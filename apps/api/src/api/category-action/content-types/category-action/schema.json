@@ -1,0 +1,39 @@
+{
+  "kind": "collectionType",
+  "collectionName": "category_actions",
+  "info": {
+    "singularName": "category-action",
+    "pluralName": "category-actions",
+    "displayName": "Category Action",
+    "description": "User actions for categories (follow/moderator)"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "actionType": {
+      "type": "enumeration",
+      "enum": ["follow", "moderator"],
+      "required": true
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["active", "pending", "removed"],
+      "default": "active",
+      "required": true
+    },
+    "category": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::category.category",
+      "inversedBy": "category_actions"
+    },
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "category_actions"
+    }
+  }
+}

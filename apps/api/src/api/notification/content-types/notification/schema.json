@@ -1,0 +1,40 @@
+{
+  "kind": "collectionType",
+  "collectionName": "notifications",
+  "info": {
+    "singularName": "notification",
+    "pluralName": "notifications",
+    "displayName": "Notification",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "type": {
+      "type": "enumeration",
+      "enum": [
+        "moderator_invite",
+        "comment",
+        "like",
+        "follow"
+      ]
+    },
+    "message": {
+      "type": "text"
+    },
+    "read": {
+      "type": "boolean",
+      "default": false
+    },
+    "data": {
+      "type": "json"
+    }
+  }
+}

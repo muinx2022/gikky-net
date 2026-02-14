@@ -1,0 +1,43 @@
+{
+  "kind": "collectionType",
+  "collectionName": "post_actions",
+  "info": {
+    "singularName": "post-action",
+    "pluralName": "post-actions",
+    "displayName": "Post Action",
+    "description": "Unified user actions for posts and comments (like/follow)"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "actionType": {
+      "type": "enumeration",
+      "enum": ["like", "follow"],
+      "required": true
+    },
+    "targetType": {
+      "type": "enumeration",
+      "enum": ["post", "comment"],
+      "required": true
+    },
+    "post": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::post.post",
+      "inversedBy": "post_actions"
+    },
+    "comment": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::comment.comment",
+      "inversedBy": "post_actions"
+    },
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    }
+  }
+}
