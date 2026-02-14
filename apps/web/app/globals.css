@@ -1,0 +1,106 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-background: 0 0% 100%;
+  --color-foreground: 222 47% 11%;
+  --color-card: 0 0% 100%;
+  --color-card-foreground: 222 47% 11%;
+  --color-popover: 0 0% 100%;
+  --color-popover-foreground: 222 47% 11%;
+  --color-primary: 221 83% 53%;
+  --color-primary-foreground: 0 0% 100%;
+  --color-secondary: 210 40% 97%;
+  --color-secondary-foreground: 222 47% 11%;
+  --color-muted: 210 33% 97%;
+  --color-muted-foreground: 215 16% 46%;
+  --color-accent: 199 89% 48%;
+  --color-accent-foreground: 0 0% 100%;
+  --color-destructive: 0 84% 60%;
+  --color-destructive-foreground: 0 0% 100%;
+  --color-border: 214 28% 88%;
+  --color-input: 214 28% 88%;
+  --color-ring: 221 83% 53%;
+  --radius: 0.75rem;
+}
+
+@layer base {
+  * {
+    border-color: hsl(214 28% 88%);
+  }
+  .dark * {
+    border-color: hsl(215 25% 27%);
+  }
+}
+
+html {
+  overflow-y: scroll;
+}
+
+body {
+  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: #f1f5f9;
+  color: #1c1c1c;
+  text-rendering: optimizeLegibility;
+}
+.dark body {
+  background-color: #16141c;
+  color: #e2e8f0;
+}
+
+.forum-shell {
+  min-height: 100vh;
+  background-color: #f1f5f9;
+}
+.dark .forum-shell {
+  background-color: #16141c;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #f2deef;
+  transition: background-color 0.15s ease;
+}
+
+.menu-item:hover {
+  background-color: #1e293b;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* Selection styling */
+::selection {
+  background-color: #cce7ff;
+  color: #1c1c1c;
+}
+.dark ::selection {
+  background-color: #1e3a8a;
+  color: #e2e8f0;
+}

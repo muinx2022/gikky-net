@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx turbo:*)",
+      "Bash(curl:*)",
+      "Bash(timeout 5 bash -c 'while ! curl -s http://localhost:1337/api/users/me -H \"\"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzcwNzgxNzE2LCJleHAiOjE3NzMzNzM3MTZ9.i6INBr2dVv2saw1b35yVv5-A5jJvLMC9_Lw7G1a0rhg\"\" 2>/dev/null | grep -q role; do sleep 1; done')",
+      "Bash(npm install:*)",
+      "Bash(npm cache clean:*)",
+      "Bash(dir:*)",
+      "Bash(npm run develop:*)",
+      "Bash(findstr:*)",
+      "Bash(npm run build:*)",
+      "Bash(sqlite3:*)",
+      "Bash(move moderator-routes.ts 01-moderator-routes.ts)",
+      "Bash(npm run dev:*)",
+      "Bash(timeout:*)",
+      "Bash(netstat:*)",
+      "Bash(taskkill:*)",
+      "Bash(cmd /c \"cd apps\\\\web && if exist .next rmdir /s /q .next\")",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git rm:*)"
+    ]
+  }
+}
