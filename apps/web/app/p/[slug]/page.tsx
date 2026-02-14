@@ -642,9 +642,10 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
     return username.substring(0, 2).toUpperCase();
   };
   const wasUpdated =
+    Boolean(post) &&
     Boolean(post?.updatedAt) &&
     Boolean(post?.createdAt) &&
-    new Date(post.updatedAt).getTime() - new Date(post.createdAt).getTime() > 60_000;
+    new Date(post!.updatedAt).getTime() - new Date(post!.createdAt).getTime() > 60_000;
 
   const renderComment = (comment: Comment, level: number = 0) => {
     return (
