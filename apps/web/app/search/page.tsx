@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import ForumLayout from "../../components/ForumLayout";
 import { api } from "../../lib/api";
@@ -18,7 +18,7 @@ interface SearchResultItem {
 
 const PAGE_SIZE = 20;
 
-export default function SearchPage() {
+function SearchContent() {
   const searchParams = useSearchParams();
   const q = (searchParams.get("q") || "").trim();
 
@@ -65,49 +65,57 @@ export default function SearchPage() {
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
+    <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5">
+      <h1 className="text-2xl font-bold text-slate-900">Search</h1>
+      {q ? <p className="text-sm text-slate-500">Results for: "{q}"</p> : <p className="text-sm text-slate-500">Type in search box.</p>}
+
+      {loading ? (
+        <p className="text-slate-500">Searching...</p>
+      ) : results.length === 0 ? (
+        <p className="text-slate-500">No results found.</p>
+      ) : (
+        <div className="divide-y divide-slate-200">
+          {results.map((item) => (
+            <Link key={item.documentId} href={`/p/${item.slug}--${item.documentId}`} className="block py-4">
+              <h2 className="text-lg font-semibold text-slate-900">{item.title}</h2>
+              <p className="mt-1 line-clamp-2 text-sm text-slate-600">{item.excerpt || item.contentPlain || ""}</p>
+              {item.author ? <p className="mt-1 text-xs text-slate-400">by {item.author}</p> : null}
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {q && pageCount > 1 && (
+        <div className="flex items-center gap-2 pt-2">
+          <button
+            className="rounded border border-slate-300 px-3 py-1 text-sm disabled:opacity-50"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page <= 1}
+          >
+            Prev
+          </button>
+          <span className="text-sm text-slate-500">
+            {page}/{pageCount}
+          </span>
+          <button
+            className="rounded border border-slate-300 px-3 py-1 text-sm disabled:opacity-50"
+            onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+            disabled={page >= pageCount}
+          >
+            Next
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
     <ForumLayout>
-      <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5">
-        <h1 className="text-2xl font-bold text-slate-900">Search</h1>
-        {q ? <p className="text-sm text-slate-500">Results for: "{q}"</p> : <p className="text-sm text-slate-500">Type in search box.</p>}
-
-        {loading ? (
-          <p className="text-slate-500">Searching...</p>
-        ) : results.length === 0 ? (
-          <p className="text-slate-500">No results found.</p>
-        ) : (
-          <div className="divide-y divide-slate-200">
-            {results.map((item) => (
-              <Link key={item.documentId} href={`/p/${item.slug}--${item.documentId}`} className="block py-4">
-                <h2 className="text-lg font-semibold text-slate-900">{item.title}</h2>
-                <p className="mt-1 line-clamp-2 text-sm text-slate-600">{item.excerpt || item.contentPlain || ""}</p>
-                {item.author ? <p className="mt-1 text-xs text-slate-400">by {item.author}</p> : null}
-              </Link>
-            ))}
-          </div>
-        )}
-
-        {q && pageCount > 1 && (
-          <div className="flex items-center gap-2 pt-2">
-            <button
-              className="rounded border border-slate-300 px-3 py-1 text-sm disabled:opacity-50"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1}
-            >
-              Prev
-            </button>
-            <span className="text-sm text-slate-500">
-              {page}/{pageCount}
-            </span>
-            <button
-              className="rounded border border-slate-300 px-3 py-1 text-sm disabled:opacity-50"
-              onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
-              disabled={page >= pageCount}
-            >
-              Next
-            </button>
-          </div>
-        )}
-      </div>
+      <Suspense fallback={<p className="text-slate-500">Loading...</p>}>
+        <SearchContent />
+      </Suspense>
     </ForumLayout>
   );
 }
