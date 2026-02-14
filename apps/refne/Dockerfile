@@ -52,4 +52,4 @@ WORKDIR /app/apps/refne
 
 EXPOSE 3001
 
-CMD ["node_modules/.bin/next", "start", "--port", "3001"]
+CMD ["/app/node_modules/.bin/next", "start", "--port", "3001"]
