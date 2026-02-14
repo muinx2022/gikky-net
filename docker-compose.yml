@@ -1,73 +1,117 @@
 services:
-  api:
+  # 1. Cloudflare Tunnel
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: gikky-cloudflared
+    restart: always
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+    command: tunnel --no-autoupdate run
+    networks:
+      - gikky-network
+
+  # 2. Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: gikky-postgres
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - gikky-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 3. Meilisearch
+  meilisearch:
+    image: getmeili/meilisearch:v1.6
+    container_name: gikky-meilisearch
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - MEILI_DB_PATH=/meili_data
+      - MEILI_NO_ANALYTICS=true
+    volumes:
+      - meilisearch_data:/meili_data
+    networks:
+      - gikky-network
+
+  # 4. Backend (Strapi) — build từ source
+  backend:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
-    container_name: gikky-api
+    container_name: gikky-backend
     restart: unless-stopped
-    ports:
-      - "1337:1337"
+    env_file: .env
     environment:
-      NODE_ENV: production
-      HOST: 0.0.0.0
-      PORT: 1337
-      # --- Database (PostgreSQL) ---
-      DATABASE_CLIENT: postgres
-      DATABASE_HOST: ${DATABASE_HOST}
-      DATABASE_PORT: ${DATABASE_PORT:-5432}
-      DATABASE_NAME: ${DATABASE_NAME:-gikky_strapi}
-      DATABASE_USERNAME: ${DATABASE_USERNAME}
-      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
-      # --- Strapi secrets (required) ---
-      APP_KEYS: ${APP_KEYS}
-      API_TOKEN_SALT: ${API_TOKEN_SALT}
-      ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET}
-      TRANSFER_TOKEN_SALT: ${TRANSFER_TOKEN_SALT}
-      JWT_SECRET: ${JWT_SECRET}
-      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      - DATABASE_HOST=postgres
+      - MEILISEARCH_HOST=http://meilisearch:7700
     volumes:
-      - strapi_uploads:/app/apps/api/public/uploads
+      - ./uploads:/app/apps/api/public/uploads
+      - ./backups:/app/apps/api/backups
+    depends_on:
+      postgres:
+        condition: service_healthy
+      meilisearch:
+        condition: service_started
     networks:
-      - gikky-net
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - gikky-network
 
-  web:
+  # 5. Frontend (Next.js web) — build từ source
+  frontend:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
-    container_name: gikky-web
+      args:
+        NEXT_PUBLIC_STRAPI_URL: ${NEXT_PUBLIC_STRAPI_URL}
+        NEXT_PUBLIC_STRAPI_API_URL: ${NEXT_PUBLIC_STRAPI_API_URL}
+        NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL}
+        NEXT_PUBLIC_USE_CUSTOM_UPLOAD: ${NEXT_PUBLIC_USE_CUSTOM_UPLOAD}
+        NEXT_PUBLIC_CUSTOM_UPLOAD_ENDPOINT: ${NEXT_PUBLIC_CUSTOM_UPLOAD_ENDPOINT}
+        NEXT_PUBLIC_LEGACY_UPLOAD_ENDPOINT: ${NEXT_PUBLIC_LEGACY_UPLOAD_ENDPOINT}
+    container_name: gikky-frontend
     restart: unless-stopped
+    env_file: .env
+    environment:
+      - HOSTNAME=0.0.0.0
+      - PORT=3000
     ports:
       - "3000:3000"
-    environment:
-      NODE_ENV: production
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://gikky-api:1337}
-    networks:
-      - gikky-net
     depends_on:
-      - api
+      - backend
+    networks:
+      - gikky-network
 
+  # 6. Refne (Next.js admin panel) — build từ source
   refne:
     build:
       context: .
       dockerfile: apps/refne/Dockerfile
+      args:
+        NEXT_PUBLIC_STRAPI_URL: ${NEXT_PUBLIC_STRAPI_URL}
+        NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL}
     container_name: gikky-refne
     restart: unless-stopped
+    env_file: .env
+    environment:
+      - HOSTNAME=0.0.0.0
+      - PORT=3001
     ports:
       - "3001:3001"
-    environment:
-      NODE_ENV: production
-      PORT: 3001
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://gikky-api:1337}
-    networks:
-      - gikky-net
     depends_on:
-      - api
-
-volumes:
-  strapi_uploads:
+      - backend
+    networks:
+      - gikky-network
 
 networks:
-  gikky-net:
+  gikky-network:
     driver: bridge
+
+volumes:
+  postgres_data:
+  meilisearch_data:

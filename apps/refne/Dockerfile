@@ -20,6 +20,12 @@ RUN npm ci
 # Copy refne app source (no local @repo/* dependencies)
 COPY apps/refne ./apps/refne
 
+# Build args for NEXT_PUBLIC_* vars (baked into bundle at build time)
+ARG NEXT_PUBLIC_STRAPI_URL
+ARG NEXT_PUBLIC_BACKEND_URL
+ENV NEXT_PUBLIC_STRAPI_URL=${NEXT_PUBLIC_STRAPI_URL}
+ENV NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL}
+
 # Build Next.js
 WORKDIR /app/apps/refne
 RUN npm run build
