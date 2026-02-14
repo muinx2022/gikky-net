@@ -1,0 +1,14 @@
+.git
+.gitignore
+**/node_modules
+**/.next
+**/dist
+**/build
+**/.turbo
+**/coverage
+**/*.log
+.env*
+!apps/api/.env.example
+.DS_Store
+README.md
+.claude
