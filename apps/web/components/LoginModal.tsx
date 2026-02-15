@@ -52,7 +52,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
 
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Sign In</h2>
-          <p className="text-sm text-slate-600 dark:text-slate-400">Đăng nhập để tham gia TechDev Forum</p>
+          <p className="text-sm text-slate-600 dark:text-slate-400">Đăng nhập để tham gia Gikky</p>
         </div>
 
         <div className="space-y-3">
@@ -81,6 +81,13 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
             <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Continue with Facebook</span>
           </button>
         </div>
+
+        <p className="mt-4 text-center text-xs text-slate-500 dark:text-slate-400">
+          Khi đăng nhập, bạn đồng ý với{" "}
+          <a href="/quy-dinh" target="_blank" rel="noopener noreferrer" className="underline hover:text-slate-700 dark:hover:text-slate-200">
+            quy định của chúng tôi
+          </a>
+        </p>
       </div>
     </div>
   );
