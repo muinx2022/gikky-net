@@ -9,14 +9,74 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect changed services
+        id: changes
+        run: |
+          FILES=$(git diff --name-only HEAD~1 HEAD)
+          echo "$FILES"
+
+          if echo "$FILES" | grep -q "^apps/web/\|^packages/"; then
+            echo "frontend=true" >> $GITHUB_OUTPUT
+          else
+            echo "frontend=false" >> $GITHUB_OUTPUT
+          fi
+
+          if echo "$FILES" | grep -q "^apps/api/"; then
+            echo "backend=true" >> $GITHUB_OUTPUT
+          else
+            echo "backend=false" >> $GITHUB_OUTPUT
+          fi
+
+          if echo "$FILES" | grep -q "^apps/refne/"; then
+            echo "refne=true" >> $GITHUB_OUTPUT
+          else
+            echo "refne=false" >> $GITHUB_OUTPUT
+          fi
+
+          if echo "$FILES" | grep -q "^docker-compose.yml$\|^.env"; then
+            echo "all=true" >> $GITHUB_OUTPUT
+          else
+            echo "all=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          envs: CHANGED_FRONTEND,CHANGED_BACKEND,CHANGED_REFNE,CHANGED_ALL
           script: |
             cd ~/projects/gikky-net
             git pull origin main
-            docker compose up -d --build frontend
-            docker compose logs --tail=20 frontend
+
+            if [ "$CHANGED_ALL" = "true" ]; then
+              echo "==> Rebuilding all services..."
+              docker compose up -d --build
+            else
+              if [ "$CHANGED_FRONTEND" = "true" ]; then
+                echo "==> Rebuilding frontend..."
+                docker compose up -d --build frontend
+              fi
+              if [ "$CHANGED_BACKEND" = "true" ]; then
+                echo "==> Rebuilding backend..."
+                docker compose up -d --build backend
+              fi
+              if [ "$CHANGED_REFNE" = "true" ]; then
+                echo "==> Rebuilding refne..."
+                docker compose up -d --build refne
+              fi
+            fi
+
+            echo "==> Running containers:"
+            docker compose ps
+        env:
+          CHANGED_FRONTEND: ${{ steps.changes.outputs.frontend }}
+          CHANGED_BACKEND: ${{ steps.changes.outputs.backend }}
+          CHANGED_REFNE: ${{ steps.changes.outputs.refne }}
+          CHANGED_ALL: ${{ steps.changes.outputs.all }}
