@@ -14,8 +14,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
   const popupRef = useRef<Window | null>(null);
 
   const openOAuth = (provider: "google" | "facebook") => {
-    const callbackUrl = `/connect/${provider}/redirect`;
-    const url = `/api/auth/signin/${provider}?callbackUrl=${encodeURIComponent(callbackUrl)}`;
+    const url = `/connect/${provider}/signin`;
     const width = 500;
     const height = 600;
     const left = window.screenX + (window.outerWidth - width) / 2;
