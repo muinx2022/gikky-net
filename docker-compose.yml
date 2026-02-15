@@ -51,6 +51,8 @@ services:
     environment:
       - DATABASE_HOST=postgres
       - MEILISEARCH_HOST=http://meilisearch:7700
+    ports:
+      - "1337:1337"
     volumes:
       - ./uploads:/app/apps/api/public/uploads
       - ./backups:/app/apps/api/backups
