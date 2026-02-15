@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { setAuthSession } from "../lib/auth-storage";
+
+const IS_DEV = process.env.NODE_ENV === "development";
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -12,6 +14,35 @@ interface LoginModalProps {
 
 export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps) {
   const popupRef = useRef<Window | null>(null);
+  const [localEmail, setLocalEmail] = useState("");
+  const [localPassword, setLocalPassword] = useState("");
+  const [localError, setLocalError] = useState("");
+  const [localLoading, setLocalLoading] = useState(false);
+
+  const handleLocalLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLocalError("");
+    setLocalLoading(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/local`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier: localEmail, password: localPassword }),
+      });
+      const data = await res.json();
+      if (data.jwt && data.user) {
+        setAuthSession(data.jwt, data.user);
+        onLoginSuccess(data.user, data.jwt);
+        onClose();
+      } else {
+        setLocalError(data.error?.message || "Đăng nhập thất bại");
+      }
+    } catch {
+      setLocalError("Không thể kết nối server");
+    } finally {
+      setLocalLoading(false);
+    }
+  };
 
   const openOAuth = (provider: "google" | "facebook") => {
     const url = `/connect/${provider}/signin`;
@@ -80,6 +111,40 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
             <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Continue with Facebook</span>
           </button>
         </div>
+
+        {IS_DEV && (
+          <form onSubmit={handleLocalLogin} className="mt-4 space-y-2">
+            <div className="relative flex items-center">
+              <div className="flex-grow border-t border-slate-200 dark:border-slate-700" />
+              <span className="mx-3 text-xs text-slate-400">dev only</span>
+              <div className="flex-grow border-t border-slate-200 dark:border-slate-700" />
+            </div>
+            <input
+              type="email"
+              placeholder="Email"
+              value={localEmail}
+              onChange={(e) => setLocalEmail(e.target.value)}
+              required
+              className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-transparent text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              value={localPassword}
+              onChange={(e) => setLocalPassword(e.target.value)}
+              required
+              className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-transparent text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            {localError && <p className="text-xs text-red-500">{localError}</p>}
+            <button
+              type="submit"
+              disabled={localLoading}
+              className="w-full py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            >
+              {localLoading ? "Đang đăng nhập..." : "Đăng nhập"}
+            </button>
+          </form>
+        )}
 
         <p className="mt-4 text-center text-xs text-slate-500 dark:text-slate-400">
           Khi đăng nhập, bạn đồng ý với{" "}
