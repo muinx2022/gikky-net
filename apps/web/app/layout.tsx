@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import { SessionProvider } from "next-auth/react";
 import { AuthProvider } from "../components/AuthContext";
 import SystemThemeSync from "../components/SystemThemeSync";
 
@@ -27,7 +28,9 @@ export default function RootLayout({
     <html lang="en" style={{ overflowY: "scroll" }} suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <SystemThemeSync />
-        <AuthProvider>{children}</AuthProvider>
+        <SessionProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </SessionProvider>
       </body>
     </html>
   );

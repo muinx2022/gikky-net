@@ -2,7 +2,6 @@
 
 import { useEffect, useRef } from "react";
 import { X } from "lucide-react";
-import { getStrapiURL } from "../lib/api";
 import { setAuthSession } from "../lib/auth-storage";
 
 interface LoginModalProps {
@@ -15,7 +14,8 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
   const popupRef = useRef<Window | null>(null);
 
   const openOAuth = (provider: "google" | "facebook") => {
-    const url = getStrapiURL(`/api/connect/${provider}`);
+    const callbackUrl = `/connect/${provider}/redirect`;
+    const url = `/api/auth/signin/${provider}?callbackUrl=${encodeURIComponent(callbackUrl)}`;
     const width = 500;
     const height = 600;
     const left = window.screenX + (window.outerWidth - width) / 2;

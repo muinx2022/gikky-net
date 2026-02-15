@@ -1,52 +1,38 @@
 "use client";
 
 import { useEffect } from "react";
-import { useParams, useSearchParams } from "next/navigation";
-import { getStrapiURL } from "../../../../lib/api";
+import { useSession } from "next-auth/react";
 import { setAuthSession } from "../../../../lib/auth-storage";
 
 export default function OAuthRedirectPage() {
-  const params = useParams();
-  const searchParams = useSearchParams();
+  const { data: session, status } = useSession();
 
   useEffect(() => {
-    const provider = params?.provider as string;
-    const accessToken = searchParams?.get("access_token");
+    if (status === "loading") return;
 
-    if (!provider || !accessToken) {
+    if (status === "authenticated" && session?.strapiJwt && session?.strapiUser) {
+      setAuthSession(session.strapiJwt, session.strapiUser);
       if (window.opener) {
-        window.opener.postMessage({ type: "oauth_error", error: "Missing provider or access_token" }, window.location.origin);
+        window.opener.postMessage(
+          { type: "oauth_success", jwt: session.strapiJwt, user: session.strapiUser },
+          window.location.origin
+        );
         window.close();
+      } else {
+        window.location.href = "/";
       }
-      return;
+    } else if (status === "unauthenticated") {
+      if (window.opener) {
+        window.opener.postMessage(
+          { type: "oauth_error", error: "Authentication failed" },
+          window.location.origin
+        );
+        window.close();
+      } else {
+        window.location.href = "/";
+      }
     }
-
-    const url = getStrapiURL(`/api/auth/${provider}/callback?access_token=${accessToken}`);
-
-    fetch(url)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.jwt && data.user) {
-          setAuthSession(data.jwt, data.user);
-          if (window.opener) {
-            window.opener.postMessage({ type: "oauth_success", jwt: data.jwt, user: data.user }, window.location.origin);
-            window.close();
-          } else {
-            window.location.href = "/";
-          }
-        } else {
-          throw new Error(data.error?.message || "OAuth failed");
-        }
-      })
-      .catch((err) => {
-        if (window.opener) {
-          window.opener.postMessage({ type: "oauth_error", error: err.message }, window.location.origin);
-          window.close();
-        } else {
-          window.location.href = "/";
-        }
-      });
-  }, [params, searchParams]);
+  }, [status, session]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
