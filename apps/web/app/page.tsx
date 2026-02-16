@@ -77,7 +77,7 @@ export default function ForumPage() {
         populate: {
           categories: true,
           tags: true,
-          author: { fields: ["id", "username"] },
+          author: { fields: ["id", "username"], populate: { avatar: true } },
         },
         pagination: {
           page: targetPage,

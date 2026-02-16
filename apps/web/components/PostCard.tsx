@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { Eye, MessageSquare, Share2 } from "lucide-react";
+import { getStrapiURL } from "../lib/api";
 
 export interface PostCardPost {
   id: number;
@@ -15,6 +16,7 @@ export interface PostCardPost {
   author?: {
     id: number;
     username: string;
+    avatar?: { url: string; formats?: { thumbnail?: { url: string } } } | null;
   } | null;
   comments?: Array<{ id: number }>;
   commentsCount?: number;
@@ -114,8 +116,20 @@ export default function PostCard({ post, formatDate, formatCategoryTitle, onShar
     <Link href={`/p/${post.slug}--${post.documentId}`} className="block">
       <article className="px-5 py-4 transition hover:bg-slate-50">
         <div className="mb-2 flex items-center justify-between gap-2">
-          <div className="text-sm text-slate-600">
-            <span className="font-medium">By: {post.author?.username || "anonymous"}</span>
+          <div className="flex items-center gap-2 text-sm text-slate-600">
+            {(() => {
+              const av = post.author?.avatar;
+              const rawUrl = av?.formats?.thumbnail?.url || av?.url;
+              const avatarUrl = rawUrl ? (rawUrl.startsWith("http") ? rawUrl : getStrapiURL(rawUrl)) : null;
+              return (
+                <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-blue-100 text-[10px] font-semibold text-blue-700">
+                  {avatarUrl
+                    ? <img src={avatarUrl} alt={post.author?.username || ""} className="h-full w-full object-cover" />
+                    : (post.author?.username || "?").charAt(0).toUpperCase()}
+                </div>
+              );
+            })()}
+            <span className="font-medium">{post.author?.username || "anonymous"}</span>
           </div>
           <span className="text-sm text-slate-400">{formatDate(post.createdAt)}</span>
         </div>

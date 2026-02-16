@@ -11,6 +11,12 @@ import LoginModal from "../../../components/LoginModal";
 import { useSearchParams } from "next/navigation";
 // Force recompile - fixed SSR
 
+interface AuthorAvatar {
+  id: number;
+  url: string;
+  formats?: { thumbnail?: { url: string } };
+}
+
 interface Post {
   id: number;
   documentId: string;
@@ -28,6 +34,7 @@ interface Post {
     id: number;
     username: string;
     email: string;
+    avatar?: AuthorAvatar | null;
   };
 }
 
@@ -39,6 +46,7 @@ interface Comment {
   author?: {
     id: number;
     username: string;
+    avatar?: AuthorAvatar | null;
   };
   parent?: {
     id: number;
@@ -172,7 +180,9 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
   const fetchPostData = async (userId?: number) => {
     try {
       // Fetch post by documentId
-      const postRes = await api.get(`/api/posts/${documentId}?populate=*`);
+      const postRes = await api.get(`/api/posts/${documentId}`, {
+        params: { populate: { categories: true, tags: true, author: { populate: { avatar: true } } } },
+      });
       const postData = postRes.data?.data;
 
       if (!postData) {
@@ -189,14 +199,8 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
         const headers = jwt ? { Authorization: `Bearer ${jwt}` } : undefined;
         const commentsRes = await api.get(`/api/comments`, {
           params: {
-            filters: {
-              post: {
-                documentId: {
-                  $eq: documentId,
-                },
-              },
-            },
-            populate: "*",
+            filters: { post: { documentId: { $eq: documentId } } },
+            populate: { author: { populate: { avatar: true } }, parent: true },
             sort: "createdAt:asc",
           },
           headers,
@@ -638,8 +642,19 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
     }
   };
 
-  const getInitials = (username: string) => {
-    return username.substring(0, 2).toUpperCase();
+  const getInitials = (username: string) => username.substring(0, 2).toUpperCase();
+
+  const renderAvatar = (username: string, avatar?: AuthorAvatar | null, size = "w-8 h-8") => {
+    const url = avatar?.formats?.thumbnail?.url || avatar?.url;
+    const fullUrl = url ? (url.startsWith("http") ? url : `${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:1337"}${url}`) : null;
+    return (
+      <div className={`${size} rounded-full flex-shrink-0 overflow-hidden bg-blue-100 dark:bg-blue-900 flex items-center justify-center`}>
+        {fullUrl
+          ? <img src={fullUrl} alt={username} className="w-full h-full object-cover" />
+          : <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">{getInitials(username)}</span>
+        }
+      </div>
+    );
   };
   const wasUpdated =
     Boolean(post) &&
@@ -655,11 +670,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
         className={`${level > 0 ? "ml-5 pl-3 border-l border-slate-300 dark:border-slate-800" : ""} mb-4`}
       >
         <div className="flex items-start gap-3">
-          <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center flex-shrink-0">
-            <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">
-              {getInitials(comment.author?.username || "Anonymous")}
-            </span>
-          </div>
+          {renderAvatar(comment.author?.username || "Anonymous", comment.author?.avatar)}
           <div className="flex-1 min-w-0">
             <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3">
               <div className="flex items-center gap-2 mb-1">
@@ -884,11 +895,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
           {/* Meta */}
           <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400 mb-6 pb-6 border-b border-slate-300 dark:border-slate-800">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-                <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">
-                  {getInitials(post.author?.username || "Anonymous")}
-                </span>
-              </div>
+              {renderAvatar(post.author?.username || "Anonymous", post.author?.avatar)}
               <span className="font-medium text-slate-700 dark:text-slate-300">
                 {post.author?.username || "Anonymous"}
               </span>
@@ -984,11 +991,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
           {!commentsBlocked && showCommentForm && (
             <div className="mb-8">
               <div className="flex gap-3">
-                <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center flex-shrink-0">
-                  <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">
-                    {currentUser ? getInitials(currentUser.username) : "??"}
-                  </span>
-                </div>
+                {renderAvatar(currentUser?.username || "?", undefined)}
                 <div className="flex-1">
                   {showFormatInComment ? (
                     <div className="relative">

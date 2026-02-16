@@ -75,7 +75,7 @@ export default function TagPage({ params }: { params: Promise<{ name: string }> 
         populate: {
           categories: true,
           tags: true,
-          author: { fields: ["id", "username"] },
+          author: { fields: ["id", "username"], populate: { avatar: true } },
         },
         filters: {
           tags: { name: { $eq: tagName } },

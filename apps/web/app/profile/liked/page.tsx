@@ -69,6 +69,7 @@ export default function SavedPostsPage() {
           categories: true,
           author: {
             fields: ["id", "username"],
+            populate: { avatar: true },
           },
         },
         filters: {

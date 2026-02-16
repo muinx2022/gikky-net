@@ -64,6 +64,7 @@ export default function PopularPage() {
           categories: true,
           author: {
             fields: ["id", "username"],
+            populate: { avatar: true },
           },
         },
         pagination: {

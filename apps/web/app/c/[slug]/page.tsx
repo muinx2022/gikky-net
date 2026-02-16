@@ -184,6 +184,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
             tags: true,
             author: {
               fields: ["id", "username"],
+              populate: { avatar: true },
             },
           },
           filters: {
