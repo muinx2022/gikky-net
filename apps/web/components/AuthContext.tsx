@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { api } from "../lib/api";
+import { api, getStrapiURL } from "../lib/api";
 import { clearAuthSession, getAuthToken, getStoredUser, setStoredUser } from "../lib/auth-storage";
 
 interface UserData {
@@ -64,9 +64,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (!jwt) return;
 
-    api.get("/api/users/me", { headers: { Authorization: `Bearer ${jwt}` } })
+    api.get("/api/profile/me", { headers: { Authorization: `Bearer ${jwt}` } })
       .then((res) => {
-        const me = res.data as UserData;
+        const raw = res.data as any;
+        const avatarRaw = raw.avatar?.formats?.thumbnail?.url || raw.avatar?.url || null;
+        const avatarUrl = avatarRaw
+          ? avatarRaw.startsWith("http") ? avatarRaw : getStrapiURL(avatarRaw)
+          : null;
+        const me: UserData = { id: raw.id, username: raw.username, email: raw.email, avatarUrl };
         setCurrentUser(me);
         setStoredUser(me);
         checkModeratorStatus();
