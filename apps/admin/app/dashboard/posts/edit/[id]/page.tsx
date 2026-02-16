@@ -92,7 +92,7 @@ export default function EditPostPage() {
         content: post.content || '',
         excerpt: post.excerpt || '',
         status: post.status || 'draft',
-        moderationStatus: post.moderationStatus || null,
+        moderationStatus: (post.moderationStatus && post.moderationStatus !== '') ? post.moderationStatus : null,
         categories: post.categories?.map((cat: { documentId: string }) => cat.documentId) || [],
         tags: post.tags?.map((tag: { documentId: string }) => tag.documentId) || [],
         authorSelection: post.author?.id ? String(post.author.id) : 'random',
@@ -397,13 +397,12 @@ export default function EditPostPage() {
 
             <Select
               label="Moderation"
-              placeholder="None"
-              clearable
-              value={formData.moderationStatus}
+              value={formData.moderationStatus ?? ''}
               onChange={(value) =>
                 setFormData({ ...formData, moderationStatus: (value as 'block-comment' | 'delete') || null })
               }
               data={[
+                { value: '', label: 'None' },
                 { value: 'block-comment', label: 'Block comments' },
                 { value: 'delete', label: 'Delete' },
               ]}

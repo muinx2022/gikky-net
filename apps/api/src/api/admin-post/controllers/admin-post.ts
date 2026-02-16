@@ -117,7 +117,8 @@ const setAuthorForDocument = async (strapi: Core.Strapi, documentId: string, aut
 export default ({ strapi }: { strapi: Core.Strapi }) => ({
   async find(ctx) {
     const query = ctx.query || {};
-    const rows = await strapi.documents(POST_UID).findMany(query as any);
+    // Query published version first to get correct status; Strapi v5 default returns draft
+    const rows = await strapi.documents(POST_UID).findMany({ ...query as any, status: 'published' });
     const data = await attachAuthors(strapi, rows);
 
     ctx.body = {
@@ -134,10 +135,20 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
     const { id } = ctx.params;
     const query = ctx.query || {};
 
-    const row = await strapi.documents(POST_UID).findOne({
+    // Try published first, fall back to draft
+    let row = await strapi.documents(POST_UID).findOne({
       documentId: id,
       ...(query as any),
+      status: 'published',
     });
+
+    if (!row) {
+      row = await strapi.documents(POST_UID).findOne({
+        documentId: id,
+        ...(query as any),
+        status: 'draft',
+      });
+    }
 
     if (!row) {
       return ctx.notFound('Post not found');
