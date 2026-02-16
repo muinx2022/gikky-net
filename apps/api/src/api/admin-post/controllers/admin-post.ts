@@ -3,6 +3,7 @@ import type { Core } from '@strapi/strapi';
 const POST_UID = 'api::post.post';
 const CATEGORY_UID = 'api::category.category';
 const TAG_UID = 'api::tag.tag' as any;
+const MODERATION_STATUS_VALUES = new Set(['block-comment', 'delete']);
 
 const attachAuthors = async (strapi: Core.Strapi, rows: any[]) => {
   if (!Array.isArray(rows) || rows.length === 0) return rows;
@@ -87,6 +88,20 @@ const parseDataPayload = async (strapi: Core.Strapi, ctx: any) => {
   }
   if (Array.isArray(nextPayload.tags)) {
     nextPayload.tags = await resolveRelationIds(strapi, TAG_UID, nextPayload.tags);
+  }
+
+  // Ignore invalid moderation values like '', 'none', or whitespace from older/admin builds.
+  if (typeof nextPayload.moderationStatus === 'string') {
+    const normalized = nextPayload.moderationStatus.trim();
+    if (!normalized || normalized.toLowerCase() === 'none') {
+      delete nextPayload.moderationStatus;
+    } else if (MODERATION_STATUS_VALUES.has(normalized)) {
+      nextPayload.moderationStatus = normalized;
+    } else {
+      delete nextPayload.moderationStatus;
+    }
+  } else if (nextPayload.moderationStatus == null) {
+    delete nextPayload.moderationStatus;
   }
 
   return {
