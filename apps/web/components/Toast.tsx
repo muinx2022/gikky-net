@@ -56,7 +56,7 @@ export function Toast({ message, type, onClose, index = 0 }: ToastProps) {
       className={`fixed right-4 transition-all duration-300 ${
         isVisible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"
       }`}
-      style={{ top: `${72 + index * 72}px`, zIndex: 1000 }}
+      style={{ top: `${120 + index * 72}px`, zIndex: 1000 }}
     >
       <div
         className={`flex items-center gap-3 px-4 py-3 rounded-lg border shadow-lg ${config.bgColor} ${config.borderColor}`}

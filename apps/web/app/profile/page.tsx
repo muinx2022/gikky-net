@@ -84,8 +84,7 @@ export default function ProfilePage() {
     const jwt = getAuthToken();
     if (!jwt) return;
     try {
-      const res = await api.get("/api/users/me", {
-        params: { populate: "avatar" },
+      const res = await api.get("/api/profile/me", {
         headers: { Authorization: `Bearer ${jwt}` },
       });
       const user = res.data as UserProfile;
@@ -116,7 +115,7 @@ export default function ProfilePage() {
     if (!jwt) return;
     setSaving(true);
     try {
-      const res = await api.put(`/api/users/${profile.id}`, fields, {
+      const res = await api.put("/api/profile/me", fields, {
         headers: { Authorization: `Bearer ${jwt}` },
       });
       const updated = res.data as UserProfile;
@@ -154,11 +153,10 @@ export default function ProfilePage() {
       const uploaded = await uploadRes.json();
       const media = uploaded[0];
 
-      // Step 2: link avatar to user
-      const res = await api.put(`/api/users/${profile.id}`, { avatar: media.id }, {
+      // Step 2: link avatar to user via custom profile endpoint
+      await api.put("/api/profile/me", { avatar: media.id }, {
         headers: { Authorization: `Bearer ${jwt}` },
       });
-      const updated = res.data as UserProfile;
       // Re-fetch to get populated avatar url
       await fetchProfile();
       showToast("Avatar updated", "success");
