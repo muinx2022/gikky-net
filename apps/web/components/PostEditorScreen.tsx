@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Save, Send, ChevronDown, Check, Hash, X as XIcon } from "lucide-react";
 import ForumLayout from "./ForumLayout";
@@ -112,6 +112,7 @@ export default function PostEditorScreen({ documentId }: { documentId?: string }
   const [tagSearch, setTagSearch] = useState("");
   const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
   const [categorySearch, setCategorySearch] = useState("");
+  const categoryPickerRef = useRef<HTMLDivElement>(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [postOwnerId, setPostOwnerId] = useState<number | null>(null);
   const [postModerationStatus, setPostModerationStatus] = useState<"block-comment" | "delete" | null>(null);
@@ -178,6 +179,17 @@ export default function PostEditorScreen({ documentId }: { documentId?: string }
     if (!q) return categoryOptions;
     return categoryOptions.filter((option) => option.label.toLowerCase().includes(q));
   }, [categoryOptions, categorySearch]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (categoryPickerRef.current && !categoryPickerRef.current.contains(e.target as Node)) {
+        setCategoryPickerOpen(false);
+        setCategorySearch("");
+      }
+    };
+    if (categoryPickerOpen) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [categoryPickerOpen]);
 
   useEffect(() => {
     const flash = sessionStorage.getItem("post-editor-toast");
@@ -508,26 +520,36 @@ export default function PostEditorScreen({ documentId }: { documentId?: string }
               </div>
 
               {/* Category picker — Reddit subreddit style */}
-              <div className="relative">
+              <div className="relative" ref={categoryPickerRef}>
                 <label className="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-300">
                   Chuyên mục
                 </label>
-                <button
-                  type="button"
-                  onClick={() => setCategoryPickerOpen((prev) => !prev)}
-                  className={`flex w-full items-center gap-2.5 rounded-full border-2 bg-white px-3 py-2 text-left transition-colors dark:bg-slate-900 ${
+
+                {/* Trigger / inline search */}
+                <div
+                  onClick={() => { if (!categoryPickerOpen) setCategoryPickerOpen(true); }}
+                  className={`flex w-full cursor-pointer items-center gap-2.5 rounded-full border-2 bg-white px-3 py-2 transition-colors dark:bg-slate-900 ${
                     categoryPickerOpen
                       ? "border-blue-500"
                       : "border-slate-200 hover:border-slate-400 dark:border-slate-700 dark:hover:border-slate-500"
                   }`}
                 >
-                  {selectedCategoryIds.length === 0 ? (
-                    <>
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
-                        <span className="text-xs text-slate-400">?</span>
-                      </div>
-                      <span className="flex-1 text-sm text-slate-400 dark:text-slate-500">Chọn chuyên mục</span>
-                    </>
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
+                    <span className="text-xs text-slate-400">
+                      {selectedCategoryIds.length === 0 ? "?" : categoryOptions.find(o => selectedCategoryIds.includes(o.value))?.label.replace(/^[\s›]+/, "").charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+
+                  {categoryPickerOpen ? (
+                    <input
+                      autoFocus
+                      value={categorySearch}
+                      onChange={(e) => setCategorySearch(e.target.value)}
+                      placeholder="Tìm chuyên mục..."
+                      className="flex-1 bg-transparent text-sm text-slate-900 placeholder-slate-400 focus:outline-none dark:text-slate-100 dark:placeholder-slate-500"
+                    />
+                  ) : selectedCategoryIds.length === 0 ? (
+                    <span className="flex-1 text-sm text-slate-400 dark:text-slate-500">Chọn chuyên mục</span>
                   ) : (
                     <div className="flex flex-1 flex-wrap gap-1.5">
                       {categoryOptions
@@ -558,23 +580,15 @@ export default function PostEditorScreen({ documentId }: { documentId?: string }
                         })}
                     </div>
                   )}
+
                   <ChevronDown
                     size={16}
                     className={`ml-auto shrink-0 text-slate-400 transition-transform ${categoryPickerOpen ? "rotate-180" : ""}`}
                   />
-                </button>
+                </div>
 
                 {categoryPickerOpen && (
                   <div className="absolute z-20 mt-2 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
-                    <div className="p-2 border-b border-slate-100 dark:border-slate-800">
-                      <input
-                        autoFocus
-                        value={categorySearch}
-                        onChange={(e) => setCategorySearch(e.target.value)}
-                        placeholder="Tìm chuyên mục..."
-                        className="w-full rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500"
-                      />
-                    </div>
                     <div className="max-h-60 overflow-auto py-1">
                       {filteredCategoryOptions.length === 0 ? (
                         <p className="px-4 py-3 text-sm text-slate-400">Không tìm thấy chuyên mục.</p>
