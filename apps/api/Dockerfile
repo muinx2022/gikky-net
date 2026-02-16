@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package.json package-lock.json turbo.json .npmrc ./
 COPY apps/api/package.json ./apps/api/package.json
 COPY apps/web/package.json ./apps/web/package.json
-COPY apps/refne/package.json ./apps/refne/package.json
+COPY apps/admin/package.json ./apps/admin/package.json
 COPY packages/ui/package.json ./packages/ui/package.json
 COPY packages/tiptap-editor/package.json ./packages/tiptap-editor/package.json
 COPY packages/eslint-config/package.json ./packages/eslint-config/package.json

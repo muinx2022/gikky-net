@@ -14,6 +14,12 @@ jobs:
         with:
           fetch-depth: 2
 
+      - name: Install cloudflared
+        run: |
+          curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o cloudflared
+          chmod +x cloudflared
+          sudo mv cloudflared /usr/local/bin/
+
       - name: Detect changed services
         id: changes
         run: |
@@ -32,10 +38,10 @@ jobs:
             echo "backend=false" >> $GITHUB_OUTPUT
           fi
 
-          if echo "$FILES" | grep -q "^apps/refne/"; then
-            echo "refne=true" >> $GITHUB_OUTPUT
+          if echo "$FILES" | grep -q "^apps/admin/"; then
+            echo "admin=true" >> $GITHUB_OUTPUT
           else
-            echo "refne=false" >> $GITHUB_OUTPUT
+            echo "admin=false" >> $GITHUB_OUTPUT
           fi
 
           if echo "$FILES" | grep -q "^docker-compose.yml$\|^.env"; then
@@ -44,13 +50,14 @@ jobs:
             echo "all=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Deploy via SSH
+      - name: Deploy via SSH over Cloudflare Tunnel
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.VPS_HOST }}
+          host: ssh.gikky.net
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: CHANGED_FRONTEND,CHANGED_BACKEND,CHANGED_REFNE,CHANGED_ALL
+          proxy_host: ssh.gikky.net
+          envs: CHANGED_FRONTEND,CHANGED_BACKEND,CHANGED_ADMIN,CHANGED_ALL
           script: |
             cd ~/projects/gikky-net
             git pull origin main
@@ -67,9 +74,9 @@ jobs:
                 echo "==> Rebuilding backend..."
                 docker compose up -d --build backend
               fi
-              if [ "$CHANGED_REFNE" = "true" ]; then
-                echo "==> Rebuilding refne..."
-                docker compose up -d --build refne
+              if [ "$CHANGED_ADMIN" = "true" ]; then
+                echo "==> Rebuilding admin..."
+                docker compose up -d --build admin
               fi
             fi
 
@@ -78,5 +85,5 @@ jobs:
         env:
           CHANGED_FRONTEND: ${{ steps.changes.outputs.frontend }}
           CHANGED_BACKEND: ${{ steps.changes.outputs.backend }}
-          CHANGED_REFNE: ${{ steps.changes.outputs.refne }}
+          CHANGED_ADMIN: ${{ steps.changes.outputs.refne }}
           CHANGED_ALL: ${{ steps.changes.outputs.all }}

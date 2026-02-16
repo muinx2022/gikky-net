@@ -92,15 +92,15 @@ services:
     networks:
       - gikky-network
 
-  # 6. Refne (Next.js admin panel) — build từ source
-  refne:
+  # 6. Admin (Next.js admin panel) — build từ source
+  admin:
     build:
       context: .
-      dockerfile: apps/refne/Dockerfile
+      dockerfile: apps/admin/Dockerfile
       args:
         NEXT_PUBLIC_STRAPI_URL: ${NEXT_PUBLIC_STRAPI_URL}
         NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL}
-    container_name: gikky-refne
+    container_name: gikky-admin
     restart: unless-stopped
     env_file: .env
     environment:

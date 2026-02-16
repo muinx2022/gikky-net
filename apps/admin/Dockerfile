@@ -6,7 +6,7 @@ WORKDIR /app
 
 # Copy workspace package manifests
 COPY package.json package-lock.json turbo.json .npmrc ./
-COPY apps/refne/package.json ./apps/refne/package.json
+COPY apps/admin/package.json ./apps/admin/package.json
 COPY apps/api/package.json ./apps/api/package.json
 COPY apps/web/package.json ./apps/web/package.json
 COPY packages/ui/package.json ./packages/ui/package.json
@@ -17,8 +17,8 @@ COPY packages/typescript-config/package.json ./packages/typescript-config/packag
 # Install all workspace deps
 RUN npm ci
 
-# Copy refne app source (no local @repo/* dependencies)
-COPY apps/refne ./apps/refne
+# Copy admin app source (no local @repo/* dependencies)
+COPY apps/admin ./apps/admin
 
 # Build args for NEXT_PUBLIC_* vars (baked into bundle at build time)
 ARG NEXT_PUBLIC_STRAPI_URL
@@ -27,7 +27,7 @@ ENV NEXT_PUBLIC_STRAPI_URL=${NEXT_PUBLIC_STRAPI_URL}
 ENV NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL}
 
 # Build Next.js
-WORKDIR /app/apps/refne
+WORKDIR /app/apps/admin
 RUN npm run build
 
 # --- Runner ---
@@ -44,11 +44,11 @@ ENV HOSTNAME=0.0.0.0
 # Copy node_modules
 COPY --from=builder /app/node_modules ./node_modules
 # Copy built Next.js app
-COPY --from=builder /app/apps/refne/.next ./apps/refne/.next
-COPY --from=builder /app/apps/refne/public ./apps/refne/public
-COPY --from=builder /app/apps/refne/package.json ./apps/refne/package.json
+COPY --from=builder /app/apps/admin/.next ./apps/admin/.next
+COPY --from=builder /app/apps/admin/public ./apps/admin/public
+COPY --from=builder /app/apps/admin/package.json ./apps/admin/package.json
 
-WORKDIR /app/apps/refne
+WORKDIR /app/apps/admin
 
 EXPOSE 3001
 
