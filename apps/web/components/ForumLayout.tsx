@@ -248,8 +248,10 @@ export default function ForumLayout({ children, categories = [] }: ForumLayoutPr
                     onClick={() => setShowUserMenu((value) => !value)}
                     className="inline-flex items-center gap-2 rounded-md px-2.5 py-1.5 text-slate-100 transition hover:bg-slate-800"
                   >
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#3b82f6] text-xs font-bold text-white">
-                      {currentUser.username.charAt(0).toUpperCase()}
+                    <div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-[#3b82f6] text-xs font-bold text-white">
+                      {currentUser.avatarUrl
+                        ? <img src={currentUser.avatarUrl} alt="avatar" className="h-full w-full object-cover" />
+                        : currentUser.username.charAt(0).toUpperCase()}
                     </div>
                     <span className="hidden md:block">{currentUser.username}</span>
                     <ChevronDown size={14} />

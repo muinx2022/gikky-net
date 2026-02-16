@@ -58,7 +58,7 @@ const modBadge = (mod?: "block-comment" | "delete" | null) => {
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { currentUser, hydrated } = useAuth();
+  const { currentUser, hydrated, updateUser } = useAuth();
   const { showToast, ToastContainer } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -159,6 +159,9 @@ export default function ProfilePage() {
       });
       // Re-fetch to get populated avatar url
       await fetchProfile();
+      // Update header avatar
+      const avatarUrl = media.formats?.thumbnail?.url || media.url;
+      updateUser({ avatarUrl: avatarUrl.startsWith("http") ? avatarUrl : getStrapiURL(avatarUrl) });
       showToast("Avatar updated", "success");
     } catch (err: any) {
       showToast(err?.message || "Failed to upload avatar", "error");

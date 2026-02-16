@@ -8,6 +8,7 @@ interface UserData {
   id: number;
   username: string;
   email: string;
+  avatarUrl?: string | null;
 }
 
 interface ModeratorCategory {
@@ -20,6 +21,7 @@ interface AuthContextValue {
   hydrated: boolean;
   handleLoginSuccess: (user: UserData) => void;
   handleLogout: () => void;
+  updateUser: (partial: Partial<UserData>) => void;
 }
 
 const AuthContext = createContext<AuthContextValue>({
@@ -28,6 +30,7 @@ const AuthContext = createContext<AuthContextValue>({
   hydrated: false,
   handleLoginSuccess: () => {},
   handleLogout: () => {},
+  updateUser: () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -86,8 +89,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsModerator(false);
   };
 
+  const updateUser = (partial: Partial<UserData>) => {
+    setCurrentUser((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, ...partial };
+      setStoredUser(updated);
+      return updated;
+    });
+  };
+
   return (
-    <AuthContext.Provider value={{ currentUser, isModerator, hydrated, handleLoginSuccess, handleLogout }}>
+    <AuthContext.Provider value={{ currentUser, isModerator, hydrated, handleLoginSuccess, handleLogout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
