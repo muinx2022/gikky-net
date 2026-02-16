@@ -134,35 +134,41 @@ export default factories.createCoreController('api::post.post', ({ strapi }) => 
       return result;
     }
 
-    const rawPosts = await strapi.db.query('api::post.post').findMany({
-      where: {
-        id: {
-          $in: ids,
-        },
-      },
-      populate: {
-        author: {
-          populate: { avatar: true },
-        },
-      },
+    // Collect documentIds for the returned rows
+    const docIds = rows.map((row: any) => row?.documentId).filter(Boolean);
+
+    // Query draft rows first (authoritative source for relations like categories/tags)
+    const draftPosts = await strapi.db.query('api::post.post').findMany({
+      where: { documentId: { $in: docIds }, publishedAt: null },
+      populate: { author: { populate: { avatar: true } }, categories: true, tags: true },
     });
 
-    const authorById = new Map<number, { id: number; username: string; avatar: any } | null>();
-    for (const raw of rawPosts as any[]) {
-      const author = raw?.author
-        ? {
-            id: raw.author.id,
-            username: raw.author.username,
-            avatar: raw.author.avatar || null,
-          }
-        : null;
-      authorById.set(Number(raw.id), author);
+    // For docs with no draft, also fetch published rows
+    const draftDocIds = new Set((draftPosts as any[]).map((p: any) => p.documentId));
+    const missingDocIds = docIds.filter((d: string) => !draftDocIds.has(d));
+    const publishedFallback = missingDocIds.length > 0
+      ? await strapi.db.query('api::post.post').findMany({
+          where: { documentId: { $in: missingDocIds }, publishedAt: { $notNull: true } },
+          populate: { author: { populate: { avatar: true } }, categories: true, tags: true },
+        })
+      : [];
+
+    const rawByDocId = new Map<string, any>();
+    for (const p of [...(draftPosts as any[]), ...(publishedFallback as any[])]) {
+      if (!rawByDocId.has(p.documentId)) rawByDocId.set(p.documentId, p);
     }
 
-    const normalizedRows = rows.map((row: any) => ({
-      ...row,
-      author: authorById.get(Number(row.id)) || null,
-    }));
+    const normalizedRows = rows.map((row: any) => {
+      const raw = rawByDocId.get(row?.documentId);
+      return {
+        ...row,
+        categories: raw?.categories || row.categories || [],
+        tags: raw?.tags || row.tags || [],
+        author: raw?.author
+          ? { id: raw.author.id, username: raw.author.username, avatar: raw.author.avatar || null }
+          : null,
+      };
+    });
 
     (result as any).data = hasAuthorFilter
       ? normalizedRows.filter((row: any) => Number(row?.author?.id) === authorFilterId)
@@ -180,23 +186,25 @@ export default factories.createCoreController('api::post.post', ({ strapi }) => 
       return result;
     }
 
-    const raw = await strapi.db.query('api::post.post').findOne({
-      where: {
-        id: Number(row.id),
-      },
-      populate: {
-        author: {
-          populate: { avatar: true },
-        },
-        categories: true,
-        tags: true,
-      },
+    const docId = row.documentId;
+
+    // Query draft first (draft is the canonical source for categories/tags since
+    // users may update relations without republishing the post)
+    const draft = await strapi.db.query('api::post.post').findOne({
+      where: { documentId: docId, publishedAt: null },
+      populate: { author: { populate: { avatar: true } }, categories: true, tags: true },
+    });
+
+    // Fall back to published row if no draft exists
+    const raw = draft || await strapi.db.query('api::post.post').findOne({
+      where: { documentId: docId, publishedAt: { $notNull: true } },
+      populate: { author: { populate: { avatar: true } }, categories: true, tags: true },
     });
 
     (result as any).data = {
       ...row,
-      categories: raw?.categories || row.categories || [],
-      tags: raw?.tags || row.tags || [],
+      categories: raw?.categories || [],
+      tags: raw?.tags || [],
       author: raw?.author
         ? {
             id: raw.author.id,
