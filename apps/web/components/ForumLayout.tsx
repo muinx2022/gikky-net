@@ -18,6 +18,12 @@ interface Category {
   parent?: { id?: number } | null;
 }
 
+interface Tag {
+  id: number;
+  documentId: string;
+  name: string;
+}
+
 interface ForumLayoutProps {
   children: React.ReactNode;
   categories?: Category[];
@@ -50,6 +56,7 @@ export default function ForumLayout({ children, categories = [] }: ForumLayoutPr
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [footerPages, setFooterPages] = useState<FooterPageLink[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [searchValue, setSearchValue] = useState("");
   const [suggestions, setSuggestions] = useState<SearchSuggestItem[]>([]);
   const [suggestOpen, setSuggestOpen] = useState(false);
@@ -79,6 +86,12 @@ export default function ForumLayout({ children, categories = [] }: ForumLayoutPr
     };
 
     loadFooterPages();
+  }, []);
+
+  useEffect(() => {
+    api.get("/api/tags", { params: { sort: "name:asc", "pagination[limit]": 30 } })
+      .then((res) => setTags(res.data?.data || []))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -346,21 +359,35 @@ export default function ForumLayout({ children, categories = [] }: ForumLayoutPr
                 <div className="min-h-0 flex-1 overflow-y-auto">
                   {categories.length > 0 && (
                     <>
-                    <h3 className="mb-4 text-[20px] font-semibold text-slate-900">Recommended topics</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {categories.slice(0, 8).map((category) => (
-                        <Link
-                          key={category.id}
-                          href={`/c/${toCategorySlug(category)}`}
-                          className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700 transition hover:bg-slate-200"
-                        >
-                        {formatCategoryTitle(category.name)}
-                      </Link>
-                    ))}
-                    </div>
-                    <Link href="/" className="mt-4 inline-block text-sm font-semibold text-[#2563eb] hover:text-[#1d4ed8]">
-                      See more topics
-                    </Link>
+                      <h3 className="mb-3 text-[18px] font-semibold text-slate-900">Recommended topics</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {categories.slice(0, 8).map((category) => (
+                          <Link
+                            key={category.id}
+                            href={`/c/${toCategorySlug(category)}`}
+                            className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700 transition hover:bg-slate-200"
+                          >
+                            {formatCategoryTitle(category.name)}
+                          </Link>
+                        ))}
+                      </div>
+                    </>
+                  )}
+
+                  {tags.length > 0 && (
+                    <>
+                      <h3 className="mb-3 mt-5 text-[18px] font-semibold text-slate-900">Tags</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {tags.map((tag) => (
+                          <Link
+                            key={tag.id}
+                            href={`/tag/${tag.name}`}
+                            className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-2.5 py-0.5 text-xs text-slate-600 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600"
+                          >
+                            <span className="text-slate-400">#</span>{tag.name}
+                          </Link>
+                        ))}
+                      </div>
                     </>
                   )}
                 </div>
