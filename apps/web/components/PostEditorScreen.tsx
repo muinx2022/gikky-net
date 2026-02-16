@@ -503,6 +503,7 @@ export default function PostEditorScreen({ documentId }: { documentId?: string }
 
           {!loading ? (
             <form
+              noValidate
               onSubmit={(e) => {
                 e.preventDefault();
                 submitPost("published");
@@ -659,6 +660,7 @@ export default function PostEditorScreen({ documentId }: { documentId?: string }
               <div>
                 <div className="mb-2 flex items-center gap-2">
                   <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Tags</label>
+                  <span className="text-xs text-slate-400">(tùy chọn)</span>
                   {selectedTagIds.length > 0 && (
                     <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
                       {selectedTagIds.length} đã chọn
