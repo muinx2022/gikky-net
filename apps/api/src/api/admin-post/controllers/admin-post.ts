@@ -177,6 +177,11 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
     const { payload, authorUserId } = await parseDataPayload(strapi, ctx);
     const status = payload?.status === 'published' ? 'published' : 'draft';
 
+    // Explicitly null out moderationStatus if not set, to clear any stale '' value in DB
+    if (!payload.moderationStatus) {
+      payload.moderationStatus = null;
+    }
+
     const data = await strapi.documents(POST_UID).update({
       documentId: id,
       data: payload,

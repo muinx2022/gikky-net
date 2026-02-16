@@ -214,10 +214,13 @@ export default function EditPostPage() {
         content: contentWithUploadedMedia,
         excerpt: formData.excerpt,
         status: formData.status,
-        moderationStatus: formData.moderationStatus || null,
         categories: formData.categories,
         tags: formData.tags,
       };
+
+      if (formData.moderationStatus) {
+        payload.moderationStatus = formData.moderationStatus;
+      }
 
       if (authorUserId) {
         payload.authorUserId = authorUserId;
