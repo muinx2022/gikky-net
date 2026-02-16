@@ -16,8 +16,13 @@ import {
   Alert,
   Box,
 } from "@mantine/core";
-import { setCookie } from "cookies-next";
 import { strapiApi } from "../lib/strapi";
+
+function setAuthCookie(name: string, value: string, rememberMe: boolean) {
+  const encoded = encodeURIComponent(value);
+  const base = `${name}=${encoded}; path=/; SameSite=Lax`;
+  document.cookie = rememberMe ? `${base}; max-age=${60 * 60 * 24 * 30}` : base;
+}
 
 type RoleInfo = { id?: number; name?: string };
 
@@ -190,9 +195,8 @@ export default function LoginPage() {
       }
 
       // 3. Store the token and user
-      const cookieOptions = rememberMe ? { maxAge: 60 * 60 * 24 * 30 } : {}; // 30 days if remember me
-      setCookie("token", jwt, cookieOptions);
-      setCookie("user", JSON.stringify(userWithRole), cookieOptions);
+      setAuthCookie("token", jwt, rememberMe);
+      setAuthCookie("user", JSON.stringify(userWithRole), rememberMe);
 
       // 4. Redirect to dashboard
       router.push("/dashboard");

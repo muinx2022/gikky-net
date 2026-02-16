@@ -5,7 +5,7 @@ import { AppShell, Burger, Group, NavLink, Text, Avatar, Menu, UnstyledButton, r
 import { useDisclosure } from '@mantine/hooks';
 import { LayoutDashboard, Users, Settings, LogOut, ChevronDown, FileText, FolderTree, Tag, User, BookOpenText } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
-import { deleteCookie, getCookie } from 'cookies-next';
+import { getCookie } from 'cookies-next/client';
 import NotificationDropdown from '../../components/NotificationDropdown';
 
 export default function DashboardShell({
@@ -30,8 +30,8 @@ export default function DashboardShell({
   }, []);
 
   const handleLogout = () => {
-    deleteCookie('token');
-    deleteCookie('user');
+    document.cookie = "token=; max-age=0; path=/";
+    document.cookie = "user=; max-age=0; path=/";
     router.push('/');
   };
 
