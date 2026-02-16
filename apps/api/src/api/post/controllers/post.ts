@@ -188,11 +188,15 @@ export default factories.createCoreController('api::post.post', ({ strapi }) => 
         author: {
           populate: { avatar: true },
         },
+        categories: true,
+        tags: true,
       },
     });
 
     (result as any).data = {
       ...row,
+      categories: raw?.categories || row.categories || [],
+      tags: raw?.tags || row.tags || [],
       author: raw?.author
         ? {
             id: raw.author.id,
