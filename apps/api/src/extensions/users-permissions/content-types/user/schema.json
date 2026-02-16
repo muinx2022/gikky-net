@@ -76,6 +76,15 @@
       "relation": "oneToMany",
       "target": "api::category-action.category-action",
       "mappedBy": "user"
+    },
+    "bio": {
+      "type": "text"
+    },
+    "avatar": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["images"]
     }
   }
 }
