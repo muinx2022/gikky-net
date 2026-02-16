@@ -28,7 +28,7 @@ interface Post {
   moderationStatus?: string | null;
   createdAt: string;
   updatedAt: string;
-  categories?: Array<{ id: number; name: string }>;
+  categories?: Array<{ id: number; name: string; slug?: string }>;
   tags?: Array<{ id: number; name: string }>;
   author?: {
     id: number;
@@ -869,21 +869,20 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
             <article className="rounded-xl border border-slate-300 bg-white p-8 dark:border-slate-800 dark:bg-slate-900">
           {/* Categories */}
           {post.categories && post.categories.length > 0 && (
-            <div className="flex items-center gap-2 mb-4">
-              {post.categories.map((cat) => (
-                <span key={cat.id} className="px-3 py-1 bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 rounded-lg text-sm font-medium">
-                  {cat.name}
-                </span>
-              ))}
-            </div>
-          )}
-          {post.tags && post.tags.length > 0 && (
-            <div className="mb-4 flex items-center gap-2">
-              {post.tags.map((tag) => (
-                <span key={tag.id} className="rounded-lg bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                  #{tag.name}
-                </span>
-              ))}
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              {post.categories.map((cat) => {
+                const catSlug = cat.slug || cat.name.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-");
+                return (
+                  <Link
+                    key={cat.id}
+                    href={`/c/${catSlug}`}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700 transition hover:bg-blue-100 dark:bg-blue-950 dark:text-blue-300 dark:hover:bg-blue-900"
+                  >
+                    <span className="text-blue-400 dark:text-blue-500">›</span>
+                    {cat.name}
+                  </Link>
+                );
+              })}
             </div>
           )}
 
@@ -917,6 +916,21 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
               dangerouslySetInnerHTML={{ __html: sanitizePostHtml(post.content) }}
             />
           </div>
+
+          {/* Tags */}
+          {post.tags && post.tags.length > 0 && (
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              {post.tags.map((tag) => (
+                <Link
+                  key={tag.id}
+                  href={`/tag/${tag.name}`}
+                  className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-2.5 py-0.5 text-xs text-slate-600 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600 dark:border-slate-700 dark:text-slate-400 dark:hover:border-blue-600 dark:hover:bg-blue-950 dark:hover:text-blue-400"
+                >
+                  <span className="text-slate-400 dark:text-slate-500">#</span>{tag.name}
+                </Link>
+              ))}
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex items-center gap-3 pt-6 border-t border-slate-300 dark:border-slate-800">
