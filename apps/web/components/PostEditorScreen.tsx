@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Save, Send } from "lucide-react";
+import { ArrowLeft, Save, Send, ChevronDown, Check, Hash, X as XIcon } from "lucide-react";
 import ForumLayout from "./ForumLayout";
 import TiptapEditor from "./TiptapEditor";
 import { useToast } from "./Toast";
@@ -507,43 +507,83 @@ export default function PostEditorScreen({ documentId }: { documentId?: string }
                 />
               </div>
 
+              {/* Category picker — Reddit subreddit style */}
               <div className="relative">
-                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Categories (multi-level)</label>
+                <label className="mb-1.5 block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  Chuyên mục
+                </label>
                 <button
                   type="button"
                   onClick={() => setCategoryPickerOpen((prev) => !prev)}
-                  className="flex min-h-10 w-full flex-wrap items-center gap-2 rounded-sm border border-slate-400 bg-white px-3 py-2 text-left text-slate-900 focus:border-blue-500 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+                  className={`flex w-full items-center gap-2.5 rounded-full border-2 bg-white px-3 py-2 text-left transition-colors dark:bg-slate-900 ${
+                    categoryPickerOpen
+                      ? "border-blue-500"
+                      : "border-slate-200 hover:border-slate-400 dark:border-slate-700 dark:hover:border-slate-500"
+                  }`}
                 >
                   {selectedCategoryIds.length === 0 ? (
-                    <span className="text-slate-500 dark:text-slate-400">Select categories</span>
+                    <>
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
+                        <span className="text-xs text-slate-400">?</span>
+                      </div>
+                      <span className="flex-1 text-sm text-slate-400 dark:text-slate-500">Chọn chuyên mục</span>
+                    </>
                   ) : (
-                    categoryOptions
-                      .filter((option) => selectedCategoryIds.includes(option.value))
-                      .map((option) => (
-                        <span
-                          key={option.value}
-                          className="inline-flex items-center rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                        >
-                          {option.label}
-                        </span>
-                      ))
+                    <div className="flex flex-1 flex-wrap gap-1.5">
+                      {categoryOptions
+                        .filter((opt) => selectedCategoryIds.includes(opt.value))
+                        .map((opt) => {
+                          const letter = opt.label.replace(/^[\s›]+/, "").charAt(0).toUpperCase();
+                          return (
+                            <span
+                              key={opt.value}
+                              className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 pl-1 pr-2.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                            >
+                              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-[10px] font-bold text-white">
+                                {letter}
+                              </span>
+                              {opt.label.replace(/^[\s›]+/, "")}
+                              <button
+                                type="button"
+                                onMouseDown={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedCategoryIds((prev) => prev.filter((id) => id !== opt.value));
+                                }}
+                                className="ml-0.5 text-blue-400 hover:text-blue-700 dark:hover:text-blue-200"
+                              >
+                                <XIcon size={10} />
+                              </button>
+                            </span>
+                          );
+                        })}
+                    </div>
                   )}
+                  <ChevronDown
+                    size={16}
+                    className={`ml-auto shrink-0 text-slate-400 transition-transform ${categoryPickerOpen ? "rotate-180" : ""}`}
+                  />
                 </button>
 
-                {categoryPickerOpen ? (
-                  <div className="absolute z-20 mt-1 w-full rounded-sm border border-slate-300 bg-white p-2 shadow-lg dark:border-slate-700 dark:bg-slate-900">
-                    <input
-                      value={categorySearch}
-                      onChange={(e) => setCategorySearch(e.target.value)}
-                      placeholder="Search categories"
-                      className="mb-2 w-full rounded-sm border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                    />
-                    <div className="max-h-56 overflow-auto">
+                {categoryPickerOpen && (
+                  <div className="absolute z-20 mt-2 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
+                    <div className="p-2 border-b border-slate-100 dark:border-slate-800">
+                      <input
+                        autoFocus
+                        value={categorySearch}
+                        onChange={(e) => setCategorySearch(e.target.value)}
+                        placeholder="Tìm chuyên mục..."
+                        className="w-full rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500"
+                      />
+                    </div>
+                    <div className="max-h-60 overflow-auto py-1">
                       {filteredCategoryOptions.length === 0 ? (
-                        <p className="px-2 py-1 text-sm text-slate-500 dark:text-slate-400">No categories found.</p>
+                        <p className="px-4 py-3 text-sm text-slate-400">Không tìm thấy chuyên mục.</p>
                       ) : (
                         filteredCategoryOptions.map((option) => {
                           const isSelected = selectedCategoryIds.includes(option.value);
+                          const cleanLabel = option.label.replace(/^[\s›]+/, "");
+                          const isChild = option.label.startsWith(" ");
+                          const letter = cleanLabel.charAt(0).toUpperCase();
                           return (
                             <button
                               type="button"
@@ -556,20 +596,36 @@ export default function PostEditorScreen({ documentId }: { documentId?: string }
                                 );
                                 setCategoryPickerOpen(false);
                               }}
-                              className={`block w-full rounded px-2 py-1.5 text-left text-sm ${
+                              className={`flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors ${
                                 isSelected
-                                  ? "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100"
-                                  : "text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
-                              }`}
+                                  ? "bg-blue-50 dark:bg-blue-900/20"
+                                  : "hover:bg-slate-50 dark:hover:bg-slate-800"
+                              } ${isChild ? "pl-8" : ""}`}
                             >
-                              {option.label}
+                              <div
+                                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ${
+                                  isSelected ? "bg-blue-500" : "bg-slate-400 dark:bg-slate-600"
+                                }`}
+                              >
+                                {letter}
+                              </div>
+                              <span
+                                className={`flex-1 text-sm font-medium ${
+                                  isSelected
+                                    ? "text-blue-700 dark:text-blue-300"
+                                    : "text-slate-700 dark:text-slate-200"
+                                }`}
+                              >
+                                {cleanLabel}
+                              </span>
+                              {isSelected && <Check size={15} className="shrink-0 text-blue-500" />}
                             </button>
                           );
                         })
                       )}
                     </div>
                   </div>
-                ) : null}
+                )}
               </div>
 
               <div>
@@ -584,69 +640,62 @@ export default function PostEditorScreen({ documentId }: { documentId?: string }
                 />
               </div>
 
-              <div className="relative">
-                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Tags</label>
-                <button
-                  type="button"
-                  onClick={() => setTagPickerOpen((prev) => !prev)}
-                  className="flex min-h-10 w-full flex-wrap items-center gap-2 rounded-sm border border-slate-400 bg-white px-3 py-2 text-left text-slate-900 focus:border-blue-500 focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
-                >
-                  {selectedTagIds.length === 0 ? (
-                    <span className="text-slate-500 dark:text-slate-400">Select tags</span>
-                  ) : (
-                    tags
-                      .filter((tag) => selectedTagIds.includes(String(tag.id)))
-                      .map((tag) => (
-                        <span
-                          key={tag.id}
-                          className="inline-flex items-center rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                        >
-                          #{tag.name}
-                        </span>
-                      ))
+              {/* Tags — Reddit flair chip style */}
+              <div>
+                <div className="mb-2 flex items-center gap-2">
+                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Tags</label>
+                  {selectedTagIds.length > 0 && (
+                    <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+                      {selectedTagIds.length} đã chọn
+                    </span>
                   )}
-                </button>
+                </div>
 
-                {tagPickerOpen ? (
-                  <div className="absolute z-20 mt-1 w-full rounded-sm border border-slate-300 bg-white p-2 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+                <div className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+                  {/* Search */}
+                  <div className="relative mb-3">
+                    <Hash size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
                       value={tagSearch}
                       onChange={(e) => setTagSearch(e.target.value)}
-                      placeholder="Search tags"
-                      className="mb-2 w-full rounded-sm border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                      placeholder="Tìm tag..."
+                      className="w-full rounded-lg bg-slate-50 py-1.5 pl-7 pr-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500"
                     />
-                    <div className="max-h-56 overflow-auto">
-                      {filteredTags.length === 0 ? (
-                        <p className="px-2 py-1 text-sm text-slate-500 dark:text-slate-400">No tags found.</p>
-                      ) : (
-                        filteredTags.map((tag) => {
-                          const isSelected = selectedTagIds.includes(String(tag.id));
-                          return (
-                            <button
-                              type="button"
-                              key={tag.id}
-                              onClick={() => {
-                                setSelectedTagIds((prev) =>
-                                  isSelected
-                                    ? prev.filter((id) => id !== String(tag.id))
-                                    : [...prev, String(tag.id)]
-                                );
-                                setTagPickerOpen(false);
-                              }}
-                              className={`block w-full rounded px-2 py-1.5 text-left text-sm ${
-                                isSelected
-                                  ? "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100"
-                                  : "text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
-                              }`}
-                            >
-                              #{tag.name}
-                            </button>
-                          );
-                        })
-                      )}
-                    </div>
                   </div>
-                ) : null}
+
+                  {/* Tag chips */}
+                  {filteredTags.length === 0 ? (
+                    <p className="text-sm text-slate-400 dark:text-slate-500">Không tìm thấy tag.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {filteredTags.map((tag) => {
+                        const isSelected = selectedTagIds.includes(String(tag.id));
+                        return (
+                          <button
+                            type="button"
+                            key={tag.id}
+                            onClick={() =>
+                              setSelectedTagIds((prev) =>
+                                isSelected
+                                  ? prev.filter((id) => id !== String(tag.id))
+                                  : [...prev, String(tag.id)]
+                              )
+                            }
+                            className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-all ${
+                              isSelected
+                                ? "border-blue-500 bg-blue-500 text-white shadow-sm"
+                                : "border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-blue-500 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
+                            }`}
+                          >
+                            <Hash size={10} />
+                            {tag.name}
+                            {isSelected && <XIcon size={10} className="ml-0.5 opacity-70" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {error && <p className="text-sm text-red-600">{error}</p>}
