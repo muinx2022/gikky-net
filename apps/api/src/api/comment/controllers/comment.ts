@@ -8,6 +8,7 @@ export default factories.createCoreController('api::comment.comment', ({ strapi 
       populate: {
         author: {
           select: ['id', 'username', 'email'],
+          populate: { avatar: true },
         },
         parent: true,
       },

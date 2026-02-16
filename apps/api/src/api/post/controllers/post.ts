@@ -113,16 +113,19 @@ export default factories.createCoreController('api::post.post', ({ strapi }) => 
         },
       },
       populate: {
-        author: true,
+        author: {
+          populate: { avatar: true },
+        },
       },
     });
 
-    const authorById = new Map<number, { id: number; username: string } | null>();
+    const authorById = new Map<number, { id: number; username: string; avatar: any } | null>();
     for (const raw of rawPosts as any[]) {
       const author = raw?.author
         ? {
             id: raw.author.id,
             username: raw.author.username,
+            avatar: raw.author.avatar || null,
           }
         : null;
       authorById.set(Number(raw.id), author);
@@ -154,7 +157,9 @@ export default factories.createCoreController('api::post.post', ({ strapi }) => 
         id: Number(row.id),
       },
       populate: {
-        author: true,
+        author: {
+          populate: { avatar: true },
+        },
       },
     });
 
@@ -164,6 +169,7 @@ export default factories.createCoreController('api::post.post', ({ strapi }) => 
         ? {
             id: raw.author.id,
             username: raw.author.username,
+            avatar: raw.author.avatar || null,
           }
         : null,
     };
