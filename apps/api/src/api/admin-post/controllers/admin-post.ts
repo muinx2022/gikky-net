@@ -132,8 +132,7 @@ const setAuthorForDocument = async (strapi: Core.Strapi, documentId: string, aut
 export default ({ strapi }: { strapi: Core.Strapi }) => ({
   async find(ctx) {
     const query = ctx.query || {};
-    // Use draft status — draft always exists and holds the source-of-truth custom status field
-    const rows = await strapi.documents(POST_UID).findMany({ ...query as any, status: 'draft' });
+    const rows = await strapi.documents(POST_UID).findMany({ ...query as any, status: 'published' });
     const data = await attachAuthors(strapi, rows);
 
     ctx.body = {
@@ -150,11 +149,20 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
     const { id } = ctx.params;
     const query = ctx.query || {};
 
-    const row = await strapi.documents(POST_UID).findOne({
+    // Try published first, fall back to draft
+    let row = await strapi.documents(POST_UID).findOne({
       documentId: id,
       ...(query as any),
-      status: 'draft',
+      status: 'published',
     });
+
+    if (!row) {
+      row = await strapi.documents(POST_UID).findOne({
+        documentId: id,
+        ...(query as any),
+        status: 'draft',
+      });
+    }
 
     if (!row) {
       return ctx.notFound('Post not found');
@@ -181,7 +189,6 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
   async update(ctx) {
     const { id } = ctx.params;
     const { payload, authorUserId } = await parseDataPayload(strapi, ctx);
-    const newCustomStatus = payload.status;
 
     // Fix any stale '' moderationStatus in DB directly (bypasses enum validation)
     if (!payload.moderationStatus) {
@@ -192,22 +199,22 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
       });
     }
 
-    // Always update draft version (source of truth)
+    // Update draft version
     const data = await strapi.documents(POST_UID).update({
       documentId: id,
       data: payload,
       status: 'draft',
     });
 
-    // Sync Strapi document publish state with the custom status field
-    if (newCustomStatus === 'published') {
-      await strapi.documents(POST_UID).publish({ documentId: id });
-    } else {
-      try {
-        await strapi.documents(POST_UID).unpublish({ documentId: id });
-      } catch {
-        // Already unpublished, ignore
-      }
+    // Also update published version so find() (which queries published) sees the changes
+    try {
+      await strapi.documents(POST_UID).update({
+        documentId: id,
+        data: payload,
+        status: 'published',
+      });
+    } catch {
+      // No published version yet, ignore
     }
 
     await setAuthorForDocument(strapi, id, authorUserId);
