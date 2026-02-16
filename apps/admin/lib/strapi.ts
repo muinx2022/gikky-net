@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { getCookie } from 'cookies-next';
 
-const API_URL = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://127.0.0.1:1337';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:1337';
 
 export const strapiApi = axios.create({
   baseURL: API_URL,
