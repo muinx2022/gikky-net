@@ -40,23 +40,30 @@ export default factories.createCoreController('api::post.post', ({ strapi }) => 
     const nextData = { ...(body.data || {}) };
     // Remove author: Strapi v5 rejects relation to users-permissions via request body ("Invalid key: author")
     delete nextData.author;
+    // Remove tags: Strapi v5 also rejects tags in request body; set separately via Documents API
+    const rawTags = nextData.tags;
+    delete nextData.tags;
     ctx.request.body = { ...body, data: nextData };
 
     const result = await super.create(ctx);
 
     // Strapi v5 Draft & Publish creates up to 2 DB rows for the same documentId
-    // (one draft, one published). We must set author on both variants.
+    // (one draft, one published). We must set author and tags on both variants.
     const documentId = (result as any)?.data?.documentId;
     if (documentId) {
+      const extraData: Record<string, any> = { author: user.id };
+      if (Array.isArray(rawTags) && rawTags.length > 0) {
+        extraData.tags = rawTags;
+      }
       await strapi.documents('api::post.post').update({
         documentId,
-        data: { author: user.id } as any,
+        data: extraData as any,
       });
       try {
         await strapi.documents('api::post.post').update({
           documentId,
           status: 'published',
-          data: { author: user.id } as any,
+          data: extraData as any,
         });
       } catch {
         // No published variant yet — ignore
@@ -77,9 +84,30 @@ export default factories.createCoreController('api::post.post', ({ strapi }) => 
     const body = (ctx.request.body || {}) as { data?: Record<string, any> };
     const nextData = { ...(body.data || {}) };
     delete nextData.author;
+    // Remove tags from body; set via Documents API after super.update to avoid "invalid key" error
+    const rawTags = Object.prototype.hasOwnProperty.call(nextData, 'tags') ? nextData.tags : undefined;
+    const hasTags = rawTags !== undefined;
+    delete nextData.tags;
     ctx.request.body = { ...body, data: nextData };
 
-    return await super.update(ctx);
+    const result = await super.update(ctx);
+
+    if (hasTags) {
+      const documentId = ctx.params.id;
+      const tagIds = Array.isArray(rawTags) ? rawTags : [];
+      const isPublished = String((ctx.query as any)?.status) === 'published';
+      try {
+        await strapi.documents('api::post.post').update({
+          documentId,
+          status: isPublished ? 'published' : 'draft',
+          data: { tags: tagIds } as any,
+        });
+      } catch {
+        // ignore if variant doesn't exist
+      }
+    }
+
+    return result;
   },
 
   async find(ctx) {
