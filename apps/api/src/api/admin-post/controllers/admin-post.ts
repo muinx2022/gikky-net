@@ -177,9 +177,13 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
     const { payload, authorUserId } = await parseDataPayload(strapi, ctx);
     const status = payload?.status === 'published' ? 'published' : 'draft';
 
-    // Explicitly null out moderationStatus if not set, to clear any stale '' value in DB
+    // Fix any stale '' moderationStatus in DB directly (bypasses enum validation)
     if (!payload.moderationStatus) {
-      payload.moderationStatus = null;
+      delete payload.moderationStatus;
+      await strapi.db.query(POST_UID).updateMany({
+        where: { documentId: id, moderationStatus: '' },
+        data: { moderationStatus: null },
+      });
     }
 
     const data = await strapi.documents(POST_UID).update({
