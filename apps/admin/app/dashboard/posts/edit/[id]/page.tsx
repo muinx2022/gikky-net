@@ -63,6 +63,7 @@ export default function EditPostPage() {
     content: '',
     excerpt: '',
     status: 'draft',
+    moderationStatus: null as 'block-comment' | 'delete' | null,
     categories: [] as string[],
     tags: [] as string[],
     authorSelection: 'random',
@@ -91,6 +92,7 @@ export default function EditPostPage() {
         content: post.content || '',
         excerpt: post.excerpt || '',
         status: post.status || 'draft',
+        moderationStatus: post.moderationStatus || null,
         categories: post.categories?.map((cat: { documentId: string }) => cat.documentId) || [],
         tags: post.tags?.map((tag: { documentId: string }) => tag.documentId) || [],
         authorSelection: post.author?.id ? String(post.author.id) : 'random',
@@ -212,6 +214,7 @@ export default function EditPostPage() {
         content: contentWithUploadedMedia,
         excerpt: formData.excerpt,
         status: formData.status,
+        moderationStatus: formData.moderationStatus || null,
         categories: formData.categories,
         tags: formData.tags,
       };
@@ -390,6 +393,22 @@ export default function EditPostPage() {
               styles={{
                 label: { fontWeight: 600, color: '#334155', marginBottom: 8 },
               }}
+            />
+
+            <Select
+              label="Moderation"
+              placeholder="None"
+              clearable
+              value={formData.moderationStatus}
+              onChange={(value) =>
+                setFormData({ ...formData, moderationStatus: (value as 'block-comment' | 'delete') || null })
+              }
+              data={[
+                { value: 'block-comment', label: 'Block comments' },
+                { value: 'delete', label: 'Delete' },
+              ]}
+              mb="md"
+              styles={{ label: { fontWeight: 600, color: '#334155', marginBottom: 8 } }}
             />
 
             <Box mb="xl">
