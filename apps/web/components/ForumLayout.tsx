@@ -167,8 +167,7 @@ export default function ForumLayout({ children, categories = [] }: ForumLayoutPr
     name
       .replace(/[-_]+/g, " ")
       .replace(/\s+/g, " ")
-      .trim()
-      .replace(/\b\w/g, (char) => char.toUpperCase());
+      .trim();
 
   return (
     <div className="forum-shell min-h-screen">

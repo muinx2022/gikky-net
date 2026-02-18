@@ -40,7 +40,7 @@ const formatDate = (dateString: string) => {
 };
 
 const formatCategoryTitle = (name: string) =>
-  name.replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim().replace(/\b\w/g, (c) => c.toUpperCase());
+  name.replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim();
 
 export default function TagPage({ params }: { params: Promise<{ name: string }> }) {
   const resolvedParams = use(params);
