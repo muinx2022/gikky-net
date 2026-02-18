@@ -48,13 +48,14 @@ function buildQueryString(params: any, prefix = ''): string {
       const nested = buildQueryString(value, fullKey);
       if (nested) parts.push(nested);
     } else if (Array.isArray(value)) {
-      // Handle arrays
-      value.forEach((item) => {
+      // Handle arrays using indexed keys (Strapi-compatible): fields[0]=id&fields[1]=username
+      value.forEach((item, index) => {
+        const arrayKey = `${fullKey}[${index}]`;
         if (typeof item === 'object') {
-          const nested = buildQueryString(item, fullKey);
+          const nested = buildQueryString(item, arrayKey);
           if (nested) parts.push(nested);
         } else {
-          parts.push(`${encodeURIComponent(fullKey)}=${encodeURIComponent(String(item))}`);
+          parts.push(`${encodeURIComponent(arrayKey)}=${encodeURIComponent(String(item))}`);
         }
       });
     } else {

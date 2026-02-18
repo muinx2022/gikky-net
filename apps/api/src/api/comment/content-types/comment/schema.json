@@ -22,6 +22,11 @@
       "target": "api::post.post",
       "inversedBy": "comments"
     },
+    "journalTrade": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::journal-trade.journal-trade"
+    },
     "author": {
       "type": "relation",
       "relation": "manyToOne",

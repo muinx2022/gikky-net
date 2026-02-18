@@ -111,14 +111,14 @@ export default factories.createCoreController('api::post.post', ({ strapi }) => 
   },
 
   async find(ctx) {
-    sanitizePostFilters(ctx);
-
     const rawAuthorFilter =
       (ctx.query as any)?.filters?.author?.id?.$eq ??
       (ctx.query as any)?.filters?.author?.$eq ??
       null;
     const authorFilterId = Number(rawAuthorFilter);
     const hasAuthorFilter = Number.isFinite(authorFilterId) && authorFilterId > 0;
+
+    sanitizePostFilters(ctx);
 
     const result = await super.find(ctx);
     const rows = Array.isArray((result as any)?.data) ? (result as any).data : [];
@@ -226,17 +226,21 @@ export default factories.createCoreController('api::post.post', ({ strapi }) => 
     }
 
     const rows = await strapi.db.query('api::post.post').findMany({
-      where: {
-        author: user.id,
-      },
       select: ['id', 'documentId', 'title', 'slug', 'status', 'createdAt', 'updatedAt', 'publishedAt'],
+      populate: { author: { select: ['id'] } },
       orderBy: [{ updatedAt: 'desc' }, { createdAt: 'desc' }],
     });
 
+    const myRows = (rows as any[]).filter((row: any) => {
+      const authorId = Number(row?.author?.id ?? row?.author);
+      return Number.isFinite(authorId) && authorId === Number(user.id);
+    });
+    strapi.log.info(`[post.myPosts] user=${user.id} totalRows=${(rows as any[]).length} myRows=${myRows.length}`);
+
     // Strapi document model can return draft+published variants.
-    // Keep one row per documentId, preferring draft variant first if present.
+    // Keep one row per documentId, preferring published variant when present.
     const byDocumentId = new Map<string, any>();
-    for (const row of rows as any[]) {
+    for (const row of myRows) {
       const key = String(row?.documentId || '');
       if (!key) continue;
 
@@ -246,9 +250,9 @@ export default factories.createCoreController('api::post.post', ({ strapi }) => 
         continue;
       }
 
-      const currentIsDraft = !row?.publishedAt;
-      const existingIsDraft = !existing?.publishedAt;
-      if (currentIsDraft && !existingIsDraft) {
+      const currentIsPublished = Boolean(row?.publishedAt);
+      const existingIsPublished = Boolean(existing?.publishedAt);
+      if (currentIsPublished && !existingIsPublished) {
         byDocumentId.set(key, row);
       }
     }
@@ -259,6 +263,7 @@ export default factories.createCoreController('api::post.post', ({ strapi }) => 
       title: row.title,
       slug: row.slug,
       status: row.status,
+      publishedAt: row.publishedAt ?? null,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     }));

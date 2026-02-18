@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
@@ -8,6 +8,7 @@ import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import Image from "@tiptap/extension-image";
+import { ImageIcon, Video, Youtube } from "lucide-react";
 import { uploadMedia } from "../lib/upload";
 
 interface TiptapEditorProps {
@@ -103,7 +104,7 @@ const toYouTubeEmbedUrl = (input: string): string | null => {
 export default function TiptapEditor({
   content,
   onChange,
-  placeholder = "Viết gì đó...",
+  placeholder = "Viáº¿t gÃ¬ Ä‘Ã³...",
   className = "",
   compact = false,
   uploadMode = "immediate",
@@ -208,11 +209,11 @@ export default function TiptapEditor({
     const isVideo = file.type.startsWith("video/");
 
     if (kind === "image" && !isImage) {
-      pushToast("error", "Vui lòng chọn file ảnh hợp lệ.");
+      pushToast("error", "Vui lÃ²ng chá»n file áº£nh há»£p lá»‡.");
       return;
     }
     if (kind === "video" && !isVideo) {
-      pushToast("error", "Vui lòng chọn file video hợp lệ.");
+      pushToast("error", "Vui lÃ²ng chá»n file video há»£p lá»‡.");
       return;
     }
 
@@ -236,7 +237,7 @@ export default function TiptapEditor({
           })
           .run();
       }
-      pushToast("success", "Đã đính kèm. File sẽ được tải lên khi bạn đăng.");
+      pushToast("success", "ÄÃ£ Ä‘Ã­nh kÃ¨m. File sáº½ Ä‘Æ°á»£c táº£i lÃªn khi báº¡n Ä‘Äƒng.");
       if (imageInputRef.current) imageInputRef.current.value = "";
       if (videoInputRef.current) videoInputRef.current.value = "";
       return;
@@ -262,12 +263,12 @@ export default function TiptapEditor({
           .run();
       }
       if (kind === "video" && uploaded.trimmed) {
-        pushToast("success", "Tải lên thành công. Video đã được cắt tự động còn 180 giây.");
+        pushToast("success", "Táº£i lÃªn thÃ nh cÃ´ng. Video Ä‘Ã£ Ä‘Æ°á»£c cáº¯t tá»± Ä‘á»™ng cÃ²n 180 giÃ¢y.");
       } else {
-        pushToast("success", "Tải lên thành công.");
+        pushToast("success", "Táº£i lÃªn thÃ nh cÃ´ng.");
       }
     } catch (error: any) {
-      const message = error?.message || "Tải lên thất bại.";
+      const message = error?.message || "Táº£i lÃªn tháº¥t báº¡i.";
       pushToast("error", message);
     } finally {
       setUploading(false);
@@ -439,17 +440,19 @@ export default function TiptapEditor({
           type="button"
           onClick={() => triggerPick("image")}
           disabled={uploading}
-          className="px-2 py-1 rounded text-xs font-medium text-slate-700 hover:bg-slate-200 disabled:opacity-50"
+          className="inline-flex items-center justify-center rounded px-2 py-1 text-slate-700 hover:bg-slate-200 disabled:opacity-50"
+          title="Ảnh"
         >
-          Ảnh
+          <ImageIcon size={16} />
         </button>
         <button
           type="button"
           onClick={() => triggerPick("video")}
           disabled={uploading}
-          className="px-2 py-1 rounded text-xs font-medium text-slate-700 hover:bg-slate-200 disabled:opacity-50"
+          className="inline-flex items-center justify-center rounded px-2 py-1 text-slate-700 hover:bg-slate-200 disabled:opacity-50"
+          title="Video"
         >
-          Video
+          <Video size={16} />
         </button>
         <button
           type="button"
@@ -470,9 +473,10 @@ export default function TiptapEditor({
               })
               .run();
           }}
-          className="px-2 py-1 rounded text-xs font-medium text-slate-700 hover:bg-slate-200"
+          className="inline-flex items-center justify-center rounded px-2 py-1 text-slate-700 hover:bg-slate-200"
+          title="YouTube"
         >
-          YouTube
+          <Youtube size={16} />
         </button>
         {uploading ? <span className="text-xs text-slate-500">Đang tải lên...</span> : null}
       </div>
@@ -483,3 +487,6 @@ export default function TiptapEditor({
     </div>
   );
 }
+
+
+

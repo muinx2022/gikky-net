@@ -14,7 +14,7 @@
   "attributes": {
     "actionType": {
       "type": "enumeration",
-      "enum": ["like", "follow"],
+      "enum": ["like", "follow", "upvote", "downvote"],
       "required": true
     },
     "targetType": {

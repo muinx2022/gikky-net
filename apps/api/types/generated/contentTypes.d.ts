@@ -539,6 +539,10 @@ export interface ApiCommentComment extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    journalTrade: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::journal-trade.journal-trade'
+    >;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -553,6 +557,71 @@ export interface ApiCommentComment extends Struct.CollectionTypeSchema {
     >;
     publishedAt: Schema.Attribute.DateTime;
     replies: Schema.Attribute.Relation<'oneToMany', 'api::comment.comment'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiJournalTradeJournalTrade
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'journal_trades';
+  info: {
+    displayName: 'Journal Trade';
+    pluralName: 'journal-trades';
+    singularName: 'journal-trade';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    author: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+    calcMode: Schema.Attribute.Enumeration<['raw', 'pip']> &
+      Schema.Attribute.DefaultTo<'raw'>;
+    contractSize: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<1>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    direction: Schema.Attribute.Enumeration<['long', 'short']> &
+      Schema.Attribute.Required;
+    emotion: Schema.Attribute.Enumeration<
+      ['confident', 'neutral', 'fearful', 'greedy', 'hesitant']
+    >;
+    entryDate: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    entryPrice: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    exitDate: Schema.Attribute.DateTime;
+    exitPrice: Schema.Attribute.Decimal;
+    fees: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    isPublic: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::journal-trade.journal-trade'
+    > &
+      Schema.Attribute.Private;
+    market: Schema.Attribute.Enumeration<
+      ['crypto', 'forex', 'stock', 'futures', 'other']
+    > &
+      Schema.Attribute.DefaultTo<'crypto'>;
+    notes: Schema.Attribute.RichText;
+    outcome: Schema.Attribute.Enumeration<
+      ['win', 'loss', 'breakeven', 'open']
+    > &
+      Schema.Attribute.DefaultTo<'open'>;
+    pipSize: Schema.Attribute.Decimal;
+    pipValue: Schema.Attribute.Decimal;
+    pnl: Schema.Attribute.Decimal;
+    pnlPercent: Schema.Attribute.Decimal;
+    publishedAt: Schema.Attribute.DateTime;
+    quantity: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    riskRewardRatio: Schema.Attribute.Decimal;
+    screenshots: Schema.Attribute.Media<'images', true>;
+    setup: Schema.Attribute.Text;
+    strategy: Schema.Attribute.String;
+    symbol: Schema.Attribute.String & Schema.Attribute.Required;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -645,7 +714,9 @@ export interface ApiPostActionPostAction extends Struct.CollectionTypeSchema {
     draftAndPublish: false;
   };
   attributes: {
-    actionType: Schema.Attribute.Enumeration<['like', 'follow']> &
+    actionType: Schema.Attribute.Enumeration<
+      ['like', 'follow', 'upvote', 'downvote']
+    > &
       Schema.Attribute.Required;
     comment: Schema.Attribute.Relation<'manyToOne', 'api::comment.comment'>;
     createdAt: Schema.Attribute.DateTime;
@@ -1227,6 +1298,8 @@ export interface PluginUsersPermissionsUser
     draftAndPublish: false;
   };
   attributes: {
+    avatar: Schema.Attribute.Media<'images'>;
+    bio: Schema.Attribute.Text;
     blocked: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     category_actions: Schema.Attribute.Relation<
       'oneToMany',
@@ -1290,6 +1363,7 @@ declare module '@strapi/strapi' {
       'api::category-action.category-action': ApiCategoryActionCategoryAction;
       'api::category.category': ApiCategoryCategory;
       'api::comment.comment': ApiCommentComment;
+      'api::journal-trade.journal-trade': ApiJournalTradeJournalTrade;
       'api::notification.notification': ApiNotificationNotification;
       'api::page.page': ApiPagePage;
       'api::post-action.post-action': ApiPostActionPostAction;

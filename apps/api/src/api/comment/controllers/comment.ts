@@ -11,6 +11,7 @@ export default factories.createCoreController('api::comment.comment', ({ strapi 
           populate: { avatar: true },
         },
         parent: true,
+        journalTrade: true,
       },
       orderBy: { createdAt: 'asc' },
     });
@@ -25,21 +26,22 @@ export default factories.createCoreController('api::comment.comment', ({ strapi 
       return ctx.unauthorized('You must be logged in to comment');
     }
 
-    const { content, post, parent } = ctx.request.body.data;
+    const { content, post, journalTrade, parent } = ctx.request.body.data;
 
     if (!content || !content.trim()) {
       return ctx.badRequest('Comment content is required');
     }
 
-    if (!post) {
-      return ctx.badRequest('Post ID is required');
+    if (!post && !journalTrade) {
+      return ctx.badRequest('Post ID or Journal Trade ID is required');
     }
 
     // Create comment with authenticated user as author
     const comment = await strapi.db.query('api::comment.comment').create({
       data: {
         content: content.trim(),
-        post: post,
+        post: post || null,
+        journalTrade: journalTrade || null,
         author: user.id,
         parent: parent || null,
       },
@@ -52,7 +54,7 @@ export default factories.createCoreController('api::comment.comment', ({ strapi 
     });
 
     // Notify post owner on new top-level comment
-    if (!parent) {
+    if (!parent && post) {
       const postRow = await strapi.db.query('api::post.post').findOne({
         where: { id: post },
         populate: ['author'],
@@ -103,11 +105,32 @@ export default factories.createCoreController('api::comment.comment', ({ strapi 
       });
     }
 
+    // Notify journal trade owner on new top-level comment
+    if (!parent && journalTrade) {
+      const tradeRow = await strapi.db.query('api::journal-trade.journal-trade').findOne({
+        where: { id: journalTrade },
+        populate: ['author'],
+        select: ['id', 'symbol', 'documentId'],
+      });
+      const tradeOwnerId = tradeRow?.author?.id || tradeRow?.author;
+      if (tradeOwnerId && tradeOwnerId !== user.id) {
+        emitNotification(strapi, {
+          userId: tradeOwnerId,
+          type: 'comment',
+          message: `${user.username} commented on your trade "${tradeRow?.symbol || ''}"`,
+          data: {
+            journalTradeId: tradeRow?.documentId || null,
+            actorId: user.id,
+          },
+        });
+      }
+    }
+
     // Notify parent comment owner on reply
     if (parent) {
       const parentComment = await strapi.db.query('api::comment.comment').findOne({
         where: { id: parent },
-        populate: ['author', 'post'],
+        populate: ['author', 'post', 'journalTrade'],
         select: ['id', 'documentId'],
       });
       const parentOwnerId = parentComment?.author?.id || parentComment?.author;
@@ -119,6 +142,7 @@ export default factories.createCoreController('api::comment.comment', ({ strapi 
           data: {
             parentCommentId: parentComment?.documentId || null,
             postId: parentComment?.post?.documentId || null,
+            journalTradeId: parentComment?.journalTrade?.documentId || null,
             actorId: user.id,
           },
         });

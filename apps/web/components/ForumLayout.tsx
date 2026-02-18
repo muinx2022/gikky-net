@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, FileText, LogOut, PlusCircle, Search, Shield, User } from "lucide-react";
+import { BarChart2, BookOpen, ChevronDown, FileText, LogOut, PlusCircle, Search, Shield, User } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import NotificationDropdown from "./NotificationDropdown";
 import LoginModal from "./LoginModal";
@@ -53,6 +53,8 @@ export default function ForumLayout({ children, categories = [] }: ForumLayoutPr
   const pathname = usePathname();
   const homeActive = pathname === "/";
   const popularActive = pathname === "/popular";
+  const tradingActive = pathname === "/trading";
+  const journalActive = pathname.startsWith("/journal");
 
   useEffect(() => {
     setShowMobileSidebar(false);
@@ -295,9 +297,17 @@ export default function ForumLayout({ children, categories = [] }: ForumLayoutPr
                             <User size={15} />
                             Hồ sơ
                           </Link>
+                          <Link href="/create-post" className="menu-item" onClick={() => setShowUserMenu(false)}>
+                            <PlusCircle size={15} />
+                            Viết bài
+                          </Link>
                           <Link href="/profile/posts" className="menu-item" onClick={() => setShowUserMenu(false)}>
                             <FileText size={15} />
                             Bài viết của tôi
+                          </Link>
+                          <Link href="/journal" className="menu-item" onClick={() => setShowUserMenu(false)}>
+                            <BookOpen size={15} />
+                            Nhật ký giao dịch
                           </Link>
                         </div>
                         {isModerator && (
@@ -361,6 +371,26 @@ export default function ForumLayout({ children, categories = [] }: ForumLayoutPr
           >
             Nổi bật
           </Link>
+          <Link
+            href="/trading"
+            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition ${
+              tradingActive ? "bg-blue-500/20 text-blue-200" : "text-slate-300 hover:bg-slate-800 hover:text-white"
+            }`}
+          >
+            <BarChart2 size={13} />
+            Cộng đồng
+          </Link>
+          {hydrated && currentUser && (
+            <Link
+              href="/journal"
+              className={`hidden md:flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition ${
+                journalActive ? "bg-blue-500/20 text-blue-200" : "text-slate-300 hover:bg-slate-800 hover:text-white"
+              }`}
+            >
+              <BookOpen size={13} />
+              Nhật ký giao dịch
+            </Link>
+          )}
         </div>
       </div>
 

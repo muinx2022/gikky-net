@@ -1,7 +1,7 @@
 import { factories } from '@strapi/strapi';
 import { emitNotification } from '../../../utils/notification-emitter';
 
-type ActionType = 'like' | 'follow';
+type ActionType = 'like' | 'follow' | 'upvote' | 'downvote';
 type TargetType = 'post' | 'comment' | 'category';
 
 const toInt = (value: unknown): number | null => {
@@ -23,7 +23,7 @@ export default factories.createCoreController('api::post-action.post-action' as 
     const commentId = toInt(payload.commentId);
     const categoryId = toInt(payload.categoryId);
 
-    if (!['like', 'follow'].includes(actionType)) {
+    if (!['like', 'follow', 'upvote', 'downvote'].includes(actionType)) {
       return ctx.badRequest('Invalid actionType');
     }
     if (!['post', 'comment', 'category'].includes(targetType)) {
@@ -38,13 +38,13 @@ export default factories.createCoreController('api::post-action.post-action' as 
     if (targetType === 'category' && !categoryId) {
       return ctx.badRequest('categoryId is required for category actions');
     }
-    if (targetType === 'comment' && actionType !== 'like') {
-      return ctx.badRequest('Only like action is supported for comments');
+    if (targetType === 'comment' && !['upvote', 'downvote'].includes(actionType)) {
+      return ctx.badRequest('Only upvote/downvote actions are supported for comments');
     }
     if (targetType === 'category' && actionType !== 'follow') {
       return ctx.badRequest('Only follow action is supported for categories');
     }
-    if (targetType === 'post' && !['like', 'follow'].includes(actionType)) {
+    if (targetType === 'post' && !['like', 'follow', 'upvote', 'downvote'].includes(actionType)) {
       return ctx.badRequest('Unsupported action for post');
     }
 
@@ -106,6 +106,25 @@ export default factories.createCoreController('api::post-action.post-action' as 
       comment: targetType === 'comment' ? commentId : null,
     };
 
+    // For upvote/downvote, check for opposite vote first
+    let oppositeVote = null;
+    if (actionType === 'upvote' || actionType === 'downvote') {
+      const oppositeActionType = actionType === 'upvote' ? 'downvote' : 'upvote';
+      oppositeVote = await strapi.db.query('api::post-action.post-action').findOne({
+        where: {
+          ...whereBase,
+          actionType: oppositeActionType,
+        },
+      });
+      
+      // Remove opposite vote if exists
+      if (oppositeVote) {
+        await strapi.db.query('api::post-action.post-action').delete({
+          where: { id: oppositeVote.id },
+        });
+      }
+    }
+
     const existing = await strapi.db.query('api::post-action.post-action').findOne({
       where: whereBase,
     });
@@ -128,7 +147,7 @@ export default factories.createCoreController('api::post-action.post-action' as 
       documentId = created.documentId || null;
 
       // Notify owner only when action is activated (not when toggled off)
-      if (targetType === 'post' && postId) {
+      if (targetType === 'post' && postId && (actionType === 'follow' || actionType === 'upvote')) {
         const post = await strapi.db.query('api::post.post').findOne({
           where: { id: postId },
           populate: ['author'],
@@ -136,13 +155,15 @@ export default factories.createCoreController('api::post-action.post-action' as 
         });
         const ownerId = post?.author?.id || post?.author;
         if (ownerId && ownerId !== user.id) {
+          const notificationType: 'like' | 'follow' = actionType === 'follow' ? 'follow' : 'like';
+          const message = actionType === 'follow'
+            ? `${user.username} followed your post "${post?.title || ''}"`
+            : `${user.username} upvoted your post "${post?.title || ''}"`;
+          
           emitNotification(strapi, {
             userId: ownerId,
-            type: actionType === 'follow' ? 'follow' : 'like',
-            message:
-              actionType === 'follow'
-                ? `${user.username} followed your post "${post?.title || ''}"`
-                : `${user.username} liked your post "${post?.title || ''}"`,
+            type: notificationType,
+            message,
             data: {
               postId: post?.documentId || null,
               postTitle: post?.title || '',
@@ -152,7 +173,7 @@ export default factories.createCoreController('api::post-action.post-action' as 
         }
       }
 
-      if (targetType === 'comment' && commentId && actionType === 'like') {
+      if (targetType === 'comment' && commentId && actionType === 'upvote') {
         const comment = await strapi.db.query('api::comment.comment').findOne({
           where: { id: commentId },
           populate: ['author', 'post'],
@@ -163,7 +184,7 @@ export default factories.createCoreController('api::post-action.post-action' as 
           emitNotification(strapi, {
             userId: ownerId,
             type: 'like',
-            message: `${user.username} liked your comment`,
+            message: `${user.username} upvoted your comment`,
             data: {
               commentId: comment?.documentId || null,
               postId: comment?.post?.documentId || null,
@@ -210,43 +231,69 @@ export default factories.createCoreController('api::post-action.post-action' as 
     });
     const commentIds = comments.map((c: any) => c.id);
 
-    const [postLikeCount, postFollowCount] = await Promise.all([
+    const [postUpvoteCount, postDownvoteCount, postFollowCount] = await Promise.all([
       strapi.db.query('api::post-action.post-action').count({
-        where: { targetType: 'post', actionType: 'like', post: postId },
+        where: { targetType: 'post', actionType: 'upvote', post: postId },
+      }),
+      strapi.db.query('api::post-action.post-action').count({
+        where: { targetType: 'post', actionType: 'downvote', post: postId },
       }),
       strapi.db.query('api::post-action.post-action').count({
         where: { targetType: 'post', actionType: 'follow', post: postId },
       }),
     ]);
 
-    const commentLikeCounts: Record<number, number> = {};
+    const commentUpvoteCounts: Record<number, number> = {};
+    const commentDownvoteCounts: Record<number, number> = {};
     if (commentIds.length > 0) {
-      const commentLikeActions = await strapi.db.query('api::post-action.post-action').findMany({
-        where: {
-          targetType: 'comment',
-          actionType: 'like',
-          comment: { id: { $in: commentIds } },
-        },
-        populate: {
-          comment: {
-            select: ['id'],
+      const [commentUpvoteActions, commentDownvoteActions] = await Promise.all([
+        strapi.db.query('api::post-action.post-action').findMany({
+          where: {
+            targetType: 'comment',
+            actionType: 'upvote',
+            comment: { id: { $in: commentIds } },
           },
-        },
-      });
+          populate: {
+            comment: {
+              select: ['id'],
+            },
+          },
+        }),
+        strapi.db.query('api::post-action.post-action').findMany({
+          where: {
+            targetType: 'comment',
+            actionType: 'downvote',
+            comment: { id: { $in: commentIds } },
+          },
+          populate: {
+            comment: {
+              select: ['id'],
+            },
+          },
+        }),
+      ]);
 
-      commentLikeActions.forEach((row: any) => {
+      commentUpvoteActions.forEach((row: any) => {
         const cid = row.comment?.id;
         if (!cid) return;
-        commentLikeCounts[cid] = (commentLikeCounts[cid] || 0) + 1;
+        commentUpvoteCounts[cid] = (commentUpvoteCounts[cid] || 0) + 1;
+      });
+
+      commentDownvoteActions.forEach((row: any) => {
+        const cid = row.comment?.id;
+        if (!cid) return;
+        commentDownvoteCounts[cid] = (commentDownvoteCounts[cid] || 0) + 1;
       });
     }
 
     const myActions = {
       post: {
-        like: null as string | null,
+        upvote: null as string | null,
+        downvote: null as string | null,
         follow: null as string | null,
       },
-      commentLikes: {} as Record<number, string>,
+      commentUpvotes: {} as Record<number, string>,
+      commentDownvotes: {} as Record<number, string>,
     };
 
     if (user) {
@@ -269,14 +316,20 @@ export default factories.createCoreController('api::post-action.post-action' as 
       });
 
       userRows.forEach((row: any) => {
-        if (row.targetType === 'post' && row.actionType === 'like') {
-          myActions.post.like = row.documentId;
+        if (row.targetType === 'post' && row.actionType === 'upvote') {
+          myActions.post.upvote = row.documentId;
+        }
+        if (row.targetType === 'post' && row.actionType === 'downvote') {
+          myActions.post.downvote = row.documentId;
         }
         if (row.targetType === 'post' && row.actionType === 'follow') {
           myActions.post.follow = row.documentId;
         }
-        if (row.targetType === 'comment' && row.actionType === 'like' && row.comment?.id) {
-          myActions.commentLikes[row.comment.id] = row.documentId;
+        if (row.targetType === 'comment' && row.actionType === 'upvote' && row.comment?.id) {
+          myActions.commentUpvotes[row.comment.id] = row.documentId;
+        }
+        if (row.targetType === 'comment' && row.actionType === 'downvote' && row.comment?.id) {
+          myActions.commentDownvotes[row.comment.id] = row.documentId;
         }
       });
     }
@@ -285,10 +338,12 @@ export default factories.createCoreController('api::post-action.post-action' as 
       data: {
         counts: {
           post: {
-            like: postLikeCount,
+            upvote: postUpvoteCount,
+            downvote: postDownvoteCount,
             follow: postFollowCount,
           },
-          commentLikes: commentLikeCounts,
+          commentUpvotes: commentUpvoteCounts,
+          commentDownvotes: commentDownvoteCounts,
         },
         myActions,
       },
@@ -306,11 +361,23 @@ export default factories.createCoreController('api::post-action.post-action' as 
       return { data: {} };
     }
 
-    const [likeRows, commentRows] = await Promise.all([
+    const [upvoteRows, downvoteRows, commentRows] = await Promise.all([
       strapi.db.query('api::post-action.post-action').findMany({
         where: {
           targetType: 'post',
-          actionType: 'like',
+          actionType: 'upvote',
+          post: { id: { $in: postIds } },
+        },
+        populate: {
+          post: {
+            select: ['id'],
+          },
+        },
+      }),
+      strapi.db.query('api::post-action.post-action').findMany({
+        where: {
+          targetType: 'post',
+          actionType: 'downvote',
           post: { id: { $in: postIds } },
         },
         populate: {
@@ -332,21 +399,37 @@ export default factories.createCoreController('api::post-action.post-action' as 
       }),
     ]);
 
-    const result: Record<number, { likes: number; comments: number }> = {};
+    const result: Record<number, { upvotes: number; downvotes: number; comments: number; score: number }> = {};
     postIds.forEach((postId) => {
-      result[postId] = { likes: 0, comments: 0 };
+      result[postId] = { upvotes: 0, downvotes: 0, comments: 0, score: 0 };
     });
 
-    likeRows.forEach((row: any) => {
+    upvoteRows.forEach((row: any) => {
       const pid = row.post?.id;
       if (!pid || !result[pid]) return;
-      result[pid].likes += 1;
+      result[pid].upvotes += 1;
+    });
+
+    downvoteRows.forEach((row: any) => {
+      const pid = row.post?.id;
+      if (!pid || !result[pid]) return;
+      result[pid].downvotes += 1;
     });
 
     commentRows.forEach((row: any) => {
       const pid = row.post?.id;
       if (!pid || !result[pid]) return;
       result[pid].comments += 1;
+    });
+
+    // Calculate score: engagement (total votes) is primary, net score is secondary
+    // Score = (upvotes - downvotes) + (upvotes + downvotes) * 0.01
+    // This ensures 100up/100down (score: 2) > 1up/1down (score: 0.02)
+    postIds.forEach((postId) => {
+      const data = result[postId];
+      const netScore = data.upvotes - data.downvotes;
+      const engagement = data.upvotes + data.downvotes;
+      data.score = netScore + engagement * 0.01;
     });
 
     return { data: result };

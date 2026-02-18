@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, use } from "react";
 import { api } from "../../../lib/api";
@@ -8,6 +8,7 @@ import { Heart, Bookmark, MessageSquare, Send, CornerDownRight, X, ArrowUp, Arro
 import ForumLayout from "../../../components/ForumLayout";
 import TiptapEditor from "../../../components/TiptapEditor";
 import LoginModal from "../../../components/LoginModal";
+import CommentThread from "../../../components/CommentThread";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "../../../components/AuthContext";
 // Force recompile v3
@@ -1295,134 +1296,13 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
 
         {/* Comments Section */}
         <div className="rounded-xl border border-slate-300 bg-white p-8 dark:border-slate-800 dark:bg-slate-900">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-            <MessageSquare size={20} />
-            Bình luận ({comments.length})
-          </h2>
-
-          {/* Comments Blocked Warning */}
-          {(commentsBlocked || isDraftPost) && (
-            <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4 mb-6">
-              <p className="text-orange-800 dark:text-orange-200 text-sm font-medium">
-                {isDraftPost ? "Draft post: comments are disabled." : "Comments are disabled on this post by a moderator."}
-              </p>
-            </div>
-          )}
-
-          {/* Add Comment */}
-          {!commentsBlocked && !isDraftPost && !showCommentForm && (
-            <div
-              onClick={() => {
-                if (!currentUser) {
-                  setLoginIntent('comment');
-                  setShowLoginModal(true);
-                  return;
-                }
-                setReplyingTo(null);
-                setReplyContent("");
-                setShowFormatInReply(null);
-                setShowCommentForm(true);
-              }}
-              className="mb-8 p-3 border-2 border-dashed border-slate-400 dark:border-slate-800 rounded-lg cursor-pointer hover:border-blue-500 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-all group"
-            >
-              <p className="text-center text-sm text-slate-500 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400">
-                💬 Nhấn để tham gia thảo luận...
-              </p>
-            </div>
-          )}
-
-          {!commentsBlocked && !isDraftPost && showCommentForm && (
-            <div className="mb-8">
-              <div className="flex gap-3">
-                {renderAvatar(currentUser?.username || "?", currentUser?.avatarUrl ? { id: 0, url: currentUser.avatarUrl } : undefined)}
-                <div className="flex-1">
-                  {showFormatInComment ? (
-                    <div className="relative">
-                      <TiptapEditor
-                        content={newComment}
-                        onChange={(html) => setNewComment(html)}
-                        placeholder="Viết bình luận..."
-                        className="bg-slate-50 dark:bg-slate-800"
-                        compact
-                      />
-                      <div className="absolute bottom-2 right-2 flex items-center gap-2">
-                        <button
-                          onClick={toggleCommentFormat}
-                          className="px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
-                        >
-                          {showFormatInComment ? 'Ẩn định dạng' : 'Hiển thị định dạng'}
-                        </button>
-                        <button
-                          onClick={() => {
-                            setShowCommentForm(false);
-                            setNewComment("");
-                            setShowFormatInComment(false);
-                          }}
-                          className="px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
-                        >
-                          Hủy
-                        </button>
-                        <button
-                          onClick={handleSubmitComment}
-                          disabled={!newComment.trim()}
-                          className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          Đăng bình luận
-                        </button>
-                      </div>
-                    </div>
-                ) : (
-                  <div className="relative">
-                    <textarea
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      placeholder="Viết bình luận..."
-                      rows={3}
-                      className="w-full min-h-[180px] px-4 py-3 pb-14 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white resize-none"
-                      autoFocus
-                    />
-                    <div className="absolute bottom-3 right-3 flex items-center gap-2">
-                      <button
-                        onClick={toggleCommentFormat}
-                        className="px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
-                      >
-                        {showFormatInComment ? 'Ẩn định dạng' : 'Hiển thị định dạng'}
-                      </button>
-                      <button
-                        onClick={() => {
-                          setShowCommentForm(false);
-                          setNewComment("");
-                          setShowFormatInComment(false);
-                        }}
-                        className="px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
-                      >
-                        Hủy
-                      </button>
-                      <button
-                        onClick={handleSubmitComment}
-                        disabled={!newComment.trim()}
-                        className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        Đăng bình luận
-                      </button>
-                    </div>
-                  </div>
-                )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Comments List */}
-          <div className="space-y-4">
-            {comments.length === 0 ? (
-              <p className="text-center text-slate-500 dark:text-slate-400 py-8">
-                Chưa có bình luận. Hãy là người đầu tiên!
-              </p>
-            ) : (
-              comments.map((comment) => renderComment(comment))
-            )}
-          </div>
+          <CommentThread
+            relation="post"
+            targetDocumentId={documentId}
+            targetEntityId={post?.id}
+            disabled={commentsBlocked || isDraftPost}
+            disabledMessage={isDraftPost ? "Bài viết nháp: bình luận đang bị tắt." : "Bình luận đã bị khóa bởi kiểm duyệt viên."}
+          />
         </div>
           </div>
         <LoginModal

@@ -1,0 +1,108 @@
+{
+  "kind": "collectionType",
+  "collectionName": "journal_trades",
+  "info": {
+    "singularName": "journal-trade",
+    "pluralName": "journal-trades",
+    "displayName": "Journal Trade"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "symbol": {
+      "type": "string",
+      "required": true
+    },
+    "market": {
+      "type": "enumeration",
+      "enum": ["crypto", "forex", "stock", "futures", "other"],
+      "default": "crypto"
+    },
+    "direction": {
+      "type": "enumeration",
+      "enum": ["long", "short"],
+      "required": true
+    },
+    "entryDate": {
+      "type": "datetime",
+      "required": true
+    },
+    "exitDate": {
+      "type": "datetime"
+    },
+    "entryPrice": {
+      "type": "decimal",
+      "required": true
+    },
+    "exitPrice": {
+      "type": "decimal"
+    },
+    "quantity": {
+      "type": "decimal",
+      "required": true
+    },
+    "pnl": {
+      "type": "decimal"
+    },
+    "pnlPercent": {
+      "type": "decimal"
+    },
+    "fees": {
+      "type": "decimal",
+      "default": 0
+    },
+    "contractSize": {
+      "type": "decimal",
+      "default": 1
+    },
+    "calcMode": {
+      "type": "enumeration",
+      "enum": ["raw", "pip"],
+      "default": "raw"
+    },
+    "pipSize": {
+      "type": "decimal"
+    },
+    "pipValue": {
+      "type": "decimal"
+    },
+    "riskRewardRatio": {
+      "type": "decimal"
+    },
+    "outcome": {
+      "type": "enumeration",
+      "enum": ["win", "loss", "breakeven", "open"],
+      "default": "open"
+    },
+    "strategy": {
+      "type": "string"
+    },
+    "setup": {
+      "type": "text"
+    },
+    "notes": {
+      "type": "richtext"
+    },
+    "emotion": {
+      "type": "enumeration",
+      "enum": ["confident", "neutral", "fearful", "greedy", "hesitant"]
+    },
+    "isPublic": {
+      "type": "boolean",
+      "default": false
+    },
+    "screenshots": {
+      "type": "media",
+      "multiple": true,
+      "required": false,
+      "allowedTypes": ["images"]
+    },
+    "author": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    }
+  }
+}
