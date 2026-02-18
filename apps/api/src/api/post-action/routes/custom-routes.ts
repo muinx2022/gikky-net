@@ -23,6 +23,7 @@ export default {
       path: '/post-actions/feed-summary',
       handler: 'post-action.feedSummary',
       config: {
+        auth: false,
         policies: [],
         middlewares: [],
       },
