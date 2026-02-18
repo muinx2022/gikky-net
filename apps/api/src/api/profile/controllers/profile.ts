@@ -21,6 +21,26 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
     };
   },
 
+  async getByUsername(ctx) {
+    const { username } = ctx.params;
+    if (!username) return ctx.badRequest('Username is required');
+
+    const user = await strapi.db.query('plugin::users-permissions.user').findOne({
+      where: { username: { $eqi: String(username).trim() } as any },
+      populate: { avatar: true },
+    });
+
+    if (!user) return ctx.notFound();
+
+    ctx.body = {
+      id: user.id,
+      username: (user as any).username,
+      bio: (user as any).bio ?? null,
+      avatar: (user as any).avatar ?? null,
+      createdAt: (user as any).createdAt ?? null,
+    };
+  },
+
   async updateMe(ctx) {
     const userId = ctx.state?.user?.id;
     if (!userId) return ctx.unauthorized();

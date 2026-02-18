@@ -39,7 +39,7 @@ export default function NotificationInvitePage() {
       });
       setState(res.data?.data || null);
     } catch (e: any) {
-      setError(e?.response?.data?.error?.message || "Failed to load invitation status.");
+      setError(e?.response?.data?.error?.message || "Không thể tải trạng thái lời mời.");
     } finally {
       setLoading(false);
     }
@@ -48,7 +48,7 @@ export default function NotificationInvitePage() {
   useEffect(() => {
     if (!jwt) {
       setLoading(false);
-      setError("Please sign in to view this invitation.");
+      setError("Vui lòng đăng nhập để xem lời mời này.");
       return;
     }
     fetchStatus();
@@ -71,7 +71,7 @@ export default function NotificationInvitePage() {
       );
       await fetchStatus();
     } catch (e: any) {
-      setError(e?.response?.data?.error?.message || "Failed to submit response.");
+      setError(e?.response?.data?.error?.message || "Gửi phản hồi thất bại.");
     } finally {
       setSubmitting(false);
     }
@@ -79,20 +79,20 @@ export default function NotificationInvitePage() {
 
   const statusLabel =
     state?.status === "active"
-      ? "You already accepted this invitation."
+      ? "Bạn đã chấp nhận lời mời này."
       : state?.status === "removed"
-      ? "You already rejected this invitation."
-      : "You have been invited to moderate this category.";
+      ? "Bạn đã từ chối lời mời này."
+      : "Bạn được mời trở thành kiểm duyệt viên của danh mục này.";
 
   return (
     <ForumLayout categories={[]}>
       <div className="mx-auto max-w-2xl pt-8">
         <div className="rounded border border-slate-400 bg-white p-6">
-          <h1 className="mb-2 text-xl font-semibold text-slate-900">Moderator Invitation</h1>
-          {state?.categoryName && <p className="mb-4 text-sm text-slate-600">Category: {state.categoryName}</p>}
+          <h1 className="mb-2 text-xl font-semibold text-slate-900">Lời mời kiểm duyệt viên</h1>
+          {state?.categoryName && <p className="mb-4 text-sm text-slate-600">Danh mục: {state.categoryName}</p>}
 
           {loading ? (
-            <p className="text-slate-500">Loading...</p>
+            <p className="text-slate-500">Đang tải...</p>
           ) : error ? (
             <p className="text-sm text-red-600">{error}</p>
           ) : (
@@ -106,14 +106,14 @@ export default function NotificationInvitePage() {
                     disabled={submitting}
                     className="rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
                   >
-                    Accept
+                    Chấp nhận
                   </button>
                   <button
                     onClick={() => respond("reject")}
                     disabled={submitting}
                     className="rounded border border-slate-400 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
                   >
-                    Reject
+                    Từ chối
                   </button>
                 </div>
               ) : (
@@ -121,7 +121,7 @@ export default function NotificationInvitePage() {
                   onClick={() => router.push("/")}
                   className="rounded border border-slate-400 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
                 >
-                  Back to home
+                  Về trang chủ
                 </button>
               )}
             </>

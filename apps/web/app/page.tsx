@@ -11,7 +11,7 @@ interface Post extends PostCardPost {
   status: string;
 }
 
-type FeedSummaryMap = Record<string, { likes?: number; comments?: number }>;
+type FeedSummaryMap = Record<string, { upvotes?: number; downvotes?: number; comments?: number; score?: number }>;
 
 interface Category {
   id: number;
@@ -105,8 +105,10 @@ export default function ForumPage() {
       const summary = summaryMap[String(post.id)];
       return {
         ...post,
-        likesCount: typeof summary?.likes === "number" ? summary.likes : 0,
+        upvotesCount: typeof summary?.upvotes === "number" ? summary.upvotes : 0,
+        downvotesCount: typeof summary?.downvotes === "number" ? summary.downvotes : 0,
         commentsCount: typeof summary?.comments === "number" ? summary.comments : 0,
+        score: typeof summary?.score === "number" ? summary.score : 0,
       };
     });
 
@@ -188,10 +190,10 @@ export default function ForumPage() {
     const date = new Date(dateString);
     const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-    if (diff < 60) return "just now";
-    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-    if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+    if (diff < 60) return "vừa xong";
+    if (diff < 3600) return `${Math.floor(diff / 60)}p trước`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}g trước`;
+    if (diff < 604800) return `${Math.floor(diff / 86400)}ng trước`;
 
     return date.toLocaleDateString("en-US", {
       month: "short",
@@ -205,11 +207,11 @@ export default function ForumPage() {
       <div className="space-y-4">
         {loading ? (
           <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center">
-            <div className="text-slate-500">Loading...</div>
+            <div className="text-slate-500">Đang tải...</div>
           </div>
         ) : posts.length === 0 ? (
           <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center">
-            <p className="text-slate-500">No posts yet.</p>
+            <p className="text-slate-500">Chưa có bài viết.</p>
           </div>
         ) : (
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
@@ -227,7 +229,7 @@ export default function ForumPage() {
                   dangerouslySetInnerHTML={{ __html: frontPage.content }}
                 />
               ) : (
-                <p className="text-[15px] leading-7 text-slate-700">No community introduction content yet.</p>
+                <p className="text-[15px] leading-7 text-slate-700">Chưa có nội dung giới thiệu cộng đồng.</p>
               )}
             </div>
 
@@ -248,10 +250,10 @@ export default function ForumPage() {
                 {loadingMore && (
                   <span className="inline-flex items-center gap-2 text-sm text-slate-500">
                     <Loader2 size={15} className="animate-spin" />
-                    Loading more...
+                    Đang tải thêm...
                   </span>
                 )}
-                {!hasMore && posts.length > 0 && <span className="text-xs text-slate-400">You have reached the end.</span>}
+                {!hasMore && posts.length > 0 && <span className="text-xs text-slate-400">Bạn đã đến cuối.</span>}
               </div>
             </div>
           </div>

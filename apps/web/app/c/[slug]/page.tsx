@@ -24,7 +24,7 @@ interface Post extends PostCardPost {
   status: string;
 }
 
-type FeedSummaryMap = Record<string, { likes?: number; comments?: number }>;
+type FeedSummaryMap = Record<string, { upvotes?: number; downvotes?: number; comments?: number; score?: number }>;
 
 const PAGE_SIZE = 10;
 
@@ -222,8 +222,10 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
         const summary = summaryMap[String(post.id)];
         return {
           ...post,
-          likesCount: typeof summary?.likes === "number" ? summary.likes : 0,
+          upvotesCount: typeof summary?.upvotes === "number" ? summary.upvotes : 0,
+          downvotesCount: typeof summary?.downvotes === "number" ? summary.downvotes : 0,
           commentsCount: typeof summary?.comments === "number" ? summary.comments : 0,
+          score: typeof summary?.score === "number" ? summary.score : 0,
         };
       });
       const pagination = response.data?.meta?.pagination;
@@ -308,7 +310,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
 
     const jwt = getAuthToken();
     if (!jwt) {
-      showToast("Please sign in to follow this category", "error");
+      showToast("Vui lòng đăng nhập để theo dõi danh mục", "error");
       return;
     }
 
@@ -332,7 +334,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
       const nextFollowing = Boolean(action?.active);
       setIsFollowingCategory(nextFollowing);
       setFollowersCount(action?.count ?? 0);
-      showToast(nextFollowing ? "Followed category" : "Unfollowed category", "success");
+      showToast(nextFollowing ? "Đã theo dõi danh mục" : "Đã bỏ theo dõi danh mục", "success");
 
       const effectiveUserId = currentUserId ?? resolveCurrentUserId();
       if (effectiveUserId !== null) {
@@ -340,7 +342,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
       }
     } catch (error) {
       console.error("Failed to follow/unfollow category:", error);
-      showToast("Failed to update follow status", "error");
+      showToast("Cập nhật trạng thái theo dõi thất bại", "error");
     }
   };
 
@@ -349,10 +351,10 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
     const date = new Date(dateString);
     const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-    if (diff < 60) return "just now";
-    if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
-    if (diff < 604800) return `${Math.floor(diff / 86400)} days ago`;
+    if (diff < 60) return "vừa xong";
+    if (diff < 3600) return `${Math.floor(diff / 60)} phút trước`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`;
+    if (diff < 604800) return `${Math.floor(diff / 86400)} ngày trước`;
 
     return date.toLocaleDateString("en-US", {
       month: "short",
@@ -367,30 +369,30 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
       <div className="space-y-3">
         {loading ? (
           <div className="rounded-sm border border-slate-300 bg-white p-12 text-center dark:border-slate-700/35 dark:bg-slate-900">
-            <div className="text-slate-500 dark:text-slate-400">Loading...</div>
+            <div className="text-slate-500 dark:text-slate-400">Đang tải...</div>
           </div>
         ) : !selectedCategory ? (
           <div className="rounded-sm border border-slate-300 bg-white p-12 text-center dark:border-slate-700/35 dark:bg-slate-900">
-            <p className="text-slate-500 dark:text-slate-400">This category does not exist.</p>
+            <p className="text-slate-500 dark:text-slate-400">Danh mục này không tồn tại.</p>
           </div>
         ) : posts.length === 0 ? (
           <div className="rounded-sm border border-slate-300 bg-white p-12 text-center dark:border-slate-700/35 dark:bg-slate-900">
-            <p className="text-slate-500 dark:text-slate-400">No posts in this category yet.</p>
+            <p className="text-slate-500 dark:text-slate-400">Chưa có bài viết trong danh mục này.</p>
           </div>
         ) : (
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
             <div className="px-5 py-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Category</div>
+                  <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Danh mục</div>
                   <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">
                     {selectedCategory ? (
                       <>
                         {`c/${formatCategoryTitle(selectedCategory.name)}`}{" "}
-                        <span className="text-sm font-normal text-slate-500 dark:text-slate-400">{`(following: ${followersCount})`}</span>
+                        <span className="text-sm font-normal text-slate-500 dark:text-slate-400">{`(đang theo dõi: ${followersCount})`}</span>
                       </>
                     ) : (
-                      "Category not found"
+                      "Không tìm thấy danh mục"
                     )}
                   </h1>
                   {selectedCategory?.description && (
@@ -406,7 +408,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
                         : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700/35 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
                     }`}
                   >
-                    {isFollowingCategory ? "Following" : "Follow"}
+                    {isFollowingCategory ? "Đang theo dõi" : "Theo dõi"}
                   </button>
                 )}
               </div>
@@ -444,11 +446,11 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
                 {loadingMore && (
                   <span className="inline-flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
                     <Loader2 size={15} className="animate-spin" />
-                    Loading more posts...
+                    Đang tải thêm bài viết...
                   </span>
                 )}
                 {!hasMore && posts.length > 0 && (
-                  <span className="text-xs text-slate-400 dark:text-slate-500">You have reached the end.</span>
+                  <span className="text-xs text-slate-400 dark:text-slate-500">Bạn đã đến cuối.</span>
                 )}
               </div>
             </div>

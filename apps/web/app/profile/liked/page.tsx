@@ -20,7 +20,7 @@ interface Post extends PostCardPost {
   status: string;
 }
 
-type FeedSummaryMap = Record<string, { likes?: number; comments?: number }>;
+type FeedSummaryMap = Record<string, { upvotes?: number; downvotes?: number; comments?: number; score?: number }>;
 
 export default function SavedPostsPage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -49,7 +49,7 @@ export default function SavedPostsPage() {
   const fetchSavedPosts = useCallback(async () => {
     const jwt = getAuthToken();
     if (!jwt) {
-      setError("Please sign in to view saved posts.");
+      setError("Vui lòng đăng nhập để xem bài viết đã lưu.");
       return;
     }
 
@@ -58,7 +58,7 @@ export default function SavedPostsPage() {
     });
     const me = meRes.data as { id?: number };
     if (!me?.id) {
-      setError("Unable to resolve current user.");
+      setError("Không thể xác định người dùng hiện tại.");
       return;
     }
 
@@ -102,8 +102,10 @@ export default function SavedPostsPage() {
       const summary = summaryMap[String(post.id)];
       return {
         ...post,
-        likesCount: typeof summary?.likes === "number" ? summary.likes : 0,
+        upvotesCount: typeof summary?.upvotes === "number" ? summary.upvotes : 0,
+        downvotesCount: typeof summary?.downvotes === "number" ? summary.downvotes : 0,
         commentsCount: typeof summary?.comments === "number" ? summary.comments : 0,
+        score: typeof summary?.score === "number" ? summary.score : 0,
       };
     });
 
@@ -117,7 +119,7 @@ export default function SavedPostsPage() {
       try {
         await Promise.all([fetchCategories(), fetchSavedPosts()]);
       } catch (err: any) {
-        setError(err?.response?.data?.error?.message || err?.message || "Failed to load saved posts.");
+        setError(err?.response?.data?.error?.message || err?.message || "Tải bài viết đã lưu thất bại.");
       } finally {
         setLoading(false);
       }
@@ -131,10 +133,10 @@ export default function SavedPostsPage() {
     const date = new Date(dateString);
     const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-    if (diff < 60) return "just now";
-    if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
-    if (diff < 604800) return `${Math.floor(diff / 86400)} days ago`;
+    if (diff < 60) return "vừa xong";
+    if (diff < 3600) return `${Math.floor(diff / 60)} phút trước`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`;
+    if (diff < 604800) return `${Math.floor(diff / 86400)} ngày trước`;
 
     return date.toLocaleDateString("en-US", {
       month: "short",
@@ -147,13 +149,13 @@ export default function SavedPostsPage() {
     <ForumLayout categories={categories}>
       <div className="pt-5 md:pt-6 space-y-3">
         <div className="rounded border border-slate-300 bg-white px-4 py-3 dark:border-slate-700/35 dark:bg-slate-900">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Saved Posts</h1>
-          <p className="text-sm text-slate-600 dark:text-slate-400">Posts you follow.</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Bài viết đã lưu</h1>
+          <p className="text-sm text-slate-600 dark:text-slate-400">Bài viết bạn đang theo dõi.</p>
         </div>
 
         {loading ? (
           <div className="rounded-sm border border-slate-300 bg-white p-12 text-center dark:border-slate-700/35 dark:bg-slate-900">
-            <div className="text-slate-500 dark:text-slate-400">Loading...</div>
+            <div className="text-slate-500 dark:text-slate-400">Đang tải...</div>
           </div>
         ) : error ? (
           <div className="rounded-sm border border-slate-300 bg-white p-12 text-center dark:border-slate-700/35 dark:bg-slate-900">
@@ -161,7 +163,7 @@ export default function SavedPostsPage() {
           </div>
         ) : posts.length === 0 ? (
           <div className="rounded-sm border border-slate-300 bg-white p-12 text-center dark:border-slate-700/35 dark:bg-slate-900">
-            <p className="text-slate-500 dark:text-slate-400">No saved posts yet.</p>
+            <p className="text-slate-500 dark:text-slate-400">Chưa có bài viết nào được lưu.</p>
           </div>
         ) : (
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white divide-y divide-slate-200">

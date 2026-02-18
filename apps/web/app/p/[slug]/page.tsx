@@ -4,12 +4,13 @@ import { useEffect, useState, use } from "react";
 import { api } from "../../../lib/api";
 import { clearAuthSession, getAuthToken, setStoredUser } from "../../../lib/auth-storage";
 import Link from "next/link";
-import { Heart, Bookmark, MessageSquare, Send, CornerDownRight, X } from "lucide-react";
+import { Heart, Bookmark, MessageSquare, Send, CornerDownRight, X, ArrowUp, ArrowDown } from "lucide-react";
 import ForumLayout from "../../../components/ForumLayout";
 import TiptapEditor from "../../../components/TiptapEditor";
 import LoginModal from "../../../components/LoginModal";
 import { useSearchParams } from "next/navigation";
-// Force recompile - fixed SSR
+import { useAuth } from "../../../components/AuthContext";
+// Force recompile v3
 
 interface AuthorAvatar {
   id: number;
@@ -72,25 +73,33 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
   // Unwrap params Promise
   const resolvedParams = use(params);
   const searchParams = useSearchParams();
+  const { currentUser, handleLoginSuccess: updateAuthContext } = useAuth();
+
+  console.log('PostDetailPage rendered - v4');
 
   const [post, setPost] = useState<Post | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isLiked, setIsLiked] = useState(false);
+  const [isUpvoted, setIsUpvoted] = useState(false);
+  const [isDownvoted, setIsDownvoted] = useState(false);
   const [isFollowed, setIsFollowed] = useState(false);
-  const [likesCount, setLikesCount] = useState(0);
+  const [upvotesCount, setUpvotesCount] = useState(0);
+  const [downvotesCount, setDownvotesCount] = useState(0);
   const [followsCount, setFollowsCount] = useState(0);
   const [newComment, setNewComment] = useState("");
   const [replyingTo, setReplyingTo] = useState<number | null>(null);
   const [replyContent, setReplyContent] = useState("");
-  const [currentUser, setCurrentUser] = useState<UserData | null>(null);
   const [showCommentForm, setShowCommentForm] = useState(false);
   const [showFormatInComment, setShowFormatInComment] = useState(false);
   const [showFormatInReply, setShowFormatInReply] = useState<number | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [commentLikeCounts, setCommentLikeCounts] = useState<Record<number, number>>({});
-  const [commentLikeIds, setCommentLikeIds] = useState<Record<number, string>>({});
+  const [loginIntent, setLoginIntent] = useState<'comment' | null>(null);
+  const [publishingPost, setPublishingPost] = useState(false);
+  const [commentUpvoteCounts, setCommentUpvoteCounts] = useState<Record<number, number>>({});
+  const [commentDownvoteCounts, setCommentDownvoteCounts] = useState<Record<number, number>>({});
+  const [commentUpvoteIds, setCommentUpvoteIds] = useState<Record<number, string>>({});
+  const [commentDownvoteIds, setCommentDownvoteIds] = useState<Record<number, string>>({});
   const [showToast, setShowToast] = useState<{show: boolean; message: string; type: 'success' | 'error'}>({
     show: false,
     message: '',
@@ -104,32 +113,13 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
 
   useEffect(() => {
     const bootstrap = async () => {
-      const jwt = getAuthToken();
-      if (jwt) {
-        try {
-          const meRes = await api.get("/api/users/me", {
-            headers: { Authorization: `Bearer ${jwt}` },
-          });
-          const me = meRes.data as UserData;
-          setCurrentUser(me);
-          setStoredUser(me);
-          await fetchPostData(me.id);
-        } catch (error) {
-          console.error("Failed to resolve current auth user:", error);
-          clearAuthSession();
-          setCurrentUser(null);
-          await fetchPostData();
-        }
-      } else {
-        setCurrentUser(null);
-        await fetchPostData();
-      }
-
+      // currentUser is managed by AuthContext, just fetch data
+      await fetchPostData(currentUser?.id);
       await fetchCategories();
     };
 
     bootstrap();
-  }, [documentId]);
+  }, [documentId, currentUser?.id]);
 
   const fetchCategories = async () => {
     try {
@@ -165,6 +155,18 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
     }
   }, [replyingTo]);
 
+  // Close comment/reply forms when user logs out
+  useEffect(() => {
+    if (!currentUser) {
+      setShowCommentForm(false);
+      setNewComment("");
+      setShowFormatInComment(false);
+      setReplyingTo(null);
+      setReplyContent("");
+      setShowFormatInReply(null);
+    }
+  }, [currentUser]);
+
   useEffect(() => {
     if (!targetCommentId || comments.length === 0) return;
     const el = document.getElementById(`comment-${targetCommentId}`);
@@ -179,16 +181,58 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
 
   const fetchPostData = async (userId?: number) => {
     try {
-      // Fetch post by documentId
-      const postRes = await api.get(`/api/posts/${documentId}`, {
-        params: { populate: { categories: true, tags: true, author: { populate: { avatar: true } } } },
-      });
+      const populateParams = { populate: { categories: true, tags: true, author: { populate: { avatar: true } } } };
+      const jwt = getAuthToken();
+
+      // Fetch post by documentId. If authenticated, try draft first.
+      let postRes;
+      if (jwt) {
+        try {
+          postRes = await api.get(`/api/posts/${documentId}`, {
+            params: { ...populateParams, status: "draft" },
+            headers: { Authorization: `Bearer ${jwt}` },
+          });
+        } catch {
+          postRes = await api.get(`/api/posts/${documentId}`, {
+            params: populateParams,
+          });
+        }
+      } else {
+        postRes = await api.get(`/api/posts/${documentId}`, {
+          params: populateParams,
+        });
+      }
       const postData = postRes.data?.data;
 
       if (!postData) {
         console.error("No post data found");
         setLoading(false);
         return;
+      }
+
+      // Draft posts are only visible to owner; everyone else gets not-found view.
+      const isOwner = Number(postData?.author?.id) === Number(userId);
+      if (postData.status === "draft" && !isOwner) {
+        let canViewDraft = false;
+        const jwt = getAuthToken();
+
+        // Fallback for old/inconsistent author relation: verify ownership via /posts/my list.
+        if (jwt) {
+          try {
+            const myPostsRes = await api.get("/api/posts/my", {
+              headers: { Authorization: `Bearer ${jwt}` },
+            });
+            const myPosts = myPostsRes.data?.data || [];
+            canViewDraft = myPosts.some((item: any) => item?.documentId === postData?.documentId);
+          } catch {
+            canViewDraft = false;
+          }
+        }
+
+        if (!canViewDraft) {
+          setPost(null);
+          return;
+        }
       }
 
       setPost(postData);
@@ -226,16 +270,21 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
         const summaryRes = await api.get(`/api/post-actions/summary?postId=${postData.id}`, { headers });
         const summary = summaryRes.data?.data;
 
-        setLikesCount(summary?.counts?.post?.like || 0);
+        setUpvotesCount(summary?.counts?.post?.upvote || 0);
+        setDownvotesCount(summary?.counts?.post?.downvote || 0);
         setFollowsCount(summary?.counts?.post?.follow || 0);
 
-        const myPostLikeId = summary?.myActions?.post?.like || null;
+        const myPostUpvoteId = summary?.myActions?.post?.upvote || null;
+        const myPostDownvoteId = summary?.myActions?.post?.downvote || null;
         const myPostFollowId = summary?.myActions?.post?.follow || null;
-        setIsLiked(Boolean(myPostLikeId));
+        setIsUpvoted(Boolean(myPostUpvoteId));
+        setIsDownvoted(Boolean(myPostDownvoteId));
         setIsFollowed(Boolean(myPostFollowId));
 
-        setCommentLikeCounts(summary?.counts?.commentLikes || {});
-        setCommentLikeIds(summary?.myActions?.commentLikes || {});
+        setCommentUpvoteCounts(summary?.counts?.commentUpvotes || {});
+        setCommentDownvoteCounts(summary?.counts?.commentDownvotes || {});
+        setCommentUpvoteIds(summary?.myActions?.commentUpvotes || {});
+        setCommentDownvoteIds(summary?.myActions?.commentDownvotes || {});
       } catch (actionSummaryError) {
         console.error("Failed to fetch post actions summary:", actionSummaryError);
       }
@@ -288,34 +337,33 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
     return sortTree(rootComments, 0);
   };
 
-  const handleLike = async () => {
-    if (!currentUser) {
-      setShowToast({ show: true, message: "Please sign in to like this post", type: "error" });
-      setTimeout(() => setShowToast({ show: false, message: "", type: "error" }), 3000);
-      return;
-    }
+  const handleUpvote = async () => {
+    if (String(post?.status || "").toLowerCase() === "draft") return;
+    console.log('handleUpvote called', { currentUser, post });
 
     try {
       const jwt = getAuthToken();
 
       if (!jwt) {
-        setShowToast({ show: true, message: "Please sign in to like this post", type: "error" });
+        setShowLoginModal(true);
+        setShowToast({ show: true, message: "Vui lòng đăng nhập để bình chọn", type: "error" });
         setTimeout(() => setShowToast({ show: false, message: "", type: "error" }), 3000);
         return;
       }
 
       if (!post?.id) {
-        setShowToast({ show: true, message: "Post not loaded properly", type: "error" });
+        setShowToast({ show: true, message: "Bài viết chưa tải đúng", type: "error" });
         setTimeout(() => setShowToast({ show: false, message: "", type: "error" }), 3000);
         return;
       }
 
+      console.log('Sending upvote request', { postId: post.id });
       const response = await api.post(
         `/api/post-actions/toggle`,
         {
           data: {
             targetType: "post",
-            actionType: "like",
+            actionType: "upvote",
             postId: post.id,
           },
         },
@@ -326,17 +374,107 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
         }
       );
 
+      console.log('Upvote response:', response.data);
       const action = response.data?.data;
-      const nextLiked = Boolean(action?.active);
-      setIsLiked(nextLiked);
-      setLikesCount(action?.count ?? 0);
-      setShowToast({ show: true, message: nextLiked ? "Liked post" : "Unliked post", type: "success" });
+      const nextUpvoted = Boolean(action?.active);
+      
+      // If upvote was toggled on, remove downvote
+      if (nextUpvoted) {
+        setIsDownvoted(false);
+      }
+      
+      setIsUpvoted(nextUpvoted);
+      
+      // Refresh the counts
+      if (currentUser) {
+        await fetchPostData(currentUser.id);
+      }
+      
+      setShowToast({ show: true, message: nextUpvoted ? "Đã ủng hộ" : "Đã bỏ bình chọn", type: "success" });
       setTimeout(() => setShowToast({ show: false, message: "", type: "success" }), 3000);
     } catch (error: any) {
-      console.error("Failed to like/unlike post:", error);
+      console.error("Failed to upvote post:", error);
+      console.error("Error details:", {
+        response: error?.response,
+        message: error?.message,
+        status: error?.response?.status,
+        data: error?.response?.data
+      });
       setShowToast({
         show: true,
-        message: `Failed to update like status: ${error?.response?.data?.error?.message || error.message}`,
+        message: `Bình chọn thất bại: ${error?.response?.data?.error?.message || error.message}`,
+        type: "error",
+      });
+      setTimeout(() => setShowToast({ show: false, message: "", type: "error" }), 3000);
+    }
+  };
+
+  const handleDownvote = async () => {
+    if (String(post?.status || "").toLowerCase() === "draft") return;
+    console.log('handleDownvote called', { currentUser, post });
+
+    try {
+      const jwt = getAuthToken();
+
+      if (!jwt) {
+        setShowLoginModal(true);
+        setShowToast({ show: true, message: "Vui lòng đăng nhập để bình chọn", type: "error" });
+        setTimeout(() => setShowToast({ show: false, message: "", type: "error" }), 3000);
+        return;
+      }
+
+      if (!post?.id) {
+        setShowToast({ show: true, message: "Bài viết chưa tải đúng", type: "error" });
+        setTimeout(() => setShowToast({ show: false, message: "", type: "error" }), 3000);
+        return;
+      }
+
+      console.log('Sending downvote request', { postId: post.id });
+      const response = await api.post(
+        `/api/post-actions/toggle`,
+        {
+          data: {
+            targetType: "post",
+            actionType: "downvote",
+            postId: post.id,
+          },
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${jwt}`,
+          },
+        }
+      );
+
+      console.log('Downvote response:', response.data);
+      const action = response.data?.data;
+      const nextDownvoted = Boolean(action?.active);
+      
+      // If downvote was toggled on, remove upvote
+      if (nextDownvoted) {
+        setIsUpvoted(false);
+      }
+      
+      setIsDownvoted(nextDownvoted);
+      
+      // Refresh the counts
+      if (currentUser) {
+        await fetchPostData(currentUser.id);
+      }
+      
+      setShowToast({ show: true, message: nextDownvoted ? "Đã phản đối" : "Đã bỏ bình chọn", type: "success" });
+      setTimeout(() => setShowToast({ show: false, message: "", type: "success" }), 3000);
+    } catch (error: any) {
+      console.error("Failed to downvote post:", error);
+      console.error("Error details:", {
+        response: error?.response,
+        message: error?.message,
+        status: error?.response?.status,
+        data: error?.response?.data
+      });
+      setShowToast({
+        show: true,
+        message: `Bình chọn thất bại: ${error?.response?.data?.error?.message || error.message}`,
         type: "error",
       });
       setTimeout(() => setShowToast({ show: false, message: "", type: "error" }), 3000);
@@ -344,22 +482,18 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
   };
 
   const handleFollow = async () => {
-    if (!currentUser) {
-      setShowToast({ show: true, message: "Please sign in to follow this post", type: "error" });
-      setTimeout(() => setShowToast({ show: false, message: "", type: "error" }), 3000);
-      return;
-    }
-
+    if (String(post?.status || "").toLowerCase() === "draft") return;
     try {
       const jwt = getAuthToken();
       if (!jwt) {
-        setShowToast({ show: true, message: "Please sign in to follow this post", type: "error" });
+        setShowLoginModal(true);
+        setShowToast({ show: true, message: "Vui lòng đăng nhập để theo dõi bài viết", type: "error" });
         setTimeout(() => setShowToast({ show: false, message: "", type: "error" }), 3000);
         return;
       }
 
       if (!post?.id) {
-        setShowToast({ show: true, message: "Post not loaded properly", type: "error" });
+        setShowToast({ show: true, message: "Bài viết chưa tải đúng", type: "error" });
         setTimeout(() => setShowToast({ show: false, message: "", type: "error" }), 3000);
         return;
       }
@@ -384,22 +518,56 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
       const nextFollowed = Boolean(action?.active);
       setIsFollowed(nextFollowed);
       setFollowsCount(action?.count ?? 0);
-      setShowToast({ show: true, message: nextFollowed ? "Followed post" : "Unfollowed post", type: "success" });
+      setShowToast({ show: true, message: nextFollowed ? "Đã theo dõi bài viết" : "Đã bỏ theo dõi bài viết", type: "success" });
       setTimeout(() => setShowToast({ show: false, message: "", type: "success" }), 3000);
     } catch (error: any) {
       console.error("Failed to follow/unfollow post:", error);
       setShowToast({
         show: true,
-        message: `Failed to update follow status: ${error?.response?.data?.error?.message || error.message}`,
+        message: `Cập nhật theo dõi thất bại: ${error?.response?.data?.error?.message || error.message}`,
         type: "error",
       });
       setTimeout(() => setShowToast({ show: false, message: "", type: "error" }), 3000);
     }
   };
 
+  const handlePublishNow = async () => {
+    if (!post) return;
+
+    const jwt = getAuthToken();
+    if (!jwt) {
+      setShowLoginModal(true);
+      setShowToast({ show: true, message: "Please sign in to publish this post", type: "error" });
+      setTimeout(() => setShowToast({ show: false, message: "", type: "error" }), 3000);
+      return;
+    }
+
+    try {
+      setPublishingPost(true);
+      await api.put(
+        `/api/posts/${post.documentId}?status=published`,
+        { data: { status: "published" } },
+        { headers: { Authorization: `Bearer ${jwt}` } }
+      );
+
+      setPost((prev) => (prev ? { ...prev, status: "published" } : prev));
+      setShowToast({ show: true, message: "Post is now published", type: "success" });
+      setTimeout(() => setShowToast({ show: false, message: "", type: "success" }), 3000);
+    } catch (error: any) {
+      setShowToast({
+        show: true,
+        message: `Failed to publish post: ${error?.response?.data?.error?.message || error?.message || "Unknown error"}`,
+        type: "error",
+      });
+      setTimeout(() => setShowToast({ show: false, message: "", type: "error" }), 3000);
+    } finally {
+      setPublishingPost(false);
+    }
+  };
+
   const handleSubmitComment = async () => {
     if (!currentUser) {
-      alert("Please sign in to comment");
+      alert("Vui lòng đăng nhập để bình luận");
       return;
     }
     if (!newComment.trim()) return;
@@ -407,7 +575,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
     try {
       const jwt = getAuthToken();
       if (!jwt) {
-        alert("Please sign in to comment");
+        alert("Vui lòng đăng nhập để bình luận");
         return;
       }
 
@@ -429,7 +597,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
       setNewComment("");
       setShowCommentForm(false);
       setShowFormatInComment(false);
-      setShowToast({ show: true, message: 'Comment posted successfully!', type: 'success' });
+      setShowToast({ show: true, message: 'Đã đăng bình luận thành công!', type: 'success' });
       setTimeout(() => setShowToast({ show: false, message: '', type: 'success' }), 3000);
 
       // Refresh comments
@@ -442,7 +610,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
       console.error("Failed to post comment:", error);
       setShowToast({
         show: true,
-        message: `Failed to post comment: ${error?.response?.data?.error?.message || error?.message || "Unknown error"}`,
+        message: `Đăng bình luận thất bại: ${error?.response?.data?.error?.message || error?.message || "Lỗi không xác định"}`,
         type: 'error',
       });
       setTimeout(() => setShowToast({ show: false, message: '', type: 'error' }), 3000);
@@ -451,7 +619,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
 
   const handleSubmitReply = async (parentId: number) => {
     if (!currentUser) {
-      alert("Please sign in to reply");
+      alert("Vui lòng đăng nhập để trả lời");
       return;
     }
     if (!replyContent.trim()) return;
@@ -459,7 +627,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
     try {
       const jwt = getAuthToken();
       if (!jwt) {
-        alert("Please sign in to reply");
+        alert("Vui lòng đăng nhập để trả lời");
         return;
       }
 
@@ -482,7 +650,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
       setReplyContent("");
       setReplyingTo(null);
       setShowFormatInReply(null);
-      setShowToast({ show: true, message: 'Reply posted successfully!', type: 'success' });
+      setShowToast({ show: true, message: 'Đã đăng trả lời thành công!', type: 'success' });
       setTimeout(() => setShowToast({ show: false, message: '', type: 'success' }), 3000);
 
       // Refresh comments
@@ -495,23 +663,23 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
       console.error("Failed to post reply:", error);
       setShowToast({
         show: true,
-        message: `Failed to post reply: ${error?.response?.data?.error?.message || error?.message || "Unknown error"}`,
+        message: `Đăng trả lời thất bại: ${error?.response?.data?.error?.message || error?.message || "Lỗi không xác định"}`,
         type: 'error',
       });
       setTimeout(() => setShowToast({ show: false, message: '', type: 'error' }), 3000);
     }
   };
 
-  const handleLikeComment = async (commentId: number) => {
+  const handleUpvoteComment = async (commentId: number) => {
     if (!currentUser) {
-      alert("Please sign in to like comments");
+      setShowLoginModal(true);
       return;
     }
 
     try {
       const jwt = getAuthToken();
       if (!jwt) {
-        alert("Please sign in to like comments");
+        setShowLoginModal(true);
         return;
       }
 
@@ -520,7 +688,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
         {
           data: {
             targetType: "comment",
-            actionType: "like",
+            actionType: "upvote",
             commentId,
           },
         },
@@ -532,11 +700,18 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
       );
 
       const action = response.data?.data;
-      setCommentLikeCounts((prev) => ({
-        ...prev,
-        [commentId]: action?.count ?? 0,
-      }));
-      setCommentLikeIds((prev) => {
+      const nextUpvoted = Boolean(action?.active);
+
+      // If upvoted, remove downvote
+      if (nextUpvoted) {
+        setCommentDownvoteIds((prev) => {
+          const next = { ...prev };
+          delete next[commentId];
+          return next;
+        });
+      }
+
+      setCommentUpvoteIds((prev) => {
         const next = { ...prev };
         if (action?.active && action?.documentId) {
           next[commentId] = action.documentId;
@@ -545,9 +720,85 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
         }
         return next;
       });
+
+      // Refresh counts
+      if (currentUser) {
+        await fetchPostData(currentUser.id);
+      }
     } catch (error: any) {
-      console.error("Failed to like/unlike comment:", error);
-      alert(`Failed to update comment like: ${error?.response?.data?.error?.message || error.message}`);
+      console.error("Failed to upvote comment:", error);
+      setShowToast({
+        show: true,
+        message: `Bình chọn thất bại: ${error?.response?.data?.error?.message || error.message}`,
+        type: "error",
+      });
+      setTimeout(() => setShowToast({ show: false, message: "", type: "error" }), 3000);
+    }
+  };
+
+  const handleDownvoteComment = async (commentId: number) => {
+    if (!currentUser) {
+      setShowLoginModal(true);
+      return;
+    }
+
+    try {
+      const jwt = getAuthToken();
+      if (!jwt) {
+        setShowLoginModal(true);
+        return;
+      }
+
+      const response = await api.post(
+        `/api/post-actions/toggle`,
+        {
+          data: {
+            targetType: "comment",
+            actionType: "downvote",
+            commentId,
+          },
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${jwt}`,
+          },
+        }
+      );
+
+      const action = response.data?.data;
+      const nextDownvoted = Boolean(action?.active);
+
+      // If downvoted, remove upvote
+      if (nextDownvoted) {
+        setCommentUpvoteIds((prev) => {
+          const next = { ...prev };
+          delete next[commentId];
+          return next;
+        });
+      }
+
+      setCommentDownvoteIds((prev) => {
+        const next = { ...prev };
+        if (action?.active && action?.documentId) {
+          next[commentId] = action.documentId;
+        } else {
+          delete next[commentId];
+        }
+        return next;
+      });
+
+      // Refresh counts
+      if (currentUser) {
+        await fetchPostData(currentUser.id);
+      }
+    } catch (error: any) {
+      console.error("Failed to downvote comment:", error);
+      setShowToast({
+        show: true,
+        message: `Bình chọn thất bại: ${error?.response?.data?.error?.message || error.message}`,
+        type: "error",
+      });
+      setTimeout(() => setShowToast({ show: false, message: "", type: "error" }), 3000);
     }
   };
 
@@ -620,25 +871,25 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
     if (diffInSeconds < 60) {
-      return "just now";
+      return "vừa xong";
     } else if (diffInSeconds < 3600) {
       const minutes = Math.floor(diffInSeconds / 60);
-      return `${minutes} ${minutes === 1 ? 'minute' : 'minutes'} ago`;
+      return `${minutes} phút trước`;
     } else if (diffInSeconds < 86400) {
       const hours = Math.floor(diffInSeconds / 3600);
-      return `${hours} ${hours === 1 ? 'hour' : 'hours'} ago`;
+      return `${hours} giờ trước`;
     } else if (diffInSeconds < 604800) {
       const days = Math.floor(diffInSeconds / 86400);
-      return `${days} ${days === 1 ? 'day' : 'days'} ago`;
+      return `${days} ngày trước`;
     } else if (diffInSeconds < 2592000) {
       const weeks = Math.floor(diffInSeconds / 604800);
-      return `${weeks} ${weeks === 1 ? 'week' : 'weeks'} ago`;
+      return `${weeks} tuần trước`;
     } else if (diffInSeconds < 31536000) {
       const months = Math.floor(diffInSeconds / 2592000);
-      return `${months} ${months === 1 ? 'month' : 'months'} ago`;
+      return `${months} tháng trước`;
     } else {
       const years = Math.floor(diffInSeconds / 31536000);
-      return `${years} ${years === 1 ? 'year' : 'years'} ago`;
+      return `${years} năm trước`;
     }
   };
 
@@ -674,9 +925,13 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
           <div className="flex-1 min-w-0">
             <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3">
               <div className="flex items-center gap-2 mb-1">
-                <span className="font-medium text-sm text-slate-900 dark:text-white">
-                  {comment.author?.username || "Anonymous"}
-                </span>
+                {comment.author?.username ? (
+                  <Link href={`/user/${encodeURIComponent(comment.author.username)}`} className="font-medium text-sm text-slate-900 dark:text-white hover:underline">
+                    {comment.author.username}
+                  </Link>
+                ) : (
+                  <span className="font-medium text-sm text-slate-900 dark:text-white">Anonymous</span>
+                )}
                 <span className="text-xs text-slate-500">
                   {formatDate(comment.createdAt)}
                 </span>
@@ -686,41 +941,58 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
                 dangerouslySetInnerHTML={{ __html: sanitizeCommentHtml(comment.content) }}
               />
             </div>
-            {!commentsBlocked && (
-              <div className="flex items-center gap-4 mt-2 text-xs text-slate-500">
-                <button
-                  onClick={() => handleLikeComment(comment.id)}
-                  className={`hover:text-red-600 dark:hover:text-red-400 flex items-center gap-1 ${
-                    commentLikeIds[comment.id] ? "text-red-600 dark:text-red-400" : ""
-                  }`}
-                >
-                  <Heart size={12} fill={commentLikeIds[comment.id] ? "currentColor" : "none"} />
-                  Like
-                  {(commentLikeCounts[comment.id] || 0) > 0 && (
-                    <span>({commentLikeCounts[comment.id]})</span>
-                  )}
-                </button>
+            {!commentsBlocked && String(post.status || "").toLowerCase() !== "draft" && (
+              <div className="flex items-center gap-4 mt-2 text-xs">
+                {/* Upvote/Downvote */}
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => handleUpvoteComment(comment.id)}
+                    className={`p-0.5 transition-colors ${
+                      commentUpvoteIds[comment.id]
+                        ? "text-orange-600 dark:text-orange-400"
+                        : "text-slate-500 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400"
+                    }`}
+                    title="Upvote"
+                  >
+                    <ArrowUp size={14} strokeWidth={commentUpvoteIds[comment.id] ? 2.5 : 2} />
+                  </button>
+                  <span className="text-xs font-medium text-slate-700 dark:text-slate-300 min-w-[1.5rem] text-center">
+                    {(commentUpvoteCounts[comment.id] || 0) - (commentDownvoteCounts[comment.id] || 0)}
+                  </span>
+                  <button
+                    onClick={() => handleDownvoteComment(comment.id)}
+                    className={`p-0.5 transition-colors ${
+                      commentDownvoteIds[comment.id]
+                        ? "text-purple-600 dark:text-purple-400"
+                        : "text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400"
+                    }`}
+                    title="Downvote"
+                  >
+                    <ArrowDown size={14} strokeWidth={commentDownvoteIds[comment.id] ? 2.5 : 2} />
+                  </button>
+                </div>
+                
                 <button
                   onClick={() => {
                     setReplyingTo(comment.id);
                   }}
-                  className="hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1"
+                  className="hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 text-slate-500 dark:text-slate-400"
                 >
                   <CornerDownRight size={12} />
-                  Reply
+                  Trả lời
                 </button>
               </div>
             )}
 
             {/* Reply input */}
-            {!commentsBlocked && replyingTo === comment.id && (
+            {!commentsBlocked && String(post.status || "").toLowerCase() !== "draft" && replyingTo === comment.id && (
               <div className="mt-3">
                 {showFormatInReply === comment.id ? (
                   <div className="relative">
                     <TiptapEditor
                       content={replyContent}
                       onChange={(html) => setReplyContent(html)}
-                      placeholder="Write a reply..."
+                      placeholder="Viết trả lời..."
                       className="bg-white dark:bg-slate-900"
                       compact
                     />
@@ -729,7 +1001,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
                         onClick={() => toggleReplyFormat(comment.id)}
                         className="px-2 py-1 text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
                       >
-                        {showFormatInReply === comment.id ? 'Hide format' : 'Show format'}
+                        {showFormatInReply === comment.id ? 'Ẩn định dạng' : 'Hiển thị định dạng'}
                       </button>
                       <button
                         onClick={() => {
@@ -739,14 +1011,14 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
                         }}
                         className="px-2 py-1 text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
                       >
-                        Cancel
+                        Hủy
                       </button>
                       <button
                         onClick={() => handleSubmitReply(comment.id)}
                         disabled={!replyContent.trim()}
                         className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Reply
+                        Trả lời
                       </button>
                     </div>
                   </div>
@@ -755,9 +1027,9 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
                   <textarea
                     value={replyContent}
                     onChange={(e) => setReplyContent(e.target.value)}
-                    placeholder="Write a reply..."
+                    placeholder="Viết trả lời..."
                     rows={2}
-                    className="w-full min-h-[95px] px-3 py-2 pb-14 text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white resize-none"
+                    className="w-full min-h-[180px] px-3 py-2 pb-14 text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white resize-none"
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
@@ -771,7 +1043,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
                       onClick={() => toggleReplyFormat(comment.id)}
                       className="px-2 py-1 text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
                     >
-                      {showFormatInReply === comment.id ? 'Hide format' : 'Show format'}
+                      {showFormatInReply === comment.id ? 'Ẩn định dạng' : 'Hiển thị định dạng'}
                     </button>
                     <button
                       onClick={() => {
@@ -781,14 +1053,14 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
                       }}
                       className="px-2 py-1 text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
                     >
-                      Cancel
+                      Hủy
                     </button>
                     <button
                       onClick={() => handleSubmitReply(comment.id)}
                       disabled={!replyContent.trim()}
                       className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Reply
+                      Trả lời
                     </button>
                   </div>
                 </div>
@@ -812,7 +1084,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
     return (
       <ForumLayout categories={categories}>
         <div className="min-h-[calc(100vh-200px)] flex items-center justify-center">
-          <p className="text-slate-600">Loading...</p>
+          <p className="text-slate-600">Đang tải...</p>
         </div>
       </ForumLayout>
     );
@@ -822,7 +1094,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
     return (
       <ForumLayout categories={categories}>
         <div className="min-h-[calc(100vh-200px)] flex items-center justify-center">
-          <p className="text-slate-600">Post not found</p>
+          <p className="text-slate-600">Không tìm thấy bài viết</p>
         </div>
       </ForumLayout>
     );
@@ -837,9 +1109,9 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
               <div className="w-16 h-16 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-3xl">🚫</span>
               </div>
-              <h2 className="text-2xl font-bold text-red-900 dark:text-red-100 mb-2">Post Hidden</h2>
+              <h2 className="text-2xl font-bold text-red-900 dark:text-red-100 mb-2">Bài viết đã bị ẩn</h2>
               <p className="text-red-700 dark:text-red-300">
-                This post has been hidden by a moderator and is no longer available for public viewing.
+                Bài viết này đã bị kiểm duyệt viên ẩn và không còn hiển thị công khai.
               </p>
             </div>
           </div>
@@ -849,6 +1121,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
 
   // Check if comments are blocked
   const commentsBlocked = post.moderationStatus === 'block-comment';
+  const isDraftPost = String(post.status || "").toLowerCase() === "draft";
 
   return (
     <ForumLayout categories={categories}>
@@ -891,20 +1164,38 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
             {post.title}
           </h1>
 
+          {isDraftPost && (
+            <div className="mb-4 flex flex-wrap items-center gap-2 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-300">
+              <span>Bài viết này đang ở dạng nháp, bạn muốn hiển thị với tất cả mọi người không?</span>
+              <button
+                type="button"
+                onClick={handlePublishNow}
+                disabled={publishingPost}
+                className="rounded bg-amber-600 px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {publishingPost ? "Publishing..." : "Hiển thị bài viết ngay"}
+              </button>
+            </div>
+          )}
+
           {/* Meta */}
           <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400 mb-6 pb-6 border-b border-slate-300 dark:border-slate-800">
             <div className="flex items-center gap-2">
               {renderAvatar(post.author?.username || "Anonymous", post.author?.avatar)}
-              <span className="font-medium text-slate-700 dark:text-slate-300">
-                {post.author?.username || "Anonymous"}
-              </span>
+              {post.author?.username ? (
+                <Link href={`/user/${encodeURIComponent(post.author.username)}`} className="font-medium text-slate-700 dark:text-slate-300 hover:underline">
+                  {post.author.username}
+                </Link>
+              ) : (
+                <span className="font-medium text-slate-700 dark:text-slate-300">Anonymous</span>
+              )}
             </div>
             <span>•</span>
             <span>{formatDate(post.createdAt)}</span>
             {wasUpdated && (
               <>
                 <span>•</span>
-                <span className="text-blue-600 dark:text-blue-400">Updated {formatDate(post.updatedAt)}</span>
+                <span className="text-blue-600 dark:text-blue-400">Cập nhật {formatDate(post.updatedAt)}</span>
               </>
             )}
           </div>
@@ -933,33 +1224,70 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
           )}
 
           {/* Actions */}
-          <div className="flex items-center gap-3 pt-6 border-t border-slate-300 dark:border-slate-800">
+          <div className="flex items-center gap-6 pt-6 border-t border-slate-300 dark:border-slate-800">
+            {/* Upvote/Downvote */}
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                disabled={isDraftPost}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('Upvote button clicked!');
+                  handleUpvote();
+                }}
+                className={`p-1 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                  isUpvoted
+                    ? "text-orange-600 dark:text-orange-400"
+                    : "text-slate-500 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400"
+                }`}
+                title={isDraftPost ? "Draft post" : "Upvote"}
+              >
+                <ArrowUp size={20} strokeWidth={isUpvoted ? 2.5 : 2} />
+              </button>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300 min-w-[2rem] text-center">
+                {upvotesCount - downvotesCount}
+              </span>
+              <button
+                type="button"
+                disabled={isDraftPost}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('Downvote button clicked!');
+                  handleDownvote();
+                }}
+                className={`p-1 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                  isDownvoted
+                    ? "text-purple-600 dark:text-purple-400"
+                    : "text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400"
+                }`}
+                title={isDraftPost ? "Draft post" : "Downvote"}
+              >
+                <ArrowDown size={20} strokeWidth={isDownvoted ? 2.5 : 2} />
+              </button>
+            </div>
+
+            {/* Follow/Bookmark */}
             <button
-              onClick={handleLike}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                isLiked
-                  ? "bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400"
-                  : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
-              }`}
-            >
-              <Heart size={18} fill={isLiked ? "currentColor" : "none"} />
-              <span className="text-sm font-medium">{isLiked ? "Liked" : "Like"}</span>
-              {likesCount > 0 && (
-                <span className="text-xs ml-1">({likesCount})</span>
-              )}
-            </button>
-            <button
-              onClick={handleFollow}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+              type="button"
+              disabled={isDraftPost}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Follow button clicked!');
+                handleFollow();
+              }}
+              className={`flex items-center gap-1.5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                 isFollowed
-                  ? "bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400"
-                  : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                  ? "text-blue-600 dark:text-blue-400"
+                  : "text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400"
               }`}
+              title={isDraftPost ? "Draft post" : (isFollowed ? "Unfollow" : "Follow this post")}
             >
-              <Bookmark size={18} fill={isFollowed ? "currentColor" : "none"} />
-              <span className="text-sm font-medium">{isFollowed ? "Following" : "Follow"}</span>
+              <Bookmark size={20} fill={isFollowed ? "currentColor" : "none"} />
               {followsCount > 0 && (
-                <span className="text-xs ml-1">({followsCount})</span>
+                <span className="text-sm">{followsCount}</span>
               )}
             </button>
           </div>
@@ -969,23 +1297,24 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
         <div className="rounded-xl border border-slate-300 bg-white p-8 dark:border-slate-800 dark:bg-slate-900">
           <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
             <MessageSquare size={20} />
-            Comments ({comments.length})
+            Bình luận ({comments.length})
           </h2>
 
           {/* Comments Blocked Warning */}
-          {commentsBlocked && (
+          {(commentsBlocked || isDraftPost) && (
             <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4 mb-6">
               <p className="text-orange-800 dark:text-orange-200 text-sm font-medium">
-                🔒 Comments have been disabled on this post by a moderator.
+                {isDraftPost ? "Draft post: comments are disabled." : "Comments are disabled on this post by a moderator."}
               </p>
             </div>
           )}
 
           {/* Add Comment */}
-          {!commentsBlocked && !showCommentForm && (
+          {!commentsBlocked && !isDraftPost && !showCommentForm && (
             <div
               onClick={() => {
                 if (!currentUser) {
+                  setLoginIntent('comment');
                   setShowLoginModal(true);
                   return;
                 }
@@ -997,30 +1326,31 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
               className="mb-8 p-3 border-2 border-dashed border-slate-400 dark:border-slate-800 rounded-lg cursor-pointer hover:border-blue-500 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-all group"
             >
               <p className="text-center text-sm text-slate-500 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400">
-                💬 Click to join the discussion...
+                💬 Nhấn để tham gia thảo luận...
               </p>
             </div>
           )}
 
-          {!commentsBlocked && showCommentForm && (
+          {!commentsBlocked && !isDraftPost && showCommentForm && (
             <div className="mb-8">
               <div className="flex gap-3">
-                {renderAvatar(currentUser?.username || "?", undefined)}
+                {renderAvatar(currentUser?.username || "?", currentUser?.avatarUrl ? { id: 0, url: currentUser.avatarUrl } : undefined)}
                 <div className="flex-1">
                   {showFormatInComment ? (
                     <div className="relative">
                       <TiptapEditor
                         content={newComment}
                         onChange={(html) => setNewComment(html)}
-                        placeholder="Write a comment..."
+                        placeholder="Viết bình luận..."
                         className="bg-slate-50 dark:bg-slate-800"
+                        compact
                       />
                       <div className="absolute bottom-2 right-2 flex items-center gap-2">
                         <button
                           onClick={toggleCommentFormat}
                           className="px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
                         >
-                          {showFormatInComment ? 'Hide format' : 'Show format'}
+                          {showFormatInComment ? 'Ẩn định dạng' : 'Hiển thị định dạng'}
                         </button>
                         <button
                           onClick={() => {
@@ -1030,14 +1360,14 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
                           }}
                           className="px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
                         >
-                          Cancel
+                          Hủy
                         </button>
                         <button
                           onClick={handleSubmitComment}
                           disabled={!newComment.trim()}
                           className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          Post Comment
+                          Đăng bình luận
                         </button>
                       </div>
                     </div>
@@ -1046,9 +1376,9 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
                     <textarea
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
-                      placeholder="Write a comment..."
+                      placeholder="Viết bình luận..."
                       rows={3}
-                      className="w-full min-h-[190px] px-4 py-3 pb-14 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white resize-none"
+                      className="w-full min-h-[180px] px-4 py-3 pb-14 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white resize-none"
                       autoFocus
                     />
                     <div className="absolute bottom-3 right-3 flex items-center gap-2">
@@ -1056,7 +1386,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
                         onClick={toggleCommentFormat}
                         className="px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
                       >
-                        {showFormatInComment ? 'Hide format' : 'Show format'}
+                        {showFormatInComment ? 'Ẩn định dạng' : 'Hiển thị định dạng'}
                       </button>
                       <button
                         onClick={() => {
@@ -1066,14 +1396,14 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
                         }}
                         className="px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
                       >
-                        Cancel
+                        Hủy
                       </button>
                       <button
                         onClick={handleSubmitComment}
                         disabled={!newComment.trim()}
                         className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Post Comment
+                        Đăng bình luận
                       </button>
                     </div>
                   </div>
@@ -1087,7 +1417,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
           <div className="space-y-4">
             {comments.length === 0 ? (
               <p className="text-center text-slate-500 dark:text-slate-400 py-8">
-                No comments yet. Be the first to comment!
+                Chưa có bình luận. Hãy là người đầu tiên!
               </p>
             ) : (
               comments.map((comment) => renderComment(comment))
@@ -1097,16 +1427,27 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
           </div>
         <LoginModal
           isOpen={showLoginModal}
-          onClose={() => setShowLoginModal(false)}
-          onLoginSuccess={(user) => {
-            setCurrentUser(user);
+          onClose={() => {
             setShowLoginModal(false);
-            setReplyingTo(null);
-            setReplyContent("");
-            setShowFormatInReply(null);
-            setShowCommentForm(true);
+            setLoginIntent(null);
+          }}
+          onLoginSuccess={(user) => {
+            // Update global auth context (currentUser comes from there)
+            updateAuthContext(user);
+            setShowLoginModal(false);
+            
+            // Only open comment form if user clicked comment box
+            if (loginIntent === 'comment') {
+              setReplyingTo(null);
+              setReplyContent("");
+              setShowFormatInReply(null);
+              setShowCommentForm(true);
+            }
+            
+            setLoginIntent(null);
           }}
         />
     </ForumLayout>
   );
 }
+

@@ -225,7 +225,7 @@ export default function PostEditorScreen({ documentId }: { documentId?: string }
 
         const jwt = getAuthToken();
         if (!jwt) {
-          setError("Please sign in to edit post.");
+          setError("Vui lòng đăng nhập để chỉnh sửa bài viết.");
           setLoading(false);
           return;
         }
@@ -254,7 +254,7 @@ export default function PostEditorScreen({ documentId }: { documentId?: string }
         setCurrentUserId(me?.id ?? null);
 
         if (!post) {
-          setError("Post not found.");
+          setError("Không tìm thấy bài viết.");
           setLoading(false);
           return;
         }
@@ -263,13 +263,13 @@ export default function PostEditorScreen({ documentId }: { documentId?: string }
         setPostModerationStatus(post.moderationStatus ?? null);
 
         if (post.author?.id && post.author.id !== me.id) {
-          setError("You do not have permission to edit this post.");
+          setError("Bạn không có quyền chỉnh sửa bài viết này.");
           setLoading(false);
           return;
         }
 
         if (post.moderationStatus === "delete") {
-          setError("This post was hidden by moderator and cannot be edited.");
+          setError("Bài viết này đã bị kiểm duyệt viên ẩn và không thể chỉnh sửa.");
           setLoading(false);
           return;
         }
@@ -315,28 +315,28 @@ export default function PostEditorScreen({ documentId }: { documentId?: string }
     setError("");
 
     if (!title.trim() || !hasRenderableContent(content)) {
-      setError("Title and content are required.");
-      showToast("Title and content are required.", "error");
+      setError("Tiêu đề và nội dung là bắt buộc.");
+      showToast("Tiêu đề và nội dung là bắt buộc.", "error");
       return;
     }
 
     const jwt = getAuthToken();
     if (!jwt) {
-      setError(`Please sign in to ${isEditMode ? "edit" : "create"} post.`);
-      showToast(`Please sign in to ${isEditMode ? "edit" : "create"} post.`, "error");
+      setError(`Vui lòng đăng nhập để ${isEditMode ? "chỉnh sửa" : "tạo"} bài viết.`);
+      showToast(`Vui lòng đăng nhập để ${isEditMode ? "chỉnh sửa" : "tạo"} bài viết.`, "error");
       return;
     }
 
     if (isEditMode) {
       if (postModerationStatus === "delete") {
-        const message = "This post was hidden by moderator and cannot be edited.";
+        const message = "Bài viết này đã bị kiểm duyệt viên ẩn và không thể chỉnh sửa.";
         setError(message);
         showToast(message, "error");
         return;
       }
 
       if (postOwnerId && currentUserId && postOwnerId !== currentUserId) {
-        const message = "You do not have permission to edit this post.";
+        const message = "Bạn không có quyền chỉnh sửa bài viết này.";
         setError(message);
         showToast(message, "error");
         return;
@@ -459,19 +459,19 @@ export default function PostEditorScreen({ documentId }: { documentId?: string }
         if (post?.documentId) {
           sessionStorage.setItem(
             "post-editor-toast",
-            status === "draft" ? "Draft saved successfully" : "Post created successfully"
+            status === "draft" ? "Đã lưu nháp thành công" : "Đã tạo bài viết thành công"
           );
           router.push(`/profile/posts/${post.documentId}/edit`);
           return;
         }
-        showToast(status === "draft" ? "Draft saved successfully" : "Post created successfully", "success");
+        showToast(status === "draft" ? "Đã lưu nháp thành công" : "Đã tạo bài viết thành công", "success");
         router.push("/profile/posts");
         return;
       }
 
       await runMutationWithRelationFallback("update");
 
-      showToast(status === "draft" ? "Draft saved successfully" : "Post updated successfully", "success");
+      showToast(status === "draft" ? "Đã lưu nháp thành công" : "Đã cập nhật bài viết thành công", "success");
     } catch (err: unknown) {
       const rawMessage = getApiErrorMessage(err) || `Failed to ${isEditMode ? "update" : "create"} post.`;
       setError(rawMessage || `Failed to ${isEditMode ? "update" : "create"} post.`);
@@ -486,7 +486,7 @@ export default function PostEditorScreen({ documentId }: { documentId?: string }
       <div className="pt-5 md:pt-6 max-w-3xl">
         <div className="rounded border border-slate-400 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
           <div className="mb-6 flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{isEditMode ? "Edit Post" : "Create Post"}</h1>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{isEditMode ? "Chỉnh sửa bài" : "Tạo bài viết"}</h1>
             {isEditMode ? (
               <button
                 type="button"
@@ -494,12 +494,12 @@ export default function PostEditorScreen({ documentId }: { documentId?: string }
                 className="inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-sm font-medium transition bg-slate-100 text-slate-900 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
               >
                 <ArrowLeft size={14} />
-                Back to My Posts
+                Về bài viết của tôi
               </button>
             ) : null}
           </div>
 
-          {loading ? <p className="text-slate-600 dark:text-slate-400">Loading...</p> : null}
+          {loading ? <p className="text-slate-600 dark:text-slate-400">Đang tải...</p> : null}
 
           {!loading ? (
             <form
@@ -511,11 +511,11 @@ export default function PostEditorScreen({ documentId }: { documentId?: string }
               className="space-y-4"
             >
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Title</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Tiêu đề</label>
                 <input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Post title"
+                  placeholder="Tiêu đề bài viết"
                   className="w-full px-4 py-2 border border-slate-400 rounded-sm bg-white text-slate-900 focus:outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
                 />
               </div>
@@ -645,11 +645,11 @@ export default function PostEditorScreen({ documentId }: { documentId?: string }
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Content</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Nội dung</label>
                 <TiptapEditor
                   content={content}
                   onChange={setContent}
-                  placeholder="Write your post..."
+                  placeholder="Viết bài của bạn..."
                   className="bg-white dark:bg-slate-900"
                   uploadMode="deferred"
                   onPendingUploadsChange={setPendingUploads}
@@ -725,7 +725,7 @@ export default function PostEditorScreen({ documentId }: { documentId?: string }
                   className="inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-sm font-medium transition bg-slate-100 text-slate-900 hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
                 >
                   <Save size={14} />
-                  {submitting && submitMode === "draft" ? "Saving..." : "Save Draft"}
+                  {submitting && submitMode === "draft" ? "Đang lưu..." : "Lưu nháp"}
                 </button>
                 <button
                   type="submit"
@@ -735,11 +735,11 @@ export default function PostEditorScreen({ documentId }: { documentId?: string }
                   <Send size={14} />
                   {submitting && submitMode === "published"
                     ? isEditMode
-                      ? "Updating..."
-                      : "Creating..."
+                      ? "Đang cập nhật..."
+                      : "Đang tạo..."
                     : isEditMode
-                      ? "Publish Update"
-                      : "Create Post"}
+                      ? "Đăng cập nhật"
+                      : "Tạo bài viết"}
                 </button>
               </div>
             </form>

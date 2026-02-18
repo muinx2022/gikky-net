@@ -10,7 +10,7 @@ interface Post extends PostCardPost {
   status: string;
 }
 
-type FeedSummaryMap = Record<string, { likes?: number; comments?: number }>;
+type FeedSummaryMap = Record<string, { upvotes?: number; downvotes?: number; comments?: number; score?: number }>;
 
 interface Category {
   id: number;
@@ -95,18 +95,23 @@ export default function PopularPage() {
       const summary = summaryMap[String(post.id)];
       return {
         ...post,
-        likesCount: typeof summary?.likes === "number" ? summary.likes : 0,
+        upvotesCount: typeof summary?.upvotes === "number" ? summary.upvotes : 0,
+        downvotesCount: typeof summary?.downvotes === "number" ? summary.downvotes : 0,
         commentsCount: typeof summary?.comments === "number" ? summary.comments : 0,
+        score: typeof summary?.score === "number" ? summary.score : 0,
       };
     });
 
     normalizedPosts.sort((a, b) => {
+      // Sort by score first (which includes engagement bonus)
+      const scoreDiff = (b.score || 0) - (a.score || 0);
+      if (scoreDiff !== 0) return scoreDiff;
+
+      // Then by comments
       const commentsDiff = (b.commentsCount || 0) - (a.commentsCount || 0);
       if (commentsDiff !== 0) return commentsDiff;
 
-      const likesDiff = (b.likesCount || 0) - (a.likesCount || 0);
-      if (likesDiff !== 0) return likesDiff;
-
+      // Finally by date
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 
@@ -133,10 +138,10 @@ export default function PopularPage() {
       const date = new Date(dateString);
       const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-      if (diff < 60) return "just now";
-      if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
-      if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
-      if (diff < 604800) return `${Math.floor(diff / 86400)} days ago`;
+      if (diff < 60) return "vừa xong";
+      if (diff < 3600) return `${Math.floor(diff / 60)} phút trước`;
+      if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`;
+      if (diff < 604800) return `${Math.floor(diff / 86400)} ngày trước`;
 
       return date.toLocaleDateString("en-US", {
         month: "short",
@@ -152,11 +157,11 @@ export default function PopularPage() {
       <div className="space-y-3 pt-5 md:pt-6">
         {loading ? (
           <div className="rounded-sm border border-slate-300 bg-white p-12 text-center dark:border-slate-700/35 dark:bg-slate-900">
-            <div className="text-slate-500 dark:text-slate-400">Loading...</div>
+            <div className="text-slate-500 dark:text-slate-400">Đang tải...</div>
           </div>
         ) : posts.length === 0 ? (
           <div className="rounded-sm border border-slate-300 bg-white p-12 text-center dark:border-slate-700/35 dark:bg-slate-900">
-            <p className="text-slate-500 dark:text-slate-400">No posts yet</p>
+            <p className="text-slate-500 dark:text-slate-400">Chưa có bài viết</p>
           </div>
         ) : (
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white divide-y divide-slate-200">

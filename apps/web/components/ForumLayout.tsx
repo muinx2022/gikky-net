@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, FileText, Heart, LogOut, PlusCircle, Search, Shield, User } from "lucide-react";
+import { ChevronDown, FileText, LogOut, PlusCircle, Search, Shield, User } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import NotificationDropdown from "./NotificationDropdown";
 import LoginModal from "./LoginModal";
@@ -53,8 +53,14 @@ export default function ForumLayout({ children, categories = [] }: ForumLayoutPr
   const pathname = usePathname();
   const homeActive = pathname === "/";
   const popularActive = pathname === "/popular";
+
+  useEffect(() => {
+    setShowMobileSidebar(false);
+  }, [pathname]);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+  const mobileSidebarPanelRef = useRef<HTMLDivElement | null>(null);
   const [footerPages, setFooterPages] = useState<FooterPageLink[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [searchValue, setSearchValue] = useState("");
@@ -104,6 +110,16 @@ export default function ForumLayout({ children, categories = [] }: ForumLayoutPr
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!showMobileSidebar) return;
+    const handleDocClick = (e: MouseEvent) => {
+      if (mobileSidebarPanelRef.current?.contains(e.target as Node)) return;
+      setShowMobileSidebar(false);
+    };
+    document.addEventListener("click", handleDocClick);
+    return () => document.removeEventListener("click", handleDocClick);
+  }, [showMobileSidebar]);
 
   useEffect(() => {
     const q = searchValue.trim();
@@ -159,8 +175,18 @@ export default function ForumLayout({ children, categories = [] }: ForumLayoutPr
       <header className="sticky top-0 z-40 h-16 border-b border-slate-700 bg-[#0b1220]">
         <div className="mx-auto flex h-full w-full max-w-[1340px] items-center justify-between px-4 md:px-8">
           <div className="flex items-center gap-5">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[#3b82f6] text-white">
+            <Link
+              href="/"
+              onClick={(e) => {
+                if (typeof window !== "undefined" && window.innerWidth < 768) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowMobileSidebar((v) => !v);
+                }
+              }}
+              className="flex items-center gap-2"
+            >
+              <div className={`flex h-8 w-8 items-center justify-center rounded-md text-white transition-colors ${showMobileSidebar ? "bg-blue-400" : "bg-[#3b82f6]"}`}>
                 <span className="text-sm font-black">G</span>
               </div>
               <span className="text-3xl font-black tracking-tight text-white">Gikky</span>
@@ -170,7 +196,7 @@ export default function ForumLayout({ children, categories = [] }: ForumLayoutPr
               <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search posts, topics..."
+                placeholder="Tìm kiếm bài viết, chủ đề..."
                 value={searchValue}
                 onFocus={() => setSuggestOpen(true)}
                 onChange={(e) => {
@@ -189,7 +215,7 @@ export default function ForumLayout({ children, categories = [] }: ForumLayoutPr
                 onClick={() => runSearch(searchValue)}
                 className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-md bg-[#2563eb] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#1d4ed8]"
               >
-                Search
+                Tìm
               </button>
               {suggestOpen && (
                 <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 overflow-hidden rounded-xl border border-slate-700 bg-[#0f172a] shadow-xl">
@@ -199,16 +225,16 @@ export default function ForumLayout({ children, categories = [] }: ForumLayoutPr
                         onClick={() => runSearch(searchValue)}
                         className="block w-full border-b border-slate-700 px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-800"
                       >
-                        Search for "{searchValue.trim()}"
+                        Tìm kiếm "{searchValue.trim()}"
                       </button>
                       {searchValue.trim().length < SEARCH_SUGGEST_MIN_CHARS ? (
                         <div className="px-3 py-2 text-sm text-slate-400">
-                          Type at least {SEARCH_SUGGEST_MIN_CHARS} characters for suggestions
+                          Nhập ít nhất {SEARCH_SUGGEST_MIN_CHARS} ký tự để gợi ý
                         </div>
                       ) : searchingSuggest ? (
-                        <div className="px-3 py-2 text-sm text-slate-400">Searching...</div>
+                        <div className="px-3 py-2 text-sm text-slate-400">Đang tìm...</div>
                       ) : suggestions.length === 0 ? (
-                        <div className="px-3 py-2 text-sm text-slate-400">No suggestions</div>
+                        <div className="px-3 py-2 text-sm text-slate-400">Không có gợi ý</div>
                       ) : (
                         suggestions.map((item) => (
                           <button
@@ -223,7 +249,7 @@ export default function ForumLayout({ children, categories = [] }: ForumLayoutPr
                       )}
                     </>
                   ) : (
-                    <div className="px-3 py-2 text-sm text-slate-400">Type to search...</div>
+                    <div className="px-3 py-2 text-sm text-slate-400">Nhập để tìm kiếm...</div>
                   )}
                 </div>
               )}
@@ -240,7 +266,7 @@ export default function ForumLayout({ children, categories = [] }: ForumLayoutPr
                   className="hidden items-center gap-1 rounded-md border border-[#22c55e] bg-[#22c55e] px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-[#16a34a] sm:inline-flex"
                 >
                   <PlusCircle size={14} />
-                  Create
+                  Tạo bài
                 </Link>
 
                 <div className="relative">
@@ -268,15 +294,11 @@ export default function ForumLayout({ children, categories = [] }: ForumLayoutPr
                         <div className="py-1">
                           <Link href="/profile" className="menu-item" onClick={() => setShowUserMenu(false)}>
                             <User size={15} />
-                            Profile
+                            Hồ sơ
                           </Link>
                           <Link href="/profile/posts" className="menu-item" onClick={() => setShowUserMenu(false)}>
                             <FileText size={15} />
-                            My Posts
-                          </Link>
-                          <Link href="/profile/liked" className="menu-item" onClick={() => setShowUserMenu(false)}>
-                            <Heart size={15} />
-                            Saved
+                            Bài viết của tôi
                           </Link>
                         </div>
                         {isModerator && (
@@ -287,7 +309,7 @@ export default function ForumLayout({ children, categories = [] }: ForumLayoutPr
                               onClick={() => setShowUserMenu(false)}
                             >
                               <Shield size={15} />
-                              Moderator Panel
+                              Bảng kiểm duyệt
                             </Link>
                           </div>
                         )}
@@ -300,7 +322,7 @@ export default function ForumLayout({ children, categories = [] }: ForumLayoutPr
                             className="menu-item w-full"
                           >
                             <LogOut size={15} />
-                            Log Out
+                            Đăng xuất
                           </button>
                         </div>
                       </div>
@@ -313,7 +335,7 @@ export default function ForumLayout({ children, categories = [] }: ForumLayoutPr
                 onClick={() => setShowLoginModal(true)}
                 className="rounded-md border border-[#3b82f6] px-4 py-1.5 text-sm font-semibold text-blue-300 transition hover:bg-[#3b82f6] hover:text-white"
               >
-                Log In
+                Đăng nhập
               </button>
             ) : (
               <div className="h-8 w-24 rounded-full bg-slate-700" />
@@ -330,7 +352,7 @@ export default function ForumLayout({ children, categories = [] }: ForumLayoutPr
               homeActive ? "bg-blue-500/20 text-blue-200" : "text-slate-300 hover:bg-slate-800 hover:text-white"
             }`}
           >
-            Home
+            Trang chủ
           </Link>
           <Link
             href="/popular"
@@ -338,12 +360,78 @@ export default function ForumLayout({ children, categories = [] }: ForumLayoutPr
               popularActive ? "bg-blue-500/20 text-blue-200" : "text-slate-300 hover:bg-slate-800 hover:text-white"
             }`}
           >
-            Popular
+            Nổi bật
           </Link>
         </div>
       </div>
 
       <div className="pointer-events-none absolute inset-x-0 top-[108px] z-0 h-[220px] bg-[#0f172a]" />
+
+      {/* Mobile sidebar overlay */}
+      {showMobileSidebar && (
+        <div
+          className="fixed left-0 right-0 bottom-0 top-[108px] z-30 bg-black/30 md:hidden pointer-events-none"
+        >
+          <div
+            ref={mobileSidebarPanelRef}
+            className="absolute right-0 top-0 h-full w-80 max-w-[85vw] overflow-y-auto bg-white p-5 shadow-xl"
+          >
+            {categories.length > 0 && (
+              <>
+                <h3 className="mb-3 text-[18px] font-semibold text-slate-900">Chủ đề đề xuất</h3>
+                <div className="flex flex-wrap gap-2">
+                  {categories.slice(0, 8).map((category) => (
+                    <Link
+                      key={category.id}
+                      href={`/c/${toCategorySlug(category)}`}
+                      onClick={() => setShowMobileSidebar(false)}
+                      className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700 transition hover:bg-slate-200"
+                    >
+                      {formatCategoryTitle(category.name)}
+                    </Link>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {tags.length > 0 && (
+              <>
+                <h3 className="mb-3 mt-5 text-[18px] font-semibold text-slate-900">Thẻ</h3>
+                <div className="flex flex-wrap gap-2">
+                  {tags.map((tag) => (
+                    <Link
+                      key={tag.id}
+                      href={`/tag/${tag.name}`}
+                      onClick={() => setShowMobileSidebar(false)}
+                      className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-2.5 py-0.5 text-xs text-slate-600 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600"
+                    >
+                      <span className="text-slate-400">#</span>{tag.name}
+                    </Link>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {footerPages.length > 0 && (
+              <div className="mt-5 border-t border-slate-200 pt-4">
+                <div className="flex flex-wrap gap-x-3 gap-y-1">
+                  {footerPages.map((page) => (
+                    <Link
+                      key={page.documentId}
+                      href={`/page/${page.slug}`}
+                      onClick={() => setShowMobileSidebar(false)}
+                      className="text-sm font-medium text-slate-600 transition hover:text-blue-600"
+                    >
+                      {page.title}
+                    </Link>
+                  ))}
+                </div>
+                <p className="mt-2 text-xs text-slate-400">@Trading - {currentYear}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <main className="relative z-10 mx-auto w-full max-w-[1340px] px-4 pb-10 pt-6 md:px-8">
         <div className="grid grid-cols-1 gap-6 md:grid-cols-[minmax(0,1fr)_320px]">
@@ -361,7 +449,7 @@ export default function ForumLayout({ children, categories = [] }: ForumLayoutPr
                 <div className="min-h-0 flex-1 overflow-y-auto">
                   {categories.length > 0 && (
                     <>
-                      <h3 className="mb-3 text-[18px] font-semibold text-slate-900">Recommended topics</h3>
+                      <h3 className="mb-3 text-[18px] font-semibold text-slate-900">Chủ đề đề xuất</h3>
                       <div className="flex flex-wrap gap-2">
                         {categories.slice(0, 8).map((category) => (
                           <Link
@@ -378,7 +466,7 @@ export default function ForumLayout({ children, categories = [] }: ForumLayoutPr
 
                   {tags.length > 0 && (
                     <>
-                      <h3 className="mb-3 mt-5 text-[18px] font-semibold text-slate-900">Tags</h3>
+                      <h3 className="mb-3 mt-5 text-[18px] font-semibold text-slate-900">Thẻ</h3>
                       <div className="flex flex-wrap gap-2">
                         {tags.map((tag) => (
                           <Link

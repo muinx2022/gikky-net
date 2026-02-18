@@ -141,12 +141,12 @@ export default function ModeratorPage() {
         headers: { Authorization: `Bearer ${jwt}` }
       });
 
-      showToast("Post approved successfully", "success");
+      showToast("Đã duyệt bài viết thành công", "success");
       await refreshPosts();
       setConfirmModal({ ...confirmModal, isOpen: false });
     } catch (error) {
       console.error("Failed to approve post:", error);
-      showToast("Failed to approve post", "error");
+      showToast("Duyệt bài thất bại", "error");
       setConfirmModal({ ...confirmModal, isOpen: false });
     }
   };
@@ -160,12 +160,12 @@ export default function ModeratorPage() {
         headers: { Authorization: `Bearer ${jwt}` }
       });
 
-      showToast("Comments blocked successfully", "success");
+      showToast("Đã khóa bình luận thành công", "success");
       await refreshPosts();
       setConfirmModal({ ...confirmModal, isOpen: false });
     } catch (error) {
       console.error("Failed to block comments:", error);
-      showToast("Failed to block comments", "error");
+      showToast("Khóa bình luận thất bại", "error");
       setConfirmModal({ ...confirmModal, isOpen: false });
     }
   };
@@ -179,12 +179,12 @@ export default function ModeratorPage() {
         headers: { Authorization: `Bearer ${jwt}` }
       });
 
-      showToast("Post hidden successfully", "success");
+      showToast("Đã ẩn bài viết thành công", "success");
       await refreshPosts();
       setConfirmModal({ ...confirmModal, isOpen: false });
     } catch (error) {
       console.error("Failed to hide post:", error);
-      showToast("Failed to hide post", "error");
+      showToast("Ẩn bài thất bại", "error");
       setConfirmModal({ ...confirmModal, isOpen: false });
     }
   };
@@ -192,9 +192,9 @@ export default function ModeratorPage() {
   const handleApprove = (postId: string, postTitle: string) => {
     setConfirmModal({
       isOpen: true,
-      title: "Approve Post",
-      message: `Are you sure you want to approve "${postTitle}"? This will make it visible and enable comments.`,
-      confirmText: "Approve",
+      title: "Duyệt bài viết",
+      message: `Bạn có chắc muốn duyệt "${postTitle}"? Bài viết sẽ được hiển thị và cho phép bình luận.`,
+      confirmText: "Duyệt",
       confirmColor: "green",
       onConfirm: async () => {
         await executeApprove(postId);
@@ -205,9 +205,9 @@ export default function ModeratorPage() {
   const handleReject = (postId: string, postTitle: string) => {
     setConfirmModal({
       isOpen: true,
-      title: "Block Comments",
-      message: `Are you sure you want to block comments on "${postTitle}"?`,
-      confirmText: "Block Comments",
+      title: "Khóa bình luận",
+      message: `Bạn có chắc muốn khóa bình luận trên "${postTitle}"?`,
+      confirmText: "Khóa bình luận",
       confirmColor: "orange",
       onConfirm: async () => {
         await executeReject(postId);
@@ -218,9 +218,9 @@ export default function ModeratorPage() {
   const handleHide = (postId: string, postTitle: string) => {
     setConfirmModal({
       isOpen: true,
-      title: "Hide Post",
-      message: `Are you sure you want to hide "${postTitle}"? This will remove it from public view.`,
-      confirmText: "Hide Post",
+      title: "Ẩn bài viết",
+      message: `Bạn có chắc muốn ẩn "${postTitle}"? Bài viết sẽ bị xóa khỏi tầm nhìn công khai.`,
+      confirmText: "Ẩn bài",
       confirmColor: "red",
       onConfirm: async () => {
         await executeHide(postId);
@@ -253,7 +253,7 @@ export default function ModeratorPage() {
     if (!moderationStatus) {
       return (
         <span className="px-3 py-1 rounded-lg text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
-          Approved
+          Đã duyệt
         </span>
       );
     }
@@ -262,13 +262,13 @@ export default function ModeratorPage() {
       case "block-comment":
         return (
           <span className="px-3 py-1 rounded-lg text-xs font-medium bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300">
-            Comments Blocked
+            Đã khóa bình luận
           </span>
         );
       case "delete":
         return (
           <span className="px-3 py-1 rounded-lg text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300">
-            Hidden
+            Đã ẩn
           </span>
         );
       default:
@@ -280,7 +280,7 @@ export default function ModeratorPage() {
     return (
       <ForumLayout>
         <div className="container mx-auto px-4 py-8">
-          <p className="text-slate-600 dark:text-slate-400">Loading...</p>
+          <p className="text-slate-600 dark:text-slate-400">Đang tải...</p>
         </div>
       </ForumLayout>
     );
@@ -291,7 +291,7 @@ export default function ModeratorPage() {
       <ForumLayout>
         <div className="container mx-auto px-4 py-8">
           <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6">
-            <p className="text-yellow-800 dark:text-yellow-200">Please sign in to access the moderator panel.</p>
+            <p className="text-yellow-800 dark:text-yellow-200">Vui lòng đăng nhập để truy cập bảng kiểm duyệt.</p>
           </div>
         </div>
       </ForumLayout>
@@ -305,10 +305,10 @@ export default function ModeratorPage() {
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
             <div className="flex items-center gap-3 mb-2">
               <Shield className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-              <h2 className="text-lg font-semibold text-blue-900 dark:text-blue-100">Moderator Panel</h2>
+              <h2 className="text-lg font-semibold text-blue-900 dark:text-blue-100">Bảng kiểm duyệt</h2>
             </div>
             <p className="text-blue-800 dark:text-blue-200">
-              You are not a moderator of any categories yet. Contact an administrator to become a moderator.
+              Bạn chưa là kiểm duyệt viên của bất kỳ danh mục nào. Liên hệ quản trị viên để trở thành kiểm duyệt viên.
             </p>
           </div>
         </div>
@@ -332,10 +332,10 @@ export default function ModeratorPage() {
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             <Shield className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Moderator Panel</h1>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Bảng kiểm duyệt</h1>
           </div>
           <p className="text-slate-600 dark:text-slate-400">
-            Manage posts in your categories
+            Quản lý bài viết trong danh mục của bạn
           </p>
         </div>
 
@@ -345,7 +345,7 @@ export default function ModeratorPage() {
             <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-300 dark:border-slate-800">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                 <FolderTree size={20} />
-                Your Categories
+                Danh mục của bạn
               </h2>
               <div className="space-y-2">
                 {moderatorCategories.map((modCategory) => (
@@ -372,12 +372,12 @@ export default function ModeratorPage() {
             <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-300 dark:border-slate-800">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                 <FileText size={20} />
-                Posts ({posts.length})
+                Bài viết ({posts.length})
               </h2>
 
               {posts.length === 0 ? (
                 <p className="text-slate-500 dark:text-slate-400 text-center py-8">
-                  No posts in this category yet.
+                  Chưa có bài viết trong danh mục này.
                 </p>
               ) : (
                 <div className="space-y-3">
@@ -392,7 +392,7 @@ export default function ModeratorPage() {
                             {post.title}
                           </h3>
                           <div className="flex items-center gap-3 text-sm text-slate-500 dark:text-slate-400">
-                            <span>By {post.author?.username || "Anonymous"}</span>
+                            <span>Bởi {post.author?.username || "Ẩn danh"}</span>
                             <span>•</span>
                             <span>{formatDate(post.createdAt)}</span>
                           </div>
@@ -409,23 +409,23 @@ export default function ModeratorPage() {
                           title="Publish post and enable comments"
                         >
                           <Check size={14} />
-                          Approve
+                          Duyệt
                         </button>
                         <button
                           onClick={() => handleReject(post.documentId, post.title)}
                           className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 hover:bg-orange-100 dark:hover:bg-orange-900/50 transition-colors text-sm"
-                          title="Block comments on this post"
+                          title="Khóa bình luận bài viết này"
                         >
                           <X size={14} />
-                          Block Comments
+                          Khóa bình luận
                         </button>
                         <button
                           onClick={() => handleHide(post.documentId, post.title)}
                           className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors text-sm"
-                          title="Hide post from public (archived)"
+                          title="Ẩn bài viết khỏi công chúng"
                         >
                           <Trash2 size={14} />
-                          Hide Post
+                          Ẩn bài
                         </button>
                       </div>
                     </div>

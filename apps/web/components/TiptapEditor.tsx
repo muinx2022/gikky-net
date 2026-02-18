@@ -103,7 +103,7 @@ const toYouTubeEmbedUrl = (input: string): string | null => {
 export default function TiptapEditor({
   content,
   onChange,
-  placeholder = "Write something...",
+  placeholder = "Viết gì đó...",
   className = "",
   compact = false,
   uploadMode = "immediate",
@@ -208,11 +208,11 @@ export default function TiptapEditor({
     const isVideo = file.type.startsWith("video/");
 
     if (kind === "image" && !isImage) {
-      pushToast("error", "Please choose a valid image file.");
+      pushToast("error", "Vui lòng chọn file ảnh hợp lệ.");
       return;
     }
     if (kind === "video" && !isVideo) {
-      pushToast("error", "Please choose a valid video file.");
+      pushToast("error", "Vui lòng chọn file video hợp lệ.");
       return;
     }
 
@@ -236,7 +236,7 @@ export default function TiptapEditor({
           })
           .run();
       }
-      pushToast("success", "Attached. File will upload when you submit.");
+      pushToast("success", "Đã đính kèm. File sẽ được tải lên khi bạn đăng.");
       if (imageInputRef.current) imageInputRef.current.value = "";
       if (videoInputRef.current) videoInputRef.current.value = "";
       return;
@@ -262,12 +262,12 @@ export default function TiptapEditor({
           .run();
       }
       if (kind === "video" && uploaded.trimmed) {
-        pushToast("success", "Uploaded successfully. Video was auto-trimmed to 180s.");
+        pushToast("success", "Tải lên thành công. Video đã được cắt tự động còn 180 giây.");
       } else {
-        pushToast("success", "Uploaded successfully.");
+        pushToast("success", "Tải lên thành công.");
       }
     } catch (error: any) {
-      const message = error?.message || "Upload failed.";
+      const message = error?.message || "Tải lên thất bại.";
       pushToast("error", message);
     } finally {
       setUploading(false);
@@ -441,7 +441,7 @@ export default function TiptapEditor({
           disabled={uploading}
           className="px-2 py-1 rounded text-xs font-medium text-slate-700 hover:bg-slate-200 disabled:opacity-50"
         >
-          Img
+          Ảnh
         </button>
         <button
           type="button"
@@ -454,11 +454,11 @@ export default function TiptapEditor({
         <button
           type="button"
           onClick={() => {
-            const url = window.prompt("Paste YouTube URL:");
+            const url = window.prompt("Dán URL YouTube:");
             if (!url) return;
             const embedUrl = toYouTubeEmbedUrl(url);
             if (!embedUrl) {
-              pushToast("error", "Invalid YouTube URL.");
+              pushToast("error", "URL YouTube không hợp lệ.");
               return;
             }
             editor
@@ -474,7 +474,7 @@ export default function TiptapEditor({
         >
           YouTube
         </button>
-        {uploading ? <span className="text-xs text-slate-500">Uploading...</span> : null}
+        {uploading ? <span className="text-xs text-slate-500">Đang tải lên...</span> : null}
       </div>
 
       <div className={contentClass} onClick={() => editor.chain().focus().run()}>

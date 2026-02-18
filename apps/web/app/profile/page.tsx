@@ -41,9 +41,14 @@ const statusBadge = (status: string) => {
     draft: "bg-slate-100 text-slate-600",
     archived: "bg-yellow-100 text-yellow-700",
   };
+  const label: Record<string, string> = {
+    published: "đã đăng",
+    draft: "nháp",
+    archived: "lưu trữ",
+  };
   return (
     <span className={`rounded px-2 py-0.5 text-[11px] font-semibold ${map[status] || "bg-slate-100 text-slate-600"}`}>
-      {status}
+      {label[status] || status}
     </span>
   );
 };
@@ -53,7 +58,7 @@ const modBadge = (mod?: "block-comment" | "delete" | null) => {
   const cfg = mod === "delete"
     ? "bg-red-100 text-red-700"
     : "bg-orange-100 text-orange-700";
-  return <span className={`rounded px-2 py-0.5 text-[11px] font-semibold ${cfg}`}>{mod === "delete" ? "hidden" : "block cmt"}</span>;
+  return <span className={`rounded px-2 py-0.5 text-[11px] font-semibold ${cfg}`}>{mod === "delete" ? "đã ẩn" : "khóa bình luận"}</span>;
 };
 
 export default function ProfilePage() {
@@ -92,7 +97,7 @@ export default function ProfilePage() {
       setBio(user.bio || "");
       setUsername(user.username || "");
     } catch {
-      showToast("Failed to load profile", "error");
+      showToast("Không thể tải hồ sơ", "error");
     } finally {
       setLoading(false);
     }
@@ -121,11 +126,11 @@ export default function ProfilePage() {
       const updated = res.data as UserProfile;
       setProfile((prev) => prev ? { ...prev, ...updated } : prev);
       setStoredUser({ id: updated.id, username: updated.username, email: updated.email });
-      showToast("Saved successfully", "success");
+      showToast("Đã lưu thành công", "success");
       setEditingBio(false);
       setEditingUsername(false);
     } catch (err: any) {
-      showToast(err?.response?.data?.error?.message || "Failed to save", "error");
+      showToast(err?.response?.data?.error?.message || "Lưu thất bại", "error");
     } finally {
       setSaving(false);
     }
@@ -162,9 +167,9 @@ export default function ProfilePage() {
       // Update header avatar
       const avatarUrl = media.formats?.thumbnail?.url || media.url;
       updateUser({ avatarUrl: avatarUrl.startsWith("http") ? avatarUrl : getStrapiURL(avatarUrl) });
-      showToast("Avatar updated", "success");
+      showToast("Đã cập nhật ảnh đại diện", "success");
     } catch (err: any) {
-      showToast(err?.message || "Failed to upload avatar", "error");
+      showToast(err?.message || "Tải ảnh đại diện thất bại", "error");
     } finally {
       setUploadingAvatar(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -202,7 +207,7 @@ export default function ProfilePage() {
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
           {isProfileIncomplete && (
             <div className="border-b border-blue-100 bg-blue-50 px-6 py-2.5 text-sm text-blue-700">
-              Complete your profile by adding a bio and avatar.
+              Hoàn thiện hồ sơ bằng cách thêm tiểu sử và ảnh đại diện.
             </div>
           )}
 
@@ -271,7 +276,7 @@ export default function ProfilePage() {
             {/* Bio */}
             <div className="mt-5">
               <div className="mb-1.5 flex items-center gap-2">
-                <span className="text-sm font-semibold text-slate-700">Bio</span>
+                <span className="text-sm font-semibold text-slate-700">Tiểu sử</span>
                 {!editingBio && (
                   <button onClick={() => setEditingBio(true)} className="rounded p-1 text-slate-400 hover:text-slate-600">
                     <Pencil size={13} />
@@ -286,16 +291,16 @@ export default function ProfilePage() {
                     onChange={(e) => setBio(e.target.value)}
                     rows={3}
                     maxLength={300}
-                    placeholder="Tell others a bit about yourself..."
+                    placeholder="Hãy giới thiệu một chút về bản thân..."
                     className="w-full resize-none rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-blue-500 focus:outline-none"
                   />
                   <div className="flex items-center gap-2">
                     <button onClick={() => saveField({ bio })} disabled={saving} className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50">
                       {saving ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
-                      Save
+                      Lưu
                     </button>
                     <button onClick={() => { setEditingBio(false); setBio(profile.bio || ""); }} className="rounded-lg bg-slate-100 px-4 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-200">
-                      Cancel
+                      Hủy
                     </button>
                     <span className="ml-auto text-xs text-slate-400">{bio.length}/300</span>
                   </div>
@@ -305,7 +310,7 @@ export default function ProfilePage() {
                   className={`text-sm leading-relaxed ${profile.bio ? "text-slate-700" : "cursor-pointer italic text-slate-400 hover:text-slate-500"}`}
                   onClick={() => !profile.bio && setEditingBio(true)}
                 >
-                  {profile.bio || "No bio yet. Click to add one."}
+                  {profile.bio || "Chưa có tiểu sử. Nhấn để thêm."}
                 </p>
               )}
             </div>
@@ -315,9 +320,9 @@ export default function ProfilePage() {
         {/* ── My Posts ── */}
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
           <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3.5">
-            <h2 className="font-semibold text-slate-900">My Posts</h2>
+            <h2 className="font-semibold text-slate-900">Bài viết của tôi</h2>
             <Link href="/create-post" className="text-sm font-medium text-blue-600 hover:underline">
-              + New post
+              + Bài viết mới
             </Link>
           </div>
 
@@ -327,8 +332,8 @@ export default function ProfilePage() {
             </div>
           ) : posts.length === 0 ? (
             <div className="px-5 py-10 text-center text-sm text-slate-400">
-              No posts yet.{" "}
-              <Link href="/create-post" className="text-blue-600 hover:underline">Create your first post</Link>
+              Chưa có bài viết.{" "}
+              <Link href="/create-post" className="text-blue-600 hover:underline">Tạo bài viết đầu tiên</Link>
             </div>
           ) : (
             <div className="divide-y divide-slate-100">
