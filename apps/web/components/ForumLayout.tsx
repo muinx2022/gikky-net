@@ -373,7 +373,7 @@ export default function ForumLayout({ children, categories = [] }: ForumLayoutPr
         >
           <div
             ref={mobileSidebarPanelRef}
-            className="absolute right-0 top-0 h-full w-80 max-w-[85vw] overflow-y-auto bg-white p-5 shadow-xl"
+            className="absolute right-0 top-0 h-full w-80 max-w-[85vw] overflow-y-auto bg-white p-5 shadow-xl pointer-events-auto"
           >
             {categories.length > 0 && (
               <>
