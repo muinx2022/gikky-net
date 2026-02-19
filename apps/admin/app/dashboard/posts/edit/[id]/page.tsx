@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { Title, Text, Box, Paper, TextInput, Textarea, Select, Button, Group, LoadingOverlay, MultiSelect, Switch } from '@mantine/core';
-import { ArrowLeft, Save, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, Save, CheckCircle, XCircle, ChevronDown } from 'lucide-react';
 import { notifications } from '@mantine/notifications';
 import { strapiApi } from '../../../../../lib/strapi';
 import { uploadMedia } from '../../../../../lib/upload';
 import { useRouter, useParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import type { PendingMediaItem } from '../../../../../components/TiptapEditor';
+import UserPickerModal, { type PickedUser } from '../../../../../components/UserPickerModal';
 
 const TiptapEditor = dynamic(() => import('../../../../../components/TiptapEditor'), {
   ssr: false,
@@ -32,11 +33,6 @@ interface Tag {
   name: string;
 }
 
-interface AdminUser {
-  id: number;
-  username?: string;
-  email?: string;
-}
 
 const getApiErrorMessage = (error: unknown, fallback: string) => {
   if (typeof error !== 'object' || error === null) return fallback;
@@ -53,7 +49,8 @@ export default function EditPostPage() {
   const [saving, setSaving] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
-  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [selectedAuthor, setSelectedAuthor] = useState<PickedUser | null>(null);
+  const [userPickerOpened, setUserPickerOpened] = useState(false);
   const [pendingMedia, setPendingMedia] = useState<PendingMediaItem[]>([]);
   const [dropdownOpened, setDropdownOpened] = useState(false);
   const [tagDropdownOpened, setTagDropdownOpened] = useState(false);
@@ -66,7 +63,6 @@ export default function EditPostPage() {
     moderationStatus: null as 'block-comment' | 'delete' | null,
     categories: [] as string[],
     tags: [] as string[],
-    authorSelection: 'random',
   });
 
   useEffect(() => {
@@ -74,7 +70,6 @@ export default function EditPostPage() {
       fetchPost();
       fetchCategories();
       fetchTags();
-      fetchUsers();
     }
   }, [postId]);
 
@@ -95,8 +90,14 @@ export default function EditPostPage() {
         moderationStatus: (post.moderationStatus && post.moderationStatus !== '') ? post.moderationStatus : null,
         categories: post.categories?.map((cat: { documentId: string }) => cat.documentId) || [],
         tags: post.tags?.map((tag: { documentId: string }) => tag.documentId) || [],
-        authorSelection: post.author?.id ? String(post.author.id) : 'random',
       });
+      if (post.author?.id) {
+        setSelectedAuthor({
+          id: post.author.id,
+          username: post.author.username || post.author.email || `User #${post.author.id}`,
+          email: post.author.email || '',
+        });
+      }
     } catch (error) {
       console.error('Failed to fetch post:', error);
       notifications.show({
@@ -125,19 +126,6 @@ export default function EditPostPage() {
     }
   };
 
-  const fetchUsers = async () => {
-    try {
-      const response = await strapiApi.get('/api/admin-users', {
-        params: {
-          sort: 'username:asc',
-        },
-      });
-      setUsers(response.data.data || []);
-    } catch (error) {
-      console.error('Failed to fetch users:', error);
-    }
-  };
-
   const fetchTags = async () => {
     try {
       const response = await strapiApi.get('/api/admin-tags', {
@@ -149,17 +137,6 @@ export default function EditPostPage() {
     } catch (error) {
       console.error('Failed to fetch tags:', error);
     }
-  };
-
-  const resolveAuthorUserId = () => {
-    if (users.length === 0) return null;
-    if (formData.authorSelection === 'random') {
-      const randomIndex = Math.floor(Math.random() * users.length);
-      return users[randomIndex]?.id ?? null;
-    }
-
-    const authorId = Number(formData.authorSelection);
-    return Number.isFinite(authorId) && authorId > 0 ? authorId : null;
   };
 
   const uploadDeferredMedia = async (rawContent: string) => {
@@ -206,7 +183,7 @@ export default function EditPostPage() {
 
     try {
       const contentWithUploadedMedia = await uploadDeferredMedia(formData.content);
-      const authorUserId = resolveAuthorUserId();
+      const authorUserId = selectedAuthor?.id ?? null;
 
       const payload: Record<string, unknown> = {
         title: formData.title,
@@ -381,21 +358,29 @@ export default function EditPostPage() {
               />
             </Box>
 
-            <Select
-              label="Author"
-              value={formData.authorSelection}
-              onChange={(value) => setFormData({ ...formData, authorSelection: value || 'random' })}
-              data={[
-                { value: 'random', label: 'Random user' },
-                ...users.map((user) => ({
-                  value: String(user.id),
-                  label: user.username || user.email || `User #${user.id}`,
-                })),
-              ]}
-              mb="md"
-              styles={{
-                label: { fontWeight: 600, color: '#334155', marginBottom: 8 },
-              }}
+            <Box mb="md">
+              <Text fw={600} c="#334155" size="sm" mb={8}>Author</Text>
+              <Button
+                fullWidth
+                variant="default"
+                onClick={() => setUserPickerOpened(true)}
+                justify="flex-start"
+                rightSection={<ChevronDown size={14} color="#94a3b8" />}
+                styles={{
+                  root: {
+                    color: selectedAuthor ? '#334155' : '#adb5bd',
+                    fontWeight: selectedAuthor ? 500 : 400,
+                  },
+                }}
+              >
+                {selectedAuthor ? selectedAuthor.username : 'Select user...'}
+              </Button>
+            </Box>
+
+            <UserPickerModal
+              opened={userPickerOpened}
+              onClose={() => setUserPickerOpened(false)}
+              onSelect={(user) => setSelectedAuthor(user)}
             />
 
             <Select

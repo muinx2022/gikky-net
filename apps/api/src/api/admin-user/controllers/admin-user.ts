@@ -34,16 +34,34 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
   async find(ctx) {
     const query = (ctx.query || {}) as any;
 
+    // Build where clause from filters + optional full-text search param
+    let where: any = query.filters || {};
+    const searchTerm = typeof query.search === 'string' ? query.search.trim() : '';
+    if (searchTerm) {
+      where = {
+        ...where,
+        $or: [
+          { username: { $containsi: searchTerm } },
+          { email: { $containsi: searchTerm } },
+        ],
+      };
+    }
+
+    const pageSize = query?.pagination?.pageSize ? Number(query.pagination.pageSize) : undefined;
+    const limit = query?.pagination?.limit ? Number(query.pagination.limit) : pageSize;
+    const offset =
+      query?.pagination?.start != null
+        ? Number(query.pagination.start)
+        : query?.pagination?.page && pageSize
+          ? (Number(query.pagination.page) - 1) * pageSize
+          : undefined;
+
     const users = await strapi.query('plugin::users-permissions.user').findMany({
-      where: query.filters || {},
+      where,
       populate: query.populate || ['role'],
       orderBy: normalizeSort(query.sort),
-      limit: query?.pagination?.limit,
-      offset:
-        query?.pagination?.start ||
-        (query?.pagination?.page && query?.pagination?.pageSize
-          ? (Number(query.pagination.page) - 1) * Number(query.pagination.pageSize)
-          : undefined),
+      limit,
+      offset,
     });
 
     ctx.body = {
