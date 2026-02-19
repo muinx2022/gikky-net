@@ -27,6 +27,7 @@ interface Tag {
 interface ForumLayoutProps {
   children: React.ReactNode;
   categories?: Category[];
+  activeNav?: "home" | "popular" | "trading" | "journal";
 }
 
 interface FooterPageLink {
@@ -48,13 +49,13 @@ const SUBNAV_HEIGHT = 44;
 const SEARCH_SUGGEST_MIN_CHARS = 3;
 const SEARCH_SUGGEST_DEBOUNCE_MS = 420;
 
-export default function ForumLayout({ children, categories = [] }: ForumLayoutProps) {
+export default function ForumLayout({ children, categories = [], activeNav }: ForumLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const homeActive = pathname === "/";
-  const popularActive = pathname === "/popular";
-  const tradingActive = pathname === "/trading";
-  const journalActive = pathname.startsWith("/journal");
+  const homeActive = activeNav ? activeNav === "home" : pathname === "/";
+  const popularActive = activeNav ? activeNav === "popular" : pathname === "/popular";
+  const tradingActive = activeNav ? activeNav === "trading" : pathname === "/trading";
+  const journalActive = activeNav ? activeNav === "journal" : pathname.startsWith("/journal");
 
   useEffect(() => {
     setShowMobileSidebar(false);

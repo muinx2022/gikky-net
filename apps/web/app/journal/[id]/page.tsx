@@ -151,9 +151,10 @@ export default function TradeDetailPage() {
 
   const isLong = trade.direction === "long";
   const pnlPositive = (trade.pnl ?? 0) >= 0;
+  const activeNav = isOwner ? "journal" : "trading";
 
   return (
-    <ForumLayout categories={categories}>
+    <ForumLayout categories={categories} activeNav={activeNav as "journal" | "trading"}>
       <div className="mx-auto max-w-3xl space-y-4">
         <div className="rounded-2xl border border-slate-200 bg-white p-5">
           <div className="flex items-center justify-between gap-3">
