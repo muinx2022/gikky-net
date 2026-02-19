@@ -1,6 +1,6 @@
 FROM node:20-alpine AS builder
 
-RUN apk add --no-cache libc6-compat
+RUN apk add --no-cache libc6-compat icu-libs icu-data-full tzdata
 
 WORKDIR /app
 
@@ -40,6 +40,9 @@ ENV NEXT_PUBLIC_CUSTOM_UPLOAD_ENDPOINT=${NEXT_PUBLIC_CUSTOM_UPLOAD_ENDPOINT}
 ENV NEXT_PUBLIC_LEGACY_UPLOAD_ENDPOINT=${NEXT_PUBLIC_LEGACY_UPLOAD_ENDPOINT}
 ENV AUTH_SECRET=${AUTH_SECRET}
 ENV NEXTAUTH_URL=${NEXTAUTH_URL}
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+ENV TZ=Asia/Ho_Chi_Minh
 
 # Build Next.js
 WORKDIR /app/apps/web
@@ -48,13 +51,16 @@ RUN npm run build
 # --- Runner ---
 FROM node:20-alpine AS runner
 
-RUN apk add --no-cache libc6-compat
+RUN apk add --no-cache libc6-compat icu-libs icu-data-full tzdata
 
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+ENV TZ=Asia/Ho_Chi_Minh
 
 # Copy node_modules (includes workspace symlinks to packages/)
 COPY --from=builder /app/node_modules ./node_modules

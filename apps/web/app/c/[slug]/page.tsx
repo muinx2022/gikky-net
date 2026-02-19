@@ -361,16 +361,15 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
     const date = new Date(dateString);
     const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-    if (diff < 60) return "vá»«a xong";
-    if (diff < 3600) return `${Math.floor(diff / 60)} phÃºt trÆ°á»›c`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)} giá» trÆ°á»›c`;
-    if (diff < 604800) return `${Math.floor(diff / 86400)} ngÃ y trÆ°á»›c`;
+    if (diff < 60) return "vừa xong";
+    if (diff < 3600) return `${Math.floor(diff / 60)} phút trước`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`;
+    if (diff < 604800) return `${Math.floor(diff / 86400)} ngày trước`;
 
-    return date.toLocaleDateString("vi-VN", {
-      month: "short",
-      day: "numeric",
-      year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
-    });
+    const dd = String(date.getDate()).padStart(2, "0");
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const yyyy = String(date.getFullYear());
+    return date.getFullYear() === now.getFullYear() ? `${dd}/${mm}` : `${dd}/${mm}/${yyyy}`;
   };
 
   return (
