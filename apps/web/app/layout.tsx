@@ -1,17 +1,15 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
+import { Be_Vietnam_Pro } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "next-auth/react";
 import { AuthProvider } from "../components/AuthContext";
 import SystemThemeSync from "../components/SystemThemeSync";
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
+const beVietnamPro = Be_Vietnam_Pro({
+  weight: ["300", "400", "500", "600", "700"],
+  subsets: ["latin", "vietnamese"],
+  variable: "--font-sans",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -41,7 +39,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi" style={{ overflowY: "scroll" }} suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className={`${beVietnamPro.variable} antialiased`}>
         <SystemThemeSync />
         <SessionProvider>
           <AuthProvider>{children}</AuthProvider>

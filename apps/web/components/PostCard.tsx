@@ -36,12 +36,8 @@ export interface PostCardPost {
 type ContentPreview =
   | { type: "video"; src: string }
   | { type: "image"; src: string; alt: string }
-  | { type: "rich"; html: string }
   | { type: "text"; text: string }
   | null;
-
-const hasRichFormatting = (content: string) =>
-  /<(h[1-6]|ul|ol|li|blockquote|pre|code|strong|b|em|i|u|s|a|table|iframe)\b/i.test(content);
 
 const decodeEntities = (str: string): string => {
   if (typeof document === "undefined") {
@@ -70,10 +66,6 @@ function getContentPreview(content?: string): ContentPreview {
     if (src) return { type: "image", src: decodeEntities(src), alt: altMatch?.[1] ?? "" };
   }
 
-  if (hasRichFormatting(content)) {
-    return { type: "rich", html: content };
-  }
-
   const plain = content
     .replace(/<[^>]+>/g, " ")
     .replace(/&nbsp;/gi, " ")
@@ -86,7 +78,7 @@ function getContentPreview(content?: string): ContentPreview {
   if (!plain) return null;
 
   const words = plain.split(/\s+/);
-  const trimmed = words.slice(0, 36).join(" ") + (words.length > 36 ? "..." : "");
+  const trimmed = words.slice(0, 150).join(" ") + (words.length > 150 ? "..." : "");
   return { type: "text", text: trimmed };
 }
 
@@ -200,12 +192,6 @@ export default function PostCard({ post, formatDate, formatCategoryTitle, onShar
         )}
 
         {preview?.type === "text" && <p className="mb-3 text-base leading-relaxed text-slate-700">{preview.text}</p>}
-        {preview?.type === "rich" && (
-          <div
-            className="prose mb-3 max-w-none text-[15px] leading-7 text-slate-700"
-            dangerouslySetInnerHTML={{ __html: preview.html }}
-          />
-        )}
 
         {post.categories && post.categories.length > 0 && (
           <div className="mb-3 flex flex-wrap gap-2">
