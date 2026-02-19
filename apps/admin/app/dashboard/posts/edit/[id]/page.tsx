@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Title, Text, Box, Paper, TextInput, Textarea, Select, Button, Group, LoadingOverlay, MultiSelect, Switch } from '@mantine/core';
 import { ArrowLeft, Save, CheckCircle, XCircle, ChevronDown } from 'lucide-react';
 import { notifications } from '@mantine/notifications';
@@ -53,7 +53,7 @@ export default function EditPostPage() {
   const [userPickerOpened, setUserPickerOpened] = useState(false);
   const [pendingMedia, setPendingMedia] = useState<PendingMediaItem[]>([]);
   const [dropdownOpened, setDropdownOpened] = useState(false);
-  const [tagDropdownOpened, setTagDropdownOpened] = useState(false);
+  const [tagSearchValue, setTagSearchValue] = useState('');
   const [formData, setFormData] = useState({
     title: '',
     slug: '',
@@ -175,6 +175,36 @@ export default function EditPostPage() {
       .forEach((cat) => addCategoryWithChildren(cat));
 
     return options;
+  };
+
+  const tagOptions = useMemo(() => {
+    const options = tags.map((tag) => ({ value: tag.documentId, label: tag.name }));
+    const trimmed = tagSearchValue.trim();
+    if (trimmed && !tags.some((t) => t.name.toLowerCase() === trimmed.toLowerCase())) {
+      return [{ value: `__create__:${trimmed}`, label: `+ Tạo tag "${trimmed}"` }, ...options];
+    }
+    return options;
+  }, [tags, tagSearchValue]);
+
+  const handleTagsChange = async (values: string[]) => {
+    const toCreate = values.find((v) => v.startsWith('__create__:'));
+    if (!toCreate) {
+      setFormData((prev) => ({ ...prev, tags: values }));
+      setTagSearchValue('');
+      return;
+    }
+    const name = toCreate.replace('__create__:', '');
+    const existingValues = values.filter((v) => !v.startsWith('__create__:'));
+    try {
+      const res = await strapiApi.post('/api/admin-tags', { data: { name } });
+      const newTag: Tag = res.data.data;
+      setTags((prev) => [...prev, newTag]);
+      setFormData((prev) => ({ ...prev, tags: [...existingValues, newTag.documentId] }));
+    } catch (error) {
+      notifications.show({ title: 'Error', message: `Failed to create tag "${name}"`, color: 'red', icon: <XCircle size={18} /> });
+      setFormData((prev) => ({ ...prev, tags: existingValues }));
+    }
+    setTagSearchValue('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -309,24 +339,17 @@ export default function EditPostPage() {
 
             <MultiSelect
               label="Tags"
-              placeholder="Select tags"
+              placeholder="Chọn hoặc tạo tag..."
               value={formData.tags}
-              onChange={(value) => {
-                setFormData({ ...formData, tags: value });
-                setTagDropdownOpened(false);
-              }}
-              data={tags.map((tag) => ({
-                value: tag.documentId,
-                label: tag.name,
-              }))}
+              onChange={handleTagsChange}
+              data={tagOptions}
+              searchValue={tagSearchValue}
+              onSearchChange={setTagSearchValue}
               mb="md"
               searchable
               comboboxProps={{
                 transitionProps: { duration: 200, transition: 'pop' },
               }}
-              onDropdownOpen={() => setTagDropdownOpened(true)}
-              onDropdownClose={() => setTagDropdownOpened(false)}
-              dropdownOpened={tagDropdownOpened}
               styles={{
                 label: { fontWeight: 600, color: '#334155', marginBottom: 8 },
               }}
