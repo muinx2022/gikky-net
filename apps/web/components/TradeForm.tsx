@@ -1,7 +1,10 @@
 ﻿"use client";
 
 import { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { Calendar, TrendingDown, TrendingUp, X } from "lucide-react";
+
+const TiptapEditor = dynamic(() => import("./TiptapEditor"), { ssr: false });
 
 interface TradeFormProps {
   initialData?: Record<string, any>;
@@ -162,7 +165,8 @@ export default function TradeForm({ initialData, onSubmit, submitLabel = "Lưu t
     if (pnl !== "") payload.pnl = parseDecimal(pnl);
     if (strategy.trim()) payload.strategy = strategy.trim();
     if (setup.trim()) payload.setup = setup.trim();
-    if (notes.trim()) payload.notes = notes.trim();
+    const notesText = notes.replace(/<[^>]+>/g, "").trim();
+    if (notesText) payload.notes = notes;
     if (emotion) payload.emotion = emotion;
 
     setSubmitting(true);
@@ -303,7 +307,14 @@ export default function TradeForm({ initialData, onSubmit, submitLabel = "Lưu t
 
       <div>
         <label className="mb-1.5 block text-sm font-medium text-slate-700">Ghi chú</label>
-        <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} placeholder="Suy nghĩ, bài học, nhận xét sau trade..." className={`${inputCls} resize-none`} />
+        <div className="rounded-lg border border-slate-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100">
+          <TiptapEditor
+            content={notes}
+            onChange={setNotes}
+            placeholder="Suy nghĩ, bài học, nhận xét sau trade..."
+            compact
+          />
+        </div>
       </div>
 
       <div>
