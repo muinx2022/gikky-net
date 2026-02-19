@@ -75,8 +75,6 @@ export default function ForumPage() {
     const response = await api.get("/api/posts", {
       params: {
         sort: "createdAt:desc",
-        status: "published",
-        filters: { status: { $eq: "published" } },
         populate: {
           categories: true,
           tags: true,
