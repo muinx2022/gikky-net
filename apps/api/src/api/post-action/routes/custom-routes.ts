@@ -42,6 +42,7 @@ export default {
       path: '/post-actions/comment-summary',
       handler: 'post-action.commentSummary',
       config: {
+        auth: false,
         policies: [],
         middlewares: [],
       },
