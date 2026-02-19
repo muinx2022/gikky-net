@@ -1,8 +1,9 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { signOut, useSession } from "next-auth/react";
 import { api, getStrapiURL } from "../lib/api";
-import { clearAuthSession, getAuthToken, getStoredUser, setStoredUser } from "../lib/auth-storage";
+import { clearAuthSession, getAuthToken, getStoredUser, setAuthSession, setStoredUser } from "../lib/auth-storage";
 
 interface UserData {
   id: number;
@@ -37,6 +38,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<UserData | null>(null);
   const [isModerator, setIsModerator] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const { data: nextAuthSession, status: sessionStatus } = useSession();
+  const verificationDone = useRef(false);
 
   const checkModeratorStatus = async () => {
     try {
@@ -53,15 +56,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Step 1: Immediately restore from localStorage (fast, synchronous)
   useEffect(() => {
     const jwt = getAuthToken();
     const storedUser = getStoredUser<UserData>();
-
     if (storedUser && jwt) {
       setCurrentUser(storedUser);
     }
     setHydrated(true);
+  }, []);
 
+  // Step 2: Verify JWT once NextAuth session status is resolved
+  useEffect(() => {
+    if (sessionStatus === "loading") return;
+    if (verificationDone.current) return;
+    verificationDone.current = true;
+
+    const localJwt = getAuthToken();
+    const sessionJwt = (nextAuthSession as any)?.strapiJwt;
+    const sessionUser = (nextAuthSession as any)?.strapiUser;
+
+    // If NextAuth has a Strapi JWT but localStorage doesn't, sync it
+    if (sessionJwt && !localJwt) {
+      setAuthSession(sessionJwt, sessionUser || {});
+    }
+
+    const jwt = localJwt || sessionJwt;
     if (!jwt) return;
 
     api.get("/api/profile/me", { headers: { Authorization: `Bearer ${jwt}` } })
@@ -77,14 +97,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         checkModeratorStatus();
       })
       .catch((error: any) => {
-        const status = Number(error?.response?.status);
-        if (status === 401 || status === 403) {
-          clearAuthSession();
-          setCurrentUser(null);
-          setIsModerator(false);
+        const httpStatus = Number(error?.response?.status);
+        if (httpStatus === 401 || httpStatus === 403) {
+          // Only destroy the session if there is no active Google OAuth session.
+          // When NextAuth shows "authenticated", the user logged in via Google and their
+          // NextAuth cookie is still valid. The 401 from Strapi can happen in production
+          // due to config differences (CORS, internal vs external URL, etc.) and should
+          // not forcibly log the user out. They will be prompted when they take an action.
+          if (sessionStatus !== "authenticated") {
+            clearAuthSession();
+            setCurrentUser(null);
+            setIsModerator(false);
+          }
         }
       });
-  }, []);
+  }, [sessionStatus, nextAuthSession]);
 
   const handleLoginSuccess = (user: UserData) => {
     setCurrentUser(user);
@@ -95,6 +122,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     clearAuthSession();
     setCurrentUser(null);
     setIsModerator(false);
+    // Also clear the NextAuth session cookie so F5 doesn't re-authenticate via Google
+    signOut({ redirect: false }).catch(() => {});
   };
 
   const updateUser = (partial: Partial<UserData>) => {
