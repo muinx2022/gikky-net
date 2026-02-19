@@ -163,7 +163,7 @@ export default function PopularPage() {
             <p className="text-slate-500 dark:text-slate-400">Chưa có bài viết</p>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white divide-y divide-slate-200">
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white divide-y divide-slate-200 dark:border-slate-700/35 dark:bg-slate-900 dark:divide-slate-700/35">
             {posts.map((post) => (
               <PostCard
                 key={post.id}

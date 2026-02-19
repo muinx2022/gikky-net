@@ -404,18 +404,18 @@ export default function ForumLayout({ children, categories = [], activeNav }: Fo
         >
           <div
             ref={mobileSidebarPanelRef}
-            className="absolute right-0 top-0 h-full w-80 max-w-[85vw] overflow-y-auto bg-white p-5 shadow-xl pointer-events-auto"
+            className="absolute right-0 top-0 h-full w-80 max-w-[85vw] overflow-y-auto bg-white p-5 shadow-xl pointer-events-auto dark:bg-slate-900"
           >
             {categories.length > 0 && (
               <>
-                <h3 className="mb-3 text-[18px] font-semibold text-slate-900">Chủ đề đề xuất</h3>
+                <h3 className="mb-3 text-[18px] font-semibold text-slate-900 dark:text-slate-100">Chủ đề đề xuất</h3>
                 <div className="flex flex-wrap gap-2">
                   {categories.slice(0, 8).map((category) => (
                     <Link
                       key={category.id}
                       href={`/c/${toCategorySlug(category)}`}
                       onClick={() => setShowMobileSidebar(false)}
-                      className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700 transition hover:bg-slate-200"
+                      className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                     >
                       {formatCategoryTitle(category.name)}
                     </Link>
@@ -426,16 +426,16 @@ export default function ForumLayout({ children, categories = [], activeNav }: Fo
 
             {tags.length > 0 && (
               <>
-                <h3 className="mb-3 mt-5 text-[18px] font-semibold text-slate-900">Thẻ</h3>
+                <h3 className="mb-3 mt-5 text-[18px] font-semibold text-slate-900 dark:text-slate-100">Thẻ</h3>
                 <div className="flex flex-wrap gap-2">
                   {tags.map((tag) => (
                     <Link
                       key={tag.id}
                       href={`/tag/${tag.name}`}
                       onClick={() => setShowMobileSidebar(false)}
-                      className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-2.5 py-0.5 text-xs text-slate-600 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600"
+                      className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-2.5 py-0.5 text-xs text-slate-600 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600 dark:border-slate-700/35 dark:text-slate-400 dark:hover:border-blue-500/40 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
                     >
-                      <span className="text-slate-400">#</span>{tag.name}
+                      <span className="text-slate-400 dark:text-slate-500">#</span>{tag.name}
                     </Link>
                   ))}
                 </div>
@@ -443,14 +443,14 @@ export default function ForumLayout({ children, categories = [], activeNav }: Fo
             )}
 
             {footerPages.length > 0 && (
-              <div className="mt-5 border-t border-slate-200 pt-4">
+              <div className="mt-5 border-t border-slate-200 pt-4 dark:border-slate-700/35">
                 <div className="flex flex-wrap gap-x-3 gap-y-1">
                   {footerPages.map((page) => (
                     <Link
                       key={page.documentId}
                       href={`/page/${page.slug}`}
                       onClick={() => setShowMobileSidebar(false)}
-                      className="text-sm font-medium text-slate-600 transition hover:text-blue-600"
+                      className="text-sm font-medium text-slate-600 transition hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
                     >
                       {page.title}
                     </Link>
@@ -475,17 +475,17 @@ export default function ForumLayout({ children, categories = [], activeNav }: Fo
                 top: `${HEADER_HEIGHT + SUBNAV_HEIGHT + 8}px`,
               }}
             >
-              <section className="flex h-full flex-col rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_1px_1px_rgba(15,23,42,0.04)]">
+              <section className="flex h-full flex-col rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_1px_1px_rgba(15,23,42,0.04)] dark:border-slate-700/35 dark:bg-slate-900">
                 <div className="min-h-0 flex-1 overflow-y-auto">
                   {categories.length > 0 && (
                     <>
-                      <h3 className="mb-3 text-[18px] font-semibold text-slate-900">Chủ đề đề xuất</h3>
+                      <h3 className="mb-3 text-[18px] font-semibold text-slate-900 dark:text-slate-100">Chủ đề đề xuất</h3>
                       <div className="flex flex-wrap gap-2">
                         {categories.slice(0, 8).map((category) => (
                           <Link
                             key={category.id}
                             href={`/c/${toCategorySlug(category)}`}
-                            className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700 transition hover:bg-slate-200"
+                            className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                           >
                             {formatCategoryTitle(category.name)}
                           </Link>
@@ -496,15 +496,15 @@ export default function ForumLayout({ children, categories = [], activeNav }: Fo
 
                   {tags.length > 0 && (
                     <>
-                      <h3 className="mb-3 mt-5 text-[18px] font-semibold text-slate-900">Thẻ</h3>
+                      <h3 className="mb-3 mt-5 text-[18px] font-semibold text-slate-900 dark:text-slate-100">Thẻ</h3>
                       <div className="flex flex-wrap gap-2">
                         {tags.map((tag) => (
                           <Link
                             key={tag.id}
                             href={`/tag/${tag.name}`}
-                            className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-2.5 py-0.5 text-xs text-slate-600 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600"
+                            className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-2.5 py-0.5 text-xs text-slate-600 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600 dark:border-slate-700/35 dark:text-slate-400 dark:hover:border-blue-500/40 dark:hover:bg-blue-900/20 dark:hover:text-blue-400"
                           >
-                            <span className="text-slate-400">#</span>{tag.name}
+                            <span className="text-slate-400 dark:text-slate-500">#</span>{tag.name}
                           </Link>
                         ))}
                       </div>
@@ -512,13 +512,13 @@ export default function ForumLayout({ children, categories = [], activeNav }: Fo
                   )}
                 </div>
 
-                <div className="mt-4 border-t border-slate-200 pt-3">
+                <div className="mt-4 border-t border-slate-200 pt-3 dark:border-slate-700/35">
                   <div className="flex flex-wrap gap-x-3 gap-y-1">
                   {footerPages.map((page) => (
                     <Link
                       key={page.documentId}
                       href={`/page/${page.slug}`}
-                      className="text-sm font-medium text-slate-600 transition hover:text-blue-600"
+                      className="text-sm font-medium text-slate-600 transition hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
                     >
                       {page.title}
                     </Link>

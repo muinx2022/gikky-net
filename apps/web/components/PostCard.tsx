@@ -126,11 +126,11 @@ export default function PostCard({ post, formatDate, formatCategoryTitle, onShar
 
   return (
     <article
-      className="px-5 py-4 transition hover:bg-slate-50 cursor-pointer"
+      className="px-5 py-4 transition hover:bg-slate-50 cursor-pointer dark:hover:bg-slate-800/50"
       onClick={() => router.push(postUrl)}
     >
         <div className="mb-2 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 text-sm text-slate-600">
+          <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
             {(() => {
               const av = post.author?.avatar;
               const rawUrl = av?.formats?.thumbnail?.url || av?.url;
@@ -138,7 +138,7 @@ export default function PostCard({ post, formatDate, formatCategoryTitle, onShar
               const authorUsername = post.author?.username;
               const inner = (
                 <>
-                  <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-blue-100 text-[10px] font-semibold text-blue-700">
+                  <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-blue-100 text-[10px] font-semibold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
                     {avatarUrl
                       ? <img src={avatarUrl} alt={authorUsername || ""} className="h-full w-full object-cover" />
                       : (authorUsername || "?").charAt(0).toUpperCase()}
@@ -159,10 +159,10 @@ export default function PostCard({ post, formatDate, formatCategoryTitle, onShar
               );
             })()}
           </div>
-          <span className="text-sm text-slate-400">{formatDate(post.createdAt)}</span>
+          <span className="text-sm text-slate-400 dark:text-slate-500">{formatDate(post.createdAt)}</span>
         </div>
 
-        <h2 className="mb-2 text-lg font-semibold leading-tight text-slate-900 md:text-xl">
+        <h2 className="mb-2 text-lg font-semibold leading-tight text-slate-900 md:text-xl dark:text-slate-100">
           <Link href={postUrl} onClick={(e) => e.stopPropagation()} className="hover:underline">{post.title}</Link>
         </h2>
 
@@ -191,7 +191,7 @@ export default function PostCard({ post, formatDate, formatCategoryTitle, onShar
           />
         )}
 
-        {preview?.type === "text" && <p className="mb-3 text-base leading-relaxed text-slate-700">{preview.text}</p>}
+        {preview?.type === "text" && <p className="mb-3 text-base leading-relaxed text-slate-700 dark:text-slate-300">{preview.text}</p>}
 
         {post.categories && post.categories.length > 0 && (
           <div className="mb-3 flex flex-wrap gap-2">
@@ -200,7 +200,7 @@ export default function PostCard({ post, formatDate, formatCategoryTitle, onShar
                 key={category.id}
                 href={category.slug ? `/c/${category.slug}` : "#"}
                 onClick={(e) => e.stopPropagation()}
-                className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600 hover:bg-slate-200 transition-colors"
+                className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600 hover:bg-slate-200 transition-colors dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
               >
                 {formatCategoryTitle ? formatCategoryTitle(category.name) : category.name}
               </Link>
@@ -214,7 +214,7 @@ export default function PostCard({ post, formatDate, formatCategoryTitle, onShar
                 key={tag.id}
                 href={`/tag/${encodeURIComponent(tag.name)}`}
                 onClick={(e) => e.stopPropagation()}
-                className="rounded-full bg-blue-50 px-3 py-1 text-xs text-blue-700 hover:bg-blue-100 transition-colors"
+                className="rounded-full bg-blue-50 px-3 py-1 text-xs text-blue-700 hover:bg-blue-100 transition-colors dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50"
               >
                 #{tag.name}
               </Link>
@@ -222,7 +222,7 @@ export default function PostCard({ post, formatDate, formatCategoryTitle, onShar
           </div>
         )}
 
-        <div className="flex items-center gap-5 border-t border-slate-100 pt-3 text-sm text-slate-500">
+        <div className="flex items-center gap-5 border-t border-slate-100 pt-3 text-sm text-slate-500 dark:border-slate-700/35 dark:text-slate-400">
           <span className="inline-flex items-center gap-1.5">
             <MessageSquare size={15} />
             {commentsCount} bình luận
@@ -238,7 +238,7 @@ export default function PostCard({ post, formatDate, formatCategoryTitle, onShar
               event.stopPropagation();
               onShare(post);
             }}
-            className="ml-auto inline-flex items-center gap-1.5 font-medium text-slate-600 transition hover:text-[#2563eb]"
+            className="ml-auto inline-flex items-center gap-1.5 font-medium text-slate-600 transition hover:text-[#2563eb] dark:text-slate-400 dark:hover:text-blue-400"
           >
             <Share2 size={15} />
             Chia sẻ

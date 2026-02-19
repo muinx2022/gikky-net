@@ -149,35 +149,35 @@ export default function TagPage({ params }: { params: Promise<{ name: string }> 
     <ForumLayout categories={categories}>
       <div className="space-y-3">
         {loading ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center">
-            <Loader2 size={24} className="mx-auto animate-spin text-slate-400" />
+          <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center dark:border-slate-700/35 dark:bg-slate-900">
+            <Loader2 size={24} className="mx-auto animate-spin text-slate-400 dark:text-slate-500" />
           </div>
         ) : (
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-700/35 dark:bg-slate-900">
             {/* Header */}
             <div className="px-5 py-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400">
                   <Hash size={20} />
                 </div>
                 <div>
-                  <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Tháº»</div>
-                  <h1 className="text-xl font-bold text-slate-900">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Tháº»</div>
+                  <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">
                     {tagName}
-                    <span className="ml-2 text-sm font-normal text-slate-400">{totalPosts} bài viết</span>
+                    <span className="ml-2 text-sm font-normal text-slate-400 dark:text-slate-500">{totalPosts} bài viết</span>
                   </h1>
                 </div>
               </div>
             </div>
 
-            <div className="border-t border-slate-200" />
+            <div className="border-t border-slate-200 dark:border-slate-700/35" />
 
             {posts.length === 0 ? (
               <div className="p-12 text-center">
-                <p className="text-slate-500">Chưa có bài viết với thẻ này.</p>
+                <p className="text-slate-500 dark:text-slate-400">Chưa có bài viết với thẻ này.</p>
               </div>
             ) : (
-              <div className="divide-y divide-slate-200">
+              <div className="divide-y divide-slate-200 dark:divide-slate-700/35">
                 {posts.map((post) => (
                   <PostCard
                     key={post.id}
@@ -191,13 +191,13 @@ export default function TagPage({ params }: { params: Promise<{ name: string }> 
 
                 <div ref={sentinelRef} className="py-3 text-center">
                   {loadingMore && (
-                    <span className="inline-flex items-center gap-2 text-sm text-slate-500">
+                    <span className="inline-flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
                       <Loader2 size={15} className="animate-spin" />
                       Đang tải thêm bài viết...
                     </span>
                   )}
                   {!hasMore && posts.length > 0 && (
-                    <span className="text-xs text-slate-400">Bạn đã đến cuối.</span>
+                    <span className="text-xs text-slate-400 dark:text-slate-500">Bạn đã đến cuối.</span>
                   )}
                 </div>
               </div>

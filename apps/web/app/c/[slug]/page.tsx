@@ -389,7 +389,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
             <p className="text-slate-500 dark:text-slate-400">ChÆ°a cÃ³ bÃ i viáº¿t trong danh má»¥c nÃ y.</p>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-700/35 dark:bg-slate-900">
             <div className="px-5 py-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
@@ -437,9 +437,9 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
               )}
             </div>
 
-            <div className="border-t border-slate-200" />
+            <div className="border-t border-slate-200 dark:border-slate-700/35" />
 
-            <div className="divide-y divide-slate-200">
+            <div className="divide-y divide-slate-200 dark:divide-slate-700/35">
               {posts.map((post) => (
                 <PostCard
                   key={post.id}

@@ -215,36 +215,36 @@ export default function ForumPage() {
     <ForumLayout categories={categories}>
       <div className="space-y-4">
         {loading ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center">
-            <div className="text-slate-500">Đang tải...</div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center dark:border-slate-700/35 dark:bg-slate-900">
+            <div className="text-slate-500 dark:text-slate-400">Đang tải...</div>
           </div>
         ) : posts.length === 0 ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center">
-            <p className="text-slate-500">Chưa có bài viết.</p>
+          <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center dark:border-slate-700/35 dark:bg-slate-900">
+            <p className="text-slate-500 dark:text-slate-400">Chưa có bài viết.</p>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-700/35 dark:bg-slate-900">
             <div className="flex items-center gap-3 px-5 py-4">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#dbeafe] text-[#3b82f6]">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#dbeafe] text-[#3b82f6] dark:bg-blue-900/40 dark:text-blue-400">
                 <MessageSquare size={20} />
               </div>
-              <h1 className="text-3xl font-black tracking-tight text-slate-900">{frontPage?.title || "Community"}</h1>
+              <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-slate-100">{frontPage?.title || "Community"}</h1>
             </div>
 
             <div className="space-y-4 px-5 pb-5">
               {frontPage?.content ? (
                 <div
-                  className="max-w-none text-[15px] leading-7 text-slate-700 [&_h1]:mb-3 [&_h1]:text-3xl [&_h1]:font-bold [&_h2]:mb-3 [&_h2]:text-2xl [&_h2]:font-bold [&_h3]:mb-2 [&_h3]:text-xl [&_h3]:font-semibold [&_p]:my-2 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_blockquote]:my-3 [&_blockquote]:border-l-4 [&_blockquote]:border-slate-300 [&_blockquote]:pl-4 [&_a]:text-blue-600 [&_a]:underline"
+                  className="max-w-none text-[15px] leading-7 text-slate-700 dark:text-slate-300 [&_h1]:mb-3 [&_h1]:text-3xl [&_h1]:font-bold [&_h2]:mb-3 [&_h2]:text-2xl [&_h2]:font-bold [&_h3]:mb-2 [&_h3]:text-xl [&_h3]:font-semibold [&_p]:my-2 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_blockquote]:my-3 [&_blockquote]:border-l-4 [&_blockquote]:border-slate-300 [&_blockquote]:pl-4 [&_a]:text-blue-600 [&_a]:underline dark:[&_a]:text-blue-400"
                   dangerouslySetInnerHTML={{ __html: frontPage.content }}
                 />
               ) : (
-                <p className="text-[15px] leading-7 text-slate-700">Chưa có nội dung giới thiệu cộng đồng.</p>
+                <p className="text-[15px] leading-7 text-slate-700 dark:text-slate-300">Chưa có nội dung giới thiệu cộng đồng.</p>
               )}
             </div>
 
-            <div className="border-t border-slate-200" />
+            <div className="border-t border-slate-200 dark:border-slate-700/35" />
 
-            <div className="divide-y divide-slate-200">
+            <div className="divide-y divide-slate-200 dark:divide-slate-700/35">
               {posts.map((post) => (
                 <PostCard
                   key={post.id}
@@ -257,12 +257,12 @@ export default function ForumPage() {
 
               <div ref={sentinelRef} className="py-3 text-center">
                 {loadingMore && (
-                  <span className="inline-flex items-center gap-2 text-sm text-slate-500">
+                  <span className="inline-flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
                     <Loader2 size={15} className="animate-spin" />
                     Đang tải thêm...
                   </span>
                 )}
-                {!hasMore && posts.length > 0 && <span className="text-xs text-slate-400">Bạn đã đến cuối.</span>}
+                {!hasMore && posts.length > 0 && <span className="text-xs text-slate-400 dark:text-slate-500">Bạn đã đến cuối.</span>}
               </div>
             </div>
           </div>
