@@ -11,6 +11,7 @@ import LoginModal from "../../../components/LoginModal";
 import CommentThread from "../../../components/CommentThread";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "../../../components/AuthContext";
+import { setPageMeta } from "../../../lib/meta";
 // Force recompile v3
 
 interface AuthorAvatar {
@@ -167,6 +168,12 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
       setShowFormatInReply(null);
     }
   }, [currentUser]);
+
+  useEffect(() => {
+    if (!post) return;
+    const desc = post.excerpt || post.content?.replace(/<[^>]+>/g, "").trim().slice(0, 160) || "";
+    setPageMeta(post.title, desc);
+  }, [post]);
 
   useEffect(() => {
     if (!targetCommentId || comments.length === 0) return;
@@ -814,7 +821,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
     return (html || "")
       .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
       .replace(/\son\w+=(["']).*?\1/gi, "")
-      .replace(/javascript:/gi, "");
+      .replace(/javascript:/gi, "")
   };
 
   const htmlToPlainText = (html: string) => {

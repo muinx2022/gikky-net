@@ -6,6 +6,7 @@ import ForumLayout from "../components/ForumLayout";
 import PostCard, { type PostCardPost } from "../components/PostCard";
 import ShareModal from "../components/ShareModal";
 import { api } from "../lib/api";
+import { setPageMeta, SITE_NAME } from "../lib/meta";
 
 interface Post extends PostCardPost {
   status: string;
@@ -157,6 +158,15 @@ export default function ForumPage() {
 
     bootstrap();
   }, [fetchCategories, fetchFrontPage, fetchPosts]);
+
+  useEffect(() => {
+    const desc = "Gikky là nơi chia sẻ kiến thức, thảo luận chuyên sâu và kinh nghiệm giao dịch từ cộng đồng.";
+    if (frontPage?.title) {
+      setPageMeta(frontPage.title, desc);
+    } else {
+      document.title = SITE_NAME + " – Cộng đồng chia sẻ kiến thức";
+    }
+  }, [frontPage]);
 
   const loadMorePosts = useCallback(async () => {
     if (loading || loadingMore || !hasMore) return;

@@ -184,6 +184,7 @@ export default function PostCard({ post, formatDate, formatCategoryTitle, onShar
           <img
             src={preview.src}
             alt={preview.alt}
+            referrerPolicy="no-referrer"
             className="mb-3 w-full rounded-xl object-contain"
             style={{ maxHeight: 460 }}
           />

@@ -9,6 +9,7 @@ import ShareModal from "../../../components/ShareModal";
 import { useToast } from "../../../components/Toast";
 import { api } from "../../../lib/api";
 import { getAuthToken, getStoredUser } from "../../../lib/auth-storage";
+import { setPageMeta } from "../../../lib/meta";
 
 interface Category {
   id: number;
@@ -287,6 +288,14 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
       console.error("Failed to refresh category posts with descendants:", error);
     });
   }, [fetchPostsByCategory, loading, selectedCategory, selectedCategoryIds]);
+
+  useEffect(() => {
+    if (!selectedCategory) return;
+    const desc = selectedCategory.description
+      ? selectedCategory.description
+      : `Xem các bài viết và thảo luận về ${selectedCategory.name} trên Gikky.`;
+    setPageMeta(selectedCategory.name, desc);
+  }, [selectedCategory]);
 
   useEffect(() => {
     const sentinel = sentinelRef.current;

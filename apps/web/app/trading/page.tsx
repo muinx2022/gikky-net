@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Loader2, BarChart2 } from "lucide-react";
 import { api } from "../../lib/api";
+import { setPageMeta } from "../../lib/meta";
 import { useCategories } from "../../lib/useCategories";
 import ForumLayout from "../../components/ForumLayout";
 import TradeCard from "../../components/TradeCard";
@@ -26,6 +27,10 @@ export default function TradingCommunityPage() {
   const categories = useCategories();
   const [trades, setTrades] = useState<Trade[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setPageMeta("Cộng đồng giao dịch", "Theo dõi và chia sẻ trade công khai từ cộng đồng nhà đầu tư trên Gikky.");
+  }, []);
   const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);

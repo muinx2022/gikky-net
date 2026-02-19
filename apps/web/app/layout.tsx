@@ -15,8 +15,23 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "ForgeForum | Developer Community",
-  description: "A developer forum for discussions, architecture reviews, and practical engineering knowledge.",
+  title: {
+    default: "Gikky – Cộng đồng chia sẻ kiến thức",
+    template: "%s | Gikky",
+  },
+  description: "Gikky là nơi chia sẻ kiến thức, thảo luận chuyên sâu và kinh nghiệm giao dịch từ cộng đồng.",
+  openGraph: {
+    type: "website",
+    locale: "vi_VN",
+    siteName: "Gikky",
+    title: "Gikky – Cộng đồng chia sẻ kiến thức",
+    description: "Gikky là nơi chia sẻ kiến thức, thảo luận chuyên sâu và kinh nghiệm giao dịch từ cộng đồng.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Gikky – Cộng đồng chia sẻ kiến thức",
+    description: "Gikky là nơi chia sẻ kiến thức, thảo luận chuyên sâu và kinh nghiệm giao dịch từ cộng đồng.",
+  },
 };
 
 export default function RootLayout({
@@ -25,7 +40,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" style={{ overflowY: "scroll" }} suppressHydrationWarning>
+    <html lang="vi" style={{ overflowY: "scroll" }} suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <SystemThemeSync />
         <SessionProvider>

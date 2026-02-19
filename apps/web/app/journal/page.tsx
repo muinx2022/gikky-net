@@ -8,6 +8,7 @@ import { api } from "../../lib/api";
 import { getAuthToken } from "../../lib/auth-storage";
 import { useAuth } from "../../components/AuthContext";
 import { useCategories } from "../../lib/useCategories";
+import { setPageMeta } from "../../lib/meta";
 import ForumLayout from "../../components/ForumLayout";
 import TradeCard from "../../components/TradeCard";
 import ConfirmModal from "../../components/ConfirmModal";
@@ -81,6 +82,10 @@ export default function JournalPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [deleteTarget, setDeleteTarget] = useState<Trade | null>(null);
   const categories = useCategories();
+
+  useEffect(() => {
+    setPageMeta("Nhật ký giao dịch", "Ghi lại, phân tích và theo dõi lịch sử giao dịch cá nhân của bạn trên Gikky.");
+  }, []);
 
   useEffect(() => {
     if (!hydrated) return;
