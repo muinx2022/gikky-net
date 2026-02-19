@@ -435,6 +435,69 @@ export default factories.createCoreController('api::post-action.post-action' as 
     return { data: result };
   },
 
+  async commentSummary(ctx) {
+    const rawIds = String(ctx.query.commentIds || '')
+      .split(',')
+      .map((v) => Number(v.trim()))
+      .filter((v) => Number.isFinite(v) && v > 0);
+
+    const commentIds = Array.from(new Set(rawIds));
+    if (commentIds.length === 0) {
+      return { data: { counts: { commentUpvotes: {}, commentDownvotes: {} }, myActions: { commentUpvotes: {}, commentDownvotes: {} } } };
+    }
+
+    const user = ctx.state.user;
+
+    const [upvoteActions, downvoteActions] = await Promise.all([
+      strapi.db.query('api::post-action.post-action').findMany({
+        where: { targetType: 'comment', actionType: 'upvote', comment: { id: { $in: commentIds } } },
+        populate: { comment: { select: ['id'] } },
+      }),
+      strapi.db.query('api::post-action.post-action').findMany({
+        where: { targetType: 'comment', actionType: 'downvote', comment: { id: { $in: commentIds } } },
+        populate: { comment: { select: ['id'] } },
+      }),
+    ]);
+
+    const commentUpvoteCounts: Record<number, number> = {};
+    const commentDownvoteCounts: Record<number, number> = {};
+
+    upvoteActions.forEach((row: any) => {
+      const cid = row.comment?.id;
+      if (!cid) return;
+      commentUpvoteCounts[cid] = (commentUpvoteCounts[cid] || 0) + 1;
+    });
+    downvoteActions.forEach((row: any) => {
+      const cid = row.comment?.id;
+      if (!cid) return;
+      commentDownvoteCounts[cid] = (commentDownvoteCounts[cid] || 0) + 1;
+    });
+
+    const myActions: { commentUpvotes: Record<number, string>; commentDownvotes: Record<number, string> } = {
+      commentUpvotes: {},
+      commentDownvotes: {},
+    };
+
+    if (user) {
+      const userRows = await strapi.db.query('api::post-action.post-action').findMany({
+        where: {
+          user: user.id,
+          targetType: 'comment',
+          comment: { id: { $in: commentIds } },
+        },
+        populate: { comment: { select: ['id'] } },
+      });
+      userRows.forEach((row: any) => {
+        const cid = row.comment?.id;
+        if (!cid) return;
+        if (row.actionType === 'upvote') myActions.commentUpvotes[cid] = row.documentId;
+        if (row.actionType === 'downvote') myActions.commentDownvotes[cid] = row.documentId;
+      });
+    }
+
+    return { data: { counts: { commentUpvoteCounts, commentDownvoteCounts }, myActions } };
+  },
+
   async categorySummary(ctx) {
     const categoryId = toInt(ctx.query.categoryId);
     if (!categoryId) {

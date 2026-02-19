@@ -37,5 +37,14 @@ export default {
         middlewares: [],
       },
     },
+    {
+      method: 'GET',
+      path: '/post-actions/comment-summary',
+      handler: 'post-action.commentSummary',
+      config: {
+        policies: [],
+        middlewares: [],
+      },
+    },
   ],
 };

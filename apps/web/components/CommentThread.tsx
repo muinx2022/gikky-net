@@ -135,30 +135,21 @@ export default function CommentThread({
       const rows = res.data?.data || [];
       setComments(buildCommentTree(rows));
       const allIds: number[] = rows.map((r: any) => r.id).filter(Boolean);
-      setCommentUpvoteCounts((prev) => {
-        const next = { ...prev };
-        allIds.forEach((id) => { if (typeof next[id] !== "number") next[id] = 0; });
-        return next;
-      });
-      setCommentDownvoteCounts((prev) => {
-        const next = { ...prev };
-        allIds.forEach((id) => { if (typeof next[id] !== "number") next[id] = 0; });
-        return next;
-      });
+      await loadCommentActionSummary(allIds);
     } catch {
       setComments([]);
     }
   };
 
-  const loadCommentActionSummary = async () => {
-    if (relation !== "post" || !targetEntityId) return;
+  const loadCommentActionSummary = async (commentIds: number[]) => {
+    if (commentIds.length === 0) return;
     try {
       const jwt = getAuthToken();
       const headers = jwt ? { Authorization: `Bearer ${jwt}` } : undefined;
-      const res = await api.get(`/api/post-actions/summary?postId=${targetEntityId}`, { headers });
+      const res = await api.get(`/api/post-actions/comment-summary?commentIds=${commentIds.join(",")}`, { headers });
       const summary = res.data?.data || {};
-      setCommentUpvoteCounts(summary?.counts?.commentUpvotes || {});
-      setCommentDownvoteCounts(summary?.counts?.commentDownvotes || {});
+      setCommentUpvoteCounts(summary?.counts?.commentUpvoteCounts || {});
+      setCommentDownvoteCounts(summary?.counts?.commentDownvoteCounts || {});
       setCommentUpvoteIds(summary?.myActions?.commentUpvotes || {});
       setCommentDownvoteIds(summary?.myActions?.commentDownvotes || {});
     } catch {
@@ -168,7 +159,6 @@ export default function CommentThread({
 
   useEffect(() => {
     loadComments();
-    loadCommentActionSummary();
   }, [relation, targetDocumentId, targetEntityId]);
 
   useEffect(() => {
@@ -225,7 +215,6 @@ export default function CommentThread({
     setShowCommentForm(false);
     setShowFormatInComment(false);
     await loadComments();
-    await loadCommentActionSummary();
   };
 
   const handleSubmitReply = async (parentId: number) => {
@@ -247,7 +236,6 @@ export default function CommentThread({
     setReplyingTo(null);
     setShowFormatInReply(null);
     await loadComments();
-    await loadCommentActionSummary();
   };
 
   const handleUpvoteComment = async (commentId: number) => {
