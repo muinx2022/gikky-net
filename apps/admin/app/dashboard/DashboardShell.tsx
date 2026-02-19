@@ -80,10 +80,10 @@ export default function DashboardShell({
                     color: 'white',
                   }}
                 >
-                  R
+                  A
                 </div>
                 <Text fw={700} size="lg" style={{ color: '#334155' }}>
-                  Refne
+                  Administration
                 </Text>
             </Group>
           </Group>
