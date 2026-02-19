@@ -43,6 +43,15 @@ type ContentPreview =
 const hasRichFormatting = (content: string) =>
   /<(h[1-6]|ul|ol|li|blockquote|pre|code|strong|b|em|i|u|s|a|table|iframe)\b/i.test(content);
 
+const decodeEntities = (str: string): string => {
+  if (typeof document === "undefined") {
+    return str.replace(/&amp;/gi, "&").replace(/&lt;/gi, "<").replace(/&gt;/gi, ">").replace(/&quot;/gi, '"');
+  }
+  const el = document.createElement("textarea");
+  el.innerHTML = str;
+  return el.value;
+};
+
 function getContentPreview(content?: string): ContentPreview {
   if (!content) return null;
 
@@ -50,7 +59,7 @@ function getContentPreview(content?: string): ContentPreview {
   if (videoBlock) {
     const srcMatch = videoBlock[0].match(/src=["']([^"']+)["']/i);
     const src = srcMatch?.[1];
-    if (src) return { type: "video", src };
+    if (src) return { type: "video", src: decodeEntities(src) };
   }
 
   const imgMatch = content.match(/<img[^>]+>/i);
@@ -58,7 +67,7 @@ function getContentPreview(content?: string): ContentPreview {
     const srcMatch = imgMatch[0].match(/src=["']([^"']+)["']/i);
     const altMatch = imgMatch[0].match(/alt=["']([^"']*)["']/i);
     const src = srcMatch?.[1];
-    if (src) return { type: "image", src, alt: altMatch?.[1] ?? "" };
+    if (src) return { type: "image", src: decodeEntities(src), alt: altMatch?.[1] ?? "" };
   }
 
   if (hasRichFormatting(content)) {
