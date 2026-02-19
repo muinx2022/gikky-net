@@ -170,9 +170,16 @@ export default factories.createCoreController('api::post.post', ({ strapi }) => 
       };
     });
 
+    // Public listing endpoint (/api/posts) must never leak draft rows.
+    // Keep only published variants even when requester is authenticated.
+    const publishedRows = normalizedRows.filter((row: any) => {
+      const status = String(row?.status || '').toLowerCase();
+      return status === 'published' || Boolean(row?.publishedAt);
+    });
+
     (result as any).data = hasAuthorFilter
-      ? normalizedRows.filter((row: any) => Number(row?.author?.id) === authorFilterId)
-      : normalizedRows;
+      ? publishedRows.filter((row: any) => Number(row?.author?.id) === authorFilterId)
+      : publishedRows;
 
     return result;
   },

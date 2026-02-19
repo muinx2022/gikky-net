@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Loader2, MessageSquare } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -75,6 +75,8 @@ export default function ForumPage() {
     const response = await api.get("/api/posts", {
       params: {
         sort: "createdAt:desc",
+        status: "published",
+        filters: { status: { $eq: "published" } },
         populate: {
           categories: true,
           tags: true,
@@ -164,7 +166,7 @@ export default function ForumPage() {
     if (frontPage?.title) {
       setPageMeta(frontPage.title, desc);
     } else {
-      document.title = SITE_NAME + " – Cộng đồng chia sẻ kiến thức";
+      document.title = SITE_NAME + " - Cộng đồng chia sẻ kiến thức";
     }
   }, [frontPage]);
 
@@ -201,11 +203,11 @@ export default function ForumPage() {
     const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
 
     if (diff < 60) return "vừa xong";
-    if (diff < 3600) return `${Math.floor(diff / 60)}p trước`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}g trước`;
-    if (diff < 604800) return `${Math.floor(diff / 86400)}ng trước`;
+    if (diff < 3600) return `${Math.floor(diff / 60)} phút trước`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`;
+    if (diff < 604800) return `${Math.floor(diff / 86400)} ngày trước`;
 
-    return date.toLocaleDateString("en-US", {
+    return date.toLocaleDateString("vi-VN", {
       month: "short",
       day: "numeric",
       year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
@@ -274,3 +276,4 @@ export default function ForumPage() {
     </ForumLayout>
   );
 }
+

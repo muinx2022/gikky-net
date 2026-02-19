@@ -256,7 +256,7 @@ export default function CommentThread({
     );
     const action = res.data?.data;
     const nextActive = Boolean(action?.active);
-    const nextId = action?.id || "";
+    const nextId = action?.documentId || "";
 
     setCommentUpvoteCounts((prev) => ({ ...prev, [commentId]: Math.max(0, (prev[commentId] || 0) + (nextActive ? 1 : -1)) }));
     if (nextActive && existingDownvoteId) {
@@ -291,7 +291,7 @@ export default function CommentThread({
     );
     const action = res.data?.data;
     const nextActive = Boolean(action?.active);
-    const nextId = action?.id || "";
+    const nextId = action?.documentId || "";
 
     setCommentDownvoteCounts((prev) => ({ ...prev, [commentId]: Math.max(0, (prev[commentId] || 0) + (nextActive ? 1 : -1)) }));
     if (nextActive && existingUpvoteId) {

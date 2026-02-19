@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { use, useCallback, useEffect, useRef, useState } from "react";
 import { Loader2, Hash } from "lucide-react";
@@ -32,7 +32,7 @@ const formatDate = (dateString: string) => {
   if (diff < 3600) return `${Math.floor(diff / 60)} phút trước`;
   if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`;
   if (diff < 604800) return `${Math.floor(diff / 86400)} ngày trước`;
-  return date.toLocaleDateString("en-US", {
+  return date.toLocaleDateString("vi-VN", {
     month: "short",
     day: "numeric",
     year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
@@ -162,7 +162,7 @@ export default function TagPage({ params }: { params: Promise<{ name: string }> 
                   <Hash size={20} />
                 </div>
                 <div>
-                  <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Thẻ</div>
+                  <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Tháº»</div>
                   <h1 className="text-xl font-bold text-slate-900">
                     {tagName}
                     <span className="ml-2 text-sm font-normal text-slate-400">{totalPosts} bài viết</span>
@@ -211,3 +211,4 @@ export default function TagPage({ params }: { params: Promise<{ name: string }> 
     </ForumLayout>
   );
 }
+

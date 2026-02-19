@@ -109,7 +109,7 @@ export default function PostCard({ post, formatDate, formatCategoryTitle, onShar
     post.downvotesCount ??
     post.post_actions?.filter((action) => action.targetType === "post" && action.actionType === "downvote").length ??
     0;
-  const score = post.score ?? (upvotesCount - downvotesCount);
+  const score = upvotesCount - downvotesCount;
 
   const preview = getContentPreview(post.content);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -239,16 +239,18 @@ export default function PostCard({ post, formatDate, formatCategoryTitle, onShar
         <div className="flex items-center gap-5 border-t border-slate-100 pt-3 text-sm text-slate-500">
           <span className="inline-flex items-center gap-1.5">
             <MessageSquare size={15} />
-            {commentsCount} bình luận
+            {commentsCount} b?nh lu?n
           </span>
           <span className="inline-flex items-center gap-1.5">
             <Eye size={15} />
             <span className={score > 0 ? "text-green-600" : score < 0 ? "text-red-600" : ""}>
-              {score > 0 ? `+${score}` : score} điểm
+              {score > 0 ? `+${score}` : score} ?i?m
             </span>
-            <span className="text-xs text-slate-400">
-              ({upvotesCount}↑ {downvotesCount}↓)
-            </span>
+            {(upvotesCount > 0 || downvotesCount > 0) && (
+              <span className="text-xs text-slate-400">
+                ({upvotesCount}? {downvotesCount}?)
+              </span>
+            )}
           </span>
           <button
             onClick={(event) => {
@@ -258,7 +260,7 @@ export default function PostCard({ post, formatDate, formatCategoryTitle, onShar
             className="ml-auto inline-flex items-center gap-1.5 font-medium text-slate-600 transition hover:text-[#2563eb]"
           >
             <Share2 size={15} />
-            Chia sẻ
+            Chia s?
           </button>
         </div>
     </article>

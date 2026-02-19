@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import ForumLayout from "../../components/ForumLayout";
@@ -143,7 +143,7 @@ export default function PopularPage() {
       if (diff < 86400) return `${Math.floor(diff / 3600)} giờ trước`;
       if (diff < 604800) return `${Math.floor(diff / 86400)} ngày trước`;
 
-      return date.toLocaleDateString("en-US", {
+      return date.toLocaleDateString("vi-VN", {
         month: "short",
         day: "numeric",
         year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
@@ -182,3 +182,4 @@ export default function PopularPage() {
     </ForumLayout>
   );
 }
+

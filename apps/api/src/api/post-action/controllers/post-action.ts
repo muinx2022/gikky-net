@@ -361,70 +361,29 @@ export default factories.createCoreController('api::post-action.post-action' as 
       return { data: {} };
     }
 
-    const [upvoteRows, downvoteRows, commentRows] = await Promise.all([
-      strapi.db.query('api::post-action.post-action').findMany({
-        where: {
-          targetType: 'post',
-          actionType: 'upvote',
-          post: { id: { $in: postIds } },
-        },
-        populate: {
-          post: {
-            select: ['id'],
-          },
-        },
-      }),
-      strapi.db.query('api::post-action.post-action').findMany({
-        where: {
-          targetType: 'post',
-          actionType: 'downvote',
-          post: { id: { $in: postIds } },
-        },
-        populate: {
-          post: {
-            select: ['id'],
-          },
-        },
-      }),
-      strapi.db.query('api::comment.comment').findMany({
-        where: {
-          post: { id: { $in: postIds } },
-        },
-        populate: {
-          post: {
-            select: ['id'],
-          },
-        },
-        select: ['id'],
-      }),
-    ]);
-
     const result: Record<number, { upvotes: number; downvotes: number; comments: number; score: number }> = {};
     postIds.forEach((postId) => {
       result[postId] = { upvotes: 0, downvotes: 0, comments: 0, score: 0 };
     });
 
-    upvoteRows.forEach((row: any) => {
-      const pid = row.post?.id;
-      if (!pid || !result[pid]) return;
-      result[pid].upvotes += 1;
-    });
+    // Use individual .count() per post — same pattern as summary() which is known to work
+    await Promise.all(postIds.map(async (postId) => {
+      const [upvotes, downvotes, comments] = await Promise.all([
+        strapi.db.query('api::post-action.post-action').count({
+          where: { targetType: 'post', actionType: 'upvote', post: postId },
+        }),
+        strapi.db.query('api::post-action.post-action').count({
+          where: { targetType: 'post', actionType: 'downvote', post: postId },
+        }),
+        strapi.db.query('api::comment.comment').count({
+          where: { post: postId },
+        }),
+      ]);
+      result[postId].upvotes = upvotes;
+      result[postId].downvotes = downvotes;
+      result[postId].comments = comments;
+    }));
 
-    downvoteRows.forEach((row: any) => {
-      const pid = row.post?.id;
-      if (!pid || !result[pid]) return;
-      result[pid].downvotes += 1;
-    });
-
-    commentRows.forEach((row: any) => {
-      const pid = row.post?.id;
-      if (!pid || !result[pid]) return;
-      result[pid].comments += 1;
-    });
-
-    // Calculate score: engagement (total votes) is primary, net score is secondary
-    // Score = (upvotes - downvotes) + (upvotes + downvotes) * 0.01
-    // This ensures 100up/100down (score: 2) > 1up/1down (score: 0.02)
     postIds.forEach((postId) => {
       const data = result[postId];
       const netScore = data.upvotes - data.downvotes;
@@ -443,10 +402,24 @@ export default factories.createCoreController('api::post-action.post-action' as 
 
     const commentIds = Array.from(new Set(rawIds));
     if (commentIds.length === 0) {
-      return { data: { counts: { commentUpvotes: {}, commentDownvotes: {} }, myActions: { commentUpvotes: {}, commentDownvotes: {} } } };
+      return { data: { counts: { commentUpvoteCounts: {}, commentDownvoteCounts: {} }, myActions: { commentUpvotes: {}, commentDownvotes: {} } } };
     }
 
-    const user = ctx.state.user;
+    // Route is auth:false (public), so manually resolve user from Bearer token if provided
+    let user = ctx.state.user;
+    if (!user) {
+      try {
+        const token = await strapi.plugins['users-permissions'].services.jwt.getToken(ctx);
+        if (token?.id) {
+          user = await strapi.db.query('plugin::users-permissions.user' as any).findOne({
+            where: { id: Number(token.id) },
+            select: ['id'],
+          });
+        }
+      } catch {
+        // Invalid or expired token — treat as unauthenticated
+      }
+    }
 
     const [upvoteActions, downvoteActions] = await Promise.all([
       strapi.db.query('api::post-action.post-action').findMany({
