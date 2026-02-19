@@ -246,11 +246,6 @@ export default function PostCard({ post, formatDate, formatCategoryTitle, onShar
             <span className={score > 0 ? "text-green-600" : score < 0 ? "text-red-600" : ""}>
               {score > 0 ? `+${score}` : score} điểm
             </span>
-            {(upvotesCount > 0 || downvotesCount > 0) && (
-              <span className="text-xs text-slate-400">
-                ({upvotesCount}↑ {downvotesCount}↓)
-              </span>
-            )}
           </span>
           <button
             onClick={(event) => {
