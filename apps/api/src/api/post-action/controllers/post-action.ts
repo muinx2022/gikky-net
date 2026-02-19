@@ -225,21 +225,38 @@ export default factories.createCoreController('api::post-action.post-action' as 
     }
 
     const user = ctx.state.user;
+
+    // Resolve all version IDs (draft + published) for this post's document
+    const postRow = await strapi.db.query('api::post.post').findOne({
+      where: { id: postId },
+      select: ['id', 'documentId'],
+    });
+    let versionIds: number[] = [postId];
+    if (postRow?.documentId) {
+      const siblings = await strapi.db.query('api::post.post').findMany({
+        where: { documentId: postRow.documentId },
+        select: ['id'],
+      });
+      if (siblings.length > 0) {
+        versionIds = siblings.map((s: any) => s.id as number);
+      }
+    }
+
     const comments = await strapi.db.query('api::comment.comment').findMany({
-      where: { post: postId },
+      where: { post: { id: { $in: versionIds } } },
       select: ['id'],
     });
     const commentIds = comments.map((c: any) => c.id);
 
     const [postUpvoteCount, postDownvoteCount, postFollowCount] = await Promise.all([
       strapi.db.query('api::post-action.post-action').count({
-        where: { targetType: 'post', actionType: 'upvote', post: postId },
+        where: { targetType: 'post', actionType: 'upvote', post: { id: { $in: versionIds } } },
       }),
       strapi.db.query('api::post-action.post-action').count({
-        where: { targetType: 'post', actionType: 'downvote', post: postId },
+        where: { targetType: 'post', actionType: 'downvote', post: { id: { $in: versionIds } } },
       }),
       strapi.db.query('api::post-action.post-action').count({
-        where: { targetType: 'post', actionType: 'follow', post: postId },
+        where: { targetType: 'post', actionType: 'follow', post: { id: { $in: versionIds } } },
       }),
     ]);
 
@@ -301,7 +318,7 @@ export default factories.createCoreController('api::post-action.post-action' as 
         where: {
           user: user.id,
           $or: [
-            { targetType: 'post', post: postId },
+            { targetType: 'post', post: { id: { $in: versionIds } } },
             {
               targetType: 'comment',
               comment: { id: { $in: commentIds.length > 0 ? commentIds : [-1] } },
@@ -366,17 +383,46 @@ export default factories.createCoreController('api::post-action.post-action' as 
       result[postId] = { upvotes: 0, downvotes: 0, comments: 0, score: 0 };
     });
 
-    // Use individual .count() per post — same pattern as summary() which is known to work
+    // Resolve all version IDs (draft + published) for each requested postId so that
+    // actions/comments stored against any version of the same document are counted.
+    const postRows = await strapi.db.query('api::post.post').findMany({
+      where: { id: { $in: postIds } },
+      select: ['id', 'documentId'],
+    });
+    const documentIds = [...new Set(postRows.map((p: any) => p.documentId).filter(Boolean))];
+    let siblingRows: any[] = [];
+    if (documentIds.length > 0) {
+      siblingRows = await strapi.db.query('api::post.post').findMany({
+        where: { documentId: { $in: documentIds } },
+        select: ['id', 'documentId'],
+      });
+    }
+
+    // Build map: requested postId → all version IDs for that document
+    const versionIdsMap: Record<number, number[]> = {};
+    for (const postId of postIds) {
+      const row = postRows.find((p: any) => p.id === postId);
+      if (row?.documentId) {
+        const siblings = siblingRows
+          .filter((s: any) => s.documentId === row.documentId)
+          .map((s: any) => s.id as number);
+        versionIdsMap[postId] = siblings.length > 0 ? siblings : [postId];
+      } else {
+        versionIdsMap[postId] = [postId];
+      }
+    }
+
     await Promise.all(postIds.map(async (postId) => {
+      const versionIds = versionIdsMap[postId];
       const [upvotes, downvotes, comments] = await Promise.all([
         strapi.db.query('api::post-action.post-action').count({
-          where: { targetType: 'post', actionType: 'upvote', post: postId },
+          where: { targetType: 'post', actionType: 'upvote', post: { id: { $in: versionIds } } },
         }),
         strapi.db.query('api::post-action.post-action').count({
-          where: { targetType: 'post', actionType: 'downvote', post: postId },
+          where: { targetType: 'post', actionType: 'downvote', post: { id: { $in: versionIds } } },
         }),
         strapi.db.query('api::comment.comment').count({
-          where: { post: postId },
+          where: { post: { id: { $in: versionIds } } },
         }),
       ]);
       result[postId].upvotes = upvotes;
