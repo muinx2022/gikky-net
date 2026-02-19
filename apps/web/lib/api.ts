@@ -84,7 +84,7 @@ export const api = {
 
     if (!response.ok) {
       const error: any = new Error(`HTTP ${response.status}: ${data?.error?.message || response.statusText}`);
-      error.response = { data };
+      error.response = { status: response.status, data };
       throw error;
     }
 
@@ -105,7 +105,7 @@ export const api = {
 
     if (!response.ok) {
       const error: any = new Error(`HTTP ${response.status}: ${data?.error?.message || response.statusText}`);
-      error.response = { data };
+      error.response = { status: response.status, data };
       throw error;
     }
 
@@ -127,7 +127,7 @@ export const api = {
 
     if (!response.ok) {
       const error: any = new Error(`HTTP ${response.status}: ${data?.error?.message || response.statusText}`);
-      error.response = { data };
+      error.response = { status: response.status, data };
       throw error;
     }
 
@@ -149,7 +149,7 @@ export const api = {
 
     if (!response.ok) {
       const error: any = new Error(`HTTP ${response.status}: ${data?.error?.message || response.statusText}`);
-      error.response = { data };
+      error.response = { status: response.status, data };
       throw error;
     }
 

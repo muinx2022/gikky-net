@@ -76,10 +76,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setStoredUser(me);
         checkModeratorStatus();
       })
-      .catch(() => {
-        clearAuthSession();
-        setCurrentUser(null);
-        setIsModerator(false);
+      .catch((error: any) => {
+        const status = Number(error?.response?.status);
+        if (status === 401 || status === 403) {
+          clearAuthSession();
+          setCurrentUser(null);
+          setIsModerator(false);
+        }
       });
   }, []);
 
