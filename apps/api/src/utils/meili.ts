@@ -10,8 +10,10 @@ const POSTS_INDEX = process.env.MEILI_POSTS_INDEX || "posts";
 type MeiliHit = {
   id: string;
   documentId: string;
+  type?: string;
   title: string;
   slug: string;
+  symbol?: string;
   excerpt?: string;
   contentPlain?: string;
   createdAt?: string;
@@ -77,8 +79,8 @@ export async function ensurePostsIndex() {
   await meiliRequest(`/indexes/${POSTS_INDEX}/settings`, {
     method: "PATCH",
     body: JSON.stringify({
-      searchableAttributes: ["title", "excerpt", "contentPlain", "categories", "tags", "author"],
-      filterableAttributes: ["createdAt"],
+      searchableAttributes: ["title", "excerpt", "contentPlain", "categories", "tags", "author", "symbol"],
+      filterableAttributes: ["createdAt", "type"],
       sortableAttributes: ["createdAt"],
       rankingRules: ["words", "typo", "proximity", "attribute", "sort", "exactness"],
     }),
@@ -95,6 +97,7 @@ async function toSearchDoc(post: any) {
   return {
     id: String(post.documentId || post.id),
     documentId: String(post.documentId || ""),
+    type: "post",
     title: String(post.title || ""),
     slug: String(post.slug || ""),
     excerpt: String(post.excerpt || ""),
@@ -150,6 +153,71 @@ export async function deletePostFromSearch(documentId: string) {
   });
 }
 
+function toJournalTradeDoc(trade: any) {
+  const author = trade?.author?.username ? String(trade.author.username) : "";
+  const title = [
+    trade.symbol,
+    trade.direction === "long" ? "Long" : "Short",
+    trade.strategy || "",
+  ].filter(Boolean).join(" · ");
+
+  const excerpt = [trade.strategy, trade.setup].filter(Boolean).join(" · ").slice(0, 200);
+  const contentPlain = [
+    trade.setup && stripHtml(String(trade.setup)),
+    trade.notes && stripHtml(String(trade.notes)),
+  ].filter(Boolean).join(" ").slice(0, 2000);
+
+  return {
+    id: `jt-${trade.documentId || trade.id}`,
+    documentId: String(trade.documentId || ""),
+    type: "journal-trade",
+    title,
+    slug: "",
+    symbol: String(trade.symbol || ""),
+    excerpt,
+    contentPlain,
+    createdAt: trade.createdAt || trade.updatedAt || null,
+    author,
+    categories: [],
+    tags: [],
+  };
+}
+
+async function loadPublicJournalTradeByDocumentId(strapi: any, documentId: string) {
+  const trades = await strapi.db.query("api::journal-trade.journal-trade").findMany({
+    where: { documentId, isPublic: true },
+    populate: { author: true },
+    orderBy: [{ updatedAt: "desc" }],
+    limit: 1,
+  });
+  return trades?.[0] || null;
+}
+
+export async function upsertJournalTradeToSearch(strapi: any, documentId: string) {
+  if (!documentId) return;
+  await ensurePostsIndex();
+
+  const trade = await loadPublicJournalTradeByDocumentId(strapi, documentId);
+  if (!trade) {
+    await deleteJournalTradeFromSearch(documentId);
+    return;
+  }
+
+  const doc = toJournalTradeDoc(trade);
+  await meiliRequest(`/indexes/${POSTS_INDEX}/documents`, {
+    method: "POST",
+    body: JSON.stringify([doc]),
+  });
+}
+
+export async function deleteJournalTradeFromSearch(documentId: string) {
+  if (!documentId) return;
+  await ensurePostsIndex();
+  await meiliRequest(`/indexes/${POSTS_INDEX}/documents/${encodeURIComponent(`jt-${documentId}`)}`, {
+    method: "DELETE",
+  });
+}
+
 export async function searchPosts(q: string, limit = 20, offset = 0) {
   await ensurePostsIndex();
   return meiliRequest(`/indexes/${POSTS_INDEX}/search`, {
@@ -161,8 +229,10 @@ export async function searchPosts(q: string, limit = 20, offset = 0) {
       sort: ["createdAt:desc"],
       attributesToRetrieve: [
         "documentId",
+        "type",
         "title",
         "slug",
+        "symbol",
         "excerpt",
         "contentPlain",
         "createdAt",
@@ -206,6 +276,22 @@ export async function ensureSearchSeed(strapi: any) {
     await meiliRequest(`/indexes/${POSTS_INDEX}/documents`, {
       method: "POST",
       body: JSON.stringify(docs),
+    });
+  }
+
+  // Also seed public journal trades
+  const journalRows = await strapi.db.query("api::journal-trade.journal-trade").findMany({
+    where: { isPublic: true },
+    populate: { author: true },
+    orderBy: [{ updatedAt: "desc" }],
+    limit: 2000,
+  });
+
+  if (Array.isArray(journalRows) && journalRows.length > 0) {
+    const journalDocs = journalRows.map((row: any) => toJournalTradeDoc(row));
+    await meiliRequest(`/indexes/${POSTS_INDEX}/documents`, {
+      method: "POST",
+      body: JSON.stringify(journalDocs),
     });
   }
 

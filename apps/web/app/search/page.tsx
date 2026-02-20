@@ -8,13 +8,20 @@ import { api } from "../../lib/api";
 
 interface SearchResultItem {
   documentId: string;
+  type?: string;
   title: string;
   slug: string;
+  symbol?: string;
   excerpt?: string;
   contentPlain?: string;
   createdAt?: string;
   author?: string;
 }
+
+const getItemUrl = (item: SearchResultItem) => {
+  if (item.type === "journal-trade") return `/journal/${item.documentId}`;
+  return `/p/${item.slug}--${item.documentId}`;
+};
 
 const PAGE_SIZE = 20;
 
@@ -76,8 +83,15 @@ function SearchContent() {
       ) : (
         <div className="divide-y divide-slate-200 dark:divide-slate-700/35">
           {results.map((item) => (
-            <Link key={item.documentId} href={`/p/${item.slug}--${item.documentId}`} className="block py-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 -mx-5 px-5">
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{item.title}</h2>
+            <Link key={item.documentId} href={getItemUrl(item)} className="block py-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 -mx-5 px-5">
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{item.title}</h2>
+                {item.type === "journal-trade" && (
+                  <span className="shrink-0 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                    Nhật ký
+                  </span>
+                )}
+              </div>
               <p className="mt-1 line-clamp-2 text-sm text-slate-600 dark:text-slate-400">{item.excerpt || item.contentPlain || ""}</p>
               {item.author ? <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">bởi {item.author}</p> : null}
             </Link>

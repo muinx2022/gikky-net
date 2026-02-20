@@ -35,8 +35,10 @@ export default {
       ctx.body = {
         data: (result?.hits || []).map((hit: any) => ({
           documentId: hit.documentId,
+          type: hit.type || "post",
           title: hit.title,
-          slug: hit.slug,
+          slug: hit.slug || "",
+          symbol: hit.symbol || "",
           excerpt: hit.excerpt,
           contentPlain: hit.contentPlain,
           createdAt: hit.createdAt,
