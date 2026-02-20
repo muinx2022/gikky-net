@@ -249,11 +249,11 @@ export default function LoginPage() {
             }}
           >
             <Text size="24px" fw={900} style={{ color: "white" }}>
-              R
+              G
             </Text>
           </Box>
           <Title ta="center" fw={700} style={{ color: "#334155", fontSize: "1.75rem", marginBottom: "0.5rem" }}>
-              Refne Admin
+              Gikky Administration
           </Title>
           <Text c="#64748b" size="sm" ta="center">
               Sign in to your account
