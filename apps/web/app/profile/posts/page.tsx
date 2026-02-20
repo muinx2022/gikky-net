@@ -30,7 +30,7 @@ interface PostItem {
 
 const formatDate = (value: string) => {
   try {
-    return new Date(value).toLocaleString(undefined, {
+    return new Date(value).toLocaleString("vi-VN", {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -38,6 +38,12 @@ const formatDate = (value: string) => {
   } catch {
     return value;
   }
+};
+
+const STATUS_LABEL: Record<string, string> = {
+  draft: "Bản nháp",
+  published: "Đã xuất bản",
+  archived: "Đã lưu trữ",
 };
 
 const getModerationBadge = (moderationStatus?: "block-comment" | "delete" | null) => {
@@ -196,7 +202,7 @@ export default function MyPostsPage() {
                   <div className="min-w-0">
                     <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100 break-words">{post.title}</h2>
                     <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                      <span>{post.status}</span>
+                      <span>{STATUS_LABEL[post.status] ?? post.status}</span>
                       <span>|</span>
                       <span>{formatDate(post.updatedAt)}</span>
                       <span>|</span>
