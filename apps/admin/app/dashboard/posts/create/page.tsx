@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
-import { Title, Text, Box, Paper, TextInput, Textarea, Button, Group, MultiSelect, Switch } from '@mantine/core';
+import { Title, Text, Box, Paper, TextInput, Button, Group, MultiSelect, Switch } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { ArrowLeft, Save, CheckCircle, XCircle, ChevronDown } from 'lucide-react';
 import { strapiApi } from '../../../../lib/strapi';
@@ -55,7 +55,6 @@ export default function CreatePostPage() {
     title: '',
     slug: '',
     content: '',
-    excerpt: '',
     status: 'draft',
     categories: [] as string[],
     tags: [] as string[],
@@ -173,7 +172,6 @@ export default function CreatePostPage() {
         title: formData.title,
         slug: formData.slug,
         content: contentWithUploadedMedia,
-        excerpt: formData.excerpt,
         status: formData.status,
       };
 
@@ -316,18 +314,6 @@ export default function CreatePostPage() {
             comboboxProps={{
               transitionProps: { duration: 200, transition: 'pop' },
             }}
-            styles={{
-              label: { fontWeight: 600, color: '#334155', marginBottom: 8 },
-            }}
-          />
-
-          <Textarea
-            label="Excerpt"
-            placeholder="Brief description of the post"
-            rows={3}
-            value={formData.excerpt}
-            onChange={(e) => setFormData({ ...formData, excerpt: e.currentTarget.value })}
-            mb="md"
             styles={{
               label: { fontWeight: 600, color: '#334155', marginBottom: 8 },
             }}

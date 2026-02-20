@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
-import { Title, Text, Box, Paper, TextInput, Textarea, Select, Button, Group, LoadingOverlay, MultiSelect, Switch } from '@mantine/core';
+import { Title, Text, Box, Paper, TextInput, Select, Button, Group, LoadingOverlay, MultiSelect, Switch } from '@mantine/core';
 import { ArrowLeft, Save, CheckCircle, XCircle, ChevronDown } from 'lucide-react';
 import { notifications } from '@mantine/notifications';
 import { strapiApi } from '../../../../../lib/strapi';
@@ -58,7 +58,6 @@ export default function EditPostPage() {
     title: '',
     slug: '',
     content: '',
-    excerpt: '',
     status: 'draft',
     moderationStatus: null as 'block-comment' | 'delete' | null,
     categories: [] as string[],
@@ -85,7 +84,6 @@ export default function EditPostPage() {
         title: post.title || '',
         slug: post.slug || '',
         content: post.content || '',
-        excerpt: post.excerpt || '',
         status: post.status || 'draft',
         moderationStatus: (post.moderationStatus && post.moderationStatus !== '') ? post.moderationStatus : null,
         categories: post.categories?.map((cat: { documentId: string }) => cat.documentId) || [],
@@ -219,7 +217,6 @@ export default function EditPostPage() {
         title: formData.title,
         slug: formData.slug,
         content: contentWithUploadedMedia,
-        excerpt: formData.excerpt,
         status: formData.status,
         categories: formData.categories,
         tags: formData.tags,
@@ -350,18 +347,6 @@ export default function EditPostPage() {
               comboboxProps={{
                 transitionProps: { duration: 200, transition: 'pop' },
               }}
-              styles={{
-                label: { fontWeight: 600, color: '#334155', marginBottom: 8 },
-              }}
-            />
-
-            <Textarea
-              label="Excerpt"
-              placeholder="Brief description of the post"
-              rows={3}
-              value={formData.excerpt}
-              onChange={(e) => setFormData({ ...formData, excerpt: e.currentTarget.value })}
-              mb="md"
               styles={{
                 label: { fontWeight: 600, color: '#334155', marginBottom: 8 },
               }}

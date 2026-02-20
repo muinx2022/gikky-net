@@ -528,6 +528,7 @@ export default function TiptapEditor({
         .tiptap-editor {
           min-height: 288px;
           outline: none;
+          color: #1e293b;
         }
 
         .tiptap-editor p {
