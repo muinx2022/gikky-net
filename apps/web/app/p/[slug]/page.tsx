@@ -94,6 +94,8 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
   const [commentDownvoteCounts, setCommentDownvoteCounts] = useState<Record<number, number>>({});
   const [commentUpvoteIds, setCommentUpvoteIds] = useState<Record<number, string>>({});
   const [commentDownvoteIds, setCommentDownvoteIds] = useState<Record<number, string>>({});
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [isSubmittingReply, setIsSubmittingReply] = useState(false);
   const [showToast, setShowToast] = useState<{show: boolean; message: string; type: 'success' | 'error'}>({
     show: false,
     message: '',
@@ -552,8 +554,10 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
       return;
     }
     if (!newComment.trim()) return;
+    if (isSubmittingComment) return;
 
     try {
+      setIsSubmittingComment(true);
       const jwt = getAuthToken();
       if (!jwt) {
         alert("Vui lòng đăng nhập để bình luận");
@@ -595,6 +599,8 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
         type: 'error',
       });
       setTimeout(() => setShowToast({ show: false, message: '', type: 'error' }), 3000);
+    } finally {
+      setIsSubmittingComment(false);
     }
   };
 
@@ -604,8 +610,10 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
       return;
     }
     if (!replyContent.trim()) return;
+    if (isSubmittingReply) return;
 
     try {
+      setIsSubmittingReply(true);
       const jwt = getAuthToken();
       if (!jwt) {
         alert("Vui lòng đăng nhập để trả lời");
@@ -648,6 +656,8 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
         type: 'error',
       });
       setTimeout(() => setShowToast({ show: false, message: '', type: 'error' }), 3000);
+    } finally {
+      setIsSubmittingReply(false);
     }
   };
 
@@ -928,7 +938,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => handleUpvoteComment(comment.id)}
-                    className={`p-0.5 transition-colors ${
+                    className={`min-w-[36px] min-h-[36px] flex items-center justify-center transition-colors ${
                       commentUpvoteIds[comment.id]
                         ? "text-orange-600 dark:text-orange-400"
                         : "text-slate-500 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400"
@@ -942,7 +952,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
                   </span>
                   <button
                     onClick={() => handleDownvoteComment(comment.id)}
-                    className={`p-0.5 transition-colors ${
+                    className={`min-w-[36px] min-h-[36px] flex items-center justify-center transition-colors ${
                       commentDownvoteIds[comment.id]
                         ? "text-purple-600 dark:text-purple-400"
                         : "text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400"
@@ -1120,7 +1130,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
       )}
       <div className="space-y-4">
             {/* Post Content */}
-            <article className="rounded-xl border border-slate-300 bg-white p-8 dark:border-slate-800 dark:bg-slate-900">
+            <article className="rounded-xl border border-slate-300 bg-white p-4 md:p-8 dark:border-slate-800 dark:bg-slate-900">
           {/* Categories */}
           {post.categories && post.categories.length > 0 && (
             <div className="flex flex-wrap items-center gap-2 mb-4">
@@ -1214,10 +1224,9 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  console.log('Upvote button clicked!');
                   handleUpvote();
                 }}
-                className={`p-1 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                className={`min-w-[44px] min-h-[44px] flex items-center justify-center p-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                   isUpvoted
                     ? "text-orange-600 dark:text-orange-400"
                     : "text-slate-500 dark:text-slate-400 hover:text-orange-600 dark:hover:text-orange-400"
@@ -1235,10 +1244,9 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  console.log('Downvote button clicked!');
                   handleDownvote();
                 }}
-                className={`p-1 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                className={`min-w-[44px] min-h-[44px] flex items-center justify-center p-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                   isDownvoted
                     ? "text-purple-600 dark:text-purple-400"
                     : "text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400"
@@ -1256,10 +1264,9 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('Follow button clicked!');
                 handleFollow();
               }}
-              className={`flex items-center gap-1.5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+              className={`min-h-[44px] flex items-center gap-1.5 px-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                 isFollowed
                   ? "text-blue-600 dark:text-blue-400"
                   : "text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400"

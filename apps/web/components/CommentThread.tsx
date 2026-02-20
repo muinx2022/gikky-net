@@ -74,6 +74,8 @@ export default function CommentThread({
   const [showFormatInReply, setShowFormatInReply] = useState<number | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loginIntent, setLoginIntent] = useState<"comment" | "reply" | null>(null);
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [isSubmittingReply, setIsSubmittingReply] = useState(false);
   const [commentUpvoteCounts, setCommentUpvoteCounts] = useState<Record<number, number>>({});
   const [commentDownvoteCounts, setCommentDownvoteCounts] = useState<Record<number, number>>({});
   const [commentUpvoteIds, setCommentUpvoteIds] = useState<Record<number, string>>({});
@@ -199,6 +201,7 @@ export default function CommentThread({
   const handleSubmitComment = async () => {
     if (disabled) return;
     if (!newComment.trim()) return;
+    if (isSubmittingComment) return;
     const jwt = getAuthToken();
     if (!jwt) {
       setLoginIntent("comment");
@@ -206,20 +209,26 @@ export default function CommentThread({
       return;
     }
     if (!targetEntityId) return;
-    await api.post(
-      "/api/comments",
-      { data: { content: newComment, [relation]: targetEntityId } },
-      { headers: { Authorization: `Bearer ${jwt}` } }
-    );
-    setNewComment("");
-    setShowCommentForm(false);
-    setShowFormatInComment(false);
-    await loadComments();
+    try {
+      setIsSubmittingComment(true);
+      await api.post(
+        "/api/comments",
+        { data: { content: newComment, [relation]: targetEntityId } },
+        { headers: { Authorization: `Bearer ${jwt}` } }
+      );
+      setNewComment("");
+      setShowCommentForm(false);
+      setShowFormatInComment(false);
+      await loadComments();
+    } finally {
+      setIsSubmittingComment(false);
+    }
   };
 
   const handleSubmitReply = async (parentId: number) => {
     if (disabled) return;
     if (!replyContent.trim()) return;
+    if (isSubmittingReply) return;
     const jwt = getAuthToken();
     if (!jwt) {
       setLoginIntent("reply");
@@ -227,15 +236,20 @@ export default function CommentThread({
       return;
     }
     if (!targetEntityId) return;
-    await api.post(
-      "/api/comments",
-      { data: { content: replyContent, [relation]: targetEntityId, parent: parentId } },
-      { headers: { Authorization: `Bearer ${jwt}` } }
-    );
-    setReplyContent("");
-    setReplyingTo(null);
-    setShowFormatInReply(null);
-    await loadComments();
+    try {
+      setIsSubmittingReply(true);
+      await api.post(
+        "/api/comments",
+        { data: { content: replyContent, [relation]: targetEntityId, parent: parentId } },
+        { headers: { Authorization: `Bearer ${jwt}` } }
+      );
+      setReplyContent("");
+      setReplyingTo(null);
+      setShowFormatInReply(null);
+      await loadComments();
+    } finally {
+      setIsSubmittingReply(false);
+    }
   };
 
   const handleUpvoteComment = async (commentId: number) => {
@@ -361,7 +375,7 @@ export default function CommentThread({
                         {showFormatInReply === comment.id ? "Ẩn định dạng" : "Hiển thị định dạng"}
                       </button>
                       <button onClick={() => { setReplyingTo(null); setReplyContent(""); setShowFormatInReply(null); }} className="px-2 py-1 text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors">Hủy</button>
-                      <button onClick={() => handleSubmitReply(comment.id)} disabled={!replyContent.trim()} className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Trả lời</button>
+                      <button onClick={() => handleSubmitReply(comment.id)} disabled={!replyContent.trim() || isSubmittingReply} className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">{isSubmittingReply ? "Đang gửi..." : "Trả lời"}</button>
                     </div>
                   </div>
                 ) : (
@@ -378,7 +392,7 @@ export default function CommentThread({
                         {showFormatInReply === comment.id ? "Ẩn định dạng" : "Hiển thị định dạng"}
                       </button>
                       <button onClick={() => { setReplyingTo(null); setReplyContent(""); setShowFormatInReply(null); }} className="px-2 py-1 text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors">Hủy</button>
-                      <button onClick={() => handleSubmitReply(comment.id)} disabled={!replyContent.trim()} className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Trả lời</button>
+                      <button onClick={() => handleSubmitReply(comment.id)} disabled={!replyContent.trim() || isSubmittingReply} className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">{isSubmittingReply ? "Đang gửi..." : "Trả lời"}</button>
                     </div>
                   </div>
                 )}
@@ -437,7 +451,7 @@ export default function CommentThread({
                       {showFormatInComment ? "Ẩn định dạng" : "Hiển thị định dạng"}
                     </button>
                     <button onClick={() => { setShowCommentForm(false); setNewComment(""); setShowFormatInComment(false); }} className="px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors">Hủy</button>
-                    <button onClick={handleSubmitComment} disabled={!newComment.trim()} className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Đăng bình luận</button>
+                    <button onClick={handleSubmitComment} disabled={!newComment.trim() || isSubmittingComment} className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">{isSubmittingComment ? "Đang gửi..." : "Đăng bình luận"}</button>
                   </div>
                 </div>
               ) : (
@@ -455,7 +469,7 @@ export default function CommentThread({
                       {showFormatInComment ? "Ẩn định dạng" : "Hiển thị định dạng"}
                     </button>
                     <button onClick={() => { setShowCommentForm(false); setNewComment(""); setShowFormatInComment(false); }} className="px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors">Hủy</button>
-                    <button onClick={handleSubmitComment} disabled={!newComment.trim()} className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Đăng bình luận</button>
+                    <button onClick={handleSubmitComment} disabled={!newComment.trim() || isSubmittingComment} className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">{isSubmittingComment ? "Đang gửi..." : "Đăng bình luận"}</button>
                   </div>
                 </div>
               )}
