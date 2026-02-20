@@ -144,16 +144,11 @@ export default function AdminCommentList({ postId, journalTradeId }: AdminCommen
   const fetchComments = async () => {
     setLoading(true);
     try {
-      const filters: Record<string, unknown> = {};
-      if (postId) filters.post = { documentId: { $eq: postId } };
-      if (journalTradeId) filters.journalTrade = { documentId: { $eq: journalTradeId } };
+      const params: Record<string, string> = {};
+      if (postId) params.postId = postId;
+      if (journalTradeId) params.journalTradeId = journalTradeId;
 
-      const response = await strapiApi.get("/api/comments", {
-        params: {
-          filters,
-          includeDisabled: 1,
-        },
-      });
+      const response = await strapiApi.get("/api/admin-comments", { params });
       setComments(response.data?.data || []);
     } catch (error) {
       console.error("Failed to fetch comments", error);
@@ -170,7 +165,7 @@ export default function AdminCommentList({ postId, journalTradeId }: AdminCommen
   const handleToggleDisable = async (documentId: string, currentDisabled: boolean) => {
     setTogglingId(documentId);
     try {
-      const response = await strapiApi.patch(`/api/comments/${documentId}/disable`);
+      const response = await strapiApi.patch(`/api/admin-comments/${documentId}/disable`);
       const newDisabled: boolean = response.data?.data?.disabled ?? !currentDisabled;
       setComments((prev) =>
         prev.map((c) => (c.documentId === documentId ? { ...c, disabled: newDisabled } : c))
