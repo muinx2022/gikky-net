@@ -7,7 +7,6 @@ import { ArrowLeft, BookOpenText, Pencil } from "lucide-react";
 import { api } from "../../../../lib/api";
 import { getAuthToken } from "../../../../lib/auth-storage";
 import { useAuth } from "../../../../components/AuthContext";
-import { useCategories } from "../../../../lib/useCategories";
 import ForumLayout from "../../../../components/ForumLayout";
 import TradeForm from "../../../../components/TradeForm";
 
@@ -15,7 +14,6 @@ export default function EditTradePage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { currentUser, hydrated } = useAuth();
-  const categories = useCategories();
   const [trade, setTrade] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [notAllowed, setNotAllowed] = useState(false);
@@ -63,7 +61,7 @@ export default function EditTradePage() {
 
   if (loading) {
     return (
-      <ForumLayout categories={categories}>
+      <ForumLayout>
         <div className="mx-auto max-w-3xl space-y-4">
           <div className="h-16 animate-pulse rounded-2xl bg-slate-100" />
           <div className="h-96 animate-pulse rounded-2xl bg-slate-100" />
@@ -74,7 +72,7 @@ export default function EditTradePage() {
 
   if (notAllowed || !trade) {
     return (
-      <ForumLayout categories={categories}>
+      <ForumLayout>
         <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-10 text-center">
           <p className="text-slate-500">Không tìm thấy trade hoặc bạn không có quyền chỉnh sửa.</p>
           <Link href="/journal" className="mt-3 inline-block text-sm text-blue-600 hover:underline">
@@ -86,7 +84,7 @@ export default function EditTradePage() {
   }
 
   return (
-    <ForumLayout categories={categories}>
+    <ForumLayout>
       <div className="mx-auto max-w-3xl overflow-hidden rounded-2xl border border-slate-200 bg-white">
         <div className="flex items-center justify-between px-5 py-4">
           <div className="flex items-center gap-3">

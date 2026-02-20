@@ -12,49 +12,10 @@ interface Post extends PostCardPost {
 
 type FeedSummaryMap = Record<string, { upvotes?: number; downvotes?: number; comments?: number; score?: number }>;
 
-interface Category {
-  id: number;
-  documentId: string;
-  name: string;
-  description: string;
-  slug?: string;
-  parent?: { id?: number } | null;
-}
-
 export default function PopularPage() {
   const [posts, setPosts] = useState<Post[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [sharePost, setSharePost] = useState<PostCardPost | null>(null);
   const [loading, setLoading] = useState(true);
-
-  const fetchCategories = useCallback(async () => {
-    const categoriesRes = await api.get("/api/categories", {
-      params: {
-        sort: ["sortOrder:asc", "name:asc"],
-        populate: "parent",
-        filters: {
-          parent: {
-            $null: true,
-          },
-        },
-      },
-    });
-
-    let rootCategories = categoriesRes.data?.data || [];
-
-    if (rootCategories.length === 0) {
-      const allCategoriesRes = await api.get("/api/categories", {
-        params: {
-          sort: ["sortOrder:asc", "name:asc"],
-          populate: "parent",
-        },
-      });
-      const allCategories = allCategoriesRes.data?.data || [];
-      rootCategories = allCategories.filter((cat: Category) => !cat?.parent?.id);
-    }
-
-    setCategories(rootCategories);
-  }, []);
 
   const fetchPopularPosts = useCallback(async () => {
     const response = await api.get("/api/posts", {
@@ -121,7 +82,7 @@ export default function PopularPage() {
   useEffect(() => {
     const bootstrap = async () => {
       try {
-        await Promise.all([fetchCategories(), fetchPopularPosts()]);
+        await fetchPopularPosts();
       } catch (error) {
         console.error("Failed to fetch popular data:", error);
       } finally {
@@ -130,7 +91,7 @@ export default function PopularPage() {
     };
 
     bootstrap();
-  }, [fetchCategories, fetchPopularPosts]);
+  }, [fetchPopularPosts]);
 
   const formatDate = useMemo(
     () => (dateString: string) => {
@@ -152,7 +113,7 @@ export default function PopularPage() {
   );
 
   return (
-    <ForumLayout categories={categories}>
+    <ForumLayout>
       <div className="space-y-3 pt-5 md:pt-6">
         {loading ? (
           <div className="rounded-sm border border-slate-300 bg-white p-12 text-center dark:border-slate-700/35 dark:bg-slate-900">

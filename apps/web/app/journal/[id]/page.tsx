@@ -20,7 +20,6 @@ import {
 import { api, getStrapiURL } from "../../../lib/api";
 import { getAuthToken } from "../../../lib/auth-storage";
 import { useAuth } from "../../../components/AuthContext";
-import { useCategories } from "../../../lib/useCategories";
 import ForumLayout from "../../../components/ForumLayout";
 import ConfirmModal from "../../../components/ConfirmModal";
 import CommentThread from "../../../components/CommentThread";
@@ -72,7 +71,6 @@ export default function TradeDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { currentUser } = useAuth();
-  const categories = useCategories();
   const [trade, setTrade] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showDelete, setShowDelete] = useState(false);
@@ -127,7 +125,7 @@ export default function TradeDetailPage() {
 
   if (loading) {
     return (
-      <ForumLayout categories={categories}>
+      <ForumLayout>
         <div className="mx-auto max-w-3xl space-y-4">
           <div className="h-16 animate-pulse rounded-2xl bg-slate-100" />
           <div className="h-80 animate-pulse rounded-2xl bg-slate-100" />
@@ -138,7 +136,7 @@ export default function TradeDetailPage() {
 
   if (!trade) {
     return (
-      <ForumLayout categories={categories}>
+      <ForumLayout>
         <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-10 text-center">
           <p className="text-slate-500">Không tìm thấy trade hoặc trade này là riêng tư.</p>
           <Link href="/journal" className="mt-3 inline-block text-sm text-blue-600 hover:underline">
@@ -154,7 +152,7 @@ export default function TradeDetailPage() {
   const activeNav = isOwner ? "journal" : "trading";
 
   return (
-    <ForumLayout categories={categories} activeNav={activeNav as "journal" | "trading"}>
+    <ForumLayout activeNav={activeNav as "journal" | "trading"}>
       <div className="mx-auto max-w-3xl space-y-4">
         <div className="rounded-2xl border border-slate-200 bg-white p-5">
           <div className="flex items-center justify-between gap-3">

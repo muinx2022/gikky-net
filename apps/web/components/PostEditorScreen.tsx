@@ -482,7 +482,7 @@ export default function PostEditorScreen({ documentId }: { documentId?: string }
   };
 
   return (
-    <ForumLayout categories={categories}>
+    <ForumLayout>
       <div className="pt-5 md:pt-6 max-w-3xl">
         <div className="rounded border border-slate-400 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
           <div className="mb-6 flex items-center justify-between">

@@ -64,13 +64,6 @@ interface UserData {
   email: string;
 }
 
-interface Category {
-  id: number;
-  documentId: string;
-  name: string;
-  description: string;
-}
-
 export default function PostDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   // Unwrap params Promise
   const resolvedParams = use(params);
@@ -81,7 +74,6 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
 
   const [post, setPost] = useState<Post | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [isUpvoted, setIsUpvoted] = useState(false);
   const [isDownvoted, setIsDownvoted] = useState(false);
@@ -117,29 +109,10 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
     const bootstrap = async () => {
       // currentUser is managed by AuthContext, just fetch data
       await fetchPostData(currentUser?.id);
-      await fetchCategories();
     };
 
     bootstrap();
   }, [documentId, currentUser?.id]);
-
-  const fetchCategories = async () => {
-    try {
-      const response = await api.get("/api/categories", {
-        params: {
-          sort: ["sortOrder:asc", "name:asc"],
-          filters: {
-            parent: {
-              $null: true,
-            },
-          },
-        },
-      });
-      setCategories(response.data?.data || []);
-    } catch (error) {
-      console.error("Failed to fetch categories:", error);
-    }
-  };
 
   // Only one input form can be open at a time.
   useEffect(() => {
@@ -1090,7 +1063,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
 
   if (loading) {
     return (
-      <ForumLayout categories={categories}>
+      <ForumLayout>
         <div className="min-h-[calc(100vh-200px)] flex items-center justify-center">
           <p className="text-slate-600">Đang tải...</p>
         </div>
@@ -1100,7 +1073,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
 
   if (!post) {
     return (
-      <ForumLayout categories={categories}>
+      <ForumLayout>
         <div className="min-h-[calc(100vh-200px)] flex items-center justify-center">
           <p className="text-slate-600">Không tìm thấy bài viết</p>
         </div>
@@ -1111,7 +1084,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
   // Check if post is hidden by moderator
   if (post.moderationStatus === 'delete') {
     return (
-      <ForumLayout categories={categories}>
+      <ForumLayout>
         <div className="max-w-3xl">
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-8 text-center">
               <div className="w-16 h-16 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -1132,7 +1105,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
   const isDraftPost = String(post.status || "").toLowerCase() === "draft";
 
   return (
-    <ForumLayout categories={categories}>
+    <ForumLayout>
       {/* Toast Notification */}
       {showToast.show && (
         <div className="fixed top-4 right-4 z-50 animate-slide-in">

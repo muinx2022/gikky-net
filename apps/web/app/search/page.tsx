@@ -6,15 +6,6 @@ import { useSearchParams } from "next/navigation";
 import ForumLayout from "../../components/ForumLayout";
 import { api } from "../../lib/api";
 
-interface Category {
-  id: number;
-  documentId: string;
-  name: string;
-  description: string;
-  sortOrder?: number;
-  parent?: { id: number; name: string } | null;
-}
-
 interface SearchResultItem {
   documentId: string;
   title: string;
@@ -120,17 +111,8 @@ function SearchContent() {
 }
 
 export default function SearchPage() {
-  const [categories, setCategories] = useState<Category[]>([]);
-
-  useEffect(() => {
-    api
-      .get("/api/categories", { params: { sort: ["sortOrder:asc", "name:asc"], populate: "parent" } })
-      .then((res) => setCategories(res.data?.data || []))
-      .catch(() => {});
-  }, []);
-
   return (
-    <ForumLayout categories={categories}>
+    <ForumLayout>
       <Suspense fallback={<p className="text-slate-500">Đang tải...</p>}>
         <SearchContent />
       </Suspense>

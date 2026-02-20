@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from "react";
 import { Loader2, BarChart2 } from "lucide-react";
 import { api } from "../../lib/api";
 import { setPageMeta } from "../../lib/meta";
-import { useCategories } from "../../lib/useCategories";
 import ForumLayout from "../../components/ForumLayout";
 import TradeCard from "../../components/TradeCard";
 
@@ -24,7 +23,6 @@ interface Trade {
 }
 
 export default function TradingCommunityPage() {
-  const categories = useCategories();
   const [trades, setTrades] = useState<Trade[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -71,7 +69,7 @@ export default function TradingCommunityPage() {
   };
 
   return (
-    <ForumLayout categories={categories}>
+    <ForumLayout>
       <div className="space-y-4">
         {loading ? (
           <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center text-sm text-slate-400">

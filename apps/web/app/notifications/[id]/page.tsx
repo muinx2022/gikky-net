@@ -85,7 +85,7 @@ export default function NotificationInvitePage() {
       : "Bạn được mời trở thành kiểm duyệt viên của danh mục này.";
 
   return (
-    <ForumLayout categories={[]}>
+    <ForumLayout>
       <div className="mx-auto max-w-2xl pt-8">
         <div className="rounded border border-slate-400 bg-white p-6">
           <h1 className="mb-2 text-xl font-semibold text-slate-900">Lời mời kiểm duyệt viên</h1>

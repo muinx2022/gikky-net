@@ -7,15 +7,6 @@ import PostCard, { type PostCardPost } from "../../../components/PostCard";
 import ShareModal from "../../../components/ShareModal";
 import { api, getStrapiURL } from "../../../lib/api";
 
-interface Category {
-  id: number;
-  documentId: string;
-  name: string;
-  description: string;
-  slug?: string;
-  parent?: { id?: number } | null;
-}
-
 interface UserProfile {
   id: number;
   username: string;
@@ -56,7 +47,6 @@ export default function UserPage({ params }: { params: Promise<{ username: strin
   const resolvedParams = use(params);
   const username = decodeURIComponent(resolvedParams.username);
 
-  const [categories, setCategories] = useState<Category[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [totalPosts, setTotalPosts] = useState(0);
@@ -68,17 +58,6 @@ export default function UserPage({ params }: { params: Promise<{ username: strin
   const [notFound, setNotFound] = useState(false);
 
   const sentinelRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    api.get("/api/categories", {
-      params: { sort: ["sortOrder:asc", "name:asc"], populate: { parent: true } },
-    })
-      .then((res) => {
-        const all: Category[] = res.data?.data || [];
-        setCategories(all.filter((c) => !c.parent?.id));
-      })
-      .catch(() => {});
-  }, []);
 
   const fetchPosts = useCallback(async (targetPage: number, append: boolean, userId: number) => {
     const response = await api.get("/api/posts", {
@@ -177,7 +156,7 @@ export default function UserPage({ params }: { params: Promise<{ username: strin
   })();
 
   return (
-    <ForumLayout categories={categories}>
+    <ForumLayout>
       <div className="space-y-3">
         {loading ? (
           <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center">

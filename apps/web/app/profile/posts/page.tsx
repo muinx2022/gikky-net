@@ -7,15 +7,6 @@ import ForumLayout from "../../../components/ForumLayout";
 import { api } from "../../../lib/api";
 import { getAuthToken } from "../../../lib/auth-storage";
 
-interface Category {
-  id: number;
-  documentId: string;
-  name: string;
-  description: string;
-  sortOrder?: number;
-  parent?: { id: number; name: string } | null;
-}
-
 interface PostItem {
   id: number;
   documentId: string;
@@ -71,7 +62,6 @@ const getModerationBadge = (moderationStatus?: "block-comment" | "delete" | null
 };
 
 export default function MyPostsPage() {
-  const [categories, setCategories] = useState<Category[]>([]);
   const [posts, setPosts] = useState<PostItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -88,14 +78,6 @@ export default function MyPostsPage() {
       }
 
       try {
-        const categoriesRes = await api.get("/api/categories", {
-          params: {
-            sort: ["sortOrder:asc", "name:asc"],
-            populate: "parent",
-          },
-        });
-        setCategories(categoriesRes.data?.data || []);
-
         const postsRes = await api.get("/api/posts/my", {
           headers: { Authorization: `Bearer ${jwt}` },
         });
@@ -181,7 +163,7 @@ export default function MyPostsPage() {
   };
 
   return (
-    <ForumLayout categories={categories}>
+    <ForumLayout>
       <div className="w-full">
         <div className="rounded border border-slate-300 bg-white p-4 md:p-6 dark:border-slate-700/35 dark:bg-slate-900">
           <div className="mb-5">

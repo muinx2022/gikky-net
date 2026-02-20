@@ -6,13 +6,11 @@ import Link from "next/link";
 import { ArrowLeft, BookOpenText } from "lucide-react";
 import { api } from "../../../lib/api";
 import { getAuthToken } from "../../../lib/auth-storage";
-import { useCategories } from "../../../lib/useCategories";
 import ForumLayout from "../../../components/ForumLayout";
 import TradeForm from "../../../components/TradeForm";
 
 export default function NewTradePage() {
   const router = useRouter();
-  const categories = useCategories();
   const [allowed, setAllowed] = useState(false);
 
   useEffect(() => {
@@ -43,7 +41,7 @@ export default function NewTradePage() {
   if (!allowed) return null;
 
   return (
-    <ForumLayout categories={categories}>
+    <ForumLayout>
       <div className="mx-auto max-w-3xl overflow-hidden rounded-2xl border border-slate-200 bg-white">
         <div className="flex items-center justify-between px-5 py-4">
           <div className="flex items-center gap-3">

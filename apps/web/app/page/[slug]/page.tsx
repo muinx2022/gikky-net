@@ -4,15 +4,6 @@ import { use, useEffect, useState } from "react";
 import ForumLayout from "../../../components/ForumLayout";
 import { api } from "../../../lib/api";
 
-interface Category {
-  id: number;
-  documentId: string;
-  name: string;
-  description: string;
-  slug?: string;
-  parent?: { id?: number } | null;
-}
-
 interface StaticPage {
   id: number;
   documentId: string;
@@ -26,22 +17,13 @@ export default function StaticPageDetail({ params }: { params: Promise<{ slug: s
   const resolvedParams = use(params);
   const slug = resolvedParams.slug;
 
-  const [categories, setCategories] = useState<Category[]>([]);
   const [page, setPage] = useState<StaticPage | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const bootstrap = async () => {
       try {
-        const [categoriesRes, pageRes] = await Promise.all([
-          api.get("/api/categories", {
-            params: {
-              sort: ["sortOrder:asc", "name:asc"],
-              populate: "parent",
-              filters: { parent: { $null: true } },
-            },
-          }),
-          api.get("/api/pages", {
+        const pageRes = await api.get("/api/pages", {
             params: {
               filters: {
                 slug: {
@@ -54,10 +36,8 @@ export default function StaticPageDetail({ params }: { params: Promise<{ slug: s
               },
               status: "published",
             },
-          }),
-        ]);
+          });
 
-        setCategories(categoriesRes.data?.data || []);
         setPage(pageRes.data?.data?.[0] || null);
       } catch (error) {
         console.error("Failed to load static page:", error);
@@ -70,7 +50,7 @@ export default function StaticPageDetail({ params }: { params: Promise<{ slug: s
   }, [slug]);
 
   return (
-    <ForumLayout categories={categories}>
+    <ForumLayout>
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-6">
         {loading ? (
           <p className="text-slate-500">Loading...</p>

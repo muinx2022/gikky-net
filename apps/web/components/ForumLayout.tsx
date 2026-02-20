@@ -26,7 +26,6 @@ interface Tag {
 
 interface ForumLayoutProps {
   children: React.ReactNode;
-  categories?: Category[];
   activeNav?: "home" | "popular" | "trading" | "journal";
 }
 
@@ -49,7 +48,7 @@ const SUBNAV_HEIGHT = 44;
 const SEARCH_SUGGEST_MIN_CHARS = 3;
 const SEARCH_SUGGEST_DEBOUNCE_MS = 420;
 
-export default function ForumLayout({ children, categories = [], activeNav }: ForumLayoutProps) {
+export default function ForumLayout({ children, activeNav }: ForumLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
   const homeActive = activeNav ? activeNav === "home" : pathname === "/";
@@ -64,6 +63,7 @@ export default function ForumLayout({ children, categories = [], activeNav }: Fo
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const mobileSidebarPanelRef = useRef<HTMLDivElement | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [footerPages, setFooterPages] = useState<FooterPageLink[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [searchValue, setSearchValue] = useState("");
@@ -73,6 +73,27 @@ export default function ForumLayout({ children, categories = [], activeNav }: Fo
   const searchWrapRef = useRef<HTMLDivElement | null>(null);
   const { currentUser, isModerator, hydrated, handleLoginSuccess, handleLogout } = useAuth();
   const currentYear = new Date().getFullYear();
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await api.get("/api/categories", {
+          params: { sort: ["sortOrder:asc", "name:asc"], populate: "parent", filters: { parent: { $null: true } } },
+        });
+        let roots: Category[] = res.data?.data || [];
+        if (roots.length === 0) {
+          const allRes = await api.get("/api/categories", {
+            params: { sort: ["sortOrder:asc", "name:asc"], populate: "parent" },
+          });
+          const all: Category[] = allRes.data?.data || [];
+          roots = all.filter((c) => !c.parent?.id);
+        }
+        setCategories(roots);
+      } catch {
+        // ignore
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     const loadFooterPages = async () => {

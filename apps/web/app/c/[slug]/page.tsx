@@ -54,7 +54,6 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
   const resolvedParams = use(params);
   const categorySlug = resolvedParams.slug;
 
-  const [categories, setCategories] = useState<Category[]>([]);
   const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -123,10 +122,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
     });
 
     const fetchedCategories = categoriesRes.data?.data || [];
-    const rootCategories = fetchedCategories.filter((cat: Category) => !cat?.parent?.id);
-
     setAllCategories(fetchedCategories);
-    setCategories(rootCategories);
 
     const matchedCategory = fetchedCategories.find(
       (cat: Category) => cat.slug === categorySlug || normalizeSlug(cat.name) === categorySlug
@@ -373,7 +369,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
   };
 
   return (
-    <ForumLayout categories={categories}>
+    <ForumLayout>
       <ToastContainer />
       <div className="space-y-3">
         {loading ? (

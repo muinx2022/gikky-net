@@ -7,7 +7,6 @@ import { BarChart2, Pencil, PlusCircle, Trash2 } from "lucide-react";
 import { api } from "../../lib/api";
 import { getAuthToken } from "../../lib/auth-storage";
 import { useAuth } from "../../components/AuthContext";
-import { useCategories } from "../../lib/useCategories";
 import { setPageMeta } from "../../lib/meta";
 import ForumLayout from "../../components/ForumLayout";
 import TradeCard from "../../components/TradeCard";
@@ -81,7 +80,6 @@ export default function JournalPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [deleteTarget, setDeleteTarget] = useState<Trade | null>(null);
-  const categories = useCategories();
 
   useEffect(() => {
     setPageMeta("Nhật ký giao dịch", "Ghi lại, phân tích và theo dõi lịch sử giao dịch cá nhân của bạn trên Gikky.");
@@ -152,7 +150,7 @@ export default function JournalPage() {
   const pnlPositive = (stats?.totalPnl ?? 0) >= 0;
 
   return (
-    <ForumLayout categories={categories}>
+    <ForumLayout>
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
         <div className="flex items-center justify-between px-5 py-4">
           <div className="flex items-center gap-3">

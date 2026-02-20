@@ -7,15 +7,6 @@ import ShareModal from "../../../components/ShareModal";
 import { api } from "../../../lib/api";
 import { getAuthToken } from "../../../lib/auth-storage";
 
-interface Category {
-  id: number;
-  documentId: string;
-  name: string;
-  description: string;
-  slug?: string;
-  parent?: { id: number } | null;
-}
-
 interface Post extends PostCardPost {
   status: string;
 }
@@ -23,28 +14,10 @@ interface Post extends PostCardPost {
 type FeedSummaryMap = Record<string, { upvotes?: number; downvotes?: number; comments?: number; score?: number }>;
 
 export default function SavedPostsPage() {
-  const [categories, setCategories] = useState<Category[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [sharePost, setSharePost] = useState<PostCardPost | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
-  const fetchCategories = useCallback(async () => {
-    const categoriesRes = await api.get("/api/categories", {
-      params: {
-        sort: ["sortOrder:asc", "name:asc"],
-        populate: "parent",
-        filters: {
-          parent: {
-            $null: true,
-          },
-        },
-      },
-    });
-
-    const rootCategories = categoriesRes.data?.data || [];
-    setCategories(rootCategories);
-  }, []);
 
   const fetchSavedPosts = useCallback(async () => {
     const jwt = getAuthToken();
@@ -117,7 +90,7 @@ export default function SavedPostsPage() {
       setLoading(true);
       setError("");
       try {
-        await Promise.all([fetchCategories(), fetchSavedPosts()]);
+        await fetchSavedPosts();
       } catch (err: any) {
         setError(err?.response?.data?.error?.message || err?.message || "Táº£i bÃ i viáº¿t Ä‘Ã£ lÆ°u tháº¥t báº¡i.");
       } finally {
@@ -126,7 +99,7 @@ export default function SavedPostsPage() {
     };
 
     bootstrap();
-  }, [fetchCategories, fetchSavedPosts]);
+  }, [fetchSavedPosts]);
 
   const formatDate = (dateString: string) => {
     const now = new Date();
@@ -145,7 +118,7 @@ export default function SavedPostsPage() {
   };
 
   return (
-    <ForumLayout categories={categories}>
+    <ForumLayout>
       <div className="pt-5 md:pt-6 space-y-3">
         <div className="rounded border border-slate-300 bg-white px-4 py-3 dark:border-slate-700/35 dark:bg-slate-900">
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">BÃ i viáº¿t Ä‘Ã£ lÆ°u</h1>

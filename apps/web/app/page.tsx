@@ -14,15 +14,6 @@ interface Post extends PostCardPost {
 
 type FeedSummaryMap = Record<string, { upvotes?: number; downvotes?: number; comments?: number; score?: number }>;
 
-interface Category {
-  id: number;
-  documentId: string;
-  name: string;
-  description: string;
-  slug?: string;
-  parent?: { id?: number } | null;
-}
-
 interface StaticPage {
   id: number;
   documentId: string;
@@ -36,7 +27,6 @@ const PAGE_SIZE = 10;
 
 export default function ForumPage() {
   const [posts, setPosts] = useState<Post[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [sharePost, setSharePost] = useState<PostCardPost | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -45,31 +35,6 @@ export default function ForumPage() {
   const [frontPage, setFrontPage] = useState<StaticPage | null>(null);
 
   const sentinelRef = useRef<HTMLDivElement | null>(null);
-
-  const fetchCategories = useCallback(async () => {
-    const categoriesRes = await api.get("/api/categories", {
-      params: {
-        sort: ["sortOrder:asc", "name:asc"],
-        populate: "parent",
-        filters: { parent: { $null: true } },
-      },
-    });
-
-    let rootCategories = categoriesRes.data?.data || [];
-
-    if (rootCategories.length === 0) {
-      const allCategoriesRes = await api.get("/api/categories", {
-        params: {
-          sort: ["sortOrder:asc", "name:asc"],
-          populate: "parent",
-        },
-      });
-      const allCategories = allCategoriesRes.data?.data || [];
-      rootCategories = allCategories.filter((category: Category) => !category?.parent?.id);
-    }
-
-    setCategories(rootCategories);
-  }, []);
 
   const fetchPosts = useCallback(async (targetPage: number, append: boolean) => {
     const response = await api.get("/api/posts", {
@@ -148,7 +113,7 @@ export default function ForumPage() {
   useEffect(() => {
     const bootstrap = async () => {
       try {
-        await Promise.all([fetchCategories(), fetchPosts(1, false), fetchFrontPage()]);
+        await Promise.all([fetchPosts(1, false), fetchFrontPage()]);
       } catch (error) {
         console.error("Failed to fetch home data:", error);
       } finally {
@@ -157,7 +122,7 @@ export default function ForumPage() {
     };
 
     bootstrap();
-  }, [fetchCategories, fetchFrontPage, fetchPosts]);
+  }, [fetchFrontPage, fetchPosts]);
 
   useEffect(() => {
     const desc = "Gikky là nơi chia sẻ kiến thức, thảo luận chuyên sâu và kinh nghiệm giao dịch từ cộng đồng.";
@@ -212,7 +177,7 @@ export default function ForumPage() {
   };
 
   return (
-    <ForumLayout categories={categories}>
+    <ForumLayout>
       <div className="space-y-4">
         {loading ? (
           <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center dark:border-slate-700/35 dark:bg-slate-900">

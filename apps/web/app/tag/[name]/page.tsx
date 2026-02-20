@@ -7,15 +7,6 @@ import PostCard, { type PostCardPost } from "../../../components/PostCard";
 import ShareModal from "../../../components/ShareModal";
 import { api } from "../../../lib/api";
 
-interface Category {
-  id: number;
-  documentId: string;
-  name: string;
-  description: string;
-  slug?: string;
-  parent?: { id?: number } | null;
-}
-
 interface Post extends PostCardPost {
   status: string;
 }
@@ -45,7 +36,6 @@ export default function TagPage({ params }: { params: Promise<{ name: string }> 
   const resolvedParams = use(params);
   const tagName = decodeURIComponent(resolvedParams.name);
 
-  const [categories, setCategories] = useState<Category[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [totalPosts, setTotalPosts] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -56,16 +46,6 @@ export default function TagPage({ params }: { params: Promise<{ name: string }> 
 
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    api.get("/api/categories", {
-      params: { sort: ["sortOrder:asc", "name:asc"], populate: { parent: true } },
-    })
-      .then((res) => {
-        const all: Category[] = res.data?.data || [];
-        setCategories(all.filter((c) => !c.parent?.id));
-      })
-      .catch(() => {});
-  }, []);
 
   const fetchPosts = useCallback(async (targetPage: number, append: boolean) => {
     const response = await api.get("/api/posts", {
@@ -146,7 +126,7 @@ export default function TagPage({ params }: { params: Promise<{ name: string }> 
   }, [loadMore]);
 
   return (
-    <ForumLayout categories={categories}>
+    <ForumLayout>
       <div className="space-y-3">
         {loading ? (
           <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center dark:border-slate-700/35 dark:bg-slate-900">
