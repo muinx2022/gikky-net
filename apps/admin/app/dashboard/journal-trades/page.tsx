@@ -1,10 +1,11 @@
 ﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Anchor, Badge, Box, Button, Group, Menu, Modal, Paper, Select, SimpleGrid, Switch, Table, Text, TextInput, Title } from "@mantine/core";
+import { Anchor, Badge, Box, Button, Group, Menu, Paper, Select, Switch, Table, Text, TextInput, Title } from "@mantine/core";
 import { MoreVertical, Trash, Eye } from "lucide-react";
 import { notifications } from "@mantine/notifications";
 import { strapiApi } from "../../../lib/strapi";
+import { useRouter } from "next/navigation";
 import DeleteConfirmModal from "../../../components/DeleteConfirmModal";
 
 interface Trade {
@@ -55,6 +56,7 @@ const PUBLIC_OPTIONS = [
 ];
 
 export default function JournalTradesPage() {
+  const router = useRouter();
   const [trades, setTrades] = useState<Trade[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
@@ -66,9 +68,6 @@ export default function JournalTradesPage() {
   const [deleteModalOpened, setDeleteModalOpened] = useState(false);
   const [deletingTrade, setDeletingTrade] = useState<{ id: string; symbol: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [viewModalOpened, setViewModalOpened] = useState(false);
-  const [viewLoading, setViewLoading] = useState(false);
-  const [viewTrade, setViewTrade] = useState<Trade | null>(null);
 
   const fetchTrades = async () => {
     setLoading(true);
@@ -148,26 +147,6 @@ export default function JournalTradesPage() {
     }
   };
 
-  const openViewModal = async (trade: Trade) => {
-    if (!trade.isPublic) return;
-    setViewModalOpened(true);
-    setViewLoading(true);
-    try {
-      const response = await strapiApi.get(`/api/admin-journals/${trade.documentId}`);
-      setViewTrade(response.data?.data || null);
-    } catch (error) {
-      console.error("Failed to fetch trade detail", error);
-      notifications.show({
-        title: "Error",
-        message: "Failed to fetch trade detail",
-        color: "red",
-      });
-      setViewModalOpened(false);
-    } finally {
-      setViewLoading(false);
-    }
-  };
-
   const formatDate = (dateString: string) => {
     try {
       return new Date(dateString).toLocaleDateString("en-US", {
@@ -189,13 +168,8 @@ export default function JournalTradesPage() {
               component="button"
               type="button"
               fw={600}
-              onClick={() => openViewModal(trade)}
-              disabled={!trade.isPublic}
-              c={!trade.isPublic ? "dimmed" : undefined}
-              style={{
-                textDecoration: "none",
-                cursor: trade.isPublic ? "pointer" : "not-allowed",
-              }}
+              onClick={() => router.push(`/dashboard/journal-trades/${trade.documentId}`)}
+              style={{ textDecoration: "none", cursor: "pointer" }}
             >
               {trade.symbol}
             </Anchor>
@@ -226,8 +200,7 @@ export default function JournalTradesPage() {
                 size="xs"
                 variant="light"
                 leftSection={<Eye size={14} />}
-                disabled={!trade.isPublic}
-                onClick={() => openViewModal(trade)}
+                onClick={() => router.push(`/dashboard/journal-trades/${trade.documentId}`)}
               >
                 View
               </Button>
@@ -326,55 +299,6 @@ export default function JournalTradesPage() {
         message={`Are you sure you want to delete "${deletingTrade?.symbol || "this trade"}"?`}
       />
 
-      <Modal
-        opened={viewModalOpened}
-        onClose={() => {
-          if (viewLoading) return;
-          setViewModalOpened(false);
-          setViewTrade(null);
-        }}
-        title="Chi tiết trade journal"
-        centered
-        size="lg"
-      >
-        {viewLoading ? (
-          <Text size="sm" c="dimmed">Loading...</Text>
-        ) : !viewTrade ? (
-          <Text size="sm" c="dimmed">Không có dữ liệu.</Text>
-        ) : (
-          <Box>
-            <SimpleGrid cols={2} spacing="sm" mb="md">
-              <Text size="sm"><b>Symbol:</b> {viewTrade.symbol}</Text>
-              <Text size="sm"><b>Market:</b> {viewTrade.market}</Text>
-              <Text size="sm"><b>Direction:</b> {viewTrade.direction}</Text>
-              <Text size="sm"><b>Outcome:</b> {viewTrade.outcome}</Text>
-              <Text size="sm"><b>P&amp;L:</b> {viewTrade.pnl == null ? "-" : Number(viewTrade.pnl).toFixed(2)}</Text>
-              <Text size="sm"><b>Quantity:</b> {viewTrade.quantity ?? "-"}</Text>
-              <Text size="sm"><b>Entry Price:</b> {viewTrade.entryPrice ?? "-"}</Text>
-              <Text size="sm"><b>Exit Price:</b> {viewTrade.exitPrice ?? "-"}</Text>
-              <Text size="sm"><b>Entry Date:</b> {formatDate(viewTrade.entryDate)}</Text>
-              <Text size="sm"><b>Exit Date:</b> {viewTrade.exitDate ? formatDate(viewTrade.exitDate) : "-"}</Text>
-              <Text size="sm"><b>Tác giả:</b> {viewTrade.author?.username || viewTrade.author?.email || "Unknown"}</Text>
-              <Text size="sm"><b>Trạng thái:</b> {viewTrade.isPublic ? "Public" : "Private"}</Text>
-            </SimpleGrid>
-
-            <Box mb="sm">
-              <Text fw={600} size="sm" mb={4}>Strategy</Text>
-              <Text size="sm" c="dimmed">{viewTrade.strategy || "-"}</Text>
-            </Box>
-
-            <Box mb="sm">
-              <Text fw={600} size="sm" mb={4}>Setup</Text>
-              <Text size="sm" c="dimmed">{viewTrade.setup || "-"}</Text>
-            </Box>
-
-            <Box>
-              <Text fw={600} size="sm" mb={4}>Notes</Text>
-              <Text size="sm" c="dimmed" style={{ whiteSpace: "pre-wrap" }}>{viewTrade.notes || "-"}</Text>
-            </Box>
-          </Box>
-        )}
-      </Modal>
     </Box>
   );
 }

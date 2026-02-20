@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Title, Text, Box, Paper, Badge, Group, Button, LoadingOverlay } from '@mantine/core';
-import { ArrowLeft, Edit, Calendar, User } from 'lucide-react';
+import { Title, Text, Box, Paper, Badge, Group, Button, LoadingOverlay, Divider } from '@mantine/core';
+import { ArrowLeft, Edit, Calendar, User, MessageSquare } from 'lucide-react';
 import { strapiApi } from '../../../../lib/strapi';
 import { useRouter, useParams } from 'next/navigation';
+import AdminCommentList from '../../../../components/AdminCommentList';
 
 interface Post {
   id: number;
@@ -160,18 +161,21 @@ export default function ViewPostPage() {
               </Group>
             )}
 
-            {/* Content */}
+            {/* Content in scrollable box */}
             <Box
               style={{
-                color: '#334155',
-                lineHeight: 1.7,
+                maxHeight: 480,
+                overflowY: 'auto',
+                border: '1px solid #e2e8f0',
+                borderRadius: 8,
+                padding: '1rem 1.25rem',
+                background: '#fafafa',
               }}
             >
               <div
+                className="post-content"
                 dangerouslySetInnerHTML={{ __html: post.content }}
-                style={{
-                  fontSize: '1rem',
-                }}
+                style={{ color: '#334155', lineHeight: 1.7, fontSize: '1rem' }}
               />
             </Box>
 
@@ -191,62 +195,30 @@ export default function ViewPostPage() {
         )}
       </Paper>
 
+      {/* Comments Section */}
+      {post && (
+        <Paper shadow="xs" p="xl" radius="lg" mt="lg" style={{ border: '1px solid #e2e8f0' }}>
+          <Group gap="xs" mb="lg">
+            <MessageSquare size={18} color="#64748b" />
+            <Title order={3} c="#0f172a">Comments</Title>
+          </Group>
+          <Divider mb="md" />
+          <AdminCommentList postId={post.documentId} />
+        </Paper>
+      )}
+
       <style jsx global>{`
-        .post-content h1 {
-          font-size: 2rem;
-          font-weight: 700;
-          margin: 1.5rem 0 1rem;
-        }
-        .post-content h2 {
-          font-size: 1.5rem;
-          font-weight: 700;
-          margin: 1.25rem 0 0.875rem;
-        }
-        .post-content h3 {
-          font-size: 1.25rem;
-          font-weight: 600;
-          margin: 1rem 0 0.75rem;
-        }
-        .post-content p {
-          margin: 0.75rem 0;
-        }
-        .post-content ul,
-        .post-content ol {
-          margin: 0.75rem 0;
-          padding-left: 1.5rem;
-        }
-        .post-content blockquote {
-          border-left: 3px solid #e2e8f0;
-          padding-left: 1rem;
-          margin: 1rem 0;
-          color: #64748b;
-        }
-        .post-content code {
-          background: #f1f5f9;
-          padding: 0.2rem 0.4rem;
-          border-radius: 4px;
-          font-family: monospace;
-          font-size: 0.875rem;
-        }
-        .post-content pre {
-          background: #0f172a;
-          color: white;
-          padding: 1rem;
-          border-radius: 8px;
-          overflow-x: auto;
-          margin: 1rem 0;
-        }
-        .post-content pre code {
-          background: none;
-          padding: 0;
-          color: white;
-        }
-        .post-content a {
-          color: #3b82f6;
-          text-decoration: underline;
-        }
+        .post-content h1 { font-size: 2rem; font-weight: 700; margin: 1.5rem 0 1rem; }
+        .post-content h2 { font-size: 1.5rem; font-weight: 700; margin: 1.25rem 0 0.875rem; }
+        .post-content h3 { font-size: 1.25rem; font-weight: 600; margin: 1rem 0 0.75rem; }
+        .post-content p { margin: 0.75rem 0; }
+        .post-content ul, .post-content ol { margin: 0.75rem 0; padding-left: 1.5rem; }
+        .post-content blockquote { border-left: 3px solid #e2e8f0; padding-left: 1rem; margin: 1rem 0; color: #64748b; }
+        .post-content code { background: #f1f5f9; padding: 0.2rem 0.4rem; border-radius: 4px; font-family: monospace; font-size: 0.875rem; }
+        .post-content pre { background: #0f172a; color: white; padding: 1rem; border-radius: 8px; overflow-x: auto; margin: 1rem 0; }
+        .post-content pre code { background: none; padding: 0; color: white; }
+        .post-content a { color: #3b82f6; text-decoration: underline; }
       `}</style>
     </Box>
   );
 }
-

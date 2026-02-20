@@ -3,8 +3,13 @@ import { emitNotification } from '../../../utils/notification-emitter';
 
 export default factories.createCoreController('api::comment.comment', ({ strapi }) => ({
   async find(ctx) {
+    const baseWhere: any = ctx.query.filters || {};
+    // Admin with includeDisabled param can see disabled comments
+    const isAdmin = ctx.state.user && ctx.query.includeDisabled;
+    const where = isAdmin ? baseWhere : { ...baseWhere, disabled: { $ne: true } };
+
     const comments = await strapi.db.query('api::comment.comment').findMany({
-      where: ctx.query.filters || {},
+      where,
       populate: {
         author: {
           select: ['id', 'username', 'email'],
@@ -150,6 +155,26 @@ export default factories.createCoreController('api::comment.comment', ({ strapi 
     }
 
     return { data: comment };
+  },
+
+  async toggleDisable(ctx) {
+    const user = ctx.state.user;
+    if (!user) return ctx.unauthorized('Authentication required');
+
+    const { id } = ctx.params;
+
+    const comment = await strapi.db.query('api::comment.comment').findOne({
+      where: { documentId: id },
+    });
+
+    if (!comment) return ctx.notFound('Comment not found');
+
+    const updated = await strapi.db.query('api::comment.comment').update({
+      where: { documentId: id },
+      data: { disabled: !comment.disabled },
+    });
+
+    return { data: { documentId: id, disabled: updated.disabled } };
   },
 
   async delete(ctx) {
