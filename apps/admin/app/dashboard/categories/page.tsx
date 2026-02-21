@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { Title, Text, Box, Paper, Group, Button, ActionIcon, Menu, Switch, Tooltip, TextInput, Select } from "@mantine/core";
+import { Title, Text, Box, Paper, Group, Button, ActionIcon, Switch, Tooltip, TextInput, Select } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { Plus, MoreVertical, Edit, Trash, FolderTree, CheckCircle, XCircle, Shield, GripVertical } from "lucide-react";
+import { Plus, Edit, Trash, FolderTree, CheckCircle, XCircle, Shield, GripVertical } from "lucide-react";
 import { strapiApi } from "../../../lib/strapi";
 import { useRouter } from "next/navigation";
 import DeleteConfirmModal from "../../../components/DeleteConfirmModal";
@@ -411,25 +411,21 @@ export default function CategoriesPage() {
                   size="sm"
                 />
               </Tooltip>
-              <Menu shadow="md" width={170} radius="md">
-                <Menu.Target>
-                  <ActionIcon variant="subtle" color="gray">
-                    <MoreVertical size={16} />
-                  </ActionIcon>
-                </Menu.Target>
-                <Menu.Dropdown>
-                  <Menu.Item leftSection={<Shield size={14} />} onClick={() => openAssignModModal(category.documentId, category.name)} color="orange">
-                    Invite or Assign Mod
-                  </Menu.Item>
-                  <Menu.Divider />
-                  <Menu.Item leftSection={<Edit size={14} />} onClick={() => router.push(`/dashboard/categories/edit/${category.documentId}`)}>
-                    Edit
-                  </Menu.Item>
-                  <Menu.Item color="red" leftSection={<Trash size={14} />} onClick={() => openDeleteModal(category.documentId, category.name)}>
-                    Delete
-                  </Menu.Item>
-                </Menu.Dropdown>
-              </Menu>
+              <Tooltip label="Invite or Assign Mod" withArrow color="orange">
+                <ActionIcon variant="light" color="orange" size="sm" onClick={() => openAssignModModal(category.documentId, category.name)}>
+                  <Shield size={14} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip label="Edit" withArrow>
+                <ActionIcon variant="light" size="sm" onClick={() => router.push(`/dashboard/categories/edit/${category.documentId}`)}>
+                  <Edit size={14} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip label="Delete" withArrow color="red">
+                <ActionIcon variant="light" color="red" size="sm" onClick={() => openDeleteModal(category.documentId, category.name)}>
+                  <Trash size={14} />
+                </ActionIcon>
+              </Tooltip>
             </Group>
           </Group>
         </Paper>

@@ -54,5 +54,14 @@ export default {
         middlewares: [],
       },
     },
+    {
+      method: 'GET',
+      path: '/posts/moderator/detail/:id',
+      handler: 'post.moderatorDetail',
+      config: {
+        policies: [],
+        middlewares: [],
+      },
+    },
   ],
 };

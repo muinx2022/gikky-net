@@ -53,19 +53,25 @@ const resolveRelationIds = async (strapi: Core.Strapi, uid: string, value: unkno
   for (const raw of value) {
     const asNumber = Number(raw);
     if (Number.isFinite(asNumber) && asNumber > 0) {
-      if (!seen.has(asNumber)) {
-        seen.add(asNumber);
-        resolved.push(asNumber);
+      const foundById = await strapi.db.query(uid as any).findOne({
+        where: { id: asNumber },
+        select: ['id'],
+      });
+      const id = Number((foundById as any)?.id);
+      if (Number.isFinite(id) && id > 0 && !seen.has(id)) {
+        seen.add(id);
+        resolved.push(id);
       }
       continue;
     }
 
     if (typeof raw === 'string' && raw.trim()) {
-      const found = await strapi.db.query(uid as any).findOne({
-        where: { documentId: raw.trim() },
+      const rawDocumentId = raw.trim();
+      const foundByDocumentId = await strapi.db.query(uid as any).findOne({
+        where: { documentId: rawDocumentId },
         select: ['id'],
       });
-      const id = Number((found as any)?.id);
+      const id = Number((foundByDocumentId as any)?.id);
       if (Number.isFinite(id) && id > 0 && !seen.has(id)) {
         seen.add(id);
         resolved.push(id);
@@ -78,6 +84,7 @@ const resolveRelationIds = async (strapi: Core.Strapi, uid: string, value: unkno
 
 const parseDataPayload = async (strapi: Core.Strapi, ctx: any) => {
   const payload = ctx.request.body?.data || {};
+  const hasModerationStatus = Object.prototype.hasOwnProperty.call(payload, 'moderationStatus');
   const authorCandidate = payload.authorUserId ?? payload.author;
   const authorUserId = Number(authorCandidate);
   const nextPayload = { ...payload };
@@ -102,7 +109,10 @@ const parseDataPayload = async (strapi: Core.Strapi, ctx: any) => {
     } else {
       delete nextPayload.moderationStatus;
     }
-  } else if (nextPayload.moderationStatus == null) {
+  } else if (hasModerationStatus && nextPayload.moderationStatus == null) {
+    // Explicit null from admin UI means "clear moderation status".
+    nextPayload.moderationStatus = null;
+  } else if (!hasModerationStatus) {
     delete nextPayload.moderationStatus;
   }
 
@@ -110,6 +120,24 @@ const parseDataPayload = async (strapi: Core.Strapi, ctx: any) => {
     payload: nextPayload,
     authorUserId: Number.isFinite(authorUserId) && authorUserId > 0 ? authorUserId : null,
   };
+};
+
+const validateRequiredCategories = (
+  ctx: any,
+  payload: Record<string, unknown>,
+  mode: 'create' | 'update'
+) => {
+  const categories = payload.categories;
+
+  // For partial updates (status/moderation toggles), categories may be omitted.
+  if (mode === 'update' && typeof categories === 'undefined') {
+    return null;
+  }
+
+  if (!Array.isArray(categories) || categories.length === 0) {
+    return ctx.badRequest('Category is required');
+  }
+  return null;
 };
 
 const setAuthorForDocument = async (strapi: Core.Strapi, documentId: string, authorUserId: number | null) => {
@@ -134,7 +162,27 @@ const setAuthorForDocument = async (strapi: Core.Strapi, documentId: string, aut
 export default ({ strapi }: { strapi: Core.Strapi }) => ({
   async find(ctx) {
     const query = ctx.query || {};
-    const rows = await strapi.documents(POST_UID).findMany({ ...query as any, status: 'published' });
+    const [draftRows, publishedRows] = await Promise.all([
+      strapi.documents(POST_UID).findMany({ ...query as any, status: 'draft' }),
+      strapi.documents(POST_UID).findMany({ ...query as any, status: 'published' }),
+    ]);
+
+    // Merge by documentId, prefer draft variant to reflect latest admin edits.
+    const byDocumentId = new Map<string, any>();
+    for (const row of (publishedRows as any[])) {
+      if (!row?.documentId) continue;
+      byDocumentId.set(String(row.documentId), row);
+    }
+    for (const row of (draftRows as any[])) {
+      if (!row?.documentId) continue;
+      byDocumentId.set(String(row.documentId), row);
+    }
+
+    const rows = Array.from(byDocumentId.values()).sort((a: any, b: any) => {
+      const aTs = new Date(a?.createdAt || 0).getTime();
+      const bTs = new Date(b?.createdAt || 0).getTime();
+      return bTs - aTs;
+    });
     const data = await attachAuthors(strapi, rows);
 
     ctx.body = {
@@ -151,18 +199,18 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
     const { id } = ctx.params;
     const query = ctx.query || {};
 
-    // Try published first, fall back to draft
+    // Prefer draft first so admin edit screen always reflects latest saved relations.
     let row = await strapi.documents(POST_UID).findOne({
       documentId: id,
       ...(query as any),
-      status: 'published',
+      status: 'draft',
     });
 
     if (!row) {
       row = await strapi.documents(POST_UID).findOne({
         documentId: id,
         ...(query as any),
-        status: 'draft',
+        status: 'published',
       });
     }
 
@@ -177,6 +225,8 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
   async create(ctx) {
     // Ban check for the author being set
     const { payload, authorUserId } = await parseDataPayload(strapi, ctx);
+    const categoryError = validateRequiredCategories(ctx, payload, 'create');
+    if (categoryError) return categoryError;
 
     if (authorUserId) {
       const fullUser = await strapi.db.query('plugin::users-permissions.user').findOne({
@@ -227,10 +277,11 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
   async update(ctx) {
     const { id } = ctx.params;
     const { payload, authorUserId } = await parseDataPayload(strapi, ctx);
+    const categoryError = validateRequiredCategories(ctx, payload, 'update');
+    if (categoryError) return categoryError;
 
-    // Fix any stale '' moderationStatus in DB directly (bypasses enum validation)
-    if (!payload.moderationStatus) {
-      delete payload.moderationStatus;
+    // If moderation status is being cleared, keep null and normalize old invalid '' rows.
+    if (Object.prototype.hasOwnProperty.call(payload, 'moderationStatus') && payload.moderationStatus == null) {
       await strapi.db.query(POST_UID).updateMany({
         where: { documentId: id, moderationStatus: '' },
         data: { moderationStatus: null },

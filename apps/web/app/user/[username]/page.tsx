@@ -8,6 +8,7 @@ import ShareModal from "../../../components/ShareModal";
 import { api, getStrapiURL } from "../../../lib/api";
 import { useAuth } from "../../../components/AuthContext";
 import { getAuthToken } from "../../../lib/auth-storage";
+import { setPageMeta } from "../../../lib/meta";
 
 interface UserProfile {
   id: number;
@@ -60,7 +61,6 @@ export default function UserPage({ params }: { params: Promise<{ username: strin
   const [sharePost, setSharePost] = useState<PostCardPost | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
-  const [followingCount, setFollowingCount] = useState(0);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
 
@@ -134,7 +134,6 @@ export default function UserPage({ params }: { params: Promise<{ username: strin
           const countsRes = await api.get(`/api/user-follows/counts?userId=${user.id}`, { headers });
           const counts = countsRes.data?.data;
           setFollowerCount(counts?.followers || 0);
-          setFollowingCount(counts?.following || 0);
           setIsFollowing(Boolean(counts?.isFollowing));
         } catch { /* ignore */ }
       })
@@ -186,6 +185,17 @@ export default function UserPage({ params }: { params: Promise<{ username: strin
     const raw = av.formats?.thumbnail?.url || av.url;
     return raw ? (raw.startsWith("http") ? raw : getStrapiURL(raw)) : null;
   })();
+
+  useEffect(() => {
+    if (notFound) {
+      setPageMeta(`Không tìm thấy thành viên ${username}`, "Trang cá nhân không tồn tại hoặc đã bị xóa.");
+      return;
+    }
+    if (!profile) return;
+    const desc = profile.bio?.trim()
+      || `${followerCount} người theo dõi ${profile.username} trên Gikky.`;
+    setPageMeta(`Thành viên ${profile.username} | Trang cá nhân`, desc);
+  }, [profile, notFound, username, followerCount]);
 
   return (
     <ForumLayout>
@@ -245,7 +255,6 @@ export default function UserPage({ params }: { params: Promise<{ username: strin
                   )}
                   <div className="flex items-center gap-4 mt-2 text-sm text-slate-500">
                     <span><strong className="text-slate-700">{followerCount}</strong> người theo dõi</span>
-                    <span><strong className="text-slate-700">{followingCount}</strong> đang theo dõi</span>
                   </div>
                 </div>
               </div>

@@ -102,6 +102,11 @@ export default function PostEditorScreen({ documentId }: { documentId?: string }
   const [submitting, setSubmitting] = useState(false);
   const [submitMode, setSubmitMode] = useState<"draft" | "published">("published");
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({
+    title: false,
+    category: false,
+    content: false,
+  });
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(isEditMode);
@@ -313,10 +318,16 @@ export default function PostEditorScreen({ documentId }: { documentId?: string }
 
   const submitPost = async (status: "draft" | "published") => {
     setError("");
+    const nextFieldErrors = {
+      title: !title.trim(),
+      category: selectedCategoryIds.length === 0,
+      content: !hasRenderableContent(content),
+    };
+    setFieldErrors(nextFieldErrors);
 
-    if (!title.trim() || !hasRenderableContent(content)) {
-      setError("Tiêu đề và nội dung là bắt buộc.");
-      showToast("Tiêu đề và nội dung là bắt buộc.", "error");
+    if (nextFieldErrors.title || nextFieldErrors.category || nextFieldErrors.content) {
+      setError("Tiêu đề, chuyên mục và nội dung là bắt buộc.");
+      showToast("Tiêu đề, chuyên mục và nội dung là bắt buộc.", "error");
       return;
     }
 
@@ -483,7 +494,7 @@ export default function PostEditorScreen({ documentId }: { documentId?: string }
 
   return (
     <ForumLayout>
-      <div className="pt-5 md:pt-6 max-w-3xl">
+      <div className="w-full pt-5 md:pt-6">
         <div className="rounded border border-slate-400 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
           <div className="mb-6 flex items-center justify-between">
             <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{isEditMode ? "Chỉnh sửa bài" : "Tạo bài viết"}</h1>
@@ -514,9 +525,18 @@ export default function PostEditorScreen({ documentId }: { documentId?: string }
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Tiêu đề</label>
                 <input
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  onChange={(e) => {
+                    setTitle(e.target.value);
+                    if (fieldErrors.title) {
+                      setFieldErrors((prev) => ({ ...prev, title: false }));
+                    }
+                  }}
                   placeholder="Tiêu đề bài viết"
-                  className="w-full px-4 py-2 border border-slate-400 rounded-sm bg-white text-slate-900 focus:outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+                  className={`w-full px-4 py-2 border rounded-sm bg-white text-slate-900 focus:outline-none dark:bg-slate-900 dark:text-slate-100 ${
+                    fieldErrors.title
+                      ? "border-red-500 focus:border-red-500 dark:border-red-500"
+                      : "border-slate-400 focus:border-blue-500 dark:border-slate-800"
+                  }`}
                 />
               </div>
 
@@ -530,9 +550,11 @@ export default function PostEditorScreen({ documentId }: { documentId?: string }
                 <div
                   onClick={() => { if (!categoryPickerOpen) setCategoryPickerOpen(true); }}
                   className={`flex w-full cursor-pointer items-center gap-2.5 rounded-full border-2 bg-white px-3 py-2 transition-colors dark:bg-slate-900 ${
-                    categoryPickerOpen
-                      ? "border-blue-500"
-                      : "border-slate-200 hover:border-slate-400 dark:border-slate-700 dark:hover:border-slate-500"
+                    fieldErrors.category
+                      ? "border-red-500 dark:border-red-500"
+                      : categoryPickerOpen
+                        ? "border-blue-500"
+                        : "border-slate-200 hover:border-slate-400 dark:border-slate-700 dark:hover:border-slate-500"
                   }`}
                 >
                   <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
@@ -609,6 +631,9 @@ export default function PostEditorScreen({ documentId }: { documentId?: string }
                                     ? prev.filter((id) => id !== option.value)
                                     : [...prev, option.value]
                                 );
+                                if (!isSelected && fieldErrors.category) {
+                                  setFieldErrors((prev) => ({ ...prev, category: false }));
+                                }
                                 setCategoryPickerOpen(false);
                                 setCategorySearch("");
                               }}
@@ -648,9 +673,16 @@ export default function PostEditorScreen({ documentId }: { documentId?: string }
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Nội dung</label>
                 <TiptapEditor
                   content={content}
-                  onChange={setContent}
+                  onChange={(value) => {
+                    setContent(value);
+                    if (fieldErrors.content && hasRenderableContent(value)) {
+                      setFieldErrors((prev) => ({ ...prev, content: false }));
+                    }
+                  }}
                   placeholder="Viết bài của bạn..."
-                  className="bg-white dark:bg-slate-900"
+                  className={`bg-white dark:bg-slate-900 ${
+                    fieldErrors.content ? "!border-red-500 dark:!border-red-500" : ""
+                  }`}
                   uploadMode="deferred"
                   onPendingUploadsChange={setPendingUploads}
                 />

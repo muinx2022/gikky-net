@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Eye, Pencil } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Eye, Pencil, X } from "lucide-react";
 import ForumLayout from "../../../components/ForumLayout";
 import { api } from "../../../lib/api";
 import { getAuthToken } from "../../../lib/auth-storage";
@@ -37,6 +37,8 @@ const STATUS_LABEL: Record<string, string> = {
   archived: "Đã lưu trữ",
 };
 
+const PAGE_SIZE = 10;
+
 const getModerationBadge = (moderationStatus?: "block-comment" | "delete" | null) => {
   if (!moderationStatus) {
     return (
@@ -67,6 +69,16 @@ export default function MyPostsPage() {
   const [error, setError] = useState("");
   const [publishingPostId, setPublishingPostId] = useState<string | null>(null);
   const [draftingPostId, setDraftingPostId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const totalPages = Math.max(1, Math.ceil(posts.length / PAGE_SIZE));
+  const paginatedPosts = posts.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   useEffect(() => {
     const run = async () => {
@@ -179,7 +191,7 @@ export default function MyPostsPage() {
 
           {!loading && !error && posts.length > 0 ? (
             <div className="divide-y divide-slate-300 dark:divide-slate-700/35">
-              {posts.map((post) => (
+              {paginatedPosts.map((post) => (
                 <div key={post.documentId} className="flex flex-col gap-3 py-4 md:flex-row md:items-start md:justify-between">
                   <div className="min-w-0">
                     <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100 break-words">{post.title}</h2>
@@ -197,9 +209,11 @@ export default function MyPostsPage() {
                           type="button"
                           onClick={() => handlePublishNow(post)}
                           disabled={publishingPostId === post.documentId}
-                          className="rounded bg-amber-600 px-2 py-1 font-semibold text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
+                          title="Hiển thị bài viết ngay"
+                          aria-label="Hiển thị bài viết ngay"
+                          className="inline-flex h-7 w-7 items-center justify-center rounded bg-amber-600 text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
                         >
-                          {publishingPostId === post.documentId ? "Đang hiển thị..." : "Hiển thị bài viết ngay"}
+                          <Check size={14} className={publishingPostId === post.documentId ? "animate-pulse" : ""} />
                         </button>
                       </div>
                     ) : null}
@@ -210,32 +224,39 @@ export default function MyPostsPage() {
                         type="button"
                         onClick={() => handleMoveToDraft(post)}
                         disabled={draftingPostId === post.documentId}
-                        className="inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-sm font-medium transition bg-amber-100 text-amber-900 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-200 dark:hover:bg-amber-900/50 disabled:cursor-not-allowed disabled:opacity-60"
+                        title="Chuyển về bài nháp"
+                        aria-label="Chuyển về bài nháp"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded transition bg-amber-100 text-amber-900 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-200 dark:hover:bg-amber-900/50 disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        {draftingPostId === post.documentId ? "Đang chuyển..." : "Chuyển về bài nháp"}
+                        <X size={14} className={draftingPostId === post.documentId ? "animate-pulse" : ""} />
                       </button>
                     ) : null}
                     <Link
                       href={`/p/${post.slug}--${post.documentId}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-sm font-medium transition bg-slate-100 text-slate-900 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+                      title="Xem bài viết"
+                      aria-label="Xem bài viết"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded transition bg-slate-100 text-slate-900 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
                     >
                       <Eye size={14} />
-                      Xem
                     </Link>
                     {post.moderationStatus === "delete" ? (
-                      <span className="inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-sm font-medium bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                      <span
+                        title="Không thể sửa bài viết đã bị ẩn"
+                        aria-label="Không thể sửa bài viết đã bị ẩn"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                      >
                         <Pencil size={14} />
-                        Không thể sửa
                       </span>
                     ) : (
                       <Link
                         href={`/profile/posts/${post.documentId}/edit`}
-                        className="inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-sm font-medium transition bg-slate-100 text-slate-900 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+                        title="Sửa bài viết"
+                        aria-label="Sửa bài viết"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded transition bg-slate-100 text-slate-900 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
                       >
                         <Pencil size={14} />
-                        Sửa
                       </Link>
                     )}
                   </div>
@@ -243,9 +264,36 @@ export default function MyPostsPage() {
               ))}
             </div>
           ) : null}
+
+          {!loading && !error && posts.length > 0 && totalPages > 1 ? (
+            <div className="mt-4 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                disabled={currentPage <= 1}
+                title="Trang trước"
+                aria-label="Trang trước"
+                className="inline-flex h-8 w-8 items-center justify-center rounded border border-slate-300 text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700/35 dark:text-slate-300 dark:hover:bg-slate-800"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <span className="text-sm text-slate-500 dark:text-slate-400">
+                {currentPage}/{totalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                disabled={currentPage >= totalPages}
+                title="Trang sau"
+                aria-label="Trang sau"
+                className="inline-flex h-8 w-8 items-center justify-center rounded border border-slate-300 text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700/35 dark:text-slate-300 dark:hover:bg-slate-800"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
     </ForumLayout>
   );
 }
-

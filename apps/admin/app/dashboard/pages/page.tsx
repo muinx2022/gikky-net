@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Title, Text, Box, Paper, Table, Group, Button, ActionIcon, Menu, Switch, Tooltip, TextInput, Select } from "@mantine/core";
-import { Plus, MoreVertical, Edit, Trash, CheckCircle, XCircle } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Title, Text, Box, Paper, Table, Group, Button, ActionIcon, Switch, Tooltip, TextInput, Select } from "@mantine/core";
+import { Plus, Edit, Trash, CheckCircle, XCircle } from "lucide-react";
 import { strapiApi } from "../../../lib/strapi";
 import { useRouter } from "next/navigation";
 import DeleteConfirmModal from "../../../components/DeleteConfirmModal";
@@ -40,8 +40,10 @@ const getApiErrorMessage = (error: unknown, fallback: string) => {
 export default function PagesListPage() {
   usePageTitle('Pages');
   const router = useRouter();
+  const PAGE_SIZE = 10;
   const [pages, setPages] = useState<PageItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
   const [deleteModalOpened, setDeleteModalOpened] = useState(false);
   const [deletingPage, setDeletingPage] = useState<{ id: string; title: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -59,6 +61,20 @@ export default function PagesListPage() {
   useEffect(() => {
     fetchPages();
   }, [filters]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters]);
+
+  const totalPages = Math.max(1, Math.ceil(pages.length / PAGE_SIZE));
+  const pagedPages = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return pages.slice(start, start + PAGE_SIZE);
+  }, [pages, currentPage]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
 
   const fetchPages = async () => {
     setLoading(true);
@@ -226,7 +242,7 @@ export default function PagesListPage() {
                 </Table.Td>
               </Table.Tr>
             ) : (
-              pages.map((page) => (
+              pagedPages.map((page) => (
                 <Table.Tr key={page.id}>
                   <Table.Td>
                     <Text fw={600} c="#0f172a">
@@ -268,30 +284,17 @@ export default function PagesListPage() {
                     </Group>
                   </Table.Td>
                   <Table.Td>
-                    <Group gap={4} justify="center">
-                      <Menu shadow="md" width={160} radius="md">
-                        <Menu.Target>
-                          <ActionIcon variant="subtle" color="gray">
-                            <MoreVertical size={16} />
-                          </ActionIcon>
-                        </Menu.Target>
-                        <Menu.Dropdown>
-                          <Menu.Item
-                            leftSection={<Edit size={14} />}
-                            onClick={() => router.push(`/dashboard/pages/edit/${page.documentId}`)}
-                          >
-                            Edit
-                          </Menu.Item>
-                          <Menu.Divider />
-                          <Menu.Item
-                            color="red"
-                            leftSection={<Trash size={14} />}
-                            onClick={() => openDeleteModal(page.documentId, page.title)}
-                          >
-                            Delete
-                          </Menu.Item>
-                        </Menu.Dropdown>
-                      </Menu>
+                    <Group gap={4} justify="center" wrap="nowrap">
+                      <Tooltip label="Edit" withArrow>
+                        <ActionIcon variant="light" size="sm" onClick={() => router.push(`/dashboard/pages/edit/${page.documentId}`)}>
+                          <Edit size={14} />
+                        </ActionIcon>
+                      </Tooltip>
+                      <Tooltip label="Delete" withArrow color="red">
+                        <ActionIcon variant="light" color="red" size="sm" onClick={() => openDeleteModal(page.documentId, page.title)}>
+                          <Trash size={14} />
+                        </ActionIcon>
+                      </Tooltip>
                     </Group>
                   </Table.Td>
                 </Table.Tr>
@@ -300,6 +303,21 @@ export default function PagesListPage() {
           </Table.Tbody>
         </Table>
       </Paper>
+      {!loading && pages.length > 0 && (
+        <Group justify="space-between" mt="md">
+          <Text size="sm" c="#64748b">
+            Page {currentPage}/{totalPages} · {pages.length} items
+          </Text>
+          <Group gap="xs">
+            <Button size="xs" variant="light" disabled={currentPage <= 1} onClick={() => setCurrentPage((p) => p - 1)}>
+              Prev
+            </Button>
+            <Button size="xs" variant="light" disabled={currentPage >= totalPages} onClick={() => setCurrentPage((p) => p + 1)}>
+              Next
+            </Button>
+          </Group>
+        </Group>
+      )}
 
       <DeleteConfirmModal
         opened={deleteModalOpened}

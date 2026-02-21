@@ -40,7 +40,7 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
       where: { id: Number(id) },
       populate: {
         post: { populate: { author: true } },
-        comment: { populate: { author: true } },
+        comment: { populate: { author: true, post: true } },
       },
     });
 
@@ -55,6 +55,33 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
       where: { id: Number(id) },
       data: updateData,
     });
+
+    if (status === 'reviewed') {
+      const targetPostDocId =
+        (report as any)?.post?.documentId
+        || (report as any)?.comment?.post?.documentId
+        || null;
+
+      if (targetPostDocId) {
+        try {
+          await strapi.documents('api::post.post').update({
+            documentId: targetPostDocId,
+            data: { moderationStatus: 'delete' },
+          });
+          try {
+            await strapi.documents('api::post.post').update({
+              documentId: targetPostDocId,
+              status: 'published',
+              data: { moderationStatus: 'delete' },
+            });
+          } catch {
+            // No published variant yet.
+          }
+        } catch {
+          // non-critical
+        }
+      }
+    }
 
     // When confirmed (reviewed) → increment author's strikeCount
     if (status === 'reviewed') {

@@ -50,8 +50,8 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
       categoryId = (commentRow as any).post?.categories?.[0]?.id ?? null;
     }
 
-    // Dedup: reject if same user + same target has pending report
-    const existingWhere: any = { reportedBy: user.id, status: 'pending' };
+    // Dedup: reject if same user + same target has been reported before (any status)
+    const existingWhere: any = { reportedBy: user.id };
     if (postId) existingWhere.post = postId;
     if (commentId) existingWhere.comment = commentId;
 
@@ -141,5 +141,102 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
     });
 
     ctx.body = { data: filtered };
+  },
+
+  async myStatus(ctx) {
+    const user = ctx.state.user;
+    if (!user) return ctx.unauthorized('Authentication required');
+
+    const { post: postDocId, comment: commentDocId } = (ctx.query || {}) as {
+      post?: string;
+      comment?: string;
+    };
+
+    if (!postDocId && !commentDocId) {
+      return ctx.badRequest('Cần chỉ định post hoặc comment');
+    }
+    if (postDocId && commentDocId) {
+      return ctx.badRequest('Chỉ được kiểm tra một đối tượng');
+    }
+
+    let postId: number | null = null;
+    let commentId: number | null = null;
+
+    if (postDocId) {
+      const postRow = await strapi.db.query('api::post.post').findOne({
+        where: { documentId: postDocId },
+        select: ['id'],
+      });
+      if (!postRow) return ctx.notFound('Bài viết không tồn tại');
+      postId = postRow.id;
+    }
+
+    if (commentDocId) {
+      const commentRow = await strapi.db.query('api::comment.comment').findOne({
+        where: { documentId: commentDocId },
+        select: ['id'],
+      });
+      if (!commentRow) return ctx.notFound('Bình luận không tồn tại');
+      commentId = commentRow.id;
+    }
+
+    const where: any = { reportedBy: user.id };
+    if (postId) where.post = postId;
+    if (commentId) where.comment = commentId;
+
+    const existing = await strapi.db.query('api::report.report').findOne({
+      where,
+      select: ['id', 'status', 'createdAt'],
+      orderBy: { createdAt: 'desc' },
+    });
+
+    ctx.body = {
+      data: {
+        reported: Boolean(existing),
+        reportId: (existing as any)?.id ?? null,
+        status: (existing as any)?.status ?? null,
+      },
+    };
+  },
+
+  async dismiss(ctx) {
+    const user = ctx.state.user;
+    if (!user) return ctx.unauthorized('Authentication required');
+
+    const { id } = ctx.params;
+    const reportId = Number(id);
+    if (!Number.isFinite(reportId)) return ctx.badRequest('Invalid report id');
+
+    const report = await strapi.db.query('api::report.report').findOne({
+      where: { id: reportId },
+      populate: {
+        post: { populate: { categories: true } },
+        comment: { populate: { post: { populate: { categories: true } } } },
+      },
+    });
+
+    if (!report) return ctx.notFound('Report not found');
+
+    // Verify user is a moderator of the relevant category
+    const postCategories = (report as any).post?.categories
+      || (report as any).comment?.post?.categories
+      || [];
+
+    let isMod = false;
+    for (const cat of postCategories) {
+      const modEntry = await strapi.db.query('api::category-action.category-action').findOne({
+        where: { category: cat.id, user: user.id, actionType: 'moderator', status: 'active' },
+      });
+      if (modEntry) { isMod = true; break; }
+    }
+
+    if (!isMod) return ctx.forbidden('Not a moderator of this category');
+
+    await strapi.db.query('api::report.report').update({
+      where: { id: reportId },
+      data: { status: 'dismissed', reviewedBy: user.id },
+    });
+
+    ctx.body = { data: { id: reportId, status: 'dismissed' } };
   },
 });

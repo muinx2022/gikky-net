@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { Loader2 } from "lucide-react";
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -290,7 +290,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
     if (!selectedCategory) return;
     const desc = selectedCategory.description
       ? selectedCategory.description
-      : `Xem cÃ¡c bÃ i viáº¿t vÃ  tháº£o luáº­n vá» ${selectedCategory.name} trÃªn Gikky.`;
+      : `Xem các bài viết và thảo luận về ${selectedCategory.name} trên Gikky.`;
     setPageMeta(selectedCategory.name, desc);
   }, [selectedCategory]);
 
@@ -316,7 +316,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
 
     const jwt = getAuthToken();
     if (!jwt) {
-      showToast("Vui lÃ²ng Ä‘Äƒng nháº­p Ä‘á»ƒ theo dÃµi danh má»¥c", "error");
+      showToast("Vui lòng đăng nhập để theo dõi danh mục", "error");
       return;
     }
 
@@ -340,7 +340,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
       const nextFollowing = Boolean(action?.active);
       setIsFollowingCategory(nextFollowing);
       setFollowersCount(action?.count ?? 0);
-      showToast(nextFollowing ? "ÄÃ£ theo dÃµi danh má»¥c" : "ÄÃ£ bá» theo dÃµi danh má»¥c", "success");
+      showToast(nextFollowing ? "Đã theo dõi danh mục" : "Đã bỏ theo dõi danh mục", "success");
 
       const effectiveUserId = currentUserId ?? resolveCurrentUserId();
       if (effectiveUserId !== null) {
@@ -348,7 +348,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
       }
     } catch (error) {
       console.error("Failed to follow/unfollow category:", error);
-      showToast("Cáº­p nháº­t tráº¡ng thÃ¡i theo dÃµi tháº¥t báº¡i", "error");
+      showToast("Cập nhật trạng thái theo dõi thất bại", "error");
     }
   };
 
@@ -374,30 +374,30 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
       <div className="space-y-3">
         {loading ? (
           <div className="rounded-sm border border-slate-300 bg-white p-12 text-center dark:border-slate-700/35 dark:bg-slate-900">
-            <div className="text-slate-500 dark:text-slate-400">Äang táº£i...</div>
+            <div className="text-slate-500 dark:text-slate-400">Đang tải...</div>
           </div>
         ) : !selectedCategory ? (
           <div className="rounded-sm border border-slate-300 bg-white p-12 text-center dark:border-slate-700/35 dark:bg-slate-900">
-            <p className="text-slate-500 dark:text-slate-400">Danh má»¥c nÃ y khÃ´ng tá»“n táº¡i.</p>
+            <p className="text-slate-500 dark:text-slate-400">Danh mục này không tồn tại.</p>
           </div>
         ) : posts.length === 0 ? (
           <div className="rounded-sm border border-slate-300 bg-white p-12 text-center dark:border-slate-700/35 dark:bg-slate-900">
-            <p className="text-slate-500 dark:text-slate-400">ChÆ°a cÃ³ bÃ i viáº¿t trong danh má»¥c nÃ y.</p>
+            <p className="text-slate-500 dark:text-slate-400">Chưa có bài viết trong danh mục này.</p>
           </div>
         ) : (
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-700/35 dark:bg-slate-900">
             <div className="px-5 py-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Danh má»¥c</div>
+                  <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Danh mục</div>
                   <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">
                     {selectedCategory ? (
                       <>
                         {`c/${formatCategoryTitle(selectedCategory.name)}`}{" "}
-                        <span className="text-sm font-normal text-slate-500 dark:text-slate-400">{`(Ä‘ang theo dÃµi: ${followersCount})`}</span>
+                        <span className="text-sm font-normal text-slate-500 dark:text-slate-400">{`(đang theo dõi: ${followersCount})`}</span>
                       </>
                     ) : (
-                      "KhÃ´ng tÃ¬m tháº¥y danh má»¥c"
+                      "Không tìm thấy danh mục"
                     )}
                   </h1>
                   {selectedCategory?.description && (
@@ -413,7 +413,7 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
                         : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700/35 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
                     }`}
                   >
-                    {isFollowingCategory ? "Äang theo dÃµi" : "Theo dÃµi"}
+                    {isFollowingCategory ? "Đang theo dõi" : "Theo dõi"}
                   </button>
                 )}
               </div>
@@ -451,11 +451,11 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
                 {loadingMore && (
                   <span className="inline-flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
                     <Loader2 size={15} className="animate-spin" />
-                    Äang táº£i thÃªm bÃ i viáº¿t...
+                    Đang tải thêm bài viết...
                   </span>
                 )}
                 {!hasMore && posts.length > 0 && (
-                  <span className="text-xs text-slate-400 dark:text-slate-500">Báº¡n Ä‘Ã£ Ä‘áº¿n cuá»‘i.</span>
+                  <span className="text-xs text-slate-400 dark:text-slate-500">Bạn đã đến cuối.</span>
                 )}
               </div>
             </div>
@@ -468,4 +468,3 @@ export default function CategoryPage({ params }: { params: Promise<{ slug: strin
     </ForumLayout>
   );
 }
-

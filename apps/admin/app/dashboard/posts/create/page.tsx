@@ -52,6 +52,7 @@ export default function CreatePostPage() {
   const [userPickerOpened, setUserPickerOpened] = useState(false);
   const [pendingMedia, setPendingMedia] = useState<PendingMediaItem[]>([]);
   const [dropdownOpened, setDropdownOpened] = useState(false);
+  const [tagDropdownOpened, setTagDropdownOpened] = useState(false);
   const [tagSearchValue, setTagSearchValue] = useState('');
   const [formData, setFormData] = useState({
     title: '',
@@ -146,6 +147,7 @@ export default function CreatePostPage() {
     if (!toCreate) {
       setFormData((prev) => ({ ...prev, tags: values }));
       setTagSearchValue('');
+      setTagDropdownOpened(false);
       return;
     }
     const name = toCreate.replace('__create__:', '');
@@ -160,10 +162,24 @@ export default function CreatePostPage() {
       setFormData((prev) => ({ ...prev, tags: existingValues }));
     }
     setTagSearchValue('');
+    setTagDropdownOpened(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const validCategoryIds = new Set(categories.map((cat) => cat.documentId).filter(Boolean));
+    const normalizedCategories = (formData.categories || []).filter((value) => validCategoryIds.has(value));
+
+    if (normalizedCategories.length === 0) {
+      notifications.show({
+        title: 'Error',
+        message: 'Category is required',
+        color: 'red',
+        icon: <XCircle size={18} />,
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -177,9 +193,7 @@ export default function CreatePostPage() {
         status: formData.status,
       };
 
-      if (formData.categories.length > 0) {
-        payload.categories = formData.categories;
-      }
+      payload.categories = normalizedCategories;
       if (formData.tags.length > 0) {
         payload.tags = formData.tags;
       }
@@ -284,6 +298,7 @@ export default function CreatePostPage() {
           <MultiSelect
             label="Categories"
             placeholder="Select categories"
+            required
             value={formData.categories}
             onChange={(value) => {
               setFormData({ ...formData, categories: value });
@@ -316,6 +331,9 @@ export default function CreatePostPage() {
             comboboxProps={{
               transitionProps: { duration: 200, transition: 'pop' },
             }}
+            onDropdownOpen={() => setTagDropdownOpened(true)}
+            onDropdownClose={() => setTagDropdownOpened(false)}
+            dropdownOpened={tagDropdownOpened}
             styles={{
               label: { fontWeight: 600, color: '#334155', marginBottom: 8 },
             }}

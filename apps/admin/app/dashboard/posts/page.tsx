@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
-import { Title, Text, Box, Paper, Table, Group, Button, ActionIcon, Menu, Switch, Tooltip, Badge, TextInput, Select } from '@mantine/core';
-import { Plus, MoreVertical, Edit, Trash, Eye, CheckCircle, XCircle } from 'lucide-react';
+import { Title, Text, Box, Paper, Table, Group, Button, ActionIcon, Switch, Tooltip, Badge, TextInput, Select } from '@mantine/core';
+import { Plus, Edit, Trash, Eye, CheckCircle, XCircle, Archive, ArchiveRestore, MessageSquareOff, MessageSquare } from 'lucide-react';
 import { strapiApi } from '../../../lib/strapi';
 import { useRouter } from 'next/navigation';
 import DeleteConfirmModal from '../../../components/DeleteConfirmModal';
@@ -37,6 +37,7 @@ interface Post {
   slug: string;
   excerpt: string;
   status: string;
+  moderationStatus?: string | null;
   createdAt: string;
   publishedAt: string | null;
   categories?: Category[];
@@ -48,6 +49,14 @@ interface Post {
   } | null;
 }
 
+interface ReportListItem {
+  status: 'pending' | 'reviewed' | 'dismissed';
+  post?: { documentId?: string } | null;
+  comment?: { post?: { documentId?: string } | null } | null;
+}
+
+type ReportStats = { pending: number; reviewed: number };
+
 const getApiErrorMessage = (error: unknown, fallback: string) => {
   if (typeof error !== 'object' || error === null) return fallback;
   const response = (error as { response?: { data?: { error?: { message?: string } } } }).response;
@@ -57,6 +66,7 @@ const getApiErrorMessage = (error: unknown, fallback: string) => {
 export default function PostsPage() {
   usePageTitle('Posts');
   const router = useRouter();
+  const PAGE_SIZE = 10;
   const [posts, setPosts] = useState<Post[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
@@ -74,6 +84,8 @@ export default function PostsPage() {
     userId: '',
   });
   const [loading, setLoading] = useState(true);
+  const [reportStatsByPostDocId, setReportStatsByPostDocId] = useState<Record<string, ReportStats>>({});
+  const [currentPage, setCurrentPage] = useState(1);
   const [deleteModalOpened, setDeleteModalOpened] = useState(false);
   const [deletingPost, setDeletingPost] = useState<{ id: string; title: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -159,6 +171,22 @@ export default function PostsPage() {
     fetchPosts();
   }, [filters]);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters]);
+
+  const totalPages = Math.max(1, Math.ceil(posts.length / PAGE_SIZE));
+  const pagedPosts = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return posts.slice(start, start + PAGE_SIZE);
+  }, [posts, currentPage]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
   const fetchFilterOptions = async () => {
     try {
       const [categoryRes, tagRes, userRes] = await Promise.all([
@@ -221,10 +249,28 @@ export default function PostsPage() {
         params.filters = nextFilters;
       }
 
-      const response = await strapiApi.get('/api/admin-posts', {
-        params,
-      });
-      setPosts(response.data.data);
+      const [postsRes, reportsRes] = await Promise.all([
+        strapiApi.get('/api/admin-posts', {
+          params,
+        }),
+        strapiApi.get('/api/admin-reports'),
+      ]);
+      const nextPosts: Post[] = postsRes.data?.data || [];
+      setPosts(nextPosts);
+
+      const docIdSet = new Set(nextPosts.map((p) => p.documentId).filter(Boolean));
+      const reportRows: ReportListItem[] = reportsRes.data?.data || [];
+      const nextStats: Record<string, ReportStats> = {};
+      for (const row of reportRows) {
+        const status = row?.status;
+        if (status !== 'pending' && status !== 'reviewed') continue;
+        const docId = row?.post?.documentId || row?.comment?.post?.documentId;
+        if (!docId || !docIdSet.has(docId)) continue;
+        if (!nextStats[docId]) nextStats[docId] = { pending: 0, reviewed: 0 };
+        if (status === 'pending') nextStats[docId].pending += 1;
+        if (status === 'reviewed') nextStats[docId].reviewed += 1;
+      }
+      setReportStatsByPostDocId(nextStats);
     } catch (error) {
       console.error('Failed to fetch posts:', error);
     } finally {
@@ -260,6 +306,36 @@ export default function PostsPage() {
       month: 'short',
       day: 'numeric',
     });
+  };
+
+  const handleToggleArchive = async (documentId: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'archived' ? 'published' : 'archived';
+    try {
+      await strapiApi.put(`/api/admin-posts/${documentId}`, { data: { status: newStatus } });
+      setPosts((prev) => prev.map((p) => p.documentId === documentId ? { ...p, status: newStatus } : p));
+    } catch (error: unknown) {
+      notifications.show({
+        title: 'Error',
+        message: getApiErrorMessage(error, 'Failed to update archive status'),
+        color: 'red',
+        icon: <XCircle size={18} />,
+      });
+    }
+  };
+
+  const handleToggleBlockComment = async (documentId: string, currentModerationStatus?: string | null) => {
+    const newValue = currentModerationStatus === 'block-comment' ? null : 'block-comment';
+    try {
+      await strapiApi.put(`/api/admin-posts/${documentId}`, { data: { moderationStatus: newValue } });
+      setPosts((prev) => prev.map((p) => p.documentId === documentId ? { ...p, moderationStatus: newValue } : p));
+    } catch (error: unknown) {
+      notifications.show({
+        title: 'Error',
+        message: getApiErrorMessage(error, 'Failed to update comment status'),
+        color: 'red',
+        icon: <XCircle size={18} />,
+      });
+    }
   };
 
   const handleToggleStatus = async (documentId: string, currentStatus: string) => {
@@ -407,28 +483,50 @@ export default function PostsPage() {
               <Table.Th style={{ width: 140 }}>Categories</Table.Th>
               <Table.Th style={{ width: 180 }}>Author</Table.Th>
               <Table.Th style={{ width: 100, textAlign: 'center' }}>Status</Table.Th>
+              <Table.Th style={{ width: 70, textAlign: 'center' }}>Mod</Table.Th>
               <Table.Th style={{ width: 120 }}>Created</Table.Th>
-              <Table.Th style={{ width: 80, textAlign: 'center' }}>Actions</Table.Th>
+              <Table.Th style={{ width: 100, textAlign: 'center' }}>Actions</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
             {loading ? (
                 <Table.Tr>
-                <Table.Td colSpan={6} style={{ textAlign: 'center', padding: '2rem' }}>
+                <Table.Td colSpan={7} style={{ textAlign: 'center', padding: '2rem' }}>
                   <Text c="#64748b">Loading posts...</Text>
                 </Table.Td>
               </Table.Tr>
             ) : posts.length === 0 ? (
               <Table.Tr>
-                <Table.Td colSpan={6} style={{ textAlign: 'center', padding: '2rem' }}>
+                <Table.Td colSpan={7} style={{ textAlign: 'center', padding: '2rem' }}>
                   <Text c="#64748b">No posts found. Create your first post!</Text>
                 </Table.Td>
               </Table.Tr>
             ) : (
-              posts.map((post) => (
+              pagedPosts.map((post) => (
                 <Table.Tr key={post.id}>
                   <Table.Td>
                     <Text fw={600} c="#0f172a">{post.title}</Text>
+                    {reportStatsByPostDocId[post.documentId]?.pending > 0 && (
+                      <Badge size="xs" color="yellow" variant="light" mt={2}>
+                        report cho xu ly ({reportStatsByPostDocId[post.documentId].pending})
+                      </Badge>
+                    )}
+                    {reportStatsByPostDocId[post.documentId]?.reviewed > 0 && (
+                      <Badge size="xs" color="red" variant="light" mt={2}>
+                        report da xac nhan ({reportStatsByPostDocId[post.documentId].reviewed})
+                      </Badge>
+                    )}
+                    {post.moderationStatus === 'block-comment' && (
+                      <Badge size="xs" color="red" variant="light" mt={2}>comment blocked</Badge>
+                    )}
+                    {post.moderationStatus === 'delete' && (
+                      <Badge size="xs" color="red" variant="filled" mt={2}>
+                        bài viết vi phạm (đã xác nhận)
+                      </Badge>
+                    )}
+                    {post.status === 'archived' && (
+                      <Badge size="xs" color="orange" variant="light" mt={2} ml={post.moderationStatus ? 4 : 0}>archived</Badge>
+                    )}
                     {post.tags && post.tags.length > 0 && (
                       <Group gap={6} mt={4}>
                         {post.tags.map((tag) => (
@@ -485,40 +583,50 @@ export default function PostsPage() {
                       </Tooltip>
                     </Group>
                   </Table.Td>
+                  <Table.Td style={{ width: 70 }}>
+                    <Group gap={4} justify="center" wrap="nowrap">
+                      <Tooltip label={post.status === 'archived' ? 'Unarchive' : 'Archive'} withArrow color="orange">
+                        <ActionIcon
+                          variant={post.status === 'archived' ? 'filled' : 'light'}
+                          color="orange"
+                          size="sm"
+                          onClick={() => handleToggleArchive(post.documentId, post.status)}
+                        >
+                          {post.status === 'archived' ? <ArchiveRestore size={14} /> : <Archive size={14} />}
+                        </ActionIcon>
+                      </Tooltip>
+                      <Tooltip label={post.moderationStatus === 'block-comment' ? 'Unblock comments' : 'Block comments'} withArrow color="red">
+                        <ActionIcon
+                          variant={post.moderationStatus === 'block-comment' ? 'filled' : 'light'}
+                          color="red"
+                          size="sm"
+                          onClick={() => handleToggleBlockComment(post.documentId, post.moderationStatus)}
+                        >
+                          {post.moderationStatus === 'block-comment' ? <MessageSquare size={14} /> : <MessageSquareOff size={14} />}
+                        </ActionIcon>
+                      </Tooltip>
+                    </Group>
+                  </Table.Td>
                   <Table.Td>
                     <Text size="sm" c="#64748b">{formatDate(post.createdAt)}</Text>
                   </Table.Td>
                   <Table.Td>
-                    <Group gap={4} justify="center">
-                      <Menu shadow="md" width={160} radius="md">
-                        <Menu.Target>
-                          <ActionIcon variant="subtle" color="gray">
-                            <MoreVertical size={16} />
-                          </ActionIcon>
-                        </Menu.Target>
-                        <Menu.Dropdown>
-                          <Menu.Item
-                            leftSection={<Edit size={14} />}
-                            onClick={() => router.push(`/dashboard/posts/edit/${post.documentId}`)}
-                          >
-                            Edit
-                          </Menu.Item>
-                          <Menu.Item
-                            leftSection={<Eye size={14} />}
-                            onClick={() => router.push(`/dashboard/posts/${post.documentId}`)}
-                          >
-                            View
-                          </Menu.Item>
-                          <Menu.Divider />
-                          <Menu.Item
-                            color="red"
-                            leftSection={<Trash size={14} />}
-                            onClick={() => openDeleteModal(post.documentId, post.title)}
-                          >
-                            Delete
-                          </Menu.Item>
-                        </Menu.Dropdown>
-                      </Menu>
+                    <Group gap={4} justify="center" wrap="nowrap">
+                      <Tooltip label="Edit" withArrow>
+                        <ActionIcon variant="light" size="sm" onClick={() => router.push(`/dashboard/posts/edit/${post.documentId}`)}>
+                          <Edit size={14} />
+                        </ActionIcon>
+                      </Tooltip>
+                      <Tooltip label="View" withArrow>
+                        <ActionIcon variant="light" size="sm" onClick={() => router.push(`/dashboard/posts/${post.documentId}`)}>
+                          <Eye size={14} />
+                        </ActionIcon>
+                      </Tooltip>
+                      <Tooltip label="Delete" withArrow color="red">
+                        <ActionIcon variant="light" color="red" size="sm" onClick={() => openDeleteModal(post.documentId, post.title)}>
+                          <Trash size={14} />
+                        </ActionIcon>
+                      </Tooltip>
                     </Group>
                   </Table.Td>
                 </Table.Tr>
@@ -527,6 +635,21 @@ export default function PostsPage() {
           </Table.Tbody>
         </Table>
       </Paper>
+      {!loading && posts.length > 0 && (
+        <Group justify="space-between" mt="md">
+          <Text size="sm" c="#64748b">
+            Page {currentPage}/{totalPages} · {posts.length} items
+          </Text>
+          <Group gap="xs">
+            <Button size="xs" variant="light" disabled={currentPage <= 1} onClick={() => setCurrentPage((p) => p - 1)}>
+              Prev
+            </Button>
+            <Button size="xs" variant="light" disabled={currentPage >= totalPages} onClick={() => setCurrentPage((p) => p + 1)}>
+              Next
+            </Button>
+          </Group>
+        </Group>
+      )}
 
       <DeleteConfirmModal
         opened={deleteModalOpened}

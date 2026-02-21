@@ -1,8 +1,8 @@
 ﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Anchor, Badge, Box, Button, Group, Menu, Paper, Select, Switch, Table, Text, TextInput, Title } from "@mantine/core";
-import { MoreVertical, Trash, Eye } from "lucide-react";
+import { Anchor, ActionIcon, Badge, Box, Button, Group, Paper, Select, Switch, Table, Text, TextInput, Title, Tooltip } from "@mantine/core";
+import { Trash, Eye } from "lucide-react";
 import { notifications } from "@mantine/notifications";
 import { strapiApi } from "../../../lib/strapi";
 import { useRouter } from "next/navigation";
@@ -59,8 +59,10 @@ const PUBLIC_OPTIONS = [
 export default function JournalTradesPage() {
   usePageTitle('Journal Trades');
   const router = useRouter();
+  const PAGE_SIZE = 10;
   const [trades, setTrades] = useState<Trade[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState({
     symbol: "",
     market: "",
@@ -102,6 +104,20 @@ export default function JournalTradesPage() {
   useEffect(() => {
     fetchTrades();
   }, [filters.symbol, filters.market, filters.outcome, filters.isPublic]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters.symbol, filters.market, filters.outcome, filters.isPublic]);
+
+  const totalPages = Math.max(1, Math.ceil(trades.length / PAGE_SIZE));
+  const pagedTrades = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return trades.slice(start, start + PAGE_SIZE);
+  }, [trades, currentPage]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
 
   const openDeleteModal = (documentId: string, symbol: string) => {
     setDeletingTrade({ id: documentId, symbol });
@@ -163,7 +179,7 @@ export default function JournalTradesPage() {
 
   const rows = useMemo(
     () =>
-      trades.map((trade) => (
+      pagedTrades.map((trade) => (
         <Table.Tr key={trade.documentId}>
           <Table.Td>
             <Anchor
@@ -196,33 +212,32 @@ export default function JournalTradesPage() {
               color="green"
             />
           </Table.Td>
-          <Table.Td>
-            <Group gap={6} justify="flex-end">
-              <Button
-                size="xs"
-                variant="light"
-                leftSection={<Eye size={14} />}
-                onClick={() => router.push(`/dashboard/journal-trades/${trade.documentId}`)}
-              >
-                View
-              </Button>
-              <Menu shadow="md" width={180} position="bottom-end">
-                <Menu.Target>
-                  <Button variant="subtle" px={8}>
-                    <MoreVertical size={16} />
-                  </Button>
-                </Menu.Target>
-                <Menu.Dropdown>
-                  <Menu.Item color="red" leftSection={<Trash size={14} />} onClick={() => openDeleteModal(trade.documentId, trade.symbol)}>
-                    Delete
-                  </Menu.Item>
-                </Menu.Dropdown>
-              </Menu>
+          <Table.Td style={{ width: 80 }}>
+            <Group gap={6} justify="flex-end" wrap="nowrap">
+              <Tooltip label="View" withArrow>
+                <ActionIcon
+                  variant="light"
+                  size="sm"
+                  onClick={() => router.push(`/dashboard/journal-trades/${trade.documentId}`)}
+                >
+                  <Eye size={14} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip label="Delete" withArrow color="red">
+                <ActionIcon
+                  variant="light"
+                  color="red"
+                  size="sm"
+                  onClick={() => openDeleteModal(trade.documentId, trade.symbol)}
+                >
+                  <Trash size={14} />
+                </ActionIcon>
+              </Tooltip>
             </Group>
           </Table.Td>
         </Table.Tr>
       )),
-    [trades]
+    [pagedTrades]
   );
 
   return (
@@ -272,7 +287,7 @@ export default function JournalTradesPage() {
                 <Table.Th style={{ width: 210 }}>Kết quả</Table.Th>
                 <Table.Th>Tác giả</Table.Th>
                 <Table.Th style={{ width: 90, textAlign: "center" }}>Public</Table.Th>
-                <Table.Th style={{ textAlign: "right" }}>Actions</Table.Th>
+                <Table.Th style={{ width: 80, textAlign: "right" }}>Actions</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
@@ -287,6 +302,21 @@ export default function JournalTradesPage() {
           </Table>
         </Table.ScrollContainer>
       </Paper>
+      {!loading && trades.length > 0 && (
+        <Group justify="space-between" mt="md">
+          <Text size="sm" c="dimmed">
+            Page {currentPage}/{totalPages} · {trades.length} items
+          </Text>
+          <Group gap="xs">
+            <Button size="xs" variant="light" disabled={currentPage <= 1} onClick={() => setCurrentPage((p) => p - 1)}>
+              Prev
+            </Button>
+            <Button size="xs" variant="light" disabled={currentPage >= totalPages} onClick={() => setCurrentPage((p) => p + 1)}>
+              Next
+            </Button>
+          </Group>
+        </Group>
+      )}
 
       <DeleteConfirmModal
         opened={deleteModalOpened}

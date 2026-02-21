@@ -93,6 +93,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
   const [reportReason, setReportReason] = useState("other");
   const [reportDetail, setReportDetail] = useState("");
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
+  const [hasReportedPost, setHasReportedPost] = useState(false);
   const [publishingPost, setPublishingPost] = useState(false);
   const [commentUpvoteCounts, setCommentUpvoteCounts] = useState<Record<number, number>>({});
   const [commentDownvoteCounts, setCommentDownvoteCounts] = useState<Record<number, number>>({});
@@ -145,6 +146,8 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
       setReplyingTo(null);
       setReplyContent("");
       setShowFormatInReply(null);
+      setHasReportedPost(false);
+      setShowReportModal(false);
     }
   }, [currentUser]);
 
@@ -223,6 +226,21 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
       }
 
       setPost(postData);
+
+      // Check whether current user already reported this post.
+      if (jwt && userId && Number(postData?.author?.id) !== Number(userId)) {
+        try {
+          const reportStatusRes = await api.get('/api/reports/my-status', {
+            params: { post: postData.documentId },
+            headers: { Authorization: `Bearer ${jwt}` },
+          });
+          setHasReportedPost(Boolean(reportStatusRes.data?.data?.reported));
+        } catch {
+          setHasReportedPost(false);
+        }
+      } else {
+        setHasReportedPost(false);
+      }
 
       // Fetch comments for this post
       try {
@@ -522,16 +540,28 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
     if (!post) return;
     const jwt = getAuthToken();
     if (!jwt) { setShowLoginModal(true); return; }
+    if (hasReportedPost) {
+      setShowToast({ show: true, message: 'Bạn đã báo cáo bài viết này rồi.', type: 'error' });
+      setTimeout(() => setShowToast({ show: false, message: '', type: 'error' }), 3000);
+      setShowReportModal(false);
+      return;
+    }
     setIsSubmittingReport(true);
     try {
       await api.post('/api/reports', { post: post.documentId, reason: reportReason, detail: reportDetail || undefined }, { headers: { Authorization: `Bearer ${jwt}` } });
+      setHasReportedPost(true);
       setShowReportModal(false);
       setReportDetail('');
       setReportReason('other');
       setShowToast({ show: true, message: 'Đã gửi báo cáo. Cảm ơn bạn!', type: 'success' });
       setTimeout(() => setShowToast({ show: false, message: '', type: 'success' }), 3000);
     } catch (error: any) {
-      setShowToast({ show: true, message: `Gửi báo cáo thất bại: ${error?.response?.data?.error?.message || error.message}`, type: 'error' });
+      const msg = String(error?.response?.data?.error?.message || error.message || '');
+      if (msg.toLowerCase().includes('đã báo cáo') || msg.toLowerCase().includes('already')) {
+        setHasReportedPost(true);
+        setShowReportModal(false);
+      }
+      setShowToast({ show: true, message: `Gửi báo cáo thất bại: ${msg}`, type: 'error' });
       setTimeout(() => setShowToast({ show: false, message: '', type: 'error' }), 3000);
     } finally {
       setIsSubmittingReport(false);
@@ -1307,9 +1337,10 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
             {currentUser && !isDraftPost && Number(post.author?.id) !== Number(currentUser.id) && (
               <button
                 type="button"
-                onClick={() => setShowReportModal(true)}
-                className="min-h-[44px] flex items-center gap-1.5 px-2 text-slate-400 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400 transition-colors"
-                title="Báo cáo bài viết"
+                onClick={() => { if (!hasReportedPost) setShowReportModal(true); }}
+                disabled={hasReportedPost}
+                className="min-h-[44px] flex items-center gap-1.5 px-2 text-slate-400 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                title={hasReportedPost ? "Bạn đã báo cáo bài viết này rồi" : "Báo cáo bài viết"}
               >
                 <Flag size={18} />
               </button>
@@ -1355,10 +1386,10 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
                     <button onClick={() => setShowReportModal(false)} className="px-4 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">Hủy</button>
                     <button
                       onClick={handleSubmitReport}
-                      disabled={isSubmittingReport}
+                      disabled={isSubmittingReport || hasReportedPost}
                       className="px-4 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
                     >
-                      {isSubmittingReport ? 'Đang gửi...' : 'Gửi báo cáo'}
+                      {hasReportedPost ? 'Đã báo cáo' : (isSubmittingReport ? 'Đang gửi...' : 'Gửi báo cáo')}
                     </button>
                   </div>
                 </div>
@@ -1403,4 +1434,3 @@ export default function PostDetailPage({ params }: { params: Promise<{ slug: str
     </ForumLayout>
   );
 }
-

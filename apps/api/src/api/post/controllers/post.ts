@@ -170,6 +170,7 @@ export default factories.createCoreController('api::post.post', ({ strapi }) => 
       const raw = rawByDocId.get(row?.documentId);
       return {
         ...row,
+        moderationStatus: raw?.moderationStatus ?? row?.moderationStatus ?? null,
         categories: raw?.categories || row.categories || [],
         tags: raw?.tags || row.tags || [],
         author: raw?.author
@@ -182,7 +183,9 @@ export default factories.createCoreController('api::post.post', ({ strapi }) => 
     // Keep only published variants even when requester is authenticated.
     const publishedRows = normalizedRows.filter((row: any) => {
       const status = String(row?.status || '').toLowerCase();
-      return status === 'published' || Boolean(row?.publishedAt);
+      const isPublished = status === 'published' || Boolean(row?.publishedAt);
+      const isHiddenByModeration = String(row?.moderationStatus || '').toLowerCase() === 'delete';
+      return isPublished && !isHiddenByModeration;
     });
 
     (result as any).data = hasAuthorFilter
@@ -218,6 +221,7 @@ export default factories.createCoreController('api::post.post', ({ strapi }) => 
 
     (result as any).data = {
       ...row,
+      moderationStatus: raw?.moderationStatus ?? row?.moderationStatus ?? null,
       categories: raw?.categories || [],
       tags: raw?.tags || [],
       author: raw?.author
@@ -228,6 +232,10 @@ export default factories.createCoreController('api::post.post', ({ strapi }) => 
           }
         : null,
     };
+
+    if (String((result as any)?.data?.moderationStatus || '').toLowerCase() === 'delete') {
+      return ctx.notFound('Post not found');
+    }
 
     return result;
   },
@@ -324,25 +332,37 @@ export default factories.createCoreController('api::post.post', ({ strapi }) => 
       return ctx.unauthorized('You must be logged in');
     }
 
-    const { categoryId } = ctx.query;
-    if (!categoryId) {
+    const categoryId = Number((ctx.query as any)?.categoryId);
+    if (!Number.isFinite(categoryId) || categoryId <= 0) {
       return ctx.badRequest('categoryId is required');
     }
+    const page = Math.max(1, Number((ctx.query as any)?.page) || 1);
+    const pageSize = Math.min(100, Math.max(1, Number((ctx.query as any)?.pageSize) || 10));
 
     console.log('=== MODERATOR LIST ===');
     console.log('User:', user.id, user.username);
     console.log('Category ID:', categoryId);
 
-    // Fetch posts using raw database query to bypass sanitization
-    // Only get published versions (not drafts)
-    const posts = await strapi.db.query('api::post.post').findMany({
+    const modEntry = await strapi.db.query('api::category-action.category-action').findOne({
       where: {
-        categories: {
-          id: categoryId,
-        },
-        publishedAt: {
-          $notNull: true,
-        },
+        category: categoryId,
+        user: user.id,
+        actionType: 'moderator',
+        status: 'active',
+      },
+    });
+    if (!modEntry) {
+      return ctx.forbidden('Not a moderator of this category');
+    }
+
+    // Fetch draft rows (publishedAt: null) — avoids duplicates and always has the
+    // latest moderationStatus since reject/hide update the draft version first.
+    // We still apply a strict in-memory category filter below as a safety net,
+    // because relation filtering can be inconsistent across DB drivers/config.
+    const rawPosts = await strapi.db.query('api::post.post').findMany({
+      where: {
+        publishedAt: null,
+        status: 'published',
       },
       populate: {
         author: true,
@@ -351,13 +371,24 @@ export default factories.createCoreController('api::post.post', ({ strapi }) => 
       orderBy: { createdAt: 'desc' },
     });
 
+    const posts = (rawPosts as any[]).filter((post) => {
+      const categories = Array.isArray(post?.categories) ? post.categories : [];
+      return categories.some((cat: any) => Number(cat?.id) === categoryId);
+    });
+    const total = posts.length;
+    const pageCount = Math.max(1, Math.ceil(total / pageSize));
+    const safePage = Math.min(page, pageCount);
+    const start = (safePage - 1) * pageSize;
+    const end = start + pageSize;
+    const pagedPosts = posts.slice(start, end);
+
     console.log('Found posts:', posts.length);
     console.log('First post moderationStatus:', posts[0]?.moderationStatus);
 
     // Return raw data without sanitization
     ctx.type = 'application/json';
     ctx.body = {
-      data: posts.map(post => ({
+      data: pagedPosts.map(post => ({
         id: post.id,
         documentId: post.documentId,
         title: post.title,
@@ -371,6 +402,57 @@ export default factories.createCoreController('api::post.post', ({ strapi }) => 
         } : null,
         categories: post.categories || [],
       })),
+      meta: {
+        pagination: {
+          page: safePage,
+          pageSize,
+          pageCount,
+          total,
+        },
+      },
+    };
+  },
+
+  // Moderator: fetch full post detail (includes content), verify mod access
+  async moderatorDetail(ctx) {
+    const user = ctx.state.user;
+    if (!user) return ctx.unauthorized('You must be logged in');
+
+    const { id } = ctx.params;
+
+    const post = await strapi.db.query('api::post.post').findOne({
+      where: { documentId: id, publishedAt: null },
+      populate: { author: true, categories: true },
+    });
+
+    if (!post) return ctx.notFound('Post not found');
+
+    // Verify the user is a moderator of at least one of the post's categories
+    const categories: any[] = (post as any).categories || [];
+    let isMod = false;
+    for (const cat of categories) {
+      const modEntry = await strapi.db.query('api::category-action.category-action').findOne({
+        where: { category: cat.id, user: user.id, actionType: 'moderator', status: 'active' },
+      });
+      if (modEntry) { isMod = true; break; }
+    }
+
+    if (!isMod) return ctx.forbidden('Not a moderator of this post\'s category');
+
+    ctx.type = 'application/json';
+    ctx.body = {
+      data: {
+        id: (post as any).id,
+        documentId: (post as any).documentId,
+        title: (post as any).title,
+        slug: (post as any).slug,
+        content: (post as any).content,
+        status: (post as any).status,
+        moderationStatus: (post as any).moderationStatus,
+        createdAt: (post as any).createdAt,
+        author: (post as any).author ? { id: (post as any).author.id, username: (post as any).author.username } : null,
+        categories: categories.map((c: any) => ({ id: c.id, documentId: c.documentId, name: c.name })),
+      },
     };
   },
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Title, Text, Box, Paper, Table, Badge, Avatar, Group, TextInput, Select, Button, Modal, Textarea, Stack } from '@mantine/core';
 import { strapiApi } from '../../../lib/strapi';
 import { usePageTitle } from '../../../hooks/usePageTitle';
@@ -25,8 +25,10 @@ interface UserData {
 
 export default function UsersPage() {
   usePageTitle('Users');
+  const PAGE_SIZE = 10;
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState({ q: '', role: '', status: '' });
   const [draftFilters, setDraftFilters] = useState({ q: '', role: '', status: '' });
 
@@ -37,6 +39,20 @@ export default function UsersPage() {
   const [banLoading, setBanLoading] = useState(false);
 
   useEffect(() => { fetchUsers(); }, [filters]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters]);
+
+  const totalPages = Math.max(1, Math.ceil(users.length / PAGE_SIZE));
+  const pagedUsers = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return users.slice(start, start + PAGE_SIZE);
+  }, [users, currentPage]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -228,7 +244,7 @@ export default function UsersPage() {
                 </Table.Td>
               </Table.Tr>
             ) : (
-              users.map((user) => (
+              pagedUsers.map((user) => (
                 <Table.Tr
                   key={user.id}
                   style={isHighStrikes(user) ? { background: '#fef9c3' } : undefined}
@@ -302,6 +318,21 @@ export default function UsersPage() {
           </Table.Tbody>
         </Table>
       </Paper>
+      {!loading && users.length > 0 && (
+        <Group justify="space-between" mt="md">
+          <Text size="sm" c="#64748b">
+            Page {currentPage}/{totalPages} · {users.length} items
+          </Text>
+          <Group gap="xs">
+            <Button size="xs" variant="light" disabled={currentPage <= 1} onClick={() => setCurrentPage((p) => p - 1)}>
+              Prev
+            </Button>
+            <Button size="xs" variant="light" disabled={currentPage >= totalPages} onClick={() => setCurrentPage((p) => p + 1)}>
+              Next
+            </Button>
+          </Group>
+        </Group>
+      )}
 
       {/* Ban Modal */}
       <Modal

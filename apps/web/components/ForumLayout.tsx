@@ -506,7 +506,7 @@ export default function ForumLayout({ children, activeNav }: ForumLayoutProps) {
                 top: `${HEADER_HEIGHT + SUBNAV_HEIGHT + 8}px`,
               }}
             >
-              <section className="flex h-full flex-col rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_1px_1px_rgba(15,23,42,0.04)] dark:border-slate-700/35 dark:bg-slate-900">
+              <section className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_1px_1px_rgba(15,23,42,0.04)] dark:border-slate-700/35 dark:bg-slate-900">
                 <div className="min-h-0 flex-1 overflow-y-auto">
                   {categories.length > 0 && (
                     <>
