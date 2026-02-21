@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Title, Text, Box, Paper, Table, Badge, Avatar, Group, TextInput, Select, Button } from '@mantine/core';
 import { strapiApi } from '../../../lib/strapi';
+import { usePageTitle } from '../../../hooks/usePageTitle';
 
 interface UserData {
   id: number;
@@ -19,6 +20,7 @@ interface UserData {
 }
 
 export default function UsersPage() {
+  usePageTitle('Users');
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({

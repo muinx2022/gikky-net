@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import type { PendingMediaItem } from '../../../../components/TiptapEditor';
 import UserPickerModal, { type PickedUser } from '../../../../components/UserPickerModal';
+import { usePageTitle } from '../../../../hooks/usePageTitle';
 
 const TiptapEditor = dynamic(() => import('../../../../components/TiptapEditor'), {
   ssr: false,
@@ -42,6 +43,7 @@ const getApiErrorMessage = (error: unknown, fallback: string) => {
 };
 
 export default function CreatePostPage() {
+  usePageTitle('Create Post');
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);

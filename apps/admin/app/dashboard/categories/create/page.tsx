@@ -7,6 +7,7 @@ import { ArrowLeft, Save, CheckCircle, XCircle } from 'lucide-react';
 import { strapiApi } from '../../../../lib/strapi';
 import { generateSlug } from '../../../../lib/utils';
 import { useRouter } from 'next/navigation';
+import { usePageTitle } from '../../../../hooks/usePageTitle';
 
 interface Category {
   id: number;
@@ -21,6 +22,7 @@ interface Category {
 }
 
 export default function CreateCategoryPage() {
+  usePageTitle('Create Category');
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);

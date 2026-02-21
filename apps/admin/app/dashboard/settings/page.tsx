@@ -2,8 +2,10 @@
 
 import { Title, Text, Box, Paper, Center, Stack } from '@mantine/core';
 import { Settings, Wrench } from 'lucide-react';
+import { usePageTitle } from '../../../hooks/usePageTitle';
 
 export default function SettingsPage() {
+  usePageTitle('Settings');
   return (
     <Box>
       <Box mb="xl">

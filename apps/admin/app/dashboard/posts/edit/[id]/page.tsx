@@ -10,6 +10,7 @@ import { useRouter, useParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import type { PendingMediaItem } from '../../../../../components/TiptapEditor';
 import UserPickerModal, { type PickedUser } from '../../../../../components/UserPickerModal';
+import { usePageTitle } from '../../../../../hooks/usePageTitle';
 
 const TiptapEditor = dynamic(() => import('../../../../../components/TiptapEditor'), {
   ssr: false,
@@ -41,6 +42,7 @@ const getApiErrorMessage = (error: unknown, fallback: string) => {
 };
 
 export default function EditPostPage() {
+  usePageTitle('Edit Post');
   const router = useRouter();
   const params = useParams();
   const postId = params.id as string;

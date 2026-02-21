@@ -6,6 +6,7 @@ import { notifications } from '@mantine/notifications';
 import { ArrowLeft, Save, CheckCircle, XCircle } from 'lucide-react';
 import { strapiApi } from '../../../../../lib/strapi';
 import { useRouter, useParams } from 'next/navigation';
+import { usePageTitle } from '../../../../../hooks/usePageTitle';
 
 interface Category {
   id: number;
@@ -20,6 +21,7 @@ interface Category {
 }
 
 export default function EditCategoryPage() {
+  usePageTitle('Edit Category');
   const router = useRouter();
   const params = useParams();
   const categoryId = params.id as string;

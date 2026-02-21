@@ -7,6 +7,7 @@ import { strapiApi } from '../../../lib/strapi';
 import { useRouter } from 'next/navigation';
 import DeleteConfirmModal from '../../../components/DeleteConfirmModal';
 import { notifications } from '@mantine/notifications';
+import { usePageTitle } from '../../../hooks/usePageTitle';
 
 interface Category {
   id: number;
@@ -54,6 +55,7 @@ const getApiErrorMessage = (error: unknown, fallback: string) => {
 };
 
 export default function PostsPage() {
+  usePageTitle('Posts');
   const router = useRouter();
   const [posts, setPosts] = useState<Post[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);

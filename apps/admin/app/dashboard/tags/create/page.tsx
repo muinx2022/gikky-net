@@ -7,8 +7,10 @@ import { ArrowLeft, Save, CheckCircle, XCircle } from "lucide-react";
 import { strapiApi } from "../../../../lib/strapi";
 import { generateSlug } from "../../../../lib/utils";
 import { useRouter } from "next/navigation";
+import { usePageTitle } from '../../../../hooks/usePageTitle';
 
 export default function CreateTagPage() {
+  usePageTitle('Create Tag');
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({

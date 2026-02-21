@@ -7,12 +7,14 @@ import { ArrowLeft, Save, CheckCircle, XCircle } from "lucide-react";
 import { strapiApi } from "../../../../../lib/strapi";
 import { useRouter, useParams } from "next/navigation";
 import dynamic from "next/dynamic";
+import { usePageTitle } from '../../../../../hooks/usePageTitle';
 
 const TiptapEditor = dynamic(() => import("../../../../../components/TiptapEditor"), {
   ssr: false,
 });
 
 export default function EditPagePage() {
+  usePageTitle('Edit Page');
   const router = useRouter();
   const params = useParams();
   const pageId = params.id as string;

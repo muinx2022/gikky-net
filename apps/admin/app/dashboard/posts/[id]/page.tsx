@@ -6,6 +6,7 @@ import { ArrowLeft, Edit, Calendar, User, MessageSquare } from 'lucide-react';
 import { strapiApi } from '../../../../lib/strapi';
 import { useRouter, useParams } from 'next/navigation';
 import AdminCommentList from '../../../../components/AdminCommentList';
+import { usePageTitle } from '../../../../hooks/usePageTitle';
 
 interface Post {
   id: number;
@@ -32,6 +33,7 @@ const statusColors: Record<string, string> = {
 };
 
 export default function ViewPostPage() {
+  usePageTitle('View Post');
   const router = useRouter();
   const params = useParams();
   const postId = params.id as string;

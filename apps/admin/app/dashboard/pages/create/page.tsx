@@ -8,12 +8,14 @@ import { strapiApi } from "../../../../lib/strapi";
 import { generateSlug } from "../../../../lib/utils";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
+import { usePageTitle } from '../../../../hooks/usePageTitle';
 
 const TiptapEditor = dynamic(() => import("../../../../components/TiptapEditor"), {
   ssr: false,
 });
 
 export default function CreatePagePage() {
+  usePageTitle('Create Page');
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({

@@ -6,6 +6,7 @@ import { ArrowLeft, MessageSquare } from "lucide-react";
 import { strapiApi } from "../../../../lib/strapi";
 import { useRouter, useParams } from "next/navigation";
 import AdminCommentList from "../../../../components/AdminCommentList";
+import { usePageTitle } from '../../../../hooks/usePageTitle';
 
 interface Trade {
   id: number;
@@ -32,6 +33,7 @@ interface Trade {
 }
 
 export default function ViewJournalTradePage() {
+  usePageTitle('Journal Trade');
   const router = useRouter();
   const params = useParams();
   const tradeId = params.id as string;

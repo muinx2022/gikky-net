@@ -8,6 +8,7 @@ import { strapiApi } from "../../../lib/strapi";
 import { useRouter } from "next/navigation";
 import DeleteConfirmModal from "../../../components/DeleteConfirmModal";
 import AssignModeratorModal from "../../../components/AssignModeratorModal";
+import { usePageTitle } from '../../../hooks/usePageTitle';
 
 interface CategoryItem {
   id: number;
@@ -21,6 +22,7 @@ interface CategoryItem {
 }
 
 export default function CategoriesPage() {
+  usePageTitle('Categories');
   const router = useRouter();
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [loading, setLoading] = useState(true);

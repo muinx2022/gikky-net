@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { FolderTree, FileText, Users, Clock, TrendingUp } from 'lucide-react';
 import { strapiApi } from '../../lib/strapi';
 import { useRouter } from 'next/navigation';
+import { usePageTitle } from '../../hooks/usePageTitle';
 
 const StatCard = ({
   title,
@@ -68,6 +69,7 @@ const StatCard = ({
 };
 
 export default function DashboardPage() {
+  usePageTitle('Dashboard');
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [stats, setStats] = useState({

@@ -7,6 +7,7 @@ import { notifications } from "@mantine/notifications";
 import { strapiApi } from "../../../lib/strapi";
 import { useRouter } from "next/navigation";
 import DeleteConfirmModal from "../../../components/DeleteConfirmModal";
+import { usePageTitle } from '../../../hooks/usePageTitle';
 
 interface Trade {
   id: number;
@@ -56,6 +57,7 @@ const PUBLIC_OPTIONS = [
 ];
 
 export default function JournalTradesPage() {
+  usePageTitle('Journal Trades');
   const router = useRouter();
   const [trades, setTrades] = useState<Trade[]>([]);
   const [loading, setLoading] = useState(true);

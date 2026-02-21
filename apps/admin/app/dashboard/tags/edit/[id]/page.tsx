@@ -6,8 +6,10 @@ import { notifications } from "@mantine/notifications";
 import { ArrowLeft, Save, CheckCircle, XCircle } from "lucide-react";
 import { strapiApi } from "../../../../../lib/strapi";
 import { useRouter, useParams } from "next/navigation";
+import { usePageTitle } from '../../../../../hooks/usePageTitle';
 
 export default function EditTagPage() {
+  usePageTitle('Edit Tag');
   const router = useRouter();
   const params = useParams();
   const tagId = params.id as string;

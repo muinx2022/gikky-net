@@ -7,6 +7,7 @@ import { strapiApi } from "../../../lib/strapi";
 import { useRouter } from "next/navigation";
 import DeleteConfirmModal from "../../../components/DeleteConfirmModal";
 import { notifications } from "@mantine/notifications";
+import { usePageTitle } from '../../../hooks/usePageTitle';
 
 interface PageItem {
   id: number;
@@ -37,6 +38,7 @@ const getApiErrorMessage = (error: unknown, fallback: string) => {
 };
 
 export default function PagesListPage() {
+  usePageTitle('Pages');
   const router = useRouter();
   const [pages, setPages] = useState<PageItem[]>([]);
   const [loading, setLoading] = useState(true);
