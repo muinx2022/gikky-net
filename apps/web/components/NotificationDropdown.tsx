@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Bell, Shield, MessageSquare, Heart, UserPlus } from 'lucide-react';
 import { io, Socket } from 'socket.io-client';
 import { useRouter } from 'next/navigation';
-import { api } from '../lib/api';
+import { api, getStrapiURL } from '../lib/api';
 import { getAuthToken } from '../lib/auth-storage';
 import { useAuth } from './AuthContext';
 
@@ -61,7 +61,7 @@ export default function NotificationDropdown() {
     const jwt = getAuthToken();
     if (!jwt) return;
 
-    const newSocket = io('http://localhost:1337', {
+    const newSocket = io(getStrapiURL(), {
       transports: ['websocket', 'polling'],
     });
     activeSocket = newSocket;
@@ -105,15 +105,8 @@ export default function NotificationDropdown() {
   const handleMarkAsRead = async (notificationId: string) => {
     try {
       const jwt = getAuthToken();
-      await fetch(`http://localhost:1337/api/notifications/${notificationId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${jwt}`,
-        },
-        body: JSON.stringify({
-          data: { read: true },
-        }),
+      await api.put(`/api/notifications/${notificationId}`, { data: { read: true } }, {
+        headers: { Authorization: `Bearer ${jwt}` },
       });
 
       setNotifications(notifications.map((n) => (n.documentId === notificationId ? { ...n, read: true } : n)));
@@ -151,15 +144,8 @@ export default function NotificationDropdown() {
         notifications
           .filter((n) => !n.read)
           .map((n) =>
-            fetch(`http://localhost:1337/api/notifications/${n.documentId}`, {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${jwt}`,
-              },
-              body: JSON.stringify({
-                data: { read: true },
-              }),
+            api.put(`/api/notifications/${n.documentId}`, { data: { read: true } }, {
+              headers: { Authorization: `Bearer ${jwt}` },
             })
           )
       );
