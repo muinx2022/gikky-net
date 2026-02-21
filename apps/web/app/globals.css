@@ -127,3 +127,25 @@ body {
 .post-preview pre { background: #1e293b; color: #e2e8f0; padding: 0.65rem 0.85rem; border-radius: 6px; overflow-x: auto; font-size: 0.78rem; margin-bottom: 0.4rem; }
 .post-preview blockquote { border-left: 3px solid #cbd5e1; padding-left: 0.75rem; color: #64748b; font-style: italic; margin-bottom: 0.4rem; }
 .dark .post-preview blockquote { border-color: #334155; color: #94a3b8; }
+
+/* Ensure list markers render correctly in editor and post content */
+.ProseMirror ul,
+.prose ul {
+  list-style: disc;
+  list-style-position: outside;
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+}
+
+.ProseMirror ol,
+.prose ol {
+  list-style: decimal;
+  list-style-position: outside;
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+}
+
+.ProseMirror li,
+.prose li {
+  margin: 0.2rem 0;
+}

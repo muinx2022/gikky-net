@@ -140,7 +140,6 @@ export default function TiptapEditor({
   const contentClass = compact
     ? `overflow-y-auto cursor-text p-3 pb-10 ${editorBodyHeightClass}`
     : `overflow-y-auto cursor-text p-4 pb-12 ${editorBodyHeightClass}`;
-  const proseClass = compact ? "prose prose-sm" : "prose";
 
   const editor = useEditor(
     {
@@ -168,7 +167,9 @@ export default function TiptapEditor({
       },
       editorProps: {
         attributes: {
-          class: `${proseClass} dark:prose-invert w-full !max-w-none focus:outline-none text-slate-900 dark:text-slate-100 h-full`,
+          class: compact
+            ? "prose prose-sm dark:prose-invert w-full !max-w-none focus:outline-none text-slate-900 dark:text-slate-100 h-full"
+            : "prose dark:prose-invert w-full !max-w-none focus:outline-none text-slate-900 dark:text-slate-100 h-full",
         },
       },
     },
