@@ -78,12 +78,20 @@ export default function ForumLayout({ children, activeNav }: ForumLayoutProps) {
     (async () => {
       try {
         const res = await api.get("/api/categories", {
-          params: { sort: ["sortOrder:asc", "name:asc"], populate: "parent", filters: { parent: { $null: true } } },
+          params: {
+            sort: ["sortOrder:asc", "name:asc"],
+            populate: "parent",
+            filters: { parent: { $null: true }, published: { $eq: true } },
+          },
         });
         let roots: Category[] = res.data?.data || [];
         if (roots.length === 0) {
           const allRes = await api.get("/api/categories", {
-            params: { sort: ["sortOrder:asc", "name:asc"], populate: "parent" },
+            params: {
+              sort: ["sortOrder:asc", "name:asc"],
+              populate: "parent",
+              filters: { published: { $eq: true } },
+            },
           });
           const all: Category[] = allRes.data?.data || [];
           roots = all.filter((c) => !c.parent?.id);
