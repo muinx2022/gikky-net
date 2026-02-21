@@ -85,6 +85,20 @@
       "multiple": false,
       "required": false,
       "allowedTypes": ["images"]
+    },
+    "banned": {
+      "type": "boolean",
+      "default": false
+    },
+    "bannedUntil": {
+      "type": "datetime"
+    },
+    "banReason": {
+      "type": "text"
+    },
+    "strikeCount": {
+      "type": "integer",
+      "default": 0
     }
   }
 }

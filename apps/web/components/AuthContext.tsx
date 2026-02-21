@@ -10,6 +10,8 @@ interface UserData {
   username: string;
   email: string;
   avatarUrl?: string | null;
+  banned?: boolean;
+  bannedUntil?: string | null;
 }
 
 interface ModeratorCategory {
@@ -91,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const avatarUrl = avatarRaw
           ? avatarRaw.startsWith("http") ? avatarRaw : getStrapiURL(avatarRaw)
           : null;
-        const me: UserData = { id: raw.id, username: raw.username, email: raw.email, avatarUrl };
+        const me: UserData = { id: raw.id, username: raw.username, email: raw.email, avatarUrl, banned: raw.banned ?? false, bannedUntil: raw.bannedUntil ?? null };
         setCurrentUser(me);
         setStoredUser(me);
         checkModeratorStatus();

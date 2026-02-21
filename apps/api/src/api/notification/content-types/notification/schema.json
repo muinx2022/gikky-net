@@ -23,7 +23,9 @@
         "moderator_invite",
         "comment",
         "like",
-        "follow"
+        "follow",
+        "report",
+        "strike_threshold"
       ]
     },
     "message": {

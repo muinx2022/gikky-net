@@ -18,6 +18,8 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
       email: (user as any).email,
       bio: (user as any).bio ?? null,
       avatar: (user as any).avatar ?? null,
+      banned: (user as any).banned ?? false,
+      bannedUntil: (user as any).bannedUntil ?? null,
     };
   },
 

@@ -5,7 +5,7 @@ import { api } from "../../../lib/api";
 import ForumLayout from "../../../components/ForumLayout";
 import ConfirmModal from "../../../components/ConfirmModal";
 import { useToast } from "../../../components/Toast";
-import { Shield, FolderTree, FileText, Check, X, Trash2 } from "lucide-react";
+import { Shield, FolderTree, FileText, Check, X, Trash2, Flag } from "lucide-react";
 import { getAuthToken, getStoredUser } from "../../../lib/auth-storage";
 
 interface Category {
@@ -38,9 +38,21 @@ interface ModeratorCategory {
   category: Category;
 }
 
+interface Report {
+  id: number;
+  reason: string;
+  detail?: string | null;
+  status: string;
+  createdAt: string;
+  post?: { id: number; documentId: string; title: string; author?: { id: number; username: string } } | null;
+  comment?: { id: number; documentId: string; content: string; author?: { id: number; username: string } } | null;
+  reportedBy?: { id: number; username: string } | null;
+}
+
 export default function ModeratorPage() {
   const [moderatorCategories, setModeratorCategories] = useState<ModeratorCategory[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [reports, setReports] = useState<Report[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -92,11 +104,23 @@ export default function ModeratorPage() {
       if (firstCategory?.category) {
         setSelectedCategory(firstCategory.category.documentId);
         await fetchPostsForCategory(firstCategory.category.id);
+        await fetchReportsForCategory(firstCategory.category.id);
       }
     } catch (error) {
       console.error("Failed to fetch moderator data:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchReportsForCategory = async (categoryId: number) => {
+    try {
+      const jwt = getAuthToken();
+      if (!jwt) return;
+      const reportsRes = await api.get(`/api/reports/mod-queue?categoryId=${categoryId}`, { headers: { Authorization: `Bearer ${jwt}` } });
+      setReports(reportsRes.data?.data || []);
+    } catch (error) {
+      console.error("Failed to fetch reports:", error);
     }
   };
 
@@ -122,13 +146,37 @@ export default function ModeratorPage() {
     const category = moderatorCategories.find((m) => m.category.documentId === categoryId);
     if (category) {
       await fetchPostsForCategory(category.category.id);
+      await fetchReportsForCategory(category.category.id);
     }
   };
 
   const refreshPosts = async () => {
     if (selectedCategory) {
       const category = moderatorCategories.find(m => m.category.documentId === selectedCategory);
-      if (category) await fetchPostsForCategory(category.category.id);
+      if (category) {
+        await fetchPostsForCategory(category.category.id);
+        await fetchReportsForCategory(category.category.id);
+      }
+    }
+  };
+
+  const REASON_LABELS: Record<string, string> = {
+    spam: 'Spam', inappropriate: 'Không phù hợp', harassment: 'Quấy rối',
+    misinformation: 'Thông tin sai', other: 'Khác',
+  };
+
+  const handleDismissReport = async (reportId: number) => {
+    try {
+      const jwt = getAuthToken();
+      if (!jwt) return;
+      await api.patch(`/api/admin-reports/${reportId}`, { status: 'dismissed' }, { headers: { Authorization: `Bearer ${jwt}` } });
+      showToast('Đã bác bỏ báo cáo', 'success');
+      if (selectedCategory) {
+        const category = moderatorCategories.find(m => m.category.documentId === selectedCategory);
+        if (category) await fetchReportsForCategory(category.category.id);
+      }
+    } catch {
+      showToast('Thao tác thất bại', 'error');
     }
   };
 
@@ -367,8 +415,49 @@ export default function ModeratorPage() {
             </div>
           </div>
 
-          {/* Main Content - Posts */}
-          <div className="lg:col-span-3">
+          {/* Main Content - Posts + Reports */}
+          <div className="lg:col-span-3 space-y-6">
+            {/* Reports Section */}
+            {reports.length > 0 && (
+              <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-red-200 dark:border-red-900">
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                  <Flag size={20} className="text-red-500" />
+                  Báo cáo chờ xử lý ({reports.length})
+                </h2>
+                <div className="space-y-3">
+                  {reports.map((report) => {
+                    const target = report.post
+                      ? `Bài viết: ${report.post.title}`
+                      : `Bình luận: ${(report.comment?.content || '').replace(/<[^>]+>/g, '').trim().slice(0, 60)}`;
+                    const author = report.post?.author || report.comment?.author;
+                    return (
+                      <div key={report.id} className="border border-red-100 dark:border-red-900/40 rounded-lg p-4 bg-red-50 dark:bg-red-900/10">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-slate-900 dark:text-white line-clamp-1">{target}</p>
+                            <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 mt-1">
+                              <span>Tác giả: {author?.username || 'Ẩn danh'}</span>
+                              <span>•</span>
+                              <span>Báo cáo bởi: {report.reportedBy?.username || 'Ẩn danh'}</span>
+                            </div>
+                            {report.detail && <p className="text-xs text-slate-500 mt-1 italic">{report.detail}</p>}
+                          </div>
+                          <button
+                            onClick={() => handleDismissReport(report.id)}
+                            className="ml-4 flex items-center gap-1 px-3 py-1.5 text-xs rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                          >
+                            <X size={12} />
+                            Bác bỏ
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+
             <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-300 dark:border-slate-800">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                 <FileText size={20} />

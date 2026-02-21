@@ -375,6 +375,16 @@ export default function ForumLayout({ children, activeNav }: ForumLayoutProps) {
         </div>
       </header>
 
+      {currentUser?.banned && (
+        <div className="sticky top-16 z-30 bg-red-600 text-white text-center py-2 px-4 text-sm font-medium">
+          ⚠️ Tài khoản của bạn đang bị hạn chế
+          {currentUser.bannedUntil
+            ? ` đến ${new Date(currentUser.bannedUntil).toLocaleDateString('vi-VN')}`
+            : ' vĩnh viễn'
+          }. Bạn không thể đăng bài hoặc bình luận.
+        </div>
+      )}
+
       <div className="sticky top-16 z-30 border-b border-slate-700 bg-[#0f172a]/95 backdrop-blur">
         <div className="mx-auto flex h-11 w-full max-w-[1340px] items-center gap-2 px-4 md:px-8">
           <Link

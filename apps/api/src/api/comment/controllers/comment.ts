@@ -1,5 +1,6 @@
 import { factories } from '@strapi/strapi';
 import { emitNotification } from '../../../utils/notification-emitter';
+import { checkBan } from '../../../utils/ban-check';
 
 export default factories.createCoreController('api::comment.comment', ({ strapi }) => ({
   async find(ctx) {
@@ -30,6 +31,13 @@ export default factories.createCoreController('api::comment.comment', ({ strapi 
     if (!user) {
       return ctx.unauthorized('You must be logged in to comment');
     }
+
+    // Fetch full user record to check ban status
+    const fullUser = await strapi.db.query('plugin::users-permissions.user').findOne({
+      where: { id: user.id },
+      select: ['id', 'banned', 'bannedUntil'],
+    });
+    if (await checkBan(strapi, fullUser, ctx)) return;
 
     const { content, post, journalTrade, parent } = ctx.request.body.data;
 

@@ -6,6 +6,8 @@ import ForumLayout from "../../../components/ForumLayout";
 import PostCard, { type PostCardPost } from "../../../components/PostCard";
 import ShareModal from "../../../components/ShareModal";
 import { api, getStrapiURL } from "../../../lib/api";
+import { useAuth } from "../../../components/AuthContext";
+import { getAuthToken } from "../../../lib/auth-storage";
 
 interface UserProfile {
   id: number;
@@ -46,6 +48,7 @@ const formatJoinDate = (dateString?: string | null) => {
 export default function UserPage({ params }: { params: Promise<{ username: string }> }) {
   const resolvedParams = use(params);
   const username = decodeURIComponent(resolvedParams.username);
+  const { currentUser, hydrated } = useAuth();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -56,6 +59,10 @@ export default function UserPage({ params }: { params: Promise<{ username: strin
   const [hasMore, setHasMore] = useState(true);
   const [sharePost, setSharePost] = useState<PostCardPost | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
 
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
@@ -116,16 +123,41 @@ export default function UserPage({ params }: { params: Promise<{ username: strin
     setHasMore(true);
 
     api.get(`/api/profile/${encodeURIComponent(username)}`)
-      .then((res) => {
+      .then(async (res) => {
         const user: UserProfile = res.data;
         setProfile(user);
-        return fetchPosts(1, false, user.id);
+        await fetchPosts(1, false, user.id);
+        // Fetch follow counts
+        try {
+          const jwt = getAuthToken();
+          const headers = jwt ? { Authorization: `Bearer ${jwt}` } : undefined;
+          const countsRes = await api.get(`/api/user-follows/counts?userId=${user.id}`, { headers });
+          const counts = countsRes.data?.data;
+          setFollowerCount(counts?.followers || 0);
+          setFollowingCount(counts?.following || 0);
+          setIsFollowing(Boolean(counts?.isFollowing));
+        } catch { /* ignore */ }
       })
       .catch((err) => {
         if (err?.response?.status === 404) setNotFound(true);
       })
       .finally(() => setLoading(false));
   }, [username, fetchPosts]);
+
+  const handleFollowToggle = async () => {
+    if (!profile || !currentUser) return;
+    const jwt = getAuthToken();
+    if (!jwt) return;
+    setFollowLoading(true);
+    try {
+      const res = await api.post('/api/user-follows/toggle', { followingId: profile.id }, { headers: { Authorization: `Bearer ${jwt}` } });
+      const data = res.data?.data;
+      setIsFollowing(Boolean(data?.active));
+      setFollowerCount(data?.followerCount ?? followerCount);
+    } catch { /* ignore */ } finally {
+      setFollowLoading(false);
+    }
+  };
 
   const loadMore = useCallback(async () => {
     if (loading || loadingMore || !hasMore || !profile) return;
@@ -170,21 +202,51 @@ export default function UserPage({ params }: { params: Promise<{ username: strin
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
             {/* Profile header */}
             <div className="px-5 py-5">
-              <div className="flex items-center gap-4">
+              <div className="flex items-start gap-4">
                 <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-blue-100">
                   {avatarUrl
                     ? <img src={avatarUrl} alt={profile?.username} className="h-full w-full object-cover" />
                     : <User size={28} className="text-blue-400" />
                   }
                 </div>
-                <div>
-                  <h1 className="text-xl font-bold text-slate-900">{profile?.username}</h1>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <h1 className="text-xl font-bold text-slate-900">{profile?.username}</h1>
+                    {hydrated && profile && (
+                      currentUser
+                        ? Number(currentUser.id) !== Number(profile.id) && (
+                            <button
+                              onClick={handleFollowToggle}
+                              disabled={followLoading}
+                              className={`px-3 py-1 text-sm rounded-full font-medium transition-colors disabled:opacity-50 ${
+                                isFollowing
+                                  ? 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                                  : 'bg-blue-600 text-white hover:bg-blue-700'
+                              }`}
+                            >
+                              {followLoading ? '...' : isFollowing ? 'Đang theo dõi' : 'Theo dõi'}
+                            </button>
+                          )
+                        : (
+                            <a
+                              href="/login"
+                              className="px-3 py-1 text-sm rounded-full font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                            >
+                              Theo dõi
+                            </a>
+                          )
+                    )}
+                  </div>
                   {profile?.bio && (
                     <p className="mt-0.5 text-sm text-slate-500">{profile.bio}</p>
                   )}
                   {profile?.createdAt && (
                     <p className="mt-1 text-xs text-slate-400">Tham gia {formatJoinDate(profile.createdAt)}</p>
                   )}
+                  <div className="flex items-center gap-4 mt-2 text-sm text-slate-500">
+                    <span><strong className="text-slate-700">{followerCount}</strong> người theo dõi</span>
+                    <span><strong className="text-slate-700">{followingCount}</strong> đang theo dõi</span>
+                  </div>
                 </div>
               </div>
             </div>

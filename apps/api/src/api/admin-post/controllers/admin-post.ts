@@ -1,4 +1,6 @@
 import type { Core } from '@strapi/strapi';
+import { checkBan } from '../../../utils/ban-check';
+import { emitNotification } from '../../../utils/notification-emitter';
 
 const POST_UID = 'api::post.post';
 const CATEGORY_UID = 'api::category.category';
@@ -173,7 +175,17 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
   },
 
   async create(ctx) {
+    // Ban check for the author being set
     const { payload, authorUserId } = await parseDataPayload(strapi, ctx);
+
+    if (authorUserId) {
+      const fullUser = await strapi.db.query('plugin::users-permissions.user').findOne({
+        where: { id: authorUserId },
+        select: ['id', 'banned', 'bannedUntil'],
+      });
+      if (await checkBan(strapi, fullUser, ctx)) return;
+    }
+
     const status = payload?.status === 'published' ? 'published' : 'draft';
 
     const data = await strapi.documents(POST_UID).create({
@@ -182,6 +194,32 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
     });
 
     await setAuthorForDocument(strapi, data?.documentId, authorUserId);
+
+    // Notify followers when post is published
+    if (status === 'published' && authorUserId && data?.documentId) {
+      try {
+        const author = await strapi.db.query('plugin::users-permissions.user').findOne({
+          where: { id: authorUserId },
+          select: ['id', 'username'],
+        });
+        const follows = await strapi.db.query('api::user-follow.user-follow').findMany({
+          where: { following: authorUserId },
+          populate: { follower: { select: ['id'] } },
+        });
+        follows.forEach(({ follower }: any) => {
+          if (follower?.id) {
+            emitNotification(strapi, {
+              userId: follower.id,
+              type: 'follow',
+              message: `${(author as any)?.username || 'Ai đó'} vừa đăng bài: "${payload?.title || ''}"`,
+              data: { postId: data.documentId },
+            });
+          }
+        });
+      } catch {
+        // non-critical, ignore
+      }
+    }
 
     ctx.body = { data };
   },
@@ -206,6 +244,9 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
       status: 'draft',
     });
 
+    // Track if this update is publishing the post
+    const isPublishing = payload?.status === 'published';
+
     // Also update published version so find() (which queries published) sees the changes
     try {
       await strapi.documents(POST_UID).update({
@@ -218,6 +259,32 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
     }
 
     await setAuthorForDocument(strapi, id, authorUserId);
+
+    // Notify followers when post status changes to published
+    if (isPublishing && authorUserId) {
+      try {
+        const author = await strapi.db.query('plugin::users-permissions.user').findOne({
+          where: { id: authorUserId },
+          select: ['id', 'username'],
+        });
+        const follows = await strapi.db.query('api::user-follow.user-follow').findMany({
+          where: { following: authorUserId },
+          populate: { follower: { select: ['id'] } },
+        });
+        follows.forEach(({ follower }: any) => {
+          if (follower?.id) {
+            emitNotification(strapi, {
+              userId: follower.id,
+              type: 'follow',
+              message: `${(author as any)?.username || 'Ai đó'} vừa đăng bài: "${payload?.title || ''}"`,
+              data: { postId: id },
+            });
+          }
+        });
+      } catch {
+        // non-critical, ignore
+      }
+    }
 
     ctx.body = { data };
   },

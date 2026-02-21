@@ -73,4 +73,42 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
       },
     };
   },
+
+  async ban(ctx) {
+    const { id } = ctx.params;
+    const body = (ctx.request.body || {}) as { duration?: string; reason?: string };
+    const { duration = 'permanent', reason } = body;
+
+    let bannedUntil: Date | null = null;
+    if (duration !== 'permanent') {
+      const daysMap: Record<string, number> = { '1d': 1, '3d': 3, '7d': 7 };
+      const days = daysMap[duration];
+      if (days) {
+        bannedUntil = new Date();
+        bannedUntil.setDate(bannedUntil.getDate() + days);
+      }
+    }
+
+    await strapi.db.query('plugin::users-permissions.user').update({
+      where: { id: Number(id) },
+      data: {
+        banned: true,
+        bannedUntil: bannedUntil ?? null,
+        banReason: reason || null,
+      },
+    });
+
+    ctx.body = { data: { id: Number(id), banned: true, bannedUntil, banReason: reason || null } };
+  },
+
+  async unban(ctx) {
+    const { id } = ctx.params;
+
+    await strapi.db.query('plugin::users-permissions.user').update({
+      where: { id: Number(id) },
+      data: { banned: false, bannedUntil: null, banReason: null },
+    });
+
+    ctx.body = { data: { id: Number(id), banned: false } };
+  },
 });

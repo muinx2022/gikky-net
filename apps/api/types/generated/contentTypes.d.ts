@@ -539,6 +539,7 @@ export interface ApiCommentComment extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    disabled: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     journalTrade: Schema.Attribute.Relation<
       'manyToOne',
       'api::journal-trade.journal-trade'
@@ -655,7 +656,14 @@ export interface ApiNotificationNotification
     publishedAt: Schema.Attribute.DateTime;
     read: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     type: Schema.Attribute.Enumeration<
-      ['moderator_invite', 'comment', 'like', 'follow']
+      [
+        'moderator_invite',
+        'comment',
+        'like',
+        'follow',
+        'report',
+        'strike_threshold',
+      ]
     >;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -800,6 +808,50 @@ export interface ApiPostPost extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiReportReport extends Struct.CollectionTypeSchema {
+  collectionName: 'reports';
+  info: {
+    displayName: 'Report';
+    pluralName: 'reports';
+    singularName: 'report';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    comment: Schema.Attribute.Relation<'manyToOne', 'api::comment.comment'>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    detail: Schema.Attribute.Text;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::report.report'
+    > &
+      Schema.Attribute.Private;
+    post: Schema.Attribute.Relation<'manyToOne', 'api::post.post'>;
+    publishedAt: Schema.Attribute.DateTime;
+    reason: Schema.Attribute.Enumeration<
+      ['spam', 'inappropriate', 'harassment', 'misinformation', 'other']
+    >;
+    reportedBy: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+    reviewedBy: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+    reviewNote: Schema.Attribute.Text;
+    status: Schema.Attribute.Enumeration<['pending', 'reviewed', 'dismissed']> &
+      Schema.Attribute.DefaultTo<'pending'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiTagTag extends Struct.CollectionTypeSchema {
   collectionName: 'tags';
   info: {
@@ -834,6 +886,41 @@ export interface ApiTagTag extends Struct.CollectionTypeSchema {
       Schema.Attribute.DefaultTo<true>;
     publishedAt: Schema.Attribute.DateTime;
     slug: Schema.Attribute.UID<'name'> & Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiUserFollowUserFollow extends Struct.CollectionTypeSchema {
+  collectionName: 'user_follows';
+  info: {
+    displayName: 'User Follow';
+    pluralName: 'user-follows';
+    singularName: 'user-follow';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    follower: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+    following: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::user-follow.user-follow'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -1299,6 +1386,9 @@ export interface PluginUsersPermissionsUser
   };
   attributes: {
     avatar: Schema.Attribute.Media<'images'>;
+    banned: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    bannedUntil: Schema.Attribute.DateTime;
+    banReason: Schema.Attribute.Text;
     bio: Schema.Attribute.Text;
     blocked: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     category_actions: Schema.Attribute.Relation<
@@ -1337,6 +1427,7 @@ export interface PluginUsersPermissionsUser
       'manyToOne',
       'plugin::users-permissions.role'
     >;
+    strikeCount: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -1368,7 +1459,9 @@ declare module '@strapi/strapi' {
       'api::page.page': ApiPagePage;
       'api::post-action.post-action': ApiPostActionPostAction;
       'api::post.post': ApiPostPost;
+      'api::report.report': ApiReportReport;
       'api::tag.tag': ApiTagTag;
+      'api::user-follow.user-follow': ApiUserFollowUserFollow;
       'plugin::content-releases.release': PluginContentReleasesRelease;
       'plugin::content-releases.release-action': PluginContentReleasesReleaseAction;
       'plugin::i18n.locale': PluginI18NLocale;

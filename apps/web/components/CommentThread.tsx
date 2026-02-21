@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useState } from "react";
-import { ArrowDown, ArrowUp, CornerDownRight, MessageSquare } from "lucide-react";
+import { ArrowDown, ArrowUp, CornerDownRight, Flag, MessageSquare, X } from "lucide-react";
 import { api, getStrapiURL } from "../lib/api";
 import { getAuthToken } from "../lib/auth-storage";
 import LoginModal from "./LoginModal";
@@ -80,6 +80,10 @@ export default function CommentThread({
   const [commentDownvoteCounts, setCommentDownvoteCounts] = useState<Record<number, number>>({});
   const [commentUpvoteIds, setCommentUpvoteIds] = useState<Record<number, string>>({});
   const [commentDownvoteIds, setCommentDownvoteIds] = useState<Record<number, string>>({});
+  const [reportModal, setReportModal] = useState<{ open: boolean; commentDocId: string | null }>({ open: false, commentDocId: null });
+  const [reportReason, setReportReason] = useState('other');
+  const [reportDetail, setReportDetail] = useState('');
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
 
   const getInitials = (name?: string) => {
     if (!name) return "A";
@@ -322,6 +326,23 @@ export default function CommentThread({
     });
   };
 
+  const handleSubmitCommentReport = async () => {
+    if (!reportModal.commentDocId) return;
+    const jwt = getAuthToken();
+    if (!jwt) { setShowLoginModal(true); return; }
+    setIsSubmittingReport(true);
+    try {
+      await api.post('/api/reports', { comment: reportModal.commentDocId, reason: reportReason, detail: reportDetail || undefined }, { headers: { Authorization: `Bearer ${jwt}` } });
+      setReportModal({ open: false, commentDocId: null });
+      setReportDetail('');
+      setReportReason('other');
+    } catch {
+      // silent fail
+    } finally {
+      setIsSubmittingReport(false);
+    }
+  };
+
   const renderComment = (comment: any, level: number = 0): React.ReactNode => {
     return (
       <div key={comment.id} id={`comment-${comment.documentId}`} className={`${level > 0 ? "ml-5 pl-3 border-l border-slate-300 dark:border-slate-800" : ""} mb-4`}>
@@ -362,6 +383,16 @@ export default function CommentThread({
                   <CornerDownRight size={12} />
                   Trả lời
                 </button>
+
+                {currentUser && currentUser.id !== (comment.author?.id || comment.author) && (
+                  <button
+                    onClick={() => { setReportModal({ open: true, commentDocId: comment.documentId }); setReportReason('other'); setReportDetail(''); }}
+                    className="text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                    title="Báo cáo bình luận"
+                  >
+                    <Flag size={12} />
+                  </button>
+                )}
               </div>
             )}
 
@@ -500,6 +531,56 @@ export default function CommentThread({
           setLoginIntent(null);
         }}
       />
+
+      {/* Report Comment Modal */}
+      {reportModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Báo cáo bình luận</h3>
+              <button onClick={() => setReportModal({ open: false, commentDocId: null })} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Lý do</label>
+                <select
+                  value={reportReason}
+                  onChange={(e) => setReportReason(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white"
+                >
+                  <option value="spam">Spam</option>
+                  <option value="inappropriate">Nội dung không phù hợp</option>
+                  <option value="harassment">Quấy rối</option>
+                  <option value="misinformation">Thông tin sai lệch</option>
+                  <option value="other">Khác</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Chi tiết (tuỳ chọn)</label>
+                <textarea
+                  value={reportDetail}
+                  onChange={(e) => setReportDetail(e.target.value)}
+                  placeholder="Mô tả thêm về vi phạm..."
+                  rows={3}
+                  className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-white resize-none"
+                />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <button onClick={() => setReportModal({ open: false, commentDocId: null })} className="px-4 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">Hủy</button>
+                <button
+                  onClick={handleSubmitCommentReport}
+                  disabled={isSubmittingReport}
+                  className="px-4 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                >
+                  {isSubmittingReport ? 'Đang gửi...' : 'Gửi báo cáo'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

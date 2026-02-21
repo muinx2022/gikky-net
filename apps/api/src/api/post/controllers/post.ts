@@ -3,6 +3,7 @@
  */
 
 import { factories } from '@strapi/strapi';
+import { checkBan } from '../../../utils/ban-check';
 
 const stripAuthorFilterDeep = (value: any): any => {
   if (Array.isArray(value)) {
@@ -35,6 +36,13 @@ export default factories.createCoreController('api::post.post', ({ strapi }) => 
     if (!user?.id) {
       return ctx.unauthorized('You must be logged in');
     }
+
+    // Fetch full user record to check ban status
+    const fullUser = await strapi.db.query('plugin::users-permissions.user').findOne({
+      where: { id: user.id },
+      select: ['id', 'banned', 'bannedUntil'],
+    });
+    if (await checkBan(strapi, fullUser, ctx)) return;
 
     const body = (ctx.request.body || {}) as { data?: Record<string, any> };
     const nextData = { ...(body.data || {}) };

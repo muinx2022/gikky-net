@@ -1,0 +1,24 @@
+{
+  "kind": "collectionType",
+  "collectionName": "user_follows",
+  "info": {
+    "singularName": "user-follow",
+    "pluralName": "user-follows",
+    "displayName": "User Follow"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "follower": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "following": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    }
+  }
+}

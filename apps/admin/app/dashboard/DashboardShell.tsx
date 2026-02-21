@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { AppShell, Burger, Group, NavLink, Text, Avatar, Menu, UnstyledButton, rem } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { LayoutDashboard, Users, Settings, LogOut, ChevronDown, FileText, FolderTree, Tag, User, BookOpenText, ChartCandlestick } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, LogOut, ChevronDown, FileText, FolderTree, Tag, User, BookOpenText, ChartCandlestick, Flag } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { getCookie } from 'cookies-next/client';
 import NotificationDropdown from '../../components/NotificationDropdown';
@@ -273,6 +273,26 @@ export default function DashboardShell({
             root: {
               '&:hover': {
                 background: pathname?.startsWith('/dashboard/journal-trades') ? '#e2e8f0' : '#fafafa',
+              },
+            },
+          }}
+        />
+        <NavLink
+          href="/dashboard/reports"
+          label="Reports"
+          leftSection={<Flag size={18} />}
+          active={pathname?.startsWith('/dashboard/reports')}
+          style={{
+            borderRadius: '8px',
+            marginBottom: '2px',
+            fontWeight: pathname?.startsWith('/dashboard/reports') ? 600 : 500,
+            background: pathname?.startsWith('/dashboard/reports') ? '#e2e8f0' : 'transparent',
+            color: pathname?.startsWith('/dashboard/reports') ? '#334155' : '#64748b',
+          }}
+          styles={{
+            root: {
+              '&:hover': {
+                background: pathname?.startsWith('/dashboard/reports') ? '#e2e8f0' : '#fafafa',
               },
             },
           }}

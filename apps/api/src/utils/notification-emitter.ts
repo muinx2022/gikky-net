@@ -3,7 +3,7 @@ import type { Core } from '@strapi/strapi';
 
 export interface NotificationEventPayload {
   userId: number;
-  type: 'moderator_invite' | 'comment' | 'like' | 'follow';
+  type: 'moderator_invite' | 'comment' | 'like' | 'follow' | 'report' | 'strike_threshold';
   message: string;
   data?: Record<string, unknown>;
 }
