@@ -36,8 +36,70 @@ export interface PostCardPost {
 type ContentPreview =
   | { type: "video"; src: string }
   | { type: "image"; src: string; alt: string }
-  | { type: "text"; text: string }
+  | { type: "html"; html: string }
   | null;
+
+const VOID_ELEMENTS = new Set([
+  "area","base","br","col","embed","hr","img","input",
+  "link","meta","param","source","track","wbr",
+]);
+
+function truncateHtml(html: string, maxWords: number): string {
+  let wordCount = 0;
+  let pos = 0;
+  let result = "";
+  const openTags: string[] = [];
+
+  outer: while (pos < html.length) {
+    if (html[pos] === "<") {
+      const end = html.indexOf(">", pos);
+      if (end === -1) { result += html.slice(pos); break; }
+      const inner = html.slice(pos + 1, end).trim();
+      const full = html.slice(pos, end + 1);
+
+      if (inner.startsWith("/")) {
+        const name = inner.slice(1).split(/[\s>]/)[0].toLowerCase();
+        const idx = openTags.lastIndexOf(name);
+        if (idx !== -1) openTags.splice(idx, 1);
+        result += full;
+      } else if (!inner.startsWith("!")) {
+        const selfClose = inner.endsWith("/");
+        const name = inner.replace(/\/$/, "").split(/[\s>]/)[0].toLowerCase();
+        if (!selfClose && !VOID_ELEMENTS.has(name)) openTags.push(name);
+        result += full;
+      } else {
+        result += full;
+      }
+      pos = end + 1;
+    } else {
+      const nextTag = html.indexOf("<", pos);
+      const textEnd = nextTag === -1 ? html.length : nextTag;
+      const text = html.slice(pos, textEnd);
+      const tokens = text.split(/(\s+)/);
+      let out = "";
+
+      for (const token of tokens) {
+        if (/\S/.test(token)) {
+          wordCount++;
+          if (wordCount > maxWords) {
+            result += out.trimEnd() + "...";
+            break outer;
+          }
+          out += token;
+        } else {
+          out += token;
+        }
+      }
+      result += out;
+      pos = textEnd;
+    }
+  }
+
+  for (let i = openTags.length - 1; i >= 0; i--) {
+    result += `</${openTags[i]}>`;
+  }
+  return result;
+}
 
 const decodeEntities = (str: string): string => {
   if (typeof document === "undefined") {
@@ -66,20 +128,11 @@ function getContentPreview(content?: string): ContentPreview {
     if (src) return { type: "image", src: decodeEntities(src), alt: altMatch?.[1] ?? "" };
   }
 
-  const plain = content
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">")
-    .replace(/\s+/g, " ")
-    .trim();
+  const truncated = truncateHtml(content, 100);
+  const hasText = truncated.replace(/<[^>]+>/g, "").trim();
+  if (!hasText) return null;
 
-  if (!plain) return null;
-
-  const words = plain.split(/\s+/);
-  const trimmed = words.slice(0, 150).join(" ") + (words.length > 150 ? "..." : "");
-  return { type: "text", text: trimmed };
+  return { type: "html", html: truncated };
 }
 
 interface PostCardProps {
@@ -191,7 +244,12 @@ export default function PostCard({ post, formatDate, formatCategoryTitle, onShar
           />
         )}
 
-        {preview?.type === "text" && <p className="mb-3 text-base leading-relaxed text-slate-700 dark:text-slate-300">{preview.text}</p>}
+        {preview?.type === "html" && (
+          <div
+            className="post-preview mb-3"
+            dangerouslySetInnerHTML={{ __html: preview.html }}
+          />
+        )}
 
         {post.categories && post.categories.length > 0 && (
           <div className="mb-3 flex flex-wrap gap-2">

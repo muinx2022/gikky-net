@@ -104,3 +104,26 @@ body {
   background-color: #1e3a8a;
   color: #e2e8f0;
 }
+
+/* Post card HTML preview formatting */
+.post-preview { font-size: 0.9rem; line-height: 1.65; color: #475569; }
+.dark .post-preview { color: #94a3b8; }
+.post-preview p { margin-bottom: 0.4rem; }
+.post-preview p:last-child { margin-bottom: 0; }
+.post-preview strong, .post-preview b { font-weight: 600; color: #334155; }
+.dark .post-preview strong, .dark .post-preview b { color: #cbd5e1; }
+.post-preview em, .post-preview i { font-style: italic; }
+.post-preview h1, .post-preview h2, .post-preview h3,
+.post-preview h4, .post-preview h5, .post-preview h6 {
+  font-weight: 600; margin-bottom: 0.25rem; color: #1e293b;
+}
+.dark .post-preview h1, .dark .post-preview h2, .dark .post-preview h3,
+.dark .post-preview h4, .dark .post-preview h5, .dark .post-preview h6 { color: #e2e8f0; }
+.post-preview ul { list-style-type: disc; padding-left: 1.25rem; margin-bottom: 0.4rem; }
+.post-preview ol { list-style-type: decimal; padding-left: 1.25rem; margin-bottom: 0.4rem; }
+.post-preview li { margin-bottom: 0.1rem; }
+.post-preview code { font-family: monospace; background: #f1f5f9; padding: 0.1rem 0.3rem; border-radius: 3px; font-size: 0.8rem; }
+.dark .post-preview code { background: #1e293b; color: #e2e8f0; }
+.post-preview pre { background: #1e293b; color: #e2e8f0; padding: 0.65rem 0.85rem; border-radius: 6px; overflow-x: auto; font-size: 0.78rem; margin-bottom: 0.4rem; }
+.post-preview blockquote { border-left: 3px solid #cbd5e1; padding-left: 0.75rem; color: #64748b; font-style: italic; margin-bottom: 0.4rem; }
+.dark .post-preview blockquote { border-color: #334155; color: #94a3b8; }
