@@ -1,0 +1,433 @@
+"""Đường ghi domain — **mọi** thay đổi kéo theo cột denormalize đi qua đây.
+
+PLAN mục 6 chốt: `last_entry_at`, `last_activity_at`, `entry_count`, `comment_count`,
+`up_count`/`down_count` là "TẤT CẢ denormalize, cập nhật trong CÙNG transaction với
+ghi". Điều đó chỉ giữ được nếu có ĐÚNG MỘT chỗ biết cách ghi. Rải `mach.entry_count += 1`
+vào view/serializer/command là công thức cho đường ghi thứ tư quên mất cột thứ năm —
+và cột denormalize sai thì không có gì đỏ, chỉ có feed sắp sai và banner đếm sai.
+
+Phase 1a chỉ có seed dùng các hàm này; 1b (API đọc) không ghi gì; Phase 2 (API viết)
+gọi lại đúng chúng.
+
+**Cột denormalize được TÍNH LẠI TỪ NGUỒN, không cộng dồn.** Cộng dồn (`F("x") + 1`) rẻ
+hơn nhưng trôi vĩnh viễn sau MỘT lần lỗi, và không ai phát hiện được. Ở quy mô một mạch
+(vài chục mốc, vài trăm bình luận) hai câu `aggregate` là chi phí không đáng kể. Khi nào
+một mạch có hàng chục nghìn bình luận thì đổi, và lúc đó phải kèm command đối soát.
+
+**Nói cho đúng mức: "tính lại từ nguồn" KHÔNG tự nó chống trôi được.** Đọc-rồi-ghi mà
+không khoá hàng `Mach` thì hai transaction đồng thời vẫn mất số vĩnh viễn dưới READ
+COMMITTED: cái đến sau đếm khi chưa thấy hàng của cái đến trước, rồi ghi đè lên số vừa
+đúng. Không log, không exception, không job đối soát nào chữa. Điều kiện đủ là **hàng
+`Mach` bị khoá suốt từ lúc đếm tới lúc ghi**, và `cap_nhat_dem_mach` tự lấy khoá đó
+(xem docstring của nó) chứ không trông vào việc người gọi nhớ.
+
+**Đường ghi lịch sử tách hẳn khỏi đường ghi thường** — xem `_created_at_seed` dưới đây.
+"""
+
+import logging
+
+from django.core.exceptions import ValidationError
+from django.db import IntegrityError, transaction
+from django.db.models import Max
+from django.utils import timezone
+
+from core.cay_binh_luan import cap_phat_path
+from core.models.binh_luan import Comment
+from core.models.dien_dan import Mach, Sub
+from core.models.moc import Moc, kiem_figures
+from core.models.tuong_tac import Vote
+from core.thoi_gian import ngay_vn
+
+logger = logging.getLogger(__name__)
+
+#: Số lần thử lại khi va `UNIQUE (mach, path)` / `UNIQUE (mach, seq)`. Va chạm chỉ xảy
+#: ra khi có đường ghi KHÔNG khoá hàng cha (xem docstring `core/cay_binh_luan.py`), nên
+#: 3 lần là quá đủ; hết 3 lần mà vẫn va thì có lỗi thật, phải nổ chứ không lặp vô hạn.
+SO_LAN_THU_LAI = 3
+
+
+def _dong_dau_server(_created_at_seed):
+    """Trả về dấu thời gian server cho một hàng sắp ghi. Xem docstring của module.
+
+    **Vì sao tham số mang tên xấu xí `_created_at_seed` chứ không phải `created_at`:**
+    PLAN nguyên tắc 3 chốt `created_at` là "dấu thời gian cho niềm tin — server, bất
+    biến", còn `occurred_at` là trường người dùng NHẬP. Nếu hai thứ đó nằm cạnh nhau
+    dưới dạng hai kwarg bình thường thì một dòng rất tự nhiên ở Phase 2 —
+    `them_moc(**data.dict())` — cho người viết tự đóng dấu giờ server của chính mình.
+    Nhật ký "ghi-trước-khi-biết-kết-quả" lập tức thành nhật ký viết sau khi biết kết
+    quả, mà trang vẫn trả 200 và không có gì đỏ.
+
+    Tên có gạch dưới đầu + hậu tố `_seed` làm cửa đó đóng lại theo cách kiểm được:
+    không schema Ninja nào có field tên như vậy, nên `**data.dict()` không thể chạm tới;
+    và nếu schema lỡ khai `created_at` thật thì lời gọi **nổ `TypeError` ngay** chứ không
+    lặng lẽ nhận. 1a chỉ có `seed_dev` được phép truyền.
+
+    Bổ sung bắt buộc ở plan 1b/Phase 2: schema viết KHÔNG có `created_at`, kèm test
+    chứng minh handler không forward nó xuống đây.
+    """
+    return _created_at_seed or timezone.now()
+
+
+def cap_nhat_dem_mach(mach: Mach) -> Mach:
+    """Tính lại 4 cột denormalize của `Mach` từ nguồn và lưu. Gọi TRONG transaction ghi.
+
+    **Hàm TỰ khoá hàng `Mach`** rồi mới đếm — đừng gỡ dòng `select_for_update` đầu hàm,
+    và đừng đẩy trách nhiệm đó sang người gọi. Đây là đọc-rồi-ghi: bỏ khoá thì hai
+    transaction đồng thời (một người viết bình luận, một mod ẩn bình luận khác) làm mất
+    số **vĩnh viễn** — cái đến sau đếm khi chưa thấy hàng của cái đến trước, chờ ở khoá
+    hàng `Mach` tại câu `UPDATE`, rồi ghi đè con số vừa đúng. Không có gì đỏ.
+    Xin khoá lại khi đã giữ là no-op, nên `them_moc`/`tao_binh_luan` gọi vào đây an toàn.
+
+    Hệ quả của việc tự khoá: gọi NGOÀI `transaction.atomic()` sẽ nổ
+    `TransactionManagementError` — cố ý, giống `cap_phat_path`. Một lời gọi không nằm
+    trong transaction ghi thì con số nó tính ra đã hết hạn trước khi commit.
+
+    Hàm đọc lại hàng từ DB, nên **object truyền vào KHÔNG được cập nhật tại chỗ**; người
+    gọi muốn dùng tiếp phải `refresh_from_db()` hoặc lấy giá trị trả về.
+
+    **Bốn cột chia làm HAI nhóm đo hai thứ KHÁC NHAU — PLAN mục 6, "Luật đếm 4 cột
+    denormalize: CẤU TRÚC vs NỘI DUNG".** Gộp chúng về một công thức là sai đúng một
+    nửa, theo chiều nào cũng vậy; dưới đây là cả hai vế kèm lý do, để lần sau không ai
+    "dọn dẹp" chúng thành một.
+
+    - **`entry_count` và `last_entry_at` đo CẤU TRÚC**: tính trên **MỌI** `Moc` — bia mộ
+      (`deleted_at`) lẫn mốc bị mod ẩn (`hidden_at`) đều đếm. `seq` cấp một lần rồi bất
+      biến (`core/models/moc.py`), nên thứ phải giữ ở đây là **`entry_count == max(seq)`**:
+      banner CẶN nói "8 mốc" trong khi spine đánh số tới 9 là sai *âm thầm*, và dải gập
+      của mặt CẶN (PLAN 5.5: mốc 1 + gập giữa + 2 mốc cuối) suy thẳng ra từ chính con số
+      này ⇒ lệch một là gập nhầm ô, đẩy mốc tổng kết vào phần bị gập.
+      Hệ quả cố ý: **ẩn hay xoá mềm một mốc không làm `last_entry_at` lùi** ⇒ hệ số tươi
+      của `hay_nhat` (PLAN 5.3, `core/xep_hang.py` — điều kiện `created_at >
+      last_entry_at`) không hồi tố. Ẩn một mốc mà để cột này lùi thì cả loạt bình luận cũ
+      bỗng dưng được cộng 0.15. Nói cho đúng mức: cột này lùi ĐƯỢC nếu ai đó xoá **cứng**
+      mốc mới nhất — hôm nay không đường sản phẩm nào làm thế (xoá = bia mộ), nhưng admin
+      Django thì làm được; xem cùng cảnh báo ở PLAN mục 6, đoạn `entry_count == max(seq)`.
+
+    - **`comment_count` và `last_activity_at` đo NỘI DUNG ĐỌC ĐƯỢC**: loại `deleted_at`
+      và `hidden_at`. "💬 **24** bình luận" ở chân trang (PLAN 5.5) trong khi người ta
+      đếm được 22 là sai âm thầm — không test nào đỏ, không log nào kêu. Và
+      `last_activity_at` là đầu vào của luật BÃO/CẶN (PLAN 5.5): một mạch vừa bị dọn spam
+      không được ở mặt BÃO thêm 72 giờ nhờ đúng cái spam vừa bị ẩn.
+
+    Vì hai nhóm đo hai thứ khác nhau, `last_activity_at` **không** lấy `last_entry_at`
+    làm vế mốc — nó đếm lại trên mốc ĐỌC ĐƯỢC. Lấy nhầm thì một mốc bị ẩn giữ mạch nằm
+    lại mặt BÃO, tức đúng cái sai vừa loại được ở vế bình luận, chỉ đổi bảng.
+    """
+    mach = Mach.objects.select_for_update().get(pk=mach.pk)
+    moc_tat_ca = Moc.objects.filter(mach=mach)
+    moc_doc_duoc = moc_tat_ca.filter(deleted_at__isnull=True, hidden_at__isnull=True)
+    comment_doc_duoc = Comment.objects.filter(
+        mach=mach, deleted_at__isnull=True, hidden_at__isnull=True
+    )
+
+    mach.entry_count = moc_tat_ca.count()
+    mach.comment_count = comment_doc_duoc.count()
+
+    moc_moi_nhat = moc_tat_ca.aggregate(Max("created_at"))["created_at__max"]
+    if moc_moi_nhat is not None:
+        mach.last_entry_at = moc_moi_nhat
+
+    hoat_dong = [
+        t
+        for t in (
+            moc_doc_duoc.aggregate(Max("created_at"))["created_at__max"],
+            comment_doc_duoc.aggregate(Max("created_at"))["created_at__max"],
+        )
+        if t is not None
+    ]
+    # Mạch bị mod ẩn sạch thì không còn gì "đọc được" để lấy MAX. Cột là `NOT NULL` nên
+    # vẫn phải có một dấu thời gian, và "lúc mạch ra đời" là cái duy nhất còn thật khi
+    # mọi nội dung đã bị ẩn.
+    #
+    # Nhánh này làm ĐƯỢC đúng một việc: không giữ giá trị cũ và không lấy giờ hiện tại
+    # — hai cách đó đều đóng dấu "vừa hoạt động" cho một mạch chẳng còn gì đọc được,
+    # tức mạch bị dọn sạch lúc 11:00 lại được tính là sôi động từ 11:00.
+    #
+    # Nhánh này KHÔNG làm được (đừng đọc mạnh hơn thế): nó không kéo mạch vừa bị dọn ra
+    # khỏi mặt BÃO. Mạch spam đăng 10:00, mod ẩn sạch 11:00 ⇒ `last_activity_at` về
+    # 10:00 hôm nay ⇒ `now − last_activity_at = 1h ≤ 72h` ⇒ vẫn BÃO thêm 71 giờ
+    # (PLAN 5.5). Việc đó thuộc `Mach.hidden_at`/`locked_at` ở Phase 4 — xem PLAN mục 6,
+    # "hệ quả cố ý 2". Cột này chỉ đo nội dung, nó không biết mạch bị dọn hay chưa từng
+    # có ai vào.
+    mach.last_activity_at = max(hoat_dong) if hoat_dong else mach.created_at
+    mach.save(
+        update_fields=[
+            "entry_count",
+            "comment_count",
+            "last_entry_at",
+            "last_activity_at",
+        ]
+    )
+    return mach
+
+
+def tao_mach(
+    *,
+    sub: Sub,
+    author,
+    title: str,
+    body: str,
+    occurred_at=None,
+    loai: str | None = None,
+    question_for_crowd: str | None = None,
+    figures=None,
+    _created_at_seed=None,
+) -> tuple[Mach, Moc]:
+    """Tạo `Mach` + `Moc(seq=1)` trong MỘT transaction (PLAN 5.1).
+
+    Không có trường `body` trên `Mach`: bài gốc *chính là* mốc 1. Vì vậy không tồn tại
+    trạng thái hợp lệ nào có `Mach` mà không có mốc 1 — hai câu INSERT phải nằm trong
+    cùng một transaction, không phải "tạo mạch rồi tí nữa thêm mốc".
+
+    `_created_at_seed`: chỉ `seed_dev` truyền — xem `_dong_dau_server`.
+    """
+    khi = _dong_dau_server(_created_at_seed)
+    with transaction.atomic():
+        mach = Mach.objects.create(
+            sub=sub,
+            author=author,
+            title=title,
+            created_at=khi,
+            last_entry_at=khi,
+            last_activity_at=khi,
+        )
+        moc = them_moc(
+            mach=mach,
+            author=author,
+            body=body,
+            occurred_at=occurred_at,
+            loai=loai,
+            question_for_crowd=question_for_crowd,
+            figures=figures,
+            _created_at_seed=khi,
+        )
+    return mach, moc
+
+
+def them_moc(
+    *,
+    mach: Mach,
+    author,
+    body: str,
+    occurred_at=None,
+    loai: str | None = None,
+    question_for_crowd: str | None = None,
+    figures=None,
+    _created_at_seed=None,
+) -> Moc:
+    """Nối một mốc vào mạch, cấp `seq` kế tiếp, cập nhật cột denormalize.
+
+    `seq` cấp bằng `max(seq) + 1` **dưới khoá hàng `Mach`**, không phải
+    `entry_count + 1`: `entry_count` là cột denormalize, tin nó để cấp khoá chính là
+    biến một cột "tiện cho hiển thị" thành nguồn sự thật.
+
+    Rate limit 3 mốc/ngày VN và luật "chỉ author, mạch open + không khoá" là việc của
+    tầng API (Phase 2) — chúng phụ thuộc người gọi, không phải bất biến của dữ liệu.
+    Seed cần dựng mạch 9 mốc trong một lần chạy nên không thể chôn giới hạn đó ở đây.
+
+    `_created_at_seed`: chỉ `seed_dev` truyền — xem `_dong_dau_server`.
+    """
+    kiem_figures(figures)
+    khi = _dong_dau_server(_created_at_seed)
+    if occurred_at is None:
+        occurred_at = ngay_vn(khi)
+
+    for lan in range(SO_LAN_THU_LAI):
+        try:
+            with transaction.atomic():
+                mach_khoa = Mach.objects.select_for_update().get(pk=mach.pk)
+                seq_cuoi = Moc.objects.filter(mach=mach_khoa).aggregate(Max("seq"))[
+                    "seq__max"
+                ]
+                moc = Moc.objects.create(
+                    mach=mach_khoa,
+                    seq=(seq_cuoi or 0) + 1,
+                    author=author,
+                    occurred_at=occurred_at,
+                    created_at=khi,
+                    loai=loai,
+                    body=body,
+                    question_for_crowd=question_for_crowd,
+                    figures=figures,
+                )
+                cap_nhat_dem_mach(mach_khoa)
+        except IntegrityError:
+            logger.warning(
+                "them_moc: đụng UNIQUE(mach, seq) ở mạch %s, thử lại (lần %s/%s)",
+                mach.pk,
+                lan + 1,
+                SO_LAN_THU_LAI,
+            )
+            if lan == SO_LAN_THU_LAI - 1:
+                raise
+            continue
+        mach.refresh_from_db()
+        # `Moc.objects.create(mach=mach_khoa, ...)` làm Django cache `mach_khoa` vào
+        # `moc._state.fields_cache`, mà `mach_khoa` là bản đọc TRƯỚC khi mốc này được ghi —
+        # `cap_nhat_dem_mach` nay đọc lại hàng thay vì sửa tại chỗ. Không gán lại thì
+        # `them_moc(...).mach.entry_count` trả số CŨ: handler `POST /machs/{id}/mocs` của
+        # Phase 2 sẽ báo "8 mốc" ngay sau khi vừa tạo mốc 9, HTTP 200, không gì đỏ.
+        # `tao_binh_luan` không dính vì nó create bằng chính object caller rồi refresh nó.
+        moc.mach = mach
+        return moc
+    raise AssertionError("không tới được đây")  # pragma: no cover
+
+
+def tao_binh_luan(
+    *,
+    mach: Mach,
+    author,
+    body: str,
+    parent: Comment | None = None,
+    anchor_moc_seq: int | None = None,
+    _created_at_seed=None,
+) -> Comment:
+    """Viết một bình luận: cấp `path` dưới khoá, tạo hàng, cập nhật `comment_count`.
+
+    **`anchor_moc_seq` chỉ có nghĩa ở bình luận GỐC** (PLAN nguyên tắc 6). Truyền neo
+    kèm `parent` là mâu thuẫn khái niệm — reply luôn thuộc thread của gốc — nên ở đây
+    ném lỗi thay vì lặng lẽ bỏ qua: bỏ qua im lặng là cách một bình luận biến mất khỏi
+    ngăn kéo mà không ai hiểu tại sao.
+
+    Retry `IntegrityError` là lưới an toàn cho đường ghi không khoá hàng cha; đường ghi
+    bình thường không bao giờ chạm tới nó (xem `core/cay_binh_luan.py`).
+
+    `_created_at_seed`: chỉ `seed_dev` truyền — xem `_dong_dau_server`.
+    """
+    if parent is not None and anchor_moc_seq is not None:
+        raise ValidationError(
+            "anchor_moc_seq chỉ đặt được trên bình luận gốc; reply kế thừa neo của gốc."
+        )
+    khi = _dong_dau_server(_created_at_seed)
+
+    for lan in range(SO_LAN_THU_LAI):
+        try:
+            with transaction.atomic():
+                path = cap_phat_path(mach, parent)
+                comment = Comment.objects.create(
+                    mach=mach,
+                    parent=parent,
+                    author=author,
+                    anchor_moc_seq=anchor_moc_seq,
+                    body=body,
+                    created_at=khi,
+                    path=path,
+                )
+                # Không tự khoá hàng `Mach` ở đây nữa: `cap_nhat_dem_mach` tự lấy đúng
+                # khoá đó. Hai chỗ cùng xin là thừa một round-trip, và tệ hơn là nó dạy
+                # người đọc rằng khoá là việc của người gọi.
+                cap_nhat_dem_mach(mach)
+        except IntegrityError:
+            logger.warning(
+                "tao_binh_luan: đụng UNIQUE(mach, path) ở mạch %s, thử lại (lần %s/%s)",
+                mach.pk,
+                lan + 1,
+                SO_LAN_THU_LAI,
+            )
+            if lan == SO_LAN_THU_LAI - 1:
+                raise
+            continue
+        mach.refresh_from_db()
+        return comment
+    raise AssertionError("không tới được đây")  # pragma: no cover
+
+
+def dat_vote(*, user, target: Moc | Comment, value: int) -> Vote | None:
+    """Vote / đổi vote / rút vote, cập nhật count của đích trong CÙNG transaction.
+
+    `value = 0` nghĩa là **rút** (PLAN mục 7) — hàng `Vote` bị xoá, không lưu `0`.
+    `CheckConstraint` trên bảng chặn `0` xuống DB, nên "rút" và "vote trung tính" không
+    thể lẫn vào nhau.
+
+    Trả về hàng `Vote` còn hiệu lực, hoặc `None` nếu vừa rút.
+    """
+    if value not in (-1, 0, 1):
+        raise ValidationError(f"value phải thuộc {{-1, 0, 1}}, nhận {value!r}.")
+
+    if isinstance(target, Moc):
+        loai = Vote.Loai.MOC
+    elif isinstance(target, Comment):
+        loai = Vote.Loai.COMMENT
+    else:  # pragma: no cover - lỗi lập trình, không phải ca dữ liệu
+        raise ValidationError(f"Không vote được cho {type(target).__name__}.")
+
+    with transaction.atomic():
+        # Khoá hàng đích: hai người vote cùng lúc mà không khoá thì cả hai cùng đọc
+        # count cũ và cùng ghi đè — mất một phiếu, im lặng.
+        dich = type(target).objects.select_for_update().get(pk=target.pk)
+        cu = (
+            Vote.objects.select_for_update()
+            .filter(user=user, target_type=loai, target_id=dich.pk)
+            .first()
+        )
+        gia_tri_cu = cu.value if cu else 0
+
+        if value == 0:
+            if cu is not None:
+                cu.delete()
+            moi = None
+        elif cu is not None:
+            cu.value = value
+            cu.save(update_fields=["value"])
+            moi = cu
+        else:
+            moi = Vote.objects.create(
+                user=user, target_type=loai, target_id=dich.pk, value=value
+            )
+
+        _ap_delta_vote(dich, gia_tri_cu, value)
+
+    target.refresh_from_db()
+    return moi
+
+
+def dat_vote_hang_loat(
+    *, target: Moc | Comment, nguoi_up=(), nguoi_down=()
+) -> None:
+    """Bỏ nhiều phiếu cho MỘT đích trong một transaction — cho seed / nạp dữ liệu.
+
+    Vì sao không gọi `dat_vote` trong vòng lặp: mỗi lượt là ~8 round-trip (khoá đích,
+    khoá vote cũ, ghi, đọc lại). Seed có ~440 phiếu ⇒ 17 giây, mà seed còn chạy trong
+    test. Hàm này ghi một lần rồi **đếm lại từ bảng `Vote`** — vẫn là "tính lại từ
+    nguồn" như `cap_nhat_dem_mach`, nên không có cửa cho count trôi.
+
+    Chỉ dùng khi biết chắc những người này CHƯA vote đích đó (seed dựng từ DB rỗng).
+    Đường ghi của người dùng thật luôn là `dat_vote` — nó xử lý đổi/rút phiếu.
+    """
+    loai = Vote.Loai.MOC if isinstance(target, Moc) else Vote.Loai.COMMENT
+    hang = [
+        Vote(user=u, target_type=loai, target_id=target.pk, value=gia_tri)
+        for gia_tri, nhom in ((1, nguoi_up), (-1, nguoi_down))
+        for u in nhom
+    ]
+    if not hang:
+        return
+    with transaction.atomic():
+        dich = type(target).objects.select_for_update().get(pk=target.pk)
+        Vote.objects.bulk_create(hang)
+        phieu = Vote.objects.filter(target_type=loai, target_id=dich.pk)
+        up = phieu.filter(value=1).count()
+        down = phieu.filter(value=-1).count()
+        if isinstance(dich, Comment):
+            dich.up_count = up
+            dich.down_count = down
+            dich.save(update_fields=["up_count", "down_count"])
+        else:
+            dich.score = up - down
+            dich.save(update_fields=["score"])
+    target.refresh_from_db()
+
+
+def _ap_delta_vote(dich: Moc | Comment, cu: int, moi: int) -> None:
+    """Cập nhật count của đích sau khi vote đổi từ `cu` sang `moi` (0 = không vote)."""
+    if cu == moi:
+        return
+    if isinstance(dich, Comment):
+        dich.up_count += (1 if moi == 1 else 0) - (1 if cu == 1 else 0)
+        dich.down_count += (1 if moi == -1 else 0) - (1 if cu == -1 else 0)
+        dich.save(update_fields=["up_count", "down_count"])
+        # `score` là GeneratedField — DB vừa tính lại, object trong bộ nhớ thì chưa.
+        dich.refresh_from_db(fields=["score"])
+    else:
+        dich.score += moi - cu
+        dich.save(update_fields=["score"])

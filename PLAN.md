@@ -145,6 +145,12 @@ thi **không đề xuất lại**, kể cả dạng biến thể, trừ khi user
   lưu **đủ cả 5 trường bản trước** (sửa lùi `occurred_at` mà không để vết là phá giá trị lõi),
   UI hiện "đã sửa N lần" bấm xem diff — diff phải hiện cả thay đổi ngày ("10/06 → 04/06").
 - Xoá → `deleted_at`, render bia mộ. Ảnh: Phase 5, ≤10 ảnh/mốc.
+- **Mốc bị mod ẩn (`hidden_at`) CŨNG giữ chỗ trên spine như bia mộ**, nhãn "mốc đã bị ẩn"
+  *(chốt 2026-08-21)*. Lý do: `seq` bất biến, spine không đánh số lại được — giấu hẳn một ô là
+  làm thủng dãy số và phá bất biến `entry_count == số ô trên spine` mà dải gập của 5.5 suy ra.
+  ⚠ Đây là quyết định **moderation công khai**: người lạ thấy rằng có thứ vừa bị gỡ. Nó không
+  mâu thuẫn 5.10 ("soft-hide — tác giả vẫn thấy kèm nhãn"): tác giả thấy **nội dung**, người
+  khác chỉ thấy **cái ô trống có nhãn**. **User cần duyệt lại lựa chọn này trước khi ra mắt.**
 
 ### 5.3 Khán đài
 
@@ -166,7 +172,20 @@ thi **không đề xuất lại**, kể cả dạng biến thể, trừ khi user
   thật chỉ áp cho `moi_nhat`/`cu_nhat` (khoá `created_at, id` ổn định).
 - Bình luận điểm ≤ −5 tự gập, bấm mới mở.
 - Chip `‹mốc N›` trên bình luận gốc có neo: bấm → peek mốc đó, không rời khán đài.
-- Sửa bình luận: hiện dấu `*đã sửa*`. Xoá: giữ chỗ "[đã xoá]" nếu có reply con, xoá thật nếu chưa.
+- Sửa bình luận: hiện dấu `*đã sửa*`. Xoá: giữ chỗ "[đã xoá]" nếu có reply con **hoặc đã TỪNG
+  được trích vào sổ (kể cả trích đã gỡ)**; xoá thật chỉ khi không dính cả hai.
+  Chữ "đã TỪNG" là cố ý và khớp đúng `Trich.comment = PROTECT`: rào 1 của 5.6 giữ hàng `Trich`
+  sau khi gỡ vì **"tự nó là log"** — xoá thật bình luận sẽ xoá luôn cái log đó. Đọc thành "đang
+  được trích" là Phase 2 sẽ tiền-kiểm `removed_at IS NULL`, quyết "xoá thật", rồi ăn
+  `ProtectedError` → 500 trên một thao tác hợp lệ của chính chủ.
+  > **Vá 2026-08-21 (Phase 1a).** Bản đầu chỉ có điều kiện "có reply con", và nó **đá thẳng vào
+  > 5.6** — mục 5.6 mở đầu bằng "cuốn sổ **không-xoá-được**" và giữ hàng `Trich` kể cả khi gỡ vì
+  > "tự nó là log". Hai câu gặp nhau ở chỗ: người bình luận xoá bình luận chưa có reply của chính
+  > mình ⇒ blockquote biến mất khỏi mốc của một mạch **đã đóng sổ**, chỉ số "Được trích ×N" tụt,
+  > hàng log mất — không exception, không audit. `Trich.comment` nay là `PROTECT` nên đường đó
+  > **nổ** thay vì nuốt; câu trên là luật tương ứng ở tầng sản phẩm.
+  > Kèm theo, việc của Phase 2: xoá thật một bình luận để lại **`Vote` mồ côi** (`Vote` cố ý
+  > không có FK) — đường `DELETE /comments/{id}` phải dọn, hoặc chuyển hẳn sang xoá mềm.
 
 ### 5.4 Ngăn kéo — bốn luật
 
@@ -282,9 +301,10 @@ Mach            id, sub FK, author FK, slug, title (≤160),
                 ket_qua VARCHAR(40) NULL,          # nhập tự do khi đóng sổ (5.1)
                 locked_at NULL,                    # mod khoá — trục riêng với status
                 hidden_at NULL, hidden_by FK NULL, # mod ẩn (soft-hide)
-                last_entry_at, last_activity_at,   # activity = max(mốc mới, comment mới);
-                entry_count, comment_count,        #   TẤT CẢ denormalize, cập nhật trong
-                created_at                         #   cùng transaction với ghi
+                last_entry_at, last_activity_at,   # KHÔNG phải "max mọi hoạt động" — hai nhóm
+                entry_count, comment_count,        #   hai luật đếm, xem "Luật đếm 4 cột" ở
+                created_at                         #   ghi chú cuối mục này. TẤT CẢ denormalize,
+                                                   #   cập nhật trong cùng transaction với ghi
                 INDEX (sub, last_entry_at DESC), (author, created_at DESC),
                       (created_at DESC),                          # feed Mới toàn cục
                       (last_entry_at DESC) WHERE status='open'    # feed Đang diễn ra toàn cục
@@ -312,9 +332,10 @@ Comment         id, mach FK, parent FK NULL, author FK,
                 hidden_at NULL, hidden_by FK NULL,
                 up_count INT DEFAULT 0, down_count INT DEFAULT 0,   # BẮT BUỘC cho wilson —
                 score INT GENERATED (up_count − down_count),        #   score suy ra, đừng lưu tay
-                path VARCHAR                       # materialized path: "000012.000034"
-                UNIQUE (mach, path)                # chặn race cấp phát path
-                INDEX (mach, path), (mach, anchor_moc_seq) WHERE parent IS NULL,
+                path VARCHAR COLLATE "C"           # materialized path: "000012.000034"
+                UNIQUE (mach, path)                # chặn race cấp phát path; ĐỦ cho cả
+                                                   #   LIKE 'tiền tố%' — xem ghi chú dưới
+                INDEX (mach, anchor_moc_seq) WHERE parent IS NULL,
                       (mach, author)               # cho luật BÃO "từng bình luận mạch này"
 
 Vote            user FK, target_type ENUM(moc, comment), target_id, value SMALLINT ∈ {−1, 1}
@@ -347,11 +368,43 @@ Ghi chú thực thi:
 - **Cấp phát `path`:** trong transaction, `select_for_update` trên parent (comment gốc thì trên
   Mach) rồi cấp segment kế; retry khi `IntegrityError` từ `UNIQUE (mach, path)`. Không có bước
   này, hai reply đồng thời cùng parent sẽ trùng path im lặng.
+- **`path` phải là `COLLATE "C"`, và bỏ `INDEX (mach, path)` riêng** *(sửa ngược 2026-08-21,
+  sau khi đo bằng `EXPLAIN`)*. Postgres chỉ biến `LIKE 'x%'` thành điều kiện index khi cột
+  có collation `C` (hoặc opclass `*_pattern_ops`); dưới collation locale — dev là
+  `English_United Kingdom.1252` — cùng truy vấn rơi xuống `Filter:` **kể cả khi đã tắt
+  `enable_seqscan` lẫn `enable_bitmapscan`**. Có `C` rồi thì b-tree của `UNIQUE (mach, path)`
+  phục vụ luôn việc gom subtree, nên index thường trùng cột là thừa: bản đầu của mục này liệt
+  kê cả hai là thiếu sót, không phải chủ ý. `C` còn khoá luôn thứ tự của `Max(path)` và
+  `ORDER BY path` để dev (Windows) và prod (Linux) không cho hai kết quả khác nhau.
 - **`path` dùng để làm gì:** gom cả subtree bằng một query + sort `cu_nhat` bằng ORDER BY path.
   Với `hay_nhat`/`moi_nhat`: fetch phẳng theo mach rồi **dựng cây và sắp sibling trong Python**
   — đừng cố nhét rank vào ORDER BY path.
 - Wilson + bonus tươi tính lúc query (Python, trên trang 50 thread — rẻ); **không lưu rank**.
 - Xoá user (GDPR-lite): giữ nội dung, author hiển thị "[tài khoản đã xoá]".
+- **Luật đếm 4 cột denormalize — CẤU TRÚC vs NỘI DUNG** *(chốt 2026-08-21, Phase 1a)*:
+  - `entry_count` và `last_entry_at` đo **cấu trúc**: tính trên **MỌI** `Moc`, kể cả bia mộ
+    (`deleted_at`) lẫn mốc bị mod ẩn (`hidden_at`). Lý do: `seq` bất biến và spine render đủ
+    số ô — mốc ẩn chiếm chỗ y hệt bia mộ. Giữ được bất biến **`entry_count == max(seq)`**, mà
+    dải gập của mặt CẶN (5.5) suy ra từ chính con số này.
+  - `comment_count` và `last_activity_at` đo **nội dung đọc được**: loại `deleted_at` và
+    `hidden_at`. Lý do: banner nói "24 bình luận" trong khi người đọc thấy 22 là sai âm thầm;
+    và một mạch bị dọn spam không được ở mặt BÃO thêm 72h nhờ chính cái spam vừa bị ẩn.
+  - Hệ quả cố ý 1: **ẩn hay xoá mềm một mốc không làm `last_entry_at` lùi** ⇒ hệ số tươi (5.3)
+    không hồi tố. (Nói "không bao giờ lùi" là nói quá: xoá **cứng** hàng `Moc` mới nhất — hôm nay
+    chỉ Django admin làm được — vẫn kéo nó lùi. Cùng mệnh đề điều kiện với `entry_count` dưới.)
+  - Hệ quả cố ý 2 — **hai cột lệch nhau được**, `last_activity_at` có thể **nhỏ hơn**
+    `last_entry_at`. Sinh ra ca: tác giả nối mốc 10, không ai bình luận, mod ẩn mốc 10 ⇒ mạch
+    vẫn **đứng đầu feed "Đang diễn ra"** (5.9 sort `last_entry_at`) nhưng mở ra là **mặt CẶN**
+    (5.5 tính theo `last_activity_at`). Đây là hành vi mới từ 2026-08-21, **chưa xử**: Phase 4
+    phải dọn bằng `Mach.hidden_at`/`locked_at`, hoặc feed lọc thêm `last_activity_at`. Ghi ở đây
+    để 1c/Phase 4 không tưởng là bug ngẫu nhiên.
+  - **`Comment.deleted_at` KHÔNG được đếm dù vẫn render bia mộ `[đã xoá]` (5.3).** Khác với
+    `Moc` — `Comment` không có `seq` nên không có bất biến nào để giữ. Hệ quả: khán đài có thể
+    render 24 dòng trong khi chân trang nói "💬 22 bình luận". **"💬 N" nghĩa là N bình luận
+    ĐỌC ĐƯỢC, không phải N dòng** — 1c phải hiểu đúng chữ đó.
+  - Nói chính xác: code ghim `entry_count == COUNT(*) Moc`. Nó trùng `max(seq)` **chừng nào
+    không hàng `Moc` nào bị xoá cứng** — hôm nay không có đường nào, nhưng Phase 4 mở admin xoá
+    `Moc` lẻ là bất biến gãy im lặng.
 
 ---
 
