@@ -1,0 +1,26 @@
+{
+  "name": "gikky-net",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "setup:env": "node scripts/setup-env.mjs",
+    "codegen": "node scripts/codegen.mjs",
+    "codegen:check": "node scripts/codegen-check.mjs",
+    "test": "node scripts/pytest.mjs -q",
+    "api:dev": "node scripts/py.mjs runserver 8000",
+    "api:migrate": "node scripts/py.mjs migrate",
+    "api:check": "node scripts/py.mjs check --database default",
+    "web:dev": "pnpm --filter @gikky/web dev",
+    "admin:dev": "pnpm --filter @gikky/admin dev",
+    "build": "pnpm --filter @gikky/web build && pnpm --filter @gikky/admin build",
+    "lint": "pnpm --filter @gikky/web lint && pnpm --filter @gikky/admin lint"
+  },
+  "devDependencies": {
+    "@hey-api/openapi-ts": "^0.99.0",
+    "typescript": "^5.9.0"
+  },
+  "packageManager": "pnpm@10.34.5",
+  "pnpm": {
+    "onlyBuiltDependencies": ["sharp", "unrs-resolver"]
+  }
+}

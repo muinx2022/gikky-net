@@ -1,0 +1,893 @@
+<meta charset="utf-8">
+<title>Bài viết nối dài</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,600&display=swap">
+
+<style>
+:root{
+  --bg:#F1F2F5;
+  --surface:#FFFFFF;
+  --surface-2:#E7E9EE;
+  --inset:#F7F8FA;
+  --ink:#14161B;
+  --ink-2:#535A67;
+  --ink-3:#868D9B;
+  --line:#DBDEE5;
+  --line-2:#C7CBD4;
+  --accent:#3A46A8;
+  --accent-soft:#E4E6F6;
+  --stamp:#B07A2B;
+  --stamp-soft:#F5EBDA;
+  --gain:#1C7A4F;
+  --loss:#B33A2B;
+  --focus:#3A46A8;
+
+  --f-display:"Newsreader",Georgia,"Times New Roman",serif;
+  --f-ui:"Be Vietnam Pro","Segoe UI",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
+
+  --rail:34px;
+  --gutter:18px;
+}
+
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1116;
+    --surface:#161A21;
+    --surface-2:#1E232C;
+    --inset:#12161C;
+    --ink:#E7EAF0;
+    --ink-2:#A3AAB8;
+    --ink-3:#6F7787;
+    --line:#272D38;
+    --line-2:#39414F;
+    --accent:#8B99F2;
+    --accent-soft:#20263C;
+    --stamp:#D8A455;
+    --stamp-soft:#2A2318;
+    --gain:#43BE83;
+    --loss:#E4776A;
+    --focus:#8B99F2;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1116;
+  --surface:#161A21;
+  --surface-2:#1E232C;
+  --inset:#12161C;
+  --ink:#E7EAF0;
+  --ink-2:#A3AAB8;
+  --ink-3:#6F7787;
+  --line:#272D38;
+  --line-2:#39414F;
+  --accent:#8B99F2;
+  --accent-soft:#20263C;
+  --stamp:#D8A455;
+  --stamp-soft:#2A2318;
+  --gain:#43BE83;
+  --loss:#E4776A;
+  --focus:#8B99F2;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--f-ui);
+  font-size:15px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+button{font:inherit;color:inherit;background:none;border:none;padding:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:3px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+
+/* ---------- chrome ---------- */
+.chrome{
+  position:sticky;top:0;z-index:20;
+  background:color-mix(in srgb,var(--bg) 86%,transparent);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);
+}
+.chrome-in{
+  max-width:860px;margin:0 auto;padding:11px 22px;
+  display:flex;align-items:center;gap:14px;
+}
+.wordmark{
+  font-family:var(--f-display);font-size:23px;font-weight:600;
+  letter-spacing:-.01em;line-height:1;
+}
+.wordmark::after{
+  content:"";display:inline-block;width:5px;height:5px;border-radius:50%;
+  background:var(--accent);margin-left:5px;vertical-align:middle;
+}
+.crumb{font-size:13px;color:var(--ink-3)}
+.crumb b{color:var(--ink-2);font-weight:500}
+.demo-flag{
+  margin-left:auto;font-family:var(--f-mono);font-size:10.5px;
+  text-transform:uppercase;letter-spacing:.1em;color:var(--stamp);
+  border:1px dashed var(--stamp);border-radius:2px;padding:3px 7px;
+}
+
+/* ---------- shell ---------- */
+.shell{max-width:860px;margin:0 auto;padding:26px 22px 70px}
+.card{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:6px;
+}
+
+/* ---------- post head ---------- */
+.post-head{padding:24px 26px 20px}
+.eyebrow{
+  font-family:var(--f-mono);font-size:11.5px;color:var(--accent);
+  letter-spacing:.04em;
+}
+h1{
+  font-family:var(--f-display);
+  font-size:clamp(25px,4.2vw,33px);
+  line-height:1.22;font-weight:600;letter-spacing:-.015em;
+  margin:9px 0 12px;text-wrap:balance;
+}
+.byline{
+  display:flex;flex-wrap:wrap;align-items:center;gap:9px;
+  font-size:13px;color:var(--ink-3);
+}
+.byline .who{color:var(--ink-2);font-weight:500}
+.byline .dot{color:var(--line-2)}
+.byline .count{
+  font-family:var(--f-mono);color:var(--ink);font-weight:500;
+  background:var(--surface-2);border-radius:3px;padding:1px 7px;
+}
+.head-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:17px}
+.btn{
+  border:1px solid var(--line-2);border-radius:4px;
+  padding:7px 13px;font-size:13px;font-weight:500;
+  transition:background .12s ease,border-color .12s ease;
+}
+.btn:hover{background:var(--surface-2)}
+.btn-key{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-key:hover{background:var(--accent);filter:brightness(1.08)}
+.btn[aria-pressed="true"]{
+  background:var(--accent-soft);border-color:var(--accent);color:var(--accent);
+}
+.btn-key[aria-pressed="true"]{color:var(--accent)}
+
+/* ---------- timeline ---------- */
+.timeline{list-style:none;margin:0;padding:0 26px 4px}
+.row{display:grid;grid-template-columns:var(--rail) 1fr;column-gap:var(--gutter)}
+.rail{position:relative;border-left:2px solid var(--line);margin-left:16px}
+.node{
+  position:absolute;left:1px;top:0;transform:translateX(-50%);
+  width:28px;height:28px;border-radius:50%;
+  background:var(--surface);border:2px solid var(--line);
+  display:grid;place-items:center;
+  font-family:var(--f-mono);font-size:12px;font-weight:500;color:var(--ink-2);
+}
+
+.entry{padding-bottom:26px}
+.entry.is-new .node{border-color:var(--stamp);color:var(--stamp)}
+.entry-in{padding-top:2px;min-width:0}
+
+.entry-head{
+  display:flex;flex-wrap:wrap;align-items:baseline;gap:9px;
+  padding-bottom:7px;
+}
+.when{font-family:var(--f-mono);font-size:14px;font-weight:500}
+.chip{
+  font-size:11.5px;font-weight:500;letter-spacing:.02em;
+  background:var(--surface-2);color:var(--ink-2);
+  border-radius:3px;padding:2px 8px;
+}
+.chip.key{background:var(--accent-soft);color:var(--accent)}
+.receipt{
+  font-family:var(--f-mono);font-size:11px;color:var(--ink-3);
+  margin-left:auto;white-space:nowrap;
+}
+.receipt .edited{color:var(--stamp)}
+
+.prose{margin:0;color:var(--ink);font-size:14.5px}
+.prose p{margin:0 0 9px}
+.prose p:last-child{margin-bottom:0}
+.prose strong{font-weight:600}
+
+.figures{
+  display:flex;flex-wrap:wrap;gap:0;margin:12px 0 2px;
+  border:1px solid var(--line);border-radius:5px;overflow:hidden;
+  background:var(--inset);
+}
+.fig{padding:9px 15px;flex:1 1 110px;border-right:1px solid var(--line)}
+.fig:last-child{border-right:none}
+.fig dt{
+  font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--ink-3);margin-bottom:2px;
+}
+.fig dd{margin:0;font-family:var(--f-mono);font-size:14.5px;font-weight:500}
+.gain{color:var(--gain)}
+.loss{color:var(--loss)}
+
+.entry-foot{display:flex;flex-wrap:wrap;align-items:center;gap:11px;margin-top:12px}
+
+.vote{
+  display:inline-flex;align-items:center;gap:2px;
+  border:1px solid var(--line);border-radius:999px;padding:1px 3px;
+}
+.vote button{
+  display:grid;place-items:center;width:24px;height:24px;border-radius:50%;
+  color:var(--ink-3);transition:color .12s ease,background .12s ease;
+}
+.vote button:hover{background:var(--surface-2);color:var(--ink)}
+.vote button[aria-pressed="true"]{color:var(--accent)}
+.vote button.down[aria-pressed="true"]{color:var(--loss)}
+.vote .score{
+  min-width:34px;text-align:center;font-family:var(--f-mono);
+  font-size:12.5px;font-weight:500;font-variant-numeric:tabular-nums;
+}
+.vote.on-up .score{color:var(--accent)}
+.vote.on-down .score{color:var(--loss)}
+
+.link-btn{
+  font-size:12.5px;color:var(--ink-2);
+  border-bottom:1px solid var(--line-2);padding-bottom:1px;
+}
+.link-btn:hover{color:var(--accent);border-color:var(--accent)}
+.link-btn.is-on{color:var(--accent);border-color:var(--accent)}
+
+/* collapsed gap */
+.gap{padding-bottom:26px}
+.gap .rail{border-left-style:dashed;border-left-color:var(--line-2)}
+.gap-btn{
+  width:100%;text-align:left;
+  background:var(--inset);border:1px dashed var(--line-2);border-radius:5px;
+  padding:11px 15px;transition:border-color .12s ease,background .12s ease;
+}
+.gap-btn:hover{border-color:var(--accent);background:var(--accent-soft)}
+.gap-title{font-size:13px;font-weight:500}
+.gap-title .n{font-family:var(--f-mono)}
+.gap-tags{
+  margin-top:6px;font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3);
+  overflow-wrap:anywhere;
+}
+
+/* new marker */
+.newmark{padding-bottom:26px}
+.newmark .rail{border-left-color:var(--stamp)}
+.newmark .node{
+  width:12px;height:12px;top:6px;border-color:var(--stamp);background:var(--stamp);
+}
+.newmark-in{
+  display:flex;align-items:center;gap:11px;padding-top:2px;
+}
+.newmark-in span{
+  font-family:var(--f-mono);font-size:11px;text-transform:uppercase;
+  letter-spacing:.11em;color:var(--stamp);white-space:nowrap;
+}
+.newmark-in i{flex:1;height:1px;background:var(--stamp);opacity:.35}
+
+/* open end */
+.tl-end{padding-bottom:6px}
+.tl-end .rail{border-left-style:dotted;border-left-color:var(--line-2)}
+.tl-end .node{
+  width:10px;height:10px;top:5px;background:var(--bg);border-color:var(--line-2);
+}
+.tl-end p{margin:0;padding-top:1px;font-size:12.5px;color:var(--ink-3)}
+
+/* ---------- discussion ---------- */
+.discussion{border-top:1px solid var(--line);margin-top:6px;padding:20px 26px 26px}
+.disc-head{display:flex;flex-wrap:wrap;align-items:center;gap:11px;margin-bottom:5px}
+.disc-head h2{
+  font-family:var(--f-display);font-size:20px;font-weight:600;margin:0;
+}
+.disc-head .n{font-family:var(--f-mono);font-size:14px;color:var(--ink-3)}
+
+.filterbar{
+  display:none;align-items:center;gap:11px;flex-wrap:wrap;
+  background:var(--accent-soft);border:1px solid var(--accent);
+  border-radius:5px;padding:8px 13px;margin:12px 0 4px;
+  font-size:13px;color:var(--accent);
+}
+.filterbar.on{display:flex}
+.filterbar strong{font-family:var(--f-mono);font-weight:500}
+.filterbar button{margin-left:auto;font-size:12.5px;font-weight:500;text-decoration:underline}
+
+.comments,.replies{list-style:none;margin:0;padding:0}
+.comments{margin-top:14px;display:flex;flex-direction:column;gap:20px}
+.replies{
+  margin:15px 0 0 0;padding-left:17px;border-left:2px solid var(--line);
+  display:flex;flex-direction:column;gap:16px;
+}
+.cmt.hide{display:none}
+
+.cmt-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:12.5px}
+.cmt-head .who{font-weight:600;font-size:13px}
+.cmt-head .op{
+  font-size:10.5px;font-weight:600;letter-spacing:.04em;
+  background:var(--accent);color:#fff;border-radius:3px;padding:1px 5px;
+}
+.anchor{
+  font-family:var(--f-mono);font-size:11px;
+  border:1px solid var(--line-2);border-radius:3px;padding:1px 6px;color:var(--ink-2);
+}
+.cmt-head .ago{color:var(--ink-3)}
+
+.drift{
+  display:flex;gap:8px;align-items:flex-start;
+  margin:7px 0 6px;padding:6px 11px;
+  background:var(--stamp-soft);border-left:2px solid var(--stamp);border-radius:0 3px 3px 0;
+  font-size:12px;line-height:1.45;color:var(--ink-2);
+}
+.drift b{color:var(--stamp);font-weight:600;font-family:var(--f-mono);font-size:11px;white-space:nowrap}
+.cmt[data-drift] .cmt-body{color:var(--ink-2)}
+
+.cmt-body{margin:5px 0 0;font-size:14.5px}
+.cmt-body p{margin:0 0 8px}
+.cmt-body p:last-child{margin-bottom:0}
+.cmt-foot{display:flex;align-items:center;gap:11px;margin-top:9px}
+
+.cmt.buried .cmt-body,.cmt.buried .cmt-foot{display:none}
+.cmt.buried .reveal{display:inline}
+.reveal{display:none;font-size:12.5px;color:var(--ink-3);margin-top:5px}
+.reveal button{text-decoration:underline}
+
+/* ---------- notes ---------- */
+.notes{margin-top:26px;padding:22px 26px 24px}
+.notes h2{
+  font-family:var(--f-mono);font-size:11px;text-transform:uppercase;
+  letter-spacing:.12em;color:var(--ink-3);margin:0 0 4px;font-weight:500;
+}
+.notes .lede{font-size:14px;color:var(--ink-2);margin:0 0 16px}
+.notes ol{margin:0;padding:0;list-style:none;display:grid;gap:14px}
+.notes li{display:grid;grid-template-columns:26px 1fr;gap:12px;align-items:start}
+.notes .idx{
+  font-family:var(--f-mono);font-size:11.5px;color:var(--accent);
+  border:1px solid var(--accent);border-radius:3px;
+  text-align:center;padding:1px 0;line-height:1.5;
+}
+.notes h3{margin:0 0 2px;font-size:14px;font-weight:600}
+.notes p{margin:0;font-size:13.5px;color:var(--ink-2)}
+
+@media (max-width:640px){
+  :root{--rail:26px;--gutter:13px}
+  .chrome-in{padding:10px 15px}
+  .shell{padding:16px 12px 50px}
+  .post-head{padding:19px 16px 16px}
+  .timeline{padding:0 16px 4px}
+  .discussion{padding:18px 16px 22px}
+  .notes{padding:18px 16px 20px}
+  .rail{margin-left:12px}
+  .node{width:24px;height:24px;font-size:11px}
+  .receipt{margin-left:0;flex-basis:100%}
+  .crumb{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important;animation:none!important}
+}
+</style>
+
+<header class="chrome">
+  <div class="chrome-in">
+    <div class="wordmark">Mạch</div>
+    <div class="crumb">v/<b>GiaoDich</b></div>
+    <div class="demo-flag">mockup · nội dung minh hoạ</div>
+  </div>
+</header>
+
+<div class="shell">
+
+  <main class="card">
+    <div class="post-head">
+      <div class="eyebrow mono">mạch đang mở</div>
+      <h1>Nhật ký lệnh HPG — vào 27.8, ghi lại toàn bộ diễn biến cho tới khi đóng</h1>
+      <div class="byline">
+        <span class="who">u/ba_muoi_phien</span>
+        <span class="dot">·</span>
+        <span>mở ngày 04/03/2026</span>
+        <span class="dot">·</span>
+        <span class="count">9 mốc</span>
+        <span class="dot">·</span>
+        <span>mốc mới nhất 3 giờ trước</span>
+      </div>
+      <div class="head-actions">
+        <button class="btn btn-key" id="follow" aria-pressed="false">Theo dõi mạch</button>
+        <button class="btn" id="expand-all" aria-pressed="false">Mở toàn bộ 9 mốc</button>
+      </div>
+    </div>
+
+    <ol class="timeline" id="timeline">
+
+      <li class="row entry" data-seq="1">
+        <div class="rail"><span class="node">1</span></div>
+        <div class="entry-in">
+          <div class="entry-head">
+            <span class="when">04/03/2026</span>
+            <span class="chip key">vào lệnh</span>
+            <span class="receipt">ghi 04/03 · 21:14</span>
+          </div>
+          <div class="prose">
+            <p>Mở mạch này để tự ép mình ghi kỷ luật. Luận điểm: HPG tích luỹ 7 tuần trong nền 26–28, khối lượng cạn dần ở đáy nền, và tôi cho rằng đơn hàng thép xây dựng quý II sẽ khá hơn cùng kỳ. Vào <strong>27.8</strong>, cắt nếu thủng <strong>26.4</strong> — dưới đáy nền.</p>
+            <p>Cam kết: mọi thay đổi kế hoạch sẽ ghi thành mốc mới ở đây, <strong>không sửa bài gốc</strong>. Ai muốn soi thì soi.</p>
+          </div>
+          <dl class="figures">
+            <div class="fig"><dt>Giá vào</dt><dd>27.80</dd></div>
+            <div class="fig"><dt>Dừng lỗ</dt><dd>26.40</dd></div>
+            <div class="fig"><dt>Tỷ trọng</dt><dd>12%</dd></div>
+            <div class="fig"><dt>Mục tiêu</dt><dd>34.00</dd></div>
+          </dl>
+          <div class="entry-foot">
+            <div class="vote" data-base="89">
+              <button class="up" aria-label="Ủng hộ mốc 1" aria-pressed="false"><svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true"><path d="M6 2.2 10.6 9.6H1.4z" fill="currentColor"/></svg></button>
+              <span class="score">89</span>
+              <button class="down" aria-label="Phản đối mốc 1" aria-pressed="false"><svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true"><path d="M6 9.8 1.4 2.4h9.2z" fill="currentColor"/></svg></button>
+            </div>
+            <button class="link-btn thread" data-seq="1">7 thảo luận quanh mốc này</button>
+          </div>
+        </div>
+      </li>
+
+      <li class="row gap" id="gap">
+        <div class="rail"><span class="node" aria-hidden="true">···</span></div>
+        <div>
+          <button class="gap-btn" id="gap-btn" aria-expanded="false" aria-controls="hidden-entries">
+            <span class="gap-title"><span class="n">5 mốc</span> giữa 11/03 và 28/05 — bấm để mở</span>
+            <span class="gap-tags">giữ · nâng dừng lỗ · chốt 1/3 · giữ qua nhịp chỉnh · tin ngành thép</span>
+          </button>
+        </div>
+      </li>
+
+      <li class="row entry" data-seq="7">
+        <div class="rail"><span class="node">7</span></div>
+        <div class="entry-in">
+          <div class="entry-head">
+            <span class="when">10/06/2026</span>
+            <span class="chip">chốt 1/3</span>
+            <span class="receipt">ghi 11/06 · 08:02 · <span class="edited">đã sửa 1 lần</span></span>
+          </div>
+          <div class="prose">
+            <p>Chốt thêm một phần ba ở <strong>34.20</strong>, đúng vùng mục tiêu đặt từ mốc 1. Phần còn lại để chạy, dời dừng lỗ lên <strong>31.00</strong>.</p>
+            <p>Thành thật: tôi chốt sớm hơn kế hoạch nửa phiên vì sợ, không vì tín hiệu. Ghi lại để lần sau đọc lại còn nhớ.</p>
+          </div>
+          <dl class="figures">
+            <div class="fig"><dt>Giá ra</dt><dd>34.20</dd></div>
+            <div class="fig"><dt>Phần đã chốt</dt><dd>2/3</dd></div>
+            <div class="fig"><dt>Lãi phần này</dt><dd class="gain">+23.0%</dd></div>
+          </dl>
+          <div class="entry-foot">
+            <div class="vote" data-base="146">
+              <button class="up" aria-label="Ủng hộ mốc 7" aria-pressed="false"><svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true"><path d="M6 2.2 10.6 9.6H1.4z" fill="currentColor"/></svg></button>
+              <span class="score">146</span>
+              <button class="down" aria-label="Phản đối mốc 7" aria-pressed="false"><svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true"><path d="M6 9.8 1.4 2.4h9.2z" fill="currentColor"/></svg></button>
+            </div>
+            <button class="link-btn thread" data-seq="7">4 thảo luận quanh mốc này</button>
+          </div>
+        </div>
+      </li>
+
+      <li class="row newmark">
+        <div class="rail"><span class="node" aria-hidden="true"></span></div>
+        <div class="newmark-in">
+          <span>Mới kể từ lần bạn đọc — 12/08</span>
+          <i aria-hidden="true"></i>
+        </div>
+      </li>
+
+      <li class="row entry is-new" data-seq="8">
+        <div class="rail"><span class="node">8</span></div>
+        <div class="entry-in">
+          <div class="entry-head">
+            <span class="when">14/08/2026</span>
+            <span class="chip">dừng lỗ</span>
+            <span class="receipt">ghi 14/08 · 14:55</span>
+          </div>
+          <div class="prose">
+            <p>Giá quay đầu sau tin hoãn dự án, dừng lỗ ăn nốt phần còn lại ở <strong>31.00</strong>. Lệnh đóng hoàn toàn sau 163 ngày.</p>
+            <p>Cái dừng lỗ dời lên từ mốc 7 đã làm đúng việc của nó. Nếu để nguyên 26.4 như ban đầu thì giờ vẫn đang gồng.</p>
+          </div>
+          <dl class="figures">
+            <div class="fig"><dt>Giá ra</dt><dd>31.00</dd></div>
+            <div class="fig"><dt>Phần còn lại</dt><dd>1/3</dd></div>
+            <div class="fig"><dt>Lãi phần này</dt><dd class="gain">+11.5%</dd></div>
+          </dl>
+          <div class="entry-foot">
+            <div class="vote" data-base="98">
+              <button class="up" aria-label="Ủng hộ mốc 8" aria-pressed="false"><svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true"><path d="M6 2.2 10.6 9.6H1.4z" fill="currentColor"/></svg></button>
+              <span class="score">98</span>
+              <button class="down" aria-label="Phản đối mốc 8" aria-pressed="false"><svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true"><path d="M6 9.8 1.4 2.4h9.2z" fill="currentColor"/></svg></button>
+            </div>
+            <button class="link-btn thread" data-seq="8">6 thảo luận quanh mốc này</button>
+          </div>
+        </div>
+      </li>
+
+      <li class="row entry is-new" data-seq="9">
+        <div class="rail"><span class="node">9</span></div>
+        <div class="entry-in">
+          <div class="entry-head">
+            <span class="when">21/08/2026</span>
+            <span class="chip key">tổng kết</span>
+            <span class="receipt">ghi 21/08 · 06:40</span>
+          </div>
+          <div class="prose">
+            <p>Đóng sổ. <strong>+18.2%</strong> trên phần vốn đã phân bổ, giữ 163 ngày. Nhưng con số không phải thứ tôi muốn ghi lại.</p>
+            <p>Ba điều rút ra: <strong>một</strong>, luận điểm ngành đúng nhưng đúng muộn hơn tôi nghĩ hai tháng — nếu size to hơn thì đã không gồng nổi. <strong>Hai</strong>, lần dời dừng lỗ ở mốc 5 mới là quyết định đáng tiền nhất cả lệnh, lúc đó không ai vote cho nó. <strong>Ba</strong>, cái tôi chốt sớm ở mốc 7 vì sợ đã lấy mất khoảng 4% — và tôi chỉ nhìn ra được vì lúc đó đã trót ghi thật.</p>
+          </div>
+          <dl class="figures">
+            <div class="fig"><dt>Kết quả</dt><dd class="gain">+18.2%</dd></div>
+            <div class="fig"><dt>Thời gian giữ</dt><dd>163 ngày</dd></div>
+            <div class="fig"><dt>Số lần sửa kế hoạch</dt><dd>3</dd></div>
+          </dl>
+          <div class="entry-foot">
+            <div class="vote" data-base="412">
+              <button class="up" aria-label="Ủng hộ mốc 9" aria-pressed="false"><svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true"><path d="M6 2.2 10.6 9.6H1.4z" fill="currentColor"/></svg></button>
+              <span class="score">412</span>
+              <button class="down" aria-label="Phản đối mốc 9" aria-pressed="false"><svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true"><path d="M6 9.8 1.4 2.4h9.2z" fill="currentColor"/></svg></button>
+            </div>
+            <button class="link-btn thread" data-seq="9">7 thảo luận quanh mốc này</button>
+          </div>
+        </div>
+      </li>
+
+      <li class="row tl-end">
+        <div class="rail"><span class="node" aria-hidden="true"></span></div>
+        <p>Mạch vẫn mở. Tác giả còn ghi tiếp được.</p>
+      </li>
+
+    </ol>
+
+    <section class="discussion">
+      <div class="disc-head">
+        <h2>Thảo luận</h2>
+        <span class="n mono">24</span>
+      </div>
+
+      <div class="filterbar" id="filterbar">
+        <span>Đang xem thảo luận quanh <strong id="filter-label">mốc 7</strong></span>
+        <button id="clear-filter">Bỏ lọc, xem tất cả</button>
+      </div>
+
+      <ul class="comments" id="comments">
+
+        <li class="cmt" data-anchor="2" data-drift="7">
+          <div class="cmt-head">
+            <span class="who">u/song_vi_thuong</span>
+            <span class="anchor">mốc 2/9</span>
+            <span class="ago">5 tháng trước</span>
+          </div>
+          <div class="drift">
+            <b>ngữ cảnh cũ</b>
+            <span>Viết khi mạch mới tới mốc 2. Bảy mốc đã xảy ra sau đó.</span>
+          </div>
+          <div class="cmt-body">
+            <p>Kèo này ngon đấy, tôi cũng vào 27.5 sáng nay. Nền chặt, cứ ôm tới 34 là đẹp.</p>
+          </div>
+          <div class="cmt-foot">
+            <div class="vote" data-base="31">
+              <button class="up" aria-label="Ủng hộ bình luận" aria-pressed="false"><svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true"><path d="M6 2.2 10.6 9.6H1.4z" fill="currentColor"/></svg></button>
+              <span class="score">31</span>
+              <button class="down" aria-label="Phản đối bình luận" aria-pressed="false"><svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true"><path d="M6 9.8 1.4 2.4h9.2z" fill="currentColor"/></svg></button>
+            </div>
+            <button class="link-btn">Trả lời</button>
+          </div>
+          <ul class="replies">
+            <li class="cmt" data-anchor="9">
+              <div class="cmt-head">
+                <span class="who">u/song_vi_thuong</span>
+                <span class="anchor">mốc 9/9</span>
+                <span class="ago">2 giờ trước</span>
+              </div>
+              <div class="cmt-body">
+                <p>Quay lại đọc chính comment của mình 5 tháng trước mà buồn cười. Tôi ôm tới 34 thật, rồi ôm ngược về 29 vì không có mốc nào bắt mình dừng lại nghĩ. Đây mới là chỗ mạch hơn đứt cái nhóm chat.</p>
+              </div>
+              <div class="cmt-foot">
+                <div class="vote" data-base="188">
+                  <button class="up" aria-label="Ủng hộ bình luận" aria-pressed="false"><svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true"><path d="M6 2.2 10.6 9.6H1.4z" fill="currentColor"/></svg></button>
+                  <span class="score">188</span>
+                  <button class="down" aria-label="Phản đối bình luận" aria-pressed="false"><svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true"><path d="M6 9.8 1.4 2.4h9.2z" fill="currentColor"/></svg></button>
+                </div>
+                <button class="link-btn">Trả lời</button>
+              </div>
+            </li>
+          </ul>
+        </li>
+
+        <li class="cmt" data-anchor="7">
+          <div class="cmt-head">
+            <span class="who">u/hai_lua_chart</span>
+            <span class="anchor">mốc 7/9</span>
+            <span class="ago">2 tháng trước</span>
+          </div>
+          <div class="cmt-body">
+            <p>Sao không kéo dừng lỗ theo đường trung bình 20 ngày cho khỏi phải quyết định bằng tay? Chốt tay kiểu này lần nào cũng bị cảm xúc dắt.</p>
+          </div>
+          <div class="cmt-foot">
+            <div class="vote" data-base="64">
+              <button class="up" aria-label="Ủng hộ bình luận" aria-pressed="false"><svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true"><path d="M6 2.2 10.6 9.6H1.4z" fill="currentColor"/></svg></button>
+              <span class="score">64</span>
+              <button class="down" aria-label="Phản đối bình luận" aria-pressed="false"><svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true"><path d="M6 9.8 1.4 2.4h9.2z" fill="currentColor"/></svg></button>
+            </div>
+            <button class="link-btn">Trả lời</button>
+          </div>
+          <ul class="replies">
+            <li class="cmt" data-anchor="7">
+              <div class="cmt-head">
+                <span class="who">u/ba_muoi_phien</span>
+                <span class="op">TÁC GIẢ</span>
+                <span class="anchor">mốc 7/9</span>
+                <span class="ago">2 tháng trước</span>
+              </div>
+              <div class="cmt-body">
+                <p>Có thử rồi, hai lệnh trước đó tôi bị đường 20 ngày quét sạch ở nhịp rung. Nhưng ông nói đúng ở chỗ tôi không có quy tắc — tôi sẽ ghi quy tắc vào mốc tổng kết cuối lệnh để lần sau khỏi cãi nhau với chính mình.</p>
+              </div>
+              <div class="cmt-foot">
+                <div class="vote" data-base="97">
+                  <button class="up" aria-label="Ủng hộ bình luận" aria-pressed="false"><svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true"><path d="M6 2.2 10.6 9.6H1.4z" fill="currentColor"/></svg></button>
+                  <span class="score">97</span>
+                  <button class="down" aria-label="Phản đối bình luận" aria-pressed="false"><svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true"><path d="M6 9.8 1.4 2.4h9.2z" fill="currentColor"/></svg></button>
+                </div>
+                <button class="link-btn">Trả lời</button>
+              </div>
+            </li>
+          </ul>
+        </li>
+
+        <li class="cmt buried" data-anchor="4" data-drift="5">
+          <div class="cmt-head">
+            <span class="who">u/tin_don_noi_bo</span>
+            <span class="anchor">mốc 4/9</span>
+            <span class="ago">4 tháng trước</span>
+          </div>
+          <div class="cmt-body">
+            <p>Bán hết đi, sắp có tin xấu, tôi biết người trong ngành. Không nghe thì đừng khóc.</p>
+          </div>
+          <div class="cmt-foot">
+            <div class="vote" data-base="-42">
+              <button class="up" aria-label="Ủng hộ bình luận" aria-pressed="false"><svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true"><path d="M6 2.2 10.6 9.6H1.4z" fill="currentColor"/></svg></button>
+              <span class="score">-42</span>
+              <button class="down" aria-label="Phản đối bình luận" aria-pressed="false"><svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true"><path d="M6 9.8 1.4 2.4h9.2z" fill="currentColor"/></svg></button>
+            </div>
+            <button class="link-btn">Trả lời</button>
+          </div>
+          <div class="reveal">Bình luận bị chôn <span class="mono">(−42)</span> · <button type="button" class="unbury">hiện ra</button></div>
+        </li>
+
+        <li class="cmt" data-anchor="9">
+          <div class="cmt-head">
+            <span class="who">u/co_dong_nho_le</span>
+            <span class="anchor">mốc 9/9</span>
+            <span class="ago">1 giờ trước</span>
+          </div>
+          <div class="cmt-body">
+            <p>Điều hay nhất ở mạch này không phải con số +18.2%. Là chỗ ở mốc 7 ông tự khai "chốt sớm vì sợ" trong lúc chưa biết kết cục ra sao. Không sửa lại được nữa nên đọc mới tin.</p>
+          </div>
+          <div class="cmt-foot">
+            <div class="vote" data-base="205">
+              <button class="up" aria-label="Ủng hộ bình luận" aria-pressed="false"><svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true"><path d="M6 2.2 10.6 9.6H1.4z" fill="currentColor"/></svg></button>
+              <span class="score">205</span>
+              <button class="down" aria-label="Phản đối bình luận" aria-pressed="false"><svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true"><path d="M6 9.8 1.4 2.4h9.2z" fill="currentColor"/></svg></button>
+            </div>
+            <button class="link-btn">Trả lời</button>
+          </div>
+        </li>
+
+        <li class="cmt" data-anchor="1" data-drift="8">
+          <div class="cmt-head">
+            <span class="who">u/moi_tap_choi</span>
+            <span class="anchor">mốc 1/9</span>
+            <span class="ago">5 tháng trước</span>
+          </div>
+          <div class="drift">
+            <b>ngữ cảnh cũ</b>
+            <span>Viết khi mạch mới tới mốc 1. Tám mốc đã xảy ra sau đó.</span>
+          </div>
+          <div class="cmt-body">
+            <p>Tỷ trọng 12% cho một mã thép có to quá không bác? Em mới chơi nên hỏi ngu.</p>
+          </div>
+          <div class="cmt-foot">
+            <div class="vote" data-base="18">
+              <button class="up" aria-label="Ủng hộ bình luận" aria-pressed="false"><svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true"><path d="M6 2.2 10.6 9.6H1.4z" fill="currentColor"/></svg></button>
+              <span class="score">18</span>
+              <button class="down" aria-label="Phản đối bình luận" aria-pressed="false"><svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true"><path d="M6 9.8 1.4 2.4h9.2z" fill="currentColor"/></svg></button>
+            </div>
+            <button class="link-btn">Trả lời</button>
+          </div>
+        </li>
+
+      </ul>
+    </section>
+  </main>
+
+  <aside class="card notes">
+    <h2>Đang thử điều gì ở đây</h2>
+    <p class="lede">Bốn quyết định dưới đây là toàn bộ lý do bản dựng này tồn tại. Phần "cho thêm mốc" thì ai cũng nghĩ ra được.</p>
+    <ol>
+      <li>
+        <span class="idx">1</span>
+        <div>
+          <h3>Bình luận neo vào mốc</h3>
+          <p>Mỗi bình luận nhớ mốc nào đang là mới nhất lúc nó được viết. Nhờ vậy câu "kèo này ngon đấy" ở mốc 2 được đọc như một phát biểu đúng thời điểm, không phải một câu ngớ ngẩn. Bấm "N thảo luận quanh mốc này" để lọc theo mốc.</p>
+        </div>
+      </li>
+      <li>
+        <span class="idx">2</span>
+        <div>
+          <h3>Hai dấu thời gian, chỉ một cái sửa được</h3>
+          <p>Ngày lớn bên trái là ngày sự việc xảy ra, do tác giả tự đặt và nhập lùi được. Dòng nhỏ bên phải là dấu máy chủ, bất biến, kèm cả số lần sửa. Với nhật ký giao dịch thì đây không phải chi tiết phụ — nó chính là thứ khiến bài đáng tin.</p>
+        </div>
+      </li>
+      <li>
+        <span class="idx">3</span>
+        <div>
+          <h3>Vote theo từng mốc</h3>
+          <p>Mốc 9 được 412 phiếu còn bài gốc chỉ 89. Nếu điểm số đóng băng theo ngày đăng như diễn đàn thường, phần giá trị nhất của bài này sẽ không bao giờ nổi lên.</p>
+        </div>
+      </li>
+      <li>
+        <span class="idx">4</span>
+        <div>
+          <h3>Người đọc mới và người theo dõi cần thứ tự ngược nhau</h3>
+          <p>Mặc định hiện mốc gốc cộng ba mốc gần nhất, phần giữa gói lại nhưng vẫn lộ nhãn để biết mình đang bỏ qua gì. Vạch hoàng thổ đánh dấu phần mới kể từ lần đọc trước. Không ai phải chọn kiểu sắp xếp.</p>
+        </div>
+      </li>
+    </ol>
+  </aside>
+
+</div>
+
+<script>
+(function(){
+  // --- vote ---
+  document.querySelectorAll(".vote").forEach(function(v){
+    var base = parseInt(v.dataset.base,10);
+    var score = v.querySelector(".score");
+    var up = v.querySelector(".up");
+    var down = v.querySelector(".down");
+    var state = 0;
+    function render(){
+      score.textContent = base + state;
+      up.setAttribute("aria-pressed", state === 1 ? "true":"false");
+      down.setAttribute("aria-pressed", state === -1 ? "true":"false");
+      v.classList.toggle("on-up", state === 1);
+      v.classList.toggle("on-down", state === -1);
+    }
+    up.addEventListener("click", function(){ state = state === 1 ? 0 : 1; render(); });
+    down.addEventListener("click", function(){ state = state === -1 ? 0 : -1; render(); });
+  });
+
+  // --- follow ---
+  var follow = document.getElementById("follow");
+  follow.addEventListener("click", function(){
+    var on = follow.getAttribute("aria-pressed") === "true";
+    follow.setAttribute("aria-pressed", on ? "false":"true");
+    follow.textContent = on ? "Theo dõi mạch" : "Đang theo dõi — báo khi có mốc mới";
+  });
+
+  // --- hidden entries ---
+  var HIDDEN = [
+    {seq:2, date:"11/03/2026", stamp:"ghi 11/03 · 22:30", tag:"giữ", votes:24, threads:2,
+     body:"<p>Một tuần đi ngang trong 27.2–28.4, khối lượng thấp. Không làm gì. Ghi lại đúng để sau này biết mình đã <strong>không</strong> hành động, chứ không phải quên bài.</p>"},
+    {seq:3, date:"19/03/2026", stamp:"ghi 19/03 · 15:07", tag:"nâng dừng lỗ", votes:71, threads:3,
+     body:"<p>Vượt 29.2 với khối lượng gấp đôi trung bình. Kéo dừng lỗ lên <strong>27.80</strong>, tức là về hoà vốn. Từ đây trở đi lệnh này không thể làm tôi mất tiền nữa, chỉ có thể mất phần lãi.</p>"},
+    {seq:4, date:"02/04/2026", stamp:"ghi 02/04 · 09:41", tag:"chốt 1/3", votes:58, threads:5,
+     body:"<p>Chốt một phần ba ở <strong>31.50</strong>. Không có trong kế hoạch ban đầu — kế hoạch chỉ có một mục tiêu duy nhất 34. Tôi đang phá kỷ luật của chính mình, ghi ra đây để không giả vờ là đã tính trước.</p>"},
+    {seq:5, date:"15/04/2026", stamp:"ghi 15/04 · 20:18", tag:"giữ qua nhịp chỉnh", votes:19, threads:4,
+     body:"<p>Thị trường chỉnh 6%, HPG về 29.4, cách dừng lỗ 1.6 giá. Không dời dừng lỗ xuống, không mua thêm. Đây là mốc khó viết nhất vì lúc viết tôi đang muốn làm cả hai việc đó.</p>"},
+    {seq:6, date:"28/05/2026", stamp:"ghi 28/05 · 11:26", tag:"tin ngành thép", votes:112, threads:6,
+     body:"<p>Số liệu tiêu thụ thép xây dựng tháng 5 tăng 22% cùng kỳ. Luận điểm ở mốc 1 đúng, nhưng đúng muộn hơn tôi tính khoảng hai tháng. Giá lên 33.1 trong ba phiên.</p>"}
+  ];
+
+  function entryHTML(e){
+    return '<li class="row entry" data-seq="'+e.seq+'">'
+      + '<div class="rail"><span class="node">'+e.seq+'</span></div>'
+      + '<div class="entry-in">'
+      +   '<div class="entry-head">'
+      +     '<span class="when">'+e.date+'</span>'
+      +     '<span class="chip">'+e.tag+'</span>'
+      +     '<span class="receipt">'+e.stamp+'</span>'
+      +   '</div>'
+      +   '<div class="prose">'+e.body+'</div>'
+      +   '<div class="entry-foot">'
+      +     '<div class="vote" data-base="'+e.votes+'">'
+      +       '<button class="up" aria-label="Ủng hộ mốc '+e.seq+'" aria-pressed="false"><svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true"><path d="M6 2.2 10.6 9.6H1.4z" fill="currentColor"/></svg></button>'
+      +       '<span class="score">'+e.votes+'</span>'
+      +       '<button class="down" aria-label="Phản đối mốc '+e.seq+'" aria-pressed="false"><svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true"><path d="M6 9.8 1.4 2.4h9.2z" fill="currentColor"/></svg></button>'
+      +     '</div>'
+      +     '<button class="link-btn thread" data-seq="'+e.seq+'">'+e.threads+' thảo luận quanh mốc này</button>'
+      +   '</div>'
+      + '</div></li>';
+  }
+
+  function bindVote(v){
+    var base = parseInt(v.dataset.base,10);
+    var score = v.querySelector(".score");
+    var up = v.querySelector(".up"), down = v.querySelector(".down");
+    var state = 0;
+    function render(){
+      score.textContent = base + state;
+      up.setAttribute("aria-pressed", state === 1 ? "true":"false");
+      down.setAttribute("aria-pressed", state === -1 ? "true":"false");
+      v.classList.toggle("on-up", state === 1);
+      v.classList.toggle("on-down", state === -1);
+    }
+    up.addEventListener("click", function(){ state = state === 1 ? 0 : 1; render(); });
+    down.addEventListener("click", function(){ state = state === -1 ? 0 : -1; render(); });
+  }
+
+  var gap = document.getElementById("gap");
+  var gapBtn = document.getElementById("gap-btn");
+  var expandAll = document.getElementById("expand-all");
+  var opened = false;
+  var injected = [];
+
+  function openGap(){
+    if (opened) return;
+    opened = true;
+    var frag = document.createElement("tbody");
+    frag.innerHTML = HIDDEN.map(entryHTML).join("");
+    var nodes = Array.prototype.slice.call(frag.children);
+    nodes.forEach(function(n){
+      gap.parentNode.insertBefore(n, gap);
+      injected.push(n);
+      bindVote(n.querySelector(".vote"));
+      n.querySelector(".thread").addEventListener("click", onThread);
+    });
+    gap.style.display = "none";
+    gapBtn.setAttribute("aria-expanded","true");
+    expandAll.setAttribute("aria-pressed","true");
+    expandAll.textContent = "Thu gọn về tóm lược";
+  }
+  function closeGap(){
+    if (!opened) return;
+    opened = false;
+    injected.forEach(function(n){ n.remove(); });
+    injected = [];
+    gap.style.display = "";
+    gapBtn.setAttribute("aria-expanded","false");
+    expandAll.setAttribute("aria-pressed","false");
+    expandAll.textContent = "Mở toàn bộ 9 mốc";
+  }
+  gapBtn.addEventListener("click", openGap);
+  expandAll.addEventListener("click", function(){ opened ? closeGap() : openGap(); });
+
+  // --- comment filter by anchored entry ---
+  var bar = document.getElementById("filterbar");
+  var label = document.getElementById("filter-label");
+  var comments = document.getElementById("comments");
+  var active = null;
+
+  function applyFilter(seq){
+    active = seq;
+    var tops = comments.querySelectorAll(":scope > .cmt");
+    Array.prototype.forEach.call(tops, function(c){
+      if (seq === null) { c.classList.remove("hide"); return; }
+      var match = c.dataset.anchor === String(seq) ||
+        !!c.querySelector('.replies .cmt[data-anchor="'+seq+'"]');
+      c.classList.toggle("hide", !match);
+    });
+    document.querySelectorAll(".thread").forEach(function(b){
+      b.classList.toggle("is-on", seq !== null && b.dataset.seq === String(seq));
+    });
+    if (seq === null) { bar.classList.remove("on"); }
+    else { label.textContent = "mốc " + seq; bar.classList.add("on"); }
+  }
+
+  function onThread(ev){
+    var seq = parseInt(ev.currentTarget.dataset.seq,10);
+    if (active === seq) { applyFilter(null); return; }
+    applyFilter(seq);
+    document.querySelector(".discussion").scrollIntoView({behavior:"smooth", block:"start"});
+  }
+
+  document.querySelectorAll(".thread").forEach(function(b){
+    b.addEventListener("click", onThread);
+  });
+  document.getElementById("clear-filter").addEventListener("click", function(){ applyFilter(null); });
+
+  // --- buried comment ---
+  document.querySelectorAll(".unbury").forEach(function(b){
+    b.addEventListener("click", function(){
+      b.closest(".cmt").classList.remove("buried");
+    });
+  });
+})();
+</script>

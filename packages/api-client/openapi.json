@@ -1,0 +1,67 @@
+{
+  "components": {
+    "schemas": {
+      "HealthOut": {
+        "description": "Kết quả healthcheck. `db` = \"ok\" chỉ khi truy vấn thật xuống Postgres thành công.",
+        "properties": {
+          "db": {
+            "title": "Db",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "db"
+        ],
+        "title": "HealthOut",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "",
+    "title": "gikky.net API",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "description": "`SELECT 1` thật xuống DB.\n\nDB sống → 200 `{\"status\":\"ok\",\"db\":\"ok\"}`; DB hỏng hoặc trả kết quả sai → 503\n`{\"status\":\"fail\",\"db\":\"fail\"}`.",
+        "operationId": "get_health",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthOut"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Health",
+        "tags": [
+          "health"
+        ]
+      }
+    }
+  },
+  "servers": []
+}

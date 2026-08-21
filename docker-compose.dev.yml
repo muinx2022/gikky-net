@@ -1,0 +1,87 @@
+# CHƯA CHẠY ĐƯỢC TRÊN MÁY DEV HIỆN TẠI: máy này KHÔNG có Docker (user chốt 2026-08-21
+# là không cài). Dev đang dùng PostgreSQL 17 LOCAL ở cổng 5432.
+#
+# File này là tài sản của repo, dùng khi nào có Docker. Khi đó postgres của compose
+# nghe ở cổng 55432 (5432 đã bị PG17 local giữ) => phải đổi `DATABASE_URL` trong
+# `api/.env` sang:
+#   postgres://gikky:doi-mat-khau-nay@127.0.0.1:55432/gikky_dev
+#
+#   docker compose -f docker-compose.dev.yml up -d
+
+services:
+  postgres:
+    # 17 để khớp ĐÚNG bản PostgreSQL 17 đang chạy local — một con số duy nhất từ dev tới
+    # prod. Lệch major version giữa hai môi trường là loại lỗi chỉ lộ ra lúc deploy.
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: gikky_dev
+      POSTGRES_USER: gikky
+      POSTGRES_PASSWORD: doi-mat-khau-nay
+    ports:
+      # 55432 phía host để không đụng PostgreSQL 17 local đang giữ 5432.
+      - "55432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gikky -d gikky_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # minio = R2 giả lập ở local (PLAN 8.5).
+  minio:
+    # Ghim tag, KHÔNG dùng `:latest`: minio đổi hành vi CLI/CORS giữa các bản, `latest`
+    # làm hai máy dev chạy hai thứ khác nhau mà file compose thì y hệt.
+    # CHƯA KIỂM ĐƯỢC tag này (máy không có Docker) — lần đầu có Docker phải `docker pull`
+    # xác nhận, sai thì sửa lại đúng một dòng.
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: gikky
+      MINIO_ROOT_PASSWORD: doi-mat-khau-nay
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Tạo bucket + đặt CORS. PLAN 8.5: presigned PUT là ngoại lệ cross-origin DUY NHẤT
+  # của hệ thống; thiếu CORS trên bucket là chết ngay ở preflight, không phải lỗi Django.
+  minio-init:
+    # Ghim tag — cùng lý do và cùng cảnh báo "chưa kiểm được" như service `minio`.
+    image: minio/mc:RELEASE.2025-04-16T18-13-26Z
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint:
+      - sh
+      - -c
+      - |
+        set -e
+        mc alias set local http://minio:9000 gikky doi-mat-khau-nay
+        mc mb --ignore-existing local/gikky-media
+        cat > /tmp/cors.xml <<'XML'
+        <CORSConfiguration>
+          <CORSRule>
+            <AllowedOrigin>http://localhost:3000</AllowedOrigin>
+            <AllowedOrigin>https://gikky.net</AllowedOrigin>
+            <AllowedMethod>PUT</AllowedMethod>
+            <AllowedHeader>*</AllowedHeader>
+            <ExposeHeader>ETag</ExposeHeader>
+            <MaxAgeSeconds>3000</MaxAgeSeconds>
+          </CORSRule>
+        </CORSConfiguration>
+        XML
+        mc cors set local/gikky-media /tmp/cors.xml
+        mc cors get local/gikky-media
+
+volumes:
+  pgdata:
+  miniodata:

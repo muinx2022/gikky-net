@@ -1,0 +1,18 @@
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+.next/
+.env
+.env.local
+.pytest_cache/
+dist/
+*.log
+
+# đích của `collectstatic` (STATIC_ROOT) — sinh ra, không commit
+api/staticfiles/
+
+# build/tooling caches
+*.egg-info/
+.turbo/
+next-env.d.ts
