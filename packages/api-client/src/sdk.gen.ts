@@ -4,7 +4,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetHealthData, GetHealthErrors, GetHealthResponses } from './types.gen';
+import type { GetHealthData, GetHealthErrors, GetHealthResponses, LietKeBanCuMocData, LietKeBanCuMocErrors, LietKeBanCuMocResponses, LietKeBinhLuanMachData, LietKeBinhLuanMachErrors, LietKeBinhLuanMachResponses, LietKeBinhLuanMocData, LietKeBinhLuanMocErrors, LietKeBinhLuanMocResponses, LietKeFeedDangDienRaData, LietKeFeedDangDienRaErrors, LietKeFeedDangDienRaResponses, LietKeFeedMoiData, LietKeFeedMoiErrors, LietKeFeedMoiResponses, XemHoSoData, XemHoSoErrors, XemHoSoResponses, XemMachData, XemMachErrors, XemMachResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -21,6 +21,37 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
 };
 
 /**
+ * Feed Dang Dien Ra
+ *
+ * Feed **Đang diễn ra**: mạch còn mở, mốc mới nhất trước (`last_entry_at` giảm dần).
+ *
+ * Feed đặc sản của gikky, **không phải** Hot: mốc mới không "bump" bài, nó chỉ cập nhật
+ * khoá sort của riêng feed này.
+ *
+ * `last_entry_at` đo **cấu trúc** — mọi mốc đều tính, kể cả mốc bị mod ẩn. Vì thế một
+ * mạch có thể đứng đầu feed này mà mở ra là **mặt CẶN** (`face` tính theo
+ * `last_activity_at`, vốn chỉ đo nội dung đọc được). Đó là hành vi đúng theo luật đếm
+ * hiện hành, đã ghi ở PLAN mục 6 "hệ quả cố ý 2" — đừng chữa bằng cách đổi khoá sort.
+ *
+ * Tham số như `GET /feeds/moi`.
+ */
+export const lietKeFeedDangDienRa = <ThrowOnError extends boolean = false>(options?: Options<LietKeFeedDangDienRaData, ThrowOnError>): RequestResult<LietKeFeedDangDienRaResponses, LietKeFeedDangDienRaErrors, ThrowOnError> => (options?.client ?? client).get<LietKeFeedDangDienRaResponses, LietKeFeedDangDienRaErrors, ThrowOnError>({ url: '/api/v1/feeds/dang-dien-ra', ...options });
+
+/**
+ * Feed Moi
+ *
+ * Feed **Mới**: mọi bài, mới đăng trước (`created_at` giảm dần).
+ *
+ * `?sub=<slug>` lọc theo chuyên mục; sub không tồn tại trả 404 `sub_khong_ton_tai`.
+ * `?cursor=` là cursor keyset lấy từ `cursor_ke_tiep` của trang trước; `null` là hết.
+ * `?limit=` tối đa 50.
+ *
+ * Mạch bị mod ẩn không xuất hiện. Mạch đã đóng sổ **vẫn xuất hiện** — feed này sắp theo
+ * lúc bài ra đời, không theo trạng thái sổ.
+ */
+export const lietKeFeedMoi = <ThrowOnError extends boolean = false>(options?: Options<LietKeFeedMoiData, ThrowOnError>): RequestResult<LietKeFeedMoiResponses, LietKeFeedMoiErrors, ThrowOnError> => (options?.client ?? client).get<LietKeFeedMoiResponses, LietKeFeedMoiErrors, ThrowOnError>({ url: '/api/v1/feeds/moi', ...options });
+
+/**
  * Health
  *
  * `SELECT 1` thật xuống DB.
@@ -29,3 +60,125 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
  * `{"status":"fail","db":"fail"}`.
  */
 export const getHealth = <ThrowOnError extends boolean = false>(options?: Options<GetHealthData, ThrowOnError>): RequestResult<GetHealthResponses, GetHealthErrors, ThrowOnError> => (options?.client ?? client).get<GetHealthResponses, GetHealthErrors, ThrowOnError>({ url: '/api/v1/health', ...options });
+
+/**
+ * Xem Mach
+ *
+ * Trang mạch: thông tin mạch + **toàn bộ** mốc + `face` + spine.
+ *
+ * `id` là khoá bền của mạch (PLAN 5.9). Endpoint **không nhận slug** — URL
+ * `/m/<slug>-<id>` có slug cũ hay slug sai vẫn ra đúng mạch này, còn chuyện redirect
+ * 301 về slug chuẩn là việc của tầng web, dựa vào trường `slug` trong response.
+ *
+ * Response **không chứa trường nào phụ thuộc người xem** nên cache được (PLAN 8.4);
+ * vote của tôi / đã theo chưa / đọc tới đâu nằm ở `GET /machs/{id}/me` (Phase 3).
+ *
+ * Mốc đã xoá hoặc bị mod ẩn vẫn có mặt trong `mocs` và `spine` dưới dạng **bia mộ giữ
+ * chỗ**, không kèm nội dung: `seq` bất biến, giấu hẳn một ô là thủng dãy số và phá bất
+ * biến `entry_count == số ô trên spine` (PLAN 5.2).
+ */
+export const xemMach = <ThrowOnError extends boolean = false>(options: Options<XemMachData, ThrowOnError>): RequestResult<XemMachResponses, XemMachErrors, ThrowOnError> => (options.client ?? client).get<XemMachResponses, XemMachErrors, ThrowOnError>({ url: '/api/v1/machs/{mach_id}', ...options });
+
+/**
+ * Liet Ke Binh Luan Mach
+ *
+ * Khán đài: **cây bình luận đã dựng sẵn**, server sắp xếp (PLAN mục 7).
+ *
+ * `?sort=hay_nhat|moi_nhat|cu_nhat`, mặc định `hay_nhat`. Sort không thuộc ba giá trị
+ * đó trả 400 `sort_khong_hop_le` — API **không bao giờ tự đổi sort ngầm** dưới tay
+ * người dùng (PLAN nguyên tắc 7).
+ *
+ * - `hay_nhat`: wilson (z = 1.281) cộng hệ số tươi 0.15 cho bình luận **gốc** ra đời
+ * sau mốc mới nhất và còn trong 48 giờ đầu đời của nó. Sibling trong thread sắp theo
+ * wilson **thuần** — hệ số tươi không áp cho reply. Phân trang bằng `?offset=`,
+ * `?limit=` tối đa 50.
+ * - `moi_nhat` / `cu_nhat`: `?cursor=` keyset trên `(created_at, id)`.
+ *
+ * **Hai kiểu phân trang KHÔNG dùng lẫn nhau, dùng nhầm trả 400** với
+ * `code = "tham_so_khong_hop_le"`: `?cursor=` kèm `sort=hay_nhat`, hoặc `?offset=` khác
+ * 0 kèm hai sort thời gian. Nuốt im lặng tham số sai chỗ là hành vi mà chính
+ * `api/phan_trang.py` cấm cho cursor rác: người ở trang 3 của `moi_nhat` bấm đổi sang
+ * `hay_nhat`, router giữ nguyên query string, API trả **trang 1** kèm HTTP 200 — UI
+ * tưởng mình vẫn ở trang 3 và append tiếp ⇒ lặp dòng hoặc mất dòng, không lần ra được.
+ *
+ * Bình luận bị mod ẩn, hoặc tác giả tự xoá, chỉ còn lại **bia mộ giữ chỗ** khi nó còn
+ * con sống sót trong `replies` — và riêng ca tác giả tự xoá thì cả khi bình luận **đã
+ * từng được trích vào sổ**, kể cả trích đã gỡ (PLAN 5.3). Không dính vế nào thì nó biến
+ * mất hẳn. "Con sống sót" không có nghĩa "con đọc được": con ấy có thể tự nó là bia mộ,
+ * nên một thread trong `threads` có thể **toàn bia mộ, không một chữ nội dung nào**, mà
+ * vẫn chiếm một chỗ trong `tong_thread` và một slot của trang này.
+ * Bia mộ không được tính vào `comment_count` của mạch, nên số bình luận **đọc được** có
+ * thể nhỏ hơn số dòng trả về.
+ */
+export const lietKeBinhLuanMach = <ThrowOnError extends boolean = false>(options: Options<LietKeBinhLuanMachData, ThrowOnError>): RequestResult<LietKeBinhLuanMachResponses, LietKeBinhLuanMachErrors, ThrowOnError> => (options.client ?? client).get<LietKeBinhLuanMachResponses, LietKeBinhLuanMachErrors, ThrowOnError>({ url: '/api/v1/machs/{mach_id}/comments', ...options });
+
+/**
+ * Liet Ke Binh Luan Moc
+ *
+ * Ngăn kéo của một mốc: lát cắt bình luận neo vào mốc đó, **cũ → mới**.
+ *
+ * Lấy các thread có bình luận **gốc** mang `anchor_moc_seq` bằng `seq` của mốc này, và
+ * lấy **cả thread** — reply viết ở thời điểm mốc nào cũng thuộc về thread của gốc
+ * (PLAN nguyên tắc 6). Nhờ vậy ngăn kéo của mốc 2 kể được cả lời tiên tri lẫn cái kết.
+ *
+ * Không có tham số sắp xếp: ngăn kéo là cửa sổ chiếu vào khán đài, không phải một
+ * phòng riêng (PLAN 5.4 luật 2). Anchor dùng để CHIẾU, không bao giờ để chia khán đài
+ * thành nhiều phòng (PLAN nguyên tắc 4).
+ *
+ * Mốc chưa có bình luận nào trả `threads: []`, `so_binh_luan: 0` cùng
+ * `question_for_crowd` nếu mốc có câu mồi — UI hiện lời mời chứ **không** hiện "💬 0"
+ * (PLAN 5.4 luật 4, nguyên tắc 9).
+ *
+ * Ngăn kéo của một mốc đã thành **bia mộ vẫn mở được** (bình luận không biến mất theo
+ * mốc), nhưng `question_for_crowd` khi đó là `null`: đó là nội dung của mốc, mà nội
+ * dung của bia mộ thì không trả ra.
+ */
+export const lietKeBinhLuanMoc = <ThrowOnError extends boolean = false>(options: Options<LietKeBinhLuanMocData, ThrowOnError>): RequestResult<LietKeBinhLuanMocResponses, LietKeBinhLuanMocErrors, ThrowOnError> => (options.client ?? client).get<LietKeBinhLuanMocResponses, LietKeBinhLuanMocErrors, ThrowOnError>({ url: '/api/v1/mocs/{moc_id}/comments', ...options });
+
+/**
+ * Liet Ke Ban Cu Moc
+ *
+ * Các bản TRƯỚC của một mốc, cho UI diff "đã sửa N lần" (PLAN 5.2).
+ *
+ * Mỗi bản lưu **đủ cả 5 trường sửa được** (`body`, `figures`, `occurred_at`, `loai`,
+ * `question_for_crowd`), nên diff hiện được cả thay đổi ngày sự việc ("10/06 → 04/06")
+ * — sửa lùi `occurred_at` mà không để vết là phá đúng giá trị lõi của sản phẩm.
+ *
+ * Mốc **đã xoá hoặc bị mod ẩn trả 404**: các bản cũ chứa nguyên văn nội dung, mở đường
+ * này ra là gỡ mốc ở cửa trước còn đọc được ở cửa sau.
+ *
+ * Mốc chưa sửa lần nào trả `items: []`, không phải 404.
+ */
+export const lietKeBanCuMoc = <ThrowOnError extends boolean = false>(options: Options<LietKeBanCuMocData, ThrowOnError>): RequestResult<LietKeBanCuMocResponses, LietKeBanCuMocErrors, ThrowOnError> => (options.client ?? client).get<LietKeBanCuMocResponses, LietKeBanCuMocErrors, ThrowOnError>({ url: '/api/v1/mocs/{moc_id}/revisions', ...options });
+
+/**
+ * Xem Ho So
+ *
+ * Hồ sơ công khai: mạch của họ, "Được trích ×N", tổng mốc, tổng bình luận.
+ *
+ * Ba con số đếm **nội dung đọc được**: mốc/bình luận đã xoá hoặc bị ẩn không tính, và
+ * nội dung nằm trong một mạch đã bị mod ẩn cũng không tính.
+ *
+ * `duoc_trich` đếm theo **số chủ mạch khác nhau** đã trích bình luận của người này, chỉ
+ * tính trích còn hiệu lực — rào 3 của PLAN 5.6, chống hai nick trích qua lại để tự nâng
+ * chỉ số cho nhau. Nó **soi gương đúng cái blockquote** trên thẻ mốc: đếm khi khối trích
+ * còn hiện, không đếm khi khối trích biến mất. Mạch bị mod ẩn, mốc nhận trích bị ẩn hoặc
+ * xoá, hay chính bình luận bị **mod ẩn** đều làm khối trích biến mất ⇒ không đếm. Thiếu
+ * bốn bộ lọc ấy thì mod ẩn cả một mạch làm `so_mach`/`so_moc`/`so_binh_luan` về 0 trong
+ * khi "Được trích ×1" vẫn sáng trên hồ sơ — đúng cái "máy in địa vị" mà rào 3 dựng lên
+ * để chặn.
+ *
+ * **Tác giả TỰ xoá bình luận thì `duoc_trich` KHÔNG tụt**, và đó là chỗ con số này cố ý
+ * lệch khỏi ba con số trên. `trinh_bay.trich_ra` giữ nguyên body của blockquote trong ca
+ * ấy, vì PLAN 5.6 dựng "cuốn sổ không-xoá-được" để chống *tác giả* rút chữ, không phải
+ * để chống *mod* gỡ nội dung. Đếm tụt ở đây là hai cửa nói hai chuyện về cùng một sự
+ * kiện: khối trích còn nguyên chữ trên trang mạch mà chỉ số trên hồ sơ đã giảm thì không
+ * con số nào giải thích được nữa.
+ *
+ * `?limit=` cắt số mạch trả kèm, mặc định 20, tối đa 50. Hồ sơ **chưa có cursor** ở
+ * bản này: quá `limit` mạch thì phần dôi ra không có đường nào lấy tiếp.
+ *
+ * Endpoint này **không** trả email, trạng thái ban hay bất cứ thứ gì chỉ chủ tài khoản
+ * được thấy.
+ */
+export const xemHoSo = <ThrowOnError extends boolean = false>(options: Options<XemHoSoData, ThrowOnError>): RequestResult<XemHoSoResponses, XemHoSoErrors, ThrowOnError> => (options.client ?? client).get<XemHoSoResponses, XemHoSoErrors, ThrowOnError>({ url: '/api/v1/users/{username}', ...options });

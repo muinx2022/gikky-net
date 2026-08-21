@@ -22,6 +22,23 @@ COMMITTED: cái đến sau đếm khi chưa thấy hàng của cái đến trư�
 (xem docstring của nó) chứ không trông vào việc người gọi nhớ.
 
 **Đường ghi lịch sử tách hẳn khỏi đường ghi thường** — xem `_created_at_seed` dưới đây.
+
+**THỨ TỰ KHOÁ HÀNG, ràng buộc toàn module: `Comment` TRƯỚC, `Mach` SAU.** (K5 — nợ 1a
+bàn giao, trước đó chỉ tồn tại như một sự thật ngầm của code.)
+
+Đường viết reply đang khoá theo thứ tự: `cap_phat_path` khoá hàng `Comment` cha, rồi
+`cap_nhat_dem_mach` mới xin khoá hàng `Mach`. Bất kỳ đường ghi nào đi NGƯỢC lại — khoá
+`Mach` trước rồi mới khoá một `Comment` — là đủ để hai transaction đồng thời ôm nhau
+chết: A giữ `Comment` chờ `Mach`, B giữ `Mach` chờ `Comment`. Postgres phát hiện và huỷ
+một bên, nên hậu quả là 500 ngẫu nhiên dưới tải chứ không phải treo vĩnh viễn — cũng vì
+thế mà nó gần như không tái hiện được ở máy dev.
+
+Ngoại lệ DUY NHẤT và có chủ đích: bình luận GỐC không có hàng cha nào để khoá, nên
+`cap_phat_path` khoá thẳng `Mach` (mọi bình luận gốc của một mạch là sibling của nhau).
+Đường đó chỉ chạm MỘT hàng khoá, nên nó không tham gia được vào chu trình nào.
+
+Phase 2 thêm `DELETE /comments/{id}`, `POST /votes`, các đường moderation — mỗi đường đều
+phải theo đúng thứ tự trên.
 """
 
 import logging
@@ -44,6 +61,30 @@ logger = logging.getLogger(__name__)
 #: ra khi có đường ghi KHÔNG khoá hàng cha (xem docstring `core/cay_binh_luan.py`), nên
 #: 3 lần là quá đủ; hết 3 lần mà vẫn va thì có lỗi thật, phải nổ chứ không lặp vô hạn.
 SO_LAN_THU_LAI = 3
+
+#: Tên constraint mà retry ở dưới được phép hiểu là "một cuộc đua cấp phát khoá".
+RB_MOC_SEQ = "moc_duy_nhat_seq"
+RB_COMMENT_PATH = "comment_duy_nhat_path"
+
+
+def _la_va_cham(loi: IntegrityError, ten_constraint: str) -> bool:
+    """Lỗi này có đúng là va vào `ten_constraint` không? (K1b — nợ 1a bàn giao.)
+
+    Bản 1a bắt `IntegrityError` TRẦN, và cái giá của nó không phải là lý thuyết:
+    `CHECK (seq >= 1)`, `CHECK (value IN (-1, 1))`, FK gãy, NOT NULL — mọi thứ đều là
+    `IntegrityError`. Bắt trần nghĩa là một lỗi lập trình bị **thử lại ba lần**, ghi ra
+    ba dòng log đổ tội cho một cuộc đua không hề xảy ra, rồi mới ném ra ngoài với đúng
+    ngoại lệ ban đầu. Người đọc log đi tìm race condition; race đó không tồn tại.
+
+    Nguồn sự thật là `constraint_name` trong `diag` của psycopg — Postgres nói thẳng tên
+    ràng buộc bị vi phạm. **Mức bảo vệ thật, đừng đọc mạnh hơn:** khi driver không cung
+    cấp `diag` (backend khác, hoặc ngoại lệ được dựng lại bằng tay trong test), hàm rơi
+    về so chuỗi trên thông điệp — yếu hơn, nhưng vẫn hẹp hơn hẳn "bắt mọi thứ".
+    """
+    ten = getattr(getattr(loi.__cause__, "diag", None), "constraint_name", None)
+    if ten is not None:
+        return ten == ten_constraint
+    return ten_constraint in str(loi)
 
 
 def _dong_dau_server(_created_at_seed):
@@ -251,7 +292,9 @@ def them_moc(
                     figures=figures,
                 )
                 cap_nhat_dem_mach(mach_khoa)
-        except IntegrityError:
+        except IntegrityError as loi:
+            if not _la_va_cham(loi, RB_MOC_SEQ):
+                raise
             logger.warning(
                 "them_moc: đụng UNIQUE(mach, seq) ở mạch %s, thử lại (lần %s/%s)",
                 mach.pk,
@@ -317,7 +360,9 @@ def tao_binh_luan(
                 # khoá đó. Hai chỗ cùng xin là thừa một round-trip, và tệ hơn là nó dạy
                 # người đọc rằng khoá là việc của người gọi.
                 cap_nhat_dem_mach(mach)
-        except IntegrityError:
+        except IntegrityError as loi:
+            if not _la_va_cham(loi, RB_COMMENT_PATH):
+                raise
             logger.warning(
                 "tao_binh_luan: đụng UNIQUE(mach, path) ở mạch %s, thử lại (lần %s/%s)",
                 mach.pk,

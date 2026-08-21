@@ -111,6 +111,13 @@ Django admin ở **`/api/admin/django/`** — không phải `/api/admin/`; xem d
   checker của TypeScript đọc bề mặt export THẬT của `src/index.ts` (đi theo cả `export *`),
   và `pnpm codegen` exit ≠ 0 nếu `client` lọt ra. `index.ts` là file SINH RA — chỉ một bản
   `@hey-api/openapi-ts` mới đổi ý là luật viết tay thành vô hiệu.
+- **Thứ tự khoá hàng: `Comment` TRƯỚC, `Mach` SAU.** Đường reply khoá `Comment` cha
+  (`cap_phat_path`) rồi mới xin `Mach` (`cap_nhat_dem_mach`). Đường nào làm ngược sinh deadlock —
+  Postgres huỷ một bên ⇒ 500 ngẫu nhiên dưới tải, gần như không tái hiện được ở dev. Ngoại lệ duy
+  nhất: bình luận gốc không có cha nên khoá thẳng `Mach` (chỉ chạm một hàng khoá).
+- **`cap_nhat_dem_mach` phải gọi TRONG một `atomic()`.** Nó tự `select_for_update` hàng `Mach`,
+  nhưng khoá chỉ sống tới lúc transaction đóng. Ghi `deleted_at`/`hidden_at` ở transaction này rồi
+  đếm lại ở transaction khác = `comment_count` sai vĩnh viễn, không log, không job đối soát.
 - **`export_openapi` tự ghi file**, không dùng redirect `>` của PowerShell 5.1 (nó ghi UTF-16/BOM,
   làm codegen và bước kiểm drift vỡ). Output phải: UTF-8 không BOM · LF · `sort_keys` · newline cuối
   file — 2 lần chạy ra cùng byte.

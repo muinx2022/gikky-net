@@ -1,9 +1,15 @@
 """Router API v1 (PLAN mục 7 — prefix `/api/v1`).
 
-Phase 0 mới có mỗi healthcheck. Các endpoint hợp đồng v1 còn lại thuộc Phase 1+.
+Phase 1b thêm 6 endpoint ĐỌC; mọi endpoint GHI vẫn thuộc Phase 2, và
+`GET /machs/{id}/me` (dữ liệu của viewer) thuộc Phase 3.
+
+Endpoint chia theo module vì cùng lý do `core/models/` là package: gom một file thì mỗi
+lần sửa khán đài đều phải cuộn qua hồ sơ người dùng. **Vẫn CHỈ MỘT `NinjaAPI` khoá `v1`**
+— thêm `NinjaAPI` mới là ba việc kèm ba cái chuông, xem `config/api_registry.py`.
 
 Luật khi thêm endpoint: **phải khai `operation_id` tường minh**, nếu không tên hàm
 trong TS client sinh ra sẽ đổi theo tên hàm Python / theo route (PLAN 8.3).
+`tests/test_operation_id.py` là cái chuông cho luật đó.
 """
 
 import logging
@@ -80,3 +86,19 @@ def health(request):
         return Status(503, HealthOut(status="fail", db="fail"))
 
     return Status(200, HealthOut(status="ok", db="ok"))
+
+
+# Mount ở CUỐI file: các module router import `api.loi`/`api.schemas`, còn `api_v1` phải
+# tồn tại trước khi `config/api_registry.py` đọc tới. Đặt import ở đây tránh vòng lặp
+# import mà không cần một module "app" thứ ba chỉ để nối dây.
+from api.feeds import router as router_feeds  # noqa: E402
+from api.loi import dang_ky_xu_ly_loi  # noqa: E402
+from api.machs import router as router_machs  # noqa: E402
+from api.mocs import router as router_mocs  # noqa: E402
+from api.users import router as router_users  # noqa: E402
+
+dang_ky_xu_ly_loi(api_v1)
+api_v1.add_router("", router_feeds)
+api_v1.add_router("", router_machs)
+api_v1.add_router("", router_mocs)
+api_v1.add_router("", router_users)

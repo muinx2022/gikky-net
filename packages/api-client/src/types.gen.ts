@@ -7,6 +7,127 @@ export type ClientOptions = {
 };
 
 /**
+ * BinhLuanOut
+ *
+ * Một nút trong cây bình luận. Server dựng cây và sắp sibling (PLAN mục 7).
+ *
+ * Khi `trang_thai != "binh_thuong"` thì đây là **bia mộ giữ chỗ**: `author`, `body`,
+ * `edited_at` là `null`; `up_count`, `down_count`, `score` về `0`; còn `la_chu_mach` và
+ * `tu_gap` về `false`. **`id`, `parent_id`, `depth`, `anchor_moc_seq`, `created_at` vẫn
+ * là giá trị THẬT** — đó là cách 1c dựng được nút "nhảy tới khán đài" từ
+ * `TrichOut.comment_id`. Nút như vậy xuất hiện khi nó còn **con sống
+ * sót** trong `replies`, **hoặc** khi `trang_thai = "da_xoa"` và bình luận đã TỪNG được
+ * chủ mạch trích vào sổ — kể cả trích đã gỡ (PLAN 5.3). Không dính vế nào thì nó biến
+ * mất hẳn.
+ *
+ * "Con sống sót" **không** đồng nghĩa "con đọc được": con ấy có thể tự nó là bia mộ,
+ * được giữ nhờ vế thứ hai. Hệ quả, và đây là hành vi đúng chứ không phải lỗi: một thread
+ * có thể trả về **toàn bia mộ, không một chữ nội dung nào**, và nó vẫn chiếm một chỗ
+ * trong `tong_thread` lẫn một slot trong trang của khán đài. Đừng đọc "thread" thành
+ * "thread có nội dung".
+ *
+ * Vế thứ hai chỉ áp cho `"da_xoa"`. Bình luận bị **mod ẩn** mà không còn con sống sót
+ * thì biến mất kể cả khi từng được trích: `MocOut.trich` cũng biến mất trong ca đó, nên
+ * giữ lại bia mộ là giữ chỗ cho một liên kết không còn đầu kia.
+ *
+ * `depth` 1-based: bình luận gốc là 1. UI render tối đa 6 tầng rồi "tiếp tục thread →",
+ * nhưng API trả đủ cây (PLAN 5.3).
+ */
+export type BinhLuanOut = {
+    /**
+     * Anchor Moc Seq
+     */
+    anchor_moc_seq: number | null;
+    author: NguoiDungTomTatOut | null;
+    /**
+     * Body
+     */
+    body: string | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Depth
+     */
+    depth: number;
+    /**
+     * Down Count
+     */
+    down_count: number;
+    /**
+     * Edited At
+     */
+    edited_at: string | null;
+    /**
+     * Id
+     */
+    id: number;
+    /**
+     * La Chu Mach
+     */
+    la_chu_mach: boolean;
+    /**
+     * Parent Id
+     */
+    parent_id: number | null;
+    /**
+     * Replies
+     */
+    replies: Array<BinhLuanOut>;
+    /**
+     * Score
+     */
+    score: number;
+    /**
+     * Trang Thai
+     */
+    trang_thai: 'binh_thuong' | 'da_xoa' | 'da_an';
+    /**
+     * Tu Gap
+     */
+    tu_gap: boolean;
+    /**
+     * Up Count
+     */
+    up_count: number;
+};
+
+/**
+ * FeedOut
+ *
+ * Một trang feed. `cursor_ke_tiep = null` nghĩa là hết.
+ */
+export type FeedOut = {
+    /**
+     * Cursor Ke Tiep
+     */
+    cursor_ke_tiep: string | null;
+    /**
+     * Items
+     */
+    items: Array<MachTomTatOut>;
+};
+
+/**
+ * FigureOut
+ *
+ * Một cặp trong dải số của mốc, vd `{label: "GIÁ VÀO", value: "27.80"}`.
+ *
+ * Thuần hiển thị — server không validate ngữ nghĩa (PLAN 5.2).
+ */
+export type FigureOut = {
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Value
+     */
+    value: string;
+};
+
+/**
  * HealthOut
  *
  * Kết quả healthcheck. `db` = "ok" chỉ khi truy vấn thật xuống Postgres thành công.
@@ -21,6 +142,606 @@ export type HealthOut = {
      */
     status: string;
 };
+
+/**
+ * HoSoOut
+ *
+ * Hồ sơ công khai `/u/<username>` — PLAN 5.9.
+ *
+ * **`machs` bị CẮT ở `?limit=` (mặc định 20, tối đa 50) và hồ sơ KHÔNG có cursor.**
+ * Người có nhiều mạch hơn thế thì phần dôi ra không lấy tiếp được bằng đường nào — đừng
+ * đọc `machs` như "toàn bộ mạch của người này", và đừng suy `so_mach` từ `len(machs)`:
+ * `so_mach` đếm cả phần bị cắt.
+ *
+ * Cảnh báo đó nằm ở docstring CLASS chứ không ở comment `#:` của trường là có lý do:
+ * `tests/test_hop_dong_openapi.py` chứng minh comment `#:` **không ra tới**
+ * `openapi.json`, nên chỉ docstring class mới tới được tay người dùng API.
+ *
+ * `so_mach`, `so_moc`, `so_binh_luan` đếm **nội dung đọc được**: nội dung đã xoá, bị mod
+ * ẩn, hoặc nằm trong một mạch đã bị mod ẩn đều không tính.
+ *
+ * **`duoc_trich` KHÔNG cùng luật đó**, và khác biệt là chủ đích: nó soi gương đúng khối
+ * trích trên thẻ mốc. Mạch bị mod ẩn, mốc nhận trích bị ẩn hoặc xoá, hay bình luận bị
+ * **mod ẩn** đều làm khối trích biến mất ⇒ không đếm. Nhưng tác giả **tự xoá** bình luận
+ * thì blockquote giữ nguyên body (PLAN 5.6, "sổ không-xoá-được" chống tác giả rút chữ)
+ * ⇒ `duoc_trich` **không đổi**.
+ */
+export type HoSoOut = {
+    /**
+     * Bio
+     */
+    bio: string;
+    /**
+     * Date Joined
+     */
+    date_joined: string;
+    /**
+     * Display Name
+     */
+    display_name: string;
+    /**
+     * Duoc Trich
+     */
+    duoc_trich: number;
+    /**
+     * Machs
+     */
+    machs: Array<MachTomTatOut>;
+    /**
+     * So Binh Luan
+     */
+    so_binh_luan: number;
+    /**
+     * So Mach
+     */
+    so_mach: number;
+    /**
+     * So Moc
+     */
+    so_moc: number;
+    /**
+     * Username
+     */
+    username: string;
+};
+
+/**
+ * KhanDaiOut
+ *
+ * Khán đài: MỘT phòng chứa toàn bộ cây bình luận của mạch (PLAN mục 2, 5.3).
+ *
+ * Phân trang khác nhau theo `sort`, đúng PLAN 5.3:
+ *
+ * - `hay_nhat` — MỘT trang 50 thread gốc, "xem thêm" gọi lại bằng `?offset=`. Rank động
+ * theo `now` nên trang sau có thể trôi nhẹ; đó là đánh đổi đã chốt. `cursor_ke_tiep`
+ * luôn `null` ở sort này.
+ * - `moi_nhat` / `cu_nhat` — cursor keyset thật trên `(created_at, id)`.
+ * `offset_ke_tiep` luôn `null` ở hai sort này.
+ */
+export type KhanDaiOut = {
+    /**
+     * Cursor Ke Tiep
+     */
+    cursor_ke_tiep: string | null;
+    /**
+     * Offset Ke Tiep
+     */
+    offset_ke_tiep: number | null;
+    /**
+     * Sort
+     */
+    sort: 'hay_nhat' | 'moi_nhat' | 'cu_nhat';
+    /**
+     * Threads
+     */
+    threads: Array<BinhLuanOut>;
+    /**
+     * Tong Thread
+     */
+    tong_thread: number;
+};
+
+/**
+ * LoiOut
+ *
+ * `{detail, code}` — PLAN mục 7.
+ */
+export type LoiOut = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Detail
+     */
+    detail: string;
+};
+
+/**
+ * MachChiTietOut
+ *
+ * Trang mạch: mạch + toàn bộ mốc + `face` server đã tính + spine (PLAN mục 7).
+ *
+ * **Response này KHÔNG chứa trường nào phụ thuộc người xem** và vì thế cache được
+ * (PLAN 8.4). Vote của tôi, đã theo chưa, đọc tới đâu — tất cả nằm ở
+ * `GET /machs/{id}/me`.
+ *
+ * `face` ở bản này tính THUẦN theo luật thời gian: mạch đang mở · chưa bị mod khoá ·
+ * `now − last_activity_at ≤ 72h`. Vế "user đã follow hoặc từng bình luận" của PLAN 5.5
+ * **chưa được áp** vì nó phụ thuộc người xem.
+ *
+ * `comment_count` là số bình luận ĐỌC ĐƯỢC, và `last_activity_at` có thể nhỏ hơn
+ * `last_entry_at` — xem `MachTomTatOut`.
+ */
+export type MachChiTietOut = {
+    author: NguoiDungTomTatOut;
+    /**
+     * Closed At
+     */
+    closed_at: string | null;
+    /**
+     * Comment Count
+     */
+    comment_count: number;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Entry Count
+     */
+    entry_count: number;
+    /**
+     * Face
+     */
+    face: 'bao' | 'can';
+    /**
+     * Id
+     */
+    id: number;
+    /**
+     * Ket Qua
+     */
+    ket_qua: string | null;
+    /**
+     * Last Activity At
+     */
+    last_activity_at: string;
+    /**
+     * Last Entry At
+     */
+    last_entry_at: string;
+    /**
+     * Locked
+     */
+    locked: boolean;
+    /**
+     * Mocs
+     */
+    mocs: Array<MocOut>;
+    /**
+     * Slug
+     */
+    slug: string;
+    /**
+     * Spine
+     */
+    spine: Array<SpineOut>;
+    /**
+     * Status
+     */
+    status: string;
+    sub: SubTomTatOut;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * MachTomTatOut
+ *
+ * Một mạch ở mức thẻ feed / danh sách hồ sơ.
+ *
+ * **`comment_count` là số bình luận ĐỌC ĐƯỢC, không phải số dòng khán đài sẽ render.**
+ * Bình luận đã xoá hoặc bị ẩn không được đếm, nhưng vẫn để lại bia mộ giữ chỗ khi chúng
+ * còn reply — nên khán đài có thể hiện 24 dòng trong khi con số này nói 22. Đó là chủ
+ * đích, đừng "sửa" cho khớp.
+ *
+ * **`last_activity_at` có thể NHỎ HƠN `last_entry_at`.** Hai cột đo hai thứ khác nhau:
+ * `last_entry_at` đo cấu trúc (mọi mốc, kể cả mốc bị ẩn), `last_activity_at` đo nội
+ * dung đọc được. Hệ quả nhìn thấy được: một mạch đứng đầu feed "Đang diễn ra" mà mở ra
+ * là mặt CẶN.
+ */
+export type MachTomTatOut = {
+    author: NguoiDungTomTatOut;
+    /**
+     * Comment Count
+     */
+    comment_count: number;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Entry Count
+     */
+    entry_count: number;
+    /**
+     * Id
+     */
+    id: number;
+    /**
+     * Ket Qua
+     */
+    ket_qua: string | null;
+    /**
+     * Last Activity At
+     */
+    last_activity_at: string;
+    /**
+     * Last Entry At
+     */
+    last_entry_at: string;
+    /**
+     * Slug
+     */
+    slug: string;
+    /**
+     * Status
+     */
+    status: string;
+    sub: SubTomTatOut;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * MocOut
+ *
+ * Một mốc trong mạch. Bài gốc là `seq = 1`, không có ngoại lệ (PLAN mục 2).
+ *
+ * Khi `trang_thai != "binh_thuong"` thì đây là **bia mộ**: `body`, `loai`, `figures`,
+ * `question_for_crowd`, `edited_at` đều `null`, còn `edit_count` và `score` về `0` —
+ * số phiếu của nội dung đã gỡ không được trả ra, cùng chuẩn với `BinhLuanOut`. `seq`,
+ * `occurred_at`, `so_binh_luan` và chỗ đứng trên spine vẫn còn: `seq` bất biến, giấu
+ * hẳn một ô là thủng dãy số, và ngăn kéo của bia mộ vẫn mở được (PLAN 5.2).
+ */
+export type MocOut = {
+    /**
+     * Body
+     */
+    body: string | null;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Edit Count
+     */
+    edit_count: number;
+    /**
+     * Edited At
+     */
+    edited_at: string | null;
+    /**
+     * Figures
+     */
+    figures: Array<FigureOut> | null;
+    /**
+     * Id
+     */
+    id: number;
+    /**
+     * Loai
+     */
+    loai: string | null;
+    /**
+     * Occurred At
+     */
+    occurred_at: string;
+    /**
+     * Question For Crowd
+     */
+    question_for_crowd: string | null;
+    /**
+     * Score
+     */
+    score: number;
+    /**
+     * Seq
+     */
+    seq: number;
+    /**
+     * So Binh Luan
+     */
+    so_binh_luan: number;
+    /**
+     * Trang Thai
+     */
+    trang_thai: 'binh_thuong' | 'da_xoa' | 'da_an';
+    trich: TrichOut | null;
+};
+
+/**
+ * MocRevisionOut
+ *
+ * Một bản TRƯỚC của mốc — đủ cả 5 trường sửa được, cho UI diff (PLAN 5.2).
+ *
+ * Có `occurred_at` là bắt buộc: sửa lùi ngày sự việc mà không để vết là phá đúng giá
+ * trị lõi của sản phẩm, nên diff phải hiện được cả thay đổi ngày.
+ */
+export type MocRevisionOut = {
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Figures
+     */
+    figures: Array<FigureOut> | null;
+    /**
+     * Id
+     */
+    id: number;
+    /**
+     * Loai
+     */
+    loai: string | null;
+    /**
+     * Occurred At
+     */
+    occurred_at: string;
+    /**
+     * Question For Crowd
+     */
+    question_for_crowd: string | null;
+    /**
+     * Revised At
+     */
+    revised_at: string;
+};
+
+/**
+ * MocRevisionsOut
+ */
+export type MocRevisionsOut = {
+    /**
+     * Items
+     */
+    items: Array<MocRevisionOut>;
+    /**
+     * Moc Id
+     */
+    moc_id: number;
+    /**
+     * Moc Seq
+     */
+    moc_seq: number;
+};
+
+/**
+ * NganKeoOut
+ *
+ * Lát cắt bình luận neo vào một mốc — PLAN 5.4.
+ *
+ * Chứa các thread có bình luận **gốc** neo mốc này, **cả thread**, gồm reply viết ở bất
+ * kỳ thời điểm nào. Sắp cũ → mới và **không cho chỉnh** — ngăn kéo là cửa sổ, không
+ * phải phòng (luật 2).
+ *
+ * Mốc chưa có bình luận nào trả `threads: []` và `so_binh_luan: 0`; UI **không** hiện
+ * "💬 0" mà hiện lời mời cùng `question_for_crowd` nếu có (luật 4).
+ */
+export type NganKeoOut = {
+    /**
+     * Moc Id
+     */
+    moc_id: number;
+    /**
+     * Moc Seq
+     */
+    moc_seq: number;
+    /**
+     * Question For Crowd
+     */
+    question_for_crowd: string | null;
+    /**
+     * So Binh Luan
+     */
+    so_binh_luan: number;
+    /**
+     * Threads
+     */
+    threads: Array<BinhLuanOut>;
+};
+
+/**
+ * NguoiDungTomTatOut
+ *
+ * Tác giả, ở mức đủ để render một dòng chữ ký.
+ */
+export type NguoiDungTomTatOut = {
+    /**
+     * Display Name
+     */
+    display_name: string;
+    /**
+     * Username
+     */
+    username: string;
+};
+
+/**
+ * SpineOut
+ *
+ * Một ô trên dải xương sống `①──②──…──◉⑨` (PLAN 9.2).
+ *
+ * `da_xoa` và `da_an` đều giữ chỗ: bất biến `entry_count == số ô trên spine` là thứ dải
+ * gập của mặt CẶN suy ra (PLAN 5.2, 5.5).
+ */
+export type SpineOut = {
+    /**
+     * Da An
+     */
+    da_an: boolean;
+    /**
+     * Da Xoa
+     */
+    da_xoa: boolean;
+    /**
+     * Occurred At
+     */
+    occurred_at: string;
+    /**
+     * Seq
+     */
+    seq: number;
+    /**
+     * So Binh Luan
+     */
+    so_binh_luan: number;
+};
+
+/**
+ * SubTomTatOut
+ */
+export type SubTomTatOut = {
+    /**
+     * Slug
+     */
+    slug: string;
+    /**
+     * Ten
+     */
+    ten: string;
+};
+
+/**
+ * TrichOut
+ *
+ * Bình luận được chủ mạch trích vào mốc — "trích vào sổ" (PLAN 5.6).
+ *
+ * Hai dấu thời gian đều có mặt vì rào 2 của PLAN 5.6 bắt blockquote hiện đủ cả hai
+ * ("viết 10/06, trích 21/08") — chống trích hậu nghiệm để sổ đọc như tiên tri.
+ *
+ * `trang_thai = "da_xoa"` nghĩa là người viết đã xoá bình luận gốc **sau khi** nó vào
+ * sổ; blockquote vẫn còn nguyên nội dung, vì sổ là "không-xoá-được" (PLAN 5.6). Bình
+ * luận bị **mod ẩn** thì cả khối trích biến mất khỏi response, không có trạng thái nào
+ * biểu diễn nó.
+ */
+export type TrichOut = {
+    /**
+     * Anchor Moc Seq
+     */
+    anchor_moc_seq: number | null;
+    author: NguoiDungTomTatOut;
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Comment Created At
+     */
+    comment_created_at: string;
+    /**
+     * Comment Id
+     */
+    comment_id: number;
+    /**
+     * Trang Thai
+     */
+    trang_thai: 'binh_thuong' | 'da_xoa' | 'da_an';
+    /**
+     * Trich Created At
+     */
+    trich_created_at: string;
+};
+
+export type LietKeFeedDangDienRaData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Sub
+         */
+        sub?: string | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/feeds/dang-dien-ra';
+};
+
+export type LietKeFeedDangDienRaErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type LietKeFeedDangDienRaError = LietKeFeedDangDienRaErrors[keyof LietKeFeedDangDienRaErrors];
+
+export type LietKeFeedDangDienRaResponses = {
+    /**
+     * OK
+     */
+    200: FeedOut;
+};
+
+export type LietKeFeedDangDienRaResponse = LietKeFeedDangDienRaResponses[keyof LietKeFeedDangDienRaResponses];
+
+export type LietKeFeedMoiData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Sub
+         */
+        sub?: string | null;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/feeds/moi';
+};
+
+export type LietKeFeedMoiErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type LietKeFeedMoiError = LietKeFeedMoiErrors[keyof LietKeFeedMoiErrors];
+
+export type LietKeFeedMoiResponses = {
+    /**
+     * OK
+     */
+    200: FeedOut;
+};
+
+export type LietKeFeedMoiResponse = LietKeFeedMoiResponses[keyof LietKeFeedMoiResponses];
 
 export type GetHealthData = {
     body?: never;
@@ -46,3 +767,183 @@ export type GetHealthResponses = {
 };
 
 export type GetHealthResponse = GetHealthResponses[keyof GetHealthResponses];
+
+export type XemMachData = {
+    body?: never;
+    path: {
+        /**
+         * Mach Id
+         */
+        mach_id: number;
+    };
+    query?: never;
+    url: '/api/v1/machs/{mach_id}';
+};
+
+export type XemMachErrors = {
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type XemMachError = XemMachErrors[keyof XemMachErrors];
+
+export type XemMachResponses = {
+    /**
+     * OK
+     */
+    200: MachChiTietOut;
+};
+
+export type XemMachResponse = XemMachResponses[keyof XemMachResponses];
+
+export type LietKeBinhLuanMachData = {
+    body?: never;
+    path: {
+        /**
+         * Mach Id
+         */
+        mach_id: number;
+    };
+    query?: {
+        /**
+         * Sort
+         */
+        sort?: string;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Offset
+         */
+        offset?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/machs/{mach_id}/comments';
+};
+
+export type LietKeBinhLuanMachErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type LietKeBinhLuanMachError = LietKeBinhLuanMachErrors[keyof LietKeBinhLuanMachErrors];
+
+export type LietKeBinhLuanMachResponses = {
+    /**
+     * OK
+     */
+    200: KhanDaiOut;
+};
+
+export type LietKeBinhLuanMachResponse = LietKeBinhLuanMachResponses[keyof LietKeBinhLuanMachResponses];
+
+export type LietKeBinhLuanMocData = {
+    body?: never;
+    path: {
+        /**
+         * Moc Id
+         */
+        moc_id: number;
+    };
+    query?: never;
+    url: '/api/v1/mocs/{moc_id}/comments';
+};
+
+export type LietKeBinhLuanMocErrors = {
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type LietKeBinhLuanMocError = LietKeBinhLuanMocErrors[keyof LietKeBinhLuanMocErrors];
+
+export type LietKeBinhLuanMocResponses = {
+    /**
+     * OK
+     */
+    200: NganKeoOut;
+};
+
+export type LietKeBinhLuanMocResponse = LietKeBinhLuanMocResponses[keyof LietKeBinhLuanMocResponses];
+
+export type LietKeBanCuMocData = {
+    body?: never;
+    path: {
+        /**
+         * Moc Id
+         */
+        moc_id: number;
+    };
+    query?: never;
+    url: '/api/v1/mocs/{moc_id}/revisions';
+};
+
+export type LietKeBanCuMocErrors = {
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type LietKeBanCuMocError = LietKeBanCuMocErrors[keyof LietKeBanCuMocErrors];
+
+export type LietKeBanCuMocResponses = {
+    /**
+     * OK
+     */
+    200: MocRevisionsOut;
+};
+
+export type LietKeBanCuMocResponse = LietKeBanCuMocResponses[keyof LietKeBanCuMocResponses];
+
+export type XemHoSoData = {
+    body?: never;
+    path: {
+        /**
+         * Username
+         */
+        username: string;
+    };
+    query?: {
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/users/{username}';
+};
+
+export type XemHoSoErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type XemHoSoError = XemHoSoErrors[keyof XemHoSoErrors];
+
+export type XemHoSoResponses = {
+    /**
+     * OK
+     */
+    200: HoSoOut;
+};
+
+export type XemHoSoResponse = XemHoSoResponses[keyof XemHoSoResponses];

@@ -31,9 +31,14 @@ allauth (Phase 2), ISR/cache/middleware (Phase 3), frontend (1c).
 | `hay_nhat` | **1 trang 50 thread gốc**, `?offset=` cho "xem thêm"; **không** cursor | PLAN 5.3 chốt đúng vậy, kèm lý do "chấp nhận trôi nhẹ vì rank động" |
 | `moi_nhat` / `cu_nhat` | cursor keyset thật trên `(created_at, id)` | PLAN 5.3 |
 | Hình cây bình luận | **lồng nhau (nested)**, mỗi node có `depth`; server dựng cây + sắp sibling | PLAN mục 7 "trả cây đã dựng"; PLAN 5.3 nói UI render ≤6 tầng — **đó là việc của 1c**, API trả đủ |
-| Nội dung bị xoá / ẩn | `Moc.deleted_at` → **bia mộ** (trả node với `da_xoa=true`, không body) · `Comment.deleted_at` → `[đã xoá]` nếu có reply, biến mất nếu không · `hidden_at` → **ẩn khỏi API công khai** (Phase 4 mới có "tác giả vẫn thấy") | PLAN 5.2, 5.3, 5.10 |
+| Nội dung bị xoá / ẩn | `Moc.deleted_at` → **bia mộ** (trả node với `da_xoa=true`, không body) · `Comment.deleted_at` → `[đã xoá]` nếu có reply **hoặc đã TỪNG được trích vào sổ, kể cả trích đã gỡ** (PLAN 5.3 dòng 175 — **sửa 2026-08-22, Z1**: bản chốt đầu chỉ ghi một vế và cài đặt cũng chỉ có một) · `hidden_at` → **ẩn khỏi API công khai**, và vế "đã từng được trích" **không** áp cho nó — moderation thắng (Phase 4 mới có "tác giả vẫn thấy") | PLAN 5.2, 5.3, 5.10 |
 | Wilson + hệ số tươi | dùng lại `core/xep_hang.py` của 1a, **tính lúc query trong Python**, không lưu rank | PLAN 5.3 ghi rõ "không lưu rank" |
-| Spine | server trả mảng `{seq, occurred_at, so_binh_luan, da_xoa}` | 9.2 |
+| Spine | server trả mảng `{seq, occurred_at, so_binh_luan, da_xoa, **da_an**}` — **5 trường, sửa 2026-08-22 (Z15.1)** | 9.2; `da_an` vào thêm vì PLAN 5.2 (chốt 2026-08-21) cho mốc bị mod ẩn GIỮ ô trên spine, mà `da_xoa` một mình không nói được ca đó |
+| `MocOut.trich` | thẻ mốc mang luôn khối trích (`TrichOut`) thay vì bắt 1c gọi thêm một cửa | **ngoài hợp đồng §1 bản đầu**, ghi bổ sung 2026-08-22 (Z15.2). Không hỏng R3 (không phụ thuộc người xem) và tiết kiệm đúng một round-trip cho PLAN 5.6 rào 4 "trích là chú thích gắn vào thân mốc" |
+| Khối trích khi bình luận bị che | tác giả TỰ xoá ⇒ blockquote **giữ nguyên body** + `trang_thai="da_xoa"`; mod ẩn ⇒ **cả khối biến mất** | **Quyết định sản phẩm mới, PLAN không chốt ca này** — ghi ra 2026-08-22 (Z15.3) vì trước đó nó chỉ sống trong docstring `trinh_bay.trich_ra`. Căn cứ: PLAN 5.6 "sổ không-xoá-được" chống *tác giả* rút chữ, không phải chống *mod* gỡ nội dung. Nên cân nhắc đưa lên `PLAN.md` 5.6 — **chưa làm, cần user duyệt** |
+| **`duoc_trich` soi gương đúng cái blockquote** | Đếm khi khối trích **còn hiện**, không đếm khi nó biến mất. Bộ lọc: `comment__deleted_at` **BỎ** (tác giả tự xoá ⇒ blockquote giữ body) · `comment__hidden_at` giữ (mod ẩn ⇒ khối trích biến mất) · `moc__deleted_at` giữ (mốc thành bia mộ ⇒ khối trích không render) · `moc__hidden_at` + `moc__mach__hidden_at` giữ (moderation) | Chốt 2026-08-22 (§5b của plan vá, cài ở vá lượt 2 T1). Z4 lọc đủ **5** cột thì tác giả tự xoá làm `duoc_trich` tụt trong khi blockquote vẫn còn nguyên chữ trên thẻ mốc — hai cửa nói hai chuyện về cùng một sự kiện, và mâu thuẫn thẳng với chính hàng trên ("sổ không-xoá-được" chống *tác giả* rút chữ, không chống *mod* gỡ nội dung). Đây là chỗ `duoc_trich` **cố ý không cùng luật** với `so_mach`/`so_moc`/`so_binh_luan`, nên nó được ghi vào docstring class `HoSoOut` (tức vào `openapi.json`) chứ không chỉ vào code |
+| Bia mộ và số phiếu | `BinhLuanOut` **và** `MocOut` đều zero hoá số phiếu của nội dung đã che (`up/down/score`) | Chốt 2026-08-22 (Z7): bản đầu có hai chuẩn cho cùng một lý lẽ — `nut_ra` zero hoá còn `moc_ra` trả thẳng `score`. `so_binh_luan` KHÔNG về 0 vì ngăn kéo của bia mộ vẫn mở được |
+| Phân trang sai sort | `?cursor=` kèm `hay_nhat`, hoặc `?offset≠0` kèm `moi_nhat`/`cu_nhat` ⇒ **400 `tham_so_khong_hop_le`** | Chốt 2026-08-22 (Z5): bản đầu nuốt im lặng ⇒ trả trang 1 kèm 200 trong khi UI tưởng đang ở trang 3 |
 
 ## 2. Hạng mục việc
 
@@ -80,8 +85,18 @@ này (khác 1a) — đó là dự kiến.
 | R9 | **Số query ghim** cho cả 6 endpoint | `django_assert_num_queries` |
 | R10 | Nội dung `hidden_at` không lọt ra API công khai | test |
 | R11 | `pnpm codegen` sinh client mới; `codegen:check` khớp; hàng rào `client` singleton vẫn xanh | chạy |
-| R12 | **Không hồi quy**: 165 test 1a xanh, 0 warning, lint/build sạch | chạy |
+| R12 | **Không hồi quy**: 175 test 1a xanh, 0 warning, lint/build sạch | chạy | <!-- sửa 2026-08-22 (Z15.4): 165 là con số cũ, sai -->
 | R13 | Chưa commit; không rác | `git status` |
+
+## 3b. Nợ 1a bàn giao — 1b PHẢI xử, không được để trôi
+
+| Mã | Việc | Vì sao là của 1b |
+|---|---|---|
+| K1 | **Schema GHI không được có `created_at`** | 1a bỏ `auto_now_add` để seed dựng mạch 163 ngày ⇒ tính bất biến của PLAN nguyên tắc 3 nay **do tầng API giữ**. 1b là tầng API đầu tiên. Dù 1b chưa có endpoint ghi, phải có test ghim "không schema `*In` nào chứa `created_at`" để Phase 2 không lỡ tay |
+| K2 | **Đọc `last_activity_at` phải biết nó CÓ THỂ nhỏ hơn `last_entry_at`** | Hệ quả cố ý của luật đếm (PLAN mục 6). `face` của `GET /machs/{id}` tính theo `last_activity_at`; feed "Đang diễn ra" sort theo `last_entry_at`. Mạch đứng đầu feed mà mở ra mặt CẶN là **hành vi đúng**, không phải bug — ghi vào docstring endpoint |
+| K3 | **"💬 N" là N bình luận ĐỌC ĐƯỢC, không phải N dòng** | `Comment.deleted_at` không được đếm nhưng vẫn render bia mộ `[đã xoá]` (PLAN 5.3). Khán đài có thể render 24 dòng trong khi `comment_count` = 22 |
+| K4 | **`except IntegrityError` quá rộng trong `core/ghi.py`** | Mọi `IntegrityError` (CHECK, FK, NOT NULL) bị nuốt + retry 3 lần vô ích + 3 dòng log đổ tội cho một cuộc đua không có thật. 1b gọi `ghi.py` gián tiếp qua seed/test; lọc theo tên constraint là việc nhỏ, làm luôn |
+| K5 | **Thứ tự khoá ngầm `Comment → Mach`** | Đường reply khoá `Comment(cha)` rồi mới xin `Mach` trong `cap_nhat_dem_mach`. Bất kỳ đường nào làm ngược (`Mach` trước, `Comment` sau) sinh deadlock. Chưa ai ghi thành ràng buộc — ghi vào `CLAUDE.md` |
 
 ## 4. Rủi ro đã biết
 1. **Dựng cây trong Python dễ thành O(n²)** — gom một lần rồi dựng bằng dict, đừng đệ quy query.

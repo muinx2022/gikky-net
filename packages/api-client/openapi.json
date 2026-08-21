@@ -1,6 +1,182 @@
 {
   "components": {
     "schemas": {
+      "BinhLuanOut": {
+        "description": "Một nút trong cây bình luận. Server dựng cây và sắp sibling (PLAN mục 7).\n\nKhi `trang_thai != \"binh_thuong\"` thì đây là **bia mộ giữ chỗ**: `author`, `body`,\n`edited_at` là `null`; `up_count`, `down_count`, `score` về `0`; còn `la_chu_mach` và\n`tu_gap` về `false`. **`id`, `parent_id`, `depth`, `anchor_moc_seq`, `created_at` vẫn\nlà giá trị THẬT** — đó là cách 1c dựng được nút \"nhảy tới khán đài\" từ\n`TrichOut.comment_id`. Nút như vậy xuất hiện khi nó còn **con sống\nsót** trong `replies`, **hoặc** khi `trang_thai = \"da_xoa\"` và bình luận đã TỪNG được\nchủ mạch trích vào sổ — kể cả trích đã gỡ (PLAN 5.3). Không dính vế nào thì nó biến\nmất hẳn.\n\n\"Con sống sót\" **không** đồng nghĩa \"con đọc được\": con ấy có thể tự nó là bia mộ,\nđược giữ nhờ vế thứ hai. Hệ quả, và đây là hành vi đúng chứ không phải lỗi: một thread\ncó thể trả về **toàn bia mộ, không một chữ nội dung nào**, và nó vẫn chiếm một chỗ\ntrong `tong_thread` lẫn một slot trong trang của khán đài. Đừng đọc \"thread\" thành\n\"thread có nội dung\".\n\nVế thứ hai chỉ áp cho `\"da_xoa\"`. Bình luận bị **mod ẩn** mà không còn con sống sót\nthì biến mất kể cả khi từng được trích: `MocOut.trich` cũng biến mất trong ca đó, nên\ngiữ lại bia mộ là giữ chỗ cho một liên kết không còn đầu kia.\n\n`depth` 1-based: bình luận gốc là 1. UI render tối đa 6 tầng rồi \"tiếp tục thread →\",\nnhưng API trả đủ cây (PLAN 5.3).",
+        "properties": {
+          "anchor_moc_seq": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Anchor Moc Seq"
+          },
+          "author": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NguoiDungTomTatOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "body": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Body"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "depth": {
+            "title": "Depth",
+            "type": "integer"
+          },
+          "down_count": {
+            "title": "Down Count",
+            "type": "integer"
+          },
+          "edited_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Edited At"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "la_chu_mach": {
+            "title": "La Chu Mach",
+            "type": "boolean"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "replies": {
+            "items": {
+              "$ref": "#/components/schemas/BinhLuanOut"
+            },
+            "title": "Replies",
+            "type": "array"
+          },
+          "score": {
+            "title": "Score",
+            "type": "integer"
+          },
+          "trang_thai": {
+            "enum": [
+              "binh_thuong",
+              "da_xoa",
+              "da_an"
+            ],
+            "title": "Trang Thai",
+            "type": "string"
+          },
+          "tu_gap": {
+            "title": "Tu Gap",
+            "type": "boolean"
+          },
+          "up_count": {
+            "title": "Up Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "parent_id",
+          "depth",
+          "anchor_moc_seq",
+          "author",
+          "body",
+          "created_at",
+          "edited_at",
+          "up_count",
+          "down_count",
+          "score",
+          "trang_thai",
+          "la_chu_mach",
+          "tu_gap",
+          "replies"
+        ],
+        "title": "BinhLuanOut",
+        "type": "object"
+      },
+      "FeedOut": {
+        "description": "Một trang feed. `cursor_ke_tiep = null` nghĩa là hết.",
+        "properties": {
+          "cursor_ke_tiep": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cursor Ke Tiep"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MachTomTatOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items",
+          "cursor_ke_tiep"
+        ],
+        "title": "FeedOut",
+        "type": "object"
+      },
+      "FigureOut": {
+        "description": "Một cặp trong dải số của mốc, vd `{label: \"GIÁ VÀO\", value: \"27.80\"}`.\n\nThuần hiển thị — server không validate ngữ nghĩa (PLAN 5.2).",
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "value"
+        ],
+        "title": "FigureOut",
+        "type": "object"
+      },
       "HealthOut": {
         "description": "Kết quả healthcheck. `db` = \"ok\" chỉ khi truy vấn thật xuống Postgres thành công.",
         "properties": {
@@ -19,6 +195,736 @@
         ],
         "title": "HealthOut",
         "type": "object"
+      },
+      "HoSoOut": {
+        "description": "Hồ sơ công khai `/u/<username>` — PLAN 5.9.\n\n**`machs` bị CẮT ở `?limit=` (mặc định 20, tối đa 50) và hồ sơ KHÔNG có cursor.**\nNgười có nhiều mạch hơn thế thì phần dôi ra không lấy tiếp được bằng đường nào — đừng\nđọc `machs` như \"toàn bộ mạch của người này\", và đừng suy `so_mach` từ `len(machs)`:\n`so_mach` đếm cả phần bị cắt.\n\nCảnh báo đó nằm ở docstring CLASS chứ không ở comment `#:` của trường là có lý do:\n`tests/test_hop_dong_openapi.py` chứng minh comment `#:` **không ra tới**\n`openapi.json`, nên chỉ docstring class mới tới được tay người dùng API.\n\n`so_mach`, `so_moc`, `so_binh_luan` đếm **nội dung đọc được**: nội dung đã xoá, bị mod\nẩn, hoặc nằm trong một mạch đã bị mod ẩn đều không tính.\n\n**`duoc_trich` KHÔNG cùng luật đó**, và khác biệt là chủ đích: nó soi gương đúng khối\ntrích trên thẻ mốc. Mạch bị mod ẩn, mốc nhận trích bị ẩn hoặc xoá, hay bình luận bị\n**mod ẩn** đều làm khối trích biến mất ⇒ không đếm. Nhưng tác giả **tự xoá** bình luận\nthì blockquote giữ nguyên body (PLAN 5.6, \"sổ không-xoá-được\" chống tác giả rút chữ)\n⇒ `duoc_trich` **không đổi**.",
+        "properties": {
+          "bio": {
+            "title": "Bio",
+            "type": "string"
+          },
+          "date_joined": {
+            "format": "date-time",
+            "title": "Date Joined",
+            "type": "string"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "duoc_trich": {
+            "title": "Duoc Trich",
+            "type": "integer"
+          },
+          "machs": {
+            "items": {
+              "$ref": "#/components/schemas/MachTomTatOut"
+            },
+            "title": "Machs",
+            "type": "array"
+          },
+          "so_binh_luan": {
+            "title": "So Binh Luan",
+            "type": "integer"
+          },
+          "so_mach": {
+            "title": "So Mach",
+            "type": "integer"
+          },
+          "so_moc": {
+            "title": "So Moc",
+            "type": "integer"
+          },
+          "username": {
+            "title": "Username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "username",
+          "display_name",
+          "bio",
+          "date_joined",
+          "so_mach",
+          "so_moc",
+          "so_binh_luan",
+          "duoc_trich",
+          "machs"
+        ],
+        "title": "HoSoOut",
+        "type": "object"
+      },
+      "KhanDaiOut": {
+        "description": "Khán đài: MỘT phòng chứa toàn bộ cây bình luận của mạch (PLAN mục 2, 5.3).\n\nPhân trang khác nhau theo `sort`, đúng PLAN 5.3:\n\n- `hay_nhat` — MỘT trang 50 thread gốc, \"xem thêm\" gọi lại bằng `?offset=`. Rank động\n  theo `now` nên trang sau có thể trôi nhẹ; đó là đánh đổi đã chốt. `cursor_ke_tiep`\n  luôn `null` ở sort này.\n- `moi_nhat` / `cu_nhat` — cursor keyset thật trên `(created_at, id)`.\n  `offset_ke_tiep` luôn `null` ở hai sort này.",
+        "properties": {
+          "cursor_ke_tiep": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cursor Ke Tiep"
+          },
+          "offset_ke_tiep": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offset Ke Tiep"
+          },
+          "sort": {
+            "enum": [
+              "hay_nhat",
+              "moi_nhat",
+              "cu_nhat"
+            ],
+            "title": "Sort",
+            "type": "string"
+          },
+          "threads": {
+            "items": {
+              "$ref": "#/components/schemas/BinhLuanOut"
+            },
+            "title": "Threads",
+            "type": "array"
+          },
+          "tong_thread": {
+            "title": "Tong Thread",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sort",
+          "tong_thread",
+          "threads",
+          "offset_ke_tiep",
+          "cursor_ke_tiep"
+        ],
+        "title": "KhanDaiOut",
+        "type": "object"
+      },
+      "LoiOut": {
+        "description": "`{detail, code}` — PLAN mục 7.",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          }
+        },
+        "required": [
+          "detail",
+          "code"
+        ],
+        "title": "LoiOut",
+        "type": "object"
+      },
+      "MachChiTietOut": {
+        "description": "Trang mạch: mạch + toàn bộ mốc + `face` server đã tính + spine (PLAN mục 7).\n\n**Response này KHÔNG chứa trường nào phụ thuộc người xem** và vì thế cache được\n(PLAN 8.4). Vote của tôi, đã theo chưa, đọc tới đâu — tất cả nằm ở\n`GET /machs/{id}/me`.\n\n`face` ở bản này tính THUẦN theo luật thời gian: mạch đang mở · chưa bị mod khoá ·\n`now − last_activity_at ≤ 72h`. Vế \"user đã follow hoặc từng bình luận\" của PLAN 5.5\n**chưa được áp** vì nó phụ thuộc người xem.\n\n`comment_count` là số bình luận ĐỌC ĐƯỢC, và `last_activity_at` có thể nhỏ hơn\n`last_entry_at` — xem `MachTomTatOut`.",
+        "properties": {
+          "author": {
+            "$ref": "#/components/schemas/NguoiDungTomTatOut"
+          },
+          "closed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed At"
+          },
+          "comment_count": {
+            "title": "Comment Count",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "entry_count": {
+            "title": "Entry Count",
+            "type": "integer"
+          },
+          "face": {
+            "enum": [
+              "bao",
+              "can"
+            ],
+            "title": "Face",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "ket_qua": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ket Qua"
+          },
+          "last_activity_at": {
+            "format": "date-time",
+            "title": "Last Activity At",
+            "type": "string"
+          },
+          "last_entry_at": {
+            "format": "date-time",
+            "title": "Last Entry At",
+            "type": "string"
+          },
+          "locked": {
+            "title": "Locked",
+            "type": "boolean"
+          },
+          "mocs": {
+            "items": {
+              "$ref": "#/components/schemas/MocOut"
+            },
+            "title": "Mocs",
+            "type": "array"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "spine": {
+            "items": {
+              "$ref": "#/components/schemas/SpineOut"
+            },
+            "title": "Spine",
+            "type": "array"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "sub": {
+            "$ref": "#/components/schemas/SubTomTatOut"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "title",
+          "sub",
+          "author",
+          "status",
+          "closed_at",
+          "ket_qua",
+          "locked",
+          "created_at",
+          "last_entry_at",
+          "last_activity_at",
+          "entry_count",
+          "comment_count",
+          "face",
+          "mocs",
+          "spine"
+        ],
+        "title": "MachChiTietOut",
+        "type": "object"
+      },
+      "MachTomTatOut": {
+        "description": "Một mạch ở mức thẻ feed / danh sách hồ sơ.\n\n**`comment_count` là số bình luận ĐỌC ĐƯỢC, không phải số dòng khán đài sẽ render.**\nBình luận đã xoá hoặc bị ẩn không được đếm, nhưng vẫn để lại bia mộ giữ chỗ khi chúng\ncòn reply — nên khán đài có thể hiện 24 dòng trong khi con số này nói 22. Đó là chủ\nđích, đừng \"sửa\" cho khớp.\n\n**`last_activity_at` có thể NHỎ HƠN `last_entry_at`.** Hai cột đo hai thứ khác nhau:\n`last_entry_at` đo cấu trúc (mọi mốc, kể cả mốc bị ẩn), `last_activity_at` đo nội\ndung đọc được. Hệ quả nhìn thấy được: một mạch đứng đầu feed \"Đang diễn ra\" mà mở ra\nlà mặt CẶN.",
+        "properties": {
+          "author": {
+            "$ref": "#/components/schemas/NguoiDungTomTatOut"
+          },
+          "comment_count": {
+            "title": "Comment Count",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "entry_count": {
+            "title": "Entry Count",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "ket_qua": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ket Qua"
+          },
+          "last_activity_at": {
+            "format": "date-time",
+            "title": "Last Activity At",
+            "type": "string"
+          },
+          "last_entry_at": {
+            "format": "date-time",
+            "title": "Last Entry At",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "sub": {
+            "$ref": "#/components/schemas/SubTomTatOut"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "title",
+          "sub",
+          "author",
+          "status",
+          "ket_qua",
+          "entry_count",
+          "comment_count",
+          "created_at",
+          "last_entry_at",
+          "last_activity_at"
+        ],
+        "title": "MachTomTatOut",
+        "type": "object"
+      },
+      "MocOut": {
+        "description": "Một mốc trong mạch. Bài gốc là `seq = 1`, không có ngoại lệ (PLAN mục 2).\n\nKhi `trang_thai != \"binh_thuong\"` thì đây là **bia mộ**: `body`, `loai`, `figures`,\n`question_for_crowd`, `edited_at` đều `null`, còn `edit_count` và `score` về `0` —\nsố phiếu của nội dung đã gỡ không được trả ra, cùng chuẩn với `BinhLuanOut`. `seq`,\n`occurred_at`, `so_binh_luan` và chỗ đứng trên spine vẫn còn: `seq` bất biến, giấu\nhẳn một ô là thủng dãy số, và ngăn kéo của bia mộ vẫn mở được (PLAN 5.2).",
+        "properties": {
+          "body": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Body"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "edit_count": {
+            "title": "Edit Count",
+            "type": "integer"
+          },
+          "edited_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Edited At"
+          },
+          "figures": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FigureOut"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Figures"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "loai": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Loai"
+          },
+          "occurred_at": {
+            "format": "date",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "question_for_crowd": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question For Crowd"
+          },
+          "score": {
+            "title": "Score",
+            "type": "integer"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "so_binh_luan": {
+            "title": "So Binh Luan",
+            "type": "integer"
+          },
+          "trang_thai": {
+            "enum": [
+              "binh_thuong",
+              "da_xoa",
+              "da_an"
+            ],
+            "title": "Trang Thai",
+            "type": "string"
+          },
+          "trich": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrichOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "seq",
+          "occurred_at",
+          "created_at",
+          "loai",
+          "body",
+          "question_for_crowd",
+          "figures",
+          "edited_at",
+          "edit_count",
+          "score",
+          "trang_thai",
+          "so_binh_luan",
+          "trich"
+        ],
+        "title": "MocOut",
+        "type": "object"
+      },
+      "MocRevisionOut": {
+        "description": "Một bản TRƯỚC của mốc — đủ cả 5 trường sửa được, cho UI diff (PLAN 5.2).\n\nCó `occurred_at` là bắt buộc: sửa lùi ngày sự việc mà không để vết là phá đúng giá\ntrị lõi của sản phẩm, nên diff phải hiện được cả thay đổi ngày.",
+        "properties": {
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "figures": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FigureOut"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Figures"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "loai": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Loai"
+          },
+          "occurred_at": {
+            "format": "date",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "question_for_crowd": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question For Crowd"
+          },
+          "revised_at": {
+            "format": "date-time",
+            "title": "Revised At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "body",
+          "figures",
+          "occurred_at",
+          "loai",
+          "question_for_crowd",
+          "revised_at"
+        ],
+        "title": "MocRevisionOut",
+        "type": "object"
+      },
+      "MocRevisionsOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MocRevisionOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "moc_id": {
+            "title": "Moc Id",
+            "type": "integer"
+          },
+          "moc_seq": {
+            "title": "Moc Seq",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "moc_id",
+          "moc_seq",
+          "items"
+        ],
+        "title": "MocRevisionsOut",
+        "type": "object"
+      },
+      "NganKeoOut": {
+        "description": "Lát cắt bình luận neo vào một mốc — PLAN 5.4.\n\nChứa các thread có bình luận **gốc** neo mốc này, **cả thread**, gồm reply viết ở bất\nkỳ thời điểm nào. Sắp cũ → mới và **không cho chỉnh** — ngăn kéo là cửa sổ, không\nphải phòng (luật 2).\n\nMốc chưa có bình luận nào trả `threads: []` và `so_binh_luan: 0`; UI **không** hiện\n\"💬 0\" mà hiện lời mời cùng `question_for_crowd` nếu có (luật 4).",
+        "properties": {
+          "moc_id": {
+            "title": "Moc Id",
+            "type": "integer"
+          },
+          "moc_seq": {
+            "title": "Moc Seq",
+            "type": "integer"
+          },
+          "question_for_crowd": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question For Crowd"
+          },
+          "so_binh_luan": {
+            "title": "So Binh Luan",
+            "type": "integer"
+          },
+          "threads": {
+            "items": {
+              "$ref": "#/components/schemas/BinhLuanOut"
+            },
+            "title": "Threads",
+            "type": "array"
+          }
+        },
+        "required": [
+          "moc_id",
+          "moc_seq",
+          "question_for_crowd",
+          "so_binh_luan",
+          "threads"
+        ],
+        "title": "NganKeoOut",
+        "type": "object"
+      },
+      "NguoiDungTomTatOut": {
+        "description": "Tác giả, ở mức đủ để render một dòng chữ ký.",
+        "properties": {
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "username": {
+            "title": "Username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "username",
+          "display_name"
+        ],
+        "title": "NguoiDungTomTatOut",
+        "type": "object"
+      },
+      "SpineOut": {
+        "description": "Một ô trên dải xương sống `①──②──…──◉⑨` (PLAN 9.2).\n\n`da_xoa` và `da_an` đều giữ chỗ: bất biến `entry_count == số ô trên spine` là thứ dải\ngập của mặt CẶN suy ra (PLAN 5.2, 5.5).",
+        "properties": {
+          "da_an": {
+            "title": "Da An",
+            "type": "boolean"
+          },
+          "da_xoa": {
+            "title": "Da Xoa",
+            "type": "boolean"
+          },
+          "occurred_at": {
+            "format": "date",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "so_binh_luan": {
+            "title": "So Binh Luan",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "seq",
+          "occurred_at",
+          "so_binh_luan",
+          "da_xoa",
+          "da_an"
+        ],
+        "title": "SpineOut",
+        "type": "object"
+      },
+      "SubTomTatOut": {
+        "properties": {
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "ten": {
+            "title": "Ten",
+            "type": "string"
+          }
+        },
+        "required": [
+          "slug",
+          "ten"
+        ],
+        "title": "SubTomTatOut",
+        "type": "object"
+      },
+      "TrichOut": {
+        "description": "Bình luận được chủ mạch trích vào mốc — \"trích vào sổ\" (PLAN 5.6).\n\nHai dấu thời gian đều có mặt vì rào 2 của PLAN 5.6 bắt blockquote hiện đủ cả hai\n(\"viết 10/06, trích 21/08\") — chống trích hậu nghiệm để sổ đọc như tiên tri.\n\n`trang_thai = \"da_xoa\"` nghĩa là người viết đã xoá bình luận gốc **sau khi** nó vào\nsổ; blockquote vẫn còn nguyên nội dung, vì sổ là \"không-xoá-được\" (PLAN 5.6). Bình\nluận bị **mod ẩn** thì cả khối trích biến mất khỏi response, không có trạng thái nào\nbiểu diễn nó.",
+        "properties": {
+          "anchor_moc_seq": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Anchor Moc Seq"
+          },
+          "author": {
+            "$ref": "#/components/schemas/NguoiDungTomTatOut"
+          },
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "comment_created_at": {
+            "format": "date-time",
+            "title": "Comment Created At",
+            "type": "string"
+          },
+          "comment_id": {
+            "title": "Comment Id",
+            "type": "integer"
+          },
+          "trang_thai": {
+            "enum": [
+              "binh_thuong",
+              "da_xoa",
+              "da_an"
+            ],
+            "title": "Trang Thai",
+            "type": "string"
+          },
+          "trich_created_at": {
+            "format": "date-time",
+            "title": "Trich Created At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "comment_id",
+          "author",
+          "body",
+          "trang_thai",
+          "comment_created_at",
+          "trich_created_at",
+          "anchor_moc_seq"
+        ],
+        "title": "TrichOut",
+        "type": "object"
       }
     }
   },
@@ -29,6 +935,178 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/feeds/dang-dien-ra": {
+      "get": {
+        "description": "Feed **Đang diễn ra**: mạch còn mở, mốc mới nhất trước (`last_entry_at` giảm dần).\n\nFeed đặc sản của gikky, **không phải** Hot: mốc mới không \"bump\" bài, nó chỉ cập nhật\nkhoá sort của riêng feed này.\n\n`last_entry_at` đo **cấu trúc** — mọi mốc đều tính, kể cả mốc bị mod ẩn. Vì thế một\nmạch có thể đứng đầu feed này mà mở ra là **mặt CẶN** (`face` tính theo\n`last_activity_at`, vốn chỉ đo nội dung đọc được). Đó là hành vi đúng theo luật đếm\nhiện hành, đã ghi ở PLAN mục 6 \"hệ quả cố ý 2\" — đừng chữa bằng cách đổi khoá sort.\n\nTham số như `GET /feeds/moi`.",
+        "operationId": "liet_ke_feed_dang_dien_ra",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sub",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sub"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "Feed Dang Dien Ra",
+        "tags": [
+          "feed"
+        ]
+      }
+    },
+    "/api/v1/feeds/moi": {
+      "get": {
+        "description": "Feed **Mới**: mọi bài, mới đăng trước (`created_at` giảm dần).\n\n`?sub=<slug>` lọc theo chuyên mục; sub không tồn tại trả 404 `sub_khong_ton_tai`.\n`?cursor=` là cursor keyset lấy từ `cursor_ke_tiep` của trang trước; `null` là hết.\n`?limit=` tối đa 50.\n\nMạch bị mod ẩn không xuất hiện. Mạch đã đóng sổ **vẫn xuất hiện** — feed này sắp theo\nlúc bài ra đời, không theo trạng thái sổ.",
+        "operationId": "liet_ke_feed_moi",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "sub",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sub"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "Feed Moi",
+        "tags": [
+          "feed"
+        ]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "description": "`SELECT 1` thật xuống DB.\n\nDB sống → 200 `{\"status\":\"ok\",\"db\":\"ok\"}`; DB hỏng hoặc trả kết quả sai → 503\n`{\"status\":\"fail\",\"db\":\"fail\"}`.",
@@ -59,6 +1137,297 @@
         "summary": "Health",
         "tags": [
           "health"
+        ]
+      }
+    },
+    "/api/v1/machs/{mach_id}": {
+      "get": {
+        "description": "Trang mạch: thông tin mạch + **toàn bộ** mốc + `face` + spine.\n\n`id` là khoá bền của mạch (PLAN 5.9). Endpoint **không nhận slug** — URL\n`/m/<slug>-<id>` có slug cũ hay slug sai vẫn ra đúng mạch này, còn chuyện redirect\n301 về slug chuẩn là việc của tầng web, dựa vào trường `slug` trong response.\n\nResponse **không chứa trường nào phụ thuộc người xem** nên cache được (PLAN 8.4);\nvote của tôi / đã theo chưa / đọc tới đâu nằm ở `GET /machs/{id}/me` (Phase 3).\n\nMốc đã xoá hoặc bị mod ẩn vẫn có mặt trong `mocs` và `spine` dưới dạng **bia mộ giữ\nchỗ**, không kèm nội dung: `seq` bất biến, giấu hẳn một ô là thủng dãy số và phá bất\nbiến `entry_count == số ô trên spine` (PLAN 5.2).",
+        "operationId": "xem_mach",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mach_id",
+            "required": true,
+            "schema": {
+              "title": "Mach Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MachChiTietOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "Xem Mach",
+        "tags": [
+          "mach"
+        ]
+      }
+    },
+    "/api/v1/machs/{mach_id}/comments": {
+      "get": {
+        "description": "Khán đài: **cây bình luận đã dựng sẵn**, server sắp xếp (PLAN mục 7).\n\n`?sort=hay_nhat|moi_nhat|cu_nhat`, mặc định `hay_nhat`. Sort không thuộc ba giá trị\nđó trả 400 `sort_khong_hop_le` — API **không bao giờ tự đổi sort ngầm** dưới tay\nngười dùng (PLAN nguyên tắc 7).\n\n- `hay_nhat`: wilson (z = 1.281) cộng hệ số tươi 0.15 cho bình luận **gốc** ra đời\n  sau mốc mới nhất và còn trong 48 giờ đầu đời của nó. Sibling trong thread sắp theo\n  wilson **thuần** — hệ số tươi không áp cho reply. Phân trang bằng `?offset=`,\n  `?limit=` tối đa 50.\n- `moi_nhat` / `cu_nhat`: `?cursor=` keyset trên `(created_at, id)`.\n\n**Hai kiểu phân trang KHÔNG dùng lẫn nhau, dùng nhầm trả 400** với\n`code = \"tham_so_khong_hop_le\"`: `?cursor=` kèm `sort=hay_nhat`, hoặc `?offset=` khác\n0 kèm hai sort thời gian. Nuốt im lặng tham số sai chỗ là hành vi mà chính\n`api/phan_trang.py` cấm cho cursor rác: người ở trang 3 của `moi_nhat` bấm đổi sang\n`hay_nhat`, router giữ nguyên query string, API trả **trang 1** kèm HTTP 200 — UI\ntưởng mình vẫn ở trang 3 và append tiếp ⇒ lặp dòng hoặc mất dòng, không lần ra được.\n\nBình luận bị mod ẩn, hoặc tác giả tự xoá, chỉ còn lại **bia mộ giữ chỗ** khi nó còn\ncon sống sót trong `replies` — và riêng ca tác giả tự xoá thì cả khi bình luận **đã\ntừng được trích vào sổ**, kể cả trích đã gỡ (PLAN 5.3). Không dính vế nào thì nó biến\nmất hẳn. \"Con sống sót\" không có nghĩa \"con đọc được\": con ấy có thể tự nó là bia mộ,\nnên một thread trong `threads` có thể **toàn bia mộ, không một chữ nội dung nào**, mà\nvẫn chiếm một chỗ trong `tong_thread` và một slot của trang này.\nBia mộ không được tính vào `comment_count` của mạch, nên số bình luận **đọc được** có\nthể nhỏ hơn số dòng trả về.",
+        "operationId": "liet_ke_binh_luan_mach",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mach_id",
+            "required": true,
+            "schema": {
+              "title": "Mach Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "hay_nhat",
+              "title": "Sort",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KhanDaiOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "Liet Ke Binh Luan Mach",
+        "tags": [
+          "binh-luan"
+        ]
+      }
+    },
+    "/api/v1/mocs/{moc_id}/comments": {
+      "get": {
+        "description": "Ngăn kéo của một mốc: lát cắt bình luận neo vào mốc đó, **cũ → mới**.\n\nLấy các thread có bình luận **gốc** mang `anchor_moc_seq` bằng `seq` của mốc này, và\nlấy **cả thread** — reply viết ở thời điểm mốc nào cũng thuộc về thread của gốc\n(PLAN nguyên tắc 6). Nhờ vậy ngăn kéo của mốc 2 kể được cả lời tiên tri lẫn cái kết.\n\nKhông có tham số sắp xếp: ngăn kéo là cửa sổ chiếu vào khán đài, không phải một\nphòng riêng (PLAN 5.4 luật 2). Anchor dùng để CHIẾU, không bao giờ để chia khán đài\nthành nhiều phòng (PLAN nguyên tắc 4).\n\nMốc chưa có bình luận nào trả `threads: []`, `so_binh_luan: 0` cùng\n`question_for_crowd` nếu mốc có câu mồi — UI hiện lời mời chứ **không** hiện \"💬 0\"\n(PLAN 5.4 luật 4, nguyên tắc 9).\n\nNgăn kéo của một mốc đã thành **bia mộ vẫn mở được** (bình luận không biến mất theo\nmốc), nhưng `question_for_crowd` khi đó là `null`: đó là nội dung của mốc, mà nội\ndung của bia mộ thì không trả ra.",
+        "operationId": "liet_ke_binh_luan_moc",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "moc_id",
+            "required": true,
+            "schema": {
+              "title": "Moc Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NganKeoOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "Liet Ke Binh Luan Moc",
+        "tags": [
+          "binh-luan"
+        ]
+      }
+    },
+    "/api/v1/mocs/{moc_id}/revisions": {
+      "get": {
+        "description": "Các bản TRƯỚC của một mốc, cho UI diff \"đã sửa N lần\" (PLAN 5.2).\n\nMỗi bản lưu **đủ cả 5 trường sửa được** (`body`, `figures`, `occurred_at`, `loai`,\n`question_for_crowd`), nên diff hiện được cả thay đổi ngày sự việc (\"10/06 → 04/06\")\n— sửa lùi `occurred_at` mà không để vết là phá đúng giá trị lõi của sản phẩm.\n\nMốc **đã xoá hoặc bị mod ẩn trả 404**: các bản cũ chứa nguyên văn nội dung, mở đường\nnày ra là gỡ mốc ở cửa trước còn đọc được ở cửa sau.\n\nMốc chưa sửa lần nào trả `items: []`, không phải 404.",
+        "operationId": "liet_ke_ban_cu_moc",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "moc_id",
+            "required": true,
+            "schema": {
+              "title": "Moc Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MocRevisionsOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "Liet Ke Ban Cu Moc",
+        "tags": [
+          "moc"
+        ]
+      }
+    },
+    "/api/v1/users/{username}": {
+      "get": {
+        "description": "Hồ sơ công khai: mạch của họ, \"Được trích ×N\", tổng mốc, tổng bình luận.\n\nBa con số đếm **nội dung đọc được**: mốc/bình luận đã xoá hoặc bị ẩn không tính, và\nnội dung nằm trong một mạch đã bị mod ẩn cũng không tính.\n\n`duoc_trich` đếm theo **số chủ mạch khác nhau** đã trích bình luận của người này, chỉ\ntính trích còn hiệu lực — rào 3 của PLAN 5.6, chống hai nick trích qua lại để tự nâng\nchỉ số cho nhau. Nó **soi gương đúng cái blockquote** trên thẻ mốc: đếm khi khối trích\ncòn hiện, không đếm khi khối trích biến mất. Mạch bị mod ẩn, mốc nhận trích bị ẩn hoặc\nxoá, hay chính bình luận bị **mod ẩn** đều làm khối trích biến mất ⇒ không đếm. Thiếu\nbốn bộ lọc ấy thì mod ẩn cả một mạch làm `so_mach`/`so_moc`/`so_binh_luan` về 0 trong\nkhi \"Được trích ×1\" vẫn sáng trên hồ sơ — đúng cái \"máy in địa vị\" mà rào 3 dựng lên\nđể chặn.\n\n**Tác giả TỰ xoá bình luận thì `duoc_trich` KHÔNG tụt**, và đó là chỗ con số này cố ý\nlệch khỏi ba con số trên. `trinh_bay.trich_ra` giữ nguyên body của blockquote trong ca\nấy, vì PLAN 5.6 dựng \"cuốn sổ không-xoá-được\" để chống *tác giả* rút chữ, không phải\nđể chống *mod* gỡ nội dung. Đếm tụt ở đây là hai cửa nói hai chuyện về cùng một sự\nkiện: khối trích còn nguyên chữ trên trang mạch mà chỉ số trên hồ sơ đã giảm thì không\ncon số nào giải thích được nữa.\n\n`?limit=` cắt số mạch trả kèm, mặc định 20, tối đa 50. Hồ sơ **chưa có cursor** ở\nbản này: quá `limit` mạch thì phần dôi ra không có đường nào lấy tiếp.\n\nEndpoint này **không** trả email, trạng thái ban hay bất cứ thứ gì chỉ chủ tài khoản\nđược thấy.",
+        "operationId": "xem_ho_so",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "required": true,
+            "schema": {
+              "title": "Username",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HoSoOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "Xem Ho So",
+        "tags": [
+          "nguoi-dung"
         ]
       }
     }
