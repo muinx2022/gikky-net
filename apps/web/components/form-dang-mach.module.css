@@ -1,0 +1,119 @@
+/* Trang `/dang-mach`. Chất liệu "sổ nghiêm" của PLAN 9.1 — cùng khuôn với năm trang tài
+   khoản (`form-tai-khoan.module.css`), rộng hơn vì thân mốc là một khối văn bản dài. */
+
+.the {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 22px 22px 18px;
+  background: var(--surface);
+}
+
+.o {
+  display: block;
+  margin-bottom: 14px;
+}
+
+.nhan {
+  display: block;
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-bottom: 5px;
+}
+
+.dong,
+.chon {
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+}
+
+.dong:focus-visible,
+.chon:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -1px;
+}
+
+.chan {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.nhac {
+  flex: 1 1 240px;
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ink-3);
+}
+
+.gui {
+  margin-left: auto;
+  padding: 10px 20px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.gui:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.gui:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.loi {
+  margin: 0 0 15px;
+  padding: 9px 13px;
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  background: var(--inset);
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.moi {
+  margin: 0;
+  padding: 16px 18px;
+  border: 1px dashed var(--line-2);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.moi a {
+  color: var(--accent);
+}
+
+.moi a:hover {
+  text-decoration: underline;
+}
+
+/* Ô giữ chỗ trong lúc `GET /me` chưa trả lời. Có viền và có chữ, không phải khoảng trắng:
+   trên trang này form LÀ nội dung, nên một nhịp trắng trơn đọc ra là trang hỏng. */
+.cho {
+  margin: 0;
+  padding: 16px 18px;
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+  color: var(--ink-3);
+  font-size: 14px;
+}

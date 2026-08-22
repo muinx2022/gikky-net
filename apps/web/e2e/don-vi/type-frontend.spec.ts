@@ -348,7 +348,11 @@ test("luật trên có quét trúng lời gọi THẬT ở MỌI cửa (không q
     // --- Phase 2: đường GHI, chạy ở trình duyệt ---
     "components/composer.tsx",
     "components/cot-vote.tsx",
+    // --- Mảng B: FORM GHI (đăng bài · nối mốc · sửa/xoá mốc · đóng sổ/mở lại) ---
+    "components/form-dang-mach.tsx",
     "components/hanh-dong-binh-luan.tsx",
+    "components/hanh-dong-moc.tsx",
+    "components/khoi-chu-mach.tsx",
     "components/phien.tsx",
     "lib/api.ts",
   ]);

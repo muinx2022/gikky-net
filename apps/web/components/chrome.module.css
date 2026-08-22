@@ -46,6 +46,15 @@
   color: var(--accent);
 }
 
+/* Góc phải: nút "Đăng bài" + thanh tài khoản. Xem chú thích trong `chrome.tsx` để biết vì
+   sao hai thứ này phải nằm chung một hộp thay vì đứng rời trên `.trong`. */
+.phai {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 @media (max-width: 640px) {
   .trong {
     padding: 10px 15px;

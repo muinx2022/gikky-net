@@ -1,0 +1,129 @@
+/* Khu của chủ mạch — chất liệu "sổ nghiêm" của PLAN 9.1, nhưng nền lõm để nó đọc ra là
+   *bàn làm việc của tôi* chứ không phải một mốc nữa trên nhật ký.
+
+   ⚠ Không `--stamp`, không `--gain`/`--loss` (PLAN 9.1 giao hai hệ ấy cho việc khác). */
+
+.khoi {
+  margin: 18px 0 6px;
+  padding: 14px 16px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--inset);
+}
+
+.nhan_khoi {
+  margin: 0 0 10px;
+  font-family: var(--f-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.cau {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--ink-2);
+}
+
+.hang {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+.chinh {
+  padding: 8px 16px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chinh:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.chinh:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.nhe {
+  padding: 8px 14px;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.nhe:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.o {
+  display: block;
+  margin-bottom: 12px;
+}
+
+.nhan {
+  display: block;
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-bottom: 5px;
+}
+
+.tuy_chon {
+  font-family: var(--f-mono);
+  font-size: 10.5px;
+  color: var(--ink-3);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 1px 6px;
+  margin-left: 5px;
+}
+
+.dong_o {
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+}
+
+.dong_o:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -1px;
+}
+
+.goi_y {
+  display: block;
+  font-size: 11.5px;
+  color: var(--ink-3);
+  margin-top: 4px;
+  line-height: 1.55;
+}
+
+.loi {
+  margin: 0 0 11px;
+  padding: 9px 12px;
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.6;
+}

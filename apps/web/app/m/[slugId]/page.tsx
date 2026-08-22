@@ -13,6 +13,7 @@ import { BaoCursorHong } from "@/components/bao-cursor-hong";
 import { DaiGapBung } from "@/components/dai-gap";
 import { JsonLd } from "@/components/json-ld";
 import { KhanDai, LoiMoiBungKhanDai } from "@/components/khan-dai";
+import { KhoiChuMach } from "@/components/khoi-chu-mach";
 import { MachProvider } from "@/components/mach-ngu-canh";
 import { NganKeoProvider } from "@/components/ngan-keo";
 import { TheMoc } from "@/components/the-moc";
@@ -302,6 +303,19 @@ export default async function TrangMach({
             )}
           </ol>
         </NganKeoProvider>
+
+        {/* Khu của chủ mạch — nối mốc · đóng sổ · mở lại (PLAN 5.1). Đặt NGAY DƯỚI nhật ký
+            và TRÊN khán đài, đúng thứ tự việc: mốc mới nối vào cuối cuốn sổ, không phải
+            vào cuối trang. Component tự quyết có hiện hay không (chỉ chủ mạch), nên ở đây
+            không có phép kiểm nào — xem docstring của nó. */}
+        <KhoiChuMach
+          machId={mach.id}
+          chuMach={mach.author.username}
+          khoa={mach.locked}
+          dong={mach.status === "closed"}
+          closedAt={mach.closed_at}
+          soMoc={mach.entry_count}
+        />
 
         {cursor_hong && <BaoCursorHong />}
 

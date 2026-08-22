@@ -1,0 +1,32 @@
+.nut {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 13px;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.nut:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+@media (max-width: 520px) {
+  /* Trên màn hình hẹp giữ lại dấu ＋, bỏ chữ: thanh trên cùng đã có bốn thứ tranh chỗ,
+     và cái nút này không được đẩy tên người dùng ra khỏi màn hình. */
+  .nut {
+    padding: 6px 9px;
+    font-size: 0;
+    gap: 0;
+  }
+
+  .nut > span {
+    font-size: 15px;
+  }
+}

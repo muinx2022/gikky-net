@@ -7,6 +7,7 @@ import { BinhLuan, DanhSachBinhLuan } from "./binh-luan";
 import { Composer } from "./composer";
 import { SoLaiLo } from "./con-so";
 import { CotVote } from "./cot-vote";
+import { HanhDongMoc } from "./hanh-dong-moc";
 import { KhoiTrich } from "./khoi-trich";
 import { KhungNganKeo, NutNganKeo } from "./ngan-keo";
 import css from "./the-moc.module.css";
@@ -149,6 +150,11 @@ export function TheMoc({
               hienSoDem={hienSoDem}
             />
           )}
+          {/* Menu `⋯` của TÁC GIẢ — sửa / xoá mốc (PLAN 5.2). Nó tự quyết có hiện hay
+              không (chủ mạch? mạch bị khoá? bia mộ?), nên chỗ này không có điều kiện nào:
+              một phép kiểm quyền chép ra hai chỗ là chỗ thứ hai sẽ quên `khoa`.
+              Hiện cả trên bài thường (`laMach === false`) — bài một mốc vẫn sửa được. */}
+          <HanhDongMoc moc={moc} />
         </div>
 
         {laMach && (

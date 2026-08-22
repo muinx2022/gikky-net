@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import css from "./chrome.module.css";
+import { NutDangMach } from "./nut-dang-mach";
 import { ThanhTaiKhoan } from "./thanh-tai-khoan";
 
 /** Thanh trên cùng. Cố tình tối giản: 1c chưa có auth (Phase 2), nên không có ô đăng
@@ -34,11 +35,19 @@ export function Chrome() {
           <Link href="/s/crypto">Crypto</Link>
           <Link href="/luat">Luật</Link>
         </nav>
-        {/* Phase 2. `ThanhTaiKhoan` là **client component** và nó hỏi `GET /me` ở trình
-            duyệt — đó là điều kiện để `/luat` vẫn là route TĨNH (xem ghi chú nợ ở trên,
-            và docstring `components/phien.tsx`). Một lời gọi API ở phía server tại đây
-            làm hỏng đúng cái đường thoát mà `error.tsx` dựa vào. */}
-        <ThanhTaiKhoan />
+        {/* Phase 2. Cả hai là **client component** và chúng hỏi `GET /me` ở trình duyệt —
+            đó là điều kiện để `/luat` vẫn là route TĨNH (xem ghi chú nợ ở trên, và
+            docstring `components/phien.tsx`). Một lời gọi API ở phía server tại đây làm
+            hỏng đúng cái đường thoát mà `error.tsx` dựa vào.
+
+            Bọc trong một hộp riêng thay vì để hai phần tử rời: `ThanhTaiKhoan` mang sẵn
+            `margin-left: auto`, và hai `auto` cùng hàng thì flexbox **chia đôi** khoảng
+            trống — nút "Đăng bài" trôi ra giữa thanh. Trong hộp này nó không còn khoảng
+            trống nào để chia. */}
+        <div className={css.phai}>
+          <NutDangMach />
+          <ThanhTaiKhoan />
+        </div>
       </div>
     </header>
   );

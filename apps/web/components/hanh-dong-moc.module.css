@@ -1,0 +1,138 @@
+/* Menu `⋯` trên thẻ mốc. Cùng hình dạng với `hanh-dong-binh-luan.module.css` — hai menu
+   trông khác nhau trên cùng một trang là hai menu người dùng phải học hai lần — nhưng form
+   sửa thì mang chất liệu "sổ nghiêm" của PLAN 9.1 (viền cứng, nền surface), vì cái nó sửa
+   là một trang sổ chứ không phải một lời tán gẫu. */
+
+.khung {
+  display: contents;
+}
+
+.menu {
+  position: relative;
+}
+
+.menu > summary {
+  list-style: none;
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: var(--ink-3);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.menu > summary:hover {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.hop {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 128px;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 4px;
+  box-shadow: 0 8px 22px rgb(0 0 0 / 12%);
+  z-index: 15;
+}
+
+.hop > button {
+  text-align: left;
+  padding: 6px 9px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.hop > button:hover:not(:disabled) {
+  background: var(--inset);
+  color: var(--accent);
+}
+
+.sua {
+  /* `.khung` là `display: contents`, nên khối này là một flex item của `.chan` trên thẻ
+     mốc (`flex-wrap: wrap`). `flex: 1 0 100%` ép nó xuống dòng riêng, không chen vào
+     hàng nút. */
+  flex: 1 0 100%;
+  margin-top: 10px;
+  padding: 13px 14px 11px;
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  background: var(--surface);
+}
+
+/* Câu cảnh báo "sẽ để lại dấu đã sửa". Nét đứt + nền lõm, KHÔNG màu cảnh báo: PLAN 9.1
+   khoá xanh/đỏ cho con số lãi lỗ và hoàng thổ cho con dấu. Đây là lời dặn, không phải dấu. */
+.nhac {
+  margin: 0 0 12px;
+  padding: 8px 11px;
+  border: 1px dashed var(--line-2);
+  border-radius: 4px;
+  background: var(--inset);
+  color: var(--ink-2);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.chan {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gui {
+  margin-left: auto;
+  padding: 7px 16px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.gui:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.nhe {
+  padding: 7px 13px;
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.nhe:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.loi {
+  flex: 1 0 100%;
+  margin: 6px 0 0;
+  padding: 6px 10px;
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  background: var(--inset);
+  color: var(--ink);
+  font-size: 12.5px;
+}

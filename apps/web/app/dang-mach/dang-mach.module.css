@@ -1,0 +1,19 @@
+.khung {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 36px 18px 72px;
+}
+
+.tieu_de {
+  font-family: var(--f-display);
+  font-size: 28px;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.lede {
+  margin: 0 0 22px;
+  color: var(--ink-2);
+  font-size: 14px;
+  line-height: 1.7;
+}
