@@ -7,25 +7,27 @@ Module này lo **nội dung** và **luật thời gian**. Việc gửi nằm ở
 `core/management/commands/gui_digest.py`; nó chỉ gọi `django.core.mail`, nên backend nào
 đang cấu hình thì đi đường đó (xem `EMAIL_BACKEND` trong `config/settings.py`).
 
-## Chỗ CẮM của Phase 3 — đọc trước khi sửa
+## Chỗ cắm của Phase 3 — ĐÃ CẮM (2026-08-23)
 
-Danh sách người nhận cần trả lời câu *"ai đang theo mạch nào"*, và bảng `Follow` là việc
-của **Phase 3** (PLAN 5.7). Nó chưa tồn tại. Hai cách xử, và cách đã chọn là cách thứ hai:
+Danh sách người nhận cần trả lời câu *"ai đang theo mạch nào"*. Bảng `Follow` thuộc Phase
+3 (PLAN 5.7), nên Mảng D đã để `nguoi_nhan_digest()` làm **một cửa duy nhất trả rỗng**
+thay vì bịa sẵn một model — toàn bộ đường đi phía sau nó (gom diễn biến, dựng nội dung,
+gửi) là code THẬT, chạy thật, có bài đo thật với danh sách người nhận tự dựng.
 
-1. bịa sẵn một model `Follow` ở đây để "chuẩn bị" — sai, vì Phase 3 sẽ khai nó theo nhu
-   cầu thật của notification, và một bảng bịa trước sẽ hoặc bị bỏ đi, hoặc tệ hơn, được
-   giữ lại vì "đã có rồi";
-2. **để `nguoi_nhan_digest()` là một cửa duy nhất, hôm nay trả rỗng.** Toàn bộ đường đi
-   phía sau nó — gom diễn biến, dựng nội dung, gửi — là code THẬT, chạy thật, có bài đo
-   thật (bài đo tự dựng danh sách người nhận). Phase 3 chỉ phải sửa đúng một hàm.
+Phase 3 vì thế chỉ phải sửa **đúng một hàm**, và không dòng nào khác của module này đổi.
+Ba luật mà Mảng D ghi sẵn ở docstring hàm đó (opt-in · còn hoạt động · không gửi cho chính
+tác giả) đều được giữ nguyên chữ; luật thứ ba rút gọn được thành một điều kiện chính xác
+chứ không phải xấp xỉ — lý do ở ngay tại chỗ.
 
-Nói thẳng cái giá của cách 2: **trên máy này lệnh `gui_digest` luôn gửi 0 email**, vì
-không có người nhận nào. Đừng đọc "0 email, exit 0" thành "digest chạy tốt".
+Cái **chưa** đo được, đừng đọc mạnh hơn: máy dev không có SMTP nên `EMAIL_BACKEND` là
+`filebased` (thư ra `api/.mail/`). "Dựng nội dung + giao cho backend" là đo được; "SMTP
+nhận và chuyển thư" thì không.
 """
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
+from django.db import models
 from django.db.models import QuerySet
 
 from core.models import Mach, Moc, User
@@ -68,24 +70,56 @@ class NguoiNhan:
 
 
 def nguoi_nhan_digest() -> list[NguoiNhan]:
-    """Ai nhận digest, và họ theo mạch nào.
+    """Ai nhận digest, và họ theo mạch nào. **Đã cắm ở Phase 3** (trước đó trả rỗng).
 
-    **HÔM NAY TRẢ RỖNG — đây là chỗ cắm của Phase 3**, không phải một hàm chưa viết xong.
-    Bảng `Follow` (PLAN 5.7) và cờ opt-in trên `User` đều thuộc Phase 3; khi có chúng,
-    thân hàm này thành một truy vấn duy nhất, đại ý:
+    Bảng `Follow` (PLAN 5.7) và cờ `User.nhan_digest` nay đã có, nên hàm là một truy vấn.
+    Mọi thứ phía sau — `gom_dien_bien`, `dung_digest`, lệnh `gui_digest` — không phải sửa
+    một dòng nào: đó là cả điểm của cách để một cửa duy nhất.
 
-        Follow.objects.filter(user__nhan_digest=True, user__is_active=True)
-            .values_list("user", "mach")  →  gom theo user
+    **Ba luật, và không luật nào suy ra được từ chữ ký hàm** — đó là lý do chúng được ghi
+    ra ở đây từ lúc hàm còn trả rỗng:
 
-    Mọi thứ phía sau — `gom_dien_bien`, `dung_digest`, lệnh `gui_digest` — đã chạy thật
-    và có bài đo thật với danh sách người nhận tự dựng. Sửa đúng hàm này là xong.
+    1. **chỉ user đã opt-in.** PLAN 5.8 nói rõ *"tuỳ chọn opt-in"*, và `User.nhan_digest`
+       mặc định `False`. Đảo mặc định là biến mọi tài khoản đã có thành người đăng ký mà
+       không ai bấm gì;
+    2. **chỉ user còn hoạt động.** `is_active=False` là cách gikky cài "xoá tài khoản
+       GDPR-lite" (`core/models/nguoi_dung.py`) — gửi thư tuần cho một tài khoản người ta
+       đã rời đi là chuyện tệ hơn hẳn một dòng dữ liệu thừa. Kèm `email` không rỗng: không
+       có địa chỉ thì không có gì để gửi, và một `NguoiNhan` như thế chỉ làm lệnh
+       `gui_digest` đếm nhầm số thư nó tưởng đã gửi;
+    3. **không gửi cho chính tác giả mạch.** Câu gốc của luật này là *"không gửi những mạch
+       mà diễn biến duy nhất là mốc do chính họ vừa viết"* — và trên gikky nó rút gọn được
+       thành một điều kiện CHÍNH XÁC, không phải xấp xỉ: chỉ tác giả mới nối được mốc
+       (`api/machs.py::noi_moc`, 403 `khong_phai_chu` cho người khác), nên **mọi** diễn
+       biến của một mạch đều do tác giả nó viết. Vì thế `exclude(mach__author=...)` phủ
+       đúng luật, không hơn không kém. Nếu đồng tác giả mở ra ở phase sau thì câu rút gọn
+       này hết đúng và phải quay lại lọc ở tầng `gom_dien_bien`.
 
-    ⚠ Ba luật phải giữ khi cắm vào, vì không luật nào trong số đó suy ra được từ chữ ký:
-    chỉ user đã **opt-in** (PLAN 5.8 nói rõ "tuỳ chọn opt-in"), chỉ user còn **hoạt
-    động**, và **không gửi cho chính tác giả** những mạch mà diễn biến duy nhất là mốc
-    do chính họ vừa viết.
+    Sắp theo `user_id` rồi `mach_id` để lệnh gọi có thứ tự ổn định giữa hai lần chạy —
+    bài đo đọc `mach_ids` theo vị trí, và một `set` không thứ tự ở đây làm chúng chớp nhoáng.
     """
-    return []
+    from core.models import Follow
+
+    theo_user: dict[int, list[int]] = {}
+    nguoi: dict[int, User] = {}
+    hang = (
+        Follow.objects.filter(
+            user__nhan_digest=True,
+            user__is_active=True,
+        )
+        .exclude(user__email="")
+        .exclude(mach__author_id=models.F("user_id"))
+        .exclude(mach__hidden_at__isnull=False)
+        .select_related("user")
+        .order_by("user_id", "mach_id")
+    )
+    for f in hang:
+        theo_user.setdefault(f.user_id, []).append(f.mach_id)
+        nguoi[f.user_id] = f.user
+    return [
+        NguoiNhan(user=nguoi[uid], mach_ids=tuple(ids))
+        for uid, ids in theo_user.items()
+    ]
 
 
 @dataclass(frozen=True)

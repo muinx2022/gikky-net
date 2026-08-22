@@ -4,8 +4,12 @@ Phase 2 thêm `PATCH /mocs/{id}` và `DELETE /mocs/{id}`. Luật quyền: **ch�
 chính mốc đó** — xem docstring từng endpoint.
 """
 
+from datetime import timedelta
+
 from django.core.exceptions import ValidationError as LoiModel
-from ninja import Router
+from django.db import IntegrityError, transaction
+from django.utils import timezone
+from ninja import Router, Status
 
 from core.doc_noi_dung import (
     dem_binh_luan_theo_moc,
@@ -15,12 +19,15 @@ from core.doc_noi_dung import (
     nap_binh_luan,
     tap_tung_duoc_trich,
 )
-from core.ghi import sua_moc, xoa_moc
+from core.ghi import go_trich, sua_moc, trich_vao_so, xoa_moc
+from core.models.binh_luan import Comment
 from core.models.moc import Moc, MocRevision
 from core.models.tuong_tac import Trich
+from core.revalidate import lam_moi_mach
+from core.thong_bao import bao_duoc_trich
 
 from api.ghi_chung import doi_con_song, kiem_occurred_at, nap_moc
-from api.loi import LoiOut, khong_tim_thay
+from api.loi import LoiOut, khong_tim_thay, loi
 from api.quyen import (
     DU_LIEU_KHONG_HOP_LE,
     LoiGhi,
@@ -28,8 +35,8 @@ from api.quyen import (
     doi_chu_so_huu,
     doi_mach_tuong_tac_duoc,
 )
-from api.schemas import MocOut, MocRevisionsOut, NganKeoOut
-from api.schemas_ghi import MocSuaIn
+from api.schemas import MocOut, MocRevisionsOut, NganKeoOut, TrichKetQuaOut
+from api.schemas_ghi import MocSuaIn, TrichIn
 from api.trinh_bay import moc_ra, nut_ra, revision_ra
 
 router = Router()
@@ -188,6 +195,7 @@ def sua_moc_api(request, moc_id: int, du_lieu: MocSuaIn):
         moc = sua_moc(moc=moc, thay_doi=thay_doi)
     except LoiModel as e:
         raise LoiGhi(400, DU_LIEU_KHONG_HOP_LE, "; ".join(e.messages)) from e
+    lam_moi_mach(moc.mach)
     return _moc_ra_day_du(moc)
 
 
@@ -216,4 +224,180 @@ def xoa_moc_api(request, moc_id: int):
     doi_mach_tuong_tac_duoc(moc.mach)
     doi_con_song(moc, "Mốc")
     moc = xoa_moc(moc=moc)
+    lam_moi_mach(moc.mach)
     return _moc_ra_day_du(moc)
+
+
+# =============================================================================
+# TRÍCH VÀO SỔ — PLAN 5.6, Phase 3
+# =============================================================================
+#
+# Bốn rào của PLAN 5.6 nằm ở BỐN TẦNG khác nhau, và biết rào nào ở đâu là điều kiện để
+# không ai "củng cố" nhầm chỗ:
+#
+#  1. **tối đa 1 trích đang hiệu lực mỗi mốc** — partial unique
+#     `UNIQUE (moc) WHERE removed_at IS NULL` ở tầng DB. Câu `exists()` dưới đây là để
+#     trả 409 cho tử tế, KHÔNG phải là hàng rào: kiểm-rồi-ghi thua một cú double-click.
+#  2. **blockquote kèm HAI dấu thời gian** — `api/schemas.py::TrichOut`
+#     (`comment_created_at` + `trich_created_at`), đã có từ 1b.
+#  3. **`duoc_trich` đếm theo số tác giả KHÁC NHAU, không tính tự trích** —
+#     `api/users.py`, đã có. Đường ghi ở đây **không được phá nó**, và cách nó không phá là
+#     không đụng gì tới chỉ số ấy: chỉ số được tính lại từ bảng `Trich` mỗi lần đọc hồ sơ.
+#  4. **render tách bạch khỏi thân mốc** — `MocOut.trich` là một trường RIÊNG, không phải
+#     chữ nối vào `body`. Đó là lý do hai endpoint dưới đây trả về cả thẻ mốc.
+#
+# Rào duy nhất đường ghi này tự cài là rào 1. Ba rào kia đã đứng sẵn; việc của lượt này là
+# không dựng một cửa đi vòng qua chúng.
+
+#: Đã có một trích đang hiệu lực trên mốc này (rào 1 của PLAN 5.6). 409.
+DA_CO_TRICH = "da_co_trich"
+#: Quá 24 giờ kể từ lúc trích ⇒ không gỡ được nữa (PLAN 5.6 rào 1). 409.
+HET_HAN_GO_TRICH = "het_han_go_trich"
+#: Mốc này chưa có trích nào để gỡ. 404.
+CHUA_CO_TRICH = "chua_co_trich"
+
+#: PLAN 5.6 rào 1 — "gỡ trích được trong 24h".
+GIO_GO_TRICH = 24
+
+
+def _trich_hieu_luc(moc: Moc) -> Trich | None:
+    """Hàng `Trich` đang hiệu lực của một mốc, hoặc `None`. Tối đa một (rào 1)."""
+    return (
+        Trich.objects.filter(moc=moc, removed_at__isnull=True)
+        .select_related("comment", "comment__author")
+        .first()
+    )
+
+
+@router.post(
+    "/mocs/{int:moc_id}/trich",
+    response={
+        201: TrichKetQuaOut,
+        400: LoiOut,
+        401: LoiOut,
+        403: LoiOut,
+        404: LoiOut,
+        409: LoiOut,
+    },
+    operation_id="trich_vao_so",
+    tags=["trich"],
+    auth=dang_nhap,
+)
+def trich_vao_so_api(request, moc_id: int, du_lieu: TrichIn):
+    """Ghi một câu khán đài vào sổ — "trích vào sổ", PLAN 5.6.
+
+    **Quyền: CHỈ chủ mạch** (`Mach.author`, không phải `Moc.author`). Người khác nhận 403
+    `khong_phai_chu`. Rào 4 của PLAN 5.6 nói rõ blockquote ghi *"trích từ khán đài, **bởi
+    chủ mạch**"* — nó là cơ chế thưởng mà chủ cuốn sổ trao đi, nên nó chỉ có nghĩa khi
+    đúng một người trao được.
+
+    Bốn ca từ chối, mỗi ca một mã để UI nói đúng chuyện:
+
+    - mạch bị mod **khoá** ⇒ 403 `mach_bi_khoa`. Khác với follow/seen (sổ tay riêng của
+      người đọc, xem `api/theo_doi.py`), trích **ghi vào nội dung công khai** của mạch —
+      nó đúng nghĩa "tương tác" mà PLAN 5.10 cấm trên mạch bị khoá;
+    - mốc đã thành **bia mộ** hoặc bị mod ẩn ⇒ 409 `noi_dung_da_go`. Trích là chú thích
+      gắn vào thân mốc (rào 4), mà bia mộ thì không còn thân nào để gắn — `trinh_bay.moc_ra`
+      cũng đã bỏ khối trích của mốc bị gỡ, nên ghi vào đó là ghi một hàng không cửa nào hiện;
+    - bình luận **không thuộc mạch này**, hoặc đã bị gỡ ⇒ 400 `du_lieu_khong_hop_le`;
+    - mốc **đã có trích đang hiệu lực** ⇒ 409 `da_co_trich` (rào 1). Gỡ trước rồi trích lại.
+
+    **Trích bình luận của CHÍNH MÌNH thì được**, và blockquote hiện đầy đủ — nhưng chỉ số
+    "Được trích ×N" trên hồ sơ **không cộng** (rào 3, `api/users.py`), và không có thông
+    báo nào được gửi (`core/thong_bao.py::bao_duoc_trich`). Ba cửa, một luật: tự trích
+    không phải một sự kiện xã hội.
+
+    Người được trích nhận thông báo (PLAN 5.6 dòng cuối), sinh **trong cùng transaction**.
+    """
+    moc = nap_moc(moc_id)
+    doi_chu_so_huu(request.user, moc.mach.author_id, "mạch")
+    doi_mach_tuong_tac_duoc(moc.mach)
+    doi_con_song(moc, "Mốc")
+
+    comment = Comment.objects.filter(pk=du_lieu.comment_id, mach=moc.mach).first()
+    if comment is None:
+        raise LoiGhi(
+            400,
+            DU_LIEU_KHONG_HOP_LE,
+            f"Bình luận {du_lieu.comment_id} không thuộc mạch này. Sổ của một mạch chỉ "
+            "trích được câu nói trong chính khán đài của nó.",
+        )
+    if not doc_duoc(comment):
+        raise LoiGhi(
+            400,
+            DU_LIEU_KHONG_HOP_LE,
+            "Bình luận này đã bị gỡ, không trích vào sổ được.",
+        )
+    if _trich_hieu_luc(moc) is not None:
+        raise LoiGhi(
+            409,
+            DA_CO_TRICH,
+            f"Mốc {moc.seq} đã có một trích đang hiệu lực — gỡ nó trước rồi trích câu khác.",
+        )
+
+    try:
+        with transaction.atomic():
+            trich = trich_vao_so(moc=moc, comment=comment)
+            bao_duoc_trich(trich)
+    except IntegrityError as e:
+        # Rào 1 ở tầng DB bắt được cuộc đua mà câu `exists()` ở trên thua: hai lượt bấm
+        # đồng thời của cùng một chủ mạch (double-click, hai tab) cùng thấy "chưa có".
+        # 409 chứ không 500 — hành động vẫn hợp lệ, chỉ là đã có người (chính họ) làm trước.
+        raise LoiGhi(
+            409,
+            DA_CO_TRICH,
+            f"Mốc {moc.seq} vừa có một trích khác được ghi vào cùng lúc.",
+        ) from e
+
+    lam_moi_mach(moc.mach)
+    moc.refresh_from_db()
+    return Status(201, TrichKetQuaOut(moc=_moc_ra_day_du(moc)))
+
+
+@router.delete(
+    "/mocs/{int:moc_id}/trich",
+    response={200: TrichKetQuaOut, 401: LoiOut, 403: LoiOut, 404: LoiOut, 409: LoiOut},
+    operation_id="go_trich",
+    tags=["trich"],
+    auth=dang_nhap,
+)
+def go_trich_api(request, moc_id: int):
+    """Gỡ trích khỏi sổ — **trong 24 giờ**, sau đó không gỡ được nữa (PLAN 5.6 rào 1).
+
+    **Quyền: CHỈ chủ mạch**, đối xứng với đường trích.
+
+    Hàng `Trich` **ở lại** với `removed_at` — nó tự nó là log, và nó là thứ giữ cho chữ
+    "đã TỪNG được trích" của PLAN 5.3 còn đúng (`Trich.comment = PROTECT` chặn xoá THẬT
+    một bình luận đã vào sổ, kể cả sau khi trích bị gỡ). Vì unique là **partial**, gỡ xong
+    thì trích câu khác vào đúng mốc đó được ngay.
+
+    Hạn 24 giờ là hạn THẬT chứ không phải gợi ý UI: rào 1 dựng nó lên để sổ không thành
+    một cái bảng chủ mạch xoay hằng ngày theo việc câu nào "hoá ra đúng" — đúng thứ rào 2
+    (hai dấu thời gian) cũng đang chống.
+
+    Mốc chưa có trích nào đang hiệu lực ⇒ 404 `chua_co_trich`; quá hạn ⇒ 409
+    `het_han_go_trich`. Không idempotent về phía "gỡ cái đã gỡ": trả 404 chứ không 200, vì
+    một lượt gỡ thành công và một lượt gỡ vào chỗ trống là hai chuyện khác nhau, và cái
+    thứ hai gần như luôn nghĩa là UI đang hiển thị một trạng thái cũ.
+    """
+    moc = nap_moc(moc_id)
+    doi_chu_so_huu(request.user, moc.mach.author_id, "mạch")
+    doi_mach_tuong_tac_duoc(moc.mach)
+
+    trich = _trich_hieu_luc(moc)
+    if trich is None:
+        # Mã RIÊNG, không dùng `khong_tim_thay`: ở đây mốc có thật và người gọi có quyền,
+        # thứ vắng mặt là cái trích. Gộp vào `khong_tim_thay` là bắt UI đoán xem 404 vừa
+        # rồi nói "mốc này không tồn tại" hay "mốc này không có gì để gỡ".
+        return loi(404, CHUA_CO_TRICH, f"Mốc {moc.seq} chưa có trích nào đang hiệu lực.")
+    if timezone.now() - trich.created_at > timedelta(hours=GIO_GO_TRICH):
+        raise LoiGhi(
+            409,
+            HET_HAN_GO_TRICH,
+            f"Quá {GIO_GO_TRICH} giờ kể từ lúc trích — câu này đã ở lại trong sổ.",
+        )
+
+    go_trich(trich=trich)
+    lam_moi_mach(moc.mach)
+    moc.refresh_from_db()
+    return TrichKetQuaOut(moc=_moc_ra_day_du(moc))

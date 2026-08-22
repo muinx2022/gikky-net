@@ -15,6 +15,8 @@ from core.management.commands.seed_dev import (
     COMMENTS_HPG,
     MOC_BIA_MO_SEQ,
     MOCS_BIA_MO,
+    MOD_SEED,
+    NGUOI_CO_TEN,
     SO_NGUOI_XEM,
     TITLE_BIA_MO,
     TITLE_HPG,
@@ -406,7 +408,12 @@ def test_reset_dung_lai_tu_dau_khong_de_lai_rac(da_seed):
     call_command("seed_dev", "--reset", verbosity=0)
     assert Mach.objects.filter(title=TITLE_HPG).count() == 1
     assert Sub.objects.count() == 2
-    assert User.objects.count() == 11 + SO_NGUOI_XEM
+    # `len(NGUOI_CO_TEN)` chứ không phải `11` viết cứng, và `+ 1` là **mod seed**
+    # (`MOD_SEED`, thêm 2026-08-23 — cửa duy nhất vào khu quản trị từ một clone sạch).
+    # Con số phải suy ra từ chính hằng của seed: một `11` viết tay sẽ đỏ mỗi lần ai đó
+    # thêm một nhân vật, và cách chữa nhanh nhất là sửa con số — tức bài đo này thôi
+    # không kiểm gì nữa.
+    assert User.objects.count() == len(NGUOI_CO_TEN) + SO_NGUOI_XEM + 1
     assert Comment.objects.filter(mach__title=TITLE_HPG).count() == len(COMMENTS_HPG)
     assert Trich.objects.count() == 2
 
@@ -595,3 +602,55 @@ def test_hai_kieu_bia_mo_binh_luan_la_HAI_hang_khac_nhau(mach_bia_mo):
     assert mod_an.body == than[BINH_LUAN_MOD_AN], (
         f"hàng MOD ẨN trong DB không phải bình luận {BINH_LUAN_MOD_AN!r}"
     )
+
+
+# --- Tài khoản mod (thêm 2026-08-23, Phase 3) --------------------------------
+
+
+def test_seed_tao_dung_MOT_tai_khoan_mod_va_no_vao_duoc_khu_quan_tri(da_seed, client):
+    """Từ một clone sạch phải có đường vào `apps/admin` — trước đợt này thì KHÔNG có.
+
+    `seed_dev` dựng 43 tài khoản mà không cái nào `is_staff`, nên khu quản trị của Mảng C
+    trả 403 cho tất cả và cách vào duy nhất là tự gõ `createsuperuser` — một bước không
+    nằm trong `CLAUDE.md`, không nằm trong README, và không có gì đỏ khi thiếu.
+
+    Bài đo đi qua **cửa HTTP thật** (`GET /api/admin/me`) chứ không chỉ đọc cột `is_staff`:
+    lớp chặn thật ở dev là `api/quan_tri.py::ChiMod`, và nó hỏi bốn điều kiện chứ không
+    một (`is_authenticated`, `is_staff`, `is_active`, không bị ban). Một tài khoản đúng cột
+    mà sai một trong ba điều kiện kia vẫn không vào được, và đọc cột thì không thấy.
+    """
+    ten_mod, hien_thi = MOD_SEED
+    mod = User.objects.get(username=ten_mod)
+    assert mod.is_staff is True
+    assert mod.display_name == hien_thi
+    # KHÔNG phải superuser — `ChiMod` chỉ hỏi `is_staff`, còn superuser mở thêm cả Django
+    # admin với quyền xoá thẳng hàng `Moc` (phá bất biến `entry_count == max(seq)`).
+    assert mod.is_superuser is False
+
+    assert User.objects.filter(is_staff=True).count() == 1, (
+        "đúng MỘT tài khoản mod: mỗi tài khoản staff thừa là một cửa vào khu quản trị"
+    )
+
+    client.force_login(mod)
+    r = client.get("/api/admin/me")
+    assert r.status_code == 200, r.content[:300]
+
+
+def test_mod_seed_KHONG_viet_noi_dung_nao(da_seed):
+    """Mod phải là một cặp mắt từ ngoài.
+
+    Một tài khoản vừa là chủ nội dung vừa là người kiểm duyệt nó làm mọi bài đo phân quyền
+    của Mảng C mất đối chứng: "mod ẩn được bài này" không phân biệt được với "tác giả xoá
+    được bài của mình".
+    """
+    mod = User.objects.get(username=MOD_SEED[0])
+    assert not Mach.objects.filter(author=mod).exists()
+    assert not Moc.objects.filter(author=mod).exists()
+    assert not Comment.objects.filter(author=mod).exists()
+
+
+def test_reset_don_luon_tai_khoan_mod(da_seed):
+    """Bỏ mod ra khỏi danh sách xoá thì `--reset` để lại một `is_staff` mồ côi, và lượt
+    seed sau đâm `UNIQUE` trên `username` — nửa sau của `--reset` chết thay vì nửa đầu."""
+    call_command("seed_dev", "--reset", verbosity=0)
+    assert User.objects.filter(username=MOD_SEED[0]).count() == 1

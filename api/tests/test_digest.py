@@ -242,12 +242,98 @@ def moc_trong_cua_so(mach, tac_gia) -> None:
     them_moc(mach=mach, author=tac_gia, body="Mốc 2.", _created_at_seed=KHI_MOC)
 
 
-def test_nguoi_nhan_digest_hom_nay_rong_va_lenh_NOI_RA(db):
-    """Chỗ cắm của Phase 3 — và lệnh không được báo "xong" một cách rỗng tuếch."""
+def test_khong_ai_opt_in_thi_rong_va_lenh_NOI_RA_VI_SAO(db):
+    """DB không có ai bật `nhan_digest` ⇒ rỗng, và lệnh không được báo "xong" rỗng tuếch.
+
+    *(Đổi ở Phase 3, 2026-08-23.)* Bản trước khẳng định `nguoi_nhan_digest()` **luôn** trả
+    `[]` và đòi chữ "Phase 3" trong thông báo — đúng khi hàm còn là một chỗ cắm, nhưng nó
+    là bài đo sẽ **vẫn xanh** sau khi hàm được cắm mà cắm sai (trả rỗng vô điều kiện). Nay
+    nó đo đúng thứ đo được: DB rỗng ⇒ danh sách rỗng, và lời cảnh báo chỉ ra điều kiện
+    thiếu. Vế "cắm đúng thì trả người thật" nằm ở
+    `test_nguoi_nhan_digest_doc_bang_Follow_va_giu_du_ba_luat`.
+    """
     assert md.nguoi_nhan_digest() == []
     ra = goi()
-    assert "Phase 3" in ra
+    assert "nhan_digest" in ra and "opt-in" in ra
     assert mail.outbox == []
+
+
+# --- Cắm vào bảng `Follow` (Phase 3, 2026-08-23) -----------------------------
+
+
+def test_nguoi_nhan_digest_doc_bang_Follow_va_giu_du_ba_luat(
+    mach, tac_gia, nguoi_khac, sub
+):
+    """Ba luật mà Mảng D ghi sẵn ở docstring, đo từng cái một.
+
+    Chúng không suy ra được từ chữ ký hàm, nên chúng là ba chỗ một bản cắm "đúng về mặt
+    hình dạng" vẫn sai — và sai im lặng: hàm vẫn trả một danh sách, thư vẫn đi.
+    """
+    from core.models import Follow, User
+
+    def dung(ten: str, **cot) -> User:
+        return User.objects.create(
+            username=ten, email=f"{ten}@vi-du.gikky.net", **cot
+        )
+
+    opt_in = dung("opt_in", nhan_digest=True)
+    khong_opt_in = dung("khong_opt_in", nhan_digest=False)
+    da_nghi = dung("da_nghi", nhan_digest=True, is_active=False)
+    khong_email = User.objects.create(username="khong_email", email="", nhan_digest=True)
+
+    for u in (opt_in, khong_opt_in, da_nghi, khong_email):
+        Follow.objects.create(user=u, mach=mach)
+    # Luật 3: tác giả theo mạch của CHÍNH MÌNH — mọi diễn biến của mạch đều do họ viết
+    # (chỉ tác giả nối được mốc), nên không có gì để báo lại cho họ.
+    tac_gia.nhan_digest = True
+    tac_gia.save(update_fields=["nhan_digest"])
+    Follow.objects.create(user=tac_gia, mach=mach)
+
+    ra = md.nguoi_nhan_digest()
+    assert [n.user.username for n in ra] == ["opt_in"], (
+        "đúng một người đủ ba điều kiện; ai lọt thêm là một luật vừa bị bỏ"
+    )
+    assert ra[0].mach_ids == (mach.pk,)
+
+
+def test_mach_cua_chinh_minh_bi_loai_nhung_mach_nguoi_khac_thi_khong(
+    mach, tac_gia, nguoi_khac, sub
+):
+    """Luật 3 loại đúng **mạch của chính họ**, không loại cả người.
+
+    Một `exclude(user=...)` viết hụt sẽ làm người vừa mở mạch đầu tiên của mình mất luôn
+    digest cho mọi mạch khác họ theo — im lặng, và chỉ lộ ra sau vài tuần không nhận thư.
+    """
+    from core.ghi import tao_mach
+    from core.models import Follow
+
+    cua_toi, _ = tao_mach(sub=sub, author=nguoi_khac, title="Mạch của tôi", body="x")
+    nguoi_khac.nhan_digest = True
+    nguoi_khac.email = "ai_do@vi-du.gikky.net"
+    nguoi_khac.save(update_fields=["nhan_digest", "email"])
+    Follow.objects.create(user=nguoi_khac, mach=cua_toi)
+    Follow.objects.create(user=nguoi_khac, mach=mach)
+
+    ra = md.nguoi_nhan_digest()
+    assert len(ra) == 1
+    assert ra[0].mach_ids == (mach.pk,), "mạch của chính họ phải bị loại, người thì không"
+
+
+def test_mach_bi_mod_an_khong_vao_danh_sach_theo_doi(mach, tac_gia, nguoi_khac):
+    """Mạch bị mod ẩn thì không có gì để báo — `gom_dien_bien` cũng lọc, nhưng lọc sớm
+    ở đây giữ cho `NguoiNhan.mach_ids` không mang id của thứ không ai đọc được."""
+    from django.utils import timezone
+
+    from core.models import Follow
+
+    nguoi_khac.nhan_digest = True
+    nguoi_khac.email = "ai_do@vi-du.gikky.net"
+    nguoi_khac.save(update_fields=["nhan_digest", "email"])
+    Follow.objects.create(user=nguoi_khac, mach=mach)
+    mach.hidden_at = timezone.now()
+    mach.save(update_fields=["hidden_at"])
+
+    assert md.nguoi_nhan_digest() == []
 
 
 def test_lenh_gui_that_khi_co_nguoi_nhan(mach, tac_gia, nguoi_khac, monkeypatch):

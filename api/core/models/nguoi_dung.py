@@ -27,6 +27,17 @@ class User(AbstractUser):
     display_name = models.CharField(max_length=60, blank=True)
     bio = models.TextField(blank=True, validators=[MaxLengthValidator(500)])
 
+    # --- Thông báo (PLAN 5.8 · Phase 3) --------------------------------------
+    #: Nhận email digest tuần hay không. **`default=False` là bắt buộc, không phải một
+    #: lựa chọn thẩm mỹ:** PLAN 5.8 chốt digest là *"tuỳ chọn **opt-in**"*, và `True` mặc
+    #: định biến mọi tài khoản đã có thành người đăng ký mà không ai bấm gì — đúng nghĩa
+    #: opt-out, tức ngược hẳn câu trong PLAN.
+    #:
+    #: Cờ này là một trong **ba** điều kiện của `core.digest.nguoi_nhan_digest()`; hai cái
+    #: kia (`is_active`, và không gửi cho chính tác giả mạch) không suy ra được từ một
+    #: cột nào nên chúng nằm ở truy vấn, xem docstring hàm đó.
+    nhan_digest = models.BooleanField(default=False)
+
     # --- Ban (PLAN 5.10 · Phase 4 dùng) -------------------------------------
     #: Ban tạm: hết hạn thì tự hết. Ban vĩnh viễn dùng cờ riêng để không phải
     #: nhét một mốc thời gian giả kiểu năm 9999 vào DB.

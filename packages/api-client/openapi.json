@@ -184,6 +184,118 @@
         "title": "BinhLuanSuaIn",
         "type": "object"
       },
+      "ChuongOut": {
+        "description": "`GET /notifications` — chuông poll 60 giây (PLAN 5.8). **Per-user, cấm cache.**\n\nTrả kèm `so_chua_doc` của **toàn bộ** hộp thư chứ không phải của trang đang xem: con\nsố trên chấm đỏ nói \"bạn có 23 thứ chưa đọc\", và tính nó trên một trang 20 dòng sẽ cho\nra `20` mãi mãi — một con số trông hợp lý và luôn sai.",
+        "properties": {
+          "cursor_ke_tiep": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cursor Ke Tiep"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ThongBaoOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "so_chua_doc": {
+            "title": "So Chua Doc",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "so_chua_doc",
+          "cursor_ke_tiep"
+        ],
+        "title": "ChuongOut",
+        "type": "object"
+      },
+      "DaDocOut": {
+        "description": "Kết quả `POST /notifications/read`. `so_da_danh_dau` là số dòng **vừa đổi trạng thái**.\n\nĐánh dấu lại một thông báo đã đọc **không** được tính vào con số đó, và không được dời\n`read_at` cũ: hai lần bấm \"đọc hết\" phải ra `so_da_danh_dau = 0` ở lần thứ hai, nếu\nkhông thì con số này không nói được gì.",
+        "properties": {
+          "so_chua_doc": {
+            "title": "So Chua Doc",
+            "type": "integer"
+          },
+          "so_da_danh_dau": {
+            "title": "So Da Danh Dau",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "so_da_danh_dau",
+          "so_chua_doc"
+        ],
+        "title": "DaDocOut",
+        "type": "object"
+      },
+      "DaXemIn": {
+        "description": "`POST /machs/{id}/seen` — client báo đã đọc tới đâu (PLAN 5.5).\n\n`entry_seq = null` (mặc định) nghĩa là **\"đã xem tới mốc mới nhất\"**, đúng ca PLAN 5.5\nmô tả: thẻ mốc mới nhất mở sẵn khi trang mở, nên client gọi endpoint này không kèm gì.\nTruyền một `seq` cụ thể là ca người ta bung timeline đầy đủ rồi đọc tới một chỗ nào đó.\n\nCon số **chỉ tiến, không lùi** ở phía server (`core.ghi.dat_da_xem`), nên gửi một\n`entry_seq` nhỏ hơn vị trí đã ghi là no-op chứ không phải một cách reset vạch mới —\npeek một mốc cũ trên spine không được đánh dấu 6 mốc cuối thành chưa đọc.\n\n`ge=0` chứ không `ge=1`: `0` là \"chưa xem mốc nào\", giá trị khởi điểm hợp lệ của cột.",
+        "properties": {
+          "entry_seq": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entry Seq"
+          }
+        },
+        "title": "DaXemIn",
+        "type": "object"
+      },
+      "DaXemOut": {
+        "description": "Kết quả `POST /machs/{id}/seen` — PLAN 5.5.\n\n**`following = false` nghĩa là KHÔNG GHI GÌ**, và đó là câu trả lời trung thực chứ\nkhông phải một lỗi: `last_seen_entry_seq` sống trên hàng `Follow` (PLAN mục 6), nên\nngười chưa theo mạch không có chỗ nào để lưu vị trí đọc. Endpoint nhận request (200)\nthay vì 404 — client không phải biết trước mình có theo hay không mới dám đặt một cái\nbookmark — nhưng nó **nói ra** rằng không có gì được lưu, thay vì trả một `{ok: true}`\nrỗng nghĩa.\n\nCon số trả về là giá trị **sau** lượt ghi, và nó chỉ tiến không lùi: mở lại một mốc cũ\ntrên spine không được kéo vạch mới về sau (xem `core.ghi.dat_da_xem`).",
+        "properties": {
+          "following": {
+            "title": "Following",
+            "type": "boolean"
+          },
+          "last_seen_entry_seq": {
+            "title": "Last Seen Entry Seq",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "following",
+          "last_seen_entry_seq"
+        ],
+        "title": "DaXemOut",
+        "type": "object"
+      },
+      "DanhDauDaDocIn": {
+        "description": "`POST /notifications/read` — đánh dấu đã đọc (PLAN 5.8).\n\n`ids = null` (mặc định) nghĩa là **đánh dấu HẾT** — nút \"đọc hết\" của chuông. Truyền\nmột danh sách là đánh dấu đúng từng dòng, cho lượt bấm vào một thông báo lẻ.\n\nId của **người khác** trong danh sách bị bỏ qua chứ không làm cả request hỏng: truy vấn\nluôn kèm `user = người đang gọi` (xem endpoint), nên chuyện tệ nhất một id lạ gây ra là\n`so_da_danh_dau` nhỏ hơn số id đã gửi. Trả 403 ở đây thì ngược lại: nó **xác nhận** id\nđó có thật và thuộc về ai đó — một cửa dò id qua mã lỗi.\n\nDanh sách rỗng `[]` khác `null`: nó đánh dấu **không dòng nào**. Cố ý giữ khác nhau —\nmột mảng rỗng do client dựng hụt không được biến thành \"đọc hết\".",
+        "properties": {
+          "ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ids"
+          }
+        },
+        "title": "DanhDauDaDocIn",
+        "type": "object"
+      },
       "DongSoIn": {
         "description": "Đóng sổ — `POST /machs/{id}/close`. `ket_qua` tuỳ chọn, ≤40 ký tự (PLAN 5.1).\n\nThuần hiển thị, không validate ngữ nghĩa — cùng triết lý với `figures`.",
         "properties": {
@@ -575,6 +687,60 @@
           "spine"
         ],
         "title": "MachChiTietOut",
+        "type": "object"
+      },
+      "MachCuaToiOut": {
+        "description": "`GET /machs/{id}/me` — trạng thái của NGƯỜI XEM trên một mạch (PLAN mục 7, 8.4).\n\n**Response này KHÔNG BAO GIỜ được cache.** Nó là nửa còn lại của cặp mà PLAN 8.4 dựng\nlên: `GET /machs/{id}` không chứa gì per-user nên trang cache được, còn mọi thứ phụ\nthuộc người xem đi qua đây, sau khi trang đã render. Một `Cache-Control` lỏng hay một\nlượt nướng nội dung này vào HTML tĩnh là phục vụ phiếu bầu của người này cho người kia.\n\nKhách chưa đăng nhập nhận **200** với `dang_nhap = false`, hai danh sách rỗng và\n`following = false` — cùng lý lẽ `ToiOut`: đây là lời gọi chạy trên mọi lượt tải trang\nmạch, kể cả của bot, nên 401 ở trạng thái bình thường nhất của hệ thống là dạy frontend\ncoi lỗi là chuyện thường.\n\n`face` ở đây **có thể khác** `face` của `GET /machs/{id}`, và đó là toàn bộ lý do\ntrường này tồn tại ở cả hai chỗ. Bên kia tính vế thời gian của PLAN 5.5 (cache được);\nbên này áp thêm vế thứ hai — *\"user đăng nhập VÀ đã follow hoặc từng bình luận mạch\nnày\"*. Vì vế 2 là một phép HOẶC, `face` ở đây chỉ có thể **CẶN → BÃO**, không bao giờ\nngược lại. Frontend lấy `face` của endpoint này khi có, và rơi về bên kia khi khách.",
+        "properties": {
+          "dang_nhap": {
+            "title": "Dang Nhap",
+            "type": "boolean"
+          },
+          "face": {
+            "enum": [
+              "bao",
+              "can"
+            ],
+            "title": "Face",
+            "type": "string"
+          },
+          "following": {
+            "title": "Following",
+            "type": "boolean"
+          },
+          "last_seen_entry_seq": {
+            "title": "Last Seen Entry Seq",
+            "type": "integer"
+          },
+          "my_reactions": {
+            "items": {
+              "$ref": "#/components/schemas/ReactionCuaToiOut"
+            },
+            "title": "My Reactions",
+            "type": "array"
+          },
+          "my_votes": {
+            "items": {
+              "$ref": "#/components/schemas/VoteCuaToiOut"
+            },
+            "title": "My Votes",
+            "type": "array"
+          },
+          "tung_binh_luan": {
+            "title": "Tung Binh Luan",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "dang_nhap",
+          "face",
+          "my_votes",
+          "my_reactions",
+          "following",
+          "last_seen_entry_seq",
+          "tung_binh_luan"
+        ],
+        "title": "MachCuaToiOut",
         "type": "object"
       },
       "MachMoiIn": {
@@ -1178,6 +1344,25 @@
         "title": "NguoiDungTomTatOut",
         "type": "object"
       },
+      "ReactionCuaToiOut": {
+        "description": "Reaction của **người đang xem** trên một mốc. Một user tối đa một reaction mỗi mốc.",
+        "properties": {
+          "emoji": {
+            "title": "Emoji",
+            "type": "string"
+          },
+          "moc_id": {
+            "title": "Moc Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "moc_id",
+          "emoji"
+        ],
+        "title": "ReactionCuaToiOut",
+        "type": "object"
+      },
       "ReactionIn": {
         "description": "React / đổi / rút — `POST /mocs/{id}/reactions` (PLAN 5.7).\n\nBộ CỐ ĐỊNH `len · xuong · lua · bang · trung` (📈📉🔥🧊🎯). `emoji = null` là **rút**.",
         "properties": {
@@ -1318,6 +1503,74 @@
         "title": "SubTomTatOut",
         "type": "object"
       },
+      "TheoMachOut": {
+        "description": "Kết quả `POST`/`DELETE /machs/{id}/follow` — PLAN 5.7. Cả hai đều idempotent.\n\n`last_seen_entry_seq` có mặt vì lượt theo ĐẦU TIÊN đặt nó bằng `entry_count` hiện tại,\nkhông phải `0`: người ta theo để biết chuyện **sắp** xảy ra, không phải để bị giao lại\ntoàn bộ quá khứ (xem `core.ghi.dat_follow`). Bỏ theo ⇒ `false` và `0`.",
+        "properties": {
+          "following": {
+            "title": "Following",
+            "type": "boolean"
+          },
+          "last_seen_entry_seq": {
+            "title": "Last Seen Entry Seq",
+            "type": "integer"
+          },
+          "mach_id": {
+            "title": "Mach Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "mach_id",
+          "following",
+          "last_seen_entry_seq"
+        ],
+        "title": "TheoMachOut",
+        "type": "object"
+      },
+      "ThongBaoOut": {
+        "description": "Một dòng chuông — PLAN 5.8.\n\n`payload` là **JSON tự do có chủ đích**: ba loại thông báo mang ba bộ trường khác nhau,\nvà ép chúng vào một schema chung sẽ ra một object mà 2/3 số trường luôn `null`. Các\nkhoá chung cho cả ba loại: `mach_id`, `mach_title`, `mach_slug` — đủ để render một\ndòng có link mà **không phải join** sang bảng nào, điều kiện để chuông poll 60 giây\nmột lần không thành một câu truy vấn nặng.\n\nCái giá của việc chép sẵn tiêu đề vào payload: đổi tiêu đề mạch thì dòng chuông cũ giữ\ntiêu đề tại thời điểm báo. Đó là hành vi ĐÚNG cho một thông báo — nó kể lại một sự\nkiện đã xảy ra — không phải một chỗ dữ liệu trôi.\n\n`type`: `\"moc_moi\"` | `\"trich\"` | `\"reply\"`.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "title": "Payload",
+            "type": "object"
+          },
+          "read_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Read At"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "payload",
+          "created_at",
+          "read_at"
+        ],
+        "title": "ThongBaoOut",
+        "type": "object"
+      },
       "ToiOut": {
         "description": "`GET /me` — người đang đăng nhập là ai (thêm ở Phase 2, PLAN mục 7).\n\n**Không cache được, và không được nướng vào page cache** (PLAN 8.4 điểm 4): đây là\nresponse per-user thuần tuý. Khác `GET /machs/{id}/me` ở chỗ nó không phụ thuộc mạch\nnào — header cần biết \"ai đang đăng nhập\" trên MỌI trang.\n\nKhách chưa đăng nhập nhận **200** kèm `dang_nhap = false`, không phải 401: header là\nthứ render trên mọi trang, và một endpoint trả lỗi cho trạng thái bình thường nhất của\nhệ thống sẽ đẩy frontend vào chỗ phải coi lỗi là chuyện thường.\n\n`google_bat` là **cấu hình server**, không phải trạng thái người dùng, và nó nằm ở đây\nvì đúng một lý do: PLAN mục 4 cấm nút vĩnh viễn không bấm được, nên trang đăng nhập\nphải biết có nên **render** nút Google hay không — `false` ⇒ nút **vắng mặt**, không\nphải `disabled`.",
         "properties": {
@@ -1383,6 +1636,33 @@
         "title": "ToiOut",
         "type": "object"
       },
+      "TrichIn": {
+        "description": "`POST /mocs/{id}/trich` — chủ mạch ghi một câu khán đài vào sổ (PLAN 5.6).\n\nChỉ có `comment_id`: **mốc nhận trích nằm ở URL**, không nằm trong thân. Hai thứ đó\nkhông được cùng ở một chỗ vì rào 1 (\"tối đa 1 trích đang hiệu lực mỗi mốc\") là một\nràng buộc trên `moc`, và người gọi phải nói rõ mốc nào trước khi server đi kiểm.\n\nKhông có trường `body`: sổ trích **dẫn lại** một bình luận đã tồn tại, không phải chỗ\nchủ mạch tự viết một câu rồi gán tên người khác vào.",
+        "properties": {
+          "comment_id": {
+            "title": "Comment Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "comment_id"
+        ],
+        "title": "TrichIn",
+        "type": "object"
+      },
+      "TrichKetQuaOut": {
+        "description": "Kết quả `POST`/`DELETE /mocs/{id}/trich` — PLAN 5.6.\n\nTrả về **cả thẻ mốc** (`moc`) chứ không chỉ mỗi khối trích: rào 4 của PLAN 5.6 bắt\nkhối trích render **tách bạch khỏi thân mốc** như một chú thích, nên UI phải vẽ lại cả\ncái thẻ. Trả mỗi `TrichOut` thì client phải tự ghép vào state của thẻ — tức có một bản\nthứ hai của luật \"trích gắn vào đâu\", và bản đó sẽ trôi.\n\n`moc.trich` là `null` sau khi gỡ. Hình dạng `moc` giống hệt `GET /machs/{id}`.",
+        "properties": {
+          "moc": {
+            "$ref": "#/components/schemas/MocOut"
+          }
+        },
+        "required": [
+          "moc"
+        ],
+        "title": "TrichKetQuaOut",
+        "type": "object"
+      },
       "TrichOut": {
         "description": "Bình luận được chủ mạch trích vào mốc — \"trích vào sổ\" (PLAN 5.6).\n\nHai dấu thời gian đều có mặt vì rào 2 của PLAN 5.6 bắt blockquote hiện đủ cả hai\n(\"viết 10/06, trích 21/08\") — chống trích hậu nghiệm để sổ đọc như tiên tri.\n\n`trang_thai = \"da_xoa\"` nghĩa là người viết đã xoá bình luận gốc **sau khi** nó vào\nsổ; blockquote vẫn còn nguyên nội dung, vì sổ là \"không-xoá-được\" (PLAN 5.6). Bình\nluận bị **mod ẩn** thì cả khối trích biến mất khỏi response, không có trạng thái nào\nbiểu diễn nó.",
         "properties": {
@@ -1438,6 +1718,30 @@
           "anchor_moc_seq"
         ],
         "title": "TrichOut",
+        "type": "object"
+      },
+      "VoteCuaToiOut": {
+        "description": "Một lá phiếu của **người đang xem** trên một mốc hoặc một bình luận của mạch này.",
+        "properties": {
+          "target_id": {
+            "title": "Target Id",
+            "type": "integer"
+          },
+          "target_type": {
+            "title": "Target Type",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "target_type",
+          "target_id",
+          "value"
+        ],
+        "title": "VoteCuaToiOut",
         "type": "object"
       },
       "VoteIn": {
@@ -2385,6 +2689,183 @@
         ]
       }
     },
+    "/api/v1/machs/{mach_id}/follow": {
+      "delete": {
+        "description": "Bỏ theo mạch — PLAN 5.7. **Idempotent**: bỏ theo thứ vốn không theo vẫn là 200.\n\n**Quyền: bất kỳ ai đã đăng nhập**, và chỉ xoá được hàng của chính họ.\n\nTrả `following: false` và `last_seen_entry_seq: 0`. Con số `0` ở đây nói đúng sự thật:\nhàng `Follow` bị xoá nên vị trí đọc mất theo, và theo lại là bắt đầu từ `entry_count`\nlúc đó (xem `core.ghi.bo_follow`).\n\nMạch bị mod **khoá** vẫn bỏ theo được, và cửa này là lý do chính của quyết định ấy —\nxem docstring module.",
+        "operationId": "bo_theo_mach",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mach_id",
+            "required": true,
+            "schema": {
+              "title": "Mach Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TheoMachOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Bo Theo Mach",
+        "tags": [
+          "mach"
+        ]
+      },
+      "post": {
+        "description": "Theo mạch — \"Theo mạch\", PLAN 5.7. Follower nhận thông báo khi có mốc mới.\n\n**Quyền: bất kỳ ai đã đăng nhập**, kể cả tác giả trên mạch của chính mình (vô hại:\n`core/thong_bao.py::bao_moc_moi` loại người viết ra khỏi danh sách nhận, nên tự theo\nkhông sinh chuông nào). Chỉ ghi vào hàng của chính người gọi.\n\n**Idempotent**: bấm lần thứ hai trả về đúng trạng thái cũ, và **không** đụng\n`last_seen_entry_seq` — hàng đã có nghĩa là vị trí đọc đã có, ghi đè nó là xoá dấu đọc\ndở của chính người đang bấm.\n\nLượt theo ĐẦU TIÊN đặt `last_seen_entry_seq = entry_count`, không phải `0`: người ta\ntheo để biết chuyện **sắp** xảy ra (xem `core.ghi.dat_follow`).\n\nMạch bị mod **khoá** vẫn theo được — xem docstring module.",
+        "operationId": "theo_mach",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mach_id",
+            "required": true,
+            "schema": {
+              "title": "Mach Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TheoMachOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Theo Mach",
+        "tags": [
+          "mach"
+        ]
+      }
+    },
+    "/api/v1/machs/{mach_id}/me": {
+      "get": {
+        "description": "Trạng thái của **người đang xem** trên mạch này — PLAN mục 7, 8.4 điểm 4.\n\n**Không bao giờ cache được.** Đây là nửa per-user của trang mạch: phiếu của tôi,\nreaction của tôi, tôi có theo mạch không, tôi đọc tới mốc nào. Client component gọi nó\n**sau khi** trang đã render từ cache; tuyệt đối không nướng nội dung này vào HTML.\n\n**Khách chưa đăng nhập nhận 200**, không phải 401 — hai danh sách rỗng,\n`following = false`, `last_seen_entry_seq = 0`. Cùng lý lẽ `GET /me` (PLAN mục 7):\nendpoint này chạy trên MỌI lượt tải trang mạch, kể cả của bot, nên trả lỗi cho trạng\nthái bình thường nhất của hệ thống là dạy frontend coi lỗi là chuyện thường. `face` của\nkhách vì thế bằng đúng `face` của `GET /machs/{id}`.\n\n`face` ở đây áp **đủ hai vế** của PLAN 5.5: vế thời gian, HOẶC \"user đăng nhập VÀ đã\nfollow hoặc từng bình luận mạch này\". Vì là phép HOẶC nên nó chỉ kéo được CẶN → BÃO.\nServer quyết, frontend không tính lại (PLAN nguyên tắc 10).\n\nMạch bị mod ẩn ⇒ **404**, cùng mã với mọi cửa công khai khác: trả trạng thái viewer cho\nmột mạch đã bị gỡ là xác nhận nó tồn tại.\n\nKhông cần đăng nhập nên **không khai `auth=`** — nó là endpoint GET, không có gì để\nCSRF bảo vệ, và luật \"mọi operation không-GET phải có auth\"\n(`tests/test_quyen_ghi.py`) vì thế không đụng tới nó.",
+        "operationId": "xem_mach_cua_toi",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mach_id",
+            "required": true,
+            "schema": {
+              "title": "Mach Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MachCuaToiOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "Xem Mach Cua Toi",
+        "tags": [
+          "mach"
+        ]
+      }
+    },
     "/api/v1/machs/{mach_id}/mocs": {
       "post": {
         "description": "Nối một mốc vào mạch — PLAN 5.1.\n\n**Quyền: CHỈ tác giả mạch.** Người khác nhận 403 `khong_phai_chu`. Mạch là nhật ký\ncủa một người; nếu ai cũng nối được thì \"dấu thời gian máy chủ bất biến\" chẳng chứng\nminh được ai đã ghi cái gì.\n\nBa điều kiện nữa, mỗi cái một mã riêng để UI nói đúng chuyện:\n- mạch bị mod **khoá** ⇒ 403 `mach_bi_khoa` (đọc được, cấm tương tác — PLAN 5.10);\n- mạch **đã đóng sổ** ⇒ 409 `mach_da_dong` (đóng sổ vẫn bình luận được, chỉ không nối\n  mốc — PLAN 5.1);\n- quá **3 mốc trong ngày lịch VN** ⇒ 429 `qua_han_muc_moc`. Hạn mức đếm theo\n  `created_at` (dấu server) và tính **mọi** mốc kể cả bia mộ — xoá rồi viết lại là\n  cách lách ngắn nhất. Ranh giới là nửa đêm giờ VN, không phải 24 giờ trượt.\n\n`occurred_at` nhập lùi thoải mái, cấm tương lai (PLAN 5.2). Tác giả nhận +1 phiếu của\nchính mình (PLAN 5.7).",
@@ -2566,6 +3047,84 @@
           }
         ],
         "summary": "Mo Lai Mach",
+        "tags": [
+          "mach"
+        ]
+      }
+    },
+    "/api/v1/machs/{mach_id}/seen": {
+      "post": {
+        "description": "Ghi vị trí đọc — nền của **vạch mới** ở mặt BÃO (PLAN 5.5).\n\n**Quyền: bất kỳ ai đã đăng nhập, và chỉ ghi vào hàng `Follow` của CHÍNH HỌ.** Không có\ntham số nào chỉ ra người khác, nên không có đường nào đặt vị trí đọc hộ ai.\n\n`entry_seq` vắng mặt ⇒ \"đã xem tới mốc mới nhất\", đúng ca PLAN 5.5 mô tả (thẻ mốc mới\nnhất mở sẵn khi trang mở). Con số **chỉ tiến không lùi** và bị kẹp trần ở `entry_count`\n— mở lại một mốc cũ trên spine không được kéo vạch mới về sau.\n\n**Chưa theo mạch ⇒ 200 kèm `following: false`, và KHÔNG ghi gì.**\n`last_seen_entry_seq` sống trên hàng `Follow` (PLAN mục 6) nên người chưa theo không có\nchỗ nào để lưu. Không tạo `Follow` hộ: đó là âm thầm bắt người ta theo mạch vì họ mở\nmột trang. Không trả 404: client sẽ phải hỏi trước xem mình có theo không, tức thêm một\nround-trip cho một cái bookmark. Response nói thẳng là không lưu gì.\n\nMạch bị mod **khoá** vẫn gọi được — xem docstring module.",
+        "operationId": "danh_dau_da_xem",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mach_id",
+            "required": true,
+            "schema": {
+              "title": "Mach Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DaXemIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DaXemOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Danh Dau Da Xem",
         "tags": [
           "mach"
         ]
@@ -2949,6 +3508,303 @@
         "summary": "Liet Ke Ban Cu Moc",
         "tags": [
           "moc"
+        ]
+      }
+    },
+    "/api/v1/mocs/{moc_id}/trich": {
+      "delete": {
+        "description": "Gỡ trích khỏi sổ — **trong 24 giờ**, sau đó không gỡ được nữa (PLAN 5.6 rào 1).\n\n**Quyền: CHỈ chủ mạch**, đối xứng với đường trích.\n\nHàng `Trich` **ở lại** với `removed_at` — nó tự nó là log, và nó là thứ giữ cho chữ\n\"đã TỪNG được trích\" của PLAN 5.3 còn đúng (`Trich.comment = PROTECT` chặn xoá THẬT\nmột bình luận đã vào sổ, kể cả sau khi trích bị gỡ). Vì unique là **partial**, gỡ xong\nthì trích câu khác vào đúng mốc đó được ngay.\n\nHạn 24 giờ là hạn THẬT chứ không phải gợi ý UI: rào 1 dựng nó lên để sổ không thành\nmột cái bảng chủ mạch xoay hằng ngày theo việc câu nào \"hoá ra đúng\" — đúng thứ rào 2\n(hai dấu thời gian) cũng đang chống.\n\nMốc chưa có trích nào đang hiệu lực ⇒ 404 `chua_co_trich`; quá hạn ⇒ 409\n`het_han_go_trich`. Không idempotent về phía \"gỡ cái đã gỡ\": trả 404 chứ không 200, vì\nmột lượt gỡ thành công và một lượt gỡ vào chỗ trống là hai chuyện khác nhau, và cái\nthứ hai gần như luôn nghĩa là UI đang hiển thị một trạng thái cũ.",
+        "operationId": "go_trich",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "moc_id",
+            "required": true,
+            "schema": {
+              "title": "Moc Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrichKetQuaOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Go Trich Api",
+        "tags": [
+          "trich"
+        ]
+      },
+      "post": {
+        "description": "Ghi một câu khán đài vào sổ — \"trích vào sổ\", PLAN 5.6.\n\n**Quyền: CHỈ chủ mạch** (`Mach.author`, không phải `Moc.author`). Người khác nhận 403\n`khong_phai_chu`. Rào 4 của PLAN 5.6 nói rõ blockquote ghi *\"trích từ khán đài, **bởi\nchủ mạch**\"* — nó là cơ chế thưởng mà chủ cuốn sổ trao đi, nên nó chỉ có nghĩa khi\nđúng một người trao được.\n\nBốn ca từ chối, mỗi ca một mã để UI nói đúng chuyện:\n\n- mạch bị mod **khoá** ⇒ 403 `mach_bi_khoa`. Khác với follow/seen (sổ tay riêng của\n  người đọc, xem `api/theo_doi.py`), trích **ghi vào nội dung công khai** của mạch —\n  nó đúng nghĩa \"tương tác\" mà PLAN 5.10 cấm trên mạch bị khoá;\n- mốc đã thành **bia mộ** hoặc bị mod ẩn ⇒ 409 `noi_dung_da_go`. Trích là chú thích\n  gắn vào thân mốc (rào 4), mà bia mộ thì không còn thân nào để gắn — `trinh_bay.moc_ra`\n  cũng đã bỏ khối trích của mốc bị gỡ, nên ghi vào đó là ghi một hàng không cửa nào hiện;\n- bình luận **không thuộc mạch này**, hoặc đã bị gỡ ⇒ 400 `du_lieu_khong_hop_le`;\n- mốc **đã có trích đang hiệu lực** ⇒ 409 `da_co_trich` (rào 1). Gỡ trước rồi trích lại.\n\n**Trích bình luận của CHÍNH MÌNH thì được**, và blockquote hiện đầy đủ — nhưng chỉ số\n\"Được trích ×N\" trên hồ sơ **không cộng** (rào 3, `api/users.py`), và không có thông\nbáo nào được gửi (`core/thong_bao.py::bao_duoc_trich`). Ba cửa, một luật: tự trích\nkhông phải một sự kiện xã hội.\n\nNgười được trích nhận thông báo (PLAN 5.6 dòng cuối), sinh **trong cùng transaction**.",
+        "operationId": "trich_vao_so",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "moc_id",
+            "required": true,
+            "schema": {
+              "title": "Moc Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrichIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrichKetQuaOut"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Trich Vao So Api",
+        "tags": [
+          "trich"
+        ]
+      }
+    },
+    "/api/v1/notifications": {
+      "get": {
+        "description": "Chuông poll 60 giây — PLAN 5.8. **Per-user tuyệt đối, KHÔNG BAO GIỜ cache.**\n\n**Quyền: chỉ thông báo của chính người gọi.** Không có tham số nào chỉ ra người khác;\n`user = request.user` nằm ngay trong queryset gốc.\n\nSắp **mới nhất trước**, cursor keyset trên `(created_at, id)` — khoá BẤT BIẾN, nên nó\nhưởng đủ bảo đảm \"không trùng, không sót\" của `api/phan_trang.py`. Một thông báo\n`moc_moi` được gộp lại (mốc thứ hai trong ngày) sẽ **bump `created_at`** và vì thế\nnhảy lên đầu — đúng ý muốn, và nó không phá keyset: hàng ấy chuyển sang trang 1, đúng\nca \"hàng mới chèn vào đầu\" mà keyset sinh ra để xử.\n\n`so_chua_doc` đếm **toàn bộ hộp thư**, không phải trang đang xem: con số trên chấm đỏ\nnói \"bạn có 23 thứ chưa đọc\", tính nó trên một trang 20 dòng thì nó kẹt ở `20` mãi mãi\n— một con số trông hợp lý và luôn sai.\n\n**Không có bộ lọc `?chua_doc=`** ở bản này. Chuông hiện cả đã đọc lẫn chưa đọc trong\nmột dòng thời gian; thêm một chế độ lọc là thêm một trạng thái UI phải nhớ, mà PLAN\n5.8 không đòi.",
+        "operationId": "liet_ke_thong_bao",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChuongOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Liet Ke Thong Bao",
+        "tags": [
+          "thong-bao"
+        ]
+      }
+    },
+    "/api/v1/notifications/read": {
+      "post": {
+        "description": "Đánh dấu thông báo đã đọc — PLAN 5.8.\n\n**Quyền: chỉ thông báo của chính người gọi.** `ids` của người khác **bị bỏ qua im\nlặng**, không phải 403: truy vấn luôn kèm `user = request.user`, nên chuyện tệ nhất\nmột id lạ gây ra là `so_da_danh_dau` nhỏ hơn số id đã gửi. Trả 403 thì ngược lại — nó\n**xác nhận** id đó có thật và thuộc về ai đó, tức một cửa dò id qua mã lỗi.\n\n`ids = null` là \"đọc hết\"; một danh sách là đánh dấu đúng từng dòng. `[]` đánh dấu\n**không dòng nào** — khác `null` một cách cố ý, để một mảng rỗng do client dựng hụt\nkhông lặng lẽ thành lệnh xoá sạch chấm đỏ.\n\n**Chỉ chạm hàng đang `read_at IS NULL`.** Hai hệ quả, cả hai đều là chủ đích:\n`so_da_danh_dau` đếm đúng số dòng **vừa đổi trạng thái** (bấm \"đọc hết\" lần thứ hai ra\n`0`), và `read_at` cũ không bị dời — nó là mốc \"tôi đã xem cái này lúc nào\", không phải\nmột cờ boolean viết lại được mỗi lần bấm.",
+        "operationId": "danh_dau_da_doc",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DanhDauDaDocIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DaDocOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Danh Dau Da Doc",
+        "tags": [
+          "thong-bao"
         ]
       }
     },

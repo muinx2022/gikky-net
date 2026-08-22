@@ -4,7 +4,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { DatReactionData, DatReactionErrors, DatReactionResponses, DatVoteData, DatVoteErrors, DatVoteResponses, DongSoMachData, DongSoMachErrors, DongSoMachResponses, GetHealthData, GetHealthErrors, GetHealthResponses, LietKeBanCuMocData, LietKeBanCuMocErrors, LietKeBanCuMocResponses, LietKeBinhLuanMachData, LietKeBinhLuanMachErrors, LietKeBinhLuanMachResponses, LietKeBinhLuanMocData, LietKeBinhLuanMocErrors, LietKeBinhLuanMocResponses, LietKeFeedDangDienRaData, LietKeFeedDangDienRaErrors, LietKeFeedDangDienRaResponses, LietKeFeedMoiData, LietKeFeedMoiErrors, LietKeFeedMoiResponses, LietKeSubData, LietKeSubResponses, MoLaiMachData, MoLaiMachErrors, MoLaiMachResponses, NoiMocData, NoiMocErrors, NoiMocResponses, SuaBinhLuanData, SuaBinhLuanErrors, SuaBinhLuanResponses, SuaMocData, SuaMocErrors, SuaMocResponses, TaoMachData, TaoMachErrors, TaoMachResponses, VietBinhLuanData, VietBinhLuanErrors, VietBinhLuanResponses, XemHoSoData, XemHoSoErrors, XemHoSoResponses, XemMachData, XemMachErrors, XemMachResponses, XemSubData, XemSubErrors, XemSubResponses, XemToiData, XemToiResponses, XoaBinhLuanData, XoaBinhLuanErrors, XoaBinhLuanResponses, XoaMocData, XoaMocErrors, XoaMocResponses } from './types.gen';
+import type { BoTheoMachData, BoTheoMachErrors, BoTheoMachResponses, DanhDauDaDocData, DanhDauDaDocErrors, DanhDauDaDocResponses, DanhDauDaXemData, DanhDauDaXemErrors, DanhDauDaXemResponses, DatReactionData, DatReactionErrors, DatReactionResponses, DatVoteData, DatVoteErrors, DatVoteResponses, DongSoMachData, DongSoMachErrors, DongSoMachResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GoTrichData, GoTrichErrors, GoTrichResponses, LietKeBanCuMocData, LietKeBanCuMocErrors, LietKeBanCuMocResponses, LietKeBinhLuanMachData, LietKeBinhLuanMachErrors, LietKeBinhLuanMachResponses, LietKeBinhLuanMocData, LietKeBinhLuanMocErrors, LietKeBinhLuanMocResponses, LietKeFeedDangDienRaData, LietKeFeedDangDienRaErrors, LietKeFeedDangDienRaResponses, LietKeFeedMoiData, LietKeFeedMoiErrors, LietKeFeedMoiResponses, LietKeSubData, LietKeSubResponses, LietKeThongBaoData, LietKeThongBaoErrors, LietKeThongBaoResponses, MoLaiMachData, MoLaiMachErrors, MoLaiMachResponses, NoiMocData, NoiMocErrors, NoiMocResponses, SuaBinhLuanData, SuaBinhLuanErrors, SuaBinhLuanResponses, SuaMocData, SuaMocErrors, SuaMocResponses, TaoMachData, TaoMachErrors, TaoMachResponses, TheoMachData, TheoMachErrors, TheoMachResponses, TrichVaoSoData, TrichVaoSoErrors, TrichVaoSoResponses, VietBinhLuanData, VietBinhLuanErrors, VietBinhLuanResponses, XemHoSoData, XemHoSoErrors, XemHoSoResponses, XemMachCuaToiData, XemMachCuaToiErrors, XemMachCuaToiResponses, XemMachData, XemMachErrors, XemMachResponses, XemSubData, XemSubErrors, XemSubResponses, XemToiData, XemToiResponses, XoaBinhLuanData, XoaBinhLuanErrors, XoaBinhLuanResponses, XoaMocData, XoaMocErrors, XoaMocResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -317,6 +317,86 @@ export const vietBinhLuan = <ThrowOnError extends boolean = false>(options: Opti
 });
 
 /**
+ * Bo Theo Mach
+ *
+ * Bỏ theo mạch — PLAN 5.7. **Idempotent**: bỏ theo thứ vốn không theo vẫn là 200.
+ *
+ * **Quyền: bất kỳ ai đã đăng nhập**, và chỉ xoá được hàng của chính họ.
+ *
+ * Trả `following: false` và `last_seen_entry_seq: 0`. Con số `0` ở đây nói đúng sự thật:
+ * hàng `Follow` bị xoá nên vị trí đọc mất theo, và theo lại là bắt đầu từ `entry_count`
+ * lúc đó (xem `core.ghi.bo_follow`).
+ *
+ * Mạch bị mod **khoá** vẫn bỏ theo được, và cửa này là lý do chính của quyết định ấy —
+ * xem docstring module.
+ */
+export const boTheoMach = <ThrowOnError extends boolean = false>(options: Options<BoTheoMachData, ThrowOnError>): RequestResult<BoTheoMachResponses, BoTheoMachErrors, ThrowOnError> => (options.client ?? client).delete<BoTheoMachResponses, BoTheoMachErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/machs/{mach_id}/follow',
+    ...options
+});
+
+/**
+ * Theo Mach
+ *
+ * Theo mạch — "Theo mạch", PLAN 5.7. Follower nhận thông báo khi có mốc mới.
+ *
+ * **Quyền: bất kỳ ai đã đăng nhập**, kể cả tác giả trên mạch của chính mình (vô hại:
+ * `core/thong_bao.py::bao_moc_moi` loại người viết ra khỏi danh sách nhận, nên tự theo
+ * không sinh chuông nào). Chỉ ghi vào hàng của chính người gọi.
+ *
+ * **Idempotent**: bấm lần thứ hai trả về đúng trạng thái cũ, và **không** đụng
+ * `last_seen_entry_seq` — hàng đã có nghĩa là vị trí đọc đã có, ghi đè nó là xoá dấu đọc
+ * dở của chính người đang bấm.
+ *
+ * Lượt theo ĐẦU TIÊN đặt `last_seen_entry_seq = entry_count`, không phải `0`: người ta
+ * theo để biết chuyện **sắp** xảy ra (xem `core.ghi.dat_follow`).
+ *
+ * Mạch bị mod **khoá** vẫn theo được — xem docstring module.
+ */
+export const theoMach = <ThrowOnError extends boolean = false>(options: Options<TheoMachData, ThrowOnError>): RequestResult<TheoMachResponses, TheoMachErrors, ThrowOnError> => (options.client ?? client).post<TheoMachResponses, TheoMachErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/machs/{mach_id}/follow',
+    ...options
+});
+
+/**
+ * Xem Mach Cua Toi
+ *
+ * Trạng thái của **người đang xem** trên mạch này — PLAN mục 7, 8.4 điểm 4.
+ *
+ * **Không bao giờ cache được.** Đây là nửa per-user của trang mạch: phiếu của tôi,
+ * reaction của tôi, tôi có theo mạch không, tôi đọc tới mốc nào. Client component gọi nó
+ * **sau khi** trang đã render từ cache; tuyệt đối không nướng nội dung này vào HTML.
+ *
+ * **Khách chưa đăng nhập nhận 200**, không phải 401 — hai danh sách rỗng,
+ * `following = false`, `last_seen_entry_seq = 0`. Cùng lý lẽ `GET /me` (PLAN mục 7):
+ * endpoint này chạy trên MỌI lượt tải trang mạch, kể cả của bot, nên trả lỗi cho trạng
+ * thái bình thường nhất của hệ thống là dạy frontend coi lỗi là chuyện thường. `face` của
+ * khách vì thế bằng đúng `face` của `GET /machs/{id}`.
+ *
+ * `face` ở đây áp **đủ hai vế** của PLAN 5.5: vế thời gian, HOẶC "user đăng nhập VÀ đã
+ * follow hoặc từng bình luận mạch này". Vì là phép HOẶC nên nó chỉ kéo được CẶN → BÃO.
+ * Server quyết, frontend không tính lại (PLAN nguyên tắc 10).
+ *
+ * Mạch bị mod ẩn ⇒ **404**, cùng mã với mọi cửa công khai khác: trả trạng thái viewer cho
+ * một mạch đã bị gỡ là xác nhận nó tồn tại.
+ *
+ * Không cần đăng nhập nên **không khai `auth=`** — nó là endpoint GET, không có gì để
+ * CSRF bảo vệ, và luật "mọi operation không-GET phải có auth"
+ * (`tests/test_quyen_ghi.py`) vì thế không đụng tới nó.
+ */
+export const xemMachCuaToi = <ThrowOnError extends boolean = false>(options: Options<XemMachCuaToiData, ThrowOnError>): RequestResult<XemMachCuaToiResponses, XemMachCuaToiErrors, ThrowOnError> => (options.client ?? client).get<XemMachCuaToiResponses, XemMachCuaToiErrors, ThrowOnError>({ url: '/api/v1/machs/{mach_id}/me', ...options });
+
+/**
  * Noi Moc
  *
  * Nối một mốc vào mạch — PLAN 5.1.
@@ -372,6 +452,40 @@ export const moLaiMach = <ThrowOnError extends boolean = false>(options: Options
         }],
     url: '/api/v1/machs/{mach_id}/reopen',
     ...options
+});
+
+/**
+ * Danh Dau Da Xem
+ *
+ * Ghi vị trí đọc — nền của **vạch mới** ở mặt BÃO (PLAN 5.5).
+ *
+ * **Quyền: bất kỳ ai đã đăng nhập, và chỉ ghi vào hàng `Follow` của CHÍNH HỌ.** Không có
+ * tham số nào chỉ ra người khác, nên không có đường nào đặt vị trí đọc hộ ai.
+ *
+ * `entry_seq` vắng mặt ⇒ "đã xem tới mốc mới nhất", đúng ca PLAN 5.5 mô tả (thẻ mốc mới
+ * nhất mở sẵn khi trang mở). Con số **chỉ tiến không lùi** và bị kẹp trần ở `entry_count`
+ * — mở lại một mốc cũ trên spine không được kéo vạch mới về sau.
+ *
+ * **Chưa theo mạch ⇒ 200 kèm `following: false`, và KHÔNG ghi gì.**
+ * `last_seen_entry_seq` sống trên hàng `Follow` (PLAN mục 6) nên người chưa theo không có
+ * chỗ nào để lưu. Không tạo `Follow` hộ: đó là âm thầm bắt người ta theo mạch vì họ mở
+ * một trang. Không trả 404: client sẽ phải hỏi trước xem mình có theo không, tức thêm một
+ * round-trip cho một cái bookmark. Response nói thẳng là không lưu gì.
+ *
+ * Mạch bị mod **khoá** vẫn gọi được — xem docstring module.
+ */
+export const danhDauDaXem = <ThrowOnError extends boolean = false>(options: Options<DanhDauDaXemData, ThrowOnError>): RequestResult<DanhDauDaXemResponses, DanhDauDaXemErrors, ThrowOnError> => (options.client ?? client).post<DanhDauDaXemResponses, DanhDauDaXemErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/machs/{mach_id}/seen',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**
@@ -522,6 +636,144 @@ export const datReaction = <ThrowOnError extends boolean = false>(options: Optio
  * Mốc chưa sửa lần nào trả `items: []`, không phải 404.
  */
 export const lietKeBanCuMoc = <ThrowOnError extends boolean = false>(options: Options<LietKeBanCuMocData, ThrowOnError>): RequestResult<LietKeBanCuMocResponses, LietKeBanCuMocErrors, ThrowOnError> => (options.client ?? client).get<LietKeBanCuMocResponses, LietKeBanCuMocErrors, ThrowOnError>({ url: '/api/v1/mocs/{moc_id}/revisions', ...options });
+
+/**
+ * Go Trich Api
+ *
+ * Gỡ trích khỏi sổ — **trong 24 giờ**, sau đó không gỡ được nữa (PLAN 5.6 rào 1).
+ *
+ * **Quyền: CHỈ chủ mạch**, đối xứng với đường trích.
+ *
+ * Hàng `Trich` **ở lại** với `removed_at` — nó tự nó là log, và nó là thứ giữ cho chữ
+ * "đã TỪNG được trích" của PLAN 5.3 còn đúng (`Trich.comment = PROTECT` chặn xoá THẬT
+ * một bình luận đã vào sổ, kể cả sau khi trích bị gỡ). Vì unique là **partial**, gỡ xong
+ * thì trích câu khác vào đúng mốc đó được ngay.
+ *
+ * Hạn 24 giờ là hạn THẬT chứ không phải gợi ý UI: rào 1 dựng nó lên để sổ không thành
+ * một cái bảng chủ mạch xoay hằng ngày theo việc câu nào "hoá ra đúng" — đúng thứ rào 2
+ * (hai dấu thời gian) cũng đang chống.
+ *
+ * Mốc chưa có trích nào đang hiệu lực ⇒ 404 `chua_co_trich`; quá hạn ⇒ 409
+ * `het_han_go_trich`. Không idempotent về phía "gỡ cái đã gỡ": trả 404 chứ không 200, vì
+ * một lượt gỡ thành công và một lượt gỡ vào chỗ trống là hai chuyện khác nhau, và cái
+ * thứ hai gần như luôn nghĩa là UI đang hiển thị một trạng thái cũ.
+ */
+export const goTrich = <ThrowOnError extends boolean = false>(options: Options<GoTrichData, ThrowOnError>): RequestResult<GoTrichResponses, GoTrichErrors, ThrowOnError> => (options.client ?? client).delete<GoTrichResponses, GoTrichErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/mocs/{moc_id}/trich',
+    ...options
+});
+
+/**
+ * Trich Vao So Api
+ *
+ * Ghi một câu khán đài vào sổ — "trích vào sổ", PLAN 5.6.
+ *
+ * **Quyền: CHỈ chủ mạch** (`Mach.author`, không phải `Moc.author`). Người khác nhận 403
+ * `khong_phai_chu`. Rào 4 của PLAN 5.6 nói rõ blockquote ghi *"trích từ khán đài, **bởi
+ * chủ mạch**"* — nó là cơ chế thưởng mà chủ cuốn sổ trao đi, nên nó chỉ có nghĩa khi
+ * đúng một người trao được.
+ *
+ * Bốn ca từ chối, mỗi ca một mã để UI nói đúng chuyện:
+ *
+ * - mạch bị mod **khoá** ⇒ 403 `mach_bi_khoa`. Khác với follow/seen (sổ tay riêng của
+ * người đọc, xem `api/theo_doi.py`), trích **ghi vào nội dung công khai** của mạch —
+ * nó đúng nghĩa "tương tác" mà PLAN 5.10 cấm trên mạch bị khoá;
+ * - mốc đã thành **bia mộ** hoặc bị mod ẩn ⇒ 409 `noi_dung_da_go`. Trích là chú thích
+ * gắn vào thân mốc (rào 4), mà bia mộ thì không còn thân nào để gắn — `trinh_bay.moc_ra`
+ * cũng đã bỏ khối trích của mốc bị gỡ, nên ghi vào đó là ghi một hàng không cửa nào hiện;
+ * - bình luận **không thuộc mạch này**, hoặc đã bị gỡ ⇒ 400 `du_lieu_khong_hop_le`;
+ * - mốc **đã có trích đang hiệu lực** ⇒ 409 `da_co_trich` (rào 1). Gỡ trước rồi trích lại.
+ *
+ * **Trích bình luận của CHÍNH MÌNH thì được**, và blockquote hiện đầy đủ — nhưng chỉ số
+ * "Được trích ×N" trên hồ sơ **không cộng** (rào 3, `api/users.py`), và không có thông
+ * báo nào được gửi (`core/thong_bao.py::bao_duoc_trich`). Ba cửa, một luật: tự trích
+ * không phải một sự kiện xã hội.
+ *
+ * Người được trích nhận thông báo (PLAN 5.6 dòng cuối), sinh **trong cùng transaction**.
+ */
+export const trichVaoSo = <ThrowOnError extends boolean = false>(options: Options<TrichVaoSoData, ThrowOnError>): RequestResult<TrichVaoSoResponses, TrichVaoSoErrors, ThrowOnError> => (options.client ?? client).post<TrichVaoSoResponses, TrichVaoSoErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/mocs/{moc_id}/trich',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Liet Ke Thong Bao
+ *
+ * Chuông poll 60 giây — PLAN 5.8. **Per-user tuyệt đối, KHÔNG BAO GIỜ cache.**
+ *
+ * **Quyền: chỉ thông báo của chính người gọi.** Không có tham số nào chỉ ra người khác;
+ * `user = request.user` nằm ngay trong queryset gốc.
+ *
+ * Sắp **mới nhất trước**, cursor keyset trên `(created_at, id)` — khoá BẤT BIẾN, nên nó
+ * hưởng đủ bảo đảm "không trùng, không sót" của `api/phan_trang.py`. Một thông báo
+ * `moc_moi` được gộp lại (mốc thứ hai trong ngày) sẽ **bump `created_at`** và vì thế
+ * nhảy lên đầu — đúng ý muốn, và nó không phá keyset: hàng ấy chuyển sang trang 1, đúng
+ * ca "hàng mới chèn vào đầu" mà keyset sinh ra để xử.
+ *
+ * `so_chua_doc` đếm **toàn bộ hộp thư**, không phải trang đang xem: con số trên chấm đỏ
+ * nói "bạn có 23 thứ chưa đọc", tính nó trên một trang 20 dòng thì nó kẹt ở `20` mãi mãi
+ * — một con số trông hợp lý và luôn sai.
+ *
+ * **Không có bộ lọc `?chua_doc=`** ở bản này. Chuông hiện cả đã đọc lẫn chưa đọc trong
+ * một dòng thời gian; thêm một chế độ lọc là thêm một trạng thái UI phải nhớ, mà PLAN
+ * 5.8 không đòi.
+ */
+export const lietKeThongBao = <ThrowOnError extends boolean = false>(options?: Options<LietKeThongBaoData, ThrowOnError>): RequestResult<LietKeThongBaoResponses, LietKeThongBaoErrors, ThrowOnError> => (options?.client ?? client).get<LietKeThongBaoResponses, LietKeThongBaoErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/notifications',
+    ...options
+});
+
+/**
+ * Danh Dau Da Doc
+ *
+ * Đánh dấu thông báo đã đọc — PLAN 5.8.
+ *
+ * **Quyền: chỉ thông báo của chính người gọi.** `ids` của người khác **bị bỏ qua im
+ * lặng**, không phải 403: truy vấn luôn kèm `user = request.user`, nên chuyện tệ nhất
+ * một id lạ gây ra là `so_da_danh_dau` nhỏ hơn số id đã gửi. Trả 403 thì ngược lại — nó
+ * **xác nhận** id đó có thật và thuộc về ai đó, tức một cửa dò id qua mã lỗi.
+ *
+ * `ids = null` là "đọc hết"; một danh sách là đánh dấu đúng từng dòng. `[]` đánh dấu
+ * **không dòng nào** — khác `null` một cách cố ý, để một mảng rỗng do client dựng hụt
+ * không lặng lẽ thành lệnh xoá sạch chấm đỏ.
+ *
+ * **Chỉ chạm hàng đang `read_at IS NULL`.** Hai hệ quả, cả hai đều là chủ đích:
+ * `so_da_danh_dau` đếm đúng số dòng **vừa đổi trạng thái** (bấm "đọc hết" lần thứ hai ra
+ * `0`), và `read_at` cũ không bị dời — nó là mốc "tôi đã xem cái này lúc nào", không phải
+ * một cờ boolean viết lại được mỗi lần bấm.
+ */
+export const danhDauDaDoc = <ThrowOnError extends boolean = false>(options: Options<DanhDauDaDocData, ThrowOnError>): RequestResult<DanhDauDaDocResponses, DanhDauDaDocErrors, ThrowOnError> => (options.client ?? client).post<DanhDauDaDocResponses, DanhDauDaDocErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/notifications/read',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
 
 /**
  * Liet Ke Sub

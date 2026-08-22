@@ -15,9 +15,11 @@ hoặc `pnpm digest` ở gốc repo.
   Nó đi qua đúng đường `django.core.mail` như bản SMTP, chỉ khác cái ống ở cuối — nên
   "dựng nội dung + giao cho backend" là đã đo được, còn "SMTP nhận và chuyển thư" thì
   **chưa**, và không đo được ở đây.
-- **`nguoi_nhan_digest()` hôm nay trả rỗng** (bảng `Follow` là Phase 3 — xem
-  `core/digest.py`). Nên lệnh này trên máy này luôn báo *0 email*. Đừng đọc con số đó
-  thành "digest chạy tốt": nó nghĩa là không có ai để gửi.
+- **`nguoi_nhan_digest()` đã được cắm ở Phase 3** (2026-08-23) — nó đọc bảng `Follow` thật.
+  Nhưng lệnh này trên máy dev **vẫn** báo *0 email*, và nay vì một lý do khác: `nhan_digest`
+  mặc định `False` (PLAN 5.8 chốt digest là **opt-in**) nên `seed_dev` không tạo người nhận
+  nào. Đừng đọc "0 email, exit 0" thành "digest chạy tốt" — dòng cảnh báo lệnh in ra khi
+  danh sách rỗng nói đủ ba điều kiện để biết chỗ nào đang thiếu.
 
 ## `--theo-lich` để làm gì
 
@@ -115,12 +117,19 @@ class Command(BaseCommand):
 
         nguoi_nhan = digest.nguoi_nhan_digest()
         if not nguoi_nhan:
-            # Nói RA vì sao rỗng. "0 email" một mình đọc như "đã chạy xong xuôi", trong
-            # khi sự thật là chưa có ai để gửi (bảng `Follow` thuộc Phase 3).
+            # Nói RA vì sao rỗng. "0 email" một mình đọc như "đã chạy xong xuôi".
+            #
+            # Từ 2026-08-23 (Phase 3) câu này đổi nghĩa, và đổi theo hướng quan trọng:
+            # trước đó rỗng nghĩa là **hàm chưa được cắm**, nay nó nghĩa là **không ai
+            # đủ điều kiện**. Ba điều kiện, và trên một DB dev thì điều kiện đầu gần như
+            # luôn là thủ phạm: `User.nhan_digest` mặc định `False` (PLAN 5.8 chốt digest
+            # là opt-in), nên `seed_dev` không tạo người nhận nào.
             self.stdout.write(
                 self.style.WARNING(
-                    "Không có người nhận nào: `core.digest.nguoi_nhan_digest()` đang trả "
-                    "rỗng — đó là chỗ cắm của Phase 3 (bảng Follow), không phải lỗi."
+                    "Không có người nhận nào. `nguoi_nhan_digest()` đòi ĐỦ ba điều kiện: "
+                    "user bật `nhan_digest` (opt-in, mặc định TẮT) · `is_active` và có "
+                    "email · đang theo một mạch KHÔNG phải của chính họ. Kiểm điều kiện "
+                    "đầu trước — trên máy dev nó thường là chỗ thiếu."
                 )
             )
             return

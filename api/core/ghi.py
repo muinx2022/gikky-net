@@ -42,10 +42,23 @@ thành **`Mach` khoá SAU CÙNG**.
 Không đường ghi nào của module này gọi `select_for_update` trên `Moc` sau khi đã khoá
 `Mach` — nhưng khoá NGẦM do khoá ngoại thì có: `INSERT INTO core_trich(moc_id, …)` lấy
 `FOR KEY SHARE` trên hàng `Moc` được tham chiếu, và người viết dòng `Trich.objects
-.create(...)` không thấy khoá nào cả vì không có dòng nào nói ra. Hôm nay chưa có đường
-ghi `Trich` nào, nên chưa phải lỗi; Phase 2 làm endpoint "trích vào sổ" thì đây là chỗ
-cạnh ngược `Mach → Moc` mọc ra. Luật đầy đủ kèm ca cụ thể: `gikky-net/CLAUDE.md`, mục
-"Thứ tự khoá hàng".
+.create(...)` không thấy khoá nào cả vì không có dòng nào nói ra. Luật đầy đủ kèm ca cụ
+thể: `gikky-net/CLAUDE.md`, mục "Thứ tự khoá hàng".
+
+**Phase 3 đã mở đúng đường ghi ấy, và cách nó giữ luật là KHÔNG CHẠM `Mach`** — xem
+`trich_vao_so` ở dưới. Đường trích lấy đúng ba khoá, cả ba đều ngầm: `Moc` và `Comment`
+(FK của `core_trich`), `User` (FK của `core_notification`, do handler sinh thông báo trong
+cùng transaction — xem `core/thong_bao.py`). Không hàng `Mach` nào, nên không cạnh ngược
+nào. Bài đo cấu trúc `tests/test_trich_ghi.py::test_duong_trich_khong_khoa_hang_Mach` đỏ
+nếu ai đó thêm `cap_nhat_dem_mach` vào đó "cho chắc".
+
+**Cạnh thứ ba, thêm ở Phase 3: `Mach` → `User`.** `noi_moc` đang giữ khoá hàng `Mach`
+(qua `them_moc`) khi handler gọi `thong_bao.bao_moc_moi`, mà `INSERT core_notification`
+lấy `FOR KEY SHARE` trên `core_user`. Cùng chiều với mọi cạnh khác (`Mach` vẫn là hàng
+khoá SAU CÙNG trong nhóm mạch, còn `User` là một bảng khác hẳn), và cạnh ngược
+`User → Mach` hôm nay **không tồn tại**: hai đường duy nhất khoá `User` là `ban_user` /
+`go_ban_user`, cả hai chỉ ghi `AuditLog` sau đó. Thêm một đường ghi khoá `User` rồi mới
+đụng `Mach` là dựng chu trình.
 
 Ngoại lệ DUY NHẤT và có chủ đích: bình luận GỐC không có hàng cha nào để khoá, nên
 `cap_phat_path` khoá thẳng `Mach` (mọi bình luận gốc của một mạch là sibling của nhau).
@@ -76,7 +89,7 @@ from core.models.binh_luan import Comment
 from core.models.dien_dan import Mach, Sub
 from core.models.he_thong import AuditLog, Report
 from core.models.moc import Moc, MocRevision, kiem_figures
-from core.models.tuong_tac import Reaction, Trich, Vote
+from core.models.tuong_tac import Follow, Reaction, Trich, Vote
 from core.thoi_gian import TZ_VN, ngay_vn
 
 #: PLAN 5.1 — tối đa 3 mốc mỗi **ngày lịch VN** mỗi mạch.
@@ -855,6 +868,158 @@ def dat_reaction(*, user, moc: Moc, emoji: str | None) -> Reaction | None:
         cu.emoji = emoji
         cu.save(update_fields=["emoji"])
         return cu
+
+
+# ═══ Follow · vị trí đọc · trích vào sổ — PLAN 5.5, 5.6, 5.7, Phase 3 ════════
+#
+# Ba nhóm hàm dưới đây có CHUNG một tính chất đáng ghi ra một lần: **không hàm nào gọi
+# `cap_nhat_dem_mach`, và không hàm nào chạm hàng `Mach`.**
+#
+# Không phải vì quên. Bốn cột denormalize (+ `diem_bai_goc`) đo số mốc, số bình luận đọc
+# được, hai mốc thời gian hoạt động và điểm bài gốc — **không cột nào phụ thuộc vào việc
+# ai theo mạch, ai đọc tới đâu, hay câu nào được ghi vào sổ**. Gọi `cap_nhat_dem_mach` ở
+# đây không sửa được gì, nhưng nó lấy khoá độc quyền hàng `Mach`, và với `Trich` thì cái
+# khoá đó là một **lỗi thật** chứ không chỉ lãng phí — xem `trich_vao_so`.
+
+
+def dat_follow(*, user, mach: Mach) -> Follow:
+    """Theo mạch (PLAN 5.7). Idempotent — bấm hai lần không đổi gì.
+
+    **Hàng mới đặt `last_seen_entry_seq = mach.entry_count`, không phải `0`.** Mặc định
+    `0` của model đúng cho một hàng dựng bằng tay ("chưa xem mốc nào"); đường sản phẩm thì
+    biết rõ hơn. Bấm "Theo mạch" trên một mạch 9 mốc rồi thấy **cả 9 mốc** đánh dấu chưa
+    xem là vạch mới (PLAN 5.5) nói dối ngay ở lượt đầu tiên — người ta theo để biết chuyện
+    **sắp** xảy ra, không phải để bị giao lại toàn bộ quá khứ.
+
+    Lần follow **thứ hai** thì không đụng `last_seen_entry_seq`: hàng đã có nghĩa là vị
+    trí đọc đã có, và ghi đè nó là xoá dấu đọc dở của chính người đang bấm.
+
+    Không kiểm `locked_at`: xem docstring `bo_follow`.
+    """
+    theo, _ = Follow.objects.get_or_create(
+        user=user,
+        mach=mach,
+        defaults={"last_seen_entry_seq": mach.entry_count},
+    )
+    return theo
+
+
+def bo_follow(*, user, mach: Mach) -> bool:
+    """Bỏ theo mạch. Trả `True` nếu vừa có một hàng bị xoá, `False` nếu vốn không theo.
+
+    **Xoá hàng chứ không đặt một cờ**, nên `last_seen_entry_seq` mất theo và theo lại là
+    bắt đầu từ `entry_count` hiện tại. Chấp nhận được: một cột "đã bỏ theo nhưng vẫn nhớ
+    chỗ đọc" là trạng thái không cửa nào của sản phẩm đọc tới, và giữ nó lại chỉ để phòng
+    xa là giữ một hàng dữ liệu người dùng tưởng mình đã xoá.
+
+    **Cố ý KHÔNG kiểm `mach.locked_at`** — và đây là chỗ dễ "dọn dẹp" nhầm nhất của phase
+    này. PLAN 5.10 nói mạch bị mod khoá thì *"đọc được, không tương tác"*, còn
+    `api/quyen.py::doi_mach_tuong_tac_duoc` được gọi ở mọi cửa ghi khác. Nhưng follow là
+    **sổ tay riêng của người đọc**: không sinh chữ, không đổi con số nào của mạch, không
+    ai khác nhìn thấy. Và chặn đúng cửa này có hại thật — người ta không tắt được thông
+    báo của chính cái mạch mod vừa phải khoá lại.
+    Ghim ở `tests/test_api_follow_seen.py::test_mach_bi_khoa_van_follow_va_seen_duoc`.
+    """
+    so_xoa, _ = Follow.objects.filter(user=user, mach=mach).delete()
+    return so_xoa > 0
+
+
+def dat_da_xem(*, user, mach: Mach, entry_seq: int | None = None) -> Follow | None:
+    """Ghi vị trí đọc cho vạch mới (PLAN 5.5). Trả hàng `Follow`, hoặc `None` nếu chưa theo.
+
+    `entry_seq = None` nghĩa là "đã xem hết tới mốc mới nhất" — đúng ca PLAN 5.5 mô tả
+    ("thẻ mốc mới nhất mở sẵn được tính là đã xem, client gọi `POST /machs/{id}/seen` khi
+    trang mở").
+
+    **Chỉ tiến, không bao giờ lùi.** `max(cũ, mới)` chứ không gán thẳng: client gọi
+    endpoint này mỗi lượt mở trang, kể cả khi người ta bấm vào một **peek mốc cũ** trên
+    spine. Gán thẳng thì mở lại mốc 3 của một mạch 9 mốc là tự tay đánh dấu 6 mốc cuối
+    thành chưa đọc — và người dùng không có cách nào hiểu vì sao vạch mới nhảy về sau.
+    Đây cũng là điều kiện để hai tab mở song song không giẫm lên nhau.
+
+    Kẹp trần ở `entry_count`: `seq` không bao giờ vượt số mốc, nên một `entry_seq` lớn hơn
+    chỉ có thể là client gõ sai hoặc cố tình. Kẹp im lặng thay vì 400 vì con số này là một
+    cái bookmark, không phải một khẳng định về dữ liệu.
+
+    **Chưa theo mạch ⇒ `None`, không tạo `Follow` hộ.** `last_seen_entry_seq` sống trên
+    `Follow` (PLAN mục 6), nên người chưa theo không có hàng nào để ghi. Ba lối xử, hai
+    lối bị loại: tạo hàng hộ là **âm thầm bắt người ta theo mạch vì họ mở một trang**;
+    trả 404 bắt client phải biết trước mình có theo hay không mới dám gọi, tức thêm một
+    round-trip cho một cái bookmark. Lối còn lại — nhận rồi không ghi gì — chỉ trung thực
+    nếu người gọi **nói ra** chuyện đó, nên tầng API trả `following: false` chứ không trả
+    một `{"ok": true}` rỗng nghĩa.
+    """
+    with transaction.atomic():
+        theo = Follow.objects.select_for_update().filter(user=user, mach=mach).first()
+        if theo is None:
+            return None
+        muon = mach.entry_count if entry_seq is None else entry_seq
+        moi = max(0, min(int(muon), mach.entry_count))
+        if moi > theo.last_seen_entry_seq:
+            theo.last_seen_entry_seq = moi
+            theo.save(update_fields=["last_seen_entry_seq"])
+    return theo
+
+
+def trich_vao_so(*, moc: Moc, comment: Comment) -> Trich:
+    """Trích một bình luận vào một mốc — "trích vào sổ", PLAN 5.6.
+
+    Người gọi (tầng API) đã kiểm quyền "chỉ chủ mạch", mốc còn sống, bình luận đọc được và
+    hai thứ cùng một mạch. Ở đây chỉ còn **rào 1**: tối đa 1 trích đang hiệu lực mỗi mốc.
+
+    Rào 1 được giữ bởi partial unique `UNIQUE (moc) WHERE removed_at IS NULL`
+    (`trich_mot_hieu_luc_moi_moc`), **không** bởi câu `exists()` ở tầng API: câu đó là
+    kiểm-rồi-ghi, và hai lượt bấm đồng thời của cùng một chủ mạch (double-click, hai tab)
+    cùng thấy "chưa có" rồi cùng ghi. Hàm này để `IntegrityError` bay lên cho tầng API đổi
+    thành 409 — DB là chỗ duy nhất phân xử được cuộc đua đó.
+
+    ---
+
+    ## THỨ TỰ KHOÁ — đọc trước khi thêm bất cứ dòng nào vào hàm này
+
+    `CLAUDE.md` cảnh báo đích danh ca này, và đây là chỗ nó thành code. `INSERT INTO
+    core_trich(moc_id, comment_id, …)` lấy `FOR KEY SHARE` trên hàng `Moc` **và** hàng
+    `Comment` được tham chiếu — **hai khoá không có dòng `select_for_update` nào nói ra**.
+    Luật của module là `Mach` khoá SAU CÙNG (xem docstring đầu file), nên bất cứ thứ gì
+    khoá hàng `Mach` **trước** câu `INSERT` này là dựng đúng cạnh ngược `Mach → Moc`, và
+    người viết dòng đó sẽ không thấy khoá nào cả.
+
+    Cách giữ đúng ở đây đơn giản đến mức dễ bị coi là thiếu sót: **hàm không chạm hàng
+    `Mach` một lần nào**, và nó **không gọi `cap_nhat_dem_mach`**. Không cột denormalize
+    nào của `Mach` phụ thuộc `Trich` — trích không đổi số mốc, số bình luận đọc được, hai
+    mốc thời gian hoạt động, hay điểm bài gốc. Thêm một lời gọi "cho chắc" vào đây không
+    sửa được con số nào và mở ra một cạnh khoá ngược.
+
+    Ghim bằng bài đo **cấu trúc**, không bằng bài đo deadlock (deadlock test là test chớp
+    nhoáng): `tests/test_trich_ghi.py::test_duong_trich_khong_khoa_hang_Mach` bắt mọi câu
+    SQL của một lượt trích và đòi không câu nào khoá hay `UPDATE` `core_mach`.
+    """
+    return Trich.objects.create(moc=moc, comment=comment)
+
+
+def go_trich(*, trich: Trich, khi=None) -> Trich:
+    """Gỡ một trích khỏi sổ — ghi `removed_at`, **không xoá hàng** (PLAN 5.6 rào 1).
+
+    Hàng ở lại vì *tự nó là log*: nó trả lời "câu này đã từng ở trong sổ, và bị rút ra lúc
+    nào". Đó cũng là thứ giữ cho `Trich.comment = PROTECT` nói đúng chữ "đã TỪNG được
+    trích" của PLAN 5.3 — xoá hàng ở đây là mở lại đường xoá THẬT một bình luận đã vào sổ.
+
+    Vì unique là **partial** (`WHERE removed_at IS NULL`), gỡ xong thì trích câu khác vào
+    đúng mốc đó được ngay — không phải dọn gì thêm.
+
+    Hạn 24 giờ là luật của tầng API (nó cần "bây giờ", không phải một bất biến dữ liệu),
+    cùng lối với hạn 7 ngày của `mo_lai`.
+
+    Idempotent: gỡ lần hai không dời `removed_at`. Dời nó là dời luôn hạn 24 giờ của lần
+    gỡ đầu — cùng loài lỗi mà `dong_so` chặn bằng 409 `mach_da_dong`.
+    """
+    khi = khi or timezone.now()
+    with transaction.atomic():
+        t = Trich.objects.select_for_update().get(pk=trich.pk)
+        if t.removed_at is None:
+            t.removed_at = khi
+            t.save(update_fields=["removed_at"])
+    return t
 
 
 # ═══ Moderation — PLAN 5.10, Phase 4 ═════════════════════════════════════════

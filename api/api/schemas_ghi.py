@@ -131,3 +131,55 @@ class ReactionIn(Schema):
     """
 
     emoji: str | None = None
+
+
+# --- Phase 3 -----------------------------------------------------------------
+
+
+class DaXemIn(Schema):
+    """`POST /machs/{id}/seen` — client báo đã đọc tới đâu (PLAN 5.5).
+
+    `entry_seq = null` (mặc định) nghĩa là **"đã xem tới mốc mới nhất"**, đúng ca PLAN 5.5
+    mô tả: thẻ mốc mới nhất mở sẵn khi trang mở, nên client gọi endpoint này không kèm gì.
+    Truyền một `seq` cụ thể là ca người ta bung timeline đầy đủ rồi đọc tới một chỗ nào đó.
+
+    Con số **chỉ tiến, không lùi** ở phía server (`core.ghi.dat_da_xem`), nên gửi một
+    `entry_seq` nhỏ hơn vị trí đã ghi là no-op chứ không phải một cách reset vạch mới —
+    peek một mốc cũ trên spine không được đánh dấu 6 mốc cuối thành chưa đọc.
+
+    `ge=0` chứ không `ge=1`: `0` là "chưa xem mốc nào", giá trị khởi điểm hợp lệ của cột.
+    """
+
+    entry_seq: int | None = Field(default=None, ge=0)
+
+
+class TrichIn(Schema):
+    """`POST /mocs/{id}/trich` — chủ mạch ghi một câu khán đài vào sổ (PLAN 5.6).
+
+    Chỉ có `comment_id`: **mốc nhận trích nằm ở URL**, không nằm trong thân. Hai thứ đó
+    không được cùng ở một chỗ vì rào 1 ("tối đa 1 trích đang hiệu lực mỗi mốc") là một
+    ràng buộc trên `moc`, và người gọi phải nói rõ mốc nào trước khi server đi kiểm.
+
+    Không có trường `body`: sổ trích **dẫn lại** một bình luận đã tồn tại, không phải chỗ
+    chủ mạch tự viết một câu rồi gán tên người khác vào.
+    """
+
+    comment_id: int
+
+
+class DanhDauDaDocIn(Schema):
+    """`POST /notifications/read` — đánh dấu đã đọc (PLAN 5.8).
+
+    `ids = null` (mặc định) nghĩa là **đánh dấu HẾT** — nút "đọc hết" của chuông. Truyền
+    một danh sách là đánh dấu đúng từng dòng, cho lượt bấm vào một thông báo lẻ.
+
+    Id của **người khác** trong danh sách bị bỏ qua chứ không làm cả request hỏng: truy vấn
+    luôn kèm `user = người đang gọi` (xem endpoint), nên chuyện tệ nhất một id lạ gây ra là
+    `so_da_danh_dau` nhỏ hơn số id đã gửi. Trả 403 ở đây thì ngược lại: nó **xác nhận** id
+    đó có thật và thuộc về ai đó — một cửa dò id qua mã lỗi.
+
+    Danh sách rỗng `[]` khác `null`: nó đánh dấu **không dòng nào**. Cố ý giữ khác nhau —
+    một mảng rỗng do client dựng hụt không được biến thành "đọc hết".
+    """
+
+    ids: list[int] | None = None

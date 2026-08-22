@@ -37,6 +37,25 @@ xuống chỗ khác hẳn: `apps/web/e2e/mach-can.spec.ts` chết ở `beforeAll
 `--reset` tường minh: `seed_dev` không có đường "dựng bù phần thiếu" (xem đoạn trên), nên
 nói ra là việc duy nhất trung thực nó làm được.
 
+## Đăng nhập bằng tài khoản seed (chỉ đúng ở máy dev)
+
+Cả 44 tài khoản dùng chung mật khẩu **`seed-dev-khong-dung-that`** (hằng `MAT_KHAU_SEED`),
+đăng nhập bằng **email** `<username>@vi-du.gikky.net` — gikky đăng nhập bằng email, không
+bằng username (`ACCOUNT_LOGIN_METHODS`). Email của chúng được đánh dấu đã xác thực sẵn.
+
+| vai | tài khoản | vào được đâu |
+|---|---|---|
+| chủ mạch HPG | `ba_muoi_phien` | app công khai (3000) |
+| chủ mạch VNM | `bac_gau_ha_noi` | app công khai (3000) |
+| **mod** | **`mod_gikky`** (`is_staff`) | **cả `apps/admin` (3001)** |
+
+`mod_gikky` thêm 2026-08-23 và là **cửa duy nhất vào khu quản trị từ một clone sạch** —
+xem hằng `MOD_SEED`. Không phải superuser, cố ý.
+
+Mật khẩu viết ra ở đây và **chỉ ở đây**: nó là một chuỗi cố định nằm trong repo công khai,
+nên nó chỉ an toàn chừng nào không ai mang `seed_dev` lên một máy có người thật. Tên hằng
+đã nói thẳng chuyện đó.
+
 **Vote là hàng `Vote` THẬT**, không phải gán thẳng `up_count`. Vì vậy số phiếu bị chặn
 trên bởi số user seed (32 người xem) — mockup PLAN 9.2 có "▲412" nhưng đó là minh hoạ
 bố cục, không phải đơn hàng dữ liệu; PLAN mục 10 chỉ đòi "điểm vote rải để top-10 wilson
@@ -106,6 +125,21 @@ SO_NGUOI_XEM = 32
 CHU_MACH = "ba_muoi_phien"
 #: Mật khẩu chung của mọi user seed — chỉ có ý nghĩa ở máy dev.
 MAT_KHAU_SEED = "seed-dev-khong-dung-that"
+
+#: Tài khoản **mod** của seed (`is_staff=True`) — thêm 2026-08-23, Phase 3.
+#:
+#: Vì sao nó phải tồn tại: Mảng C mở cả khu quản trị ở `/api/admin/*`, và lớp chặn thật ở
+#: dev là permission `is_staff` (`api/quan_tri.py::ChiMod` — hàng rào Host **không** tách
+#: được hai app Next ở dev, xem `config/host_admin.py`). Trước đợt này `seed_dev` dựng 43
+#: tài khoản mà **không cái nào** `is_staff`, nên từ một clone sạch không có đường nào vào
+#: `apps/admin` ngoài việc tự gõ `createsuperuser` — một bước không nằm trong `CLAUDE.md`,
+#: không nằm trong README, và không có gì đỏ khi thiếu: khu quản trị chỉ trả 403.
+#:
+#: `is_superuser` cố ý **False**: `ChiMod` chỉ hỏi `is_staff`, nên superuser là quyền thừa
+#: cho việc này. Cái nó mở thêm là toàn bộ Django admin ở `/api/admin/django/` với quyền
+#: xoá thẳng hàng `Moc`/`Mach` — đúng đường phá bất biến `entry_count == max(seq)` mà PLAN
+#: mục 6 cảnh báo. Ai cần superuser ở dev thì `createsuperuser`, có ý thức.
+MOD_SEED = ("mod_gikky", "Mod gikky")
 
 # --- 9 mốc của mạch HPG ------------------------------------------------------
 # (ngày kể từ mốc 1, giờ VN, loai, body, figures, question_for_crowd, lui_occurred_at)
@@ -551,9 +585,13 @@ class Command(BaseCommand):
         """
         from core.models import Vote
 
-        ten_seed = [u for u, _ in NGUOI_CO_TEN] + [
-            self._ten_nguoi_xem(i) for i in range(SO_NGUOI_XEM)
-        ]
+        ten_seed = (
+            [u for u, _ in NGUOI_CO_TEN]
+            + [self._ten_nguoi_xem(i) for i in range(SO_NGUOI_XEM)]
+            # Mod seed nằm trong danh sách xoá: bỏ nó ra thì `--reset` để lại một tài
+            # khoản `is_staff` mồ côi, và lượt seed sau đâm `UNIQUE` trên `username`.
+            + [MOD_SEED[0]]
+        )
         users = User.objects.filter(username__in=ten_seed)
         Vote.objects.filter(user__in=users).delete()
         Trich.objects.filter(comment__mach__author__in=users).delete()
@@ -619,6 +657,18 @@ class Command(BaseCommand):
             )
             for i in range(SO_NGUOI_XEM)
         ]
+        # Tài khoản mod — cửa duy nhất vào `apps/admin` từ một clone sạch. Xem `MOD_SEED`.
+        # Nó KHÔNG viết mạch/mốc/bình luận nào: mod phải là một cặp mắt từ ngoài, và một
+        # tài khoản vừa là chủ nội dung vừa là người kiểm duyệt nó làm mọi bài đo phân
+        # quyền của Mảng C mất đối chứng.
+        ten_mod, hien_thi_mod = MOD_SEED
+        nguoi[ten_mod] = User.objects.create(
+            username=ten_mod,
+            email=f"{ten_mod}@vi-du.gikky.net",
+            password=mat_khau,
+            display_name=hien_thi_mod,
+            is_staff=True,
+        )
         self._xac_thuc_email(list(nguoi.values()))
         return nguoi
 
