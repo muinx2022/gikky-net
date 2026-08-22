@@ -391,10 +391,17 @@ test.describe("V5 — ngăn kéo", () => {
     const lat = page.getByTestId("lat-cat-1");
     await expect(lat).toBeVisible();
 
+    // Ngăn kéo là một BẢN PHỤ của khán đài, không phải chỗ ở của bình luận, nên nó mang
+    // `data-ban-phu-binh-luan-id` (W11): `data-binh-luan-id` chỉ có ở đúng MỘT nút cho
+    // mỗi comment id trong cả trang.
+    //
+    // X6 — thuộc tính này TỪNG tên là `data-trich-binh-luan-id`, và chỗ này là bằng
+    // chứng tên ấy sai: lát cắt ngăn kéo không phải một trích đoạn, nó là toàn bộ thread
+    // neo vào mốc. Bài đo cũ đọc thuộc tính tên "trích" để lấy nội dung ngăn kéo.
     const id_dom = await lat
-      .locator("[data-binh-luan-id]")
+      .locator("[data-ban-phu-binh-luan-id]")
       .evaluateAll((els) =>
-        els.map((e) => Number(e.getAttribute("data-binh-luan-id"))),
+        els.map((e) => Number(e.getAttribute("data-ban-phu-binh-luan-id"))),
       );
     expect(id_dom).toEqual(duyet(nk.threads).map((n) => n.id));
   });

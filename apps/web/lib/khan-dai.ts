@@ -2,7 +2,9 @@ import type { BinhLuanOut, KhanDaiOut } from "@gikky/api-client";
 
 /** Ba sort của khán đài — PLAN 5.3.
  *
- * **Đây là chỗ vá nợ 1b #4.** `GET /machs/{id}/comments` khai tham số `sort: str` ở
+ * **Đây là chỗ vá nợ 1b #3** (danh sách chuẩn: `plans/2026-08-22-phase-1b-va2.md`
+ * §3 — xem `plans/2026-08-22-phase-1d-va3.md` §4b về việc token `1b #N` từng trỏ vào
+ * hai hệ đánh số khác nhau). `GET /machs/{id}/comments` khai tham số `sort: str` ở
  * Ninja, nên `LietKeBinhLuanMachData["query"]["sort"]` trong TS client sinh ra là
  * `string`: gõ `?sort=hay_nhaat` không bị TypeScript chặn, chỉ tới runtime mới ăn 400.
  * Hằng union này bọc lại ở tầng 1c.
@@ -105,6 +107,29 @@ export function trangThaiDeepLink(
   idCoTrongTrang: ReadonlySet<number>,
 ): "cuon_duoc" | "trang_sau" {
   return idCoTrongTrang.has(commentId) ? "cuon_duoc" : "trang_sau";
+}
+
+/** Khối "Câu đáng đọc" có đáng render không — PLAN 5.5, ngoại lệ "tập = cả khán đài".
+ *
+ * **Vì sao câu hỏi này không trả lời được bằng hai kích thước** *(Y1, lượt vá 4)*. Bản
+ * trước hỏi `tap.tong_thread >= tongThreadDayDu`, tức so kích thước TẬP với tổng thread
+ * của CÂY. Từ X4 hai con số ấy đếm hai thứ khác nhau: cây đếm mọi bia mộ giữ chỗ, còn tập
+ * không nhận bia mộ qua vế top-10 nhưng vẫn ôm bia mộ **đã được trích** (PLAN 5.6). Hệ
+ * quả đo được trên seed dev — mạch VNM có 6 gốc (1 mod ẩn · 1 tác giả xoá đã trích · 4
+ * bình thường) cho tập 5, `5 < 6` ⇒ render ⇒ 5 bình luận in **hai lần** trên một trang và
+ * `[bình luận đã xoá]` nằm ngay dưới nhãn "Câu đáng đọc".
+ *
+ * Con số so được là con số **API tự trả**: có ứng viên nào bị bỏ lại ngoài tập không.
+ * Không có thì khối chứa trọn phần **thread GỐC** đọc được của cây, tức nó không lọc gì
+ * cả — đúng nghĩa
+ * ngoại lệ mà PLAN chốt, và lần này diễn đạt bằng một đại lượng đúng loài.
+ *
+ * `null` (khán đài thường, hoặc lời gọi hỏng) ⇒ **không render**: fail-closed. Mất khối
+ * này là mất một lối tắt; render nhầm nó là in cả cây hai lần.
+ */
+export function nenRenderCauDangDoc(tap: KhanDaiOut | null): tap is KhanDaiOut {
+  if (tap === null || tap.threads.length === 0) return false;
+  return (tap.so_ung_vien_bo_lai ?? 0) > 0;
 }
 
 /** Neo HTML của một bình luận trong khán đài. Một chỗ sinh, một chỗ đọc. */

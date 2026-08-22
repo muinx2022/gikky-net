@@ -244,6 +244,9 @@ def test_the_feed_du_truong_cho_1c(client, seed):
         "created_at",
         "last_entry_at",
         "last_activity_at",
+        # Phase 1d: cột vote của thẻ feed đọc điểm MỐC 1, không phải tổng điểm mạch
+        # (PLAN 5.7 — vote nằm trên từng mốc riêng rẽ).
+        "diem",
     }
     assert the["ket_qua"] == "+18.2% · 163 ngày"
     assert the["author"]["display_name"] == "Ba Mươi Phiên"

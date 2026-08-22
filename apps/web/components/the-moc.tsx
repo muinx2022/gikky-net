@@ -1,10 +1,11 @@
 import type { MocOut, NganKeoOut } from "@gikky/api-client";
 
-import { dauThoiGianServer, diemCoDau, ngayDayDu } from "@/lib/dinh-dang";
+import { dauThoiGianServer, ngayDayDu } from "@/lib/dinh-dang";
 import { SAU_NGAN_KEO } from "@/lib/khan-dai";
 
 import { BinhLuan, DanhSachBinhLuan } from "./binh-luan";
 import { SoLaiLo } from "./con-so";
+import { CotVote } from "./cot-vote";
 import { KhoiTrich } from "./khoi-trich";
 import { KhungNganKeo, NutNganKeo } from "./ngan-keo";
 import css from "./the-moc.module.css";
@@ -67,7 +68,14 @@ export function TheMoc({
           <span className={css.dot}>{moc.seq}</span>
         </div>
       )}
+      {/* Cột vote bên trái thân mốc — plan con 1d §2.5.6. Nó ở đây từ 1d để Phase 2
+          không phải vẽ lại bố cục thẻ khi vote sống dậy (PLAN 5.7: vote nằm trên TỪNG
+          mốc, "mốc 9 được 412 dù bài gốc 89" — nên con số này là `moc.score`, không phải
+          điểm mạch). Bia mộ vẫn có cột: `score` của nó đã bị API zero hoá, và giấu cột đi
+          ở đúng những hàng đó làm timeline so le. */}
       <div className={css.trong}>
+        <CotVote diem={moc.score} nhan={`mốc ${moc.seq}`} cai_gi="moc" />
+        <div className={css.noi}>
         <div className={css.dau}>
           <span className={css.khi} data-testid="moc-occurred-at">
             {ngayDayDu(moc.occurred_at)}
@@ -126,9 +134,6 @@ export function TheMoc({
         )}
 
         <div className={css.chan}>
-          <span className={css.diem} data-testid="diem-moc">
-            {diemCoDau(moc.score)}
-          </span>
           {laMach && (
             <NutNganKeo
               seq={moc.seq}
@@ -159,6 +164,7 @@ export function TheMoc({
             )}
           </KhungNganKeo>
         )}
+        </div>
       </div>
     </li>
   );

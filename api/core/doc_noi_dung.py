@@ -9,10 +9,16 @@ còn những luật nằm CHỖ KHÁC:
 - `Mach.hidden_at` — **6 bản sao** ở `api/feeds.py`, `api/machs.py`, `api/mocs.py` và **ba
   chỗ** trong `api/users.py` (một trong ba là bộ lọc `duoc_trich` nói ở gạch đầu dòng cuối).
   Đây là luật che có sức tàn phá lớn nhất và nó không đi qua file này lần nào;
-- `Trich.removed_at` — 2 bản (`api/machs.py`, `api/users.py`);
+- `Trich.removed_at` — **2 bản**: `api/machs.py` (khối trích trên thẻ mốc) và
+  `TRICH_CON_HIEN` ngay trong file này. Bản thứ hai là bộ lọc DÙNG CHUNG của
+  `tap_dang_duoc_trich` ("câu đáng đọc", PLAN 5.5) và của `duoc_trich`
+  (`api/users.py`) — trước 2026-08-22 chúng là hai bản chép tay và bản chép ở đây thiếu
+  bốn điều kiện, xem docstring `TRICH_CON_HIEN`. Nó nằm cạnh `tap_tung_duoc_trich`, vốn
+  cố ý KHÔNG lọc `removed_at`: hai hàm sát nhau mà ngược luật nhau là chỗ dễ gọi nhầm
+  nhất, nên cả hai docstring đều chỉ sang nhau;
 - "bình luận bị mod ẩn ⇒ khối trích biến mất" — `api/trinh_bay.py::trich_ra`;
-- bộ lọc của `duoc_trich` — `api/users.py`, và nó cố ý **không** cùng luật với ba con số
-  bên cạnh.
+- vế "KHÔNG tính tự trích" của `duoc_trich` — `api/users.py`, và nó cố ý **không** cùng
+  luật với ba con số bên cạnh.
 
 Lý do phải liệt kê ra: luật rải mà không ai đếm thì đường thứ tư quên mất điều kiện thứ
 năm, và thiếu một bộ lọc `hidden_at` thì không có gì đỏ, chỉ có nội dung bị mod ẩn hiện ra
@@ -155,6 +161,10 @@ def tap_tung_duoc_trich(mach: Mach) -> frozenset[int]:
     MỘT truy vấn cho cả mạch, trả `frozenset` để `dung_cay` tra bằng hash chứ không quét
     lại: hàm dựng cây không được có `Comment.objects` hay `Trich.objects` nào bên trong,
     nếu không `django_assert_num_queries` hết ghim được.
+
+    ⚠ **Đừng nhầm với `tap_dang_duoc_trich`** ngay dưới — hàm đó LỌC `removed_at` và phục
+    vụ "câu đáng đọc" (PLAN 5.5). Hai hàm khác nhau đúng một điều kiện, và gọi nhầm thì
+    không có gì đỏ: chỉ có bia mộ biến mất, hoặc một câu đã bị gỡ khỏi sổ leo lên mặt tiền.
     """
     return frozenset(
         Trich.objects.filter(comment__mach=mach).values_list("comment_id", flat=True)
@@ -247,36 +257,116 @@ def _khoa_thoi_gian(nut: Nut) -> tuple[datetime, int]:
     return (nut.binh_luan.created_at, nut.binh_luan.pk)
 
 
+#: Số chữ số thập phân giữ lại khi SO SÁNH wilson — xem `_cat_du_so`.
+#:
+#: 12 là chỗ đứng có chủ đích giữa hai bờ, và **cả hai bờ đều đã đo** *(số đo sửa lại ở
+#: W7, lượt vá 2 — bản trước viết "nhỏ nhất cũng cỡ `1e-3`" và "chín bậc mười trống",
+#: cả hai đều sai; phép quét thì mãi tới X2, lượt vá 3, mới thật sự tồn tại — W7 sửa con
+#: số rồi trỏ tới một bài đo chưa ai viết)*. Phép quét chạy được nằm ở
+#: `api/tests/test_pha_hoa_wilson.py::test_BO_DUOI_ca_vung_up_0_nam_duoi_nguong_cat` và
+#: `::test_BO_TREN_hai_bo_phieu_KHAC_nhau_khong_bao_gio_bi_gop`, quét toàn bộ
+#: `up, down ∈ [0, 200]` (40 401 cặp) — không phải một ước lượng bằng mắt:
+#:
+#: - **bờ dưới** — dư số của vùng `up = 0`: `wilson(0, 5) = 2.09e-17`, `wilson(0, 20) =
+#:   6.41e-18`, và `wilson(0, 1000) = −1.08e-19` (dấu **lật** ở `down` lớn). `round(…, 12)`
+#:   quy về `0.0` mọi giá trị dưới `5e-13`, tức bờ này cách ngưỡng cắt **~4,4 bậc mười**;
+#: - **bờ trên** — khoảng cách nhỏ nhất giữa hai bộ phiếu KHÁC nhau thật sự (chỉ xét
+#:   `up > 0`): **3.94e-10**, đạt ở `(134, 15)` so với `(178, 21)`. Ở quy mô `n = 10⁹` thì
+#:   một phiếu lẻ vẫn dịch rank khoảng `1.0e-9`. Bờ này cách ngưỡng cắt **~2,9 bậc mười**.
+#:
+#: Biên an toàn thật là **~2,9 bậc**, không phải chín — kết luận không đổi (0 cặp `up > 0`
+#: bị gộp nhầm trong 40 401 giá trị) nhưng con số biện minh thì phải đúng, vì nó là thứ
+#: người sau dùng để cân khi muốn đổi `12`.
+#:
+#: **Hai bờ ghim hằng này theo hai CHIỀU NGƯỢC nhau, và chỉ một chiều có nhiều bài đo**
+#: *(Y2, lượt vá 4 — câu cũ viết "Hạ xuống `8` là gộp 6 cặp: hai bài đo trên đỏ", và đó là
+#: một khẳng định sai lần thứ ba của cùng khối chữ này)*:
+#:
+#: - **hạ** (12 → 8) gộp 6 cặp `up > 0` ⇒ đỏ `test_BO_TREN_hai_bo_phieu_KHAC_nhau_khong
+#:   _bao_gio_bi_gop` và `test_cap_sat_nhau_nhat_van_PHAN_BIET_duoc_sau_khi_cat`.
+#:   `test_BO_DUOI_…` thì **KHÔNG** đỏ, và không thể đỏ: hạ chữ số chỉ nuốt thêm dư số,
+#:   tức làm bờ dưới an toàn hơn;
+#:   ⚠ ở `8` cả hai bài `BO_TREN` đều đỏ **cùng lúc**, nên đừng đọc con số 6 cặp từ một
+#:   bài rồi tưởng bài kia thừa — bài thứ hai gọi tên cặp cụ thể, bài thứ nhất đếm.
+#: - **nâng** (từ `17` trở lên — đo, không ước lượng) làm `round(2.09e-17, d)` thôi ra
+#:   `0.0` ⇒ đỏ `test_BO_DUOI_…` **cùng 6 bài khác** của cùng file: `_cat_du_so` hết gộp
+#:   được cả vùng `up = 0` nên khoá phá hoà `score` trở lại thành dòng chết, và cả bốn
+#:   bài đo thứ tự (`?dang_doc=1`, sibling, bia mộ, sort mặc định) đổ theo.
+#:
+#: Tức không có bài đo nào một mình ghim được `12`; nó bị kẹp từ hai phía bởi hai bài
+#: khác nhau.
+CHU_SO_SO_WILSON = 12
+
+
+def _cat_du_so(x: float) -> float:
+    """Cắt dư số dấu phẩy động trước khi SO SÁNH — dùng cho MỌI khoá wilson.
+
+    Một chỗ cắt duy nhất, hai chỗ gọi (`khoa_sap_wilson` cho sibling/"Câu đáng đọc",
+    `_rank_goc` cho gốc của sort `hay_nhat`). Hai bản chép tay là cách bản vá V9 chỉ vá
+    được một nửa: nó siết `sap_wilson_thuan` mà để `_rank_goc` nguyên sự đảo (W6).
+    """
+    return round(x, CHU_SO_SO_WILSON)
+
+
 def _rank_goc(nut: Nut, *, last_entry_at: datetime | None, now: datetime) -> float:
-    """Rank `hay_nhat` của một bình luận GỐC (PLAN 5.3) — tính trên số ĐÃ CHE.
+    """Rank `hay_nhat` của một bình luận GỐC (PLAN 5.3) — tính trên số ĐÃ CHE, ĐÃ CẮT
+    dư số (*W6, lượt vá 2*).
 
     Bia mộ không có nội dung nên không có gì để "tươi": nó lấy `wilson(0, 0) = 0.0` và
     không nhận hệ số. Hệ quả là nó **không giữ hạng cũ** nhờ số phiếu mà API không còn
     trả ra — một thread "+29 rồi bị xoá" rơi xuống đáy thay vì đứng đầu khán đài dưới
     dạng một dòng trống.
 
-    **Nói cho đúng mức:** rank `0.0` là SÀN, không phải "dưới mọi bình luận đọc được".
-    Bình luận đọc được bị dìm nặng vẫn xếp trên (`wilson(0, 5) ≈ 2e-17 > 0`), nhưng một
-    bình luận **0 up 0 down không được hệ số tươi** cũng ra đúng `0.0` và **hoà** với bia
-    mộ — lúc đó `_khoa_thoi_gian` mới quyết, tức cũ hơn đứng trước.
+    **Vì sao phải cắt dư số ở đây nữa.** Bản trước để `wilson_lower_bound` thô, và
+    docstring cũ mô tả hậu quả (*"bình luận đọc được bị dìm nặng vẫn xếp trên"*) như một
+    **lựa chọn**. Nó không phải lựa chọn: `wilson(0, 5) ≈ 2.09e-17 > 0` là dư số của hai
+    đường số học khác nhau, và với `down ≳ 1000` thì dấu của dư số **lật** (`wilson(0,
+    1000) = −1.08e-19 < 0`) — tức "luật" ấy còn tự đảo chiều theo số phiếu chống. Một
+    thứ tự mặt tiền do nhiễu dấu phẩy động quyết định thì không giải thích được bằng thứ
+    người đọc nhìn thấy, và đó là đúng thứ `khoa_sap_wilson` đã diệt ở sort sibling.
+
+    Sau khi cắt, cả vùng `up = 0` hoà nhau ở `0.0` — bia mộ, câu chưa ai vote, câu bị dìm
+    20 phiếu. **Khoá phá hoà là `score`** (xem `sap_goc_hay_nhat`), tường minh và bằng
+    đúng con số trên cột vote. Không còn luật ngầm nào tên là "đọc được xếp trên bia mộ":
+    bia mộ có `score = 0` nên trong **vùng hoà** nó đứng trên câu `−20` và dưới câu `+3`.
+
+    ⚠ **"Vùng hoà" là cả mệnh đề, không phải một chữ thừa** *(X8, lượt vá 3)*. Câu trên
+    chỉ đúng cho những nút cùng rơi về `rank = 0.0`, tức **ngoài** cửa sổ 48h. Một câu
+    `−20` vừa viết ăn `HE_SO_TUOI = 0.15`, rank của nó là `0.15 > 0.0`, và nó xếp **trên**
+    bia mộ — `score` không bao giờ được hỏi tới vì khoá thứ nhất đã khác nhau. Bản trước
+    viết "y hệt mọi nút khác" rồi hai dòng sau lại thừa nhận hệ số tươi không bị cắt: hai
+    câu tự mâu thuẫn, và câu sai là câu đầu.
+
+    Hệ số tươi (`+0.15`) lớn hơn ngưỡng cắt 11 bậc nên phép cắt không đụng tới nó.
     """
     if not nut.hien_noi_dung:
-        return wilson_lower_bound(0, 0)
-    return xep_hang_binh_luan_goc(
-        up_count=nut.up,
-        down_count=nut.down,
-        created_at=nut.binh_luan.created_at,
-        last_entry_at=last_entry_at,
-        now=now,
+        return _cat_du_so(wilson_lower_bound(0, 0))
+    return _cat_du_so(
+        xep_hang_binh_luan_goc(
+            up_count=nut.up,
+            down_count=nut.down,
+            created_at=nut.binh_luan.created_at,
+            last_entry_at=last_entry_at,
+            now=now,
+        )
     )
 
 
 def sap_goc_hay_nhat(*, last_entry_at: datetime | None, now: datetime) -> SapXep:
+    """Gốc của sort `hay_nhat`: `(-rank, -score, created_at, id)` — *W6, lượt vá 2*.
+
+    `-n.diem` đứng giữa vì lý do giống hệt `sap_wilson_thuan`: sau khi `_rank_goc` cắt
+    dư số, cả vùng `up = 0` hoà nhau, và để `_khoa_thoi_gian` quyết một mình thì câu bị
+    dìm 20 phiếu vẫn chiếm mặt tiền khán đài chỉ nhờ nó **cũ hơn** câu chưa ai vote —
+    cùng một cái sai, chỉ đổi chỗ từ khối "Câu đáng đọc" sang sort MẶC ĐỊNH.
+    """
+
     def sap(nuts: list[Nut]) -> list[Nut]:
         return sorted(
             nuts,
             key=lambda n: (
                 -_rank_goc(n, last_entry_at=last_entry_at, now=now),
+                -n.diem,
                 *_khoa_thoi_gian(n),
             ),
         )
@@ -284,10 +374,61 @@ def sap_goc_hay_nhat(*, last_entry_at: datetime | None, now: datetime) -> SapXep
     return sap
 
 
+def khoa_sap_wilson(up: int, down: int, diem: int) -> tuple[float, int]:
+    """Khoá so sánh của `sap_wilson_thuan` **trừ vế thời gian** — `(-wilson đã cắt, -điểm)`.
+
+    Đây là **định nghĩa DUY NHẤT** của "wilson dùng để so sánh" (vá V9, 2026-08-22; gộp
+    một chỗ ở W8, lượt vá 2 — trước đó còn một hàm `_khoa_wilson` riêng chỉ còn test gọi,
+    tức đúng cái bẫy hàm mồ côi mà `doc_duoc` từng dính ở 1b).
+
+    **Vì sao phải cắt trước khi so.** `wilson_lower_bound` tự nhận trong docstring rằng
+    `up = 0, down = n` cho `0.0` với **mọi** `n`, và về toán thì đúng: với `p = 0`, hai vế
+    `tâm` và `biên` bằng nhau đúng bằng `z²/(2n)`. Nhưng chúng được tính bằng hai đường số
+    học khác nhau (một phép chia, một phép `sqrt`) nên phép trừ để lại **dư số**:
+    `wilson(0, 5)` ra `2.09e-17` và `wilson(0, 20)` ra `6.41e-18`, cả hai **lớn hơn**
+    `wilson(0, 0) = 0.0` tuyệt đối. Hỏng nặng hơn một cú hoà: đó là một thứ tự **ngược, và
+    ổn định** — câu bị dìm 20 phiếu xếp TRÊN câu chưa ai vote, lần nào cũng thế.
+
+    Phép cắt nằm ở đây chứ không ở `wilson_lower_bound`: hàm ấy là công thức (PLAN 5.3
+    chốt `z = 1.281`), còn đây là quyết định *"hai giá trị cách nhau `1e-17` thì coi là
+    bằng nhau khi xếp hạng"* — một luật của tầng SẮP XẾP.
+
+    **Vì sao `-diem` phải đứng ngay sau.** Chèn `score` mà không cắt thì vô nghĩa (hai giá
+    trị không hoà thì khoá thứ hai không bao giờ được hỏi tới); cắt mà không chèn `score`
+    thì cả vùng `up = 0` hoà nhau và tuổi quyết định — câu bị dìm vẫn thắng nhờ nó cũ hơn.
+    Hai nửa, thiếu nửa nào cũng vô hiệu.
+
+    **Công khai, nhận số rời** (không nhận `Nut`) để **ORACLE của test dùng đúng bộ so
+    sánh của code** *(W8)*. Trước đó `test_api_cau_dang_doc.py` và `test_seed_dev.py` tự
+    sắp bằng `wilson_lower_bound` **thô** — một bộ so sánh KHÁC ở hai chỗ. Hôm nay hai bộ
+    trùng kết quả vì cả 14 bình luận gốc của seed đều `up > 0` và 14 giá trị wilson phân
+    biệt; ngày một bình luận gốc về `up = 0` thì chúng tách ra, và test sẽ đỏ với thông
+    điệp *"thứ tự sai"* trong khi thứ sai là chính oracle.
+
+    `diem` phải là số ĐÃ CHE (bia mộ ⇒ `0`) — xem `Nut.diem`.
+    """
+    return (-_cat_du_so(wilson_lower_bound(up, down)), -diem)
+
+
 def sap_wilson_thuan(nuts: list[Nut]) -> list[Nut]:
-    """Sibling trong thread: wilson THUẦN, không hệ số tươi (PLAN 5.3)."""
+    """Sibling trong thread: wilson THUẦN, không hệ số tươi (PLAN 5.3).
+
+    Cũng là thứ tự của khối "Câu đáng đọc" (PLAN 5.5) — xem `cau_dang_doc`.
+
+    **Khoá phá hoà là `score`, ĐỨNG TRƯỚC khoá thời gian** *(vá V9, 2026-08-22)*. Trong
+    cả vùng `up = 0`, wilson không mang thông tin (xem `khoa_sap_wilson`), nên nếu để
+    `_khoa_thoi_gian` quyết thì một câu **bị 20 người vote xuống** chiếm slot top-10 của
+    "Câu đáng đọc" chỉ nhờ nó **cũ hơn** một câu chưa ai vote. `score` = `up − down` là
+    đúng con số người đọc đang nhìn thấy trên cột vote, nên thứ tự giải thích được bằng
+    chính màn hình — cùng nguyên tắc mà `Nut.up`/`Nut.down` đã theo khi đọc số ĐÃ CHE.
+
+    Bia mộ mang `score = 0` (số phiếu bị zero hoá) nên nó xếp trên một câu bị dìm nặng.
+    Đó là hệ quả của cùng nguyên tắc trên, không phải một ngoại lệ: người đọc thấy `0` và
+    thấy `−20`.
+    """
     return sorted(
-        nuts, key=lambda n: (-wilson_lower_bound(n.up, n.down), *_khoa_thoi_gian(n))
+        nuts,
+        key=lambda n: (*khoa_sap_wilson(n.up, n.down, n.diem), *_khoa_thoi_gian(n)),
     )
 
 
@@ -355,6 +496,157 @@ def lat_cat_ngan_keo(
         binh_luan, sap_goc=sap, sap_con=sap, tung_duoc_trich=tung_duoc_trich
     )
     return [n for n in cay if n.binh_luan.anchor_moc_seq == seq]
+
+
+#: "Câu đáng đọc" lấy bao nhiêu thread theo wilson trước khi hợp với tập đã trích —
+#: PLAN 5.5 chốt đích danh "top-10".
+TOP_CAU_DANG_DOC = 10
+
+
+#: "Khối trích còn HIỆN trên thẻ mốc" — **định nghĩa DUY NHẤT**, dùng cho
+#: `Trich.objects.filter(**TRICH_CON_HIEN)`.
+#:
+#: Năm điều kiện là đúng năm cửa làm khối trích biến mất khỏi thẻ mốc, không thừa không
+#: thiếu: `removed_at` (chủ mạch gỡ, `api/machs.py`), `comment__hidden_at`
+#: (`api/trinh_bay.py::trich_ra`), `moc__deleted_at` / `moc__hidden_at`
+#: (`trinh_bay.py::moc_ra` không gắn trích lên bia mộ), `moc__mach__hidden_at`
+#: (`api/machs.py::_mach_hien` — mạch bị mod ẩn thì không có trang nào để hiện).
+#:
+#: Vì sao dùng chung (vá V1, 2026-08-22): `tap_dang_duoc_trich` chỉ lọc `removed_at`
+#: trong khi `api/users.py` đã lọc đủ năm cho **cùng một luật**. Hệ quả: mod ẩn mốc 5 thì
+#: khối trích biến mất khỏi trang, nhưng câu đó vẫn được kéo lên TRÊN CÙNG khối "Câu đáng
+#: đọc" — nội dung mod vừa gỡ leo lên mặt tiền, HTTP 200, không gì đỏ.
+#:
+#: ⚠ **CỐ Ý thiếu `comment__deleted_at`.** Tác giả tự xoá bình luận thì `trich_ra` GIỮ
+#: NGUYÊN body của blockquote (PLAN 5.6 dựng "cuốn sổ không-xoá-được" để chống *tác giả*
+#: rút chữ, không phải để chống *mod* gỡ nội dung). Thêm cột đó vào là chỉ số hồ sơ tụt
+#: và câu đó rơi khỏi "câu đáng đọc" trong khi blockquote vẫn còn nguyên chữ trên trang
+#: mạch — hai cửa nói hai chuyện về cùng một sự kiện. Xem docstring `api/users.py`.
+TRICH_CON_HIEN: dict[str, bool] = {
+    "removed_at__isnull": True,
+    "comment__hidden_at__isnull": True,
+    "moc__deleted_at__isnull": True,
+    "moc__hidden_at__isnull": True,
+    "moc__mach__hidden_at__isnull": True,
+}
+
+
+def tap_dang_duoc_trich(mach: Mach) -> frozenset[int]:
+    """Id bình luận có khối trích **đang hiện** trên một mốc của mạch.
+
+    Khác `tap_tung_duoc_trich` ở chỗ nó lọc, và chỗ đó là chủ đích: hàm kia cố ý KHÔNG
+    lọc gì vì nó phục vụ luật giữ bia mộ ("đã TỪNG được trích", PLAN 5.3). Hàm này phục
+    vụ "câu đáng đọc" của PLAN 5.5 — nó phải soi gương đúng khối trích đang hiện trên thẻ
+    mốc, tức đúng năm cột của `TRICH_CON_HIEN`. Một câu chủ mạch vừa rút khỏi sổ, hay một
+    câu nằm trên cái mốc mod vừa ẩn, mà vẫn được kéo lên mặt tiền là đưa lên chỗ dễ thấy
+    nhất đúng thứ vừa bị gỡ khỏi trang.
+    """
+    return frozenset(
+        Trich.objects.filter(moc__mach=mach, **TRICH_CON_HIEN).values_list(
+            "comment_id", flat=True
+        )
+    )
+
+
+@dataclass(frozen=True)
+class TapDangDoc:
+    """Kết quả của `cau_dang_doc`: tập thread, **kèm con số nói nó đã lọc được gì**.
+
+    Hai trường đi cùng nhau vì người tiêu thụ cần cả hai và chỉ có chỗ này biết cả hai.
+    Trả mỗi `list[Nut]` là buộc người gọi tự suy lại "tập này có phải một phép lọc thật
+    không" từ những con số nó đang cầm — và Y1 là bản ghi của chuyện suy sai ấy: frontend
+    so kích thước tập với **tổng thread của cây** (số đếm CẢ bia mộ), trong khi từ X4 tập
+    chỉ nhận ứng viên ĐỌC ĐƯỢC qua vế top-10. Hai con số đếm hai thứ khác nhau.
+    """
+
+    threads: list[Nut]
+    #: Số **ứng viên** (thread gốc đọc được) nằm ngoài `threads`.
+    #:
+    #: `0` nghĩa là khối không lọc được gì: nó chứa trọn phần **thread GỐC đọc được**
+    #: của cây, và render
+    #: nó là in mọi bình luận hai lần trên một trang (PLAN 5.5, ngoại lệ "tập = cả khán
+    #: đài"). Đây là số ĐÚNG để hỏi, không phải `len(threads)` so với tổng thread:
+    #: `threads` còn ôm bia mộ **đã được trích** (PLAN 5.6) — thứ không phải ứng viên và
+    #: không mang nội dung — nên phép so kia đọc "5 < 6" trên đúng mạch mà khối là bản
+    #: sao, và sẽ đọc sai lần nữa theo chiều ngược lại ở mạch nhiều bia mộ đã trích
+    #: (`10 + 3 bia mộ ≥ 12 ứng viên` ⇒ ẩn nhầm một khối đang lọc thật 2 thread).
+    so_ung_vien_bo_lai: int
+
+
+def cau_dang_doc(goc: list[Nut], *, dang_duoc_trich: frozenset[int]) -> TapDangDoc:
+    """"Câu đáng đọc" của mặt CẶN — PLAN 5.5: **đã trích ∪ top-10 theo wilson**.
+
+    Nhận danh sách thread GỐC đã dựng (thứ tự nào cũng được — hàm tự sắp lại), trả về
+    đúng những thread thuộc phép hợp, sắp theo **wilson thuần giảm dần**, kèm số ứng viên
+    bị bỏ lại (xem `TapDangDoc`).
+
+    Ba chốt, mỗi cái đóng một cửa cài sai:
+
+    1. **Phép hợp phải là hợp THẬT.** `r7` của seed nằm hạng 12/14 theo wilson, cố ý
+       NGOÀI top-10 (`seed_dev.py`, khối "BA VAI"). Ai cài thành "chỉ top-10" thì mất nó
+       và bài đo đỏ — đó là lý do con số 12/14 được dựng ra từ 1a.
+    2. **Wilson THUẦN, không hệ số tươi.** PLAN 5.5 viết "top-10 theo wilson", còn hệ số
+       tươi 0.15 là cơ chế của sort `hay_nhat` (PLAN 5.3) và nó phụ thuộc `now`. Trộn vào
+       đây là biến một danh sách "đáng đọc" thành một danh sách đổi theo giờ chạy test.
+    3. **Đơn vị là THREAD GỐC**, không phải từng bình luận lẻ. `threads` của `KhanDaiOut`
+       là danh sách thread, và một bình luận được trích nằm sâu trong nhánh vẫn phải kéo
+       theo gốc của nó — nếu không, nút trả về mất cha và cây không dựng lại được. Vì thế
+       vế "đã trích" tìm thread nào CHỨA một bình luận đang được trích.
+
+    4. **Bia mộ bị loại khỏi vế top-10, TƯỜNG MINH** *(X4, lượt vá 3 — lỗi sản phẩm
+       thật)*. Bản trước không loại và biện minh rằng nó *"chỉ lọt vào tập khi mạch có
+       dưới 10 thread"*. Sai: wilson của bia mộ là `0.0`, và trong nhóm đáy ấy
+       `sap_wilson_thuan` phá hoà bằng `score` — bia mộ mang `0` nên nó **thắng** mọi câu
+       bị dìm và **hoà** với mọi câu chưa ai vote (rồi tuổi quyết). Điều kiện thật để nó
+       lọt chỉ là *≥ 11 thread gốc mà dưới 10 thread có phiếu* — hình dạng bình thường
+       của một mạch đông bình luận, ít vote. Hậu quả nhìn thấy được: dòng
+       `[bình luận đã xoá]` in ngay dưới nhãn "Câu đáng đọc" và dòng "…những câu được
+       đánh giá cao nhất".
+       ⚠ **Chỉ vế top-10.** Bia mộ **đã được trích** vẫn phải ở lại qua vế thứ hai — đó là
+       luật `giu_vi_da_trich` của PLAN 5.6 (cuốn sổ không-xoá-được), và 1b đã từng làm
+       hỏng đúng chỗ này. Vì thế vòng lặp dưới duyệt `theo_wilson` (CẢ bia mộ), còn phép
+       cắt top-10 duyệt `ung_vien`. Đổi `theo_wilson` thành `ung_vien` ở vòng lặp là gỡ
+       câu đã trích của người ta khỏi mặt tiền ngay khi họ tự xoá bình luận gốc —
+       `tests/test_trich_con_hien.py::test_tac_gia_tu_xoa_thi_cau_do_VAN_o_lai_cau_dang_doc`
+       đỏ.
+
+       *(Tên `ung_vien` là của Y4, lượt vá 4: biến ấy từng tên `doc_duoc`, trùng đúng tên
+       hàm `doc_duoc` công khai ở đầu file này. Hôm nay không nổ vì thân hàm không gọi
+       hàm ấy; ai thêm một lời gọi vào đây thì ăn `TypeError: 'list' object is not
+       callable`, và câu docstring ngay trên thì đọc ra hai nghĩa.)*
+
+    5. **Con số trả kèm: `so_ung_vien_bo_lai`** *(Y1, lượt vá 4 — hồi quy do chính X4 đẻ
+       ra)*. Vế 4 thu nhỏ tập ứng viên; người tiêu thụ kích thước ấy —
+       `apps/web/components/khan-dai.tsx` — vẫn so nó với **tổng thread của cây**, con số
+       đếm CẢ bia mộ. Trên mạch VNM của `seed_dev` (6 gốc: 1 mod ẩn · 1 tác giả xoá đã
+       trích · 4 bình thường) phép so ra `5 < 6` ⇒ khối render ⇒ 5 bình luận in **hai
+       lần** trên một trang, và thread cuối của khối là `[bình luận đã xoá]` nằm ngay dưới
+       nhãn "Câu đáng đọc" — nguyên văn cái hại vế 4 tuyên bố vừa gỡ.
+       Chữa bằng cách trả ra **con số hàm này đã lọc từ**, không bắt frontend suy lại luật
+       domain (PLAN nguyên tắc 10). Xem `TapDangDoc.so_ung_vien_bo_lai` về việc vì sao là
+       "số ứng viên bỏ lại" chứ không phải "số ứng viên".
+
+    Xếp hạng của bia mộ vẫn giữ nguyên luật cũ ở mọi chỗ KHÁC (khán đài, sibling): nhóm
+    đáy được `sap_wilson_thuan` tách bằng `score`, nên một câu bị dìm nặng vẫn xếp **dưới**
+    bia mộ chứ không chen lên trước nó nhờ tuổi — xem docstring hàm đó (vá V9). Cái X4 đổi
+    là *tư cách vào tập*, không phải *thứ tự trong tập*.
+    """
+    theo_wilson = sap_wilson_thuan(goc)
+    ung_vien = [n for n in theo_wilson if n.hien_noi_dung]
+    chon = {id(n) for n in ung_vien[:TOP_CAU_DANG_DOC]}
+    for n in theo_wilson:
+        if _co_trich_trong_nhanh(n, dang_duoc_trich):
+            chon.add(id(n))
+    return TapDangDoc(
+        threads=[n for n in theo_wilson if id(n) in chon],
+        so_ung_vien_bo_lai=sum(1 for n in ung_vien if id(n) not in chon),
+    )
+
+
+def _co_trich_trong_nhanh(nut: Nut, dang_duoc_trich: frozenset[int]) -> bool:
+    if nut.binh_luan.pk in dang_duoc_trich:
+        return True
+    return any(_co_trich_trong_nhanh(c, dang_duoc_trich) for c in nut.con)
 
 
 def dem_nut(nuts: Iterable[Nut]) -> int:

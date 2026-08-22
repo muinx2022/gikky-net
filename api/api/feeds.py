@@ -1,31 +1,63 @@
-"""Hai feed của trang chủ — PLAN 5.9, mục 7.
+"""Hai feed của trang chủ + header của sub — PLAN 5.9, mục 7.
 
 `Mới` sắp theo `created_at`; `Đang diễn ra` sắp theo `last_entry_at` trên mạch đang mở.
 Hai feed, hai khoá sort khác nhau, **cố ý không có feed "Hot" nào bump theo mốc mới**:
 PLAN mục 4 loại cơ chế đó vì nó dạy tác giả băm "chốt 1/3" thành ba mốc để ăn ba lượt đẩy.
+
+**`?sort=nhieu_diem` KHÔNG phải cái vừa bị loại** (plan con 1d §1). Nó sắp theo
+`Mach.diem_bai_goc` — điểm của mốc 1, tức điểm của **bài gốc**, do người đọc bỏ phiếu.
+Nối thêm mốc không đụng vào con số đó, nên động cơ "băm mốc để ăn lượt đẩy" không tồn tại
+ở đây; đó chính là chỗ nó khác feed Hot bằng bump. Khoá thứ ba này áp cho CẢ hai feed:
+mỗi feed đã có một tập mạch riêng (mọi mạch / mạch đang mở), `sort` chỉ đổi cách sắp.
 """
 
-from django.db.models import QuerySet
+from typing import Literal, get_args
+
+from django.db.models import Count, Q, QuerySet
 from ninja import Router
 
 from core.models.dien_dan import Mach, Sub, TrangThaiMach
+from core.thoi_gian import KHOANG_TAT_CA, KhoangThoiGian, moc_khoang_vn
 
-from api.loi import CURSOR_KHONG_HOP_LE, SUB_KHONG_TON_TAI, LoiOut, loi
+from api.loi import (
+    CURSOR_KHONG_HOP_LE,
+    SUB_KHONG_TON_TAI,
+    LoiOut,
+    khong_tim_thay,
+    loi,
+)
 from api.phan_trang import (
     GIOI_HAN_MAC_DINH,
     CursorHong,
     cat_trang,
     giai_ma_cursor,
+    giai_ma_cursor_so,
     kiem_gioi_han,
     loc_keyset,
     ma_hoa_cursor,
+    ma_hoa_cursor_so,
 )
-from api.schemas import FeedOut
+from api.schemas import FeedOut, SubChiTietOut
 from api.trinh_bay import mach_tom_tat_ra
 
 router = Router()
 
 TRA_LOI = {200: FeedOut, 400: LoiOut, 404: LoiOut}
+
+#: `?sort=` của hai feed. **`Literal` là NGUỒN**, hai hằng dưới giải nén từ nó *(W9,
+#: lượt vá 2)* — cùng lý lẽ với `core/thoi_gian.py::KhoangThoiGian`: chữ ký endpoint phải
+#: mang kiểu này thì `openapi.json` mới ra `enum`, và frontend mới suy được union thay vì
+#: gõ lại bản sao thứ hai của hợp đồng (PLAN 8.3).
+#:
+#: `tu_nhien` = khoá sort riêng của từng feed (`created_at` / `last_entry_at`);
+#: `nhieu_diem` = `Mach.diem_bai_goc` giảm dần (plan con 1d §1).
+SortFeed = Literal["tu_nhien", "nhieu_diem"]
+SORT_FEED_HOP_LE: tuple[str, ...] = get_args(SortFeed)
+SORT_TU_NHIEN, SORT_NHIEU_DIEM = SORT_FEED_HOP_LE
+
+#: Khoá keyset của sort Top. Cặp `(điểm, id)` chứ không mình điểm — điểm trùng nhau là
+#: chuyện thường (mọi mạch chưa ai vote đều `0`).
+TRUONG_DIEM = "diem_bai_goc"
 
 
 def _mach_hien(sub: str | None) -> QuerySet:
@@ -61,6 +93,47 @@ def _trang(qs: QuerySet, *, truong: str, cursor: str | None, limit: int):
     ), None
 
 
+def _trang_diem(qs: QuerySet, *, cursor: str | None, limit: int):
+    """Một trang keyset giảm dần theo `(diem_bai_goc, id)` — sort Top.
+
+    Bản sao có chủ đích của `_trang`, không phải một tham số thêm vào nó: hai họ cursor
+    mã hoá hai kiểu khoá khác nhau (`giai_ma_cursor` vs `giai_ma_cursor_so`), và gộp
+    chúng lại bằng một cờ là tạo đúng cái nhánh mà "cursor sort này lọt sang sort kia"
+    đi qua. Hai hàm ngắn, hai họ cursor, không nhánh nào chung.
+
+    ⚠ **Nợ có tên — khoá keyset ở đây BIẾN ĐỔI, khác hẳn `_trang`** *(nói ra 2026-08-22,
+    lượt vá 2; §0 của plan chốt GIỮ cơ chế)*. `diem_bai_goc` đổi mỗi lần có phiếu rơi vào
+    mốc 1, nên bảo đảm "không trùng, không sót" của keyset **không** áp cho sort này:
+
+    - **sót**: mạch chưa trả ở trang trước được vote LÊN vượt `(diem, id)` của cursor ⇒
+      nó đứng trước chỗ cắt ⇒ biến mất khỏi mọi trang của lượt cuộn đó;
+    - **trùng**: mạch đã trả bị vote XUỐNG dưới mốc cursor ⇒ nó rơi vào phần còn lại ⇒
+      hiện lần thứ hai.
+
+    Không chữa: mọi bảng xếp hạng theo điểm sống đều có tính chất này, `OFFSET` còn tệ
+    hơn, và snapshot là một hệ thống khác. Hai ca trên được **ghim bằng test** ở
+    `api/tests/test_keyset_khoa_bien_doi.py` — đó là test tài liệu hoá một đánh đổi, đổi
+    cơ chế thì nó đỏ chứ không phải nó đang bảo vệ một tính chất mong muốn.
+    """
+    if cursor is not None:
+        try:
+            diem, id = giai_ma_cursor_so(cursor)
+        except CursorHong as e:
+            return None, loi(400, CURSOR_KHONG_HOP_LE, f"Cursor không hợp lệ: {e}")
+        qs = loc_keyset(qs, truong=TRUONG_DIEM, khi=diem, id=id, giam_dan=True)
+
+    hang = list(qs.order_by(f"-{TRUONG_DIEM}", "-pk")[: limit + 1])
+    trang, con_nua = cat_trang(hang, limit)
+    ke_tiep = (
+        ma_hoa_cursor_so(trang[-1].diem_bai_goc, trang[-1].pk)
+        if con_nua and trang
+        else None
+    )
+    return FeedOut(
+        items=[mach_tom_tat_ra(m) for m in trang], cursor_ke_tiep=ke_tiep
+    ), None
+
+
 def _kiem_sub(sub: str | None):
     """Sub gõ sai phải là 404, không phải feed rỗng.
 
@@ -75,50 +148,64 @@ def _kiem_sub(sub: str | None):
     return loi(404, SUB_KHONG_TON_TAI, f"Không có sub {sub!r}.")
 
 
-@router.get(
-    "/feeds/moi",
-    response=TRA_LOI,
-    operation_id="liet_ke_feed_moi",
-    tags=["feed"],
-)
-def feed_moi(
-    request,
-    sub: str | None = None,
-    cursor: str | None = None,
-    limit: int = GIOI_HAN_MAC_DINH,
-):
-    """Feed **Mới**: mọi bài, mới đăng trước (`created_at` giảm dần).
+def _loc_khoang(qs: QuerySet, khoang: str) -> QuerySet:
+    """Cắt theo `Mach.created_at >= mốc đầu khoảng` (giờ VN — `core/thoi_gian.py`).
 
+    Lọc theo `created_at` chứ không theo `last_entry_at` là chốt của plan con 1d §1:
+    "top tuần" nghĩa là *bài ra đời trong tuần*, không phải *bài được nối mốc trong tuần*
+    — vế thứ hai là feed Hot bằng bump đội lốt, đúng thứ PLAN mục 4 loại.
+
+    **`khoang` áp cho MỌI sort, không riêng `nhieu_diem`** — câu trả lời cố ý cho câu hỏi
+    "khoang kèm sort thời gian thì làm gì" (chỗ này giữ lại lý lẽ của `_kiem_sort_khoang`
+    cũ, hàm đã bị W9 xoá khi chữ ký endpoint chuyển sang `Literal`). Hai lựa chọn còn lại
+    đều tệ hơn: bỏ qua im lặng là `?khoang=ngay` biến mất khỏi kết quả mà URL vẫn nói nó
+    có (đúng loài lỗi mà `api/machs.py` đã phải trả 400 để diệt), còn trả 400 thì cấm một
+    tổ hợp đọc ra nghĩa hoàn toàn bình thường ("bài mới trong tuần").
+
+    Vì thế hàm này nằm ngoài mọi nhánh `sort`: nó chạy trước `_phuc_vu`, cho cả hai sort.
+    """
+    moc = moc_khoang_vn(khoang)
+    return qs if moc is None else qs.filter(created_at__gte=moc)
+
+
+def _phuc_vu(qs: QuerySet, *, truong: str, sort: str, cursor: str | None, limit: int):
+    if sort == SORT_NHIEU_DIEM:
+        return _trang_diem(qs, cursor=cursor, limit=limit)
+    return _trang(qs, truong=truong, cursor=cursor, limit=limit)
+
+
+#: Đoạn tài liệu chung của hai feed. Viết một chỗ vì nó đi thẳng ra `openapi.json` rồi ra
+#: JSDoc của TS client — hai bản chép tay sẽ trôi khỏi nhau ngay lần sửa đầu.
+#:
+#: Đi vào `description=` của decorator chứ không vào docstring: `ninja.Operation` chốt
+#: `description` NGAY lúc decorator chạy (`operation.py`, `self.description = description
+#: or self.signature.docstring`), nên nối thêm vào `__doc__` sau đó là nối vào một chỗ
+#: hợp đồng đã đi qua — docstring đẹp lên mà `openapi.json` không đổi một chữ.
+_TAI_LIEU_CHUNG = """
     `?sub=<slug>` lọc theo chuyên mục; sub không tồn tại trả 404 `sub_khong_ton_tai`.
     `?cursor=` là cursor keyset lấy từ `cursor_ke_tiep` của trang trước; `null` là hết.
     `?limit=` tối đa 50.
 
-    Mạch bị mod ẩn không xuất hiện. Mạch đã đóng sổ **vẫn xuất hiện** — feed này sắp theo
-    lúc bài ra đời, không theo trạng thái sổ.
-    """
-    if (l := kiem_gioi_han(limit)) is not None:
-        return l
-    if (l := _kiem_sub(sub)) is not None:
-        return l
-    ket_qua, l = _trang(
-        _mach_hien(sub), truong="created_at", cursor=cursor, limit=limit
-    )
-    return l if l is not None else ket_qua
+    `?sort=tu_nhien` (mặc định) giữ khoá sort riêng của feed này. `?sort=nhieu_diem` sắp
+    theo điểm bài gốc giảm dần, cursor keyset trên `(diem, id)`. **Cursor của sort này
+    KHÔNG dùng được cho sort kia** — đem nhầm là 400 `cursor_khong_hop_le`.
 
+    `?khoang=ngay|tuan|thang|tat_ca` (mặc định `tat_ca`) lọc theo `created_at`, ranh giới
+    là nửa đêm **giờ VN**; `tuan` = 7 ngày lịch gần nhất kể cả hôm nay, `thang` = 30 ngày.
+    Khoảng áp cho **mọi** sort, không riêng `nhieu_diem`. Giá trị lạ trả 400
+    `tham_so_khong_hop_le` — không bao giờ lặng lẽ quy về `tat_ca`.
 
-@router.get(
-    "/feeds/dang-dien-ra",
-    response=TRA_LOI,
-    operation_id="liet_ke_feed_dang_dien_ra",
-    tags=["feed"],
-)
-def feed_dang_dien_ra(
-    request,
-    sub: str | None = None,
-    cursor: str | None = None,
-    limit: int = GIOI_HAN_MAC_DINH,
-):
-    """Feed **Đang diễn ra**: mạch còn mở, mốc mới nhất trước (`last_entry_at` giảm dần).
+    Mạch bị mod ẩn không xuất hiện.
+"""
+
+_MO_TA_FEED_MOI = """Feed **Mới**: mọi bài, mới đăng trước (`created_at` giảm dần).
+
+    Mạch đã đóng sổ **vẫn xuất hiện** — feed này sắp theo lúc bài ra đời, không theo
+    trạng thái sổ.
+""" + _TAI_LIEU_CHUNG
+
+_MO_TA_FEED_DDR = """Feed **Đang diễn ra**: mạch còn mở, mốc mới nhất trước
+    (`last_entry_at` giảm dần).
 
     Feed đặc sản của gikky, **không phải** Hot: mốc mới không "bump" bài, nó chỉ cập nhật
     khoá sort của riêng feed này.
@@ -127,17 +214,135 @@ def feed_dang_dien_ra(
     mạch có thể đứng đầu feed này mà mở ra là **mặt CẶN** (`face` tính theo
     `last_activity_at`, vốn chỉ đo nội dung đọc được). Đó là hành vi đúng theo luật đếm
     hiện hành, đã ghi ở PLAN mục 6 "hệ quả cố ý 2" — đừng chữa bằng cách đổi khoá sort.
+""" + _TAI_LIEU_CHUNG
 
-    Tham số như `GET /feeds/moi`.
-    """
+
+@router.get(
+    "/feeds/moi",
+    response=TRA_LOI,
+    operation_id="liet_ke_feed_moi",
+    description=_MO_TA_FEED_MOI,
+    tags=["feed"],
+)
+def feed_moi(
+    request,
+    sub: str | None = None,
+    sort: SortFeed = SORT_TU_NHIEN,
+    khoang: KhoangThoiGian = KHOANG_TAT_CA,
+    cursor: str | None = None,
+    limit: int = GIOI_HAN_MAC_DINH,
+):
+    """Xem `_MO_TA_FEED_MOI` — mô tả công khai nằm ở `description=` của decorator."""
     if (l := kiem_gioi_han(limit)) is not None:
         return l
     if (l := _kiem_sub(sub)) is not None:
         return l
-    ket_qua, l = _trang(
-        _mach_hien(sub).filter(status=TrangThaiMach.MO),
-        truong="last_entry_at",
+    ket_qua, l = _phuc_vu(
+        _loc_khoang(_mach_hien(sub), khoang),
+        truong="created_at",
+        sort=sort,
         cursor=cursor,
         limit=limit,
     )
     return l if l is not None else ket_qua
+
+
+@router.get(
+    "/feeds/dang-dien-ra",
+    response=TRA_LOI,
+    operation_id="liet_ke_feed_dang_dien_ra",
+    description=_MO_TA_FEED_DDR,
+    tags=["feed"],
+)
+def feed_dang_dien_ra(
+    request,
+    sub: str | None = None,
+    sort: SortFeed = SORT_TU_NHIEN,
+    khoang: KhoangThoiGian = KHOANG_TAT_CA,
+    cursor: str | None = None,
+    limit: int = GIOI_HAN_MAC_DINH,
+):
+    """Xem `_MO_TA_FEED_DDR` — mô tả công khai nằm ở `description=` của decorator."""
+    if (l := kiem_gioi_han(limit)) is not None:
+        return l
+    if (l := _kiem_sub(sub)) is not None:
+        return l
+    ket_qua, l = _phuc_vu(
+        _loc_khoang(_mach_hien(sub).filter(status=TrangThaiMach.MO), khoang),
+        truong="last_entry_at",
+        sort=sort,
+        cursor=cursor,
+        limit=limit,
+    )
+    return l if l is not None else ket_qua
+
+
+def _subs_kem_so_mach() -> QuerySet:
+    """`Sub` kèm `so_mach_hien` — **cùng bộ lọc với `_mach_hien`**, đếm bằng annotate.
+
+    Một định nghĩa cho cả hai endpoint sub: `xem_sub` và `liet_ke_sub` nói cùng một con
+    số về cùng một chuyên mục, còn hai bản chép tay thì sẽ lệch nhau đúng lúc luật che
+    của feed đổi — và lệch ở đây nghĩa là header trang sub và sidebar cãi nhau ngay trên
+    cùng một màn hình.
+    """
+    return Sub.objects.annotate(
+        so_mach_hien=Count("machs", filter=Q(machs__hidden_at__isnull=True))
+    )
+
+
+def _sub_ra(sub: Sub) -> SubChiTietOut:
+    """Cần `so_mach_hien` đã annotate — xem `_subs_kem_so_mach`."""
+    return SubChiTietOut(
+        slug=sub.slug,
+        ten=sub.ten,
+        mo_ta=sub.mo_ta,
+        so_mach=sub.so_mach_hien,
+        created_at=sub.created_at,
+    )
+
+
+@router.get(
+    "/subs",
+    response={200: list[SubChiTietOut]},
+    operation_id="liet_ke_sub",
+    tags=["sub"],
+)
+def liet_ke_sub(request):
+    """MỌI chuyên mục, sắp theo `slug` — PLAN mục 7 *(thêm ở lượt vá Phase 1d)*.
+
+    **Frontend CẤM ghi cứng danh sách slug** (PLAN mục 7 nói thẳng). Trước endpoint này,
+    `apps/web` giữ một hằng `SUB_KHOI_DIEM = ["chung-khoan", "crypto"]` nuôi cả sidebar
+    lẫn `sitemap.ts`: mở sub thứ ba qua admin thì **cả hai chỗ cùng bỏ sót nó, im lặng**,
+    và chiều ngược cũng im — đổi slug trong admin thì sidebar âm thầm bỏ mục đó (404 →
+    lọc khỏi danh sách) trong khi `sitemap.xml` vẫn khai `/s/<slug cũ>` là URL sống.
+
+    **Không phân trang, và đó là một chốt chứ không phải một thiếu sót.** v1 tạo sub bằng
+    tay qua admin (PLAN mục 1), nên tập này là hàng chục chứ không phải hàng nghìn; thêm
+    cursor bây giờ là bắt hai chỗ gọi (sidebar, sitemap) tự lật trang cho một danh sách
+    chưa bao giờ dài. Ngày nó dài ra thì đổi ở đây, kèm cursor keyset trên `slug`.
+
+    Sắp theo `slug` chứ không theo `so_mach`: sidebar là một **bản đồ**, và một bản đồ
+    tự sắp lại theo độ đông mỗi lần có bài mới thì không ai nhớ được chỗ nào ở đâu.
+    """
+    return [_sub_ra(s) for s in _subs_kem_so_mach().order_by("slug")]
+
+
+@router.get(
+    "/subs/{slug}",
+    response={200: SubChiTietOut, 404: LoiOut},
+    operation_id="xem_sub",
+    tags=["sub"],
+)
+def xem_sub(request, slug: str):
+    """Header của trang chuyên mục `/s/<slug>` — tên, mô tả, số mạch, ngày lập.
+
+    Endpoint **đọc, không per-user**, tách khỏi feed vì nó đổi theo nhịp hoàn toàn khác:
+    tên và mô tả sub gần như bất động, còn feed đổi mỗi lần có bài mới. Nhét header vào
+    `FeedOut` là bắt mọi trang phân trang phải chở lại cùng một khối chữ.
+
+    Slug không tồn tại trả 404 `khong_tim_thay`.
+    """
+    sub = _subs_kem_so_mach().filter(slug=slug).first()
+    if sub is None:
+        return khong_tim_thay(f"sub {slug!r}")
+    return _sub_ra(sub)

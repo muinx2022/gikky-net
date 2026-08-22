@@ -89,6 +89,15 @@ tiếng Anh).
    Bình luận là *quá trình*, mốc là *kết tủa* — mỗi pha một mặt.
 9. **Trạng thái vắng phải duyên dáng.** Dưới 4 bình luận: ẩn mọi số đếm, khán đài thu về một
    dòng mời. Không bao giờ hiển thị "0 bình luận", "0 người đang xem" — không phô sự im lặng.
+   **Áp cho CẢ hồ sơ** *(chốt 2026-08-22)*: user chưa hoạt động không được in
+   `Mạch 0 · Mốc 0 · Bình luận 0 · Được trích ×0` — ẩn cả khối chỉ số, thay bằng một dòng
+   giới thiệu. `Được trích ×N` là phần thưởng chủ lực của 5.6; in `×0` vào mặt người mới là
+   nói với họ rằng họ đang ở cuối bảng trước khi kịp viết chữ nào.
+   **Ngoại lệ đã cân nhắc — điểm vote** *(chốt 2026-08-22)*: `0` trên cột vote KHÔNG bị
+   luật này cấm. `diem` là toạ độ trên một thang **có phần âm**, không phải số đếm người
+   tham gia; giấu nó đi thì `0` (chưa ai vote) lẫn với `0` (5 lên 5 xuống), và cột vote
+   mất chiều cao làm nhảy bố cục cả feed. Nhưng ngoại lệ này **có giá phải trả**, xem
+   5.7: chừng nào chưa có tự-upvote thì ngày ra mắt MỌI thẻ đều in `0`.
 10. **Luật domain ở Django, frontend chỉ render.** Có 2 frontend (web + admin) — luật mà rò
     sang React là có 2 phiên bản sự thật. API trả kết quả đã quyết (`face`, danh sách đã sort,
     lỗi rate-limit...), Next không tính lại.
@@ -113,6 +122,7 @@ thi **không đề xuất lại**, kể cả dạng biến thể, trừ khi user
 | **Auto-mở panel/sheet khi khách ghé** | Interstitial che nội dung người ta bấm vào để đọc — bị đóng theo phản xạ. |
 | **Mention `@user`** | Cắt khỏi v1 (cần parse + cú pháp + chống spam riêng — không đáng ở giai đoạn này). |
 | **Search full-text** | Cắt hẳn khỏi v1, kể cả tsquery "mức tối thiểu". V2. |
+| **"Tham gia sub" (subscribe) + feed cá nhân hoá** | *(chốt 2026-08-22)* Vòng lặp lõi của Reddit, nhưng v1 chỉ có **2 sub** — một nút Tham gia với hai lựa chọn là sân khấu, và feed "của tôi" gần như trùng feed chung. Nó còn cần model mới + logic feed mà PLAN không có. **Và không render nút disabled làm chỗ đứng**: một cái nút vĩnh viễn không bấm được còn tệ hơn không có nút (nguyên tắc 9 — đừng phô thứ rỗng). Xét lại khi có >5 sub. |
 | **Neo bình luận chung vào mốc 1** (khán đài = ngăn kéo của mốc đầu) | User nêu 2026-08-21, cân nhắc rồi **giữ nguyên nguyên tắc 4**. Cơ chế "một kho, hai ống kính" thì đã đúng ý đó rồi (khán đài = list chung, ngăn kéo = lát cắt theo mốc, mốc 1 = bài gốc). Chỉ khác chỗ **neo mặc định**: nếu neo mốc 1 thì ngăn kéo mốc 1 phình thành bản sao khán đài, **ngăn kéo mốc mới nhất rỗng** đúng lúc tác giả vừa nối mốc và cần phản hồi nhất (đâm nguyên tắc 9), chip `‹mốc 1›` hiện khắp nơi thành nhiễu, và mặt BÃO (5.5) mất chỗ dựa. Nhu cầu "bình luận về cả mạch" đã có đường riêng: **gỡ chip → `anchor_moc_seq = NULL`**. |
 
 ---
@@ -150,7 +160,8 @@ thi **không đề xuất lại**, kể cả dạng biến thể, trừ khi user
   làm thủng dãy số và phá bất biến `entry_count == số ô trên spine` mà dải gập của 5.5 suy ra.
   ⚠ Đây là quyết định **moderation công khai**: người lạ thấy rằng có thứ vừa bị gỡ. Nó không
   mâu thuẫn 5.10 ("soft-hide — tác giả vẫn thấy kèm nhãn"): tác giả thấy **nội dung**, người
-  khác chỉ thấy **cái ô trống có nhãn**. **User cần duyệt lại lựa chọn này trước khi ra mắt.**
+  khác chỉ thấy **cái ô trống có nhãn**. **USER ĐÃ DUYỆT 2026-08-22** — một ô trống trung thực
+  hơn một dãy số thủng, và Reddit cũng làm đúng vậy với `[removed]`.
 
 ### 5.3 Khán đài
 
@@ -221,6 +232,17 @@ CẶN  còn lại.       last_activity_at: cột denormalize trên Mach (mục 6
   top-10 theo wilson.** Bấm chân trang → bung khán đài đầy đủ ngay tại đó (mặc định
   `hay_nhat`, đổi được 3 sort) **kết thúc bằng composer** — mạch đóng vẫn bình luận được (5.1).
 
+  > **Cách cài "câu đáng đọc", chốt 2026-08-22:** cú bấm bung khán đài đầy đủ (đúng câu
+  > trên), nhưng phần **TRÊN CÙNG** của khối vừa bung là tập hợp ấy, gắn nhãn "Câu đáng
+  > đọc", rồi mới tới cây đầy đủ. Không làm vậy thì cái nhãn trên nút đang hứa một thứ mà
+  > cú bấm không giao — 1c bung toàn bộ khán đài và phép hợp không tồn tại ở đâu cả. Phải
+  > là **hợp THẬT**: `r7` của seed cố ý nằm NGOÀI top-10, nên ai cài thành "chỉ top-10"
+  > thì bài đo đỏ.
+  > **Một ngoại lệ** *(chốt 2026-08-22, Phase 1d)*: khi tập ấy BẰNG cả khán đài (mạch dưới
+  > 10 thread và không có trích nào), khối "Câu đáng đọc" **không render**. Nếu không nó
+  > là bản sao y nguyên của cái cây ngay dưới nó, và một cái nhãn "đáng đọc" dán lên
+  > TOÀN BỘ nội dung thì không chọn lọc gì cả — nó chỉ làm trang dài gấp đôi.
+
   > **Công thức dải gập, chốt 2026-08-22 (Phase 1c) — hiện thực DUY NHẤT ở
   > `apps/web/lib/dai-gap.ts`:** với `entry_count = n`, **gập `seq` từ 2 tới n−3**; hiện mốc
   > `1`, `n−2`, `n−1`, `n`. Với `n = 9` ⇒ gập **2–6, đúng "5 mốc"** như câu trên và như
@@ -229,8 +251,11 @@ CẶN  còn lại.       last_activity_at: cột denormalize trên Mach (mục 6
   > (`n−2, n−1, n`). Giữ `2…n−3` vì nó làm ba chỗ còn lại của PLAN đúng cùng lúc, **và** vì
   > nó đưa khối "trích vào sổ" của mạch seed (mốc 7) lên mặt tiền — với `2…n−2` thì cơ chế
   > thưởng chủ lực của 5.6 bị gập mất, phải bấm bung mới thấy.
-  > **User cần duyệt lại lựa chọn này.** Bản đầu của Phase 1c cài `2…n−2`, và phiên chính đã
-  > lỡ sửa wireframe cho khớp code trước khi phản biện chỉ ra rằng nền mới là chỗ sai.
+  > **USER ĐÃ DUYỆT 2026-08-22.** Kèm một sửa: **chỉ gập khi giấu được ÍT NHẤT 2 mốc**, tức
+  > `n ≥ 6`. Với `n = 5` công thức cho dải gập đúng 1 mốc — giấu một mốc sau một cái nút cao
+  > bằng chính nó, lại tốn thêm một dòng mồi bung. `NGUONG_KHONG_GAP` phải là **5**, không
+  > phải 4. (Bản đầu của 1c cài `2…n−2`, và phiên chính đã lỡ sửa wireframe cho khớp code
+  > trước khi phản biện chỉ ra rằng NỀN mới là chỗ sai.)
 
 ### 5.6 Trích vào sổ — bốn rào bắt buộc
 
@@ -242,7 +267,9 @@ Rào (chống "máy in địa vị" + "giặt hindsight"):
 2. Blockquote hiển thị **kèm dấu thời gian bình luận gốc** ("viết 10/06, trích 21/08") —
    chống trích hậu nghiệm câu "hoá ra đúng" để sổ đọc như tiên tri.
 3. Chỉ số hồ sơ "Được trích vào sổ ×N" đếm theo **số tác giả khác nhau** đã trích —
-   chống hai nick trích qua lại.
+   chống hai nick trích qua lại. **KHÔNG tính tự trích** *(chốt 2026-08-22)*: chủ mạch trích
+   bình luận của chính mình thì không cộng vào chỉ số của chính họ. Rào này dựng lên để chặn
+   "máy in địa vị" — mà tự trích chính là cái máy in ngắn nhất.
 4. Render tách bạch khỏi thân mốc, ghi rõ "trích từ khán đài, bởi chủ mạch" — nó là chú thích,
    không phải nội dung sổ.
 Người được trích nhận notification.
@@ -251,6 +278,12 @@ Người được trích nhận notification.
 
 - Vote ±1 trên mốc và bình luận, riêng rẽ (mốc 9 được 412 dù bài gốc 89 — phần giá trị nhất
   phải nổi lên được). Đổi/rút vote được.
+- **Tác giả tự upvote sẵn** *(chốt 2026-08-22, cài ở Phase 2)*: mốc và bình luận khởi điểm
+  với **+1 của chính người viết**, rút được như mọi vote khác. Không phải để thổi điểm —
+  ai cũng được đúng 1 phiếu nên thứ hạng tương đối không đổi — mà để `0` **có nghĩa**.
+  Không có nó thì `0` vừa là "chưa ai đụng tới" vừa là "đã bị dìm về không", và ngày ra
+  mắt cả feed là một cột số 0 (đâm nguyên tắc 9, xem mục 3). Có nó thì `0` nghĩa là **đã
+  có người vote xuống** — một câu mang thông tin.
 - Reaction 1 chạm trên mốc: bộ cố định `📈 📉 🔥 🧊 🎯` — bậc thang tham gia rẻ hơn viết.
 - Follow mạch: nút "Theo mạch". Follower nhận notification mốc mới.
 
@@ -434,6 +467,8 @@ Lỗi `{detail, code}`.
 |---|---|---|
 | `POST /auth/*` | allauth headless: email, Google OAuth | |
 | `GET /feeds/moi`, `GET /feeds/dang-dien-ra` | 2 feed, cursor keyset | `?sub=` lọc |
+| `GET /subs/{slug}` | header trang chuyên mục: `ten`, `mo_ta`, `so_mach`, `created_at` | *(thêm Phase 1d, 2026-08-22)* chỉ đọc, không per-user; slug lạ → 404 |
+| `GET /subs` | liệt kê MỌI sub, sắp theo `slug` | *(thêm Phase 1d vá, 2026-08-22)* sidebar + `sitemap.ts` phải hỏi đây, **cấm ghi cứng danh sách slug ở frontend** — sub thứ ba mở ra mà vắng mặt im lặng ở cả hai chỗ là đúng loài hỏng nợ #11 vừa được vá để diệt |
 | `POST /machs` | tạo bài (= mốc 1) | |
 | `GET /machs/{id}` | mach + mốc + `face` server đã tính + spine | **không chứa gì per-user** (cache được) |
 | `GET /machs/{id}/me` | trạng thái CỦA VIEWER: my_votes, my_reactions, following, last_seen_entry_seq | client fetch sau khi trang cached render — dữ liệu per-user KHÔNG được nướng vào page cache (8.4) |
@@ -605,7 +640,10 @@ chỉ dùng làm chuẩn **màu / chữ / chất liệu**, KHÔNG dùng làm chu
 
 - Nền giấy lạnh `#F1F2F5` / tối `#0E1116`; mực `#14161B` / `#E7EAF0`; nhấn xanh mực `#3A46A8`
   / `#8B99F2`; **hoàng thổ `#B07A2B` / `#D8A455` dành riêng cho những gì mang tính "đóng dấu"**:
-  vạch mới, "đã sửa", trích vào sổ, số mốc chưa xem trên spine. **Xanh `#1C7A4F` / đỏ `#B33A2B`
+  vạch mới, "đã sửa", trích vào sổ, số mốc chưa xem trên spine, **nhãn "ĐÃ ĐÓNG SỔ" trên
+  thẻ feed, nhãn "DRAFT" của `/luat`, chỉ số "Được trích ×N" trên hồ sơ** *(ba cái sau chốt
+  2026-08-22)*. **Danh sách này là NGUỒN của allowlist trong `e2e/don-vi/mau-token.spec.ts`** —
+  hàng rào phải suy từ đây, không được tự nới. **Xanh `#1C7A4F` / đỏ `#B33A2B`
   CẤM dùng trang trí** — chỉ được xuất hiện ở con số lãi/lỗ.
 - Chữ: Newsreader (tiêu đề mạch) · Be Vietnam Pro (UI) · IBM Plex Mono (mọi timestamp + con số,
   `tabular-nums` — mốc phải *trông như biên lai*).

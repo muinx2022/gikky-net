@@ -31,11 +31,13 @@ def test_sub_cua_seed_e2e_khong_trung_sub_nao_cua_seed_dev():
     nên không ai có cớ bỏ qua.
     """
     cua_seed_dev = {s["slug"] for s in seed_dev.SUBS}
-    assert seed_e2e.SUB_SLUG not in cua_seed_dev, (
-        f"`seed_e2e` đang dùng ké sub {seed_e2e.SUB_SLUG!r} của `seed_dev`. Mạch của "
-        "`e2e_nhieu_mach` sẽ treo lại trong sub đó sau khi `seed_dev --reset` xoá xong "
-        "phần của mình ⇒ ProtectedError, và `--reset` chết vĩnh viễn."
-    )
+    for slug in (seed_e2e.SUB_SLUG, seed_e2e.SUB_RONG_SLUG):
+        assert slug not in cua_seed_dev, (
+            f"`seed_e2e` đang dùng ké sub {slug!r} của `seed_dev`. Mạch của "
+            "`e2e_nhieu_mach` sẽ treo lại trong sub đó sau khi `seed_dev --reset` xoá "
+            "xong phần của mình ⇒ ProtectedError, và `--reset` chết vĩnh viễn."
+        )
+    assert seed_e2e.SUB_RONG_SLUG != seed_e2e.SUB_SLUG
 
 
 def test_seed_dev_reset_van_chay_duoc_sau_khi_seed_e2e_da_chay():
@@ -85,3 +87,15 @@ def test_seed_e2e_chay_lan_hai_khong_nhan_doi_va_reset_don_sach():
     )
     assert User.objects.filter(username=seed_e2e.USERNAME).count() == 1
     assert Sub.objects.filter(slug=seed_e2e.SUB_SLUG).count() == 1
+    assert Sub.objects.filter(slug=seed_e2e.SUB_RONG_SLUG).count() == 1
+
+
+def test_sub_rong_that_su_RONG(db):
+    """Vá V6 (B8): nhánh "sub 0 mạch" của UI chỉ có đất chạy nếu hàng này thật sự rỗng.
+
+    Một mạch lỡ tay gắn vào đây là bài đo Playwright đo vào chỗ trống mà vẫn xanh — nó
+    chỉ khẳng định "không thấy chữ `0 mạch`", và một sub có bài thì đúng là không có
+    chữ đó.
+    """
+    call_command("seed_e2e", verbosity=0)
+    assert Mach.objects.filter(sub__slug=seed_e2e.SUB_RONG_SLUG).count() == 0

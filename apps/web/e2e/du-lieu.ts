@@ -32,6 +32,19 @@ export const TITLE_POST_THUONG =
 export const TITLE_BIA_MO = "Nhật ký lệnh VNM — vào 62.5, thoát khi gãy nền";
 export const USER_NHIEU_MACH = "e2e_nhieu_mach";
 
+/** Hai sub của `seed_e2e` — **không** nằm trong danh sách sub của `seed_dev`.
+ *
+ * Chúng là điều kiện để hai bài đo của lượt vá đo được gì đó (trùng đúng hằng
+ * `SUB_SLUG` / `SUB_RONG_SLUG` trong `api/core/management/commands/seed_e2e.py`):
+ *
+ * - `SUB_NGOAI_DANH_SACH` chứng minh sidebar và `sitemap.xml` **tự** biết một sub mở
+ *   ngoài hai sub khởi điểm (vá V8). Trước đó cả hai ghi cứng `["chung-khoan", "crypto"]`
+ *   nên nó vắng mặt ở cả hai chỗ, im lặng;
+ * - `SUB_RONG` có **0 mạch**, tức nhánh "không in số 0" của PLAN nguyên tắc 9 (vá V6).
+ */
+export const SUB_NGOAI_DANH_SACH = "e2e-thu-nghiem";
+export const SUB_RONG = "e2e-sub-rong";
+
 export async function timMachTheoTitle(title: string): Promise<MachChiTietOut> {
   const feed = await json<FeedOut>("/api/v1/feeds/moi?limit=50");
   const the = feed.items.find((m) => m.title === title);

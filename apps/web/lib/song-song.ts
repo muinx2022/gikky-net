@@ -6,8 +6,12 @@
  * `force-dynamic` nghĩa là không tầng cache nào hấp thụ giúp. Ai cũng mở được URL đó,
  * nên hệ số khuếch đại 40× là thứ người ngoài điều khiển được.
  *
- * Đây **không phải** bản vá cho nợ có tên #1 (N+1 ngăn kéo). Số lời gọi vẫn bằng số mốc;
- * chỗ này chỉ chặn chúng ập vào cùng một lúc. Xử thật ở Phase 3 cùng lúc bật ISR.
+ * Đây **không phải** bản vá cho nợ có tên `N+1-NGAN-KEO` (danh sách nợ:
+ * `plans/2026-08-22-phase-1d-va3.md` §4). Số lời gọi vẫn bằng số mốc; chỗ này chỉ chặn
+ * chúng ập vào cùng một lúc. Xử thật ở Phase 3 cùng lúc bật ISR.
+ *
+ * *(Tên cũ ở đây là "#1" — số ấy trỏ vào một khoản KHÁC trong cùng danh sách; sửa ở Y5,
+ * lượt vá 4, và danh sách nay định danh bằng tên chứ không bằng số.)*
  */
 
 /** Trần mặc định cho fan-out ngăn kéo.

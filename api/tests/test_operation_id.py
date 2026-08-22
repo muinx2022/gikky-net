@@ -11,6 +11,8 @@ một bài đo dựa vào schema sẽ XANH cho cả hai. Thứ phân biệt đư
 `Operation`: `op.operation_id is None` nghĩa là không ai khai.
 """
 
+from pathlib import Path
+
 import pytest
 from ninja import NinjaAPI, Router
 
@@ -68,12 +70,17 @@ def test_operation_id_khong_trung_nhau():
     assert trung == [], f"operation_id trùng: {trung}"
 
 
-def test_du_6_endpoint_doc_cua_plan_muc_7():
-    """Hợp đồng 1b: đúng 6 endpoint đọc, đúng path của PLAN mục 7 (+ health của Phase 0).
+def test_du_endpoint_doc_cua_plan_muc_7():
+    """Hợp đồng đọc: đúng những path của PLAN mục 7 (+ health của Phase 0).
 
     Viết cứng danh sách là cố ý: nó vừa là bài đo R1, vừa là chỗ ĐỎ đầu tiên nếu ai đó
     lỡ tay thêm một endpoint ghi vào phase này (Phase 2) hoặc đổi đường dẫn đã hứa với
     frontend.
+
+    `GET /subs/{slug}` thêm ở Phase 1d (plan con §2.3) và `GET /subs` thêm ở lượt vá
+    (§V8) — PLAN mục 7 **bắt** ghi lại vào bảng khi thêm endpoint, nên cả hai dòng đã có
+    mặt trong bảng ấy. Sửa danh sách này mà không sửa bảng là để hợp đồng công khai nói
+    thiếu một endpoint đang chạy; `test_bang_API_cua_PLAN_co_du_dong_sub` giữ chiều đó.
     """
     thuc_te = {
         (tuple(sorted(op.methods)), duong_dan)
@@ -83,12 +90,30 @@ def test_du_6_endpoint_doc_cua_plan_muc_7():
         (("GET",), "/health"),
         (("GET",), "/feeds/moi"),
         (("GET",), "/feeds/dang-dien-ra"),
+        (("GET",), "/subs"),
+        (("GET",), "/subs/{slug}"),
         (("GET",), "/machs/{int:mach_id}"),
         (("GET",), "/machs/{int:mach_id}/comments"),
         (("GET",), "/mocs/{int:moc_id}/comments"),
         (("GET",), "/mocs/{int:moc_id}/revisions"),
         (("GET",), "/users/{username}"),
     }
+
+
+def test_bang_API_cua_PLAN_co_du_dong_sub():
+    """PLAN mục 7: "plan con từng phase **được thêm** endpoint nhỏ … nhưng phải … cập nhật
+    lại bảng này". Câu đó không có hàng rào nào cho tới đây.
+
+    Bài đo đọc thẳng `PLAN.md` chứ không tin trí nhớ: endpoint sống mà bảng hợp đồng câm
+    thì người viết frontend không có cách nào biết nó tồn tại.
+
+    `GET /subs` (vá V8) mang thêm một chốt mà chỉ bảng ấy nói ra: **cấm ghi cứng danh
+    sách slug ở frontend**. Dòng biến mất khỏi bảng là chốt đó biến mất cùng.
+    """
+    plan = (Path(__file__).resolve().parents[2] / "PLAN.md").read_text(encoding="utf-8")
+    bang = plan.split("## 7. API v1")[1].split("## 8.")[0]
+    assert "`GET /subs/{slug}`" in bang
+    assert "`GET /subs`" in bang
 
 
 @pytest.mark.django_db

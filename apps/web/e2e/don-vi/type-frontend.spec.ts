@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { expect, test } from "@playwright/test";
 
+import { KHOANG_FEED, SORT_API } from "../../lib/api";
 import { boImport, quetNguon } from "./quet";
 
 const WEB = resolve(__dirname, "..", "..");
@@ -22,15 +23,155 @@ const OPENAPI = JSON.parse(
   readFileSync(resolve(GOC, "packages/api-client/openapi.json"), "utf8"),
 ) as {
   components?: { schemas?: Record<string, unknown> };
-  paths?: Record<string, Record<string, { operationId?: string }>>;
+  paths?: Record<
+    string,
+    Record<
+      string,
+      {
+        operationId?: string;
+        parameters?: { name: string; schema?: { enum?: unknown } }[];
+      }
+    >
+  >;
 };
 
 const TEN_SCHEMA = Object.keys(OPENAPI.components?.schemas ?? {});
 
-/** Chính file này nhắc tên schema trong chuỗi kỳ vọng mà không import chúng. */
-const TU_TRU = "e2e/don-vi/type-frontend.spec.ts";
+/** Mọi file `.ts`/`.tsx` của `apps/web`. **KHÔNG lọc bớt** — xem `TU_TRU`. */
+const FILES = quetNguon(WEB, /\.tsx?$/);
 
-const FILES = quetNguon(WEB, /\.tsx?$/).filter((f) => f.ten !== TU_TRU);
+/** Năm luật của hàng rào này, mỗi luật một khoá. Miễn trừ khai theo TỪNG LUẬT. */
+type Luat =
+  | "KHAI_LAI_SCHEMA"
+  | "NHAC_MA_KHONG_IMPORT"
+  | "CLIENT_SINGLETON"
+  | "THIEU_BASE_URL"
+  | "GOI_QUA_BIEN";
+
+/** File **nói VỀ** tên schema / tên hàm API thay vì dùng chúng — miễn trừ **theo LUẬT**,
+ * kèm lý do *(vá W2, lượt vá 2)*.
+ *
+ * Một hàng rào grep không phân biệt được "gọi hàm" với "nhắc tên hàm trong một biểu thức
+ * chính quy", nên mọi hàng rào soi chính bề mặt API đều tự tố cáo mình. Nhưng bản trước
+ * lọc **cả file khỏi cả 6 luật**, và cái giá đo được: thêm hai lời gọi thiếu `baseUrl`
+ * vào `khong-ghi-cung-sub.spec.ts` cho **120 passed, 0 failed**. Tức luật "mọi lời gọi
+ * API phải có `baseUrl`" — đúng đường rò session của user A sang user B mà
+ * `gikky-net/CLAUDE.md` cấm — **mù với cả một file**, và giấy miễn trừ ấy chỉ cần cho
+ * MỘT luật khác hẳn.
+ *
+ * Danh sách tường minh chứ không phải quy ước theo thư mục: bài đo bình thường trong
+ * `e2e/` vẫn phải tuân luật (chúng gọi API thật), chỉ những file đọc MÃ NGUỒN mới được
+ * miễn — và chỉ ở đúng luật chúng vướng.
+ */
+const TU_TRU: Readonly<Record<Luat, Readonly<Record<string, string>>>> = {
+  KHAI_LAI_SCHEMA: {
+    "e2e/don-vi/type-frontend.spec.ts":
+      "chính nó — chuỗi hàng giả `export interface MachChiTietOut { … }`",
+  },
+  NHAC_MA_KHONG_IMPORT: {
+    "e2e/don-vi/type-frontend.spec.ts": "chính nó — nêu tên schema trong chuỗi kỳ vọng",
+  },
+  // ⚠ RỖNG, và phải rỗng: đây là hai luật chống rò session. Không file nào — kể cả
+  // chính hàng rào này — được miễn khỏi chúng.
+  CLIENT_SINGLETON: {},
+  THIEU_BASE_URL: {},
+  GOI_QUA_BIEN: {
+    "e2e/don-vi/type-frontend.spec.ts": "chính nó — nêu tên hàm API trong chuỗi kỳ vọng",
+    "e2e/don-vi/khong-ghi-cung-sub.spec.ts":
+      "hàng rào PLAN mục 7 — phải nêu tên `lietKeSub` để ghim 'đúng một cửa hỏi API'",
+  },
+};
+
+/** Một luật = một hàm thuần trả về danh sách vi phạm của MỘT file.
+ *
+ * Tách ra khỏi `test()` là điều kiện để hai chuyện dưới đây làm được: chạy luật trên một
+ * file ĐANG được miễn trừ (để chứng minh giấy miễn trừ còn cần), và chạy nó trên chuỗi
+ * hàng giả (để chứng minh luật không rỗng).
+ */
+type Nguon = { ten: string; sach: string };
+const KIEM: Readonly<Record<Luat, (f: Nguon) => string[]>> = {
+  KHAI_LAI_SCHEMA: (f) => {
+    // Bỏ chú thích VÀ bỏ import: `import { xemMach, type FeedOut }` chứa đúng chuỗi
+    // `type FeedOut` mà luật này đi tìm, dù đó là nhập khẩu chứ không phải khai báo.
+    const than = boImport(f.sach);
+    return TEN_SCHEMA.filter((ten) =>
+      new RegExp(`\\b(interface|type|class|enum)\\s+${ten}\\b`).test(than),
+    ).map((ten) => `${f.ten}: khai lại ${ten}`);
+  },
+  NHAC_MA_KHONG_IMPORT: (f) => {
+    const da_nhap = tenDaNhap(f.sach);
+    return TEN_SCHEMA.filter(
+      (ten) => new RegExp(`\\b${ten}\\b`).test(f.sach) && !da_nhap.has(ten),
+    ).map((ten) => `${f.ten}: dùng ${ten} mà không import từ @gikky/api-client`);
+  },
+  CLIENT_SINGLETON: (f) => {
+    const ra: string[] = [];
+    if (/from\s+"@gikky\/api-client\/client(\.gen)?"/.test(f.sach)) {
+      ra.push(`${f.ten}: import thẳng \`client\` singleton`);
+    }
+    // Và không ai GỌI `setConfig` — đó là đường rò session của user A sang user B:
+    // `client` là object dùng chung cả tiến trình Node.
+    // Thông điệp cố ý KHÔNG viết `setConfig` kèm dấu ngoặc mở: chính dòng này nằm trong
+    // `apps/web`, nên một chuỗi trông giống lời gọi ở đây là file tự tố cáo mình — và
+    // cách chữa duy nhất còn lại sẽ là một giấy miễn trừ cho đúng cái luật chống rò
+    // session mà W2 vừa dọn sạch giấy miễn trừ.
+    if (/\bsetConfig\s*\(/.test(f.sach)) ra.push(`${f.ten}: gọi setConfig`);
+    return ra;
+  },
+  THIEU_BASE_URL: (f) =>
+    loiGoiApi(f.sach)
+      .filter((g) => !coBaseUrl(g.doi_so, f.sach))
+      .map((g) => `${f.ten}: ${g.ten}(…) thiếu baseUrl`),
+  GOI_QUA_BIEN: (f) => {
+    const than = boImport(f.sach);
+    const ra: string[] = [];
+    for (const ten of TEN_HAM_API) {
+      for (const m of than.matchAll(new RegExp(`\\b${ten}\\b`, "g"))) {
+        const sau = than.slice(m.index + ten.length);
+        const truoc = than.slice(0, m.index);
+        if (/^\s*\(/.test(sau)) continue;
+        if (/\btypeof\s+$/.test(truoc)) continue;
+        ra.push(`${f.ten}: ${ten} được nhắc tới mà không phải một lời gọi trực tiếp`);
+      }
+    }
+    return ra;
+  },
+};
+
+/** Vi phạm của một luật trên TOÀN BỘ `apps/web`, đã trừ đúng giấy miễn trừ của luật đó. */
+function viPham(luat: Luat): string[] {
+  const mien = TU_TRU[luat];
+  return FILES.filter((f) => !(f.ten in mien)).flatMap((f) => KIEM[luat](f));
+}
+
+test("giấy miễn trừ không có dòng chết, và mỗi dòng phải THẬT SỰ cần", () => {
+  // Hai chiều, và chiều thứ hai là chiều W2 vừa dạy: một miễn trừ rộng hơn nhu cầu là
+  // một cái lỗ, không phải một sự rộng lượng. Ở đây "cần" được ĐO: chạy đúng luật đó
+  // trên đúng file đó, và nó phải ra vi phạm. Không ra ⇒ dòng giấy phải bị xoá.
+  const co_that = new Map(FILES.map((f) => [f.ten, f]));
+  const chet: string[] = [];
+  const thua: string[] = [];
+  for (const luat of Object.keys(TU_TRU) as Luat[]) {
+    for (const ten of Object.keys(TU_TRU[luat])) {
+      const f = co_that.get(ten);
+      if (f === undefined) {
+        chet.push(`${luat} → ${ten} (file không tồn tại)`);
+      } else if (KIEM[luat](f).length === 0) {
+        thua.push(`${luat} → ${ten} (file không vi phạm luật này)`);
+      }
+    }
+  }
+  expect(chet).toEqual([]);
+  expect(thua).toEqual([]);
+});
+
+test("W2 — hai luật chống rò session KHÔNG có giấy miễn trừ nào", () => {
+  // Ghim thẳng cái chốt của W2 thay vì để nó là một dòng chú thích: thêm một file vào
+  // hai bảng này là mở lại đúng cửa mà lượt vá 2 vừa đóng, và nó phải đỏ ngay tại đây
+  // chứ không phải ba tháng sau, lúc một trang mới quên `baseUrl`.
+  expect(Object.keys(TU_TRU.CLIENT_SINGLETON)).toEqual([]);
+  expect(Object.keys(TU_TRU.THIEU_BASE_URL)).toEqual([]);
+});
 
 test("đọc được danh sách schema của API (không có thì hàng rào rỗng)", () => {
   expect(TEN_SCHEMA.length).toBeGreaterThan(10);
@@ -40,18 +181,7 @@ test("đọc được danh sách schema của API (không có thì hàng rào r�
 });
 
 test("không file nào ở apps/web tự khai lại một schema của API", () => {
-  const pham: string[] = [];
-  for (const f of FILES) {
-    // Bỏ chú thích VÀ bỏ import: `import { xemMach, type FeedOut }` chứa đúng chuỗi
-    // `type FeedOut` mà luật này đi tìm, dù đó là nhập khẩu chứ không phải khai báo.
-    const than = boImport(f.sach);
-    for (const ten of TEN_SCHEMA) {
-      if (new RegExp(`\\b(interface|type|class|enum)\\s+${ten}\\b`).test(than)) {
-        pham.push(`${f.ten}: khai lại ${ten}`);
-      }
-    }
-  }
-  expect(pham).toEqual([]);
+  expect(viPham("KHAI_LAI_SCHEMA")).toEqual([]);
 });
 
 test("luật trên bắt được hàng giả (chứng minh nó không phải hàng rào rỗng)", () => {
@@ -87,17 +217,7 @@ function tenDaNhap(noi_dung: string): Set<string> {
 }
 
 test("file nào NHẮC tới một schema của API thì phải IMPORT nó từ @gikky/api-client", () => {
-  const pham: string[] = [];
-  for (const f of FILES) {
-    const da_nhap = tenDaNhap(f.sach);
-    for (const ten of TEN_SCHEMA) {
-      if (!new RegExp(`\\b${ten}\\b`).test(f.sach)) continue;
-      if (!da_nhap.has(ten)) {
-        pham.push(`${f.ten}: dùng ${ten} mà không import từ @gikky/api-client`);
-      }
-    }
-  }
-  expect(pham).toEqual([]);
+  expect(viPham("NHAC_MA_KHONG_IMPORT")).toEqual([]);
 });
 
 test("bài đo trên có bắt được ít nhất một file thật (không quét vào chỗ trống)", () => {
@@ -119,15 +239,7 @@ test("tenDaNhap không trèo sang câu lệnh import khác (lỗi `[\\s\\S]*?` c
 });
 
 test("không ai import `client` singleton (CLAUDE.md — hỏng im lặng, trang vẫn 200)", () => {
-  const nhap_thang = FILES.filter((f) =>
-    /from\s+"@gikky\/api-client\/client(\.gen)?"/.test(f.sach),
-  );
-  expect(nhap_thang.map((f) => f.ten)).toEqual([]);
-
-  // Và không ai GỌI `setConfig` — đó là đường rò session của user A sang user B: `client`
-  // là object dùng chung cả tiến trình Node.
-  const goi_setconfig = FILES.filter((f) => /\bsetConfig\s*\(/.test(f.sach));
-  expect(goi_setconfig.map((f) => f.ten)).toEqual([]);
+  expect(viPham("CLIENT_SINGLETON")).toEqual([]);
 });
 
 /** Tên hàm mà TS client sinh ra cho mỗi endpoint: `operationId` đổi sang camelCase.
@@ -208,13 +320,11 @@ test("mọi lời gọi hàm API trong apps/web đều truyền `baseUrl` theo t
   // thẳng hàm client mà quên `baseUrl` vẫn xanh — và chú thích cũ còn khẳng định
   // *"`lib/api.ts` là cửa duy nhất"*, câu đã sai sẵn lúc viết: `app/chan-doan/page.tsx`
   // gọi `getHealth(...)` ngoài cửa đó.
-  const pham: string[] = [];
-  for (const f of FILES) {
-    for (const g of loiGoiApi(f.sach)) {
-      if (!coBaseUrl(g.doi_so, f.sach)) pham.push(`${f.ten}: ${g.ten}(…) thiếu baseUrl`);
-    }
-  }
-  expect(pham).toEqual([]);
+  //
+  // Vá W2 (lượt vá 2): luật này quét **mọi** file, không trừ file nào. Trước đó
+  // `TU_TRU_THEO_FILE` lọc cả file khỏi cả sáu luật, nên hai lời gọi thiếu `baseUrl`
+  // thêm vào `khong-ghi-cung-sub.spec.ts` cho `120 passed, 0 failed`.
+  expect(viPham("THIEU_BASE_URL")).toEqual([]);
 });
 
 test("luật trên có quét trúng lời gọi THẬT ở CẢ HAI cửa (không quét vào chỗ trống)", () => {
@@ -233,14 +343,75 @@ test("luật trên có quét trúng lời gọi THẬT ở CẢ HAI cửa (khôn
   expect(theo_file.get("lib/api.ts")).toBeGreaterThanOrEqual(6);
 });
 
+/** `"xemMach"` **ghép từ hai mảnh, cố ý** *(W2, lượt vá 2)*.
+ *
+ * Hàng giả dưới đây là một chuỗi TRÔNG NHƯ lời gọi API thiếu `baseUrl` — mà chính file
+ * này nằm trong `apps/web`, nên viết nó liền một mạch là tự nộp mình cho luật
+ * `THIEU_BASE_URL`. Bản trước xử bằng cách miễn trừ cả file khỏi cả sáu luật, và cái giá
+ * đo được là hàng rào chống rò session mù với một file thật. Ghép chuỗi rẻ hơn nhiều so
+ * với một dòng giấy phép, và nó không mở cửa cho ai khác.
+ */
+const XEM_MACH = "xem" + "Mach";
+
 test("luật trên bắt được hàng giả (lời gọi thiếu baseUrl)", () => {
-  const gia = 'const r = await xemMach({ path: { mach_id: 1 } });';
+  const gia = `const r = await ${XEM_MACH}({ path: { mach_id: 1 } });`;
   const goi = loiGoiApi(gia);
   expect(goi).toHaveLength(1);
   expect(coBaseUrl(goi[0].doi_so, gia)).toBe(false);
   // …và KHÔNG bắt nhầm lời gọi đi qua một lớp spread hằng số.
-  const that = 'const C = { baseUrl: X };\nconst r = await xemMach({ ...C, path: {} });';
+  const that = `const C = { baseUrl: X };\nconst r = await ${XEM_MACH}({ ...C, path: {} });`;
   expect(coBaseUrl(loiGoiApi(that)[0].doi_so, that)).toBe(true);
+});
+
+test("hai mảnh ghép ra ĐÚNG một tên hàm API có thật (chống hàng giả mục ruỗng)", () => {
+  // Nếu `XEM_MACH` gõ sai thì `loiGoiApi` không tìm thấy gì, `goi` rỗng, và bài trên đỏ
+  // ở `toHaveLength(1)` — nhưng thông điệp sẽ nói về `loiGoiApi` chứ không nói về chỗ
+  // sai thật. Một dòng ở đây tiết kiệm nửa giờ đọc nhầm.
+  expect(TEN_HAM_API).toContain(XEM_MACH);
+});
+
+/** `enum` của một tham số query, đọc thẳng `openapi.json`. `null` nếu không có. */
+function enumThamSo(duong_dan: string, ten: string): string[] | null {
+  const tham_so = OPENAPI.paths?.[duong_dan]?.get?.parameters ?? [];
+  const s = tham_so.find((p) => p.name === ten)?.schema;
+  return Array.isArray(s?.enum) ? (s.enum as string[]) : null;
+}
+
+/** W9 — **frontend không được khai lại tập giá trị của một enum API**.
+ *
+ * Luật này bổ sung cho `KHAI_LAI_SCHEMA`, thứ chỉ soi **TÊN** schema. `KHOANG_FEED` và
+ * `SORT_API` từng là hai mảng/union gõ tay (`["ngay","tuan","thang","tat_ca"]`,
+ * `"tu_nhien" | "nhieu_diem"`) — bản sao thứ hai của hợp đồng API mà không mang tên
+ * schema nào, nên hàng rào cũ đi qua mà không thấy gì. PLAN 8.3 và `gikky-net/CLAUDE.md`
+ * cấm đúng loài đó.
+ *
+ * Bài đo so **giá trị lúc chạy** với `openapi.json`, không grep mã nguồn: nó đọc hợp
+ * đồng, nên nó đúng dù frontend viết bằng mảng, union, `Object.keys`, hay gì khác.
+ * Đi cả hai chiều — API thêm một giá trị mà UI không bày ra cửa nào cũng là hỏng, chỉ
+ * theo chiều ngược lại.
+ */
+test("W9 — `khoang` mà UI bày ra khớp ĐÚNG enum trong openapi.json", () => {
+  const cho_phep = enumThamSo("/api/v1/feeds/moi", "khoang");
+  expect(cho_phep, "`khoang` không còn là enum ⇒ Django lại khai `str` trơn").not.toBeNull();
+  expect([...KHOANG_FEED].sort()).toEqual([...cho_phep!].sort());
+
+  // Hai feed phải cùng một tập — lấy một cửa làm nguồn ở `lib/api.ts` chỉ đúng khi thế.
+  expect(enumThamSo("/api/v1/feeds/dang-dien-ra", "khoang")).toEqual(cho_phep);
+});
+
+test("W9 — `sort` mà UI gửi lên khớp ĐÚNG enum trong openapi.json", () => {
+  const cho_phep = enumThamSo("/api/v1/feeds/moi", "sort");
+  expect(cho_phep, "`sort` không còn là enum ⇒ Django lại khai `str` trơn").not.toBeNull();
+  expect([...new Set(Object.values(SORT_API))].sort()).toEqual([...cho_phep!].sort());
+  expect(enumThamSo("/api/v1/feeds/dang-dien-ra", "sort")).toEqual(cho_phep);
+});
+
+test("W9 — hai bài trên KHÔNG nghiệm đúng với mọi thứ (chống hàng rào rỗng)", () => {
+  // `enumThamSo` trả `null` cho tham số không phải enum, và cả hai bài trên đỏ ở
+  // `not.toBeNull()` trong ca đó — đây là chỗ chứng minh nhánh ấy có thật.
+  expect(enumThamSo("/api/v1/feeds/moi", "cursor")).toBeNull();
+  expect(enumThamSo("/api/v1/feeds/moi", "khong-co-tham-so-nay")).toBeNull();
+  expect(KHOANG_FEED.length).toBeGreaterThan(1);
 });
 
 test("hàm API không được đi qua biến trung gian — hàng rào tìm callee theo TÊN", () => {
@@ -249,18 +420,5 @@ test("hàm API không được đi qua biến trung gian — hàng rào tìm cal
   // gọi là `ham`, không phải một tên hàm API. Cấm luôn kiểu viết đó thì chữ "mọi" mới
   // đúng. Hai ngoại lệ hợp lệ: dòng `import`, và `typeof <ten>` (dùng ở TẦNG KIỂU, không
   // sinh ra lời gọi nào lúc chạy — `app/chan-doan/health-text.ts`).
-  const pham: string[] = [];
-  for (const f of FILES) {
-    const than = boImport(f.sach);
-    for (const ten of TEN_HAM_API) {
-      for (const m of than.matchAll(new RegExp(`\\b${ten}\\b`, "g"))) {
-        const sau = than.slice(m.index + ten.length);
-        const truoc = than.slice(0, m.index);
-        if (/^\s*\(/.test(sau)) continue;
-        if (/\btypeof\s+$/.test(truoc)) continue;
-        pham.push(`${f.ten}: ${ten} được nhắc tới mà không phải một lời gọi trực tiếp`);
-      }
-    }
-  }
-  expect(pham).toEqual([]);
+  expect(viPham("GOI_QUA_BIEN")).toEqual([]);
 });

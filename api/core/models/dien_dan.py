@@ -124,6 +124,16 @@ class Mach(models.Model):
     last_activity_at = models.DateTimeField(default=timezone.now)
     entry_count = models.PositiveIntegerField(default=0)
     comment_count = models.PositiveIntegerField(default=0)
+    #: Điểm của **mốc 1** — khoá sort của feed "Nhiều điểm nhất" (plan con 1d §1).
+    #:
+    #: `IntegerField` chứ không `PositiveIntegerField`: `Moc.score` là `up − down` nên nó
+    #: âm được, và một mạch bị dìm phải xếp DƯỚI mạch chưa ai vote chứ không bị kẹp về 0.
+    #:
+    #: Vì sao denormalize thay vì `JOIN` sang `Moc` rồi `ORDER BY`: khoá sort của một feed
+    #: phải index được, mà điểm nằm ở bảng khác thì không có index nào phục vụ được
+    #: `ORDER BY` đó (PLAN mục 6 đã chọn kỷ luật denormalize cho đúng nhóm bài này).
+    #: Công thức + ca bia mộ: `core/ghi.py::cap_nhat_dem_mach` và CHỈ ở đó.
+    diem_bai_goc = models.IntegerField(default=0)
 
     created_at = models.DateTimeField(default=timezone.now, editable=False)
 
@@ -144,6 +154,51 @@ class Mach(models.Model):
                 condition=models.Q(status=TrangThaiMach.MO),
                 name="mach_open_last_entry",
             ),
+            # Feed "Nhiều điểm nhất" toàn thời gian (plan con 1d §1). Cặp `(điểm, id)` là
+            # đúng khoá cursor keyset của feed đó — `diem_bai_goc` một mình không duy
+            # nhất, và keyset trên khoá không duy nhất lại rơi đúng vào bệnh trùng/sót mà
+            # nó sinh ra để chữa (xem `api/phan_trang.py`).
+            models.Index(fields=["-diem_bai_goc", "-id"], name="mach_diem_desc"),
+            #
+            # **KHÔNG có index riêng cho "Nhiều điểm nhất trong một KHOẢNG"**
+            # (`?khoang=ngay|tuan|thang`) — W10, lượt vá 2. Bản 1d từng thêm
+            # `mach_created_diem` trên `(-created_at, -diem_bai_goc)`; nó bị **bỏ hẳn**,
+            # và lý do là số đo chứ không phải khẩu vị.
+            #
+            # `EXPLAIN`, `enable_seqscan = off`, trên `gikky_dev` — **24 hàng `core_mach`
+            # của `seed_dev`**, tức số của một bảng đồ chơi; đọc nó như "planner CHỌN gì",
+            # đừng đọc như "cái này nhanh hơn cái kia":
+            #
+            #     ->  Sort  (Sort Key: diem_bai_goc DESC, id DESC)
+            #           ->  Index Scan using mach_created_desc on core_mach
+            #                 Index Cond: (created_at >= '…')
+            #                 Filter: (hidden_at IS NULL)
+            #
+            # Kế hoạch ấy **y hệt** kế hoạch khi còn `mach_created_diem` — chỉ đổi tên
+            # index. Cột `diem_bai_goc` trong index cũ không bao giờ góp được gì, và đó
+            # là bản chất của B-tree chứ không phải chuyện tinh chỉnh:
+            #
+            # 1. vị từ trên cột đầu là RANGE (`created_at >= …`), nên mọi cột sau nó
+            #    không còn cấp thứ tự — `Sort` LUÔN xuất hiện;
+            # 2. index **không chứa cột `id`**, mà khoá sort là cặp `(diem_bai_goc, id)`,
+            #    nên nó không phục vụ được `ORDER BY` kể cả khi vị từ đầu là `=`;
+            # 3. vế keyset của trang 2 vì thế rơi xuống `Filter`, không thành `Index Cond`:
+            #
+            #        Filter: (hidden_at IS NULL) AND
+            #                (diem_bai_goc < 5 OR (diem_bai_goc = 5 AND id < 999))
+            #
+            # Và `mach_created_desc` trên `(-created_at)` **đã có sẵn từ migration 0002**,
+            # nên giữ `mach_created_diem` là nuôi một index thứ hai cho cùng một kế hoạch:
+            # mọi `INSERT`/`UPDATE` trên `core_mach` trả tiền, không ai được gì.
+            #
+            # Với `khoang=tat_ca` (mặc định) thì đường đi khác hẳn: `mach_diem_desc` ở
+            # trên cho `Index Scan` đúng thứ tự, **không có `Sort` nào**.
+            #
+            # **Nợ có tên**: "top theo khoảng" vẫn chưa có index nào phục vụ được cả phép
+            # lọc lẫn phép sắp. Cách chữa thật là index partial theo từng khoảng, hoặc
+            # BRIN + sắp trong bộ nhớ, hoặc chấp nhận `Sort` — quyết định ấy cần số đo
+            # trên dữ liệu THẬT (24 hàng không phân biệt được ba phương án), không phải
+            # một dòng đổi thứ tự cột ở đây.
         ]
 
     def __str__(self) -> str:

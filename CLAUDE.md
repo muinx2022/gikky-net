@@ -72,6 +72,11 @@ Chạy ở **gốc repo** trừ khi ghi khác.
 | Đo Lighthouse SEO | `pnpm lighthouse` (cần `next start` + Django đang chạy) |
 | Seed 21 mạch cho ca "hồ sơ bị cắt" | `node scripts/py.mjs seed_e2e` |
 
+⚠ **`--` nuốt mất cờ lọc của Playwright.** `pnpm e2e:don-vi -g "X3"` lọc đúng (8 bài);
+`pnpm e2e:don-vi -- -g "X3"` chạy **cả 151 bài** và vẫn báo "passed" — một con số trông
+như đã lọc mà thực ra là của cả bộ. Bẫy này có sức hút riêng vì bảng trên dạy đúng lối `--`
+cho pytest (`pnpm test -- -k health -x`), nên phản xạ chép sang e2e là sai.
+
 ⚠ **`pnpm e2e --project=don-vi` thì KHÁC và KHÔNG an toàn** — cờ `--project` đi qua
 `playwright.config.ts`, mà `globalSetup` + `webServer` ở đó là cấu hình TOÀN CỤC nên vẫn seed DB
 và vẫn dựng 2 server. Đúng lệnh là `pnpm e2e:don-vi`.
@@ -133,6 +138,14 @@ Django admin ở **`/api/admin/django/`** — không phải `/api/admin/`; xem d
   (`cap_phat_path`) rồi mới xin `Mach` (`cap_nhat_dem_mach`). Đường nào làm ngược sinh deadlock —
   Postgres huỷ một bên ⇒ 500 ngẫu nhiên dưới tải, gần như không tái hiện được ở dev. Ngoại lệ duy
   nhất: bình luận gốc không có cha nên khoá thẳng `Mach` (chỉ chạm một hàng khoá).
+  **Cạnh thứ hai, thêm ở Phase 1d: `Moc` → `Mach`.** `dat_vote` trên mốc 1 gọi
+  `cap_nhat_dem_mach` để `diem_bai_goc` không trôi, nên nó khoá hàng `Moc` rồi mới xin
+  hàng `Mach`. Cùng chiều với cạnh cũ (`Mach` luôn đứng CUỐI) nên không sinh chu trình —
+  và luật đọc gọn lại thành **`Mach` khoá sau cùng, không có ngoại lệ**.
+  ⚠ Khoá NGẦM cũng tính: `INSERT INTO core_trich(moc_id, …)` lấy `FOR KEY SHARE` trên
+  hàng `Moc` được tham chiếu. Phase 2 làm endpoint "trích vào sổ" mà khoá `Mach` trước
+  rồi mới insert `Trich` là dựng đúng cạnh ngược `Mach` → `Moc` — cạnh người viết sẽ
+  không thấy vì nó không có dòng `select_for_update` nào.
 - **`cap_nhat_dem_mach` phải gọi TRONG một `atomic()`.** Nó tự `select_for_update` hàng `Mach`,
   nhưng khoá chỉ sống tới lúc transaction đóng. Ghi `deleted_at`/`hidden_at` ở transaction này rồi
   đếm lại ở transaction khác = `comment_count` sai vĩnh viễn, không log, không job đối soát.

@@ -1,0 +1,83 @@
+.cot {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.khoi {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 12px 14px;
+}
+
+.tieu_de {
+  font-family: var(--f-ui);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  color: var(--ink-3);
+  margin: 0 0 8px;
+}
+
+.than {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+.so {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.gach_dau_dong {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  display: grid;
+  gap: 4px;
+}
+
+.dan {
+  display: inline-block;
+  margin-top: 9px;
+  font-size: 12.5px;
+  color: var(--accent);
+}
+
+.danh_sach_sub {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.mot_sub {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 6px;
+  margin: 0 -6px;
+  border-radius: 4px;
+}
+
+.mot_sub:hover {
+  background: var(--surface-2);
+}
+
+.slug {
+  font-size: 12px;
+  color: var(--accent);
+}
+
+.ten_sub {
+  font-size: 12.5px;
+  color: var(--ink-2);
+}

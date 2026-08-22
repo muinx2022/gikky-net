@@ -1,4 +1,9 @@
+import { CHU_NGUOI_DUNG } from "@/lib/chu-nguoi-dung";
+
 /** Thân văn của mốc và của bình luận.
+ *
+ * Mang dấu `CHU_NGUOI_DUNG`: đây là chỗ DUY NHẤT `body` do người dùng gõ được in ra, nên
+ * đánh dấu ở đây phủ cả mốc lẫn bình luận bằng một dòng (Y3).
  *
  * **Chưa render markdown, và đó là chủ đích ở 1c.** PLAN 5.2 khai `body` là markdown
  * ≤10.000 ký tự, nhưng nội dung do người dùng đăng: bật một bộ parse markdown là mở luôn
@@ -12,7 +17,7 @@
 export function ThanVan({ body, className }: { body: string; className?: string }) {
   const doan = body.split(/\n{2,}/).filter((d) => d.trim() !== "");
   return (
-    <div className={className}>
+    <div className={className} {...CHU_NGUOI_DUNG}>
       {doan.map((d, i) => (
         <p key={i}>
           {d.split("\n").map((dong, j, tat_ca) => (

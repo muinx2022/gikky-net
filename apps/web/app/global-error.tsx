@@ -67,14 +67,19 @@ export default function LoiToanCuc({
               router vừa hỏng. `window.location` là đường chắc chắn thoát ra —
               và cũng là lý do đây là `<button>` chứ không `<a>` (eslint
               `no-html-link-for-pages` cấm `<a>` trỏ route nội bộ, đúng trong mọi ca
-              khác). */}
+              khác).
+
+              ⚠ **Đích là `/luat`, không phải `/`** (nợ #14, 2026-08-22). Trang chủ gọi
+              `docFeed` + `docCacSub`; nếu cái làm hỏng khung trang là Django thì `/` hỏng
+              y hệt, và cái nút "thoát" dẫn thẳng vào một trang lỗi thứ hai. `/luat` không
+              gọi API nào và được tiền dựng lúc build. */}
           <button
             type="button"
             className={css.nut}
-            onClick={() => window.location.assign("/")}
-            data-testid="trang-loi-toan-cuc-ve-trang-chu"
+            onClick={() => window.location.assign("/luat")}
+            data-testid="trang-loi-toan-cuc-ve-luat"
           >
-            Tải lại trang chủ
+            Sang trang Luật
           </button>
         </main>
       </body>

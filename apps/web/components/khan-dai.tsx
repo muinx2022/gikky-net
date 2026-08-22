@@ -6,6 +6,7 @@ import {
   SAU_KHAN_DAI,
   SORT_KHAN_DAI,
   type SortKhanDai,
+  nenRenderCauDangDoc,
 } from "@/lib/khan-dai";
 
 import { BinhLuan, DanhSachBinhLuan } from "./binh-luan";
@@ -49,6 +50,63 @@ export function LoiMoiBungKhanDai({
   );
 }
 
+/** Khối "Câu đáng đọc" — PLAN 5.5, chốt 2026-08-22.
+ *
+ * **Vì sao nó tồn tại:** cái nút ở chân trang mặt CẶN ghi *"xem các câu đáng đọc ▾"*, và
+ * ở 1c cú bấm giao ra **toàn bộ khán đài** — phép hợp `đã trích ∪ top-10 wilson` không
+ * tồn tại ở đâu cả. Nhãn hứa một thứ mà cú bấm không giao. PLAN chốt cách chữa: vẫn bung
+ * khán đài đầy đủ, nhưng phần TRÊN CÙNG của khối vừa bung là tập hợp ấy, gắn nhãn, rồi
+ * mới tới cây đầy đủ.
+ *
+ * Tập này do **server** tính (`?dang_doc=1`) — PLAN nguyên tắc 10: luật domain ở Django,
+ * frontend chỉ render. Tính lại ở đây là dựng bản thứ hai của một công thức mà API đã có,
+ * và bản thứ hai chỉ có `hay_nhat` trang 1 để nhìn nên nó sẽ sai ở mạch trên 50 thread.
+ *
+ * `null` (API hỏng lẻ ở đúng lời gọi này) ⇒ **không render khối**, và đó là lựa chọn có
+ * ý thức: cây đầy đủ ngay dưới vẫn còn nguyên, nên mất khối này là mất một lối tắt chứ
+ * không mất nội dung. Ngược lại, để cả trang mạch 500 vì một khối phụ mới là hỏng nặng
+ * hơn thứ nó chữa.
+ */
+export function CauDangDoc({
+  tap,
+  duongDanKhanDai,
+}: {
+  tap: KhanDaiOut | null;
+  duongDanKhanDai: string;
+}) {
+  // Khối không lọc được gì ⇒ không render: nó sẽ chép lại y nguyên cây ngay dưới nó.
+  // "Câu đáng đọc" là một phép LỌC; khi nó không lọc được gì thì thứ nó thêm vào chỉ là
+  // hai bản của cùng một danh sách, và người đọc phải tự đoán vì sao mình thấy mọi bình
+  // luận hai lần.
+  //
+  // Phép quyết định nằm ở `lib/khan-dai.ts` và đọc CON SỐ API TRẢ VỀ, không so hai kích
+  // thước — xem `nenRenderCauDangDoc` về việc so hai kích thước sai ở đâu (Y1).
+  if (!nenRenderCauDangDoc(tap)) return null;
+  return (
+    <section className={css.dang_doc} data-testid="cau-dang-doc">
+      <div className={css.dang_doc_dau}>
+        <h3 className={css.dang_doc_tieu_de}>Câu đáng đọc</h3>
+        <p className={css.dang_doc_giai_thich}>
+          Bình luận đã được chủ mạch trích vào sổ, cộng những câu được đánh giá cao nhất.
+        </p>
+      </div>
+      <DanhSachBinhLuan data-testid="cay-cau-dang-doc">
+        {tap.threads.map((n) => (
+          <BinhLuan
+            key={n.id}
+            nut={n}
+            doSauToiDa={SAU_KHAN_DAI}
+            duongDanKhanDai={duongDanKhanDai}
+            // `datNeo` TẮT ở đây: khối này và cây đầy đủ bên dưới render cùng những
+            // bình luận ấy, và hai phần tử cùng mang `id="bl-<id>"` là HTML trùng id —
+            // trình duyệt cuộn tới cái nào là chuyện hên xui. Neo thuộc về cây đầy đủ.
+          />
+        ))}
+      </DanhSachBinhLuan>
+    </section>
+  );
+}
+
 /** Khán đài đã bung: 3 sort đổi qua URL param + composer ở cuối (PLAN 5.5).
  *
  * `composerTat` là **bắt buộc có mặt** dù chưa dùng được: PLAN 5.1 chốt "mạch đóng vẫn
@@ -83,6 +141,7 @@ export function KhanDai({
   hrefXemThem,
   duongDanKhanDai,
   hienSoDem,
+  cauDangDoc = null,
 }: {
   khanDai: KhanDaiOut;
   sort: SortKhanDai;
@@ -91,6 +150,8 @@ export function KhanDai({
   duongDanKhanDai: string;
   /** Nguyên tắc 9 — mạch dưới 4 bình luận thì ẩn mọi số đếm. */
   hienSoDem: boolean;
+  /** Tập "câu đáng đọc" do server tính (`?dang_doc=1`), hoặc `null` để không render khối. */
+  cauDangDoc?: KhanDaiOut | null;
 }) {
   if (khanDai.tong_thread === 0) {
     return (
@@ -116,6 +177,10 @@ export function KhanDai({
           </span>
         )}
       </div>
+
+      {/* TRÊN CÙNG của khối vừa bung, trước cả thanh sort — PLAN 5.5 chốt đúng vị trí
+          này. Đặt nó dưới cây là để cái nhãn trên nút vẫn hứa suông. */}
+      <CauDangDoc tap={cauDangDoc} duongDanKhanDai={duongDanKhanDai} />
 
       <div className={css.thanh_sort} data-testid="thanh-sort">
         <span className={css.nhan_sort}>Sắp xếp:</span>

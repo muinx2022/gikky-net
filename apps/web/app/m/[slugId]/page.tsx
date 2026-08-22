@@ -15,7 +15,13 @@ import { JsonLd } from "@/components/json-ld";
 import { KhanDai, LoiMoiBungKhanDai } from "@/components/khan-dai";
 import { NganKeoProvider } from "@/components/ngan-keo";
 import { TheMoc } from "@/components/the-moc";
-import { docKhanDai, docMach, docNganKeo, type TrangCursor } from "@/lib/api";
+import {
+  docCauDangDoc,
+  docKhanDai,
+  docMach,
+  docNganKeo,
+  type TrangCursor,
+} from "@/lib/api";
 import { nenHienSoDem } from "@/lib/dem";
 import {
   nhanDaiGap,
@@ -152,13 +158,21 @@ export default async function TrangMach({
   const khan_dai_trang = trang_dang_xem.du_lieu;
   const cursor_hong = trang_dang_xem.cursorHong || offset_hong;
 
+  // "Câu đáng đọc" (PLAN 5.5) — chỉ nạp khi khán đài thật sự bung ra, cùng lý lẽ với
+  // `trang_dang_xem`. Lời gọi RIÊNG: tập này có thứ tự riêng (wilson thuần) và không
+  // phân trang, nên nó không tái dụng được trang khán đài đang hiện.
+  const cau_dang_doc = bung_khan_dai ? await docCauDangDoc(mach.id) : null;
+
   // Ngăn kéo nạp sẵn cho MỌI mốc của mạch — kể cả mốc `so_binh_luan === 0` (vá B1: mốc
   // chỉ còn bia mộ vẫn có lát cắt), và kể cả mốc nằm trong dải gập, vì dải gập bung ra
   // ngay tại chỗ chứ không tải lại trang.
   //
-  // Đây là mặt sau của nợ có tên #1 (N+1 ngăn kéo, plan vá §5): số lời gọi nay bằng số
-  // MỐC chứ không bằng số mốc có bình luận. Đổi lại là cái nút và cái ngăn kéo nói cùng
-  // một chuyện. Xử thật ở Phase 3, cùng lúc bật ISR.
+  // Đây là mặt sau của nợ có tên `N+1-NGAN-KEO` (danh sách nợ:
+  // `plans/2026-08-22-phase-1d-va3.md` §4; nêu lần đầu ở
+  // `plans/2026-08-22-phase-1c-va.md` §5): số lời gọi nay bằng
+  // số MỐC chứ không bằng số mốc có bình luận. Đổi lại là cái nút và cái ngăn kéo nói
+  // cùng một chuyện. Xử thật ở Phase 3, cùng lúc bật ISR.
+  // (Tên cũ "#1" trỏ nhầm sang khoản keyset của cùng danh sách — sửa ở Y5, lượt vá 4.)
   //
   // `chayCoTran` thay `Promise.all` (vá E4): số lời gọi không đổi, nhưng chúng không còn
   // ập vào Django cùng một lúc. Mạch 40 mốc từng là 40 kết nối đồng thời cho MỘT lượt
@@ -287,6 +301,7 @@ export default async function TrangMach({
             hrefXemThem={hrefXemThem(co_ban, sort, khan_dai_trang)}
             duongDanKhanDai={duong_dan_khan_dai}
             hienSoDem={hien_so_dem}
+            cauDangDoc={cau_dang_doc}
           />
         ) : (
           <LoiMoiBungKhanDai

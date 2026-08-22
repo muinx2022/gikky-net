@@ -91,17 +91,23 @@ export default function Loi({
           `true` VĨNH VIỄN: nút trên khoá cứng, nhãn kẹt ở "Đang thử lại…", và trang lỗi
           hết đường thoát. Đúng loài "banner kẹt vĩnh viễn" mà `D:\Projects\CLAUDE.md`
           ghi lại từ 2026-08-04.
-          `location.reload()` chứ không `router.refresh()`: cái đang treo là chính lời
-          gọi RSC, nên phải bỏ hẳn tài liệu hiện tại. Bất đối xứng cũ — `global-error.tsx`
-          (0 bài đo, 1c không chạm tới được) CÓ lối thoát, còn file nằm trên đường đi thật
-          thì không — nay hết. */}
+          `window.location` chứ không `router.refresh()` / `next/link`: cái đang treo là
+          chính lời gọi RSC, nên phải bỏ hẳn tài liệu hiện tại.
+
+          ⚠ **Đích là `/luat`, KHÔNG phải `location.reload()`** (nợ #14, 2026-08-22).
+          `reload()` nạp lại ĐÚNG cái route vừa treo — nếu upstream còn treo thì nó treo
+          tiếp, và "đường thoát" chỉ là một vòng lặp chậm hơn. `/luat` là route TĨNH
+          (`app/luat/page.tsx` không gọi API nào, Next tiền dựng nó lúc build), nên nó lên
+          được kể cả khi Django chết hẳn — thứ duy nhất trong repo này đúng như vậy, và
+          `e2e/don-vi/trang-loi.spec.ts` ghim cả tính tĩnh đó. Từ `/luat` người ta còn
+          đường đi tiếp qua thanh điều hướng. */}
       <button
         type="button"
         className={css.nut}
-        onClick={() => window.location.reload()}
-        data-testid="trang-loi-tai-lai"
+        onClick={() => window.location.assign("/luat")}
+        data-testid="trang-loi-ve-luat"
       >
-        Tải lại trang
+        Sang trang Luật
       </button>
     </main>
   );

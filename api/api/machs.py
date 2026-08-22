@@ -8,9 +8,11 @@ from core.doc_noi_dung import (
     SORT_HOP_LE,
     SORT_MOI_NHAT,
     Nut,
+    cau_dang_doc,
     dem_binh_luan_theo_moc,
     dung_cay_theo_sort,
     nap_binh_luan,
+    tap_dang_duoc_trich,
     tap_tung_duoc_trich,
 )
 from core.mat import tinh_mat_theo_thoi_gian
@@ -86,9 +88,13 @@ def xem_mach(request, mach_id: int):
     # `filterwarnings = ["error"]` biến `DeprecationWarning` thành lỗi test.
     # Dùng lại `MachTomTatOut` để 12 trường chung của thẻ feed và của trang mạch không
     # có hai bản sao trôi khỏi nhau.
+    # `exclude={"diem"}` là CỐ Ý (plan con 1d §2.1). `diem` là điểm của mốc 1, và trang
+    # mạch đã trả nguyên mốc 1 kèm `score` của nó trong `mocs` — chép thêm một bản ở tầng
+    # mạch là dựng hai chỗ nói cùng một con số, và cái thứ hai sẽ là cái trôi. Thẻ feed
+    # cần `diem` vì nó KHÔNG có `mocs`.
     tom_tat = mach_tom_tat_ra(mach)
     return MachChiTietOut(
-        **tom_tat.model_dump(),
+        **tom_tat.model_dump(exclude={"diem"}),
         closed_at=mach.closed_at,
         locked=mach.locked_at is not None,
         face=tinh_mat_theo_thoi_gian(
@@ -159,7 +165,8 @@ def liet_ke_binh_luan_mach(
     sort: str = SORT_HAY_NHAT,
     cursor: str | None = None,
     offset: int = 0,
-    limit: int = GIOI_HAN_TOI_DA,
+    limit: int | None = None,
+    dang_doc: bool = False,
 ):
     """Khán đài: **cây bình luận đã dựng sẵn**, server sắp xếp (PLAN mục 7).
 
@@ -188,6 +195,34 @@ def liet_ke_binh_luan_mach(
     vẫn chiếm một chỗ trong `tong_thread` và một slot của trang này.
     Bia mộ không được tính vào `comment_count` của mạch, nên số bình luận **đọc được** có
     thể nhỏ hơn số dòng trả về.
+
+    ### `?dang_doc=1` — "câu đáng đọc" (PLAN 5.5)
+
+    Trả **phép hợp `đã trích ∪ top-10 theo wilson`** trên các thread GỐC, sắp theo wilson
+    **thuần** giảm dần. Đây là khối gắn nhãn "Câu đáng đọc" nằm trên cùng khi chân trang
+    mặt CẶN bung khán đài; cây đầy đủ vẫn lấy bằng một lời gọi thường (không có tham số
+    này).
+
+    Phép hợp là hợp THẬT: một bình luận được trích nhưng xếp hạng thấp **vẫn có mặt**.
+    Không có phân trang ở chế độ này — tập tối đa là `10 + số mốc có trích`, và
+    `offset_ke_tiep`/`cursor_ke_tiep` luôn `null`, `tong_thread` là kích thước của tập.
+
+    Chế độ này (và **chỉ** chế độ này) trả thêm `so_ung_vien_bo_lai`: số thread gốc đọc
+    được nằm ngoài tập. `0` nghĩa là khối không lọc được gì và UI phải ẩn nó đi (PLAN 5.5,
+    ngoại lệ "tập = cả khán đài"). Đừng suy con số ấy bằng cách so `tong_thread` của hai
+    lời gọi — hai đầu đếm bia mộ khác nhau, xem `KhanDaiOut` (Y1, lượt vá 4).
+
+    Vì tập này có thứ tự riêng, `?dang_doc=1` **chỉ đi cùng `sort=hay_nhat`** (mặc định)
+    và **không nhận `offset`/`cursor`/`limit`** — dùng lẫn trả 400
+    `tham_so_khong_hop_le` thay vì lặng lẽ bỏ qua tham số, đúng luật đang áp cho hai kiểu
+    phân trang ở trên. `limit` là **cửa thứ tư của cùng cái luật ấy** (vá V7,
+    2026-08-22): nhánh này không đọc `limit` ở đâu cả, nên `?dang_doc=1&limit=5` trước đó
+    trả 200 kèm 11 thread — người gọi tưởng mình đã cắt còn 5.
+
+    `limit` mặc định là `None` chứ không phải `GIOI_HAN_TOI_DA`, và đó là cả cách phép
+    kiểm trên đứng được: với mặc định là một con số thì "không truyền" và "truyền đúng 50"
+    trông y hệt nhau ở trong hàm, nên hoặc là bỏ qua im lặng, hoặc là 400 cho một lời gọi
+    không sai gì.
     """
     if sort not in SORT_HOP_LE:
         return loi(
@@ -195,7 +230,7 @@ def liet_ke_binh_luan_mach(
             SORT_KHONG_HOP_LE,
             f"sort phải thuộc {{{', '.join(SORT_HOP_LE)}}}, nhận {sort!r}.",
         )
-    if (l := kiem_gioi_han(limit)) is not None:
+    if (l := kiem_gioi_han(limit if limit is not None else GIOI_HAN_TOI_DA)) is not None:
         return l
     if offset < 0:
         return loi(
@@ -213,6 +248,18 @@ def liet_ke_binh_luan_mach(
             THAM_SO_KHONG_HOP_LE,
             f"sort={sort} phân trang bằng cursor, không nhận offset.",
         )
+    if dang_doc and (
+        sort != SORT_HAY_NHAT
+        or offset != 0
+        or cursor is not None
+        or limit is not None
+    ):
+        return loi(
+            400,
+            THAM_SO_KHONG_HOP_LE,
+            "dang_doc=1 có thứ tự riêng (wilson thuần) và không phân trang: "
+            "không nhận sort khác hay_nhat, không nhận offset/cursor/limit.",
+        )
 
     mach = _mach_hien(mach_id)
     if mach is None:
@@ -225,9 +272,25 @@ def liet_ke_binh_luan_mach(
         now=timezone.now(),
         tung_duoc_trich=tap_tung_duoc_trich(mach),
     )
+
+    if dang_doc:
+        tap = cau_dang_doc(goc, dang_duoc_trich=tap_dang_duoc_trich(mach))
+        return KhanDaiOut(
+            sort=sort,
+            tong_thread=len(tap.threads),
+            threads=[nut_ra(n, chu_mach_id=mach.author_id) for n in tap.threads],
+            so_ung_vien_bo_lai=tap.so_ung_vien_bo_lai,
+            offset_ke_tiep=None,
+            cursor_ke_tiep=None,
+        )
+
     try:
         trang, offset_ke_tiep, cursor_ke_tiep = _cat_goc(
-            goc, sort=sort, cursor=cursor, offset=offset, limit=limit
+            goc,
+            sort=sort,
+            cursor=cursor,
+            offset=offset,
+            limit=limit if limit is not None else GIOI_HAN_TOI_DA,
         )
     except CursorHong as e:
         return loi(400, CURSOR_KHONG_HOP_LE, f"Cursor không hợp lệ: {e}")
@@ -236,6 +299,9 @@ def liet_ke_binh_luan_mach(
         sort=sort,
         tong_thread=len(goc),
         threads=[nut_ra(n, chu_mach_id=mach.author_id) for n in trang],
+        # `None`, không phải `0` — xem `KhanDaiOut.so_ung_vien_bo_lai`: con số này là câu
+        # trả lời cho một câu hỏi chỉ chế độ `dang_doc` đặt ra.
+        so_ung_vien_bo_lai=None,
         offset_ke_tiep=offset_ke_tiep,
         cursor_ke_tiep=cursor_ke_tiep,
     )

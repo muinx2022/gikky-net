@@ -97,6 +97,10 @@ export type BinhLuanOut = {
  * FeedOut
  *
  * Một trang feed. `cursor_ke_tiep = null` nghĩa là hết.
+ *
+ * **Cursor mang khoá của ĐÚNG sort đã sinh ra nó** (plan con 1d §2.1): `sort=nhieu_diem`
+ * trả cursor `(diem, id)`, hai sort thời gian trả cursor `(thời điểm, id)`. Đem cursor
+ * của sort này sang sort kia là 400 `cursor_khong_hop_le`, không phải trang 1 im lặng.
  */
 export type FeedOut = {
     /**
@@ -217,6 +221,12 @@ export type HoSoOut = {
  * luôn `null` ở sort này.
  * - `moi_nhat` / `cu_nhat` — cursor keyset thật trên `(created_at, id)`.
  * `offset_ke_tiep` luôn `null` ở hai sort này.
+ *
+ * **Chế độ `?dang_doc=1`** (PLAN 5.5 — "câu đáng đọc") dùng lại đúng schema này nhưng
+ * đổi nghĩa hai trường: `threads` là phép hợp `đã trích ∪ top-10 wilson` sắp theo wilson
+ * **thuần**, và `tong_thread` là kích thước của tập ấy chứ không phải tổng thread của
+ * mạch. Cả hai con trỏ trang luôn `null` — chế độ đó không phân trang. Chỉ chế độ này
+ * mang `so_ung_vien_bo_lai`.
  */
 export type KhanDaiOut = {
     /**
@@ -227,6 +237,10 @@ export type KhanDaiOut = {
      * Offset Ke Tiep
      */
     offset_ke_tiep: number | null;
+    /**
+     * So Ung Vien Bo Lai
+     */
+    so_ung_vien_bo_lai: number | null;
     /**
      * Sort
      */
@@ -352,6 +366,11 @@ export type MachChiTietOut = {
  * `last_entry_at` đo cấu trúc (mọi mốc, kể cả mốc bị ẩn), `last_activity_at` đo nội
  * dung đọc được. Hệ quả nhìn thấy được: một mạch đứng đầu feed "Đang diễn ra" mà mở ra
  * là mặt CẶN.
+ *
+ * **`diem` là điểm của MỐC 1, không phải tổng điểm của mạch.** PLAN 5.7 chốt vote nằm
+ * trên từng mốc riêng rẽ ("mốc 9 được 412 dù bài gốc 89"), nên không tồn tại con số
+ * "điểm của mạch"; cột vote trên thẻ feed chiếu đúng điểm bài gốc. Mốc 1 đã xoá hoặc bị
+ * mod ẩn ⇒ `0`, cùng chuẩn với `MocOut.score` của bia mộ.
  */
 export type MachTomTatOut = {
     author: NguoiDungTomTatOut;
@@ -363,6 +382,10 @@ export type MachTomTatOut = {
      * Created At
      */
     created_at: string;
+    /**
+     * Diem
+     */
+    diem: number;
     /**
      * Entry Count
      */
@@ -605,6 +628,45 @@ export type SpineOut = {
 };
 
 /**
+ * SubChiTietOut
+ *
+ * Header của trang `/s/<slug>` — plan con 1d §2.3.
+ *
+ * `so_mach` đếm mạch **hiện được**: chỉ loại mạch bị mod ẩn (`hidden_at`), đúng bộ lọc
+ * của `api/feeds.py::_mach_hien`.
+ *
+ * ⚠ **Không phải "đúng bộ lọc mà hai feed dùng"** *(sửa ở W12, lượt vá 2 — câu cũ nói
+ * quá)*: `/feeds/dang-dien-ra` lọc THÊM `status=MO`, nên với một chuyên mục có mạch đã
+ * đóng sổ thì `so_mach` lớn hơn tổng số thẻ của feed đó kể cả khi không cắt trang. Con
+ * số này khớp tập của `/feeds/moi`, không khớp tập của `/feeds/dang-dien-ra`.
+ *
+ * Và ngay cả với `/feeds/moi` thì đừng suy con số này ra số thẻ trên màn hình: feed cắt
+ * trang, còn `?khoang=` cắt thêm theo `created_at`.
+ */
+export type SubChiTietOut = {
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Mo Ta
+     */
+    mo_ta: string;
+    /**
+     * Slug
+     */
+    slug: string;
+    /**
+     * So Mach
+     */
+    so_mach: number;
+    /**
+     * Ten
+     */
+    ten: string;
+};
+
+/**
  * SubTomTatOut
  */
 export type SubTomTatOut = {
@@ -668,6 +730,14 @@ export type LietKeFeedDangDienRaData = {
          */
         sub?: string | null;
         /**
+         * Sort
+         */
+        sort?: 'tu_nhien' | 'nhieu_diem';
+        /**
+         * Khoang
+         */
+        khoang?: 'ngay' | 'tuan' | 'thang' | 'tat_ca';
+        /**
          * Cursor
          */
         cursor?: string | null;
@@ -709,6 +779,14 @@ export type LietKeFeedMoiData = {
          * Sub
          */
         sub?: string | null;
+        /**
+         * Sort
+         */
+        sort?: 'tu_nhien' | 'nhieu_diem';
+        /**
+         * Khoang
+         */
+        khoang?: 'ngay' | 'tuan' | 'thang' | 'tat_ca';
         /**
          * Cursor
          */
@@ -822,7 +900,11 @@ export type LietKeBinhLuanMachData = {
         /**
          * Limit
          */
-        limit?: number;
+        limit?: number | null;
+        /**
+         * Dang Doc
+         */
+        dang_doc?: boolean;
     };
     url: '/api/v1/machs/{mach_id}/comments';
 };
@@ -908,6 +990,54 @@ export type LietKeBanCuMocResponses = {
 };
 
 export type LietKeBanCuMocResponse = LietKeBanCuMocResponses[keyof LietKeBanCuMocResponses];
+
+export type LietKeSubData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/subs';
+};
+
+export type LietKeSubResponses = {
+    /**
+     * Response
+     *
+     * OK
+     */
+    200: Array<SubChiTietOut>;
+};
+
+export type LietKeSubResponse = LietKeSubResponses[keyof LietKeSubResponses];
+
+export type XemSubData = {
+    body?: never;
+    path: {
+        /**
+         * Slug
+         */
+        slug: string;
+    };
+    query?: never;
+    url: '/api/v1/subs/{slug}';
+};
+
+export type XemSubErrors = {
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type XemSubError = XemSubErrors[keyof XemSubErrors];
+
+export type XemSubResponses = {
+    /**
+     * OK
+     */
+    200: SubChiTietOut;
+};
+
+export type XemSubResponse = XemSubResponses[keyof XemSubResponses];
 
 export type XemHoSoData = {
     body?: never;

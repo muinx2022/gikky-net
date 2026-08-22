@@ -1,83 +1,167 @@
 import type { FeedOut } from "@gikky/api-client";
 import Link from "next/link";
 
-import { NHAN_TAB, TAB_FEED, type TabFeed } from "@/lib/api";
+import {
+  KHOANG_FEED,
+  KHOANG_MAC_DINH,
+  NHAN_KHOANG,
+  NHAN_TAB,
+  TAB_FEED,
+  tabCoKhoang,
+  type KhoangFeed,
+  type TabFeed,
+} from "@/lib/api";
 
 import { BaoCursorHong } from "./bao-cursor-hong";
 import css from "./feed.module.css";
 import { TheMach } from "./the-mach";
 
-/** Feed hai tab — PLAN 5.9.
+/** Feed ba tab — PLAN 5.9 (Mới · Đang diễn ra) + plan con 1d §2.5.4 ("Nhiều điểm nhất").
  *
  * **"Đang diễn ra" KHÔNG phải "Hot".** Nó sort theo `last_entry_at`, tức theo lúc tác
  * giả nối mốc, chứ không theo lượng tương tác. PLAN mục 4 đã loại hẳn cơ chế "mốc mới
  * bump bài lên feed Hot" vì động cơ ngược: tác giả băm "chốt 1/3" thành 3 mốc để ăn 3
  * lượt đẩy. Đừng thêm bất cứ trọng số nào vào đây.
  *
- * Trạng thái tab nằm trên URL (`?tab=`) chứ không trong state: feed là thứ người ta gửi
- * link cho nhau.
+ * **"Nhiều điểm nhất" cũng không phải Hot**: khoá của nó là điểm **bài gốc**, con số mà
+ * nối thêm mốc không đụng tới — xem `lib/api.ts::TAB_FEED`.
+ *
+ * Toàn bộ trạng thái (tab, khoảng, cursor) nằm trên URL chứ không trong state: feed là
+ * thứ người ta gửi link cho nhau, và PLAN nguyên tắc 7 cấm "tự đổi sort ngầm dưới tay
+ * người dùng" — không có state ẩn thì không có chỗ nào để đổi ngầm.
+ *
+ * **Đổi tab thì RỚT `cursor`, và giữ `khoang`.** Cursor mang khoá sort của tab sinh ra nó
+ * (API trả 400 `cursor_khong_hop_le` nếu đem sang tab khác), nên tha nó theo là biến một
+ * cú bấm tab thành một trang lỗi. `khoang` thì không dính khoá nào — người đang xem "top
+ * tuần" bấm sang tab khác rồi quay lại mà mất mốc thời gian là mất đúng thứ họ vừa chọn.
+ *
+ * **`khoang` đi theo URL ở MỌI tab, kể cả tab không bày ra nó** *(vá V2, 2026-08-22)*.
+ * Bản đầu hỏi `tabCoKhoang(t)` của tab ĐÍCH ngay trong `duoi()`, nên `khoang` chỉ sống
+ * sót khi tab đích là `nhieu-diem` — tức chỉ khi KHÔNG đổi tab, đúng ngược lại kịch bản
+ * mà câu trên nói nó bảo vệ. Vòng `nhieu-diem&khoang=tuan` → `moi` → `nhieu-diem` rơi về
+ * `tat_ca`.
+ * ⚠ Mang theo URL **không phải** là gửi lên API: `lib/api.ts::khoangGuiLenApi` cắt
+ * `khoang` ở tab không có control chọn khoảng. Gửi kèm là dựng một **bộ lọc tàng hình** —
+ * feed bị cắt bớt mà trên màn hình không có gì nói ra và không có cách nào tắt, tức đâm
+ * PLAN nguyên tắc 7 còn nặng hơn cái lỗi vừa vá.
  */
+/** Đầu trang: **hoặc** một `header` riêng, **hoặc** cặp `tieuDe`/`lede` — không bao giờ
+ * cả hai *(X9, lượt vá 3)*.
+ *
+ * Trước X9 cả ba là prop rời và `header` chỉ đơn giản thắng ở chỗ render, nên trang sub
+ * truyền đủ ba: `tieuDe={`s/${slug}`}` và `lede={chi_tiet.mo_ta}` **không render ở đâu
+ * cả**. Một bản sao thứ hai của `mo_ta` không ai đọc là thứ sẽ lệch khỏi bản thật ở lần
+ * sửa sau, và người đọc `page.tsx` không có cách nào biết dòng nào là dòng có tác dụng.
+ *
+ * Union này biến chuyện đó thành lỗi biên dịch chứ không phải một quy ước: truyền cả hai
+ * là `tsc` đỏ ngay tại chỗ gọi. Không thêm bài đo runtime nào cho luật này — kiểu là hàng
+ * rào chặt hơn, và `pnpm build` đã chạy `tsc`.
+ */
+type DauTrang =
+  | { header: React.ReactNode; tieuDe?: never; lede?: never }
+  | { header?: undefined; tieuDe: string; lede: string };
+
 export function Feed({
   feed,
   tab,
+  khoang,
   coBan,
   tieuDe,
   lede,
   cursorHong = false,
+  sidebar,
+  header,
 }: {
   feed: FeedOut;
   tab: TabFeed;
+  khoang: KhoangFeed;
   /** Đường dẫn gốc của feed: `/` hoặc `/s/<sub>`. */
   coBan: string;
-  tieuDe: string;
-  lede: string;
   /** `?cursor=` không dùng được ⇒ đang hiện trang đầu. Xem `lib/api.ts::TrangCursor`. */
   cursorHong?: boolean;
-}) {
-  const href = (t: TabFeed) => `${coBan}?tab=${t}`;
+  /** Cột phải. Bắt buộc có mặt — cả hai trang feed đều dựng nó. */
+  sidebar: React.ReactNode;
+} & DauTrang) {
+  /** `?khoang=` đi kèm MỌI tab, nhưng chỉ khi khác mặc định: URL sạch thì link chia sẻ
+   * đọc được, và `?khoang=tat_ca` không nói thêm gì so với việc thiếu nó.
+   *
+   * **Không hỏi `tabCoKhoang` ở đây** — xem docstring component. Hỏi nó tại chỗ này là
+   * đánh rơi lựa chọn của người dùng ngay lúc họ bấm sang tab khác. Cửa "gửi lên API"
+   * đóng ở `lib/api.ts`, không đóng bằng cách xoá tham số khỏi URL. */
+  const duoi = (k: KhoangFeed) => (k !== KHOANG_MAC_DINH ? `&khoang=${k}` : "");
+  const hrefTab = (t: TabFeed) => `${coBan}?tab=${t}${duoi(khoang)}`;
+  const hrefKhoang = (k: KhoangFeed) => `${coBan}?tab=${tab}${duoi(k)}`;
 
   return (
-    <main className={css.khung}>
-      <h1 className={css.tieu_de}>{tieuDe}</h1>
-      <p className={css.lede}>{lede}</p>
+    <div className={css.khung}>
+      <main className={css.chinh}>
+        {header ?? (
+          <>
+            <h1 className={css.tieu_de}>{tieuDe}</h1>
+            <p className={css.lede}>{lede}</p>
+          </>
+        )}
 
-      {cursorHong && <BaoCursorHong />}
+        {cursorHong && <BaoCursorHong />}
 
-      <nav className={css.tab} data-testid="tab-feed">
-        {TAB_FEED.map((t) => (
-          <Link
-            key={t}
-            href={href(t)}
-            className={t === tab ? `${css.mot_tab} ${css.tab_dang_chon}` : css.mot_tab}
-            aria-current={t === tab ? "page" : undefined}
-            data-testid={`tab-${t}`}
-          >
-            {NHAN_TAB[t]}
-          </Link>
-        ))}
-      </nav>
-
-      {feed.items.length === 0 ? (
-        <p className={css.rong} data-testid="feed-rong">
-          Chưa có bài nào ở đây.
-        </p>
-      ) : (
-        <ul className={css.danh_sach} data-testid="feed">
-          {feed.items.map((m) => (
-            <TheMach key={m.id} mach={m} />
+        <nav className={css.tab} data-testid="tab-feed" aria-label="Sắp xếp feed">
+          {TAB_FEED.map((t) => (
+            <Link
+              key={t}
+              href={hrefTab(t)}
+              className={t === tab ? `${css.mot_tab} ${css.tab_dang_chon}` : css.mot_tab}
+              aria-current={t === tab ? "page" : undefined}
+              data-testid={`tab-${t}`}
+            >
+              {NHAN_TAB[t]}
+            </Link>
           ))}
-        </ul>
-      )}
+        </nav>
 
-      {feed.cursor_ke_tiep !== null && (
-        <Link
-          className={css.xem_them}
-          data-testid="feed-xem-them"
-          href={`${coBan}?tab=${tab}&cursor=${encodeURIComponent(feed.cursor_ke_tiep)}`}
-        >
-          xem thêm ↓
-        </Link>
-      )}
-    </main>
+        {tabCoKhoang(tab) && (
+          <nav className={css.khoang} data-testid="chon-khoang" aria-label="Khoảng thời gian">
+            {KHOANG_FEED.map((k) => (
+              <Link
+                key={k}
+                href={hrefKhoang(k)}
+                className={
+                  k === khoang ? `${css.mot_khoang} ${css.khoang_dang_chon}` : css.mot_khoang
+                }
+                aria-current={k === khoang ? "true" : undefined}
+                data-testid={`khoang-${k}`}
+              >
+                {NHAN_KHOANG[k]}
+              </Link>
+            ))}
+          </nav>
+        )}
+
+        {feed.items.length === 0 ? (
+          <p className={css.rong} data-testid="feed-rong">
+            {tabCoKhoang(tab) && khoang !== KHOANG_MAC_DINH
+              ? "Chưa có bài nào trong khoảng này."
+              : "Chưa có bài nào ở đây."}
+          </p>
+        ) : (
+          <ul className={css.danh_sach} data-testid="feed">
+            {feed.items.map((m) => (
+              <TheMach key={m.id} mach={m} />
+            ))}
+          </ul>
+        )}
+
+        {feed.cursor_ke_tiep !== null && (
+          <Link
+            className={css.xem_them}
+            data-testid="feed-xem-them"
+            href={`${hrefTab(tab)}&cursor=${encodeURIComponent(feed.cursor_ke_tiep)}`}
+          >
+            xem thêm ↓
+          </Link>
+        )}
+      </main>
+
+      {sidebar}
+    </div>
   );
 }

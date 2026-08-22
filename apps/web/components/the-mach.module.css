@@ -1,8 +1,32 @@
+/* Thẻ feed kiểu Reddit: cột vote trái + thân dày đặc.
+ *
+ * Mật độ là chủ đích (PLAN 9.1 — "mật độ là oxy của tán gẫu"): một màn hình điện thoại
+ * phải chứa được nhiều thẻ, nếu không feed đọc như một tờ rơi. Padding và khoảng cách ở
+ * đây đã nén so với bản 1c; tiêu đề vẫn giữ mặt chữ Newsreader vì nó là chỗ duy nhất của
+ * thẻ được phép nghiêm.
+ */
 .the {
+  display: flex;
+  gap: 10px;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 6px;
-  padding: 16px 18px;
+  padding: 9px 12px 9px 8px;
+}
+
+.than {
+  min-width: 0;
+  flex: 1;
+}
+
+.dau {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink-3);
 }
 
 .sub {
@@ -14,15 +38,15 @@
 
 .tieu_de {
   font-family: var(--f-display);
-  font-size: 19px;
-  line-height: 1.3;
+  font-size: 17.5px;
+  line-height: 1.28;
   font-weight: 600;
   letter-spacing: -0.01em;
-  margin: 6px 0 8px;
+  margin: 2px 0 5px;
   text-wrap: balance;
 }
 
-.chu_ky {
+.chan {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -43,11 +67,32 @@
 .dem {
   font-family: var(--f-mono);
   font-variant-numeric: tabular-nums;
-  color: var(--ink);
+  color: var(--ink-2);
   font-weight: 500;
   background: var(--surface-2);
   border-radius: 3px;
+  padding: 0 6px;
+}
+
+/* `💬 N` là lối vào khán đài, nên nó phải TRÔNG như bấm được — trên Reddit đây là chỗ
+ * người ta bấm nhiều nhất của một thẻ. */
+.nut_binh_luan {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--f-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-2);
+  background: var(--surface-2);
+  border-radius: 3px;
   padding: 1px 7px;
+}
+
+.nut_binh_luan:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 
 .khi {
@@ -62,7 +107,7 @@
   color: var(--ink-2);
   border: 1px solid var(--line-2);
   border-radius: 3px;
-  padding: 1px 7px;
+  padding: 0 6px;
 }
 
 .dong_so {

@@ -1,7 +1,18 @@
+/* Hai cột kiểu Reddit: feed trái, sidebar phải. Dưới 900px sidebar xuống dưới feed —
+ * nội dung của nó là đường đi (luật, các sub), không phải trang trí, nên nó không được
+ * biến mất trên điện thoại. */
 .khung {
-  max-width: var(--khung);
+  max-width: 1060px;
   margin: 0 auto;
-  padding: 26px 22px 40px;
+  padding: 22px 22px 40px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 288px;
+  gap: 22px;
+  align-items: start;
+}
+
+.chinh {
+  min-width: 0;
 }
 
 .tieu_de {
@@ -14,7 +25,7 @@
 }
 
 .lede {
-  margin: 0 0 18px;
+  margin: 0 0 16px;
   font-size: 13.5px;
   color: var(--ink-2);
   max-width: 62ch;
@@ -23,14 +34,14 @@
 .tab {
   display: flex;
   flex-wrap: wrap;
-  gap: 9px;
-  margin-bottom: 16px;
+  gap: 8px;
+  margin-bottom: 10px;
 }
 
 .mot_tab {
   border: 1px solid var(--line-2);
   border-radius: 4px;
-  padding: 6px 13px;
+  padding: 5px 12px;
   font-size: 13px;
   font-weight: 500;
   color: var(--ink-2);
@@ -42,12 +53,33 @@
   color: var(--accent);
 }
 
+/* Hàng khoảng thời gian là hàng PHỤ của tab — nhạt hơn, không viền, để không đọc thành
+ * một hàng tab thứ hai ngang vai. */
+.khoang {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+  font-size: 12.5px;
+}
+
+.mot_khoang {
+  color: var(--ink-3);
+  border-bottom: 1px solid transparent;
+}
+
+.khoang_dang_chon {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 500;
+}
+
 .danh_sach {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 
 .rong {
@@ -58,14 +90,20 @@
 
 .xem_them {
   display: inline-block;
-  margin-top: 18px;
+  margin-top: 16px;
   font-size: 13px;
   color: var(--accent);
   border-bottom: 1px solid var(--accent);
 }
 
+@media (max-width: 900px) {
+  .khung {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 @media (max-width: 640px) {
   .khung {
-    padding: 16px 12px 34px;
+    padding: 14px 12px 34px;
   }
 }

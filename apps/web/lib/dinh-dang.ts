@@ -74,6 +74,35 @@ export function ngayNganCuaThoiDiem(iso: string): string {
   return `${p.day}/${p.month}`;
 }
 
+/** Dòng `12 mạch · lập 04/03/2026` dưới tên một chuyên mục — **một chỗ dựng, hai chỗ
+ * đọc** (header `/s/<sub>` và sidebar).
+ *
+ * `so_mach === 0` **không in số 0** *(vá V6, 2026-08-22)*. PLAN nguyên tắc 9 cấm phô sự
+ * im lặng, và ca này là cửa anh em của `×0` vừa đóng ở hồ sơ: v1 tạo sub bằng tay qua
+ * admin (PLAN mục 1), nên "0 mạch · lập 22/08/2026" nằm ngay cạnh "Chưa có bài nào ở
+ * đây." là hình dạng MẶC ĐỊNH của mọi chuyên mục mới, không phải ca biên. Hai lần nói
+ * cùng một chuyện, và lần thứ nhất nói bằng một con số 0.
+ *
+ * ⚠ **Câu thay thế KHÔNG được nói "mới"** *(W4, lượt vá 2)*. Bản V6 in *"Chuyên mục mới
+ * · lập 04/03/2024"* — hai vế tự mâu thuẫn trên cùng một dòng, và nó **sai thật**:
+ * `so_mach` đếm mạch **hiện được**, nên một chuyên mục sống hai năm rồi bị mod ẩn sạch
+ * bài cũng rơi vào nhánh này. `×0` cũ ít nhất không nói gì thêm; một câu sai về dữ liệu
+ * thì tệ hơn một con số vô duyên.
+ *
+ * Câu hiện tại **không khẳng định gì về nội dung** — nó chỉ nêu ngày lập, thứ đúng trong
+ * cả hai ca và **không rò** ra việc có bài bị ẩn (đường suy ra "sub này vừa bị dọn" là
+ * một rò rỉ moderation, cùng lý lẽ với mã lỗi `khong_tim_thay` gộp chung ở `api/loi.py`).
+ * Ngày lập ở lại vì nó là thông tin thật về nơi chốn này, không phải một số đếm bằng 0.
+ *
+ * ⚠ Đây là luật **RENDER**, không phải luật API: `GET /subs` vẫn trả `so_mach = 0` và
+ * `api/tests/test_api_sub.py` vẫn ghim điều đó. Tầng API không được nói dối về con số;
+ * tầng render quyết định có bày nó ra hay không.
+ */
+export function dongSoMachSub(soMach: number, createdAtIso: string): string {
+  const lap = `lập ${ngayCuaThoiDiem(createdAtIso)}`;
+  return soMach === 0 ? `Chuyên mục ${lap}` : `${soMach} mạch · ${lap}`;
+}
+
 /** Số nguyên có dấu, dùng cho điểm vote: `+28`, `−3`, `0`.
  *
  * Dấu trừ là U+2212 (dấu toán học) chứ không phải hyphen: ở font mono nó cân bằng chiều

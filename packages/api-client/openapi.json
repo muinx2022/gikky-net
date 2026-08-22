@@ -130,7 +130,7 @@
         "type": "object"
       },
       "FeedOut": {
-        "description": "Một trang feed. `cursor_ke_tiep = null` nghĩa là hết.",
+        "description": "Một trang feed. `cursor_ke_tiep = null` nghĩa là hết.\n\n**Cursor mang khoá của ĐÚNG sort đã sinh ra nó** (plan con 1d §2.1): `sort=nhieu_diem`\ntrả cursor `(diem, id)`, hai sort thời gian trả cursor `(thời điểm, id)`. Đem cursor\ncủa sort này sang sort kia là 400 `cursor_khong_hop_le`, không phải trang 1 im lặng.",
         "properties": {
           "cursor_ke_tiep": {
             "anyOf": [
@@ -255,7 +255,7 @@
         "type": "object"
       },
       "KhanDaiOut": {
-        "description": "Khán đài: MỘT phòng chứa toàn bộ cây bình luận của mạch (PLAN mục 2, 5.3).\n\nPhân trang khác nhau theo `sort`, đúng PLAN 5.3:\n\n- `hay_nhat` — MỘT trang 50 thread gốc, \"xem thêm\" gọi lại bằng `?offset=`. Rank động\n  theo `now` nên trang sau có thể trôi nhẹ; đó là đánh đổi đã chốt. `cursor_ke_tiep`\n  luôn `null` ở sort này.\n- `moi_nhat` / `cu_nhat` — cursor keyset thật trên `(created_at, id)`.\n  `offset_ke_tiep` luôn `null` ở hai sort này.",
+        "description": "Khán đài: MỘT phòng chứa toàn bộ cây bình luận của mạch (PLAN mục 2, 5.3).\n\nPhân trang khác nhau theo `sort`, đúng PLAN 5.3:\n\n- `hay_nhat` — MỘT trang 50 thread gốc, \"xem thêm\" gọi lại bằng `?offset=`. Rank động\n  theo `now` nên trang sau có thể trôi nhẹ; đó là đánh đổi đã chốt. `cursor_ke_tiep`\n  luôn `null` ở sort này.\n- `moi_nhat` / `cu_nhat` — cursor keyset thật trên `(created_at, id)`.\n  `offset_ke_tiep` luôn `null` ở hai sort này.\n\n**Chế độ `?dang_doc=1`** (PLAN 5.5 — \"câu đáng đọc\") dùng lại đúng schema này nhưng\nđổi nghĩa hai trường: `threads` là phép hợp `đã trích ∪ top-10 wilson` sắp theo wilson\n**thuần**, và `tong_thread` là kích thước của tập ấy chứ không phải tổng thread của\nmạch. Cả hai con trỏ trang luôn `null` — chế độ đó không phân trang. Chỉ chế độ này\nmang `so_ung_vien_bo_lai`.",
         "properties": {
           "cursor_ke_tiep": {
             "anyOf": [
@@ -278,6 +278,17 @@
               }
             ],
             "title": "Offset Ke Tiep"
+          },
+          "so_ung_vien_bo_lai": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "So Ung Vien Bo Lai"
           },
           "sort": {
             "enum": [
@@ -304,6 +315,7 @@
           "sort",
           "tong_thread",
           "threads",
+          "so_ung_vien_bo_lai",
           "offset_ke_tiep",
           "cursor_ke_tiep"
         ],
@@ -450,7 +462,7 @@
         "type": "object"
       },
       "MachTomTatOut": {
-        "description": "Một mạch ở mức thẻ feed / danh sách hồ sơ.\n\n**`comment_count` là số bình luận ĐỌC ĐƯỢC, không phải số dòng khán đài sẽ render.**\nBình luận đã xoá hoặc bị ẩn không được đếm, nhưng vẫn để lại bia mộ giữ chỗ khi chúng\ncòn reply — nên khán đài có thể hiện 24 dòng trong khi con số này nói 22. Đó là chủ\nđích, đừng \"sửa\" cho khớp.\n\n**`last_activity_at` có thể NHỎ HƠN `last_entry_at`.** Hai cột đo hai thứ khác nhau:\n`last_entry_at` đo cấu trúc (mọi mốc, kể cả mốc bị ẩn), `last_activity_at` đo nội\ndung đọc được. Hệ quả nhìn thấy được: một mạch đứng đầu feed \"Đang diễn ra\" mà mở ra\nlà mặt CẶN.",
+        "description": "Một mạch ở mức thẻ feed / danh sách hồ sơ.\n\n**`comment_count` là số bình luận ĐỌC ĐƯỢC, không phải số dòng khán đài sẽ render.**\nBình luận đã xoá hoặc bị ẩn không được đếm, nhưng vẫn để lại bia mộ giữ chỗ khi chúng\ncòn reply — nên khán đài có thể hiện 24 dòng trong khi con số này nói 22. Đó là chủ\nđích, đừng \"sửa\" cho khớp.\n\n**`last_activity_at` có thể NHỎ HƠN `last_entry_at`.** Hai cột đo hai thứ khác nhau:\n`last_entry_at` đo cấu trúc (mọi mốc, kể cả mốc bị ẩn), `last_activity_at` đo nội\ndung đọc được. Hệ quả nhìn thấy được: một mạch đứng đầu feed \"Đang diễn ra\" mà mở ra\nlà mặt CẶN.\n\n**`diem` là điểm của MỐC 1, không phải tổng điểm của mạch.** PLAN 5.7 chốt vote nằm\ntrên từng mốc riêng rẽ (\"mốc 9 được 412 dù bài gốc 89\"), nên không tồn tại con số\n\"điểm của mạch\"; cột vote trên thẻ feed chiếu đúng điểm bài gốc. Mốc 1 đã xoá hoặc bị\nmod ẩn ⇒ `0`, cùng chuẩn với `MocOut.score` của bia mộ.",
         "properties": {
           "author": {
             "$ref": "#/components/schemas/NguoiDungTomTatOut"
@@ -463,6 +475,10 @@
             "format": "date-time",
             "title": "Created At",
             "type": "string"
+          },
+          "diem": {
+            "title": "Diem",
+            "type": "integer"
           },
           "entry_count": {
             "title": "Entry Count",
@@ -521,7 +537,8 @@
           "comment_count",
           "created_at",
           "last_entry_at",
-          "last_activity_at"
+          "last_activity_at",
+          "diem"
         ],
         "title": "MachTomTatOut",
         "type": "object"
@@ -851,6 +868,41 @@
         "title": "SpineOut",
         "type": "object"
       },
+      "SubChiTietOut": {
+        "description": "Header của trang `/s/<slug>` — plan con 1d §2.3.\n\n`so_mach` đếm mạch **hiện được**: chỉ loại mạch bị mod ẩn (`hidden_at`), đúng bộ lọc\ncủa `api/feeds.py::_mach_hien`.\n\n⚠ **Không phải \"đúng bộ lọc mà hai feed dùng\"** *(sửa ở W12, lượt vá 2 — câu cũ nói\nquá)*: `/feeds/dang-dien-ra` lọc THÊM `status=MO`, nên với một chuyên mục có mạch đã\nđóng sổ thì `so_mach` lớn hơn tổng số thẻ của feed đó kể cả khi không cắt trang. Con\nsố này khớp tập của `/feeds/moi`, không khớp tập của `/feeds/dang-dien-ra`.\n\nVà ngay cả với `/feeds/moi` thì đừng suy con số này ra số thẻ trên màn hình: feed cắt\ntrang, còn `?khoang=` cắt thêm theo `created_at`.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "mo_ta": {
+            "title": "Mo Ta",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "so_mach": {
+            "title": "So Mach",
+            "type": "integer"
+          },
+          "ten": {
+            "title": "Ten",
+            "type": "string"
+          }
+        },
+        "required": [
+          "slug",
+          "ten",
+          "mo_ta",
+          "so_mach",
+          "created_at"
+        ],
+        "title": "SubChiTietOut",
+        "type": "object"
+      },
       "SubTomTatOut": {
         "properties": {
           "slug": {
@@ -937,7 +989,7 @@
   "paths": {
     "/api/v1/feeds/dang-dien-ra": {
       "get": {
-        "description": "Feed **Đang diễn ra**: mạch còn mở, mốc mới nhất trước (`last_entry_at` giảm dần).\n\nFeed đặc sản của gikky, **không phải** Hot: mốc mới không \"bump\" bài, nó chỉ cập nhật\nkhoá sort của riêng feed này.\n\n`last_entry_at` đo **cấu trúc** — mọi mốc đều tính, kể cả mốc bị mod ẩn. Vì thế một\nmạch có thể đứng đầu feed này mà mở ra là **mặt CẶN** (`face` tính theo\n`last_activity_at`, vốn chỉ đo nội dung đọc được). Đó là hành vi đúng theo luật đếm\nhiện hành, đã ghi ở PLAN mục 6 \"hệ quả cố ý 2\" — đừng chữa bằng cách đổi khoá sort.\n\nTham số như `GET /feeds/moi`.",
+        "description": "Feed **Đang diễn ra**: mạch còn mở, mốc mới nhất trước\n    (`last_entry_at` giảm dần).\n\n    Feed đặc sản của gikky, **không phải** Hot: mốc mới không \"bump\" bài, nó chỉ cập nhật\n    khoá sort của riêng feed này.\n\n    `last_entry_at` đo **cấu trúc** — mọi mốc đều tính, kể cả mốc bị mod ẩn. Vì thế một\n    mạch có thể đứng đầu feed này mà mở ra là **mặt CẶN** (`face` tính theo\n    `last_activity_at`, vốn chỉ đo nội dung đọc được). Đó là hành vi đúng theo luật đếm\n    hiện hành, đã ghi ở PLAN mục 6 \"hệ quả cố ý 2\" — đừng chữa bằng cách đổi khoá sort.\n\n    `?sub=<slug>` lọc theo chuyên mục; sub không tồn tại trả 404 `sub_khong_ton_tai`.\n    `?cursor=` là cursor keyset lấy từ `cursor_ke_tiep` của trang trước; `null` là hết.\n    `?limit=` tối đa 50.\n\n    `?sort=tu_nhien` (mặc định) giữ khoá sort riêng của feed này. `?sort=nhieu_diem` sắp\n    theo điểm bài gốc giảm dần, cursor keyset trên `(diem, id)`. **Cursor của sort này\n    KHÔNG dùng được cho sort kia** — đem nhầm là 400 `cursor_khong_hop_le`.\n\n    `?khoang=ngay|tuan|thang|tat_ca` (mặc định `tat_ca`) lọc theo `created_at`, ranh giới\n    là nửa đêm **giờ VN**; `tuan` = 7 ngày lịch gần nhất kể cả hôm nay, `thang` = 30 ngày.\n    Khoảng áp cho **mọi** sort, không riêng `nhieu_diem`. Giá trị lạ trả 400\n    `tham_so_khong_hop_le` — không bao giờ lặng lẽ quy về `tat_ca`.\n\n    Mạch bị mod ẩn không xuất hiện.\n",
         "operationId": "liet_ke_feed_dang_dien_ra",
         "parameters": [
           {
@@ -954,6 +1006,36 @@
                 }
               ],
               "title": "Sub"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "tu_nhien",
+              "enum": [
+                "tu_nhien",
+                "nhieu_diem"
+              ],
+              "title": "Sort",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "khoang",
+            "required": false,
+            "schema": {
+              "default": "tat_ca",
+              "enum": [
+                "ngay",
+                "tuan",
+                "thang",
+                "tat_ca"
+              ],
+              "title": "Khoang",
+              "type": "string"
             }
           },
           {
@@ -1023,7 +1105,7 @@
     },
     "/api/v1/feeds/moi": {
       "get": {
-        "description": "Feed **Mới**: mọi bài, mới đăng trước (`created_at` giảm dần).\n\n`?sub=<slug>` lọc theo chuyên mục; sub không tồn tại trả 404 `sub_khong_ton_tai`.\n`?cursor=` là cursor keyset lấy từ `cursor_ke_tiep` của trang trước; `null` là hết.\n`?limit=` tối đa 50.\n\nMạch bị mod ẩn không xuất hiện. Mạch đã đóng sổ **vẫn xuất hiện** — feed này sắp theo\nlúc bài ra đời, không theo trạng thái sổ.",
+        "description": "Feed **Mới**: mọi bài, mới đăng trước (`created_at` giảm dần).\n\n    Mạch đã đóng sổ **vẫn xuất hiện** — feed này sắp theo lúc bài ra đời, không theo\n    trạng thái sổ.\n\n    `?sub=<slug>` lọc theo chuyên mục; sub không tồn tại trả 404 `sub_khong_ton_tai`.\n    `?cursor=` là cursor keyset lấy từ `cursor_ke_tiep` của trang trước; `null` là hết.\n    `?limit=` tối đa 50.\n\n    `?sort=tu_nhien` (mặc định) giữ khoá sort riêng của feed này. `?sort=nhieu_diem` sắp\n    theo điểm bài gốc giảm dần, cursor keyset trên `(diem, id)`. **Cursor của sort này\n    KHÔNG dùng được cho sort kia** — đem nhầm là 400 `cursor_khong_hop_le`.\n\n    `?khoang=ngay|tuan|thang|tat_ca` (mặc định `tat_ca`) lọc theo `created_at`, ranh giới\n    là nửa đêm **giờ VN**; `tuan` = 7 ngày lịch gần nhất kể cả hôm nay, `thang` = 30 ngày.\n    Khoảng áp cho **mọi** sort, không riêng `nhieu_diem`. Giá trị lạ trả 400\n    `tham_so_khong_hop_le` — không bao giờ lặng lẽ quy về `tat_ca`.\n\n    Mạch bị mod ẩn không xuất hiện.\n",
         "operationId": "liet_ke_feed_moi",
         "parameters": [
           {
@@ -1040,6 +1122,36 @@
                 }
               ],
               "title": "Sub"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "tu_nhien",
+              "enum": [
+                "tu_nhien",
+                "nhieu_diem"
+              ],
+              "title": "Sort",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "khoang",
+            "required": false,
+            "schema": {
+              "default": "tat_ca",
+              "enum": [
+                "ngay",
+                "tuan",
+                "thang",
+                "tat_ca"
+              ],
+              "title": "Khoang",
+              "type": "string"
             }
           },
           {
@@ -1185,7 +1297,7 @@
     },
     "/api/v1/machs/{mach_id}/comments": {
       "get": {
-        "description": "Khán đài: **cây bình luận đã dựng sẵn**, server sắp xếp (PLAN mục 7).\n\n`?sort=hay_nhat|moi_nhat|cu_nhat`, mặc định `hay_nhat`. Sort không thuộc ba giá trị\nđó trả 400 `sort_khong_hop_le` — API **không bao giờ tự đổi sort ngầm** dưới tay\nngười dùng (PLAN nguyên tắc 7).\n\n- `hay_nhat`: wilson (z = 1.281) cộng hệ số tươi 0.15 cho bình luận **gốc** ra đời\n  sau mốc mới nhất và còn trong 48 giờ đầu đời của nó. Sibling trong thread sắp theo\n  wilson **thuần** — hệ số tươi không áp cho reply. Phân trang bằng `?offset=`,\n  `?limit=` tối đa 50.\n- `moi_nhat` / `cu_nhat`: `?cursor=` keyset trên `(created_at, id)`.\n\n**Hai kiểu phân trang KHÔNG dùng lẫn nhau, dùng nhầm trả 400** với\n`code = \"tham_so_khong_hop_le\"`: `?cursor=` kèm `sort=hay_nhat`, hoặc `?offset=` khác\n0 kèm hai sort thời gian. Nuốt im lặng tham số sai chỗ là hành vi mà chính\n`api/phan_trang.py` cấm cho cursor rác: người ở trang 3 của `moi_nhat` bấm đổi sang\n`hay_nhat`, router giữ nguyên query string, API trả **trang 1** kèm HTTP 200 — UI\ntưởng mình vẫn ở trang 3 và append tiếp ⇒ lặp dòng hoặc mất dòng, không lần ra được.\n\nBình luận bị mod ẩn, hoặc tác giả tự xoá, chỉ còn lại **bia mộ giữ chỗ** khi nó còn\ncon sống sót trong `replies` — và riêng ca tác giả tự xoá thì cả khi bình luận **đã\ntừng được trích vào sổ**, kể cả trích đã gỡ (PLAN 5.3). Không dính vế nào thì nó biến\nmất hẳn. \"Con sống sót\" không có nghĩa \"con đọc được\": con ấy có thể tự nó là bia mộ,\nnên một thread trong `threads` có thể **toàn bia mộ, không một chữ nội dung nào**, mà\nvẫn chiếm một chỗ trong `tong_thread` và một slot của trang này.\nBia mộ không được tính vào `comment_count` của mạch, nên số bình luận **đọc được** có\nthể nhỏ hơn số dòng trả về.",
+        "description": "Khán đài: **cây bình luận đã dựng sẵn**, server sắp xếp (PLAN mục 7).\n\n`?sort=hay_nhat|moi_nhat|cu_nhat`, mặc định `hay_nhat`. Sort không thuộc ba giá trị\nđó trả 400 `sort_khong_hop_le` — API **không bao giờ tự đổi sort ngầm** dưới tay\nngười dùng (PLAN nguyên tắc 7).\n\n- `hay_nhat`: wilson (z = 1.281) cộng hệ số tươi 0.15 cho bình luận **gốc** ra đời\n  sau mốc mới nhất và còn trong 48 giờ đầu đời của nó. Sibling trong thread sắp theo\n  wilson **thuần** — hệ số tươi không áp cho reply. Phân trang bằng `?offset=`,\n  `?limit=` tối đa 50.\n- `moi_nhat` / `cu_nhat`: `?cursor=` keyset trên `(created_at, id)`.\n\n**Hai kiểu phân trang KHÔNG dùng lẫn nhau, dùng nhầm trả 400** với\n`code = \"tham_so_khong_hop_le\"`: `?cursor=` kèm `sort=hay_nhat`, hoặc `?offset=` khác\n0 kèm hai sort thời gian. Nuốt im lặng tham số sai chỗ là hành vi mà chính\n`api/phan_trang.py` cấm cho cursor rác: người ở trang 3 của `moi_nhat` bấm đổi sang\n`hay_nhat`, router giữ nguyên query string, API trả **trang 1** kèm HTTP 200 — UI\ntưởng mình vẫn ở trang 3 và append tiếp ⇒ lặp dòng hoặc mất dòng, không lần ra được.\n\nBình luận bị mod ẩn, hoặc tác giả tự xoá, chỉ còn lại **bia mộ giữ chỗ** khi nó còn\ncon sống sót trong `replies` — và riêng ca tác giả tự xoá thì cả khi bình luận **đã\ntừng được trích vào sổ**, kể cả trích đã gỡ (PLAN 5.3). Không dính vế nào thì nó biến\nmất hẳn. \"Con sống sót\" không có nghĩa \"con đọc được\": con ấy có thể tự nó là bia mộ,\nnên một thread trong `threads` có thể **toàn bia mộ, không một chữ nội dung nào**, mà\nvẫn chiếm một chỗ trong `tong_thread` và một slot của trang này.\nBia mộ không được tính vào `comment_count` của mạch, nên số bình luận **đọc được** có\nthể nhỏ hơn số dòng trả về.\n\n### `?dang_doc=1` — \"câu đáng đọc\" (PLAN 5.5)\n\nTrả **phép hợp `đã trích ∪ top-10 theo wilson`** trên các thread GỐC, sắp theo wilson\n**thuần** giảm dần. Đây là khối gắn nhãn \"Câu đáng đọc\" nằm trên cùng khi chân trang\nmặt CẶN bung khán đài; cây đầy đủ vẫn lấy bằng một lời gọi thường (không có tham số\nnày).\n\nPhép hợp là hợp THẬT: một bình luận được trích nhưng xếp hạng thấp **vẫn có mặt**.\nKhông có phân trang ở chế độ này — tập tối đa là `10 + số mốc có trích`, và\n`offset_ke_tiep`/`cursor_ke_tiep` luôn `null`, `tong_thread` là kích thước của tập.\n\nChế độ này (và **chỉ** chế độ này) trả thêm `so_ung_vien_bo_lai`: số thread gốc đọc\nđược nằm ngoài tập. `0` nghĩa là khối không lọc được gì và UI phải ẩn nó đi (PLAN 5.5,\nngoại lệ \"tập = cả khán đài\"). Đừng suy con số ấy bằng cách so `tong_thread` của hai\nlời gọi — hai đầu đếm bia mộ khác nhau, xem `KhanDaiOut` (Y1, lượt vá 4).\n\nVì tập này có thứ tự riêng, `?dang_doc=1` **chỉ đi cùng `sort=hay_nhat`** (mặc định)\nvà **không nhận `offset`/`cursor`/`limit`** — dùng lẫn trả 400\n`tham_so_khong_hop_le` thay vì lặng lẽ bỏ qua tham số, đúng luật đang áp cho hai kiểu\nphân trang ở trên. `limit` là **cửa thứ tư của cùng cái luật ấy** (vá V7,\n2026-08-22): nhánh này không đọc `limit` ở đâu cả, nên `?dang_doc=1&limit=5` trước đó\ntrả 200 kèm 11 thread — người gọi tưởng mình đã cắt còn 5.\n\n`limit` mặc định là `None` chứ không phải `GIOI_HAN_TOI_DA`, và đó là cả cách phép\nkiểm trên đứng được: với mặc định là một con số thì \"không truyền\" và \"truyền đúng 50\"\ntrông y hệt nhau ở trong hàm, nên hoặc là bỏ qua im lặng, hoặc là 400 cho một lời gọi\nkhông sai gì.",
         "operationId": "liet_ke_binh_luan_mach",
         "parameters": [
           {
@@ -1238,9 +1350,25 @@
             "name": "limit",
             "required": false,
             "schema": {
-              "default": 50,
-              "title": "Limit",
-              "type": "integer"
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "in": "query",
+            "name": "dang_doc",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Dang Doc",
+              "type": "boolean"
             }
           }
         ],
@@ -1368,9 +1496,79 @@
         ]
       }
     },
+    "/api/v1/subs": {
+      "get": {
+        "description": "MỌI chuyên mục, sắp theo `slug` — PLAN mục 7 *(thêm ở lượt vá Phase 1d)*.\n\n**Frontend CẤM ghi cứng danh sách slug** (PLAN mục 7 nói thẳng). Trước endpoint này,\n`apps/web` giữ một hằng `SUB_KHOI_DIEM = [\"chung-khoan\", \"crypto\"]` nuôi cả sidebar\nlẫn `sitemap.ts`: mở sub thứ ba qua admin thì **cả hai chỗ cùng bỏ sót nó, im lặng**,\nvà chiều ngược cũng im — đổi slug trong admin thì sidebar âm thầm bỏ mục đó (404 →\nlọc khỏi danh sách) trong khi `sitemap.xml` vẫn khai `/s/<slug cũ>` là URL sống.\n\n**Không phân trang, và đó là một chốt chứ không phải một thiếu sót.** v1 tạo sub bằng\ntay qua admin (PLAN mục 1), nên tập này là hàng chục chứ không phải hàng nghìn; thêm\ncursor bây giờ là bắt hai chỗ gọi (sidebar, sitemap) tự lật trang cho một danh sách\nchưa bao giờ dài. Ngày nó dài ra thì đổi ở đây, kèm cursor keyset trên `slug`.\n\nSắp theo `slug` chứ không theo `so_mach`: sidebar là một **bản đồ**, và một bản đồ\ntự sắp lại theo độ đông mỗi lần có bài mới thì không ai nhớ được chỗ nào ở đâu.",
+        "operationId": "liet_ke_sub",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SubChiTietOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Liet Ke Sub",
+        "tags": [
+          "sub"
+        ]
+      }
+    },
+    "/api/v1/subs/{slug}": {
+      "get": {
+        "description": "Header của trang chuyên mục `/s/<slug>` — tên, mô tả, số mạch, ngày lập.\n\nEndpoint **đọc, không per-user**, tách khỏi feed vì nó đổi theo nhịp hoàn toàn khác:\ntên và mô tả sub gần như bất động, còn feed đổi mỗi lần có bài mới. Nhét header vào\n`FeedOut` là bắt mọi trang phân trang phải chở lại cùng một khối chữ.\n\nSlug không tồn tại trả 404 `khong_tim_thay`.",
+        "operationId": "xem_sub",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubChiTietOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "Xem Sub",
+        "tags": [
+          "sub"
+        ]
+      }
+    },
     "/api/v1/users/{username}": {
       "get": {
-        "description": "Hồ sơ công khai: mạch của họ, \"Được trích ×N\", tổng mốc, tổng bình luận.\n\nBa con số đếm **nội dung đọc được**: mốc/bình luận đã xoá hoặc bị ẩn không tính, và\nnội dung nằm trong một mạch đã bị mod ẩn cũng không tính.\n\n`duoc_trich` đếm theo **số chủ mạch khác nhau** đã trích bình luận của người này, chỉ\ntính trích còn hiệu lực — rào 3 của PLAN 5.6, chống hai nick trích qua lại để tự nâng\nchỉ số cho nhau. Nó **soi gương đúng cái blockquote** trên thẻ mốc: đếm khi khối trích\ncòn hiện, không đếm khi khối trích biến mất. Mạch bị mod ẩn, mốc nhận trích bị ẩn hoặc\nxoá, hay chính bình luận bị **mod ẩn** đều làm khối trích biến mất ⇒ không đếm. Thiếu\nbốn bộ lọc ấy thì mod ẩn cả một mạch làm `so_mach`/`so_moc`/`so_binh_luan` về 0 trong\nkhi \"Được trích ×1\" vẫn sáng trên hồ sơ — đúng cái \"máy in địa vị\" mà rào 3 dựng lên\nđể chặn.\n\n**Tác giả TỰ xoá bình luận thì `duoc_trich` KHÔNG tụt**, và đó là chỗ con số này cố ý\nlệch khỏi ba con số trên. `trinh_bay.trich_ra` giữ nguyên body của blockquote trong ca\nấy, vì PLAN 5.6 dựng \"cuốn sổ không-xoá-được\" để chống *tác giả* rút chữ, không phải\nđể chống *mod* gỡ nội dung. Đếm tụt ở đây là hai cửa nói hai chuyện về cùng một sự\nkiện: khối trích còn nguyên chữ trên trang mạch mà chỉ số trên hồ sơ đã giảm thì không\ncon số nào giải thích được nữa.\n\n`?limit=` cắt số mạch trả kèm, mặc định 20, tối đa 50. Hồ sơ **chưa có cursor** ở\nbản này: quá `limit` mạch thì phần dôi ra không có đường nào lấy tiếp.\n\nEndpoint này **không** trả email, trạng thái ban hay bất cứ thứ gì chỉ chủ tài khoản\nđược thấy.",
+        "description": "Hồ sơ công khai: mạch của họ, \"Được trích ×N\", tổng mốc, tổng bình luận.\n\nBa con số đếm **nội dung đọc được**: mốc/bình luận đã xoá hoặc bị ẩn không tính, và\nnội dung nằm trong một mạch đã bị mod ẩn cũng không tính.\n\n`duoc_trich` đếm theo **số chủ mạch khác nhau** đã trích bình luận của người này, chỉ\ntính trích còn hiệu lực — rào 3 của PLAN 5.6, chống hai nick trích qua lại để tự nâng\nchỉ số cho nhau. Nó **soi gương đúng cái blockquote** trên thẻ mốc: đếm khi khối trích\ncòn hiện, không đếm khi khối trích biến mất. Mạch bị mod ẩn, mốc nhận trích bị ẩn hoặc\nxoá, hay chính bình luận bị **mod ẩn** đều làm khối trích biến mất ⇒ không đếm. Thiếu\nbốn bộ lọc ấy thì mod ẩn cả một mạch làm `so_mach`/`so_moc`/`so_binh_luan` về 0 trong\nkhi \"Được trích ×1\" vẫn sáng trên hồ sơ — đúng cái \"máy in địa vị\" mà rào 3 dựng lên\nđể chặn. Bộ lọc ấy là `core.doc_noi_dung.TRICH_CON_HIEN`, dùng chung với \"câu đáng\nđọc\" của PLAN 5.5.\n\n**TỰ TRÍCH KHÔNG TÍNH** *(rào 3, chốt 2026-08-22)*: chủ mạch trích bình luận của\nchính mình thì chỉ số của họ không nhúc nhích. Chỉ số này đo *\"có bao nhiêu người\nKHÁC thấy chữ của bạn đáng ghi vào sổ\"*; tự trích trả lời câu hỏi khác hẳn, và nó là\nđường ngắn nhất tới cùng con số — không cần nick thứ hai, không cần ai đồng ý. Khối\nblockquote vẫn hiện đầy đủ trên thẻ mốc, chỉ có chỉ số hồ sơ là không cộng.\n\n**Tác giả TỰ xoá bình luận thì `duoc_trich` KHÔNG tụt**, và đó là chỗ con số này cố ý\nlệch khỏi ba con số trên. `trinh_bay.trich_ra` giữ nguyên body của blockquote trong ca\nấy, vì PLAN 5.6 dựng \"cuốn sổ không-xoá-được\" để chống *tác giả* rút chữ, không phải\nđể chống *mod* gỡ nội dung. Đếm tụt ở đây là hai cửa nói hai chuyện về cùng một sự\nkiện: khối trích còn nguyên chữ trên trang mạch mà chỉ số trên hồ sơ đã giảm thì không\ncon số nào giải thích được nữa.\n\n`?limit=` cắt số mạch trả kèm, mặc định 20, tối đa 50. Hồ sơ **chưa có cursor** ở\nbản này: quá `limit` mạch thì phần dôi ra không có đường nào lấy tiếp.\n\nEndpoint này **không** trả email, trạng thái ban hay bất cứ thứ gì chỉ chủ tài khoản\nđược thấy.",
         "operationId": "xem_ho_so",
         "parameters": [
           {

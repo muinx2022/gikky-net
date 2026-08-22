@@ -4,7 +4,8 @@ import { trongDaiGap, type DaiGap } from "./dai-gap";
 
 /** MỘT trích dẫn nóng nhất làm mồi bung cho dải gập — PLAN 5.5, wireframe 9.2.
  *
- * **API không cấp trường này** (nợ 1b #4 của plan con 1c §5) nên 1c tự tính, theo đúng
+ * **API không cấp trường này** (nợ 1b #4 — danh sách chuẩn:
+ * `plans/2026-08-22-phase-1b-va2.md` §3) nên 1c tự tính, theo đúng
  * ba điều kiện của plan con §1:
  *
  * 1. chỉ **bình luận gốc** (`depth === 1`) — mồi là một câu đứng riêng, không phải reply

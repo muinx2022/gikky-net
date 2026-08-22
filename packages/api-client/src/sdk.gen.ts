@@ -4,7 +4,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetHealthData, GetHealthErrors, GetHealthResponses, LietKeBanCuMocData, LietKeBanCuMocErrors, LietKeBanCuMocResponses, LietKeBinhLuanMachData, LietKeBinhLuanMachErrors, LietKeBinhLuanMachResponses, LietKeBinhLuanMocData, LietKeBinhLuanMocErrors, LietKeBinhLuanMocResponses, LietKeFeedDangDienRaData, LietKeFeedDangDienRaErrors, LietKeFeedDangDienRaResponses, LietKeFeedMoiData, LietKeFeedMoiErrors, LietKeFeedMoiResponses, XemHoSoData, XemHoSoErrors, XemHoSoResponses, XemMachData, XemMachErrors, XemMachResponses } from './types.gen';
+import type { GetHealthData, GetHealthErrors, GetHealthResponses, LietKeBanCuMocData, LietKeBanCuMocErrors, LietKeBanCuMocResponses, LietKeBinhLuanMachData, LietKeBinhLuanMachErrors, LietKeBinhLuanMachResponses, LietKeBinhLuanMocData, LietKeBinhLuanMocErrors, LietKeBinhLuanMocResponses, LietKeFeedDangDienRaData, LietKeFeedDangDienRaErrors, LietKeFeedDangDienRaResponses, LietKeFeedMoiData, LietKeFeedMoiErrors, LietKeFeedMoiResponses, LietKeSubData, LietKeSubResponses, XemHoSoData, XemHoSoErrors, XemHoSoResponses, XemMachData, XemMachErrors, XemMachResponses, XemSubData, XemSubErrors, XemSubResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -23,7 +23,8 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
 /**
  * Feed Dang Dien Ra
  *
- * Feed **Đang diễn ra**: mạch còn mở, mốc mới nhất trước (`last_entry_at` giảm dần).
+ * Feed **Đang diễn ra**: mạch còn mở, mốc mới nhất trước
+ * (`last_entry_at` giảm dần).
  *
  * Feed đặc sản của gikky, **không phải** Hot: mốc mới không "bump" bài, nó chỉ cập nhật
  * khoá sort của riêng feed này.
@@ -33,7 +34,21 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
  * `last_activity_at`, vốn chỉ đo nội dung đọc được). Đó là hành vi đúng theo luật đếm
  * hiện hành, đã ghi ở PLAN mục 6 "hệ quả cố ý 2" — đừng chữa bằng cách đổi khoá sort.
  *
- * Tham số như `GET /feeds/moi`.
+ * `?sub=<slug>` lọc theo chuyên mục; sub không tồn tại trả 404 `sub_khong_ton_tai`.
+ * `?cursor=` là cursor keyset lấy từ `cursor_ke_tiep` của trang trước; `null` là hết.
+ * `?limit=` tối đa 50.
+ *
+ * `?sort=tu_nhien` (mặc định) giữ khoá sort riêng của feed này. `?sort=nhieu_diem` sắp
+ * theo điểm bài gốc giảm dần, cursor keyset trên `(diem, id)`. **Cursor của sort này
+ * KHÔNG dùng được cho sort kia** — đem nhầm là 400 `cursor_khong_hop_le`.
+ *
+ * `?khoang=ngay|tuan|thang|tat_ca` (mặc định `tat_ca`) lọc theo `created_at`, ranh giới
+ * là nửa đêm **giờ VN**; `tuan` = 7 ngày lịch gần nhất kể cả hôm nay, `thang` = 30 ngày.
+ * Khoảng áp cho **mọi** sort, không riêng `nhieu_diem`. Giá trị lạ trả 400
+ * `tham_so_khong_hop_le` — không bao giờ lặng lẽ quy về `tat_ca`.
+ *
+ * Mạch bị mod ẩn không xuất hiện.
+ *
  */
 export const lietKeFeedDangDienRa = <ThrowOnError extends boolean = false>(options?: Options<LietKeFeedDangDienRaData, ThrowOnError>): RequestResult<LietKeFeedDangDienRaResponses, LietKeFeedDangDienRaErrors, ThrowOnError> => (options?.client ?? client).get<LietKeFeedDangDienRaResponses, LietKeFeedDangDienRaErrors, ThrowOnError>({ url: '/api/v1/feeds/dang-dien-ra', ...options });
 
@@ -42,12 +57,24 @@ export const lietKeFeedDangDienRa = <ThrowOnError extends boolean = false>(optio
  *
  * Feed **Mới**: mọi bài, mới đăng trước (`created_at` giảm dần).
  *
+ * Mạch đã đóng sổ **vẫn xuất hiện** — feed này sắp theo lúc bài ra đời, không theo
+ * trạng thái sổ.
+ *
  * `?sub=<slug>` lọc theo chuyên mục; sub không tồn tại trả 404 `sub_khong_ton_tai`.
  * `?cursor=` là cursor keyset lấy từ `cursor_ke_tiep` của trang trước; `null` là hết.
  * `?limit=` tối đa 50.
  *
- * Mạch bị mod ẩn không xuất hiện. Mạch đã đóng sổ **vẫn xuất hiện** — feed này sắp theo
- * lúc bài ra đời, không theo trạng thái sổ.
+ * `?sort=tu_nhien` (mặc định) giữ khoá sort riêng của feed này. `?sort=nhieu_diem` sắp
+ * theo điểm bài gốc giảm dần, cursor keyset trên `(diem, id)`. **Cursor của sort này
+ * KHÔNG dùng được cho sort kia** — đem nhầm là 400 `cursor_khong_hop_le`.
+ *
+ * `?khoang=ngay|tuan|thang|tat_ca` (mặc định `tat_ca`) lọc theo `created_at`, ranh giới
+ * là nửa đêm **giờ VN**; `tuan` = 7 ngày lịch gần nhất kể cả hôm nay, `thang` = 30 ngày.
+ * Khoảng áp cho **mọi** sort, không riêng `nhieu_diem`. Giá trị lạ trả 400
+ * `tham_so_khong_hop_le` — không bao giờ lặng lẽ quy về `tat_ca`.
+ *
+ * Mạch bị mod ẩn không xuất hiện.
+ *
  */
 export const lietKeFeedMoi = <ThrowOnError extends boolean = false>(options?: Options<LietKeFeedMoiData, ThrowOnError>): RequestResult<LietKeFeedMoiResponses, LietKeFeedMoiErrors, ThrowOnError> => (options?.client ?? client).get<LietKeFeedMoiResponses, LietKeFeedMoiErrors, ThrowOnError>({ url: '/api/v1/feeds/moi', ...options });
 
@@ -109,6 +136,34 @@ export const xemMach = <ThrowOnError extends boolean = false>(options: Options<X
  * vẫn chiếm một chỗ trong `tong_thread` và một slot của trang này.
  * Bia mộ không được tính vào `comment_count` của mạch, nên số bình luận **đọc được** có
  * thể nhỏ hơn số dòng trả về.
+ *
+ * ### `?dang_doc=1` — "câu đáng đọc" (PLAN 5.5)
+ *
+ * Trả **phép hợp `đã trích ∪ top-10 theo wilson`** trên các thread GỐC, sắp theo wilson
+ * **thuần** giảm dần. Đây là khối gắn nhãn "Câu đáng đọc" nằm trên cùng khi chân trang
+ * mặt CẶN bung khán đài; cây đầy đủ vẫn lấy bằng một lời gọi thường (không có tham số
+ * này).
+ *
+ * Phép hợp là hợp THẬT: một bình luận được trích nhưng xếp hạng thấp **vẫn có mặt**.
+ * Không có phân trang ở chế độ này — tập tối đa là `10 + số mốc có trích`, và
+ * `offset_ke_tiep`/`cursor_ke_tiep` luôn `null`, `tong_thread` là kích thước của tập.
+ *
+ * Chế độ này (và **chỉ** chế độ này) trả thêm `so_ung_vien_bo_lai`: số thread gốc đọc
+ * được nằm ngoài tập. `0` nghĩa là khối không lọc được gì và UI phải ẩn nó đi (PLAN 5.5,
+ * ngoại lệ "tập = cả khán đài"). Đừng suy con số ấy bằng cách so `tong_thread` của hai
+ * lời gọi — hai đầu đếm bia mộ khác nhau, xem `KhanDaiOut` (Y1, lượt vá 4).
+ *
+ * Vì tập này có thứ tự riêng, `?dang_doc=1` **chỉ đi cùng `sort=hay_nhat`** (mặc định)
+ * và **không nhận `offset`/`cursor`/`limit`** — dùng lẫn trả 400
+ * `tham_so_khong_hop_le` thay vì lặng lẽ bỏ qua tham số, đúng luật đang áp cho hai kiểu
+ * phân trang ở trên. `limit` là **cửa thứ tư của cùng cái luật ấy** (vá V7,
+ * 2026-08-22): nhánh này không đọc `limit` ở đâu cả, nên `?dang_doc=1&limit=5` trước đó
+ * trả 200 kèm 11 thread — người gọi tưởng mình đã cắt còn 5.
+ *
+ * `limit` mặc định là `None` chứ không phải `GIOI_HAN_TOI_DA`, và đó là cả cách phép
+ * kiểm trên đứng được: với mặc định là một con số thì "không truyền" và "truyền đúng 50"
+ * trông y hệt nhau ở trong hàm, nên hoặc là bỏ qua im lặng, hoặc là 400 cho một lời gọi
+ * không sai gì.
  */
 export const lietKeBinhLuanMach = <ThrowOnError extends boolean = false>(options: Options<LietKeBinhLuanMachData, ThrowOnError>): RequestResult<LietKeBinhLuanMachResponses, LietKeBinhLuanMachErrors, ThrowOnError> => (options.client ?? client).get<LietKeBinhLuanMachResponses, LietKeBinhLuanMachErrors, ThrowOnError>({ url: '/api/v1/machs/{mach_id}/comments', ...options });
 
@@ -152,6 +207,40 @@ export const lietKeBinhLuanMoc = <ThrowOnError extends boolean = false>(options:
 export const lietKeBanCuMoc = <ThrowOnError extends boolean = false>(options: Options<LietKeBanCuMocData, ThrowOnError>): RequestResult<LietKeBanCuMocResponses, LietKeBanCuMocErrors, ThrowOnError> => (options.client ?? client).get<LietKeBanCuMocResponses, LietKeBanCuMocErrors, ThrowOnError>({ url: '/api/v1/mocs/{moc_id}/revisions', ...options });
 
 /**
+ * Liet Ke Sub
+ *
+ * MỌI chuyên mục, sắp theo `slug` — PLAN mục 7 *(thêm ở lượt vá Phase 1d)*.
+ *
+ * **Frontend CẤM ghi cứng danh sách slug** (PLAN mục 7 nói thẳng). Trước endpoint này,
+ * `apps/web` giữ một hằng `SUB_KHOI_DIEM = ["chung-khoan", "crypto"]` nuôi cả sidebar
+ * lẫn `sitemap.ts`: mở sub thứ ba qua admin thì **cả hai chỗ cùng bỏ sót nó, im lặng**,
+ * và chiều ngược cũng im — đổi slug trong admin thì sidebar âm thầm bỏ mục đó (404 →
+ * lọc khỏi danh sách) trong khi `sitemap.xml` vẫn khai `/s/<slug cũ>` là URL sống.
+ *
+ * **Không phân trang, và đó là một chốt chứ không phải một thiếu sót.** v1 tạo sub bằng
+ * tay qua admin (PLAN mục 1), nên tập này là hàng chục chứ không phải hàng nghìn; thêm
+ * cursor bây giờ là bắt hai chỗ gọi (sidebar, sitemap) tự lật trang cho một danh sách
+ * chưa bao giờ dài. Ngày nó dài ra thì đổi ở đây, kèm cursor keyset trên `slug`.
+ *
+ * Sắp theo `slug` chứ không theo `so_mach`: sidebar là một **bản đồ**, và một bản đồ
+ * tự sắp lại theo độ đông mỗi lần có bài mới thì không ai nhớ được chỗ nào ở đâu.
+ */
+export const lietKeSub = <ThrowOnError extends boolean = false>(options?: Options<LietKeSubData, ThrowOnError>): RequestResult<LietKeSubResponses, unknown, ThrowOnError> => (options?.client ?? client).get<LietKeSubResponses, unknown, ThrowOnError>({ url: '/api/v1/subs', ...options });
+
+/**
+ * Xem Sub
+ *
+ * Header của trang chuyên mục `/s/<slug>` — tên, mô tả, số mạch, ngày lập.
+ *
+ * Endpoint **đọc, không per-user**, tách khỏi feed vì nó đổi theo nhịp hoàn toàn khác:
+ * tên và mô tả sub gần như bất động, còn feed đổi mỗi lần có bài mới. Nhét header vào
+ * `FeedOut` là bắt mọi trang phân trang phải chở lại cùng một khối chữ.
+ *
+ * Slug không tồn tại trả 404 `khong_tim_thay`.
+ */
+export const xemSub = <ThrowOnError extends boolean = false>(options: Options<XemSubData, ThrowOnError>): RequestResult<XemSubResponses, XemSubErrors, ThrowOnError> => (options.client ?? client).get<XemSubResponses, XemSubErrors, ThrowOnError>({ url: '/api/v1/subs/{slug}', ...options });
+
+/**
  * Xem Ho So
  *
  * Hồ sơ công khai: mạch của họ, "Được trích ×N", tổng mốc, tổng bình luận.
@@ -166,7 +255,14 @@ export const lietKeBanCuMoc = <ThrowOnError extends boolean = false>(options: Op
  * xoá, hay chính bình luận bị **mod ẩn** đều làm khối trích biến mất ⇒ không đếm. Thiếu
  * bốn bộ lọc ấy thì mod ẩn cả một mạch làm `so_mach`/`so_moc`/`so_binh_luan` về 0 trong
  * khi "Được trích ×1" vẫn sáng trên hồ sơ — đúng cái "máy in địa vị" mà rào 3 dựng lên
- * để chặn.
+ * để chặn. Bộ lọc ấy là `core.doc_noi_dung.TRICH_CON_HIEN`, dùng chung với "câu đáng
+ * đọc" của PLAN 5.5.
+ *
+ * **TỰ TRÍCH KHÔNG TÍNH** *(rào 3, chốt 2026-08-22)*: chủ mạch trích bình luận của
+ * chính mình thì chỉ số của họ không nhúc nhích. Chỉ số này đo *"có bao nhiêu người
+ * KHÁC thấy chữ của bạn đáng ghi vào sổ"*; tự trích trả lời câu hỏi khác hẳn, và nó là
+ * đường ngắn nhất tới cùng con số — không cần nick thứ hai, không cần ai đồng ý. Khối
+ * blockquote vẫn hiện đầy đủ trên thẻ mốc, chỉ có chỉ số hồ sơ là không cộng.
  *
  * **Tác giả TỰ xoá bình luận thì `duoc_trich` KHÔNG tụt**, và đó là chỗ con số này cố ý
  * lệch khỏi ba con số trên. `trinh_bay.trich_ra` giữ nguyên body của blockquote trong ca

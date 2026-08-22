@@ -33,6 +33,20 @@ chết: A giữ `Comment` chờ `Mach`, B giữ `Mach` chờ `Comment`. Postgres
 một bên, nên hậu quả là 500 ngẫu nhiên dưới tải chứ không phải treo vĩnh viễn — cũng vì
 thế mà nó gần như không tái hiện được ở máy dev.
 
+Cạnh thứ hai, thêm 2026-08-22 (plan con 1d): **`Moc` TRƯỚC, `Mach` SAU** — `dat_vote`
+khoá hàng `Moc` rồi `_dong_bo_diem_bai_goc` xin khoá hàng `Mach`. Không sinh chu trình
+với cạnh trên (`Comment → Mach`) vì hai cạnh cùng chĩa VÀO `Mach`, nên luật đọc gọn lại
+thành **`Mach` khoá SAU CÙNG**.
+
+⚠ **Nói cho đúng mức** *(vá V11, 2026-08-22)*: câu trên chỉ đúng với khoá TƯỜNG MINH.
+Không đường ghi nào của module này gọi `select_for_update` trên `Moc` sau khi đã khoá
+`Mach` — nhưng khoá NGẦM do khoá ngoại thì có: `INSERT INTO core_trich(moc_id, …)` lấy
+`FOR KEY SHARE` trên hàng `Moc` được tham chiếu, và người viết dòng `Trich.objects
+.create(...)` không thấy khoá nào cả vì không có dòng nào nói ra. Hôm nay chưa có đường
+ghi `Trich` nào, nên chưa phải lỗi; Phase 2 làm endpoint "trích vào sổ" thì đây là chỗ
+cạnh ngược `Mach → Moc` mọc ra. Luật đầy đủ kèm ca cụ thể: `gikky-net/CLAUDE.md`, mục
+"Thứ tự khoá hàng".
+
 Ngoại lệ DUY NHẤT và có chủ đích: bình luận GỐC không có hàng cha nào để khoá, nên
 `cap_phat_path` khoá thẳng `Mach` (mọi bình luận gốc của một mạch là sibling của nhau).
 Đường đó chỉ chạm MỘT hàng khoá, nên nó không tham gia được vào chu trình nào.
@@ -49,6 +63,7 @@ from django.db.models import Max
 from django.utils import timezone
 
 from core.cay_binh_luan import cap_phat_path
+from core.doc_noi_dung import doc_duoc
 from core.models.binh_luan import Comment
 from core.models.dien_dan import Mach, Sub
 from core.models.moc import Moc, kiem_figures
@@ -153,6 +168,13 @@ def cap_nhat_dem_mach(mach: Mach) -> Mach:
     Vì hai nhóm đo hai thứ khác nhau, `last_activity_at` **không** lấy `last_entry_at`
     làm vế mốc — nó đếm lại trên mốc ĐỌC ĐƯỢC. Lấy nhầm thì một mốc bị ẩn giữ mạch nằm
     lại mặt BÃO, tức đúng cái sai vừa loại được ở vế bình luận, chỉ đổi bảng.
+
+    **Cột thứ NĂM, `diem_bai_goc`** (plan con 1d §1) — khoá sort của feed "Nhiều điểm
+    nhất". Nó theo luật của nhóm **NỘI DUNG**, không theo nhóm cấu trúc: mốc 1 thành bia
+    mộ hoặc bị mod ẩn ⇒ `0`. Lý do: điểm là *nội dung*, không phải *chỗ đứng*. Đây đúng
+    là chuẩn `moc_ra`/`nut_ra` đã áp từ 1b — số phiếu của thứ đã bị gỡ không được trả ra,
+    nên nó cũng không được xếp hạng cho mạch. Mạch chưa có mốc 1 (không tồn tại ở đường
+    sản phẩm, nhưng có ở dữ liệu nạp tay) cũng là `0`.
     """
     mach = Mach.objects.select_for_update().get(pk=mach.pk)
     moc_tat_ca = Moc.objects.filter(mach=mach)
@@ -191,15 +213,33 @@ def cap_nhat_dem_mach(mach: Mach) -> Mach:
     # "hệ quả cố ý 2". Cột này chỉ đo nội dung, nó không biết mạch bị dọn hay chưa từng
     # có ai vào.
     mach.last_activity_at = max(hoat_dong) if hoat_dong else mach.created_at
+    mach.diem_bai_goc = _diem_bai_goc(mach)
     mach.save(
         update_fields=[
             "entry_count",
             "comment_count",
             "last_entry_at",
             "last_activity_at",
+            "diem_bai_goc",
         ]
     )
     return mach
+
+
+def _diem_bai_goc(mach: Mach) -> int:
+    """Điểm của mốc `seq=1`, hoặc `0` khi mốc đó là bia mộ / bị mod ẩn / không có.
+
+    Tách thành hàm riêng để `cap_nhat_dem_mach` đọc được thành một dòng, **không phải**
+    để mở một đường ghi thứ hai: hàm này không lưu gì. Đường ghi vẫn là một.
+
+    Hỏi `doc_duoc` chứ không tự viết `deleted_at is None and hidden_at is None`: luật che
+    của `Moc` có đúng một chỗ (`core/doc_noi_dung.py`), và bản sao thứ hai của nó ở đây là
+    bản sẽ quên `hidden_at` khi Phase 4 thêm một trạng thái nữa.
+    """
+    moc = Moc.objects.filter(mach=mach, seq=1).first()
+    if moc is None or not doc_duoc(moc):
+        return 0
+    return moc.score
 
 
 def tao_mach(
@@ -421,6 +461,7 @@ def dat_vote(*, user, target: Moc | Comment, value: int) -> Vote | None:
             )
 
         _ap_delta_vote(dich, gia_tri_cu, value)
+        _dong_bo_diem_bai_goc(dich)
 
     target.refresh_from_db()
     return moi
@@ -460,7 +501,59 @@ def dat_vote_hang_loat(
         else:
             dich.score = up - down
             dich.save(update_fields=["score"])
+        _dong_bo_diem_bai_goc(dich)
     target.refresh_from_db()
+
+
+def _dong_bo_diem_bai_goc(dich: Moc | Comment) -> None:
+    """Vote vừa rơi vào mốc 1 ⇒ `Mach.diem_bai_goc` phải đi theo, NGAY trong transaction.
+
+    Không có dòng này thì `diem_bai_goc` chỉ đúng vào lúc ai đó vô tình viết một bình
+    luận (đường duy nhất còn lại gọi `cap_nhat_dem_mach`): feed "Nhiều điểm nhất" sắp
+    theo một con số đóng băng, HTTP 200, không log, không job đối soát. Đúng loài trôi
+    mà PLAN mục 6 dựng kỷ luật denormalize để chặn.
+
+    **Thứ tự khoá hàng: `Moc` TRƯỚC, `Mach` SAU** — thêm một cạnh vào đồ thị khoá của
+    module này (xem docstring đầu file). Không có chu trình: `them_moc` khoá `Mach` rồi
+    chỉ `INSERT` một hàng `Moc` mới (khoá hàng mới không ai chờ được), và không đường ghi
+    nào khoá `Mach` rồi mới `select_for_update` một hàng `Moc` đã tồn tại. Phase 2/4 thêm
+    đường ghi nào chạm cả hai bảng thì phải giữ đúng chiều này — kể cả khi nó không viết
+    `select_for_update` dòng nào, vì `INSERT` một hàng tham chiếu tới `Moc` cũng lấy khoá
+    (`FOR KEY SHARE`). Xem cảnh báo ở docstring đầu file.
+
+    Vote vào bình luận không đi qua đây: `diem_bai_goc` chỉ đọc `Moc.score`.
+
+    ⚠ **Nợ có tên: TRANH CHẤP KHOÁ, chưa tối ưu** *(W5, lượt vá 2 — chốt KHÔNG đổi hành
+    vi ở lượt này)*. Docstring trên nói kỹ về *thứ tự* khoá mà không một chữ về *giá*
+    của nó. Giá thật: mỗi lá phiếu vào mốc 1 lấy **một khoá độc quyền hàng `Mach`**
+    (`cap_nhat_dem_mach` mở bằng `select_for_update`) rồi chạy **5 truy vấn tổng hợp**
+    (`entry_count`, `comment_count`, hai `Max(created_at)`, `_diem_bai_goc`) — trong khi
+    bốn con số đầu **không liên quan gì tới lá phiếu vừa bỏ**. Khoá ấy còn nối tiếp với
+    `tao_binh_luan` và `them_moc`, vốn cũng xin đúng hàng đó: bài càng nóng thì hàng đợi
+    trên một hàng `Mach` càng dài, và đó đúng là những bài có nhiều phiếu nhất.
+
+    **Vì sao không tối ưu bây giờ:** Phase 2 mới có endpoint vote (`POST /votes`), nên
+    hôm nay không có tải thật để đo — tối ưu mù thì không chứng minh được gì và vẫn phải
+    làm lại khi có số.
+
+    **Phương án rẻ hơn để Phase 2 cân**, khi đã đo được: thay lời gọi `cap_nhat_dem_mach`
+    ở đây bằng một `UPDATE` đúng một cột, trong cùng transaction đang giữ khoá hàng `Moc`:
+
+        diem = dich.score if doc_duoc(dich) else 0
+        Mach.objects.filter(pk=dich.mach_id).update(diem_bai_goc=diem)
+
+    (đúng luật của `_diem_bai_goc`, chỉ khác là không phải đọc lại hàng `Moc` — `dich`
+    CHÍNH LÀ mốc 1 và nó vừa được ghi ở dòng trên.)
+
+    Hàng `Moc` (seq=1) đã bị `dat_vote` khoá độc quyền trước đó, và **mọi** đường đổi
+    `diem_bai_goc` đều phải đi qua đúng hàng `Moc` ấy, nên hai lá phiếu đồng thời vẫn
+    tuần tự hoá được mà không cần thêm khoá trên `Mach`. Cái mất: bốn cột kia không được
+    đối soát nhờ ăn ké lượt vote nữa — phải cân với nhịp trôi thật của chúng trước khi
+    đổi, đừng đổi vì nó ngắn hơn.
+    """
+    if not isinstance(dich, Moc) or dich.seq != 1:
+        return
+    cap_nhat_dem_mach(Mach.objects.get(pk=dich.mach_id))
 
 
 def _ap_delta_vote(dich: Moc | Comment, cu: int, moi: int) -> None:

@@ -1,0 +1,38 @@
+/* Header của trang chuyên mục — dải nhận diện đứng trên feed, chất liệu "sổ nghiêm" nhẹ
+ * (PLAN 9.1): viền cứng, slug bằng mono, không bo tròn nhiều. */
+.dau {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+
+.slug {
+  margin: 0;
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+
+.ten {
+  font-family: var(--f-display);
+  font-size: clamp(21px, 3.2vw, 26px);
+  line-height: 1.22;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin: 2px 0 6px;
+}
+
+.mo_ta {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--ink-2);
+  max-width: 62ch;
+}
+
+.so {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--ink-3);
+}

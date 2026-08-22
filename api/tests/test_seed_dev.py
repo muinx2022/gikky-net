@@ -23,8 +23,8 @@ from core.management.commands.seed_dev import (
     TRICH_MOC_SEQ,
     Command,
 )
+from core.doc_noi_dung import khoa_sap_wilson
 from core.models import Comment, Mach, Moc, Sub, Trich, User, Vote
-from core.xep_hang import wilson_lower_bound
 
 pytestmark = pytest.mark.django_db
 
@@ -58,7 +58,9 @@ def seq_dai_gap(mach: Mach) -> set[int]:
     và đây là định nghĩa nguyên văn theo PLAN.
     """
     n = mach.entry_count
-    assert n >= 5, "mạch quá ngắn thì không có dải gập để nói"
+    # Ngưỡng `NGUONG_KHONG_GAP = 5` (USER DUYỆT 2026-08-22): chỉ gập khi giấu được ≥ 2
+    # mốc, tức `n ≥ 6`. Mạch ngắn hơn không có dải gập nào để nói.
+    assert n >= 6, "mạch quá ngắn thì không có dải gập để nói"
     return set(range(2, n - 2))
 
 
@@ -179,13 +181,15 @@ def test_ba_vai_cua_PLAN_muc_5_5_la_ba_hang_khac_nhau(da_seed):
     này là thứ giữ cho ba tiêu chí đó còn phân biệt được nhau.
     """
     goc = list(Comment.objects.filter(mach=da_seed, parent__isnull=True))
-    diem = {c.pk: wilson_lower_bound(c.up_count, c.down_count) for c in goc}
+    diem = {c.pk: khoa_sap_wilson(c.up_count, c.down_count, c.score) for c in goc}
 
     trong_dai_gap = [c for c in goc if c.anchor_moc_seq in seq_dai_gap(da_seed)]
     assert trong_dai_gap, "dải gập không có bình luận nào — không có mồi bung để đo"
 
-    cao_nhat_toan_mach = max(goc, key=lambda c: diem[c.pk])
-    cao_nhat_dai_gap = max(trong_dai_gap, key=lambda c: diem[c.pk])
+    # `min` chứ không `max`: `khoa_sap_wilson` trả khoá ĐÃ ĐẢO DẤU (nó là khoá `sorted`
+    # tăng dần của code), nên hạng cao nhất là khoá nhỏ nhất.
+    cao_nhat_toan_mach = min(goc, key=lambda c: diem[c.pk])
+    cao_nhat_dai_gap = min(trong_dai_gap, key=lambda c: diem[c.pk])
     duoc_trich = Trich.objects.get(
         moc__mach=da_seed, moc__seq=TRICH_MOC_SEQ, removed_at__isnull=True
     ).comment
@@ -209,7 +213,7 @@ def test_binh_luan_duoc_trich_KHONG_thuoc_top_10_wilson(da_seed):
     hệt. Nay comment được trích nằm gần bét bảng: quên vế đó là thiếu hàng ngay.
     """
     goc = list(Comment.objects.filter(mach=da_seed, parent__isnull=True))
-    xep = sorted(goc, key=lambda c: wilson_lower_bound(c.up_count, c.down_count), reverse=True)
+    xep = sorted(goc, key=lambda c: khoa_sap_wilson(c.up_count, c.down_count, c.score))
     top_10 = {c.pk for c in xep[:10]}
     duoc_trich = Trich.objects.get(
         moc__mach=da_seed, moc__seq=TRICH_MOC_SEQ, removed_at__isnull=True
@@ -254,10 +258,47 @@ def test_co_moc_KHONG_binh_luan_nao_va_moc_do_mang_cau_moi(da_seed):
 def test_diem_vote_rai_du_de_top_10_wilson_co_nghia(da_seed):
     """PLAN mục 10 đòi đích danh. "Rải" = xếp hạng phân biệt được, không phải cùng điểm."""
     goc = Comment.objects.filter(mach=da_seed, parent__isnull=True)
-    diem = [wilson_lower_bound(c.up_count, c.down_count) for c in goc]
+    diem = [khoa_sap_wilson(c.up_count, c.down_count, c.score) for c in goc]
     assert len(goc) >= 10
     assert len(set(diem)) >= 10, "quá nhiều bình luận gốc đồng điểm, top-10 vô nghĩa"
     assert any(c.down_count > c.up_count for c in goc), "phải có cả bình luận bị dìm"
+
+
+def test_diem_bai_goc_cua_ba_mach_seed_KHAC_NHAU_RO(da_seed):
+    """Plan con 1d §2.4 — điều kiện để feed "Nhiều điểm nhất" *đo được gì đó*.
+
+    Ba mạch seed đồng điểm thì Top và Mới ra cùng thứ tự, và mọi bài đo phân biệt hai
+    cách cài đặt đều pass rỗng — đúng bài học seed của 1a (W6). Ghim ở đây, cạnh dữ liệu,
+    chứ không chỉ ở bài đo API: người sửa số phiếu mốc 1 sẽ mở file này trước.
+
+    **Không đổi số nào của mạch HPG để làm điều đó** (plan con §2.4 cấm đích danh, và
+    §2.4 nói "dừng lại và báo"): số phiếu hiện có đã cho ba giá trị rời nhau.
+    """
+    diem = {
+        m.title: m.diem_bai_goc
+        for m in Mach.objects.filter(
+            title__in=[TITLE_HPG, TITLE_BIA_MO, TITLE_POST_THUONG]
+        )
+    }
+    assert len(diem) == 3
+    assert len(set(diem.values())) == 3, f"hai mạch seed đồng điểm: {diem}"
+    assert diem[TITLE_HPG] > diem[TITLE_BIA_MO] > diem[TITLE_POST_THUONG]
+
+
+def test_co_mach_moc_1_diem_THAP_hon_mot_moc_sau(da_seed):
+    """Vế thứ hai của plan con 1d §2.4.
+
+    Không có nó thì "điểm bài gốc" và "điểm mốc cao nhất" cho cùng thứ hạng trên seed, và
+    một cài đặt lấy nhầm `max(score)` thay vì `score` của mốc 1 vẫn xanh.
+    """
+    lech = [
+        m.title
+        for m in Mach.objects.all()
+        if (moc := Moc.objects.filter(mach=m).order_by("-score").first()) is not None
+        and moc.seq != 1
+        and moc.score > m.diem_bai_goc
+    ]
+    assert lech, "không mạch nào có mốc sau điểm cao hơn mốc 1"
 
 
 def test_dem_vote_khop_so_hang_vote_that(da_seed):

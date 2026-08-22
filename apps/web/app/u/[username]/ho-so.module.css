@@ -69,6 +69,15 @@
   color: var(--stamp);
 }
 
+/* Thay cả khối chỉ số khi user chưa hoạt động — PLAN nguyên tắc 9, vế "áp cho CẢ hồ sơ".
+ * Một dòng chữ, không viền, không ô: nó là lời giới thiệu, không phải một bảng số rỗng
+ * đội lốt. */
+.chua_hoat_dong {
+  margin: 20px 0 0;
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+
 .phu_tieu_de {
   font-family: var(--f-mono);
   font-size: 11px;

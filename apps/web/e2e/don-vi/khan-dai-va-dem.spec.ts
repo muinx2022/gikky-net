@@ -1,4 +1,4 @@
-import type { BinhLuanOut } from "@gikky/api-client";
+import type { BinhLuanOut, KhanDaiOut } from "@gikky/api-client";
 import { expect, test } from "@playwright/test";
 
 import { thamSoPhanTrangBiBo } from "../../lib/api";
@@ -8,6 +8,7 @@ import {
   SORT_KHAN_DAI,
   docSort,
   idTrongTrang,
+  nenRenderCauDangDoc,
   neoBinhLuan,
   trangThaiDeepLink,
 } from "../../lib/khan-dai";
@@ -112,6 +113,45 @@ test("dựng lại URL từ slug + id là phép đảo của phép tách", () =>
       id,
     });
   }
+});
+
+/* ---- Y1: khối "Câu đáng đọc" chỉ render khi nó LỌC được gì ----------------- */
+
+/** Một response `?dang_doc=1` giả, chỉ giữ ba trường phép quyết định thật sự đọc. */
+function tapDangDoc(soThread: number, boLai: number | null): KhanDaiOut {
+  return {
+    sort: "hay_nhat",
+    tong_thread: soThread,
+    threads: Array.from({ length: soThread }, (_, i) => ({
+      ...chuoiSau(1)[0]!,
+      id: i + 1,
+    })),
+    so_ung_vien_bo_lai: boLai,
+    offset_ke_tiep: null,
+    cursor_ke_tiep: null,
+  };
+}
+
+test("Y1 — bỏ lại 0 ứng viên là khối không lọc được gì ⇒ KHÔNG render", () => {
+  // Hình dạng mạch VNM của seed dev: tập 5 thread, cây 6 (một gốc mod ẩn không vào tập).
+  // Luật cũ so `5 < 6` rồi render — và khối chép lại y nguyên phần đọc được của cây.
+  expect(nenRenderCauDangDoc(tapDangDoc(5, 0))).toBe(false);
+  // Mạch 2 thread (post thường): cùng kết luận, đường cũ cũng đúng ở ca này.
+  expect(nenRenderCauDangDoc(tapDangDoc(2, 0))).toBe(false);
+});
+
+test("Y1 — còn ứng viên bị bỏ lại thì khối là phép lọc thật ⇒ RENDER", () => {
+  // Hình dạng mạch HPG của seed: 14 gốc đọc được, tập = top-10 ∪ {r7} ⇒ bỏ lại 3.
+  expect(nenRenderCauDangDoc(tapDangDoc(11, 3))).toBe(true);
+  expect(nenRenderCauDangDoc(tapDangDoc(10, 9))).toBe(true);
+});
+
+test("Y1 — fail-closed: null, tập rỗng, và response KHÔNG phải chế độ dang_doc", () => {
+  expect(nenRenderCauDangDoc(null)).toBe(false);
+  expect(nenRenderCauDangDoc(tapDangDoc(0, 5))).toBe(false);
+  // `so_ung_vien_bo_lai === null` là dấu hiệu người gọi truyền nhầm response khán đài
+  // ĐẦY ĐỦ vào đây. Render nó là in cả cây hai lần; ẩn đi chỉ mất một lối tắt.
+  expect(nenRenderCauDangDoc(tapDangDoc(14, null))).toBe(false);
 });
 
 /* ---- Vá D5: tham số phân trang bị vứt phải NÓI RA -------------------------- */

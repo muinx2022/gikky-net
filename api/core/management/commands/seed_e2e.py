@@ -9,13 +9,20 @@ ghim lại đúng những con số ấy. Thêm 21 mạch vào đó là đổi `s
 thứ tự feed "Mới", đổi số hàng mà mọi bài đo đếm — tức sửa nền của bài đo cũ để phục vụ
 bài đo mới. Hai bộ dữ liệu, hai mục đích, hai cổng vào.
 
-Nội dung: MỘT user (`e2e_nhieu_mach`) với **21 mạch** — nhiều hơn `limit` mặc định 20 của
-`GET /users/{username}`. Đó là ca duy nhất chứng minh được tiêu chí V16 của plan con 1c:
-hồ sơ cắt danh sách mà **không có cursor** (nợ 1b #6), nên UI phải NÓI RA là bị cắt. Với
-20 mạch trở xuống thì `so_mach == len(machs)` và bài đo đó pass rỗng dù UI im lặng.
+Nội dung — hai thứ, mỗi thứ dựng đúng một ca mà `seed_dev` không có:
 
-Mỗi mạch chỉ có mốc 1 và không bình luận: bài đo V16 chỉ cần *số lượng*, và mọi thứ thêm
-vào đây là thêm một cách để nó vỡ vì lý do không liên quan.
+1. MỘT user (`e2e_nhieu_mach`) với **21 mạch** — nhiều hơn `limit` mặc định 20 của
+   `GET /users/{username}`. Đó là ca duy nhất chứng minh được tiêu chí V16 của plan con
+   1c: hồ sơ cắt danh sách mà **không có cursor** (nợ 1b #6), nên UI phải NÓI RA là bị
+   cắt. Với 20 mạch trở xuống thì `so_mach == len(machs)` và bài đo đó pass rỗng dù UI
+   im lặng. Mỗi mạch chỉ có mốc 1 và không bình luận: bài đo V16 chỉ cần *số lượng*, và
+   mọi thứ thêm vào đây là thêm một cách để nó vỡ vì lý do không liên quan.
+2. MỘT sub **rỗng** (`SUB_RONG_SLUG`, thêm 2026-08-22 cho vá V6) — không mạch nào. Lý do
+   ở ngay chỗ khai hằng.
+
+Cộng thêm: sub riêng ở (1) không nằm trong danh sách sub của `seed_dev`, nên bộ e2e cũng
+là chỗ chứng minh sidebar và `sitemap.xml` **tự** biết một sub mở ngoài danh sách khởi
+điểm (vá V8) — trước đó cả hai ghi cứng hai slug và bỏ sót nó, im lặng.
 
 **SUB RIÊNG, không dùng ké `chung-khoan` (vá A3, 2026-08-22).** Bản đầu gắn 21 mạch này
 vào sub của `seed_dev` nhưng gán cho một tác giả KHÔNG nằm trong `ten_seed` của `seed_dev`.
@@ -59,6 +66,20 @@ SUB_SLUG = "e2e-thu-nghiem"
 SUB_TEN = "E2E thử nghiệm"
 SUB_MO_TA = "Chuyên mục dựng riêng cho bộ e2e của apps/web. Không phải nội dung thật."
 
+#: Sub **KHÔNG có mạch nào** — dựng cho vá V6 (tiêu chí B8, 2026-08-22).
+#:
+#: v1 tạo sub bằng tay qua admin (PLAN mục 1), nên "vừa mở, chưa ai đăng" là hình dạng
+#: MẶC ĐỊNH của mọi chuyên mục mới chứ không phải ca biên — mà cả `seed_dev` lẫn phần
+#: trên của file này đều không có một sub nào như thế. Không có hàng dữ liệu đó thì nhánh
+#: "không in số 0" của `lib/dinh-dang.ts::dongSoMachSub` không có đất chạy, đúng kiểu
+#: điểm mù mà vá B2 của 1c vừa gỡ cho ba nhánh render bia mộ.
+#:
+#: Tên và mô tả tránh mọi biến thể của chữ *"tham gia"*: `e2e/vo-reddit.spec.ts` khẳng
+#: định sự VẮNG MẶT của nó bằng cách quét toàn bộ text của trang.
+SUB_RONG_SLUG = "e2e-sub-rong"
+SUB_RONG_TEN = "E2E chuyên mục rỗng"
+SUB_RONG_MO_TA = "Chuyên mục rỗng dựng riêng cho bộ e2e. Cố ý không có bài nào."
+
 #: 21 > `SO_MACH_TREN_HO_SO` (20) của `api/api/users.py`. Đúng một mạch dôi ra là đủ, và
 #: giữ nó sát ngưỡng làm bài đo nhạy: cắt sai một đơn vị là thấy ngay.
 SO_MACH = 21
@@ -89,6 +110,11 @@ class Command(BaseCommand):
 
         sub, _ = Sub.objects.get_or_create(
             slug=SUB_SLUG, defaults={"ten": SUB_TEN, "mo_ta": SUB_MO_TA}
+        )
+        # Sub rỗng: tạo rồi thôi, không gắn mạch nào vào — đó là cả nội dung của nó.
+        Sub.objects.get_or_create(
+            slug=SUB_RONG_SLUG,
+            defaults={"ten": SUB_RONG_TEN, "mo_ta": SUB_RONG_MO_TA},
         )
 
         nguoi = User.objects.create(
@@ -144,7 +170,7 @@ class Command(BaseCommand):
         Mach.objects.filter(author__in=users).delete()
         so = users.count()
         users.delete()
-        Sub.objects.filter(slug=SUB_SLUG).delete()
+        Sub.objects.filter(slug__in=[SUB_SLUG, SUB_RONG_SLUG]).delete()
         self.stdout.write(
-            f"--reset: đã xoá {so} user seed_e2e cùng mạch của họ và sub {SUB_SLUG!r}."
+            f"--reset: đã xoá {so} user seed_e2e cùng mạch của họ và 2 sub e2e."
         )

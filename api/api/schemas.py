@@ -66,6 +66,11 @@ class MachTomTatOut(Schema):
     `last_entry_at` đo cấu trúc (mọi mốc, kể cả mốc bị ẩn), `last_activity_at` đo nội
     dung đọc được. Hệ quả nhìn thấy được: một mạch đứng đầu feed "Đang diễn ra" mà mở ra
     là mặt CẶN.
+
+    **`diem` là điểm của MỐC 1, không phải tổng điểm của mạch.** PLAN 5.7 chốt vote nằm
+    trên từng mốc riêng rẽ ("mốc 9 được 412 dù bài gốc 89"), nên không tồn tại con số
+    "điểm của mạch"; cột vote trên thẻ feed chiếu đúng điểm bài gốc. Mốc 1 đã xoá hoặc bị
+    mod ẩn ⇒ `0`, cùng chuẩn với `MocOut.score` của bia mộ.
     """
 
     id: int
@@ -87,10 +92,40 @@ class MachTomTatOut(Schema):
     #: Đo **nội dung đọc được**, nên **có thể nhỏ hơn `last_entry_at`**. Xem
     #: `MachChiTietOut.face`.
     last_activity_at: datetime
+    #: Điểm của **mốc 1** (`Mach.diem_bai_goc`) — khoá sort của `?sort=nhieu_diem`, và là
+    #: con số trên cột vote của thẻ feed. Âm được. Bia mộ ⇒ `0`.
+    diem: int
+
+
+class SubChiTietOut(Schema):
+    """Header của trang `/s/<slug>` — plan con 1d §2.3.
+
+    `so_mach` đếm mạch **hiện được**: chỉ loại mạch bị mod ẩn (`hidden_at`), đúng bộ lọc
+    của `api/feeds.py::_mach_hien`.
+
+    ⚠ **Không phải "đúng bộ lọc mà hai feed dùng"** *(sửa ở W12, lượt vá 2 — câu cũ nói
+    quá)*: `/feeds/dang-dien-ra` lọc THÊM `status=MO`, nên với một chuyên mục có mạch đã
+    đóng sổ thì `so_mach` lớn hơn tổng số thẻ của feed đó kể cả khi không cắt trang. Con
+    số này khớp tập của `/feeds/moi`, không khớp tập của `/feeds/dang-dien-ra`.
+
+    Và ngay cả với `/feeds/moi` thì đừng suy con số này ra số thẻ trên màn hình: feed cắt
+    trang, còn `?khoang=` cắt thêm theo `created_at`.
+    """
+
+    slug: str
+    ten: str
+    mo_ta: str
+    so_mach: int
+    created_at: datetime
 
 
 class FeedOut(Schema):
-    """Một trang feed. `cursor_ke_tiep = null` nghĩa là hết."""
+    """Một trang feed. `cursor_ke_tiep = null` nghĩa là hết.
+
+    **Cursor mang khoá của ĐÚNG sort đã sinh ra nó** (plan con 1d §2.1): `sort=nhieu_diem`
+    trả cursor `(diem, id)`, hai sort thời gian trả cursor `(thời điểm, id)`. Đem cursor
+    của sort này sang sort kia là 400 `cursor_khong_hop_le`, không phải trang 1 im lặng.
+    """
 
     items: list[MachTomTatOut]
     cursor_ke_tiep: str | None
@@ -272,12 +307,32 @@ class KhanDaiOut(Schema):
       luôn `null` ở sort này.
     - `moi_nhat` / `cu_nhat` — cursor keyset thật trên `(created_at, id)`.
       `offset_ke_tiep` luôn `null` ở hai sort này.
+
+    **Chế độ `?dang_doc=1`** (PLAN 5.5 — "câu đáng đọc") dùng lại đúng schema này nhưng
+    đổi nghĩa hai trường: `threads` là phép hợp `đã trích ∪ top-10 wilson` sắp theo wilson
+    **thuần**, và `tong_thread` là kích thước của tập ấy chứ không phải tổng thread của
+    mạch. Cả hai con trỏ trang luôn `null` — chế độ đó không phân trang. Chỉ chế độ này
+    mang `so_ung_vien_bo_lai`.
     """
 
     sort: SortKhanDai
     #: Tổng số thread GỐC hiện ra (kể cả bia mộ giữ chỗ), trước khi cắt trang.
+    #:
+    #: ⚠ Ở `?dang_doc=1` đây là kích thước của TẬP, và nó **không so được** với
+    #: `tong_thread` của khán đài đầy đủ: tập không nhận bia mộ qua vế top-10 (X4) nhưng
+    #: vẫn ôm bia mộ **đã được trích** (PLAN 5.6), còn cây thì đếm mọi bia mộ giữ chỗ.
+    #: Câu hỏi "khối này có lọc được gì không" trả lời bằng `so_ung_vien_bo_lai`.
     tong_thread: int
     threads: list[BinhLuanOut]
+    #: Chỉ ở `?dang_doc=1` (ngoài đó là `null`): số thread gốc **đọc được** bị phép lọc bỏ
+    #: lại ngoài `threads`.
+    #:
+    #: `0` nghĩa là tập chứa trọn phần **thread GỐC** đọc được của cây ⇒ UI **không
+    #: render** khối "Câu
+    #: đáng đọc": nó sẽ là bản sao của cây ngay dưới nó (PLAN 5.5, ngoại lệ chốt
+    #: 2026-08-22). `null` ở khán đài thường là cố ý — `0` đọc ra là "không lọc được gì",
+    #: một câu trả lời SAI cho một câu hỏi không được đặt.
+    so_ung_vien_bo_lai: int | None
     offset_ke_tiep: int | None
     cursor_ke_tiep: str | None
 

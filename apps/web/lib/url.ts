@@ -30,6 +30,20 @@ export function duongDanMach(slug: string, id: number): string {
   return `/m/${slug}-${id}`;
 }
 
+/** `/m/<slug>-<id>` với khán đài **đã bung**, neo tại `#khan-dai`.
+ *
+ * Một chỗ dựng cho cả `💬 N` trên thẻ feed lẫn chân trang mặt CẶN: hai chỗ tự ghép query
+ * string là hai chỗ sẽ lệch nhau ở lần thêm tham số tiếp theo, và cái lệch đó không kêu ở
+ * đâu — chỉ có một trong hai cú bấm mở đúng khán đài.
+ *
+ * `sort=hay_nhat` viết tường minh chứ không để trống: `?khan_dai=1` một mình cũng ra
+ * `hay_nhat` (mặc định của `docSort`), nhưng khi đó thanh sort trên trang và URL nói hai
+ * chuyện khác nhau, và bấm Back sau khi đổi sort sẽ về một URL không mang sort.
+ */
+export function duongDanKhanDai(slug: string, id: number): string {
+  return `${duongDanMach(slug, id)}?khan_dai=1&sort=hay_nhat#khan-dai`;
+}
+
 export function duongDanSub(slug: string): string {
   return `/s/${slug}`;
 }

@@ -20,7 +20,8 @@
 `docker-compose.dev.yml` vẫn PHẢI viết đúng plan (là tài sản của repo, dùng khi có Docker),
 nhưng **không chạy được ở phase này** → tiêu chí "compose up" chuyển thành HOÃN, ghi rõ.
 
-**DB dev đã chốt:** role `gikky` / password `doi-mat-khau-nay` / database `gikky_dev` /
+**DB dev đã chốt:** role `gikky` / password ghi trong `api/.env` (KHÔNG commit — chuỗi thật
+từng nằm ở dòng này, đã gỡ 2026-08-22 khi repo lên công khai) / database `gikky_dev` /
 `127.0.0.1:5432`. User tự chạy lệnh tạo. Agent **không** cần và **không được** hỏi mật khẩu
 superuser `postgres`. Nếu kết nối `gikky_dev` thất bại → DỪNG, báo phiên chính, **không** tự đổi
 sang SQLite, **không** tự tạo DB bằng đường vòng.

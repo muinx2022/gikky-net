@@ -1,0 +1,31 @@
+/* Nút gập nằm ở MÉP TRÁI của bình luận, ngoài luồng chữ — đúng chỗ Reddit đặt nó, và
+ * cũng là chỗ duy nhất không phá nhịp đọc của thân bình luận. */
+.khung {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  column-gap: 4px;
+  align-items: start;
+}
+
+.nut {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--ink-3);
+  padding: 0;
+  text-align: left;
+}
+
+.nut:hover {
+  color: var(--accent);
+}
+
+.tom_tat {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  line-height: 1.5;
+}
+
+.than {
+  min-width: 0;
+}

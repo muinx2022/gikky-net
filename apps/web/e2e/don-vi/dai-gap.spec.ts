@@ -11,7 +11,13 @@ import {
 } from "../../lib/dai-gap";
 
 /** Công thức dải gập của PLAN 5.5 (khối "Công thức dải gập, chốt 2026-08-22"): `n` mốc
- * ⇒ gập seq 2 … **n−3**, hiện 1, n−2, n−1, n; `n ≤ 4` thì không gập.
+ * ⇒ gập seq 2 … **n−3**, hiện 1, n−2, n−1, n; `n ≤ 5` thì không gập.
+ *
+ * ⚠ Ngưỡng là **5**, không phải 4 (USER DUYỆT 2026-08-22, plan con 1d §2.5.9): chỉ gập
+ * khi giấu được ít nhất 2 mốc. Con số 5 ở đây gõ tay trong tên bài đo lẫn trong thân —
+ * xem bài `n = 5 KHÔNG gập` và `n = 6 gập ĐÚNG 2 mốc` bên dưới, hai vế của cùng một mốc
+ * chuyển. Bài đo nào cũng dựng kỳ vọng từ `NGUONG_KHONG_GAP` thì hạ ngưỡng về 4 sẽ không
+ * làm gì đỏ.
  *
  * Con số ở đây **gõ tay**, cố ý không dựng từ `tinhDaiGap` — đó là điều làm nó khác bài
  * đo trên trang thật: bài đo Playwright từng import chính hàm này cho vế kỳ vọng, và
@@ -80,15 +86,35 @@ test(`n ≤ ${NGUONG_KHONG_GAP} thì KHÔNG gập, hiện đủ`, () => {
   }
 });
 
-test(`n = ${NGUONG_KHONG_GAP + 1} là mốc bắt đầu gập, dải gập đúng 1 mốc`, () => {
+test("A11 — ngưỡng đúng bằng 5 (USER DUYỆT 2026-08-22, PLAN 5.5)", () => {
+  // Gõ tay con số, không đọc từ hằng: bài đo phải đỏ khi ai đó hạ nó về 4.
+  expect(NGUONG_KHONG_GAP).toBe(5);
+});
+
+test("A11 — n = 5 thì KHÔNG gập (dải gập 1 mốc là lỗ: giấu 1, tốn 2 dòng khung)", () => {
   const d = tinhDaiGap(5);
+  expect(d.gap).toBe(false);
+  expect([...d.seqHien]).toEqual([1, 2, 3, 4, 5]);
+});
+
+test("A11 — n = 6 là mốc bắt đầu gập, và gập ĐÚNG 2 mốc", () => {
+  // Đây là mạch VNM của seed (`entry_count = 6`): nó phải còn gập, nếu không thì bia mộ
+  // đặt trong dải gập ở `seed_dev` mất chỗ đứng và cả nhóm bài đo đó đo vào chỗ trống.
+  const d = tinhDaiGap(6);
   expect(d.gap).toBe(true);
   if (!d.gap) return;
-  expect([d.seqDau, d.seqCuoi]).toEqual([2, 2]);
-  expect(d.soMoc).toBe(1);
-  expect([...d.seqHien]).toEqual([1, 3, 4, 5]);
-  // Nhãn không được ra "Mốc 2–2" — đó là chuỗi không ai đọc ra nghĩa.
-  expect(nhanKhoangMoc(d)).toBe("Mốc 2");
+  expect([d.seqDau, d.seqCuoi]).toEqual([2, 3]);
+  expect(d.soMoc).toBe(2);
+  expect([...d.seqHien]).toEqual([1, 4, 5, 6]);
+  expect(nhanKhoangMoc(d)).toBe("Mốc 2–3");
+});
+
+test("A11 — mọi dải gập sinh ra đều giấu ÍT NHẤT 2 mốc", () => {
+  // Vế tổng quát của cùng một luật: ngưỡng chỉ là cách CÀI, còn đây là điều phải đúng.
+  for (let n = 0; n <= 40; n += 1) {
+    const d = tinhDaiGap(n);
+    if (d.gap) expect(d.soMoc, `n=${n}`).toBeGreaterThanOrEqual(2);
+  }
 });
 
 /** Mốc tối giản cho `tongBinhLuanTrongDai` — chỉ hai trường mà hàm đó đọc.

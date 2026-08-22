@@ -1,0 +1,33 @@
+/* Cột vote trái — bố cục Reddit. Hẹp, cao bằng hai dòng đầu của thẻ, không giãn theo
+ * thân bài: nó là một cái mép, không phải một cột nội dung. */
+.cot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding-top: 1px;
+  width: 30px;
+  flex: 0 0 30px;
+  user-select: none;
+}
+
+.mui_ten {
+  font-size: 11px;
+  line-height: 1;
+  padding: 2px 0;
+  width: 100%;
+  color: var(--ink-3);
+  /* Con trỏ "không cho phép" là nửa còn lại của lời giải thích: `title` chỉ hiện sau khi
+   * đứng yên một lúc, còn cái này thấy ngay lúc rê tới. */
+  cursor: not-allowed;
+}
+
+.diem {
+  font-family: var(--f-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--ink-2);
+}
+

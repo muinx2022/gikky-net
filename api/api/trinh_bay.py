@@ -95,6 +95,7 @@ def mach_tom_tat_ra(mach: Mach) -> MachTomTatOut:
         created_at=mach.created_at,
         last_entry_at=mach.last_entry_at,
         last_activity_at=mach.last_activity_at,
+        diem=mach.diem_bai_goc,
     )
 
 

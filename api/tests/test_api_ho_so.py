@@ -8,7 +8,7 @@ from django.utils import timezone
 from api.users import SO_MACH_TREN_HO_SO
 from core.ghi import tao_mach
 from core.models import Comment, Mach, Moc, Trich
-from tests.conftest import lay
+from tests.conftest import lay, viet
 
 pytestmark = pytest.mark.django_db
 
@@ -42,6 +42,53 @@ def test_duoc_trich_dem_theo_so_CHU_MACH_khac_nhau(client, seed):
     Trich.objects.create(moc=Moc.objects.get(mach=seed, seq=8), comment=them)
 
     assert lay(client, f"/api/v1/users/{nguoi_duoc_trich.username}")["duoc_trich"] == 1
+
+
+def test_TU_TRICH_khong_cong_vao_duoc_trich(client, seed):
+    """PLAN 5.6 rào 3, vế "KHÔNG tính tự trích" *(chốt 2026-08-22, vá V3)*.
+
+    Chủ mạch trích bình luận của **chính mình** thì chỉ số của họ không nhúc nhích. Rào 3
+    dựng lên để chặn "máy in địa vị"; tự trích là cái máy in ngắn nhất — không cần nick
+    thứ hai, không cần ai đồng ý, và ở một sản phẩm mà chủ mạch là người bấm nút trích
+    thì nó là đường đi rẻ nhất tới một con số đẹp.
+
+    Ghim cả hai đầu trong một bài: cùng một bình luận, người khác trích ⇒ `+1`; chính chủ
+    mạch trích ⇒ không. Bỏ `.exclude(moc__mach__author=user)` là vế thứ hai đỏ ngay.
+    """
+    chu_mach = seed.author
+    # Chủ mạch tự viết một bình luận trong mạch của mình rồi tự trích nó vào mốc 8.
+    cua_minh = viet(seed, chu_mach, "Tự ghi chữ của mình vào sổ của mình.")
+    truoc = lay(client, f"/api/v1/users/{chu_mach.username}")["duoc_trich"]
+    assert truoc == 0, "tiền đề: chủ mạch HPG chưa được ai trích"
+
+    Trich.objects.create(moc=Moc.objects.get(mach=seed, seq=8), comment=cua_minh)
+    assert lay(client, f"/api/v1/users/{chu_mach.username}")["duoc_trich"] == truoc
+
+    # …trong khi khối trích VẪN hiện đầy đủ trên thẻ mốc: luật này là luật ĐẾM, không
+    # phải luật che. Chủ mạch vẫn ghi được chữ của mình vào sổ, chỉ là không tự thưởng.
+    d = lay(client, f"/api/v1/machs/{seed.pk}")
+    assert any(
+        m["trich"] is not None and m["trich"]["comment_id"] == cua_minh.pk
+        for m in d["mocs"]
+    )
+
+
+def test_nguoi_KHAC_trich_thi_van_cong_du(client, seed, nguoi_khac):
+    """Chiều ngược của bài trên: `exclude` không được cắt quá tay.
+
+    Cùng một bình luận, cùng một cái mốc — chỉ khác chủ mạch là ai. Không có bài này thì
+    `duoc_trich = 0` cứng cũng xanh ở bài trên.
+    """
+    chu_mach = seed.author
+    cua_minh = viet(seed, chu_mach, "Tự ghi chữ của mình vào sổ của mình.")
+
+    # Một mạch KHÁC, chủ mạch KHÁC, trích đúng bình luận ấy vào mốc 1 của nó.
+    mach_khac, _ = tao_mach(
+        sub=seed.sub, author=nguoi_khac, title="Mạch của người khác", body="Mốc 1."
+    )
+    Trich.objects.create(moc=Moc.objects.get(mach=mach_khac, seq=1), comment=cua_minh)
+
+    assert lay(client, f"/api/v1/users/{chu_mach.username}")["duoc_trich"] == 1
 
 
 def test_trich_da_go_khong_tinh_vao_chi_so(client, seed):
@@ -201,3 +248,22 @@ def test_mach_tren_ho_so_moi_nhat_truoc(client, sub, tac_gia):
     d = lay(client, f"/api/v1/users/{tac_gia.username}")
     assert [m["id"] for m in d["machs"]] == [moi.pk, cu.pk]
     assert d["so_mach"] == 2
+
+
+def test_bon_chi_so_ve_0_khi_noi_dung_bi_an_SACH(client, seed):
+    """Tiền đề của W4: hồ sơ "không có chỉ số nào" **không** đồng nghĩa "chưa từng đăng".
+
+    Frontend ẩn cả khối chỉ số khi cả bốn con số bằng 0 (PLAN nguyên tắc 9), và bản A12
+    thay chỗ đó bằng câu *"Tài khoản này chưa đăng mạch hay bình luận nào."* — một khẳng
+    định về QUÁ KHỨ mà API không hề nói. Bài đo này dựng đúng ca phản chứng: một tác giả
+    có mạch, mốc, bình luận và trích, bị mod ẩn sạch, vẫn ra `0/0/0/0`.
+    """
+    truoc = lay(client, "/api/v1/users/ba_muoi_phien")
+    assert [truoc["so_mach"], truoc["so_moc"], truoc["so_binh_luan"]] != [0, 0, 0]
+
+    khi = timezone.now()
+    Mach.objects.filter(author__username="ba_muoi_phien").update(hidden_at=khi)
+    Comment.objects.filter(author__username="ba_muoi_phien").update(hidden_at=khi)
+
+    d = lay(client, "/api/v1/users/ba_muoi_phien")
+    assert [d["so_mach"], d["so_moc"], d["so_binh_luan"], d["duoc_trich"]] == [0, 0, 0, 0]

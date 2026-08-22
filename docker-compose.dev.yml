@@ -4,7 +4,7 @@
 # File này là tài sản của repo, dùng khi nào có Docker. Khi đó postgres của compose
 # nghe ở cổng 55432 (5432 đã bị PG17 local giữ) => phải đổi `DATABASE_URL` trong
 # `api/.env` sang:
-#   postgres://gikky:doi-mat-khau-nay@127.0.0.1:55432/gikky_dev
+#   postgres://gikky:<mật khẩu của bạn>@127.0.0.1:55432/gikky_dev
 #
 #   docker compose -f docker-compose.dev.yml up -d
 
@@ -17,7 +17,11 @@ services:
     environment:
       POSTGRES_DB: gikky_dev
       POSTGRES_USER: gikky
-      POSTGRES_PASSWORD: doi-mat-khau-nay
+      # KHÔNG có giá trị mặc định, và đó là chủ đích: repo này công khai, nên một mật
+      # khẩu ghi cứng ở đây là một chuỗi thật ai cũng đọc được — mà nó lại trùng mật
+      # khẩu role `gikky` trên máy dev. `:?` làm compose DỪNG kèm thông báo nếu thiếu,
+      # thay vì lặng lẽ dựng một DB bằng mật khẩu rỗng.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?đặt POSTGRES_PASSWORD trước khi up}
     ports:
       # 55432 phía host để không đụng PostgreSQL 17 local đang giữ 5432.
       - "55432:5432"
@@ -40,7 +44,7 @@ services:
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: gikky
-      MINIO_ROOT_PASSWORD: doi-mat-khau-nay
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?đặt MINIO_ROOT_PASSWORD trước khi up}
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -65,7 +69,7 @@ services:
       - -c
       - |
         set -e
-        mc alias set local http://minio:9000 gikky doi-mat-khau-nay
+        mc alias set local http://minio:9000 gikky "$$MINIO_ROOT_PASSWORD"
         mc mb --ignore-existing local/gikky-media
         cat > /tmp/cors.xml <<'XML'
         <CORSConfiguration>

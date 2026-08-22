@@ -15,6 +15,8 @@
 import { launch } from "chrome-launcher";
 import lighthouse from "lighthouse";
 
+import { docNguong } from "./lighthouse-nguong.mjs";
+
 const TITLE_HPG = "Nhật ký lệnh HPG — vào 27.80, không bán trước tháng 8";
 const WEB = process.env.E2E_BASE_URL ?? "http://localhost:3000";
 const API = process.env.E2E_API_ORIGIN ?? "http://localhost:8000";
@@ -28,8 +30,11 @@ async function urlMachSeed() {
   return `${WEB}/m/${m.slug}-${m.id}`;
 }
 
+// `docNguong` NÉM cho `""`/`"abc"` thay vì cho ra `NaN` (nợ #12): `diem < NaN` là
+// `false`, tức mọi điểm đều qua và lệnh exit 0 — một ngưỡng như thế không chặn được gì.
+// Đọc ngưỡng TRƯỚC khi mở Chrome: đối số sai thì không có lý do gì tốn 20 giây đo.
+const nguong = docNguong(process.argv[3]);
 const url = process.argv[2] ?? (await urlMachSeed());
-const nguong = Number(process.argv[3] ?? 90);
 
 const chrome = await launch({ chromeFlags: ["--headless=new", "--no-sandbox"] });
 try {

@@ -5,7 +5,7 @@ import type { MocOut } from "@gikky/api-client";
  * PLAN 5.5 (khối "Công thức dải gập, chốt 2026-08-22") chốt:
  *
  *     entry_count = n  ⇒  gập seq 2 … n−3, hiện seq 1, n−2, n−1, n
- *     n ≤ 4            ⇒  KHÔNG gập
+ *     n ≤ 5            ⇒  KHÔNG gập
  *
  * Vì sao file này tồn tại: cho tới 1b, công thức chỉ sống trong
  * `api/tests/test_seed_dev.py`. Hai chỗ định nghĩa là hai sự thật — cái thứ hai sẽ trôi
@@ -20,11 +20,22 @@ import type { MocOut } from "@gikky/api-client";
  * gập mất, phải bấm bung mới thấy.
  *
  * Câu *"2 mốc cuối"* của PLAN 5.5 là văn xuôi lỏng — thực tế hiện **ba** mốc cuối. PLAN
- * đã ghi chú lại chuyện đó và đánh dấu chờ user duyệt.
+ * đã ghi chú lại chuyện đó, và **user duyệt công thức này ngày 2026-08-22** kèm đúng một
+ * sửa: ngưỡng `NGUONG_KHONG_GAP` lên 5 (xem ngay dưới). Không còn dấu "chờ duyệt" nào
+ * trong PLAN 5.5 — đừng đi tìm.
  */
 
-/** Dưới ngưỡng này thì gập không còn giấu được gì đáng kể — hiện thẳng cả mạch. */
-export const NGUONG_KHONG_GAP = 4;
+/** Dưới-hoặc-bằng ngưỡng này thì gập không còn giấu được gì đáng kể — hiện thẳng cả mạch.
+ *
+ * **5, không phải 4** *(USER DUYỆT 2026-08-22, PLAN 5.5)*: chỉ gập khi giấu được **ít
+ * nhất 2 mốc**. Với `n = 5` công thức `2…n−3` cho dải gập đúng MỘT mốc — giấu một mốc
+ * sau một cái nút cao bằng chính nó, lại tốn thêm một dòng mồi bung. Đó là đổi một hàng
+ * nội dung lấy hai hàng khung, tức lỗ.
+ *
+ * Hệ quả kiểm được: `n = 6` (mạch VNM của seed) vẫn gập, và gập đúng 2 mốc (`2…3`).
+ * Ngưỡng 6 sẽ làm mạch đó hết gập và bài đo bia mộ trong dải gập mất chỗ đứng.
+ */
+export const NGUONG_KHONG_GAP = 5;
 
 export type DaiGap =
   | { readonly gap: false; readonly seqHien: readonly number[] }
@@ -70,8 +81,10 @@ export function trongDaiGap(dai: DaiGap, seq: number): boolean {
 
 /** Phần "Mốc 2–6" của nhãn dải gập.
  *
- * `n = 5` cho dải gập đúng MỘT mốc (`2…2`), và "Mốc 2–2" là cách viết không ai đọc ra
- * nghĩa. Một chỗ sinh chuỗi, một chỗ đọc.
+ * Nhánh `seqDau === seqCuoi` giữ lại **dù `tinhDaiGap` không còn sinh ra nó**: từ
+ * 2026-08-22 `NGUONG_KHONG_GAP = 5` nên dải gập luôn có ≥ 2 mốc. Nó ở lại vì "Mốc 2–2" là
+ * chuỗi không ai đọc ra nghĩa, và ngày nào ai đó hạ ngưỡng xuống 4 thì thứ hiện ra phải
+ * là "Mốc 2" chứ không phải một lỗi hiển thị mới. Một chỗ sinh chuỗi, một chỗ đọc.
  */
 export function nhanKhoangMoc(dai: DaiGap): string {
   if (!dai.gap) return "";

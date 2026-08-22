@@ -41,6 +41,39 @@
   background: var(--accent-soft);
 }
 
+/* Khối "Câu đáng đọc" — nền `--inset` + viền để tách khỏi cây đầy đủ ngay dưới nó.
+ *
+ * KHÔNG dùng hoàng thổ `--stamp` dù nó chứa cả bình luận "đã trích": PLAN 9.1 giao màu
+ * đó cho THỨ mang tính đóng dấu, và con dấu ở đây là khối trích trên thẻ mốc, không phải
+ * cái hộp gom lại. Tô hộp bằng cùng màu là làm loãng đúng tín hiệu khối trích sống nhờ. */
+.dang_doc {
+  margin-top: 16px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--inset);
+  padding: 12px 14px 4px;
+}
+
+.dang_doc_dau {
+  margin-bottom: 4px;
+}
+
+.dang_doc_tieu_de {
+  font-family: var(--f-ui);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  color: var(--ink-3);
+  margin: 0;
+}
+
+.dang_doc_giai_thich {
+  margin: 3px 0 0;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
 .thanh_sort {
   display: flex;
   flex-wrap: wrap;

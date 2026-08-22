@@ -36,9 +36,18 @@
   color: var(--ink-2);
 }
 
+/* Cột vote + thân, đúng bố cục Reddit. `min-width: 0` ở CẢ HAI tầng: thiếu nó thì một
+ * dải `figures` dài đẩy toàn bộ thẻ tràn ngang. */
 .trong {
   padding-top: 2px;
   min-width: 0;
+  display: flex;
+  gap: 8px;
+}
+
+.noi {
+  min-width: 0;
+  flex: 1;
 }
 
 .dau {
@@ -143,20 +152,14 @@
   max-width: 62ch;
 }
 
+/* Điểm mốc đã dời sang cột vote bên trái (`cot-vote.module.css`) — chân thẻ chỉ còn cái
+ * nút ngăn kéo. Giữ `flex` vì nút đó vẫn cần canh và vì Phase 2 sẽ thêm reaction vào đây. */
 .chan {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 13px;
   margin-top: 12px;
-}
-
-.diem {
-  font-family: var(--f-mono);
-  font-variant-numeric: tabular-nums;
-  font-size: 12.5px;
-  font-weight: 500;
-  color: var(--ink-2);
 }
 
 .bia_mo {
