@@ -76,16 +76,24 @@ def test_TU_TRICH_khong_cong_vao_duoc_trich(client, seed):
 def test_nguoi_KHAC_trich_thi_van_cong_du(client, seed, nguoi_khac):
     """Chiều ngược của bài trên: `exclude` không được cắt quá tay.
 
-    Cùng một bình luận, cùng một cái mốc — chỉ khác chủ mạch là ai. Không có bài này thì
-    `duoc_trich = 0` cứng cũng xanh ở bài trên.
+    Cùng một người viết, cùng một cái mốc-1 — chỉ khác chủ mạch là ai. Không có bài này
+    thì `duoc_trich = 0` cứng cũng xanh ở bài trên.
+
+    ⚠ **Bản trước dựng dữ liệu KHÔNG HỢP LỆ và Phase 2 mới chặn được**: nó lấy bình luận
+    `chu_mach` viết trong mạch HPG rồi trích vào mốc của một mạch khác. `Trich.clean()`
+    (nợ "Trich chéo mạch", trả ở Phase 2) nay từ chối đúng hàng đó — khối trích chéo mạch
+    sẽ render nội dung của một mạch khác lên thẻ mốc, kèm tên tác giả, trông y như thật.
+    Bài đo được dựng lại cho HỢP LỆ mà **giữ nguyên ý**: `chu_mach` bình luận **trong
+    mạch của người khác**, và người khác trích nó.
     """
     chu_mach = seed.author
-    cua_minh = viet(seed, chu_mach, "Tự ghi chữ của mình vào sổ của mình.")
 
-    # Một mạch KHÁC, chủ mạch KHÁC, trích đúng bình luận ấy vào mốc 1 của nó.
+    # Một mạch KHÁC, chủ mạch KHÁC. Bình luận nằm TRONG mạch đó — cùng mạch với cái mốc
+    # nhận trích, đúng ràng buộc của `Trich`.
     mach_khac, _ = tao_mach(
         sub=seed.sub, author=nguoi_khac, title="Mạch của người khác", body="Mốc 1."
     )
+    cua_minh = viet(mach_khac, chu_mach, "Chữ của tôi, trong sổ của người khác.")
     Trich.objects.create(moc=Moc.objects.get(mach=mach_khac, seq=1), comment=cua_minh)
 
     assert lay(client, f"/api/v1/users/{chu_mach.username}")["duoc_trich"] == 1

@@ -7,7 +7,9 @@ import { neoBinhLuan } from "@/lib/khan-dai";
 import { duongDanHoSo } from "@/lib/url";
 
 import css from "./binh-luan.module.css";
+import { CotVote } from "./cot-vote";
 import { GapNhanh } from "./gap-nhanh";
+import { HanhDongBinhLuan } from "./hanh-dong-binh-luan";
 import { ThanVan } from "./than-van";
 
 // `SAU_KHAN_DAI` / `SAU_NGAN_KEO` đã dời sang `lib/khan-dai.ts`: `idTrongTrang` phải
@@ -147,9 +149,28 @@ function NoiDung({ nut }: { nut: BinhLuanOut }) {
       </div>
       <ThanVan body={nut.body ?? ""} className={css.than} />
       <div className={css.chan}>
-        <span className={css.diem} data-testid="diem-binh-luan">
-          {diemCoDau(nut.score)}
-        </span>
+        {/* Cột vote của bình luận nằm NGANG (thẻ mốc thì dọc): khán đài dày, một cột dọc
+            cho mỗi dòng sẽ ăn hết bề ngang trên mobile. Vẫn CÙNG component, nên luật
+            "nói ra vì sao không bấm được" và luật lạc quan chỉ có đúng một bản.
+            `testIdDiem` giữ nguyên `diem-binh-luan` — con số vẫn ở đúng chỗ cũ, chỉ mọc
+            thêm hai mũi tên quanh nó. */}
+        <CotVote
+          diem={nut.score}
+          nhan={`bình luận của u/${nut.author?.username ?? ""}`}
+          cai_gi="binh-luan"
+          nam_ngang
+          testIdDiem="diem-binh-luan"
+          dich={{ loai: "comment", id: nut.id }}
+        />
+        {/* "Trả lời" + menu `⋯` (sửa/xoá). Client component: nó phải hỏi "cái này có
+            phải của tôi không", mà câu trả lời là dữ liệu per-user và không được nướng
+            vào HTML cache (PLAN 8.4 điểm 4). */}
+        <HanhDongBinhLuan
+          id={nut.id}
+          tacGia={nut.author?.username ?? null}
+          than={nut.body ?? ""}
+          daXoa={nut.trang_thai !== "binh_thuong"}
+        />
       </div>
     </>
   );

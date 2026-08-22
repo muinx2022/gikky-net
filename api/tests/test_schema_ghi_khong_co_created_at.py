@@ -11,9 +11,14 @@ tự đóng dấu giờ server của chính mình, và nhật ký "ghi-trước-
 ký viết sau khi biết kết quả. HTTP 201, không có gì đỏ, và bằng chứng sai nằm lại vĩnh
 viễn trong cuốn sổ mà cả sản phẩm dựa vào.
 
-**1b chưa có endpoint ghi nào**, nên phép kiểm áp lên schema thật hôm nay là VACUOUS. Đó
-chính là lý do file này kiểm hàm kiểm tra trước (đối chứng dương ở dưới): thứ được nghiệm
-thu hôm nay là *cái bẫy đã giăng và chạy được*, còn con mồi thì Phase 2 mới tới.
+**Phase 2 đã tới, và con mồi đã có mặt**: 11 endpoint ghi, 8 schema `*In`. Bài đo thật ở
+cuối file vì thế **không còn rỗng** — `test_bay_da_co_moi` ghim đúng chuyện đó, thay cho
+`test_ghi_ro_1b_chua_co_endpoint_ghi_nao` (bài đo cũ ĐỎ khi endpoint ghi đầu tiên xuất
+hiện; nó đã làm xong việc của nó và được gỡ ở Phase 2, đúng như docstring của nó dặn).
+
+Hai đối chứng dương ở giữa file thì **ở lại**: chúng chứng minh `truong_cam_trong_request_body`
+thật sự bắt được trường cấm, kể cả khi nó nằm ở tầng schema lồng nhau. Không có chúng thì
+hàm kiểm được phép `return []` vô điều kiện và cả file vẫn xanh.
 """
 
 import pytest
@@ -145,26 +150,25 @@ def test_hang_rao_KHONG_bat_nham_created_at_o_RESPONSE():
 
 @pytest.mark.django_db
 def test_api_v1_khong_co_schema_ghi_nao_nhan_created_at():
-    """Bài đo THẬT. Hôm nay 1b chưa có endpoint ghi nên nó chạy trên tập rỗng —
-    Phase 2 thêm `POST /machs` mà lỡ tay là nó đỏ ngay lần chạy đầu."""
+    """Bài đo THẬT — nay chạy trên tập KHÔNG rỗng (xem `test_bay_da_co_moi`)."""
     assert truong_cam_trong_request_body(api_v1.get_openapi_schema()) == []
 
 
-def test_ghi_ro_1b_chua_co_endpoint_ghi_nao():
-    """Ghim đúng tiền đề "hôm nay tập rỗng" — để mai kia nó thôi rỗng thì có chỗ biết.
+def test_bay_da_co_moi():
+    """Chống bài đo trên rỗng: phải có endpoint ghi THẬT để nó soi.
 
-    Bài này ĐỎ khi Phase 2 thêm endpoint ghi đầu tiên. Đó là chủ đích: người thêm phải
-    quay lại đây, đọc cả file, rồi mới xoá nó — thay vì mặc nhiên tin rằng hàng rào ở
-    trên vẫn còn đang canh cái gì đó.
+    Thay chân cho `test_ghi_ro_1b_chua_co_endpoint_ghi_nao` (đã gỡ ở Phase 2). Bài cũ hỏi
+    *"đã có con mồi chưa"* để người ta biết bẫy còn rỗng; bài này hỏi ngược lại —
+    **bẫy còn con mồi để canh không** — vì đó mới là câu hỏi đúng từ Phase 2 trở đi.
+    Ai gỡ hết endpoint ghi (hoặc đổi chúng sang nhận `Form`/`File` không sinh
+    `requestBody` JSON) thì bài trên xanh vô điều kiện, và bài này đỏ để nói ra.
     """
     schema = api_v1.get_openapi_schema()
-    method_ghi = [
+    co_than_json = [
         f"{m.upper()} {duong}"
         for duong, ops in schema["paths"].items()
-        for m in ops
-        if m.lower() in {"post", "put", "patch", "delete"}
+        for m, op in ops.items()
+        if m.lower() in {"post", "put", "patch"}
+        and "application/json" in ((op.get("requestBody") or {}).get("content") or {})
     ]
-    assert method_ghi == [], (
-        "1b là phase ĐỌC. Có endpoint ghi rồi thì xoá bài đo này và đọc lại cả file "
-        f"trước khi làm gì khác: {method_ghi}"
-    )
+    assert len(co_than_json) >= 8, co_than_json

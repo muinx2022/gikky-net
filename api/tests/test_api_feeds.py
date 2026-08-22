@@ -12,7 +12,7 @@ import pytest
 from django.utils import timezone
 
 from core.ghi import tao_mach, them_moc
-from core.models import Mach, Sub
+from core.models import Mach, Moc, Sub
 from tests.conftest import lay
 
 pytestmark = pytest.mark.django_db
@@ -247,6 +247,10 @@ def test_the_feed_du_truong_cho_1c(client, seed):
         # Phase 1d: cột vote của thẻ feed đọc điểm MỐC 1, không phải tổng điểm mạch
         # (PLAN 5.7 — vote nằm trên từng mốc riêng rẽ).
         "diem",
+        # Phase 2: đích của mũi tên vote. Thẻ feed không có `mocs`, nên nó cần `id` của
+        # mốc 1 để gọi `POST /votes` — không có nó thì mũi tên trên feed là nút chết.
+        "moc_1_id",
     }
+    assert the["moc_1_id"] == Moc.objects.get(mach=seed, seq=1).pk
     assert the["ket_qua"] == "+18.2% · 163 ngày"
     assert the["author"]["display_name"] == "Ba Mươi Phiên"

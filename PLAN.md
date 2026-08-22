@@ -465,26 +465,27 @@ Lỗi `{detail, code}`.
 
 | Method & path | Việc | Ghi chú |
 |---|---|---|
-| `POST /auth/*` | allauth headless: email, Google OAuth | |
+| `POST /api/_allauth/browser/v1/auth/*` | allauth headless: đăng ký · đăng nhập · đăng xuất · xác thực email · quên/đổi mật khẩu · Google OAuth | *(chốt Phase 2, 2026-08-22)* **không** nằm dưới `/api/v1` — đó là URLconf của allauth, mount nguyên khối ở `/api/_allauth/`. `HEADLESS_CLIENTS = ("browser",)` ⇒ chỉ session cookie. Redirect URI Google của bản headless là `/api/_allauth/browser/v1/auth/provider/callback`, **không** phải `/api/accounts/google/login/callback/` |
+| `GET /me` | phiên hiện tại: `dang_nhap`, `username`, `display_name`, `email`, `email_da_xac_thuc`, `la_staff`, `google_bat` | *(thêm Phase 2, 2026-08-22)* khách nhận **200** kèm `dang_nhap:false`, không phải 401. Per-user tuyệt đối — **không cache** (8.4 điểm 4). `google_bat=false` ⇒ trang đăng nhập **không render** nút Google (mục 4) |
 | `GET /feeds/moi`, `GET /feeds/dang-dien-ra` | 2 feed, cursor keyset | `?sub=` lọc |
 | `GET /subs/{slug}` | header trang chuyên mục: `ten`, `mo_ta`, `so_mach`, `created_at` | *(thêm Phase 1d, 2026-08-22)* chỉ đọc, không per-user; slug lạ → 404 |
 | `GET /subs` | liệt kê MỌI sub, sắp theo `slug` | *(thêm Phase 1d vá, 2026-08-22)* sidebar + `sitemap.ts` phải hỏi đây, **cấm ghi cứng danh sách slug ở frontend** — sub thứ ba mở ra mà vắng mặt im lặng ở cả hai chỗ là đúng loài hỏng nợ #11 vừa được vá để diệt |
-| `POST /machs` | tạo bài (= mốc 1) | |
+| `POST /machs` | tạo bài (= mốc 1) | *(Phase 2)* ai đăng nhập cũng được; `sub` là **slug**; tác giả nhận sẵn +1 của mình (5.7) |
 | `GET /machs/{id}` | mach + mốc + `face` server đã tính + spine | **không chứa gì per-user** (cache được) |
 | `GET /machs/{id}/me` | trạng thái CỦA VIEWER: my_votes, my_reactions, following, last_seen_entry_seq | client fetch sau khi trang cached render — dữ liệu per-user KHÔNG được nướng vào page cache (8.4) |
-| `POST /machs/{id}/mocs` | nối mốc | rate 3/ngày VN, chỉ author, open + không khoá |
-| `PATCH /mocs/{id}` · `DELETE` | sửa (5 trường ở 5.2; revision nếu >15ph) · bia mộ | |
+| `POST /machs/{id}/mocs` | nối mốc | rate 3/ngày VN, chỉ author, open + không khoá. *(Phase 2)* mã lỗi riêng cho từng ca: `khong_phai_chu` 403 · `mach_bi_khoa` 403 · `mach_da_dong` 409 · `qua_han_muc_moc` 429 |
+| `PATCH /mocs/{id}` · `DELETE` | sửa (5 trường ở 5.2; revision nếu >15ph) · bia mộ | *(Phase 2)* **chỉ `Moc.author`**; PATCH thật (trường vắng = không đổi); `DELETE` trả về chính thẻ mốc ở dạng bia mộ, không 204 |
 | `GET /mocs/{id}/revisions` | danh sách bản cũ cho UI diff | |
 | `GET /machs/{id}/comments` | khán đài `?sort=hay_nhat\|moi_nhat\|cu_nhat`; hay_nhat = 1 trang 50 + "xem thêm", 2 sort kia cursor keyset | server sort, trả cây đã dựng |
 | `GET /mocs/{id}/comments` | lát cắt ngăn kéo, cũ→mới | |
-| `POST /machs/{id}/comments` | viết bình luận | parent?, anchor_moc_seq? (nullable), body |
-| `PATCH /comments/{id}` · `DELETE` | sửa (dấu *đã sửa*) · xoá theo luật 5.3 | |
-| `POST /votes` | vote/đổi/rút | value ∈ {−1,0,1}; transaction cập nhật counts |
-| `POST /mocs/{id}/reactions` | react/đổi/rút | |
+| `POST /machs/{id}/comments` | viết bình luận | parent?, anchor_moc_seq? (nullable), body. *(Phase 2)* ai đăng nhập cũng được, **mạch đóng sổ vẫn viết được**; `anchor` kèm `parent` ⇒ 400; người viết nhận sẵn +1 của mình |
+| `PATCH /comments/{id}` · `DELETE` | sửa (dấu *đã sửa*) · xoá theo luật 5.3 | *(Phase 2)* **chỉ `Comment.author`**, kể cả chủ mạch cũng không sửa được lời người khác. `DELETE` trả `{id, xoa_that}`: `false` = ở lại làm bia mộ; xoá thật thì **dọn `Vote` mồ côi** cùng transaction |
+| `POST /votes` | vote/đổi/rút | value ∈ {−1,0,1}; transaction cập nhật counts. *(Phase 2)* trả về con số MỚI của đích cho UI lạc quan; `up_count`/`down_count` là `null` với đích là mốc (mốc chỉ có `score`) |
+| `POST /mocs/{id}/reactions` | react/đổi/rút | *(Phase 2)* `emoji=null` là rút; trả `dem` **đủ 5 khoá kể cả khoá 0** |
 | `POST /mocs/{id}/trich` · `DELETE` | trích/gỡ | 4 rào 5.6 |
 | `POST /machs/{id}/follow` · `DELETE` | theo/bỏ | |
 | `POST /machs/{id}/seen` | cập nhật last_seen_entry_seq | gọi khi mở trang |
-| `POST /machs/{id}/close` · `/reopen` | đóng sổ (kèm ket_qua?) / mở lại ≤7 ngày | |
+| `POST /machs/{id}/close` · `/reopen` | đóng sổ (kèm ket_qua?) / mở lại ≤7 ngày | *(Phase 2)* **chỉ author**; đóng lần hai ⇒ 409 `mach_da_dong` (nếu không, bấm hai lần là dời hạn 7 ngày); mở lại **xoá `ket_qua`** |
 | `GET /notifications` · `POST /notifications/read` | chuông poll 60s | |
 | `POST /media/presign` · `POST /media/confirm` | flow upload 8.5 | Phase 5 |
 | `POST /reports` | báo cáo | |

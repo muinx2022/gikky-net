@@ -13,10 +13,11 @@ import css from "./the-mach.module.css";
  *
  * Ba thứ 1d đổi:
  *
- * 1. **cột vote bên trái** (`CotVote`, mũi tên `disabled` kèm lý do) — con số là
- *    `mach.diem`, tức điểm của MỐC 1. PLAN 5.7 chốt vote nằm trên từng mốc riêng rẽ nên
- *    không tồn tại "điểm của mạch"; thẻ feed chiếu điểm bài gốc, đúng như Reddit chiếu
- *    điểm của bài;
+ * 1. **cột vote bên trái** (`CotVote`) — con số là `mach.diem`, tức điểm của MỐC 1.
+ *    PLAN 5.7 chốt vote nằm trên từng mốc riêng rẽ nên không tồn tại "điểm của mạch";
+ *    thẻ feed chiếu điểm bài gốc, đúng như Reddit chiếu điểm của bài. **Từ Phase 2 mũi
+ *    tên SỐNG**, và đích của nó là `mach.moc_1_id` — thẻ feed không có `mocs` nên nó cần
+ *    `id` ấy đi kèm, nếu không cái nút là nút chết;
  * 2. `💬 N` là **link thật** dẫn thẳng vào khán đài đang mở, không còn là một dòng chữ.
  *    Trên Reddit đó là lối vào chính của một thẻ, và ở đây nó cũng là lối duy nhất tới
  *    khán đài mà không phải cuộn hết nhật ký;
@@ -33,7 +34,12 @@ export function TheMach({ mach }: { mach: MachTomTatOut }) {
   const hien_so_dem = nenHienSoDem(mach.comment_count);
   return (
     <li className={css.the} data-testid="the-mach" data-mach-id={mach.id}>
-      <CotVote diem={mach.diem} nhan={mach.title} cai_gi="mach" />
+      <CotVote
+        diem={mach.diem}
+        nhan={mach.title}
+        cai_gi="mach"
+        dich={mach.moc_1_id === null ? null : { loai: "moc", id: mach.moc_1_id }}
+      />
       <div className={css.than}>
         <div className={css.dau}>
           {/* Bốn nút mang dấu `CHU_NGUOI_DUNG` trong thẻ này (Y3): slug sub, tên tác giả,

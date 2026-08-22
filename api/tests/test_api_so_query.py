@@ -29,15 +29,21 @@ pytestmark = pytest.mark.django_db
 #: Nó là MỘT truy vấn cho cả mạch, không phải một truy vấn cho mỗi bình luận; hai bài
 #: chống-rỗng ở cuối file là thứ chứng minh chỗ đó.
 #: `/revisions` = 2: mốc · bản cũ.
-#: Hồ sơ = 6: user · danh sách mạch · 4 phép đếm trên 4 bảng khác nhau.
+#: Hồ sơ = 7: user · danh sách mạch · `moc_1_id` theo lô · 4 phép đếm trên 4 bảng.
+#: Feed = 2: trang mạch · **`moc_1_id` theo lô**.
+#:
+#: Truy vấn `moc_1_id` vào ở **Phase 2**: thẻ feed cần `id` của mốc 1 làm đích cho mũi tên
+#: vote (`POST /votes`). Nó là MỘT truy vấn cho cả trang, không phải một truy vấn mỗi thẻ
+#: — và đó chính là thứ `test_them_mach_KHONG_lam_tang_so_query_cua_feed` ở cuối file
+#: chứng minh: 22 thẻ vẫn đúng con số này.
 SO_QUERY = {
     "xem_mach": 4,
     "khan_dai": 3,
     "ngan_keo": 3,
     "revisions": 2,
-    "feed": 1,
-    "feed_co_sub": 2,
-    "ho_so": 6,
+    "feed": 2,
+    "feed_co_sub": 3,
+    "ho_so": 7,
 }
 
 

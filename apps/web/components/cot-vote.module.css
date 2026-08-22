@@ -17,9 +17,36 @@
   padding: 2px 0;
   width: 100%;
   color: var(--ink-3);
+  background: none;
+  border: 0;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.mui_ten:hover:not(:disabled) {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* Mũi tên ĐANG là phiếu của tôi. Dùng `--accent` chứ không phải xanh/đỏ lãi lỗ: PLAN
+ * 9.1 cấm hai màu ấy ngoài con số lãi/lỗ, và một cái nút đang được chọn không phải là
+ * một con số lãi lỗ. */
+.chon {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.mui_ten:disabled {
   /* Con trỏ "không cho phép" là nửa còn lại của lời giải thích: `title` chỉ hiện sau khi
    * đứng yên một lúc, còn cái này thấy ngay lúc rê tới. */
   cursor: not-allowed;
+}
+
+.loi {
+  font-size: 10px;
+  line-height: 1.25;
+  color: var(--ink-2);
+  text-align: center;
 }
 
 .diem {
@@ -31,3 +58,19 @@
   color: var(--ink-2);
 }
 
+
+/* Biến thể NGANG cho bình luận — xem CotVote prop `nam_ngang`. Cùng component, khác
+   trục: khán đài dày nên một cột dọc cho mỗi dòng ăn hết bề ngang trên mobile. */
+.ngang {
+  flex-direction: row;
+  align-items: center;
+  gap: 3px;
+  width: auto;
+  flex: 0 0 auto;
+  padding-top: 0;
+}
+
+.ngang .mui_ten {
+  width: auto;
+  padding: 2px 5px;
+}

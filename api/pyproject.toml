@@ -8,6 +8,11 @@ dependencies = [
     "django-ninja>=1.3",
     "psycopg[binary]>=3.2",
     "django-environ>=0.11",
+    # Tài khoản (Phase 2). `[socialaccount]` kéo theo `requests`/`python3-openid` cho
+    # provider Google — provider chỉ được ĐĂNG KÝ khi có `GOOGLE_CLIENT_ID` trong env
+    # (xem `config/settings.py`), nhưng gói thì phải có sẵn để `INSTALLED_APPS` nạp được
+    # `allauth.socialaccount` một cách vô điều kiện.
+    "django-allauth[socialaccount]>=65.4",
 ]
 
 [project.optional-dependencies]

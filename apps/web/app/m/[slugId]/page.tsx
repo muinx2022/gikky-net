@@ -13,6 +13,7 @@ import { BaoCursorHong } from "@/components/bao-cursor-hong";
 import { DaiGapBung } from "@/components/dai-gap";
 import { JsonLd } from "@/components/json-ld";
 import { KhanDai, LoiMoiBungKhanDai } from "@/components/khan-dai";
+import { MachProvider } from "@/components/mach-ngu-canh";
 import { NganKeoProvider } from "@/components/ngan-keo";
 import { TheMoc } from "@/components/the-moc";
 import {
@@ -220,6 +221,17 @@ export default async function TrangMach({
   return (
     <main className={css.khung}>
       <JsonLd duLieu={jsonLdMach(mach)} />
+      {/* Ba sự thật về mạch, chia cho mọi widget CLIENT nằm sâu bên trong (cột vote,
+          composer, menu `⋯`). Provider là client component nhưng children của nó vẫn là
+          server component — trang mạch không bị kéo sang client. Xem
+          `components/mach-ngu-canh.tsx` để biết vì sao không xâu prop. */}
+      <MachProvider
+        gia_tri={{
+          machId: mach.id,
+          khoa: mach.locked,
+          chuMach: mach.author.username,
+        }}
+      >
       <article className={css.the}>
         <header className={css.dau}>
           <BannerMach mach={mach} />
@@ -311,6 +323,7 @@ export default async function TrangMach({
           />
         )}
       </article>
+      </MachProvider>
     </main>
   );
 }

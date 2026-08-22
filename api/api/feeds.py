@@ -38,7 +38,7 @@ from api.phan_trang import (
     ma_hoa_cursor_so,
 )
 from api.schemas import FeedOut, SubChiTietOut
-from api.trinh_bay import mach_tom_tat_ra
+from api.trinh_bay import mach_tom_tat_ra, moc_1_theo_mach
 
 router = Router()
 
@@ -58,6 +58,17 @@ SORT_TU_NHIEN, SORT_NHIEU_DIEM = SORT_FEED_HOP_LE
 #: Khoá keyset của sort Top. Cặp `(điểm, id)` chứ không mình điểm — điểm trùng nhau là
 #: chuyện thường (mọi mạch chưa ai vote đều `0`).
 TRUONG_DIEM = "diem_bai_goc"
+
+
+def _the_ra(trang) -> list:
+    """Một trang mạch → danh sách thẻ, `moc_1_id` nạp theo LÔ bằng MỘT truy vấn.
+
+    Thẻ feed cần `moc_1_id` làm đích cho mũi tên vote (Phase 2). Hỏi lẻ từng thẻ là N+1
+    trên mọi feed và nó không đỏ ở đâu cả, chỉ chậm dần theo số thẻ — nên phép gom nằm ở
+    đây, và `mach_tom_tat_ra` cố ý không tự truy vấn.
+    """
+    theo_mach = moc_1_theo_mach(trang)
+    return [mach_tom_tat_ra(m, moc_1_id=theo_mach.get(m.pk)) for m in trang]
 
 
 def _mach_hien(sub: str | None) -> QuerySet:
@@ -88,9 +99,7 @@ def _trang(qs: QuerySet, *, truong: str, cursor: str | None, limit: int):
         if con_nua and trang
         else None
     )
-    return FeedOut(
-        items=[mach_tom_tat_ra(m) for m in trang], cursor_ke_tiep=ke_tiep
-    ), None
+    return FeedOut(items=_the_ra(trang), cursor_ke_tiep=ke_tiep), None
 
 
 def _trang_diem(qs: QuerySet, *, cursor: str | None, limit: int):
@@ -129,9 +138,7 @@ def _trang_diem(qs: QuerySet, *, cursor: str | None, limit: int):
         if con_nua and trang
         else None
     )
-    return FeedOut(
-        items=[mach_tom_tat_ra(m) for m in trang], cursor_ke_tiep=ke_tiep
-    ), None
+    return FeedOut(items=_the_ra(trang), cursor_ke_tiep=ke_tiep), None
 
 
 def _kiem_sub(sub: str | None):

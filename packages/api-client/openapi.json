@@ -1,6 +1,45 @@
 {
   "components": {
     "schemas": {
+      "BinhLuanMoiIn": {
+        "description": "Viết bình luận — `POST /machs/{id}/comments` (PLAN 5.4, nguyên tắc 4 và 6).\n\n`anchor_moc_seq` **chỉ đặt được trên bình luận gốc**: reply kế thừa neo của gốc, nên\ngửi kèm `parent_id` là 400 chứ không phải bỏ qua im lặng — bỏ qua im lặng là cách một\nbình luận biến mất khỏi ngăn kéo mà không ai hiểu tại sao.\n\nGốc mang `anchor_moc_seq = null` nghĩa là người viết **đã gỡ chip** — không thuộc ngăn\nkéo nào. Đó là một lựa chọn, không phải dữ liệu thiếu.",
+        "properties": {
+          "anchor_moc_seq": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Anchor Moc Seq"
+          },
+          "body": {
+            "maxLength": 10000,
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          }
+        },
+        "required": [
+          "body"
+        ],
+        "title": "BinhLuanMoiIn",
+        "type": "object"
+      },
       "BinhLuanOut": {
         "description": "Một nút trong cây bình luận. Server dựng cây và sắp sibling (PLAN mục 7).\n\nKhi `trang_thai != \"binh_thuong\"` thì đây là **bia mộ giữ chỗ**: `author`, `body`,\n`edited_at` là `null`; `up_count`, `down_count`, `score` về `0`; còn `la_chu_mach` và\n`tu_gap` về `false`. **`id`, `parent_id`, `depth`, `anchor_moc_seq`, `created_at` vẫn\nlà giá trị THẬT** — đó là cách 1c dựng được nút \"nhảy tới khán đài\" từ\n`TrichOut.comment_id`. Nút như vậy xuất hiện khi nó còn **con sống\nsót** trong `replies`, **hoặc** khi `trang_thai = \"da_xoa\"` và bình luận đã TỪNG được\nchủ mạch trích vào sổ — kể cả trích đã gỡ (PLAN 5.3). Không dính vế nào thì nó biến\nmất hẳn.\n\n\"Con sống sót\" **không** đồng nghĩa \"con đọc được\": con ấy có thể tự nó là bia mộ,\nđược giữ nhờ vế thứ hai. Hệ quả, và đây là hành vi đúng chứ không phải lỗi: một thread\ncó thể trả về **toàn bia mộ, không một chữ nội dung nào**, và nó vẫn chiếm một chỗ\ntrong `tong_thread` lẫn một slot trong trang của khán đài. Đừng đọc \"thread\" thành\n\"thread có nội dung\".\n\nVế thứ hai chỉ áp cho `\"da_xoa\"`. Bình luận bị **mod ẩn** mà không còn con sống sót\nthì biến mất kể cả khi từng được trích: `MocOut.trich` cũng biến mất trong ca đó, nên\ngiữ lại bia mộ là giữ chỗ cho một liên kết không còn đầu kia.\n\n`depth` 1-based: bình luận gốc là 1. UI render tối đa 6 tầng rồi \"tiếp tục thread →\",\nnhưng API trả đủ cây (PLAN 5.3).",
         "properties": {
@@ -129,6 +168,41 @@
         "title": "BinhLuanOut",
         "type": "object"
       },
+      "BinhLuanSuaIn": {
+        "description": "Sửa bình luận — `PATCH /comments/{id}`. Chỉ `body` (PLAN 5.3).",
+        "properties": {
+          "body": {
+            "maxLength": 10000,
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          }
+        },
+        "required": [
+          "body"
+        ],
+        "title": "BinhLuanSuaIn",
+        "type": "object"
+      },
+      "DongSoIn": {
+        "description": "Đóng sổ — `POST /machs/{id}/close`. `ket_qua` tuỳ chọn, ≤40 ký tự (PLAN 5.1).\n\nThuần hiển thị, không validate ngữ nghĩa — cùng triết lý với `figures`.",
+        "properties": {
+          "ket_qua": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ket Qua"
+          }
+        },
+        "title": "DongSoIn",
+        "type": "object"
+      },
       "FeedOut": {
         "description": "Một trang feed. `cursor_ke_tiep = null` nghĩa là hết.\n\n**Cursor mang khoá của ĐÚNG sort đã sinh ra nó** (plan con 1d §2.1): `sort=nhieu_diem`\ntrả cursor `(diem, id)`, hai sort thời gian trả cursor `(thời điểm, id)`. Đem cursor\ncủa sort này sang sort kia là 400 `cursor_khong_hop_le`, không phải trang 1 im lặng.",
         "properties": {
@@ -156,6 +230,29 @@
           "cursor_ke_tiep"
         ],
         "title": "FeedOut",
+        "type": "object"
+      },
+      "FigureIn": {
+        "description": "Một cặp trong dải số của mốc. Thuần hiển thị — server không validate ngữ nghĩa.",
+        "properties": {
+          "label": {
+            "maxLength": 24,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          },
+          "value": {
+            "maxLength": 24,
+            "minLength": 1,
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "value"
+        ],
+        "title": "FigureIn",
         "type": "object"
       },
       "FigureOut": {
@@ -252,6 +349,25 @@
           "machs"
         ],
         "title": "HoSoOut",
+        "type": "object"
+      },
+      "KetQuaXoaOut": {
+        "description": "Kết quả `DELETE /comments/{id}` — PLAN 5.3.\n\n`xoa_that = false` nghĩa là bình luận **ở lại làm bia mộ** \"[đã xoá]\" vì nó còn reply\ncon **hoặc đã TỪNG được trích vào sổ** (kể cả trích đã gỡ). UI phải render lại nút đó\nthành bia mộ chứ không gỡ nó khỏi cây — gỡ đi là làm mồ côi cả nhánh con.",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "xoa_that": {
+            "title": "Xoa That",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "xoa_that"
+        ],
+        "title": "KetQuaXoaOut",
         "type": "object"
       },
       "KhanDaiOut": {
@@ -461,6 +577,87 @@
         "title": "MachChiTietOut",
         "type": "object"
       },
+      "MachMoiIn": {
+        "description": "Đăng bài — `POST /machs`. Bài gốc **chính là mốc 1**, nên nó kế thừa `MocMoiIn`.\n\nKhông có trường `body` trên `Mach` (PLAN 5.1): `body` ở đây là thân của mốc 1.",
+        "properties": {
+          "body": {
+            "maxLength": 10000,
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          },
+          "figures": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FigureIn"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Figures"
+          },
+          "loai": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Loai"
+          },
+          "occurred_at": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred At"
+          },
+          "question_for_crowd": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question For Crowd"
+          },
+          "sub": {
+            "description": "slug của chuyên mục",
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Sub",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "body",
+          "sub",
+          "title"
+        ],
+        "title": "MachMoiIn",
+        "type": "object"
+      },
       "MachTomTatOut": {
         "description": "Một mạch ở mức thẻ feed / danh sách hồ sơ.\n\n**`comment_count` là số bình luận ĐỌC ĐƯỢC, không phải số dòng khán đài sẽ render.**\nBình luận đã xoá hoặc bị ẩn không được đếm, nhưng vẫn để lại bia mộ giữ chỗ khi chúng\ncòn reply — nên khán đài có thể hiện 24 dòng trong khi con số này nói 22. Đó là chủ\nđích, đừng \"sửa\" cho khớp.\n\n**`last_activity_at` có thể NHỎ HƠN `last_entry_at`.** Hai cột đo hai thứ khác nhau:\n`last_entry_at` đo cấu trúc (mọi mốc, kể cả mốc bị ẩn), `last_activity_at` đo nội\ndung đọc được. Hệ quả nhìn thấy được: một mạch đứng đầu feed \"Đang diễn ra\" mà mở ra\nlà mặt CẶN.\n\n**`diem` là điểm của MỐC 1, không phải tổng điểm của mạch.** PLAN 5.7 chốt vote nằm\ntrên từng mốc riêng rẽ (\"mốc 9 được 412 dù bài gốc 89\"), nên không tồn tại con số\n\"điểm của mạch\"; cột vote trên thẻ feed chiếu đúng điểm bài gốc. Mốc 1 đã xoá hoặc bị\nmod ẩn ⇒ `0`, cùng chuẩn với `MocOut.score` của bia mộ.",
         "properties": {
@@ -509,6 +706,17 @@
             "title": "Last Entry At",
             "type": "string"
           },
+          "moc_1_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Moc 1 Id"
+          },
           "slug": {
             "title": "Slug",
             "type": "string"
@@ -538,9 +746,76 @@
           "created_at",
           "last_entry_at",
           "last_activity_at",
-          "diem"
+          "diem",
+          "moc_1_id"
         ],
         "title": "MachTomTatOut",
+        "type": "object"
+      },
+      "MocMoiIn": {
+        "description": "Nối một mốc vào mạch — `POST /machs/{id}/mocs` (PLAN 5.1, 5.2).\n\n`occurred_at` là ngày **sự việc xảy ra**: nhập lùi thoải mái, **cấm tương lai**, và\n\"tương lai\" tính theo **ngày lịch VN** (PLAN mục 1). Không gửi ⇒ server lấy hôm nay\ngiờ VN.",
+        "properties": {
+          "body": {
+            "maxLength": 10000,
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          },
+          "figures": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FigureIn"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Figures"
+          },
+          "loai": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Loai"
+          },
+          "occurred_at": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred At"
+          },
+          "question_for_crowd": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question For Crowd"
+          }
+        },
+        "required": [
+          "body"
+        ],
+        "title": "MocMoiIn",
         "type": "object"
       },
       "MocOut": {
@@ -770,6 +1045,76 @@
         "title": "MocRevisionsOut",
         "type": "object"
       },
+      "MocSuaIn": {
+        "description": "Sửa mốc — `PATCH /mocs/{id}`. **Đúng 5 trường của PLAN 5.2, không gì khác.**\n\nĐây là PATCH thật: trường **không gửi** thì không đổi, trường gửi `null` thì xoá.\nPhân biệt hai ca đó bằng `model_fields_set` của pydantic, nên đừng đổi `None` mặc\nđịnh thành một sentinel khác — `api/mocs.py` đọc đúng cơ chế ấy.",
+        "properties": {
+          "body": {
+            "anyOf": [
+              {
+                "maxLength": 10000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Body"
+          },
+          "figures": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FigureIn"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Figures"
+          },
+          "loai": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Loai"
+          },
+          "occurred_at": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred At"
+          },
+          "question_for_crowd": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question For Crowd"
+          }
+        },
+        "title": "MocSuaIn",
+        "type": "object"
+      },
       "NganKeoOut": {
         "description": "Lát cắt bình luận neo vào một mốc — PLAN 5.4.\n\nChứa các thread có bình luận **gốc** neo mốc này, **cả thread**, gồm reply viết ở bất\nkỳ thời điểm nào. Sắp cũ → mới và **không cho chỉnh** — ngăn kéo là cửa sổ, không\nphải phòng (luật 2).\n\nMốc chưa có bình luận nào trả `threads: []` và `so_binh_luan: 0`; UI **không** hiện\n\"💬 0\" mà hiện lời mời cùng `question_for_crowd` nếu có (luật 4).",
         "properties": {
@@ -831,6 +1176,58 @@
           "display_name"
         ],
         "title": "NguoiDungTomTatOut",
+        "type": "object"
+      },
+      "ReactionIn": {
+        "description": "React / đổi / rút — `POST /mocs/{id}/reactions` (PLAN 5.7).\n\nBộ CỐ ĐỊNH `len · xuong · lua · bang · trung` (📈📉🔥🧊🎯). `emoji = null` là **rút**.",
+        "properties": {
+          "emoji": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emoji"
+          }
+        },
+        "title": "ReactionIn",
+        "type": "object"
+      },
+      "ReactionOut": {
+        "description": "Kết quả một lượt reaction — `POST /mocs/{id}/reactions`. `emoji = null` là đã rút.",
+        "properties": {
+          "dem": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Dem",
+            "type": "object"
+          },
+          "emoji": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emoji"
+          },
+          "moc_id": {
+            "title": "Moc Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "moc_id",
+          "emoji",
+          "dem"
+        ],
+        "title": "ReactionOut",
         "type": "object"
       },
       "SpineOut": {
@@ -921,6 +1318,71 @@
         "title": "SubTomTatOut",
         "type": "object"
       },
+      "ToiOut": {
+        "description": "`GET /me` — người đang đăng nhập là ai (thêm ở Phase 2, PLAN mục 7).\n\n**Không cache được, và không được nướng vào page cache** (PLAN 8.4 điểm 4): đây là\nresponse per-user thuần tuý. Khác `GET /machs/{id}/me` ở chỗ nó không phụ thuộc mạch\nnào — header cần biết \"ai đang đăng nhập\" trên MỌI trang.\n\nKhách chưa đăng nhập nhận **200** kèm `dang_nhap = false`, không phải 401: header là\nthứ render trên mọi trang, và một endpoint trả lỗi cho trạng thái bình thường nhất của\nhệ thống sẽ đẩy frontend vào chỗ phải coi lỗi là chuyện thường.\n\n`google_bat` là **cấu hình server**, không phải trạng thái người dùng, và nó nằm ở đây\nvì đúng một lý do: PLAN mục 4 cấm nút vĩnh viễn không bấm được, nên trang đăng nhập\nphải biết có nên **render** nút Google hay không — `false` ⇒ nút **vắng mặt**, không\nphải `disabled`.",
+        "properties": {
+          "dang_nhap": {
+            "title": "Dang Nhap",
+            "type": "boolean"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "email_da_xac_thuc": {
+            "title": "Email Da Xac Thuc",
+            "type": "boolean"
+          },
+          "google_bat": {
+            "title": "Google Bat",
+            "type": "boolean"
+          },
+          "la_staff": {
+            "title": "La Staff",
+            "type": "boolean"
+          },
+          "username": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username"
+          }
+        },
+        "required": [
+          "dang_nhap",
+          "username",
+          "display_name",
+          "email",
+          "email_da_xac_thuc",
+          "la_staff",
+          "google_bat"
+        ],
+        "title": "ToiOut",
+        "type": "object"
+      },
       "TrichOut": {
         "description": "Bình luận được chủ mạch trích vào mốc — \"trích vào sổ\" (PLAN 5.6).\n\nHai dấu thời gian đều có mặt vì rào 2 của PLAN 5.6 bắt blockquote hiện đủ cả hai\n(\"viết 10/06, trích 21/08\") — chống trích hậu nghiệm để sổ đọc như tiên tri.\n\n`trang_thai = \"da_xoa\"` nghĩa là người viết đã xoá bình luận gốc **sau khi** nó vào\nsổ; blockquote vẫn còn nguyên nội dung, vì sổ là \"không-xoá-được\" (PLAN 5.6). Bình\nluận bị **mod ẩn** thì cả khối trích biến mất khỏi response, không có trạng thái nào\nbiểu diễn nó.",
         "properties": {
@@ -977,6 +1439,93 @@
         ],
         "title": "TrichOut",
         "type": "object"
+      },
+      "VoteIn": {
+        "description": "Vote / đổi / rút — `POST /votes` (PLAN 5.7, mục 7).\n\n`value = 0` nghĩa là **rút**: hàng `Vote` bị xoá, không lưu `0`.",
+        "properties": {
+          "target_id": {
+            "title": "Target Id",
+            "type": "integer"
+          },
+          "target_type": {
+            "description": "\"moc\" hoặc \"comment\"",
+            "title": "Target Type",
+            "type": "string"
+          },
+          "value": {
+            "maximum": 1,
+            "minimum": -1,
+            "title": "Value",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "target_type",
+          "target_id",
+          "value"
+        ],
+        "title": "VoteIn",
+        "type": "object"
+      },
+      "VoteOut": {
+        "description": "Kết quả một lượt vote — `POST /votes` (PLAN 5.7).\n\nTrả về **con số mới của đích** chứ không chỉ \"ok\": UI vote lạc quan (optimistic) cần\nmột nguồn sự thật để đối chiếu sau khi mạng trả lời, nếu không hai lượt bấm nhanh sẽ\nđể lại một con số client tự cộng mà server không đồng ý. `value = 0` nghĩa là vừa rút.\n\n`up_count`/`down_count` chỉ có nghĩa với đích là **bình luận** — mốc chỉ lưu `score`\n(PLAN mục 6), nên với mốc hai trường này là `null`, không phải `0`.",
+        "properties": {
+          "down_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Down Count"
+          },
+          "score": {
+            "title": "Score",
+            "type": "integer"
+          },
+          "target_id": {
+            "title": "Target Id",
+            "type": "integer"
+          },
+          "target_type": {
+            "title": "Target Type",
+            "type": "string"
+          },
+          "up_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Up Count"
+          },
+          "value": {
+            "title": "Value",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "target_type",
+          "target_id",
+          "value",
+          "score",
+          "up_count",
+          "down_count"
+        ],
+        "title": "VoteOut",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "DangNhap": {
+        "in": "cookie",
+        "name": "sessionid",
+        "type": "apiKey"
       }
     }
   },
@@ -987,6 +1536,180 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/comments/{comment_id}": {
+      "delete": {
+        "description": "Xoá bình luận theo **luật hai vế** của PLAN 5.3 — nợ 1a bàn giao, trả ở đây.\n\n**Quyền: CHỈ tác giả của bình luận.** Mạch bị mod khoá ⇒ 403; đã xoá rồi ⇒ 409.\n\nLuật, nguyên văn: giữ chỗ \"[đã xoá]\" nếu **có reply con** HOẶC **đã TỪNG được trích\nvào sổ (kể cả trích đã gỡ)**; xoá thật chỉ khi không dính cả hai. Chữ \"đã TỪNG\" khớp\nđúng `Trich.comment = PROTECT` — `PROTECT` chặn theo hàng, nó không biết `removed_at`\nlà gì. Đọc thành \"đang được trích\" là tiền-kiểm `removed_at IS NULL`, quyết \"xoá\nthật\", rồi ăn `ProtectedError` ⇒ 500 trên một thao tác hợp lệ của chính chủ.\n\n**Xoá thật thì dọn `Vote` mồ côi trong cùng transaction** — `Vote` cố ý không có FK\ntới đích nên không có `ON DELETE` nào; nợ này ghi sẵn trong docstring của model từ 1a.\n\n`xoa_that = false` nghĩa là nút ở lại làm bia mộ: UI phải **render lại** nó chứ không\ngỡ khỏi cây, nếu không cả nhánh con mất chỗ bám.",
+        "operationId": "xoa_binh_luan",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "comment_id",
+            "required": true,
+            "schema": {
+              "title": "Comment Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KetQuaXoaOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Xoa Binh Luan Api",
+        "tags": [
+          "binh-luan"
+        ]
+      },
+      "patch": {
+        "description": "Sửa bình luận: đổi `body`, hiện dấu `*đã sửa*` (PLAN 5.3).\n\n**Quyền: CHỈ tác giả của bình luận** — 403 `khong_phai_chu` cho mọi người khác, kể cả\nchủ mạch. Chủ mạch có quyền trên *cuốn sổ*, không có quyền trên *lời của người khác*.\nMạch bị mod khoá ⇒ 403; bình luận đã là bia mộ hoặc bị ẩn ⇒ 409.\n\n**Không có cửa sổ sửa im lặng 15 phút** như mốc, và đó là chủ đích: mốc là *bằng\nchứng* nên nó cần lịch sử bản cũ, bình luận là *tán gẫu* nên nó chỉ cần nói ra rằng đã\nsửa. `anchor_moc_seq` **không** sửa được — đổi neo sau khi thread đã có reply là dời\ncả thread sang một ngăn kéo khác dưới chân người đang đọc.\n\nTrả về nút bình luận **không kèm `replies`** (mảng rỗng): endpoint này sửa đúng một\ndòng, và trả cả nhánh con là mời UI thay nguyên nhánh bằng dữ liệu nó không hỏi.",
+        "operationId": "sua_binh_luan",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "comment_id",
+            "required": true,
+            "schema": {
+              "title": "Comment Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BinhLuanSuaIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BinhLuanOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Sua Binh Luan Api",
+        "tags": [
+          "binh-luan"
+        ]
+      }
+    },
     "/api/v1/feeds/dang-dien-ra": {
       "get": {
         "description": "Feed **Đang diễn ra**: mạch còn mở, mốc mới nhất trước\n    (`last_entry_at` giảm dần).\n\n    Feed đặc sản của gikky, **không phải** Hot: mốc mới không \"bump\" bài, nó chỉ cập nhật\n    khoá sort của riêng feed này.\n\n    `last_entry_at` đo **cấu trúc** — mọi mốc đều tính, kể cả mốc bị mod ẩn. Vì thế một\n    mạch có thể đứng đầu feed này mà mở ra là **mặt CẶN** (`face` tính theo\n    `last_activity_at`, vốn chỉ đo nội dung đọc được). Đó là hành vi đúng theo luật đếm\n    hiện hành, đã ghi ở PLAN mục 6 \"hệ quả cố ý 2\" — đừng chữa bằng cách đổi khoá sort.\n\n    `?sub=<slug>` lọc theo chuyên mục; sub không tồn tại trả 404 `sub_khong_ton_tai`.\n    `?cursor=` là cursor keyset lấy từ `cursor_ke_tiep` của trang trước; `null` là hết.\n    `?limit=` tối đa 50.\n\n    `?sort=tu_nhien` (mặc định) giữ khoá sort riêng của feed này. `?sort=nhieu_diem` sắp\n    theo điểm bài gốc giảm dần, cursor keyset trên `(diem, id)`. **Cursor của sort này\n    KHÔNG dùng được cho sort kia** — đem nhầm là 400 `cursor_khong_hop_le`.\n\n    `?khoang=ngay|tuan|thang|tat_ca` (mặc định `tat_ca`) lọc theo `created_at`, ranh giới\n    là nửa đêm **giờ VN**; `tuan` = 7 ngày lịch gần nhất kể cả hôm nay, `thang` = 30 ngày.\n    Khoảng áp cho **mọi** sort, không riêng `nhieu_diem`. Giá trị lạ trả 400\n    `tham_so_khong_hop_le` — không bao giờ lặng lẽ quy về `tat_ca`.\n\n    Mạch bị mod ẩn không xuất hiện.\n",
@@ -1252,6 +1975,84 @@
         ]
       }
     },
+    "/api/v1/machs": {
+      "post": {
+        "description": "Đăng bài = tạo `Mach` + `Moc(seq=1)` trong MỘT giao dịch (PLAN 5.1).\n\n**Quyền: bất kỳ ai đã đăng nhập và không bị khoá.** Không có \"chủ\" để đối chiếu —\nngười gọi *trở thành* chủ. Tài khoản bị ban bị chặn ở lớp auth (`api/quyen.py`).\n\nKhông có nút \"tạo mạch\" riêng (PLAN nguyên tắc 1): mọi post sinh ra là post thường,\nUI mạch tự bật từ mốc 2. Vì thế endpoint này và `POST /machs/{id}/mocs` nhận **cùng\nmột bộ trường nội dung** — `MachMoiIn` kế thừa thẳng `MocMoiIn`.\n\nTác giả nhận **+1 phiếu của chính mình** ngay lúc đăng (PLAN 5.7) — để `0` trên cột\nvote có nghĩa là \"đã có người vote xuống\", không phải \"chưa ai đụng tới\".",
+        "operationId": "tao_mach",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MachMoiIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MachChiTietOut"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Tao Mach Api",
+        "tags": [
+          "mach"
+        ]
+      }
+    },
     "/api/v1/machs/{mach_id}": {
       "get": {
         "description": "Trang mạch: thông tin mạch + **toàn bộ** mốc + `face` + spine.\n\n`id` là khoá bền của mạch (PLAN 5.9). Endpoint **không nhận slug** — URL\n`/m/<slug>-<id>` có slug cũ hay slug sai vẫn ra đúng mạch này, còn chuyện redirect\n301 về slug chuẩn là việc của tầng web, dựa vào trường `slug` trong response.\n\nResponse **không chứa trường nào phụ thuộc người xem** nên cache được (PLAN 8.4);\nvote của tôi / đã theo chưa / đọc tới đâu nằm ở `GET /machs/{id}/me` (Phase 3).\n\nMốc đã xoá hoặc bị mod ẩn vẫn có mặt trong `mocs` và `spine` dưới dạng **bia mộ giữ\nchỗ**, không kèm nội dung: `seq` bất biến, giấu hẳn một ô là thủng dãy số và phá bất\nbiến `entry_count == số ô trên spine` (PLAN 5.2).",
@@ -1290,6 +2091,94 @@
           }
         },
         "summary": "Xem Mach",
+        "tags": [
+          "mach"
+        ]
+      }
+    },
+    "/api/v1/machs/{mach_id}/close": {
+      "post": {
+        "description": "Đóng sổ — PLAN 5.1. **Quyền: CHỈ tác giả mạch** (403 cho người khác).\n\n`ket_qua` là một dòng tự do ≤40 ký tự (\"+18.2% · 163 ngày\"), hiện ở banner mặt CẶN và\nOG card. **Thuần hiển thị** — server không validate ngữ nghĩa, cùng triết lý với\n`figures`. Không nhập ⇒ `null`, banner ẩn phần đó.\n\nMạch đã đóng rồi thì 409 `mach_da_dong` chứ không phải \"đóng lại lần nữa\": đóng sổ\nlần hai sẽ ghi đè `closed_at`, và cái đó **dời hạn 7 ngày mở lại** — tức một cách vô\nhạn hoá cái hạn đó bằng cách bấm hai lần.",
+        "operationId": "dong_so_mach",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mach_id",
+            "required": true,
+            "schema": {
+              "title": "Mach Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DongSoIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MachChiTietOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Dong So Mach",
         "tags": [
           "mach"
         ]
@@ -1408,6 +2297,475 @@
         "tags": [
           "binh-luan"
         ]
+      },
+      "post": {
+        "description": "Viết bình luận vào khán đài hoặc ngăn kéo — PLAN 5.4, nguyên tắc 4 và 6.\n\n**Quyền: bất kỳ ai đã đăng nhập.** Không phải chỉ tác giả — khán đài là chỗ của đám\nđông. Chặn duy nhất là mạch bị mod **khoá** (403 `mach_bi_khoa`).\n**Mạch đã đóng sổ VẪN bình luận được** (PLAN 5.1) — đó là khác biệt cố ý so với\n`POST /machs/{id}/mocs`, đừng \"dọn dẹp\" hai đường này thành một phép kiểm.\n\n`anchor_moc_seq` **chỉ đặt được trên bình luận gốc**; gửi kèm `parent_id` là 400. Neo\ntrỏ vào một `seq` không tồn tại trong mạch cũng là 400 — chip `‹mốc 12›` trên một mạch\n9 mốc mở ra một ngăn kéo không có thật.\n\n`parent_id` phải thuộc **cùng mạch**: reply xuyên mạch sẽ dựng một nhánh mà cả hai\ntrang đều không hiển thị đúng.\n\nNgười viết nhận +1 phiếu của chính mình (PLAN 5.7).",
+        "operationId": "viet_binh_luan",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mach_id",
+            "required": true,
+            "schema": {
+              "title": "Mach Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BinhLuanMoiIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BinhLuanOut"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Viet Binh Luan",
+        "tags": [
+          "binh-luan"
+        ]
+      }
+    },
+    "/api/v1/machs/{mach_id}/mocs": {
+      "post": {
+        "description": "Nối một mốc vào mạch — PLAN 5.1.\n\n**Quyền: CHỈ tác giả mạch.** Người khác nhận 403 `khong_phai_chu`. Mạch là nhật ký\ncủa một người; nếu ai cũng nối được thì \"dấu thời gian máy chủ bất biến\" chẳng chứng\nminh được ai đã ghi cái gì.\n\nBa điều kiện nữa, mỗi cái một mã riêng để UI nói đúng chuyện:\n- mạch bị mod **khoá** ⇒ 403 `mach_bi_khoa` (đọc được, cấm tương tác — PLAN 5.10);\n- mạch **đã đóng sổ** ⇒ 409 `mach_da_dong` (đóng sổ vẫn bình luận được, chỉ không nối\n  mốc — PLAN 5.1);\n- quá **3 mốc trong ngày lịch VN** ⇒ 429 `qua_han_muc_moc`. Hạn mức đếm theo\n  `created_at` (dấu server) và tính **mọi** mốc kể cả bia mộ — xoá rồi viết lại là\n  cách lách ngắn nhất. Ranh giới là nửa đêm giờ VN, không phải 24 giờ trượt.\n\n`occurred_at` nhập lùi thoải mái, cấm tương lai (PLAN 5.2). Tác giả nhận +1 phiếu của\nchính mình (PLAN 5.7).",
+        "operationId": "noi_moc",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mach_id",
+            "required": true,
+            "schema": {
+              "title": "Mach Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MocMoiIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MocOut"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Noi Moc",
+        "tags": [
+          "moc"
+        ]
+      }
+    },
+    "/api/v1/machs/{mach_id}/reopen": {
+      "post": {
+        "description": "Mở lại mạch đã đóng sổ — **trong 7 ngày**, sau đó nút biến mất (PLAN 5.1).\n\n**Quyền: CHỈ tác giả mạch.** Quá hạn ⇒ 409 `het_han_mo_lai`; mạch đang mở ⇒ 409\n`mach_dang_mo`.\n\nHạn tính từ `closed_at`, và nó là hạn THẬT chứ không phải gợi ý UI: một cuốn sổ mở\nlại được vô thời hạn thì \"đã đóng sổ\" không còn nghĩa gì, mà đó là nhãn cả mặt CẶN\nlẫn OG card đang dựa vào.\n\n`ket_qua` **bị xoá theo** — xem `core/ghi.py::mo_lai`.",
+        "operationId": "mo_lai_mach",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mach_id",
+            "required": true,
+            "schema": {
+              "title": "Mach Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MachChiTietOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Mo Lai Mach",
+        "tags": [
+          "mach"
+        ]
+      }
+    },
+    "/api/v1/me": {
+      "get": {
+        "description": "Danh tính của phiên hiện tại. **Per-user tuyệt đối — không cache** (PLAN 8.4).\n\nKhách chưa đăng nhập nhận 200 kèm `dang_nhap: false` và mọi trường danh tính `null`.\n\n`email_da_xac_thuc` có mặt vì xác thực email là **bắt buộc** ở gikky: tài khoản chưa\nxác thực thì đăng nhập được nhưng chưa nên được mời viết bài, và UI cần phân biệt hai\ntrạng thái đó thay vì để người dùng bấm rồi ăn lỗi.\n\n`google_bat` là cấu hình server, không phải trạng thái người dùng: `false` ⇒ trang\nđăng nhập **không render** nút Google (PLAN mục 4 — không nút vĩnh viễn không bấm\nđược), chứ không render một nút `disabled`.\n\nEndpoint này **không** trả trạng thái ban, quyền chi tiết, hay bất cứ thứ gì của người\nkhác — nó chỉ nói về chính phiên đang gọi.",
+        "operationId": "xem_toi",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToiOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Xem Toi",
+        "tags": [
+          "tai-khoan"
+        ]
+      }
+    },
+    "/api/v1/mocs/{moc_id}": {
+      "delete": {
+        "description": "Xoá mốc = **bia mộ** giữ chỗ, không bao giờ `DELETE` thật (PLAN nguyên tắc 2).\n\n**Quyền: CHỈ tác giả của mốc.** Mạch bị mod khoá ⇒ 403. Mốc đã bị gỡ rồi ⇒ 409.\n\nTrả về chính thẻ mốc ở trạng thái bia mộ (`trang_thai = \"da_xoa\"`, nội dung `null`)\nchứ không trả 204: UI phải **render lại ô đó** chứ không gỡ nó khỏi timeline — `seq`\nbất biến và spine phải đủ số ô, giấu hẳn một ô là thủng dãy số (PLAN 5.2).\n\nXoá mốc **không** làm `entry_count`/`last_entry_at` lùi (chúng đo *cấu trúc*), nhưng\n**có** làm `comment_count`/`last_activity_at` đổi (chúng đo *nội dung đọc được*) —\nPLAN mục 6, luật đếm 4 cột.",
+        "operationId": "xoa_moc",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "moc_id",
+            "required": true,
+            "schema": {
+              "title": "Moc Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MocOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Xoa Moc Api",
+        "tags": [
+          "moc"
+        ]
+      },
+      "patch": {
+        "description": "Sửa mốc — **đúng 5 trường** của PLAN 5.2, không gì khác.\n\n**Quyền: CHỈ tác giả của mốc** (`Moc.author`, không phải `Mach.author` — hai thứ đó\ntrùng nhau hôm nay vì chỉ tác giả nối được mốc, nhưng hỏi đúng cột là điều kiện để\nchúng vẫn đúng khi đồng tác giả mở ra). Người khác nhận 403 `khong_phai_chu`.\nMạch bị mod khoá ⇒ 403; mốc đã là bia mộ hoặc bị ẩn ⇒ 409 `noi_dung_da_go`.\n\n**PATCH thật**: trường không gửi thì không đổi, trường gửi `null` thì xoá. `body`\nkhông nhận `null` (mốc phải có thân) — schema chặn trước khi vào đây.\n\nSửa **im lặng trong 15 phút** kể từ `created_at`; sau đó mỗi lần sửa tạo một\n`MocRevision` lưu **đủ cả 5 trường bản trước** và tăng \"đã sửa N lần\". Có\n`occurred_at` trong revision là bắt buộc: sửa lùi ngày sự việc mà không để vết là phá\nđúng giá trị lõi \"ghi-trước-khi-biết-kết-quả\" của sản phẩm.\n\n`occurred_at` mới vẫn **cấm ngày tương lai** (theo giờ VN).",
+        "operationId": "sua_moc",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "moc_id",
+            "required": true,
+            "schema": {
+              "title": "Moc Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MocSuaIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MocOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Sua Moc Api",
+        "tags": [
+          "moc"
+        ]
       }
     },
     "/api/v1/mocs/{moc_id}/comments": {
@@ -1450,6 +2808,104 @@
         "summary": "Liet Ke Binh Luan Moc",
         "tags": [
           "binh-luan"
+        ]
+      }
+    },
+    "/api/v1/mocs/{moc_id}/reactions": {
+      "post": {
+        "description": "Reaction 1 chạm trên mốc — bộ **CỐ ĐỊNH** 📈📉🔥🧊🎯 (PLAN 5.7).\n\n**Quyền: bất kỳ ai đã đăng nhập**, kể cả trên mốc của chính mình. Mạch bị mod khoá ⇒\n403; mốc đã bị gỡ ⇒ 409.\n\nMột user **một** reaction mỗi mốc (`UNIQUE (user, moc)`) — đổi là `UPDATE`, không phải\nthêm hàng: đây là \"bậc thang tham gia rẻ hơn viết\", không phải phiếu bầu nhiều lựa\nchọn. `emoji = null` nghĩa là **rút**.\n\nTrả về **đủ 5 khoá kể cả khoá đang bằng 0**: UI vẽ nguyên bộ, và một khoá vắng mặt\ntrong response sẽ thành một icon nhấp nháy xuất hiện/biến mất theo lượt bấm.\nLưu khoá không dấu (`len`/`xuong`/…) chứ không lưu emoji — đổi bộ icon sau này không\nphải migrate dữ liệu.",
+        "operationId": "dat_reaction",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "moc_id",
+            "required": true,
+            "schema": {
+              "title": "Moc Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReactionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReactionOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Dat Reaction Api",
+        "tags": [
+          "tuong-tac"
         ]
       }
     },
@@ -1626,6 +3082,94 @@
         "summary": "Xem Ho So",
         "tags": [
           "nguoi-dung"
+        ]
+      }
+    },
+    "/api/v1/votes": {
+      "post": {
+        "description": "Vote ±1 trên **mốc hoặc bình luận**, hai trục riêng rẽ (PLAN 5.7).\n\n**Quyền: bất kỳ ai đã đăng nhập** — kể cả trên nội dung của chính mình (PLAN 5.7 chốt\ntác giả có sẵn +1 của mình, và rút được như mọi phiếu khác). Chặn duy nhất: mạch bị\nmod **khoá** ⇒ 403 `mach_bi_khoa`; đích đã bị gỡ ⇒ 409 `noi_dung_da_go` — số phiếu\ncủa bia mộ không được trả ra (`trinh_bay.nut_ra` zero hoá nó), nên nhận thêm phiếu vào\nđó là ghi vào một con số không ai đọc được.\n\n`value ∈ {-1, 0, 1}`; **`0` nghĩa là RÚT** — hàng `Vote` bị xoá, không lưu `0`.\nVote lại cùng giá trị là no-op (idempotent), không cộng dồn.\n\nTrả về **con số mới của đích**, không chỉ \"ok\": UI vote lạc quan cần một nguồn sự thật\nđể đối chiếu, nếu không hai cú bấm nhanh để lại một con số client tự cộng.\n\nMạch **đã đóng sổ vẫn vote được** — đóng sổ chỉ chặn nối mốc (PLAN 5.1).",
+        "operationId": "dat_vote",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoteIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoteOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Dat Vote Api",
+        "tags": [
+          "tuong-tac"
         ]
       }
     }

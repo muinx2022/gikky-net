@@ -1,0 +1,141 @@
+/* Hàng "Trả lời · ⋯" dưới một bình luận. Nhẹ, xám, không tranh chú ý với nội dung —
+   chất liệu "khán đài xuề xoà" của PLAN 9.1. */
+
+.khung {
+  margin-top: 4px;
+}
+
+.hang {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nhe {
+  padding: 3px 8px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--ink-3);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.nhe:hover {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* `<details>` chứ không phải state React: menu mở được cả khi JS chưa kịp hydrate, và
+   phím Esc/Tab hoạt động sẵn. */
+.menu {
+  position: relative;
+}
+
+.menu > summary {
+  list-style: none;
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: var(--ink-3);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.menu > summary:hover {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.hop {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 116px;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 4px;
+  box-shadow: 0 8px 22px rgb(0 0 0 / 12%);
+  z-index: 15;
+}
+
+.hop > button {
+  text-align: left;
+  padding: 6px 9px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.hop > button:hover:not(:disabled) {
+  background: var(--inset);
+  color: var(--accent);
+}
+
+.sua {
+  margin-top: 7px;
+}
+
+.o {
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--inset);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.o:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -1px;
+}
+
+.chan {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.gui {
+  margin-left: auto;
+  padding: 6px 15px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.gui:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.loi {
+  margin: 6px 0 0;
+  padding: 6px 10px;
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  background: var(--inset);
+  color: var(--ink);
+  font-size: 12.5px;
+}

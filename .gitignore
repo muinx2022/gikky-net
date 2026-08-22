@@ -16,3 +16,12 @@ api/staticfiles/
 *.egg-info/
 .turbo/
 next-env.d.ts
+
+# mail ghi ra file ở dev (EMAIL_BACKEND=filebased) — chứa link xác thực thật, không commit
+api/.mail/
+
+# playwright
+apps/web/test-results/
+apps/web/playwright-report/
+# Worktree tạm của subagent — KHÔNG BAO GIỜ commit (chúng là bản sao cả cây)
+.claude/worktrees/

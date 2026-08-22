@@ -1,0 +1,145 @@
+/* Năm trang tài khoản dùng chung khung này. Chất liệu "sổ nghiêm" của PLAN 9.1: viền
+   cứng, bo nhẹ — đây là chỗ người ta khai danh tính, không phải khán đài.
+
+   ⚠ **Không đỏ, không hoàng thổ ở đây.** PLAN 9.1 cấm `--loss` ngoài con số lãi/lỗ, và
+   giao `--stamp` riêng cho "thứ mang tính đóng dấu" — một cái form không nằm trong danh
+   sách ấy. Lỗi và thành công vì thế phát tín hiệu bằng ĐƯỜNG VIỀN và NỀN (cùng lối với
+   `components/bao-cursor-hong.module.css`), không bằng màu cảnh báo. */
+
+.khung {
+  max-width: var(--khung);
+  margin: 0 auto;
+  padding: 44px 18px 72px;
+  display: flex;
+  justify-content: center;
+}
+
+.the {
+  width: 100%;
+  max-width: 420px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 26px 24px 22px;
+  background: var(--surface);
+}
+
+.tieu_de {
+  font-family: var(--f-display);
+  font-size: 25px;
+  font-weight: 600;
+  margin: 0 0 6px;
+}
+
+.mo_ta {
+  color: var(--ink-2);
+  font-size: 13.5px;
+  line-height: 1.6;
+  margin: 0 0 20px;
+}
+
+.o {
+  display: block;
+  margin-bottom: 15px;
+}
+
+.nhan {
+  display: block;
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-bottom: 5px;
+}
+
+.o input {
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+}
+
+.o input:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -1px;
+}
+
+/* Ô sai: viền ĐẬM + nét đứt. Không đổi màu — người phân biệt màu kém vẫn thấy được, và
+   nó không mượn màu của con số lãi/lỗ. */
+.o input[aria-invalid="true"] {
+  border-style: dashed;
+  border-color: var(--ink-2);
+}
+
+.goi_y {
+  display: block;
+  font-size: 11.5px;
+  color: var(--ink-3);
+  margin-top: 4px;
+}
+
+.loi_o {
+  display: block;
+  font-size: 12px;
+  color: var(--ink-2);
+  margin-top: 4px;
+}
+
+.loi {
+  margin: 0 0 15px;
+  padding: 9px 13px;
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  background: var(--inset);
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.xong {
+  margin: 0;
+  padding: 12px 13px;
+  border: 1px dashed var(--line-2);
+  border-radius: 4px;
+  background: var(--inset);
+  color: var(--ink-2);
+  font-size: 13.5px;
+  line-height: 1.65;
+}
+
+.gui {
+  width: 100%;
+  margin-top: 6px;
+  padding: 10px 14px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.gui:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.gui:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+
+.duoi {
+  margin: 18px 0 0;
+  font-size: 13px;
+  color: var(--ink-3);
+  line-height: 1.7;
+}
+
+.lien_ket {
+  color: var(--accent);
+}
+
+.lien_ket:hover {
+  text-decoration: underline;
+}

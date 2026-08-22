@@ -10,6 +10,7 @@ import {
 } from "@/lib/khan-dai";
 
 import { BinhLuan, DanhSachBinhLuan } from "./binh-luan";
+import { Composer } from "./composer";
 import css from "./khan-dai.module.css";
 
 /** Chân trang mặt CẶN khi khán đài **chưa bung** — PLAN 5.5:
@@ -109,10 +110,10 @@ export function CauDangDoc({
 
 /** Khán đài đã bung: 3 sort đổi qua URL param + composer ở cuối (PLAN 5.5).
  *
- * `composerTat` là **bắt buộc có mặt** dù chưa dùng được: PLAN 5.1 chốt "mạch đóng vẫn
- * bình luận được", nên chân khán đài phải kết thúc bằng chỗ để viết. Phase 2 mới có
- * auth, nên ở 1c nó là ô nhập `disabled` kèm lời mời đăng nhập — có chỗ đứng, không giả
- * vờ chạy được.
+ * Composer ở cuối là **bắt buộc có mặt**: PLAN 5.1 chốt "mạch đóng vẫn bình luận được",
+ * nên chân khán đài phải kết thúc bằng chỗ để viết. **Từ Phase 2 nó SỐNG** (`Composer`,
+ * thay cho ô `disabled` của 1c) — khách chưa đăng nhập thấy lời mời đăng nhập, mạch bị
+ * mod khoá thấy câu giải thích, người đăng nhập thấy ô gõ thật.
  *
  * **Nguyên tắc 9 áp ở ĐÂY nữa, không chỉ ở chân trang** (vá A2, 2026-08-22). Bản đầu của
  * 1c render `{tong_thread} thread` vô điều kiện, nên:
@@ -162,7 +163,7 @@ export function KhanDai({
         <p className={css.mot_dong_moi} data-testid="khan-dai-mot-dong-moi">
           Chưa có mấy ai nói gì — mở lời trước đi.
         </p>
-        <ComposerTat />
+        <Composer />
       </section>
     );
   }
@@ -230,25 +231,13 @@ export function KhanDai({
         </Link>
       )}
 
-      <ComposerTat />
+      <Composer />
     </section>
   );
 }
 
-/** Composer **disabled** — 1c không có thao tác ghi nào hoạt động được (Phase 2). */
-export function ComposerTat() {
-  return (
-    <div className={css.composer} data-testid="composer">
-      <textarea
-        className={css.o_nhap}
-        disabled
-        data-testid="composer-o-nhap"
-        aria-label="Viết bình luận"
-        placeholder="Chém gió với chủ mạch…"
-      />
-      <p className={css.moi_dang_nhap} data-testid="composer-moi-dang-nhap">
-        Đăng nhập để bình luận.
-      </p>
-    </div>
-  );
-}
+// `ComposerTat` (ô nhập `disabled` + "Đăng nhập để bình luận") ĐÃ ĐƯỢC GỠ ở Phase 2 —
+// `components/composer.tsx` thay chỗ nó và làm thật. Ghi lại ở đây thay vì xoá không dấu
+// vết, vì hai bài đo của 1c (`mach-can.spec.ts`) khẳng định vào `composer-o-nhap` và
+// `composer-moi-dang-nhap`; chúng được sửa cùng lượt này, và ai đọc git blame sẽ thấy
+// đường nối.

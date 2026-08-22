@@ -86,6 +86,12 @@ KHONG_CO_LOI_CLIENT = {
     # nào để khai, và khai một `404: LoiOut` không bao giờ xảy ra là bắt frontend viết
     # một nhánh xử lý cho một ca không tồn tại.
     "/api/v1/subs",
+    # `GET /me` cũng không nhận tham số nào, và quan trọng hơn: **nó không có đường 401**.
+    # Khách chưa đăng nhập nhận 200 kèm `dang_nhap: false` — xem docstring `ToiOut`. Khai
+    # một `401: LoiOut` ở đây là dựng cho frontend một nhánh xử lý cho trạng thái BÌNH
+    # THƯỜNG NHẤT của hệ thống, và nhánh đó sẽ dạy người viết header coi lỗi là chuyện
+    # thường.
+    "/api/v1/me",
 }
 
 

@@ -449,7 +449,7 @@ test.describe("V5 — ngăn kéo", () => {
 });
 
 test.describe("V6 — chân trang bung khán đài", () => {
-  test("chân trang → khán đài, 3 sort đổi qua URL param, composer cuối disabled", async ({
+  test("chân trang → khán đài, 3 sort đổi qua URL param, composer cuối mời đăng nhập", async ({
     page,
   }) => {
     await page.goto(duongDan(hpg));
@@ -481,12 +481,16 @@ test.describe("V6 — chân trang bung khán đài", () => {
       expect(id_dom).toEqual(kd.threads.map((n) => n.id));
     }
 
-    const o_nhap = page.getByTestId("composer-o-nhap");
-    await expect(o_nhap).toBeVisible();
-    await expect(o_nhap).toBeDisabled();
-    await expect(page.getByTestId("composer-moi-dang-nhap")).toHaveText(
-      "Đăng nhập để bình luận.",
-    );
+    // **Đổi ở Phase 2**: 1c render một ô nhập `disabled` giữ chỗ (`composer-o-nhap`);
+    // nay composer là thật, nên với một trình duyệt CHƯA đăng nhập nó hiện lời mời chứ
+    // không hiện một cái ô gõ được rồi trả 401. Vế "khán đài phải kết thúc bằng chỗ để
+    // viết" (PLAN 5.5) vẫn được ghim — chỉ đổi hình dạng của cái chỗ ấy.
+    // Scope tới `khan-dai`: mỗi NGĂN KÉO cũng có composer riêng (PLAN 5.4 luật 3), nên
+    // trên một mạch 9 mốc có 10 cái — cái ta đang nói tới là cái ở chân khán đài.
+    await expect(page.getByTestId("composer-o-nhap")).toHaveCount(0);
+    await expect(
+      page.getByTestId("khan-dai").getByTestId("composer-khach"),
+    ).toContainText("để tham gia bàn luận");
   });
 });
 
@@ -707,7 +711,9 @@ test.describe("W2 — khán đài rỗng không được phô số 0", () => {
     await expect(page.getByTestId("cay-khan-dai")).toHaveCount(0);
     await expect(page.getByTestId("thanh-sort")).toHaveCount(0);
     // Nhưng vẫn phải có chỗ để viết — PLAN 5.5 đòi khán đài kết thúc bằng composer.
-    await expect(page.getByTestId("composer-o-nhap")).toBeDisabled();
+    // Phase 2: composer là thật, và với trình duyệt chưa đăng nhập thì "chỗ để viết" ấy
+    // là lời mời đăng nhập, không phải một ô `disabled` (xem V6 ở trên).
+    await expect(page.getByTestId("composer-khach")).toBeVisible();
 
     const than = (await page.locator("main").innerText()).replace(/\s+/g, " ");
     expect(than).not.toMatch(/\d+\s*thread/);

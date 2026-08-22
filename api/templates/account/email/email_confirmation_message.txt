@@ -1,0 +1,14 @@
+{% autoescape off %}Chào bạn,
+
+Có người vừa dùng địa chỉ email này để đăng ký một tài khoản trên gikky.net.
+
+Nếu đúng là bạn, mở đường dẫn dưới đây để xác nhận:
+
+{{ activate_url }}
+
+Nếu không phải bạn thì bỏ qua email này — tài khoản sẽ không được kích hoạt.
+
+—
+gikky.net · nhật ký giao dịch của người Việt
+Nội dung trên gikky do người dùng đăng, không phải khuyến nghị đầu tư.
+{% endautoescape %}

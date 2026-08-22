@@ -95,6 +95,15 @@ class MachTomTatOut(Schema):
     #: Điểm của **mốc 1** (`Mach.diem_bai_goc`) — khoá sort của `?sort=nhieu_diem`, và là
     #: con số trên cột vote của thẻ feed. Âm được. Bia mộ ⇒ `0`.
     diem: int
+    #: `id` của **mốc 1** — đích mà mũi tên vote trên thẻ feed bắn vào (`POST /votes` nhận
+    #: `target_type="moc"` + `target_id`). Thêm ở Phase 2 và **chỉ** ở schema thẻ:
+    #: `MachChiTietOut` đã trả nguyên mốc 1 trong `mocs`, nên chép thêm một `id` ở tầng
+    #: mạch là dựng hai chỗ nói cùng một con số — cùng lý lẽ với `diem`.
+    #:
+    #: `null` chỉ xảy ra với dữ liệu nạp tay thiếu mốc 1 (đường sản phẩm không tạo được
+    #: `Mach` không mốc — PLAN 5.1). UI phải coi `null` là "không vote được ở đây" chứ
+    #: không đoán một id.
+    moc_1_id: int | None
 
 
 class SubChiTietOut(Schema):
@@ -418,3 +427,77 @@ class HoSoOut(Schema):
     duoc_trich: int
     #: Mạch của họ, mới nhất trước. Cắt ở một trang; hồ sơ không có cursor ở bản này.
     machs: list[MachTomTatOut]
+
+
+# --- Kết quả của ĐƯỜNG GHI (Phase 2) -----------------------------------------
+# Thân REQUEST của đường ghi nằm ở `api/schemas_ghi.py` — hai họ tách nhau vì schema đọc
+# PHẢI có `created_at` còn schema ghi thì CẤM. Ba schema dưới đây là *response*, nên chúng
+# ở lại đây cùng họ đọc.
+
+
+class VoteOut(Schema):
+    """Kết quả một lượt vote — `POST /votes` (PLAN 5.7).
+
+    Trả về **con số mới của đích** chứ không chỉ "ok": UI vote lạc quan (optimistic) cần
+    một nguồn sự thật để đối chiếu sau khi mạng trả lời, nếu không hai lượt bấm nhanh sẽ
+    để lại một con số client tự cộng mà server không đồng ý. `value = 0` nghĩa là vừa rút.
+
+    `up_count`/`down_count` chỉ có nghĩa với đích là **bình luận** — mốc chỉ lưu `score`
+    (PLAN mục 6), nên với mốc hai trường này là `null`, không phải `0`.
+    """
+
+    target_type: str
+    target_id: int
+    #: Phiếu của TÔI sau lượt này: `1`, `-1`, hoặc `0` (đã rút).
+    value: int
+    score: int
+    up_count: int | None
+    down_count: int | None
+
+
+class ReactionOut(Schema):
+    """Kết quả một lượt reaction — `POST /mocs/{id}/reactions`. `emoji = null` là đã rút."""
+
+    moc_id: int
+    emoji: str | None
+    #: Số reaction theo từng khoá, kể cả khoá đang bằng 0 — UI vẽ đủ bộ 📈📉🔥🧊🎯.
+    dem: dict[str, int]
+
+
+class ToiOut(Schema):
+    """`GET /me` — người đang đăng nhập là ai (thêm ở Phase 2, PLAN mục 7).
+
+    **Không cache được, và không được nướng vào page cache** (PLAN 8.4 điểm 4): đây là
+    response per-user thuần tuý. Khác `GET /machs/{id}/me` ở chỗ nó không phụ thuộc mạch
+    nào — header cần biết "ai đang đăng nhập" trên MỌI trang.
+
+    Khách chưa đăng nhập nhận **200** kèm `dang_nhap = false`, không phải 401: header là
+    thứ render trên mọi trang, và một endpoint trả lỗi cho trạng thái bình thường nhất của
+    hệ thống sẽ đẩy frontend vào chỗ phải coi lỗi là chuyện thường.
+
+    `google_bat` là **cấu hình server**, không phải trạng thái người dùng, và nó nằm ở đây
+    vì đúng một lý do: PLAN mục 4 cấm nút vĩnh viễn không bấm được, nên trang đăng nhập
+    phải biết có nên **render** nút Google hay không — `false` ⇒ nút **vắng mặt**, không
+    phải `disabled`.
+    """
+
+    dang_nhap: bool
+    username: str | None
+    display_name: str | None
+    #: Chỉ chủ tài khoản thấy — endpoint này không bao giờ trả email của người khác.
+    email: str | None
+    email_da_xac_thuc: bool
+    la_staff: bool
+    google_bat: bool
+
+
+class KetQuaXoaOut(Schema):
+    """Kết quả `DELETE /comments/{id}` — PLAN 5.3.
+
+    `xoa_that = false` nghĩa là bình luận **ở lại làm bia mộ** "[đã xoá]" vì nó còn reply
+    con **hoặc đã TỪNG được trích vào sổ** (kể cả trích đã gỡ). UI phải render lại nút đó
+    thành bia mộ chứ không gỡ nó khỏi cây — gỡ đi là làm mồ côi cả nhánh con.
+    """
+
+    id: int
+    xoa_that: bool

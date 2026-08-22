@@ -7,6 +7,33 @@ export type ClientOptions = {
 };
 
 /**
+ * BinhLuanMoiIn
+ *
+ * Viết bình luận — `POST /machs/{id}/comments` (PLAN 5.4, nguyên tắc 4 và 6).
+ *
+ * `anchor_moc_seq` **chỉ đặt được trên bình luận gốc**: reply kế thừa neo của gốc, nên
+ * gửi kèm `parent_id` là 400 chứ không phải bỏ qua im lặng — bỏ qua im lặng là cách một
+ * bình luận biến mất khỏi ngăn kéo mà không ai hiểu tại sao.
+ *
+ * Gốc mang `anchor_moc_seq = null` nghĩa là người viết **đã gỡ chip** — không thuộc ngăn
+ * kéo nào. Đó là một lựa chọn, không phải dữ liệu thiếu.
+ */
+export type BinhLuanMoiIn = {
+    /**
+     * Anchor Moc Seq
+     */
+    anchor_moc_seq?: number | null;
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Parent Id
+     */
+    parent_id?: number | null;
+};
+
+/**
  * BinhLuanOut
  *
  * Một nút trong cây bình luận. Server dựng cây và sắp sibling (PLAN mục 7).
@@ -94,6 +121,32 @@ export type BinhLuanOut = {
 };
 
 /**
+ * BinhLuanSuaIn
+ *
+ * Sửa bình luận — `PATCH /comments/{id}`. Chỉ `body` (PLAN 5.3).
+ */
+export type BinhLuanSuaIn = {
+    /**
+     * Body
+     */
+    body: string;
+};
+
+/**
+ * DongSoIn
+ *
+ * Đóng sổ — `POST /machs/{id}/close`. `ket_qua` tuỳ chọn, ≤40 ký tự (PLAN 5.1).
+ *
+ * Thuần hiển thị, không validate ngữ nghĩa — cùng triết lý với `figures`.
+ */
+export type DongSoIn = {
+    /**
+     * Ket Qua
+     */
+    ket_qua?: string | null;
+};
+
+/**
  * FeedOut
  *
  * Một trang feed. `cursor_ke_tiep = null` nghĩa là hết.
@@ -111,6 +164,22 @@ export type FeedOut = {
      * Items
      */
     items: Array<MachTomTatOut>;
+};
+
+/**
+ * FigureIn
+ *
+ * Một cặp trong dải số của mốc. Thuần hiển thị — server không validate ngữ nghĩa.
+ */
+export type FigureIn = {
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Value
+     */
+    value: string;
 };
 
 /**
@@ -207,6 +276,26 @@ export type HoSoOut = {
      * Username
      */
     username: string;
+};
+
+/**
+ * KetQuaXoaOut
+ *
+ * Kết quả `DELETE /comments/{id}` — PLAN 5.3.
+ *
+ * `xoa_that = false` nghĩa là bình luận **ở lại làm bia mộ** "[đã xoá]" vì nó còn reply
+ * con **hoặc đã TỪNG được trích vào sổ** (kể cả trích đã gỡ). UI phải render lại nút đó
+ * thành bia mộ chứ không gỡ nó khỏi cây — gỡ đi là làm mồ côi cả nhánh con.
+ */
+export type KetQuaXoaOut = {
+    /**
+     * Id
+     */
+    id: number;
+    /**
+     * Xoa That
+     */
+    xoa_that: boolean;
 };
 
 /**
@@ -353,6 +442,46 @@ export type MachChiTietOut = {
 };
 
 /**
+ * MachMoiIn
+ *
+ * Đăng bài — `POST /machs`. Bài gốc **chính là mốc 1**, nên nó kế thừa `MocMoiIn`.
+ *
+ * Không có trường `body` trên `Mach` (PLAN 5.1): `body` ở đây là thân của mốc 1.
+ */
+export type MachMoiIn = {
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Figures
+     */
+    figures?: Array<FigureIn> | null;
+    /**
+     * Loai
+     */
+    loai?: string | null;
+    /**
+     * Occurred At
+     */
+    occurred_at?: string | null;
+    /**
+     * Question For Crowd
+     */
+    question_for_crowd?: string | null;
+    /**
+     * Sub
+     *
+     * slug của chuyên mục
+     */
+    sub: string;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
  * MachTomTatOut
  *
  * Một mạch ở mức thẻ feed / danh sách hồ sơ.
@@ -407,6 +536,10 @@ export type MachTomTatOut = {
      */
     last_entry_at: string;
     /**
+     * Moc 1 Id
+     */
+    moc_1_id: number | null;
+    /**
      * Slug
      */
     slug: string;
@@ -419,6 +552,38 @@ export type MachTomTatOut = {
      * Title
      */
     title: string;
+};
+
+/**
+ * MocMoiIn
+ *
+ * Nối một mốc vào mạch — `POST /machs/{id}/mocs` (PLAN 5.1, 5.2).
+ *
+ * `occurred_at` là ngày **sự việc xảy ra**: nhập lùi thoải mái, **cấm tương lai**, và
+ * "tương lai" tính theo **ngày lịch VN** (PLAN mục 1). Không gửi ⇒ server lấy hôm nay
+ * giờ VN.
+ */
+export type MocMoiIn = {
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Figures
+     */
+    figures?: Array<FigureIn> | null;
+    /**
+     * Loai
+     */
+    loai?: string | null;
+    /**
+     * Occurred At
+     */
+    occurred_at?: string | null;
+    /**
+     * Question For Crowd
+     */
+    question_for_crowd?: string | null;
 };
 
 /**
@@ -546,6 +711,38 @@ export type MocRevisionsOut = {
 };
 
 /**
+ * MocSuaIn
+ *
+ * Sửa mốc — `PATCH /mocs/{id}`. **Đúng 5 trường của PLAN 5.2, không gì khác.**
+ *
+ * Đây là PATCH thật: trường **không gửi** thì không đổi, trường gửi `null` thì xoá.
+ * Phân biệt hai ca đó bằng `model_fields_set` của pydantic, nên đừng đổi `None` mặc
+ * định thành một sentinel khác — `api/mocs.py` đọc đúng cơ chế ấy.
+ */
+export type MocSuaIn = {
+    /**
+     * Body
+     */
+    body?: string | null;
+    /**
+     * Figures
+     */
+    figures?: Array<FigureIn> | null;
+    /**
+     * Loai
+     */
+    loai?: string | null;
+    /**
+     * Occurred At
+     */
+    occurred_at?: string | null;
+    /**
+     * Question For Crowd
+     */
+    question_for_crowd?: string | null;
+};
+
+/**
  * NganKeoOut
  *
  * Lát cắt bình luận neo vào một mốc — PLAN 5.4.
@@ -594,6 +791,42 @@ export type NguoiDungTomTatOut = {
      * Username
      */
     username: string;
+};
+
+/**
+ * ReactionIn
+ *
+ * React / đổi / rút — `POST /mocs/{id}/reactions` (PLAN 5.7).
+ *
+ * Bộ CỐ ĐỊNH `len · xuong · lua · bang · trung` (📈📉🔥🧊🎯). `emoji = null` là **rút**.
+ */
+export type ReactionIn = {
+    /**
+     * Emoji
+     */
+    emoji?: string | null;
+};
+
+/**
+ * ReactionOut
+ *
+ * Kết quả một lượt reaction — `POST /mocs/{id}/reactions`. `emoji = null` là đã rút.
+ */
+export type ReactionOut = {
+    /**
+     * Dem
+     */
+    dem: {
+        [key: string]: number;
+    };
+    /**
+     * Emoji
+     */
+    emoji: string | null;
+    /**
+     * Moc Id
+     */
+    moc_id: number;
 };
 
 /**
@@ -681,6 +914,55 @@ export type SubTomTatOut = {
 };
 
 /**
+ * ToiOut
+ *
+ * `GET /me` — người đang đăng nhập là ai (thêm ở Phase 2, PLAN mục 7).
+ *
+ * **Không cache được, và không được nướng vào page cache** (PLAN 8.4 điểm 4): đây là
+ * response per-user thuần tuý. Khác `GET /machs/{id}/me` ở chỗ nó không phụ thuộc mạch
+ * nào — header cần biết "ai đang đăng nhập" trên MỌI trang.
+ *
+ * Khách chưa đăng nhập nhận **200** kèm `dang_nhap = false`, không phải 401: header là
+ * thứ render trên mọi trang, và một endpoint trả lỗi cho trạng thái bình thường nhất của
+ * hệ thống sẽ đẩy frontend vào chỗ phải coi lỗi là chuyện thường.
+ *
+ * `google_bat` là **cấu hình server**, không phải trạng thái người dùng, và nó nằm ở đây
+ * vì đúng một lý do: PLAN mục 4 cấm nút vĩnh viễn không bấm được, nên trang đăng nhập
+ * phải biết có nên **render** nút Google hay không — `false` ⇒ nút **vắng mặt**, không
+ * phải `disabled`.
+ */
+export type ToiOut = {
+    /**
+     * Dang Nhap
+     */
+    dang_nhap: boolean;
+    /**
+     * Display Name
+     */
+    display_name: string | null;
+    /**
+     * Email
+     */
+    email: string | null;
+    /**
+     * Email Da Xac Thuc
+     */
+    email_da_xac_thuc: boolean;
+    /**
+     * Google Bat
+     */
+    google_bat: boolean;
+    /**
+     * La Staff
+     */
+    la_staff: boolean;
+    /**
+     * Username
+     */
+    username: string | null;
+};
+
+/**
  * TrichOut
  *
  * Bình luận được chủ mạch trích vào mốc — "trích vào sổ" (PLAN 5.6).
@@ -720,6 +1002,157 @@ export type TrichOut = {
      */
     trich_created_at: string;
 };
+
+/**
+ * VoteIn
+ *
+ * Vote / đổi / rút — `POST /votes` (PLAN 5.7, mục 7).
+ *
+ * `value = 0` nghĩa là **rút**: hàng `Vote` bị xoá, không lưu `0`.
+ */
+export type VoteIn = {
+    /**
+     * Target Id
+     */
+    target_id: number;
+    /**
+     * Target Type
+     *
+     * "moc" hoặc "comment"
+     */
+    target_type: string;
+    /**
+     * Value
+     */
+    value: number;
+};
+
+/**
+ * VoteOut
+ *
+ * Kết quả một lượt vote — `POST /votes` (PLAN 5.7).
+ *
+ * Trả về **con số mới của đích** chứ không chỉ "ok": UI vote lạc quan (optimistic) cần
+ * một nguồn sự thật để đối chiếu sau khi mạng trả lời, nếu không hai lượt bấm nhanh sẽ
+ * để lại một con số client tự cộng mà server không đồng ý. `value = 0` nghĩa là vừa rút.
+ *
+ * `up_count`/`down_count` chỉ có nghĩa với đích là **bình luận** — mốc chỉ lưu `score`
+ * (PLAN mục 6), nên với mốc hai trường này là `null`, không phải `0`.
+ */
+export type VoteOut = {
+    /**
+     * Down Count
+     */
+    down_count: number | null;
+    /**
+     * Score
+     */
+    score: number;
+    /**
+     * Target Id
+     */
+    target_id: number;
+    /**
+     * Target Type
+     */
+    target_type: string;
+    /**
+     * Up Count
+     */
+    up_count: number | null;
+    /**
+     * Value
+     */
+    value: number;
+};
+
+export type XoaBinhLuanData = {
+    body?: never;
+    path: {
+        /**
+         * Comment Id
+         */
+        comment_id: number;
+    };
+    query?: never;
+    url: '/api/v1/comments/{comment_id}';
+};
+
+export type XoaBinhLuanErrors = {
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+    /**
+     * Conflict
+     */
+    409: LoiOut;
+};
+
+export type XoaBinhLuanError = XoaBinhLuanErrors[keyof XoaBinhLuanErrors];
+
+export type XoaBinhLuanResponses = {
+    /**
+     * OK
+     */
+    200: KetQuaXoaOut;
+};
+
+export type XoaBinhLuanResponse = XoaBinhLuanResponses[keyof XoaBinhLuanResponses];
+
+export type SuaBinhLuanData = {
+    body: BinhLuanSuaIn;
+    path: {
+        /**
+         * Comment Id
+         */
+        comment_id: number;
+    };
+    query?: never;
+    url: '/api/v1/comments/{comment_id}';
+};
+
+export type SuaBinhLuanErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+    /**
+     * Conflict
+     */
+    409: LoiOut;
+};
+
+export type SuaBinhLuanError = SuaBinhLuanErrors[keyof SuaBinhLuanErrors];
+
+export type SuaBinhLuanResponses = {
+    /**
+     * OK
+     */
+    200: BinhLuanOut;
+};
+
+export type SuaBinhLuanResponse = SuaBinhLuanResponses[keyof SuaBinhLuanResponses];
 
 export type LietKeFeedDangDienRaData = {
     body?: never;
@@ -846,6 +1279,43 @@ export type GetHealthResponses = {
 
 export type GetHealthResponse = GetHealthResponses[keyof GetHealthResponses];
 
+export type TaoMachData = {
+    body: MachMoiIn;
+    path?: never;
+    query?: never;
+    url: '/api/v1/machs';
+};
+
+export type TaoMachErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type TaoMachError = TaoMachErrors[keyof TaoMachErrors];
+
+export type TaoMachResponses = {
+    /**
+     * Created
+     */
+    201: MachChiTietOut;
+};
+
+export type TaoMachResponse = TaoMachResponses[keyof TaoMachResponses];
+
 export type XemMachData = {
     body?: never;
     path: {
@@ -875,6 +1345,48 @@ export type XemMachResponses = {
 };
 
 export type XemMachResponse = XemMachResponses[keyof XemMachResponses];
+
+export type DongSoMachData = {
+    body: DongSoIn;
+    path: {
+        /**
+         * Mach Id
+         */
+        mach_id: number;
+    };
+    query?: never;
+    url: '/api/v1/machs/{mach_id}/close';
+};
+
+export type DongSoMachErrors = {
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+    /**
+     * Conflict
+     */
+    409: LoiOut;
+};
+
+export type DongSoMachError = DongSoMachErrors[keyof DongSoMachErrors];
+
+export type DongSoMachResponses = {
+    /**
+     * OK
+     */
+    200: MachChiTietOut;
+};
+
+export type DongSoMachResponse = DongSoMachResponses[keyof DongSoMachResponses];
 
 export type LietKeBinhLuanMachData = {
     body?: never;
@@ -931,6 +1443,244 @@ export type LietKeBinhLuanMachResponses = {
 
 export type LietKeBinhLuanMachResponse = LietKeBinhLuanMachResponses[keyof LietKeBinhLuanMachResponses];
 
+export type VietBinhLuanData = {
+    body: BinhLuanMoiIn;
+    path: {
+        /**
+         * Mach Id
+         */
+        mach_id: number;
+    };
+    query?: never;
+    url: '/api/v1/machs/{mach_id}/comments';
+};
+
+export type VietBinhLuanErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type VietBinhLuanError = VietBinhLuanErrors[keyof VietBinhLuanErrors];
+
+export type VietBinhLuanResponses = {
+    /**
+     * Created
+     */
+    201: BinhLuanOut;
+};
+
+export type VietBinhLuanResponse = VietBinhLuanResponses[keyof VietBinhLuanResponses];
+
+export type NoiMocData = {
+    body: MocMoiIn;
+    path: {
+        /**
+         * Mach Id
+         */
+        mach_id: number;
+    };
+    query?: never;
+    url: '/api/v1/machs/{mach_id}/mocs';
+};
+
+export type NoiMocErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+    /**
+     * Conflict
+     */
+    409: LoiOut;
+    /**
+     * Too Many Requests
+     */
+    429: LoiOut;
+};
+
+export type NoiMocError = NoiMocErrors[keyof NoiMocErrors];
+
+export type NoiMocResponses = {
+    /**
+     * Created
+     */
+    201: MocOut;
+};
+
+export type NoiMocResponse = NoiMocResponses[keyof NoiMocResponses];
+
+export type MoLaiMachData = {
+    body?: never;
+    path: {
+        /**
+         * Mach Id
+         */
+        mach_id: number;
+    };
+    query?: never;
+    url: '/api/v1/machs/{mach_id}/reopen';
+};
+
+export type MoLaiMachErrors = {
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+    /**
+     * Conflict
+     */
+    409: LoiOut;
+};
+
+export type MoLaiMachError = MoLaiMachErrors[keyof MoLaiMachErrors];
+
+export type MoLaiMachResponses = {
+    /**
+     * OK
+     */
+    200: MachChiTietOut;
+};
+
+export type MoLaiMachResponse = MoLaiMachResponses[keyof MoLaiMachResponses];
+
+export type XemToiData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/me';
+};
+
+export type XemToiResponses = {
+    /**
+     * OK
+     */
+    200: ToiOut;
+};
+
+export type XemToiResponse = XemToiResponses[keyof XemToiResponses];
+
+export type XoaMocData = {
+    body?: never;
+    path: {
+        /**
+         * Moc Id
+         */
+        moc_id: number;
+    };
+    query?: never;
+    url: '/api/v1/mocs/{moc_id}';
+};
+
+export type XoaMocErrors = {
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+    /**
+     * Conflict
+     */
+    409: LoiOut;
+};
+
+export type XoaMocError = XoaMocErrors[keyof XoaMocErrors];
+
+export type XoaMocResponses = {
+    /**
+     * OK
+     */
+    200: MocOut;
+};
+
+export type XoaMocResponse = XoaMocResponses[keyof XoaMocResponses];
+
+export type SuaMocData = {
+    body: MocSuaIn;
+    path: {
+        /**
+         * Moc Id
+         */
+        moc_id: number;
+    };
+    query?: never;
+    url: '/api/v1/mocs/{moc_id}';
+};
+
+export type SuaMocErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+    /**
+     * Conflict
+     */
+    409: LoiOut;
+};
+
+export type SuaMocError = SuaMocErrors[keyof SuaMocErrors];
+
+export type SuaMocResponses = {
+    /**
+     * OK
+     */
+    200: MocOut;
+};
+
+export type SuaMocResponse = SuaMocResponses[keyof SuaMocResponses];
+
 export type LietKeBinhLuanMocData = {
     body?: never;
     path: {
@@ -960,6 +1710,52 @@ export type LietKeBinhLuanMocResponses = {
 };
 
 export type LietKeBinhLuanMocResponse = LietKeBinhLuanMocResponses[keyof LietKeBinhLuanMocResponses];
+
+export type DatReactionData = {
+    body: ReactionIn;
+    path: {
+        /**
+         * Moc Id
+         */
+        moc_id: number;
+    };
+    query?: never;
+    url: '/api/v1/mocs/{moc_id}/reactions';
+};
+
+export type DatReactionErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+    /**
+     * Conflict
+     */
+    409: LoiOut;
+};
+
+export type DatReactionError = DatReactionErrors[keyof DatReactionErrors];
+
+export type DatReactionResponses = {
+    /**
+     * OK
+     */
+    200: ReactionOut;
+};
+
+export type DatReactionResponse = DatReactionResponses[keyof DatReactionResponses];
 
 export type LietKeBanCuMocData = {
     body?: never;
@@ -1077,3 +1873,44 @@ export type XemHoSoResponses = {
 };
 
 export type XemHoSoResponse = XemHoSoResponses[keyof XemHoSoResponses];
+
+export type DatVoteData = {
+    body: VoteIn;
+    path?: never;
+    query?: never;
+    url: '/api/v1/votes';
+};
+
+export type DatVoteErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+    /**
+     * Conflict
+     */
+    409: LoiOut;
+};
+
+export type DatVoteError = DatVoteErrors[keyof DatVoteErrors];
+
+export type DatVoteResponses = {
+    /**
+     * OK
+     */
+    200: VoteOut;
+};
+
+export type DatVoteResponse = DatVoteResponses[keyof DatVoteResponses];

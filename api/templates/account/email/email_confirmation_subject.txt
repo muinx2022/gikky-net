@@ -1,0 +1,1 @@
+{% load i18n %}{% autoescape off %}Xác nhận địa chỉ email cho gikky.net{% endautoescape %}

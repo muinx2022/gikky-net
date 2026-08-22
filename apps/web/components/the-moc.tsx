@@ -4,6 +4,7 @@ import { dauThoiGianServer, ngayDayDu } from "@/lib/dinh-dang";
 import { SAU_NGAN_KEO } from "@/lib/khan-dai";
 
 import { BinhLuan, DanhSachBinhLuan } from "./binh-luan";
+import { Composer } from "./composer";
 import { SoLaiLo } from "./con-so";
 import { CotVote } from "./cot-vote";
 import { KhoiTrich } from "./khoi-trich";
@@ -68,13 +69,19 @@ export function TheMoc({
           <span className={css.dot}>{moc.seq}</span>
         </div>
       )}
-      {/* Cột vote bên trái thân mốc — plan con 1d §2.5.6. Nó ở đây từ 1d để Phase 2
-          không phải vẽ lại bố cục thẻ khi vote sống dậy (PLAN 5.7: vote nằm trên TỪNG
-          mốc, "mốc 9 được 412 dù bài gốc 89" — nên con số này là `moc.score`, không phải
-          điểm mạch). Bia mộ vẫn có cột: `score` của nó đã bị API zero hoá, và giấu cột đi
-          ở đúng những hàng đó làm timeline so le. */}
+      {/* Cột vote bên trái thân mốc — plan con 1d §2.5.6, **sống từ Phase 2** (PLAN 5.7:
+          vote nằm trên TỪNG mốc, "mốc 9 được 412 dù bài gốc 89" — nên con số này là
+          `moc.score`, không phải điểm mạch). Bia mộ vẫn có cột: `score` của nó đã bị API
+          zero hoá, và giấu cột đi ở đúng những hàng đó làm timeline so le — nhưng `dich`
+          là `null`, vì API từ chối phiếu vào nội dung đã gỡ (409 `noi_dung_da_go`) và một
+          mũi tên bấm được để nhận lỗi là một cái bẫy. */}
       <div className={css.trong}>
-        <CotVote diem={moc.score} nhan={`mốc ${moc.seq}`} cai_gi="moc" />
+        <CotVote
+          diem={moc.score}
+          nhan={`mốc ${moc.seq}`}
+          cai_gi="moc"
+          dich={hien ? { loai: "moc", id: moc.id } : null}
+        />
         <div className={css.noi}>
         <div className={css.dau}>
           <span className={css.khi} data-testid="moc-occurred-at">
@@ -162,6 +169,19 @@ export function TheMoc({
                 Chưa ai neo bình luận vào mốc này.
               </p>
             )}
+            {/* PLAN 5.4 luật 3: "Composer trong ngăn kéo **tự neo mốc đó**". Nó không
+                đọc chip từ đâu cả — `anchorMocSeq` là `seq` của chính cái ngăn kéo này,
+                và đó là toàn bộ khác biệt với composer khán đài. Câu mồi
+                (`question_for_crowd`) làm placeholder khi ngăn kéo còn trống (luật 4). */}
+            <Composer
+              anchorMocSeq={moc.seq}
+              moi={
+                co_hang
+                  ? undefined
+                  : (moc.question_for_crowd ?? "＋ nói gì đó về mốc này")
+              }
+              nutGui="Gửi vào mốc này"
+            />
           </KhungNganKeo>
         )}
         </div>

@@ -17,11 +17,22 @@ Về bảo mật hạ tầng: luật Caddy `gikky.net/api/admin/*` → 403 ở P
 """
 
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path
 
 from api.v1 import api_v1
 
 urlpatterns = [
+    # allauth headless — PLAN mục 7 chốt "mount toàn bộ urls allauth dưới prefix `/api/`"
+    # để Caddy (prod) và `rewrites` của Next (dev) route được bằng đúng một luật.
+    # Bề mặt thật: `/api/_allauth/browser/v1/auth/{login,signup,session,…}`.
+    #
+    # **Không mount `allauth.urls`** (các view HTML): `HEADLESS_ONLY = True` nên chúng
+    # không tồn tại, và mount thêm là phơi ra một cửa đăng nhập thứ hai — bằng form, không
+    # đi qua CSRF/kiểm quyền của API — mà không ai kiểm.
+    # Hệ quả cần biết trước khi bật Google: redirect URI OAuth của bản headless là
+    # `/api/_allauth/browser/v1/auth/provider/callback`, **không** phải
+    # `/api/accounts/google/login/callback/` như PLAN mục 7 ghi cho bản có view HTML.
+    path("api/_allauth/", include("allauth.headless.urls")),
     # THỨ TỰ hai dòng `/api/admin/...` KHÔNG phải là thứ giữ cho cơ chế này đúng:
     # `URLResolver.resolve` bắt `Resolver404` của resolver con rồi ĐI TIẾP pattern kế,
     # nên đảo thứ tự vẫn ra cùng kết quả. Thứ thật sự giữ đúng là **Ninja không có

@@ -1,7 +1,16 @@
-"""Trang mạch và khán đài — PLAN mục 7, 5.3, 5.5, 9.2."""
+"""Trang mạch và khán đài — PLAN mục 7, 5.3, 5.5, 9.2.
 
+Phase 2 thêm bốn đường GHI vào cùng file, đúng theo lối chia của module này (theo **tiền
+tố URL**, không theo model): `POST /machs`, `POST /machs/{id}/mocs`,
+`POST /machs/{id}/comments`, `POST /machs/{id}/close` · `/reopen`.
+Luật quyền của từng cái nằm ngay trong docstring của nó — đó là chỗ người sửa sau đọc.
+"""
+
+from datetime import timedelta
+
+from django.db import transaction
 from django.utils import timezone
-from ninja import Router
+from ninja import Router, Status
 
 from core.doc_noi_dung import (
     SORT_HAY_NHAT,
@@ -14,15 +23,30 @@ from core.doc_noi_dung import (
     nap_binh_luan,
     tap_dang_duoc_trich,
     tap_tung_duoc_trich,
+    trang_thai_noi_dung,
+)
+from core.ghi import (
+    NGAY_MO_LAI,
+    SO_MOC_TOI_DA_MOI_NGAY,
+    dem_moc_trong_ngay_vn,
+    dong_so,
+    mo_lai,
+    tao_binh_luan,
+    tao_mach,
+    them_moc,
+    tu_upvote,
 )
 from core.mat import tinh_mat_theo_thoi_gian
-from core.models.dien_dan import Mach
+from core.models.dien_dan import Mach, Sub
 from core.models.moc import Moc
 from core.models.tuong_tac import Trich
 
+from api.ghi_chung import kiem_occurred_at, nap_mach
 from api.loi import (
     CURSOR_KHONG_HOP_LE,
+    KHONG_TIM_THAY,
     SORT_KHONG_HOP_LE,
+    SUB_KHONG_TON_TAI,
     THAM_SO_KHONG_HOP_LE,
     LoiOut,
     khong_tim_thay,
@@ -36,7 +60,19 @@ from api.phan_trang import (
     kiem_gioi_han,
     ma_hoa_cursor,
 )
-from api.schemas import KhanDaiOut, MachChiTietOut
+from api.quyen import (
+    DU_LIEU_KHONG_HOP_LE,
+    HET_HAN_MO_LAI,
+    MACH_DA_DONG,
+    MACH_DANG_MO,
+    QUA_HAN_MUC_MOC,
+    LoiGhi,
+    dang_nhap,
+    doi_chu_so_huu,
+    doi_mach_tuong_tac_duoc,
+)
+from api.schemas import BinhLuanOut, KhanDaiOut, MachChiTietOut, MocOut
+from api.schemas_ghi import BinhLuanMoiIn, DongSoIn, MachMoiIn, MocMoiIn
 from api.trinh_bay import mach_tom_tat_ra, moc_ra, nut_ra, spine_ra
 
 router = Router()
@@ -74,7 +110,17 @@ def xem_mach(request, mach_id: int):
     mach = _mach_hien(mach_id)
     if mach is None:
         return khong_tim_thay(f"mạch {mach_id}")
+    return mach_chi_tiet_ra(mach)
 
+
+def mach_chi_tiet_ra(mach: Mach) -> MachChiTietOut:
+    """Dựng `MachChiTietOut` từ một hàng `Mach` — dùng chung với đường GHI.
+
+    Tách ra ở Phase 2 vì `POST /machs`, `/close` và `/reopen` phải trả về **cùng một hình
+    dạng** với `GET /machs/{id}`: hai bản dựng song song là hai bản sẽ trôi khỏi nhau, và
+    cái trôi sẽ là cái ở đường ghi (nó chạy ít hơn hẳn). Hàm không kiểm quyền và không
+    kiểm `hidden_at` — người gọi làm việc đó trước.
+    """
     mocs = list(Moc.objects.filter(mach=mach).order_by("seq"))
     dem = dem_binh_luan_theo_moc(mach)
     trich_theo_moc = {
@@ -88,13 +134,13 @@ def xem_mach(request, mach_id: int):
     # `filterwarnings = ["error"]` biến `DeprecationWarning` thành lỗi test.
     # Dùng lại `MachTomTatOut` để 12 trường chung của thẻ feed và của trang mạch không
     # có hai bản sao trôi khỏi nhau.
-    # `exclude={"diem"}` là CỐ Ý (plan con 1d §2.1). `diem` là điểm của mốc 1, và trang
-    # mạch đã trả nguyên mốc 1 kèm `score` của nó trong `mocs` — chép thêm một bản ở tầng
-    # mạch là dựng hai chỗ nói cùng một con số, và cái thứ hai sẽ là cái trôi. Thẻ feed
-    # cần `diem` vì nó KHÔNG có `mocs`.
+    # `exclude={"diem", "moc_1_id"}` là CỐ Ý (plan con 1d §2.1, mở rộng ở Phase 2). Cả hai
+    # là thông tin về **mốc 1**, và trang mạch đã trả nguyên mốc 1 trong `mocs` — chép
+    # thêm một bản ở tầng mạch là dựng hai chỗ nói cùng một con số, và cái thứ hai sẽ là
+    # cái trôi. Thẻ feed cần chúng vì nó KHÔNG có `mocs`.
     tom_tat = mach_tom_tat_ra(mach)
     return MachChiTietOut(
-        **tom_tat.model_dump(exclude={"diem"}),
+        **tom_tat.model_dump(exclude={"diem", "moc_1_id"}),
         closed_at=mach.closed_at,
         locked=mach.locked_at is not None,
         face=tinh_mat_theo_thoi_gian(
@@ -305,3 +351,266 @@ def liet_ke_binh_luan_mach(
         offset_ke_tiep=offset_ke_tiep,
         cursor_ke_tiep=cursor_ke_tiep,
     )
+
+
+# =============================================================================
+# ĐƯỜNG GHI — Phase 2. Mỗi endpoint nêu LUẬT QUYỀN của nó ngay trong docstring.
+# =============================================================================
+
+
+def _figures_ra_dict(figures) -> list[dict] | None:
+    """Schema `FigureIn` → JSON thô cho cột `figures`. `None` giữ nguyên `None`.
+
+    Có hàm riêng vì `figures` là `JSONField`: nhét thẳng object pydantic vào đó thì
+    `psycopg` serialize ra một hình dạng khác (hoặc nổ), và lỗi chỉ lộ khi ai đó đọc lại.
+    """
+    if figures is None:
+        return None
+    return [{"label": f.label, "value": f.value} for f in figures]
+
+
+@router.post(
+    "/machs",
+    response={201: MachChiTietOut, 400: LoiOut, 401: LoiOut, 403: LoiOut, 404: LoiOut},
+    operation_id="tao_mach",
+    tags=["mach"],
+    auth=dang_nhap,
+)
+def tao_mach_api(request, du_lieu: MachMoiIn):
+    """Đăng bài = tạo `Mach` + `Moc(seq=1)` trong MỘT giao dịch (PLAN 5.1).
+
+    **Quyền: bất kỳ ai đã đăng nhập và không bị khoá.** Không có "chủ" để đối chiếu —
+    người gọi *trở thành* chủ. Tài khoản bị ban bị chặn ở lớp auth (`api/quyen.py`).
+
+    Không có nút "tạo mạch" riêng (PLAN nguyên tắc 1): mọi post sinh ra là post thường,
+    UI mạch tự bật từ mốc 2. Vì thế endpoint này và `POST /machs/{id}/mocs` nhận **cùng
+    một bộ trường nội dung** — `MachMoiIn` kế thừa thẳng `MocMoiIn`.
+
+    Tác giả nhận **+1 phiếu của chính mình** ngay lúc đăng (PLAN 5.7) — để `0` trên cột
+    vote có nghĩa là "đã có người vote xuống", không phải "chưa ai đụng tới".
+    """
+    kiem_occurred_at(du_lieu.occurred_at)
+    sub = Sub.objects.filter(slug=du_lieu.sub).first()
+    if sub is None:
+        raise LoiGhi(404, SUB_KHONG_TON_TAI, f"Không có chuyên mục {du_lieu.sub!r}.")
+
+    with transaction.atomic():
+        mach, moc = tao_mach(
+            sub=sub,
+            author=request.user,
+            title=du_lieu.title.strip(),
+            body=du_lieu.body,
+            occurred_at=du_lieu.occurred_at,
+            loai=du_lieu.loai,
+            question_for_crowd=du_lieu.question_for_crowd,
+            figures=_figures_ra_dict(du_lieu.figures),
+        )
+        tu_upvote(target=moc)
+    mach.refresh_from_db()
+    return Status(201, mach_chi_tiet_ra(mach))
+
+
+@router.post(
+    "/machs/{int:mach_id}/mocs",
+    response={
+        201: MocOut,
+        400: LoiOut,
+        401: LoiOut,
+        403: LoiOut,
+        404: LoiOut,
+        409: LoiOut,
+        429: LoiOut,
+    },
+    operation_id="noi_moc",
+    tags=["moc"],
+    auth=dang_nhap,
+)
+def noi_moc(request, mach_id: int, du_lieu: MocMoiIn):
+    """Nối một mốc vào mạch — PLAN 5.1.
+
+    **Quyền: CHỈ tác giả mạch.** Người khác nhận 403 `khong_phai_chu`. Mạch là nhật ký
+    của một người; nếu ai cũng nối được thì "dấu thời gian máy chủ bất biến" chẳng chứng
+    minh được ai đã ghi cái gì.
+
+    Ba điều kiện nữa, mỗi cái một mã riêng để UI nói đúng chuyện:
+    - mạch bị mod **khoá** ⇒ 403 `mach_bi_khoa` (đọc được, cấm tương tác — PLAN 5.10);
+    - mạch **đã đóng sổ** ⇒ 409 `mach_da_dong` (đóng sổ vẫn bình luận được, chỉ không nối
+      mốc — PLAN 5.1);
+    - quá **3 mốc trong ngày lịch VN** ⇒ 429 `qua_han_muc_moc`. Hạn mức đếm theo
+      `created_at` (dấu server) và tính **mọi** mốc kể cả bia mộ — xoá rồi viết lại là
+      cách lách ngắn nhất. Ranh giới là nửa đêm giờ VN, không phải 24 giờ trượt.
+
+    `occurred_at` nhập lùi thoải mái, cấm tương lai (PLAN 5.2). Tác giả nhận +1 phiếu của
+    chính mình (PLAN 5.7).
+    """
+    kiem_occurred_at(du_lieu.occurred_at)
+    mach = nap_mach(mach_id)
+    doi_chu_so_huu(request.user, mach.author_id, "mạch")
+    doi_mach_tuong_tac_duoc(mach)
+    if mach.status == Mach.TrangThai.DONG:
+        raise LoiGhi(
+            409,
+            MACH_DA_DONG,
+            "Mạch đã đóng sổ — mở lại mới nối mốc được. Bình luận thì vẫn viết được.",
+        )
+    if dem_moc_trong_ngay_vn(mach) >= SO_MOC_TOI_DA_MOI_NGAY:
+        raise LoiGhi(
+            429,
+            QUA_HAN_MUC_MOC,
+            f"Hôm nay mạch này đã đủ {SO_MOC_TOI_DA_MOI_NGAY} mốc — mai nối tiếp nhé.",
+        )
+
+    with transaction.atomic():
+        moc = them_moc(
+            mach=mach,
+            author=request.user,
+            body=du_lieu.body,
+            occurred_at=du_lieu.occurred_at,
+            loai=du_lieu.loai,
+            question_for_crowd=du_lieu.question_for_crowd,
+            figures=_figures_ra_dict(du_lieu.figures),
+        )
+        tu_upvote(target=moc)
+    moc.refresh_from_db()
+    return Status(201, moc_ra(moc, so_binh_luan=0, trich=None))
+
+
+@router.post(
+    "/machs/{int:mach_id}/comments",
+    response={
+        201: BinhLuanOut,
+        400: LoiOut,
+        401: LoiOut,
+        403: LoiOut,
+        404: LoiOut,
+    },
+    operation_id="viet_binh_luan",
+    tags=["binh-luan"],
+    auth=dang_nhap,
+)
+def viet_binh_luan(request, mach_id: int, du_lieu: BinhLuanMoiIn):
+    """Viết bình luận vào khán đài hoặc ngăn kéo — PLAN 5.4, nguyên tắc 4 và 6.
+
+    **Quyền: bất kỳ ai đã đăng nhập.** Không phải chỉ tác giả — khán đài là chỗ của đám
+    đông. Chặn duy nhất là mạch bị mod **khoá** (403 `mach_bi_khoa`).
+    **Mạch đã đóng sổ VẪN bình luận được** (PLAN 5.1) — đó là khác biệt cố ý so với
+    `POST /machs/{id}/mocs`, đừng "dọn dẹp" hai đường này thành một phép kiểm.
+
+    `anchor_moc_seq` **chỉ đặt được trên bình luận gốc**; gửi kèm `parent_id` là 400. Neo
+    trỏ vào một `seq` không tồn tại trong mạch cũng là 400 — chip `‹mốc 12›` trên một mạch
+    9 mốc mở ra một ngăn kéo không có thật.
+
+    `parent_id` phải thuộc **cùng mạch**: reply xuyên mạch sẽ dựng một nhánh mà cả hai
+    trang đều không hiển thị đúng.
+
+    Người viết nhận +1 phiếu của chính mình (PLAN 5.7).
+    """
+    mach = nap_mach(mach_id)
+    doi_mach_tuong_tac_duoc(mach)
+
+    parent = None
+    if du_lieu.parent_id is not None:
+        from core.models.binh_luan import Comment
+
+        parent = Comment.objects.filter(pk=du_lieu.parent_id, mach=mach).first()
+        if parent is None:
+            raise LoiGhi(
+                404,
+                KHONG_TIM_THAY,
+                f"Không tìm thấy bình luận cha {du_lieu.parent_id} trong mạch này.",
+            )
+        if du_lieu.anchor_moc_seq is not None:
+            raise LoiGhi(
+                400,
+                DU_LIEU_KHONG_HOP_LE,
+                "anchor_moc_seq chỉ đặt được trên bình luận gốc; reply kế thừa neo của "
+                "gốc (PLAN nguyên tắc 6).",
+            )
+    elif du_lieu.anchor_moc_seq is not None:
+        if not Moc.objects.filter(mach=mach, seq=du_lieu.anchor_moc_seq).exists():
+            raise LoiGhi(
+                400,
+                DU_LIEU_KHONG_HOP_LE,
+                f"Mạch này không có mốc {du_lieu.anchor_moc_seq}.",
+            )
+
+    with transaction.atomic():
+        c = tao_binh_luan(
+            mach=mach,
+            author=request.user,
+            body=du_lieu.body,
+            parent=parent,
+            anchor_moc_seq=du_lieu.anchor_moc_seq,
+        )
+        tu_upvote(target=c)
+    c.refresh_from_db()
+    nut = Nut(
+        binh_luan=c,
+        do_sau=c.do_sau,
+        trang_thai=trang_thai_noi_dung(c),
+        con=[],
+    )
+    return Status(201, nut_ra(nut, chu_mach_id=mach.author_id))
+
+
+@router.post(
+    "/machs/{int:mach_id}/close",
+    response={200: MachChiTietOut, 401: LoiOut, 403: LoiOut, 404: LoiOut, 409: LoiOut},
+    operation_id="dong_so_mach",
+    tags=["mach"],
+    auth=dang_nhap,
+)
+def dong_so_mach(request, mach_id: int, du_lieu: DongSoIn):
+    """Đóng sổ — PLAN 5.1. **Quyền: CHỈ tác giả mạch** (403 cho người khác).
+
+    `ket_qua` là một dòng tự do ≤40 ký tự ("+18.2% · 163 ngày"), hiện ở banner mặt CẶN và
+    OG card. **Thuần hiển thị** — server không validate ngữ nghĩa, cùng triết lý với
+    `figures`. Không nhập ⇒ `null`, banner ẩn phần đó.
+
+    Mạch đã đóng rồi thì 409 `mach_da_dong` chứ không phải "đóng lại lần nữa": đóng sổ
+    lần hai sẽ ghi đè `closed_at`, và cái đó **dời hạn 7 ngày mở lại** — tức một cách vô
+    hạn hoá cái hạn đó bằng cách bấm hai lần.
+    """
+    mach = nap_mach(mach_id)
+    doi_chu_so_huu(request.user, mach.author_id, "mạch")
+    doi_mach_tuong_tac_duoc(mach)
+    if mach.status == Mach.TrangThai.DONG:
+        raise LoiGhi(409, MACH_DA_DONG, "Mạch này đã đóng sổ rồi.")
+    mach = dong_so(mach=mach, ket_qua=du_lieu.ket_qua)
+    return mach_chi_tiet_ra(nap_mach(mach.pk))
+
+
+@router.post(
+    "/machs/{int:mach_id}/reopen",
+    response={200: MachChiTietOut, 401: LoiOut, 403: LoiOut, 404: LoiOut, 409: LoiOut},
+    operation_id="mo_lai_mach",
+    tags=["mach"],
+    auth=dang_nhap,
+)
+def mo_lai_mach(request, mach_id: int):
+    """Mở lại mạch đã đóng sổ — **trong 7 ngày**, sau đó nút biến mất (PLAN 5.1).
+
+    **Quyền: CHỈ tác giả mạch.** Quá hạn ⇒ 409 `het_han_mo_lai`; mạch đang mở ⇒ 409
+    `mach_dang_mo`.
+
+    Hạn tính từ `closed_at`, và nó là hạn THẬT chứ không phải gợi ý UI: một cuốn sổ mở
+    lại được vô thời hạn thì "đã đóng sổ" không còn nghĩa gì, mà đó là nhãn cả mặt CẶN
+    lẫn OG card đang dựa vào.
+
+    `ket_qua` **bị xoá theo** — xem `core/ghi.py::mo_lai`.
+    """
+    mach = nap_mach(mach_id)
+    doi_chu_so_huu(request.user, mach.author_id, "mạch")
+    doi_mach_tuong_tac_duoc(mach)
+    if mach.status != Mach.TrangThai.DONG:
+        raise LoiGhi(409, MACH_DANG_MO, "Mạch này đang mở, không có gì để mở lại.")
+    if mach.closed_at is not None and timezone.now() - mach.closed_at > timedelta(
+        days=NGAY_MO_LAI
+    ):
+        raise LoiGhi(
+            409,
+            HET_HAN_MO_LAI,
+            f"Quá {NGAY_MO_LAI} ngày kể từ khi đóng sổ — mạch này không mở lại được nữa.",
+        )
+    mach = mo_lai(mach=mach)
+    return mach_chi_tiet_ra(nap_mach(mach.pk))

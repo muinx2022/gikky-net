@@ -1,0 +1,106 @@
+/* Góc phải thanh trên cùng. Kiểu dáng "UI" của PLAN 9.1 — Be Vietnam Pro, không mono;
+   chỉ tên người dùng đi theo `CHU_NGUOI_DUNG`. */
+
+.khung,
+.khach {
+  position: relative;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+/* Ô giữ chỗ trong lúc `GET /me` chưa trả lời. Cùng chiều cao, đủ rộng để thanh không
+   nhảy — xem `ThanhTaiKhoan`: vẽ trạng thái khách rồi đổi là chớp "Đăng nhập" vào mặt
+   một người đang đăng nhập. */
+.chua_biet {
+  margin-left: auto;
+  display: inline-block;
+  width: 116px;
+  height: 26px;
+}
+
+.lien_ket {
+  color: var(--ink-3);
+}
+
+.lien_ket:hover {
+  color: var(--accent);
+}
+
+.nut_chinh {
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.nut_chinh:hover {
+  filter: brightness(1.08);
+}
+
+.ten {
+  font-family: var(--f-mono);
+  font-size: 13px;
+  color: var(--ink-2);
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px 11px;
+  cursor: pointer;
+}
+
+.ten:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 7px);
+  right: 0;
+  min-width: 168px;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 5px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 12%);
+  z-index: 30;
+}
+
+.menu > * {
+  text-align: left;
+  padding: 7px 10px;
+  border: 0;
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.menu > *:hover {
+  background: var(--inset);
+  color: var(--accent);
+}
+
+/* KHÔNG hoàng thổ: --stamp đi theo allowlist từng selector suy từ PLAN 9.1
+   (e2e/don-vi/mau-token.spec.ts), và "tài khoản chưa xác thực email" không có trong
+   danh sách "thứ mang tính đóng dấu" của PLAN. Nét đứt là đủ để nó khác chữ thường. */
+.chua_xac_thuc {
+  font-size: 11px;
+  color: var(--ink-3);
+  border-bottom: 1px dashed var(--line-2);
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .chua_xac_thuc {
+    display: none;
+  }
+}

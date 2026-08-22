@@ -4,7 +4,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetHealthData, GetHealthErrors, GetHealthResponses, LietKeBanCuMocData, LietKeBanCuMocErrors, LietKeBanCuMocResponses, LietKeBinhLuanMachData, LietKeBinhLuanMachErrors, LietKeBinhLuanMachResponses, LietKeBinhLuanMocData, LietKeBinhLuanMocErrors, LietKeBinhLuanMocResponses, LietKeFeedDangDienRaData, LietKeFeedDangDienRaErrors, LietKeFeedDangDienRaResponses, LietKeFeedMoiData, LietKeFeedMoiErrors, LietKeFeedMoiResponses, LietKeSubData, LietKeSubResponses, XemHoSoData, XemHoSoErrors, XemHoSoResponses, XemMachData, XemMachErrors, XemMachResponses, XemSubData, XemSubErrors, XemSubResponses } from './types.gen';
+import type { DatReactionData, DatReactionErrors, DatReactionResponses, DatVoteData, DatVoteErrors, DatVoteResponses, DongSoMachData, DongSoMachErrors, DongSoMachResponses, GetHealthData, GetHealthErrors, GetHealthResponses, LietKeBanCuMocData, LietKeBanCuMocErrors, LietKeBanCuMocResponses, LietKeBinhLuanMachData, LietKeBinhLuanMachErrors, LietKeBinhLuanMachResponses, LietKeBinhLuanMocData, LietKeBinhLuanMocErrors, LietKeBinhLuanMocResponses, LietKeFeedDangDienRaData, LietKeFeedDangDienRaErrors, LietKeFeedDangDienRaResponses, LietKeFeedMoiData, LietKeFeedMoiErrors, LietKeFeedMoiResponses, LietKeSubData, LietKeSubResponses, MoLaiMachData, MoLaiMachErrors, MoLaiMachResponses, NoiMocData, NoiMocErrors, NoiMocResponses, SuaBinhLuanData, SuaBinhLuanErrors, SuaBinhLuanResponses, SuaMocData, SuaMocErrors, SuaMocResponses, TaoMachData, TaoMachErrors, TaoMachResponses, VietBinhLuanData, VietBinhLuanErrors, VietBinhLuanResponses, XemHoSoData, XemHoSoErrors, XemHoSoResponses, XemMachData, XemMachErrors, XemMachResponses, XemSubData, XemSubErrors, XemSubResponses, XemToiData, XemToiResponses, XoaBinhLuanData, XoaBinhLuanErrors, XoaBinhLuanResponses, XoaMocData, XoaMocErrors, XoaMocResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -19,6 +19,66 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
      */
     meta?: keyof ClientMeta extends never ? Record<string, unknown> : ClientMeta;
 };
+
+/**
+ * Xoa Binh Luan Api
+ *
+ * Xoá bình luận theo **luật hai vế** của PLAN 5.3 — nợ 1a bàn giao, trả ở đây.
+ *
+ * **Quyền: CHỈ tác giả của bình luận.** Mạch bị mod khoá ⇒ 403; đã xoá rồi ⇒ 409.
+ *
+ * Luật, nguyên văn: giữ chỗ "[đã xoá]" nếu **có reply con** HOẶC **đã TỪNG được trích
+ * vào sổ (kể cả trích đã gỡ)**; xoá thật chỉ khi không dính cả hai. Chữ "đã TỪNG" khớp
+ * đúng `Trich.comment = PROTECT` — `PROTECT` chặn theo hàng, nó không biết `removed_at`
+ * là gì. Đọc thành "đang được trích" là tiền-kiểm `removed_at IS NULL`, quyết "xoá
+ * thật", rồi ăn `ProtectedError` ⇒ 500 trên một thao tác hợp lệ của chính chủ.
+ *
+ * **Xoá thật thì dọn `Vote` mồ côi trong cùng transaction** — `Vote` cố ý không có FK
+ * tới đích nên không có `ON DELETE` nào; nợ này ghi sẵn trong docstring của model từ 1a.
+ *
+ * `xoa_that = false` nghĩa là nút ở lại làm bia mộ: UI phải **render lại** nó chứ không
+ * gỡ khỏi cây, nếu không cả nhánh con mất chỗ bám.
+ */
+export const xoaBinhLuan = <ThrowOnError extends boolean = false>(options: Options<XoaBinhLuanData, ThrowOnError>): RequestResult<XoaBinhLuanResponses, XoaBinhLuanErrors, ThrowOnError> => (options.client ?? client).delete<XoaBinhLuanResponses, XoaBinhLuanErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/comments/{comment_id}',
+    ...options
+});
+
+/**
+ * Sua Binh Luan Api
+ *
+ * Sửa bình luận: đổi `body`, hiện dấu `*đã sửa*` (PLAN 5.3).
+ *
+ * **Quyền: CHỈ tác giả của bình luận** — 403 `khong_phai_chu` cho mọi người khác, kể cả
+ * chủ mạch. Chủ mạch có quyền trên *cuốn sổ*, không có quyền trên *lời của người khác*.
+ * Mạch bị mod khoá ⇒ 403; bình luận đã là bia mộ hoặc bị ẩn ⇒ 409.
+ *
+ * **Không có cửa sổ sửa im lặng 15 phút** như mốc, và đó là chủ đích: mốc là *bằng
+ * chứng* nên nó cần lịch sử bản cũ, bình luận là *tán gẫu* nên nó chỉ cần nói ra rằng đã
+ * sửa. `anchor_moc_seq` **không** sửa được — đổi neo sau khi thread đã có reply là dời
+ * cả thread sang một ngăn kéo khác dưới chân người đang đọc.
+ *
+ * Trả về nút bình luận **không kèm `replies`** (mảng rỗng): endpoint này sửa đúng một
+ * dòng, và trả cả nhánh con là mời UI thay nguyên nhánh bằng dữ liệu nó không hỏi.
+ */
+export const suaBinhLuan = <ThrowOnError extends boolean = false>(options: Options<SuaBinhLuanData, ThrowOnError>): RequestResult<SuaBinhLuanResponses, SuaBinhLuanErrors, ThrowOnError> => (options.client ?? client).patch<SuaBinhLuanResponses, SuaBinhLuanErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/comments/{comment_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
 
 /**
  * Feed Dang Dien Ra
@@ -89,6 +149,35 @@ export const lietKeFeedMoi = <ThrowOnError extends boolean = false>(options?: Op
 export const getHealth = <ThrowOnError extends boolean = false>(options?: Options<GetHealthData, ThrowOnError>): RequestResult<GetHealthResponses, GetHealthErrors, ThrowOnError> => (options?.client ?? client).get<GetHealthResponses, GetHealthErrors, ThrowOnError>({ url: '/api/v1/health', ...options });
 
 /**
+ * Tao Mach Api
+ *
+ * Đăng bài = tạo `Mach` + `Moc(seq=1)` trong MỘT giao dịch (PLAN 5.1).
+ *
+ * **Quyền: bất kỳ ai đã đăng nhập và không bị khoá.** Không có "chủ" để đối chiếu —
+ * người gọi *trở thành* chủ. Tài khoản bị ban bị chặn ở lớp auth (`api/quyen.py`).
+ *
+ * Không có nút "tạo mạch" riêng (PLAN nguyên tắc 1): mọi post sinh ra là post thường,
+ * UI mạch tự bật từ mốc 2. Vì thế endpoint này và `POST /machs/{id}/mocs` nhận **cùng
+ * một bộ trường nội dung** — `MachMoiIn` kế thừa thẳng `MocMoiIn`.
+ *
+ * Tác giả nhận **+1 phiếu của chính mình** ngay lúc đăng (PLAN 5.7) — để `0` trên cột
+ * vote có nghĩa là "đã có người vote xuống", không phải "chưa ai đụng tới".
+ */
+export const taoMach = <ThrowOnError extends boolean = false>(options: Options<TaoMachData, ThrowOnError>): RequestResult<TaoMachResponses, TaoMachErrors, ThrowOnError> => (options.client ?? client).post<TaoMachResponses, TaoMachErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/machs',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * Xem Mach
  *
  * Trang mạch: thông tin mạch + **toàn bộ** mốc + `face` + spine.
@@ -105,6 +194,33 @@ export const getHealth = <ThrowOnError extends boolean = false>(options?: Option
  * biến `entry_count == số ô trên spine` (PLAN 5.2).
  */
 export const xemMach = <ThrowOnError extends boolean = false>(options: Options<XemMachData, ThrowOnError>): RequestResult<XemMachResponses, XemMachErrors, ThrowOnError> => (options.client ?? client).get<XemMachResponses, XemMachErrors, ThrowOnError>({ url: '/api/v1/machs/{mach_id}', ...options });
+
+/**
+ * Dong So Mach
+ *
+ * Đóng sổ — PLAN 5.1. **Quyền: CHỈ tác giả mạch** (403 cho người khác).
+ *
+ * `ket_qua` là một dòng tự do ≤40 ký tự ("+18.2% · 163 ngày"), hiện ở banner mặt CẶN và
+ * OG card. **Thuần hiển thị** — server không validate ngữ nghĩa, cùng triết lý với
+ * `figures`. Không nhập ⇒ `null`, banner ẩn phần đó.
+ *
+ * Mạch đã đóng rồi thì 409 `mach_da_dong` chứ không phải "đóng lại lần nữa": đóng sổ
+ * lần hai sẽ ghi đè `closed_at`, và cái đó **dời hạn 7 ngày mở lại** — tức một cách vô
+ * hạn hoá cái hạn đó bằng cách bấm hai lần.
+ */
+export const dongSoMach = <ThrowOnError extends boolean = false>(options: Options<DongSoMachData, ThrowOnError>): RequestResult<DongSoMachResponses, DongSoMachErrors, ThrowOnError> => (options.client ?? client).post<DongSoMachResponses, DongSoMachErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/machs/{mach_id}/close',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
 
 /**
  * Liet Ke Binh Luan Mach
@@ -168,6 +284,176 @@ export const xemMach = <ThrowOnError extends boolean = false>(options: Options<X
 export const lietKeBinhLuanMach = <ThrowOnError extends boolean = false>(options: Options<LietKeBinhLuanMachData, ThrowOnError>): RequestResult<LietKeBinhLuanMachResponses, LietKeBinhLuanMachErrors, ThrowOnError> => (options.client ?? client).get<LietKeBinhLuanMachResponses, LietKeBinhLuanMachErrors, ThrowOnError>({ url: '/api/v1/machs/{mach_id}/comments', ...options });
 
 /**
+ * Viet Binh Luan
+ *
+ * Viết bình luận vào khán đài hoặc ngăn kéo — PLAN 5.4, nguyên tắc 4 và 6.
+ *
+ * **Quyền: bất kỳ ai đã đăng nhập.** Không phải chỉ tác giả — khán đài là chỗ của đám
+ * đông. Chặn duy nhất là mạch bị mod **khoá** (403 `mach_bi_khoa`).
+ * **Mạch đã đóng sổ VẪN bình luận được** (PLAN 5.1) — đó là khác biệt cố ý so với
+ * `POST /machs/{id}/mocs`, đừng "dọn dẹp" hai đường này thành một phép kiểm.
+ *
+ * `anchor_moc_seq` **chỉ đặt được trên bình luận gốc**; gửi kèm `parent_id` là 400. Neo
+ * trỏ vào một `seq` không tồn tại trong mạch cũng là 400 — chip `‹mốc 12›` trên một mạch
+ * 9 mốc mở ra một ngăn kéo không có thật.
+ *
+ * `parent_id` phải thuộc **cùng mạch**: reply xuyên mạch sẽ dựng một nhánh mà cả hai
+ * trang đều không hiển thị đúng.
+ *
+ * Người viết nhận +1 phiếu của chính mình (PLAN 5.7).
+ */
+export const vietBinhLuan = <ThrowOnError extends boolean = false>(options: Options<VietBinhLuanData, ThrowOnError>): RequestResult<VietBinhLuanResponses, VietBinhLuanErrors, ThrowOnError> => (options.client ?? client).post<VietBinhLuanResponses, VietBinhLuanErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/machs/{mach_id}/comments',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Noi Moc
+ *
+ * Nối một mốc vào mạch — PLAN 5.1.
+ *
+ * **Quyền: CHỈ tác giả mạch.** Người khác nhận 403 `khong_phai_chu`. Mạch là nhật ký
+ * của một người; nếu ai cũng nối được thì "dấu thời gian máy chủ bất biến" chẳng chứng
+ * minh được ai đã ghi cái gì.
+ *
+ * Ba điều kiện nữa, mỗi cái một mã riêng để UI nói đúng chuyện:
+ * - mạch bị mod **khoá** ⇒ 403 `mach_bi_khoa` (đọc được, cấm tương tác — PLAN 5.10);
+ * - mạch **đã đóng sổ** ⇒ 409 `mach_da_dong` (đóng sổ vẫn bình luận được, chỉ không nối
+ * mốc — PLAN 5.1);
+ * - quá **3 mốc trong ngày lịch VN** ⇒ 429 `qua_han_muc_moc`. Hạn mức đếm theo
+ * `created_at` (dấu server) và tính **mọi** mốc kể cả bia mộ — xoá rồi viết lại là
+ * cách lách ngắn nhất. Ranh giới là nửa đêm giờ VN, không phải 24 giờ trượt.
+ *
+ * `occurred_at` nhập lùi thoải mái, cấm tương lai (PLAN 5.2). Tác giả nhận +1 phiếu của
+ * chính mình (PLAN 5.7).
+ */
+export const noiMoc = <ThrowOnError extends boolean = false>(options: Options<NoiMocData, ThrowOnError>): RequestResult<NoiMocResponses, NoiMocErrors, ThrowOnError> => (options.client ?? client).post<NoiMocResponses, NoiMocErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/machs/{mach_id}/mocs',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Mo Lai Mach
+ *
+ * Mở lại mạch đã đóng sổ — **trong 7 ngày**, sau đó nút biến mất (PLAN 5.1).
+ *
+ * **Quyền: CHỈ tác giả mạch.** Quá hạn ⇒ 409 `het_han_mo_lai`; mạch đang mở ⇒ 409
+ * `mach_dang_mo`.
+ *
+ * Hạn tính từ `closed_at`, và nó là hạn THẬT chứ không phải gợi ý UI: một cuốn sổ mở
+ * lại được vô thời hạn thì "đã đóng sổ" không còn nghĩa gì, mà đó là nhãn cả mặt CẶN
+ * lẫn OG card đang dựa vào.
+ *
+ * `ket_qua` **bị xoá theo** — xem `core/ghi.py::mo_lai`.
+ */
+export const moLaiMach = <ThrowOnError extends boolean = false>(options: Options<MoLaiMachData, ThrowOnError>): RequestResult<MoLaiMachResponses, MoLaiMachErrors, ThrowOnError> => (options.client ?? client).post<MoLaiMachResponses, MoLaiMachErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/machs/{mach_id}/reopen',
+    ...options
+});
+
+/**
+ * Xem Toi
+ *
+ * Danh tính của phiên hiện tại. **Per-user tuyệt đối — không cache** (PLAN 8.4).
+ *
+ * Khách chưa đăng nhập nhận 200 kèm `dang_nhap: false` và mọi trường danh tính `null`.
+ *
+ * `email_da_xac_thuc` có mặt vì xác thực email là **bắt buộc** ở gikky: tài khoản chưa
+ * xác thực thì đăng nhập được nhưng chưa nên được mời viết bài, và UI cần phân biệt hai
+ * trạng thái đó thay vì để người dùng bấm rồi ăn lỗi.
+ *
+ * `google_bat` là cấu hình server, không phải trạng thái người dùng: `false` ⇒ trang
+ * đăng nhập **không render** nút Google (PLAN mục 4 — không nút vĩnh viễn không bấm
+ * được), chứ không render một nút `disabled`.
+ *
+ * Endpoint này **không** trả trạng thái ban, quyền chi tiết, hay bất cứ thứ gì của người
+ * khác — nó chỉ nói về chính phiên đang gọi.
+ */
+export const xemToi = <ThrowOnError extends boolean = false>(options?: Options<XemToiData, ThrowOnError>): RequestResult<XemToiResponses, unknown, ThrowOnError> => (options?.client ?? client).get<XemToiResponses, unknown, ThrowOnError>({ url: '/api/v1/me', ...options });
+
+/**
+ * Xoa Moc Api
+ *
+ * Xoá mốc = **bia mộ** giữ chỗ, không bao giờ `DELETE` thật (PLAN nguyên tắc 2).
+ *
+ * **Quyền: CHỈ tác giả của mốc.** Mạch bị mod khoá ⇒ 403. Mốc đã bị gỡ rồi ⇒ 409.
+ *
+ * Trả về chính thẻ mốc ở trạng thái bia mộ (`trang_thai = "da_xoa"`, nội dung `null`)
+ * chứ không trả 204: UI phải **render lại ô đó** chứ không gỡ nó khỏi timeline — `seq`
+ * bất biến và spine phải đủ số ô, giấu hẳn một ô là thủng dãy số (PLAN 5.2).
+ *
+ * Xoá mốc **không** làm `entry_count`/`last_entry_at` lùi (chúng đo *cấu trúc*), nhưng
+ * **có** làm `comment_count`/`last_activity_at` đổi (chúng đo *nội dung đọc được*) —
+ * PLAN mục 6, luật đếm 4 cột.
+ */
+export const xoaMoc = <ThrowOnError extends boolean = false>(options: Options<XoaMocData, ThrowOnError>): RequestResult<XoaMocResponses, XoaMocErrors, ThrowOnError> => (options.client ?? client).delete<XoaMocResponses, XoaMocErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/mocs/{moc_id}',
+    ...options
+});
+
+/**
+ * Sua Moc Api
+ *
+ * Sửa mốc — **đúng 5 trường** của PLAN 5.2, không gì khác.
+ *
+ * **Quyền: CHỈ tác giả của mốc** (`Moc.author`, không phải `Mach.author` — hai thứ đó
+ * trùng nhau hôm nay vì chỉ tác giả nối được mốc, nhưng hỏi đúng cột là điều kiện để
+ * chúng vẫn đúng khi đồng tác giả mở ra). Người khác nhận 403 `khong_phai_chu`.
+ * Mạch bị mod khoá ⇒ 403; mốc đã là bia mộ hoặc bị ẩn ⇒ 409 `noi_dung_da_go`.
+ *
+ * **PATCH thật**: trường không gửi thì không đổi, trường gửi `null` thì xoá. `body`
+ * không nhận `null` (mốc phải có thân) — schema chặn trước khi vào đây.
+ *
+ * Sửa **im lặng trong 15 phút** kể từ `created_at`; sau đó mỗi lần sửa tạo một
+ * `MocRevision` lưu **đủ cả 5 trường bản trước** và tăng "đã sửa N lần". Có
+ * `occurred_at` trong revision là bắt buộc: sửa lùi ngày sự việc mà không để vết là phá
+ * đúng giá trị lõi "ghi-trước-khi-biết-kết-quả" của sản phẩm.
+ *
+ * `occurred_at` mới vẫn **cấm ngày tương lai** (theo giờ VN).
+ */
+export const suaMoc = <ThrowOnError extends boolean = false>(options: Options<SuaMocData, ThrowOnError>): RequestResult<SuaMocResponses, SuaMocErrors, ThrowOnError> => (options.client ?? client).patch<SuaMocResponses, SuaMocErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/mocs/{moc_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * Liet Ke Binh Luan Moc
  *
  * Ngăn kéo của một mốc: lát cắt bình luận neo vào mốc đó, **cũ → mới**.
@@ -189,6 +475,37 @@ export const lietKeBinhLuanMach = <ThrowOnError extends boolean = false>(options
  * dung của bia mộ thì không trả ra.
  */
 export const lietKeBinhLuanMoc = <ThrowOnError extends boolean = false>(options: Options<LietKeBinhLuanMocData, ThrowOnError>): RequestResult<LietKeBinhLuanMocResponses, LietKeBinhLuanMocErrors, ThrowOnError> => (options.client ?? client).get<LietKeBinhLuanMocResponses, LietKeBinhLuanMocErrors, ThrowOnError>({ url: '/api/v1/mocs/{moc_id}/comments', ...options });
+
+/**
+ * Dat Reaction Api
+ *
+ * Reaction 1 chạm trên mốc — bộ **CỐ ĐỊNH** 📈📉🔥🧊🎯 (PLAN 5.7).
+ *
+ * **Quyền: bất kỳ ai đã đăng nhập**, kể cả trên mốc của chính mình. Mạch bị mod khoá ⇒
+ * 403; mốc đã bị gỡ ⇒ 409.
+ *
+ * Một user **một** reaction mỗi mốc (`UNIQUE (user, moc)`) — đổi là `UPDATE`, không phải
+ * thêm hàng: đây là "bậc thang tham gia rẻ hơn viết", không phải phiếu bầu nhiều lựa
+ * chọn. `emoji = null` nghĩa là **rút**.
+ *
+ * Trả về **đủ 5 khoá kể cả khoá đang bằng 0**: UI vẽ nguyên bộ, và một khoá vắng mặt
+ * trong response sẽ thành một icon nhấp nháy xuất hiện/biến mất theo lượt bấm.
+ * Lưu khoá không dấu (`len`/`xuong`/…) chứ không lưu emoji — đổi bộ icon sau này không
+ * phải migrate dữ liệu.
+ */
+export const datReaction = <ThrowOnError extends boolean = false>(options: Options<DatReactionData, ThrowOnError>): RequestResult<DatReactionResponses, DatReactionErrors, ThrowOnError> => (options.client ?? client).post<DatReactionResponses, DatReactionErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/mocs/{moc_id}/reactions',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
 
 /**
  * Liet Ke Ban Cu Moc
@@ -278,3 +595,36 @@ export const xemSub = <ThrowOnError extends boolean = false>(options: Options<Xe
  * được thấy.
  */
 export const xemHoSo = <ThrowOnError extends boolean = false>(options: Options<XemHoSoData, ThrowOnError>): RequestResult<XemHoSoResponses, XemHoSoErrors, ThrowOnError> => (options.client ?? client).get<XemHoSoResponses, XemHoSoErrors, ThrowOnError>({ url: '/api/v1/users/{username}', ...options });
+
+/**
+ * Dat Vote Api
+ *
+ * Vote ±1 trên **mốc hoặc bình luận**, hai trục riêng rẽ (PLAN 5.7).
+ *
+ * **Quyền: bất kỳ ai đã đăng nhập** — kể cả trên nội dung của chính mình (PLAN 5.7 chốt
+ * tác giả có sẵn +1 của mình, và rút được như mọi phiếu khác). Chặn duy nhất: mạch bị
+ * mod **khoá** ⇒ 403 `mach_bi_khoa`; đích đã bị gỡ ⇒ 409 `noi_dung_da_go` — số phiếu
+ * của bia mộ không được trả ra (`trinh_bay.nut_ra` zero hoá nó), nên nhận thêm phiếu vào
+ * đó là ghi vào một con số không ai đọc được.
+ *
+ * `value ∈ {-1, 0, 1}`; **`0` nghĩa là RÚT** — hàng `Vote` bị xoá, không lưu `0`.
+ * Vote lại cùng giá trị là no-op (idempotent), không cộng dồn.
+ *
+ * Trả về **con số mới của đích**, không chỉ "ok": UI vote lạc quan cần một nguồn sự thật
+ * để đối chiếu, nếu không hai cú bấm nhanh để lại một con số client tự cộng.
+ *
+ * Mạch **đã đóng sổ vẫn vote được** — đóng sổ chỉ chặn nối mốc (PLAN 5.1).
+ */
+export const datVote = <ThrowOnError extends boolean = false>(options: Options<DatVoteData, ThrowOnError>): RequestResult<DatVoteResponses, DatVoteErrors, ThrowOnError> => (options.client ?? client).post<DatVoteResponses, DatVoteErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/votes',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});

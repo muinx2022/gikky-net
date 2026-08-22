@@ -9,7 +9,11 @@ import { type Page, expect, test } from "@playwright/test";
 
 import { TEN_DAU_CHU_NGUOI_DUNG } from "../lib/chu-nguoi-dung";
 import { ngayCuaThoiDiem } from "../lib/dinh-dang";
-import { LY_DO_TAT_VOTE } from "../lib/vote";
+// Đổi tên ở Phase 2: hằng cũ (một câu duy nhất cho "vote chưa sống") tách làm hai, vì
+// nay có HAI lý do khác nhau — chưa đăng nhập, và mạch bị mod khoá. Dùng chung một câu
+// nghĩa là người đang đăng nhập tử tế bị bảo đi đăng nhập lại vòng vòng.
+// Nhóm A7 dưới đây chạy trên trình duyệt CHƯA đăng nhập, nên nó ghim đúng vế thứ nhất.
+import { LY_DO_CHUA_DANG_NHAP } from "../lib/vote";
 import {
   SUB_NGOAI_DANH_SACH,
   SUB_RONG,
@@ -82,11 +86,11 @@ test.describe("A7 — thẻ feed có cột vote, mũi tên disabled kèm lý do"
     for (const huong of ["len", "xuong"]) {
       const nut = cot.getByTestId(`mui-ten-${huong}`);
       await expect(nut).toBeDisabled();
-      await expect(nut).toHaveAttribute("title", LY_DO_TAT_VOTE);
+      await expect(nut).toHaveAttribute("title", LY_DO_CHUA_DANG_NHAP);
       await expect(nut).toHaveAttribute("aria-disabled", "true");
       await expect(nut).toHaveAttribute(
         "aria-label",
-        new RegExp(LY_DO_TAT_VOTE),
+        new RegExp(LY_DO_CHUA_DANG_NHAP),
       );
     }
   });

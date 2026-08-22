@@ -70,23 +70,25 @@ def test_operation_id_khong_trung_nhau():
     assert trung == [], f"operation_id trùng: {trung}"
 
 
-def test_du_endpoint_doc_cua_plan_muc_7():
-    """Hợp đồng đọc: đúng những path của PLAN mục 7 (+ health của Phase 0).
+def test_du_endpoint_cua_plan_muc_7():
+    """Bề mặt API: đúng những path của PLAN mục 7 (+ health của Phase 0).
 
     Viết cứng danh sách là cố ý: nó vừa là bài đo R1, vừa là chỗ ĐỎ đầu tiên nếu ai đó
-    lỡ tay thêm một endpoint ghi vào phase này (Phase 2) hoặc đổi đường dẫn đã hứa với
-    frontend.
+    đổi một đường dẫn đã hứa với frontend, hoặc mở thêm một cửa ghi mà quên ghi vào bảng
+    hợp đồng.
 
     `GET /subs/{slug}` thêm ở Phase 1d (plan con §2.3) và `GET /subs` thêm ở lượt vá
-    (§V8) — PLAN mục 7 **bắt** ghi lại vào bảng khi thêm endpoint, nên cả hai dòng đã có
-    mặt trong bảng ấy. Sửa danh sách này mà không sửa bảng là để hợp đồng công khai nói
-    thiếu một endpoint đang chạy; `test_bang_API_cua_PLAN_co_du_dong_sub` giữ chiều đó.
+    (§V8). **Phase 2 thêm 11 cửa ghi + `GET /me`** — PLAN mục 7 **bắt** ghi lại vào bảng
+    khi thêm endpoint, nên mọi dòng ở đây phải có mặt trong bảng ấy. Sửa danh sách này mà
+    không sửa bảng là để hợp đồng công khai nói thiếu một endpoint đang chạy;
+    `test_bang_API_cua_PLAN_co_du_dong_sub` giữ chiều đó.
     """
     thuc_te = {
         (tuple(sorted(op.methods)), duong_dan)
         for duong_dan, op in moi_operation(api_v1)
     }
     assert thuc_te == {
+        # --- đọc (Phase 0/1) ---
         (("GET",), "/health"),
         (("GET",), "/feeds/moi"),
         (("GET",), "/feeds/dang-dien-ra"),
@@ -97,6 +99,19 @@ def test_du_endpoint_doc_cua_plan_muc_7():
         (("GET",), "/mocs/{int:moc_id}/comments"),
         (("GET",), "/mocs/{int:moc_id}/revisions"),
         (("GET",), "/users/{username}"),
+        # --- tài khoản + ghi (Phase 2) ---
+        (("GET",), "/me"),
+        (("POST",), "/machs"),
+        (("POST",), "/machs/{int:mach_id}/mocs"),
+        (("POST",), "/machs/{int:mach_id}/comments"),
+        (("POST",), "/machs/{int:mach_id}/close"),
+        (("POST",), "/machs/{int:mach_id}/reopen"),
+        (("PATCH",), "/mocs/{int:moc_id}"),
+        (("DELETE",), "/mocs/{int:moc_id}"),
+        (("PATCH",), "/comments/{int:comment_id}"),
+        (("DELETE",), "/comments/{int:comment_id}"),
+        (("POST",), "/votes"),
+        (("POST",), "/mocs/{int:moc_id}/reactions"),
     }
 
 

@@ -11,7 +11,7 @@ import json
 import pytest
 from django.core.management import call_command
 
-from core.ghi import tao_binh_luan, tao_mach
+from core.ghi import tao_binh_luan, tao_mach, them_moc
 from core.management.commands.seed_dev import TITLE_HPG, TITLE_POST_THUONG
 from core.models import Comment, Mach, Sub, User
 
@@ -123,6 +123,60 @@ def lay(client, url: str, *, status: int = 200):
         f"{url} trả {r.status_code}, mong {status}: {r.content[:400]!r}"
     )
     return json.loads(r.content)
+
+
+def dat(client, url: str, du_lieu=None, *, status: int = 200, method: str = "post"):
+    """Gọi một endpoint GHI bằng JSON và đòi đúng status. Trả body đã parse.
+
+    Đối xứng với `lay()` cho đường đọc. Bốn thứ nó gom lại một chỗ, và mỗi thứ là một chỗ
+    đã từng gõ sai trong lúc viết Phase 2:
+
+    - `content_type="application/json"` — thiếu nó thì Ninja không parse được thân và trả
+      422, một mã trông y như "dữ liệu sai luật";
+    - thân `{}` khi không truyền gì — schema có toàn trường tuỳ chọn vẫn cần một object;
+    - thông điệp lỗi in nguyên body, vì `{detail, code}` mới nói được vì sao 403;
+    - `method` truyền bằng tên để bốn verb dùng chung một hàm.
+    """
+    goi = getattr(client, method)
+    r = goi(url, data=json.dumps(du_lieu or {}), content_type="application/json")
+    assert r.status_code == status, (
+        f"{method.upper()} {url} trả {r.status_code}, mong {status}: {r.content[:500]!r}"
+    )
+    return json.loads(r.content) if r.content else None
+
+
+def ma_loi(client, url: str, du_lieu=None, *, status: int, method: str = "post") -> str:
+    """Gọi một endpoint ghi, đòi đúng status, trả về **`code`** trong thân lỗi.
+
+    Đòi `code` chứ không đòi `detail`: PLAN mục 7 nói frontend bắt theo `code` và **không
+    bao giờ** parse `detail`, nên một bài đo khẳng định vào `detail` là bài đo biến việc
+    sửa chính tả thành một thay đổi phá vỡ.
+    """
+    than = dat(client, url, du_lieu, status=status, method=method)
+    assert "code" in than, f"thân lỗi thiếu `code`: {than!r}"
+    return than["code"]
+
+
+@pytest.fixture
+def nguoi_a(db) -> User:
+    """Người dùng A — **chủ** của mọi thứ trong `mach_cua_a`."""
+    return dung_user("nguoi_a", "Người A")
+
+
+@pytest.fixture
+def nguoi_b(db) -> User:
+    """Người dùng B — người LẠ. Mọi endpoint ghi phải có một bài đo "B không làm được
+    việc của A"; đó là fixture cho vế B."""
+    return dung_user("nguoi_b", "Người B")
+
+
+@pytest.fixture
+def mach_cua_a(sub, nguoi_a):
+    """Mạch 2 mốc của A + một bình luận gốc của A. Nền cho mọi bài đo phân quyền."""
+    m, _ = tao_mach(sub=sub, author=nguoi_a, title="Nhật ký của A", body="Mốc 1 của A.")
+    them_moc(mach=m, author=nguoi_a, body="Mốc 2 của A.")
+    m.refresh_from_db()
+    return m
 
 
 @pytest.fixture

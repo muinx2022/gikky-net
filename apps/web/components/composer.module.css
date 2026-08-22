@@ -1,0 +1,101 @@
+/* Chất liệu "khán đài xuề xoà" của PLAN 9.1 — bo tròn hơn sổ, nền nhạt, placeholder đùa
+   được. Tương phản với thẻ mốc là chủ đích. */
+
+.khung {
+  margin: 12px 0 4px;
+}
+
+.o {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--inset);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.o:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -1px;
+}
+
+.chan {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 7px;
+}
+
+.chip {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  color: var(--ink-3);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.gui {
+  margin-left: auto;
+  padding: 7px 16px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.gui:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.nhe {
+  padding: 7px 12px;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.nhe:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.loi {
+  margin: 7px 0 0;
+  padding: 7px 11px;
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  background: var(--inset);
+  color: var(--ink);
+  font-size: 12.5px;
+}
+
+.moi_dang_nhap {
+  margin: 12px 0 4px;
+  padding: 10px 13px;
+  border: 1px dashed var(--line-2);
+  border-radius: 10px;
+  color: var(--ink-2);
+  font-size: 13.5px;
+}
+
+.moi_dang_nhap a {
+  color: var(--accent);
+}
+
+.moi_dang_nhap a:hover {
+  text-decoration: underline;
+}

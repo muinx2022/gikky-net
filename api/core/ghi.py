@@ -56,6 +56,7 @@ phải theo đúng thứ tự trên.
 """
 
 import logging
+from datetime import datetime, time, timedelta
 
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
@@ -66,9 +67,29 @@ from core.cay_binh_luan import cap_phat_path
 from core.doc_noi_dung import doc_duoc
 from core.models.binh_luan import Comment
 from core.models.dien_dan import Mach, Sub
-from core.models.moc import Moc, kiem_figures
-from core.models.tuong_tac import Vote
-from core.thoi_gian import ngay_vn
+from core.models.moc import Moc, MocRevision, kiem_figures
+from core.models.tuong_tac import Reaction, Trich, Vote
+from core.thoi_gian import TZ_VN, ngay_vn
+
+#: PLAN 5.1 — tối đa 3 mốc mỗi **ngày lịch VN** mỗi mạch.
+SO_MOC_TOI_DA_MOI_NGAY = 3
+
+#: PLAN nguyên tắc 2 — sửa mốc trong 15 phút đầu thì im lặng, sau đó để lại `MocRevision`.
+PHUT_SUA_IM_LANG = 15
+
+#: PLAN 5.1 — mở lại mạch đã đóng sổ trong 7 ngày, sau đó nút biến mất.
+NGAY_MO_LAI = 7
+
+#: Năm trường sửa được của mốc (PLAN 5.2) — **không gì khác**. Danh sách này là NGUỒN cho
+#: cả `sua_moc` lẫn `MocRevision`: một trường sửa được mà không có mặt trong revision là
+#: một trường sửa lùi được không để vết, đúng thứ PLAN nguyên tắc 3 dựng revision để chặn.
+TRUONG_SUA_DUOC_CUA_MOC = (
+    "body",
+    "figures",
+    "occurred_at",
+    "loai",
+    "question_for_crowd",
+)
 
 logger = logging.getLogger(__name__)
 
@@ -523,37 +544,43 @@ def _dong_bo_diem_bai_goc(dich: Moc | Comment) -> None:
 
     Vote vào bình luận không đi qua đây: `diem_bai_goc` chỉ đọc `Moc.score`.
 
-    ⚠ **Nợ có tên: TRANH CHẤP KHOÁ, chưa tối ưu** *(W5, lượt vá 2 — chốt KHÔNG đổi hành
-    vi ở lượt này)*. Docstring trên nói kỹ về *thứ tự* khoá mà không một chữ về *giá*
-    của nó. Giá thật: mỗi lá phiếu vào mốc 1 lấy **một khoá độc quyền hàng `Mach`**
-    (`cap_nhat_dem_mach` mở bằng `select_for_update`) rồi chạy **5 truy vấn tổng hợp**
-    (`entry_count`, `comment_count`, hai `Max(created_at)`, `_diem_bai_goc`) — trong khi
-    bốn con số đầu **không liên quan gì tới lá phiếu vừa bỏ**. Khoá ấy còn nối tiếp với
+    ---
+
+    **Nợ `DONG-BO-DIEM` đã TRẢ ở Phase 2** *(W5 để lại từ lượt vá 2, cân lại 2026-08-22)*.
+
+    Bản 1d gọi thẳng `cap_nhat_dem_mach(Mach.objects.get(pk=dich.mach_id))`, và cái giá
+    là: mỗi lá phiếu vào mốc 1 lấy **một khoá độc quyền hàng `Mach`** rồi chạy **5 truy
+    vấn tổng hợp** (`entry_count`, `comment_count`, hai `Max(created_at)`, `_diem_bai_goc`)
+    — bốn con số đầu **không liên quan gì tới lá phiếu vừa bỏ**. Khoá ấy nối tiếp với
     `tao_binh_luan` và `them_moc`, vốn cũng xin đúng hàng đó: bài càng nóng thì hàng đợi
-    trên một hàng `Mach` càng dài, và đó đúng là những bài có nhiều phiếu nhất.
+    trên một hàng `Mach` càng dài, mà đó đúng là những bài nhiều phiếu nhất. 1d hoãn vì
+    "chưa có endpoint vote để đo"; Phase 2 mở `POST /votes`, nên điều kiện hoãn hết hiệu
+    lực và đây là chỗ trả nợ.
 
-    **Vì sao không tối ưu bây giờ:** Phase 2 mới có endpoint vote (`POST /votes`), nên
-    hôm nay không có tải thật để đo — tối ưu mù thì không chứng minh được gì và vẫn phải
-    làm lại khi có số.
+    Nay là **một `UPDATE` đúng một cột**, chạy trong transaction đang giữ khoá hàng `Moc`.
+    Ba điều làm nó ĐÚNG chứ không chỉ NGẮN, và cả ba cần đọc cùng nhau:
 
-    **Phương án rẻ hơn để Phase 2 cân**, khi đã đo được: thay lời gọi `cap_nhat_dem_mach`
-    ở đây bằng một `UPDATE` đúng một cột, trong cùng transaction đang giữ khoá hàng `Moc`:
+    1. **Không mất số.** `dat_vote`/`dat_vote_hang_loat` đã `select_for_update` hàng `Moc`
+       trước khi vào đây, và **mọi** đường đổi `diem_bai_goc` vì vote đều phải đi qua đúng
+       hàng `Moc` ấy ⇒ hai lá phiếu đồng thời vẫn tuần tự hoá, không cần khoá trên `Mach`.
+    2. **Không đua với `cap_nhat_dem_mach`.** Hàm kia mở đầu bằng `select_for_update` trên
+       `Mach` rồi mới đọc `Moc.score`, nên nó đọc điểm **dưới khoá `Mach`**; còn `UPDATE`
+       ở đây cũng phải xin đúng khoá đó. Hai bên vì thế không bao giờ chồng nhau, và bên
+       chạy sau luôn ghi con số mới hơn.
+    3. **Không sinh chu trình khoá.** Cạnh vẫn là `Moc` → `Mach`, y như bản cũ: một
+       `UPDATE core_mach` lấy khoá hàng `Mach` giống hệt `select_for_update`.
 
-        diem = dich.score if doc_duoc(dich) else 0
-        Mach.objects.filter(pk=dich.mach_id).update(diem_bai_goc=diem)
-
-    (đúng luật của `_diem_bai_goc`, chỉ khác là không phải đọc lại hàng `Moc` — `dich`
-    CHÍNH LÀ mốc 1 và nó vừa được ghi ở dòng trên.)
-
-    Hàng `Moc` (seq=1) đã bị `dat_vote` khoá độc quyền trước đó, và **mọi** đường đổi
-    `diem_bai_goc` đều phải đi qua đúng hàng `Moc` ấy, nên hai lá phiếu đồng thời vẫn
-    tuần tự hoá được mà không cần thêm khoá trên `Mach`. Cái mất: bốn cột kia không được
-    đối soát nhờ ăn ké lượt vote nữa — phải cân với nhịp trôi thật của chúng trước khi
-    đổi, đừng đổi vì nó ngắn hơn.
+    Cái MẤT, nói thẳng: bốn cột kia **không còn được đối soát nhờ ăn ké lượt vote**. Chấp
+    nhận được vì không cột nào trong bốn cột đó phụ thuộc vào phiếu — chúng có đường ghi
+    riêng (`them_moc`, `tao_binh_luan`, `xoa_moc`, `xoa_binh_luan`, các đường moderation)
+    và **mỗi đường đều gọi `cap_nhat_dem_mach`**. Nói cách khác lượt vote trước đây sửa
+    hộ một cái trôi mà nó không gây ra; nếu bốn cột ấy trôi thật thì đó là một lỗi ở đường
+    ghi khác, và giấu nó sau lượt vote chỉ làm nó khó tìm hơn.
     """
     if not isinstance(dich, Moc) or dich.seq != 1:
         return
-    cap_nhat_dem_mach(Mach.objects.get(pk=dich.mach_id))
+    diem = dich.score if doc_duoc(dich) else 0
+    Mach.objects.filter(pk=dich.mach_id).update(diem_bai_goc=diem)
 
 
 def _ap_delta_vote(dich: Moc | Comment, cu: int, moi: int) -> None:
@@ -569,3 +596,254 @@ def _ap_delta_vote(dich: Moc | Comment, cu: int, moi: int) -> None:
     else:
         dich.score += moi - cu
         dich.save(update_fields=["score"])
+
+
+def tu_upvote(*, target: Moc | Comment) -> None:
+    """Phiếu +1 của chính người viết, đặt ngay lúc nội dung ra đời — PLAN 5.7.
+
+    Vì sao nó tồn tại (nguyên văn PLAN 5.7): không phải để thổi điểm — ai cũng đúng một
+    phiếu nên thứ hạng tương đối không đổi — mà để `0` **có nghĩa**. Không có nó thì `0`
+    vừa là "chưa ai đụng tới" vừa là "đã bị dìm về không", và ngày ra mắt cả feed là một
+    cột số 0 (đâm PLAN nguyên tắc 9). Có nó thì `0` nghĩa là **đã có người vote xuống**.
+    Rút được như mọi phiếu khác — đây là một hàng `Vote` thật, không phải một số cộng thêm.
+
+    **Không nằm trong `them_moc`/`tao_binh_luan`, và đó là chủ đích**, cùng lý do rate
+    limit không nằm ở đó: `seed_dev` dựng dữ liệu LỊCH SỬ với số phiếu cho trước (mốc 9
+    được 412, mốc 1 được 89 — PLAN 9.2), và một phiếu tự động cộng thêm vào từng hàng làm
+    lệch đúng bộ số mà cả Phase 1 nghiệm thu trên đó. Đường ghi của người dùng thật thì
+    gọi hàm này ngay sau khi tạo, trong CÙNG transaction.
+
+    **Vì sao không gọi `dat_vote`:** `dat_vote` mở bằng `select_for_update` trên hàng
+    đích. Handler đang ở trong transaction mà `them_moc` vừa khoá hàng `Mach`, nên một
+    `select_for_update` trên `Moc` ở đó dựng đúng cạnh ngược **`Mach` → `Moc`** mà
+    `CLAUDE.md` cấm. Ở đây không cần khoá gì: hàng vừa `INSERT` trong chính transaction
+    này, chưa ai ngoài nó nhìn thấy được. `Vote` **không có FK** tới đích (xem
+    `core/models/tuong_tac.py`) nên `INSERT` vào `Vote` cũng không lấy `FOR KEY SHARE`
+    trên hàng nào — khác hẳn `Trich`.
+    """
+    loai = Vote.Loai.MOC if isinstance(target, Moc) else Vote.Loai.COMMENT
+    Vote.objects.create(
+        user=target.author, target_type=loai, target_id=target.pk, value=1
+    )
+    if isinstance(target, Comment):
+        Comment.objects.filter(pk=target.pk).update(up_count=1)
+        target.refresh_from_db(fields=["up_count", "score"])
+    else:
+        Moc.objects.filter(pk=target.pk).update(score=1)
+        target.score = 1
+        _dong_bo_diem_bai_goc(target)
+
+
+def dem_moc_trong_ngay_vn(mach: Mach, khi=None) -> int:
+    """Số mốc của mạch này được GHI trong ngày lịch VN của `khi` — PLAN 5.1, 5.2.
+
+    Đếm theo **`created_at`** (dấu server) chứ không theo `occurred_at`: hạn mức là hạn
+    mức *viết*, còn `occurred_at` là ngày sự việc và người dùng nhập lùi thoải mái. Đếm
+    nhầm cột thì ai nhập lùi ba ngày khác nhau là viết được chín mốc trong một buổi tối,
+    còn người ghi ba mốc hôm nay cho ba sự việc cùng ngày thì bị chặn oan.
+
+    Đếm **MỌI** mốc, kể cả bia mộ: xoá mốc vừa viết rồi viết lại là cách lách hạn mức
+    ngắn nhất, và bia mộ vẫn chiếm một `seq` thật.
+
+    Ranh giới ngày là **nửa đêm giờ VN** (`core/thoi_gian.py`), không phải 24 giờ trượt —
+    xem `moc_khoang_vn` để biết vì sao sản phẩm chọn ngày lịch.
+    """
+    dau = datetime.combine(ngay_vn(khi), time.min, tzinfo=TZ_VN)
+    return Moc.objects.filter(
+        mach=mach, created_at__gte=dau, created_at__lt=dau + timedelta(days=1)
+    ).count()
+
+
+def sua_moc(*, moc: Moc, thay_doi: dict, khi=None) -> Moc:
+    """Sửa mốc theo PLAN 5.2. Trả về mốc đã cập nhật.
+
+    `thay_doi` chỉ được chứa khoá thuộc `TRUONG_SUA_DUOC_CUA_MOC`; khoá lạ ném
+    `ValidationError` chứ không bỏ qua — bỏ qua im lặng nghĩa là một trường không sửa được
+    trông như đã sửa xong, và người dùng chỉ biết khi tải lại trang.
+
+    **Sửa im lặng ≤15 phút kể từ `created_at`** (PLAN nguyên tắc 2): không `MocRevision`,
+    không `edited_at`, không tăng `edit_count`. Sau đó **mỗi lần sửa tạo một
+    `MocRevision` lưu ĐỦ CẢ 5 TRƯỜNG bản trước** — thiếu `occurred_at` là để người ta sửa
+    lùi ngày sự việc mà không để vết, tức phá đúng giá trị lõi của sản phẩm.
+
+    Cột denormalize **không đổi** ở đây: sửa nội dung không sinh mốc mới, không đổi số
+    bình luận, và `last_entry_at`/`last_activity_at` đo *thời điểm ra đời* chứ không phải
+    thời điểm chạm vào lần cuối (PLAN mục 6). Sửa mốc mà đẩy `last_activity_at` lên là
+    cách tác giả tự giữ bài mình ở mặt BÃO bằng cách sửa chính tả mỗi 71 giờ.
+    """
+    la = set(thay_doi) - set(TRUONG_SUA_DUOC_CUA_MOC)
+    if la:
+        raise ValidationError(
+            f"Không sửa được trường {sorted(la)}; chỉ "
+            f"{list(TRUONG_SUA_DUOC_CUA_MOC)} sửa được (PLAN 5.2)."
+        )
+    if "figures" in thay_doi:
+        # `MocRevision.figures` mang cùng validator, nhưng validator của Django chỉ chạy
+        # khi ai đó gọi `full_clean()` — `create()`/`update()` thì không. Gọi tay ở đây là
+        # mục việc mà docstring `MocRevision` hẹn Phase 2 phải làm.
+        kiem_figures(thay_doi["figures"])
+
+    khi = khi or timezone.now()
+    con_im_lang = (khi - moc.created_at) <= timezone.timedelta(
+        minutes=PHUT_SUA_IM_LANG
+    )
+
+    with transaction.atomic():
+        moc = Moc.objects.select_for_update().get(pk=moc.pk)
+        if not con_im_lang:
+            MocRevision.objects.create(
+                moc=moc,
+                revised_at=khi,
+                **{t: getattr(moc, t) for t in TRUONG_SUA_DUOC_CUA_MOC},
+            )
+            moc.edited_at = khi
+            moc.edit_count += 1
+        for ten, gia_tri in thay_doi.items():
+            setattr(moc, ten, gia_tri)
+        moc.save(
+            update_fields=[*TRUONG_SUA_DUOC_CUA_MOC, "edited_at", "edit_count"]
+        )
+    return moc
+
+
+def xoa_moc(*, moc: Moc, khi=None) -> Moc:
+    """Xoá mốc = **bia mộ** (PLAN nguyên tắc 2): hàng ở lại, `seq` ở lại, nội dung mất.
+
+    Không bao giờ `DELETE` thật: `seq` bất biến và spine phải đủ số ô, nên giấu hẳn một ô
+    là thủng dãy số và phá bất biến `entry_count == max(seq)` mà dải gập của mặt CẶN suy
+    ra (PLAN 5.2, 5.5).
+
+    Gọi `cap_nhat_dem_mach` **trong cùng transaction** (bắt buộc — xem docstring của nó):
+    `comment_count`/`last_activity_at` đo nội dung ĐỌC ĐƯỢC nên chúng đổi khi một mốc
+    thành bia mộ, còn `entry_count`/`last_entry_at` đo cấu trúc nên chúng đứng yên. Cả hai
+    vế nằm trong một hàm, đừng tự tính lại ở đây.
+    """
+    khi = khi or timezone.now()
+    with transaction.atomic():
+        moc = Moc.objects.select_for_update().get(pk=moc.pk)
+        if moc.deleted_at is None:
+            moc.deleted_at = khi
+            moc.save(update_fields=["deleted_at"])
+        cap_nhat_dem_mach(moc.mach)
+    moc.refresh_from_db()
+    return moc
+
+
+def sua_binh_luan(*, comment: Comment, body: str, khi=None) -> Comment:
+    """Sửa bình luận: đổi `body`, đóng dấu `edited_at` (PLAN 5.3 — hiện `*đã sửa*`).
+
+    Không có cửa sổ im lặng như mốc: PLAN 5.3 nói thẳng "sửa bình luận: hiện dấu đã sửa",
+    không kèm ngoại lệ 15 phút. Hai thứ khác nhau vì mốc là *bằng chứng* còn bình luận là
+    *tán gẫu* — cái thứ nhất cần lịch sử bản cũ, cái thứ hai chỉ cần nói ra rằng đã sửa.
+    """
+    khi = khi or timezone.now()
+    Comment.objects.filter(pk=comment.pk).update(body=body, edited_at=khi)
+    comment.refresh_from_db()
+    return comment
+
+
+def xoa_binh_luan(*, comment: Comment, khi=None) -> bool:
+    """Xoá bình luận theo PLAN 5.3. Trả `True` nếu đã xoá **THẬT**, `False` nếu bia mộ.
+
+    Luật, nguyên văn PLAN 5.3: *giữ chỗ "[đã xoá]" nếu **có reply con** HOẶC **đã TỪNG
+    được trích vào sổ (kể cả trích đã gỡ)**; xoá thật chỉ khi không dính cả hai.*
+
+    Chữ **"đã TỪNG"** là chỗ dễ đọc hụt nhất và nó có giá cụ thể: `Trich.comment` là
+    `PROTECT`, và `PROTECT` không biết `removed_at` là gì — nó chặn theo HÀNG. Ai đọc
+    thành "đang được trích" sẽ tiền-kiểm `removed_at IS NULL`, kết luận "xoá thật được",
+    rồi ăn `ProtectedError` ⇒ **500 trên một thao tác hợp lệ của chính chủ**. Vì thế điều
+    kiện dưới đây hỏi `Trich.objects.filter(comment=…).exists()` **không kèm** bộ lọc nào.
+
+    **Xoá thật thì phải dọn `Vote` mồ côi** — nợ 1a bàn giao, ghi thẳng trong docstring
+    `core.models.tuong_tac.Vote`: `Vote` cố ý không có FK tới đích, nên không có
+    `ON DELETE` nào; bình luận biến mất mà phiếu ở lại vĩnh viễn. Chúng chỉ là rác (id của
+    Postgres là identity, không tái sử dụng, nên phiếu cũ không bao giờ *cộng vào* một
+    đích khác) — nhưng là rác không ai dọn, và nó lớn dần đúng theo lượng bình luận bị
+    xoá. Dọn trong CÙNG transaction với `DELETE`, không phải một job đối soát hẹn sau.
+
+    Thứ tự khoá: `Comment` trước, `Mach` sau (`cap_nhat_dem_mach` tự xin khoá `Mach`) —
+    đúng luật của module.
+    """
+    khi = khi or timezone.now()
+    with transaction.atomic():
+        c = Comment.objects.select_for_update().get(pk=comment.pk)
+        mach = c.mach
+        con_song = Comment.objects.filter(parent=c).exists()
+        tung_trich = Trich.objects.filter(comment=c).exists()
+
+        if con_song or tung_trich:
+            if c.deleted_at is None:
+                c.deleted_at = khi
+                c.save(update_fields=["deleted_at"])
+            cap_nhat_dem_mach(mach)
+            return False
+
+        Vote.objects.filter(
+            target_type=Vote.Loai.COMMENT, target_id=c.pk
+        ).delete()
+        c.delete()
+        cap_nhat_dem_mach(mach)
+        return True
+
+
+def dong_so(*, mach: Mach, ket_qua: str | None = None, khi=None) -> Mach:
+    """Đóng sổ mạch (PLAN 5.1). `ket_qua` là một dòng tự do ≤40 ký tự, **thuần hiển thị**.
+
+    Mạch đóng **vẫn bình luận được**, chỉ không nối mốc được — hai chuyện đó nằm ở tầng
+    API, đây chỉ ghi trạng thái. `status` và `locked_at` là hai trục riêng: đóng sổ không
+    đụng vào khoá của mod và ngược lại (PLAN 5.10).
+    """
+    khi = khi or timezone.now()
+    with transaction.atomic():
+        m = Mach.objects.select_for_update().get(pk=mach.pk)
+        m.status = Mach.TrangThai.DONG
+        m.closed_at = khi
+        m.ket_qua = (ket_qua or "").strip() or None
+        m.save(update_fields=["status", "closed_at", "ket_qua"])
+    return m
+
+
+def mo_lai(*, mach: Mach) -> Mach:
+    """Mở lại mạch đã đóng sổ (PLAN 5.1 — trong 7 ngày, sau đó nút biến mất).
+
+    **`ket_qua` bị xoá theo**, và đó là chủ đích: nó là dòng tổng kết của một cuốn sổ đã
+    khép ("+18.2% · 163 ngày") và nó hiện trên banner mặt CẶN lẫn OG card. Giữ lại nó trên
+    một mạch vừa mở lại là in một con số tổng kết lên một câu chuyện chưa kết thúc.
+    Hạn 7 ngày là luật của tầng API — nó cần "bây giờ", không phải bất biến dữ liệu.
+    """
+    with transaction.atomic():
+        m = Mach.objects.select_for_update().get(pk=mach.pk)
+        m.status = Mach.TrangThai.MO
+        m.closed_at = None
+        m.ket_qua = None
+        m.save(update_fields=["status", "closed_at", "ket_qua"])
+    return m
+
+
+def dat_reaction(*, user, moc: Moc, emoji: str | None) -> Reaction | None:
+    """React / đổi / rút reaction trên một mốc — PLAN 5.7. `emoji=None` nghĩa là **rút**.
+
+    Một user một reaction mỗi mốc (`UNIQUE (user, moc)`), nên đổi reaction là `UPDATE`
+    chứ không phải thêm hàng — bộ 📈📉🔥🧊🎯 là "bậc thang tham gia rẻ hơn viết", không
+    phải một phiếu bầu nhiều lựa chọn.
+
+    Không có cột denormalize nào đi theo: reaction không vào `score`, không vào
+    `comment_count`, không đụng `last_activity_at` (nó là *nội dung* mà cột kia đo, chứ
+    reaction thì không phải nội dung đọc được). Vì thế hàm này không gọi
+    `cap_nhat_dem_mach` và không cần khoá hàng `Mach`.
+    """
+    if emoji is not None and emoji not in Reaction.Emoji.values:
+        raise ValidationError(
+            f"emoji phải thuộc {Reaction.Emoji.values}, nhận {emoji!r}."
+        )
+    with transaction.atomic():
+        cu = Reaction.objects.select_for_update().filter(user=user, moc=moc).first()
+        if emoji is None:
+            if cu is not None:
+                cu.delete()
+            return None
+        if cu is None:
+            return Reaction.objects.create(user=user, moc=moc, emoji=emoji)
+        cu.emoji = emoji
+        cu.save(update_fields=["emoji"])
+        return cu

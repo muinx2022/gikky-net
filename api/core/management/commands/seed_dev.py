@@ -560,10 +560,34 @@ class Command(BaseCommand):
         Mach.objects.filter(author__in=users).delete()
         so_user = users.count()
         users.delete()
-        Sub.objects.filter(slug__in=[s["slug"] for s in SUBS]).delete()
+        so_sub = self._xoa_sub_neu_ranh()
         self.stdout.write(
-            f"--reset: đã xoá {so_user} user seed cùng toàn bộ nội dung và 2 sub."
+            f"--reset: đã xoá {so_user} user seed cùng toàn bộ nội dung và {so_sub} sub."
         )
+
+    def _xoa_sub_neu_ranh(self) -> int:
+        """Xoá hai `Sub` của seed, **nhưng chỉ những cái không còn ai tham chiếu**.
+
+        ⚠ **Thay đổi ở Phase 2, và nó có lý do cụ thể.** Bản trước xoá thẳng, vì trước
+        Phase 2 **không tồn tại đường nào tạo `Mach` ngoài seed** — nên "sub của seed" và
+        "sub trống sau khi xoá nội dung seed" là một. Phase 2 mở `POST /machs`: bộ e2e
+        (và bất kỳ ai dùng dev) tạo mạch thật trong `chung-khoan`, `Mach.sub` là `PROTECT`,
+        và `--reset` nổ `ProtectedError` — tức **tiêu chí M12 hỏng**, mà hỏng theo kiểu chỉ
+        lộ ra sau khi ai đó đã dùng thử sản phẩm một lần.
+
+        Vì sao **giữ lại** thay vì xoá kèm nội dung người dùng: `--reset` hứa làm mới *dữ
+        liệu seed*, không hứa dọn DB. Xoá kèm là một lệnh mang tên "reset seed" âm thầm
+        xoá bài của người khác — trên máy dev thì phiền, trên một DB có dữ liệu thật thì
+        không sửa được. Giữ lại làm `--reset` chạy được ở mọi trạng thái, và `_tao_sub`
+        (nay `get_or_create`) dùng lại đúng hàng cũ.
+
+        Trả về số sub thật sự bị xoá — để dòng thông báo không nói dối con số.
+        """
+        cua_seed = Sub.objects.filter(slug__in=[s["slug"] for s in SUBS])
+        ranh = [s for s in cua_seed if not Mach.objects.filter(sub=s).exists()]
+        for s in ranh:
+            s.delete()
+        return len(ranh)
 
     # --- dựng ----------------------------------------------------------------
     @staticmethod
@@ -595,10 +619,49 @@ class Command(BaseCommand):
             )
             for i in range(SO_NGUOI_XEM)
         ]
+        self._xac_thuc_email(list(nguoi.values()))
         return nguoi
 
+    @staticmethod
+    def _xac_thuc_email(nguoi) -> None:
+        """Đánh dấu email của user seed là **đã xác thực** — thêm ở Phase 2.
+
+        Không có bước này thì **không user seed nào đăng nhập được**: gikky đăng nhập bằng
+        email (`ACCOUNT_LOGIN_METHODS = {"email"}`) và bắt buộc xác thực
+        (`ACCOUNT_EMAIL_VERIFICATION = "mandatory"`), mà allauth tra bảng `EmailAddress`
+        chứ không tra cột `User.email`. Hệ quả trước khi vá: `seed_dev` dựng 43 tài khoản
+        có mật khẩu dùng được (`MAT_KHAU_SEED`) mà **không cái nào vào được** — một dữ
+        liệu dev nói dối đúng chỗ người ta tin nó nhất.
+
+        Đây là dữ liệu DEV nên "xác thực sẵn" là đúng: bắt người dựng repo đi đọc 43 lá
+        thư trong `api/.mail/` để dùng seed thì không ai làm. Luồng xác thực THẬT vẫn được
+        đo bằng tài khoản dựng mới trong `e2e/tai-khoan-va-ghi.spec.ts`, không đo bằng
+        seed — hai vai khác nhau.
+        """
+        from allauth.account.models import EmailAddress
+
+        phang = []
+        for x in nguoi:
+            phang.extend(x if isinstance(x, list) else [x])
+        EmailAddress.objects.bulk_create(
+            [
+                EmailAddress(user=u, email=u.email, verified=True, primary=True)
+                for u in phang
+            ]
+        )
+
     def _tao_sub(self) -> dict[str, Sub]:
-        return {s["slug"]: Sub.objects.create(**s) for s in SUBS}
+        """`get_or_create` chứ không `create` — **đổi ở Phase 2**, xem `_xoa_sub_neu_ranh`.
+
+        `--reset` nay có thể để lại hai `Sub` (khi còn nội dung của người dùng thật treo
+        vào chúng), nên bước dựng phải chịu được ca "sub đã có". `create` trần ở đó là
+        `IntegrityError` trên `slug UNIQUE` — tức `--reset` chết ở nửa sau thay vì nửa
+        đầu, đúng loài lỗi mà thay đổi này sinh ra để diệt.
+        """
+        return {
+            s["slug"]: Sub.objects.get_or_create(slug=s["slug"], defaults=s)[0]
+            for s in SUBS
+        }
 
     @staticmethod
     def _moc_dau_tien() -> date:

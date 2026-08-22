@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import css from "./chrome.module.css";
+import { ThanhTaiKhoan } from "./thanh-tai-khoan";
 
 /** Thanh trên cùng. Cố tình tối giản: 1c chưa có auth (Phase 2), nên không có ô đăng
  * nhập giả để bấm vào không đi đâu.
@@ -33,6 +34,11 @@ export function Chrome() {
           <Link href="/s/crypto">Crypto</Link>
           <Link href="/luat">Luật</Link>
         </nav>
+        {/* Phase 2. `ThanhTaiKhoan` là **client component** và nó hỏi `GET /me` ở trình
+            duyệt — đó là điều kiện để `/luat` vẫn là route TĨNH (xem ghi chú nợ ở trên,
+            và docstring `components/phien.tsx`). Một lời gọi API ở phía server tại đây
+            làm hỏng đúng cái đường thoát mà `error.tsx` dựa vào. */}
+        <ThanhTaiKhoan />
       </div>
     </header>
   );

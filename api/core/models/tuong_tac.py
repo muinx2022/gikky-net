@@ -155,6 +155,63 @@ class Trich(models.Model):
         trang_thai = "đã gỡ" if self.removed_at else "hiệu lực"
         return f"trích comment {self.comment_id} vào mốc {self.moc_id} ({trang_thai})"
 
+    def clean(self) -> None:
+        """**Bình luận và mốc phải cùng một mạch** — nợ 1a bàn giao, trả ở Phase 2.
+
+        Hai FK độc lập nghĩa là `Trich(moc=<mốc mạch A>, comment=<bình luận mạch B>)` là
+        một hàng hợp lệ với DB. Hậu quả không phải lý thuyết: `api/machs.py` nạp khối
+        trích bằng `Trich.objects.filter(moc__mach=mach)` rồi render nguyên văn
+        `trich.comment.body` — tức **nội dung của một mạch khác** hiện lên thẻ mốc, kèm
+        tên tác giả, kèm hai dấu thời gian, trông y như thật. Ở chiều ngược lại,
+        `duoc_trich` trên hồ sơ cộng cho người viết một điểm từ một cuốn sổ họ chưa từng
+        góp mặt — đúng "máy in địa vị" mà rào 3 của PLAN 5.6 dựng lên để chặn.
+
+        ⚠ **Mức bảo vệ THẬT, đừng đọc mạnh hơn: đây là ràng buộc TẦNG ỨNG DỤNG.**
+        Postgres không có `CHECK` nào so được hai cột ở hai bảng khác (`CHECK` cấm truy
+        vấn con), nên hàng rào duy nhất còn lại phải nằm trên đường ghi. `save()` dưới đây
+        gọi nó, và `save()` phủ được cả `objects.create()` — nhưng **`bulk_create`,
+        `QuerySet.update()` và SQL trần thì KHÔNG đi qua**. Cách chặt hơn (FK ghép trên
+        `(id, mach_id)`, thêm cột `mach` denormalize cho `Trich`) là một quyết định có giá
+        riêng và nó chưa cần cho tới khi có đường ghi `Trich` thật — endpoint "trích vào
+        sổ" là việc của Phase 3, và plan con của phase đó phải đọc lại đoạn này.
+        """
+        if self.comment_id is None or self.moc_id is None:
+            return
+        from core.models.binh_luan import Comment as _Comment
+        from core.models.moc import Moc as _Moc
+
+        mach_cua_comment = (
+            _Comment.objects.filter(pk=self.comment_id)
+            .values_list("mach_id", flat=True)
+            .first()
+        )
+        mach_cua_moc = (
+            _Moc.objects.filter(pk=self.moc_id)
+            .values_list("mach_id", flat=True)
+            .first()
+        )
+        if (
+            mach_cua_comment is not None
+            and mach_cua_moc is not None
+            and mach_cua_comment != mach_cua_moc
+        ):
+            from django.core.exceptions import ValidationError
+
+            raise ValidationError(
+                f"Trích chéo mạch: bình luận {self.comment_id} thuộc mạch "
+                f"{mach_cua_comment}, còn mốc {self.moc_id} thuộc mạch {mach_cua_moc}."
+            )
+
+    def save(self, *args, **kwargs):
+        """Gọi `clean()` trước mọi lần ghi — xem docstring của nó.
+
+        Django **không** tự gọi `clean()` trong `save()` (chỉ `ModelForm` gọi), nên nếu
+        chỉ khai `clean()` thì `Trich.objects.create(...)` — đường mà Phase 3 sẽ dùng —
+        đi thẳng xuống DB không qua phép kiểm nào.
+        """
+        self.clean()
+        return super().save(*args, **kwargs)
+
 
 class Follow(models.Model):
     """Theo mạch + vị trí đọc dở của người theo (PLAN mục 2 "vạch mới", 5.5)."""

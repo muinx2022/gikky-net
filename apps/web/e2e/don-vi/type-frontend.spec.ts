@@ -327,9 +327,16 @@ test("mọi lời gọi hàm API trong apps/web đều truyền `baseUrl` theo t
   expect(viPham("THIEU_BASE_URL")).toEqual([]);
 });
 
-test("luật trên có quét trúng lời gọi THẬT ở CẢ HAI cửa (không quét vào chỗ trống)", () => {
+test("luật trên có quét trúng lời gọi THẬT ở MỌI cửa (không quét vào chỗ trống)", () => {
   // Đây là vế chống rỗng. Nếu `loiGoiApi` hỏng và trả về mảng rỗng thì bài trên vẫn
   // xanh, y hệt cách bản cũ xanh.
+  //
+  // Danh sách viết cứng chứ không đếm tổng: **mỗi file mới gọi API là một chỗ mới có thể
+  // rò session**, nên nó phải nằm trong diff và phải được nhìn. Phase 2 thêm bốn file —
+  // tất cả đều là **client component chạy trong trình duyệt**, nên `baseUrl` của chúng là
+  // chuỗi RỖNG (same-origin, đi qua `rewrites`) chứ không phải `API_ORIGIN`: cookie phiên
+  // và cookie CSRF là cookie của origin đang mở, một lời gọi thẳng sang `localhost:8000`
+  // từ trình duyệt là cross-origin và không mang cookie nào.
   const theo_file = new Map<string, number>();
   for (const f of FILES) {
     const n = loiGoiApi(f.sach).length;
@@ -338,6 +345,11 @@ test("luật trên có quét trúng lời gọi THẬT ở CẢ HAI cửa (khôn
   expect([...theo_file.keys()].sort()).toEqual([
     "app/chan-doan/health-same-origin.tsx",
     "app/chan-doan/page.tsx",
+    // --- Phase 2: đường GHI, chạy ở trình duyệt ---
+    "components/composer.tsx",
+    "components/cot-vote.tsx",
+    "components/hanh-dong-binh-luan.tsx",
+    "components/phien.tsx",
     "lib/api.ts",
   ]);
   expect(theo_file.get("lib/api.ts")).toBeGreaterThanOrEqual(6);

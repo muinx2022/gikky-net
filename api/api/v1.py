@@ -38,6 +38,14 @@ def duong_dan_docs(debug: bool) -> dict[str, str | None]:
 api_v1 = NinjaAPI(
     title="gikky.net API",
     version="1.0.0",
+    # **CSRF không khai ở đây, và đó không phải là quên** — django-ninja 1.6 bỏ tham số
+    # `csrf` của `NinjaAPI` (truyền vào là `TypeError`). Mọi view của Ninja nay
+    # `csrf_exempt` ở tầng middleware Django, và phép kiểm CSRF **chuyển vào lớp auth**:
+    # `ninja.security.APIKeyCookie.__init__(csrf=True)` chạy `CsrfViewMiddleware` trước
+    # khi đọc cookie phiên. Hệ quả phải nhớ: **một endpoint GHI mà khai `auth=None` là
+    # một endpoint KHÔNG có CSRF** — bất kỳ trang web nào cũng POST sang nó được bằng
+    # cookie phiên của người đang đăng nhập, HTTP 200, không gì đỏ.
+    # Hàng rào cho đúng chuyện đó: `tests/test_quyen_ghi.py`.
     **duong_dan_docs(settings.DEBUG),
 )
 
@@ -91,14 +99,22 @@ def health(request):
 # Mount ở CUỐI file: các module router import `api.loi`/`api.schemas`, còn `api_v1` phải
 # tồn tại trước khi `config/api_registry.py` đọc tới. Đặt import ở đây tránh vòng lặp
 # import mà không cần một module "app" thứ ba chỉ để nối dây.
+from api.binh_luan import router as router_binh_luan  # noqa: E402
 from api.feeds import router as router_feeds  # noqa: E402
 from api.loi import dang_ky_xu_ly_loi  # noqa: E402
 from api.machs import router as router_machs  # noqa: E402
 from api.mocs import router as router_mocs  # noqa: E402
+from api.quyen import dang_ky_xu_ly_loi_ghi  # noqa: E402
+from api.toi import router as router_toi  # noqa: E402
+from api.tuong_tac import router as router_tuong_tac  # noqa: E402
 from api.users import router as router_users  # noqa: E402
 
 dang_ky_xu_ly_loi(api_v1)
+dang_ky_xu_ly_loi_ghi(api_v1)
 api_v1.add_router("", router_feeds)
 api_v1.add_router("", router_machs)
 api_v1.add_router("", router_mocs)
+api_v1.add_router("", router_binh_luan)
+api_v1.add_router("", router_tuong_tac)
+api_v1.add_router("", router_toi)
 api_v1.add_router("", router_users)

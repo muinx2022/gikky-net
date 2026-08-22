@@ -1,0 +1,133 @@
+"""Schema **THÂN REQUEST** của đường ghi — PLAN mục 7, 5.1–5.3, 5.7.
+
+Tách khỏi `api/schemas.py` (schema ĐỌC) vì hai họ có hai luật ngược nhau, và trộn chúng
+là cách luật thứ hai bị quên:
+
+- schema đọc **phải** có `created_at` — nó là "biên lai" của PLAN nguyên tắc 3;
+- schema ghi **cấm** có `created_at`. Nhận nó từ client là để người viết tự đóng dấu giờ
+  server của chính mình, và nhật ký "ghi-trước-khi-biết-kết-quả" thành nhật ký viết sau
+  khi biết kết quả — HTTP 201, không có gì đỏ, bằng chứng sai nằm lại vĩnh viễn.
+  Nợ 1a bàn giao, có chuông từ 1b: `tests/test_schema_ghi_khong_co_created_at.py` đọc
+  **thân request của mọi operation** trong `openapi.json` và đỏ nếu thấy trường đó ở bất
+  kỳ tầng lồng nhau nào.
+
+Cùng lý lẽ, không schema nào ở đây có `score`, `up_count`, `edit_count`, `edited_at`,
+`deleted_at`, `hidden_at`, `author`: chúng là kết quả server tính, không phải thứ người
+gọi đặt được.
+"""
+
+from datetime import date
+
+from ninja import Schema
+from pydantic import Field
+
+from core.models.binh_luan import DAI_BODY_COMMENT
+from core.models.moc import DAI_BODY_MOC
+
+#: `ket_qua` ≤40 ký tự (PLAN 5.1) · `loai` ≤20 · `question_for_crowd` ≤200 (PLAN 5.2).
+#: Khai lại ở đây thay vì import từ model là **cố ý ở đúng ba con số này**: chúng đi vào
+#: `openapi.json` thành `maxLength`, tức chúng là một phần hợp đồng công khai — nhưng
+#: `Mach.ket_qua`/`Moc.loai` khai `max_length` ở tầng cột chứ không có hằng nào để import.
+#: Hai `DAI_BODY_*` thì có hằng, nên chúng được import.
+DAI_KET_QUA = 40
+DAI_LOAI = 20
+DAI_CAU_MOI = 200
+DAI_TITLE = 160
+
+
+class FigureIn(Schema):
+    """Một cặp trong dải số của mốc. Thuần hiển thị — server không validate ngữ nghĩa."""
+
+    label: str = Field(min_length=1, max_length=24)
+    value: str = Field(min_length=1, max_length=24)
+
+
+class MocMoiIn(Schema):
+    """Nối một mốc vào mạch — `POST /machs/{id}/mocs` (PLAN 5.1, 5.2).
+
+    `occurred_at` là ngày **sự việc xảy ra**: nhập lùi thoải mái, **cấm tương lai**, và
+    "tương lai" tính theo **ngày lịch VN** (PLAN mục 1). Không gửi ⇒ server lấy hôm nay
+    giờ VN.
+    """
+
+    body: str = Field(min_length=1, max_length=DAI_BODY_MOC)
+    occurred_at: date | None = None
+    loai: str | None = Field(default=None, max_length=DAI_LOAI)
+    question_for_crowd: str | None = Field(default=None, max_length=DAI_CAU_MOI)
+    figures: list[FigureIn] | None = None
+
+
+class MachMoiIn(MocMoiIn):
+    """Đăng bài — `POST /machs`. Bài gốc **chính là mốc 1**, nên nó kế thừa `MocMoiIn`.
+
+    Không có trường `body` trên `Mach` (PLAN 5.1): `body` ở đây là thân của mốc 1.
+    """
+
+    sub: str = Field(min_length=1, max_length=40, description="slug của chuyên mục")
+    title: str = Field(min_length=1, max_length=DAI_TITLE)
+
+
+class MocSuaIn(Schema):
+    """Sửa mốc — `PATCH /mocs/{id}`. **Đúng 5 trường của PLAN 5.2, không gì khác.**
+
+    Đây là PATCH thật: trường **không gửi** thì không đổi, trường gửi `null` thì xoá.
+    Phân biệt hai ca đó bằng `model_fields_set` của pydantic, nên đừng đổi `None` mặc
+    định thành một sentinel khác — `api/mocs.py` đọc đúng cơ chế ấy.
+    """
+
+    body: str | None = Field(default=None, min_length=1, max_length=DAI_BODY_MOC)
+    occurred_at: date | None = None
+    loai: str | None = Field(default=None, max_length=DAI_LOAI)
+    question_for_crowd: str | None = Field(default=None, max_length=DAI_CAU_MOI)
+    figures: list[FigureIn] | None = None
+
+
+class DongSoIn(Schema):
+    """Đóng sổ — `POST /machs/{id}/close`. `ket_qua` tuỳ chọn, ≤40 ký tự (PLAN 5.1).
+
+    Thuần hiển thị, không validate ngữ nghĩa — cùng triết lý với `figures`.
+    """
+
+    ket_qua: str | None = Field(default=None, max_length=DAI_KET_QUA)
+
+
+class BinhLuanMoiIn(Schema):
+    """Viết bình luận — `POST /machs/{id}/comments` (PLAN 5.4, nguyên tắc 4 và 6).
+
+    `anchor_moc_seq` **chỉ đặt được trên bình luận gốc**: reply kế thừa neo của gốc, nên
+    gửi kèm `parent_id` là 400 chứ không phải bỏ qua im lặng — bỏ qua im lặng là cách một
+    bình luận biến mất khỏi ngăn kéo mà không ai hiểu tại sao.
+
+    Gốc mang `anchor_moc_seq = null` nghĩa là người viết **đã gỡ chip** — không thuộc ngăn
+    kéo nào. Đó là một lựa chọn, không phải dữ liệu thiếu.
+    """
+
+    body: str = Field(min_length=1, max_length=DAI_BODY_COMMENT)
+    parent_id: int | None = None
+    anchor_moc_seq: int | None = Field(default=None, ge=1)
+
+
+class BinhLuanSuaIn(Schema):
+    """Sửa bình luận — `PATCH /comments/{id}`. Chỉ `body` (PLAN 5.3)."""
+
+    body: str = Field(min_length=1, max_length=DAI_BODY_COMMENT)
+
+
+class VoteIn(Schema):
+    """Vote / đổi / rút — `POST /votes` (PLAN 5.7, mục 7).
+
+    `value = 0` nghĩa là **rút**: hàng `Vote` bị xoá, không lưu `0`.
+    """
+
+    target_type: str = Field(description='"moc" hoặc "comment"')
+    target_id: int
+    value: int = Field(ge=-1, le=1)
+
+
+class ReactionIn(Schema):
+    """React / đổi / rút — `POST /mocs/{id}/reactions` (PLAN 5.7).
+
+    Bộ CỐ ĐỊNH `len · xuong · lua · bang · trung` (📈📉🔥🧊🎯). `emoji = null` là **rút**.
+    """
+
+    emoji: str | None = None

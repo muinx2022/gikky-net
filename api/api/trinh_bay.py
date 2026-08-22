@@ -80,8 +80,14 @@ def figures_ra(figures) -> list[FigureOut] | None:
     ]
 
 
-def mach_tom_tat_ra(mach: Mach) -> MachTomTatOut:
-    """Thẻ mạch cho feed và cho hồ sơ. Cần `sub` + `author` đã `select_related`."""
+def mach_tom_tat_ra(mach: Mach, *, moc_1_id: int | None = None) -> MachTomTatOut:
+    """Thẻ mạch cho feed và cho hồ sơ. Cần `sub` + `author` đã `select_related`.
+
+    `moc_1_id` **phải do người gọi nạp sẵn theo LÔ** (Phase 2 — đích của mũi tên vote trên
+    thẻ). Hàm không tự truy vấn: nó chạy một lần cho mỗi thẻ, nên một `Moc.objects.filter`
+    ở đây là N+1 đúng nghĩa trên mọi feed — và nó sẽ không đỏ ở đâu cả, chỉ chậm dần theo
+    số thẻ. `api/feeds.py` và `api/users.py` gom một truy vấn cho cả trang.
+    """
     return MachTomTatOut(
         id=mach.pk,
         slug=mach.slug,
@@ -96,6 +102,18 @@ def mach_tom_tat_ra(mach: Mach) -> MachTomTatOut:
         last_entry_at=mach.last_entry_at,
         last_activity_at=mach.last_activity_at,
         diem=mach.diem_bai_goc,
+        moc_1_id=moc_1_id,
+    )
+
+
+def moc_1_theo_mach(machs) -> dict[int, int]:
+    """`{mach_id: id của mốc 1}` cho một LÔ mạch — MỘT truy vấn.
+
+    Tồn tại để `mach_tom_tat_ra` không phải tự hỏi DB (xem docstring của nó): thẻ feed cần
+    `moc_1_id` làm đích cho mũi tên vote, và hỏi lẻ từng thẻ là N+1 trên mọi feed.
+    """
+    return dict(
+        Moc.objects.filter(mach__in=machs, seq=1).values_list("mach_id", "id")
     )
 
 
