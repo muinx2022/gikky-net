@@ -8,3 +8,7 @@
 *.ico binary
 *.woff binary
 *.woff2 binary
+# `apps/web/assets/font/*.ttf` — nguồn chữ cho `ImageResponse` (OG image, Phase 6).
+# Thiếu dòng này thì `* text=auto eol=lf` ở đầu file coi TTF là văn bản và đổi mọi byte
+# 0x0D thành 0x0A lúc checkout ⇒ font hỏng, satori ném "Unsupported OpenType signature".
+*.ttf binary

@@ -1,0 +1,170 @@
+# Caddyfile MẪU cho gikky.net — PLAN 8.2 + rate limit của PLAN mục 10 (Phase 6).
+#
+# ############################################################################
+# ⚠ FILE NÀY CHƯA BAO GIỜ ĐƯỢC CHẠY. Không có Caddy trên máy dev, không có tên
+#   miền, không có prod (PLAN mục 11: mua/trỏ tên miền + deploy lần đầu là việc
+#   của user, ngoài phạm vi agent). Nó chưa qua `caddy validate`, chưa qua
+#   `caddy fmt`, và **chưa có một request nào đi qua nó**.
+#
+#   Đọc nó như một bản nháp có căn cứ, không phải như cấu hình đã nghiệm thu.
+#   Việc đầu tiên của lần deploy đầu tiên là:
+#
+#       caddy fmt --overwrite deploy/Caddyfile
+#       caddy validate --config deploy/Caddyfile
+#
+#   rồi mới tới bốn phép thử ở cuối file này.
+# ############################################################################
+#
+# ## Cần một bản Caddy CÓ PLUGIN
+#
+# `rate_limit` KHÔNG có trong Caddy tiêu chuẩn — nó là module ngoài
+# `github.com/mholt/caddy-ratelimit`. Bản Caddy tải sẵn sẽ báo "unrecognized
+# directive: rate_limit" và **không khởi động**. Dựng bản có plugin:
+#
+#     xcaddy build --with github.com/mholt/caddy-ratelimit
+#
+# Đây là ràng buộc phải biết TRƯỚC khi deploy, không phải một chi tiết: bỏ qua
+# nó thì hoặc site không lên, hoặc ai đó xoá mấy khối `rate_limit` cho nó chạy
+# — và lúc đó rate limit biến mất mà không còn dấu vết nào.
+#
+# ## Rate limit ở đây là lớp NGOÀI, không thay lớp trong
+#
+# PLAN mục 10 chốt hai con số **theo user/IP mỗi NGÀY**: đăng ký ≤5/IP/ngày,
+# đăng bài ≤10/user/ngày. Caddy không biết "user" (nó không đọc session) và
+# `caddy-ratelimit` đếm theo cửa sổ trượt, không theo ngày lịch VN. Vì vậy:
+#
+#   - **hạn mức theo NGƯỜI DÙNG và theo NGÀY LỊCH VN là việc của Django**
+#     (PLAN mục 6 + Mảng A của Phase 2). Đó mới là chỗ đúng: nó biết ai đang
+#     gọi, và nó biết nửa đêm giờ VN là lúc nào;
+#   - ở đây chỉ chặn **theo IP**, cho lưu lượng thô: một script quét đăng ký
+#     hàng nghìn lần một phút không nên đi tới tận Django mới bị từ chối.
+#
+# Hai lớp đo hai thứ khác nhau, nên **con số ở đây rộng hơn con số của PLAN có
+# chủ đích**: 5 đăng ký/IP/ngày là luật sản phẩm; `20/1h` ở đây chỉ để một IP
+# không nện được cửa đăng ký. NAT của một quán cà phê hay một công ty đi chung
+# một IP — siết bằng đúng con số của PLAN ở tầng này là chặn oan cả toà nhà.
+
+{
+	# Email cho ACME (Let's Encrypt). ĐỔI trước khi chạy thật.
+	email admin@gikky.net
+
+	# `caddy-ratelimit`: trạng thái nằm trong bộ nhớ của tiến trình. Một instance
+	# thì đúng; scale ra nhiều instance phải bật `distributed` + storage chung,
+	# nếu không mỗi instance cho phép trọn hạn mức của nó.
+	order rate_limit before basicauth
+}
+
+# ---------------------------------------------------------------------------
+# Host CÔNG KHAI
+# ---------------------------------------------------------------------------
+gikky.net, www.gikky.net {
+	encode zstd gzip
+
+	# ⚠ LUẬT NÀY PHẢI ĐỨNG TRƯỚC MỌI RULE PROXY /api/* — PLAN 8.2 gạch đầu dòng 1.
+	# Nó phủ luôn `/api/admin/django/*` (Django admin) vì cùng prefix, nên KHÔNG
+	# phải thêm luật nào nữa. Thiếu nó, API admin của Phase 4 lộ ra internet và
+	# chỉ còn mỗi permission staff che chắn.
+	#
+	# `handle` chứ không `handle_path`: thứ tự các khối `handle` trong Caddy là
+	# thứ tự khai báo, và khối đầu tiên khớp sẽ thắng.
+	handle /api/admin/* {
+		respond "Not found" 403 {
+			close
+		}
+	}
+
+	# Đăng ký / đăng nhập / quên mật khẩu — bề mặt bị dò mật khẩu và bị đăng ký
+	# hàng loạt. Đường allauth headless nằm dưới `/api/_allauth/*` (Mảng A).
+	handle /api/_allauth/* {
+		rate_limit {
+			zone dang_ky {
+				key {remote_host}
+				events 20
+				window 1h
+			}
+		}
+		reverse_proxy 127.0.0.1:8000
+	}
+
+	# Mọi đường GHI khác (tạo mạch, nối mốc, bình luận, vote). Hạn mức thật theo
+	# user/ngày nằm ở Django; đây là trần thô theo IP.
+	@ghi {
+		path /api/*
+		method POST PUT PATCH DELETE
+	}
+	handle @ghi {
+		rate_limit {
+			zone ghi {
+				key {remote_host}
+				events 120
+				window 1h
+			}
+		}
+		reverse_proxy 127.0.0.1:8000
+	}
+
+	# API đọc.
+	handle /api/* {
+		reverse_proxy 127.0.0.1:8000
+	}
+
+	# Next public. `/feed.xml`, `/sitemap.xml`, `/opengraph-image` và mọi trang
+	# đều đi qua đây — chúng là route của Next, không phải file tĩnh.
+	handle {
+		reverse_proxy 127.0.0.1:3000
+	}
+
+	header {
+		# HSTS: bật SAU khi chắc chắn HTTPS chạy đúng. Bật sớm rồi hỏng chứng chỉ
+		# là trình duyệt của người đã ghé qua sẽ TỪ CHỐI vào site trong 1 năm, và
+		# không có cách nào gỡ từ phía máy chủ.
+		# Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		# Ảnh OG phải nhúng được ở nơi khác; chỉ cấm nhúng NGƯỢC lại trang gikky.
+		X-Frame-Options SAMEORIGIN
+		-Server
+	}
+}
+
+# ---------------------------------------------------------------------------
+# Host ADMIN — PLAN 8.2: allowlist IP, và `/api/admin/*` ĐƯỢC phép ở đây
+# ---------------------------------------------------------------------------
+admin.gikky.net {
+	encode zstd gzip
+
+	# ĐỔI dải IP này trước khi chạy thật. Để nguyên `192.0.2.0/24` (dải tài liệu
+	# RFC 5737, không ai định tuyến) là khoá cửa với chính mình — cố ý: một
+	# allowlist rỗng an toàn hơn một allowlist chép nhầm.
+	#
+	# `respond` với matcher đứng TRƯỚC mọi `handle`: chặn xong thì không route nào
+	# phía dưới được chạy. Viết ngược lại (`handle @duoc_vao { … }` rồi để phần
+	# còn lại rơi xuống) là ai không khớp allowlist vẫn đi tiếp xuống khối sau.
+	@ngoai_allowlist not remote_ip 192.0.2.0/24
+	respond @ngoai_allowlist "Not found" 403 {
+		close
+	}
+
+	handle /api/* {
+		# Ở host này KHÔNG có luật 403 cho `/api/admin/*`: đó là cả lý do host này
+		# tồn tại (PLAN 8.2 dòng 4).
+		reverse_proxy 127.0.0.1:8000
+	}
+
+	handle {
+		reverse_proxy 127.0.0.1:3001
+	}
+}
+
+# ---------------------------------------------------------------------------
+# BỐN PHÉP THỬ bắt buộc sau lần deploy đầu tiên
+# ---------------------------------------------------------------------------
+#
+#   1. curl -i https://gikky.net/api/admin/django/login/     → 403
+#   2. curl -i https://gikky.net/api/v1/health               → 200
+#   3. từ một IP NGOÀI allowlist:
+#      curl -i https://admin.gikky.net/                      → 403
+#   4. gọi 25 lần POST https://gikky.net/api/_allauth/... trong 1 phút
+#                                                           → vài lần cuối 429
+#
+# Chưa chạy được bốn phép này thì file này vẫn là NHÁP, kể cả khi site đã lên.

@@ -87,6 +87,42 @@ TIME_ZONE = "Asia/Ho_Chi_Minh"
 USE_I18N = True
 USE_TZ = True
 
+# --- Email (Phase 6: digest tuần; Phase 2 sẽ dùng cho xác thực email) --------
+#
+# **Máy dev không có SMTP** (chốt cùng plan bốn mảng, 2026-08-22). `DEBUG=True` ⇒ mặc
+# định là `filebased`: thư được GHI RA FILE trong `api/sent_emails/`, đi qua đúng đường
+# `django.core.mail` như bản SMTP và chỉ khác cái ống ở cuối. Nhờ vậy luồng "dựng nội
+# dung → giao cho backend" đo được thật; phần "SMTP nhận và chuyển thư" thì **chưa bao
+# giờ chạy trên máy này**.
+#
+# Chọn theo `DEBUG` chứ không hằng: một `filebased` sót lại trên prod là mọi email xác
+# thực của Phase 2 rơi vào một thư mục không ai đọc, và người dùng không đăng ký được
+# — HTTP vẫn 200, không gì đỏ.
+EMAIL_BACKEND = env(
+    "EMAIL_BACKEND",
+    default=(
+        "django.core.mail.backends.filebased.EmailBackend"
+        if DEBUG
+        else "django.core.mail.backends.smtp.EmailBackend"
+    ),
+)
+EMAIL_FILE_PATH = env("EMAIL_FILE_PATH", default=str(BASE_DIR / "sent_emails"))
+DEFAULT_FROM_EMAIL = env(
+    "DEFAULT_FROM_EMAIL", default="gikky.net <khong-tra-loi@gikky.net>"
+)
+
+#: Origin công khai — dùng dựng link tuyệt đối trong email (`core/digest.py`). Cùng vai
+#: với `SITE_ORIGIN` của `apps/web/lib/site.ts`, và phải khớp nó trên prod.
+SITE_ORIGIN = env("SITE_ORIGIN", default="http://localhost:3000")
+
+# ⚠ **ĐIỂM GỘP với Mảng A (Phase 2).** Mảng A cấu hình email theo lối `EMAIL_URL=` của
+# django-environ (`env.email_url`) và khai `FRONTEND_ORIGIN` cho cùng vai với
+# `SITE_ORIGIN` ở trên. Hai lối cùng ra một kết quả; khi gộp hai nhánh, **giữ MỘT** — ưu
+# tiên lối `EMAIL_URL` của Mảng A vì nó là bên dùng email nhiều hơn (xác thực, đặt lại
+# mật khẩu) — rồi xoá khối này, trừ `SITE_ORIGIN` nếu Mảng A không có tên tương đương.
+# `core/digest.py` và `gui_digest` KHÔNG phụ thuộc lối nào: chúng chỉ gọi
+# `django.core.mail` + `DEFAULT_FROM_EMAIL`, và tìm origin theo cả hai tên.
+
 STATIC_URL = "static/"
 # Thiếu STATIC_ROOT thì `collectstatic` báo lỗi và Django admin lên prod mất sạch CSS.
 STATIC_ROOT = BASE_DIR / "staticfiles"

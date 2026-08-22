@@ -205,6 +205,59 @@ test("#14 — hai file thật dùng đúng đích tĩnh, không còn `reload()` 
   }
 });
 
+/* ---- Phase 6: trang 404 thật ---------------------------------------------- */
+
+/** `app/not-found.tsx` — thêm ở Phase 6. Trước đó mọi `notFound()` rơi vào trang mặc
+ * định của Next: `404 · This page could not be found`, tiếng Anh, không đường đi tiếp.
+ *
+ * **Luật ở đây KHÁC hai file trên, có chủ đích.** Trang 404 hiện khi máy chủ đã trả lời
+ * xong bằng một mã 404 — router sống, Django sống — nên `next/link` là đúng và
+ * `window.location` chỉ là một cách chậm hơn. Cái KHÔNG đổi là **đích**: `/luat`, route
+ * duy nhất không gọi API nào (nợ #14). Và cái thêm vào: trang 404 **tự nó không được
+ * gọi API**, nếu không thì một Django chết biến 404 thành 500.
+ */
+const TRANG_404 = "app/not-found.tsx";
+
+/** File này có `<Link href="<route tĩnh>">` render VÔ ĐIỀU KIỆN không?
+ *
+ * Cùng phép đếm ngoặc với `coDuongThoat` (nợ #13): một link chỉ hiện khi `cond` đúng thì
+ * đúng lúc cần nó nhất nó có thể vắng mặt.
+ */
+export function coLinkTinh(nguon: string): boolean {
+  const sach = boChuThich(nguon);
+  return ROUTE_TINH.some((r) => {
+    const re = new RegExp(`<Link[^>]*href="${r}"`, "g");
+    return [...sach.matchAll(re)].some((m) => !trongBieuThuc(sach, m.index));
+  });
+}
+
+test("#14/Phase 6 — trang 404 có link tới route TĨNH, render vô điều kiện", () => {
+  const nguon = doc(TRANG_404);
+  expect(nguon.length, "app/not-found.tsx rỗng").toBeGreaterThan(200);
+  expect(coLinkTinh(nguon), "trang 404 mất đường thoát tới /luat").toBe(true);
+});
+
+test("#14/Phase 6 — luật link bắt được hàng giả", () => {
+  // Vế chống rỗng: nếu `coLinkTinh` trả `true` với mọi thứ thì bài trên vô nghĩa.
+  expect(coLinkTinh('<Link href="/">Trang chủ</Link>')).toBe(false);
+  expect(coLinkTinh('<a href="/luat">Luật</a>'), "thẻ <a> không phải Link").toBe(false);
+  expect(coLinkTinh('<Link href="/luat">Luật</Link>')).toBe(true);
+  // …và link nằm trong `{cond && …}` KHÔNG tính (nợ #13, cùng luật với nút thoát).
+  expect(
+    coLinkTinh('return (\n<main>\n{co && <Link href="/luat">Luật</Link>}\n</main>);'),
+  ).toBe(false);
+});
+
+test("Phase 6 — trang 404 KHÔNG gọi API: Django chết thì 404 vẫn phải là 404", () => {
+  // Một `not-found.tsx` gọi `docCacSub()` để vẽ sidebar trông rất hợp lý, và nó biến mọi
+  // URL gõ sai thành 500 đúng lúc backend đang hỏng — tức đúng lúc người ta gõ sai nhiều
+  // nhất. Cùng lý lẽ với bài "`/luat` thật sự là route TĨNH" ngay dưới.
+  const sach = boChuThich(doc(TRANG_404));
+  expect(sach).not.toMatch(/from\s+"@\/lib\/api"/);
+  expect(sach).not.toMatch(/from\s+"@gikky\/api-client"/);
+  expect(sach).not.toMatch(/\bfetch\s*\(/);
+});
+
 test("#14 — `/luat` thật sự là route TĨNH: không gọi API, không `force-dynamic`", () => {
   // Không có bài này thì "route tĩnh" chỉ là một cái tên trong danh sách: ngày nào
   // `/luat` mọc thêm một lời gọi API, đường thoát lại dẫn vào một trang hỏng và hàng rào

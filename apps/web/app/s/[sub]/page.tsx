@@ -5,6 +5,7 @@ import { Feed } from "@/components/feed";
 import { Sidebar } from "@/components/sidebar";
 import { docCacSub, docFeedSub, docKhoang, docSub, docTab } from "@/lib/api";
 import { dongSoMachSub } from "@/lib/dinh-dang";
+import { urlTuyetDoi } from "@/lib/site";
 import { duongDanSub } from "@/lib/url";
 
 import css from "./sub.module.css";
@@ -21,9 +22,21 @@ export async function generateMetadata({
   const { sub } = await params;
   const chi_tiet = await docSub(sub);
   if (chi_tiet === null) return { title: `s/${sub}` };
+  const duong_dan = duongDanSub(chi_tiet.slug);
   return {
     title: `s/${chi_tiet.slug} — ${chi_tiet.ten}`,
     description: chi_tiet.mo_ta,
+    // Feed RIÊNG của chuyên mục, ghi đè `/feed.xml` toàn site khai ở `app/layout.tsx`:
+    // người đăng ký RSS từ trang `s/crypto` muốn crypto, không muốn cả site. Khai cả
+    // `canonical` vì khối `alternates` này THAY khối của layout chứ không gộp vào.
+    alternates: {
+      canonical: urlTuyetDoi(duong_dan),
+      types: {
+        "application/rss+xml": [
+          { url: `${duong_dan}/feed.xml`, title: `gikky.net · s/${chi_tiet.slug}` },
+        ],
+      },
+    },
   };
 }
 

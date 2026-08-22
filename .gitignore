@@ -12,6 +12,13 @@ dist/
 # đích của `collectstatic` (STATIC_ROOT) — sinh ra, không commit
 api/staticfiles/
 
+# `EMAIL_BACKEND=filebased` của dev ghi thư đã "gửi" vào đây (Phase 6 — digest,
+# Phase 2 — xác thực email). Là output, và nó chứa địa chỉ email thật của người test.
+api/sent_emails/
+
+# đích mặc định của `pnpm db:sao-luu` — bản dump database, không bao giờ commit
+backup/
+
 # build/tooling caches
 *.egg-info/
 .turbo/

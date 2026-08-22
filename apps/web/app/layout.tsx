@@ -3,6 +3,7 @@ import { Be_Vietnam_Pro, IBM_Plex_Mono, Newsreader } from "next/font/google";
 
 import { ChanTrang } from "@/components/chan-trang";
 import { Chrome } from "@/components/chrome";
+import { SITE_ORIGIN } from "@/lib/site";
 
 import "./globals.css";
 
@@ -28,6 +29,11 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
+  // **Bắt buộc từ Phase 6.** File `app/opengraph-image.tsx` sinh ra một URL ảnh TƯƠNG
+  // ĐỐI, mà `og:image` phải tuyệt đối để Facebook tải được. Không có `metadataBase`,
+  // Next ghép tạm `http://localhost:3000` **và in warning ở mỗi lần build** — mà luật 2
+  // của `D:\Projects\CLAUDE.md` lấy 0 warning làm mốc. Prod đặt `SITE_ORIGIN`.
+  metadataBase: new URL(SITE_ORIGIN),
   title: {
     default: "gikky.net — nhật ký giao dịch của người Việt",
     template: "%s · gikky.net",
@@ -35,6 +41,18 @@ export const metadata: Metadata = {
   description:
     "Diễn đàn trading tiếng Việt. Bài viết là một mạch: tác giả nối thêm mốc theo thời "
     + "gian thực, dấu thời gian máy chủ bất biến.",
+  // `<link rel="alternate" type="application/rss+xml">` — cách duy nhất để trình đọc feed
+  // và các tiện ích trình duyệt TỰ tìm ra `/feed.xml`. Không có dòng này thì RSS chỉ tồn
+  // tại cho ai đã biết URL của nó.
+  //
+  // ⚠ Trang nào tự khai `alternates` (trang mạch khai `canonical`) sẽ **thay** cả khối
+  // này, không gộp — đó là luật merge metadata của Next, và nó đúng ở đây: một trang mạch
+  // không có feed riêng để mà trỏ tới.
+  alternates: {
+    types: {
+      "application/rss+xml": [{ url: "/feed.xml", title: "gikky.net — mạch mới" }],
+    },
+  },
 };
 
 export default function RootLayout({
