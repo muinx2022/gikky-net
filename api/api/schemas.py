@@ -501,3 +501,169 @@ class KetQuaXoaOut(Schema):
 
     id: int
     xoa_that: bool
+
+
+# --- Trạng thái của VIEWER (Phase 3) -----------------------------------------
+# Mọi schema dưới đây là mặt đối lập của luật ở đầu file: chúng **chỉ có nghĩa khi biết
+# người xem là ai**, nên chúng chỉ được xuất hiện ở `GET /machs/{id}/me` và
+# `GET /notifications` — hai endpoint per-user tuyệt đối, KHÔNG BAO GIỜ được cache
+# (PLAN 8.4 điểm 4).
+#
+# **Tên trường ở đây là tiếng Anh, ngược quy ước tiếng Việt của cả file.** Cố ý:
+# `my_votes`/`my_reactions`/`following`/`last_seen_entry_seq` là nguyên văn PLAN mục 7, và
+# `tests/test_api_mach.py::MANH_PER_USER` đã ghim đúng những mảnh chữ ấy (`"my_"`,
+# `"following"`, `"last_seen"`) làm danh sách CẤM của `GET /machs/{id}`. Việt hoá ở đây là
+# để hàng rào bên kia canh một tập tên mà không cửa nào còn dùng tới.
+
+
+class VoteCuaToiOut(Schema):
+    """Một lá phiếu của **người đang xem** trên một mốc hoặc một bình luận của mạch này."""
+
+    #: `"moc"` | `"comment"` — cùng bộ giá trị với `Vote.Loai` và với `POST /votes`.
+    target_type: str
+    target_id: int
+    #: `1` hoặc `-1`. **Không bao giờ `0`**: rút phiếu là xoá hàng, nên phiếu đã rút vắng
+    #: mặt khỏi danh sách chứ không xuất hiện với giá trị `0` (xem `core.models.Vote`).
+    value: int
+
+
+class ReactionCuaToiOut(Schema):
+    """Reaction của **người đang xem** trên một mốc. Một user tối đa một reaction mỗi mốc."""
+
+    moc_id: int
+    emoji: str
+
+
+class MachCuaToiOut(Schema):
+    """`GET /machs/{id}/me` — trạng thái của NGƯỜI XEM trên một mạch (PLAN mục 7, 8.4).
+
+    **Response này KHÔNG BAO GIỜ được cache.** Nó là nửa còn lại của cặp mà PLAN 8.4 dựng
+    lên: `GET /machs/{id}` không chứa gì per-user nên trang cache được, còn mọi thứ phụ
+    thuộc người xem đi qua đây, sau khi trang đã render. Một `Cache-Control` lỏng hay một
+    lượt nướng nội dung này vào HTML tĩnh là phục vụ phiếu bầu của người này cho người kia.
+
+    Khách chưa đăng nhập nhận **200** với `dang_nhap = false`, hai danh sách rỗng và
+    `following = false` — cùng lý lẽ `ToiOut`: đây là lời gọi chạy trên mọi lượt tải trang
+    mạch, kể cả của bot, nên 401 ở trạng thái bình thường nhất của hệ thống là dạy frontend
+    coi lỗi là chuyện thường.
+
+    `face` ở đây **có thể khác** `face` của `GET /machs/{id}`, và đó là toàn bộ lý do
+    trường này tồn tại ở cả hai chỗ. Bên kia tính vế thời gian của PLAN 5.5 (cache được);
+    bên này áp thêm vế thứ hai — *"user đăng nhập VÀ đã follow hoặc từng bình luận mạch
+    này"*. Vì vế 2 là một phép HOẶC, `face` ở đây chỉ có thể **CẶN → BÃO**, không bao giờ
+    ngược lại. Frontend lấy `face` của endpoint này khi có, và rơi về bên kia khi khách.
+    """
+
+    #: `false` ⇒ mọi trường còn lại ở trạng thái rỗng. Không phải lỗi — xem docstring.
+    dang_nhap: bool
+    #: Mặt của mạch **với người xem này** — PLAN 5.5 đủ hai vế. Server quyết (nguyên tắc 10).
+    face: Mat
+    #: Phiếu của tôi trên MỌI mốc và MỌI bình luận của mạch này, một lần gọi. Phiếu không
+    #: có nghĩa là chưa vote — không có mục nào mang `value = 0`.
+    my_votes: list[VoteCuaToiOut]
+    my_reactions: list[ReactionCuaToiOut]
+    following: bool
+    #: Vạch mới kẻ TRƯỚC mốc `last_seen_entry_seq + 1` (PLAN 5.5). `0` = chưa xem mốc nào.
+    #: Người **chưa follow** luôn nhận `0`: cột này sống trên hàng `Follow` (PLAN mục 6),
+    #: nên không theo mạch thì không có chỗ nào ghi vị trí đọc.
+    last_seen_entry_seq: int
+    #: Người xem đã từng viết bình luận trong mạch này chưa — vế 2 của luật BÃO ở PLAN 5.5.
+    #: Trả ra chứ không chỉ dùng nội bộ để UI giải thích được vì sao mạch nguội vẫn mở ra
+    #: mặt BÃO, thay vì để người dùng thấy một trạng thái không lý do.
+    tung_binh_luan: bool
+
+
+class DaXemOut(Schema):
+    """Kết quả `POST /machs/{id}/seen` — PLAN 5.5.
+
+    **`following = false` nghĩa là KHÔNG GHI GÌ**, và đó là câu trả lời trung thực chứ
+    không phải một lỗi: `last_seen_entry_seq` sống trên hàng `Follow` (PLAN mục 6), nên
+    người chưa theo mạch không có chỗ nào để lưu vị trí đọc. Endpoint nhận request (200)
+    thay vì 404 — client không phải biết trước mình có theo hay không mới dám đặt một cái
+    bookmark — nhưng nó **nói ra** rằng không có gì được lưu, thay vì trả một `{ok: true}`
+    rỗng nghĩa.
+
+    Con số trả về là giá trị **sau** lượt ghi, và nó chỉ tiến không lùi: mở lại một mốc cũ
+    trên spine không được kéo vạch mới về sau (xem `core.ghi.dat_da_xem`).
+    """
+
+    following: bool
+    last_seen_entry_seq: int
+
+
+class TheoMachOut(Schema):
+    """Kết quả `POST`/`DELETE /machs/{id}/follow` — PLAN 5.7. Cả hai đều idempotent.
+
+    `last_seen_entry_seq` có mặt vì lượt theo ĐẦU TIÊN đặt nó bằng `entry_count` hiện tại,
+    không phải `0`: người ta theo để biết chuyện **sắp** xảy ra, không phải để bị giao lại
+    toàn bộ quá khứ (xem `core.ghi.dat_follow`). Bỏ theo ⇒ `false` và `0`.
+    """
+
+    mach_id: int
+    following: bool
+    last_seen_entry_seq: int
+
+
+class ThongBaoOut(Schema):
+    """Một dòng chuông — PLAN 5.8.
+
+    `payload` là **JSON tự do có chủ đích**: ba loại thông báo mang ba bộ trường khác nhau,
+    và ép chúng vào một schema chung sẽ ra một object mà 2/3 số trường luôn `null`. Các
+    khoá chung cho cả ba loại: `mach_id`, `mach_title`, `mach_slug` — đủ để render một
+    dòng có link mà **không phải join** sang bảng nào, điều kiện để chuông poll 60 giây
+    một lần không thành một câu truy vấn nặng.
+
+    Cái giá của việc chép sẵn tiêu đề vào payload: đổi tiêu đề mạch thì dòng chuông cũ giữ
+    tiêu đề tại thời điểm báo. Đó là hành vi ĐÚNG cho một thông báo — nó kể lại một sự
+    kiện đã xảy ra — không phải một chỗ dữ liệu trôi.
+
+    `type`: `"moc_moi"` | `"trich"` | `"reply"`.
+    """
+
+    id: int
+    type: str
+    payload: dict
+    created_at: datetime
+    #: `null` = chưa đọc. Đây là cột chấm đỏ trên chuông đọc tới.
+    read_at: datetime | None
+
+
+class ChuongOut(Schema):
+    """`GET /notifications` — chuông poll 60 giây (PLAN 5.8). **Per-user, cấm cache.**
+
+    Trả kèm `so_chua_doc` của **toàn bộ** hộp thư chứ không phải của trang đang xem: con
+    số trên chấm đỏ nói "bạn có 23 thứ chưa đọc", và tính nó trên một trang 20 dòng sẽ cho
+    ra `20` mãi mãi — một con số trông hợp lý và luôn sai.
+    """
+
+    items: list[ThongBaoOut]
+    so_chua_doc: int
+    #: Cursor keyset của trang sau, `null` khi hết. Khoá là `(created_at, id)` giảm dần —
+    #: khoá BẤT BIẾN, nên nó hưởng đủ bảo đảm "không trùng, không sót" của `api/phan_trang.py`.
+    cursor_ke_tiep: str | None
+
+
+class DaDocOut(Schema):
+    """Kết quả `POST /notifications/read`. `so_da_danh_dau` là số dòng **vừa đổi trạng thái**.
+
+    Đánh dấu lại một thông báo đã đọc **không** được tính vào con số đó, và không được dời
+    `read_at` cũ: hai lần bấm "đọc hết" phải ra `so_da_danh_dau = 0` ở lần thứ hai, nếu
+    không thì con số này không nói được gì.
+    """
+
+    so_da_danh_dau: int
+    so_chua_doc: int
+
+
+class TrichKetQuaOut(Schema):
+    """Kết quả `POST`/`DELETE /mocs/{id}/trich` — PLAN 5.6.
+
+    Trả về **cả thẻ mốc** (`moc`) chứ không chỉ mỗi khối trích: rào 4 của PLAN 5.6 bắt
+    khối trích render **tách bạch khỏi thân mốc** như một chú thích, nên UI phải vẽ lại cả
+    cái thẻ. Trả mỗi `TrichOut` thì client phải tự ghép vào state của thẻ — tức có một bản
+    thứ hai của luật "trích gắn vào đâu", và bản đó sẽ trôi.
+
+    `moc.trich` là `null` sau khi gỡ. Hình dạng `moc` giống hệt `GET /machs/{id}`.
+    """
+
+    moc: MocOut

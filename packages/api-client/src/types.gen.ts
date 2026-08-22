@@ -133,6 +133,121 @@ export type BinhLuanSuaIn = {
 };
 
 /**
+ * ChuongOut
+ *
+ * `GET /notifications` — chuông poll 60 giây (PLAN 5.8). **Per-user, cấm cache.**
+ *
+ * Trả kèm `so_chua_doc` của **toàn bộ** hộp thư chứ không phải của trang đang xem: con
+ * số trên chấm đỏ nói "bạn có 23 thứ chưa đọc", và tính nó trên một trang 20 dòng sẽ cho
+ * ra `20` mãi mãi — một con số trông hợp lý và luôn sai.
+ */
+export type ChuongOut = {
+    /**
+     * Cursor Ke Tiep
+     */
+    cursor_ke_tiep: string | null;
+    /**
+     * Items
+     */
+    items: Array<ThongBaoOut>;
+    /**
+     * So Chua Doc
+     */
+    so_chua_doc: number;
+};
+
+/**
+ * DaDocOut
+ *
+ * Kết quả `POST /notifications/read`. `so_da_danh_dau` là số dòng **vừa đổi trạng thái**.
+ *
+ * Đánh dấu lại một thông báo đã đọc **không** được tính vào con số đó, và không được dời
+ * `read_at` cũ: hai lần bấm "đọc hết" phải ra `so_da_danh_dau = 0` ở lần thứ hai, nếu
+ * không thì con số này không nói được gì.
+ */
+export type DaDocOut = {
+    /**
+     * So Chua Doc
+     */
+    so_chua_doc: number;
+    /**
+     * So Da Danh Dau
+     */
+    so_da_danh_dau: number;
+};
+
+/**
+ * DaXemIn
+ *
+ * `POST /machs/{id}/seen` — client báo đã đọc tới đâu (PLAN 5.5).
+ *
+ * `entry_seq = null` (mặc định) nghĩa là **"đã xem tới mốc mới nhất"**, đúng ca PLAN 5.5
+ * mô tả: thẻ mốc mới nhất mở sẵn khi trang mở, nên client gọi endpoint này không kèm gì.
+ * Truyền một `seq` cụ thể là ca người ta bung timeline đầy đủ rồi đọc tới một chỗ nào đó.
+ *
+ * Con số **chỉ tiến, không lùi** ở phía server (`core.ghi.dat_da_xem`), nên gửi một
+ * `entry_seq` nhỏ hơn vị trí đã ghi là no-op chứ không phải một cách reset vạch mới —
+ * peek một mốc cũ trên spine không được đánh dấu 6 mốc cuối thành chưa đọc.
+ *
+ * `ge=0` chứ không `ge=1`: `0` là "chưa xem mốc nào", giá trị khởi điểm hợp lệ của cột.
+ */
+export type DaXemIn = {
+    /**
+     * Entry Seq
+     */
+    entry_seq?: number | null;
+};
+
+/**
+ * DaXemOut
+ *
+ * Kết quả `POST /machs/{id}/seen` — PLAN 5.5.
+ *
+ * **`following = false` nghĩa là KHÔNG GHI GÌ**, và đó là câu trả lời trung thực chứ
+ * không phải một lỗi: `last_seen_entry_seq` sống trên hàng `Follow` (PLAN mục 6), nên
+ * người chưa theo mạch không có chỗ nào để lưu vị trí đọc. Endpoint nhận request (200)
+ * thay vì 404 — client không phải biết trước mình có theo hay không mới dám đặt một cái
+ * bookmark — nhưng nó **nói ra** rằng không có gì được lưu, thay vì trả một `{ok: true}`
+ * rỗng nghĩa.
+ *
+ * Con số trả về là giá trị **sau** lượt ghi, và nó chỉ tiến không lùi: mở lại một mốc cũ
+ * trên spine không được kéo vạch mới về sau (xem `core.ghi.dat_da_xem`).
+ */
+export type DaXemOut = {
+    /**
+     * Following
+     */
+    following: boolean;
+    /**
+     * Last Seen Entry Seq
+     */
+    last_seen_entry_seq: number;
+};
+
+/**
+ * DanhDauDaDocIn
+ *
+ * `POST /notifications/read` — đánh dấu đã đọc (PLAN 5.8).
+ *
+ * `ids = null` (mặc định) nghĩa là **đánh dấu HẾT** — nút "đọc hết" của chuông. Truyền
+ * một danh sách là đánh dấu đúng từng dòng, cho lượt bấm vào một thông báo lẻ.
+ *
+ * Id của **người khác** trong danh sách bị bỏ qua chứ không làm cả request hỏng: truy vấn
+ * luôn kèm `user = người đang gọi` (xem endpoint), nên chuyện tệ nhất một id lạ gây ra là
+ * `so_da_danh_dau` nhỏ hơn số id đã gửi. Trả 403 ở đây thì ngược lại: nó **xác nhận** id
+ * đó có thật và thuộc về ai đó — một cửa dò id qua mã lỗi.
+ *
+ * Danh sách rỗng `[]` khác `null`: nó đánh dấu **không dòng nào**. Cố ý giữ khác nhau —
+ * một mảng rỗng do client dựng hụt không được biến thành "đọc hết".
+ */
+export type DanhDauDaDocIn = {
+    /**
+     * Ids
+     */
+    ids?: Array<number> | null;
+};
+
+/**
  * DongSoIn
  *
  * Đóng sổ — `POST /machs/{id}/close`. `ket_qua` tuỳ chọn, ≤40 ký tự (PLAN 5.1).
@@ -439,6 +554,58 @@ export type MachChiTietOut = {
      * Title
      */
     title: string;
+};
+
+/**
+ * MachCuaToiOut
+ *
+ * `GET /machs/{id}/me` — trạng thái của NGƯỜI XEM trên một mạch (PLAN mục 7, 8.4).
+ *
+ * **Response này KHÔNG BAO GIỜ được cache.** Nó là nửa còn lại của cặp mà PLAN 8.4 dựng
+ * lên: `GET /machs/{id}` không chứa gì per-user nên trang cache được, còn mọi thứ phụ
+ * thuộc người xem đi qua đây, sau khi trang đã render. Một `Cache-Control` lỏng hay một
+ * lượt nướng nội dung này vào HTML tĩnh là phục vụ phiếu bầu của người này cho người kia.
+ *
+ * Khách chưa đăng nhập nhận **200** với `dang_nhap = false`, hai danh sách rỗng và
+ * `following = false` — cùng lý lẽ `ToiOut`: đây là lời gọi chạy trên mọi lượt tải trang
+ * mạch, kể cả của bot, nên 401 ở trạng thái bình thường nhất của hệ thống là dạy frontend
+ * coi lỗi là chuyện thường.
+ *
+ * `face` ở đây **có thể khác** `face` của `GET /machs/{id}`, và đó là toàn bộ lý do
+ * trường này tồn tại ở cả hai chỗ. Bên kia tính vế thời gian của PLAN 5.5 (cache được);
+ * bên này áp thêm vế thứ hai — *"user đăng nhập VÀ đã follow hoặc từng bình luận mạch
+ * này"*. Vì vế 2 là một phép HOẶC, `face` ở đây chỉ có thể **CẶN → BÃO**, không bao giờ
+ * ngược lại. Frontend lấy `face` của endpoint này khi có, và rơi về bên kia khi khách.
+ */
+export type MachCuaToiOut = {
+    /**
+     * Dang Nhap
+     */
+    dang_nhap: boolean;
+    /**
+     * Face
+     */
+    face: 'bao' | 'can';
+    /**
+     * Following
+     */
+    following: boolean;
+    /**
+     * Last Seen Entry Seq
+     */
+    last_seen_entry_seq: number;
+    /**
+     * My Reactions
+     */
+    my_reactions: Array<ReactionCuaToiOut>;
+    /**
+     * My Votes
+     */
+    my_votes: Array<VoteCuaToiOut>;
+    /**
+     * Tung Binh Luan
+     */
+    tung_binh_luan: boolean;
 };
 
 /**
@@ -794,6 +961,22 @@ export type NguoiDungTomTatOut = {
 };
 
 /**
+ * ReactionCuaToiOut
+ *
+ * Reaction của **người đang xem** trên một mốc. Một user tối đa một reaction mỗi mốc.
+ */
+export type ReactionCuaToiOut = {
+    /**
+     * Emoji
+     */
+    emoji: string;
+    /**
+     * Moc Id
+     */
+    moc_id: number;
+};
+
+/**
  * ReactionIn
  *
  * React / đổi / rút — `POST /mocs/{id}/reactions` (PLAN 5.7).
@@ -914,6 +1097,72 @@ export type SubTomTatOut = {
 };
 
 /**
+ * TheoMachOut
+ *
+ * Kết quả `POST`/`DELETE /machs/{id}/follow` — PLAN 5.7. Cả hai đều idempotent.
+ *
+ * `last_seen_entry_seq` có mặt vì lượt theo ĐẦU TIÊN đặt nó bằng `entry_count` hiện tại,
+ * không phải `0`: người ta theo để biết chuyện **sắp** xảy ra, không phải để bị giao lại
+ * toàn bộ quá khứ (xem `core.ghi.dat_follow`). Bỏ theo ⇒ `false` và `0`.
+ */
+export type TheoMachOut = {
+    /**
+     * Following
+     */
+    following: boolean;
+    /**
+     * Last Seen Entry Seq
+     */
+    last_seen_entry_seq: number;
+    /**
+     * Mach Id
+     */
+    mach_id: number;
+};
+
+/**
+ * ThongBaoOut
+ *
+ * Một dòng chuông — PLAN 5.8.
+ *
+ * `payload` là **JSON tự do có chủ đích**: ba loại thông báo mang ba bộ trường khác nhau,
+ * và ép chúng vào một schema chung sẽ ra một object mà 2/3 số trường luôn `null`. Các
+ * khoá chung cho cả ba loại: `mach_id`, `mach_title`, `mach_slug` — đủ để render một
+ * dòng có link mà **không phải join** sang bảng nào, điều kiện để chuông poll 60 giây
+ * một lần không thành một câu truy vấn nặng.
+ *
+ * Cái giá của việc chép sẵn tiêu đề vào payload: đổi tiêu đề mạch thì dòng chuông cũ giữ
+ * tiêu đề tại thời điểm báo. Đó là hành vi ĐÚNG cho một thông báo — nó kể lại một sự
+ * kiện đã xảy ra — không phải một chỗ dữ liệu trôi.
+ *
+ * `type`: `"moc_moi"` | `"trich"` | `"reply"`.
+ */
+export type ThongBaoOut = {
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Id
+     */
+    id: number;
+    /**
+     * Payload
+     */
+    payload: {
+        [key: string]: unknown;
+    };
+    /**
+     * Read At
+     */
+    read_at: string | null;
+    /**
+     * Type
+     */
+    type: string;
+};
+
+/**
  * ToiOut
  *
  * `GET /me` — người đang đăng nhập là ai (thêm ở Phase 2, PLAN mục 7).
@@ -963,6 +1212,41 @@ export type ToiOut = {
 };
 
 /**
+ * TrichIn
+ *
+ * `POST /mocs/{id}/trich` — chủ mạch ghi một câu khán đài vào sổ (PLAN 5.6).
+ *
+ * Chỉ có `comment_id`: **mốc nhận trích nằm ở URL**, không nằm trong thân. Hai thứ đó
+ * không được cùng ở một chỗ vì rào 1 ("tối đa 1 trích đang hiệu lực mỗi mốc") là một
+ * ràng buộc trên `moc`, và người gọi phải nói rõ mốc nào trước khi server đi kiểm.
+ *
+ * Không có trường `body`: sổ trích **dẫn lại** một bình luận đã tồn tại, không phải chỗ
+ * chủ mạch tự viết một câu rồi gán tên người khác vào.
+ */
+export type TrichIn = {
+    /**
+     * Comment Id
+     */
+    comment_id: number;
+};
+
+/**
+ * TrichKetQuaOut
+ *
+ * Kết quả `POST`/`DELETE /mocs/{id}/trich` — PLAN 5.6.
+ *
+ * Trả về **cả thẻ mốc** (`moc`) chứ không chỉ mỗi khối trích: rào 4 của PLAN 5.6 bắt
+ * khối trích render **tách bạch khỏi thân mốc** như một chú thích, nên UI phải vẽ lại cả
+ * cái thẻ. Trả mỗi `TrichOut` thì client phải tự ghép vào state của thẻ — tức có một bản
+ * thứ hai của luật "trích gắn vào đâu", và bản đó sẽ trôi.
+ *
+ * `moc.trich` là `null` sau khi gỡ. Hình dạng `moc` giống hệt `GET /machs/{id}`.
+ */
+export type TrichKetQuaOut = {
+    moc: MocOut;
+};
+
+/**
  * TrichOut
  *
  * Bình luận được chủ mạch trích vào mốc — "trích vào sổ" (PLAN 5.6).
@@ -1001,6 +1285,26 @@ export type TrichOut = {
      * Trich Created At
      */
     trich_created_at: string;
+};
+
+/**
+ * VoteCuaToiOut
+ *
+ * Một lá phiếu của **người đang xem** trên một mốc hoặc một bình luận của mạch này.
+ */
+export type VoteCuaToiOut = {
+    /**
+     * Target Id
+     */
+    target_id: number;
+    /**
+     * Target Type
+     */
+    target_type: string;
+    /**
+     * Value
+     */
+    value: number;
 };
 
 /**
@@ -1485,6 +1789,112 @@ export type VietBinhLuanResponses = {
 
 export type VietBinhLuanResponse = VietBinhLuanResponses[keyof VietBinhLuanResponses];
 
+export type BoTheoMachData = {
+    body?: never;
+    path: {
+        /**
+         * Mach Id
+         */
+        mach_id: number;
+    };
+    query?: never;
+    url: '/api/v1/machs/{mach_id}/follow';
+};
+
+export type BoTheoMachErrors = {
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type BoTheoMachError = BoTheoMachErrors[keyof BoTheoMachErrors];
+
+export type BoTheoMachResponses = {
+    /**
+     * OK
+     */
+    200: TheoMachOut;
+};
+
+export type BoTheoMachResponse = BoTheoMachResponses[keyof BoTheoMachResponses];
+
+export type TheoMachData = {
+    body?: never;
+    path: {
+        /**
+         * Mach Id
+         */
+        mach_id: number;
+    };
+    query?: never;
+    url: '/api/v1/machs/{mach_id}/follow';
+};
+
+export type TheoMachErrors = {
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type TheoMachError = TheoMachErrors[keyof TheoMachErrors];
+
+export type TheoMachResponses = {
+    /**
+     * OK
+     */
+    200: TheoMachOut;
+};
+
+export type TheoMachResponse = TheoMachResponses[keyof TheoMachResponses];
+
+export type XemMachCuaToiData = {
+    body?: never;
+    path: {
+        /**
+         * Mach Id
+         */
+        mach_id: number;
+    };
+    query?: never;
+    url: '/api/v1/machs/{mach_id}/me';
+};
+
+export type XemMachCuaToiErrors = {
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type XemMachCuaToiError = XemMachCuaToiErrors[keyof XemMachCuaToiErrors];
+
+export type XemMachCuaToiResponses = {
+    /**
+     * OK
+     */
+    200: MachCuaToiOut;
+};
+
+export type XemMachCuaToiResponse = XemMachCuaToiResponses[keyof XemMachCuaToiResponses];
+
 export type NoiMocData = {
     body: MocMoiIn;
     path: {
@@ -1576,6 +1986,44 @@ export type MoLaiMachResponses = {
 };
 
 export type MoLaiMachResponse = MoLaiMachResponses[keyof MoLaiMachResponses];
+
+export type DanhDauDaXemData = {
+    body: DaXemIn;
+    path: {
+        /**
+         * Mach Id
+         */
+        mach_id: number;
+    };
+    query?: never;
+    url: '/api/v1/machs/{mach_id}/seen';
+};
+
+export type DanhDauDaXemErrors = {
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type DanhDauDaXemError = DanhDauDaXemErrors[keyof DanhDauDaXemErrors];
+
+export type DanhDauDaXemResponses = {
+    /**
+     * OK
+     */
+    200: DaXemOut;
+};
+
+export type DanhDauDaXemResponse = DanhDauDaXemResponses[keyof DanhDauDaXemResponses];
 
 export type XemToiData = {
     body?: never;
@@ -1786,6 +2234,157 @@ export type LietKeBanCuMocResponses = {
 };
 
 export type LietKeBanCuMocResponse = LietKeBanCuMocResponses[keyof LietKeBanCuMocResponses];
+
+export type GoTrichData = {
+    body?: never;
+    path: {
+        /**
+         * Moc Id
+         */
+        moc_id: number;
+    };
+    query?: never;
+    url: '/api/v1/mocs/{moc_id}/trich';
+};
+
+export type GoTrichErrors = {
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+    /**
+     * Conflict
+     */
+    409: LoiOut;
+};
+
+export type GoTrichError = GoTrichErrors[keyof GoTrichErrors];
+
+export type GoTrichResponses = {
+    /**
+     * OK
+     */
+    200: TrichKetQuaOut;
+};
+
+export type GoTrichResponse = GoTrichResponses[keyof GoTrichResponses];
+
+export type TrichVaoSoData = {
+    body: TrichIn;
+    path: {
+        /**
+         * Moc Id
+         */
+        moc_id: number;
+    };
+    query?: never;
+    url: '/api/v1/mocs/{moc_id}/trich';
+};
+
+export type TrichVaoSoErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+    /**
+     * Conflict
+     */
+    409: LoiOut;
+};
+
+export type TrichVaoSoError = TrichVaoSoErrors[keyof TrichVaoSoErrors];
+
+export type TrichVaoSoResponses = {
+    /**
+     * Created
+     */
+    201: TrichKetQuaOut;
+};
+
+export type TrichVaoSoResponse = TrichVaoSoResponses[keyof TrichVaoSoResponses];
+
+export type LietKeThongBaoData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+    };
+    url: '/api/v1/notifications';
+};
+
+export type LietKeThongBaoErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+};
+
+export type LietKeThongBaoError = LietKeThongBaoErrors[keyof LietKeThongBaoErrors];
+
+export type LietKeThongBaoResponses = {
+    /**
+     * OK
+     */
+    200: ChuongOut;
+};
+
+export type LietKeThongBaoResponse = LietKeThongBaoResponses[keyof LietKeThongBaoResponses];
+
+export type DanhDauDaDocData = {
+    body: DanhDauDaDocIn;
+    path?: never;
+    query?: never;
+    url: '/api/v1/notifications/read';
+};
+
+export type DanhDauDaDocErrors = {
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+};
+
+export type DanhDauDaDocError = DanhDauDaDocErrors[keyof DanhDauDaDocErrors];
+
+export type DanhDauDaDocResponses = {
+    /**
+     * OK
+     */
+    200: DaDocOut;
+};
+
+export type DanhDauDaDocResponse = DanhDauDaDocResponses[keyof DanhDauDaDocResponses];
 
 export type LietKeSubData = {
     body?: never;

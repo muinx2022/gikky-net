@@ -100,6 +100,13 @@ CUA_GHI = [
     ("delete", "/api/v1/comments/{comment}", {}),
     ("post", "/api/v1/votes", {"target_type": "moc", "target_id": 0, "value": 1}),
     ("post", "/api/v1/mocs/{moc}/reactions", {"emoji": "lua"}),
+    # --- Phase 3 ---
+    ("post", "/api/v1/machs/{mach}/seen", {}),
+    ("post", "/api/v1/machs/{mach}/follow", {}),
+    ("delete", "/api/v1/machs/{mach}/follow", {}),
+    ("post", "/api/v1/mocs/{moc}/trich", {"comment_id": 0}),
+    ("delete", "/api/v1/mocs/{moc}/trich", {}),
+    ("post", "/api/v1/notifications/read", {}),
 ]
 
 
@@ -152,10 +159,19 @@ def test_khach_khong_ghi_duoc_gi(client, mach_cua_a, nguoi_a, method, duong, tha
 
 # --- (3) B không làm được việc của A -----------------------------------------
 
-#: Cửa ghi **có chủ** — B phải nhận 403 `khong_phai_chu`. Bốn cửa vắng mặt ở đây là bốn
-#: cửa cố ý KHÔNG có chủ, và chúng có bài đo riêng chứng minh B **làm được**:
+#: Cửa ghi **có chủ** — B phải nhận 403 `khong_phai_chu`. Những cửa vắng mặt ở đây là cửa
+#: cố ý KHÔNG có chủ, và chúng có bài đo riêng chứng minh B **làm được**:
 #: `POST /machs` (ai cũng đăng bài được), `POST /machs/{id}/comments` (khán đài là chỗ của
 #: đám đông), `POST /votes` và `/reactions` (vote nội dung người khác là chuyện chính).
+#:
+#: **Ba cửa Phase 3 cũng vắng mặt, và vì một lý do KHÁC HẲN** — `seen`, `follow` và
+#: `notifications/read` không phải "không có chủ", chúng là những cửa mà **chủ được suy ra
+#: từ phiên, không từ tham số**. Không có đường nào để B chỉ tới hàng của A: mọi truy vấn
+#: mở đầu bằng `user = request.user`. Vì thế 403 không phải câu trả lời đúng cho chúng —
+#: B gọi `POST /machs/{của A}/follow` là B theo mạch đó, một hành động hoàn toàn hợp lệ.
+#: Vế "B không đụng được của A" của chúng được đo bằng bài đo RIÊNG, đo đúng thứ đo được:
+#: `test_api_follow_seen.py::test_B_khong_doc_va_khong_dat_duoc_vi_tri_doc_cua_A` và
+#: `test_thong_bao.py::test_B_khong_thay_va_khong_danh_dau_duoc_thong_bao_cua_A`.
 CUA_CO_CHU = [
     ("post", "/api/v1/machs/{mach}/mocs", {"body": "B chen vào sổ của A"}),
     ("post", "/api/v1/machs/{mach}/close", {"ket_qua": "B đóng sổ hộ"}),
@@ -164,6 +180,10 @@ CUA_CO_CHU = [
     ("delete", "/api/v1/mocs/{moc}", {}),
     ("patch", "/api/v1/comments/{comment}", {"body": "B sửa bình luận của A"}),
     ("delete", "/api/v1/comments/{comment}", {}),
+    # Trích vào sổ: chủ là **`Mach.author`**, không phải `Moc.author` — rào 4 của PLAN 5.6
+    # ghi rõ blockquote là "trích từ khán đài, bởi chủ mạch".
+    ("post", "/api/v1/mocs/{moc}/trich", {"comment_id": 0}),
+    ("delete", "/api/v1/mocs/{moc}/trich", {}),
 ]
 
 

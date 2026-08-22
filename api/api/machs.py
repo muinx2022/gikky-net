@@ -40,6 +40,8 @@ from core.mat import tinh_mat_theo_thoi_gian
 from core.models.dien_dan import Mach, Sub
 from core.models.moc import Moc
 from core.models.tuong_tac import Trich
+from core.revalidate import lam_moi_mach
+from core.thong_bao import bao_moc_moi, bao_reply
 
 from api.ghi_chung import kiem_occurred_at, nap_mach
 from api.loi import (
@@ -471,6 +473,15 @@ def noi_moc(request, mach_id: int, du_lieu: MocMoiIn):
             figures=_figures_ra_dict(du_lieu.figures),
         )
         tu_upvote(target=moc)
+        # Thông báo cho follower, TRONG cùng transaction với lời ghi (PLAN 5.8).
+        # Không đẩy ra `transaction.on_commit`: rollback ở đây phải cuốn theo cả chuông,
+        # còn commit thành công mà chuông chết sau đó là mốc vào DB không ai được báo.
+        # Gộp 1 thông báo / mạch / ngày lịch VN — xem `core/thong_bao.py`.
+        bao_moc_moi(moc)
+        # On-demand revalidate (PLAN 8.4 điểm 3). Gọi TRONG transaction là đúng: hàm bọc
+        # `transaction.on_commit`, nên lời gọi HTTP chỉ đi sau khi mốc đã commit — gọi
+        # sớm hơn thì Next fetch về đọc phải dữ liệu cũ rồi cache đúng bản cũ đó.
+        lam_moi_mach(mach)
     moc.refresh_from_db()
     return Status(201, moc_ra(moc, so_binh_luan=0, trich=None))
 
@@ -543,6 +554,9 @@ def viet_binh_luan(request, mach_id: int, du_lieu: BinhLuanMoiIn):
             anchor_moc_seq=du_lieu.anchor_moc_seq,
         )
         tu_upvote(target=c)
+        # Báo cho tác giả bình luận CHA, trong cùng transaction (PLAN 5.8). Hàm tự bỏ qua
+        # ba ca: không có cha · tự trả lời mình · cha đã bị gỡ.
+        bao_reply(c)
     c.refresh_from_db()
     nut = Nut(
         binh_luan=c,
@@ -577,6 +591,8 @@ def dong_so_mach(request, mach_id: int, du_lieu: DongSoIn):
     if mach.status == Mach.TrangThai.DONG:
         raise LoiGhi(409, MACH_DA_DONG, "Mạch này đã đóng sổ rồi.")
     mach = dong_so(mach=mach, ket_qua=du_lieu.ket_qua)
+    # Đóng sổ lật mặt BÃO → CẶN và đổi banner — sự kiện CÓ signal, PLAN 8.4 điểm 2.
+    lam_moi_mach(mach)
     return mach_chi_tiet_ra(nap_mach(mach.pk))
 
 
@@ -613,4 +629,5 @@ def mo_lai_mach(request, mach_id: int):
             f"Quá {NGAY_MO_LAI} ngày kể từ khi đóng sổ — mạch này không mở lại được nữa.",
         )
     mach = mo_lai(mach=mach)
+    lam_moi_mach(mach)
     return mach_chi_tiet_ra(nap_mach(mach.pk))

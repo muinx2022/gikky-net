@@ -105,6 +105,8 @@ from api.loi import dang_ky_xu_ly_loi  # noqa: E402
 from api.machs import router as router_machs  # noqa: E402
 from api.mocs import router as router_mocs  # noqa: E402
 from api.quyen import dang_ky_xu_ly_loi_ghi  # noqa: E402
+from api.theo_doi import router as router_theo_doi  # noqa: E402
+from api.thong_bao import router as router_thong_bao  # noqa: E402
 from api.toi import router as router_toi  # noqa: E402
 from api.tuong_tac import router as router_tuong_tac  # noqa: E402
 from api.users import router as router_users  # noqa: E402
@@ -118,3 +120,9 @@ api_v1.add_router("", router_binh_luan)
 api_v1.add_router("", router_tuong_tac)
 api_v1.add_router("", router_toi)
 api_v1.add_router("", router_users)
+# Phase 3 — hai router per-user. `theo_doi` mang `/machs/{id}/me`, `/seen`, `/follow`;
+# `thong_bao` mang chuông. Cả hai tách khỏi `machs.py` vì một ranh giới có thật, không vì
+# độ dài file: chúng là chỗ **được phép** đọc `request.user`, còn `machs.py` thì không —
+# response của nó phải cache được (PLAN 8.4). Xem docstring `api/theo_doi.py`.
+api_v1.add_router("", router_theo_doi)
+api_v1.add_router("", router_thong_bao)

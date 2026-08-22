@@ -8,14 +8,19 @@ BÃO  nếu (status == open VÀ chưa bị khoá VÀ now − last_activity_at �
 CẶN  còn lại.
 ```
 
-**Module này chỉ cài VẾ THỨ NHẤT** — vế thời gian. Vế thứ hai phụ thuộc viewer và
-**cố ý chưa có ở đây**: `GET /machs/{id}` phải cache được (PLAN 8.4, chỗ PLAN tự gọi là
-"điểm dễ làm sai nhất"), nên một trường phụ thuộc người đăng nhập lọt vào response đó là
-người dùng B nhận mặt tính theo trạng thái của người dùng A qua cache. Vế viewer thuộc
-Phase 3 và sẽ đi qua `GET /machs/{id}/me`, không đi qua hàm này.
+Hai vế nằm ở **hai hàm khác nhau**, và đó là ràng buộc kiến trúc chứ không phải cách chia
+file cho gọn:
 
-Đừng "hoàn thiện" hàm bằng cách thêm tham số `user`: nó sẽ được gọi từ đúng chỗ không
-được phép biết `user`.
+- `tinh_mat_theo_thoi_gian` — vế thời gian. Không biết gì về viewer, nên nó gọi được từ
+  `GET /machs/{id}`, response mà PLAN 8.4 đòi phải cache được.
+- `tinh_mat_cho_viewer` — vế thứ hai, thêm ở **Phase 3**. Chỉ gọi được từ
+  `GET /machs/{id}/me`, endpoint per-user không bao giờ được cache.
+
+**Đừng gộp chúng lại bằng cách thêm tham số `user` vào hàm thứ nhất.** Nó được gọi từ
+đúng chỗ không được phép biết `user`, và một tham số mặc định `user=None` ở đó là lời mời
+cho lời gọi thứ hai truyền `user` vào — lúc ấy `MachChiTietOut.face` thành trường per-user
+nằm trong một response được ISR cache, tức người dùng B nhận mặt tính theo trạng thái của
+người dùng A. HTTP 200, không có gì đỏ.
 """
 
 from datetime import datetime, timedelta
@@ -61,3 +66,35 @@ def tinh_mat_theo_thoi_gian(
     if now is None:
         now = timezone.now()
     return MAT_BAO if now - last_activity_at <= NGUONG_BAO else MAT_CAN
+
+
+def tinh_mat_cho_viewer(
+    *,
+    mat_theo_thoi_gian: Mat,
+    dang_nhap: bool,
+    dang_follow: bool,
+    tung_binh_luan: bool,
+) -> Mat:
+    """Mặt của mạch **với một người xem cụ thể** — vế thứ hai của PLAN 5.5 (Phase 3).
+
+    Nguyên văn PLAN 5.5: `BÃO … HOẶC (user đăng nhập VÀ đã follow hoặc từng bình luận
+    mạch này)`. Đây là một phép **HOẶC**, nên hàm chỉ có thể kéo CẶN → BÃO, không bao giờ
+    ngược lại: người đã bỏ công theo hoặc đã nói một câu trong mạch thì mạch đó còn sống
+    với họ kể cả khi cả thế giới đã bỏ đi. Hàm nhận sẵn kết quả vế thời gian thay vì tự
+    tính lại để cả hai cửa (`GET /machs/{id}` và `/me`) không bao giờ cãi nhau về vế 1.
+
+    `dang_nhap` là một tham số RIÊNG, không suy ra từ `dang_follow or tung_binh_luan`.
+    Nghe thừa vì hai cờ kia chỉ đúng với người đã đăng nhập — nhưng chúng được TRUYỀN VÀO
+    chứ không được hàm này tự tra, nên "thừa" ở đây là chỗ duy nhất chặn được một lời gọi
+    dựng cờ từ một `user` đã đăng xuất. PLAN viết `user đăng nhập VÀ …`; giữ đúng chữ VÀ.
+
+    **Mạch bị mod khoá / đã đóng sổ vẫn có thể ra BÃO ở đây, và đó là nguyên văn PLAN.**
+    Vế 2 không có điều kiện nào về `status`/`locked_at` — nó nói về *quan hệ của người xem
+    với mạch*, không nói về trạng thái của mạch. Nếu chuyện đó thành vấn đề sản phẩm thì
+    phải sửa PLAN 5.5, không phải lặng lẽ thêm một điều kiện ở đây.
+    """
+    if mat_theo_thoi_gian == MAT_BAO:
+        return MAT_BAO
+    if dang_nhap and (dang_follow or tung_binh_luan):
+        return MAT_BAO
+    return MAT_CAN

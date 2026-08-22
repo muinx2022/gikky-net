@@ -23,6 +23,7 @@ from core.ghi import dat_an_binh_luan, dat_an_mach, dat_an_moc, dat_khoa_mach
 from core.models.binh_luan import Comment
 from core.models.dien_dan import Mach
 from core.models.moc import Moc
+from core.revalidate import lam_moi_mach
 
 from api.loi import LoiOut, khong_tim_thay
 from api.quan_tri_schemas import (
@@ -67,6 +68,8 @@ def dat_an_moc_endpoint(request, moc_id: int, du_lieu: DatAnIn):
     if moc is None:
         return khong_tim_thay("mốc")
     da_doi = dat_an_moc(moc=moc, boi=request.user, an=du_lieu.an, ly_do=du_lieu.ly_do)
+    # Ẩn/gỡ ẩn một mốc đổi nội dung trang mạch — sự kiện CÓ signal (PLAN 8.4 điểm 2).
+    lam_moi_mach(moc.mach)
     return KetQuaDoiTrangThaiOut(da_doi=da_doi, dang_bat=moc.hidden_at is not None)
 
 
@@ -88,6 +91,7 @@ def dat_an_binh_luan_endpoint(request, comment_id: int, du_lieu: DatAnIn):
     da_doi = dat_an_binh_luan(
         comment=comment, boi=request.user, an=du_lieu.an, ly_do=du_lieu.ly_do
     )
+    lam_moi_mach(comment.mach)
     return KetQuaDoiTrangThaiOut(da_doi=da_doi, dang_bat=comment.hidden_at is not None)
 
 
@@ -108,6 +112,8 @@ def dat_an_mach_endpoint(request, mach_id: int, du_lieu: DatAnIn):
     if mach is None:
         return khong_tim_thay("mạch")
     da_doi = dat_an_mach(mach=mach, boi=request.user, an=du_lieu.an, ly_do=du_lieu.ly_do)
+    # Cả hai chiều: ẩn thì cache phải đổi sang 404, gỡ ẩn thì phải thôi 404.
+    lam_moi_mach(mach)
     return KetQuaDoiTrangThaiOut(da_doi=da_doi, dang_bat=mach.hidden_at is not None)
 
 
@@ -129,6 +135,7 @@ def dat_khoa_mach_endpoint(request, mach_id: int, du_lieu: DatKhoaMachIn):
     da_doi = dat_khoa_mach(
         mach=mach, boi=request.user, khoa=du_lieu.khoa, ly_do=du_lieu.ly_do
     )
+    lam_moi_mach(mach)
     return KetQuaDoiTrangThaiOut(da_doi=da_doi, dang_bat=mach.locked_at is not None)
 
 

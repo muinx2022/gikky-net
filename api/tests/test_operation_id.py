@@ -82,6 +82,11 @@ def test_du_endpoint_cua_plan_muc_7():
     khi thêm endpoint, nên mọi dòng ở đây phải có mặt trong bảng ấy. Sửa danh sách này mà
     không sửa bảng là để hợp đồng công khai nói thiếu một endpoint đang chạy;
     `test_bang_API_cua_PLAN_co_du_dong_sub` giữ chiều đó.
+
+    **Phase 3 thêm 8 cửa** (plan con `plans/2026-08-23-mang-b1-backend-phase-3.md` §3):
+    hai cửa per-user của trang mạch (`/me`, `/seen`), hai cửa follow, hai cửa chuông và
+    hai cửa trích. Bảng PLAN mục 7 đã có sẵn dòng cho cả tám — Phase 3 không mở endpoint
+    nào ngoài hợp đồng, nó chỉ cài những dòng đã hứa từ đầu.
     """
     thuc_te = {
         (tuple(sorted(op.methods)), duong_dan)
@@ -112,6 +117,17 @@ def test_du_endpoint_cua_plan_muc_7():
         (("DELETE",), "/comments/{int:comment_id}"),
         (("POST",), "/votes"),
         (("POST",), "/mocs/{int:moc_id}/reactions"),
+        # --- mặt BÃO + vòng lặp quay lại (Phase 3) ---
+        # `GET /machs/{id}/me` là cửa DUY NHẤT ở đây trả dữ liệu per-user của trang mạch;
+        # `GET /machs/{id}` ngay trên vẫn phải sạch để còn cache được (PLAN 8.4).
+        (("GET",), "/machs/{int:mach_id}/me"),
+        (("POST",), "/machs/{int:mach_id}/seen"),
+        (("POST",), "/machs/{int:mach_id}/follow"),
+        (("DELETE",), "/machs/{int:mach_id}/follow"),
+        (("POST",), "/mocs/{int:moc_id}/trich"),
+        (("DELETE",), "/mocs/{int:moc_id}/trich"),
+        (("GET",), "/notifications"),
+        (("POST",), "/notifications/read"),
     }
 
 

@@ -32,6 +32,8 @@ env = environ.Env(
     EMAIL_URL=(str, ""),
     DEFAULT_FROM_EMAIL=(str, "gikky <khong-tra-loi@gikky.net>"),
     FRONTEND_ORIGIN=(str, "http://localhost:3000"),
+    REVALIDATE_URL=(str, "http://localhost:3000/lam-moi-cache"),
+    REVALIDATE_SECRET=(str, ""),
 )
 environ.Env.read_env(BASE_DIR / ".env")
 
@@ -267,6 +269,25 @@ if env("SESSION_COOKIE_DOMAIN"):
     SESSION_COOKIE_DOMAIN = env("SESSION_COOKIE_DOMAIN")
 if env("CSRF_COOKIE_DOMAIN"):
     CSRF_COOKIE_DOMAIN = env("CSRF_COOKIE_DOMAIN")
+
+# =============================================================================
+# ON-DEMAND REVALIDATE (PLAN 8.4 điểm 3 · Phase 3)
+# =============================================================================
+#
+# Django gọi ngược Next để làm mới trang mạch đã cache khi có sự kiện CÓ signal (mốc mới,
+# trích, đóng/mở/khoá mạch). Cơ chế + bốn chốt: `core/revalidate.py`.
+
+#: URL **nội bộ** của cửa nhận. Cố ý **không** nằm dưới `/api/`: cả `next.config.ts` (dev)
+#: lẫn Caddy (prod) đều route `/api/*` sang Django, nên một đường `/api/revalidate` là một
+#: cái bẫy chờ sẵn — nó chạy ở dev (route handler của Next thắng `rewrites`) rồi chết trên
+#: prod, nơi Caddy nuốt trước.
+REVALIDATE_URL = env("REVALIDATE_URL", default="http://localhost:3000/lam-moi-cache")
+
+#: **Rỗng ⇒ TẮT HẲN**, và đó là mặc định đúng cho máy dev lẫn cho `pytest`: một lời gọi
+#: HTTP ra `localhost:3000` giữa lúc chạy test sẽ hoặc treo tới timeout, hoặc đập vào app
+#: Next của người khác đang chạy. Prod đặt cùng một chuỗi ở đây và ở biến môi trường của
+#: tiến trình Next.
+REVALIDATE_SECRET = env("REVALIDATE_SECRET", default="")
 
 #: `False` là BẮT BUỘC: frontend phải đọc được cookie `csrftoken` bằng JS để gắn vào
 #: header `X-CSRFToken`. Cookie *phiên* (`sessionid`) thì ngược lại — `HttpOnly` mặc định
