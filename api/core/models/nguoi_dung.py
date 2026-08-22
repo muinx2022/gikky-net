@@ -9,6 +9,7 @@ cột dựng sẵn từ giờ).
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxLengthValidator
 from django.db import models
+from django.utils import timezone
 
 
 class User(AbstractUser):
@@ -35,3 +36,21 @@ class User(AbstractUser):
 
     def __str__(self) -> str:
         return self.username
+
+    def dang_bi_ban(self, now=None) -> bool:
+        """Tài khoản này có đang bị chặn không — ba cột trên, MỘT phép đọc.
+
+        Đặt ở model chứ không ở tầng API vì có ít nhất hai nơi phải hỏi cùng câu hỏi này
+        và chúng thuộc hai mảng khác nhau: cửa đăng nhập (Phase 2) và cửa quản trị
+        (`api/quan_tri.py` — mod bị ban thì không được moderate nữa). Hai bản chép tay
+        của cùng một điều kiện ba cột là bản thứ hai sẽ quên `banned_until` đã hết hạn,
+        và không có gì đỏ: chỉ có một người bị khoá vĩnh viễn khỏi tài khoản của họ.
+
+        Ban tạm **tự hết hạn** — so với `now` chứ không cần job dọn. Cột không bị xoá khi
+        hết hạn là chủ đích: nó là vết cho lần ban sau.
+        """
+        if self.ban_permanent:
+            return True
+        if self.banned_until is None:
+            return False
+        return self.banned_until > (now or timezone.now())

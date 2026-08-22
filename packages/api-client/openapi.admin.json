@@ -1,0 +1,2025 @@
+{
+  "components": {
+    "schemas": {
+      "BanIn": {
+        "description": "Body của `POST /users/{username}/ban`.\n\n`vinh_vien` và `den_khi` **loại trừ nhau**: đúng một trong hai. `core/ghi.py::ban_user`\nlà chỗ ném lỗi nếu vi phạm, không phải pydantic — luật ấy thuộc đường ghi, và nó phải\nđúng cả khi ai đó gọi hàm từ `manage.py shell`.",
+        "properties": {
+          "den_khi": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Den Khi"
+          },
+          "ly_do": {
+            "title": "Ly Do",
+            "type": "string"
+          },
+          "vinh_vien": {
+            "default": false,
+            "title": "Vinh Vien",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ly_do"
+        ],
+        "title": "BanIn",
+        "type": "object"
+      },
+      "BaoCaoOut": {
+        "description": "Một dòng trong hàng đợi báo cáo (PLAN 5.10).",
+        "properties": {
+          "action": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "dich": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NoiDungBiBaoCaoOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ghi_chu": {
+            "title": "Ghi Chu",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "ly_do": {
+            "enum": [
+              "phim_hang",
+              "lua_dao",
+              "spam",
+              "khac"
+            ],
+            "title": "Ly Do",
+            "type": "string"
+          },
+          "reporter": {
+            "$ref": "#/components/schemas/NguoiDungTomTatOut"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved At"
+          },
+          "resolved_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NguoiDungTomTatOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "ly_do",
+          "ghi_chu",
+          "created_at",
+          "reporter",
+          "dich",
+          "resolved_at",
+          "resolved_by",
+          "action"
+        ],
+        "title": "BaoCaoOut",
+        "type": "object"
+      },
+      "DatAnIn": {
+        "description": "Body của mọi endpoint ẩn/gỡ ẩn.\n\n**Một endpoint đặt-trạng-thái thay vì hai endpoint `hide`/`unhide`** — hai chiều nhận\ncùng bộ đầu vào, nên tách ra chỉ nhân đôi số chỗ phải kiểm quyền. Và nó **idempotent**:\ngửi `an=true` hai lần cho ra cùng một trạng thái.",
+        "properties": {
+          "an": {
+            "title": "An",
+            "type": "boolean"
+          },
+          "ly_do": {
+            "default": "",
+            "title": "Ly Do",
+            "type": "string"
+          }
+        },
+        "required": [
+          "an"
+        ],
+        "title": "DatAnIn",
+        "type": "object"
+      },
+      "DatKhoaMachIn": {
+        "description": "Body của `POST /machs/{id}/khoa`.\n\n`khoa` là **trục riêng, không phải `status`** (PLAN 5.10, docstring `Mach`): mạch bị\nkhoá vẫn đọc được nhưng cấm mọi tương tác, còn `closed` là tác giả tự đóng sổ.",
+        "properties": {
+          "khoa": {
+            "title": "Khoa",
+            "type": "boolean"
+          },
+          "ly_do": {
+            "default": "",
+            "title": "Ly Do",
+            "type": "string"
+          }
+        },
+        "required": [
+          "khoa"
+        ],
+        "title": "DatKhoaMachIn",
+        "type": "object"
+      },
+      "DongBaoCaoIn": {
+        "description": "Body của `POST /reports/{id}/dong`.",
+        "properties": {
+          "hanh_dong": {
+            "enum": [
+              "an",
+              "khoa",
+              "ban",
+              "bo_qua"
+            ],
+            "title": "Hanh Dong",
+            "type": "string"
+          }
+        },
+        "required": [
+          "hanh_dong"
+        ],
+        "title": "DongBaoCaoIn",
+        "type": "object"
+      },
+      "KetQuaDoiTrangThaiOut": {
+        "description": "Kết quả CHUNG của mọi hành động moderation bật/tắt một trạng thái.\n\nHai trường, và cả hai đều cần:\n\n- `da_doi` — hành động này có đổi gì không. Bấm \"ẩn\" lần thứ hai trả `false`, và đó\n  **không** phải lỗi: `core/ghi.py` cố ý không reset `hidden_at` (mất mốc thời gian\n  moderation thật) và không đẻ dòng `AuditLog` thứ hai. UI đọc trường này để không\n  báo \"đã ẩn xong\" cho một cú bấm chẳng làm gì;\n- `dang_bat` — trạng thái SAU khi gọi. Đây là thứ UI vẽ, và nó đúng ở cả hai nhánh\n  của `da_doi` — nên hai mod bấm cùng lúc vẫn thấy cùng một màn hình.",
+        "properties": {
+          "da_doi": {
+            "title": "Da Doi",
+            "type": "boolean"
+          },
+          "dang_bat": {
+            "title": "Dang Bat",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "da_doi",
+          "dang_bat"
+        ],
+        "title": "KetQuaDoiTrangThaiOut",
+        "type": "object"
+      },
+      "KetQuaXoaSubOut": {
+        "description": "Kết quả `DELETE /subs/{slug}`.\n\nTrả một thân JSON thay vì 204 rỗng vì client TS sinh từ OpenAPI: một `204` không thân\ncho ra kiểu `void`, và lúc đó `slug` vừa xoá — thứ UI cần để gỡ đúng hàng khỏi bảng —\nphải lấy từ biến cục bộ của lời gọi. Đúng thì đúng, nhưng nó là một lần suy lại.",
+        "properties": {
+          "da_xoa": {
+            "title": "Da Xoa",
+            "type": "boolean"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "slug",
+          "da_xoa"
+        ],
+        "title": "KetQuaXoaSubOut",
+        "type": "object"
+      },
+      "LoiOut": {
+        "description": "`{detail, code}` — PLAN mục 7.",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          }
+        },
+        "required": [
+          "detail",
+          "code"
+        ],
+        "title": "LoiOut",
+        "type": "object"
+      },
+      "MachQuanTriOut": {
+        "description": "Trang chi tiết một mạch cho mod (PLAN 9.3 mục 2) — kèm mọi mốc để bấm ẩn từng ô.",
+        "properties": {
+          "comment_count": {
+            "title": "Comment Count",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "da_bi_an": {
+            "title": "Da Bi An",
+            "type": "boolean"
+          },
+          "da_khoa": {
+            "title": "Da Khoa",
+            "type": "boolean"
+          },
+          "duong_dan_cong_khai": {
+            "title": "Duong Dan Cong Khai",
+            "type": "string"
+          },
+          "entry_count": {
+            "title": "Entry Count",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "last_activity_at": {
+            "format": "date-time",
+            "title": "Last Activity At",
+            "type": "string"
+          },
+          "last_entry_at": {
+            "format": "date-time",
+            "title": "Last Entry At",
+            "type": "string"
+          },
+          "mocs": {
+            "items": {
+              "$ref": "#/components/schemas/MocQuanTriOut"
+            },
+            "title": "Mocs",
+            "type": "array"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "sub_slug": {
+            "title": "Sub Slug",
+            "type": "string"
+          },
+          "tac_gia": {
+            "$ref": "#/components/schemas/NguoiDungTomTatOut"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "slug",
+          "sub_slug",
+          "tac_gia",
+          "status",
+          "created_at",
+          "last_entry_at",
+          "last_activity_at",
+          "entry_count",
+          "comment_count",
+          "da_bi_an",
+          "da_khoa",
+          "duong_dan_cong_khai",
+          "mocs"
+        ],
+        "title": "MachQuanTriOut",
+        "type": "object"
+      },
+      "MocQuanTriOut": {
+        "description": "Một mốc trong trang chi tiết của khu quản trị.\n\nKhác `MocOut` công khai ở đúng chỗ file này tồn tại: `trich_yeu` **không bị che** khi\nmốc đã bị ẩn hoặc là bia mộ — mod cần đọc để phán xử.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "da_bi_an": {
+            "title": "Da Bi An",
+            "type": "boolean"
+          },
+          "da_xoa": {
+            "title": "Da Xoa",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "occurred_at": {
+            "format": "date",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "tac_gia": {
+            "$ref": "#/components/schemas/NguoiDungTomTatOut"
+          },
+          "trich_yeu": {
+            "title": "Trich Yeu",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "seq",
+          "occurred_at",
+          "created_at",
+          "tac_gia",
+          "trich_yeu",
+          "da_bi_an",
+          "da_xoa"
+        ],
+        "title": "MocQuanTriOut",
+        "type": "object"
+      },
+      "ModOut": {
+        "description": "Danh tính của mod đang đăng nhập — đủ để header admin hiện tên và mở khoá UI.",
+        "properties": {
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "is_superuser": {
+            "title": "Is Superuser",
+            "type": "boolean"
+          },
+          "username": {
+            "title": "Username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "username",
+          "display_name",
+          "is_superuser"
+        ],
+        "title": "ModOut",
+        "type": "object"
+      },
+      "NguoiDungQuanTriOut": {
+        "description": "Hồ sơ một tài khoản dưới góc nhìn mod — trạng thái ban + vài con số để phán xử.",
+        "properties": {
+          "ban_permanent": {
+            "title": "Ban Permanent",
+            "type": "boolean"
+          },
+          "ban_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ban Reason"
+          },
+          "banned_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Banned Until"
+          },
+          "dang_bi_ban": {
+            "title": "Dang Bi Ban",
+            "type": "boolean"
+          },
+          "date_joined": {
+            "format": "date-time",
+            "title": "Date Joined",
+            "type": "string"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "is_active": {
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "is_staff": {
+            "title": "Is Staff",
+            "type": "boolean"
+          },
+          "so_binh_luan": {
+            "title": "So Binh Luan",
+            "type": "integer"
+          },
+          "so_mach": {
+            "title": "So Mach",
+            "type": "integer"
+          },
+          "username": {
+            "title": "Username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "username",
+          "display_name",
+          "date_joined",
+          "is_active",
+          "is_staff",
+          "dang_bi_ban",
+          "ban_permanent",
+          "banned_until",
+          "ban_reason",
+          "so_mach",
+          "so_binh_luan"
+        ],
+        "title": "NguoiDungQuanTriOut",
+        "type": "object"
+      },
+      "NguoiDungTomTatOut": {
+        "description": "Tác giả, ở mức đủ để render một dòng chữ ký.",
+        "properties": {
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "username": {
+            "title": "Username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "username",
+          "display_name"
+        ],
+        "title": "NguoiDungTomTatOut",
+        "type": "object"
+      },
+      "NhatKyOut": {
+        "description": "Một dòng `AuditLog` (PLAN 5.10: \"mọi hành động mod ghi AuditLog\").",
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "actor": {
+            "$ref": "#/components/schemas/NguoiDungTomTatOut"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "meta": {
+            "additionalProperties": true,
+            "title": "Meta",
+            "type": "object"
+          },
+          "target_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Id"
+          },
+          "target_type": {
+            "title": "Target Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "actor",
+          "action",
+          "target_type",
+          "target_id",
+          "meta",
+          "created_at"
+        ],
+        "title": "NhatKyOut",
+        "type": "object"
+      },
+      "NoiDungBiBaoCaoOut": {
+        "description": "Ngữ cảnh của thứ bị báo cáo — PLAN 9.3: \"bảng, **xem ngữ cảnh**, nút ẩn/khoá/ban\".\n\n**Trường `trich_yeu` mang nội dung KỂ CẢ khi nó đã bị ẩn**, và đó là chủ đích của cả\nfile này (xem docstring module). Nó chỉ ra được sau `ChiMod`.\n\n`None` cho cả object khi đích không còn tồn tại: `Report.target_id` là\n`BigIntegerField`, không phải FK — cố ý, vì một báo cáo phải sống sót được sau khi\nthứ bị tố bị xoá cứng. Frontend phải xử được ca đó chứ không giả định luôn có ngữ cảnh.",
+        "properties": {
+          "da_bi_an": {
+            "title": "Da Bi An",
+            "type": "boolean"
+          },
+          "duong_dan_cong_khai": {
+            "title": "Duong Dan Cong Khai",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "loai": {
+            "enum": [
+              "mach",
+              "moc",
+              "comment"
+            ],
+            "title": "Loai",
+            "type": "string"
+          },
+          "mach_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mach Id"
+          },
+          "mach_title": {
+            "title": "Mach Title",
+            "type": "string"
+          },
+          "seq": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seq"
+          },
+          "tac_gia": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NguoiDungTomTatOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "trich_yeu": {
+            "title": "Trich Yeu",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loai",
+          "id",
+          "mach_id",
+          "mach_title",
+          "tac_gia",
+          "trich_yeu",
+          "seq",
+          "da_bi_an",
+          "duong_dan_cong_khai"
+        ],
+        "title": "NoiDungBiBaoCaoOut",
+        "type": "object"
+      },
+      "SuaSubIn": {
+        "description": "PATCH: trường nào `None` là **không đổi**, không phải \"đặt về rỗng\".\n\n`slug` cố ý KHÔNG sửa được: nó nằm trong URL công khai `/s/<slug>` và trong\n`sitemap.ts`. Đổi nó là làm chết mọi liên kết đã phát ra ngoài, và đó phải là một việc\ncó kế hoạch (kèm redirect 301) chứ không phải một trường trong form.",
+        "properties": {
+          "mo_ta": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mo Ta"
+          },
+          "ten": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ten"
+          }
+        },
+        "title": "SuaSubIn",
+        "type": "object"
+      },
+      "SubQuanTriOut": {
+        "description": "Một sub trong khu quản trị — kèm `so_mach`, con số quyết định có xoá được hay không.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "mo_ta": {
+            "title": "Mo Ta",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "so_mach": {
+            "title": "So Mach",
+            "type": "integer"
+          },
+          "ten": {
+            "title": "Ten",
+            "type": "string"
+          }
+        },
+        "required": [
+          "slug",
+          "ten",
+          "mo_ta",
+          "created_at",
+          "so_mach"
+        ],
+        "title": "SubQuanTriOut",
+        "type": "object"
+      },
+      "TaoSubIn": {
+        "properties": {
+          "mo_ta": {
+            "default": "",
+            "title": "Mo Ta",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "ten": {
+            "title": "Ten",
+            "type": "string"
+          }
+        },
+        "required": [
+          "slug",
+          "ten"
+        ],
+        "title": "TaoSubIn",
+        "type": "object"
+      },
+      "TrangBaoCaoOut": {
+        "description": "Một trang hàng đợi, cursor keyset theo `(created_at, id)` giảm dần.",
+        "properties": {
+          "cursor_ke_tiep": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cursor Ke Tiep"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BaoCaoOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items",
+          "cursor_ke_tiep"
+        ],
+        "title": "TrangBaoCaoOut",
+        "type": "object"
+      },
+      "TrangNhatKyOut": {
+        "properties": {
+          "cursor_ke_tiep": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cursor Ke Tiep"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/NhatKyOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items",
+          "cursor_ke_tiep"
+        ],
+        "title": "TrangNhatKyOut",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "ChiMod": {
+        "in": "cookie",
+        "name": "sessionid",
+        "type": "apiKey"
+      }
+    }
+  },
+  "info": {
+    "description": "Khu quản trị — staff-only (PLAN 5.10). Mọi endpoint đòi session cookie của một tài khoản `is_staff`, còn hoạt động và không bị ban; mọi request ghi đòi CSRF. Chỉ tới được qua host quản trị (PLAN 8.2).",
+    "title": "gikky.net API quản trị",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/admin/comments/{comment_id}/an": {
+      "post": {
+        "description": "Mod ẩn / gỡ ẩn một bình luận. Idempotent.\n\nGỡ ẩn **không** hồi sinh bình luận mà tác giả đã tự xoá — `deleted_at` là trục khác\nvà endpoint này không chạm tới nó.",
+        "operationId": "quan_tri_dat_an_binh_luan",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "comment_id",
+            "required": true,
+            "schema": {
+              "title": "Comment Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatAnIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KetQuaDoiTrangThaiOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Dat An Binh Luan Endpoint",
+        "tags": [
+          "quan-tri-kiem-duyet"
+        ]
+      }
+    },
+    "/api/admin/machs/{mach_id}": {
+      "get": {
+        "description": "Trang chi tiết một mạch cho mod (PLAN 9.3 mục 2) — mọi mốc, kể cả ẩn và bia mộ.\n\nTrả **cả** mốc đã bị ẩn và bia mộ, kèm trích yếu nội dung: mod cần đọc để quyết gỡ ẩn.\nĐó là chuyện khu này được phép làm mà `GET /api/v1/machs/{id}` thì không — xem\ndocstring `api/quan_tri_schemas.py`.\n\nSố truy vấn là HẰNG SỐ (mạch + mốc kèm tác giả), không phụ thuộc số mốc.",
+        "operationId": "quan_tri_xem_mach",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mach_id",
+            "required": true,
+            "schema": {
+              "title": "Mach Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MachQuanTriOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Xem Mach",
+        "tags": [
+          "quan-tri-kiem-duyet"
+        ]
+      }
+    },
+    "/api/admin/machs/{mach_id}/an": {
+      "post": {
+        "description": "Mod ẩn / gỡ ẩn cả mạch. Idempotent.\n\nMạch bị ẩn biến mất khỏi hai feed, khỏi trang sub, khỏi hồ sơ tác giả và khỏi\n`sitemap`; `GET /machs/{id}` công khai trả 404. Nó **không** đổi con số denormalize\nnào của chính nó — xem `core/ghi.py::dat_an_mach`.",
+        "operationId": "quan_tri_dat_an_mach",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mach_id",
+            "required": true,
+            "schema": {
+              "title": "Mach Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatAnIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KetQuaDoiTrangThaiOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Dat An Mach Endpoint",
+        "tags": [
+          "quan-tri-kiem-duyet"
+        ]
+      }
+    },
+    "/api/admin/machs/{mach_id}/khoa": {
+      "post": {
+        "description": "Mod khoá / mở khoá một mạch: đọc được, cấm mọi tương tác (PLAN 5.10). Idempotent.\n\n**Trục riêng, khác \"đóng sổ\" của tác giả.** Endpoint này không đụng `status`, nên\n\"mạch đã đóng bị mod khoá\" vẫn diễn đạt được. Mạch bị khoá luôn ở mặt CẶN.",
+        "operationId": "quan_tri_dat_khoa_mach",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mach_id",
+            "required": true,
+            "schema": {
+              "title": "Mach Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatKhoaMachIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KetQuaDoiTrangThaiOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Dat Khoa Mach Endpoint",
+        "tags": [
+          "quan-tri-kiem-duyet"
+        ]
+      }
+    },
+    "/api/admin/me": {
+      "get": {
+        "description": "Mod đang đăng nhập là ai. Trả 401 nếu chưa đăng nhập, 403 nếu không phải staff.\n\nĐây cũng là endpoint **gieo cookie CSRF** cho khu quản trị: app admin gọi nó khi mở\ntrang, rồi mọi request ghi sau đó gửi kèm `X-CSRFToken` đọc từ cookie ấy.",
+        "operationId": "quan_tri_toi",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Toi",
+        "tags": [
+          "quan-tri"
+        ]
+      }
+    },
+    "/api/admin/mocs/{moc_id}/an": {
+      "post": {
+        "description": "Mod ẩn / gỡ ẩn một mốc. Idempotent — gửi hai lần cho cùng trạng thái.\n\nMốc bị ẩn **vẫn giữ ô trên spine** kèm nhãn \"mốc đã bị ẩn\" (PLAN 5.2): `seq` bất biến\nnên `entry_count` không lùi. Đổi lại, `comment_count`, `last_activity_at` và\n`diem_bai_goc` (khi đây là mốc 1) được tính lại trong cùng transaction.",
+        "operationId": "quan_tri_dat_an_moc",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "moc_id",
+            "required": true,
+            "schema": {
+              "title": "Moc Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatAnIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KetQuaDoiTrangThaiOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Dat An Moc Endpoint",
+        "tags": [
+          "quan-tri-kiem-duyet"
+        ]
+      }
+    },
+    "/api/admin/nhat-ky": {
+      "get": {
+        "description": "Nhật ký mod, mới nhất trước, cursor keyset `(created_at, id)`.\n\n`?action=` lọc theo một hằng hành động (`an_moc`, `ban_user`, …) — so **bằng đúng**\nchứ không `icontains`: `an_moc` và `go_an_moc` chỉ khác nhau một tiền tố, nên phép so\nkhớp một phần sẽ trả cả hai và mod đọc lịch sử ẩn thành lịch sử gỡ ẩn.\n\nCố ý **không** khai `action` bằng `Literal`: danh sách hằng nằm ở `core/ghi.py` và nó\ndài thêm mỗi lần có hành động mới, trong khi các dòng log CŨ mang những chuỗi có thể\nđã bị gỡ khỏi danh sách. Một `enum` ở đây sẽ từ chối lọc đúng những dòng lịch sử mà\ntrang này tồn tại để tra. Giá trị lạ ⇒ trang rỗng, không phải 400.",
+        "operationId": "quan_tri_liet_ke_nhat_ky",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "action",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Action"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrangNhatKyOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Liet Ke Nhat Ky",
+        "tags": [
+          "quan-tri-nhat-ky"
+        ]
+      }
+    },
+    "/api/admin/reports": {
+      "get": {
+        "description": "Hàng đợi báo cáo, mới nhất trước, cursor keyset `(created_at, id)`.\n\nMặc định `trang_thai=cho_xu_ly` — đó là việc của mod. `da_xu_ly` và `tat_ca` có mặt để\ntra lại một quyết định cũ. Giá trị lạ trả **400 `tham_so_khong_hop_le`** (mã mặc định,\ncố ý — xem `tests/test_hop_dong_openapi.py::CO_Y_DUNG_MA_MAC_DINH`).\n\nMỗi dòng kèm `dich`: loại, mạch chứa nó, tác giả, trích yếu nội dung và đường dẫn công\nkhai. `dich` là `null` khi thứ bị tố không còn tồn tại — báo cáo vẫn ở lại hàng đợi.",
+        "operationId": "quan_tri_liet_ke_bao_cao",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "trang_thai",
+            "required": false,
+            "schema": {
+              "default": "cho_xu_ly",
+              "enum": [
+                "cho_xu_ly",
+                "da_xu_ly",
+                "tat_ca"
+              ],
+              "title": "Trang Thai",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrangBaoCaoOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Liet Ke Bao Cao",
+        "tags": [
+          "quan-tri-bao-cao"
+        ]
+      }
+    },
+    "/api/admin/reports/{report_id}/dong": {
+      "post": {
+        "description": "Đóng một báo cáo, ghi lại mod đã làm gì. Idempotent — đóng lần hai trả `da_doi=false`.\n\n**`hanh_dong` chỉ được GHI LẠI, nó không tự thi hành gì.** Đóng với `hanh_dong=\"an\"`\nmà chưa ai bấm ẩn thì nội dung vẫn hiện; ẩn là một lời gọi riêng tới\n`POST /mocs/{id}/an`. Gộp hai việc là dựng một đường ghi thứ hai tới `hidden_at` nằm\nngoài `core/ghi.py::dat_an_*` — xem docstring `core/ghi.py::dong_bao_cao`.",
+        "operationId": "quan_tri_dong_bao_cao",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "report_id",
+            "required": true,
+            "schema": {
+              "title": "Report Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DongBaoCaoIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KetQuaDoiTrangThaiOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Dong Bao Cao Endpoint",
+        "tags": [
+          "quan-tri-bao-cao"
+        ]
+      }
+    },
+    "/api/admin/subs": {
+      "get": {
+        "description": "Mọi sub, sắp theo `slug`, kèm `so_mach`.\n\nKhông phân trang: v1 có hai sub và danh sách này là bảng điều khiển, không phải feed.\nNgày nào nó dài tới mức cần cursor thì `so_mach` sẽ là thứ vỡ trước (một `COUNT` mỗi\nhàng), và lúc đó phải sửa cả hai thứ cùng lúc.",
+        "operationId": "quan_tri_liet_ke_sub",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SubQuanTriOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Liet Ke Sub",
+        "tags": [
+          "quan-tri-sub"
+        ]
+      },
+      "post": {
+        "description": "Tạo một chuyên mục mới. 409 `xung_dot` nếu `slug` đã có.\n\n`slug` phải đã ở dạng chuẩn — server **không** tự slugify hộ. Tự sửa hộ nghĩa là người\ngõ `Chứng Khoán` nhận về `/s/chung-khoan` mà không biết, rồi lần sau gõ lại đúng chuỗi\nấy và ăn 409 cho một sub họ tưởng chưa tạo.",
+        "operationId": "quan_tri_tao_sub",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaoSubIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubQuanTriOut"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Tao Sub",
+        "tags": [
+          "quan-tri-sub"
+        ]
+      }
+    },
+    "/api/admin/subs/{slug}": {
+      "delete": {
+        "description": "Xoá một chuyên mục. 409 `xung_dot` nếu nó còn mạch.\n\nXoá THẬT, không xoá mềm: `Sub` không có nội dung của ai và không có URL nào cần giữ\nbia mộ. Điều kiện \"rỗng\" là thứ giữ cho việc đó an toàn — và nó được `PROTECT` ở tầng\nDB canh lần thứ hai (xem docstring module).",
+        "operationId": "quan_tri_xoa_sub",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KetQuaXoaSubOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Xoa Sub",
+        "tags": [
+          "quan-tri-sub"
+        ]
+      },
+      "patch": {
+        "description": "Sửa `ten` / `mo_ta`. Trường `None` là **không đổi**; `slug` không sửa được.\n\nKhông có nhánh \"không đổi gì thì bỏ qua\": `PATCH` rỗng vẫn trả 200 với trạng thái hiện\nhành, nhưng **không** ghi `AuditLog` — cùng luật với `da_doi` của các endpoint kiểm\nduyệt, xem `core/ghi.py`.",
+        "operationId": "quan_tri_sua_sub",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuaSubIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubQuanTriOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Sua Sub",
+        "tags": [
+          "quan-tri-sub"
+        ]
+      }
+    },
+    "/api/admin/users/{username}": {
+      "get": {
+        "description": "Hồ sơ một tài khoản dưới góc nhìn mod: trạng thái ban + số mạch + số bình luận.\n\n`dang_bi_ban` là **kết quả đã tính** của ba cột ban (`User.dang_bi_ban`), không phải\nmột cột thứ tư. Frontend đọc nó thay vì tự dựng lại điều kiện — bản chép tay thứ hai\ncủa điều kiện ấy sẽ quên rằng ban tạm tự hết hạn.",
+        "operationId": "quan_tri_xem_nguoi_dung",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "required": true,
+            "schema": {
+              "title": "Username",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NguoiDungQuanTriOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Xem Nguoi Dung",
+        "tags": [
+          "quan-tri-nguoi-dung"
+        ]
+      }
+    },
+    "/api/admin/users/{username}/ban": {
+      "post": {
+        "description": "Ban một tài khoản: vĩnh viễn, hoặc tạm tới `den_khi`. **Đúng một trong hai.**\n\n`ly_do` bắt buộc và không được rỗng — PLAN 5.10 nói người bị chặn phải đọc được nó.\n\n409 `xung_dot` khi đích là chính mình hoặc là một mod khác (xem docstring module).\n400 `tham_so_khong_hop_le` khi vừa `vinh_vien` vừa có `den_khi`, hoặc không có cái nào.",
+        "operationId": "quan_tri_ban_nguoi_dung",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "required": true,
+            "schema": {
+              "title": "Username",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BanIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KetQuaDoiTrangThaiOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Ban Nguoi Dung",
+        "tags": [
+          "quan-tri-nguoi-dung"
+        ]
+      }
+    },
+    "/api/admin/users/{username}/go-ban": {
+      "post": {
+        "description": "Gỡ ban. Idempotent — gỡ một tài khoản không bị ban trả `da_doi=false`.\n\nKhông có hai luật của `ban`: gỡ ban cho chính mình hay cho một mod khác đều vô hại\n(nó chỉ mở khoá), và chặn nó chỉ tạo ra một trạng thái không ai gỡ được.",
+        "operationId": "quan_tri_go_ban_nguoi_dung",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "required": true,
+            "schema": {
+              "title": "Username",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KetQuaDoiTrangThaiOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Go Ban Nguoi Dung",
+        "tags": [
+          "quan-tri-nguoi-dung"
+        ]
+      }
+    }
+  },
+  "servers": []
+}

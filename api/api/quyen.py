@@ -22,14 +22,16 @@ không gì đỏ. `tests/test_quyen_ghi.py` là cái chuông: nó đòi MỌI op
 """
 
 from django.http import HttpRequest
-from django.utils import timezone
 from ninja.errors import AuthenticationError, HttpError
 from ninja.security import SessionAuth
 
-from api.loi import LoiOut
+#: `CHUA_DANG_NHAP` được **tái xuất** từ `api/loi.py`, không khai lại ở đây (gộp mảng
+#: A + C, 2026-08-23): khu quản trị của Phase 4 cần đúng mã ấy và đã đặt nó vào `loi.py`.
+#: Hai hằng cùng tên cùng giá trị ở hai module là hai thứ trôi ra khỏi nhau lặng lẽ — đổi
+#: một cái, cửa kia vẫn trả chuỗi cũ và không có gì đỏ. Người gọi cũ
+#: (`from api.quyen import CHUA_DANG_NHAP`) không phải đổi gì.
+from api.loi import CHUA_DANG_NHAP, LoiOut
 
-#: Chưa đăng nhập (hoặc phiên hết hạn). 401.
-CHUA_DANG_NHAP = "chua_dang_nhap"
 #: Đã đăng nhập nhưng không phải chủ của thứ đang sửa/xoá. 403.
 KHONG_PHAI_CHU = "khong_phai_chu"
 #: Tài khoản đang bị khoá (PLAN 5.10). 403.
@@ -71,11 +73,18 @@ def _bi_khoa(user) -> bool:
     Cột đã có từ Phase 1, khu quản trị đặt chúng là việc của Phase 4; nhưng **phép kiểm
     phải nằm ở Phase 2**, cùng lúc với đường ghi đầu tiên. Dựng cột trước rồi hẹn kiểm
     sau nghĩa là suốt một phase, ban là một trường DB không có tác dụng nào.
+
+    ⚠ **Phép kiểm thật nằm ở `User.dang_bi_ban()`, không ở đây** (gộp mảng A + C,
+    2026-08-23). Hàm này chỉ còn là cái tên mà cửa ghi gọi. Lý do gộp: ba cột ban được
+    hỏi ở HAI cửa thuộc hai mảng khác nhau — cửa ghi (`DangNhap` ngay dưới) và cửa quản
+    trị (`api/quan_tri.py::ChiMod`) — và bản chép tay thứ hai là bản sẽ quên rằng
+    `banned_until` đã hết hạn thì hết ban. Không có gì đỏ khi nó quên: chỉ có một người
+    bị khoá vĩnh viễn khỏi tài khoản của họ.
+
+    `getattr` giữ lại để `AnonymousUser` (không có ba cột ấy) vẫn trả `False` thay vì nổ.
     """
-    if getattr(user, "ban_permanent", False):
-        return True
-    han = getattr(user, "banned_until", None)
-    return han is not None and han > timezone.now()
+    kiem = getattr(user, "dang_bi_ban", None)
+    return bool(kiem()) if callable(kiem) else False
 
 
 class DangNhap(SessionAuth):

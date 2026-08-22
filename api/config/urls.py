@@ -19,6 +19,7 @@ Về bảo mật hạ tầng: luật Caddy `gikky.net/api/admin/*` → 403 ở P
 from django.contrib import admin
 from django.urls import include, path
 
+from api.quan_tri import api_admin
 from api.v1 import api_v1
 
 urlpatterns = [
@@ -40,6 +41,11 @@ urlpatterns = [
     # nhánh con `django/`, catch-all của nó không với ra ngoài được.
     path("api/admin/django/", admin.site.urls),
     path("api/v1/", api_v1.urls),
-    # Phase 4: path("api/admin/", api_admin.urls)  ← đặt đâu cũng chạy, nhưng nhớ đăng ký
-    # NinjaAPI mới vào `config/api_registry.py`.
+    # Phase 4 (2026-08-22). Mount MỚI là việc 1/3 — hai việc còn lại (đăng ký vào
+    # `config/api_registry.py`, thêm subpath vào `packages/api-client/package.json`) có
+    # chuông riêng, xem docstring `api/quan_tri.py`.
+    #
+    # Cả prefix này — kể cả nhánh `django/` ở trên — đi qua hàng rào Host
+    # `config/host_admin.py` (PLAN 8.2), rồi mới tới `ChiMod` của Ninja.
+    path("api/admin/", api_admin.urls),
 ]

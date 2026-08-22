@@ -3,6 +3,15 @@
 Phase 2 thêm tài khoản: **django-allauth headless**, session cookie, CSRF cho origin dev
 (PLAN 8.2). Xem khối "TÀI KHOẢN" ở cuối file — ba chỗ dễ làm sai nhất (Google gác env,
 xác thực email bắt buộc, CSRF_TRUSTED_ORIGINS) đều có ghi chú tại chỗ.
+
+Phase 4 thêm `ADMIN_HOSTS` (hàng rào Host của PLAN 8.2) — khối "KHU QUẢN TRỊ" ở giữa file.
+
+⚠ **CSRF / cookie chỉ được khai ở ĐÚNG MỘT chỗ** — khối "TÀI KHOẢN" ở cuối file. Ba mảng
+song song của 2026-08-22 (A tài khoản, C khu quản trị, D vận hành) đều cần
+`CSRF_TRUSTED_ORIGINS` / `SESSION_COOKIE_DOMAIN` / `CSRF_COOKIE_DOMAIN` / email, và lượt
+gộp đã kéo chúng về một khối. Khai lần thứ hai ở bất cứ đâu trong file này thì **cái đứng
+sau thắng, im lặng** — không lỗi, không warning, chỉ một biến mang giá trị khác thứ người
+đọc file tưởng.
 """
 
 from pathlib import Path
@@ -70,6 +79,10 @@ if GOOGLE_BAT:
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # Hàng rào Host của PLAN 8.2, đặt SỚM có chủ đích: một request tới `/api/admin/*` từ
+    # host public phải chết trước khi bất cứ thứ gì đọc session hay chạm DB. Nó không cần
+    # `request.user` nên không có lý do xếp sau `AuthenticationMiddleware`.
+    "config.host_admin.ChanApiAdminNgoaiHostAdmin",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -120,6 +133,30 @@ LANGUAGE_CODE = "vi"
 TIME_ZONE = "Asia/Ho_Chi_Minh"
 USE_I18N = True
 USE_TZ = True
+
+# --- KHU QUẢN TRỊ (PLAN 8.2 · Phase 4) ---------------------------------------
+#
+# Cookie/CSRF cross-subdomain mà Phase 4 cũng cần **không nằm ở đây**: chúng nằm trong
+# khối "TÀI KHOẢN" ở cuối file, khai đúng một lần (xem docstring đầu file).
+
+#: Host được phép chạm `/api/admin/*` — hàng rào tầng HẠ TẦNG của PLAN 8.2, mô phỏng
+#: bằng middleware ở dev (PLAN mục 10, Phase 4). Cơ chế + giới hạn thật ở dev: đọc
+#: docstring `config/host_admin.py` TRƯỚC khi tin dòng này bảo vệ được gì.
+ADMIN_HOSTS = env.list(
+    "ADMIN_HOSTS",
+    default=[
+        # Dev: cả hai app Next rewrite `/api/*` sang đúng origin này, nên đây là host
+        # Django thật sự nhìn thấy. Xem `host_admin.py` — ở dev nó KHÔNG tách được
+        # app admin khỏi app public, và điều đó được nói thẳng ở đó.
+        "localhost:8000",
+        "127.0.0.1:8000",
+        # Gọi thẳng Django bằng curl/Postman lúc dev.
+        "localhost",
+        "127.0.0.1",
+        # `Client()` của Django test dùng host này.
+        "testserver",
+    ],
+)
 
 STATIC_URL = "static/"
 # Thiếu STATIC_ROOT thì `collectstatic` báo lỗi và Django admin lên prod mất sạch CSS.
@@ -207,9 +244,11 @@ else:
     EMAIL_BACKEND = "django.core.mail.backends.filebased.EmailBackend"
 
 # --- CSRF / cookie (PLAN 8.2) ------------------------------------------------
-# Thiếu khối này là POST từ dev (localhost:3000/3001) ăn 403 CSRF ngay endpoint ghi đầu
-# tiên. Prod đặt `CSRF_TRUSTED_ORIGINS=https://gikky.net,https://admin.gikky.net` cùng
-# `SESSION_COOKIE_DOMAIN=.gikky.net` / `CSRF_COOKIE_DOMAIN=.gikky.net` qua env.
+# **Khối DUY NHẤT khai ba biến này** — cả `api_v1` (Phase 2) lẫn `api_admin` (Phase 4)
+# đọc chung. Thiếu nó là POST từ dev (localhost:3000/3001) ăn 403 CSRF ngay endpoint ghi
+# đầu tiên. Prod đặt `CSRF_TRUSTED_ORIGINS=https://gikky.net,https://admin.gikky.net`
+# cùng `SESSION_COOKIE_DOMAIN=.gikky.net` / `CSRF_COOKIE_DOMAIN=.gikky.net` qua env —
+# `.gikky.net` là thứ cho cookie phiên đi được từ `gikky.net` sang `admin.gikky.net`.
 CSRF_TRUSTED_ORIGINS = env("CSRF_TRUSTED_ORIGINS") or [
     "http://localhost:3000",
     "http://localhost:3001",

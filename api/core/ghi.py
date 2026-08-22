@@ -51,8 +51,15 @@ Ngoại lệ DUY NHẤT và có chủ đích: bình luận GỐC không có hàn
 `cap_phat_path` khoá thẳng `Mach` (mọi bình luận gốc của một mạch là sibling của nhau).
 Đường đó chỉ chạm MỘT hàng khoá, nên nó không tham gia được vào chu trình nào.
 
-Phase 2 thêm `DELETE /comments/{id}`, `POST /votes`, các đường moderation — mỗi đường đều
-phải theo đúng thứ tự trên.
+Phase 2 thêm `DELETE /comments/{id}`, `POST /votes` — mỗi đường đều phải theo đúng thứ tự
+trên.
+
+**Đường moderation của Phase 4 nằm ở CUỐI file này**, không nằm trong `api/quan_tri*.py`.
+Lý do là lý do của cả module: `an_moc`/`an_binh_luan` đổi đúng hai cột (`hidden_at`,
+`hidden_by`) mà bốn cột denormalize của `Mach` đọc tới, nên một `Moc.objects.filter(pk=…)
+.update(hidden_at=…)` viết thẳng trong handler là `comment_count` sai **vĩnh viễn** —
+không log, không job đối soát, và banner "💬 24" cứ thế nói dối. Handler quản trị chỉ được
+kiểm quyền rồi gọi xuống đây.
 """
 
 import logging
@@ -67,6 +74,7 @@ from core.cay_binh_luan import cap_phat_path
 from core.doc_noi_dung import doc_duoc
 from core.models.binh_luan import Comment
 from core.models.dien_dan import Mach, Sub
+from core.models.he_thong import AuditLog, Report
 from core.models.moc import Moc, MocRevision, kiem_figures
 from core.models.tuong_tac import Reaction, Trich, Vote
 from core.thoi_gian import TZ_VN, ngay_vn
@@ -847,3 +855,286 @@ def dat_reaction(*, user, moc: Moc, emoji: str | None) -> Reaction | None:
         cu.emoji = emoji
         cu.save(update_fields=["emoji"])
         return cu
+
+
+# ═══ Moderation — PLAN 5.10, Phase 4 ═════════════════════════════════════════
+#
+# Mọi hàm dưới đây có CHUNG bốn tính chất, ghi một lần ở đây thay vì lặp lại mười lần:
+#
+# 1. **Một transaction, và `AuditLog` nằm TRONG nó.** PLAN 5.10: "mọi hành động mod ghi
+#    `AuditLog`". Ghi log ở transaction thứ hai là mở đúng cửa "đã ẩn nhưng không có
+#    dòng log nào" (và cửa ngược lại) — hai nguồn sự thật lệch nhau mà không gì đỏ.
+# 2. **Khoá hàng đích rồi mới đọc trạng thái.** Đây là đọc-rồi-ghi: hai mod bấm "ẩn"
+#    cùng lúc mà không khoá thì cả hai cùng thấy `hidden_at IS NULL`, cùng ghi, và ra
+#    HAI dòng `AuditLog` cho MỘT lần đổi trạng thái.
+# 3. **Trả `bool` = "trạng thái CÓ đổi không", và không đổi thì không ghi log.** Bấm
+#    "ẩn" lần thứ hai không được reset `hidden_at` (mất mốc thời gian moderation thật)
+#    và không được đẻ dòng log thứ hai. Handler đọc giá trị trả về để nói đúng chuyện.
+# 4. **Thứ tự khoá: `Mach` SAU CÙNG** (xem docstring đầu file). `dat_an_moc` khoá `Moc`
+#    rồi xin `Mach` qua `cap_nhat_dem_mach`; `dat_an_binh_luan` khoá `Comment` rồi xin
+#    `Mach`. Cả hai cùng chiều với hai cạnh đã có, nên không sinh chu trình.
+
+#: `AuditLog.action` — hằng chuỗi ỔN ĐỊNH, cùng tinh thần với `code` của `api/loi.py`.
+#: Đổi một chuỗi ở đây là làm mọi dòng log CŨ mồ côi khỏi bộ lọc của trang nhật ký.
+AUDIT_AN_MOC = "an_moc"
+AUDIT_GO_AN_MOC = "go_an_moc"
+AUDIT_AN_BINH_LUAN = "an_binh_luan"
+AUDIT_GO_AN_BINH_LUAN = "go_an_binh_luan"
+AUDIT_AN_MACH = "an_mach"
+AUDIT_GO_AN_MACH = "go_an_mach"
+AUDIT_KHOA_MACH = "khoa_mach"
+AUDIT_MO_KHOA_MACH = "mo_khoa_mach"
+AUDIT_BAN_USER = "ban_user"
+AUDIT_GO_BAN_USER = "go_ban_user"
+AUDIT_DONG_BAO_CAO = "dong_bao_cao"
+AUDIT_TAO_SUB = "tao_sub"
+AUDIT_SUA_SUB = "sua_sub"
+AUDIT_XOA_SUB = "xoa_sub"
+
+#: `AuditLog.target_type` — cột `varchar(16)`, giữ chuỗi ngắn.
+DICH_MOC = "moc"
+DICH_COMMENT = "comment"
+DICH_MACH = "mach"
+DICH_USER = "user"
+DICH_SUB = "sub"
+DICH_REPORT = "report"
+
+
+def ghi_audit(*, actor, action: str, target_type: str, target_id: int | None, **meta):
+    """Một dòng `AuditLog`. Gọi TRONG transaction của hành động — xem khối trên.
+
+    `meta` nhận kwarg tự do vì nó là `JSONField`: mỗi hành động cần kể một thứ khác nhau
+    (`seq` của mốc, `ly_do` của ban, `slug` của sub). Ép nó thành schema cố định là ép
+    mọi hành động mới phải sửa một class, và cái class ấy sẽ thành hợp đồng thứ hai.
+    """
+    return AuditLog.objects.create(
+        actor=actor,
+        action=action,
+        target_type=target_type,
+        target_id=target_id,
+        meta=meta,
+    )
+
+
+def _dat_co_an(dich, *, boi, bat: bool) -> bool:
+    """Bật/tắt cặp `(hidden_at, hidden_by)` trên MỘT hàng ĐÃ BỊ KHOÁ. Trả "có đổi không".
+
+    Nhận hàng đã khoá chứ không tự khoá: người gọi còn phải xin thêm khoá hàng `Mach`
+    ngay sau đó (`cap_nhat_dem_mach`), và thứ tự hai khoá ấy là ràng buộc của cả module —
+    nó không được nằm rải trong một hàm tiện ích.
+    """
+    dang_an = dich.hidden_at is not None
+    if dang_an == bat:
+        return False
+    dich.hidden_at = timezone.now() if bat else None
+    dich.hidden_by = boi if bat else None
+    dich.save(update_fields=["hidden_at", "hidden_by"])
+    return True
+
+
+def dat_an_moc(*, moc: Moc, boi, an: bool, ly_do: str = "") -> bool:
+    """Mod ẩn / gỡ ẩn một mốc (PLAN 5.2, 5.10). Trả `True` nếu trạng thái vừa đổi.
+
+    **Mốc bị ẩn GIỮ CHỖ trên spine**, nhãn "mốc đã bị ẩn" (PLAN 5.2, user duyệt
+    2026-08-22) — nên hàm này không đụng `seq`, và `entry_count` không lùi. Thứ nó phải
+    kéo theo là nhóm **NỘI DUNG**: `comment_count`, `last_activity_at`, cộng
+    `diem_bai_goc` khi mốc bị ẩn là mốc 1. Cả ba đi qua `cap_nhat_dem_mach`, không có
+    dòng số học nào viết tay ở đây.
+    """
+    with transaction.atomic():
+        hang = Moc.objects.select_for_update().get(pk=moc.pk)
+        if not _dat_co_an(hang, boi=boi, bat=an):
+            return False
+        cap_nhat_dem_mach(Mach.objects.get(pk=hang.mach_id))
+        ghi_audit(
+            actor=boi,
+            action=AUDIT_AN_MOC if an else AUDIT_GO_AN_MOC,
+            target_type=DICH_MOC,
+            target_id=hang.pk,
+            mach_id=hang.mach_id,
+            seq=hang.seq,
+            ly_do=ly_do,
+        )
+    moc.refresh_from_db()
+    return True
+
+
+def dat_an_binh_luan(*, comment: Comment, boi, an: bool, ly_do: str = "") -> bool:
+    """Mod ẩn / gỡ ẩn một bình luận (PLAN 5.10). Trả `True` nếu trạng thái vừa đổi.
+
+    Gỡ ẩn **không** hồi sinh bình luận mà tác giả đã tự xoá: `deleted_at` là trục khác và
+    hàm này không chạm tới. `trang_thai_noi_dung` cho "ẩn thắng xoá", nên một bình luận
+    dính cả hai sau khi gỡ ẩn quay về nhãn `da_xoa` — đúng sự thật, không phải hồi sinh.
+    """
+    with transaction.atomic():
+        hang = Comment.objects.select_for_update().get(pk=comment.pk)
+        if not _dat_co_an(hang, boi=boi, bat=an):
+            return False
+        cap_nhat_dem_mach(Mach.objects.get(pk=hang.mach_id))
+        ghi_audit(
+            actor=boi,
+            action=AUDIT_AN_BINH_LUAN if an else AUDIT_GO_AN_BINH_LUAN,
+            target_type=DICH_COMMENT,
+            target_id=hang.pk,
+            mach_id=hang.mach_id,
+            ly_do=ly_do,
+        )
+    comment.refresh_from_db()
+    return True
+
+
+def dat_an_mach(*, mach: Mach, boi, an: bool, ly_do: str = "") -> bool:
+    """Mod ẩn / gỡ ẩn CẢ mạch (PLAN 5.10). Trả `True` nếu trạng thái vừa đổi.
+
+    Ẩn mạch giấu nó khỏi mọi danh sách công khai lẫn trang đọc; bộ lọc
+    `hidden_at__isnull=True` nằm rải ở tầng ĐỌC (danh sách đầy đủ trong docstring
+    `core/doc_noi_dung.py`), không nằm ở đây.
+
+    **Không gọi `cap_nhat_dem_mach`**, và đó là chủ đích: bốn cột ấy đếm `Moc`/`Comment`
+    CỦA mạch, không đếm chính mạch, nên ẩn mạch không đổi con số nào. Hệ quả đã được PLAN
+    mục 6 ghi nhận ("hệ quả cố ý 2"): `last_activity_at` không lùi, tức theo luật
+    BÃO/CẶN mạch vẫn "còn sôi" — nhưng nó đã biến mất khỏi mọi cửa đọc, nên không ai
+    nhìn thấy cái mặt ấy nữa.
+    """
+    with transaction.atomic():
+        hang = Mach.objects.select_for_update().get(pk=mach.pk)
+        if not _dat_co_an(hang, boi=boi, bat=an):
+            return False
+        ghi_audit(
+            actor=boi,
+            action=AUDIT_AN_MACH if an else AUDIT_GO_AN_MACH,
+            target_type=DICH_MACH,
+            target_id=hang.pk,
+            ly_do=ly_do,
+        )
+    mach.refresh_from_db()
+    return True
+
+
+def dat_khoa_mach(*, mach: Mach, boi, khoa: bool, ly_do: str = "") -> bool:
+    """Mod khoá / mở khoá một mạch (PLAN 5.10). Trả `True` nếu trạng thái vừa đổi.
+
+    **`locked_at` là TRỤC KHÁC HẲN `status`** (docstring `Mach`): `closed` là tác giả
+    đóng sổ — vẫn bình luận được, không nối mốc được; `locked_at` là mod cấm mọi tương
+    tác trong khi trang vẫn đọc được. Hàm này không đụng `status`, và không được "tiện
+    tay" đóng sổ hộ: gộp hai trục là mất khả năng diễn đạt "mạch đã đóng bị mod khoá".
+
+    Mạch bị khoá ⇒ mặt CẶN (`core/mat.py` đọc thẳng `locked_at`), nên khoá/mở khoá đổi
+    mặt ngay mà không phải đụng cột denormalize nào.
+    """
+    with transaction.atomic():
+        hang = Mach.objects.select_for_update().get(pk=mach.pk)
+        if (hang.locked_at is not None) == khoa:
+            return False
+        hang.locked_at = timezone.now() if khoa else None
+        hang.save(update_fields=["locked_at"])
+        ghi_audit(
+            actor=boi,
+            action=AUDIT_KHOA_MACH if khoa else AUDIT_MO_KHOA_MACH,
+            target_type=DICH_MACH,
+            target_id=hang.pk,
+            ly_do=ly_do,
+        )
+    mach.refresh_from_db()
+    return True
+
+
+def ban_user(*, user, boi, vinh_vien: bool, den_khi=None, ly_do: str) -> bool:
+    """Ban một tài khoản (PLAN 5.10). Trả `True` nếu trạng thái ban vừa đổi.
+
+    Hai kiểu ban, **đúng một kiểu mỗi lần gọi**: vĩnh viễn (`ban_permanent`) hoặc tạm tới
+    `den_khi`. Không nhét mốc thời gian giả kiểu năm 9999 cho ban vĩnh viễn — hai cột
+    riêng là quyết định của model, xem `core/models/nguoi_dung.py`.
+
+    Hàm này KHÔNG kiểm "được phép ban ai": không tự ban mình, không ban mod khác — hai
+    luật ấy phụ thuộc NGƯỜI GỌI chứ không phải bất biến của dữ liệu, nên chúng ở tầng API
+    (`api/quan_tri_nguoi_dung.py`). Cùng lý lẽ với rate limit ở `them_moc`.
+
+    `ly_do` bắt buộc, không mặc định: PLAN 5.10 nói người bị chặn phải **thấy lý do**, và
+    một chuỗi rỗng lọt xuống DB là họ bị chặn đăng nhập mà không đọc được gì.
+    """
+    if vinh_vien == (den_khi is not None):
+        raise ValidationError(
+            "Ban phải là vĩnh viễn HOẶC có `den_khi` — không được cả hai, cũng không "
+            f"được không có cái nào (vinh_vien={vinh_vien!r}, den_khi={den_khi!r})."
+        )
+    if not ly_do.strip():
+        raise ValidationError(
+            "Ban phải có lý do — người bị chặn được đọc nó (PLAN 5.10)."
+        )
+
+    with transaction.atomic():
+        hang = type(user).objects.select_for_update().get(pk=user.pk)
+        truoc = (hang.ban_permanent, hang.banned_until, hang.ban_reason)
+        moi = (vinh_vien, den_khi, ly_do)
+        if truoc == moi:
+            return False
+        hang.ban_permanent, hang.banned_until, hang.ban_reason = moi
+        hang.save(update_fields=["ban_permanent", "banned_until", "ban_reason"])
+        ghi_audit(
+            actor=boi,
+            action=AUDIT_BAN_USER,
+            target_type=DICH_USER,
+            target_id=hang.pk,
+            username=hang.username,
+            vinh_vien=vinh_vien,
+            den_khi=den_khi.isoformat() if den_khi is not None else None,
+            ly_do=ly_do,
+        )
+    user.refresh_from_db()
+    return True
+
+
+def go_ban_user(*, user, boi) -> bool:
+    """Gỡ ban. Trả `True` nếu tài khoản đang bị ban và vừa được gỡ.
+
+    Xoá luôn `ban_reason`: giữ một lý do cho người KHÔNG còn bị ban là để nó hiện ra ở
+    một màn hình nào đó sau này mà không ai nhớ vì sao. Vết đã nằm ở `AuditLog`.
+    """
+    with transaction.atomic():
+        hang = type(user).objects.select_for_update().get(pk=user.pk)
+        if not hang.ban_permanent and hang.banned_until is None:
+            return False
+        ly_do_cu = hang.ban_reason
+        hang.ban_permanent = False
+        hang.banned_until = None
+        hang.ban_reason = None
+        hang.save(update_fields=["ban_permanent", "banned_until", "ban_reason"])
+        ghi_audit(
+            actor=boi,
+            action=AUDIT_GO_BAN_USER,
+            target_type=DICH_USER,
+            target_id=hang.pk,
+            username=hang.username,
+            ly_do_cu=ly_do_cu,
+        )
+    user.refresh_from_db()
+    return True
+
+
+def dong_bao_cao(*, report: Report, boi, hanh_dong: str) -> bool:
+    """Đóng một báo cáo trong hàng đợi (PLAN 5.10). Trả `True` nếu nó đang mở.
+
+    `action` chỉ GHI LẠI mod đã làm gì, nó **không tự thi hành** hành động đó. Đóng báo
+    cáo với `action="an"` mà không ai bấm ẩn thì nội dung vẫn hiện — hai việc, hai lời
+    gọi. Gộp chúng ở đây là dựng một đường ghi thứ hai tới `hidden_at` nằm ngoài
+    `dat_an_*`, đúng loại đường ghi mà cả module này tồn tại để chặn.
+    """
+    with transaction.atomic():
+        hang = Report.objects.select_for_update().get(pk=report.pk)
+        if hang.resolved_at is not None:
+            return False
+        hang.resolved_at = timezone.now()
+        hang.resolved_by = boi
+        hang.action = hanh_dong
+        hang.save(update_fields=["resolved_at", "resolved_by", "action"])
+        ghi_audit(
+            actor=boi,
+            action=AUDIT_DONG_BAO_CAO,
+            target_type=DICH_REPORT,
+            target_id=hang.pk,
+            hanh_dong=hanh_dong,
+            dich=f"{hang.target_type}#{hang.target_id}",
+        )
+    report.refresh_from_db()
+    return True

@@ -30,9 +30,15 @@ BA cái chuông, và cần cả ba:
   thiếu, hoặc ai đó vá bằng wildcard.
 """
 
+from api.quan_tri import api_admin
 from api.v1 import api_v1
 
 #: khoá = tên dùng cho `manage.py export_openapi --api <khoá>`.
+#:
+#: Khoá `v1` giữ đường dẫn CŨ (`openapi.json` + `src/`, subpath `"."`); mọi khoá khác ra
+#: `openapi.<khoá>.json` + `src-<khoá>/` và subpath `"./<khoá>"` — luật ở
+#: `scripts/api-registry.mjs::duongDanCho`, không phải ở đây.
 NINJA_APIS = {
     "v1": api_v1,
+    "admin": api_admin,
 }
