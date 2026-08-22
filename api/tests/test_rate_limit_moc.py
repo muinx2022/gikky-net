@@ -12,12 +12,13 @@ khung **17:00–24:00 giờ VN** — đúng khung ít người chạy test nhấ
 lúc 22:00 thì bị chặn oan hoặc được ghi 6 mốc.
 """
 
+import json
 from datetime import datetime, timedelta
 
 import pytest
 
 from core.ghi import SO_MOC_TOI_DA_MOI_NGAY, dem_moc_trong_ngay_vn, them_moc
-from core.thoi_gian import TZ_VN
+from core.thoi_gian import TZ_VN, nua_dem_vn_ke_tiep
 
 from api.quyen import QUA_HAN_MUC_MOC
 
@@ -124,6 +125,49 @@ def test_moc_thu_4_trong_ngay_bi_chan_kem_ma_rieng(client, mach_cua_a, nguoi_a):
         )
         == QUA_HAN_MUC_MOC
     )
+
+
+@pytest.mark.django_db
+def test_429_kem_thu_lai_tu_bang_nua_dem_VN_ke_tiep(client, mach_cua_a, nguoi_a):
+    """Nợ `API-THIEU-MOC-THOI-GIAN`: 429 phải NÓI RA mốc viết tiếp được.
+
+    `detail` dừng ở *"mai nối tiếp nhé"* — đúng nhưng thiếu con số, và "mai" lúc 23:50
+    nghĩa là mười phút nữa. Trước lượt 2026-08-23, `apps/web/lib/vong-doi.ts` dựng lại cả
+    phép đổi múi giờ để nói được câu ấy: bản sao thứ hai của một luật domain, thứ PLAN
+    nguyên tắc 10 cấm.
+
+    Bài đo so với `nua_dem_vn_ke_tiep()` chứ không chép một chuỗi ISO vào đây — chép là
+    dựng bản sao thứ ba của đúng cái luật vừa dọn.
+    """
+    client.force_login(nguoi_a)
+    dat(client, f"/api/v1/machs/{mach_cua_a.pk}/mocs", {"body": "Mốc 3."}, status=201)
+    r = client.post(
+        f"/api/v1/machs/{mach_cua_a.pk}/mocs",
+        data=json.dumps({"body": "Mốc 4."}),
+        content_type="application/json",
+    )
+    assert r.status_code == 429
+    than = r.json()
+    assert than["code"] == QUA_HAN_MUC_MOC
+    assert datetime.fromisoformat(than["thu_lai_tu"]) == nua_dem_vn_ke_tiep()
+
+
+@pytest.mark.django_db
+def test_ma_loi_khac_KHONG_mang_thu_lai_tu(client, mach_cua_a, nguoi_khac):
+    """Chiều ngược: `thu_lai_tu` chỉ có ở mã từ chối **vì thời gian**.
+
+    `LoiThoiGianOut` cố ý là lớp CON chứ không phải một trường `null` gắn vào mọi lời từ
+    chối của cả hai `NinjaAPI` — xem `api/loi.py`. Không có bài này thì "đúng một mã mang
+    trường ấy" là một câu trong docstring, không phải một sự thật đo được.
+    """
+    client.force_login(nguoi_khac)
+    r = client.post(
+        f"/api/v1/machs/{mach_cua_a.pk}/mocs",
+        data=json.dumps({"body": "Không phải mạch của tôi."}),
+        content_type="application/json",
+    )
+    assert r.status_code == 403
+    assert set(r.json()) == {"detail", "code"}
 
 
 @pytest.mark.django_db

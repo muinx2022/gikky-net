@@ -46,7 +46,9 @@ def _moc_cua_mach_hien(moc_id: int) -> Moc | None:
     """Mốc thuộc một mạch chưa bị mod ẩn. **Bia mộ vẫn trả về** — xem endpoint dưới."""
     return (
         Moc.objects.filter(pk=moc_id, mach__hidden_at__isnull=True)
-        .select_related("mach")
+        # `author` cho `MocOut.author` (nợ `MOC-THIEU-AUTHOR`); `mach__author` cho phép
+        # kiểm quyền của đường trích, vốn hỏi chủ MẠCH chứ không chủ mốc.
+        .select_related("mach", "author", "mach__author")
         .first()
     )
 

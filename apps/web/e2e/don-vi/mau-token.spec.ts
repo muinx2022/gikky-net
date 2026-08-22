@@ -240,8 +240,10 @@ const MUC_PLAN = docMucDongDau(PLAN_THAT);
  * bỏ qua: một mục biến mất khỏi bảng dưới sẽ đỏ, và người sửa phải chọn giữa "cài nó" và
  * "ghi ra rằng nó chưa tới lượt". */
 const CHUA_TOI_PHASE: Readonly<Record<string, string>> = {
-  "vạch mới": "mặt BÃO — Phase 3",
-  "số mốc chưa xem trên spine": "mặt BÃO — Phase 3",
+  // ✅ RỖNG từ 2026-08-23 (mảng B2): mặt BÃO đã có, nên "vạch mới" và "số mốc chưa xem
+  // trên spine" chuyển sang `STAMP_THEO_MUC` bên dưới. Bảng giữ lại chứ không xoá kiểu
+  // khai — mục PLAN tiếp theo chưa tới lượt phải đi qua đây, và bài đo "không có dòng
+  // chết" sẽ bắt ngay một dòng thừa.
 };
 
 /** `mục PLAN 9.1` → `file#selector` được phép dùng `--stamp` / `--stamp-soft`.
@@ -261,6 +263,13 @@ const STAMP_THEO_MUC: Readonly<Record<string, readonly string[]>> = {
     "app/u/[username]/ho-so.module.css#.trich dt, .trich dd",
   ],
   'nhãn "DRAFT" của `/luat`': ["app/luat/luat.module.css#.draft"],
+  // Mặt BÃO — mảng B2, 2026-08-23. Vạch dùng `--stamp` cho cả chữ lẫn hai đầu gạch
+  // (`::before`/`::after` là hai rule riêng với `khoiDungStamp`).
+  "vạch mới": [
+    "components/mat-bao.module.css#.vach_moi",
+    "components/mat-bao.module.css#.vach_moi::before, .vach_moi::after",
+  ],
+  "số mốc chưa xem trên spine": ["components/mat-bao.module.css#.chua_xem"],
 };
 
 const STAMP_DUOC_PHEP = Object.values(STAMP_THEO_MUC).flat();

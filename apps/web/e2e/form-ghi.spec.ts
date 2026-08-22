@@ -95,6 +95,10 @@ test.describe("B — form ghi: vòng lặp lõi chạy thật trong trình duy�
     // Mốc 2: UI mạch bật (spine + ngăn kéo) — PLAN 5.1 "UI mạch bật từ mốc 2".
     await noiMocQuaForm(page, "Mốc 2 — nâng dừng lỗ lên 26.40.");
     await expect(page.getByTestId("moc-2")).toBeVisible({ timeout: 20_000 });
+    // Từ Phase 3, mạch đang sống ra **mặt BÃO**: chỉ mốc mới nhất mở sẵn, phần còn lại
+    // nằm sau "mở cả mạch ▾" (PLAN 5.5). Mốc 1 vẫn phải ở đó và vẫn phải là thẻ "mach" —
+    // chỉ khác chỗ nó không hiện ngay.
+    await page.getByTestId("nut-mo-ca-mach").click();
     await expect(page.getByTestId("moc-1")).toHaveAttribute("data-kieu", "mach");
     await expect(page.getByTestId("chu-ky-so-moc")).toHaveText("2 mốc");
 
@@ -208,11 +212,15 @@ test.describe("B — form ghi: vòng lặp lõi chạy thật trong trình duy�
     // Xác nhận phải nói ra cả ba hệ quả — đóng sổ là hành động một chiều trên thực tế.
     expect(nhac_dong).toContain("Không nối thêm mốc");
     expect(nhac_dong).toContain("Bình luận thì vẫn viết được");
-    expect(nhac_dong).toContain("7 ngày");
+    // Câu xác nhận **không nêu con số ngày** từ 2026-08-23 (nợ `API-THIEU-MOC-THOI-GIAN`):
+    // hạn mở lại là luật của Django, và UI chỉ biết nó qua `mo_lai_den` — thứ chỉ tồn tại
+    // SAU khi đóng. Nó hứa đúng thứ nó giữ được: có hạn, và hạn chót sẽ hiện ngay sau đó.
+    expect(nhac_dong).toContain("hạn chót sẽ hiện");
 
-    // Đóng rồi thì không còn cửa nối mốc; cửa mở lại thì có (còn trong 7 ngày).
+    // Đóng rồi thì không còn cửa nối mốc; cửa mở lại thì có, kèm HẠN CHÓT do server nói.
     await expect(page.getByTestId("nut-noi-moc")).toHaveCount(0);
     await expect(page.getByTestId("nut-mo-lai")).toBeVisible();
+    await expect(page.getByTestId("con-han-mo-lai")).toContainText("giờ VN");
 
     page.once("dialog", (d) => void d.accept());
     await page.getByTestId("nut-mo-lai").click();

@@ -11,6 +11,8 @@ thì rơi ra một hình dạng thứ hai mà frontend không lường. `dang_ky
 kéo ca đó về cùng một hình dạng.
 """
 
+from datetime import datetime
+
 from ninja import NinjaAPI, Schema, Status
 from ninja.errors import ValidationError
 
@@ -43,6 +45,30 @@ class LoiOut(Schema):
     code: str
 
 
+class LoiThoiGianOut(LoiOut):
+    """Lời từ chối **vì thời gian**: `{detail, code, thu_lai_tu}` — PLAN mục 7.
+
+    Hôm nay đúng một cửa dùng nó: 429 `qua_han_muc_moc` của `POST /machs/{id}/mocs`.
+    `detail` của mã ấy dừng ở *"mai nối tiếp nhé"* — đúng, nhưng thiếu con số, và "mai"
+    lúc 23:50 nghĩa là mười phút nữa. Để frontend tự tính là bắt nó dựng lại luật "nửa
+    đêm giờ VN" ở phía client: đó chính là nợ `API-THIEU-MOC-THOI-GIAN`, trả 2026-08-23.
+
+    **Kế thừa chứ không phải hình dạng lỗi thứ hai.** Hợp đồng "mọi lỗi có `detail` +
+    `code`" giữ nguyên; ai chỉ đọc hai trường ấy không phải biết lớp này tồn tại. Và nó
+    **không** được gộp vào `LoiOut`: một `thu_lai_tu: null` gắn vào mọi 404 của cả hai
+    `NinjaAPI` là một trường vô nghĩa ở 99% số lời từ chối, và hai bài đo hình dạng lỗi
+    của khu quản trị ghim đúng chuyện đó.
+
+    ⚠ **Không ném qua `LoiGhi` được** (`api/quyen.py`): exception handler chỉ dựng được
+    `LoiOut`. Cửa nào cần trường này thì `return` thẳng `Status(...)` — phép kiểm của nó
+    vì thế phải nằm ở tầng handler, trước `transaction.atomic()`.
+    """
+
+    #: Từ lúc nào thì thử lại được. Luôn có giá trị — lớp này chỉ dùng ở đúng những mã
+    #: biết câu trả lời.
+    thu_lai_tu: datetime
+
+
 def loi(status_code: int, code: str, detail: str) -> Status[LoiOut]:
     """Trả lỗi đúng hình dạng hợp đồng. Dùng `Status` chứ không phải tuple.
 
@@ -50,6 +76,16 @@ def loi(status_code: int, code: str, detail: str) -> Status[LoiOut]:
     biến mọi `DeprecationWarning` thành lỗi test — xem cùng ghi chú ở `health`.
     """
     return Status(status_code, LoiOut(detail=detail, code=code))
+
+
+def loi_thoi_gian(
+    status_code: int, code: str, detail: str, *, thu_lai_tu: datetime
+) -> Status[LoiThoiGianOut]:
+    """Như `loi()`, kèm mốc "thử lại được từ lúc nào" — xem `LoiThoiGianOut`."""
+    return Status(
+        status_code,
+        LoiThoiGianOut(detail=detail, code=code, thu_lai_tu=thu_lai_tu),
+    )
 
 
 def khong_tim_thay(cai_gi: str) -> Status[LoiOut]:

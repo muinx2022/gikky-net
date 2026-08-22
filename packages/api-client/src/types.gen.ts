@@ -476,6 +476,41 @@ export type LoiOut = {
 };
 
 /**
+ * LoiThoiGianOut
+ *
+ * Lời từ chối **vì thời gian**: `{detail, code, thu_lai_tu}` — PLAN mục 7.
+ *
+ * Hôm nay đúng một cửa dùng nó: 429 `qua_han_muc_moc` của `POST /machs/{id}/mocs`.
+ * `detail` của mã ấy dừng ở *"mai nối tiếp nhé"* — đúng, nhưng thiếu con số, và "mai"
+ * lúc 23:50 nghĩa là mười phút nữa. Để frontend tự tính là bắt nó dựng lại luật "nửa
+ * đêm giờ VN" ở phía client: đó chính là nợ `API-THIEU-MOC-THOI-GIAN`, trả 2026-08-23.
+ *
+ * **Kế thừa chứ không phải hình dạng lỗi thứ hai.** Hợp đồng "mọi lỗi có `detail` +
+ * `code`" giữ nguyên; ai chỉ đọc hai trường ấy không phải biết lớp này tồn tại. Và nó
+ * **không** được gộp vào `LoiOut`: một `thu_lai_tu: null` gắn vào mọi 404 của cả hai
+ * `NinjaAPI` là một trường vô nghĩa ở 99% số lời từ chối, và hai bài đo hình dạng lỗi
+ * của khu quản trị ghim đúng chuyện đó.
+ *
+ * ⚠ **Không ném qua `LoiGhi` được** (`api/quyen.py`): exception handler chỉ dựng được
+ * `LoiOut`. Cửa nào cần trường này thì `return` thẳng `Status(...)` — phép kiểm của nó
+ * vì thế phải nằm ở tầng handler, trước `transaction.atomic()`.
+ */
+export type LoiThoiGianOut = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Detail
+     */
+    detail: string;
+    /**
+     * Thu Lai Tu
+     */
+    thu_lai_tu: string;
+};
+
+/**
  * MachChiTietOut
  *
  * Trang mạch: mạch + toàn bộ mốc + `face` server đã tính + spine (PLAN mục 7).
@@ -534,6 +569,10 @@ export type MachChiTietOut = {
      */
     locked: boolean;
     /**
+     * Mo Lai Den
+     */
+    mo_lai_den: string | null;
+    /**
      * Mocs
      */
     mocs: Array<MocOut>;
@@ -554,6 +593,10 @@ export type MachChiTietOut = {
      * Title
      */
     title: string;
+    /**
+     * Tran Moc Moi Ngay
+     */
+    tran_moc_moi_ngay: number;
 };
 
 /**
@@ -759,12 +802,14 @@ export type MocMoiIn = {
  * Một mốc trong mạch. Bài gốc là `seq = 1`, không có ngoại lệ (PLAN mục 2).
  *
  * Khi `trang_thai != "binh_thuong"` thì đây là **bia mộ**: `body`, `loai`, `figures`,
- * `question_for_crowd`, `edited_at` đều `null`, còn `edit_count` và `score` về `0` —
- * số phiếu của nội dung đã gỡ không được trả ra, cùng chuẩn với `BinhLuanOut`. `seq`,
- * `occurred_at`, `so_binh_luan` và chỗ đứng trên spine vẫn còn: `seq` bất biến, giấu
- * hẳn một ô là thủng dãy số, và ngăn kéo của bia mộ vẫn mở được (PLAN 5.2).
+ * `question_for_crowd`, `edited_at`, **`author`** đều `null`, còn `edit_count` và
+ * `score` về `0` — số phiếu của nội dung đã gỡ không được trả ra, cùng chuẩn với
+ * `BinhLuanOut`. `seq`, `occurred_at`, `so_binh_luan` và chỗ đứng trên spine vẫn còn:
+ * `seq` bất biến, giấu hẳn một ô là thủng dãy số, và ngăn kéo của bia mộ vẫn mở được
+ * (PLAN 5.2).
  */
 export type MocOut = {
+    author: NguoiDungTomTatOut | null;
     /**
      * Body
      */
@@ -813,6 +858,10 @@ export type MocOut = {
      * So Binh Luan
      */
     so_binh_luan: number;
+    /**
+     * Sua Im Lang Den
+     */
+    sua_im_lang_den: string;
     /**
      * Trang Thai
      */
@@ -1931,7 +1980,7 @@ export type NoiMocErrors = {
     /**
      * Too Many Requests
      */
-    429: LoiOut;
+    429: LoiThoiGianOut;
 };
 
 export type NoiMocError = NoiMocErrors[keyof NoiMocErrors];

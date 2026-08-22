@@ -24,12 +24,22 @@ export type NguCanhMach = {
   khoa: boolean;
   /** `username` của chủ mạch, để gắn badge và để biết ai được đóng sổ. */
   chuMach: string | null;
+  /** Mọi mốc của mạch, ở mức đủ để **chọn đích cho một lượt trích** (PLAN 5.6).
+   *
+   * `POST /mocs/{id}/trich` nhận mốc ở URL, và rào 1 tính "một trích đang hiệu lực" theo
+   * MỐC — nên nút "Trích vào sổ" nằm dưới một bình luận ở khán đài phải biết cả danh sách
+   * mốc, cộng mốc nào đang bận. Xâu nó qua bốn tầng server component xuống tận
+   * `HanhDongBinhLuan` là đúng thứ sẽ bị xâu thiếu; ngữ cảnh thì không.
+   *
+   * Rỗng ngoài trang mạch (feed, hồ sơ) — và `NutTrich` không vẽ gì khi rỗng. */
+  cacMoc: readonly { id: number; seq: number; coTrich: boolean }[];
 };
 
 const NguCanh = createContext<NguCanhMach>({
   machId: null,
   khoa: false,
   chuMach: null,
+  cacMoc: [],
 });
 
 export function MachProvider({

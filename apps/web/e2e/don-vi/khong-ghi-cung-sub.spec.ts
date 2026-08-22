@@ -35,18 +35,17 @@ const MA_SAN_PHAM = quetNguon(WEB, /\.(tsx?|mjs)$/).filter(
  *
  * Khai ra chứ không lặng lẽ bỏ qua: một miễn trừ có tên thì lần sau ai đó gỡ được nó sẽ
  * thấy dòng này và xoá; một điều kiện lọc khéo thì không ai nhìn lại bao giờ.
+ *
+ * ✅ **RỖNG từ 2026-08-23** — nợ `NAV-GHI-CUNG` đã trả. Dòng cũ miễn cho
+ * `components/chrome.tsx` với lý do "layout gốc, `/luat` phải tĩnh"; lối ra hoá ra là lối
+ * `PhienProvider` đã đi từ Phase 2: hỏi `GET /subs` **ở trình duyệt**
+ * (`components/dieu-huong-sub.tsx` + `lib/api.ts::docCacSubOTrinhDuyet`). `/luat` giữ
+ * nguyên `○`, `pnpm build` vẫn không cần Django sống, và thanh nav thôi gõ cứng slug.
+ *
+ * Giữ bảng lại chứ không xoá kiểu miễn trừ: nó là chỗ dòng tiếp theo phải đi qua, và bài
+ * đo "giấy miễn trừ không có dòng chết" ở dưới sẽ bắt ngay một dòng thừa.
  */
-const CHUA_CHUYEN_DUOC: Readonly<Record<string, string>> = {
-  // Thanh điều hướng nằm trong layout gốc, tức nó render trên **mọi** trang — kể cả
-  // `/luat`. Mà `/luat` phải là route TĨNH KHÔNG gọi API: nó là đường thoát của
-  // `error.tsx`/`global-error.tsx` (nợ #14), nên một lời gọi API ở đây làm đường thoát
-  // hỏng cùng lúc với thứ nó thoát khỏi. Chuyển được nó cần một nguồn danh sách sub
-  // không đi qua request (cache build-time, hoặc tách nav khỏi layout) — một quyết định
-  // có plan riêng, không phải hiệu ứng phụ của lượt vá này.
-  //
-  // ⚠ Nợ THẬT, không phải giấy phép: sub thứ ba mở ra vẫn vắng mặt trên thanh nav.
-  "components/chrome.tsx": "layout gốc — /luat phải tĩnh (nợ #14)",
-};
+const CHUA_CHUYEN_DUOC: Readonly<Record<string, string>> = {};
 
 test("bộ file quét được không rỗng và có đúng hai chỗ từng ghi cứng", () => {
   const ten = MA_SAN_PHAM.map((f) => f.ten);

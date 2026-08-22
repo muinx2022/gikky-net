@@ -170,6 +170,7 @@ function NoiDung({ nut }: { nut: BinhLuanOut }) {
           tacGia={nut.author?.username ?? null}
           than={nut.body ?? ""}
           daXoa={nut.trang_thai !== "binh_thuong"}
+          anchorMocSeq={nut.anchor_moc_seq}
         />
       </div>
     </>

@@ -131,8 +131,11 @@ test.describe("Đường ghi — đăng bài, nối mốc, bình luận, vote", 
     expect(noi.status(), await noi.text()).toBe(201);
 
     await page.goto(`/m/${mach.slug}-${mach.id}`);
-    await expect(page.getByTestId("moc-1")).toHaveAttribute("data-kieu", "mach");
+    // Mạch đang sống ⇒ mặt BÃO (Phase 3): mốc mới nhất mở sẵn, phần còn lại sau
+    // "mở cả mạch ▾" (PLAN 5.5).
     await expect(page.getByTestId("moc-2")).toBeVisible();
+    await page.getByTestId("nut-mo-ca-mach").click();
+    await expect(page.getByTestId("moc-1")).toHaveAttribute("data-kieu", "mach");
   });
 
   test("bình luận từ composer khán đài, rồi tự sửa và tự xoá được", async ({ page }) => {

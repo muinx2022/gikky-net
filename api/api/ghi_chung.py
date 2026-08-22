@@ -47,7 +47,8 @@ def nap_moc(moc_id: int) -> Moc:
     """
     moc = (
         Moc.objects.filter(pk=moc_id, mach__hidden_at__isnull=True)
-        .select_related("mach", "mach__sub", "mach__author")
+        # `author` cho `MocOut.author` — mọi cửa ghi của mốc đều trả về chính thẻ mốc.
+        .select_related("mach", "mach__sub", "mach__author", "author")
         .first()
     )
     if moc is None:

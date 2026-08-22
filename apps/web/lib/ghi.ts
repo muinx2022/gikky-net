@@ -1,4 +1,4 @@
-import type { LoiOut } from "@gikky/api-client";
+import type { LoiOut, LoiThoiGianOut } from "@gikky/api-client";
 
 /** Xử lỗi cho MỌI form ghi của `apps/web` — PLAN mục 7 (`{detail, code}`), nguyên tắc 10.
  *
@@ -43,6 +43,13 @@ export class LoiGhi extends Error {
     /** `code` của PLAN mục 7. Chuỗi rỗng khi server không trả mã nào. */
     readonly ma: string,
     message: string,
+    /** Mốc "thử lại được từ lúc nào", ISO — chỉ những mã từ chối **vì thời gian** mới có
+     * (hôm nay: 429 `qua_han_muc_moc`). `null` ở mọi mã còn lại.
+     *
+     * Con số này do SERVER nói (`api/loi.py::LoiThoiGianOut`), và đó là cả nội dung của nợ
+     * `API-THIEU-MOC-THOI-GIAN`: trước 2026-08-23, `lib/vong-doi.ts` tự dựng lại luật
+     * "nửa đêm giờ VN" để đoán ra nó. */
+    readonly thuLaiTu: string | null = null,
   ) {
     super(message);
     this.name = "LoiGhi";
@@ -65,11 +72,15 @@ type KetQua<T> = {
  */
 export function layDuLieu<T>(kq: KetQua<T>, macDinh: string): T {
   if (kq.data !== undefined) return kq.data;
-  const than = (kq.error ?? null) as LoiOut | null;
+  // `LoiThoiGianOut` là lớp CON của `LoiOut` (`api/loi.py`), nên union này chỉ nói "thân
+  // lỗi có thể mang thêm `thu_lai_tu`" — không phải hai hình dạng lỗi khác nhau. Kiểu
+  // nhập từ `@gikky/api-client`, không khai lại (PLAN 8.3).
+  const than = (kq.error ?? null) as LoiOut | LoiThoiGianOut | null;
   throw new LoiGhi(
     kq.response?.status ?? 0,
     than?.code ?? "",
     than?.detail ?? macDinh,
+    than !== null && "thu_lai_tu" in than ? than.thu_lai_tu : null,
   );
 }
 

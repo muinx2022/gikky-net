@@ -10,6 +10,7 @@ import { Composer } from "./composer";
 import css from "./hanh-dong-binh-luan.module.css";
 import { useMach } from "./mach-ngu-canh";
 import { usePhien } from "./phien";
+import { NutTrich } from "./trich";
 
 /** Hàng "Trả lời · ⋯" dưới mỗi bình luận — PLAN 5.3 (sửa/xoá) và 5.4 (trả lời inline).
  *
@@ -19,7 +20,11 @@ import { usePhien } from "./phien";
  * 2. **Sửa / Xoá**: **chỉ tác giả của chính bình luận đó**, kể cả chủ mạch cũng không.
  *    Chủ mạch có quyền trên *cuốn sổ*, không có quyền trên *lời của người khác*
  *    (`api/binh_luan.py` từ chối bằng 403 `khong_phai_chu`).
- * 3. Mạch bị mod **khoá** ⇒ không hiện hành động nào (PLAN 5.10).
+ * 3. **Trích vào sổ**: **chỉ chủ mạch**, và chiều ngược hẳn luật 2 — đây là quyền trên
+ *    cuốn sổ, không phải trên lời người khác (PLAN 5.6 rào 4: *"bởi chủ mạch"*). Nên nó
+ *    nằm NGOÀI menu `⋯` của tác giả bình luận: hai luật quyền khác nhau thì hai chỗ.
+ * 4. Mạch bị mod **khoá** ⇒ không hiện hành động nào (PLAN 5.10) — kể cả trích, vì trích
+ *    ghi vào nội dung công khai của mạch (`api/mocs.py` áp `doi_mach_tuong_tac_duoc`).
  *
  * UI vẽ theo cùng luật server áp, chứ không phải một xấp xỉ dễ chịu hơn: một nút "Xoá"
  * hiện trên bình luận người khác rồi trả 403 là dạy người dùng rằng sản phẩm hỏng.
@@ -36,6 +41,7 @@ export function HanhDongBinhLuan({
   tacGia,
   than,
   daXoa,
+  anchorMocSeq,
 }: {
   id: number;
   /** `username` tác giả bình luận. `null` ở bia mộ. */
@@ -43,6 +49,8 @@ export function HanhDongBinhLuan({
   /** Nội dung hiện tại — để form sửa mở ra với chữ cũ, không phải ô trống. */
   than: string;
   daXoa: boolean;
+  /** Mốc bình luận này đang neo — mốc mặc định của một lượt trích (PLAN 5.6). */
+  anchorMocSeq: number | null;
 }) {
   const { khoa } = useMach();
   const { toi, dangTai } = usePhien();
@@ -127,6 +135,9 @@ export function HanhDongBinhLuan({
         >
           Trả lời
         </button>
+        {/* Chỉ chủ mạch thấy — component tự quyết, cùng lối `HanhDongMoc`. Một phép kiểm
+            quyền chép ra hai chỗ là chỗ thứ hai sẽ quên. */}
+        <NutTrich commentId={id} anchorMocSeq={anchorMocSeq} />
         {cua_toi && (
           <details className={css.menu} ref={hopRef} data-testid="menu-binh-luan">
             <summary aria-label="Thêm hành động">⋯</summary>

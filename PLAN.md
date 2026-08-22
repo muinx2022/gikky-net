@@ -461,7 +461,10 @@ Ghi chú thực thi:
 Auth qua session cookie (allauth headless — **mount toàn bộ urls allauth, kể cả OAuth
 callback, dưới prefix `/api/`** để Caddy/rewrites route được; redirect URI Google đăng ký là
 `https://gikky.net/api/accounts/google/login/callback/`). CSRF chuẩn Django.
-Lỗi `{detail, code}`.
+Lỗi `{detail, code}`. **Một ngoại lệ có tên**: lời từ chối *vì thời gian* thêm
+`thu_lai_tu` (`LoiThoiGianOut`, lớp CON của `LoiOut`) — hôm nay chỉ 429 `qua_han_muc_moc`.
+Ai chỉ đọc `detail`/`code` không phải biết lớp ấy tồn tại; hàng rào
+`tests/test_hop_dong_openapi.py` vì thế đo theo **trường**, không theo tên schema.
 
 | Method & path | Việc | Ghi chú |
 |---|---|---|
@@ -471,10 +474,10 @@ Lỗi `{detail, code}`.
 | `GET /subs/{slug}` | header trang chuyên mục: `ten`, `mo_ta`, `so_mach`, `created_at` | *(thêm Phase 1d, 2026-08-22)* chỉ đọc, không per-user; slug lạ → 404 |
 | `GET /subs` | liệt kê MỌI sub, sắp theo `slug` | *(thêm Phase 1d vá, 2026-08-22)* sidebar + `sitemap.ts` phải hỏi đây, **cấm ghi cứng danh sách slug ở frontend** — sub thứ ba mở ra mà vắng mặt im lặng ở cả hai chỗ là đúng loài hỏng nợ #11 vừa được vá để diệt |
 | `POST /machs` | tạo bài (= mốc 1) | *(Phase 2)* ai đăng nhập cũng được; `sub` là **slug**; tác giả nhận sẵn +1 của mình (5.7) |
-| `GET /machs/{id}` | mach + mốc + `face` server đã tính + spine | **không chứa gì per-user** (cache được) |
+| `GET /machs/{id}` | mach + mốc + `face` server đã tính + spine | **không chứa gì per-user** (cache được). *(Phase 3, 2026-08-23)* thêm ba trường **suy từ dữ liệu mạch, không từ người xem** nên chúng không phá tính chất đó: `mo_lai_den` (= `closed_at + 7 ngày`, `null` khi đang mở) · mỗi mốc có `author` và `sua_im_lang_den` (= `created_at + 15 phút`). Cả ba trả nợ `MOC-THIEU-AUTHOR` + `API-THIEU-MOC-THOI-GIAN`: trước đó frontend giữ bản sao của `NGAY_MO_LAI`/`PHUT_SUA_IM_LANG` và suy quyền sửa mốc từ chủ MẠCH |
 | `GET /machs/{id}/me` | trạng thái CỦA VIEWER: `my_votes`, `my_reactions`, `following`, `last_seen_entry_seq`, `tung_binh_luan`, **`face`** | client fetch sau khi trang cached render — dữ liệu per-user KHÔNG được nướng vào page cache (8.4). *(Phase 3, 2026-08-23)* khách nhận **200** kèm `dang_nhap:false`, không phải 401 — cùng lý lẽ `GET /me`. **`face` ở đây áp ĐỦ HAI VẾ của 5.5** (dòng `GET /machs/{id}` chỉ có vế thời gian); vì vế 2 là phép HOẶC nên nó chỉ kéo được CẶN → BÃO. Tên trường giữ **tiếng Anh** đúng nguyên văn dòng này: `test_api_mach.py::MANH_PER_USER` ghim đúng các mảnh chữ ấy làm danh sách CẤM của cửa cache được |
-| `POST /machs/{id}/mocs` | nối mốc | rate 3/ngày VN, chỉ author, open + không khoá. *(Phase 2)* mã lỗi riêng cho từng ca: `khong_phai_chu` 403 · `mach_bi_khoa` 403 · `mach_da_dong` 409 · `qua_han_muc_moc` 429 |
-| `PATCH /mocs/{id}` · `DELETE` | sửa (5 trường ở 5.2; revision nếu >15ph) · bia mộ | *(Phase 2)* **chỉ `Moc.author`**; PATCH thật (trường vắng = không đổi); `DELETE` trả về chính thẻ mốc ở dạng bia mộ, không 204 |
+| `POST /machs/{id}/mocs` | nối mốc | rate 3/ngày VN, chỉ author, open + không khoá. *(Phase 2)* mã lỗi riêng cho từng ca: `khong_phai_chu` 403 · `mach_bi_khoa` 403 · `mach_da_dong` 409 · `qua_han_muc_moc` 429. *(Phase 3, 2026-08-23)* thân của 429 là `LoiThoiGianOut` — kèm `thu_lai_tu` = **nửa đêm giờ VN kế tiếp**, vì `detail` dừng ở "mai nối tiếp nhé" mà "mai" lúc 23:50 nghĩa là mười phút nữa |
+| `PATCH /mocs/{id}` · `DELETE` | sửa (5 trường ở 5.2; revision nếu >15ph) · bia mộ | *(Phase 2)* **chỉ `Moc.author`**; PATCH thật (trường vắng = không đổi); `DELETE` trả về chính thẻ mốc ở dạng bia mộ, không 204. *(Phase 3, 2026-08-23)* `MocOut` nay có `author` — UI hỏi được ĐÚNG cột mà cửa này hỏi, thay vì suy từ chủ mạch |
 | `GET /mocs/{id}/revisions` | danh sách bản cũ cho UI diff | |
 | `GET /machs/{id}/comments` | khán đài `?sort=hay_nhat\|moi_nhat\|cu_nhat`; hay_nhat = 1 trang 50 + "xem thêm", 2 sort kia cursor keyset | server sort, trả cây đã dựng |
 | `GET /mocs/{id}/comments` | lát cắt ngăn kéo, cũ→mới | |

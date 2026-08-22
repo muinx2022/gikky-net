@@ -1,0 +1,128 @@
+.spine {
+  padding: 0 26px 14px;
+}
+
+.day {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.o {
+  display: flex;
+  align-items: center;
+}
+
+.o + .o::before {
+  content: "";
+  width: 12px;
+  height: 1px;
+  background: var(--line-2);
+}
+
+.so {
+  font-family: var(--f-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 5px;
+  border: 1px solid var(--line);
+  border-radius: 50px;
+  background: var(--surface);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.so:hover {
+  border-color: var(--line-2);
+  color: var(--ink);
+}
+
+/* PLAN 9.1 — "số mốc chưa xem trên spine" là một trong những thứ mang tính đóng dấu, nên
+   nó và chỉ nó được dùng hoàng thổ ở file này. */
+.chua_xem {
+  color: var(--stamp);
+  border-color: var(--stamp);
+  background: var(--stamp-soft);
+  font-weight: 500;
+}
+
+.chu_thich_spine {
+  margin: 8px 0 0;
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+
+.nhat_ky {
+  list-style: none;
+  margin: 0;
+  padding: 0 26px 4px;
+}
+
+.hang_bung {
+  list-style: none;
+}
+
+/* "Vạch mới" — PLAN 9.1 giao hoàng thổ cho nó đích danh. */
+.vach_moi {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 0 14px;
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--stamp);
+}
+
+.vach_moi::before,
+.vach_moi::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--stamp);
+}
+
+.vach_chu {
+  white-space: nowrap;
+}
+
+.hang_nut {
+  padding: 4px 26px 18px;
+}
+
+.mo_ca_mach {
+  font-family: var(--f-mono);
+  font-size: 12px;
+  padding: 7px 13px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--inset);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.mo_ca_mach:hover {
+  border-color: var(--line-2);
+  color: var(--ink);
+}
+
+@media (max-width: 640px) {
+  .spine {
+    padding: 0 16px 12px;
+  }
+
+  .nhat_ky {
+    padding: 0 16px 4px;
+  }
+
+  .hang_nut {
+    padding: 4px 16px 16px;
+  }
+}

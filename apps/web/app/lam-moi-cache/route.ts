@@ -10,40 +10,33 @@
  * thống file thắng `rewrites` của `afterFiles` — rồi **chết trên prod**, nơi Caddy nuốt
  * request trước khi Next thấy nó. Đúng loài lỗi chỉ lộ ra sau khi deploy.
  *
- * ## Trạng thái THẬT hôm nay: cửa này đúng nhưng CHƯA làm được gì
+ * ## Cửa này ĐÃ có tác dụng thật từ 2026-08-23 (mảng B2)
  *
- * `app/m/[slugId]/page.tsx` còn khai `export const dynamic = "force-dynamic"`, nên trang
- * mạch không có bản cache nào để làm mới và `revalidatePath` ở dưới là một **no-op** —
- * nó trả 200 và không xảy ra chuyện gì. Đừng đọc "200 OK" thành "ISR đang chạy".
+ * Nợ `ISR-BIEN-THE-ROUTE` đã trả: `app/m/[slugId]/page.tsx` bỏ `force-dynamic`, khai
+ * `revalidate = 3600`, và `middleware.ts` tách hai biến thể route. Từ đó `revalidatePath`
+ * dưới đây **thật sự** vứt bản cache của trang mạch — trước lượt ấy nó trả 200 và không
+ * xảy ra chuyện gì (đừng đọc "200 OK" thành "ISR đang chạy" — câu ấy đã đúng suốt một
+ * phase).
  *
- * Đó là nợ có tên **`ISR-BIEN-THE-ROUTE`** (`plans/2026-08-23-mang-b1-backend-phase-3.md`
- * §5): cơ chế đủ của PLAN 8.4 cần tách trang mạch thành hai biến thể route (khách không
- * cookie ăn ISR · có cookie thì dynamic no-store) cộng một `middleware.ts` chọn nhánh.
- * Việc đó sửa `page.tsx`, và file này được viết trong lượt BACKEND chạy song song với một
- * lượt frontend đang giữ đúng file ấy — nên nửa Django + cửa nhận làm trước, phần tách
- * biến thể để lượt sau. Gỡ nợ = bỏ `force-dynamic`, thêm `export const revalidate = 3600`,
- * dựng hai biến thể; lúc đó file này bắt đầu có tác dụng mà không phải sửa dòng nào.
+ * Ghim bằng bài đo chạy thật: `e2e/phase-3.spec.ts::P10` nối một mốc rồi đòi trang KHÁCH
+ * hiện nó ra — cả đường Django → luồng nền → cửa này → data cache của Next.
+ *
+ * ## Hai hằng của cửa nằm ở `lib/lam-moi-cache.ts`, không ở đây
+ *
+ * Next **cấm Route Handler export bất cứ tên nào ngoài danh sách nó biết**; thêm một
+ * `export const DUONG_DAN_HOP_LE` vào file này làm `next build` đỏ với *"Type 'RegExp' is
+ * not assignable to type 'never'"*. Tách sang `lib/` để bài đo import được đúng cái regex
+ * đang chạy, thay vì chép một bản thứ hai.
  */
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
-/** Header mang secret. **Không dùng query string**: query nằm lại trong access log của
- * hai tầng proxy, tức secret bị ghi ra đĩa dạng thô ở hai chỗ, vĩnh viễn. */
-const HEADER_SECRET = "x-revalidate-secret";
+import { DUONG_DAN_HOP_LE, HEADER_SECRET } from "@/lib/lam-moi-cache";
 
 /** Rỗng ⇒ cửa TẮT (503), không phải "cho qua tất". Mặc định fail-closed là bắt buộc ở đây:
  * một biến môi trường quên đặt trên prod không được biến endpoint này thành một cửa ai
  * cũng gọi được để ép Next đi fetch lại bất kỳ đường dẫn nào. */
 const SECRET = process.env.REVALIDATE_SECRET ?? "";
-
-/** Chỉ nhận đường dẫn trang mạch `/m/<slug>-<id>`.
- *
- * Allowlist bằng regex chứ không nhận đường dẫn tự do: `revalidatePath` nhận bất cứ chuỗi
- * nào, nên một cửa không lọc là một cách bắt Next dựng lại **mọi** trang theo yêu cầu của
- * người gọi — kể cả khi họ chỉ đoán đúng secret một lần. Django hôm nay chỉ gửi đúng dạng
- * này (`core/revalidate.py::lam_moi_mach`); thêm dạng khác thì mở rộng ở đây, có ý thức.
- */
-const DUONG_DAN_HOP_LE = /^\/m\/[a-z0-9-]+-\d+$/;
 
 export async function POST(req: Request) {
   if (!SECRET) {

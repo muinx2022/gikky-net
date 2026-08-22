@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { defineConfig, devices } from "@playwright/test";
 
 /** Bộ e2e của `apps/web` — kéo lên sớm từ Phase 2 (plan con 1c §1).
@@ -42,6 +44,27 @@ export const DU_AN_DON_VI = {
   testMatch: /don-vi[\\/].*\.spec\.ts$/,
 } as const;
 
+/** `REVALIDATE_SECRET` của Django, đọc từ `api/.env` — **hai tiến trình phải cùng chuỗi**.
+ *
+ * PLAN 8.4 điểm 3: Django gọi `POST localhost:3000/lam-moi-cache` kèm secret ở header, và
+ * cửa nhận (`app/lam-moi-cache/route.ts`) **fail-closed** — biến rỗng ⇒ 503, không phải
+ * "cho qua tất". Django đọc secret từ `api/.env`; tiến trình Next thì không đọc file đó,
+ * nên nếu không truyền qua đây thì on-demand revalidate **im lặng không chạy** trong e2e:
+ * Django gửi, Next trả 503, không ai đỏ, và bài đo "nối mốc xong khách thấy ngay" sẽ đo
+ * một cơ chế đã chết.
+ *
+ * Không có `api/.env` (máy vừa clone) ⇒ chuỗi rỗng ⇒ cửa tắt, và bài đo tương ứng tự
+ * `skip` kèm lý do thay vì đỏ vì một chuyện không phải lỗi code.
+ */
+export function secretLamMoiCache(): string {
+  try {
+    const env = readFileSync(resolve(__dirname, "..", "..", "api", ".env"), "utf8");
+    return /^REVALIDATE_SECRET=(.*)$/m.exec(env)?.[1].trim() ?? "";
+  } catch {
+    return "";
+  }
+}
+
 export default defineConfig({
   testDir: THU_MUC_E2E,
   globalSetup: "./e2e/dung-seed.ts",
@@ -81,6 +104,9 @@ export default defineConfig({
       timeout: 300_000,
       stdout: "ignore",
       stderr: "pipe",
+      // Cùng chuỗi với Django, nếu không thì cửa on-demand revalidate trả 503 và cả cơ
+      // chế 8.4 chết im lặng trong e2e — xem `secretLamMoiCache`.
+      env: { REVALIDATE_SECRET: secretLamMoiCache() },
     },
   ],
 });

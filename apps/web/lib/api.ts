@@ -17,6 +17,7 @@ import {
 } from "@gikky/api-client";
 
 import type { SortKhanDai } from "./khan-dai";
+import { GOC_TRINH_DUYET } from "./tai-khoan";
 
 /** Server component gọi **THẲNG** Django, không vòng qua cổng 3000 của chính mình.
  *
@@ -27,6 +28,18 @@ import type { SortKhanDai } from "./khan-dai";
  */
 export const API_ORIGIN = process.env.API_ORIGIN ?? "http://localhost:8000";
 
+/** Tuổi cache của trang mạch — PLAN 8.4 điểm 2, *"revalidate nền 1 giờ"*.
+ *
+ * Một giờ là để bắt hai sự kiện **KHÔNG có signal**: cú lật BÃO→CẶN do 72h trôi, và bình
+ * luận mới trên một trang nguội. Mọi sự kiện CÓ signal (nối/sửa/xoá mốc, trích/gỡ trích,
+ * đóng/mở/khoá mạch) đi đường on-demand — `core/revalidate.py` → `app/lam-moi-cache`.
+ *
+ * ⚠ Con số này còn **một bản thứ hai**, và nó bắt buộc: `export const revalidate` của Next
+ * phải là literal phân tích tĩnh được, nên `app/m/[slugId]/page.tsx` viết `3600` bằng tay.
+ * Bản sao ấy có chuông — `e2e/don-vi/cache-mach.spec.ts` đọc cả hai file và đỏ nếu lệch.
+ */
+export const TUOI_CACHE_MACH = 3600;
+
 /** Mọi lời gọi API của 1c đi qua đây — **KHÔNG dùng `client` singleton**.
  *
  * `@gikky/api-client` cố ý không xuất subpath `./client`, và `scripts/rao-can-client.mjs`
@@ -36,11 +49,47 @@ export const API_ORIGIN = process.env.API_ORIGIN ?? "http://localhost:8000";
  * 200. Cách đúng và duy nhất hiện có: truyền `baseUrl` (và sau này `headers`) **theo
  * từng lời gọi**, đúng như mọi hàm dưới đây làm.
  *
- * `cache: "no-store"` ở 1c là **tạm**: PLAN 8.4 chốt biến thể khách phải là ISR 1 giờ +
- * on-demand revalidate, nhưng cả cơ chế đó là việc của Phase 3. Đừng đọc nó thành "trang
- * mạch cố ý không cache".
+ * **Hai hằng, khác nhau đúng một thứ: chính sách cache** (Phase 3, PLAN 8.4). Trang mạch
+ * chọn giữa chúng bằng tham số `doc` — xem `ChinhSachDoc`. Feed/sub/hồ sơ giữ nguyên
+ * `no-store`: chúng chưa có cửa on-demand revalidate nào, nên một bản cache 1 giờ ở đó là
+ * bài mới không lên feed trong một giờ.
+ *
+ * ⚠ **Vì sao `CHUNG_ISR` phải đi qua `fetch:` chứ không khai thẳng `next:`.** Client mà
+ * `@hey-api/openapi-ts` sinh ra khai `next?: never` và nói rõ *"The `next` options won't
+ * have any effect"* — nó dựng `new Request(url, init)` rồi `fetch(request)`, mà hàm dựng
+ * `Request` **vứt** mọi khoá không chuẩn, nên `next` chết ngay tại đó. Cửa còn lại là
+ * `fetch:`, một tuỳ chọn hợp lệ của chính client ấy: ta gọi `fetch` toàn cục (bản Next đã
+ * vá) với `init.next`, và bản vá đọc `init.next.revalidate` **trước** khi ngó tới
+ * `Request`. Đây là chỗ duy nhất trong repo được phép làm vậy.
+ *
+ * ⚠ **Và đây là lý do hàng rào `THIEU_BASE_URL` phải hiểu ngoặc LỒNG.** Hằng dưới có
+ * object trong object, còn bản trước của `coBaseUrl` (`e2e/don-vi/type-frontend.spec.ts`)
+ * dò `\{([^{}]*)\}` — một tầng ngoặc, nên nó không thấy `baseUrl` ở đây và báo vi phạm cho
+ * **mọi** lời gọi spread hằng này. Lối thoát rẻ là một dòng giấy miễn trừ, mà đó đúng là
+ * luật chống rò session không được có giấy nào. Hàng rào đã học đếm ngoặc cân bằng; đừng
+ * làm phẳng hằng này để né nó.
  */
 const CHUNG = { baseUrl: API_ORIGIN, cache: "no-store" } as const;
+const CHUNG_ISR = {
+  baseUrl: API_ORIGIN,
+  fetch: (yeu_cau: RequestInfo | URL) =>
+    fetch(yeu_cau, { next: { revalidate: TUOI_CACHE_MACH } }),
+} as const;
+
+/** Trang mạch có hai biến thể route (PLAN 8.4 điểm 1) và chúng đọc Django khác nhau.
+ *
+ * - `"isr"` — biến thể khách (`/m/<slug>-<id>`): fetch đi vào **data cache** của Next, nên
+ *   lượt tải thứ hai trong vòng một giờ không chạm Django. Đây là chỗ ba nợ
+ *   `N+1-NGAN-KEO` · `DANG-DOC-ROUND-TRIP` · `ISR-BIEN-THE-ROUTE` được trả: số lời gọi
+ *   không giảm, nhưng chúng thôi lặp lại ở mỗi lượt xem.
+ * - `"tuoi-song"` — biến thể có cookie phiên (`/m-phien/...`, do `middleware.ts` rewrite
+ *   tới): người vừa nối mốc phải thấy mốc của mình **ngay**, không phải đợi hết giờ.
+ *
+ * Kiểu chuỗi chứ không phải một object tuỳ chọn truyền thẳng xuống hàm API: object đó sẽ
+ * là một lời mời nhét `headers: { cookie }` vào, tức forward session của người này vào một
+ * lời gọi có thể đang được cache cho người kia.
+ */
+export type ChinhSachDoc = "isr" | "tuoi-song";
 
 /** Mã lỗi ổn định của API (PLAN mục 7 — frontend bắt theo `code`, không parse `detail`).
  * Chỉ khai những mã 1c thật sự phân biệt được hành vi; thêm mã là thêm một nhánh xử lý,
@@ -135,11 +184,23 @@ function cursorHopLe(cursor: string | undefined): string | null {
   return g === "" ? null : g;
 }
 
-export async function docMach(machId: number): Promise<MachChiTietOut | null> {
-  return lay(
-    await xemMach({ ...CHUNG, path: { mach_id: machId } }),
-    `xem_mach(${machId})`,
-  );
+/** Trang mạch. `doc` chọn biến thể cache — xem `ChinhSachDoc`.
+ *
+ * **Hai lời gọi viết thẳng, không đi qua một biến "tuỳ chọn" chung.** Đó không phải thừa:
+ * hàng rào `THIEU_BASE_URL` tìm `baseUrl` qua **một lớp spread của một hằng module**, nên
+ * `xemMach({ ...tuyChon, … })` với `tuyChon` là tham số hàm là một lời gọi hàng rào không
+ * đọc được — và luật ấy không có giấy miễn trừ nào. Cùng lý lẽ với hai lời gọi song sinh ở
+ * `feedTho` (vá E2). Bốn hàm dưới đây đều theo khuôn này.
+ */
+export async function docMach(
+  machId: number,
+  doc: ChinhSachDoc,
+): Promise<MachChiTietOut | null> {
+  const kq =
+    doc === "isr"
+      ? await xemMach({ ...CHUNG_ISR, path: { mach_id: machId } })
+      : await xemMach({ ...CHUNG, path: { mach_id: machId } });
+  return lay(kq, `xem_mach(${machId})`);
 }
 
 /** Tham số phân trang trên URL có bị vứt đi không? — **BA đường**, không phải hai.
@@ -182,6 +243,7 @@ export function thamSoPhanTrangBiBo(
 export async function docKhanDai(
   machId: number,
   sort: SortKhanDai,
+  doc: ChinhSachDoc,
   trang: { offset?: number; cursor?: string } = {},
   limit = 50,
 ): Promise<TrangCursor<KhanDaiOut | null>> {
@@ -189,17 +251,17 @@ export async function docKhanDai(
   const xin = cursorHopLe(trang.cursor);
   const offset_xin = trang.offset ?? 0;
   const tham_so_bi_bo = thamSoPhanTrangBiBo(sort, trang);
-  const goi = (cursor: string | null) =>
-    lietKeBinhLuanMach({
-      ...CHUNG,
-      path: { mach_id: machId },
-      query: {
-        sort,
-        limit,
-        offset: la_hay_nhat ? offset_xin : 0,
-        cursor: la_hay_nhat ? null : cursor,
-      },
-    });
+  const goi = (cursor: string | null) => {
+    const path = { mach_id: machId };
+    const query = {
+      sort,
+      limit,
+      offset: la_hay_nhat ? offset_xin : 0,
+      cursor: la_hay_nhat ? null : cursor,
+    };
+    if (doc === "isr") return lietKeBinhLuanMach({ ...CHUNG_ISR, path, query });
+    return lietKeBinhLuanMach({ ...CHUNG, path, query });
+  };
   const viec = `liet_ke_binh_luan_mach(${machId}, ${sort})`;
 
   const kq = await goi(la_hay_nhat ? null : xin);
@@ -218,25 +280,42 @@ export async function docKhanDai(
  * không giao.
  *
  * **Cái giá, nói thẳng: một round-trip nữa mỗi lượt bung khán đài.** Đó là nợ có tên
- * `DANG-DOC-ROUND-TRIP` (`plans/2026-08-22-phase-1d-va3.md` §4) — chấp nhận có chủ đích,
- * và nó biến mất theo đường ISR ở Phase 3 chứ không theo đường gộp hai lời gọi.
+ * `DANG-DOC-ROUND-TRIP` (`plans/2026-08-22-phase-1d-va3.md` §4) — **trả 2026-08-23**: với
+ * `doc = "isr"` lời gọi này nằm trong data cache của Next, nên nó chỉ chạm Django một lần
+ * mỗi giờ (hoặc sau một lượt on-demand revalidate) thay vì mỗi lượt bung. Số lời gọi
+ * không đổi; số lần đi tới Django thì đổi, và đó mới là thứ nợ ấy nói tới.
  */
-export async function docCauDangDoc(machId: number): Promise<KhanDaiOut | null> {
-  return lay(
-    await lietKeBinhLuanMach({
-      ...CHUNG,
-      path: { mach_id: machId },
-      query: { dang_doc: true },
-    }),
-    `cau_dang_doc(${machId})`,
-  );
+export async function docCauDangDoc(
+  machId: number,
+  doc: ChinhSachDoc,
+): Promise<KhanDaiOut | null> {
+  const path = { mach_id: machId };
+  const query = { dang_doc: true };
+  const kq =
+    doc === "isr"
+      ? await lietKeBinhLuanMach({ ...CHUNG_ISR, path, query })
+      : await lietKeBinhLuanMach({ ...CHUNG, path, query });
+  return lay(kq, `cau_dang_doc(${machId})`);
 }
 
-export async function docNganKeo(mocId: number): Promise<NganKeoOut | null> {
-  return lay(
-    await lietKeBinhLuanMoc({ ...CHUNG, path: { moc_id: mocId } }),
-    `liet_ke_binh_luan_moc(${mocId})`,
-  );
+/** Lát cắt ngăn kéo của MỘT mốc.
+ *
+ * Nợ `N+1-NGAN-KEO` (`plans/2026-08-22-phase-1d-va3.md` §4) — **trả 2026-08-23 theo đường
+ * ISR, không theo đường gộp endpoint**: trang mạch vẫn gọi một lần cho mỗi mốc, nhưng với
+ * `doc = "isr"` mỗi lời gọi ấy có bản cache riêng, nên mạch 40 mốc chạm Django 40 lần cho
+ * **cả giờ** chứ không phải cho mỗi người đọc. `chayCoTran` vẫn giữ trần đồng thời —
+ * lượt làm mới cache đầu tiên vẫn là 40 lời gọi thật.
+ */
+export async function docNganKeo(
+  mocId: number,
+  doc: ChinhSachDoc,
+): Promise<NganKeoOut | null> {
+  const path = { moc_id: mocId };
+  const kq =
+    doc === "isr"
+      ? await lietKeBinhLuanMoc({ ...CHUNG_ISR, path })
+      : await lietKeBinhLuanMoc({ ...CHUNG, path });
+  return lay(kq, `liet_ke_binh_luan_moc(${mocId})`);
 }
 
 export async function docHoSo(username: string, limit = 20): Promise<HoSoOut | null> {
@@ -395,6 +474,30 @@ export async function docCacSub(): Promise<SubChiTietOut[]> {
     );
   }
   return ra;
+}
+
+/** Cùng danh sách sub, nhưng hỏi **từ TRÌNH DUYỆT** — cho thanh điều hướng.
+ *
+ * Nợ `NAV-GHI-CUNG` (`components/chrome.tsx`, giấy miễn trừ ở
+ * `e2e/don-vi/khong-ghi-cung-sub.spec.ts`) — **trả 2026-08-23**. Nợ ấy nói: nav nằm trong
+ * layout gốc nên nó render trên MỌI trang, kể cả `/luat`; mà `/luat` phải là route TĨNH
+ * (đường thoát của `error.tsx`), nên một lời gọi API **ở phía server** tại đó làm đường
+ * thoát hỏng cùng lúc với thứ nó thoát khỏi.
+ *
+ * Lối ra là lối `PhienProvider` đã đi: hỏi ở trình duyệt. `/luat` giữ nguyên `○`,
+ * `pnpm build` vẫn không cần Django sống, và danh sách sub thôi là hai chuỗi gõ cứng.
+ *
+ * **Cái giá, nói thẳng:** link sub trên thanh nav **không có trong HTML lần đầu** — bot đọc
+ * trang không thấy chúng ở đó. Chấp nhận được vì cùng những link ấy đã nằm trong HTML
+ * server-render ở **sidebar** (`/` và `/s/*`) và trong `sitemap.xml`; nav là tiện cho
+ * người, không phải đường duy nhất để Google tìm ra một chuyên mục.
+ *
+ * `baseUrl` là **chuỗi rỗng** (same-origin, qua `rewrites`), không phải `API_ORIGIN`: đây
+ * là lời gọi chạy trong trình duyệt — xem `lib/tai-khoan.ts::GOC_TRINH_DUYET`.
+ */
+export async function docCacSubOTrinhDuyet(): Promise<SubChiTietOut[]> {
+  const kq = await lietKeSub({ baseUrl: GOC_TRINH_DUYET });
+  return kq.data ?? [];
 }
 
 /** Feed **không lọc sub** — `/` và `sitemap.xml`.

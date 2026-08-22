@@ -6,12 +6,7 @@ import { useState } from "react";
 
 import { MA_LOI, cauLoi, layDuLieu, LoiGhi } from "@/lib/ghi";
 import { GOC_TRINH_DUYET, headerGhi } from "@/lib/tai-khoan";
-import {
-  NGAY_MO_LAI,
-  SO_MOC_TOI_DA_MOI_NGAY,
-  conMoLaiDuoc,
-  moiVietTiep,
-} from "@/lib/vong-doi";
+import { conMoLaiDuoc, gioPhutVN } from "@/lib/vong-doi";
 
 import css from "./khoi-chu-mach.module.css";
 import { usePhien } from "./phien";
@@ -36,23 +31,30 @@ import { TruongMoc, mocRong, thanMoc, type NoiDungMoc } from "./truong-moc";
  * | mạch | khối này hiện gì |
  * |---|---|
  * | mở | nút "Nối mốc" + nút "Đóng sổ" |
- * | đóng, ≤7 ngày | nút "Mở lại" (PLAN 5.1) |
- * | đóng, >7 ngày | **một câu**, không nút — hạn đã hết thật |
+ * | đóng, còn hạn | nút "Mở lại" (PLAN 5.1) |
+ * | đóng, hết hạn | **một câu**, không nút — hạn đã hết thật |
  * | mod khoá | một câu, không nút gì (PLAN 5.10: đọc được, cấm tương tác) |
+ *
+ * ### Mọi con số ở đây do SERVER nói — nợ `API-THIEU-MOC-THOI-GIAN`, trả 2026-08-23
+ *
+ * Hạn mở lại là `mach.mo_lai_den` (server đã cộng 7 ngày), trần mốc/ngày là
+ * `mach.tran_moc_moi_ngay`, và mốc "viết tiếp được từ lúc nào" của 429 là `thu_lai_tu`
+ * trên chính thân lỗi. Trước lượt này cả ba là hằng chép tay ở `lib/vong-doi.ts` — hai
+ * bản của một luật, giữ khớp bằng một cái chuông đọc thẳng `api/core/ghi.py`.
  *
  * ### Lỗi thì nói bằng tiếng người
  *
- * Hạn mức 3 mốc/ngày trả **429 `qua_han_muc_moc`**. Câu của server đã là tiếng Việt ("mai
- * nối tiếp nhé"); UI thêm đúng một thứ server không nói: **mốc thời gian** được viết tiếp
- * (`moiVietTiep`). "Mai" lúc 23:50 nghĩa là mười phút nữa, và người vừa bị chặn cần biết
- * điều đó. Không bao giờ in mã lỗi hay số 429 ra mặt người dùng.
+ * Câu của server đã là tiếng Việt ("mai nối tiếp nhé"); UI thêm đúng một thứ: **giờ VN**
+ * của cái mốc server vừa gửi kèm. "Mai" lúc 23:50 nghĩa là mười phút nữa, và người vừa bị
+ * chặn cần biết điều đó. Không bao giờ in mã lỗi hay số 429 ra mặt người dùng.
  */
 export function KhoiChuMach({
   machId,
   chuMach,
   khoa,
   dong,
-  closedAt,
+  moLaiDen,
+  tranMocMoiNgay,
   soMoc,
 }: {
   machId: number;
@@ -62,8 +64,10 @@ export function KhoiChuMach({
   khoa: boolean;
   /** `status === "closed"`. */
   dong: boolean;
-  /** `closed_at` — để biết còn trong hạn 7 ngày mở lại không. */
-  closedAt: string | null;
+  /** `MachChiTietOut.mo_lai_den` — hạn chót mở lại sổ, `null` khi mạch đang mở. */
+  moLaiDen: string | null;
+  /** `MachChiTietOut.tran_moc_moi_ngay` — trần N mốc mỗi ngày lịch VN (PLAN 5.1). */
+  tranMocMoiNgay: number;
   /** `entry_count`, để đánh số cái mốc sắp nối. */
   soMoc: number;
 }) {
@@ -97,12 +101,14 @@ export function KhoiChuMach({
       await viec();
       router.refresh();
     } catch (e) {
-      // Ca duy nhất UI nói thêm ngoài câu của server — xem docstring đầu file.
-      const them =
-        e instanceof LoiGhi && e.ma === MA_LOI.QUA_HAN_MUC_MOC
-          ? ` Viết tiếp được từ ${moiVietTiep()}.`
-          : "";
-      datLoi(cauLoi(e, macDinh) + them);
+      // Ca duy nhất UI nói thêm ngoài câu của server — xem docstring đầu file. Mốc thời
+      // gian lấy từ chính thân lỗi (`thu_lai_tu`), không tính lại; server không gửi (hoặc
+      // gửi rác) thì im, vì câu của nó đã đủ đúng, chỉ thiếu con số.
+      const moc =
+        e instanceof LoiGhi && e.ma === MA_LOI.QUA_HAN_MUC_MOC && e.thuLaiTu !== null
+          ? gioPhutVN(e.thuLaiTu)
+          : null;
+      datLoi(cauLoi(e, macDinh) + (moc === null ? "" : ` Viết tiếp được từ ${moc}.`));
     } finally {
       datDangGui(false);
     }
@@ -130,11 +136,14 @@ export function KhoiChuMach({
     // `confirm` của trình duyệt, cùng lối với xoá bình luận: đóng sổ **cắt đứt đường nối
     // mốc** và cái quyền mở lại chỉ sống 7 ngày, nên nó phải có một bước dừng — và một
     // bước dừng có sẵn, dùng được bằng bàn phím thì tốt hơn một modal viết vội.
+    // Không nêu "7 ngày" ở đây: con số ấy là luật của Django, và chỗ duy nhất UI biết nó
+    // là `mo_lai_den` — thứ chỉ tồn tại SAU khi đóng. Nên câu này hứa đúng thứ nó giữ
+    // được: hạn có thật, và khu này sẽ hiện hạn chót ngay sau đó.
     const nhac =
       `Đóng sổ mạch này?\n\n` +
       `• Không nối thêm mốc được nữa.\n` +
       `• Bình luận thì vẫn viết được.\n` +
-      `• Mở lại được trong ${NGAY_MO_LAI} ngày — sau đó thì không.`;
+      `• Mở lại được trong một hạn ngắn — hạn chót sẽ hiện ngay ở khu này.`;
     if (!window.confirm(nhac)) return;
     void chay(async () => {
       layDuLieu(
@@ -183,16 +192,12 @@ export function KhoiChuMach({
       )}
 
       {dong ? (
-        <MatDong
-          closedAt={closedAt}
-          dangGui={dangGui}
-          onMoLai={guiMoLai}
-        />
+        <MatDong moLaiDen={moLaiDen} dangGui={dangGui} onMoLai={guiMoLai} />
       ) : mo === "noi" ? (
         <form onSubmit={guiMoc} data-testid="form-noi-moc">
           <p className={css.cau}>
-            Mốc {soMoc + 1}. Tối đa {SO_MOC_TOI_DA_MOI_NGAY} mốc mỗi ngày cho một mạch —
-            để nhật ký là nhật ký, không phải dòng thời gian.
+            Mốc {soMoc + 1}. Tối đa {tranMocMoiNgay} mốc mỗi ngày cho một mạch — để nhật
+            ký là nhật ký, không phải dòng thời gian.
           </p>
           <TruongMoc
             gia_tri={moc}
@@ -300,26 +305,28 @@ const LY_DO_THAN_RONG = "Mốc phải có nội dung";
  * lời giải thích — không thì chủ mạch chỉ thấy khu của mình trống trơn và không hiểu vì sao.
  */
 function MatDong({
-  closedAt,
+  moLaiDen,
   dangGui,
   onMoLai,
 }: {
-  closedAt: string | null;
+  moLaiDen: string | null;
   dangGui: boolean;
   onMoLai: () => void;
 }) {
-  if (!conMoLaiDuoc(closedAt)) {
+  const han = moLaiDen === null ? null : gioPhutVN(moLaiDen);
+  if (!conMoLaiDuoc(moLaiDen)) {
     return (
       <p className={css.cau} data-testid="het-han-mo-lai">
-        Sổ đã đóng quá {NGAY_MO_LAI} ngày — không mở lại được nữa. Bình luận thì vẫn viết
-        được.
+        Hạn mở lại sổ{han === null ? "" : ` (${han})`} đã qua — không mở lại được nữa.
+        Bình luận thì vẫn viết được.
       </p>
     );
   }
   return (
     <>
-      <p className={css.cau}>
-        Sổ đã đóng. Còn mở lại được trong vòng {NGAY_MO_LAI} ngày kể từ lúc đóng.
+      <p className={css.cau} data-testid="con-han-mo-lai">
+        Sổ đã đóng. Còn mở lại được tới{" "}
+        <span className="mono">{han}</span>.
       </p>
       <div className={css.hang}>
         <button

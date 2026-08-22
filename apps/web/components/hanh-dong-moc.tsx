@@ -6,7 +6,7 @@ import { useRef, useState } from "react";
 
 import { cauLoi, layDuLieu } from "@/lib/ghi";
 import { GOC_TRINH_DUYET, headerGhi } from "@/lib/tai-khoan";
-import { PHUT_SUA_IM_LANG, phutSuaImLangConLai } from "@/lib/vong-doi";
+import { gioPhutVN, phutSuaImLangConLai } from "@/lib/vong-doi";
 
 import css from "./hanh-dong-moc.module.css";
 import { useMach } from "./mach-ngu-canh";
@@ -20,12 +20,14 @@ import { TruongMoc, thanMoc, type NoiDungMoc } from "./truong-moc";
  * Chỉ **tác giả mốc**. Mạch bị mod khoá ⇒ không hiện gì (PLAN 5.10). Mốc đã là bia mộ ⇒
  * không hiện gì (API trả 409 `noi_dung_da_go`, và một cái nút bấm để nhận lỗi là cái bẫy).
  *
- * ⚠ **UI hỏi `chuMach`, còn API hỏi `Moc.author`** — hai cột hôm nay luôn trùng nhau (chỉ
- * chủ mạch nối được mốc), nhưng chúng KHÔNG phải một thứ, và `api/mocs.py` cố ý hỏi cột
- * đúng để còn đúng khi đồng tác giả mở ra. Frontend không hỏi được cột đúng vì `MocOut`
- * **không có trường `author`** — nợ có tên `MOC-THIEU-AUTHOR`, ghi lại ở báo cáo mảng này.
- * Hệ quả nếu đồng tác giả ra đời mà không ai sửa chỗ này: menu hiện trên mốc của người
- * khác rồi ăn 403 — khó chịu, không phải lỗ hổng (server vẫn là bên quyết).
+ * ✅ **Hỏi ĐÚNG cột mà API hỏi: `moc.author`** *(nợ `MOC-THIEU-AUTHOR`, trả 2026-08-23)*.
+ * Trước lượt này `MocOut` không có trường ấy nên UI phải suy từ chủ MẠCH — hai cột hôm nay
+ * luôn trùng nhau (chỉ chủ mạch nối được mốc), nhưng chúng không phải một thứ, và
+ * `api/mocs.py` cố ý hỏi `Moc.author` để còn đúng khi đồng tác giả mở ra. Nay hai bên hỏi
+ * cùng một cột, nên ngày ấy tới thì menu không hiện nhầm trên mốc của người khác.
+ *
+ * `moc.author` là `null` ở bia mộ — không cần nhánh riêng: phép kiểm `trang_thai` ngay
+ * trên đã trả `null` trước đó.
  *
  * ### Sửa thì phải NÓI TRƯỚC là sẽ để lại dấu
  *
@@ -43,7 +45,7 @@ import { TruongMoc, thanMoc, type NoiDungMoc } from "./truong-moc";
  * đóng form, không gọi API.
  */
 export function HanhDongMoc({ moc }: { moc: MocOut }) {
-  const { khoa, chuMach } = useMach();
+  const { khoa } = useMach();
   const { toi, dangTai } = usePhien();
   const router = useRouter();
   const [mo, datMo] = useState(false);
@@ -60,13 +62,14 @@ export function HanhDongMoc({ moc }: { moc: MocOut }) {
 
   if (dangTai || khoa) return null;
   if (moc.trang_thai !== "binh_thuong") return null;
-  if (!(toi?.dang_nhap ?? false) || toi?.username !== chuMach) return null;
+  if (!(toi?.dang_nhap ?? false) || toi?.username !== moc.author?.username) return null;
 
-  const con = phutSuaImLangConLai(moc.created_at);
+  const con = phutSuaImLangConLai(moc.sua_im_lang_den);
+  const het_luc = gioPhutVN(moc.sua_im_lang_den);
   const nhac_sua =
     con > 0
-      ? `Còn ${con} phút sửa im lặng. Sau đó, mỗi lần sửa sẽ để lại dấu “đã sửa” trên mốc và giữ lại bản cũ cho người khác xem.`
-      : `Mốc này đã quá ${PHUT_SUA_IM_LANG} phút. Lưu lại sẽ để dấu “đã sửa” trên mốc và giữ bản hiện tại làm bản cũ xem được — kể cả khi bạn chỉ sửa ngày sự việc.`;
+      ? `Còn ${con} phút sửa im lặng (tới ${het_luc}). Sau đó, mỗi lần sửa sẽ để lại dấu “đã sửa” trên mốc và giữ lại bản cũ cho người khác xem.`
+      : `Hạn sửa im lặng của mốc này đã qua. Lưu lại sẽ để dấu “đã sửa” trên mốc và giữ bản hiện tại làm bản cũ xem được — kể cả khi bạn chỉ sửa ngày sự việc.`;
 
   const luu = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

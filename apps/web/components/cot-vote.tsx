@@ -10,6 +10,7 @@ import { LY_DO_CHUA_DANG_NHAP, LY_DO_KHOA, type DichVote } from "@/lib/vote";
 import css from "./cot-vote.module.css";
 import { useMach } from "./mach-ngu-canh";
 import { usePhien } from "./phien";
+import { useTrangThaiToi } from "./trang-thai-toi";
 
 /** Cột vote bên trái thẻ — bố cục Reddit, **sống từ Phase 2** (PLAN 5.7).
  *
@@ -23,15 +24,22 @@ import { usePhien } from "./phien";
  * Khi server trả lời, con số được **thay bằng con số của server** (`kq.score`), không phải
  * giữ bản client tính. Hai cú bấm nhanh liên tiếp vì thế hội tụ về sự thật.
  *
- * ### Chưa có: phiếu của tôi sau khi tải lại trang
+ * ### Phiếu của tôi sống qua reload — nợ `VOTE-CUA-TOI`, **trả 2026-08-23**
  *
- * ⚠ **NỢ CÓ TÊN — `VOTE-CUA-TOI`.** Mũi tên nào là của tôi chỉ sống trong phiên render
- * hiện tại: tải lại trang là cả hai mũi tên về trạng thái trung tính, dù phiếu vẫn nằm
- * trong DB và điểm vẫn đúng. Lý do có thật chứ không phải quên: trạng thái ấy là dữ liệu
- * **per-user**, mà `GET /machs/{id}` cố ý không chứa gì per-user để còn cache được
- * (PLAN 8.4). Đường đúng là `GET /machs/{id}/me` — Phase 3. Đừng "chữa" bằng cách nhét
- * `my_vote` vào response trang mạch: đó đúng là dữ liệu của người này được cache rồi
- * phục vụ cho người kia.
+ * Mũi tên đang chọn đến từ `my_votes` của `GET /machs/{id}/me`, hỏi **ở trình duyệt** sau
+ * khi trang đã render (`components/trang-thai-toi.tsx`). Nó tới sau một nhịp, và nhịp ấy
+ * là cái giá bắt buộc: `GET /machs/{id}` cố ý không chứa gì per-user để trang còn cache
+ * được (PLAN 8.4). Đừng "chữa" một nhịp trễ bằng cách nhét `my_vote` vào response trang
+ * mạch — đó đúng là dữ liệu của người này được cache rồi phục vụ cho người kia, HTTP 200,
+ * không có gì đỏ.
+ *
+ * Hai nguồn, một sự thật, và **cú bấm của người dùng luôn thắng**: `phieuTay` (`null` =
+ * chưa bấm gì trong lượt xem này) đè lên phiếu server trả về. Không có lớp ấy thì một
+ * response `/me` về muộn sẽ nuốt mất cú bấm vừa xong — đúng loại lỗi chỉ xảy ra trên mạng
+ * chậm, tức không bao giờ ở máy dev.
+ *
+ * Ngoài trang mạch (feed, hồ sơ) không ai bọc provider ⇒ phiếu server luôn `0` và hai mũi
+ * tên trung tính. Đúng: thẻ ở feed không nằm trong mạch nào, và `/me` là per-MẠCH.
  *
  * ### Nút không bấm được thì phải NÓI vì sao
  *
@@ -68,11 +76,14 @@ export function CotVote({
   // Ngoài trang mạch (feed, hồ sơ) ngữ cảnh mặc định cho `khoa = false` — đúng, vì thẻ ở
   // đó không nằm trong mạch nào.
   const { khoa } = useMach();
+  const { phieuCua } = useTrangThaiToi();
   const [soDiem, datSoDiem] = useState(diem);
-  const [phieu, datPhieu] = useState<-1 | 0 | 1>(0);
+  /** `null` = người xem chưa bấm gì trong lượt xem này ⇒ lấy phiếu của server. */
+  const [phieuTay, datPhieuTay] = useState<-1 | 0 | 1 | null>(null);
   const [dangGui, datDangGui] = useState(false);
   const [loi, datLoi] = useState<string | null>(null);
 
+  const phieu = phieuTay ?? (dich === null ? 0 : phieuCua(dich));
   const dang_nhap = toi?.dang_nhap === true;
   const ly_do = khoa ? LY_DO_KHOA : !dang_nhap ? LY_DO_CHUA_DANG_NHAP : null;
   const tat = ly_do !== null || dich === null || dangGui;
@@ -82,7 +93,7 @@ export function CotVote({
     const truoc = { diem: soDiem, phieu };
     // Bấm lại đúng mũi tên đang chọn = RÚT (PLAN mục 7: `value = 0`).
     const moi = phieu === huong ? 0 : huong;
-    datPhieu(moi);
+    datPhieuTay(moi);
     datSoDiem(soDiem - phieu + moi);
     datLoi(null);
     datDangGui(true);
@@ -95,10 +106,13 @@ export function CotVote({
       if (kq.data === undefined) throw new Error("phản hồi rỗng");
       // Sự thật là con số của SERVER, không phải phép cộng của client.
       datSoDiem(kq.data.score);
-      datPhieu(kq.data.value as -1 | 0 | 1);
+      datPhieuTay(kq.data.value as -1 | 0 | 1);
     } catch {
       datSoDiem(truoc.diem);
-      datPhieu(truoc.phieu);
+      // Hoàn về đúng trạng thái TRƯỚC cú bấm. Ghi thẳng giá trị chứ không `null`: `null`
+      // nghĩa "chưa bấm gì" ⇒ nó sẽ rơi về phiếu của server, mà server có thể chưa trả
+      // lời xong — và lúc ấy mũi tên nhảy về trung tính dù người ta đã có phiếu từ trước.
+      datPhieuTay(truoc.phieu);
       datLoi("Không ghi được phiếu. Thử lại.");
     } finally {
       datDangGui(false);

@@ -41,6 +41,7 @@ from core.models.dien_dan import Mach, Sub
 from core.models.moc import Moc
 from core.models.tuong_tac import Trich
 from core.revalidate import lam_moi_mach
+from core.thoi_gian import nua_dem_vn_ke_tiep
 from core.thong_bao import bao_moc_moi, bao_reply
 
 from api.ghi_chung import kiem_occurred_at, nap_mach
@@ -51,8 +52,10 @@ from api.loi import (
     SUB_KHONG_TON_TAI,
     THAM_SO_KHONG_HOP_LE,
     LoiOut,
+    LoiThoiGianOut,
     khong_tim_thay,
     loi,
+    loi_thoi_gian,
 )
 from api.phan_trang import (
     GIOI_HAN_TOI_DA,
@@ -75,7 +78,7 @@ from api.quyen import (
 )
 from api.schemas import BinhLuanOut, KhanDaiOut, MachChiTietOut, MocOut
 from api.schemas_ghi import BinhLuanMoiIn, DongSoIn, MachMoiIn, MocMoiIn
-from api.trinh_bay import mach_tom_tat_ra, moc_ra, nut_ra, spine_ra
+from api.trinh_bay import han_mo_lai, mach_tom_tat_ra, moc_ra, nut_ra, spine_ra
 
 router = Router()
 
@@ -123,7 +126,9 @@ def mach_chi_tiet_ra(mach: Mach) -> MachChiTietOut:
     cái trôi sẽ là cái ở đường ghi (nó chạy ít hơn hẳn). Hàm không kiểm quyền và không
     kiểm `hidden_at` — người gọi làm việc đó trước.
     """
-    mocs = list(Moc.objects.filter(mach=mach).order_by("seq"))
+    # `select_related("author")`: `MocOut.author` có từ 2026-08-23 (nợ `MOC-THIEU-AUTHOR`).
+    # Không có nó thì mỗi thẻ mốc là một truy vấn `User` — N+1 trên đúng endpoint nặng nhất.
+    mocs = list(Moc.objects.filter(mach=mach).select_related("author").order_by("seq"))
     dem = dem_binh_luan_theo_moc(mach)
     trich_theo_moc = {
         t.moc_id: t
@@ -144,6 +149,8 @@ def mach_chi_tiet_ra(mach: Mach) -> MachChiTietOut:
     return MachChiTietOut(
         **tom_tat.model_dump(exclude={"diem", "moc_1_id"}),
         closed_at=mach.closed_at,
+        mo_lai_den=han_mo_lai(mach),
+        tran_moc_moi_ngay=SO_MOC_TOI_DA_MOI_NGAY,
         locked=mach.locked_at is not None,
         face=tinh_mat_theo_thoi_gian(
             status=mach.status,
@@ -421,7 +428,8 @@ def tao_mach_api(request, du_lieu: MachMoiIn):
         403: LoiOut,
         404: LoiOut,
         409: LoiOut,
-        429: LoiOut,
+        # 429 là mã DUY NHẤT của cả API mang thêm `thu_lai_tu` — xem `LoiThoiGianOut`.
+        429: LoiThoiGianOut,
     },
     operation_id="noi_moc",
     tags=["moc"],
@@ -456,10 +464,16 @@ def noi_moc(request, mach_id: int, du_lieu: MocMoiIn):
             "Mạch đã đóng sổ — mở lại mới nối mốc được. Bình luận thì vẫn viết được.",
         )
     if dem_moc_trong_ngay_vn(mach) >= SO_MOC_TOI_DA_MOI_NGAY:
-        raise LoiGhi(
+        # `return` chứ không `raise LoiGhi`: mã này là mã DUY NHẤT của đường ghi mang thêm
+        # `thu_lai_tu`, mà exception handler chỉ dựng được `LoiOut` (xem
+        # `api/loi.py::LoiThoiGianOut`). Câu trên nói "mai", trường kia nói mấy giờ — thiếu
+        # nó thì frontend phải dựng lại luật "nửa đêm giờ VN" ở phía client, đúng nợ
+        # `API-THIEU-MOC-THOI-GIAN` mà lượt 2026-08-23 trả.
+        return loi_thoi_gian(
             429,
             QUA_HAN_MUC_MOC,
             f"Hôm nay mạch này đã đủ {SO_MOC_TOI_DA_MOI_NGAY} mốc — mai nối tiếp nhé.",
+            thu_lai_tu=nua_dem_vn_ke_tiep(),
         )
 
     with transaction.atomic():

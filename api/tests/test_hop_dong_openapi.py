@@ -95,6 +95,35 @@ KHONG_CO_LOI_CLIENT = {
 }
 
 
+def _thieu_truong_hop_dong_loi(schema, than: dict) -> str | None:
+    """`None` nếu `than` là một hình dạng lỗi hợp đồng; ngược lại là lý do nó không phải.
+
+    Hợp đồng đo theo **trường**, không theo TÊN schema *(sửa 2026-08-23)*. Bản trước đòi
+    `$ref` bằng đúng `LoiOut`, nên nó đỏ với `LoiThoiGianOut` — một lớp **con** của
+    `LoiOut` thêm `thu_lai_tu` cho 429 `qua_han_muc_moc` (`api/loi.py`). Đó là báo động
+    giả: response ấy vẫn có đủ `detail` + `code`, tức frontend cũ không phải đổi dòng nào.
+    Và cách chữa sai — thêm tên lớp con vào một allowlist — sẽ để một schema *thiếu* hẳn
+    `code` lọt qua ngay khi ai đó gõ đúng tên. Đo trường thì không có tên nào để gõ đúng.
+
+    Vẫn giữ nguyên răng: `detail` phải là **chuỗi** (hình dạng 422 mặc định của Ninja trả
+    `detail` dạng MẢNG — đúng ca `dang_ky_xu_ly_loi` sinh ra để kéo về), và `code` phải có
+    mặt.
+    """
+    ten = than.get("$ref", "").rsplit("/", 1)[-1]
+    if not ten:
+        return f"không phải $ref tới một schema: {than}"
+    dinh_nghia = schema["components"]["schemas"].get(ten)
+    if dinh_nghia is None:
+        return f"$ref tới schema không tồn tại: {ten}"
+    truong = dinh_nghia.get("properties", {})
+    thieu = [t for t in ("detail", "code") if t not in truong]
+    if thieu:
+        return f"{ten} thiếu {thieu}"
+    if truong["detail"].get("type") != "string":
+        return f"{ten}.detail không phải chuỗi: {truong['detail']}"
+    return None
+
+
 def test_moi_endpoint_deu_khai_hinh_dang_loi_chuan(schema):
     """PLAN mục 7: lỗi là `{detail, code}`. Endpoint nào cũng phải KHAI ra hình dạng đó.
 
@@ -118,9 +147,25 @@ def test_moi_endpoint_deu_khai_hinh_dang_loi_chuan(schema):
                 continue
             for ma in ma_loi:
                 than = op["responses"][ma]["content"]["application/json"]["schema"]
-                if than.get("$ref", "").rsplit("/", 1)[-1] != "LoiOut":
-                    thieu.append(f"{m.upper()} {duong} [{ma}]: {than}")
+                if (vi_sao := _thieu_truong_hop_dong_loi(schema, than)) is not None:
+                    thieu.append(f"{m.upper()} {duong} [{ma}]: {vi_sao}")
     assert thieu == []
+
+
+def test_luat_hinh_dang_loi_bat_duoc_hang_gia(schema):
+    """Chống hàng rào rỗng: `_thieu_truong_hop_dong_loi` phải TỪ CHỐI được thứ sai.
+
+    Không có bài này thì nới luật từ "so tên" sang "soi trường" là một lượt nới không ai
+    đo — mà cả giá trị của bài trên nằm ở chỗ nó còn từ chối được.
+    """
+    f = _thieu_truong_hop_dong_loi
+    assert f(schema, {"$ref": "#/components/schemas/LoiOut"}) is None
+    assert f(schema, {"$ref": "#/components/schemas/LoiThoiGianOut"}) is None
+    # Một schema có thật nhưng KHÔNG phải hình dạng lỗi.
+    assert f(schema, {"$ref": "#/components/schemas/MocOut"}) is not None
+    # Kiểu trơn, không $ref — đúng ca TS client sinh ra kiểu lỗi `unknown`.
+    assert f(schema, {"type": "object"}) is not None
+    assert f(schema, {"$ref": "#/components/schemas/KhongCoLopNay"}) is not None
 
 
 def test_giay_mien_tru_loi_khong_chet_va_khong_noi_dieu(schema):

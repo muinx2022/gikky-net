@@ -275,6 +275,38 @@ function doiSo(s: string, mo: number): string {
   return s.slice(mo + 1);
 }
 
+/** Thân của object literal khởi tạo hằng `ten`, hoặc `null` nếu không thấy.
+ *
+ * ⚠ **Đếm ngoặc CÂN BẰNG, không phải `\{([^{}]*)\}`** *(sửa 2026-08-23, mảng B2)*. Bản cũ
+ * dừng ở tầng ngoặc thứ nhất, nên nó **mù** với đúng hình dạng Phase 3 cần:
+ *
+ *     const CHUNG_ISR = { baseUrl: API_ORIGIN, next: { revalidate: 3600 } } as const;
+ *
+ * `[^{}]*` không vượt qua được dấu `{` của `next:`, regex không khớp gì, `khai === null`,
+ * và mọi lời gọi `{ ...CHUNG_ISR, … }` bị báo **thiếu baseUrl**. Hỏng về phía an toàn —
+ * nhưng nó chặn cứng cơ chế ISR của PLAN 8.4, và hai lối thoát còn lại đều xấu: một dòng
+ * giấy miễn trừ cho đúng cái luật W2 vừa dọn sạch giấy, hoặc chép `baseUrl:` vào từng lời
+ * gọi để chiều một hàng rào đọc kém. Nên hàng rào học đọc ngoặc lồng.
+ *
+ * **Luật KHÔNG bị nới**: hàm vẫn chỉ đi theo đúng MỘT lớp spread của một hằng khai bằng
+ * object literal ở tầng module, và vẫn chỉ nhận `baseUrl` xuất hiện trong thân hằng đó.
+ * Thứ đổi là nó đọc được cả thân có ngoặc lồng, chứ không phải nó chấp nhận thêm ca nào.
+ */
+function thanHang(ten: string, than: string): string | null {
+  const dau = new RegExp(`\\b(?:const|let|var)\\s+${ten}\\s*=\\s*\\{`).exec(than);
+  if (dau === null) return null;
+  const mo = dau.index + dau[0].length - 1;
+  let sau = 0;
+  for (let i = mo; i < than.length; i += 1) {
+    if (than[i] === "{") sau += 1;
+    else if (than[i] === "}") {
+      sau -= 1;
+      if (sau === 0) return than.slice(mo + 1, i);
+    }
+  }
+  return null;
+}
+
 /** Đối số này có mang `baseUrl` không — trực tiếp, hay qua MỘT lớp spread hằng số?
  *
  * `lib/api.ts` gom `{ baseUrl, cache }` vào hằng `CHUNG` rồi `{ ...CHUNG, … }` ở từng
@@ -284,10 +316,8 @@ function doiSo(s: string, mo: number): string {
 function coBaseUrl(doi_so: string, than: string): boolean {
   if (/\bbaseUrl\b/.test(doi_so)) return true;
   for (const m of doi_so.matchAll(/\.\.\.([A-Za-z_$][\w$]*)/g)) {
-    const khai = new RegExp(
-      `\\b(?:const|let|var)\\s+${m[1]}\\s*=\\s*\\{([^{}]*)\\}`,
-    ).exec(than);
-    if (khai !== null && /\bbaseUrl\b/.test(khai[1])) return true;
+    const khai = thanHang(m[1], than);
+    if (khai !== null && /\bbaseUrl\b/.test(khai)) return true;
   }
   return false;
 }
@@ -342,18 +372,27 @@ test("luật trên có quét trúng lời gọi THẬT ở MỌI cửa (không q
     const n = loiGoiApi(f.sach).length;
     if (n > 0) theo_file.set(f.ten, n);
   }
+  //
+  // Danh sách xếp theo A→Z (nó là kết quả của `.sort()`), nên **không nhóm theo phase
+  // được**; phase ghi ở cuối từng dòng. Bốn dòng của mảng B2 (Phase 3) đều là client
+  // component chạy trong TRÌNH DUYỆT: `baseUrl` của chúng là chuỗi RỖNG (same-origin qua
+  // `rewrites`), không phải `API_ORIGIN` — cookie phiên là cookie của origin đang mở.
   expect([...theo_file.keys()].sort()).toEqual([
     "app/chan-doan/health-same-origin.tsx",
     "app/chan-doan/page.tsx",
-    // --- Phase 2: đường GHI, chạy ở trình duyệt ---
-    "components/composer.tsx",
-    "components/cot-vote.tsx",
-    // --- Mảng B: FORM GHI (đăng bài · nối mốc · sửa/xoá mốc · đóng sổ/mở lại) ---
-    "components/form-dang-mach.tsx",
-    "components/hanh-dong-binh-luan.tsx",
-    "components/hanh-dong-moc.tsx",
-    "components/khoi-chu-mach.tsx",
-    "components/phien.tsx",
+    "components/chuong.tsx", // B2 — chuông thông báo, poll 60s
+    "components/composer.tsx", // Phase 2
+    "components/cot-vote.tsx", // Phase 2
+    "components/form-dang-mach.tsx", // form ghi
+    "components/hanh-dong-binh-luan.tsx", // form ghi
+    "components/hanh-dong-moc.tsx", // form ghi
+    "components/khoi-chu-mach.tsx", // form ghi
+    "components/nut-theo-mach.tsx", // B2 — theo / bỏ theo mạch
+    "components/phien.tsx", // Phase 2
+    // B2 — cửa PER-USER duy nhất của trang mạch (`/machs/{id}/me` + `/seen`). Nó nằm
+    // trong danh sách này để mọi lượt thêm một chỗ đọc dữ liệu per-user đều phải qua diff.
+    "components/trang-thai-toi.tsx",
+    "components/trich.tsx", // B2 — trích / gỡ trích vào sổ
     "lib/api.ts",
   ]);
   expect(theo_file.get("lib/api.ts")).toBeGreaterThanOrEqual(6);
@@ -377,6 +416,34 @@ test("luật trên bắt được hàng giả (lời gọi thiếu baseUrl)", ()
   // …và KHÔNG bắt nhầm lời gọi đi qua một lớp spread hằng số.
   const that = `const C = { baseUrl: X };\nconst r = await ${XEM_MACH}({ ...C, path: {} });`;
   expect(coBaseUrl(loiGoiApi(that)[0].doi_so, that)).toBe(true);
+});
+
+test("coBaseUrl đọc được hằng có ngoặc LỒNG (`next: { revalidate }`)", () => {
+  // Ca thật của Phase 3, và là cái bẫy `plans/2026-08-23-mang-b1-backend-phase-3.md` §5
+  // đo trước: bản `\{([^{}]*)\}` không khớp gì ở đây ⇒ báo vi phạm cho một lời gọi ĐÚNG.
+  const long =
+    `const C = { baseUrl: X, next: { revalidate: 3600 } } as const;\n` +
+    `const r = await ${XEM_MACH}({ ...C, path: { mach_id: 1 } });`;
+  expect(coBaseUrl(loiGoiApi(long)[0].doi_so, long)).toBe(true);
+
+  // Ngoặc lồng KHÔNG được biến thành cửa cho một hằng thật sự thiếu `baseUrl`: hằng dưới
+  // đây có `baseUrl` nằm trong một hằng KHÁC, và hàm không được vin vào đó.
+  const thieu =
+    `const D = { baseUrl: X };\n` +
+    `const C = { next: { revalidate: 3600 } } as const;\n` +
+    `const r = await ${XEM_MACH}({ ...C, path: { mach_id: 1 } });`;
+  expect(coBaseUrl(loiGoiApi(thieu)[0].doi_so, thieu)).toBe(false);
+});
+
+test("thanHang cắt đúng thân hằng, không tràn sang câu lệnh sau", () => {
+  const nguon =
+    `const A = { baseUrl: X, next: { revalidate: 1 } };\n` +
+    `const B = { cache: "no-store" };\n`;
+  expect(thanHang("A", nguon)).toBe(` baseUrl: X, next: { revalidate: 1 } `);
+  expect(thanHang("B", nguon)).toBe(` cache: "no-store" `);
+  expect(thanHang("KhongCo", nguon)).toBeNull();
+  // Ngoặc không đóng ⇒ `null`, tức "không tìm thấy baseUrl" ⇒ hỏng về phía BÁO VI PHẠM.
+  expect(thanHang("C", "const C = { baseUrl: X")).toBeNull();
 });
 
 test("hai mảnh ghép ra ĐÚNG một tên hàm API có thật (chống hàng giả mục ruỗng)", () => {

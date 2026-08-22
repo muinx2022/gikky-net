@@ -167,18 +167,36 @@ class MocOut(Schema):
     """Một mốc trong mạch. Bài gốc là `seq = 1`, không có ngoại lệ (PLAN mục 2).
 
     Khi `trang_thai != "binh_thuong"` thì đây là **bia mộ**: `body`, `loai`, `figures`,
-    `question_for_crowd`, `edited_at` đều `null`, còn `edit_count` và `score` về `0` —
-    số phiếu của nội dung đã gỡ không được trả ra, cùng chuẩn với `BinhLuanOut`. `seq`,
-    `occurred_at`, `so_binh_luan` và chỗ đứng trên spine vẫn còn: `seq` bất biến, giấu
-    hẳn một ô là thủng dãy số, và ngăn kéo của bia mộ vẫn mở được (PLAN 5.2).
+    `question_for_crowd`, `edited_at`, **`author`** đều `null`, còn `edit_count` và
+    `score` về `0` — số phiếu của nội dung đã gỡ không được trả ra, cùng chuẩn với
+    `BinhLuanOut`. `seq`, `occurred_at`, `so_binh_luan` và chỗ đứng trên spine vẫn còn:
+    `seq` bất biến, giấu hẳn một ô là thủng dãy số, và ngăn kéo của bia mộ vẫn mở được
+    (PLAN 5.2).
     """
 
     id: int
     seq: int
+    #: **Tác giả của MỐC NÀY** — không suy được từ `MachChiTietOut.author` (nợ
+    #: `MOC-THIEU-AUTHOR`, trả 2026-08-23).
+    #:
+    #: Hai cột hôm nay luôn trùng nhau (chỉ chủ mạch nối được mốc), nhưng `PATCH`/`DELETE
+    #: /mocs/{id}` cố ý hỏi `Moc.author` chứ không `Mach.author` — để còn đúng khi đồng
+    #: tác giả mở ra. Không có trường này thì frontend buộc phải suy quyền sửa/xoá từ chủ
+    #: MẠCH, tức một bản sao thứ hai của luật quyền, và bản sao ấy sai đúng vào ngày cột
+    #: kia tách ra. `null` ở bia mộ, cùng chuẩn với `BinhLuanOut.author`.
+    author: NguoiDungTomTatOut | None
     #: Ngày **sự việc xảy ra**, người dùng đặt, nhập lùi được (PLAN nguyên tắc 3).
     occurred_at: date
     #: Dấu thời gian **server**, bất biến — bằng chứng "ghi lúc nào".
     created_at: datetime
+    #: Sửa mốc TRƯỚC mốc này thì không để lại dấu; sau nó, mỗi lần sửa hiện "đã sửa" và
+    #: lưu một `MocRevision` (PLAN nguyên tắc 2, 5.2). `created_at + 15 phút`.
+    #:
+    #: Server trả sẵn thay vì để UI cộng lấy: câu cảnh báo "còn N phút sửa im lặng" phải
+    #: nói ra TRƯỚC khi người ta bấm Lưu, và một bản sao của con số 15 ở frontend là bản
+    #: sẽ trôi (nợ `API-THIEU-MOC-THOI-GIAN`). Có giá trị cả ở **bia mộ** — nó suy từ
+    #: `created_at`, không phải nội dung, nên không có gì để che.
+    sua_im_lang_den: datetime
     loai: str | None
     body: str | None
     #: Câu mồi hiện trong ngăn kéo khi mốc chưa có bình luận (PLAN 5.4 luật 4).
@@ -232,6 +250,23 @@ class MachChiTietOut(Schema):
     author: NguoiDungTomTatOut
     status: str
     closed_at: datetime | None
+    #: Hạn chót **mở lại sổ** — `closed_at + 7 ngày` (PLAN 5.1). `null` khi mạch đang mở.
+    #:
+    #: PLAN 5.1 chốt "sau đó **nút biến mất**", nên UI cần một câu trả lời cho *"nút Mở
+    #: lại có được vẽ ra không"*. Trước lượt 2026-08-23 nó phải tự cộng 7 ngày vào
+    #: `closed_at` — bản sao thứ hai của một hằng domain, đúng thứ PLAN nguyên tắc 10 cấm
+    #: (nợ `API-THIEU-MOC-THOI-GIAN`). Server vẫn là bên từ chối (409 `het_han_mo_lai`);
+    #: trường này chỉ để UI **không vẽ** một cái nút chắc chắn ăn lỗi.
+    mo_lai_den: datetime | None
+    #: Trần "N mốc mỗi ngày lịch VN" của PLAN 5.1 — **hằng cấu hình server**, không phải
+    #: trạng thái của mạch này.
+    #:
+    #: Nằm ở đây vì đúng một lý do, cùng lý lẽ với `ToiOut.google_bat`: form nối mốc phải
+    #: **nói ra con số trước khi người ta gõ**, và cách duy nhất còn lại là gõ cứng nó vào
+    #: JSX. Bản sao ấy đã tồn tại ở `apps/web/lib/vong-doi.ts` cho tới 2026-08-23 (nợ
+    #: `API-THIEU-MOC-THOI-GIAN`); nó phải có một cái chuông đọc thẳng file Python để khỏi
+    #: trôi, và một trường ở đây rẻ hơn hẳn cái chuông đó.
+    tran_moc_moi_ngay: int
     ket_qua: str | None
     #: Mod đã khoá mạch chưa (đọc được, cấm tương tác). Trục RIÊNG với `status`.
     locked: bool

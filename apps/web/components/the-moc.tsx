@@ -120,6 +120,7 @@ export function TheMoc({
             {moc.trich !== null && (
               <KhoiTrich
                 trich={moc.trich}
+                mocId={moc.id}
                 mocSeq={moc.seq}
                 idTrongTrangKhanDai={idTrongTrangKhanDai}
                 duongDanKhanDai={duongDanTrich}

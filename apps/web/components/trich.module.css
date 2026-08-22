@@ -1,0 +1,59 @@
+.nhe {
+  font-family: var(--f-ui);
+  font-size: 12px;
+  padding: 3px 7px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+
+.nhe:hover:not(:disabled) {
+  border-color: var(--line);
+  color: var(--ink-2);
+}
+
+.form {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+}
+
+.nhan {
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.chon {
+  font-family: var(--f-mono);
+  font-size: 12px;
+  padding: 3px 5px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.chinh {
+  font-family: var(--f-ui);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--accent);
+  color: var(--on-accent);
+  cursor: pointer;
+}
+
+.chinh:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.loi {
+  font-size: 12px;
+  color: var(--ink-2);
+}

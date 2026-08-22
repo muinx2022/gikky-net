@@ -60,6 +60,10 @@ class LoiGhi(HttpError):
     Vì sao cần một ngoại lệ chứ không phải `return loi(...)` như tầng đọc: đường ghi đi
     qua nhiều lớp (`api/…` → `core/ghi.py`), và một phép kiểm nằm sâu trong transaction
     không "return" ra tới handler được. Ném thì transaction cũng rollback đúng lúc.
+
+    ⚠ **Không mang được `thu_lai_tu`** (`api/loi.py::LoiThoiGianOut`): exception handler ở
+    cuối file này dựng đúng một schema — `LoiOut`. Cửa nào cần trường ấy thì `return`
+    thẳng `loi_thoi_gian(...)`, và phép kiểm của nó vì thế phải nằm ở tầng handler.
     """
 
     def __init__(self, status_code: int, code: str, detail: str) -> None:

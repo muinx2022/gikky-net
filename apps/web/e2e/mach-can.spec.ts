@@ -10,6 +10,7 @@ import {
   duongDan,
   hoSo,
   khanDai,
+  lamMoiCacheTrang,
   machTheoId,
   nganKeo,
   ngayNganVN,
@@ -32,6 +33,24 @@ test.beforeAll(async () => {
   hpg = await timMachTheoTitle(TITLE_HPG);
   post = await timMachTheoTitle(TITLE_POST_THUONG);
   biaMo = await timMachTheoTitle(TITLE_BIA_MO);
+});
+
+
+/** ⚠ **Làm mới cache trang KHÁCH trước khi đọc** — bắt buộc từ Phase 3.
+ *
+ * Cả file này đọc trang của một mạch seed **không đăng nhập**, rồi so từng con số với
+ * Django. Từ 2026-08-23 trang ấy có bản cache 1 giờ (PLAN 8.4), và bản cache **sống qua
+ * cả các lần chạy `pnpm e2e`** (`.next/cache` nằm trên đĩa) trong khi DB thì lớn dần —
+ * lượt chạy trước ghi thêm bình luận và phiếu vào đúng mạch seed ấy. Bình luận và vote là
+ * hai loại thay đổi **cố ý KHÔNG có signal revalidate** (PLAN 8.4 điểm 2), nên không có
+ * gì tự dọn.
+ *
+ * Nên: gọi đúng cửa mà Django vẫn gọi, một lần cho cả file. Xem `lamMoiCacheTrang`.
+ */
+test.beforeAll(async () => {
+  await lamMoiCacheTrang(duongDan(hpg));
+  await lamMoiCacheTrang(duongDan(post));
+  await lamMoiCacheTrang(duongDan(biaMo));
 });
 
 /** Dải gập, TÍNH LẠI ĐỘC LẬP ngay tại đây — cố ý **không** gọi `lib/dai-gap.ts`.

@@ -86,3 +86,18 @@ def moc_khoang_vn(khoang: str, khi: datetime | None = None) -> datetime | None:
 def khoa_ngay_vn(khi: datetime | None = None) -> str:
     """`yyyymmdd` theo giờ VN — thành phần ngày của `Notification.dedupe_key`."""
     return ngay_vn(khi).strftime("%Y%m%d")
+
+
+def nua_dem_vn_ke_tiep(khi: datetime | None = None) -> datetime:
+    """00:00 giờ VN của NGÀY MAI — lúc hạn mức 3 mốc/ngày được nạp lại (PLAN 5.1).
+
+    Hạn mức đếm theo **ngày lịch VN** chứ không theo cửa sổ 24 giờ trượt (xem
+    `moc_khoang_vn`), nên mốc "viết tiếp được từ lúc nào" luôn là nửa đêm VN kế tiếp — và
+    lúc 23:50 thì đó là **mười phút nữa**, không phải một ngày nữa.
+
+    Trả về ở đây thay vì để frontend tự cộng ngày: câu của server dừng ở *"mai nối tiếp
+    nhé"*, và ba bản sao của luật này ở `apps/web` (nợ `API-THIEU-MOC-THOI-GIAN`) đã phải
+    tự dựng lại cả phép đổi múi giờ để nói được con số. Server biết sẵn, nên server nói.
+    """
+    mai = ngay_vn(khi) + timedelta(days=1)
+    return datetime.combine(mai, time.min, tzinfo=TZ_VN)

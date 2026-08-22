@@ -15,6 +15,7 @@ import pytest
 from django.utils import timezone
 
 from api.v1 import api_v1
+from core.ghi import NGAY_MO_LAI, PHUT_SUA_IM_LANG, SO_MOC_TOI_DA_MOI_NGAY
 from core.mat import MAT_BAO, MAT_CAN, NGUONG_BAO
 from core.models import Mach, Moc, Trich
 from tests.conftest import khoa_json, lay
@@ -44,6 +45,80 @@ def test_tra_du_moc_va_thong_tin_mach(client, seed):
     ]
 
 
+# --- Nợ `MOC-THIEU-AUTHOR` + `API-THIEU-MOC-THOI-GIAN` (2026-08-23) ----------
+#
+# Ba trường dưới đây tồn tại để **frontend thôi tính lại luật domain** (PLAN nguyên tắc
+# 10). Trước lượt này `apps/web/lib/vong-doi.ts` giữ bản sao của `NGAY_MO_LAI` và
+# `PHUT_SUA_IM_LANG`, còn menu `⋯` của thẻ mốc suy quyền sửa/xoá từ chủ MẠCH vì `MocOut`
+# không có `author`. Cả ba đều **không phụ thuộc người xem**, nên chúng nằm đúng chỗ ở
+# response cache được này — bài đo R3 ở dưới vẫn là hàng rào cho chuyện đó.
+
+
+def test_moc_mang_author_cua_chinh_no(client, seed):
+    """`MocOut.author` là tác giả MỐC, không phải trường suy từ `mach.author`.
+
+    Hôm nay hai cột trùng nhau (chỉ chủ mạch nối được mốc) nên bài đo chỉ khẳng định được
+    giá trị; cái nó thật sự ghim là **sự tồn tại** của trường. Không có nó, UI buộc phải
+    hỏi chủ mạch, và phép kiểm quyền của frontend sẽ sai đúng vào ngày đồng tác giả mở ra
+    (`PATCH /mocs/{id}` cố ý hỏi `Moc.author`).
+    """
+    d = lay(client, f"/api/v1/machs/{seed.pk}")
+    assert all(m["author"]["username"] == "ba_muoi_phien" for m in d["mocs"])
+
+
+def test_moc_bia_mo_khong_tra_author(client, seed):
+    """Bia mộ giấu `author`, cùng chuẩn với `BinhLuanOut` (`nut_ra`)."""
+    Moc.objects.filter(mach=seed, seq=3).update(deleted_at=timezone.now())
+    d = lay(client, f"/api/v1/machs/{seed.pk}")
+    theo_seq = {m["seq"]: m for m in d["mocs"]}
+    assert theo_seq[3]["trang_thai"] == "da_xoa"
+    assert theo_seq[3]["author"] is None
+    # …và `sua_im_lang_den` thì KHÔNG bị che: nó suy từ `created_at`, không phải nội dung.
+    assert theo_seq[3]["sua_im_lang_den"] is not None
+
+
+def test_sua_im_lang_den_bang_created_at_cong_15_phut(client, seed):
+    """`sua_im_lang_den` = `created_at + PHUT_SUA_IM_LANG` — server nói, UI không cộng."""
+    from datetime import datetime
+
+    d = lay(client, f"/api/v1/machs/{seed.pk}")
+    for m in d["mocs"]:
+        tao = datetime.fromisoformat(m["created_at"])
+        han = datetime.fromisoformat(m["sua_im_lang_den"])
+        assert han - tao == timedelta(minutes=PHUT_SUA_IM_LANG)
+
+
+def test_mo_lai_den_bang_closed_at_cong_7_ngay(client, seed):
+    """Mạch ĐÃ ĐÓNG: `mo_lai_den` = `closed_at + NGAY_MO_LAI` (PLAN 5.1)."""
+    from datetime import datetime
+
+    assert seed.closed_at is not None
+    d = lay(client, f"/api/v1/machs/{seed.pk}")
+    dong = datetime.fromisoformat(d["closed_at"])
+    han = datetime.fromisoformat(d["mo_lai_den"])
+    assert han - dong == timedelta(days=NGAY_MO_LAI)
+
+
+def test_mach_dang_mo_thi_mo_lai_den_la_null(client, mach):
+    """Chưa đóng sổ thì không có gì để mở lại — `null`, không phải một mốc trong quá khứ.
+
+    Đây là cái quyết định *"nút Mở lại có được vẽ ra không"*, nên `null` phải nghĩa là
+    **không vẽ**; một giá trị bịa ra ở đây (vd `created_at + 7 ngày`) sẽ cho ra một cái nút
+    hiện lên rồi ăn 409.
+    """
+    d = lay(client, f"/api/v1/machs/{mach.pk}")
+    assert d["status"] == "open"
+    assert d["closed_at"] is None
+    assert d["mo_lai_den"] is None
+
+
+def test_tra_tran_han_muc_moc_de_UI_khong_go_cung_con_so(client, seed):
+    """`so_moc_toi_da_moi_ngay` — hằng server, để form nối mốc thôi gõ cứng "3"."""
+    assert lay(client, f"/api/v1/machs/{seed.pk}")["tran_moc_moi_ngay"] == (
+        SO_MOC_TOI_DA_MOI_NGAY
+    )
+
+
 def test_post_thuong_la_nhanh_doi_chung(client, seed_post_thuong):
     """`entry_count == 1` + `ket_qua` NULL — 1c phải render như post thường (PLAN 5.1)."""
     d = lay(client, f"/api/v1/machs/{seed_post_thuong.pk}")
@@ -63,11 +138,18 @@ KHOA_CHO_PHEP = {
     "id", "slug", "title", "sub", "author", "status", "closed_at", "ket_qua",
     "locked", "created_at", "last_entry_at", "last_activity_at", "entry_count",
     "comment_count", "face", "mocs", "spine",
+    # hạn mở lại sổ (`closed_at + 7 ngày`) — suy từ MẠCH, không từ người xem: hai người
+    # mở cùng URL nhận cùng con số, nên nó cache được (nợ `API-THIEU-MOC-THOI-GIAN`).
+    "mo_lai_den",
+    # trần 3 mốc/ngày — HẰNG cấu hình server, giống nhau với mọi người xem.
+    "tran_moc_moi_ngay",
     # sub + tác giả
     "ten", "username", "display_name",
     # mốc
     "seq", "occurred_at", "loai", "body", "question_for_crowd", "figures",
     "edited_at", "edit_count", "score", "trang_thai", "so_binh_luan", "trich",
+    # hạn sửa im lặng (`created_at + 15 phút`) — cùng lý lẽ `mo_lai_den`.
+    "sua_im_lang_den",
     # figures
     "label", "value",
     # trích

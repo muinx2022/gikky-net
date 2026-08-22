@@ -7,6 +7,7 @@ import { duongDanHoSo } from "@/lib/url";
 
 import css from "./khoi-trich.module.css";
 import { ThanVan } from "./than-van";
+import { NutGoTrich } from "./trich";
 
 /** Khối "trích vào sổ" gắn trên thẻ mốc — PLAN 5.6, rào 2 và rào 4.
  *
@@ -25,11 +26,14 @@ import { ThanVan } from "./than-van";
  */
 export function KhoiTrich({
   trich,
+  mocId,
   mocSeq,
   idTrongTrangKhanDai,
   duongDanKhanDai,
 }: {
   trich: TrichOut;
+  /** `id` của MỐC mang khối trích — đích của `DELETE /mocs/{id}/trich`. */
+  mocId: number;
   mocSeq: number;
   /** `id` bình luận có mặt trong TRANG khán đài mà trang này sẽ render. */
   idTrongTrangKhanDai: ReadonlySet<number>;
@@ -74,6 +78,9 @@ export function KhoiTrich({
             bình luận này nằm ở trang sau của khán đài — chưa nhảy tới được
           </span>
         )}
+        {/* Chỉ chủ mạch thấy; component tự quyết (PLAN 5.6 — trích và gỡ trích đối xứng
+            về quyền). Hạn 24 giờ do server giữ, xem docstring `NutGoTrich`. */}
+        <NutGoTrich mocId={mocId} />
       </div>
     </figure>
   );

@@ -92,3 +92,23 @@
     margin: 0 16px 14px;
   }
 }
+
+/* Hàng tiêu đề: chữ ký bên trái, nút "Theo mạch" đẩy sang phải. */
+.hang_tren {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* Mặt BÃO: composer đứng giữa nhật ký và khán đài (wireframe 9.2). */
+.composer_bao {
+  padding: 0 26px 18px;
+}
+
+@media (max-width: 640px) {
+  .composer_bao {
+    padding: 0 16px 16px;
+  }
+}

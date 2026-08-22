@@ -1,27 +1,26 @@
 import Link from "next/link";
 
+import { Chuong } from "./chuong";
 import css from "./chrome.module.css";
+import { DieuHuongSub } from "./dieu-huong-sub";
 import { NutDangMach } from "./nut-dang-mach";
 import { ThanhTaiKhoan } from "./thanh-tai-khoan";
 
-/** Thanh trên cùng. Cố tình tối giản: 1c chưa có auth (Phase 2), nên không có ô đăng
- * nhập giả để bấm vào không đi đâu.
+/** Thanh trên cùng.
  *
- * ⚠ **NỢ: hai slug dưới đây được GHI CỨNG, và PLAN mục 7 cấm chuyện đó** *(W13, lượt vá
- * 2 — nợ ghi tại chỗ, không phải ở spec khác)*. Hậu quả thật, không phải lý thuyết: mở
- * sub thứ ba qua admin thì **nó vắng mặt trên thanh nav của MỌI trang**, im lặng, 200 ở
- * mọi cửa; đổi slug trong admin thì mục ở đây trỏ vào 404.
+ * **Mọi thứ động ở đây là client component, và đó là một ràng buộc kiến trúc.** Thanh này
+ * nằm trong layout gốc ⇒ nó render trên MỌI trang, kể cả `/luat` — trang phải là route
+ * TĨNH vì nó là đường thoát của `error.tsx`/`global-error.tsx` (nợ #14 của 1c). Một lời
+ * gọi API **ở phía server** tại đây làm `/luat` thành dynamic, tức đường thoát hỏng cùng
+ * lúc với thứ nó thoát khỏi; nó cũng bắt `pnpm build` phải có Django sống. `pnpm build`
+ * xác nhận `/luat` đang là `○`.
  *
- * `lib/api.ts::docCacSub` đã hỏi `GET /subs` cho sidebar và `sitemap.xml`, nhưng thành
- * phần này **chưa** chuyển sang được: nó nằm trong layout gốc nên nó render cả trên
- * `/luat`, mà `/luat` phải là route TĨNH không gọi API — nó là đường thoát của
- * `error.tsx`/`global-error.tsx` (nợ #14). Một lời gọi API ở đây làm đường thoát hỏng
- * cùng lúc với thứ nó thoát khỏi; `pnpm build` xác nhận `/luat` đang là `○` (tĩnh).
+ * Ba thành phần đi theo luật đó: `DieuHuongSub` hỏi `GET /subs`, `ThanhTaiKhoan` +
+ * `Chuong` hỏi `GET /me` và `GET /notifications` — tất cả trong `useEffect`.
  *
- * **Gỡ được ở Phase 3** khi có nguồn danh sách sub không đi qua request: ISR / cache
- * build-time cho `GET /subs` (PLAN 8.4), hoặc tách nav ra khỏi layout gốc. Giấy miễn trừ
- * tương ứng nằm ở `e2e/don-vi/khong-ghi-cung-sub.spec.ts::CHUA_CHUYEN_DUOC` — gỡ nợ thì
- * phải xoá cả hai chỗ, hàng rào ở đó đỏ nếu chỉ xoá một.
+ * *(2026-08-23)* Nợ `NAV-GHI-CUNG` đã trả: hai slug `chung-khoan`/`crypto` từng được gõ
+ * cứng ngay tại đây, nên mở sub thứ ba qua admin là nó vắng mặt trên nav của mọi trang.
+ * Giấy miễn trừ ở `e2e/don-vi/khong-ghi-cung-sub.spec.ts::CHUA_CHUYEN_DUOC` xoá cùng lượt.
  */
 export function Chrome() {
   return (
@@ -31,21 +30,18 @@ export function Chrome() {
           gikky
         </Link>
         <nav className={css.dieu_huong}>
-          <Link href="/s/chung-khoan">Chứng khoán</Link>
-          <Link href="/s/crypto">Crypto</Link>
+          <DieuHuongSub />
+          {/* `/luat` là link TĨNH và phải ở lại như thế: nó là đường thoát của trang lỗi,
+              nên nó không được phụ thuộc vào một lời gọi API vừa hỏng. */}
           <Link href="/luat">Luật</Link>
         </nav>
-        {/* Phase 2. Cả hai là **client component** và chúng hỏi `GET /me` ở trình duyệt —
-            đó là điều kiện để `/luat` vẫn là route TĨNH (xem ghi chú nợ ở trên, và
-            docstring `components/phien.tsx`). Một lời gọi API ở phía server tại đây làm
-            hỏng đúng cái đường thoát mà `error.tsx` dựa vào.
-
-            Bọc trong một hộp riêng thay vì để hai phần tử rời: `ThanhTaiKhoan` mang sẵn
+        {/* Bọc trong một hộp riêng thay vì để ba phần tử rời: `ThanhTaiKhoan` mang sẵn
             `margin-left: auto`, và hai `auto` cùng hàng thì flexbox **chia đôi** khoảng
             trống — nút "Đăng bài" trôi ra giữa thanh. Trong hộp này nó không còn khoảng
             trống nào để chia. */}
         <div className={css.phai}>
           <NutDangMach />
+          <Chuong />
           <ThanhTaiKhoan />
         </div>
       </div>

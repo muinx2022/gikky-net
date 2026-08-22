@@ -20,8 +20,10 @@ ngoài `doc_noi_dung` ở ngay đầu module đó.
 """
 
 import logging
+from datetime import timedelta
 
 from core.doc_noi_dung import DA_AN, Nut, doc_duoc, trang_thai_noi_dung
+from core.ghi import NGAY_MO_LAI, PHUT_SUA_IM_LANG
 from core.models.binh_luan import Comment
 from core.models.dien_dan import Mach
 from core.models.moc import Moc, MocRevision
@@ -161,8 +163,12 @@ def moc_ra(moc: Moc, *, so_binh_luan: int, trich: Trich | None) -> MocOut:
     return MocOut(
         id=moc.pk,
         seq=moc.seq,
+        # Cần `moc.author` đã `select_related` — người gọi nạp sẵn, hàm này chạy một lần
+        # cho MỖI mốc nên một truy vấn ở đây là N+1 trên mọi lượt tải trang mạch.
+        author=nguoi_dung_ra(moc.author) if hien else None,
         occurred_at=moc.occurred_at,
         created_at=moc.created_at,
+        sua_im_lang_den=moc.created_at + timedelta(minutes=PHUT_SUA_IM_LANG),
         loai=moc.loai if hien else None,
         body=moc.body if hien else None,
         question_for_crowd=moc.question_for_crowd if hien else None,
@@ -176,6 +182,18 @@ def moc_ra(moc: Moc, *, so_binh_luan: int, trich: Trich | None) -> MocOut:
         # không còn thân nào để gắn.
         trich=trich_ra(trich) if hien else None,
     )
+
+
+def han_mo_lai(mach: Mach):
+    """`closed_at + 7 ngày`, hoặc `None` khi mạch chưa đóng sổ — `MachChiTietOut.mo_lai_den`.
+
+    Hỏi `closed_at` chứ không hỏi `status`: mở lại **xoá `closed_at`** (`core/ghi.py`), nên
+    một trong hai cột là đủ, và cột này là cột phép tính cần. Hàm thuần để `api/machs.py`
+    và bài đo cùng gọi một chỗ thay vì mỗi bên cộng bảy ngày một lần.
+    """
+    if mach.closed_at is None:
+        return None
+    return mach.closed_at + timedelta(days=NGAY_MO_LAI)
 
 
 def spine_ra(moc: Moc, *, so_binh_luan: int) -> SpineOut:
