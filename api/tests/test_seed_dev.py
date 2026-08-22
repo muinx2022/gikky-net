@@ -6,12 +6,20 @@ dòng chữ command tự in ra thì đang tin lời khai của bị cáo (plan c
 
 import pytest
 from django.core.management import call_command
+from django.core.management.base import CommandError
 
 from core.management.commands.seed_dev import (
+    BINH_LUAN_MOD_AN,
+    BINH_LUAN_TU_XOA,
+    COMMENTS_BIA_MO,
     COMMENTS_HPG,
+    MOC_BIA_MO_SEQ,
+    MOCS_BIA_MO,
     SO_NGUOI_XEM,
+    TITLE_BIA_MO,
     TITLE_HPG,
     TITLE_POST_THUONG,
+    TRICH_BIA_MO_MOC_SEQ,
     TRICH_MOC_SEQ,
     Command,
 )
@@ -27,21 +35,31 @@ def da_seed():
     return Mach.objects.get(title=TITLE_HPG)
 
 
+@pytest.fixture
+def mach_bia_mo(da_seed) -> Mach:
+    """Mạch VNM — nơi ba kiểu bia mộ sống (vá B2). Xem `seed_dev.py`, khối "Mạch bia mộ"."""
+    return Mach.objects.get(title=TITLE_BIA_MO)
+
+
 def seq_dai_gap(mach: Mach) -> set[int]:
     """`seq` của những mốc nằm trong **dải gập** ở mặt CẶN.
 
-    PLAN 5.5 tả mặt CẶN là "toàn bộ mốc (mốc 1 + gập giữa + 2 mốc cuối)". Nghĩa là mốc 1
-    và hai mốc cuối luôn mở, phần giữa gập lại. Với mạch 9 mốc: mở {1, 8, 9}, gập
-    {2..7}.
+    PLAN 5.5, khối "Công thức dải gập, chốt 2026-08-22": với `entry_count = n`, gập `seq`
+    từ **2 tới n−3**; hiện `1`, `n−2`, `n−1`, `n`. Với mạch 9 mốc: mở {1, 7, 8, 9}, gập
+    {2..6} — đúng "5 mốc" của văn xuôi PLAN 5.5, của wireframe 9.2 và của bảng nghiệm thu
+    mục 10.
 
-    Định nghĩa nằm ở test chứ chưa nằm ở code sản phẩm vì 1a không render gì; 1c sẽ cài
-    lại nó. Điều đó KHÔNG làm bài đo rỗng: thứ đang đo là **dữ liệu seed**, và câu hỏi
-    là "hai vai khác nhau có rơi vào cùng một hàng không". Trả lời câu đó cần một định
-    nghĩa dải gập, và đây là định nghĩa nguyên văn theo PLAN.
+    ⚠ Bản trước của hàm này ghi `range(2, n - 1)` (= 2..7) theo cách đọc "2 mốc cuối", và
+    1c cài `2…n−2` theo đúng nó. Đợt vá 2026-08-22 lùi cả hai về `2…n−3`; hiện thực sản
+    phẩm nằm ở `apps/web/lib/dai-gap.ts`, hàm này là bản độc lập cho phía Python.
+
+    Điều đó KHÔNG làm bài đo rỗng: thứ đang đo là **dữ liệu seed**, và câu hỏi là "hai vai
+    khác nhau có rơi vào cùng một hàng không". Trả lời câu đó cần một định nghĩa dải gập,
+    và đây là định nghĩa nguyên văn theo PLAN.
     """
     n = mach.entry_count
-    assert n >= 4, "mạch quá ngắn thì không có dải gập để nói"
-    return set(range(2, n - 1))
+    assert n >= 5, "mạch quá ngắn thì không có dải gập để nói"
+    return set(range(2, n - 2))
 
 
 def test_dung_don_hang_PLAN_muc_10(da_seed):
@@ -56,6 +74,24 @@ def test_dung_don_hang_PLAN_muc_10(da_seed):
     assert Moc.objects.filter(mach=hpg).count() == 9
     assert hpg.comment_count == 24
     assert Comment.objects.filter(mach=hpg).count() == 24
+
+
+def test_mach_HPG_khong_dinh_bia_mo_nao(da_seed):
+    """Vá B2 đặt bia mộ ở MẠCH RIÊNG, và bài đo này giữ nguyên quyết định đó.
+
+    Mạch HPG là dữ liệu nghiệm thu của 1a/1b: `comment_count == 24`, thứ hạng `hay_nhat`,
+    `so_moc` trên hồ sơ chủ mạch đều bị ghim ở 8 file test khác. Một `deleted_at` lọt vào
+    đây làm 26 bài đo của 1b đỏ cùng lúc, và cách chữa duy nhất còn lại là sửa con số của
+    chúng cho khớp — tức mài cùn đúng những bài đo vừa bắt được lỗi.
+    """
+    assert not Moc.objects.filter(mach=da_seed).exclude(
+        deleted_at__isnull=True, hidden_at__isnull=True
+    ).exists()
+    assert not Comment.objects.filter(mach=da_seed).exclude(
+        deleted_at__isnull=True, hidden_at__isnull=True
+    ).exists()
+    # Và số hàng phải BẰNG số đếm — hệ quả trực tiếp của dòng trên.
+    assert da_seed.comment_count == Comment.objects.filter(mach=da_seed).count()
 
 
 def test_post_thuong_la_nhanh_doi_chung(da_seed):
@@ -120,8 +156,7 @@ def test_co_thread_neo_moc_2_ma_reply_viet_o_thoi_diem_moc_9(da_seed):
 
 
 def test_mot_trich_o_moc_7_va_binh_luan_duoc_trich_viet_tu_truoc(da_seed):
-    trich = Trich.objects.get(moc__mach=da_seed)
-    assert trich.moc.seq == TRICH_MOC_SEQ
+    trich = Trich.objects.get(moc__mach=da_seed, moc__seq=TRICH_MOC_SEQ)
     assert trich.removed_at is None
     # PLAN 5.6 rào 2: blockquote hiện "viết ..., trích ..." — muốn hiện được thì hai mốc
     # thời gian phải KHÁC nhau trong dữ liệu seed.
@@ -151,7 +186,9 @@ def test_ba_vai_cua_PLAN_muc_5_5_la_ba_hang_khac_nhau(da_seed):
 
     cao_nhat_toan_mach = max(goc, key=lambda c: diem[c.pk])
     cao_nhat_dai_gap = max(trong_dai_gap, key=lambda c: diem[c.pk])
-    duoc_trich = Trich.objects.get(moc__mach=da_seed, removed_at__isnull=True).comment
+    duoc_trich = Trich.objects.get(
+        moc__mach=da_seed, moc__seq=TRICH_MOC_SEQ, removed_at__isnull=True
+    ).comment
 
     ba_vai = {cao_nhat_toan_mach.pk, cao_nhat_dai_gap.pk, duoc_trich.pk}
     assert len(ba_vai) == 3, (
@@ -174,7 +211,9 @@ def test_binh_luan_duoc_trich_KHONG_thuoc_top_10_wilson(da_seed):
     goc = list(Comment.objects.filter(mach=da_seed, parent__isnull=True))
     xep = sorted(goc, key=lambda c: wilson_lower_bound(c.up_count, c.down_count), reverse=True)
     top_10 = {c.pk for c in xep[:10]}
-    duoc_trich = Trich.objects.get(moc__mach=da_seed, removed_at__isnull=True).comment
+    duoc_trich = Trich.objects.get(
+        moc__mach=da_seed, moc__seq=TRICH_MOC_SEQ, removed_at__isnull=True
+    ).comment
 
     assert len(goc) > 10, "ít hơn 11 bình luận gốc thì top-10 chứa tất, không đo được gì"
     assert duoc_trich.pk not in top_10, (
@@ -328,4 +367,190 @@ def test_reset_dung_lai_tu_dau_khong_de_lai_rac(da_seed):
     assert Sub.objects.count() == 2
     assert User.objects.count() == 11 + SO_NGUOI_XEM
     assert Comment.objects.filter(mach__title=TITLE_HPG).count() == len(COMMENTS_HPG)
-    assert Trich.objects.count() == 1
+    assert Trich.objects.count() == 2
+
+
+# --- Cổng idempotency lệch một nửa (vá D3, 2026-08-22) ------------------------
+
+
+def test_DB_co_HPG_ma_chua_co_VNM_thi_seed_dev_DOI_reset(da_seed):
+    """Ca của mọi máy đã chạy `seed_dev` TRƯỚC vá B2 — mạch VNM là hàng mới.
+
+    Cổng cũ chỉ nhìn `TITLE_HPG` nên nó in "đã có dữ liệu seed" rồi thoát, và VNM **không
+    bao giờ** được dựng. Cái đỏ lên sau đó lại là `apps/web/e2e/mach-can.spec.ts` chết ở
+    `beforeAll` với thông báo "seed chưa chạy?" — chỉ sai hướng cho người đi sửa.
+
+    Dựng lại đúng trạng thái đó bằng cách xoá riêng mạch VNM khỏi DB đã seed. `Trich` của
+    nó phải đi trước: `Trich.comment` là `PROTECT`, đúng cái bẫy mà `_xoa_seed` gỡ.
+    """
+    Trich.objects.filter(moc__mach__title=TITLE_BIA_MO).delete()
+    Mach.objects.filter(title=TITLE_BIA_MO).delete()
+    assert Mach.objects.filter(title=TITLE_HPG).exists()
+    assert not Mach.objects.filter(title=TITLE_BIA_MO).exists()
+
+    with pytest.raises(CommandError) as loi:
+        call_command("seed_dev", verbosity=0)
+
+    # Không im lặng bỏ qua, và thông báo phải nói ra ĐƯỜNG THOÁT — báo "sai" mà không nói
+    # gõ gì tiếp thì người đọc vẫn kẹt ở đúng chỗ cũ.
+    assert "--reset" in str(loi.value)
+    assert TITLE_BIA_MO in str(loi.value)
+    assert "seed_e2e --reset" in str(loi.value), (
+        "thiếu thứ tự phục hồi: --reset một mình vẫn nổ ProtectedError trên DB còn dữ "
+        "liệu seed_e2e dựng trước vá A3"
+    )
+    # …và nó KHÔNG dựng bù nửa vời trước khi nổ.
+    assert not Mach.objects.filter(title=TITLE_BIA_MO).exists()
+
+
+def test_DB_co_VNM_ma_mat_HPG_cung_DOI_reset(da_seed):
+    """Chiều ngược lại. Cổng phải hỏi cả hai, không phải đổi mốc chặn từ HPG sang VNM."""
+    Trich.objects.filter(moc__mach__title=TITLE_HPG).delete()
+    Mach.objects.filter(title=TITLE_HPG).delete()
+
+    with pytest.raises(CommandError) as loi:
+        call_command("seed_dev", verbosity=0)
+    assert TITLE_HPG in str(loi.value)
+
+
+def test_reset_go_duoc_the_lech_mot_nua(da_seed):
+    """Đường thoát mà thông báo lỗi chỉ ra phải thật sự đi được."""
+    Trich.objects.filter(moc__mach__title=TITLE_BIA_MO).delete()
+    Mach.objects.filter(title=TITLE_BIA_MO).delete()
+
+    call_command("seed_dev", "--reset", verbosity=0)
+    assert Mach.objects.filter(title=TITLE_HPG).count() == 1
+    assert Mach.objects.filter(title=TITLE_BIA_MO).count() == 1
+
+
+def test_DB_du_ca_hai_van_la_bo_qua_im_lang(da_seed):
+    """Không vá quá tay: trạng thái ĐỦ vẫn phải là "chạy lần hai không làm gì"."""
+    truoc = Mach.objects.count()
+    call_command("seed_dev", verbosity=0)
+    assert Mach.objects.count() == truoc
+
+
+
+
+# --- Mạch bia mộ (vá B2, 2026-08-22) -----------------------------------------
+# Trước đợt vá, `grep deleted_at|hidden_at` trên cả hai file seed trả về RỖNG. Nghĩa là
+# mọi nhánh render bia mộ của 1c — `the-moc.tsx`, `binh-luan.tsx`, `khoi-trich.tsx` —
+# chưa từng được chạy qua một hàng dữ liệu nào, trong khi plan con 1c §2.2 liệt kê chúng
+# là hạng mục việc. Các bài dưới đây ghim ba hàng vừa thêm, và ghim luôn **hệ quả** của
+# chúng ở tầng đọc, vì chính hệ quả mới là thứ UI nhìn thấy.
+
+
+def test_mach_bia_mo_dung_hinh_dang(mach_bia_mo):
+    assert mach_bia_mo.entry_count == len(MOCS_BIA_MO)
+    assert Comment.objects.filter(mach=mach_bia_mo).count() == len(COMMENTS_BIA_MO)
+    # Đóng sổ: `test_api_feeds.py` ghim số mạch của feed "Đang diễn ra", và một mạch mở
+    # thêm ở đây làm nó đỏ vì lý do không liên quan gì tới bia mộ.
+    assert mach_bia_mo.status == Mach.TrangThai.DONG
+    assert mach_bia_mo.sub.slug == "chung-khoan"
+    # Đủ 4 bình luận đọc được ⇒ nguyên tắc 9 BẬT số đếm. Dưới ngưỡng thì bài đo "nút ngăn
+    # kéo của mốc chỉ còn bia mộ không hiện số" đúng vì lý do khác, tức pass rỗng.
+    assert mach_bia_mo.comment_count >= 4
+    # …và số đếm phải LỆCH số hàng, đó là toàn bộ lý do mạch này tồn tại.
+    assert mach_bia_mo.comment_count < len(COMMENTS_BIA_MO)
+
+
+def test_co_moc_bia_mo_va_no_KHONG_lam_tut_entry_count(mach_bia_mo):
+    moc = Moc.objects.get(mach=mach_bia_mo, seq=MOC_BIA_MO_SEQ)
+    assert moc.deleted_at is not None
+    assert moc.hidden_at is None, "chọn ca TỰ XOÁ — ca mod ẩn mốc còn chờ user duyệt"
+    # PLAN mục 6: `entry_count` đo CẤU TRÚC. Bia mộ giữ chỗ, `seq` bất biến, và dải gập
+    # của mặt CẶN suy thẳng từ con số này — tụt một là gập nhầm ô.
+    assert mach_bia_mo.entry_count == Moc.objects.filter(mach=mach_bia_mo).count()
+    assert mach_bia_mo.entry_count == max(
+        Moc.objects.filter(mach=mach_bia_mo).values_list("seq", flat=True)
+    )
+    # Bia mộ mốc nằm NGOÀI dải gập ⇒ thấy được ngay trên mặt tiền, không phải bấm bung.
+    assert MOC_BIA_MO_SEQ not in seq_dai_gap(mach_bia_mo)
+
+
+def test_moc_chi_con_bia_mo_co_so_binh_luan_0_MA_ngan_keo_khong_rong(mach_bia_mo):
+    """Ca của vá B1 — `so_binh_luan` và lát cắt trả lời hai câu hỏi khác nhau.
+
+    `so_binh_luan` đếm bình luận ĐỌC ĐƯỢC; `GET /mocs/{id}/comments` vẫn trả bia mộ. Mốc
+    3 của mạch này có đúng một thread, thread đó đã được trích vào sổ rồi tác giả tự xoá
+    ⇒ số là 0 mà lát cắt có hàng. Trang mạch hỏi con số thay vì hỏi lát cắt thì cái nút
+    mời "＋ nói gì đó về mốc này" mở ra "Chưa ai neo bình luận vào mốc này" — ngay bên
+    dưới blockquote trích từ chính bình luận đó.
+    """
+    from core.doc_noi_dung import (
+        dem_binh_luan_theo_moc,
+        lat_cat_ngan_keo,
+        nap_binh_luan,
+        tap_tung_duoc_trich,
+    )
+
+    seq = TRICH_BIA_MO_MOC_SEQ
+    assert seq in seq_dai_gap(mach_bia_mo), (
+        "ca B1 phải nằm TRONG dải gập — cùng với bia mộ mốc ở ngoài, hai bài đo phủ được "
+        "cả hai phía của cái nút bung"
+    )
+    dem = dem_binh_luan_theo_moc(mach_bia_mo)
+    assert dem.get(seq, 0) == 0, "mốc này phải có 0 bình luận ĐỌC ĐƯỢC"
+
+    lat = lat_cat_ngan_keo(
+        nap_binh_luan(mach_bia_mo),
+        seq=seq,
+        tung_duoc_trich=tap_tung_duoc_trich(mach_bia_mo),
+    )
+    assert len(lat) == 1, f"lát cắt mốc {seq} phải còn đúng một bia mộ, đang có {len(lat)}"
+    assert not lat[0].hien_noi_dung
+
+
+def test_binh_luan_tu_xoa_o_lai_CHI_VI_da_tung_duoc_trich(mach_bia_mo):
+    """PLAN 5.3 dòng 175 — hai điều kiện giữ chỗ, và chúng không thay nhau được."""
+    c = Comment.objects.get(mach=mach_bia_mo, deleted_at__isnull=False)
+    assert c.hidden_at is None, "chọn ca TỰ XOÁ thuần, để hai nhãn không lẫn nhau"
+    assert not Comment.objects.filter(parent=c).exists(), (
+        "còn con thì nó ở lại vì điều kiện 1, và điều kiện 2 (đã từng được trích) không "
+        "được chứng minh gì cả"
+    )
+    trich = Trich.objects.get(moc__mach=mach_bia_mo, moc__seq=TRICH_BIA_MO_MOC_SEQ)
+    assert trich.comment_id == c.pk
+    assert trich.created_at < c.deleted_at, (
+        "chủ mạch phải trích TRƯỚC, tác giả xoá SAU — đó là ca mà PLAN 5.6 dựng 'cuốn sổ "
+        "không-xoá-được' để chống"
+    )
+
+
+def test_binh_luan_mod_an_o_lai_CHI_VI_con_con_song_sot(mach_bia_mo):
+    an = Comment.objects.get(mach=mach_bia_mo, hidden_at__isnull=False)
+    assert an.deleted_at is None, "chọn ca MOD ẨN thuần"
+    assert not Trich.objects.filter(comment=an).exists(), (
+        "nếu nó cũng từng được trích thì hai điều kiện chồng lên nhau, và bài đo không "
+        "còn phân biệt được cái nào giữ nó ở lại"
+    )
+    con = Comment.objects.filter(
+        parent=an, deleted_at__isnull=True, hidden_at__isnull=True
+    )
+    assert con.exists(), (
+        f"{BINH_LUAN_MOD_AN!r} bị mod ẩn mà không còn con đọc được ⇒ `dung_cay` bỏ hẳn "
+        "nó, và nhánh 'bia mộ vì còn con' lại không có dữ liệu"
+    )
+
+
+def test_hai_kieu_bia_mo_binh_luan_la_HAI_hang_khac_nhau(mach_bia_mo):
+    """Chập làm một thì một trong hai nhánh render không có dữ liệu chạy qua."""
+    tu_xoa = Comment.objects.get(mach=mach_bia_mo, deleted_at__isnull=False)
+    mod_an = Comment.objects.get(mach=mach_bia_mo, hidden_at__isnull=False)
+    assert tu_xoa.pk != mod_an.pk
+
+    # Và ĐÚNG hai hàng mà bảng hằng số chỉ định — nối hằng số với DB qua `body`, thứ duy
+    # nhất đi được cả hai chiều.
+    #
+    # Vá E3 (2026-08-22): dòng cũ ở đây là `assert BINH_LUAN_TU_XOA in khoa and
+    # BINH_LUAN_MOD_AN in khoa` — hai hằng số đối chiếu bảng hằng số **cùng file**, đúng
+    # bất kể DB chứa gì. Đổi `BINH_LUAN_TU_XOA = "b2"` cho trùng `BINH_LUAN_MOD_AN` thì
+    # nó vẫn xanh, trong khi ý cả bài đo là hai vai không được rơi vào một hàng.
+    than = {c[0]: c[5] for c in COMMENTS_BIA_MO}
+    assert tu_xoa.body == than[BINH_LUAN_TU_XOA], (
+        f"hàng TỰ XOÁ trong DB không phải bình luận {BINH_LUAN_TU_XOA!r} mà bảng hằng "
+        "số chỉ định"
+    )
+    assert mod_an.body == than[BINH_LUAN_MOD_AN], (
+        f"hàng MOD ẨN trong DB không phải bình luận {BINH_LUAN_MOD_AN!r}"
+    )

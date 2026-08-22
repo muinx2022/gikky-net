@@ -1,0 +1,110 @@
+.khung {
+  max-width: var(--khung);
+  margin: 0 auto;
+  padding: 26px 22px 40px;
+}
+
+.ten {
+  font-family: var(--f-display);
+  font-size: clamp(23px, 3.6vw, 29px);
+  line-height: 1.22;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin: 0 0 2px;
+}
+
+.username {
+  font-family: var(--f-mono);
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+.bio {
+  margin: 12px 0 0;
+  font-size: 14px;
+  color: var(--ink-2);
+  max-width: 62ch;
+}
+
+.chi_so {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  margin: 20px 0 0;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  overflow: hidden;
+  background: var(--inset);
+}
+
+.mot_chi_so {
+  padding: 10px 16px;
+  flex: 1 1 130px;
+  border-right: 1px solid var(--line);
+}
+
+.mot_chi_so:last-child {
+  border-right: none;
+}
+
+.mot_chi_so dt {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-3);
+  margin-bottom: 2px;
+}
+
+.mot_chi_so dd {
+  margin: 0;
+  font-family: var(--f-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+/* "Được trích vào sổ" là con dấu, không phải một con số nữa — hoàng thổ theo PLAN 9.1. */
+.trich dt,
+.trich dd {
+  color: var(--stamp);
+}
+
+.phu_tieu_de {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ink-3);
+  font-weight: 500;
+  margin: 30px 0 10px;
+}
+
+.danh_sach {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.bi_cat {
+  margin: 14px 0 0;
+  padding: 9px 13px;
+  border: 1px dashed var(--line-2);
+  border-radius: 5px;
+  font-size: 13px;
+  color: var(--ink-2);
+  background: var(--inset);
+}
+
+.rong {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+
+@media (max-width: 640px) {
+  .khung {
+    padding: 16px 12px 34px;
+  }
+}

@@ -4,7 +4,8 @@ import { HealthSameOrigin } from "./health-same-origin";
 import { moTaHealth } from "./health-text";
 
 // ĐẶC THÙ PHASE 0 — ĐỪNG COPY DÒNG NÀY SANG TRANG SẢN PHẨM.
-// Xem chú thích đầy đủ ở `apps/web/app/page.tsx`: PLAN 8.4 quy định biến thể khách của
+// Xem chú thích đầy đủ ở `apps/web/app/chan-doan/page.tsx` (Phase 1c dời trang chẩn đoán khỏi
+// `/` để nhường chỗ cho feed): PLAN 8.4 quy định biến thể khách của
 // `/m/[slug]` là ISR, chỉ biến thể có cookie mới dynamic no-store.
 export const dynamic = "force-dynamic";
 

@@ -1,0 +1,168 @@
+/* Token toàn cục — PORT NGUYÊN BẢNG MÀU/CHỮ từ `docs/mockup-tham-khao.html` (PLAN 9.1).
+ *
+ * File mockup là chuẩn **màu / chữ / chất liệu**, KHÔNG phải chuẩn layout: bố cục trong
+ * đó có trước khi chốt hai mặt BÃO/CẶN, nên layout ở đây theo PLAN 9.2 chứ không theo nó
+ * (PLAN 9.1 cảnh báo đích danh chuyện này).
+ *
+ * Hai token bị khoá công dụng, đừng nới:
+ *   --gain / --loss  = xanh #1C7A4F / đỏ #B33A2B — **CẤM trang trí**, chỉ được xuất hiện
+ *                      ở con số lãi/lỗ. Hàng rào chạy được: `e2e/don-vi/mau-token.spec.ts`
+ *                      grep toàn bộ CSS và chỉ cho phép một file dùng chúng.
+ *   --stamp          = hoàng thổ #B07A2B — chỉ cho thứ mang tính "đóng dấu" (trích vào sổ,
+ *                      "đã sửa", vạch mới, số mốc chưa xem). Hàng rào chạy được:
+ *                      `e2e/don-vi/mau-token.spec.ts` giữ một allowlist theo từng SELECTOR.
+ *
+ * `--on-accent` là màu chữ **đặt trên nền `--accent`**. Nó phải là token chứ không phải
+ * `#fff` gõ cứng: `--accent` đảo sắc giữa hai theme (#3A46A8 tối ← → #8B99F2 sáng), nên
+ * một màu chữ cố định thì một trong hai theme sai. Badge CHỦ MẠCH từng là mã hex cứng duy
+ * nhất lọt ra ngoài hệ token, và ở dark nó cho tương phản ≈2.65:1 (WCAG AA đòi 4.5:1).
+ *
+ * light/dark: `prefers-color-scheme` + `[data-theme]` ghi đè. 1c **không lưu** lựa chọn
+ * (plan con §1) — chưa có nút đổi theme, `[data-theme]` để sẵn cho Phase sau.
+ */
+
+:root {
+  --bg: #f1f2f5;
+  --surface: #ffffff;
+  --surface-2: #e7e9ee;
+  --inset: #f7f8fa;
+  --ink: #14161b;
+  --ink-2: #535a67;
+  --ink-3: #868d9b;
+  --line: #dbdee5;
+  --line-2: #c7cbd4;
+  --accent: #3a46a8;
+  --accent-soft: #e4e6f6;
+  --on-accent: #ffffff;
+  --stamp: #b07a2b;
+  --stamp-soft: #f5ebda;
+  --gain: #1c7a4f;
+  --loss: #b33a2b;
+  --focus: #3a46a8;
+
+  --f-display: var(--font-newsreader), Georgia, "Times New Roman", serif;
+  --f-ui: var(--font-be-vietnam-pro), "Segoe UI", system-ui, sans-serif;
+  --f-mono: var(--font-ibm-plex-mono), ui-monospace, "Cascadia Mono", Consolas, monospace;
+
+  --rail: 34px;
+  --gutter: 18px;
+  --khung: 860px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1116;
+    --surface: #161a21;
+    --surface-2: #1e232c;
+    --inset: #12161c;
+    --ink: #e7eaf0;
+    --ink-2: #a3aab8;
+    --ink-3: #6f7787;
+    --line: #272d38;
+    --line-2: #39414f;
+    --accent: #8b99f2;
+    --accent-soft: #20263c;
+    --on-accent: #0e1116;
+    --stamp: #d8a455;
+    --stamp-soft: #2a2318;
+    --gain: #43be83;
+    --loss: #e4776a;
+    --focus: #8b99f2;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0e1116;
+  --surface: #161a21;
+  --surface-2: #1e232c;
+  --inset: #12161c;
+  --ink: #e7eaf0;
+  --ink-2: #a3aab8;
+  --ink-3: #6f7787;
+  --line: #272d38;
+  --line-2: #39414f;
+  --accent: #8b99f2;
+  --accent-soft: #20263c;
+  --on-accent: #0e1116;
+  --stamp: #d8a455;
+  --stamp-soft: #2a2318;
+  --gain: #43be83;
+  --loss: #e4776a;
+  --focus: #8b99f2;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--f-ui);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* Mọi timestamp + con số đi bằng mono, `tabular-nums` — PLAN 9.1 "mốc phải trông như
+ * biên lai". Lớp tiện dụng dùng chung, không thuộc module nào. */
+.mono {
+  font-family: var(--f-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* `[hidden]` phải THẮNG mọi `display` do lớp đặt.
+ *
+ * UA stylesheet chỉ có `[hidden] { display: none }` với độ đặc hiệu 0-1-0, nên một
+ * `.hang { display: grid }` bất kỳ (dải gập, thẻ mốc) ghi đè nó và phần tử "đã ẩn" vẫn
+ * hiện nguyên. Dải gập bung ra rồi mà nút gập vẫn nằm đó là ca đã gặp thật, và nó không
+ * kêu ở đâu ngoài mắt người nhìn. Ẩn/hiện của ngăn kéo lẫn dải gập đều dựa vào thuộc
+ * tính này, nên nó phải là luật cứng. */
+[hidden] {
+  display: none !important;
+}
+
+/* Deep-link tới bình luận (`#bl-<id>`) không được dán vào mép trên màn hình. */
+:target {
+  scroll-margin-top: 84px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}

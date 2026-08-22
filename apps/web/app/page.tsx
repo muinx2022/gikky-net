@@ -1,42 +1,34 @@
-import { getHealth } from "@gikky/api-client";
+import { Feed } from "@/components/feed";
+import { docFeed, docTab } from "@/lib/api";
 
-import { HealthSameOrigin } from "./health-same-origin";
-import { moTaHealth } from "./health-text";
-
-// ĐẶC THÙ PHASE 0 — ĐỪNG COPY DÒNG NÀY SANG TRANG SẢN PHẨM.
-// Trang này là công cụ chẩn đoán: phải gọi Django ở MỖI lần tải, nên `force-dynamic`.
-// Trang `/m/[slug]` của Phase 3 theo PLAN 8.4: biến thể khách (không cookie) là **ISR**
-// revalidate 1 giờ + on-demand revalidate; chỉ biến thể CÓ cookie mới dynamic no-store.
-// Dán `force-dynamic` vào đó là xoá sạch tầng cache của cả sản phẩm.
+// Xem ghi chú ở `app/m/[slugId]/page.tsx`: cơ chế cache của PLAN 8.4 là việc của Phase 3.
+// Dòng này cũng giữ cho `pnpm build` không cần Django sống.
 export const dynamic = "force-dynamic";
 
-// Server component gọi THẲNG Django, không vòng qua cổng 3000 của chính mình: PLAN 8.4
-// điểm 3 đã có chiều Django -> localhost:3000 (on-demand revalidate); thêm chiều ngược
-// Node -> Node là công thức tự đói tài nguyên khi Phase 3 bật ISR.
-const API_ORIGIN = process.env.API_ORIGIN ?? "http://localhost:8000";
+export default async function TrangChu({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const q = await searchParams;
+  const tab = docTab(q.tab);
+  const cursor = Array.isArray(q.cursor) ? q.cursor[0] : q.cursor;
+  // `?cursor=rac` KHÔNG được làm trang chủ 500: `docFeed` lùi về trang đầu và trả cờ để
+  // `Feed` hiện dòng giải thích (vá A1).
+  //
+  // Còn API hỏng thì trang này PHẢI hỏng theo: `docFeed` (bản không lọc sub) ném thay vì
+  // trả `null`, nên ở đây không còn gì để `?? { items: [] }` — xem docstring của nó, vá
+  // F1. "Chưa có bài nào ở đây" chỉ được nói khi Django thật sự trả về 0 mạch.
+  const { du_lieu: feed, cursorHong } = await docFeed(tab, { cursor });
 
-async function docHealth(): Promise<string> {
-  try {
-    return moTaHealth(await getHealth({ baseUrl: API_ORIGIN, cache: "no-store" }));
-  } catch (loi) {
-    // client-fetch bình thường không ném (lỗi mạng cũng vào `error`); tới đây là chuyện
-    // ngoài dự kiến — vẫn phải in ra, không được để trang trắng.
-    return `LỖI ngoài dự kiến khi gọi ${API_ORIGIN}: ${loi instanceof Error ? loi.message : String(loi)}`;
-  }
-}
-
-export default async function Home() {
-  const health = await docHealth();
   return (
-    <main>
-      <h1>gikky.net — web</h1>
-      <p>
-        server component → Django <code>{API_ORIGIN}</code>:{" "}
-        <strong data-testid="health">{health}</strong>
-      </p>
-      <p>
-        trình duyệt → same-origin <code>/api/v1/health</code>: <HealthSameOrigin />
-      </p>
-    </main>
+    <Feed
+      feed={feed}
+      cursorHong={cursorHong}
+      tab={tab}
+      coBan="/"
+      tieuDe="gikky"
+      lede="Bài viết ở đây không phải khối văn bản chết. Tác giả nối thêm mốc theo thời gian thực, dấu thời gian máy chủ bất biến."
+    />
   );
 }

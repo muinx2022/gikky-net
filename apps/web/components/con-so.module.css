@@ -1,0 +1,22 @@
+/* ⚠ FILE DUY NHẤT ĐƯỢC DÙNG `--gain` / `--loss`.
+ *
+ * PLAN 9.1: "Xanh #1C7A4F / đỏ #B33A2B **CẤM dùng trang trí** — chỉ được xuất hiện ở con
+ * số lãi/lỗ." Hàng rào chạy được cho luật đó là `e2e/don-vi/mau-token.spec.ts`: nó grep
+ * toàn bộ CSS của `apps/web` và bắt lỗi nếu hai token này (hoặc mã hex của chúng) xuất
+ * hiện ngoài file này và ngoài phần khai token ở `app/globals.css`.
+ *
+ * Muốn thêm chỗ dùng thì phải sửa cả hàng rào — và đó chính là mục đích: quyết định có
+ * chủ đích, không phải một dòng CSS lọt vào lúc nửa đêm. */
+
+.so {
+  font-family: var(--f-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.lai {
+  color: var(--gain);
+}
+
+.lo {
+  color: var(--loss);
+}

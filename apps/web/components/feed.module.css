@@ -1,0 +1,71 @@
+.khung {
+  max-width: var(--khung);
+  margin: 0 auto;
+  padding: 26px 22px 40px;
+}
+
+.tieu_de {
+  font-family: var(--f-display);
+  font-size: clamp(23px, 3.6vw, 29px);
+  line-height: 1.22;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin: 0 0 6px;
+}
+
+.lede {
+  margin: 0 0 18px;
+  font-size: 13.5px;
+  color: var(--ink-2);
+  max-width: 62ch;
+}
+
+.tab {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-bottom: 16px;
+}
+
+.mot_tab {
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  padding: 6px 13px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+.tab_dang_chon {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.danh_sach {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.rong {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+
+.xem_them {
+  display: inline-block;
+  margin-top: 18px;
+  font-size: 13px;
+  color: var(--accent);
+  border-bottom: 1px solid var(--accent);
+}
+
+@media (max-width: 640px) {
+  .khung {
+    padding: 16px 12px 34px;
+  }
+}

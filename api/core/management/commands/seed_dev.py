@@ -5,7 +5,16 @@
 
 Nội dung: 2 sub · 1 mạch HPG 9 mốc **đã đóng sổ** (`ket_qua`, figures ở mốc 1 và 9,
 `question_for_crowd` ở đúng 1 mốc, 24 bình luận có cây + neo, 1 trích ở mốc 7, điểm vote
-rải để top-10 wilson có nghĩa) · 1 post thường (`entry_count == 1`, `ket_qua` NULL).
+rải để top-10 wilson có nghĩa) · **1 mạch VNM 6 mốc mang đủ ba kiểu bia mộ** (thêm
+2026-08-22, vá B2 — xem khối "Mạch bia mộ") · 1 post thường (`entry_count == 1`,
+`ket_qua` NULL).
+
+**Mạch HPG là dữ liệu nghiệm thu của 1a/1b và mọi con số của nó đã bị ghim ở 8 file
+test.** Vì thế ba hàng bia mộ của vá B2 đi vào một MẠCH RIÊNG chứ không vào HPG: nhét
+`deleted_at` vào HPG làm `comment_count` tụt 24 → 21, đổi thứ hạng `hay_nhat`, đổi
+`so_moc` trên hồ sơ chủ mạch — **26 bài đo của 1b đỏ cùng lúc**, và cách chữa duy nhất là
+sửa con số của chúng cho khớp, tức mài cùn đúng những bài đo vừa bắt được lỗi. Hai mục
+đích, hai mạch.
 
 **Đây là dữ liệu NGHIỆM THU, không phải dữ liệu minh hoạ.** Vài con số trông tuỳ tiện lại
 là điều kiện để bài đo của 1c *đo được gì đó*: ba vai của mặt CẶN phải rơi vào ba hàng
@@ -13,11 +22,20 @@ khác nhau, và phải có một mốc 0 bình luận mang câu mồi. Chi tiế
 bảng `COMMENTS_HPG` và bảng `MOCS_HPG`; ràng buộc được ghim ở `tests/test_seed_dev.py` và
 `plans/2026-08-21-phase-1a-data-model.md` mục 2.4. Sửa số ở đây thì đọc hai chỗ đó trước.
 
-**Idempotent bằng cách nào:** một mốc chặn duy nhất — mạch HPG đã tồn tại thì không dựng
-gì thêm. "Idempotent" kiểu `get_or_create` từng đối tượng nghe hay hơn nhưng sai ở đây:
-bình luận và vote không có khoá tự nhiên, `get_or_create` theo `body` sẽ trùng ngay khi
-hai người viết "gồng tiếp" — nên lượt hai sẽ đẻ ra một nửa dữ liệu mới, và đó đúng là
-kiểu nhân đôi khó thấy nhất. Một cổng vào duy nhất thì kiểm được bằng SQL.
+**Idempotent bằng cách nào:** một cổng chặn duy nhất, hỏi về **CẢ HAI** mạch mốc chặn
+(`TITLE_HPG` và `TITLE_BIA_MO`). "Idempotent" kiểu `get_or_create` từng đối tượng nghe
+hay hơn nhưng sai ở đây: bình luận và vote không có khoá tự nhiên, `get_or_create` theo
+`body` sẽ trùng ngay khi hai người viết "gồng tiếp" — nên lượt hai sẽ đẻ ra một nửa dữ
+liệu mới, và đó đúng là kiểu nhân đôi khó thấy nhất. Một cổng vào duy nhất thì kiểm được
+bằng SQL.
+
+**Vì sao phải hỏi cả hai, không chỉ HPG** (vá D3, 2026-08-22): mạch VNM là hàng mới của
+vá B2. Máy nào đã chạy `seed_dev` TRƯỚC đợt vá thì DB có HPG mà không có VNM, và cổng chỉ
+nhìn HPG sẽ in "đã có dữ liệu seed" rồi thoát — **không bao giờ** dựng VNM. Hậu quả rơi
+xuống chỗ khác hẳn: `apps/web/e2e/mach-can.spec.ts` chết ở `beforeAll` với thông báo
+"seed chưa chạy?", tức chỉ **sai hướng** cho người đi sửa. Nay lệch một nửa là đòi
+`--reset` tường minh: `seed_dev` không có đường "dựng bù phần thiếu" (xem đoạn trên), nên
+nói ra là việc duy nhất trung thực nó làm được.
 
 **Vote là hàng `Vote` THẬT**, không phải gán thẳng `up_count`. Vì vậy số phiếu bị chặn
 trên bởi số user seed (32 người xem) — mockup PLAN 9.2 có "▲412" nhưng đó là minh hoạ
@@ -29,10 +47,16 @@ tay thì mọi test đọc "tổng vote" sau này sẽ đo trên nền không c�
 from datetime import date, datetime, time, timedelta
 
 from django.contrib.auth.hashers import make_password
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from core.ghi import dat_vote_hang_loat, tao_binh_luan, tao_mach, them_moc
+from core.ghi import (
+    cap_nhat_dem_mach,
+    dat_vote_hang_loat,
+    tao_binh_luan,
+    tao_mach,
+    them_moc,
+)
 from core.models import Comment, Mach, Moc, Sub, Trich, User
 from core.thoi_gian import TZ_VN, ngay_vn
 
@@ -292,8 +316,146 @@ VOTE_MOC_DOWN = [1, 0, 2, 1, 0, 1, 0, 0, 0]
 #: cũng hợp lý về nội dung: `r7` khuyên bán ở mốc 5, chủ mạch không nghe, và trích vào sổ
 #: đúng lời khuyên mình đã bỏ qua là thứ PLAN 5.6 muốn khuyến khích (sổ không phải chỗ
 #: chỉ ghi những câu "hoá ra đúng" — rào 2).
+#:
+#: Mốc 7 = `n − 2` với `n = 9`, tức nó nằm trên **mặt tiền** theo công thức dải gập
+#: `2…n−3` (PLAN 5.5, chốt 2026-08-22). Đó là chủ đích: cơ chế thưởng chủ lực của 5.6
+#: phải thấy được mà không cần bấm bung.
 TRICH_COMMENT_KEY = "r7"
 TRICH_MOC_SEQ = 7
+
+# --- Mạch bia mộ (thêm 2026-08-22, vá B2) ------------------------------------
+# `grep deleted_at|hidden_at` trên cả hai file seed trước đợt vá trả về RỖNG. Nghĩa là ba
+# nhánh render bia mộ của 1c — `the-moc.tsx:105`, `binh-luan.tsx:58`, `khoi-trich.tsx:56`
+# — chưa từng chạy qua một hàng dữ liệu nào, trong khi plan con 1c §2.2 liệt kê chúng là
+# hạng mục việc. Mạch này tồn tại để chúng có đất chạy, và để ca của vá B1 tồn tại được.
+#
+# Ba kiểu bia mộ, ba lý do KHÁC NHAU (PLAN 5.3 dòng 175 + `core/doc_noi_dung.py`):
+#
+#  1. **mốc 4 tự xoá** → bia mộ mốc: giữ chỗ trên spine, `seq` bất biến, `entry_count`
+#     KHÔNG tụt (PLAN nguyên tắc 2 + luật đếm 4 cột).
+#  2. **`b3` tự xoá SAU khi được trích** → bia mộ bình luận giữ lại vì "đã TỪNG được
+#     trích", không phải vì còn con. Nó là hàng duy nhất neo mốc 3, nên mốc 3 thành mốc
+#     **`so_binh_luan == 0` mà ngăn kéo KHÔNG rỗng** — đúng ca của vá B1, và cũng là ca
+#     mà blockquote phải giữ nguyên chữ + gắn nhãn "người viết đã xoá" (PLAN 5.6).
+#  3. **`b2` bị MOD ẨN, `b2a` còn sống** → bia mộ giữ chỗ vì còn con. Vế "đã từng được
+#     trích" cố ý KHÔNG áp cho ca mod ẩn, nên hai nhánh này không thay nhau được.
+#
+# Mạch **đã đóng sổ**: `test_api_feeds.py` ghim số mạch của feed "Đang diễn ra", và một
+# mạch mở thêm ở đây làm nó đỏ vì lý do không liên quan gì tới bia mộ.
+#
+# `n = 6` ⇒ dải gập `2…n−3` = 2–3 (PLAN 5.5). Đặt ca B1 ở mốc 3 (TRONG dải gập) và bia mộ
+# mốc ở mốc 4 (trên MẶT TIỀN) là chủ đích: bài đo phủ được cả hai phía của cái nút bung.
+TITLE_BIA_MO = "Nhật ký lệnh VNM — vào 62.5, thoát khi gãy nền"
+CHU_MACH_BIA_MO = "bac_gau_ha_noi"
+
+#: Mốc 1 cách hôm nay ngần này ngày ⇒ mạch nguội, và nằm SAU post thường nhưng TRƯỚC mạch
+#: HPG trên feed "Mới" (HPG cách 208 ngày).
+LUI_NGAY_BIA_MO = 30
+DAI_MACH_BIA_MO_NGAY = 60
+
+MOCS_BIA_MO = [
+    (
+        0,
+        time(9, 30),
+        "vào lệnh",
+        "Vào VNM 62.5, 8% NAV. Luận điểm: biên sữa bột nhập khẩu đang dễ thở, và giá đã "
+        "đi ngang 4 tháng trên vùng 60.",
+        [
+            {"label": "GIÁ VÀO", "value": "62.50"},
+            {"label": "DỪNG LỖ", "value": "59.80"},
+        ],
+        None,
+        0,
+    ),
+    (
+        9,
+        time(14, 0),
+        "quan sát",
+        "Nền 63–64, khối lượng cạn dần. Chưa làm gì.",
+        None,
+        None,
+        0,
+    ),
+    (
+        21,
+        time(10, 15),
+        "gia tăng",
+        "Mua thêm 3% NAV ở 64.2 khi vượt nền. Dừng lỗ chung kéo lên 61.8.",
+        None,
+        None,
+        0,
+    ),
+    (
+        33,
+        time(15, 30),
+        "nâng dừng lỗ",
+        "Kéo dừng lỗ lên 62.9 sau phiên bùng nổ.",
+        None,
+        None,
+        0,
+    ),
+    (
+        47,
+        time(20, 0),
+        "cắt lỗ",
+        "Gãy nền 61.8 với khối lượng lớn, cắt sạch ở 61.9. Luận điểm sai thì đi, không "
+        "chờ nó tự đúng lại.",
+        None,
+        None,
+        0,
+    ),
+    (
+        DAI_MACH_BIA_MO_NGAY,
+        time(21, 0),
+        "tổng kết",
+        "Ra bình quân 61.9, lỗ 1.4% trong 60 ngày. Cái làm được: cắt đúng chỗ đã ghi "
+        "trước. Cái làm dở: gia tăng ở mốc 3 khi chưa có bằng chứng nào ngoài giá.",
+        [
+            {"label": "GIÁ RA BQ", "value": "61.90"},
+            {"label": "LỖ", "value": "-1.4%"},
+        ],
+        None,
+        0,
+    ),
+]
+
+#: khoá, khoá cha, anchor_moc_seq, username, (ngày kể từ mốc 1, giờ), body, up, down
+COMMENTS_BIA_MO = [
+    ("b1", None, 1, "hai_lua", (0, time(19, 0)),
+     "Dừng lỗ 59.80 là dưới nền 4 tháng, hợp lý. Nhưng 8% NAV cho một mã phòng thủ thì "
+     "hơi nhẹ so với luận điểm bác vừa viết.", 9, 0),
+    ("b1a", "b1", None, CHU_MACH_BIA_MO, (0, time(20, 0)),
+     "Nhẹ là cố ý. Tôi chưa có bằng chứng nào ngoài cái nền.", 4, 0),
+    ("b2", None, 2, "cu_lac_margin", (9, time(16, 0)),
+     "Vào room em đi bác, tuần này em phím 3 mã ăn bằng lần. Inbox nhé.", 2, 6),
+    ("b2a", "b2", None, "soi_dem", (10, time(8, 0)),
+     "Thread này để lại cho ai đọc mạch từ đầu: đúng kiểu mời chào mà /luat cấm.", 5, 0),
+    ("b3", None, 3, "chi_tam_ck", (21, time(12, 0)),
+     "Gia tăng khi mới vượt nền một phiên là mua cái giá, không phải mua bằng chứng. "
+     "Em nói trước để sau này bác đọc lại.", 11, 1),
+    ("b4", None, 4, "mo_ga_dao", (33, time(17, 0)),
+     "Kéo dừng lỗ lên 62.9 là sát quá không bác? Vùng đó còn rung nhiều.", 6, 1),
+    ("b5", None, 5, "tay_to_pho", (47, time(21, 0)),
+     "Cắt đúng chỗ đã ghi trước — phần khó nhất của nghề nằm ở đúng một câu đó.", 8, 0),
+    ("b6", None, 6, "em_moi_vao", (DAI_MACH_BIA_MO_NGAY, time(22, 0)),
+     "Mạch lỗ mà vẫn ghi đủ, em thấy đáng đọc hơn mấy mạch lãi.", 7, 0),
+]
+
+VOTE_MOC_BIA_MO_UP = [12, 5, 7, 9, 14, 18]
+VOTE_MOC_BIA_MO_DOWN = [0, 1, 0, 0, 1, 0]
+
+#: Mốc bị chính tác giả xoá — bia mộ giữ chỗ trên spine (PLAN nguyên tắc 2).
+MOC_BIA_MO_SEQ = 4
+
+#: Bình luận tác giả TỰ xoá; ở lại làm bia mộ **chỉ vì** đã từng được trích.
+BINH_LUAN_TU_XOA = "b3"
+
+#: Bình luận bị MOD ẩn; ở lại **chỉ vì** còn con sống sót.
+BINH_LUAN_MOD_AN = "b2"
+
+#: Trích của mạch này: `b3` vào mốc 3 — chủ mạch trích trước, tác giả xoá sau.
+TRICH_BIA_MO_COMMENT_KEY = "b3"
+TRICH_BIA_MO_MOC_SEQ = 3
 
 # --- Post thường -------------------------------------------------------------
 LUI_NGAY_POST_THUONG = 5
@@ -318,6 +480,7 @@ class Command(BaseCommand):
         if options["reset"]:
             self._xoa_seed()
 
+        self._kiem_cong_idempotency()
         if Mach.objects.filter(title=TITLE_HPG).exists():
             self.stdout.write(
                 "Đã có dữ liệu seed — không dựng lại. Dùng --reset để làm mới."
@@ -327,6 +490,7 @@ class Command(BaseCommand):
         nguoi = self._tao_user()
         subs = self._tao_sub()
         mach = self._tao_mach_hpg(nguoi, subs["chung-khoan"])
+        self._tao_mach_bia_mo(nguoi, subs["chung-khoan"])
         self._tao_post_thuong(nguoi, subs["crypto"])
 
         self.stdout.write(
@@ -334,6 +498,38 @@ class Command(BaseCommand):
                 f"Seed xong: mạch HPG id={mach.pk} · {mach.entry_count} mốc · "
                 f"{mach.comment_count} bình luận."
             )
+        )
+
+    # --- cổng idempotency ----------------------------------------------------
+    def _kiem_cong_idempotency(self) -> None:
+        """Nổ khi DB có ĐÚNG MỘT trong hai mạch mốc chặn.
+
+        Ba trạng thái, ba lối ra — và trạng thái thứ ba là thứ vá D3 thêm vào:
+
+        1. không mạch nào ⇒ dựng mới;
+        2. đủ cả hai ⇒ in "đã có dữ liệu seed" rồi thoát (lối ra của `handle`);
+        3. **lệch một nửa** ⇒ `CommandError`. Không có nhánh "dựng bù phần thiếu": seed
+           này cố ý không idempotent theo từng đối tượng (xem docstring module), nên dựng
+           bù nghĩa là chạy lại `_tao_user`/`_tao_sub` trên dữ liệu đã có và đẻ ra một
+           nửa bản sao — đúng kiểu nhân đôi khó thấy nhất.
+
+        Thông báo phải kèm **thứ tự phục hồi**, vì `--reset` một mình có thể nổ tiếp:
+        DB dựng trước vá A3 còn 21 mạch `seed_e2e` treo trong sub `chung-khoan`, và
+        `Mach.sub` là `PROTECT` ⇒ `ProtectedError`. Không nói ra thì người đọc gặp lỗi
+        thứ hai mà không biết lỗi thứ nhất chỉ đường tới nó.
+        """
+        co_hpg = Mach.objects.filter(title=TITLE_HPG).exists()
+        co_bia_mo = Mach.objects.filter(title=TITLE_BIA_MO).exists()
+        if co_hpg == co_bia_mo:
+            return
+        thieu = TITLE_BIA_MO if co_hpg else TITLE_HPG
+        dang_co = TITLE_HPG if co_hpg else TITLE_BIA_MO
+        raise CommandError(
+            f"Dữ liệu seed lệch một nửa: đã có {dang_co!r} nhưng THIẾU {thieu!r}. "
+            "Thường là DB được seed trước đợt vá 2026-08-22 (mạch VNM là hàng mới). "
+            "seed_dev không dựng bù từng phần — chạy lại với --reset. Nếu --reset nổ "
+            "ProtectedError ở model 'Sub' thì DB còn dữ liệu seed_e2e dựng trước vá A3; "
+            "khi đó thứ tự đúng là: seed_e2e --reset TRƯỚC, rồi seed_dev --reset."
         )
 
     # --- reset ---------------------------------------------------------------
@@ -461,6 +657,105 @@ class Command(BaseCommand):
         )
         mach.refresh_from_db()
         return mach
+
+    # --- mạch bia mộ ---------------------------------------------------------
+    def _khi_bia_mo(self, ngay_lech: int, gio: time) -> datetime:
+        goc = ngay_vn() - timedelta(days=LUI_NGAY_BIA_MO + DAI_MACH_BIA_MO_NGAY)
+        return datetime.combine(goc + timedelta(days=ngay_lech), gio, tzinfo=TZ_VN)
+
+    def _tao_mach_bia_mo(self, nguoi: dict, sub: Sub) -> Mach:
+        """Mạch VNM — xem khối "Mạch bia mộ" ở đầu file để biết vì sao nó tồn tại."""
+        chu = nguoi[CHU_MACH_BIA_MO]
+        lech, gio, loai, body, figures, cau_moi, lui = MOCS_BIA_MO[0]
+        khi = self._khi_bia_mo(lech, gio)
+        mach, _ = tao_mach(
+            sub=sub,
+            author=chu,
+            title=TITLE_BIA_MO,
+            body=body,
+            occurred_at=khi.date() - timedelta(days=lui),
+            loai=loai,
+            question_for_crowd=cau_moi,
+            figures=figures,
+            _created_at_seed=khi,
+        )
+        for lech, gio, loai, body, figures, cau_moi, lui in MOCS_BIA_MO[1:]:
+            khi = self._khi_bia_mo(lech, gio)
+            them_moc(
+                mach=mach,
+                author=chu,
+                body=body,
+                occurred_at=khi.date() - timedelta(days=lui),
+                loai=loai,
+                question_for_crowd=cau_moi,
+                figures=figures,
+                _created_at_seed=khi,
+            )
+
+        mocs = {m.seq: m for m in Moc.objects.filter(mach=mach)}
+        for seq, moc in sorted(mocs.items()):
+            self._bo_phieu(
+                moc,
+                nguoi["_xem"],
+                VOTE_MOC_BIA_MO_UP[seq - 1],
+                VOTE_MOC_BIA_MO_DOWN[seq - 1],
+                f"mạch bia mộ / mốc {seq}",
+            )
+
+        binh_luan: dict[str, Comment] = {}
+        for khoa, khoa_cha, anchor, username, (lech, gio), body, up, down in (
+            COMMENTS_BIA_MO
+        ):
+            c = tao_binh_luan(
+                mach=mach,
+                author=nguoi[username],
+                body=body,
+                parent=binh_luan[khoa_cha] if khoa_cha else None,
+                anchor_moc_seq=anchor,
+                _created_at_seed=self._khi_bia_mo(lech, gio),
+            )
+            binh_luan[khoa] = c
+            self._bo_phieu(c, nguoi["_xem"], up, down, f"mạch bia mộ / {khoa!r}")
+
+        mach.status = Mach.TrangThai.DONG
+        mach.closed_at = self._khi_bia_mo(DAI_MACH_BIA_MO_NGAY, time(21, 30))
+        mach.ket_qua = "−1.4% · 60 ngày"
+        mach.save(update_fields=["status", "closed_at", "ket_qua"])
+
+        Trich.objects.create(
+            moc=mocs[TRICH_BIA_MO_MOC_SEQ],
+            comment=binh_luan[TRICH_BIA_MO_COMMENT_KEY],
+            created_at=self._khi_bia_mo(DAI_MACH_BIA_MO_NGAY, time(21, 40)),
+        )
+
+        self._dung_bia_mo(mocs, binh_luan)
+        return cap_nhat_dem_mach(mach)
+
+    def _dung_bia_mo(self, mocs: dict[int, Moc], binh_luan: dict[str, Comment]) -> None:
+        """Ghi `deleted_at` / `hidden_at` cho ba hàng đã chọn.
+
+        Ghi thẳng vào cột thay vì đi qua `core/ghi.py`: đường xoá/ẩn của sản phẩm là việc
+        của Phase 2 và Phase 4, chưa tồn tại. Đổi lại, người gọi **phải** chạy
+        `cap_nhat_dem_mach` sau đó — `comment_count` và `last_activity_at` đo nội dung
+        ĐỌC ĐƯỢC (PLAN mục 6), nên bỏ bước ấy là banner nói 8 trong khi đếm được 6, im
+        lặng và không có gì đỏ. Lời gọi nằm trong `handle` vốn đã `@transaction.atomic`,
+        đúng ràng buộc `select_for_update` của hàm đó.
+
+        Thứ tự các mốc thời gian là thứ tự CÂU CHUYỆN và nó kiểm được: `b3` bị tác giả xoá
+        SAU khi chủ mạch trích nó vào sổ — đó chính là ca mà PLAN 5.6 dựng "cuốn sổ
+        không-xoá-được" để chống.
+        """
+        moc = mocs[MOC_BIA_MO_SEQ]
+        moc.deleted_at = self._khi_bia_mo(DAI_MACH_BIA_MO_NGAY + 2, time(8, 30))
+        moc.save(update_fields=["deleted_at"])
+
+        c = binh_luan[BINH_LUAN_TU_XOA]
+        c.deleted_at = self._khi_bia_mo(DAI_MACH_BIA_MO_NGAY + 2, time(9, 0))
+        c.save(update_fields=["deleted_at"])
+
+        c = binh_luan[BINH_LUAN_MOD_AN]
+        c.hidden_at = self._khi_bia_mo(DAI_MACH_BIA_MO_NGAY + 2, time(9, 30))
+        c.save(update_fields=["hidden_at"])
 
     @staticmethod
     def _bo_phieu(target, nguoi_xem: list[User], up: int, down: int, nhan: str) -> None:

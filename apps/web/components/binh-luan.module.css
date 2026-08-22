@@ -1,0 +1,117 @@
+.danh_sach,
+.tra_loi {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.danh_sach {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.tra_loi {
+  margin: 15px 0 0;
+  padding-left: 17px;
+  border-left: 2px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dau {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+}
+
+.ai {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.chu_mach {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  background: var(--accent);
+  color: var(--on-accent);
+  border-radius: 3px;
+  padding: 1px 5px;
+}
+
+.neo {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  border: 1px solid var(--line-2);
+  border-radius: 3px;
+  padding: 1px 6px;
+  color: var(--ink-2);
+}
+
+.khi {
+  color: var(--ink-3);
+  font-family: var(--f-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 11.5px;
+}
+
+.than {
+  margin: 5px 0 0;
+  font-size: 14.5px;
+}
+
+.than p {
+  margin: 0 0 8px;
+}
+
+.than p:last-child {
+  margin-bottom: 0;
+}
+
+.chan {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-top: 9px;
+}
+
+.diem {
+  font-family: var(--f-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+.bia_mo {
+  margin: 0;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--ink-3);
+}
+
+.gap summary {
+  cursor: pointer;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+.sau_qua {
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+.noi_bat {
+  animation: none;
+}
+
+.noi_bat:target {
+  background: var(--accent-soft);
+  border-radius: 4px;
+  box-shadow: 0 0 0 6px var(--accent-soft);
+}

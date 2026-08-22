@@ -1,0 +1,39 @@
+.khung {
+  max-width: var(--khung);
+  margin: 0 auto;
+  padding: 40px 18px 60px;
+}
+
+.tieu_de {
+  font-family: var(--f-display);
+  font-size: 26px;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+
+.than {
+  margin: 0 0 14px;
+  color: var(--ink-2);
+  font-size: 14.5px;
+  max-width: 62ch;
+}
+
+.ma {
+  margin: 0 0 18px;
+  color: var(--ink-3);
+  font-size: 12.5px;
+}
+
+.nut {
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--ink);
+  padding: 8px 16px;
+  font-size: 13.5px;
+}
+
+.nut:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}

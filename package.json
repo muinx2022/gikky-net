@@ -7,6 +7,9 @@
     "codegen": "node scripts/codegen.mjs",
     "codegen:check": "node scripts/codegen-check.mjs",
     "test": "node scripts/pytest.mjs -q",
+    "e2e": "pnpm --filter @gikky/web e2e",
+    "e2e:don-vi": "pnpm --filter @gikky/web e2e:don-vi",
+    "lighthouse": "node scripts/lighthouse-seo.mjs",
     "api:dev": "node scripts/py.mjs runserver 8000",
     "api:migrate": "node scripts/py.mjs migrate",
     "api:check": "node scripts/py.mjs check --database default",
@@ -17,10 +20,15 @@
   },
   "devDependencies": {
     "@hey-api/openapi-ts": "^0.99.0",
+    "chrome-launcher": "^1.2.1",
+    "lighthouse": "^13.4.1",
     "typescript": "^5.9.0"
   },
   "packageManager": "pnpm@10.34.5",
   "pnpm": {
-    "onlyBuiltDependencies": ["sharp", "unrs-resolver"]
+    "onlyBuiltDependencies": [
+      "sharp",
+      "unrs-resolver"
+    ]
   }
 }

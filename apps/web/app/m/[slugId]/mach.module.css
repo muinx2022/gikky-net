@@ -1,0 +1,94 @@
+.khung {
+  max-width: var(--khung);
+  margin: 0 auto;
+  padding: 26px 22px 40px;
+}
+
+.the {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.dau {
+  padding: 24px 26px 20px;
+}
+
+.sub {
+  font-family: var(--f-mono);
+  font-size: 11.5px;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
+
+.tieu_de {
+  font-family: var(--f-display);
+  font-size: clamp(25px, 4.2vw, 33px);
+  line-height: 1.22;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin: 9px 0 12px;
+  text-wrap: balance;
+}
+
+.chu_ky {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+.ai {
+  color: var(--ink-2);
+  font-weight: 500;
+}
+
+.cham {
+  color: var(--line-2);
+}
+
+.dem {
+  font-family: var(--f-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  font-weight: 500;
+  background: var(--surface-2);
+  border-radius: 3px;
+  padding: 1px 7px;
+}
+
+.nhat_ky {
+  list-style: none;
+  margin: 0;
+  padding: 0 26px 4px;
+}
+
+.khoa {
+  margin: 0 26px 16px;
+  padding: 9px 13px;
+  border: 1px solid var(--line-2);
+  border-radius: 5px;
+  font-size: 13px;
+  color: var(--ink-2);
+  background: var(--inset);
+}
+
+@media (max-width: 640px) {
+  .khung {
+    padding: 16px 12px 34px;
+  }
+
+  .dau {
+    padding: 19px 16px 16px;
+  }
+
+  .nhat_ky {
+    padding: 0 16px 4px;
+  }
+
+  .khoa {
+    margin: 0 16px 14px;
+  }
+}

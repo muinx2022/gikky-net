@@ -1,0 +1,53 @@
+.chrome {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: color-mix(in srgb, var(--bg) 86%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+
+.trong {
+  max-width: var(--khung);
+  margin: 0 auto;
+  padding: 11px 22px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.hieu {
+  font-family: var(--f-display);
+  font-size: 23px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+.hieu::after {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-left: 5px;
+  vertical-align: middle;
+}
+
+.dieu_huong {
+  display: flex;
+  gap: 13px;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+.dieu_huong a:hover {
+  color: var(--accent);
+}
+
+@media (max-width: 640px) {
+  .trong {
+    padding: 10px 15px;
+  }
+}

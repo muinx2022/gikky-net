@@ -1,0 +1,184 @@
+.hang {
+  display: grid;
+  grid-template-columns: var(--rail) 1fr;
+  column-gap: var(--gutter);
+  padding-bottom: 26px;
+}
+
+/* Bài thường (`entry_count === 1`) không có spine — PLAN 5.1. Một cột, không ray. */
+.hang_don {
+  display: block;
+  padding-bottom: 20px;
+}
+
+.ray {
+  position: relative;
+  border-left: 2px solid var(--line);
+  margin-left: 16px;
+}
+
+.dot {
+  position: absolute;
+  left: 1px;
+  top: 0;
+  transform: translateX(-50%);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  display: grid;
+  place-items: center;
+  font-family: var(--f-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+.trong {
+  padding-top: 2px;
+  min-width: 0;
+}
+
+.dau {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 9px;
+  padding-bottom: 7px;
+}
+
+.khi {
+  font-family: var(--f-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.chip {
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-radius: 3px;
+  padding: 2px 8px;
+}
+
+.bien_lai {
+  font-family: var(--f-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  color: var(--ink-3);
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.da_sua {
+  color: var(--stamp);
+}
+
+.than {
+  margin: 0;
+  color: var(--ink);
+  font-size: 14.5px;
+}
+
+.than p {
+  margin: 0 0 9px;
+}
+
+.than p:last-child {
+  margin-bottom: 0;
+}
+
+.figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  margin: 12px 0 2px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  overflow: hidden;
+  background: var(--inset);
+}
+
+.fig {
+  padding: 9px 15px;
+  flex: 1 1 110px;
+  border-right: 1px solid var(--line);
+}
+
+.fig:last-child {
+  border-right: none;
+}
+
+.fig dt {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-3);
+  margin-bottom: 2px;
+}
+
+.fig dd {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 500;
+}
+
+/* Câu mồi (`question_for_crowd`) là LỜI MỜI, không phải con dấu — nên không hoàng thổ.
+ * PLAN 9.1 giao `--stamp` riêng cho "thứ mang tính đóng dấu" (vạch mới, "đã sửa", trích
+ * vào sổ, số mốc chưa xem); một lời mời viết bình luận không nằm trong danh sách đó, và
+ * dùng chung màu với khối trích là làm loãng đúng cái tín hiệu mà khối trích sống nhờ. */
+.cau_moi {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--ink-2);
+  border-left: 2px solid var(--line-2);
+  background: var(--inset);
+  padding: 7px 12px;
+  border-radius: 0 3px 3px 0;
+  max-width: 62ch;
+}
+
+.chan {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 13px;
+  margin-top: 12px;
+}
+
+.diem {
+  font-family: var(--f-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+.bia_mo {
+  margin: 0;
+  font-size: 13.5px;
+  font-style: italic;
+  color: var(--ink-3);
+}
+
+@media (max-width: 640px) {
+  .ray {
+    margin-left: 12px;
+  }
+
+  .dot {
+    width: 24px;
+    height: 24px;
+    font-size: 11px;
+  }
+
+  .bien_lai {
+    margin-left: 0;
+    flex-basis: 100%;
+  }
+}

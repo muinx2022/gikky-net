@@ -1,0 +1,134 @@
+.khu {
+  border-top: 1px solid var(--line);
+  margin-top: 6px;
+  padding: 20px 26px 26px;
+}
+
+.dau {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 5px;
+}
+
+.dau h2 {
+  font-family: var(--f-display);
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.dem {
+  font-family: var(--f-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+  color: var(--ink-3);
+}
+
+.moi_bung_khan_dai {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  padding: 7px 13px;
+}
+
+.moi_bung_khan_dai:hover {
+  background: var(--accent-soft);
+}
+
+.thanh_sort {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  margin: 14px 0 4px;
+  font-size: 13px;
+}
+
+.nhan_sort {
+  color: var(--ink-3);
+  font-size: 12.5px;
+}
+
+.sort {
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  padding: 4px 11px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.sort_dang_chon {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.danh_sach {
+  margin-top: 16px;
+}
+
+.mot_dong_moi {
+  margin: 10px 0 0;
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+
+/* Trang khán đài nằm NGOÀI dải (`?offset=` gõ tay) — vá D5. Khác `.mot_dong_moi`: danh
+   sách có thật, chỉ trang này rỗng, nên nó ngồi ở chỗ của danh sách chứ không thay lời
+   mời. */
+.trang_rong {
+  margin: 14px 0 0;
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+
+.xem_them {
+  display: inline-block;
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--accent);
+  border-bottom: 1px solid var(--accent);
+}
+
+.composer {
+  margin-top: 26px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-2);
+  padding: 14px 16px;
+}
+
+.o_nhap {
+  width: 100%;
+  min-height: 74px;
+  resize: none;
+  font: inherit;
+  color: var(--ink-3);
+  background: var(--inset);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 10px 12px;
+}
+
+.o_nhap:disabled {
+  cursor: not-allowed;
+}
+
+.moi_dang_nhap {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+@media (max-width: 640px) {
+  .khu {
+    padding: 18px 16px 22px;
+  }
+}

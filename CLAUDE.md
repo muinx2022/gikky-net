@@ -67,6 +67,18 @@ Chạy ở **gốc repo** trừ khi ghi khác.
 | Sinh lại TS client từ OpenAPI | `pnpm codegen` |
 | Kiểm drift codegen (sinh lại + so hash) | `pnpm codegen:check` |
 | Test Python | `pnpm test` (thêm cờ: `pnpm test -- -k health -x`) |
+| Test e2e (Playwright) | `pnpm e2e` — **tự dựng seed, tự build + start Next 3000 và Django 8000** |
+| Chỉ chạy nhóm test hàm thuần | `pnpm e2e:don-vi` — **an toàn để chạy song song**: đi qua `playwright.don-vi.config.ts`, không `webServer`, không `globalSetup`, không chạm DB, không chiếm cổng |
+| Đo Lighthouse SEO | `pnpm lighthouse` (cần `next start` + Django đang chạy) |
+| Seed 21 mạch cho ca "hồ sơ bị cắt" | `node scripts/py.mjs seed_e2e` |
+
+⚠ **`pnpm e2e --project=don-vi` thì KHÁC và KHÔNG an toàn** — cờ `--project` đi qua
+`playwright.config.ts`, mà `globalSetup` + `webServer` ở đó là cấu hình TOÀN CỤC nên vẫn seed DB
+và vẫn dựng 2 server. Đúng lệnh là `pnpm e2e:don-vi`.
+
+**Máy mới phải chạy một lần:** `cd apps/web && npx playwright install chromium`.
+**`pnpm e2e` chiếm cổng 3000 + 8000 và GHI vào `gikky_dev`** — đừng chạy song song với bất kỳ
+thứ gì cũng dùng DB hay hai cổng đó (xem luật chia độc quyền tài nguyên ở `D:\Projects\CLAUDE.md`).
 
 Django admin ở **`/api/admin/django/`** — không phải `/api/admin/`; xem docstring
 `api/config/urls.py`.
@@ -111,6 +123,12 @@ Django admin ở **`/api/admin/django/`** — không phải `/api/admin/`; xem d
   checker của TypeScript đọc bề mặt export THẬT của `src/index.ts` (đi theo cả `export *`),
   và `pnpm codegen` exit ≠ 0 nếu `client` lọt ra. `index.ts` là file SINH RA — chỉ một bản
   `@hey-api/openapi-ts` mới đổi ý là luật viết tay thành vô hiệu.
+- **Frontend: CẤM gọi hàm API qua biến trung gian.** Viết thẳng
+  `lietKeFeedMoi({ baseUrl, ... })`, đừng `const ham = x ? lietKeFeedMoi : lietKeFeedDangDienRa;
+  ham(...)`. Hàng rào `e2e/don-vi/type-frontend.spec.ts` tìm lời gọi **theo tên hàm** để ép mọi
+  lời gọi phải kèm `baseUrl` (chống `client` singleton); alias qua biến làm phân tích tĩnh mù, và
+  lựa chọn còn lại là viết nửa cái type-checker bằng regex — thứ mong manh repo này đã diệt nhiều
+  lần. Đây là ràng buộc phong cách do hàng rào áp lên code sản phẩm, ghi ra để không ai gỡ nhầm.
 - **Thứ tự khoá hàng: `Comment` TRƯỚC, `Mach` SAU.** Đường reply khoá `Comment` cha
   (`cap_phat_path`) rồi mới xin `Mach` (`cap_nhat_dem_mach`). Đường nào làm ngược sinh deadlock —
   Postgres huỷ một bên ⇒ 500 ngẫu nhiên dưới tải, gần như không tái hiện được ở dev. Ngoại lệ duy

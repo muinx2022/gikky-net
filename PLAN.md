@@ -221,6 +221,17 @@ CẶN  còn lại.       last_activity_at: cột denormalize trên Mach (mục 6
   top-10 theo wilson.** Bấm chân trang → bung khán đài đầy đủ ngay tại đó (mặc định
   `hay_nhat`, đổi được 3 sort) **kết thúc bằng composer** — mạch đóng vẫn bình luận được (5.1).
 
+  > **Công thức dải gập, chốt 2026-08-22 (Phase 1c) — hiện thực DUY NHẤT ở
+  > `apps/web/lib/dai-gap.ts`:** với `entry_count = n`, **gập `seq` từ 2 tới n−3**; hiện mốc
+  > `1`, `n−2`, `n−1`, `n`. Với `n = 9` ⇒ gập **2–6, đúng "5 mốc"** như câu trên và như
+  > wireframe 9.2 và như bảng nghiệm thu mục 10.
+  > ⚠ Câu *"2 mốc cuối"* ở trên là **văn xuôi lỏng** — thực tế hiện **ba** mốc cuối
+  > (`n−2, n−1, n`). Giữ `2…n−3` vì nó làm ba chỗ còn lại của PLAN đúng cùng lúc, **và** vì
+  > nó đưa khối "trích vào sổ" của mạch seed (mốc 7) lên mặt tiền — với `2…n−2` thì cơ chế
+  > thưởng chủ lực của 5.6 bị gập mất, phải bấm bung mới thấy.
+  > **User cần duyệt lại lựa chọn này.** Bản đầu của Phase 1c cài `2…n−2`, và phiên chính đã
+  > lỡ sửa wireframe cho khớp code trước khi phản biện chỉ ra rằng nền mới là chỗ sai.
+
 ### 5.6 Trích vào sổ — bốn rào bắt buộc
 
 Cơ chế thưởng chủ lực cho người bình luận: được ghi tên vào cuốn sổ không-xoá-được.
@@ -258,7 +269,11 @@ Người được trích nhận notification.
 - `/` — 2 tab: **Mới** (post mới, sort `created_at`) · **Đang diễn ra** (mạch open, sort
   `last_entry_at` desc; feed đặc sản của gikky, KHÔNG phải Hot bằng bump).
 - `/s/<sub>` — như trên, trong sub. `/m/<slug>-<id>` — trang mạch (id bền, slug đổi được,
-  redirect 301 khi slug cũ). `/u/<username>` — hồ sơ: mạch của họ, chỉ số "Được trích ×N",
+  redirect vĩnh viễn khi slug cũ — **308, không phải 301** *(sửa 2026-08-22, Phase 1c)*: Next App
+  Router chỉ có `permanentRedirect()` và nó trả 308; đặt 301 phải đi qua `middleware.ts`, mà
+  middleware là cơ chế của 8.4 thuộc Phase 3. 308 còn đúng hơn về ngữ nghĩa (301 cho phép đổi
+  method sang GET, 308 giữ nguyên) và Google coi cả hai là vĩnh viễn như nhau.
+  `/u/<username>` — hồ sơ: mạch của họ, chỉ số "Được trích ×N",
   tổng mốc, tổng bình luận.
 - JSON-LD `DiscussionForumPosting` trên trang mạch; sitemap.xml; canonical.
 
