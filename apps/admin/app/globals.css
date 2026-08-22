@@ -1,0 +1,162 @@
+/* Khu quản trị — PLAN 9.3: "tự build, **tối giản**".
+ *
+ * Cố ý KHÔNG dùng hệ token của `apps/web/app/globals.css`. Hai lý do, và cái thứ hai mới
+ * là lý do thật:
+ *
+ * 1. PLAN 9.1 mô tả ngôn ngữ thị giác của **mặt tiền** ("mực và dấu", giấy lạnh, hoàng
+ *    thổ đóng dấu). Khu quản trị không phải mặt tiền; nó là một bảng điều khiển và nó nên
+ *    trông như một bảng điều khiển.
+ * 2. Hoàng thổ `--stamp` và xanh/đỏ lãi-lỗ có LUẬT riêng trong PLAN 9.1, và hàng rào
+ *    `apps/web/e2e/don-vi/mau-token.spec.ts` chỉ quét `apps/web`. Chép bảng màu sang đây
+ *    là dựng một bản sao không ai canh — rồi một nút "xoá" tô đỏ `#B33A2B` ở khu quản trị
+ *    sẽ không làm gì đỏ cả, trong khi đúng mã ấy ở `apps/web` thì bị chặn. Dùng màu hệ
+ *    thống trung tính là cách giữ cho không có bản sao nào để trôi.
+ */
+
+:root {
+  color-scheme: light dark;
+  --nen: #ffffff;
+  --nen-mo: #f4f5f7;
+  --muc: #16181d;
+  --muc-mo: #5b6270;
+  --vien: #d8dbe2;
+  --nhan: #2f4bd8;
+  --canh-bao: #8a4b00;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --nen: #14161a;
+    --nen-mo: #1c1f25;
+    --muc: #e7eaf0;
+    --muc-mo: #a0a7b4;
+    --vien: #2e333c;
+    --nhan: #93a4ff;
+    --canh-bao: #d9a24a;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--nen);
+  color: var(--muc);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+a {
+  color: var(--nhan);
+}
+
+.vo {
+  max-width: 68rem;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.dieu-huong {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: baseline;
+  border-bottom: 1px solid var(--vien);
+  padding: 0.75rem 1rem;
+}
+
+.dieu-huong strong {
+  margin-right: auto;
+}
+
+/* Bảng luôn cuộn được theo chiều ngang: hàng đợi báo cáo có 6 cột và khu này vẫn phải
+   dùng được trên màn hình hẹp — mod thường xử lý báo cáo trên điện thoại. */
+.cuon-ngang {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+th,
+td {
+  border-bottom: 1px solid var(--vien);
+  padding: 0.5rem 0.6rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  font-weight: 600;
+  color: var(--muc-mo);
+  white-space: nowrap;
+}
+
+.mono {
+  font-family: ui-monospace, "Cascadia Mono", "Consolas", monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+  color: var(--muc-mo);
+}
+
+button {
+  font: inherit;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--vien);
+  border-radius: 4px;
+  background: var(--nen-mo);
+  color: var(--muc);
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+
+input,
+select,
+textarea {
+  font: inherit;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--vien);
+  border-radius: 4px;
+  background: var(--nen);
+  color: var(--muc);
+  max-width: 100%;
+}
+
+.hang-nut {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.the {
+  border: 1px solid var(--vien);
+  border-radius: 6px;
+  padding: 0.9rem;
+  margin-bottom: 1rem;
+  background: var(--nen-mo);
+}
+
+.loi {
+  border: 1px solid var(--canh-bao);
+  border-radius: 6px;
+  padding: 0.6rem 0.8rem;
+  margin: 0.8rem 0;
+  color: var(--canh-bao);
+}
+
+.nhan-an {
+  font-size: 0.78rem;
+  border: 1px solid var(--canh-bao);
+  color: var(--canh-bao);
+  border-radius: 3px;
+  padding: 0 0.3rem;
+  white-space: nowrap;
+}

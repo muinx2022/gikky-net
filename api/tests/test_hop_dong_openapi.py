@@ -161,6 +161,14 @@ CO_Y_DUNG_MA_MAC_DINH: dict[str, str] = {
         "còn), nên đổi mã của nó là breaking change; `khoang` sinh ra sau `Literal` nên "
         "chưa bao giờ hứa mã nào khác. Xem `test_api_feed_top.py::test_khoang_la_tra_400`."
     ),
+    "trang_thai": (
+        "Bộ lọc hàng đợi báo cáo của khu quản trị (`GET /api/admin/reports`, Phase 4). "
+        "Cấp mã riêng ở `MA_LOI_THEO_THAM_SO` sẽ áp cho CẢ `api_v1`: bảng đó là bảng "
+        "dùng chung của `dang_ky_xu_ly_loi`, và một tham số chỉ tồn tại sau hàng rào "
+        "staff không có lý do chiếm một mã trong hợp đồng CÔNG KHAI. Người gọi endpoint "
+        "này là `apps/admin` do chính repo viết, nên `tham_so_khong_hop_le` là đủ — và "
+        "docstring của endpoint nói đúng thế."
+    ),
 }
 
 

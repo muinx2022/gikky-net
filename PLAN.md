@@ -491,6 +491,29 @@ Lỗi `{detail, code}`.
 | `GET /users/{username}` | hồ sơ công khai | |
 | **Admin (`/api/admin`, staff-only)** | reports queue, hide/lock/ban/unban, subs CRUD, audit log | router riêng; **chỉ truy cập được qua host admin — xem 8.2** |
 
+**Bảng khu quản trị — `NinjaAPI` khoá `admin`, prefix `/api/admin`** *(Phase 4, 2026-08-22)*.
+Mọi dòng dưới đây đòi session cookie của một tài khoản `is_staff` còn hiệu lực và chưa bị ban;
+mọi request GHI đòi CSRF. Người lạ nhận **401 `chua_dang_nhap`**, người đã đăng nhập mà không
+phải mod nhận **403 `khong_du_quyen`**, và request tới từ host không nằm trong `ADMIN_HOSTS`
+nhận **403 `sai_host_quan_tri`** trước cả hai. TS client ở subpath `@gikky/api-client/admin`.
+
+| Method & path | Việc | Ghi chú |
+|---|---|---|
+| `GET /admin/me` | mod đang đăng nhập là ai | cũng là chỗ **gieo cookie CSRF** cho app admin |
+| `GET /admin/reports` | hàng đợi báo cáo, cursor keyset | `?trang_thai=cho_xu_ly\|da_xu_ly\|tat_ca` (mặc định `cho_xu_ly`), `?limit`, `?cursor`; mỗi dòng kèm ngữ cảnh của thứ bị tố |
+| `POST /admin/reports/{id}/dong` | đóng báo cáo | `{hanh_dong: an\|khoa\|ban\|bo_qua}` — **chỉ ghi lại, không tự thi hành** |
+| `POST /admin/mocs/{id}/an` | ẩn / gỡ ẩn mốc | `{an, ly_do?}`; idempotent. Mốc bị ẩn **giữ ô trên spine** (5.2) |
+| `POST /admin/comments/{id}/an` | ẩn / gỡ ẩn bình luận | `{an, ly_do?}`; kéo theo `comment_count` trong cùng transaction |
+| `POST /admin/machs/{id}/an` | ẩn / gỡ ẩn mạch | `{an, ly_do?}`; mạch ẩn ⇒ 404 ở mọi cửa công khai |
+| `POST /admin/machs/{id}/khoa` | khoá / mở khoá mạch | `{khoa, ly_do?}`; **trục riêng, khác "đóng sổ"** (5.10) |
+| `GET /admin/machs/{id}` | chi tiết mạch cho mod | kèm mọi mốc, **không che** nội dung đã ẩn — mod phải đọc để phán xử |
+| `GET /admin/users/{username}` | hồ sơ tài khoản cho mod | trạng thái ban + số mạch + số bình luận |
+| `POST /admin/users/{username}/ban` | ban | `{ly_do, vinh_vien?, den_khi?}` — **đúng một** trong hai; 409 nếu đích là chính mình hoặc một mod khác |
+| `POST /admin/users/{username}/go-ban` | gỡ ban | idempotent |
+| `GET /admin/subs` · `POST /admin/subs` | liệt kê (kèm `so_mach`) · tạo | slug phải ở dạng chuẩn, server **không** slugify hộ |
+| `PATCH /admin/subs/{slug}` · `DELETE` | sửa `ten`/`mo_ta` · xoá | `slug` **không sửa được** (URL công khai); xoá chỉ khi sub rỗng, ngược lại 409 |
+| `GET /admin/nhat-ky` | `AuditLog`, cursor keyset | `?action=` lọc **bằng đúng**; chỉ đọc — không có cửa ghi hay xoá |
+
 OpenAPI schema xuất bằng management command **tự ghi file**, chạy từ **gốc repo**:
 
 ```

@@ -23,6 +23,18 @@ SORT_KHONG_HOP_LE = "sort_khong_hop_le"
 THAM_SO_KHONG_HOP_LE = "tham_so_khong_hop_le"
 SUB_KHONG_TON_TAI = "sub_khong_ton_tai"
 
+# --- Khu quản trị (Phase 4, `/api/admin`) ------------------------------------
+#: Chưa đăng nhập. **Tách khỏi `KHONG_DU_QUYEN` là cố ý, và ngược hẳn lý lẽ của
+#: `KHONG_TIM_THAY` ở trên**: ở API công khai, phân biệt "không có" với "đã bị ẩn" là kể
+#: cho người lạ nghe; ở khu quản trị thì người gọi đã đứng sau hàng rào Host và UI cần
+#: biết nên **hiện form đăng nhập** (401) hay **nói "tài khoản này không phải mod"** (403).
+#: Gộp hai mã là bắt frontend đoán, và cái nó đoán sai là màn hình đăng nhập vô hạn.
+CHUA_DANG_NHAP = "chua_dang_nhap"
+KHONG_DU_QUYEN = "khong_du_quyen"
+CSRF_THAT_BAI = "csrf_that_bai"
+#: Yêu cầu hợp lệ về hình dạng nhưng đụng trạng thái hiện tại (slug trùng, sub còn mạch).
+XUNG_DOT = "xung_dot"
+
 
 class LoiOut(Schema):
     """`{detail, code}` — PLAN mục 7."""
