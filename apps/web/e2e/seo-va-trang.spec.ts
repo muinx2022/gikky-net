@@ -278,3 +278,96 @@ test.describe("C5 — robots.txt + noindex cho trang chẩn đoán", () => {
     await expect(page.locator('meta[name="robots"][content*="noindex"]')).toHaveCount(0);
   });
 });
+
+/* ===========================================================================
+ * Phase 6 — ảnh OG · RSS · trang 404
+ * ===========================================================================
+ *
+ * ⚠ **CẢ KHỐI NÀY CHƯA BAO GIỜ CHẠY.** Nó được viết trong một worktree bị cấm chiếm cổng
+ * 3000/8000 (hai agent chạy song song — `D:\Projects\CLAUDE.md`, chia độc quyền tài
+ * nguyên), nên `pnpm e2e` không chạy được ở đó. Phần đo được mà KHÔNG cần server đã nằm
+ * ở `e2e/don-vi/og-anh.spec.ts` (render PNG thật, so byte), `e2e/don-vi/rss.spec.ts`
+ * (dựng + kiểm cú pháp XML) và `e2e/don-vi/trang-loi.spec.ts`.
+ *
+ * Khối này thêm vào ba câu **chỉ trả lời được khi có server thật**, và câu đáng ngờ nhất
+ * là câu đầu: Next có thật sự gắn ảnh từ file `opengraph-image.tsx` vào
+ * `<meta property="og:image">` của một trang mà `generateMetadata` đã tự khai `openGraph`
+ * không. Tài liệu nói metadata dạng FILE thắng metadata dạng object; ở đây chưa ai đo.
+ * Nếu nó ĐỎ ở lượt nghiệm thu thì đó là một lỗi thật, không phải bài đo viết ẩu:
+ * `app/m/[slugId]/page.tsx` sẽ phải khai `openGraph.images` tường minh.
+ */
+test.describe("Phase 6 — ảnh OG", () => {
+  test("ảnh OG của trang chủ là PNG thật", async ({ request }) => {
+    const res = await request.get("/opengraph-image");
+    expect(res.status()).toBe(200);
+    expect(res.headers()["content-type"]).toContain("image/png");
+    const b = await res.body();
+    expect(b.subarray(0, 8).toString("hex")).toBe("89504e470d0a1a0a");
+    expect(b.length).toBeGreaterThan(10_000);
+  });
+
+  test("mỗi mạch có ảnh OG riêng, mạch không tồn tại thì 404", async ({ request }) => {
+    const res = await request.get(`${duongDan(hpg)}/opengraph-image`);
+    expect(res.status()).toBe(200);
+    expect(res.headers()["content-type"]).toContain("image/png");
+
+    // Ảnh OG của một link chết sẽ nằm lại trong cache của Facebook rất lâu — để trống
+    // còn hơn một tấm ảnh mang thương hiệu gikky đi kèm một URL không mở được.
+    const khong_co = await request.get("/m/khong-co-mach-nay-999999999/opengraph-image");
+    expect(khong_co.status()).toBe(404);
+  });
+
+  test("trang mạch KHAI ảnh OG ra `<meta property=og:image>`", async ({ page }) => {
+    await page.goto(duongDan(hpg));
+    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+      "content",
+      /\/opengraph-image/,
+    );
+  });
+});
+
+test.describe("Phase 6 — RSS", () => {
+  test("/feed.xml có mạch seed và link tuyệt đối", async ({ request }) => {
+    const res = await request.get("/feed.xml");
+    expect(res.status()).toBe(200);
+    expect(res.headers()["content-type"]).toContain("application/rss+xml");
+    const xml = await res.text();
+    expect(xml).toContain('<rss version="2.0"');
+    expect(xml).toContain(TITLE_HPG);
+    expect(xml).toContain(`<link>http://localhost:3000${duongDan(hpg)}</link>`);
+  });
+
+  test("feed của sub nói đúng sub, và slug lạ thì 404", async ({ request }) => {
+    const res = await request.get("/s/chung-khoan/feed.xml");
+    expect(res.status()).toBe(200);
+    expect(await res.text()).toContain("s/chung-khoan");
+
+    // Một kênh 200-nhưng-rỗng dạy trình đọc rằng chuyên mục có tồn tại và vừa hết bài.
+    const la = await request.get("/s/khong-co-sub-nay/feed.xml");
+    expect(la.status()).toBe(404);
+  });
+
+  test("trang chủ KHAI feed ra `<link rel=alternate>`", async ({ page }) => {
+    // Không khai thì RSS chỉ tồn tại cho ai đã biết URL — cùng loài thiếu sót mà vá C5
+    // vừa vá cho `sitemap.xml`.
+    await page.goto("/");
+    await expect(
+      page.locator('link[rel="alternate"][type="application/rss+xml"]'),
+    ).toHaveAttribute("href", /\/feed\.xml$/);
+  });
+});
+
+test.describe("Phase 6 — trang 404 thật", () => {
+  test("URL không tồn tại: 404, tiếng Việt, có đường sang /luat", async ({ page }) => {
+    const res = await page.goto("/khong-co-trang-nay-dau");
+    expect(res?.status()).toBe(404);
+    await expect(page.getByTestId("trang-404")).toBeVisible();
+    await expect(page.getByTestId("trang-404-ve-luat")).toHaveAttribute("href", "/luat");
+  });
+
+  test("đường thoát dẫn tới một trang SỐNG, không phải một 404 nữa", async ({ page }) => {
+    await page.goto("/khong-co-trang-nay-dau");
+    await page.getByTestId("trang-404-ve-luat").click();
+    await expect(page).toHaveURL(/\/luat$/);
+  });
+});

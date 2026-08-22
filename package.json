@@ -13,6 +13,8 @@
     "api:dev": "node scripts/py.mjs runserver 8000",
     "api:migrate": "node scripts/py.mjs migrate",
     "api:check": "node scripts/py.mjs check --database default",
+    "db:sao-luu": "node scripts/sao-luu-db.mjs",
+    "digest": "node scripts/py.mjs gui_digest",
     "web:dev": "pnpm --filter @gikky/web dev",
     "admin:dev": "pnpm --filter @gikky/admin dev",
     "build": "pnpm --filter @gikky/web build && pnpm --filter @gikky/admin build",

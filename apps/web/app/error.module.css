@@ -37,3 +37,28 @@
   border-color: var(--accent);
   background: var(--accent-soft);
 }
+
+/* Hàng đường thoát của `app/not-found.tsx`. Trang 404 khác hai trang lỗi cạnh nó ở một
+ * điểm quyết định cách viết: **router vẫn sống**. Ở `error.tsx` đường thoát phải là
+ * `window.location` trên một `<button>` (cây router đang chờ một lời gọi RSC treo); ở
+ * đây `next/link` là đúng, và nó cho prefetch + điều hướng phía client. */
+.hang {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.lien_ket {
+  display: inline-block;
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--ink);
+  padding: 8px 16px;
+  font-size: 13.5px;
+}
+
+.lien_ket:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}

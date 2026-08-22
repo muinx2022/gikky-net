@@ -12,6 +12,9 @@ dist/
 # đích của `collectstatic` (STATIC_ROOT) — sinh ra, không commit
 api/staticfiles/
 
+# đích mặc định của `pnpm db:sao-luu` — bản dump database, không bao giờ commit
+backup/
+
 # build/tooling caches
 *.egg-info/
 .turbo/

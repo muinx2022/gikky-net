@@ -236,6 +236,14 @@ SOCIALACCOUNT_PROVIDERS = (
 
 #: Email. Dev không có SMTP ⇒ ghi ra file, e2e đọc file lấy link xác thực.
 #: `EMAIL_URL` (django-environ) đè được ở prod, vd `smtp://user:pass@host:587/?tls=True`.
+#:
+#: **Khối DUY NHẤT cấu hình email.** Mảng D (Phase 6) mang theo một khối thứ hai —
+#: `EMAIL_BACKEND`/`EMAIL_FILE_PATH` chọn theo `DEBUG`, thư ra `api/sent_emails/` — và
+#: khối ấy đã bị XOÁ ở lượt gộp 2026-08-23 theo đúng ghi chú điểm gộp mà chính D viết:
+#: giữ lối `EMAIL_URL` của A vì A là bên dùng email nhiều hơn (xác thực, đặt lại mật
+#: khẩu). Hệ quả phải biết: thư dev nằm ở **`api/.mail/`**, không phải `api/sent_emails/`.
+#: `SITE_ORIGIN` của D cũng bỏ — `FRONTEND_ORIGIN` ở trên là cùng vai, và
+#: `gui_digest.py` cố ý tra cả hai tên nên nó chạy đúng mà không cần biến thứ hai.
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL")
 EMAIL_FILE_PATH = BASE_DIR / ".mail"
 if env("EMAIL_URL"):

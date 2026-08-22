@@ -114,17 +114,28 @@ Chạy ở gốc repo.
 | Sinh lại TS client | `pnpm codegen` |
 | Kiểm drift codegen | `pnpm codegen:check` |
 | Đo Lighthouse SEO | `pnpm lighthouse` |
+| Sao lưu PostgreSQL | `pnpm db:sao-luu` |
+| Gửi digest tuần | `pnpm digest` |
 
 `pnpm e2e` **chiếm cổng 3000 + 8000 và ghi vào `gikky_dev`** — đừng chạy song song với thứ khác
 dùng chung hai thứ đó.
 
 ## API
 
-Mount ở `/api/v1/`. Bảng đầy đủ ở `PLAN.md` mục 7. Lược đồ tương tác chỉ mở khi `DEBUG=True`
-(`/api/v1/docs`) — ngoài DEBUG thì tắt hẳn, vì nó phơi toàn bộ bề mặt API.
+Hai `NinjaAPI`: **`/api/v1/`** (công khai) và **`/api/admin/`** (khu quản trị, staff-only —
+Phase 4). Bảng đầy đủ của cả hai ở `PLAN.md` mục 7. Lược đồ tương tác chỉ mở khi `DEBUG=True`
+(`/api/v1/docs`, `/api/admin/docs`) — ngoài DEBUG thì tắt hẳn, vì nó phơi toàn bộ bề mặt API.
 
-Django admin nằm ở **`/api/admin/django/`**, không phải `/api/admin/` — chỗ sau để dành cho
-router quản trị của Phase 4.
+Django admin nằm ở **`/api/admin/django/`**, không phải `/api/admin/` — chỗ sau là router
+quản trị Ninja. TS client của nó ở subpath `@gikky/api-client/admin`.
+
+## Vận hành (Phase 6)
+
+| Thứ | Ở đâu | Đã chạy thật chưa |
+|---|---|---|
+| Reverse proxy + rate limit tầng biên | [`deploy/Caddyfile`](deploy/Caddyfile) | **Chưa** — không có Caddy/tên miền trên máy dev. Cần bản Caddy dựng kèm plugin `caddy-ratelimit`. |
+| Sao lưu / phục hồi Postgres | [`docs/sao-luu-phuc-hoi.md`](docs/sao-luu-phuc-hoi.md) | Dump + `pg_restore` **đã chạy**; scheduler và đẩy bản sao ra khỏi máy thì **chưa** |
+| Email digest tuần (8:00 T7 giờ VN) | `pnpm digest`, `api/core/digest.py` | Nội dung + giao cho backend **đã chạy** (backend `filebased`); **SMTP chưa bao giờ chạy**, và danh sách người nhận còn rỗng cho tới Phase 3 |
 
 ## Cách làm việc trong repo này
 
