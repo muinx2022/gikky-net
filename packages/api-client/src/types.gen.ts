@@ -516,6 +516,32 @@ export type HoSoOut = {
 };
 
 /**
+ * KetQuaTimKiemOut
+ *
+ * Một dòng kết quả tìm kiếm — Phase 7.
+ *
+ * `mach` là **đúng thẻ mà feed dùng** (`MachTomTatOut`), không phải một hình dạng thứ
+ * hai: trang kết quả vẽ lại cùng loại thẻ với trang chủ, nên hai schema khác nhau chỉ
+ * tạo hai đường trôi.
+ *
+ * Hai trường tô đậm dùng dấu **`[[` `]]`**, không phải HTML. Trả `<mark>` về đây là mời
+ * `dangerouslySetInnerHTML` vào một đường dữ liệu do người dùng viết; frontend tự dựng
+ * thẻ từ cặp dấu (`apps/web/lib/tim-kiem.ts`). Chữ trong hai trường này đến từ
+ * **Postgres**, không phải từ chỉ mục — xem docstring `api/tim_kiem.py`.
+ */
+export type KetQuaTimKiemOut = {
+    /**
+     * Doan Trich
+     */
+    doan_trich: string;
+    mach: MachTomTatOut;
+    /**
+     * Title To Dam
+     */
+    title_to_dam: string;
+};
+
+/**
  * KetQuaXoaOut
  *
  * Kết quả `DELETE /comments/{id}` — PLAN 5.3.
@@ -1388,6 +1414,38 @@ export type ThongBaoOut = {
      * Type
      */
     type: string;
+};
+
+/**
+ * TimKiemOut
+ *
+ * Một trang kết quả tìm kiếm.
+ *
+ * `co_the_tim = false` là **xuống thang**, không phải lỗi: Meilisearch chưa cấu hình
+ * hoặc đang hỏng. Endpoint vẫn trả 200 để trang gọi vẽ được một câu nói bằng tiếng
+ * người thay vì xử một mã lỗi như xử sự cố (plan con Phase 7 §5).
+ *
+ * `tong` là **ước lượng** của Meilisearch (`estimatedTotalHits`), đếm trước khi lớp lọc
+ * Postgres chạy — nên `len(items)` có thể nhỏ hơn `tong` chia trang. Nói ra ở đây để
+ * frontend không dựng bộ đếm trang chính xác trên một con số không chính xác.
+ */
+export type TimKiemOut = {
+    /**
+     * Co The Tim
+     */
+    co_the_tim: boolean;
+    /**
+     * Items
+     */
+    items: Array<KetQuaTimKiemOut>;
+    /**
+     * Q
+     */
+    q: string;
+    /**
+     * Tong
+     */
+    tong: number;
 };
 
 /**
@@ -2872,6 +2930,56 @@ export type XemSubResponses = {
 };
 
 export type XemSubResponse = XemSubResponses[keyof XemSubResponses];
+
+export type TimKiemData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Q
+         */
+        q?: string;
+        /**
+         * Sub
+         */
+        sub?: string | null;
+        /**
+         * Sort
+         */
+        sort?: 'lien_quan' | 'moi';
+        /**
+         * Offset
+         */
+        offset?: number;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/tim-kiem';
+};
+
+export type TimKiemErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type TimKiemError = TimKiemErrors[keyof TimKiemErrors];
+
+export type TimKiemResponses = {
+    /**
+     * OK
+     */
+    200: TimKiemOut;
+};
+
+export type TimKiemResponse = TimKiemResponses[keyof TimKiemResponses];
 
 export type XemHoSoData = {
     body?: never;

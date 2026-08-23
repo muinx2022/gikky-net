@@ -149,6 +149,12 @@ def test_du_endpoint_cua_plan_muc_7():
         # `plans/2026-08-23-phase-5-anh-local.md` §0.
         (("POST",), "/mocs/{int:moc_id}/anh"),
         (("DELETE",), "/anh/{int:anh_id}"),
+        # --- tìm kiếm (Phase 7) ---
+        # Dòng MỚI của bảng PLAN mục 7, và nó là một lần **lật quyết định**: mục 4 xếp
+        # search full-text vào danh sách đã bác ("Cắt hẳn khỏi v1… V2"), user lật
+        # 2026-08-23. Dòng bác cũ vẫn nằm nguyên ở mục 4 kèm ngày lật — lịch sử quyết
+        # định là thứ mục 4 tồn tại để giữ.
+        (("GET",), "/tim-kiem"),
     }
 
 

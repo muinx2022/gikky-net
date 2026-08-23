@@ -1,0 +1,57 @@
+# systemd unit cho Meilisearch — Phase 7 (PLAN 8.7).
+#
+# ⚠ CHƯA CHẠY THẬT LẦN NÀO. Cùng trạng thái với `deploy/Caddyfile` (xem mục C của
+# `LOI-VA-NO.md`): máy dev là Windows, không có systemd, nên file này chưa qua
+# `systemd-analyze verify` và chưa khởi động một lần nào. Đọc nó như một bản nháp có
+# lý lẽ, không như một thứ đã được kiểm.
+#
+# Cài:
+#   sudo cp deploy/meilisearch.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now meilisearch
+#
+# Sau khi service sống, chạy MỘT LẦN để áp cấu hình index (xem `api/.env.example`):
+#   node scripts/py.mjs reindex_tim_kiem --sach
+
+[Unit]
+Description=Meilisearch cho gikky.net (chi muc tim kiem, PLAN 8.7)
+After=network.target
+
+[Service]
+Type=simple
+User=meilisearch
+Group=meilisearch
+
+# --http-addr 127.0.0.1:7700 là RÀNG BUỘC BẢO MẬT, không phải mặc định tiện tay.
+# Meilisearch không bao giờ được nghe ra ngoài localhost và Caddy không proxy tới nó:
+# luật che nội dung (mạch bị mod ẩn, bia mộ) sống ở Django, còn một khoá search nằm
+# trong trình duyệt là một khoá phát lại được với bộ lọc tuỳ ý.
+ExecStart=/usr/bin/meilisearch \
+  --http-addr 127.0.0.1:7700 \
+  --db-path /var/lib/meilisearch/data \
+  --env production \
+  --no-analytics
+
+# Master key đọc từ file, KHÔNG viết thẳng vào unit: `systemctl show` in ra toàn bộ
+# Environment= cho bất kỳ user nào, còn file thì chmod 600 được.
+#   sudo install -m 600 -o meilisearch -g meilisearch /dev/null /etc/gikky/meilisearch.env
+#   echo 'MEILI_MASTER_KEY=<chuỗi ngẫu nhiên ≥16 byte>' | sudo tee /etc/gikky/meilisearch.env
+EnvironmentFile=/etc/gikky/meilisearch.env
+
+Restart=on-failure
+RestartSec=5
+
+# Chỉ mục dựng lại được từ Postgres (`reindex_tim_kiem`), nên mất thư mục dữ liệu là
+# phiền chứ không phải mất mát — xem `docs/sao-luu-phuc-hoi.md`. Nó KHÔNG nằm trong
+# bản sao lưu, và đó là một quyết định có ghi lý do.
+StateDirectory=meilisearch
+WorkingDirectory=/var/lib/meilisearch
+
+# Siết quyền: tiến trình này chỉ cần đọc/ghi đúng thư mục dữ liệu của nó.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/meilisearch
+
+[Install]
+WantedBy=multi-user.target

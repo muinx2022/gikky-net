@@ -161,7 +161,50 @@ def dang_ky_xu_ly_loi_ghi(api) -> None:
     điệp mặc định "Unauthorized" đi ra ngoài — đúng hình dạng, sai ngôn ngữ, và không có
     `code` để frontend phân biệt "chưa đăng nhập" với "không phải chủ".
 
-    `Comment.DoesNotExist` cũng đăng ký ở đây — xem `_binh_luan_bien_mat`.
+    `Comment.DoesNotExist` đi qua `dang_ky_binh_luan_bien_mat` — hàm riêng vì khu quản
+    trị cũng cần nó nhưng **không** cần ba handler còn lại (nó có bản riêng của auth/CSRF).
+    """
+    dang_ky_binh_luan_bien_mat(api)
+
+    @api.exception_handler(AuthenticationError)
+    def _chua_dang_nhap(request, exc):
+        return api.create_response(
+            request,
+            LoiOut(detail="Bạn cần đăng nhập để làm việc này.", code=CHUA_DANG_NHAP),
+            status=401,
+        )
+
+    @api.exception_handler(HttpError)
+    def _http(request, exc: HttpError):
+        # `LoiGhi` mang sẵn `code`. `HttpError` trần chỉ đến từ một chỗ trong toàn bộ
+        # đường ghi: `APIKeyCookie._get_key` ném `HttpError(403, "CSRF check Failed")`.
+        # Đoán mã theo status ở đây là chấp nhận được vì tập nguồn hữu hạn và có chuông
+        # (`tests/test_quyen_ghi.py` đo đúng mã `csrf_khong_hop_le` trên request thật).
+        ma = getattr(exc, "code", None)
+        if ma is None:
+            ma = CSRF_KHONG_HOP_LE if exc.status_code == 403 else DU_LIEU_KHONG_HOP_LE
+        detail = str(exc)
+        if ma == CSRF_KHONG_HOP_LE:
+            detail = (
+                "Yêu cầu không kèm CSRF token hợp lệ. Tải lại trang rồi thử lại."
+            )
+        return api.create_response(
+            request, LoiOut(detail=detail, code=ma), status=exc.status_code
+        )
+
+
+def dang_ky_binh_luan_bien_mat(api) -> None:
+    """Gắn lưới `Comment.DoesNotExist` cho MỘT `NinjaAPI`. Gọi cho **mọi** API có đường ghi.
+
+    Tách khỏi `dang_ky_xu_ly_loi_ghi` ở lượt vá L38 (2026-08-23). Bản đầu chôn handler này
+    bên trong hàm ấy, mà khu quản trị **không** gọi hàm ấy — nó có bản auth/CSRF riêng
+    (`api/quan_tri.py`). Hệ quả: cùng một cuộc đua, cùng một hàng `Comment`, nhưng
+    `api_v1` trả 409 còn `api_admin` trả **500**.
+
+    Đường đâm ở khu quản trị là `core.ghi.dat_an_binh_luan` →
+    `Comment.objects.select_for_update().get(pk=…)`: tác giả bấm Xoá (xoá THẬT — PLAN 5.3,
+    bình luận không reply con và chưa từng được trích) đúng lúc mod bấm "Ẩn". Hàng còn đó
+    lúc mod nạp hàng đợi, biến mất lúc handler khoá nó.
     """
 
     @api.exception_handler(Comment.DoesNotExist)
@@ -197,30 +240,4 @@ def dang_ky_xu_ly_loi_ghi(api) -> None:
                 code=NOI_DUNG_DA_GO,
             ),
             status=409,
-        )
-
-    @api.exception_handler(AuthenticationError)
-    def _chua_dang_nhap(request, exc):
-        return api.create_response(
-            request,
-            LoiOut(detail="Bạn cần đăng nhập để làm việc này.", code=CHUA_DANG_NHAP),
-            status=401,
-        )
-
-    @api.exception_handler(HttpError)
-    def _http(request, exc: HttpError):
-        # `LoiGhi` mang sẵn `code`. `HttpError` trần chỉ đến từ một chỗ trong toàn bộ
-        # đường ghi: `APIKeyCookie._get_key` ném `HttpError(403, "CSRF check Failed")`.
-        # Đoán mã theo status ở đây là chấp nhận được vì tập nguồn hữu hạn và có chuông
-        # (`tests/test_quyen_ghi.py` đo đúng mã `csrf_khong_hop_le` trên request thật).
-        ma = getattr(exc, "code", None)
-        if ma is None:
-            ma = CSRF_KHONG_HOP_LE if exc.status_code == 403 else DU_LIEU_KHONG_HOP_LE
-        detail = str(exc)
-        if ma == CSRF_KHONG_HOP_LE:
-            detail = (
-                "Yêu cầu không kèm CSRF token hợp lệ. Tải lại trang rồi thử lại."
-            )
-        return api.create_response(
-            request, LoiOut(detail=detail, code=ma), status=exc.status_code
         )

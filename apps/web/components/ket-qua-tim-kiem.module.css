@@ -1,0 +1,72 @@
+/* Một dòng kết quả tìm kiếm. Thoáng hơn thẻ feed một chút và đó là chủ đích: trang này
+ * là chỗ QUÉT MẮT để chọn, nên đoạn khớp cần chỗ thở; feed là chỗ lướt, nên nó nén
+ * (PLAN 9.1 — "mật độ là oxy", nhưng oxy cho hai việc khác nhau thì khác nhau).
+ */
+.dong {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 11px 14px;
+}
+
+.dau {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink-3);
+}
+
+.sub {
+  font-family: var(--f-mono);
+  font-size: 11.5px;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
+
+.ai {
+  color: var(--ink-2);
+  font-weight: 500;
+}
+
+.dong_so {
+  color: var(--ink-3);
+}
+
+.title {
+  font-family: var(--f-display);
+  font-size: 17.5px;
+  line-height: 1.28;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 3px 0 4px;
+  text-wrap: balance;
+}
+
+.title a:hover {
+  color: var(--accent);
+}
+
+.trich {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  margin: 0;
+  /* Đoạn trích của API đã cắt ≤220 ký tự; hai dòng ở đây là trần THỊ GIÁC cho ca chữ
+     rộng, không phải chỗ cắt nội dung. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Chỗ khớp. Nền mờ + chữ giữ nguyên màu, không đảo màu: một trang đầy khối vàng chói đọc
+   như bút dạ quang trên photocopy, và nó phá ngôn ngữ "mực và dấu" của 9.1. */
+.dam {
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+}

@@ -235,16 +235,25 @@ test.describe("T6/T7 — bàn phím, focus, và mobile", () => {
 });
 
 test.describe("T8 — không nút CHẾT nào mới", () => {
-  test("header KHÔNG có ô tìm kiếm (Phase 7 chưa xong) và không có nút Tham gia sub", async ({
-    page,
-  }) => {
-    // Ranh giới cứng của plan §0. Chỗ đứng của ô search có thật (`.cho_tim_kiem`, một hộp
-    // rỗng), nhưng **không được render một ô nhập chết** — và không bao giờ có nút
-    // "Tham gia sub", thứ không có endpoint nào và cũng sẽ không có.
+  test("ô tìm kiếm ở header là ô SỐNG, và không có nút Tham gia sub", async ({ page }) => {
+    // Luật không đổi — "không nút chết" — nhưng TIỀN ĐỀ đã đổi: lúc viết bài này Phase 7
+    // chưa có, nên nó khẳng định header KHÔNG được có ô search (một ô không tìm được gì
+    // là nút chết). Phase 7 gộp vào 2026-08-23 ⇒ ô ấy nay phải **có mặt và tìm được
+    // thật**. Khẳng định vì thế CHẶT HƠN bản cũ, không phải nới: bản cũ xanh cả khi
+    // header chẳng có gì, bản này đòi gõ vào rồi phải tới được trang kết quả.
     await page.goto("/");
     const header = page.locator("header");
-    await expect(header.locator('input[type="search"]')).toHaveCount(0);
-    await expect(header.getByPlaceholder(/tìm/i)).toHaveCount(0);
+    const o = header.getByRole("searchbox");
+    await expect(o, "Phase 7 đã có: header phải có ô tìm kiếm THẬT").toHaveCount(1);
+
+    await o.fill("HPG");
+    await o.press("Enter");
+    await page.waitForURL(/\/tim-kiem\?/);
+    // Trang kết quả phải render được — ô search dẫn tới một route CÓ THẬT, không phải 404.
+    await expect(page.locator("main")).toBeVisible();
+
+    // Nút "Tham gia sub" thì vẫn không bao giờ có: PLAN mục 4 loại khỏi v1, và nó khác ô
+    // search ở chỗ nó không có endpoint nào và cũng sẽ không có.
     await expect(page.getByRole("button", { name: /tham gia/i })).toHaveCount(0);
   });
 

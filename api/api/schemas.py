@@ -141,6 +141,42 @@ class FeedOut(Schema):
     cursor_ke_tiep: str | None
 
 
+class KetQuaTimKiemOut(Schema):
+    """Một dòng kết quả tìm kiếm — Phase 7.
+
+    `mach` là **đúng thẻ mà feed dùng** (`MachTomTatOut`), không phải một hình dạng thứ
+    hai: trang kết quả vẽ lại cùng loại thẻ với trang chủ, nên hai schema khác nhau chỉ
+    tạo hai đường trôi.
+
+    Hai trường tô đậm dùng dấu **`[[` `]]`**, không phải HTML. Trả `<mark>` về đây là mời
+    `dangerouslySetInnerHTML` vào một đường dữ liệu do người dùng viết; frontend tự dựng
+    thẻ từ cặp dấu (`apps/web/lib/tim-kiem.ts`). Chữ trong hai trường này đến từ
+    **Postgres**, không phải từ chỉ mục — xem docstring `api/tim_kiem.py`.
+    """
+
+    mach: MachTomTatOut
+    title_to_dam: str
+    doan_trich: str
+
+
+class TimKiemOut(Schema):
+    """Một trang kết quả tìm kiếm.
+
+    `co_the_tim = false` là **xuống thang**, không phải lỗi: Meilisearch chưa cấu hình
+    hoặc đang hỏng. Endpoint vẫn trả 200 để trang gọi vẽ được một câu nói bằng tiếng
+    người thay vì xử một mã lỗi như xử sự cố (plan con Phase 7 §5).
+
+    `tong` là **ước lượng** của Meilisearch (`estimatedTotalHits`), đếm trước khi lớp lọc
+    Postgres chạy — nên `len(items)` có thể nhỏ hơn `tong` chia trang. Nói ra ở đây để
+    frontend không dựng bộ đếm trang chính xác trên một con số không chính xác.
+    """
+
+    items: list[KetQuaTimKiemOut]
+    tong: int
+    co_the_tim: bool
+    q: str
+
+
 class TrichOut(Schema):
     """Bình luận được chủ mạch trích vào mốc — "trích vào sổ" (PLAN 5.6).
 

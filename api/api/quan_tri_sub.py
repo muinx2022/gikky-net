@@ -23,6 +23,7 @@ from ninja import Router, Status
 
 from core.ghi import AUDIT_SUA_SUB, AUDIT_TAO_SUB, AUDIT_XOA_SUB, DICH_SUB, ghi_audit
 from core.models.dien_dan import Sub
+from core.tim_kiem import dong_bo_theo_sub
 
 from api.loi import THAM_SO_KHONG_HOP_LE, XUNG_DOT, LoiOut, khong_tim_thay, loi
 from api.quan_tri_schemas import (
@@ -169,6 +170,12 @@ def sua_sub(request, slug: str, du_lieu: SuaSubIn):
                 slug=sub.slug,
                 truong=sorted(thuc_su_doi),
             )
+            if "ten" in thuc_su_doi:
+                # `sub_ten` là một trường TÌM ĐƯỢC của tài liệu mạch (`core/tim_kiem.py`),
+                # nên đổi tên chuyên mục mà không đồng bộ là tìm theo tên mới ra rỗng
+                # trong khi trang sub đầy bài. `mo_ta` không nằm trong index nên không
+                # kéo theo gì — sửa mô tả không phải đẩy lại cả nghìn tài liệu.
+                dong_bo_theo_sub(sub)
     return _ra(sub)
 
 

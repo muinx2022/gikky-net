@@ -4,7 +4,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { BoTheoMachData, BoTheoMachErrors, BoTheoMachResponses, DanhDauDaDocData, DanhDauDaDocErrors, DanhDauDaDocResponses, DanhDauDaXemData, DanhDauDaXemErrors, DanhDauDaXemResponses, DatReactionData, DatReactionErrors, DatReactionResponses, DatVoteData, DatVoteErrors, DatVoteResponses, DongSoMachData, DongSoMachErrors, DongSoMachResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GoTrichData, GoTrichErrors, GoTrichResponses, GuiBaoCaoData, GuiBaoCaoErrors, GuiBaoCaoResponses, LietKeBanCuMocData, LietKeBanCuMocErrors, LietKeBanCuMocResponses, LietKeBinhLuanMachData, LietKeBinhLuanMachErrors, LietKeBinhLuanMachResponses, LietKeBinhLuanMocData, LietKeBinhLuanMocErrors, LietKeBinhLuanMocResponses, LietKeFeedDangDienRaData, LietKeFeedDangDienRaErrors, LietKeFeedDangDienRaResponses, LietKeFeedMoiData, LietKeFeedMoiErrors, LietKeFeedMoiResponses, LietKeSubData, LietKeSubResponses, LietKeThongBaoData, LietKeThongBaoErrors, LietKeThongBaoResponses, MoLaiMachData, MoLaiMachErrors, MoLaiMachResponses, NoiMocData, NoiMocErrors, NoiMocResponses, SuaBinhLuanData, SuaBinhLuanErrors, SuaBinhLuanResponses, SuaMocData, SuaMocErrors, SuaMocResponses, SuaToiData, SuaToiErrors, SuaToiResponses, TaiAnhMocData, TaiAnhMocErrors, TaiAnhMocResponses, TaoMachData, TaoMachErrors, TaoMachResponses, TheoMachData, TheoMachErrors, TheoMachResponses, TrichVaoSoData, TrichVaoSoErrors, TrichVaoSoResponses, VietBinhLuanData, VietBinhLuanErrors, VietBinhLuanResponses, XemHoSoData, XemHoSoErrors, XemHoSoResponses, XemMachCuaToiData, XemMachCuaToiErrors, XemMachCuaToiResponses, XemMachData, XemMachErrors, XemMachResponses, XemSubData, XemSubErrors, XemSubResponses, XemToiData, XemToiResponses, XoaAnhMocData, XoaAnhMocErrors, XoaAnhMocResponses, XoaBinhLuanData, XoaBinhLuanErrors, XoaBinhLuanResponses, XoaMocData, XoaMocErrors, XoaMocResponses } from './types.gen';
+import type { BoTheoMachData, BoTheoMachErrors, BoTheoMachResponses, DanhDauDaDocData, DanhDauDaDocErrors, DanhDauDaDocResponses, DanhDauDaXemData, DanhDauDaXemErrors, DanhDauDaXemResponses, DatReactionData, DatReactionErrors, DatReactionResponses, DatVoteData, DatVoteErrors, DatVoteResponses, DongSoMachData, DongSoMachErrors, DongSoMachResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GoTrichData, GoTrichErrors, GoTrichResponses, GuiBaoCaoData, GuiBaoCaoErrors, GuiBaoCaoResponses, LietKeBanCuMocData, LietKeBanCuMocErrors, LietKeBanCuMocResponses, LietKeBinhLuanMachData, LietKeBinhLuanMachErrors, LietKeBinhLuanMachResponses, LietKeBinhLuanMocData, LietKeBinhLuanMocErrors, LietKeBinhLuanMocResponses, LietKeFeedDangDienRaData, LietKeFeedDangDienRaErrors, LietKeFeedDangDienRaResponses, LietKeFeedMoiData, LietKeFeedMoiErrors, LietKeFeedMoiResponses, LietKeSubData, LietKeSubResponses, LietKeThongBaoData, LietKeThongBaoErrors, LietKeThongBaoResponses, MoLaiMachData, MoLaiMachErrors, MoLaiMachResponses, NoiMocData, NoiMocErrors, NoiMocResponses, SuaBinhLuanData, SuaBinhLuanErrors, SuaBinhLuanResponses, SuaMocData, SuaMocErrors, SuaMocResponses, SuaToiData, SuaToiErrors, SuaToiResponses, TaiAnhMocData, TaiAnhMocErrors, TaiAnhMocResponses, TaoMachData, TaoMachErrors, TaoMachResponses, TheoMachData, TheoMachErrors, TheoMachResponses, TimKiemData, TimKiemErrors, TimKiemResponses, TrichVaoSoData, TrichVaoSoErrors, TrichVaoSoResponses, VietBinhLuanData, VietBinhLuanErrors, VietBinhLuanResponses, XemHoSoData, XemHoSoErrors, XemHoSoResponses, XemMachCuaToiData, XemMachCuaToiErrors, XemMachCuaToiResponses, XemMachData, XemMachErrors, XemMachResponses, XemSubData, XemSubErrors, XemSubResponses, XemToiData, XemToiResponses, XoaAnhMocData, XoaAnhMocErrors, XoaAnhMocResponses, XoaBinhLuanData, XoaBinhLuanErrors, XoaBinhLuanResponses, XoaMocData, XoaMocErrors, XoaMocResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -1014,6 +1014,25 @@ export const lietKeSub = <ThrowOnError extends boolean = false>(options?: Option
  * Slug không tồn tại trả 404 `khong_tim_thay`.
  */
 export const xemSub = <ThrowOnError extends boolean = false>(options: Options<XemSubData, ThrowOnError>): RequestResult<XemSubResponses, XemSubErrors, ThrowOnError> => (options.client ?? client).get<XemSubResponses, XemSubErrors, ThrowOnError>({ url: '/api/v1/subs/{slug}', ...options });
+
+/**
+ * Tim Kiem
+ *
+ * Tìm mạch theo tiêu đề, thân bài gốc, các mốc nối sau, kết quả và tên tác giả.
+ *
+ * Gõ **không dấu vẫn ra kết quả có dấu** (`nhat ky lenh hpg` → *Nhật ký lệnh HPG*), và
+ * sai một ký tự ở từ dài vẫn ra. Mã chứng khoán ngắn (`HPG`) khớp **chính xác**.
+ *
+ * `?sub=<slug>` lọc theo chuyên mục; sub không tồn tại trả 404 `sub_khong_ton_tai`.
+ * `?sort=lien_quan` (mặc định) xếp theo độ liên quan; `?sort=moi` xếp mới trước.
+ * `?offset=` + `?limit=` phân trang; `limit` tối đa 50, `offset` tối đa 1000.
+ *
+ * Mạch bị mod ẩn không xuất hiện. Nội dung của mốc đã xoá hoặc bị mod ẩn không tìm được.
+ *
+ * Tìm kiếm tạm ngừng (service phụ đang hỏng hoặc chưa cấu hình) ⇒ vẫn **200**, với
+ * `co_the_tim = false` và danh sách rỗng, để trang gọi có thể nói ra bằng tiếng người.
+ */
+export const timKiem = <ThrowOnError extends boolean = false>(options?: Options<TimKiemData, ThrowOnError>): RequestResult<TimKiemResponses, TimKiemErrors, ThrowOnError> => (options?.client ?? client).get<TimKiemResponses, TimKiemErrors, ThrowOnError>({ url: '/api/v1/tim-kiem', ...options });
 
 /**
  * Xem Ho So

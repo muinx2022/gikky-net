@@ -1,10 +1,12 @@
 import Link from "next/link";
+import { Suspense } from "react";
 
 import { Chuong } from "./chuong";
 import css from "./chrome.module.css";
 import { CongTacTheme } from "./cong-tac-theme";
 import { DieuHuongSub } from "./dieu-huong-sub";
 import { NutDangMach } from "./nut-dang-mach";
+import { OTimKiem } from "./o-tim-kiem";
 import { ThanhTaiKhoan } from "./thanh-tai-khoan";
 
 /** Thanh trên cùng.
@@ -36,18 +38,20 @@ export function Chrome() {
               nên nó không được phụ thuộc vào một lời gọi API vừa hỏng. */}
           <Link href="/luat">Luật</Link>
         </nav>
+        {/* `OTimKiem` đọc `useSearchParams` để giữ lại câu vừa gõ khi bấm back. Hook đó
+            **bắt buộc phải nằm trong `Suspense`**, nếu không Next từ chối render tĩnh
+            **mọi** trang mang layout này — và `/luat` phải giữ `○`, vì nó là đường thoát
+            của `error.tsx` (nợ #14 của 1c). Với biên này, phần còn lại của trang vẫn
+            tĩnh; chỉ riêng ô nhập hoàn tất ở client.
+            `fallback` là một hộp rỗng cùng kích thước, không phải `null`: `null` làm thanh
+            trên cùng nhảy một nhịp ngay chỗ mắt người ta nhìn đầu tiên. */}
+        <Suspense fallback={<div className={css.cho_o_tim} />}>
+          <OTimKiem />
+        </Suspense>
         {/* Bọc trong một hộp riêng thay vì để ba phần tử rời: `ThanhTaiKhoan` mang sẵn
             `margin-left: auto`, và hai `auto` cùng hàng thì flexbox **chia đôi** khoảng
             trống — nút "Đăng bài" trôi ra giữa thanh. Trong hộp này nó không còn khoảng
             trống nào để chia. */}
-        {/* **Chỗ đứng của ô tìm kiếm — Phase 7 (Meilisearch).**
-
-            Cố ý để TRỐNG, không render một ô search chết: một ô nhập không tìm được gì là
-            loài lỗi repo này đã đếm nhiều lần ("nút Thử lại" của trang lỗi 1c). Nhưng chỗ
-            đứng thì có thật và nó chiếm khoảng giữa của thanh — nhờ vậy lượt gắn ô thật
-            vào không phải bố trí lại cả header. Xem
-            `plans/2026-08-23-phase-7-tim-kiem-meilisearch.md`. */}
-        <div className={css.cho_tim_kiem} aria-hidden />
         <div className={css.phai}>
           <NutDangMach />
           <Chuong />

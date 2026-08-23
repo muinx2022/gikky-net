@@ -7,6 +7,39 @@ khối dưới, nó đổi câu trả lời cho câu hỏi "sao lưu xong là đ
 > **Đọc file này TRƯỚC khi cần tới nó.** Lúc cần thật thì database đang hỏng, và đó không
 > phải lúc để đọc lần đầu một quy trình.
 
+## Meilisearch: KHÔNG sao lưu, và đó là một quyết định
+
+Phase 7 (2026-08-23) thêm **trạng thái thứ ba nằm ngoài Postgres**, sau ảnh của Phase 5:
+chỉ mục tìm kiếm của Meilisearch. Câu trả lời cho nó **khác** câu trả lời cho ảnh, và
+khác vì một lý do có thật chứ không vì lười:
+
+**Ảnh là dữ liệu gốc** — mất là mất hẳn, không có nguồn nào dựng lại được.
+**Chỉ mục là dữ liệu DẪN XUẤT** — mọi byte trong đó đều tính lại được từ Postgres:
+
+```
+node scripts/py.mjs reindex_tim_kiem --sach
+```
+
+⇒ `pnpm db:sao-luu` **không** chạm tới Meilisearch, và thư mục dữ liệu của nó **không**
+nằm trong bản sao lưu. Sao lưu một chỉ mục dựng lại được là tự nhân đôi dung lượng để giữ
+một bản có thể **lệch** so với nguồn sự thật — bản phục hồi sẽ mang theo cả những tài liệu
+lẽ ra đã bị gỡ.
+
+**Điều kiện để câu trên đúng**, và nó được ghim bằng test chứ không bằng lời hứa: lệnh
+dựng lại phải thật sự dựng lại **đủ** và phải **không** hồi sinh mạch đã bị mod ẩn. Hai vế
+ấy là `api/tests/test_tim_kiem_that.py::test_xoa_sach_index_roi_reindex_dung_lai_du` và
+`::test_reindex_khong_dua_mach_bi_an_vao_lai`, chạy trên Meilisearch thật.
+
+### Sau khi phục hồi database, phải dựng lại chỉ mục
+
+Đây là bước dễ quên nhất của quy trình phục hồi, vì **không có gì báo**: site chạy bình
+thường, mọi trang 200, chỉ ô tìm kiếm là trả về kết quả của một thế giới đã cũ (hoặc trống
+rỗng, nếu máy mới). Thêm nó vào cuối mọi lượt restore:
+
+```
+node scripts/py.mjs reindex_tim_kiem --sach
+```
+
 ## ⚠ Từ Phase 5, `pg_dump` một mình KHÔNG còn là bản sao lưu đủ
 
 Tới Phase 4, mọi thứ sản phẩm biết đều nằm trong Postgres, nên một bản dump là một bản

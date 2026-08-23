@@ -108,6 +108,7 @@ from api.machs import router as router_machs  # noqa: E402
 from api.mocs import router as router_mocs  # noqa: E402
 from api.quyen import dang_ky_xu_ly_loi_ghi  # noqa: E402
 from api.theo_doi import router as router_theo_doi  # noqa: E402
+from api.tim_kiem import router as router_tim_kiem  # noqa: E402
 from api.thong_bao import router as router_thong_bao  # noqa: E402
 from api.toi import router as router_toi  # noqa: E402
 from api.tuong_tac import router as router_tuong_tac  # noqa: E402
@@ -135,3 +136,7 @@ api_v1.add_router("", router_thong_bao)
 # vì nó là cửa duy nhất nhận **file** từ internet, và bảy phép kiểm của nó đáng được đọc
 # mà không phải cuộn qua ngăn kéo bình luận. Xem `api/anh.py`.
 api_v1.add_router("", router_anh)
+# Phase 7 — `GET /tim-kiem`. Router riêng vì nó là **đường đọc thứ hai** của toàn bộ nội
+# dung: luật che của sản phẩm phải được áp lại ở đó bằng một lớp lọc Postgres, và lý lẽ
+# ấy đáng đọc một mình. Xem `api/tim_kiem.py`.
+api_v1.add_router("", router_tim_kiem)

@@ -60,6 +60,30 @@ class User(AbstractUser):
     ban_permanent = models.BooleanField(default=False)
     ban_reason = models.CharField(max_length=200, null=True, blank=True)
 
+    class Meta(AbstractUser.Meta):
+        """**Kế thừa `AbstractUser.Meta`, không thay nó.** Bỏ đối số ấy là mất
+        `verbose_name`, `swappable` và `abstract=False` mà Django dựng sẵn — hỏng theo kiểu
+        chỉ lộ ra ở một chỗ xa (Django admin, hoặc `AUTH_USER_MODEL` swappable).
+
+        Index cho L40: `dem_dang_ky_trong_ngay_vn` chạy
+        `filter(dang_ky_ip=…, date_joined__gte=…, date_joined__lt=…)` ở **mỗi lượt đăng
+        ký**, và trước index này không có gì phủ nó — Postgres quét cả `core_user`.
+
+        Thứ tự cột **có nghĩa và không đảo được**: `dang_ky_ip` là phép so BẰNG nên nó
+        phải đứng trước; `date_joined` là phép so KHOẢNG nên nó đứng sau. Đảo lại thì
+        Postgres chỉ dùng được cột đầu và index thành nửa vô dụng — đây là luật chung của
+        B-tree tổ hợp, không phải một chi tiết của truy vấn này.
+
+        Vô hại ở quy mô v1 (vài nghìn hàng) — sổ lỗi xếp L40 là NHỎ, và index này là để
+        lần sau không phải đi tìm chứ không phải để chữa một sự cố đang cháy.
+        """
+
+        indexes = [
+            models.Index(
+                fields=["dang_ky_ip", "date_joined"], name="user_dangky_ip_ngay_idx"
+            ),
+        ]
+
     def __str__(self) -> str:
         return self.username
 
