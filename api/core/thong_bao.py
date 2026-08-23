@@ -117,9 +117,17 @@ def bao_moc_moi(moc: Moc) -> int:
     """
     mach = moc.mach
     khoa = khoa_gop_moc_moi(mach.pk, moc.created_at)
+    # `.order_by("user_id")` là **thứ tự lấy khoá**, không phải thứ tự hiển thị (L26, vá
+    # V1). `INSERT INTO core_notification(user_id, …)` lấy `FOR KEY SHARE` trên từng hàng
+    # `core_user` được tham chiếu, nên một lô 500 follower là 500 lượt xin khoá theo đúng
+    # thứ tự hàng trả về. Hôm nay chưa deadlock được vì `FOR KEY SHARE` tương thích với
+    # chính nó — hai lô chồng nhau vẫn đi qua. Ngày nào một đường notification cần
+    # `select_for_update` trên `User` (khoá độc quyền) thì hai lô sắp ngược nhau là
+    # deadlock thật, và nó sẽ không tái hiện được ở dev. Sắp xếp là một dòng.
     nguoi_nhan = list(
         Follow.objects.filter(mach=mach)
         .exclude(user_id=moc.author_id)
+        .order_by("user_id")
         .values_list("user_id", flat=True)
     )
     if not nguoi_nhan:

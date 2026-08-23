@@ -61,11 +61,18 @@ def liet_ke_thong_bao(request, limit: int = GIOI_HAN_MAC_DINH, cursor: str | Non
     **Quyền: chỉ thông báo của chính người gọi.** Không có tham số nào chỉ ra người khác;
     `user = request.user` nằm ngay trong queryset gốc.
 
-    Sắp **mới nhất trước**, cursor keyset trên `(created_at, id)` — khoá BẤT BIẾN, nên nó
-    hưởng đủ bảo đảm "không trùng, không sót" của `api/phan_trang.py`. Một thông báo
-    `moc_moi` được gộp lại (mốc thứ hai trong ngày) sẽ **bump `created_at`** và vì thế
-    nhảy lên đầu — đúng ý muốn, và nó không phá keyset: hàng ấy chuyển sang trang 1, đúng
-    ca "hàng mới chèn vào đầu" mà keyset sinh ra để xử.
+    Sắp **mới nhất trước**, cursor keyset trên `(created_at, id)`.
+
+    ⚠ **Khoá này KHÔNG bất biến** *(sửa câu ở lượt vá V1 — L34)*: dedupe `moc_moi` cố ý
+    bump `created_at` khi mốc thứ hai trong ngày về (`core/thong_bao.py::bao_moc_moi`),
+    nên một hàng đang ở trang 3 có thể nhảy lên trang 1 giữa hai lượt cuộn. Câu cũ ở đây
+    khẳng định *"khoá BẤT BIẾN"* rồi hai dòng sau tự mô tả cú bump — và câu đầu là câu
+    người sau sẽ tin.
+    Hệ quả thật, đọc đúng mức: hàng bị bump **nhảy lên trước** con trỏ, tức đúng ca "hàng
+    mới chèn vào đầu" mà keyset xử được (không trùng). Cái mất là **có thể sót** — nếu nó
+    bị bump sau khi người đọc đã đi qua vị trí cũ, họ không gặp lại nó ở trang sau. Vô hại
+    ở chuông (dòng ấy đang nằm ở trang 1, chỗ dễ thấy nhất) nhưng đó là một bảo đảm yếu
+    hơn `KEYSET-BIEN-DOI` của feed, không phải bảo đảm đầy đủ.
 
     `so_chua_doc` đếm **toàn bộ hộp thư**, không phải trang đang xem: con số trên chấm đỏ
     nói "bạn có 23 thứ chưa đọc", tính nó trên một trang 20 dòng thì nó kẹt ở `20` mãi mãi

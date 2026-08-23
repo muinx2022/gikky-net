@@ -54,6 +54,7 @@ from django.db import transaction
 
 from core.ghi import tao_mach
 from core.models import Mach, Sub, User
+from core.moi_truong import doi_dev
 from core.thoi_gian import TZ_VN, ngay_vn
 
 USERNAME = "e2e_nhieu_mach"
@@ -101,6 +102,8 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
+        # Dòng ĐẦU TIÊN, trước cả `--reset` — xem `core/moi_truong.py`.
+        doi_dev("seed_e2e")
         if options["reset"]:
             self._xoa()
 

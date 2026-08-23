@@ -167,17 +167,57 @@ test.describe("Đường ghi — đăng bài, nối mốc, bình luận, vote", 
     await expect(cay.getByText(chu2)).toHaveCount(0, { timeout: 15_000 });
   });
 
-  test("M3 ở tầng UI — bình luận của NGƯỜI KHÁC không có menu sửa/xoá", async ({
+  test("M3 ở tầng UI — bình luận của NGƯỜI KHÁC: không sửa/xoá được, chỉ báo cáo", async ({
     page,
   }) => {
     // Vế chặn thật nằm ở API (`test_quyen_ghi.py`); bài này ghim rằng UI **không mời**
     // người ta làm việc sẽ bị từ chối. Seed HPG có 24 bình luận của user khác.
+    //
+    // Từ lượt vá V1 (L03) menu `⋯` **có** trên bình luận của người khác — chứa đúng một
+    // mục "Báo cáo" (PLAN 5.10). Bài đo đòi cả hai vế: hai nút ghi vắng mặt, cửa báo cáo
+    // có mặt. Bản cũ chỉ đòi "menu vắng", và câu đó cũng xanh trong ca UI mất luôn nút
+    // báo cáo — tức nó không phân biệt được bản vá với lỗi.
     await dungTaiKhoan(page, "khac");
     const hpg = await timMachTheoTitle(TITLE_HPG);
     await page.goto(`${duongDan(hpg)}?khan_dai=1&sort=cu_nhat`);
     const cay = page.getByTestId("cay-khan-dai");
     await expect(cay.getByTestId("nut-tra-loi").first()).toBeVisible();
-    await expect(cay.getByTestId("menu-binh-luan")).toHaveCount(0);
+    await cay.getByTestId("menu-binh-luan").first().click();
+    await expect(cay.getByTestId("nut-sua-binh-luan")).toHaveCount(0);
+    await expect(cay.getByTestId("nut-xoa-binh-luan")).toHaveCount(0);
+    await expect(cay.getByTestId("nut-bao-cao-binh-luan").first()).toBeVisible();
+  });
+
+  test("báo cáo một bình luận của người khác — cửa nhận SỐNG, và chống trùng có thật (L03)", async ({
+    page,
+  }) => {
+    // `POST /reports` là cửa mà PLAN 5.10 đòi và Phase 4 quên cài: nó dựng trọn hàng đợi
+    // kiểm duyệt, `dong_bao_cao`, `AuditLog`, trang admin — rồi không có đường nào để một
+    // báo cáo vào được hàng đợi ấy. Bài đo đi đúng đường người dùng đi: menu `⋯` → chọn lý
+    // do → gửi, rồi bấm lần thứ hai để thấy chống trùng nói ra thành lời.
+    await dungTaiKhoan(page, "tocao");
+    const hpg = await timMachTheoTitle(TITLE_HPG);
+    await page.goto(`${duongDan(hpg)}?khan_dai=1&sort=cu_nhat`);
+    const cay = page.getByTestId("cay-khan-dai");
+
+    await cay.getByTestId("menu-binh-luan").first().click();
+    await cay.getByTestId("nut-bao-cao-binh-luan").first().click();
+    await cay.getByTestId("bao-cao-ly-do").first().selectOption("lua_dao");
+    await cay.getByTestId("bao-cao-ghi-chu").first().fill("Mời uỷ thác trong bình luận.");
+    await cay.getByTestId("bao-cao-gui").first().click();
+    await expect(cay.getByTestId("bao-cao-xong").first()).toBeVisible({ timeout: 15_000 });
+
+    // Lần thứ hai vào cùng một đích: 409 `da_bao_cao`, và câu của server hiện ra chứ
+    // không nuốt thành "Không gửi được". Đây cũng là vế chống rỗng — nếu lượt đầu không
+    // thật sự ghi một hàng thì lượt này sẽ thành công lần nữa.
+    await page.reload();
+    const cay2 = page.getByTestId("cay-khan-dai");
+    await cay2.getByTestId("menu-binh-luan").first().click();
+    await cay2.getByTestId("nut-bao-cao-binh-luan").first().click();
+    await cay2.getByTestId("bao-cao-gui").first().click();
+    await expect(cay2.getByTestId("bao-cao-loi").first()).toContainText("đã báo cáo", {
+      timeout: 15_000,
+    });
   });
 
   test("mũi tên vote SỐNG khi đã đăng nhập, và con số về đúng sau khi rút", async ({

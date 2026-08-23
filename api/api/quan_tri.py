@@ -66,9 +66,19 @@ class ChiMod(APIKeyCookie):
       `core/models/nguoi_dung.py` dùng đúng cờ đó cho "xoá tài khoản GDPR-lite". Một hàng
       `User` đã ẩn danh hoá mà còn `is_staff=True` vẫn moderate được là một cửa hậu sống
       sau khi người ta rời đi;
-    - `dang_bi_ban()` — mod bị ban thì không được moderate. Nếu không kiểm, hành động
-      "ban một mod đang lạm quyền" chỉ chặn được đường ĐĂNG NHẬP (Phase 2), trong khi
-      phiên đang mở của họ vẫn ẩn/khoá được cho tới lúc cookie hết hạn.
+    - `dang_bi_ban()` — mod bị ban thì không được moderate. Không có phép kiểm này thì
+      hành động "ban một mod đang lạm quyền" **không chặn được gì cả**: phiên đang mở của
+      họ vẫn ẩn/khoá được cho tới lúc cookie hết hạn.
+
+      ⚠ **Câu ở đây trước lượt vá V1 nói rằng ban "chỉ chặn được đường ĐĂNG NHẬP", và câu
+      đó SAI** (L18). Hôm nay gikky **không có adapter allauth nào** (`grep "ADAPTER"` chỉ
+      ra đúng `ACCOUNT_ADAPTER` của hạn mức đăng ký, xem `core/allauth_adapter.py`), nên
+      một tài khoản bị ban **vẫn đăng nhập được bình thường**. `dang_bi_ban()` chỉ được
+      hỏi ở hai chỗ: lớp này, và `api/quyen.py::DangNhap` (mọi cửa GHI). Cơ chế vì thế vẫn
+      an toàn — ghi 403, moderate 403 — nhưng nó an toàn theo một đường khác với đường mà
+      câu cũ mô tả, và PLAN 5.10 (*"hiện lý do khi bị chặn đăng nhập"*) vẫn **chưa** được
+      cài. Nợ có tên `BAN-CHUA-CHAN-DANG-NHAP` trong `LOI-VA-NO.md`; chỗ trả nó là
+      `core/allauth_adapter.py`, hook `pre_login`.
 
     `param_name` phải là tên cookie session: `APIKeyCookie` dùng nó cho `securitySchemes`
     của OpenAPI. Xác thực thật thì đọc `request.user` (Django `AuthenticationMiddleware`

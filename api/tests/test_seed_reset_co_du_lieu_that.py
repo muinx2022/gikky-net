@@ -16,11 +16,12 @@ liệu không thuộc về nó.
 """
 
 import pytest
-from django.core.management import call_command
 
 from core.ghi import tao_mach
 from core.management.commands.seed_dev import TITLE_HPG
 from core.models import Mach, Sub, User
+
+from .conftest import chay_seed
 
 pytestmark = pytest.mark.django_db
 
@@ -44,7 +45,7 @@ def test_reset_chay_duoc_khi_sub_con_mach_cua_nguoi_khac(seed):
     mutant đó, dòng dưới ném `ProtectedError` và cả lệnh chết.
     """
     la = _mach_nguoi_la()
-    call_command("seed_dev", "--reset", verbosity=0)
+    chay_seed("seed_dev", "--reset")
     assert Mach.objects.filter(pk=la.pk).exists()
     assert Mach.objects.filter(title=TITLE_HPG).exists(), "seed phải được dựng lại"
 
@@ -56,7 +57,7 @@ def test_reset_KHONG_xoa_noi_dung_cua_nguoi_khac(seed):
     sub ấy" — cũng xanh, và một lệnh tên là "reset seed" sẽ xoá bài của người khác.
     """
     la = _mach_nguoi_la()
-    call_command("seed_dev", "--reset", verbosity=0)
+    chay_seed("seed_dev", "--reset")
     la.refresh_from_db()
     assert la.author.username == "nguoi_dung_that"
     assert la.mocs.count() == 1
@@ -98,7 +99,7 @@ def test_reset_van_xoa_sub_khi_khong_con_ai_dung(seed):
     """
     pk_cu = {s.slug: s.pk for s in Sub.objects.all()}
     assert pk_cu, "seed phải có sub"
-    call_command("seed_dev", "--reset", verbosity=0)
+    chay_seed("seed_dev", "--reset")
     pk_moi = {s.slug: s.pk for s in Sub.objects.all()}
     assert set(pk_moi) == set(pk_cu)
     assert all(pk_moi[s] != pk_cu[s] for s in pk_cu), (

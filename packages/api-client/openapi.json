@@ -1,6 +1,94 @@
 {
   "components": {
     "schemas": {
+      "BaoCaoDaGuiOut": {
+        "description": "Biên nhận của `POST /reports` — PLAN 5.10 (L03, lượt vá V1).\n\n**Cố ý không trả trạng thái xử lý.** Người tố không được biết mod đã làm gì với báo\ncáo của mình, và endpoint này không được biến thành một cửa dò xem hàng đợi có gì:\n`resolved_at`/`resolved_by`/`action` chỉ sống ở `/api/admin`.\n\nTrả `id` vì UI cần một khoá để không hiện hai lần biên nhận cho cùng một lượt bấm;\ntrả `created_at` vì đó là dấu thời gian **của server**, thứ duy nhất trả lời được\n\"mình đã tố lúc nào\".",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "ly_do": {
+            "enum": [
+              "phim_hang",
+              "lua_dao",
+              "spam",
+              "khac"
+            ],
+            "title": "Ly Do",
+            "type": "string"
+          },
+          "target_id": {
+            "title": "Target Id",
+            "type": "integer"
+          },
+          "target_type": {
+            "enum": [
+              "mach",
+              "moc",
+              "comment"
+            ],
+            "title": "Target Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "target_type",
+          "target_id",
+          "ly_do",
+          "created_at"
+        ],
+        "title": "BaoCaoDaGuiOut",
+        "type": "object"
+      },
+      "BaoCaoMoiIn": {
+        "description": "Gửi báo cáo — `POST /reports` (PLAN 5.10).\n\n`ly_do` là **enum**, đúng bốn giá trị PLAN liệt kê: *phím hàng · lừa đảo, mời uỷ thác,\nroom VIP · spam · khác*. Khai bằng `Literal` chứ không `str` để `openapi.json` ra\n`enum` và TS client nhận một union — một chuỗi tự do ở đây là hàng đợi kiểm duyệt đầy\nnhững lý do không nhóm lại được, và mod thì phải đọc từng dòng.\n\n`ghi_chu` tuỳ chọn: chỗ người tố nói thêm. Server **không** validate ngữ nghĩa (cùng\ntriết lý với `ket_qua`/`figures`), chỉ chặn độ dài.",
+        "properties": {
+          "ghi_chu": {
+            "default": "",
+            "maxLength": 1000,
+            "title": "Ghi Chu",
+            "type": "string"
+          },
+          "ly_do": {
+            "enum": [
+              "phim_hang",
+              "lua_dao",
+              "spam",
+              "khac"
+            ],
+            "title": "Ly Do",
+            "type": "string"
+          },
+          "target_id": {
+            "minimum": 1,
+            "title": "Target Id",
+            "type": "integer"
+          },
+          "target_type": {
+            "enum": [
+              "mach",
+              "moc",
+              "comment"
+            ],
+            "title": "Target Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target_type",
+          "target_id",
+          "ly_do"
+        ],
+        "title": "BaoCaoMoiIn",
+        "type": "object"
+      },
       "BinhLuanMoiIn": {
         "description": "Viết bình luận — `POST /machs/{id}/comments` (PLAN 5.4, nguyên tắc 4 và 6).\n\n`anchor_moc_seq` **chỉ đặt được trên bình luận gốc**: reply kế thừa neo của gốc, nên\ngửi kèm `parent_id` là 400 chứ không phải bỏ qua im lặng — bỏ qua im lặng là cách một\nbình luận biến mất khỏi ngăn kéo mà không ai hiểu tại sao.\n\nGốc mang `anchor_moc_seq = null` nghĩa là người viết **đã gỡ chip** — không thuộc ngăn\nkéo nào. Đó là một lựa chọn, không phải dữ liệu thiếu.",
         "properties": {
@@ -276,7 +364,7 @@
         "type": "object"
       },
       "DanhDauDaDocIn": {
-        "description": "`POST /notifications/read` — đánh dấu đã đọc (PLAN 5.8).\n\n`ids = null` (mặc định) nghĩa là **đánh dấu HẾT** — nút \"đọc hết\" của chuông. Truyền\nmột danh sách là đánh dấu đúng từng dòng, cho lượt bấm vào một thông báo lẻ.\n\nId của **người khác** trong danh sách bị bỏ qua chứ không làm cả request hỏng: truy vấn\nluôn kèm `user = người đang gọi` (xem endpoint), nên chuyện tệ nhất một id lạ gây ra là\n`so_da_danh_dau` nhỏ hơn số id đã gửi. Trả 403 ở đây thì ngược lại: nó **xác nhận** id\nđó có thật và thuộc về ai đó — một cửa dò id qua mã lỗi.\n\nDanh sách rỗng `[]` khác `null`: nó đánh dấu **không dòng nào**. Cố ý giữ khác nhau —\nmột mảng rỗng do client dựng hụt không được biến thành \"đọc hết\".",
+        "description": "`POST /notifications/read` — đánh dấu đã đọc (PLAN 5.8).\n\n`ids = null` (mặc định) nghĩa là **đánh dấu HẾT** — nút \"đọc hết\" của chuông. Truyền\nmột danh sách là đánh dấu đúng từng dòng, cho lượt bấm vào một thông báo lẻ.\n\nId của **người khác** trong danh sách bị bỏ qua chứ không làm cả request hỏng: truy vấn\nluôn kèm `user = người đang gọi` (xem endpoint), nên chuyện tệ nhất một id lạ gây ra là\n`so_da_danh_dau` nhỏ hơn số id đã gửi. Trả 403 ở đây thì ngược lại: nó **xác nhận** id\nđó có thật và thuộc về ai đó — một cửa dò id qua mã lỗi.\n\nDanh sách rỗng `[]` khác `null`: nó đánh dấu **không dòng nào**. Cố ý giữ khác nhau —\nmột mảng rỗng do client dựng hụt không được biến thành \"đọc hết\".\n\n`ids` có **trần độ dài** (L27, vá V1): thiếu nó thì một request đơn lẻ đẩy được một\ntriệu phần tử vào `pk__in`, tức một câu SQL vài megabyte trên một endpoint chỉ cần\nđăng nhập. Trần rộng hơn hẳn mọi lượt bấm thật — chuông trả tối đa một trang — nên nó\nkhông chặn ai, nó chỉ chặn cái không phải lượt bấm.",
         "properties": {
           "ids": {
             "anyOf": [
@@ -284,6 +372,7 @@
                 "items": {
                   "type": "integer"
                 },
+                "maxItems": 500,
                 "type": "array"
               },
               {
@@ -769,6 +858,13 @@
             "title": "My Votes",
             "type": "array"
           },
+          "noi_dung_cua_toi": {
+            "items": {
+              "$ref": "#/components/schemas/NoiDungCuaToiOut"
+            },
+            "title": "Noi Dung Cua Toi",
+            "type": "array"
+          },
           "tung_binh_luan": {
             "title": "Tung Binh Luan",
             "type": "boolean"
@@ -781,7 +877,8 @@
           "my_reactions",
           "following",
           "last_seen_entry_seq",
-          "tung_binh_luan"
+          "tung_binh_luan",
+          "noi_dung_cua_toi"
         ],
         "title": "MachCuaToiOut",
         "type": "object"
@@ -1404,6 +1501,56 @@
         "title": "NguoiDungTomTatOut",
         "type": "object"
       },
+      "NoiDungCuaToiOut": {
+        "description": "Một mảnh nội dung **của chính người gọi** đang bị che ở cửa công khai — PLAN 5.2 + 5.10.\n\nPLAN 5.10 chốt moderation là *\"ẩn (soft-hide — **tác giả vẫn thấy kèm nhãn**)\"*, và\nPLAN 5.2 nhắc lại: *\"tác giả thấy **nội dung**, người khác thấy nhãn\"*. Vế ấy không cài\nđược ở `GET /machs/{id}` — cửa đó bị ép **không chứa gì per-user** vì cả trang cache\ntheo URL (PLAN 8.4), nên nhét nội dung của tác giả vào là phục vụ nó cho mọi người mở\ncùng URL. Vì thế nó sống ở đây: `GET /machs/{id}/me` vốn đã per-user, đã `no-store`,\nvà đã chạy trên mọi lượt tải trang mạch.\n\nClient vá `body` này vào đúng ô trống mà `GET /machs/{id}` để lại, kèm nhãn của\n`trang_thai` — **không** xoá nhãn đi. Tác giả phải biết là người khác KHÔNG đọc được.\n\n⚠ **Chỉ có mặt khi người gọi là `author` của chính mảnh đó.** Đây là chỗ nguy hiểm\nnhất của cả cửa này: trả nhầm của người khác biến một bản vá minh bạch thành một lỗ\nrò nội dung đã bị mod gỡ, trên một endpoint không ai soi vì nó \"chỉ trả trạng thái\".\n`tests/test_api_noi_dung_cua_toi.py` đo **cả hai chiều**.",
+        "properties": {
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "loai": {
+            "enum": [
+              "moc",
+              "comment"
+            ],
+            "title": "Loai",
+            "type": "string"
+          },
+          "seq": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seq"
+          },
+          "trang_thai": {
+            "enum": [
+              "binh_thuong",
+              "da_xoa",
+              "da_an"
+            ],
+            "title": "Trang Thai",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loai",
+          "id",
+          "seq",
+          "body",
+          "trang_thai"
+        ],
+        "title": "NoiDungCuaToiOut",
+        "type": "object"
+      },
       "ReactionCuaToiOut": {
         "description": "Reaction của **người đang xem** trên một mốc. Một user tối đa một reaction mỗi mốc.",
         "properties": {
@@ -1672,6 +1819,10 @@
             "title": "La Staff",
             "type": "boolean"
           },
+          "nhan_digest": {
+            "title": "Nhan Digest",
+            "type": "boolean"
+          },
           "username": {
             "anyOf": [
               {
@@ -1691,9 +1842,28 @@
           "email",
           "email_da_xac_thuc",
           "la_staff",
-          "google_bat"
+          "google_bat",
+          "nhan_digest"
         ],
         "title": "ToiOut",
+        "type": "object"
+      },
+      "ToiSuaIn": {
+        "description": "`PATCH /me` — tuỳ chọn của chính người đang đăng nhập (PLAN 5.8).\n\n**PATCH thật**: trường vắng mặt nghĩa là không đổi, nên `{}` là một request hợp lệ\nkhông ghi gì. Tách khỏi `ToiOut` chứ không dùng chung một schema hai chiều: `ToiOut`\nmang `username`, `email`, `la_staff`, `google_bat` — không cái nào người dùng đặt\nđược ở đây, và một schema hai chiều là lời mời nhận đại cả bốn.\n\nHôm nay đúng **một** trường. Danh tính (`display_name`, `bio`) chưa mở ở cửa này: nó\nlà nội dung công khai, cần luật độ dài + sanitize riêng, và trộn nó vào cùng lượt vá\nvới một cái công tắc boolean là cách phần khó bị làm vội.",
+        "properties": {
+          "nhan_digest": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nhan Digest"
+          }
+        },
+        "title": "ToiSuaIn",
         "type": "object"
       },
       "TrichIn": {
@@ -1902,7 +2072,7 @@
   "paths": {
     "/api/v1/comments/{comment_id}": {
       "delete": {
-        "description": "Xoá bình luận theo **luật hai vế** của PLAN 5.3 — nợ 1a bàn giao, trả ở đây.\n\n**Quyền: CHỈ tác giả của bình luận.** Mạch bị mod khoá ⇒ 403; đã xoá rồi ⇒ 409.\n\nLuật, nguyên văn: giữ chỗ \"[đã xoá]\" nếu **có reply con** HOẶC **đã TỪNG được trích\nvào sổ (kể cả trích đã gỡ)**; xoá thật chỉ khi không dính cả hai. Chữ \"đã TỪNG\" khớp\nđúng `Trich.comment = PROTECT` — `PROTECT` chặn theo hàng, nó không biết `removed_at`\nlà gì. Đọc thành \"đang được trích\" là tiền-kiểm `removed_at IS NULL`, quyết \"xoá\nthật\", rồi ăn `ProtectedError` ⇒ 500 trên một thao tác hợp lệ của chính chủ.\n\n**Xoá thật thì dọn `Vote` mồ côi trong cùng transaction** — `Vote` cố ý không có FK\ntới đích nên không có `ON DELETE` nào; nợ này ghi sẵn trong docstring của model từ 1a.\n\n`xoa_that = false` nghĩa là nút ở lại làm bia mộ: UI phải **render lại** nó chứ không\ngỡ khỏi cây, nếu không cả nhánh con mất chỗ bám.",
+        "description": "Xoá bình luận theo **luật hai vế** của PLAN 5.3 — nợ 1a bàn giao, trả ở đây.\n\n**Quyền: CHỈ tác giả của bình luận.** Mạch bị mod khoá ⇒ 403; đã xoá rồi ⇒ 409.\n\nLuật, nguyên văn: giữ chỗ \"[đã xoá]\" nếu **có reply con** HOẶC **đã TỪNG được trích\nvào sổ (kể cả trích đã gỡ)**; xoá thật chỉ khi không dính cả hai. Chữ \"đã TỪNG\" khớp\nđúng `Trich.comment = PROTECT` — `PROTECT` chặn theo hàng, nó không biết `removed_at`\nlà gì. Đọc thành \"đang được trích\" là tiền-kiểm `removed_at IS NULL`, quyết \"xoá\nthật\", rồi ăn `ProtectedError` ⇒ 500 trên một thao tác hợp lệ của chính chủ.\n\n**Xoá thật thì dọn `Vote` mồ côi trong cùng transaction** — `Vote` cố ý không có FK\ntới đích nên không có `ON DELETE` nào; nợ này ghi sẵn trong docstring của model từ 1a.\n\n`xoa_that = false` nghĩa là nút ở lại làm bia mộ: UI phải **render lại** nó chứ không\ngỡ khỏi cây, nếu không cả nhánh con mất chỗ bám.\n\n### Vì sao HAI cửa này gọi `lam_moi_mach` còn `POST /comments` thì không (L06)\n\nPLAN 8.4 điểm 2 xếp *\"bình luận mới\"* vào nhóm **KHÔNG có signal** — nó sống bằng\nvòng revalidate nền, vì ép nó vào on-demand là gọi ngược gần như mỗi request trên một\nmạch đang sôi. Sửa/xoá thì khác hẳn về hạng: đó là **nội dung biến khỏi trang công\nkhai**, cùng ranh giới mà `api/quan_tri_kiem_duyet.py` đã công nhận là sự kiện có\nsignal khi mod ẩn một bình luận.\n\nBỏ sót nó có giá cụ thể và im lặng: khách xem trang mạch nhận bản ISR\n(`revalidate = 3600`); tác giả xoá xong thì hàng biến khỏi Postgres, nhưng tác giả\nđang đăng nhập nên đi nhánh `/m-phien/` (force-dynamic) — **họ thấy nó đã mất và tin\nlà xong**, trong khi khách vẫn đọc nguyên văn tới 60 phút.\n\nGọi **sau** khi `core.ghi` đóng transaction của nó: `lam_moi_mach` bọc\n`transaction.on_commit`, mà ngoài `atomic()` thì `on_commit` chạy ngay — tức đúng lúc\ndữ liệu đã nằm trong DB. Cùng lối với `api/mocs.py::trich_vao_so_api`.",
         "operationId": "xoa_binh_luan",
         "parameters": [
           {
@@ -1978,7 +2148,7 @@
         ]
       },
       "patch": {
-        "description": "Sửa bình luận: đổi `body`, hiện dấu `*đã sửa*` (PLAN 5.3).\n\n**Quyền: CHỈ tác giả của bình luận** — 403 `khong_phai_chu` cho mọi người khác, kể cả\nchủ mạch. Chủ mạch có quyền trên *cuốn sổ*, không có quyền trên *lời của người khác*.\nMạch bị mod khoá ⇒ 403; bình luận đã là bia mộ hoặc bị ẩn ⇒ 409.\n\n**Không có cửa sổ sửa im lặng 15 phút** như mốc, và đó là chủ đích: mốc là *bằng\nchứng* nên nó cần lịch sử bản cũ, bình luận là *tán gẫu* nên nó chỉ cần nói ra rằng đã\nsửa. `anchor_moc_seq` **không** sửa được — đổi neo sau khi thread đã có reply là dời\ncả thread sang một ngăn kéo khác dưới chân người đang đọc.\n\nTrả về nút bình luận **không kèm `replies`** (mảng rỗng): endpoint này sửa đúng một\ndòng, và trả cả nhánh con là mời UI thay nguyên nhánh bằng dữ liệu nó không hỏi.",
+        "description": "Sửa bình luận: đổi `body`, hiện dấu `*đã sửa*` (PLAN 5.3).\n\n**Quyền: CHỈ tác giả của bình luận** — 403 `khong_phai_chu` cho mọi người khác, kể cả\nchủ mạch. Chủ mạch có quyền trên *cuốn sổ*, không có quyền trên *lời của người khác*.\nMạch bị mod khoá ⇒ 403; bình luận đã là bia mộ hoặc bị ẩn ⇒ 409.\n\n**Không có cửa sổ sửa im lặng 15 phút** như mốc, và đó là chủ đích: mốc là *bằng\nchứng* nên nó cần lịch sử bản cũ, bình luận là *tán gẫu* nên nó chỉ cần nói ra rằng đã\nsửa. `anchor_moc_seq` **không** sửa được — đổi neo sau khi thread đã có reply là dời\ncả thread sang một ngăn kéo khác dưới chân người đang đọc.\n\nTrả về nút bình luận **không kèm `replies`** (mảng rỗng): endpoint này sửa đúng một\ndòng, và trả cả nhánh con là mời UI thay nguyên nhánh bằng dữ liệu nó không hỏi.\n\n**Gọi `lam_moi_mach`** — xem ghi chú chung ở `xoa_binh_luan_api`.",
         "operationId": "sua_binh_luan",
         "parameters": [
           {
@@ -2341,7 +2511,7 @@
     },
     "/api/v1/machs": {
       "post": {
-        "description": "Đăng bài = tạo `Mach` + `Moc(seq=1)` trong MỘT giao dịch (PLAN 5.1).\n\n**Quyền: bất kỳ ai đã đăng nhập và không bị khoá.** Không có \"chủ\" để đối chiếu —\nngười gọi *trở thành* chủ. Tài khoản bị ban bị chặn ở lớp auth (`api/quyen.py`).\n\nKhông có nút \"tạo mạch\" riêng (PLAN nguyên tắc 1): mọi post sinh ra là post thường,\nUI mạch tự bật từ mốc 2. Vì thế endpoint này và `POST /machs/{id}/mocs` nhận **cùng\nmột bộ trường nội dung** — `MachMoiIn` kế thừa thẳng `MocMoiIn`.\n\nTác giả nhận **+1 phiếu của chính mình** ngay lúc đăng (PLAN 5.7) — để `0` trên cột\nvote có nghĩa là \"đã có người vote xuống\", không phải \"chưa ai đụng tới\".",
+        "description": "Đăng bài = tạo `Mach` + `Moc(seq=1)` trong MỘT giao dịch (PLAN 5.1).\n\n**Quyền: bất kỳ ai đã đăng nhập và không bị khoá.** Không có \"chủ\" để đối chiếu —\nngười gọi *trở thành* chủ. Tài khoản bị ban bị chặn ở lớp auth (`api/quyen.py`).\n\nKhông có nút \"tạo mạch\" riêng (PLAN nguyên tắc 1): mọi post sinh ra là post thường,\nUI mạch tự bật từ mốc 2. Vì thế endpoint này và `POST /machs/{id}/mocs` nhận **cùng\nmột bộ trường nội dung** — `MachMoiIn` kế thừa thẳng `MocMoiIn`.\n\nTác giả nhận **+1 phiếu của chính mình** ngay lúc đăng (PLAN 5.7) — để `0` trên cột\nvote có nghĩa là \"đã có người vote xuống\", không phải \"chưa ai đụng tới\".\n\n**Hạn mức: 10 mạch / người / ngày lịch VN** (PLAN mục 10 Phase 6, số đổi được ở\n`settings.HAN_MUC_MACH_MOI_USER_NGAY`) ⇒ 429 `qua_han_muc_mach` kèm `thu_lai_tu` =\nnửa đêm giờ VN kế tiếp. Ranh giới là nửa đêm VN, không phải 24 giờ trượt — cùng luật\nvới hạn mức mốc, xem `core/han_muc.py`.",
         "operationId": "tao_mach",
         "parameters": [],
         "requestBody": {
@@ -2404,6 +2574,16 @@
               }
             },
             "description": "Not Found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiThoiGianOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           }
         },
         "security": [
@@ -2663,7 +2843,7 @@
         ]
       },
       "post": {
-        "description": "Viết bình luận vào khán đài hoặc ngăn kéo — PLAN 5.4, nguyên tắc 4 và 6.\n\n**Quyền: bất kỳ ai đã đăng nhập.** Không phải chỉ tác giả — khán đài là chỗ của đám\nđông. Chặn duy nhất là mạch bị mod **khoá** (403 `mach_bi_khoa`).\n**Mạch đã đóng sổ VẪN bình luận được** (PLAN 5.1) — đó là khác biệt cố ý so với\n`POST /machs/{id}/mocs`, đừng \"dọn dẹp\" hai đường này thành một phép kiểm.\n\n`anchor_moc_seq` **chỉ đặt được trên bình luận gốc**; gửi kèm `parent_id` là 400. Neo\ntrỏ vào một `seq` không tồn tại trong mạch cũng là 400 — chip `‹mốc 12›` trên một mạch\n9 mốc mở ra một ngăn kéo không có thật.\n\n`parent_id` phải thuộc **cùng mạch**: reply xuyên mạch sẽ dựng một nhánh mà cả hai\ntrang đều không hiển thị đúng.\n\nNgười viết nhận +1 phiếu của chính mình (PLAN 5.7).",
+        "description": "Viết bình luận vào khán đài hoặc ngăn kéo — PLAN 5.4, nguyên tắc 4 và 6.\n\n**Quyền: bất kỳ ai đã đăng nhập.** Không phải chỉ tác giả — khán đài là chỗ của đám\nđông. Chặn duy nhất là mạch bị mod **khoá** (403 `mach_bi_khoa`).\n**Mạch đã đóng sổ VẪN bình luận được** (PLAN 5.1) — đó là khác biệt cố ý so với\n`POST /machs/{id}/mocs`, đừng \"dọn dẹp\" hai đường này thành một phép kiểm.\n\n`anchor_moc_seq` **chỉ đặt được trên bình luận gốc**; gửi kèm `parent_id` là 400. Neo\ntrỏ vào một `seq` không tồn tại trong mạch cũng là 400 — chip `‹mốc 12›` trên một mạch\n9 mốc mở ra một ngăn kéo không có thật.\n\n`parent_id` phải thuộc **cùng mạch**: reply xuyên mạch sẽ dựng một nhánh mà cả hai\ntrang đều không hiển thị đúng.\n\nNgười viết nhận +1 phiếu của chính mình (PLAN 5.7).\n\n**Cha đã bị gỡ ⇒ 409 `noi_dung_da_go`** (L17, vá V1). Trước lượt vá, đây là cửa ghi\nDUY NHẤT không hỏi `doi_con_song`, và cái thiếu ấy có hai hậu quả — cái thứ hai mới là\ncái nặng: (1) người ta trả lời được vào một bình luận mod **vừa ẩn**; (2) reply mới làm\nbình luận bị ẩn ấy có `con_song = True`, nên `core.ghi.xoa_binh_luan` chuyển nó sang\nnhánh bia mộ — **tác giả của nó vĩnh viễn không xoá thật được nữa**, và không ai giải\nthích được vì sao.\n\n**Hạn mức: tài khoản dưới 3 ngày tuổi viết tối đa 5 bình luận/giờ** (PLAN 5.10, số đổi\nđược ở `settings.HAN_MUC_BINH_LUAN_MOI_GIO_TAI_KHOAN_MOI`) ⇒ 429\n`qua_han_muc_binh_luan` kèm `thu_lai_tu`. Cửa sổ **trượt theo giờ**, không theo ngày\nlịch: PLAN viết \"5 bình luận/giờ\", và \"giờ\" không có ranh giới lịch nào để bám.\n\n⚠ PLAN gọi nó là *\"shadow-limit\"*. Cài ở đây là một lời **từ chối nói ra**, không phải\nmột lượt ghi âm thầm bị giấu: gikky nhận nội dung rồi không hiện nó là dựng một cái bẫy\nim lặng cho cả người viết thật lẫn người đọc, và nó mâu thuẫn với nguyên tắc \"lý do\nphải ĐÚNG\" mà repo áp cho mọi nút bị khoá. Lệch với chữ của PLAN, ghi ra để thấy.",
         "operationId": "viet_binh_luan",
         "parameters": [
           {
@@ -2736,6 +2916,26 @@
               }
             },
             "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiThoiGianOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           }
         },
         "security": [
@@ -2885,7 +3085,7 @@
     },
     "/api/v1/machs/{mach_id}/me": {
       "get": {
-        "description": "Trạng thái của **người đang xem** trên mạch này — PLAN mục 7, 8.4 điểm 4.\n\n**Không bao giờ cache được.** Đây là nửa per-user của trang mạch: phiếu của tôi,\nreaction của tôi, tôi có theo mạch không, tôi đọc tới mốc nào. Client component gọi nó\n**sau khi** trang đã render từ cache; tuyệt đối không nướng nội dung này vào HTML.\n\n**Khách chưa đăng nhập nhận 200**, không phải 401 — hai danh sách rỗng,\n`following = false`, `last_seen_entry_seq = 0`. Cùng lý lẽ `GET /me` (PLAN mục 7):\nendpoint này chạy trên MỌI lượt tải trang mạch, kể cả của bot, nên trả lỗi cho trạng\nthái bình thường nhất của hệ thống là dạy frontend coi lỗi là chuyện thường. `face` của\nkhách vì thế bằng đúng `face` của `GET /machs/{id}`.\n\n`face` ở đây áp **đủ hai vế** của PLAN 5.5: vế thời gian, HOẶC \"user đăng nhập VÀ đã\nfollow hoặc từng bình luận mạch này\". Vì là phép HOẶC nên nó chỉ kéo được CẶN → BÃO.\nServer quyết, frontend không tính lại (PLAN nguyên tắc 10).\n\nMạch bị mod ẩn ⇒ **404**, cùng mã với mọi cửa công khai khác: trả trạng thái viewer cho\nmột mạch đã bị gỡ là xác nhận nó tồn tại.\n\nKhông cần đăng nhập nên **không khai `auth=`** — nó là endpoint GET, không có gì để\nCSRF bảo vệ, và luật \"mọi operation không-GET phải có auth\"\n(`tests/test_quyen_ghi.py`) vì thế không đụng tới nó.",
+        "description": "Trạng thái của **người đang xem** trên mạch này — PLAN mục 7, 8.4 điểm 4.\n\n**Không bao giờ cache được.** Đây là nửa per-user của trang mạch: phiếu của tôi,\nreaction của tôi, tôi có theo mạch không, tôi đọc tới mốc nào. Client component gọi nó\n**sau khi** trang đã render từ cache; tuyệt đối không nướng nội dung này vào HTML.\n\n**Khách chưa đăng nhập nhận 200**, không phải 401 — hai danh sách rỗng,\n`following = false`, `last_seen_entry_seq = 0`. Cùng lý lẽ `GET /me` (PLAN mục 7):\nendpoint này chạy trên MỌI lượt tải trang mạch, kể cả của bot, nên trả lỗi cho trạng\nthái bình thường nhất của hệ thống là dạy frontend coi lỗi là chuyện thường. `face` của\nkhách vì thế bằng đúng `face` của `GET /machs/{id}`.\n\n`face` ở đây áp **đủ hai vế** của PLAN 5.5: vế thời gian, HOẶC \"user đăng nhập VÀ đã\nfollow hoặc từng bình luận mạch này\". Vì là phép HOẶC nên nó chỉ kéo được CẶN → BÃO.\nServer quyết, frontend không tính lại (PLAN nguyên tắc 10).\n\nMạch bị mod ẩn ⇒ **404**, cùng mã với mọi cửa công khai khác: trả trạng thái viewer cho\nmột mạch đã bị gỡ là xác nhận nó tồn tại.\n\n`noi_dung_cua_toi` là vế *\"tác giả vẫn thấy nội dung kèm nhãn\"* của PLAN 5.2 + 5.10 —\nnó **chỉ** chứa mốc/bình luận mà chính người gọi là tác giả. Xem\n`_noi_dung_bi_che_cua_toi`.\n\nKhông cần đăng nhập nên **không khai `auth=`** — nó là endpoint GET, không có gì để\nCSRF bảo vệ, và luật \"mọi operation không-GET phải có auth\"\n(`tests/test_quyen_ghi.py`) vì thế không đụng tới nó.",
         "operationId": "xem_mach_cua_toi",
         "parameters": [
           {
@@ -3208,6 +3408,72 @@
           }
         },
         "summary": "Xem Toi",
+        "tags": [
+          "tai-khoan"
+        ]
+      },
+      "patch": {
+        "description": "Đổi tuỳ chọn của **chính phiên đang gọi**. Hôm nay đúng một trường: `nhan_digest`.\n\n**Quyền: bất kỳ ai đã đăng nhập, và chỉ ghi vào hàng của chính họ.** Không có tham số\nnào chỉ ra người khác, nên không có đường nào đặt tuỳ chọn hộ ai.\n\n### Vì sao cửa này phải tồn tại (L14)\n\nPLAN 5.8 chốt digest tuần là **opt-in**, và `User.nhan_digest` mặc định `False` đúng\ntheo đó. Nhưng cho tới lượt vá V1, `grep \"nhan_digest\"` trong `api/` và `apps/` ra\n**0 kết quả**: không endpoint, không form, không trang cài đặt. Nghĩa là toàn bộ\n`core/digest.py`, lệnh `gui_digest` và lịch 8:00 thứ Bảy chạy trên một tập người nhận\n**luôn rỗng về cấu trúc** — commit `64b1a94` gọi đó là \"cắm nguồn người nhận cho\ndigest\", trong khi cái nguồn ấy không ai bật được.\n\n**PATCH thật**: trường vắng mặt là không đổi. Gọi với thân rỗng `{}` là hợp lệ và\nkhông ghi gì — nó chính là cách client hỏi \"trạng thái hiện tại\" mà không cần một\nendpoint thứ hai.\n\n⚠ Trang `/cai-dat` của `apps/web` **chưa có** (nợ có tên `TRANG-CAI-DAT`), nên hôm nay\ncửa này chưa có nút nào bấm vào nó. Đó là chủ đích của lượt vá V1 — mở cửa trước, UI\nthuộc lượt sau — chứ không phải một endpoint bỏ quên.",
+        "operationId": "sua_toi",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ToiSuaIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToiOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Sua Toi",
         "tags": [
           "tai-khoan"
         ]
@@ -3747,7 +4013,7 @@
     },
     "/api/v1/notifications": {
       "get": {
-        "description": "Chuông poll 60 giây — PLAN 5.8. **Per-user tuyệt đối, KHÔNG BAO GIỜ cache.**\n\n**Quyền: chỉ thông báo của chính người gọi.** Không có tham số nào chỉ ra người khác;\n`user = request.user` nằm ngay trong queryset gốc.\n\nSắp **mới nhất trước**, cursor keyset trên `(created_at, id)` — khoá BẤT BIẾN, nên nó\nhưởng đủ bảo đảm \"không trùng, không sót\" của `api/phan_trang.py`. Một thông báo\n`moc_moi` được gộp lại (mốc thứ hai trong ngày) sẽ **bump `created_at`** và vì thế\nnhảy lên đầu — đúng ý muốn, và nó không phá keyset: hàng ấy chuyển sang trang 1, đúng\nca \"hàng mới chèn vào đầu\" mà keyset sinh ra để xử.\n\n`so_chua_doc` đếm **toàn bộ hộp thư**, không phải trang đang xem: con số trên chấm đỏ\nnói \"bạn có 23 thứ chưa đọc\", tính nó trên một trang 20 dòng thì nó kẹt ở `20` mãi mãi\n— một con số trông hợp lý và luôn sai.\n\n**Không có bộ lọc `?chua_doc=`** ở bản này. Chuông hiện cả đã đọc lẫn chưa đọc trong\nmột dòng thời gian; thêm một chế độ lọc là thêm một trạng thái UI phải nhớ, mà PLAN\n5.8 không đòi.",
+        "description": "Chuông poll 60 giây — PLAN 5.8. **Per-user tuyệt đối, KHÔNG BAO GIỜ cache.**\n\n**Quyền: chỉ thông báo của chính người gọi.** Không có tham số nào chỉ ra người khác;\n`user = request.user` nằm ngay trong queryset gốc.\n\nSắp **mới nhất trước**, cursor keyset trên `(created_at, id)`.\n\n⚠ **Khoá này KHÔNG bất biến** *(sửa câu ở lượt vá V1 — L34)*: dedupe `moc_moi` cố ý\nbump `created_at` khi mốc thứ hai trong ngày về (`core/thong_bao.py::bao_moc_moi`),\nnên một hàng đang ở trang 3 có thể nhảy lên trang 1 giữa hai lượt cuộn. Câu cũ ở đây\nkhẳng định *\"khoá BẤT BIẾN\"* rồi hai dòng sau tự mô tả cú bump — và câu đầu là câu\nngười sau sẽ tin.\nHệ quả thật, đọc đúng mức: hàng bị bump **nhảy lên trước** con trỏ, tức đúng ca \"hàng\nmới chèn vào đầu\" mà keyset xử được (không trùng). Cái mất là **có thể sót** — nếu nó\nbị bump sau khi người đọc đã đi qua vị trí cũ, họ không gặp lại nó ở trang sau. Vô hại\nở chuông (dòng ấy đang nằm ở trang 1, chỗ dễ thấy nhất) nhưng đó là một bảo đảm yếu\nhơn `KEYSET-BIEN-DOI` của feed, không phải bảo đảm đầy đủ.\n\n`so_chua_doc` đếm **toàn bộ hộp thư**, không phải trang đang xem: con số trên chấm đỏ\nnói \"bạn có 23 thứ chưa đọc\", tính nó trên một trang 20 dòng thì nó kẹt ở `20` mãi mãi\n— một con số trông hợp lý và luôn sai.\n\n**Không có bộ lọc `?chua_doc=`** ở bản này. Chuông hiện cả đã đọc lẫn chưa đọc trong\nmột dòng thời gian; thêm một chế độ lọc là thêm một trạng thái UI phải nhớ, mà PLAN\n5.8 không đòi.",
         "operationId": "liet_ke_thong_bao",
         "parameters": [
           {
@@ -3865,6 +4131,94 @@
         "summary": "Danh Dau Da Doc",
         "tags": [
           "thong-bao"
+        ]
+      }
+    },
+    "/api/v1/reports": {
+      "post": {
+        "description": "Tố một mạch / mốc / bình luận vào hàng đợi kiểm duyệt — PLAN 5.10.\n\n**Quyền: bất kỳ ai đã đăng nhập.** Không cần quyền gì trên đích — đó là cả điểm của\nmột nút báo cáo. Tài khoản bị ban bị chặn ở lớp auth (`api/quyen.py`).\n\n### `mach_bi_khoa` KHÔNG được áp ở đây, và đó là chủ đích\n\nMọi cửa ghi khác gọi `doi_mach_tuong_tac_duoc`; cửa này thì không. Khoá mạch nghĩa là\n\"đọc được, cấm tương tác\" (PLAN 5.10) — nhưng báo cáo **không phải** một tương tác với\nnội dung, nó là lời nhắn gửi mod. Chặn nó là: mạch đang bị khoá vì một tranh chấp thì\nđúng lúc ấy không ai tố thêm được gì. Cùng lý lẽ đã chốt cho `follow`/`seen`\n(`api/theo_doi.py`), khác lý lẽ của `trich` (trích ghi vào nội dung công khai).\n\n### Chống trùng: một người, một đích, một báo cáo ĐANG MỞ\n\nBấm lần thứ hai khi báo cáo cũ chưa được xử lý ⇒ 409 `da_bao_cao`. Ràng buộc là một\nunique **partial** ở tầng DB (`bao_cao_mot_lan_moi_dich_dang_mo`), nên nó đúng cả khi\nhai tab bấm cùng lúc. Mod đóng báo cáo cũ rồi thì tố lại được — nếu không, một lần bấm\nnhầm là khoá vĩnh viễn khả năng tố đúng cái đích ấy.\n\n**Không** trả 200 im lặng cho lượt trùng: người bấm cần biết là gikky đã nhận rồi, chứ\nkhông phải nghĩ nút hỏng và đi bấm tiếp.\n\n### Bốn lý do, và `ghi_chu` là chỗ nói thêm\n\n`ly_do` đúng bốn giá trị của PLAN 5.10 (phím hàng · lừa đảo · spam · khác); `ghi_chu`\ntuỳ chọn. Server **không** validate ngữ nghĩa `ghi_chu` — nó là chữ cho mod đọc, và\nnó không hiện ở đâu ngoài khu quản trị.\n\nResponse cố ý **không** trả trạng thái xử lý: người tố không được biết mod đã làm gì,\nvà không được có một endpoint để dò xem hàng đợi có gì.",
+        "operationId": "gui_bao_cao",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BaoCaoMoiIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaoCaoDaGuiOut"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Gui Bao Cao",
+        "tags": [
+          "bao-cao"
         ]
       }
     },

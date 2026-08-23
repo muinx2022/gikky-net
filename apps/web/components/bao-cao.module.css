@@ -1,0 +1,93 @@
+/* Form báo cáo — bung ra dưới thẻ mốc / nút bình luận, cùng chất liệu với form sửa.
+   Xám và nhỏ: đây là một cái cửa hiếm dùng, không phải một lời mời (PLAN 9.1). */
+
+.khung {
+  margin-top: 7px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--inset);
+}
+
+.nhan {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--ink-3);
+  font-size: 12px;
+}
+
+.chon,
+.o {
+  width: 100%;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13.5px;
+}
+
+.o {
+  margin-top: 8px;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.chon:focus-visible,
+.o:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -1px;
+}
+
+.chan {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.nhe {
+  padding: 5px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--ink-3);
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.nhe:hover {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.gui {
+  margin-left: auto;
+  padding: 6px 15px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.gui:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.loi,
+.xong {
+  margin: 7px 0 0;
+  padding: 6px 10px;
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 12.5px;
+}

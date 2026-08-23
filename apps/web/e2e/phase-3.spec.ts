@@ -2,7 +2,7 @@ import { expect, test, type Browser, type Page } from "@playwright/test";
 
 import { secretLamMoiCache } from "../playwright.config";
 import { dungTaiKhoan } from "./danh-tinh";
-import { machTheoId } from "./du-lieu";
+import { lamMoiCacheTrang, machTheoId } from "./du-lieu";
 
 /** **Phase 3 — mặt BÃO, vòng lặp quay lại, và cache của PLAN 8.4**, chạy thật trên trình duyệt.
  *
@@ -294,9 +294,14 @@ test.describe("Phase 3 — mặt BÃO, vòng lặp quay lại, cache", () => {
     // Nợ `MOC-THIEU-AUTHOR`. Hôm nay hai cột trùng nhau nên bài đo chỉ khẳng định được
     // hành vi đúng ở cả hai phía; cái nó giữ là **cửa** ấy tồn tại.
     await chu.goto(duong_dan_mach);
-    await expect(chu.getByTestId("menu-moc").first()).toBeVisible();
+    await chu.getByTestId("menu-moc").first().click();
+    await expect(chu.getByTestId("nut-sua-moc").first()).toBeVisible();
+    // Người khác vẫn có menu `⋯` (từ L03 nó mang nút "Báo cáo"), nhưng **không** có
+    // "Sửa mốc" — đó mới là thứ bài đo này nói về.
     await khan_gia.goto(duong_dan_mach);
-    await expect(khan_gia.getByTestId("menu-moc")).toHaveCount(0);
+    await khan_gia.getByTestId("menu-moc").first().click();
+    await expect(khan_gia.getByTestId("nut-sua-moc")).toHaveCount(0);
+    await expect(khan_gia.getByTestId("nut-xoa-moc")).toHaveCount(0);
   });
 
   test("P9 — ISR: bình luận KHÔNG có signal ⇒ khách còn thấy bản cache (PLAN 8.4)", async ({
@@ -355,6 +360,54 @@ test.describe("Phase 3 — mặt BÃO, vòng lặp quay lại, cache", () => {
     await expect(async () => {
       await khach.reload();
       await expect(khach.getByText(than)).toHaveCount(1);
+    }).toPass({ timeout: 20_000 });
+    await an_danh.close();
+  });
+
+  test("P11 — tác giả XOÁ bình luận ⇒ khách hết thấy nó, KHÔNG chờ một giờ (L06)", async ({
+    browser,
+  }) => {
+    test.skip(
+      secretLamMoiCache() === "",
+      "REVALIDATE_SECRET rỗng ⇒ cửa làm mới cache tắt — không có gì để đo.",
+    );
+    // ## Vì sao bài này phải chạy THẬT, không đo bằng một `assert` ở Django
+    //
+    // Lỗi L06 nằm đúng ở khoảng giữa hai tầng, và mỗi tầng nhìn riêng đều "đúng":
+    // Postgres mất hàng, `/m-phien/` (dynamic) của TÁC GIẢ cũng mất nó ngay — nên tác giả
+    // thấy đã xong. Chỉ có bản ISR của **khách** còn giữ nguyên văn, tới 60 phút. Không
+    // một bài đo nào ở một tầng bắt được chuyện đó.
+    //
+    // Bài đo dựng đúng ba nhịp: khách thấy câu ⇒ tác giả của câu tự xoá ⇒ khách hết thấy.
+    const cau = `Câu sẽ bị chính người viết xoá — ${Date.now()}`;
+    await khan_gia.goto(duong_dan_mach);
+    await binhLuan(khan_gia, cau);
+
+    // Nhịp 1: ép cache mang câu ấy. Bình luận MỚI không có signal (P9 vừa ghim), nên phải
+    // làm mới tay — đúng cửa Django dùng, không phải một lối tắt riêng cho test.
+    await lamMoiCacheTrang(duong_dan_mach);
+    const an_danh = await browser.newContext();
+    const khach = await an_danh.newPage();
+    await expect(async () => {
+      await khach.goto(duong_dan_mach);
+      await expect(khach.getByTestId("cay-khan-dai").getByText(cau)).toHaveCount(1);
+    }).toPass({ timeout: 20_000 });
+
+    // Nhịp 2: chính người viết xoá nó, qua giao diện. Câu này chưa có reply và chưa từng
+    // được trích ⇒ nhánh XOÁ THẬT của PLAN 5.3, hàng biến hẳn khỏi Postgres.
+    const nut = khan_gia
+      .getByTestId("cay-khan-dai")
+      .locator("li", { hasText: cau })
+      .first();
+    await nut.getByTestId("menu-binh-luan").click();
+    await nut.getByTestId("nut-xoa-binh-luan").click();
+    await expect(khan_gia.getByTestId("cay-khan-dai").getByText(cau)).toHaveCount(0);
+
+    // Nhịp 3: **KHÔNG** gọi `lamMoiCacheTrang` nữa. Nếu `xoa_binh_luan_api` không gọi
+    // `lam_moi_mach` thì khách còn đọc được nguyên văn tới một giờ, và bài đo đỏ ở đây.
+    await expect(async () => {
+      await khach.reload();
+      await expect(khach.getByText(cau)).toHaveCount(0);
     }).toPass({ timeout: 20_000 });
     await an_danh.close();
   });

@@ -36,6 +36,14 @@ from core.ghi import (
     them_moc,
     tu_upvote,
 )
+from core.han_muc import (
+    dem_binh_luan_trong_gio,
+    dem_mach_trong_ngay_vn,
+    la_tai_khoan_moi,
+    luc_binh_luan_duoc_lai,
+    tran_binh_luan_moi_gio,
+    tran_mach_moi_ngay,
+)
 from core.mat import tinh_mat_theo_thoi_gian
 from core.models.dien_dan import Mach, Sub
 from core.models.moc import Moc
@@ -44,7 +52,7 @@ from core.revalidate import lam_moi_mach
 from core.thoi_gian import nua_dem_vn_ke_tiep
 from core.thong_bao import bao_moc_moi, bao_reply
 
-from api.ghi_chung import kiem_occurred_at, nap_mach
+from api.ghi_chung import doi_con_song, kiem_occurred_at, nap_mach
 from api.loi import (
     CURSOR_KHONG_HOP_LE,
     KHONG_TIM_THAY,
@@ -70,6 +78,8 @@ from api.quyen import (
     HET_HAN_MO_LAI,
     MACH_DA_DONG,
     MACH_DANG_MO,
+    QUA_HAN_MUC_BINH_LUAN,
+    QUA_HAN_MUC_MACH,
     QUA_HAN_MUC_MOC,
     LoiGhi,
     dang_nhap,
@@ -367,6 +377,16 @@ def liet_ke_binh_luan_mach(
 # =============================================================================
 
 
+class _QuaHanMucMoc(Exception):
+    """Thoát khỏi `atomic()` khi chạm trần 3 mốc/ngày — **không bao giờ ra khỏi module**.
+
+    Cần một ngoại lệ chứ không phải một `return` vì phép kiểm nay nằm TRONG transaction
+    (L11): `return` từ giữa khối `atomic()` là commit, còn ở đây phải nhả khoá hàng `Mach`
+    và bỏ mọi thứ đã ghi. Cũng không dùng được `LoiGhi` — mã 429 này mang thêm
+    `thu_lai_tu`, thứ exception handler không dựng được (xem `api/loi.py`).
+    """
+
+
 def _figures_ra_dict(figures) -> list[dict] | None:
     """Schema `FigureIn` → JSON thô cho cột `figures`. `None` giữ nguyên `None`.
 
@@ -380,7 +400,14 @@ def _figures_ra_dict(figures) -> list[dict] | None:
 
 @router.post(
     "/machs",
-    response={201: MachChiTietOut, 400: LoiOut, 401: LoiOut, 403: LoiOut, 404: LoiOut},
+    response={
+        201: MachChiTietOut,
+        400: LoiOut,
+        401: LoiOut,
+        403: LoiOut,
+        404: LoiOut,
+        429: LoiThoiGianOut,
+    },
     operation_id="tao_mach",
     tags=["mach"],
     auth=dang_nhap,
@@ -397,11 +424,27 @@ def tao_mach_api(request, du_lieu: MachMoiIn):
 
     Tác giả nhận **+1 phiếu của chính mình** ngay lúc đăng (PLAN 5.7) — để `0` trên cột
     vote có nghĩa là "đã có người vote xuống", không phải "chưa ai đụng tới".
+
+    **Hạn mức: 10 mạch / người / ngày lịch VN** (PLAN mục 10 Phase 6, số đổi được ở
+    `settings.HAN_MUC_MACH_MOI_USER_NGAY`) ⇒ 429 `qua_han_muc_mach` kèm `thu_lai_tu` =
+    nửa đêm giờ VN kế tiếp. Ranh giới là nửa đêm VN, không phải 24 giờ trượt — cùng luật
+    với hạn mức mốc, xem `core/han_muc.py`.
     """
     kiem_occurred_at(du_lieu.occurred_at)
     sub = Sub.objects.filter(slug=du_lieu.sub).first()
     if sub is None:
         raise LoiGhi(404, SUB_KHONG_TON_TAI, f"Không có chuyên mục {du_lieu.sub!r}.")
+    tran_mach = tran_mach_moi_ngay()
+    if dem_mach_trong_ngay_vn(request.user) >= tran_mach:
+        # Phép đếm này **không** dưới khoá, và đó là quyết định có ghi lý do —
+        # `core/han_muc.py`, khối "Hai chỗ KHÔNG khoá". Tóm tắt: khoá hàng `User` rồi mới
+        # chạm `Mach` là dựng cạnh ngược của `Mach → User` mà `core/thong_bao.py` đã có.
+        return loi_thoi_gian(
+            429,
+            QUA_HAN_MUC_MACH,
+            f"Hôm nay bạn đã đăng đủ {tran_mach} bài — mai viết tiếp nhé.",
+            thu_lai_tu=nua_dem_vn_ke_tiep(),
+        )
 
     with transaction.atomic():
         mach, moc = tao_mach(
@@ -463,39 +506,51 @@ def noi_moc(request, mach_id: int, du_lieu: MocMoiIn):
             MACH_DA_DONG,
             "Mạch đã đóng sổ — mở lại mới nối mốc được. Bình luận thì vẫn viết được.",
         )
-    if dem_moc_trong_ngay_vn(mach) >= SO_MOC_TOI_DA_MOI_NGAY:
-        # `return` chứ không `raise LoiGhi`: mã này là mã DUY NHẤT của đường ghi mang thêm
-        # `thu_lai_tu`, mà exception handler chỉ dựng được `LoiOut` (xem
-        # `api/loi.py::LoiThoiGianOut`). Câu trên nói "mai", trường kia nói mấy giờ — thiếu
-        # nó thì frontend phải dựng lại luật "nửa đêm giờ VN" ở phía client, đúng nợ
-        # `API-THIEU-MOC-THOI-GIAN` mà lượt 2026-08-23 trả.
+    try:
+        with transaction.atomic():
+            # ⚠ **Phép đếm phải nằm TRONG khoá** (L11, vá V1). Bản trước đếm ở ngoài, rồi
+            # `them_moc` mới `select_for_update` hàng `Mach` — nên hai request song song
+            # (một cú double-click là đủ) cùng đọc `2 < 3` và cùng đi tiếp: **4 mốc trong
+            # một ngày, 201 cả hai lần, không một dòng log nào**. Ở đây hàng `Mach` được
+            # khoá TRƯỚC khi đếm, và `them_moc` xin lại đúng hàng ấy trong cùng
+            # transaction (khoá tái nhập, không chờ ai).
+            Mach.objects.select_for_update().get(pk=mach.pk)
+            if dem_moc_trong_ngay_vn(mach) >= SO_MOC_TOI_DA_MOI_NGAY:
+                raise _QuaHanMucMoc
+            moc = them_moc(
+                mach=mach,
+                author=request.user,
+                body=du_lieu.body,
+                occurred_at=du_lieu.occurred_at,
+                loai=du_lieu.loai,
+                question_for_crowd=du_lieu.question_for_crowd,
+                figures=_figures_ra_dict(du_lieu.figures),
+            )
+            tu_upvote(target=moc)
+            # Thông báo cho follower, TRONG cùng transaction với lời ghi (PLAN 5.8).
+            # Không đẩy ra `transaction.on_commit`: rollback ở đây phải cuốn theo cả chuông,
+            # còn commit thành công mà chuông chết sau đó là mốc vào DB không ai được báo.
+            # Gộp 1 thông báo / mạch / ngày lịch VN — xem `core/thong_bao.py`.
+            bao_moc_moi(moc)
+            # On-demand revalidate (PLAN 8.4 điểm 3). Gọi TRONG transaction là đúng: hàm bọc
+            # `transaction.on_commit`, nên lời gọi HTTP chỉ đi sau khi mốc đã commit — gọi
+            # sớm hơn thì Next fetch về đọc phải dữ liệu cũ rồi cache đúng bản cũ đó.
+            lam_moi_mach(mach)
+    except _QuaHanMucMoc:
+        # `return` chứ không `raise LoiGhi`: mã này mang thêm `thu_lai_tu`, mà exception
+        # handler chỉ dựng được `LoiOut` (xem `api/loi.py::LoiThoiGianOut`). Câu dưới nói
+        # "mai", trường kia nói mấy giờ — thiếu nó thì frontend phải dựng lại luật "nửa
+        # đêm giờ VN" ở phía client, đúng nợ `API-THIEU-MOC-THOI-GIAN` đã trả.
+        #
+        # Và vì nó phải `return`, phép kiểm nằm trong `atomic()` cần một ngoại lệ riêng để
+        # thoát ra: một `return` từ giữa khối `atomic()` **commit** transaction thay vì
+        # rollback nó, tức chấp nhận mọi thứ vừa ghi trước đó.
         return loi_thoi_gian(
             429,
             QUA_HAN_MUC_MOC,
             f"Hôm nay mạch này đã đủ {SO_MOC_TOI_DA_MOI_NGAY} mốc — mai nối tiếp nhé.",
             thu_lai_tu=nua_dem_vn_ke_tiep(),
         )
-
-    with transaction.atomic():
-        moc = them_moc(
-            mach=mach,
-            author=request.user,
-            body=du_lieu.body,
-            occurred_at=du_lieu.occurred_at,
-            loai=du_lieu.loai,
-            question_for_crowd=du_lieu.question_for_crowd,
-            figures=_figures_ra_dict(du_lieu.figures),
-        )
-        tu_upvote(target=moc)
-        # Thông báo cho follower, TRONG cùng transaction với lời ghi (PLAN 5.8).
-        # Không đẩy ra `transaction.on_commit`: rollback ở đây phải cuốn theo cả chuông,
-        # còn commit thành công mà chuông chết sau đó là mốc vào DB không ai được báo.
-        # Gộp 1 thông báo / mạch / ngày lịch VN — xem `core/thong_bao.py`.
-        bao_moc_moi(moc)
-        # On-demand revalidate (PLAN 8.4 điểm 3). Gọi TRONG transaction là đúng: hàm bọc
-        # `transaction.on_commit`, nên lời gọi HTTP chỉ đi sau khi mốc đã commit — gọi
-        # sớm hơn thì Next fetch về đọc phải dữ liệu cũ rồi cache đúng bản cũ đó.
-        lam_moi_mach(mach)
     moc.refresh_from_db()
     return Status(201, moc_ra(moc, so_binh_luan=0, trich=None))
 
@@ -508,6 +563,8 @@ def noi_moc(request, mach_id: int, du_lieu: MocMoiIn):
         401: LoiOut,
         403: LoiOut,
         404: LoiOut,
+        409: LoiOut,
+        429: LoiThoiGianOut,
     },
     operation_id="viet_binh_luan",
     tags=["binh-luan"],
@@ -529,9 +586,38 @@ def viet_binh_luan(request, mach_id: int, du_lieu: BinhLuanMoiIn):
     trang đều không hiển thị đúng.
 
     Người viết nhận +1 phiếu của chính mình (PLAN 5.7).
+
+    **Cha đã bị gỡ ⇒ 409 `noi_dung_da_go`** (L17, vá V1). Trước lượt vá, đây là cửa ghi
+    DUY NHẤT không hỏi `doi_con_song`, và cái thiếu ấy có hai hậu quả — cái thứ hai mới là
+    cái nặng: (1) người ta trả lời được vào một bình luận mod **vừa ẩn**; (2) reply mới làm
+    bình luận bị ẩn ấy có `con_song = True`, nên `core.ghi.xoa_binh_luan` chuyển nó sang
+    nhánh bia mộ — **tác giả của nó vĩnh viễn không xoá thật được nữa**, và không ai giải
+    thích được vì sao.
+
+    **Hạn mức: tài khoản dưới 3 ngày tuổi viết tối đa 5 bình luận/giờ** (PLAN 5.10, số đổi
+    được ở `settings.HAN_MUC_BINH_LUAN_MOI_GIO_TAI_KHOAN_MOI`) ⇒ 429
+    `qua_han_muc_binh_luan` kèm `thu_lai_tu`. Cửa sổ **trượt theo giờ**, không theo ngày
+    lịch: PLAN viết "5 bình luận/giờ", và "giờ" không có ranh giới lịch nào để bám.
+
+    ⚠ PLAN gọi nó là *"shadow-limit"*. Cài ở đây là một lời **từ chối nói ra**, không phải
+    một lượt ghi âm thầm bị giấu: gikky nhận nội dung rồi không hiện nó là dựng một cái bẫy
+    im lặng cho cả người viết thật lẫn người đọc, và nó mâu thuẫn với nguyên tắc "lý do
+    phải ĐÚNG" mà repo áp cho mọi nút bị khoá. Lệch với chữ của PLAN, ghi ra để thấy.
     """
     mach = nap_mach(mach_id)
     doi_mach_tuong_tac_duoc(mach)
+
+    if la_tai_khoan_moi(request.user):
+        tran_bl = tran_binh_luan_moi_gio()
+        if dem_binh_luan_trong_gio(request.user) >= tran_bl:
+            # Đếm ngoài khoá, cùng lý do với hạn mức mạch/ngày — `core/han_muc.py`.
+            return loi_thoi_gian(
+                429,
+                QUA_HAN_MUC_BINH_LUAN,
+                f"Tài khoản mới viết tối đa {tran_bl} bình luận mỗi giờ. Ít hôm nữa hạn "
+                "này tự bỏ.",
+                thu_lai_tu=luc_binh_luan_duoc_lai(request.user),
+            )
 
     parent = None
     if du_lieu.parent_id is not None:
@@ -544,6 +630,7 @@ def viet_binh_luan(request, mach_id: int, du_lieu: BinhLuanMoiIn):
                 KHONG_TIM_THAY,
                 f"Không tìm thấy bình luận cha {du_lieu.parent_id} trong mạch này.",
             )
+        doi_con_song(parent, "Bình luận")
         if du_lieu.anchor_moc_seq is not None:
             raise LoiGhi(
                 400,

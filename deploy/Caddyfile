@@ -137,12 +137,32 @@ admin.gikky.net {
 	# RFC 5737, không ai định tuyến) là khoá cửa với chính mình — cố ý: một
 	# allowlist rỗng an toàn hơn một allowlist chép nhầm.
 	#
-	# `respond` với matcher đứng TRƯỚC mọi `handle`: chặn xong thì không route nào
-	# phía dưới được chạy. Viết ngược lại (`handle @duoc_vao { … }` rồi để phần
-	# còn lại rơi xuống) là ai không khớp allowlist vẫn đi tiếp xuống khối sau.
+	# ⚠ **THỨ TỰ VIẾT KHÔNG PHẢI THỨ TỰ CHẠY** — bản trước của file này sai đúng
+	# chỗ đó, và cái sai im lặng hoàn toàn. Caddy sắp lại directive theo
+	# `directiveOrder` dựng sẵn, **không** theo thứ tự trong file; trong bảng ấy
+	# `handle` (nhóm subroute) đứng TRƯỚC `respond`. Nên một
+	# `respond @ngoai_allowlist … 403` viết ở đầu block vẫn chạy SAU `handle /api/*`
+	# ⇒ request từ IP bất kỳ khớp `handle`, được proxy thẳng vào Django, và dòng
+	# `respond` không bao giờ tới lượt. Hai trong ba lớp che của PLAN 8.2 biến mất
+	# cùng lúc (lớp Host vẫn cho qua, vì Host **đúng là** `admin.gikky.net`).
+	#
+	# Cách chữa dùng ở đây: đưa phép chặn vào **chính nhóm `handle`**. Các khối
+	# `handle` cùng cấp là loại trừ nhau và xét theo thứ tự khai, nên khối đầu tiên
+	# khớp sẽ thắng — đây là chỗ duy nhất trong Caddyfile mà "viết trước" thật sự
+	# nghĩa là "chạy trước".
+	#
+	# `abort` **không dùng được** thay cho `respond`: nó cũng nằm sau `handle` trong
+	# `directiveOrder`, tức lặp lại đúng cái bẫy vừa gỡ.
+	#
+	# Bọc cả block trong `route { … }` là cách chữa hợp lệ thứ hai (route giữ nguyên
+	# thứ tự viết). Không chọn nó vì nó làm mọi directive trong block chịu luật
+	# thứ tự khác với phần còn lại của file — một luật ngoại lệ mà người sửa sau
+	# phải nhớ, cho cùng một kết quả.
 	@ngoai_allowlist not remote_ip 192.0.2.0/24
-	respond @ngoai_allowlist "Not found" 403 {
-		close
+	handle @ngoai_allowlist {
+		respond "Not found" 403 {
+			close
+		}
 	}
 
 	handle /api/* {

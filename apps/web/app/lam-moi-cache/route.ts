@@ -31,14 +31,15 @@
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
-import { DUONG_DAN_HOP_LE, HEADER_SECRET } from "@/lib/lam-moi-cache";
-
-/** Rỗng ⇒ cửa TẮT (503), không phải "cho qua tất". Mặc định fail-closed là bắt buộc ở đây:
- * một biến môi trường quên đặt trên prod không được biến endpoint này thành một cửa ai
- * cũng gọi được để ép Next đi fetch lại bất kỳ đường dẫn nào. */
-const SECRET = process.env.REVALIDATE_SECRET ?? "";
+import { DUONG_DAN_HOP_LE, HEADER_SECRET, secretCuaCua } from "@/lib/lam-moi-cache";
 
 export async function POST(req: Request) {
+  // Đọc biến môi trường **mỗi request**, không chụp vào một `const` ở tầng module
+  // *(đổi ở lượt vá V1 — L23)*. Hành vi trên server không đổi (biến không đổi giữa chừng),
+  // nhưng một hằng chụp lúc import làm hai nhánh TỪ CHỐI dưới đây **không đo được**: bài
+  // đo không có cách nào dựng lại module với một giá trị env khác. Và chúng cần được đo —
+  // đảo một dấu `!` ở dòng dưới là mở toang cửa mà không gì đỏ.
+  const SECRET = secretCuaCua();
   if (!SECRET) {
     return NextResponse.json(
       { loi: "REVALIDATE_SECRET chưa đặt — cửa làm mới cache đang tắt." },

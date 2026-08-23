@@ -254,8 +254,14 @@ test.describe("B — form ghi: vòng lặp lõi chạy thật trong trình duy�
     await expect(page.getByTestId("khoi-chu-mach")).toHaveCount(0);
     await expect(page.getByTestId("nut-noi-moc")).toHaveCount(0);
     await expect(page.getByTestId("nut-dong-so")).toHaveCount(0);
-    // Và không có menu `⋯` nào trên mốc của người khác.
-    await expect(page.getByTestId("menu-moc")).toHaveCount(0);
+    // Menu `⋯` trên mốc của người khác **có** tồn tại từ lượt vá V1 (L03) — nhưng nó chỉ
+    // chứa "Báo cáo". Bài đo vì thế đòi đúng thứ nó vẫn luôn muốn đòi ("UI không mời
+    // người ta làm việc sẽ bị từ chối") ở dạng CHẶT HƠN: hai nút ghi vắng mặt, và cửa báo
+    // cáo thì có mặt — trước lượt vá, "menu vắng" cũng xanh khi UI mất luôn nút báo cáo.
+    await page.getByTestId("menu-moc").first().click();
+    await expect(page.getByTestId("nut-sua-moc")).toHaveCount(0);
+    await expect(page.getByTestId("nut-xoa-moc")).toHaveCount(0);
+    await expect(page.getByTestId("nut-bao-cao-moc").first()).toBeVisible();
   });
 
   test("B7 — khách: lối đăng nhập, KHÔNG phải một cái form vô dụng", async ({ page }) => {

@@ -6,6 +6,7 @@ import { useRef, useState } from "react";
 
 import { GOC_TRINH_DUYET, headerGhi } from "@/lib/tai-khoan";
 
+import { FormBaoCao } from "./bao-cao";
 import { Composer } from "./composer";
 import css from "./hanh-dong-binh-luan.module.css";
 import { useMach } from "./mach-ngu-canh";
@@ -30,11 +31,21 @@ import { NutTrich } from "./trich";
  * hiện trên bình luận người khác rồi trả 403 là dạy người dùng rằng sản phẩm hỏng.
  * **Nhưng UI không phải hàng rào** — hàng rào là `api/quyen.py`, có bài đo riêng.
  *
- * ### "Báo cáo" đâu?
+ * ### "Báo cáo" — vào ở lượt vá V1 (L03), cùng lúc với endpoint của nó
  *
- * **Không có, và đó là chủ đích.** `POST /reports` là Phase 4. PLAN mục 4 cấm nút vĩnh
- * viễn không bấm được, nên một mục "Báo cáo" xám trong menu hôm nay là đúng thứ bị cấm.
- * Nó vào cùng lúc với endpoint của nó.
+ * Nút này chỉ hiện cho **người KHÔNG phải tác giả**: tố bình luận của chính mình không có
+ * nghĩa gì, và server tuy cho phép (cửa `POST /reports` cố ý không hỏi quyền) thì UI vẫn
+ * không nên mời.
+ *
+ * ⚠ **Hai ngoại lệ so với ba luật ở trên, và cả hai là chủ đích:**
+ *
+ * 1. mạch bị mod **khoá** vẫn báo cáo được. `api/bao_cao.py` **không** áp
+ *    `doi_mach_tuong_tac_duoc` — báo cáo là lời nhắn gửi mod, không phải một tương tác với
+ *    nội dung, và chặn nó nghĩa là đúng lúc một mạch bị khoá vì tranh chấp thì không ai tố
+ *    thêm được gì. Vì thế khi `khoa` là `true`, component vẫn render — nhưng **chỉ** menu
+ *    `⋯` với đúng một mục;
+ * 2. bia mộ (`daXoa`) thì không: không còn gì để tố, và server trả 409 — một cái nút bấm
+ *    để nhận lỗi là cái bẫy.
  */
 export function HanhDongBinhLuan({
   id,
@@ -55,7 +66,7 @@ export function HanhDongBinhLuan({
   const { khoa } = useMach();
   const { toi, dangTai } = usePhien();
   const router = useRouter();
-  const [mo, datMo] = useState<"khong" | "tra_loi" | "sua">("khong");
+  const [mo, datMo] = useState<"khong" | "tra_loi" | "sua" | "bao_cao">("khong");
   const [chu, datChu] = useState(than);
   const [dangGui, datDangGui] = useState(false);
   const [loi, datLoi] = useState<string | null>(null);
@@ -72,10 +83,12 @@ export function HanhDongBinhLuan({
     if (hopRef.current !== null) hopRef.current.open = false;
   };
 
-  if (dangTai || khoa || daXoa) return null;
+  if (dangTai || daXoa) return null;
   const dang_nhap = toi?.dang_nhap === true;
   if (!dang_nhap) return null;
   const cua_toi = tacGia !== null && toi?.username === tacGia;
+  // Mạch bị khoá: chỉ còn đúng đường báo cáo (xem docstring, ngoại lệ 1).
+  const co_menu = khoa ? !cua_toi : true;
 
   const luu = async () => {
     const moi = chu.trim();
@@ -127,43 +140,61 @@ export function HanhDongBinhLuan({
   return (
     <div className={css.khung}>
       <div className={css.hang}>
-        <button
-          type="button"
-          className={css.nhe}
-          onClick={() => datMo(mo === "tra_loi" ? "khong" : "tra_loi")}
-          data-testid="nut-tra-loi"
-        >
-          Trả lời
-        </button>
+        {!khoa && (
+          <button
+            type="button"
+            className={css.nhe}
+            onClick={() => datMo(mo === "tra_loi" ? "khong" : "tra_loi")}
+            data-testid="nut-tra-loi"
+          >
+            Trả lời
+          </button>
+        )}
         {/* Chỉ chủ mạch thấy — component tự quyết, cùng lối `HanhDongMoc`. Một phép kiểm
             quyền chép ra hai chỗ là chỗ thứ hai sẽ quên. */}
-        <NutTrich commentId={id} anchorMocSeq={anchorMocSeq} />
-        {cua_toi && (
+        {!khoa && <NutTrich commentId={id} anchorMocSeq={anchorMocSeq} />}
+        {co_menu && (
           <details className={css.menu} ref={hopRef} data-testid="menu-binh-luan">
             <summary aria-label="Thêm hành động">⋯</summary>
             <div className={css.hop}>
-              <button
-                type="button"
-                onClick={() => {
-                  dongMenu();
-                  datChu(than);
-                  datMo("sua");
-                }}
-                data-testid="nut-sua-binh-luan"
-              >
-                Sửa
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  dongMenu();
-                  void xoa();
-                }}
-                disabled={dangGui}
-                data-testid="nut-xoa-binh-luan"
-              >
-                Xoá
-              </button>
+              {cua_toi && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      dongMenu();
+                      datChu(than);
+                      datMo("sua");
+                    }}
+                    data-testid="nut-sua-binh-luan"
+                  >
+                    Sửa
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      dongMenu();
+                      void xoa();
+                    }}
+                    disabled={dangGui}
+                    data-testid="nut-xoa-binh-luan"
+                  >
+                    Xoá
+                  </button>
+                </>
+              )}
+              {!cua_toi && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    dongMenu();
+                    datMo("bao_cao");
+                  }}
+                  data-testid="nut-bao-cao-binh-luan"
+                >
+                  Báo cáo
+                </button>
+              )}
             </div>
           </details>
         )}
@@ -204,6 +235,15 @@ export function HanhDongBinhLuan({
             </button>
           </div>
         </div>
+      )}
+
+      {mo === "bao_cao" && (
+        <FormBaoCao
+          dich="comment"
+          id={id}
+          moTaDich="bình luận này"
+          onHuy={() => datMo("khong")}
+        />
       )}
 
       {mo === "tra_loi" && (

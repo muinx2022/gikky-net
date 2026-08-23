@@ -213,6 +213,29 @@ ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 ACCOUNT_EMAIL_NOTIFICATIONS = False
 ACCOUNT_PREVENT_ENUMERATION = True
+#: Adapter riêng — chỗ DUY NHẤT gắn hạn mức đăng ký theo IP và ghi lại `dang_ky_ip`.
+#: Xem `core/allauth_adapter.py`.
+ACCOUNT_ADAPTER = "core.allauth_adapter.AdapterTaiKhoan"
+
+# --- Hạn mức chống lạm dụng (PLAN mục 10 Phase 6 + PLAN 5.10) ----------------
+# **Mặc định ở đây là con số của PLAN**, tức con số chạy trên prod (nơi không ai khai
+# biến môi trường nào). `api/.env.example` nới ba số này cho máy dev — lý do ghi ở đó.
+# Cơ chế đếm + ranh giới ngày/giờ nằm ở `core/han_muc.py`; đừng dựng bản đếm thứ hai.
+
+#: PLAN mục 10 Phase 6 — "đăng ký ≤5/IP/ngày".
+HAN_MUC_DANG_KY_MOI_IP_NGAY = env.int("HAN_MUC_DANG_KY_MOI_IP_NGAY", default=5)
+#: PLAN mục 10 Phase 6 — "đăng bài ≤10/user/ngày".
+HAN_MUC_MACH_MOI_USER_NGAY = env.int("HAN_MUC_MACH_MOI_USER_NGAY", default=10)
+#: PLAN 5.10 — "shadow-limit tài khoản < 3 ngày tuổi: tối đa 5 bình luận/giờ".
+HAN_MUC_BINH_LUAN_MOI_GIO_TAI_KHOAN_MOI = env.int(
+    "HAN_MUC_BINH_LUAN_MOI_GIO_TAI_KHOAN_MOI", default=5
+)
+NGAY_TAI_KHOAN_CON_MOI = env.int("NGAY_TAI_KHOAN_CON_MOI", default=3)
+
+#: Có được tin header `X-Forwarded-For` không — xem `core/han_muc.py::dia_chi_ip`.
+#: **Mặc định `False`.** Bật đúng khi CÓ reverse proxy tin cậy ngay trước Django (prod:
+#: Caddy). Bật nhầm khi không có proxy là để ai cũng tự khai IP bằng một dòng header.
+TIN_X_FORWARDED_FOR = env.bool("TIN_X_FORWARDED_FOR", default=False)
 
 #: Credential đọc từ env chứ không từ hàng `SocialApp` trong DB: một hàng DB nghĩa là
 #: mỗi môi trường phải nhớ tạo tay, và quên thì lỗi chỉ lộ lúc ai đó bấm nút. Khối này
@@ -238,6 +261,10 @@ SOCIALACCOUNT_PROVIDERS = (
 
 #: Email. Dev không có SMTP ⇒ ghi ra file, e2e đọc file lấy link xác thực.
 #: `EMAIL_URL` (django-environ) đè được ở prod, vd `smtp://user:pass@host:587/?tls=True`.
+#:
+#: ⚠ **Thư dev nằm ở `api/.mail/`** — xem `EMAIL_FILE_PATH` mấy dòng dưới. Đường dẫn
+#: `api/sent_emails/` nhắc tới ngay sau đây là của một khối cấu hình **đã bị xoá**, không
+#: phải chỗ thư đang ra; đọc lướt hai đoạn này rất dễ nhớ nhầm con đường sai (L28).
 #:
 #: **Khối DUY NHẤT cấu hình email.** Mảng D (Phase 6) mang theo một khối thứ hai —
 #: `EMAIL_BACKEND`/`EMAIL_FILE_PATH` chọn theo `DEBUG`, thư ra `api/sent_emails/` — và

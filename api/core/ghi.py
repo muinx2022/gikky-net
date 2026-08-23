@@ -122,6 +122,15 @@ SO_LAN_THU_LAI = 3
 #: Tên constraint mà retry ở dưới được phép hiểu là "một cuộc đua cấp phát khoá".
 RB_MOC_SEQ = "moc_duy_nhat_seq"
 RB_COMMENT_PATH = "comment_duy_nhat_path"
+#: `UNIQUE (user, moc)` của `Reaction` — cuộc đua "chưa có hàng nào để khoá" (xem
+#: `dat_reaction`). Tên phải khớp ĐÚNG `core/models/tuong_tac.py`; lệch một chữ thì
+#: `_la_va_cham` trả `False` và lỗi lại bay ra thành 500, im lặng như trước.
+RB_REACTION_MOC = "reaction_duy_nhat_moc"
+#: `UNIQUE (moc) WHERE removed_at IS NULL` của `Trich` — rào 1 của PLAN 5.6.
+RB_TRICH_HIEU_LUC = "trich_mot_hieu_luc_moi_moc"
+#: `UNIQUE (reporter, target_type, target_id) WHERE resolved_at IS NULL` — chống một
+#: người tố một đích nhiều lần trong lúc báo cáo cũ còn đang mở (L03).
+RB_BAO_CAO_TRUNG = "bao_cao_mot_lan_moi_dich_dang_mo"
 
 
 def _la_va_cham(loi: IntegrityError, ten_constraint: str) -> bool:
@@ -852,6 +861,24 @@ def dat_reaction(*, user, moc: Moc, emoji: str | None) -> Reaction | None:
     `comment_count`, không đụng `last_activity_at` (nó là *nội dung* mà cột kia đo, chứ
     reaction thì không phải nội dung đọc được). Vì thế hàm này không gọi
     `cap_nhat_dem_mach` và không cần khoá hàng `Mach`.
+
+    ### Cuộc đua "chưa có hàng nào để khoá" (L09, vá V1)
+
+    `select_for_update().filter(...).first()` khoá **hàng đã tồn tại**. Lượt react ĐẦU
+    TIÊN thì chưa có hàng nào ⇒ không có gì để khoá ⇒ hai transaction song song (một cú
+    double-click là đủ) cùng thấy `cu is None` và cùng `INSERT` ⇒ hàng thứ hai va
+    `UNIQUE (user, moc)`. Bản trước để `IntegrityError` bay thẳng ra ngoài: **HTTP 500
+    trên một thao tác hợp lệ**. Đường trích gặp đúng cuộc đua này và đã xử 409 từ lâu.
+
+    Cách chữa: bọc riêng lượt `INSERT` trong một `atomic()` lồng (savepoint) rồi bắt đúng
+    `reaction_duy_nhat_moc`. Không có savepoint thì `IntegrityError` làm hỏng cả
+    transaction ngoài và lệnh `UPDATE` tiếp theo ăn `TransactionManagementError` — tức
+    chữa 500 bằng một 500 khác.
+
+    Kết cục sau khi bắt là **UPDATE**, không phải lỗi: hai lượt bấm của cùng một người
+    trên cùng một mốc là idempotent theo đúng nghĩa sản phẩm ("một user một reaction mỗi
+    mốc"), nên trả 409 ở đây chỉ là chuyển một cái 500 thành một cái phiền phức. Khác
+    `Trich` — ở đó hai lượt là hai *câu khác nhau* tranh một chỗ, nên 409 mới đúng.
     """
     if emoji is not None and emoji not in Reaction.Emoji.values:
         raise ValidationError(
@@ -864,7 +891,20 @@ def dat_reaction(*, user, moc: Moc, emoji: str | None) -> Reaction | None:
                 cu.delete()
             return None
         if cu is None:
-            return Reaction.objects.create(user=user, moc=moc, emoji=emoji)
+            try:
+                with transaction.atomic():
+                    return Reaction.objects.create(user=user, moc=moc, emoji=emoji)
+            except IntegrityError as loi:
+                if not _la_va_cham(loi, RB_REACTION_MOC):
+                    raise
+                logger.warning(
+                    "dat_reaction: đụng UNIQUE(user, moc) ở mốc %s — hai lượt react "
+                    "song song của cùng một người; chuyển sang cập nhật",
+                    moc.pk,
+                )
+                # Hàng của luồng kia đã commit (nếu không, `select_for_update` dưới đây
+                # chờ nó xong) ⇒ chắc chắn đọc được.
+                cu = Reaction.objects.select_for_update().get(user=user, moc=moc)
         cu.emoji = emoji
         cu.save(update_fields=["emoji"])
         return cu
@@ -1303,3 +1343,31 @@ def dong_bao_cao(*, report: Report, boi, hanh_dong: str) -> bool:
         )
     report.refresh_from_db()
     return True
+
+
+def tao_bao_cao(*, reporter, target_type: str, target_id: int, ly_do: str, ghi_chu: str) -> Report:
+    """Nhận một báo cáo từ người dùng — **cửa vào duy nhất** của hàng đợi kiểm duyệt.
+
+    PLAN 5.10 dựng cả phía tiêu thụ (hàng đợi, `dong_bao_cao`, `AuditLog`, trang admin)
+    ở Phase 4 mà **không dựng cửa nhận**: cho tới lượt vá V1, `Report.objects.create`
+    không xuất hiện ở đâu ngoài test, và bảng `core_report` trống về *cấu trúc* — hàng đợi
+    kiểm duyệt vĩnh viễn không có hàng nào. Đây là cửa đó.
+
+    **Không ghi `AuditLog`.** `AuditLog` là nhật ký hành động của **mod** (xem docstring
+    `core/models/he_thong.py::AuditLog`); một lượt tố của người dùng không phải hành động
+    quản trị, và đổ nó vào cùng bảng là làm loãng đúng cái nhật ký người ta mở ra để tra
+    "ai đã ẩn bài này". Hàng `Report` tự nó đã là vết.
+
+    **Không khoá hàng nào.** `INSERT` vào `core_report` lấy `FOR KEY SHARE` trên hàng
+    `core_user` của người tố (FK `reporter`) — cạnh `∅ → User`, không nối vào chu trình
+    nào (xem đồ thị khoá ở `core/thong_bao.py`). Chống trùng là việc của
+    `bao_cao_mot_lan_moi_dich_dang_mo`, một unique **partial** ở tầng DB; người gọi bắt
+    `IntegrityError` và trả 409.
+    """
+    return Report.objects.create(
+        reporter=reporter,
+        target_type=target_type,
+        target_id=target_id,
+        ly_do=ly_do,
+        ghi_chu=ghi_chu,
+    )

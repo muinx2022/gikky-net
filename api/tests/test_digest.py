@@ -127,6 +127,11 @@ def test_thu_noi_ra_ten_mach_so_moc_moi_va_link(mach, tac_gia, nguoi_khac):
     # PLAN 5.10: mọi nơi phát ra nội dung người dùng phải kèm disclaimer.
     assert "không phải khuyến nghị đầu tư" in thu.than
     assert "Bỏ nhận thư" in thu.than
+    # L14 (vá V1): câu ấy **không được** in một URL chưa có trang. Bản trước trỏ
+    # `{goc_site}/cai-dat` trong khi `apps/web/app/cai-dat` không tồn tại — lối thoát duy
+    # nhất của một lá thư định kỳ là một link 404. Ghim theo chuỗi để nó không quay lại
+    # trước khi trang ấy có thật.
+    assert "/cai-dat" not in thu.than
 
 
 def test_khong_co_display_name_thi_xung_ho_bang_username(mach, tac_gia):

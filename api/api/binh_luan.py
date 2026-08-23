@@ -9,6 +9,7 @@ from ninja import Router
 
 from core.doc_noi_dung import Nut, trang_thai_noi_dung
 from core.ghi import sua_binh_luan, xoa_binh_luan
+from core.revalidate import lam_moi_mach
 
 from api.ghi_chung import doi_con_song, nap_binh_luan
 from api.loi import LoiOut
@@ -41,12 +42,15 @@ def sua_binh_luan_api(request, comment_id: int, du_lieu: BinhLuanSuaIn):
 
     Trả về nút bình luận **không kèm `replies`** (mảng rỗng): endpoint này sửa đúng một
     dòng, và trả cả nhánh con là mời UI thay nguyên nhánh bằng dữ liệu nó không hỏi.
+
+    **Gọi `lam_moi_mach`** — xem ghi chú chung ở `xoa_binh_luan_api`.
     """
     c = nap_binh_luan(comment_id)
     doi_chu_so_huu(request.user, c.author_id, "bình luận")
     doi_mach_tuong_tac_duoc(c.mach)
     doi_con_song(c, "Bình luận")
     c = sua_binh_luan(comment=c, body=du_lieu.body)
+    lam_moi_mach(c.mach)
     nut = Nut(
         binh_luan=c, do_sau=c.do_sau, trang_thai=trang_thai_noi_dung(c), con=[]
     )
@@ -76,10 +80,29 @@ def xoa_binh_luan_api(request, comment_id: int):
 
     `xoa_that = false` nghĩa là nút ở lại làm bia mộ: UI phải **render lại** nó chứ không
     gỡ khỏi cây, nếu không cả nhánh con mất chỗ bám.
+
+    ### Vì sao HAI cửa này gọi `lam_moi_mach` còn `POST /comments` thì không (L06)
+
+    PLAN 8.4 điểm 2 xếp *"bình luận mới"* vào nhóm **KHÔNG có signal** — nó sống bằng
+    vòng revalidate nền, vì ép nó vào on-demand là gọi ngược gần như mỗi request trên một
+    mạch đang sôi. Sửa/xoá thì khác hẳn về hạng: đó là **nội dung biến khỏi trang công
+    khai**, cùng ranh giới mà `api/quan_tri_kiem_duyet.py` đã công nhận là sự kiện có
+    signal khi mod ẩn một bình luận.
+
+    Bỏ sót nó có giá cụ thể và im lặng: khách xem trang mạch nhận bản ISR
+    (`revalidate = 3600`); tác giả xoá xong thì hàng biến khỏi Postgres, nhưng tác giả
+    đang đăng nhập nên đi nhánh `/m-phien/` (force-dynamic) — **họ thấy nó đã mất và tin
+    là xong**, trong khi khách vẫn đọc nguyên văn tới 60 phút.
+
+    Gọi **sau** khi `core.ghi` đóng transaction của nó: `lam_moi_mach` bọc
+    `transaction.on_commit`, mà ngoài `atomic()` thì `on_commit` chạy ngay — tức đúng lúc
+    dữ liệu đã nằm trong DB. Cùng lối với `api/mocs.py::trich_vao_so_api`.
     """
     c = nap_binh_luan(comment_id)
     doi_chu_so_huu(request.user, c.author_id, "bình luận")
     doi_mach_tuong_tac_duoc(c.mach)
     doi_con_song(c, "Bình luận")
+    mach = c.mach
     xoa_that = xoa_binh_luan(comment=c)
+    lam_moi_mach(mach)
     return KetQuaXoaOut(id=comment_id, xoa_that=xoa_that)

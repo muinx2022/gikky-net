@@ -182,23 +182,29 @@ def test_binh_luan_GOC_khong_bao_cho_ai(client, mach_cua_a, nguoi_b):
 
 
 @pytest.mark.django_db
-def test_reply_vao_cha_DA_BI_GO_thi_khong_bao(client, mach_cua_a, nguoi_a, nguoi_b):
+def test_reply_vao_cha_DA_BI_GO_thi_khong_bao(mach_cua_a, nguoi_a, nguoi_b):
     """Cha bị mod ẩn ⇒ không báo. Thông báo là một cửa rò nếu không kiểm chỗ này.
 
     Nó nói cho tác giả biết vẫn có người đang đọc và trả lời đúng thứ mod vừa gỡ — và
     dẫn họ tới một dòng `[đã xoá]`.
+
+    ⚠ **Bài đo gọi thẳng `bao_reply`, không đi qua HTTP** *(đổi ở lượt vá V1, L17)*. Từ
+    lượt ấy `POST /machs/{id}/comments` hỏi `doi_con_song(parent)` nên cửa HTTP trả **409**
+    — tức đường cũ của bài đo này không còn dựng được hàng để đo. Phép kiểm ở `bao_reply`
+    thì **vẫn cần**: `core/` có người gọi khác (seed, migration dữ liệu, `manage.py
+    shell`), và hai lớp chặn hai chuyện khác nhau. Đây là bài đo của lớp trong; lớp ngoài
+    có bài riêng ở `test_api_ghi_binh_luan.py`.
     """
+    from core.thong_bao import bao_reply
+
     cha = tao_binh_luan(mach=mach_cua_a, author=nguoi_a, body="câu của A")
     cha.hidden_at = timezone.now()
     cha.save(update_fields=["hidden_at"])
-
-    client.force_login(nguoi_b)
-    dat(
-        client,
-        f"/api/v1/machs/{mach_cua_a.pk}/comments",
-        {"body": "B trả lời vào bia mộ", "parent_id": cha.pk},
-        status=201,
+    con = tao_binh_luan(
+        mach=mach_cua_a, author=nguoi_b, body="B trả lời vào bia mộ", parent=cha
     )
+
+    assert bao_reply(con) == 0
     assert _cua(nguoi_a).count() == 0
 
 

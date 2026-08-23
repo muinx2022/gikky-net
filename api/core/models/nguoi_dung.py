@@ -38,6 +38,21 @@ class User(AbstractUser):
     #: cột nào nên chúng nằm ở truy vấn, xem docstring hàm đó.
     nhan_digest = models.BooleanField(default=False)
 
+    # --- Chống lạm dụng (PLAN mục 10 Phase 6) -------------------------------
+    #: IP của lượt ĐĂNG KÝ, và **chỉ** của lượt đăng ký — không cập nhật theo mỗi lần
+    #: đăng nhập. Đây là khoá đếm duy nhất của hạn mức "≤5 đăng ký/IP/ngày"
+    #: (`core/han_muc.py::dem_dang_ky_trong_ngay_vn`).
+    #:
+    #: **Vì sao một cột chứ không phải một bộ đếm trong cache:** cache mặc định của Django
+    #: là `LocMemCache` — mất sạch khi tiến trình khởi động lại, và riêng cho từng worker.
+    #: Trên một prod 4 worker thì "5/ngày" âm thầm thành 20/ngày.
+    #:
+    #: Cột này là **dữ liệu cá nhân** (IP nhận dạng được người dùng). Nó tồn tại vì một
+    #: lý do hẹp và nêu được thành lời — chống đăng ký hàng loạt — nên đừng mở rộng nó
+    #: thành nhật ký truy cập: không có cửa API nào trả nó ra, và ẩn danh hoá tài khoản
+    #: (`is_active=False`, PLAN mục 6) nên xoá nó theo.
+    dang_ky_ip = models.GenericIPAddressField(null=True, blank=True, editable=False)
+
     # --- Ban (PLAN 5.10 · Phase 4 dùng) -------------------------------------
     #: Ban tạm: hết hạn thì tự hết. Ban vĩnh viễn dùng cờ riêng để không phải
     #: nhét một mốc thời gian giả kiểu năm 9999 vào DB.

@@ -10,10 +10,31 @@ import json
 
 import pytest
 from django.core.management import call_command
+from django.test import override_settings
 
 from core.ghi import tao_binh_luan, tao_mach, them_moc
 from core.management.commands.seed_dev import TITLE_HPG, TITLE_POST_THUONG
 from core.models import Comment, Mach, Sub, User
+
+
+def chay_seed(*args) -> None:
+    """Chạy một lệnh seed dưới `DEBUG=True` — **cách duy nhất** gọi chúng từ pytest.
+
+    `seed_dev`/`seed_e2e` chốt môi trường ở dòng đầu `handle()` (`core/moi_truong.py`), và
+    `django.test` ép `DEBUG = False` cho mọi bài đo bất kể `settings.py` nói gì. Hai điều
+    đó cộng lại: một `call_command("seed_dev")` trần **phải** ăn `CommandError`, và đó là
+    hành vi đúng — cổng chặn cả chỗ này thì nó mới chặn được chỗ người ta gõ nhầm.
+
+    Bọc bằng `override_settings` chứ không bằng fixture `settings`: `chay_seed` được gọi
+    cả từ hàm thường (test đua luồng không dùng được fixture bám `db`), và một helper cần
+    fixture là một helper chỉ dùng được ở nửa số chỗ.
+
+    ⚠ **Không nới ranh giới** — `DEBUG=True` chỉ sống trong đúng lời gọi này. Bài đo nào
+    khẳng định về chính cái cổng ấy thì gọi `call_command` trần, xem
+    `tests/test_seed_chot_moi_truong.py`.
+    """
+    with override_settings(DEBUG=True):
+        call_command(*args, verbosity=0)
 
 
 def dung_user(username: str, display_name: str = "") -> User:
@@ -188,7 +209,7 @@ def seed(db) -> Mach:
     (xem `seed_dev.py`, khối "BA VAI"), mà đó là hai điều kiện làm cho bài đo R7 và bài
     đo "mồi bung" không rỗng.
     """
-    call_command("seed_dev", verbosity=0)
+    chay_seed("seed_dev")
     return Mach.objects.get(title=TITLE_HPG)
 
 

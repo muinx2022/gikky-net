@@ -4,6 +4,7 @@ Phase 2 thêm `PATCH /mocs/{id}` và `DELETE /mocs/{id}`. Luật quyền: **ch�
 chính mốc đó** — xem docstring từng endpoint.
 """
 
+import logging
 from datetime import timedelta
 
 from django.core.exceptions import ValidationError as LoiModel
@@ -19,7 +20,7 @@ from core.doc_noi_dung import (
     nap_binh_luan,
     tap_tung_duoc_trich,
 )
-from core.ghi import go_trich, sua_moc, trich_vao_so, xoa_moc
+from core.ghi import RB_TRICH_HIEU_LUC, _la_va_cham, go_trich, sua_moc, trich_vao_so, xoa_moc
 from core.models.binh_luan import Comment
 from core.models.moc import Moc, MocRevision
 from core.models.tuong_tac import Trich
@@ -30,6 +31,7 @@ from api.ghi_chung import doi_con_song, kiem_occurred_at, nap_moc
 from api.loi import LoiOut, khong_tim_thay, loi
 from api.quyen import (
     DU_LIEU_KHONG_HOP_LE,
+    NOI_DUNG_DA_GO,
     LoiGhi,
     dang_nhap,
     doi_chu_so_huu,
@@ -38,6 +40,8 @@ from api.quyen import (
 from api.schemas import MocOut, MocRevisionsOut, NganKeoOut, TrichKetQuaOut
 from api.schemas_ghi import MocSuaIn, TrichIn
 from api.trinh_bay import moc_ra, nut_ra, revision_ra
+
+logger = logging.getLogger(__name__)
 
 router = Router()
 
@@ -345,10 +349,32 @@ def trich_vao_so_api(request, moc_id: int, du_lieu: TrichIn):
         # Rào 1 ở tầng DB bắt được cuộc đua mà câu `exists()` ở trên thua: hai lượt bấm
         # đồng thời của cùng một chủ mạch (double-click, hai tab) cùng thấy "chưa có".
         # 409 chứ không 500 — hành động vẫn hợp lệ, chỉ là đã có người (chính họ) làm trước.
+        #
+        # ⚠ **Phải PHÂN BIỆT nguyên nhân** (L10, vá V1). Bản trước quy MỌI `IntegrityError`
+        # về câu "đã có trích khác", và nó nói dối ở một ca có thật: FK của Django trên
+        # Postgres là `DEFERRABLE INITIALLY DEFERRED` (xác minh bằng `\d core_trich`), nên
+        # `Trich.comment_id` trỏ vào một bình luận **vừa bị xoá thật** chỉ nổ ở COMMIT —
+        # cùng loại ngoại lệ, khác hẳn nguyên nhân. Chủ mạch nhận "mốc N vừa có một trích
+        # khác" rồi đi tìm cái trích không tồn tại.
+        if _la_va_cham(e, RB_TRICH_HIEU_LUC):
+            raise LoiGhi(
+                409,
+                DA_CO_TRICH,
+                f"Mốc {moc.seq} vừa có một trích khác được ghi vào cùng lúc.",
+            ) from e
+        # Nguyên nhân còn lại đã biết tên: bình luận biến mất giữa chừng (`Comment` là
+        # model duy nhất có đường xoá thật — xem `api/quyen.py::_binh_luan_bien_mat`).
+        # `logger.exception` chứ không nuốt: nếu mai có nguyên nhân thứ ba thì nó vẫn để
+        # lại stacktrace đầy đủ, thay vì biến mất cùng lúc với cái 500.
+        logger.exception(
+            "trich_vao_so: IntegrityError không phải va rào 1 ở mốc %s, bình luận %s",
+            moc.pk,
+            du_lieu.comment_id,
+        )
         raise LoiGhi(
             409,
-            DA_CO_TRICH,
-            f"Mốc {moc.seq} vừa có một trích khác được ghi vào cùng lúc.",
+            NOI_DUNG_DA_GO,
+            "Bình luận này vừa bị gỡ — tải lại trang rồi trích câu khác.",
         ) from e
 
     lam_moi_mach(moc.mach)

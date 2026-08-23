@@ -8,6 +8,7 @@ import { cauLoi, layDuLieu } from "@/lib/ghi";
 import { GOC_TRINH_DUYET, headerGhi } from "@/lib/tai-khoan";
 import { gioPhutVN, phutSuaImLangConLai } from "@/lib/vong-doi";
 
+import { FormBaoCao } from "./bao-cao";
 import css from "./hanh-dong-moc.module.css";
 import { useMach } from "./mach-ngu-canh";
 import { usePhien } from "./phien";
@@ -17,8 +18,14 @@ import { TruongMoc, thanMoc, type NoiDungMoc } from "./truong-moc";
  *
  * ### Ai thấy
  *
- * Chỉ **tác giả mốc**. Mạch bị mod khoá ⇒ không hiện gì (PLAN 5.10). Mốc đã là bia mộ ⇒
- * không hiện gì (API trả 409 `noi_dung_da_go`, và một cái nút bấm để nhận lỗi là cái bẫy).
+ * **Sửa / Xoá mốc**: chỉ tác giả mốc. Mạch bị mod khoá ⇒ không hiện (PLAN 5.10). Mốc đã là
+ * bia mộ ⇒ không hiện gì cả (API trả 409 `noi_dung_da_go`, và một cái nút bấm để nhận lỗi
+ * là cái bẫy).
+ *
+ * **Báo cáo** (thêm ở lượt vá V1 — L03): ngược lại, chỉ **người KHÔNG phải tác giả**, và
+ * **vẫn hiện khi mạch bị khoá** — `api/bao_cao.py` cố ý không áp `doi_mach_tuong_tac_duoc`,
+ * vì báo cáo là lời nhắn gửi mod chứ không phải tương tác với nội dung. Hai luật ngược
+ * chiều nhau trong cùng một menu, nên chúng được viết ra ở đây thay vì để người sau suy.
  *
  * ✅ **Hỏi ĐÚNG cột mà API hỏi: `moc.author`** *(nợ `MOC-THIEU-AUTHOR`, trả 2026-08-23)*.
  * Trước lượt này `MocOut` không có trường ấy nên UI phải suy từ chủ MẠCH — hai cột hôm nay
@@ -49,6 +56,7 @@ export function HanhDongMoc({ moc }: { moc: MocOut }) {
   const { toi, dangTai } = usePhien();
   const router = useRouter();
   const [mo, datMo] = useState(false);
+  const [moBaoCao, datMoBaoCao] = useState(false);
   const [gia_tri, datGiaTri] = useState<NoiDungMoc>(() => tuMoc(moc));
   const [dangGui, datDangGui] = useState(false);
   const [loi, datLoi] = useState<string | null>(null);
@@ -60,9 +68,12 @@ export function HanhDongMoc({ moc }: { moc: MocOut }) {
     if (hopRef.current !== null) hopRef.current.open = false;
   };
 
-  if (dangTai || khoa) return null;
+  if (dangTai) return null;
   if (moc.trang_thai !== "binh_thuong") return null;
-  if (!(toi?.dang_nhap ?? false) || toi?.username !== moc.author?.username) return null;
+  if (!(toi?.dang_nhap ?? false)) return null;
+  const cua_toi = toi?.username === moc.author?.username;
+  // Chủ mốc trên một mạch bị khoá không còn hành động nào; người khác vẫn báo cáo được.
+  if (khoa && cua_toi) return null;
 
   const con = phutSuaImLangConLai(moc.sua_im_lang_den);
   const het_luc = gioPhutVN(moc.sua_im_lang_den);
@@ -135,30 +146,55 @@ export function HanhDongMoc({ moc }: { moc: MocOut }) {
       <details className={css.menu} ref={hopRef} data-testid="menu-moc">
         <summary aria-label={`Thêm hành động cho mốc ${moc.seq}`}>⋯</summary>
         <div className={css.hop}>
-          <button
-            type="button"
-            onClick={() => {
-              dongMenu();
-              datGiaTri(tuMoc(moc));
-              datMo(true);
-            }}
-            data-testid="nut-sua-moc"
-          >
-            Sửa mốc
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              dongMenu();
-              void xoa();
-            }}
-            disabled={dangGui}
-            data-testid="nut-xoa-moc"
-          >
-            Xoá mốc
-          </button>
+          {cua_toi && (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  dongMenu();
+                  datGiaTri(tuMoc(moc));
+                  datMo(true);
+                }}
+                data-testid="nut-sua-moc"
+              >
+                Sửa mốc
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  dongMenu();
+                  void xoa();
+                }}
+                disabled={dangGui}
+                data-testid="nut-xoa-moc"
+              >
+                Xoá mốc
+              </button>
+            </>
+          )}
+          {!cua_toi && (
+            <button
+              type="button"
+              onClick={() => {
+                dongMenu();
+                datMoBaoCao(true);
+              }}
+              data-testid="nut-bao-cao-moc"
+            >
+              Báo cáo
+            </button>
+          )}
         </div>
       </details>
+
+      {moBaoCao && (
+        <FormBaoCao
+          dich="moc"
+          id={moc.id}
+          moTaDich={`mốc ${moc.seq}`}
+          onHuy={() => datMoBaoCao(false)}
+        />
+      )}
 
       {loi !== null && (
         <p className={css.loi} role="alert" data-testid="moc-loi">

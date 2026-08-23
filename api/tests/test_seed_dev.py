@@ -5,7 +5,6 @@ dòng chữ command tự in ra thì đang tin lời khai của bị cáo (plan c
 """
 
 import pytest
-from django.core.management import call_command
 from django.core.management.base import CommandError
 
 from core.management.commands.seed_dev import (
@@ -28,12 +27,14 @@ from core.management.commands.seed_dev import (
 from core.doc_noi_dung import khoa_sap_wilson
 from core.models import Comment, Mach, Moc, Sub, Trich, User, Vote
 
+from .conftest import chay_seed
+
 pytestmark = pytest.mark.django_db
 
 
 @pytest.fixture
 def da_seed():
-    call_command("seed_dev", verbosity=0)
+    chay_seed("seed_dev")
     return Mach.objects.get(title=TITLE_HPG)
 
 
@@ -391,7 +392,7 @@ def test_chay_lan_hai_khong_nhan_doi(da_seed):
         "vote": Vote.objects.count(),
         "trich": Trich.objects.count(),
     }
-    call_command("seed_dev", verbosity=0)
+    chay_seed("seed_dev")
     sau = {
         "sub": Sub.objects.count(),
         "mach": Mach.objects.count(),
@@ -405,7 +406,7 @@ def test_chay_lan_hai_khong_nhan_doi(da_seed):
 
 
 def test_reset_dung_lai_tu_dau_khong_de_lai_rac(da_seed):
-    call_command("seed_dev", "--reset", verbosity=0)
+    chay_seed("seed_dev", "--reset")
     assert Mach.objects.filter(title=TITLE_HPG).count() == 1
     assert Sub.objects.count() == 2
     # `len(NGUOI_CO_TEN)` chứ không phải `11` viết cứng, và `+ 1` là **mod seed**
@@ -437,7 +438,7 @@ def test_DB_co_HPG_ma_chua_co_VNM_thi_seed_dev_DOI_reset(da_seed):
     assert not Mach.objects.filter(title=TITLE_BIA_MO).exists()
 
     with pytest.raises(CommandError) as loi:
-        call_command("seed_dev", verbosity=0)
+        chay_seed("seed_dev")
 
     # Không im lặng bỏ qua, và thông báo phải nói ra ĐƯỜNG THOÁT — báo "sai" mà không nói
     # gõ gì tiếp thì người đọc vẫn kẹt ở đúng chỗ cũ.
@@ -457,7 +458,7 @@ def test_DB_co_VNM_ma_mat_HPG_cung_DOI_reset(da_seed):
     Mach.objects.filter(title=TITLE_HPG).delete()
 
     with pytest.raises(CommandError) as loi:
-        call_command("seed_dev", verbosity=0)
+        chay_seed("seed_dev")
     assert TITLE_HPG in str(loi.value)
 
 
@@ -466,7 +467,7 @@ def test_reset_go_duoc_the_lech_mot_nua(da_seed):
     Trich.objects.filter(moc__mach__title=TITLE_BIA_MO).delete()
     Mach.objects.filter(title=TITLE_BIA_MO).delete()
 
-    call_command("seed_dev", "--reset", verbosity=0)
+    chay_seed("seed_dev", "--reset")
     assert Mach.objects.filter(title=TITLE_HPG).count() == 1
     assert Mach.objects.filter(title=TITLE_BIA_MO).count() == 1
 
@@ -474,7 +475,7 @@ def test_reset_go_duoc_the_lech_mot_nua(da_seed):
 def test_DB_du_ca_hai_van_la_bo_qua_im_lang(da_seed):
     """Không vá quá tay: trạng thái ĐỦ vẫn phải là "chạy lần hai không làm gì"."""
     truoc = Mach.objects.count()
-    call_command("seed_dev", verbosity=0)
+    chay_seed("seed_dev")
     assert Mach.objects.count() == truoc
 
 
@@ -652,5 +653,5 @@ def test_mod_seed_KHONG_viet_noi_dung_nao(da_seed):
 def test_reset_don_luon_tai_khoan_mod(da_seed):
     """Bỏ mod ra khỏi danh sách xoá thì `--reset` để lại một `is_staff` mồ côi, và lượt
     seed sau đâm `UNIQUE` trên `username` — nửa sau của `--reset` chết thay vì nửa đầu."""
-    call_command("seed_dev", "--reset", verbosity=0)
+    chay_seed("seed_dev", "--reset")
     assert User.objects.filter(username=MOD_SEED[0]).count() == 1

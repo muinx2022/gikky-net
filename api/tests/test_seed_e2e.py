@@ -16,10 +16,11 @@ Bài đo dưới đây gọi **cả hai** command trong cùng một DB, đúng t
 """
 
 import pytest
-from django.core.management import call_command
 
 from core.management.commands import seed_dev, seed_e2e
 from core.models import Mach, Sub, User
+
+from .conftest import chay_seed
 
 pytestmark = pytest.mark.django_db
 
@@ -46,14 +47,14 @@ def test_seed_dev_reset_van_chay_duoc_sau_khi_seed_e2e_da_chay():
     Đây là chuỗi mà máy dev gặp thật: `pnpm e2e` gọi cả hai (globalSetup), rồi lần sau
     người ta muốn dựng lại dữ liệu nghiệm thu từ đầu.
     """
-    call_command("seed_dev", verbosity=0)
-    call_command("seed_e2e", verbosity=0)
+    chay_seed("seed_dev")
+    chay_seed("seed_e2e")
     assert Mach.objects.filter(author__username=seed_e2e.USERNAME).count() == (
         seed_e2e.SO_MACH
     )
 
     # Chỗ nổ của hồi quy. Không `pytest.raises` nào ở đây: lệnh phải chạy trót lọt.
-    call_command("seed_dev", "--reset", verbosity=0)
+    chay_seed("seed_dev", "--reset")
 
     # `--reset` dựng lại đủ dữ liệu nghiệm thu…
     assert Mach.objects.filter(title=seed_dev.TITLE_HPG).count() == 1
@@ -68,7 +69,7 @@ def test_seed_dev_reset_van_chay_duoc_sau_khi_seed_e2e_da_chay():
 
 def test_seed_e2e_khong_can_seed_dev_chay_truoc():
     """Sub riêng ⇒ `seed_e2e` tự đứng được. Trước vá A3 nó `CommandError` ở đây."""
-    call_command("seed_e2e", verbosity=0)
+    chay_seed("seed_e2e")
     assert Mach.objects.filter(author__username=seed_e2e.USERNAME).count() == (
         seed_e2e.SO_MACH
     )
@@ -76,12 +77,12 @@ def test_seed_e2e_khong_can_seed_dev_chay_truoc():
 
 
 def test_seed_e2e_chay_lan_hai_khong_nhan_doi_va_reset_don_sach():
-    call_command("seed_e2e", verbosity=0)
+    chay_seed("seed_e2e")
     truoc = Mach.objects.count()
-    call_command("seed_e2e", verbosity=0)
+    chay_seed("seed_e2e")
     assert Mach.objects.count() == truoc
 
-    call_command("seed_e2e", "--reset", verbosity=0)
+    chay_seed("seed_e2e", "--reset")
     assert Mach.objects.filter(author__username=seed_e2e.USERNAME).count() == (
         seed_e2e.SO_MACH
     )
@@ -97,5 +98,5 @@ def test_sub_rong_that_su_RONG(db):
     chỉ khẳng định "không thấy chữ `0 mạch`", và một sub có bài thì đúng là không có
     chữ đó.
     """
-    call_command("seed_e2e", verbosity=0)
+    chay_seed("seed_e2e")
     assert Mach.objects.filter(sub__slug=seed_e2e.SUB_RONG_SLUG).count() == 0

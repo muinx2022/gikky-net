@@ -4,10 +4,10 @@ Không bài nào ở đây mở một kết nối HTTP thật: `_gui` được t
 gọi. Cái đang đo là **cơ chế** (khi nào gọi, gọi cái gì, hỏng thì sao), không phải việc
 `urllib` có gửi được gói tin không.
 
-⚠ **Chiều này chưa có tác dụng thật ở đầu Next** — `apps/web/app/m/[slugId]/page.tsx` vẫn
-`force-dynamic`, nên `revalidatePath` bên kia là no-op (nợ `ISR-BIEN-THE-ROUTE`,
-`plans/2026-08-23-mang-b1-backend-phase-3.md` §5). Nửa Django thì đúng và đo được, và đó
-là thứ file này khẳng định — không hơn.
+Chiều này **đã có tác dụng thật** từ `ab77957` (mảng B2): nợ `ISR-BIEN-THE-ROUTE` đã trả,
+`apps/web/app/m/[slugId]/page.tsx` nay khai `revalidate = 3600` thay vì `force-dynamic`.
+Cả vòng (Django → luồng nền → cửa nhận → data cache của Next) được `e2e/phase-3.spec.ts`
+đo chạy thật; file này vẫn chỉ khẳng định nửa Django, và đó là chủ đích.
 """
 
 import pytest
@@ -182,6 +182,9 @@ def test_secret_di_qua_HEADER_va_URL_khong_mang_secret(settings, monkeypatch):
         pytest.param("xoa_moc", id="xoa-moc"),
         pytest.param("trich", id="trich"),
         pytest.param("dong_so", id="dong-so"),
+        # Hai dòng thêm ở lượt vá V1 (L06). Xem docstring `api/binh_luan.py`.
+        pytest.param("sua_binh_luan", id="sua-binh-luan"),
+        pytest.param("xoa_binh_luan", id="xoa-binh-luan"),
     ],
 )
 def test_moi_su_kien_CO_SIGNAL_deu_goi_lam_moi(
@@ -190,9 +193,11 @@ def test_moi_su_kien_CO_SIGNAL_deu_goi_lam_moi(
     """PLAN 8.4 điểm 2 liệt kê đích danh: tạo/sửa/xoá `Moc`, `Trich`, đóng/mở/khoá mạch.
 
     Bài đo theo bảng để một cửa mới quên gọi thì có chỗ đỏ — chứ không phải "chắc là có
-    gọi". Bình luận **cố ý vắng mặt** khỏi bảng: PLAN xếp nó vào nhóm KHÔNG có signal
-    (điểm 2), sống bằng `revalidate` nền 1 giờ. Ép nó vào on-demand là gọi ngược gần như
-    mỗi request trên một mạch đang sôi.
+    gọi". **Sửa/xoá bình luận** vào bảng từ lượt vá V1 (L06): PLAN xếp *bình luận mới* vào
+    nhóm không-signal, nhưng "nội dung biến khỏi trang công khai" là hạng khác — cùng ranh
+    giới mà `quan_tri_kiem_duyet` đã công nhận khi mod ẩn một bình luận. Chỉ đường của
+    **chính tác giả** là chỗ bị quên, và nó im lặng vì tác giả đang đăng nhập nên đi nhánh
+    dynamic: họ thấy nội dung đã mất và tin là xong.
     """
     from core.models.moc import Moc
 
@@ -210,6 +215,12 @@ def test_moi_su_kien_CO_SIGNAL_deu_goi_lam_moi(
     elif viec == "trich":
         c = viet(mach_cua_a, nguoi_b, "Câu của B.")
         dat(client, f"/api/v1/mocs/{moc.pk}/trich", {"comment_id": c.pk}, status=201)
+    elif viec == "sua_binh_luan":
+        c = viet(mach_cua_a, nguoi_a, "Câu của A.")
+        dat(client, f"/api/v1/comments/{c.pk}", {"body": "Sửa."}, status=200, method="patch")
+    elif viec == "xoa_binh_luan":
+        c = viet(mach_cua_a, nguoi_a, "Câu của A.")
+        dat(client, f"/api/v1/comments/{c.pk}", status=200, method="delete")
     else:
         dat(client, f"/api/v1/machs/{mach_cua_a.pk}/close", {}, status=200)
 
@@ -219,11 +230,13 @@ def test_moi_su_kien_CO_SIGNAL_deu_goi_lam_moi(
 
 
 @pytest.mark.django_db(transaction=True)
-def test_binh_luan_KHONG_goi_lam_moi(bat_revalidate, client, mach_cua_a, nguoi_b):
+def test_VIET_binh_luan_KHONG_goi_lam_moi(bat_revalidate, client, mach_cua_a, nguoi_b):
     """Chiều ngược của bảng trên — nếu không, "gọi ở mọi nơi" cũng xanh ở mọi bài.
 
-    Bình luận thuộc nhóm KHÔNG có signal của PLAN 8.4 điểm 2, cùng nhóm với cú lật
-    BÃO→CẶN do 72 giờ trôi. Cả hai sống bằng `revalidate` nền.
+    Phạm vi bài này thu về đúng **`POST`** ở lượt vá V1 (L06): *bình luận mới* là thứ PLAN
+    8.4 điểm 2 xếp vào nhóm KHÔNG có signal, cùng nhóm với cú lật BÃO→CẶN do 72 giờ trôi.
+    `PATCH`/`DELETE` đã chuyển sang bảng trên — bản cũ của bài này nói về "bình luận" nói
+    chung, và chính câu đó là thứ giữ cho L06 trông như một quyết định.
     """
     client.force_login(nguoi_b)
     dat(client, f"/api/v1/machs/{mach_cua_a.pk}/comments", {"body": "B nói"}, status=201)

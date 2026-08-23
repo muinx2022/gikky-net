@@ -77,6 +77,7 @@ from core.ghi import (
     them_moc,
 )
 from core.models import Comment, Mach, Moc, Sub, Trich, User
+from core.moi_truong import doi_dev
 from core.thoi_gian import TZ_VN, ngay_vn
 
 #: Mốc chặn idempotency + khoá tra cứu của mạch chính.
@@ -511,6 +512,8 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
+        # Dòng ĐẦU TIÊN, trước cả `--reset` — xem `core/moi_truong.py`.
+        doi_dev("seed_dev")
         if options["reset"]:
             self._xoa_seed()
 
@@ -581,7 +584,8 @@ class Command(BaseCommand):
            Phase 2 câu trả lời phải là "không xoá thật, chỉ xoá mềm".
         2. **`Mach` trước `User`**: tác giả nội dung là `PROTECT` (xem docstring
            `core.models.nguoi_dung.User`), xoá user trước là ăn `ProtectedError`.
-        3. **`Vote` theo user**: không có FK tới đích nên không cascade được.
+        3. **`Vote` theo user VÀ theo đích**: không có FK tới đích nên không cascade
+           được, và hai chiều là hai tập khác nhau — xem khối lệnh bên dưới (L31).
         """
         from core.models import Vote
 
@@ -593,9 +597,28 @@ class Command(BaseCommand):
             + [MOD_SEED[0]]
         )
         users = User.objects.filter(username__in=ten_seed)
+        machs = Mach.objects.filter(author__in=users)
+        # `Vote` phải dọn theo **HAI** chiều, và chiều thứ hai là chiều bị quên (L31, vá
+        # V1). `Vote` cố ý không có FK tới đích (`core/models/tuong_tac.py`), nên
+        # `Mach.delete()` cascade xoá `Moc`/`Comment` mà **phiếu của người KHÔNG phải user
+        # seed** vẫn nằm lại — đo thật trên `gikky_dev`: 14 hàng mồ côi. Rác, không sai số
+        # (id của Postgres là identity, không tái sử dụng, nên phiếu cũ không bao giờ cộng
+        # vào một đích khác) — nhưng là rác không ai dọn, lớn dần theo mỗi lượt `--reset`
+        # trên một DB có người dùng thật. Docstring `tuong_tac.py:36` nói *"chỗ đó đã dọn
+        # `Vote` tay trước khi xoá"* — đúng một nửa cho tới lượt vá này.
+        #
+        # Gom id TRƯỚC khi xoá `Mach`: sau lệnh xoá thì `Moc`/`Comment` không còn để hỏi.
+        moc_ids = list(Moc.objects.filter(mach__in=machs).values_list("pk", flat=True))
+        comment_ids = list(
+            Comment.objects.filter(mach__in=machs).values_list("pk", flat=True)
+        )
         Vote.objects.filter(user__in=users).delete()
+        Vote.objects.filter(target_type=Vote.Loai.MOC, target_id__in=moc_ids).delete()
+        Vote.objects.filter(
+            target_type=Vote.Loai.COMMENT, target_id__in=comment_ids
+        ).delete()
         Trich.objects.filter(comment__mach__author__in=users).delete()
-        Mach.objects.filter(author__in=users).delete()
+        machs.delete()
         so_user = users.count()
         users.delete()
         so_sub = self._xoa_sub_neu_ranh()

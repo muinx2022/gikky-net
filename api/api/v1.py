@@ -99,6 +99,7 @@ def health(request):
 # Mount ở CUỐI file: các module router import `api.loi`/`api.schemas`, còn `api_v1` phải
 # tồn tại trước khi `config/api_registry.py` đọc tới. Đặt import ở đây tránh vòng lặp
 # import mà không cần một module "app" thứ ba chỉ để nối dây.
+from api.bao_cao import router as router_bao_cao  # noqa: E402
 from api.binh_luan import router as router_binh_luan  # noqa: E402
 from api.feeds import router as router_feeds  # noqa: E402
 from api.loi import dang_ky_xu_ly_loi  # noqa: E402
@@ -117,6 +118,9 @@ api_v1.add_router("", router_feeds)
 api_v1.add_router("", router_machs)
 api_v1.add_router("", router_mocs)
 api_v1.add_router("", router_binh_luan)
+# Cửa nhận báo cáo (PLAN 5.10) — L03, lượt vá V1. Router riêng vì nó đi qua BA loại đích
+# nên không thuộc tiền tố URL nào; xem docstring `api/bao_cao.py`.
+api_v1.add_router("", router_bao_cao)
 api_v1.add_router("", router_tuong_tac)
 api_v1.add_router("", router_toi)
 api_v1.add_router("", router_users)

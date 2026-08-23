@@ -25,6 +25,7 @@ này được cache rồi phục vụ cho người kia.
 """
 
 from datetime import date, datetime
+from typing import Literal
 
 from ninja import Schema
 
@@ -524,6 +525,29 @@ class ToiOut(Schema):
     email_da_xac_thuc: bool
     la_staff: bool
     google_bat: bool
+    #: Có nhận email digest tuần không (PLAN 5.8 — **opt-in**, mặc định `false`). Đặt bằng
+    #: `PATCH /me`. Có mặt ở đây vì một công tắc không đọc lại được trạng thái là một công
+    #: tắc UI phải đoán; khách chưa đăng nhập nhận `false`.
+    nhan_digest: bool
+
+
+class BaoCaoDaGuiOut(Schema):
+    """Biên nhận của `POST /reports` — PLAN 5.10 (L03, lượt vá V1).
+
+    **Cố ý không trả trạng thái xử lý.** Người tố không được biết mod đã làm gì với báo
+    cáo của mình, và endpoint này không được biến thành một cửa dò xem hàng đợi có gì:
+    `resolved_at`/`resolved_by`/`action` chỉ sống ở `/api/admin`.
+
+    Trả `id` vì UI cần một khoá để không hiện hai lần biên nhận cho cùng một lượt bấm;
+    trả `created_at` vì đó là dấu thời gian **của server**, thứ duy nhất trả lời được
+    "mình đã tố lúc nào".
+    """
+
+    id: int
+    target_type: Literal["mach", "moc", "comment"]
+    target_id: int
+    ly_do: Literal["phim_hang", "lua_dao", "spam", "khac"]
+    created_at: datetime
 
 
 class KetQuaXoaOut(Schema):
@@ -569,6 +593,35 @@ class ReactionCuaToiOut(Schema):
     emoji: str
 
 
+class NoiDungCuaToiOut(Schema):
+    """Một mảnh nội dung **của chính người gọi** đang bị che ở cửa công khai — PLAN 5.2 + 5.10.
+
+    PLAN 5.10 chốt moderation là *"ẩn (soft-hide — **tác giả vẫn thấy kèm nhãn**)"*, và
+    PLAN 5.2 nhắc lại: *"tác giả thấy **nội dung**, người khác thấy nhãn"*. Vế ấy không cài
+    được ở `GET /machs/{id}` — cửa đó bị ép **không chứa gì per-user** vì cả trang cache
+    theo URL (PLAN 8.4), nên nhét nội dung của tác giả vào là phục vụ nó cho mọi người mở
+    cùng URL. Vì thế nó sống ở đây: `GET /machs/{id}/me` vốn đã per-user, đã `no-store`,
+    và đã chạy trên mọi lượt tải trang mạch.
+
+    Client vá `body` này vào đúng ô trống mà `GET /machs/{id}` để lại, kèm nhãn của
+    `trang_thai` — **không** xoá nhãn đi. Tác giả phải biết là người khác KHÔNG đọc được.
+
+    ⚠ **Chỉ có mặt khi người gọi là `author` của chính mảnh đó.** Đây là chỗ nguy hiểm
+    nhất của cả cửa này: trả nhầm của người khác biến một bản vá minh bạch thành một lỗ
+    rò nội dung đã bị mod gỡ, trên một endpoint không ai soi vì nó "chỉ trả trạng thái".
+    `tests/test_api_noi_dung_cua_toi.py` đo **cả hai chiều**.
+    """
+
+    #: `"moc"` hoặc `"comment"` — client cần biết vá vào thẻ mốc hay nút bình luận.
+    loai: Literal["moc", "comment"]
+    #: `id` của `Moc`/`Comment`. `Moc` cũng trả `seq` để client khỏi phải tra ngược.
+    id: int
+    seq: int | None
+    body: str
+    #: `da_xoa` (tự xoá) hay `da_an` (mod ẩn) — quyết định câu nhãn hiện cạnh nội dung.
+    trang_thai: TrangThaiNoiDung
+
+
 class MachCuaToiOut(Schema):
     """`GET /machs/{id}/me` — trạng thái của NGƯỜI XEM trên một mạch (PLAN mục 7, 8.4).
 
@@ -606,6 +659,10 @@ class MachCuaToiOut(Schema):
     #: Trả ra chứ không chỉ dùng nội bộ để UI giải thích được vì sao mạch nguội vẫn mở ra
     #: mặt BÃO, thay vì để người dùng thấy một trạng thái không lý do.
     tung_binh_luan: bool
+    #: Mốc và bình luận **của chính người gọi** đang bị che ở cửa công khai — vế
+    #: "tác giả vẫn thấy kèm nhãn" của PLAN 5.2 + 5.10. Rỗng với khách và với người không
+    #: có nội dung nào bị che. Xem `NoiDungCuaToiOut`.
+    noi_dung_cua_toi: list[NoiDungCuaToiOut]
 
 
 class DaXemOut(Schema):

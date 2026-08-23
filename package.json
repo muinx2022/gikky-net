@@ -15,7 +15,7 @@
     "api:check": "node scripts/py.mjs check --database default",
     "db:sao-luu": "node scripts/sao-luu-db.mjs",
     "digest": "node scripts/py.mjs gui_digest",
-    "web:dev": "pnpm --filter @gikky/web dev",
+    "web:dev": "node scripts/web-dev.mjs",
     "admin:dev": "pnpm --filter @gikky/admin dev",
     "build": "pnpm --filter @gikky/web build && pnpm --filter @gikky/admin build",
     "lint": "pnpm --filter @gikky/web lint && pnpm --filter @gikky/admin lint"

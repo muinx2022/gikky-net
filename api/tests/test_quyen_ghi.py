@@ -31,6 +31,7 @@ from api.quyen import (
     KHONG_PHAI_CHU,
     MACH_BI_KHOA,
 )
+from api.quan_tri import api_admin
 from api.v1 import api_v1
 
 from .conftest import dat, ma_loi
@@ -38,17 +39,45 @@ from .conftest import dat, ma_loi
 # --- (1) hàng rào cấu trúc ---------------------------------------------------
 
 
-def moi_operation_ghi():
-    """`(methods, đường dẫn, Operation)` của mọi operation KHÔNG-GET trong `api_v1`."""
-    for prefix, router in api_v1._routers:
-        for path, path_view in router.path_operations.items():
+#: Cả HAI `NinjaAPI` của repo phải chịu cùng hàng rào (L24, vá V1). Bản trước chỉ quét
+#: `api_v1`; khu quản trị được che bằng một bảng hành vi rất chắc
+#: (`test_api_quan_tri_phan_quyen.py`) nhưng **không có hàng rào cấu trúc tương đương** —
+#: tức một endpoint quản trị MỚI quên `auth=` thì bảng kia không biết nó tồn tại để mà đỏ.
+#:
+#: `api_admin` khai `auth=ChiMod()` ở tầng `NinjaAPI`, nên hôm nay mọi operation của nó
+#: thừa hưởng sẵn. Chính vì thế hàng rào ở đây rẻ và đáng có: nó ghim rằng ai gỡ mặc định
+#: ấy ra (hoặc khai `auth=None` cho một endpoint "chỉ đọc thôi mà") phải thấy màu đỏ.
+API_CO_DUONG_GHI = {"v1": api_v1, "admin": api_admin}
+
+
+def _operation_ghi_cua(api):
+    """`(methods, đường dẫn, Operation)` của mọi operation KHÔNG-GET trong một `NinjaAPI`.
+
+    Đi qua `_get_bound_routers()` chứ **không** qua `api._routers` (L24, vá V1).
+    `api._routers` trả các router **khuôn** — operation ở đó chưa được gắn với `NinjaAPI`,
+    nên `auth_callbacks` của chúng chỉ chứa `auth=` khai trên **từng endpoint**. Khu quản
+    trị khai `auth=ChiMod()` một lần ở tầng `NinjaAPI(auth=…)`, và django-ninja rót nó vào
+    bản operation **đã bind**; đọc bản khuôn thì mọi endpoint quản trị trông như không có
+    auth — một hàng rào báo động giả 100%, tức một hàng rào sẽ bị gỡ.
+
+    Đây cũng là chỗ hàng rào này mong manh: hai tên nội bộ của django-ninja
+    (`_get_bound_routers`, `path_operations`). Cái chuông cho chuyện đó là
+    `test_hang_rao_auth_quet_ca_KHU_QUAN_TRI_va_khong_rong` — nó đỏ nếu phép quét trả rỗng.
+    """
+    for br in api._get_bound_routers():
+        for path, path_view in br.path_operations.items():
             for op in path_view.operations:
                 if set(op.methods) - {"GET", "HEAD", "OPTIONS"}:
-                    yield tuple(sorted(op.methods)), f"{prefix}{path}", op
+                    yield tuple(sorted(op.methods)), f"{br.prefix}{path}", op
+
+
+def moi_operation_ghi():
+    """Đường ghi của **`api_v1`** — nguồn cho bảng phủ ở nhóm (2)/(3) dưới đây."""
+    yield from _operation_ghi_cua(api_v1)
 
 
 def test_moi_operation_ghi_deu_co_auth():
-    """**Mọi** operation không-GET của `api_v1` phải khai `auth=`. Không có ngoại lệ.
+    """**Mọi** operation không-GET của `api_v1` VÀ `api_admin` phải khai `auth=`.
 
     Vì sao đây là một dòng bảo mật chứ không phải một quy ước: django-ninja 1.6 bỏ tham số
     `NinjaAPI(csrf=…)` và bọc `csrf_exempt` quanh mọi view của nó ở tầng middleware
@@ -58,11 +87,23 @@ def test_moi_operation_ghi_deu_co_auth():
     HTTP 200, phiếu/bình luận vẫn vào DB.
     """
     thieu = [
-        f"{'/'.join(m)} {duong}"
-        for m, duong, op in moi_operation_ghi()
+        f"[{khoa}] {'/'.join(m)} {duong}"
+        for khoa, api in API_CO_DUONG_GHI.items()
+        for m, duong, op in _operation_ghi_cua(api)
         if not op.auth_callbacks
     ]
     assert thieu == [], f"endpoint ghi không khai auth (mất cả CSRF): {thieu}"
+
+
+def test_hang_rao_auth_quet_ca_KHU_QUAN_TRI_va_khong_rong(  # noqa: D103
+):
+    """Chống bài trên xanh rỗng ở nửa `admin`: `api_admin` phải thật sự có đường ghi.
+
+    Không có bài này thì một lần đổi tên thuộc tính nội bộ của django-ninja làm
+    `_operation_ghi_cua(api_admin)` trả rỗng, và hàng rào vừa mở rộng lại co về đúng chỗ
+    cũ — im lặng.
+    """
+    assert len(list(_operation_ghi_cua(api_admin))) >= 8
 
 
 def test_co_du_endpoint_ghi_de_hang_rao_tren_khong_rong():
@@ -107,6 +148,14 @@ CUA_GHI = [
     ("post", "/api/v1/mocs/{moc}/trich", {"comment_id": 0}),
     ("delete", "/api/v1/mocs/{moc}/trich", {}),
     ("post", "/api/v1/notifications/read", {}),
+    # --- Lượt vá V1 (2026-08-23) ---
+    # `POST /reports` (L03) — cửa nhận báo cáo, **không có chủ**: ai đăng nhập cũng tố
+    # được, nên nó vắng mặt ở `CUA_CO_CHU` bên dưới. `target_id: 0` được thay bằng id thật
+    # ở thân bài đo, cùng lối với `/votes`.
+    ("post", "/api/v1/reports", {"target_type": "moc", "target_id": 0, "ly_do": "spam"}),
+    # `PATCH /me` (L14) — chủ suy ra từ PHIÊN, không từ tham số; cùng nhóm với `seen`/
+    # `follow`, xem ghi chú của `CUA_CO_CHU`.
+    ("patch", "/api/v1/me", {"nhan_digest": True}),
 ]
 
 
@@ -162,7 +211,9 @@ def test_khach_khong_ghi_duoc_gi(client, mach_cua_a, nguoi_a, method, duong, tha
 #: Cửa ghi **có chủ** — B phải nhận 403 `khong_phai_chu`. Những cửa vắng mặt ở đây là cửa
 #: cố ý KHÔNG có chủ, và chúng có bài đo riêng chứng minh B **làm được**:
 #: `POST /machs` (ai cũng đăng bài được), `POST /machs/{id}/comments` (khán đài là chỗ của
-#: đám đông), `POST /votes` và `/reactions` (vote nội dung người khác là chuyện chính).
+#: đám đông), `POST /votes` và `/reactions` (vote nội dung người khác là chuyện chính),
+#: và `POST /reports` — **cả điểm** của một nút báo cáo là không cần quyền gì trên đích
+#: (L03; `test_api_bao_cao.py` đo cả ca "B tố nội dung của A" thành công).
 #:
 #: **Ba cửa Phase 3 cũng vắng mặt, và vì một lý do KHÁC HẲN** — `seen`, `follow` và
 #: `notifications/read` không phải "không có chủ", chúng là những cửa mà **chủ được suy ra
@@ -172,6 +223,8 @@ def test_khach_khong_ghi_duoc_gi(client, mach_cua_a, nguoi_a, method, duong, tha
 #: Vế "B không đụng được của A" của chúng được đo bằng bài đo RIÊNG, đo đúng thứ đo được:
 #: `test_api_follow_seen.py::test_B_khong_doc_va_khong_dat_duoc_vi_tri_doc_cua_A` và
 #: `test_thong_bao.py::test_B_khong_thay_va_khong_danh_dau_duoc_thong_bao_cua_A`.
+#: `PATCH /me` (L14) thuộc đúng nhóm ấy — xem
+#: `test_api_toi_sua.py::test_chi_ghi_vao_hang_cua_CHINH_MINH`.
 CUA_CO_CHU = [
     ("post", "/api/v1/machs/{mach}/mocs", {"body": "B chen vào sổ của A"}),
     ("post", "/api/v1/machs/{mach}/close", {"ket_qua": "B đóng sổ hộ"}),

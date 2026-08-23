@@ -20,6 +20,7 @@ báo của chính cái mạch mod vừa phải khoá lại.
 
 from ninja import Router
 
+from core.doc_noi_dung import trang_thai_noi_dung
 from core.ghi import bo_follow, dat_da_xem, dat_follow
 from core.mat import tinh_mat_cho_viewer, tinh_mat_theo_thoi_gian
 from core.models.binh_luan import Comment
@@ -32,6 +33,7 @@ from api.quyen import dang_nhap
 from api.schemas import (
     DaXemOut,
     MachCuaToiOut,
+    NoiDungCuaToiOut,
     ReactionCuaToiOut,
     TheoMachOut,
     VoteCuaToiOut,
@@ -66,6 +68,10 @@ def xem_mach_cua_toi(request, mach_id: int):
 
     Mạch bị mod ẩn ⇒ **404**, cùng mã với mọi cửa công khai khác: trả trạng thái viewer cho
     một mạch đã bị gỡ là xác nhận nó tồn tại.
+
+    `noi_dung_cua_toi` là vế *"tác giả vẫn thấy nội dung kèm nhãn"* của PLAN 5.2 + 5.10 —
+    nó **chỉ** chứa mốc/bình luận mà chính người gọi là tác giả. Xem
+    `_noi_dung_bi_che_cua_toi`.
 
     Không cần đăng nhập nên **không khai `auth=`** — nó là endpoint GET, không có gì để
     CSRF bảo vệ, và luật "mọi operation không-GET phải có auth"
@@ -102,7 +108,63 @@ def xem_mach_cua_toi(request, mach_id: int):
         following=theo is not None,
         last_seen_entry_seq=theo.last_seen_entry_seq if theo else 0,
         tung_binh_luan=tung_binh_luan,
+        noi_dung_cua_toi=_noi_dung_bi_che_cua_toi(user, mach),
     )
+
+
+def _noi_dung_bi_che_cua_toi(user, mach) -> list[NoiDungCuaToiOut]:
+    """Mốc + bình luận **của chính `user`** trong mạch này đang bị che — PLAN 5.2 + 5.10.
+
+    ### Luật, và chỗ duy nhất nó có thể sai
+
+    Điều kiện là `author = người đang gọi` **cộng** "đang bị che". Vế đầu là thứ giữ cho
+    cửa này không thành một lỗ rò: bỏ nó đi thì `GET /machs/{id}/me` trả nguyên văn mọi
+    nội dung mod vừa gỡ cho bất kỳ ai mở trang — HTTP 200, không có gì đỏ, và không ai đi
+    soi một endpoint "chỉ trả trạng thái viewer".
+
+    Lọc `author` **ở tầng truy vấn**, không lọc trong Python sau khi đã nạp: một bộ lọc
+    trong vòng lặp là một dòng người ta gỡ đi khi refactor, còn `filter(author=user)` thì
+    không có nghĩa nào khác.
+
+    ### Vì sao "bia mộ" cũng trả, không chỉ "mod ẩn"
+
+    PLAN 5.10 nói về soft-hide của mod, nhưng ô trống trên màn hình thì giống hệt nhau ở
+    cả hai ca, và `trang_thai` đi kèm để client nói đúng chuyện. Với bia mộ, đây còn là
+    thứ duy nhất trả lời được câu "mình vừa xoá nhầm cái gì?" — nội dung đã mất khỏi cửa
+    công khai nhưng hàng vẫn còn, và chỉ chính chủ đọc lại được.
+
+    Bình luận bị xoá **THẬT** thì không có ở đây, và không cách nào có: hàng đã biến khỏi
+    Postgres (PLAN 5.3).
+
+    ### Số truy vấn
+
+    Hai — một cho `Moc`, một cho `Comment`, không phụ thuộc số hàng. Endpoint này chạy
+    trên **mọi** lượt tải trang mạch, nên một vòng lặp hỏi DB ở đây là N+1 ở chỗ đắt nhất.
+    """
+    from django.db.models import Q
+
+    bi_che = Q(deleted_at__isnull=False) | Q(hidden_at__isnull=False)
+    ra = [
+        NoiDungCuaToiOut(
+            loai="moc",
+            id=m.pk,
+            seq=m.seq,
+            body=m.body,
+            trang_thai=trang_thai_noi_dung(m),
+        )
+        for m in Moc.objects.filter(bi_che, mach=mach, author=user).order_by("seq")
+    ]
+    ra += [
+        NoiDungCuaToiOut(
+            loai="comment",
+            id=c.pk,
+            seq=None,
+            body=c.body,
+            trang_thai=trang_thai_noi_dung(c),
+        )
+        for c in Comment.objects.filter(bi_che, mach=mach, author=user).order_by("pk")
+    ]
+    return ra
 
 
 def _mach_hien(mach_id: int):
@@ -127,6 +189,7 @@ def _khach(mat_thoi_gian) -> MachCuaToiOut:
         following=False,
         last_seen_entry_seq=0,
         tung_binh_luan=False,
+        noi_dung_cua_toi=[],
     )
 
 

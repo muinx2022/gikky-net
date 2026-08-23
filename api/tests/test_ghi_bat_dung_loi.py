@@ -17,11 +17,13 @@ from core import ghi
 from core.ghi import (
     RB_COMMENT_PATH,
     RB_MOC_SEQ,
+    RB_REACTION_MOC,
+    RB_TRICH_HIEU_LUC,
     _la_va_cham,
     tao_binh_luan,
     them_moc,
 )
-from core.models import Comment, Moc
+from core.models import Comment, Moc, Reaction, Trich
 
 pytestmark = pytest.mark.django_db
 
@@ -94,6 +96,33 @@ def loi_unique_path_that(mach, tac_gia) -> IntegrityError:
     )
 
 
+@pytest.fixture
+def loi_unique_reaction_that(mach, tac_gia) -> IntegrityError:
+    """Va chạm `UNIQUE(user, moc)` của `Reaction` THẬT — nền của L09 (vá V1).
+
+    `dat_reaction` nay bắt đúng constraint này để biến một cuộc đua "chưa có hàng nào để
+    khoá" thành một lượt `UPDATE` thay vì một HTTP 500. Hằng gõ sai thì `_la_va_cham` trả
+    `False`, lỗi bay ra thành 500 y như trước, và **không có gì đỏ** — trừ bài đo này.
+    """
+    moc = Moc.objects.get(mach=mach, seq=1)
+    Reaction.objects.create(user=tac_gia, moc=moc, emoji=Reaction.Emoji.LUA)
+    return _bat_integrity(
+        lambda: Reaction.objects.create(
+            user=tac_gia, moc=moc, emoji=Reaction.Emoji.BANG
+        )
+    )
+
+
+@pytest.fixture
+def loi_unique_trich_that(mach, tac_gia) -> IntegrityError:
+    """Va chạm rào 1 của PLAN 5.6 (`UNIQUE(moc) WHERE removed_at IS NULL`) THẬT — L10."""
+    moc = Moc.objects.get(mach=mach, seq=1)
+    c1 = tao_binh_luan(mach=mach, author=tac_gia, body="Câu một")
+    c2 = tao_binh_luan(mach=mach, author=tac_gia, body="Câu hai")
+    Trich.objects.create(moc=moc, comment=c1)
+    return _bat_integrity(lambda: Trich.objects.create(moc=moc, comment=c2))
+
+
 def test_loi_that_mang_ten_constraint_cua_chinh_no(loi_check_that):
     """Đối chứng: nếu psycopg không cho tên constraint thì cả bài dưới đo bằng chuỗi."""
     ten = loi_check_that.__cause__.diag.constraint_name
@@ -110,6 +139,23 @@ def test_va_cham_UNIQUE_that_di_qua_nhanh_diag_va_khop_dung_hang(
     """
     assert loi_unique_seq_that.__cause__.diag.constraint_name == RB_MOC_SEQ
     assert loi_unique_path_that.__cause__.diag.constraint_name == RB_COMMENT_PATH
+
+
+def test_hai_hang_RB_moi_cua_va_V1_cung_khop_ten_constraint_THAT(
+    loi_unique_reaction_that, loi_unique_trich_that
+):
+    """`RB_REACTION_MOC` (L09) và `RB_TRICH_HIEU_LUC` (L10) — cùng lý lẽ với bài trên.
+
+    Hai hằng ấy là bản lề của hai bản vá 500→409. Gõ sai một chữ thì cả hai bản vá lặng lẽ
+    trở lại thành 500, và không bài đo hành vi nào bắt được vì chúng đo qua đường đã bắt
+    đúng loại lỗi.
+    """
+    assert loi_unique_reaction_that.__cause__.diag.constraint_name == RB_REACTION_MOC
+    assert loi_unique_trich_that.__cause__.diag.constraint_name == RB_TRICH_HIEU_LUC
+    assert _la_va_cham(loi_unique_reaction_that, RB_REACTION_MOC) is True
+    assert _la_va_cham(loi_unique_reaction_that, RB_TRICH_HIEU_LUC) is False
+    assert _la_va_cham(loi_unique_trich_that, RB_TRICH_HIEU_LUC) is True
+    assert _la_va_cham(loi_unique_trich_that, RB_REACTION_MOC) is False
 
 
 def test_la_va_cham_nhan_ra_va_cham_that_va_KHONG_nhan_nham(

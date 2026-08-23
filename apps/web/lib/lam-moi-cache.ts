@@ -35,3 +35,21 @@ export const HEADER_SECRET = "x-revalidate-secret";
  * `e2e/don-vi/cache-mach.spec.ts` ghim cả hai chiều.
  */
 export const DUONG_DAN_HOP_LE = /^\/m\/[a-z0-9_-]*-\d+$/;
+
+/** Secret của cửa nhận, đọc **tại thời điểm gọi**.
+ *
+ * Rỗng ⇒ cửa TẮT (503), không phải "cho qua tất". Mặc định fail-closed là bắt buộc: một
+ * biến môi trường quên đặt trên prod không được biến `/lam-moi-cache` thành một cửa ai
+ * cũng gọi được để ép Next đi fetch lại bất kỳ đường dẫn nào trong allowlist.
+ *
+ * **Vì sao là một hàm chứ không phải `const SECRET = process.env…` ở đầu route** *(L23,
+ * lượt vá V1)*: một hằng tầng module bị chụp lúc import, nên hai nhánh từ chối (secret
+ * rỗng ⇒ 503, secret sai ⇒ 401) không có cách nào dựng lại được trong bài đo — và cho tới
+ * lượt vá này **không bài đo nào đòi chúng**. Đảo một dấu `!` là mở toang cửa, im lặng.
+ *
+ * Ai cấp biến này cho tiến trình Next: `scripts/web-dev.mjs` (dev) và
+ * `playwright.config.ts` (e2e), cả hai đọc `api/.env` — cùng chuỗi với Django.
+ */
+export function secretCuaCua(): string {
+  return process.env.REVALIDATE_SECRET ?? "";
+}

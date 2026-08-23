@@ -21,9 +21,13 @@ không gì đỏ. `tests/test_quyen_ghi.py` là cái chuông: nó đòi MỌI op
 `api_v1` phải có auth.
 """
 
+import logging
+
 from django.http import HttpRequest
 from ninja.errors import AuthenticationError, HttpError
 from ninja.security import SessionAuth
+
+from core.models.binh_luan import Comment
 
 #: `CHUA_DANG_NHAP` được **tái xuất** từ `api/loi.py`, không khai lại ở đây (gộp mảng
 #: A + C, 2026-08-23): khu quản trị của Phase 4 cần đúng mã ấy và đã đặt nó vào `loi.py`.
@@ -31,6 +35,8 @@ from ninja.security import SessionAuth
 #: một cái, cửa kia vẫn trả chuỗi cũ và không có gì đỏ. Người gọi cũ
 #: (`from api.quyen import CHUA_DANG_NHAP`) không phải đổi gì.
 from api.loi import CHUA_DANG_NHAP, LoiOut
+
+logger = logging.getLogger(__name__)
 
 #: Đã đăng nhập nhưng không phải chủ của thứ đang sửa/xoá. 403.
 KHONG_PHAI_CHU = "khong_phai_chu"
@@ -46,6 +52,10 @@ MACH_DA_DONG = "mach_da_dong"
 MACH_DANG_MO = "mach_dang_mo"
 #: Vượt 3 mốc/ngày lịch VN/mạch (PLAN 5.1). 429.
 QUA_HAN_MUC_MOC = "qua_han_muc_moc"
+#: Vượt 10 mạch/ngày lịch VN/người (PLAN mục 10 Phase 6). 429.
+QUA_HAN_MUC_MACH = "qua_han_muc_mach"
+#: Tài khoản < 3 ngày tuổi vượt 5 bình luận/giờ (PLAN 5.10). 429.
+QUA_HAN_MUC_BINH_LUAN = "qua_han_muc_binh_luan"
 #: Quá 7 ngày kể từ lúc đóng sổ (PLAN 5.1). 409.
 HET_HAN_MO_LAI = "het_han_mo_lai"
 #: Thao tác trên nội dung đã xoá / đã bị mod ẩn. 409.
@@ -150,7 +160,44 @@ def dang_ky_xu_ly_loi_ghi(api) -> None:
     tra handler theo lớp cụ thể trước, và nếu chỉ có handler của `HttpError` thì thông
     điệp mặc định "Unauthorized" đi ra ngoài — đúng hình dạng, sai ngôn ngữ, và không có
     `code` để frontend phân biệt "chưa đăng nhập" với "không phải chủ".
+
+    `Comment.DoesNotExist` cũng đăng ký ở đây — xem `_binh_luan_bien_mat`.
     """
+
+    @api.exception_handler(Comment.DoesNotExist)
+    def _binh_luan_bien_mat(request, exc):
+        """Bình luận biến mất GIỮA CHỪNG một request ⇒ 409 `noi_dung_da_go`, không 500.
+
+        `Comment` là model **duy nhất** của repo có đường xoá THẬT (PLAN 5.3: không reply
+        con và chưa từng được trích ⇒ `DELETE`). Mọi model khác chỉ đóng bia mộ, nên chỉ
+        `Comment` có ca "hàng còn đó lúc nạp, biến mất lúc khoá". Ba đường đâm vào nó, và
+        cả ba là thao tác hợp lệ của người dùng bình thường:
+
+        - double-click **Xoá** (`core.ghi.xoa_binh_luan` → `select_for_update().get`);
+        - **Sửa** song song với Xoá (`core.ghi.sua_binh_luan` → `refresh_from_db`);
+        - **Trả lời** đúng lúc bình luận cha bị xoá thật
+          (`core.cay_binh_luan.cap_phat_path` → `select_for_update().get(parent)`).
+
+        Vì sao một handler chung thay vì `try/except` ở ba chỗ: hai trong ba chỗ nằm trong
+        `core/`, mà `core/` không được biết mã HTTP nào — bọc ở đó là kéo tầng API xuống
+        tầng dữ liệu. Và chỗ thứ tư sẽ xuất hiện (mọi đường ghi đụng `Comment` đều có ca
+        này), nên bản `try/except` thứ tư là bản sẽ quên.
+
+        **Không sợ nuốt nhầm lỗi lập trình**: mọi lượt *tra cứu* `Comment` trong repo đi
+        qua `.filter(...).first()` (`api/ghi_chung.py::nap_binh_luan`, `api/machs.py`), tức
+        trả `None` chứ không ném. Ngoại lệ này chỉ ra đời từ `.get()`/`refresh_from_db()`
+        trên một hàng **vừa đọc được ở chính request này**. Vẫn ghi một dòng WARNING để ca
+        này đếm được, thay vì biến mất hẳn khỏi log cùng lúc với 500.
+        """
+        logger.warning("bình luận biến mất giữa request %s: %s", request.path, exc)
+        return api.create_response(
+            request,
+            LoiOut(
+                detail="Bình luận này vừa bị gỡ — tải lại trang để thấy trạng thái mới.",
+                code=NOI_DUNG_DA_GO,
+            ),
+            status=409,
+        )
 
     @api.exception_handler(AuthenticationError)
     def _chua_dang_nhap(request, exc):

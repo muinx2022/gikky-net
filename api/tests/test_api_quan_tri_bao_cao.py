@@ -83,6 +83,32 @@ def test_ngu_canh_tra_dung_bang_chu_khong_dung_mot_minh_id(canh):
     assert dich_mach["duong_dan_cong_khai"].endswith(f"-{dl['mach'].pk}")
 
 
+def _them_bao_cao(dl, so_luong: int, tien_to: str) -> list[Report]:
+    """`so_luong` báo cáo vào CÙNG một bình luận, mỗi cái từ một NGƯỜI KHÁC NHAU.
+
+    ⚠ Phải khác người, không lặp một `reporter` (đổi ở lượt vá V1, L03). Từ lượt ấy DB có
+    unique **partial** `bao_cao_mot_lan_moi_dich_dang_mo` — một người chỉ tố một đích một
+    lần chừng nào báo cáo cũ còn đang mở. Bản cũ của hai bài dưới dựng 5–8 hàng từ cùng
+    một `tac_gia`, tức một hình dạng dữ liệu **không tồn tại được nữa**; đo phân trang và
+    số truy vấn trên nó là đo trên nền không có thật.
+
+    N người cùng tố một bình luận cũng là hình dạng thật hơn hẳn: đó chính là ca hàng đợi
+    kiểm duyệt sinh ra để xử.
+    """
+    from core.models import User
+
+    return [
+        Report.objects.create(
+            reporter=User.objects.create(username=f"{tien_to}_{i}"),
+            target_type=Report.Dich.COMMENT,
+            target_id=dl["bl2"].pk,
+            ly_do=Report.LyDo.SPAM,
+            ghi_chu=f"{tien_to} {i}",
+        )
+        for i in range(so_luong)
+    ]
+
+
 def test_so_truy_van_khong_tang_theo_so_dong(canh):
     """Ghim số truy vấn: thêm báo cáo mà số này nhích lên là `_nap_ngu_canh` thành N+1.
 
@@ -98,14 +124,7 @@ def test_so_truy_van_khong_tang_theo_so_dong(canh):
         _hang(mod)
     so_it = len(it.captured_queries)
 
-    for i in range(8):
-        Report.objects.create(
-            reporter=dl["tac_gia"],
-            target_type=Report.Dich.COMMENT,
-            target_id=dl["bl2"].pk,
-            ly_do=Report.LyDo.SPAM,
-            ghi_chu=f"lần {i}",
-        )
+    _them_bao_cao(dl, 8, "nguoi_to")
     with CaptureQueriesContext(connection) as nhieu:
         assert len(_hang(mod)) == 11
     assert len(nhieu.captured_queries) == so_it
@@ -171,14 +190,7 @@ def test_tham_so_la_tra_400_dung_hinh_dang(canh):
 def test_phan_trang_keyset_khong_trung_khong_sot(canh):
     """Cursor `(created_at, id)` — khoá bất biến, nên bảo đảm "không trùng, không sót" áp."""
     dl, mod = canh
-    for i in range(5):
-        Report.objects.create(
-            reporter=dl["tac_gia"],
-            target_type=Report.Dich.COMMENT,
-            target_id=dl["bl2"].pk,
-            ly_do=Report.LyDo.SPAM,
-            ghi_chu=f"thêm {i}",
-        )
+    _them_bao_cao(dl, 5, "nguoi_them")
     tat_ca = set()
     cursor = None
     for _ in range(10):

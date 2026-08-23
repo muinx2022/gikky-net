@@ -128,6 +128,13 @@ def test_du_endpoint_cua_plan_muc_7():
         (("DELETE",), "/mocs/{int:moc_id}/trich"),
         (("GET",), "/notifications"),
         (("POST",), "/notifications/read"),
+        # --- lượt vá V1 (2026-08-23) ---
+        # `POST /reports` là dòng PLAN mục 7 **đã hứa từ đầu** và Phase 4 quên cài (L03):
+        # nó dựng trọn phía tiêu thụ mà không dựng cửa nhận, nên hàng đợi kiểm duyệt rỗng
+        # về cấu trúc. `PATCH /me` (L14) là dòng MỚI của bảng — cờ `nhan_digest` có từ
+        # Phase 3 mà không endpoint nào đặt được, tức digest không ai bật được.
+        (("POST",), "/reports"),
+        (("PATCH",), "/me"),
     }
 
 
@@ -140,11 +147,19 @@ def test_bang_API_cua_PLAN_co_du_dong_sub():
 
     `GET /subs` (vá V8) mang thêm một chốt mà chỉ bảng ấy nói ra: **cấm ghi cứng danh
     sách slug ở frontend**. Dòng biến mất khỏi bảng là chốt đó biến mất cùng.
+
+    Lượt vá V1 thêm hai dòng, mỗi dòng mang một chốt không suy ra được từ code:
+    `POST /reports` — **không áp `mach_bi_khoa`** (ngoại lệ thứ hai của luật ấy, sau
+    `follow`/`seen`) — và `PATCH /me`, cửa duy nhất bật được digest.
     """
     plan = (Path(__file__).resolve().parents[2] / "PLAN.md").read_text(encoding="utf-8")
     bang = plan.split("## 7. API v1")[1].split("## 8.")[0]
     assert "`GET /subs/{slug}`" in bang
     assert "`GET /subs`" in bang
+    assert "`POST /reports`" in bang
+    assert "`PATCH /me`" in bang
+    assert "da_bao_cao" in bang, "bảng phải nói ra mã 409 của lượt tố trùng"
+    assert "nhan_digest" in bang, "bảng phải nói ra trường DUY NHẤT `PATCH /me` nhận"
 
 
 @pytest.mark.django_db

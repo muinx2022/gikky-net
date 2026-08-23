@@ -35,7 +35,10 @@ class Vote(models.Model):
 
     Dọn hàng `Vote` cùng transaction với `DELETE` (bình luận lẫn mạch) là **mục việc bắt
     buộc của plan Phase 2**, không phải việc của 1a: 1a không có đường xoá nào ngoài
-    `seed_dev --reset`, và chỗ đó đã dọn `Vote` tay trước khi xoá `Mach`.
+    `seed_dev --reset`, và chỗ đó dọn `Vote` tay trước khi xoá `Mach` — **theo cả hai
+    chiều từ lượt vá V1** (L31). Bản trước chỉ dọn phiếu *của user seed*, nên phiếu mà
+    **người khác** bỏ cho nội dung seed nằm lại sau mỗi lượt `--reset`; đo thật trên
+    `gikky_dev`: 14 hàng mồ côi.
 
     `value ∈ {−1, 1}` — **rút vote là XOÁ hàng, không phải lưu 0**. API nhận `0` nghĩa
     là rút (PLAN mục 7), và `CheckConstraint` dưới đây chặn `0` lọt xuống DB: một hàng

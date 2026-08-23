@@ -4,7 +4,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { BoTheoMachData, BoTheoMachErrors, BoTheoMachResponses, DanhDauDaDocData, DanhDauDaDocErrors, DanhDauDaDocResponses, DanhDauDaXemData, DanhDauDaXemErrors, DanhDauDaXemResponses, DatReactionData, DatReactionErrors, DatReactionResponses, DatVoteData, DatVoteErrors, DatVoteResponses, DongSoMachData, DongSoMachErrors, DongSoMachResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GoTrichData, GoTrichErrors, GoTrichResponses, LietKeBanCuMocData, LietKeBanCuMocErrors, LietKeBanCuMocResponses, LietKeBinhLuanMachData, LietKeBinhLuanMachErrors, LietKeBinhLuanMachResponses, LietKeBinhLuanMocData, LietKeBinhLuanMocErrors, LietKeBinhLuanMocResponses, LietKeFeedDangDienRaData, LietKeFeedDangDienRaErrors, LietKeFeedDangDienRaResponses, LietKeFeedMoiData, LietKeFeedMoiErrors, LietKeFeedMoiResponses, LietKeSubData, LietKeSubResponses, LietKeThongBaoData, LietKeThongBaoErrors, LietKeThongBaoResponses, MoLaiMachData, MoLaiMachErrors, MoLaiMachResponses, NoiMocData, NoiMocErrors, NoiMocResponses, SuaBinhLuanData, SuaBinhLuanErrors, SuaBinhLuanResponses, SuaMocData, SuaMocErrors, SuaMocResponses, TaoMachData, TaoMachErrors, TaoMachResponses, TheoMachData, TheoMachErrors, TheoMachResponses, TrichVaoSoData, TrichVaoSoErrors, TrichVaoSoResponses, VietBinhLuanData, VietBinhLuanErrors, VietBinhLuanResponses, XemHoSoData, XemHoSoErrors, XemHoSoResponses, XemMachCuaToiData, XemMachCuaToiErrors, XemMachCuaToiResponses, XemMachData, XemMachErrors, XemMachResponses, XemSubData, XemSubErrors, XemSubResponses, XemToiData, XemToiResponses, XoaBinhLuanData, XoaBinhLuanErrors, XoaBinhLuanResponses, XoaMocData, XoaMocErrors, XoaMocResponses } from './types.gen';
+import type { BoTheoMachData, BoTheoMachErrors, BoTheoMachResponses, DanhDauDaDocData, DanhDauDaDocErrors, DanhDauDaDocResponses, DanhDauDaXemData, DanhDauDaXemErrors, DanhDauDaXemResponses, DatReactionData, DatReactionErrors, DatReactionResponses, DatVoteData, DatVoteErrors, DatVoteResponses, DongSoMachData, DongSoMachErrors, DongSoMachResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GoTrichData, GoTrichErrors, GoTrichResponses, GuiBaoCaoData, GuiBaoCaoErrors, GuiBaoCaoResponses, LietKeBanCuMocData, LietKeBanCuMocErrors, LietKeBanCuMocResponses, LietKeBinhLuanMachData, LietKeBinhLuanMachErrors, LietKeBinhLuanMachResponses, LietKeBinhLuanMocData, LietKeBinhLuanMocErrors, LietKeBinhLuanMocResponses, LietKeFeedDangDienRaData, LietKeFeedDangDienRaErrors, LietKeFeedDangDienRaResponses, LietKeFeedMoiData, LietKeFeedMoiErrors, LietKeFeedMoiResponses, LietKeSubData, LietKeSubResponses, LietKeThongBaoData, LietKeThongBaoErrors, LietKeThongBaoResponses, MoLaiMachData, MoLaiMachErrors, MoLaiMachResponses, NoiMocData, NoiMocErrors, NoiMocResponses, SuaBinhLuanData, SuaBinhLuanErrors, SuaBinhLuanResponses, SuaMocData, SuaMocErrors, SuaMocResponses, SuaToiData, SuaToiErrors, SuaToiResponses, TaoMachData, TaoMachErrors, TaoMachResponses, TheoMachData, TheoMachErrors, TheoMachResponses, TrichVaoSoData, TrichVaoSoErrors, TrichVaoSoResponses, VietBinhLuanData, VietBinhLuanErrors, VietBinhLuanResponses, XemHoSoData, XemHoSoErrors, XemHoSoResponses, XemMachCuaToiData, XemMachCuaToiErrors, XemMachCuaToiResponses, XemMachData, XemMachErrors, XemMachResponses, XemSubData, XemSubErrors, XemSubResponses, XemToiData, XemToiResponses, XoaBinhLuanData, XoaBinhLuanErrors, XoaBinhLuanResponses, XoaMocData, XoaMocErrors, XoaMocResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -38,6 +38,23 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
  *
  * `xoa_that = false` nghĩa là nút ở lại làm bia mộ: UI phải **render lại** nó chứ không
  * gỡ khỏi cây, nếu không cả nhánh con mất chỗ bám.
+ *
+ * ### Vì sao HAI cửa này gọi `lam_moi_mach` còn `POST /comments` thì không (L06)
+ *
+ * PLAN 8.4 điểm 2 xếp *"bình luận mới"* vào nhóm **KHÔNG có signal** — nó sống bằng
+ * vòng revalidate nền, vì ép nó vào on-demand là gọi ngược gần như mỗi request trên một
+ * mạch đang sôi. Sửa/xoá thì khác hẳn về hạng: đó là **nội dung biến khỏi trang công
+ * khai**, cùng ranh giới mà `api/quan_tri_kiem_duyet.py` đã công nhận là sự kiện có
+ * signal khi mod ẩn một bình luận.
+ *
+ * Bỏ sót nó có giá cụ thể và im lặng: khách xem trang mạch nhận bản ISR
+ * (`revalidate = 3600`); tác giả xoá xong thì hàng biến khỏi Postgres, nhưng tác giả
+ * đang đăng nhập nên đi nhánh `/m-phien/` (force-dynamic) — **họ thấy nó đã mất và tin
+ * là xong**, trong khi khách vẫn đọc nguyên văn tới 60 phút.
+ *
+ * Gọi **sau** khi `core.ghi` đóng transaction của nó: `lam_moi_mach` bọc
+ * `transaction.on_commit`, mà ngoài `atomic()` thì `on_commit` chạy ngay — tức đúng lúc
+ * dữ liệu đã nằm trong DB. Cùng lối với `api/mocs.py::trich_vao_so_api`.
  */
 export const xoaBinhLuan = <ThrowOnError extends boolean = false>(options: Options<XoaBinhLuanData, ThrowOnError>): RequestResult<XoaBinhLuanResponses, XoaBinhLuanErrors, ThrowOnError> => (options.client ?? client).delete<XoaBinhLuanResponses, XoaBinhLuanErrors, ThrowOnError>({
     security: [{
@@ -65,6 +82,8 @@ export const xoaBinhLuan = <ThrowOnError extends boolean = false>(options: Optio
  *
  * Trả về nút bình luận **không kèm `replies`** (mảng rỗng): endpoint này sửa đúng một
  * dòng, và trả cả nhánh con là mời UI thay nguyên nhánh bằng dữ liệu nó không hỏi.
+ *
+ * **Gọi `lam_moi_mach`** — xem ghi chú chung ở `xoa_binh_luan_api`.
  */
 export const suaBinhLuan = <ThrowOnError extends boolean = false>(options: Options<SuaBinhLuanData, ThrowOnError>): RequestResult<SuaBinhLuanResponses, SuaBinhLuanErrors, ThrowOnError> => (options.client ?? client).patch<SuaBinhLuanResponses, SuaBinhLuanErrors, ThrowOnError>({
     security: [{
@@ -162,6 +181,11 @@ export const getHealth = <ThrowOnError extends boolean = false>(options?: Option
  *
  * Tác giả nhận **+1 phiếu của chính mình** ngay lúc đăng (PLAN 5.7) — để `0` trên cột
  * vote có nghĩa là "đã có người vote xuống", không phải "chưa ai đụng tới".
+ *
+ * **Hạn mức: 10 mạch / người / ngày lịch VN** (PLAN mục 10 Phase 6, số đổi được ở
+ * `settings.HAN_MUC_MACH_MOI_USER_NGAY`) ⇒ 429 `qua_han_muc_mach` kèm `thu_lai_tu` =
+ * nửa đêm giờ VN kế tiếp. Ranh giới là nửa đêm VN, không phải 24 giờ trượt — cùng luật
+ * với hạn mức mốc, xem `core/han_muc.py`.
  */
 export const taoMach = <ThrowOnError extends boolean = false>(options: Options<TaoMachData, ThrowOnError>): RequestResult<TaoMachResponses, TaoMachErrors, ThrowOnError> => (options.client ?? client).post<TaoMachResponses, TaoMachErrors, ThrowOnError>({
     security: [{
@@ -301,6 +325,23 @@ export const lietKeBinhLuanMach = <ThrowOnError extends boolean = false>(options
  * trang đều không hiển thị đúng.
  *
  * Người viết nhận +1 phiếu của chính mình (PLAN 5.7).
+ *
+ * **Cha đã bị gỡ ⇒ 409 `noi_dung_da_go`** (L17, vá V1). Trước lượt vá, đây là cửa ghi
+ * DUY NHẤT không hỏi `doi_con_song`, và cái thiếu ấy có hai hậu quả — cái thứ hai mới là
+ * cái nặng: (1) người ta trả lời được vào một bình luận mod **vừa ẩn**; (2) reply mới làm
+ * bình luận bị ẩn ấy có `con_song = True`, nên `core.ghi.xoa_binh_luan` chuyển nó sang
+ * nhánh bia mộ — **tác giả của nó vĩnh viễn không xoá thật được nữa**, và không ai giải
+ * thích được vì sao.
+ *
+ * **Hạn mức: tài khoản dưới 3 ngày tuổi viết tối đa 5 bình luận/giờ** (PLAN 5.10, số đổi
+ * được ở `settings.HAN_MUC_BINH_LUAN_MOI_GIO_TAI_KHOAN_MOI`) ⇒ 429
+ * `qua_han_muc_binh_luan` kèm `thu_lai_tu`. Cửa sổ **trượt theo giờ**, không theo ngày
+ * lịch: PLAN viết "5 bình luận/giờ", và "giờ" không có ranh giới lịch nào để bám.
+ *
+ * ⚠ PLAN gọi nó là *"shadow-limit"*. Cài ở đây là một lời **từ chối nói ra**, không phải
+ * một lượt ghi âm thầm bị giấu: gikky nhận nội dung rồi không hiện nó là dựng một cái bẫy
+ * im lặng cho cả người viết thật lẫn người đọc, và nó mâu thuẫn với nguyên tắc "lý do
+ * phải ĐÚNG" mà repo áp cho mọi nút bị khoá. Lệch với chữ của PLAN, ghi ra để thấy.
  */
 export const vietBinhLuan = <ThrowOnError extends boolean = false>(options: Options<VietBinhLuanData, ThrowOnError>): RequestResult<VietBinhLuanResponses, VietBinhLuanErrors, ThrowOnError> => (options.client ?? client).post<VietBinhLuanResponses, VietBinhLuanErrors, ThrowOnError>({
     security: [{
@@ -389,6 +430,10 @@ export const theoMach = <ThrowOnError extends boolean = false>(options: Options<
  *
  * Mạch bị mod ẩn ⇒ **404**, cùng mã với mọi cửa công khai khác: trả trạng thái viewer cho
  * một mạch đã bị gỡ là xác nhận nó tồn tại.
+ *
+ * `noi_dung_cua_toi` là vế *"tác giả vẫn thấy nội dung kèm nhãn"* của PLAN 5.2 + 5.10 —
+ * nó **chỉ** chứa mốc/bình luận mà chính người gọi là tác giả. Xem
+ * `_noi_dung_bi_che_cua_toi`.
  *
  * Không cần đăng nhập nên **không khai `auth=`** — nó là endpoint GET, không có gì để
  * CSRF bảo vệ, và luật "mọi operation không-GET phải có auth"
@@ -507,6 +552,45 @@ export const danhDauDaXem = <ThrowOnError extends boolean = false>(options: Opti
  * khác — nó chỉ nói về chính phiên đang gọi.
  */
 export const xemToi = <ThrowOnError extends boolean = false>(options?: Options<XemToiData, ThrowOnError>): RequestResult<XemToiResponses, unknown, ThrowOnError> => (options?.client ?? client).get<XemToiResponses, unknown, ThrowOnError>({ url: '/api/v1/me', ...options });
+
+/**
+ * Sua Toi
+ *
+ * Đổi tuỳ chọn của **chính phiên đang gọi**. Hôm nay đúng một trường: `nhan_digest`.
+ *
+ * **Quyền: bất kỳ ai đã đăng nhập, và chỉ ghi vào hàng của chính họ.** Không có tham số
+ * nào chỉ ra người khác, nên không có đường nào đặt tuỳ chọn hộ ai.
+ *
+ * ### Vì sao cửa này phải tồn tại (L14)
+ *
+ * PLAN 5.8 chốt digest tuần là **opt-in**, và `User.nhan_digest` mặc định `False` đúng
+ * theo đó. Nhưng cho tới lượt vá V1, `grep "nhan_digest"` trong `api/` và `apps/` ra
+ * **0 kết quả**: không endpoint, không form, không trang cài đặt. Nghĩa là toàn bộ
+ * `core/digest.py`, lệnh `gui_digest` và lịch 8:00 thứ Bảy chạy trên một tập người nhận
+ * **luôn rỗng về cấu trúc** — commit `64b1a94` gọi đó là "cắm nguồn người nhận cho
+ * digest", trong khi cái nguồn ấy không ai bật được.
+ *
+ * **PATCH thật**: trường vắng mặt là không đổi. Gọi với thân rỗng `{}` là hợp lệ và
+ * không ghi gì — nó chính là cách client hỏi "trạng thái hiện tại" mà không cần một
+ * endpoint thứ hai.
+ *
+ * ⚠ Trang `/cai-dat` của `apps/web` **chưa có** (nợ có tên `TRANG-CAI-DAT`), nên hôm nay
+ * cửa này chưa có nút nào bấm vào nó. Đó là chủ đích của lượt vá V1 — mở cửa trước, UI
+ * thuộc lượt sau — chứ không phải một endpoint bỏ quên.
+ */
+export const suaToi = <ThrowOnError extends boolean = false>(options: Options<SuaToiData, ThrowOnError>): RequestResult<SuaToiResponses, SuaToiErrors, ThrowOnError> => (options.client ?? client).patch<SuaToiResponses, SuaToiErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/me',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
 
 /**
  * Xoa Moc Api
@@ -718,11 +802,18 @@ export const trichVaoSo = <ThrowOnError extends boolean = false>(options: Option
  * **Quyền: chỉ thông báo của chính người gọi.** Không có tham số nào chỉ ra người khác;
  * `user = request.user` nằm ngay trong queryset gốc.
  *
- * Sắp **mới nhất trước**, cursor keyset trên `(created_at, id)` — khoá BẤT BIẾN, nên nó
- * hưởng đủ bảo đảm "không trùng, không sót" của `api/phan_trang.py`. Một thông báo
- * `moc_moi` được gộp lại (mốc thứ hai trong ngày) sẽ **bump `created_at`** và vì thế
- * nhảy lên đầu — đúng ý muốn, và nó không phá keyset: hàng ấy chuyển sang trang 1, đúng
- * ca "hàng mới chèn vào đầu" mà keyset sinh ra để xử.
+ * Sắp **mới nhất trước**, cursor keyset trên `(created_at, id)`.
+ *
+ * ⚠ **Khoá này KHÔNG bất biến** *(sửa câu ở lượt vá V1 — L34)*: dedupe `moc_moi` cố ý
+ * bump `created_at` khi mốc thứ hai trong ngày về (`core/thong_bao.py::bao_moc_moi`),
+ * nên một hàng đang ở trang 3 có thể nhảy lên trang 1 giữa hai lượt cuộn. Câu cũ ở đây
+ * khẳng định *"khoá BẤT BIẾN"* rồi hai dòng sau tự mô tả cú bump — và câu đầu là câu
+ * người sau sẽ tin.
+ * Hệ quả thật, đọc đúng mức: hàng bị bump **nhảy lên trước** con trỏ, tức đúng ca "hàng
+ * mới chèn vào đầu" mà keyset xử được (không trùng). Cái mất là **có thể sót** — nếu nó
+ * bị bump sau khi người đọc đã đi qua vị trí cũ, họ không gặp lại nó ở trang sau. Vô hại
+ * ở chuông (dòng ấy đang nằm ở trang 1, chỗ dễ thấy nhất) nhưng đó là một bảo đảm yếu
+ * hơn `KEYSET-BIEN-DOI` của feed, không phải bảo đảm đầy đủ.
  *
  * `so_chua_doc` đếm **toàn bộ hộp thư**, không phải trang đang xem: con số trên chấm đỏ
  * nói "bạn có 23 thứ chưa đọc", tính nó trên một trang 20 dòng thì nó kẹt ở `20` mãi mãi
@@ -768,6 +859,55 @@ export const danhDauDaDoc = <ThrowOnError extends boolean = false>(options: Opti
             type: 'apiKey'
         }],
     url: '/api/v1/notifications/read',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Gui Bao Cao
+ *
+ * Tố một mạch / mốc / bình luận vào hàng đợi kiểm duyệt — PLAN 5.10.
+ *
+ * **Quyền: bất kỳ ai đã đăng nhập.** Không cần quyền gì trên đích — đó là cả điểm của
+ * một nút báo cáo. Tài khoản bị ban bị chặn ở lớp auth (`api/quyen.py`).
+ *
+ * ### `mach_bi_khoa` KHÔNG được áp ở đây, và đó là chủ đích
+ *
+ * Mọi cửa ghi khác gọi `doi_mach_tuong_tac_duoc`; cửa này thì không. Khoá mạch nghĩa là
+ * "đọc được, cấm tương tác" (PLAN 5.10) — nhưng báo cáo **không phải** một tương tác với
+ * nội dung, nó là lời nhắn gửi mod. Chặn nó là: mạch đang bị khoá vì một tranh chấp thì
+ * đúng lúc ấy không ai tố thêm được gì. Cùng lý lẽ đã chốt cho `follow`/`seen`
+ * (`api/theo_doi.py`), khác lý lẽ của `trich` (trích ghi vào nội dung công khai).
+ *
+ * ### Chống trùng: một người, một đích, một báo cáo ĐANG MỞ
+ *
+ * Bấm lần thứ hai khi báo cáo cũ chưa được xử lý ⇒ 409 `da_bao_cao`. Ràng buộc là một
+ * unique **partial** ở tầng DB (`bao_cao_mot_lan_moi_dich_dang_mo`), nên nó đúng cả khi
+ * hai tab bấm cùng lúc. Mod đóng báo cáo cũ rồi thì tố lại được — nếu không, một lần bấm
+ * nhầm là khoá vĩnh viễn khả năng tố đúng cái đích ấy.
+ *
+ * **Không** trả 200 im lặng cho lượt trùng: người bấm cần biết là gikky đã nhận rồi, chứ
+ * không phải nghĩ nút hỏng và đi bấm tiếp.
+ *
+ * ### Bốn lý do, và `ghi_chu` là chỗ nói thêm
+ *
+ * `ly_do` đúng bốn giá trị của PLAN 5.10 (phím hàng · lừa đảo · spam · khác); `ghi_chu`
+ * tuỳ chọn. Server **không** validate ngữ nghĩa `ghi_chu` — nó là chữ cho mod đọc, và
+ * nó không hiện ở đâu ngoài khu quản trị.
+ *
+ * Response cố ý **không** trả trạng thái xử lý: người tố không được biết mod đã làm gì,
+ * và không được có một endpoint để dò xem hàng đợi có gì.
+ */
+export const guiBaoCao = <ThrowOnError extends boolean = false>(options: Options<GuiBaoCaoData, ThrowOnError>): RequestResult<GuiBaoCaoResponses, GuiBaoCaoErrors, ThrowOnError> => (options.client ?? client).post<GuiBaoCaoResponses, GuiBaoCaoErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/reports',
     ...options,
     headers: {
         'Content-Type': 'application/json',

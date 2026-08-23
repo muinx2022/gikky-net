@@ -82,6 +82,22 @@ class Report(models.Model):
         verbose_name = "báo cáo"
         verbose_name_plural = "báo cáo"
         ordering = ["-created_at"]
+        constraints = [
+            # **Một người, một đích, một báo cáo ĐANG MỞ** (L03, vá V1). Unique
+            # **partial** chứ không unique thường, và khác biệt ấy là cả luật: mod đóng
+            # báo cáo cũ xong thì cùng người ấy phải tố lại được nếu nội dung tái phạm —
+            # unique thường sẽ khoá vĩnh viễn, và người dùng không có cách nào biết vì sao
+            # nút của họ im lặng.
+            #
+            # Ở tầng DB chứ không chỉ một câu `exists()` ở handler: hai tab, hai lượt bấm
+            # cùng lúc thì câu `exists()` thua cuộc đua và hàng đợi kiểm duyệt có hai dòng
+            # y hệt — đúng loại rác làm mod đọc lướt rồi bấm bừa.
+            models.UniqueConstraint(
+                fields=["reporter", "target_type", "target_id"],
+                condition=models.Q(resolved_at__isnull=True),
+                name="bao_cao_mot_lan_moi_dich_dang_mo",
+            )
+        ]
 
     def __str__(self) -> str:
         return f"report {self.ly_do} → {self.target_type}#{self.target_id}"

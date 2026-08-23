@@ -7,6 +7,74 @@ export type ClientOptions = {
 };
 
 /**
+ * BaoCaoDaGuiOut
+ *
+ * Biên nhận của `POST /reports` — PLAN 5.10 (L03, lượt vá V1).
+ *
+ * **Cố ý không trả trạng thái xử lý.** Người tố không được biết mod đã làm gì với báo
+ * cáo của mình, và endpoint này không được biến thành một cửa dò xem hàng đợi có gì:
+ * `resolved_at`/`resolved_by`/`action` chỉ sống ở `/api/admin`.
+ *
+ * Trả `id` vì UI cần một khoá để không hiện hai lần biên nhận cho cùng một lượt bấm;
+ * trả `created_at` vì đó là dấu thời gian **của server**, thứ duy nhất trả lời được
+ * "mình đã tố lúc nào".
+ */
+export type BaoCaoDaGuiOut = {
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Id
+     */
+    id: number;
+    /**
+     * Ly Do
+     */
+    ly_do: 'phim_hang' | 'lua_dao' | 'spam' | 'khac';
+    /**
+     * Target Id
+     */
+    target_id: number;
+    /**
+     * Target Type
+     */
+    target_type: 'mach' | 'moc' | 'comment';
+};
+
+/**
+ * BaoCaoMoiIn
+ *
+ * Gửi báo cáo — `POST /reports` (PLAN 5.10).
+ *
+ * `ly_do` là **enum**, đúng bốn giá trị PLAN liệt kê: *phím hàng · lừa đảo, mời uỷ thác,
+ * room VIP · spam · khác*. Khai bằng `Literal` chứ không `str` để `openapi.json` ra
+ * `enum` và TS client nhận một union — một chuỗi tự do ở đây là hàng đợi kiểm duyệt đầy
+ * những lý do không nhóm lại được, và mod thì phải đọc từng dòng.
+ *
+ * `ghi_chu` tuỳ chọn: chỗ người tố nói thêm. Server **không** validate ngữ nghĩa (cùng
+ * triết lý với `ket_qua`/`figures`), chỉ chặn độ dài.
+ */
+export type BaoCaoMoiIn = {
+    /**
+     * Ghi Chu
+     */
+    ghi_chu?: string;
+    /**
+     * Ly Do
+     */
+    ly_do: 'phim_hang' | 'lua_dao' | 'spam' | 'khac';
+    /**
+     * Target Id
+     */
+    target_id: number;
+    /**
+     * Target Type
+     */
+    target_type: 'mach' | 'moc' | 'comment';
+};
+
+/**
  * BinhLuanMoiIn
  *
  * Viết bình luận — `POST /machs/{id}/comments` (PLAN 5.4, nguyên tắc 4 và 6).
@@ -239,6 +307,11 @@ export type DaXemOut = {
  *
  * Danh sách rỗng `[]` khác `null`: nó đánh dấu **không dòng nào**. Cố ý giữ khác nhau —
  * một mảng rỗng do client dựng hụt không được biến thành "đọc hết".
+ *
+ * `ids` có **trần độ dài** (L27, vá V1): thiếu nó thì một request đơn lẻ đẩy được một
+ * triệu phần tử vào `pk__in`, tức một câu SQL vài megabyte trên một endpoint chỉ cần
+ * đăng nhập. Trần rộng hơn hẳn mọi lượt bấm thật — chuông trả tối đa một trang — nên nó
+ * không chặn ai, nó chỉ chặn cái không phải lượt bấm.
  */
 export type DanhDauDaDocIn = {
     /**
@@ -646,6 +719,10 @@ export type MachCuaToiOut = {
      */
     my_votes: Array<VoteCuaToiOut>;
     /**
+     * Noi Dung Cua Toi
+     */
+    noi_dung_cua_toi: Array<NoiDungCuaToiOut>;
+    /**
      * Tung Binh Luan
      */
     tung_binh_luan: boolean;
@@ -1010,6 +1087,49 @@ export type NguoiDungTomTatOut = {
 };
 
 /**
+ * NoiDungCuaToiOut
+ *
+ * Một mảnh nội dung **của chính người gọi** đang bị che ở cửa công khai — PLAN 5.2 + 5.10.
+ *
+ * PLAN 5.10 chốt moderation là *"ẩn (soft-hide — **tác giả vẫn thấy kèm nhãn**)"*, và
+ * PLAN 5.2 nhắc lại: *"tác giả thấy **nội dung**, người khác thấy nhãn"*. Vế ấy không cài
+ * được ở `GET /machs/{id}` — cửa đó bị ép **không chứa gì per-user** vì cả trang cache
+ * theo URL (PLAN 8.4), nên nhét nội dung của tác giả vào là phục vụ nó cho mọi người mở
+ * cùng URL. Vì thế nó sống ở đây: `GET /machs/{id}/me` vốn đã per-user, đã `no-store`,
+ * và đã chạy trên mọi lượt tải trang mạch.
+ *
+ * Client vá `body` này vào đúng ô trống mà `GET /machs/{id}` để lại, kèm nhãn của
+ * `trang_thai` — **không** xoá nhãn đi. Tác giả phải biết là người khác KHÔNG đọc được.
+ *
+ * ⚠ **Chỉ có mặt khi người gọi là `author` của chính mảnh đó.** Đây là chỗ nguy hiểm
+ * nhất của cả cửa này: trả nhầm của người khác biến một bản vá minh bạch thành một lỗ
+ * rò nội dung đã bị mod gỡ, trên một endpoint không ai soi vì nó "chỉ trả trạng thái".
+ * `tests/test_api_noi_dung_cua_toi.py` đo **cả hai chiều**.
+ */
+export type NoiDungCuaToiOut = {
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Id
+     */
+    id: number;
+    /**
+     * Loai
+     */
+    loai: 'moc' | 'comment';
+    /**
+     * Seq
+     */
+    seq: number | null;
+    /**
+     * Trang Thai
+     */
+    trang_thai: 'binh_thuong' | 'da_xoa' | 'da_an';
+};
+
+/**
  * ReactionCuaToiOut
  *
  * Reaction của **người đang xem** trên một mốc. Một user tối đa một reaction mỗi mốc.
@@ -1255,9 +1375,34 @@ export type ToiOut = {
      */
     la_staff: boolean;
     /**
+     * Nhan Digest
+     */
+    nhan_digest: boolean;
+    /**
      * Username
      */
     username: string | null;
+};
+
+/**
+ * ToiSuaIn
+ *
+ * `PATCH /me` — tuỳ chọn của chính người đang đăng nhập (PLAN 5.8).
+ *
+ * **PATCH thật**: trường vắng mặt nghĩa là không đổi, nên `{}` là một request hợp lệ
+ * không ghi gì. Tách khỏi `ToiOut` chứ không dùng chung một schema hai chiều: `ToiOut`
+ * mang `username`, `email`, `la_staff`, `google_bat` — không cái nào người dùng đặt
+ * được ở đây, và một schema hai chiều là lời mời nhận đại cả bốn.
+ *
+ * Hôm nay đúng **một** trường. Danh tính (`display_name`, `bio`) chưa mở ở cửa này: nó
+ * là nội dung công khai, cần luật độ dài + sanitize riêng, và trộn nó vào cùng lượt vá
+ * với một cái công tắc boolean là cách phần khó bị làm vội.
+ */
+export type ToiSuaIn = {
+    /**
+     * Nhan Digest
+     */
+    nhan_digest?: boolean | null;
 };
 
 /**
@@ -1656,6 +1801,10 @@ export type TaoMachErrors = {
      * Not Found
      */
     404: LoiOut;
+    /**
+     * Too Many Requests
+     */
+    429: LoiThoiGianOut;
 };
 
 export type TaoMachError = TaoMachErrors[keyof TaoMachErrors];
@@ -1825,6 +1974,14 @@ export type VietBinhLuanErrors = {
      * Not Found
      */
     404: LoiOut;
+    /**
+     * Conflict
+     */
+    409: LoiOut;
+    /**
+     * Too Many Requests
+     */
+    429: LoiThoiGianOut;
 };
 
 export type VietBinhLuanError = VietBinhLuanErrors[keyof VietBinhLuanErrors];
@@ -2089,6 +2246,39 @@ export type XemToiResponses = {
 };
 
 export type XemToiResponse = XemToiResponses[keyof XemToiResponses];
+
+export type SuaToiData = {
+    body: ToiSuaIn;
+    path?: never;
+    query?: never;
+    url: '/api/v1/me';
+};
+
+export type SuaToiErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+};
+
+export type SuaToiError = SuaToiErrors[keyof SuaToiErrors];
+
+export type SuaToiResponses = {
+    /**
+     * OK
+     */
+    200: ToiOut;
+};
+
+export type SuaToiResponse = SuaToiResponses[keyof SuaToiResponses];
 
 export type XoaMocData = {
     body?: never;
@@ -2434,6 +2624,47 @@ export type DanhDauDaDocResponses = {
 };
 
 export type DanhDauDaDocResponse = DanhDauDaDocResponses[keyof DanhDauDaDocResponses];
+
+export type GuiBaoCaoData = {
+    body: BaoCaoMoiIn;
+    path?: never;
+    query?: never;
+    url: '/api/v1/reports';
+};
+
+export type GuiBaoCaoErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+    /**
+     * Conflict
+     */
+    409: LoiOut;
+};
+
+export type GuiBaoCaoError = GuiBaoCaoErrors[keyof GuiBaoCaoErrors];
+
+export type GuiBaoCaoResponses = {
+    /**
+     * Created
+     */
+    201: BaoCaoDaGuiOut;
+};
+
+export type GuiBaoCaoResponse = GuiBaoCaoResponses[keyof GuiBaoCaoResponses];
 
 export type LietKeSubData = {
     body?: never;

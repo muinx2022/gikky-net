@@ -11,11 +11,13 @@ PLAN 8.4 chốt trang mạch có **hai nguồn làm mới**, và cần cả hai:
    trích/gỡ trích, đóng/mở/khoá mạch. Không có nó thì một mốc vừa đăng phải chờ tới một
    giờ mới hiện, và tác giả sẽ tưởng nút đăng bị hỏng.
 
-⚠ **Hôm nay chiều này CHƯA có tác dụng thật**, và đừng đọc dòng log "đã gọi" thành ngược
-lại: `apps/web/app/m/[slugId]/page.tsx` vẫn khai `export const dynamic = "force-dynamic"`
-(nợ `ISR-BIEN-THE-ROUTE`, xem `plans/2026-08-23-mang-b1-backend-phase-3.md` §5), nên không
-có gì để làm mới — `revalidatePath` ở đầu kia là một no-op. Nửa này dựng sẵn để lượt
-frontend chỉ phải bỏ một dòng directive.
+✅ **Chiều này ĐÃ có tác dụng thật từ `ab77957`** (mảng B2, 2026-08-23). Nợ
+`ISR-BIEN-THE-ROUTE` đã trả: `apps/web/app/m/[slugId]/page.tsx` bỏ
+`export const dynamic = "force-dynamic"` và khai `revalidate = 3600`, `middleware.ts` tách
+hai biến thể route. Câu cảnh báo cũ ở chỗ này ("chưa có tác dụng thật, `revalidatePath`
+bên kia là no-op") **đã sai từ lượt ấy** và nằm lại thêm một lượt nữa — ai đọc file này
+sẽ kết luận sai rằng cả cơ chế là đồ trang trí. Vòng đầy đủ được `e2e/phase-3.spec.ts::P10`
+đo chạy thật: nối một mốc rồi đòi trang KHÁCH hiện nó ra.
 
 ## Bốn chốt của PLAN 8.4 điểm 3, và vì sao từng cái
 

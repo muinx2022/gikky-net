@@ -380,6 +380,8 @@ test("luật trên có quét trúng lời gọi THẬT ở MỌI cửa (không q
   expect([...theo_file.keys()].sort()).toEqual([
     "app/chan-doan/health-same-origin.tsx",
     "app/chan-doan/page.tsx",
+    // Lượt vá V1 (L03) — form báo cáo, client component, `baseUrl` rỗng (same-origin).
+    "components/bao-cao.tsx",
     "components/chuong.tsx", // B2 — chuông thông báo, poll 60s
     "components/composer.tsx", // Phase 2
     "components/cot-vote.tsx", // Phase 2

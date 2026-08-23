@@ -17,6 +17,7 @@ gọi đặt được.
 """
 
 from datetime import date
+from typing import Literal
 
 from ninja import Schema
 from pydantic import Field
@@ -32,6 +33,15 @@ from core.models.moc import DAI_BODY_MOC
 DAI_KET_QUA = 40
 DAI_LOAI = 20
 DAI_CAU_MOI = 200
+
+#: `Report.ghi_chu` là `TextField` (không giới hạn ở tầng cột) — trần chỉ tồn tại ở hợp
+#: đồng API, và nó phải tồn tại: thiếu nó thì một request đơn lẻ nhét được vài megabyte
+#: chữ vào hàng đợi kiểm duyệt, trên một endpoint chỉ cần đăng nhập. 1000 ký tự đủ cho một
+#: lời tố có ngữ cảnh; dài hơn thì mod không đọc nữa.
+DAI_GHI_CHU_BAO_CAO = 1000
+
+#: Trần số id một lượt `POST /notifications/read` nhận — xem `DanhDauDaDocIn`.
+DAI_DANH_SACH_DA_DOC = 500
 DAI_TITLE = 160
 
 
@@ -180,6 +190,50 @@ class DanhDauDaDocIn(Schema):
 
     Danh sách rỗng `[]` khác `null`: nó đánh dấu **không dòng nào**. Cố ý giữ khác nhau —
     một mảng rỗng do client dựng hụt không được biến thành "đọc hết".
+
+    `ids` có **trần độ dài** (L27, vá V1): thiếu nó thì một request đơn lẻ đẩy được một
+    triệu phần tử vào `pk__in`, tức một câu SQL vài megabyte trên một endpoint chỉ cần
+    đăng nhập. Trần rộng hơn hẳn mọi lượt bấm thật — chuông trả tối đa một trang — nên nó
+    không chặn ai, nó chỉ chặn cái không phải lượt bấm.
     """
 
-    ids: list[int] | None = None
+    ids: list[int] | None = Field(default=None, max_length=DAI_DANH_SACH_DA_DOC)
+
+
+class ToiSuaIn(Schema):
+    """`PATCH /me` — tuỳ chọn của chính người đang đăng nhập (PLAN 5.8).
+
+    **PATCH thật**: trường vắng mặt nghĩa là không đổi, nên `{}` là một request hợp lệ
+    không ghi gì. Tách khỏi `ToiOut` chứ không dùng chung một schema hai chiều: `ToiOut`
+    mang `username`, `email`, `la_staff`, `google_bat` — không cái nào người dùng đặt
+    được ở đây, và một schema hai chiều là lời mời nhận đại cả bốn.
+
+    Hôm nay đúng **một** trường. Danh tính (`display_name`, `bio`) chưa mở ở cửa này: nó
+    là nội dung công khai, cần luật độ dài + sanitize riêng, và trộn nó vào cùng lượt vá
+    với một cái công tắc boolean là cách phần khó bị làm vội.
+    """
+
+    #: `true` ⇒ nhận email digest tuần 8:00 thứ Bảy VN. PLAN 5.8 chốt **opt-in**, nên mặc
+    #: định của cột là `False` và cửa này là chỗ duy nhất bật được nó. Kiểu `bool | None`
+    #: với mặc định `None` là cách PATCH thật của repo phân biệt "không gửi" với "gửi
+    #: `false`" — cùng cơ chế `model_fields_set` mà `MocSuaIn` dùng; handler đọc bằng
+    #: `model_dump(exclude_unset=True)` nên một `null` gửi tường minh **không** ghi gì.
+    nhan_digest: bool | None = None
+
+
+class BaoCaoMoiIn(Schema):
+    """Gửi báo cáo — `POST /reports` (PLAN 5.10).
+
+    `ly_do` là **enum**, đúng bốn giá trị PLAN liệt kê: *phím hàng · lừa đảo, mời uỷ thác,
+    room VIP · spam · khác*. Khai bằng `Literal` chứ không `str` để `openapi.json` ra
+    `enum` và TS client nhận một union — một chuỗi tự do ở đây là hàng đợi kiểm duyệt đầy
+    những lý do không nhóm lại được, và mod thì phải đọc từng dòng.
+
+    `ghi_chu` tuỳ chọn: chỗ người tố nói thêm. Server **không** validate ngữ nghĩa (cùng
+    triết lý với `ket_qua`/`figures`), chỉ chặn độ dài.
+    """
+
+    target_type: Literal["mach", "moc", "comment"]
+    target_id: int = Field(ge=1)
+    ly_do: Literal["phim_hang", "lua_dao", "spam", "khac"]
+    ghi_chu: str = Field(default="", max_length=DAI_GHI_CHU_BAO_CAO)

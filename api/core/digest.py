@@ -243,7 +243,12 @@ def dung_digest(
     dong += [
         "— gikky.net",
         "Nội dung trên gikky do người dùng đăng, không phải khuyến nghị đầu tư.",
-        f"Bỏ nhận thư này: {goc_site}/cai-dat",
+        # ⚠ Câu này KHÔNG được trỏ tới `/cai-dat` cho tới khi trang ấy tồn tại (L14, vá
+        # V1). Bản trước in `{goc_site}/cai-dat` trong khi `apps/web/app/cai-dat` chưa có
+        # thư mục nào — tức lối thoát duy nhất của một lá thư định kỳ là một link 404. Cửa
+        # ghi thì đã có (`PATCH /api/v1/me`), chỉ trang chưa; nợ có tên `TRANG-CAI-DAT`.
+        # Không hứa một kênh trả lời: `DEFAULT_FROM_EMAIL` là `khong-tra-loi@gikky.net`.
+        "Bỏ nhận thư này: tắt tuỳ chọn “thư tuần” trong cài đặt tài khoản trên gikky.net.",
     ]
     return Digest(tieu_de=tieu_de, than="\n".join(dong), so_mach=len(muc))
 
