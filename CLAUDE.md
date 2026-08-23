@@ -142,6 +142,10 @@ Django admin ở **`/api/admin/django/`** — không phải `/api/admin/`; xem d
   `cap_nhat_dem_mach` để `diem_bai_goc` không trôi, nên nó khoá hàng `Moc` rồi mới xin
   hàng `Mach`. Cùng chiều với cạnh cũ (`Mach` luôn đứng CUỐI) nên không sinh chu trình —
   và luật đọc gọn lại thành **`Mach` khoá sau cùng, không có ngoại lệ**.
+  **Cạnh thứ tư, thêm ở Phase 5: `Mach` → `MocAnh`.** Ảnh khoá SAU CẢ `Mach`, tức chuỗi đầy
+  đủ là `Comment/Moc → Mach → MocAnh`. Bản đầu của Phase 5 dựng chu trình `MocAnh ↔ Mach`
+  (`xoa_moc` đi một chiều, `dat_an_mach` đi chiều ngược) và **deadlock thật** — bài đo đua bắt
+  được. Luật gọn lại lần nữa: **`Mach` rồi `MocAnh` đứng cuối, theo đúng thứ tự đó.**
   ⚠ Khoá NGẦM cũng tính: `INSERT INTO core_trich(moc_id, …)` lấy `FOR KEY SHARE` trên
   hàng `Moc` được tham chiếu. Phase 2 làm endpoint "trích vào sổ" mà khoá `Mach` trước
   rồi mới insert `Trich` là dựng đúng cạnh ngược `Mach` → `Moc` — cạnh người viết sẽ
@@ -161,3 +165,21 @@ Django admin ở **`/api/admin/django/`** — không phải `/api/admin/`; xem d
   "Cannot find module 'eslint-plugin-react-hooks'".
 - Same-origin ở dev đi qua `rewrites` trong `next.config.ts` của **cả hai** app
   (`/api/:path*` → `API_ORIGIN`, mặc định `http://localhost:8000`). Prod là việc của Caddy (PLAN 8.2).
+
+## Worktree của subagent có thể đứng ở commit CŨ — kiểm trước khi làm
+
+Chốt 2026-08-23, sau khi một lượt phải huỷ. Worktree cấp cho subagent **không đảm bảo** được tạo
+từ `main` hiện tại: một lượt Phase 7 nhận worktree đứng ở commit **đi sau 13 bước**.
+
+Nguy hiểm không nằm ở chỗ thiếu code — nó nằm ở chỗ **bài đo vẫn xanh**. Bài đo kiểu *"liệt kê MỌI
+đường ghi rồi ép mỗi đường phải làm X"* chạy trên cây cũ sẽ chỉ liệt kê những đường ghi **đã tồn
+tại lúc đó**: xanh thật, và gộp lên `main` thì mười đường ghi mới không ai kiểm mà bảng vẫn báo đủ.
+Đúng loài *proof đo RỖNG*.
+
+⇒ **Bước đầu tiên của mọi subagent chạy trong worktree:**
+1. `git log --oneline -1`, so với `main`; đi sau thì `git merge --ff-only main`.
+2. **Kiểm bằng NỘI DUNG, không chỉ bằng hash** — nêu đích danh vài file/hàm mà việc này phụ thuộc,
+   cộng một con số nền (`pytest --collect-only`). Hash trông đúng mà nội dung thiếu thì vẫn dừng.
+3. Thiếu thì **DỪNG và báo**, đừng "làm tới đâu hay tới đó".
+
+Và khi giao việc: **nói rõ nền là bao nhiêu test**, để agent tự phát hiện mình đứng sai cây.
