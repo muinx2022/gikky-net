@@ -618,6 +618,29 @@
         "title": "HoSoOut",
         "type": "object"
       },
+      "KetQuaTimKiemOut": {
+        "description": "Một dòng kết quả tìm kiếm — Phase 7.\n\n`mach` là **đúng thẻ mà feed dùng** (`MachTomTatOut`), không phải một hình dạng thứ\nhai: trang kết quả vẽ lại cùng loại thẻ với trang chủ, nên hai schema khác nhau chỉ\ntạo hai đường trôi.\n\nHai trường tô đậm dùng dấu **`[[` `]]`**, không phải HTML. Trả `<mark>` về đây là mời\n`dangerouslySetInnerHTML` vào một đường dữ liệu do người dùng viết; frontend tự dựng\nthẻ từ cặp dấu (`apps/web/lib/tim-kiem.ts`). Chữ trong hai trường này đến từ\n**Postgres**, không phải từ chỉ mục — xem docstring `api/tim_kiem.py`.",
+        "properties": {
+          "doan_trich": {
+            "title": "Doan Trich",
+            "type": "string"
+          },
+          "mach": {
+            "$ref": "#/components/schemas/MachTomTatOut"
+          },
+          "title_to_dam": {
+            "title": "Title To Dam",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mach",
+          "title_to_dam",
+          "doan_trich"
+        ],
+        "title": "KetQuaTimKiemOut",
+        "type": "object"
+      },
       "KetQuaXoaOut": {
         "description": "Kết quả `DELETE /comments/{id}` — PLAN 5.3.\n\n`xoa_that = false` nghĩa là bình luận **ở lại làm bia mộ** \"[đã xoá]\" vì nó còn reply\ncon **hoặc đã TỪNG được trích vào sổ** (kể cả trích đã gỡ). UI phải render lại nút đó\nthành bia mộ chứ không gỡ nó khỏi cây — gỡ đi là làm mồ côi cả nhánh con.",
         "properties": {
@@ -1850,6 +1873,38 @@
           "read_at"
         ],
         "title": "ThongBaoOut",
+        "type": "object"
+      },
+      "TimKiemOut": {
+        "description": "Một trang kết quả tìm kiếm.\n\n`co_the_tim = false` là **xuống thang**, không phải lỗi: Meilisearch chưa cấu hình\nhoặc đang hỏng. Endpoint vẫn trả 200 để trang gọi vẽ được một câu nói bằng tiếng\nngười thay vì xử một mã lỗi như xử sự cố (plan con Phase 7 §5).\n\n`tong` là **ước lượng** của Meilisearch (`estimatedTotalHits`), đếm trước khi lớp lọc\nPostgres chạy — nên `len(items)` có thể nhỏ hơn `tong` chia trang. Nói ra ở đây để\nfrontend không dựng bộ đếm trang chính xác trên một con số không chính xác.",
+        "properties": {
+          "co_the_tim": {
+            "title": "Co The Tim",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/KetQuaTimKiemOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "q": {
+            "title": "Q",
+            "type": "string"
+          },
+          "tong": {
+            "title": "Tong",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "tong",
+          "co_the_tim",
+          "q"
+        ],
+        "title": "TimKiemOut",
         "type": "object"
       },
       "ToiOut": {
@@ -4555,6 +4610,110 @@
         "summary": "Xem Sub",
         "tags": [
           "sub"
+        ]
+      }
+    },
+    "/api/v1/tim-kiem": {
+      "get": {
+        "description": "Tìm mạch theo tiêu đề, thân bài gốc, các mốc nối sau, kết quả và tên tác giả.\n\nGõ **không dấu vẫn ra kết quả có dấu** (`nhat ky lenh hpg` → *Nhật ký lệnh HPG*), và\nsai một ký tự ở từ dài vẫn ra. Mã chứng khoán ngắn (`HPG`) khớp **chính xác**.\n\n`?sub=<slug>` lọc theo chuyên mục; sub không tồn tại trả 404 `sub_khong_ton_tai`.\n`?sort=lien_quan` (mặc định) xếp theo độ liên quan; `?sort=moi` xếp mới trước.\n`?offset=` + `?limit=` phân trang; `limit` tối đa 50, `offset` tối đa 1000.\n\nMạch bị mod ẩn không xuất hiện. Nội dung của mốc đã xoá hoặc bị mod ẩn không tìm được.\n\nTìm kiếm tạm ngừng (service phụ đang hỏng hoặc chưa cấu hình) ⇒ vẫn **200**, với\n`co_the_tim = false` và danh sách rỗng, để trang gọi có thể nói ra bằng tiếng người.",
+        "operationId": "tim_kiem",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sub",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sub"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "lien_quan",
+              "enum": [
+                "lien_quan",
+                "moi"
+              ],
+              "title": "Sort",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimKiemOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "Tim Kiem",
+        "tags": [
+          "tim-kiem"
         ]
       }
     },

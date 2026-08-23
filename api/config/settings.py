@@ -34,6 +34,8 @@ env = environ.Env(
     FRONTEND_ORIGIN=(str, "http://localhost:3000"),
     REVALIDATE_URL=(str, "http://localhost:3000/lam-moi-cache"),
     REVALIDATE_SECRET=(str, ""),
+    MEILI_URL=(str, ""),
+    MEILI_KEY=(str, ""),
 )
 environ.Env.read_env(BASE_DIR / ".env")
 
@@ -362,6 +364,20 @@ REVALIDATE_URL = env("REVALIDATE_URL", default="http://localhost:3000/lam-moi-ca
 #: Next của người khác đang chạy. Prod đặt cùng một chuỗi ở đây và ở biến môi trường của
 #: tiến trình Next.
 REVALIDATE_SECRET = env("REVALIDATE_SECRET", default="")
+
+#: Meilisearch — chỉ mục tìm kiếm (PLAN 8.5, Phase 7). **Cả hai rỗng ⇒ TẮT HẲN**, cùng
+#: một mặc định và cùng một lý do với `REVALIDATE_SECRET`: clone sạch không đi gọi một
+#: service chưa ai cài, và `pytest` không phụ thuộc vào một tiến trình nền.
+#:
+#: `MEILI_KEY` phải là khoá **phạm vi hẹp** (chỉ index `mach`), **không phải master key**
+#: — master key tạo được khoá khác, tức nó là quyền quản trị toàn cụm cho một tiến trình
+#: chỉ cần đọc/ghi một index. Xem docstring `core/tim_kiem.py`.
+#:
+#: URL phải là **nội bộ** (`127.0.0.1:7700`). Meilisearch không bao giờ được Caddy proxy
+#: ra internet: luật che nội dung của sản phẩm sống ở Django, và một khoá search nằm
+#: trong trình duyệt là một khoá phát lại được với bộ lọc tuỳ ý (plan con Phase 7 §3).
+MEILI_URL = env("MEILI_URL", default="")
+MEILI_KEY = env("MEILI_KEY", default="")
 
 #: `False` là BẮT BUỘC: frontend phải đọc được cookie `csrftoken` bằng JS để gắn vào
 #: header `X-CSRFToken`. Cookie *phiên* (`sessionid`) thì ngược lại — `HttpOnly` mặc định

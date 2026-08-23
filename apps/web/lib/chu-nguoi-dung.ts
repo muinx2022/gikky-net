@@ -19,7 +19,11 @@
  * - `app/u/[username]/page.tsx` — `display_name` (h1), `u/{username}` (dòng dưới h1 và
  *   khúc sau chữ "Mạch của" ở h2), `bio`;
  * - `components/the-mach.tsx` — `s/{sub.slug}`, `u/{author.username}`, `title`, `ket_qua`;
- * - `components/binh-luan.tsx` — `u/{author.username}` trên đầu mỗi bình luận.
+ * - `components/binh-luan.tsx` — `u/{author.username}` trên đầu mỗi bình luận;
+ * - `components/ket-qua-tim-kiem.tsx` *(Phase 7)* — `s/{sub.slug}`, `u/{author.username}`,
+ *   tiêu đề đã tô đậm, đoạn trích. Hai cái sau là chữ người dùng **đi qua bộ tô đậm** của
+ *   `lib/tim-kiem.ts`, nên chúng vẫn là chữ người dùng: bộ tô đậm chỉ chèn thẻ `<mark>`
+ *   quanh chỗ khớp, nó không đổi một ký tự nào của nội dung.
  *
  * **Cố ý KHÔNG đánh dấu** những chỗ ứng dụng tự nói về nội dung người dùng, kể cả khi nó
  * đứng ngay cạnh: `[bình luận đã xoá]`, `[bình luận đã bị ẩn]`, `đã đóng sổ`, `CHỦ MẠCH`,

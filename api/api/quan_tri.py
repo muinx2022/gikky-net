@@ -49,6 +49,7 @@ from api.loi import (
     LoiOut,
     dang_ky_xu_ly_loi,
 )
+from api.quyen import dang_ky_binh_luan_bien_mat
 from api.v1 import duong_dan_docs
 
 logger = logging.getLogger(__name__)
@@ -115,6 +116,11 @@ api_admin = NinjaAPI(
 )
 
 dang_ky_xu_ly_loi(api_admin)
+# L38 (2026-08-23). Khu quản trị **không** gọi `dang_ky_xu_ly_loi_ghi` vì nó có bản
+# auth/CSRF riêng ngay dưới — nhưng nó vẫn có đường ghi đụng `Comment`
+# (`dat_an_binh_luan`), nên nó vẫn cần đúng lưới ấy. Thiếu dòng này: tác giả xoá thật đúng
+# lúc mod bấm "Ẩn" ⇒ 500 ở khu quản trị, trong khi `api_v1` trả 409 cho cùng cuộc đua.
+dang_ky_binh_luan_bien_mat(api_admin)
 
 
 @api_admin.exception_handler(AuthenticationError)

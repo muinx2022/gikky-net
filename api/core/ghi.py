@@ -119,6 +119,7 @@ from core.models.he_thong import AuditLog, Report
 from core.models.moc import Moc, MocAnh, MocRevision, kiem_figures
 from core.models.tuong_tac import Follow, Reaction, Trich, Vote
 from core.thoi_gian import TZ_VN, ngay_vn
+from core.tim_kiem import dong_bo_mach
 
 #: PLAN 5.1 — tối đa 3 mốc mỗi **ngày lịch VN** mỗi mạch.
 SO_MOC_TOI_DA_MOI_NGAY = 3
@@ -365,6 +366,7 @@ def tao_mach(
             figures=figures,
             _created_at_seed=khi,
         )
+        dong_bo_mach(mach)
     return mach, moc
 
 
@@ -415,6 +417,7 @@ def them_moc(
                     figures=figures,
                 )
                 cap_nhat_dem_mach(mach_khoa)
+                dong_bo_mach(mach_khoa)
         except IntegrityError as loi:
             if not _la_va_cham(loi, RB_MOC_SEQ):
                 raise
@@ -765,6 +768,7 @@ def sua_moc(*, moc: Moc, thay_doi: dict, khi=None) -> Moc:
         moc.save(
             update_fields=[*TRUONG_SUA_DUOC_CUA_MOC, "edited_at", "edit_count"]
         )
+        dong_bo_mach(moc.mach)
     return moc
 
 
@@ -794,6 +798,7 @@ def xoa_moc(*, moc: Moc, khi=None) -> Moc:
         # đường này thành `Moc → MocAnh → Mach`, mà `dat_an_mach` đi `Mach → MocAnh` —
         # hai chiều ngược nhau trên cùng một cặp bảng là deadlock dưới tải.
         dong_bo_kho_anh(moc)
+        dong_bo_mach(moc.mach)
     moc.refresh_from_db()
     return moc
 
@@ -1002,6 +1007,7 @@ def dong_so(*, mach: Mach, ket_qua: str | None = None, khi=None) -> Mach:
         m.closed_at = khi
         m.ket_qua = (ket_qua or "").strip() or None
         m.save(update_fields=["status", "closed_at", "ket_qua"])
+        dong_bo_mach(m)
     return m
 
 
@@ -1019,6 +1025,7 @@ def mo_lai(*, mach: Mach) -> Mach:
         m.closed_at = None
         m.ket_qua = None
         m.save(update_fields=["status", "closed_at", "ket_qua"])
+        dong_bo_mach(m)
     return m
 
 
@@ -1329,6 +1336,10 @@ def dat_an_moc(*, moc: Moc, boi, an: bool, ly_do: str = "") -> bool:
         #
         # ⚠ SAU `cap_nhat_dem_mach` — `MocAnh` khoá sau cùng, xem `xoa_moc`.
         dong_bo_kho_anh(hang)
+        # Mốc bị ẩn ⇒ thân của nó phải rời index; gỡ ẩn ⇒ quay lại. Đi qua
+        # `dong_bo_mach` chứ không tự quyết: nó đọc lại trạng thái hiện thời nên cả hai
+        # chiều dùng chung một lời gọi (xem docstring `core/tim_kiem.py`).
+        dong_bo_mach(Mach.objects.get(pk=hang.mach_id))
         ghi_audit(
             actor=boi,
             action=AUDIT_AN_MOC if an else AUDIT_GO_AN_MOC,
@@ -1388,6 +1399,10 @@ def dat_an_mach(*, mach: Mach, boi, an: bool, ly_do: str = "") -> bool:
         # mạch KHÔNG vô tình phục vụ lại ảnh của một mốc vẫn đang bị ẩn.
         for m in Moc.objects.filter(mach=hang).select_related("mach"):
             dong_bo_kho_anh(m)
+        # Ẩn mạch ⇒ tài liệu bị XOÁ khỏi index; gỡ ẩn ⇒ dựng lại. Đây là đường mà plan
+        # con Phase 7 §2 gọi là nguy hiểm nhất: index không hết hạn như cache, nên sót ở
+        # đây là mạch mod vừa ẩn vẫn tìm ra được nguyên văn tiêu đề, vô thời hạn.
+        dong_bo_mach(hang)
         ghi_audit(
             actor=boi,
             action=AUDIT_AN_MACH if an else AUDIT_GO_AN_MACH,

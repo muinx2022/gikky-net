@@ -46,6 +46,22 @@
   color: var(--accent);
 }
 
+/* Chỗ giữ của ô tìm kiếm trong lúc `Suspense` chưa xong — cùng kích thước với `.o` của
+   `o-tim-kiem.module.css`, để thanh trên cùng không nhảy một nhịp. Hai bộ số này phải
+   khớp nhau; chúng ở hai file vì một cái là chỗ giữ của layout, cái kia là hình dạng thật
+   của ô nhập. */
+.cho_o_tim {
+  flex: 0 1 260px;
+  min-width: 0;
+  height: 31px;
+}
+
+@media (max-width: 860px) {
+  .cho_o_tim {
+    display: none;
+  }
+}
+
 /* Góc phải: nút "Đăng bài" + thanh tài khoản. Xem chú thích trong `chrome.tsx` để biết vì
    sao hai thứ này phải nằm chung một hộp thay vì đứng rời trên `.trong`. */
 .phai {

@@ -121,9 +121,25 @@ thi **không đề xuất lại**, kể cả dạng biến thể, trừ khi user
 | **Structured fields bắt buộc theo sub** | Biến đăng bài thành điền biểu mẫu — không ai điền. V1 chỉ có `figures` hiển thị tự do (5.2) + `ket_qua` tự do khi đóng sổ (5.1). |
 | **Auto-mở panel/sheet khi khách ghé** | Interstitial che nội dung người ta bấm vào để đọc — bị đóng theo phản xạ. |
 | **Mention `@user`** | Cắt khỏi v1 (cần parse + cú pháp + chống spam riêng — không đáng ở giai đoạn này). |
-| **Search full-text** | Cắt hẳn khỏi v1, kể cả tsquery "mức tối thiểu". V2. |
+| ~~**Search full-text**~~ **→ ĐÃ LẬT 2026-08-23, xem ngay dưới bảng** | ~~Cắt hẳn khỏi v1, kể cả tsquery "mức tối thiểu". V2.~~ |
 | **"Tham gia sub" (subscribe) + feed cá nhân hoá** | *(chốt 2026-08-22)* Vòng lặp lõi của Reddit, nhưng v1 chỉ có **2 sub** — một nút Tham gia với hai lựa chọn là sân khấu, và feed "của tôi" gần như trùng feed chung. Nó còn cần model mới + logic feed mà PLAN không có. **Và không render nút disabled làm chỗ đứng**: một cái nút vĩnh viễn không bấm được còn tệ hơn không có nút (nguyên tắc 9 — đừng phô thứ rỗng). Xét lại khi có >5 sub. |
 | **Neo bình luận chung vào mốc 1** (khán đài = ngăn kéo của mốc đầu) | User nêu 2026-08-21, cân nhắc rồi **giữ nguyên nguyên tắc 4**. Cơ chế "một kho, hai ống kính" thì đã đúng ý đó rồi (khán đài = list chung, ngăn kéo = lát cắt theo mốc, mốc 1 = bài gốc). Chỉ khác chỗ **neo mặc định**: nếu neo mốc 1 thì ngăn kéo mốc 1 phình thành bản sao khán đài, **ngăn kéo mốc mới nhất rỗng** đúng lúc tác giả vừa nối mốc và cần phản hồi nhất (đâm nguyên tắc 9), chip `‹mốc 1›` hiện khắp nơi thành nhiễu, và mặt BÃO (5.5) mất chỗ dựa. Nhu cầu "bình luận về cả mạch" đã có đường riêng: **gỡ chip → `anchor_moc_seq = NULL`**. |
+
+### Quyết định đã LẬT
+
+Bảng trên là **lịch sử quyết định**, không phải danh sách việc cấm vĩnh viễn — nên dòng bị lật
+được gạch ngang và giữ lại, không xoá. Ai đọc lại phải thấy được cả lý lẽ cũ lẫn ngày nó thôi
+hiệu lực.
+
+- **Search full-text** — bác ban đầu ("cắt hẳn khỏi v1, kể cả tsquery mức tối thiểu"), **user
+  chủ động lật ngày 2026-08-23**, làm ở **Phase 7 bằng Meilisearch** (mục 8.5, mục 10).
+  Lý lẽ cũ vẫn đúng phần nó nói: *Postgres FTS* mức tối thiểu thật sự không đáng làm, vì tiếng
+  Việt yếu ở đúng hai chỗ người Việt cần nhất — **gõ không dấu** và **gõ sai chính tả**.
+  Cái đổi là công cụ, không phải sự thèm muốn: Meilisearch mạnh sẵn cả hai và là **một file
+  nhị phân đơn**, không cần Docker (nên ràng buộc 2026-08-21 không chạm tới nó).
+  Cái phải trả, nói trước: trên VPS nó **là một service chạy nền** — thêm một tiến trình phải
+  giám sát, phải khởi động lại khi reboot. Và search là **đường đọc thứ hai** đi vòng qua mọi
+  luật che nội dung, nên nó kéo theo hai lớp rào riêng (mục 8.5).
 
 ---
 
@@ -524,6 +540,7 @@ nhận **403 `sai_host_quan_tri`** trước cả hai. TS client ở subpath `@gi
 | `GET /admin/subs` · `POST /admin/subs` | liệt kê (kèm `so_mach`) · tạo | slug phải ở dạng chuẩn, server **không** slugify hộ |
 | `PATCH /admin/subs/{slug}` · `DELETE` | sửa `ten`/`mo_ta` · xoá | `slug` **không sửa được** (URL công khai); xoá chỉ khi sub rỗng, ngược lại 409 |
 | `GET /admin/nhat-ky` | `AuditLog`, cursor keyset | `?action=` lọc **bằng đúng**; chỉ đọc — không có cửa ghi hay xoá |
+| `GET /tim-kiem` | tìm mạch: `?q=` · `?sub=` · `?sort=lien_quan\|moi` · `?offset=` · `?limit=` | *(thêm Phase 7, 2026-08-23 — **lật** dòng bác ở mục 4)* Đi qua Django, **trình duyệt không bao giờ gọi thẳng Meilisearch** (8.5). Không per-user, **`Cache-Control: no-store`** — kết quả phụ thuộc trạng thái ẩn, cache lại là hồi sinh nội dung vừa gỡ. Gõ **không dấu ra kết quả có dấu**; mã ngắn (`HPG`) khớp **chính xác**. `sub` lạ → 404 `sub_khong_ton_tai`; `q` rỗng → danh sách rỗng, **không** phải liệt kê mọi mạch. Meilisearch hỏng/chưa cấu hình ⇒ vẫn **200** kèm `co_the_tim:false` (xuống thang, không phải sự cố). `tong` là **ước lượng** — nó đếm trước lớp lọc Postgres, nên `len(items)` có thể nhỏ hơn |
 
 OpenAPI schema xuất bằng management command **tự ghi file**, chạy từ **gốc repo**:
 
@@ -702,12 +719,75 @@ mình không còn là bản sao lưu đủ — `docs/sao-luu-phuc-hoi.md`.
   `"C:\Users\Ng Xuan Mui\AppData\Local\Programs\Python\Python312\python.exe" -m venv .venv`
   (gõ `python` trần trúng stub Microsoft Store).
 - Repo: `D:\Projects\gikky-net` (đã tạo, trống). `git init` ở Phase 0.
-- Ports dev: web 3000 · admin 3001 · api 8000 · postgres 5432 · ~~minio 9000/9001~~
+- Ports dev: web 3000 · admin 3001 · api 8000 · postgres 5432 · **meilisearch 7700**
+  (Phase 7, xem 8.7 — bind `127.0.0.1`, không mở ra ngoài) · ~~minio 9000/9001~~
   (**Phase 5 không dùng minio nữa** — ảnh lưu xuống đĩa, xem 8.5; hai cổng ấy chỉ còn
   nghĩa nếu một ngày quay lại object storage).
   Windows + Hyper-V thỉnh thoảng chiếm sẵn port sau reboot (EACCES khó hiểu) — lệnh chẩn đoán
   ghi vào CLAUDE.md repo: `netsh interface ipv4 show excludedportrange protocol=tcp`.
 - Docker Desktop cần chạy cho compose; chưa cài thì báo user, đừng tự cài.
+
+### 8.7 Tìm kiếm: Meilisearch (Phase 7 — chốt 2026-08-23, lật dòng bác ở mục 4)
+
+**Meilisearch KHÔNG phải nguồn sự thật.** Postgres là nguồn sự thật; Meilisearch là chỉ mục
+phụ, xoá sạch rồi dựng lại được bằng một lệnh:
+
+```
+node scripts/py.mjs reindex_tim_kiem --sach
+```
+
+Vì thế Meilisearch **không cần sao lưu riêng** — đó là trạng thái thứ ba ngoài Postgres (sau
+ảnh của 8.5), và câu trả lời cho nó là *dựng lại*, không phải *dump*. Nói ra thành chữ ở
+`docs/sao-luu-phuc-hoi.md` chứ không để ai tự suy.
+
+**Chạy ở đâu:** một **file nhị phân đơn**, không cần Docker. Dev: `127.0.0.1:7700`. Prod: cùng
+địa chỉ nội bộ + một systemd unit. **Caddy KHÔNG proxy tới nó** và nó **không nghe ra ngoài
+localhost**.
+
+**Đi qua Django, trình duyệt không gọi thẳng.** Lý do là luật hiển thị: một khoá search nằm
+trong trình duyệt là một khoá **phát lại được với bộ lọc tuỳ ý**. *(Meilisearch có "tenant
+token" nhúng sẵn bộ lọc — đó là đường đúng cho ngày cần tốc độ, nhưng v1 giữ một đường đọc
+duy nhất cho luật che.)* `MEILI_KEY` là khoá **phạm vi hẹp** (chỉ index `mach`), **không phải
+master key**; cả hai biến để trống trong `.env.example` ⇒ tìm kiếm **tắt hẳn**.
+
+#### Chỗ nguy hiểm nhất: search là ĐƯỜNG ĐỌC THỨ HAI
+
+Toàn bộ luật che nội dung (`Mach.hidden_at`, bia mộ, mốc bị mod ẩn, `TRICH_CON_HIEN`) sống ở
+đường đọc qua Postgres. Search đi vòng qua tất cả, và một tài liệu đã vào index thì **nằm đó
+mãi** cho tới khi có ai chủ động gỡ — **không tự hết hạn như cache**. Đây đúng loài lỗi `L06`
+nhưng nặng hơn hẳn. Nên có **hai lớp**, và phải có cả hai:
+
+1. **Đường ghi gỡ index** — `core/tim_kiem.py::dong_bo_mach`, gắn vào mọi cửa ghi của
+   `core/ghi.py`. Bề mặt ghi cố ý chỉ có **một** hàm, và nó **tự đọc lại trạng thái hiện thời
+   từ Postgres** rồi quyết upsert-hay-xoá: nếu bề mặt là cặp `thêm`/`xoá` thì mỗi đường ghi
+   phải tự trả lời "sau thao tác này mạch còn hiện không", và đường ghi thứ mười một sẽ trả
+   lời sai, im lặng. Cái chuông: `api/tests/test_tim_kiem_cau_truc.py` — nó đọc **AST**, bắt
+   mọi hàm ghi phải được **phân loại** trong một bảng, nên thêm một cửa ghi mà quên là ĐỎ.
+2. **Lọc lại qua Postgres ở tầng đọc** — `api/tim_kiem.py`. Meilisearch chỉ trả **ID và thứ
+   tự**; mọi dòng hiện ra được dựng lại từ hàng Postgres đọc bằng **cùng bộ lọc với feed**.
+   Kể cả đoạn tô đậm cũng tính lại từ chữ của Postgres, nên **không một byte nào của chỉ mục
+   đi ra trình duyệt**. Index lệch chỉ gây *thiếu một dòng*, không bao giờ gây *rò nội dung đã
+   ẩn*.
+
+#### Index cái gì — v1 chỉ MẠCH
+
+Một index `mach`. **Không index bình luận ở v1**: khối lượng lớn gấp nhiều lần, giá trị tìm
+kiếm thấp hơn, và luật hiển thị của bình luận là phần rối nhất — tức đúng chỗ hai lớp trên dễ
+thủng nhất. Nợ có tên, mở sau nếu người dùng thật sự cần.
+
+**`diem` và `last_entry_at` cố ý KHÔNG nằm trong tài liệu**: đưa vào là buộc **mọi lượt vote**
+đẩy lại index, mà vote là đường ghi dày nhất của hệ thống. Hệ quả: **không có `?sort=nhieu_diem`**
+ở tìm kiếm, khác hai feed. Nợ có tên.
+
+**Tiếng Việt không phải cấu hình gì thêm** — đã ĐO, không phải đoán: Meilisearch chuẩn hoá bỏ
+dấu ngay ở tầng tokenize. `typoTolerance.minWordSizeForTypos.oneTypo = 5` được **ghim tường
+minh dù trùng mặc định**, vì đó là thứ giữ cho mã chứng khoán khớp chính xác (`HPG` không kéo
+`HAG`/`HSG`); một bản Meilisearch sau đổi mặc định thì hành vi ấy mất **im lặng**.
+
+**Meilisearch chết thì trang vẫn sống.** Mọi đường ghi nuốt lỗi và log — trễ index là phiền,
+mất bài viết thì không. Đẩy index nằm **sau `transaction.on_commit`** (đúng bài học của
+notification), và vì `on_commit` có thể chết giữa chừng nên `reindex_tim_kiem` phải chạy lại
+được bất cứ lúc nào.
 
 ---
 
@@ -870,8 +950,27 @@ trang 404/500.
 đúng 8:00 thứ Bảy VN trên seed (giả lập đồng hồ); vượt rate → lỗi đúng, dưới rate → không
 chặn oan; script backup chạy + restore thử thành công.
 
+### Phase 7 — Tìm kiếm bằng Meilisearch (M) *(thêm 2026-08-23 — user lật dòng bác ở mục 4)*
+Kiến trúc + hai lớp rào ở **8.7**, đọc trước khi sửa gì. Nhị phân Meilisearch bind
+`127.0.0.1:7700` + khoá phạm vi hẹp; index `mach` (v1 **chỉ mạch**, không bình luận);
+`core/tim_kiem.py::dong_bo_mach` là **bề mặt ghi duy nhất**, gắn vào mọi cửa ghi của
+`core/ghi.py`, đẩy sau `transaction.on_commit`; `GET /tim-kiem` (mục 7) lọc lại qua Postgres;
+`reindex_tim_kiem [--sach]`; trang `/tim-kiem` + ô search ở header — ô này **gỡ bỏ** câu cấm ở
+`plans/2026-08-23-giao-dien-reddit-va-theme.md` §0, vốn viện dẫn dòng mục 4 nay đã lật.
+
+**Nghiệm thu:** tìm được mạch theo tiêu đề **và** theo thân mốc 1 từ trình duyệt thật; **gõ
+không dấu ra kết quả có dấu** (`mach hpg` → "Nhật ký lệnh HPG"); sai một ký tự vẫn ra, mã
+`HPG` khớp **chính xác** không nhiễu; **mod ẩn một mạch ⇒ biến khỏi kết quả, gỡ ẩn ⇒ quay
+lại** (cho cả mốc và mạch); **bài đo cấu trúc** — thêm một đường ghi mà quên gỡ index ⇒ ĐỎ;
+**cố tình đẩy tay một tài liệu đã ẩn vào index ⇒ lớp lọc thứ hai vẫn không rò**; **tắt
+Meilisearch ⇒ trang search nói ra bằng tiếng người, phần còn lại của site không sao**; xoá
+sạch index rồi `reindex` dựng lại đủ (đo bằng số lượng **và** một truy vấn mẫu); master key
+không ra tới trình duyệt và Meilisearch không nghe ngoài localhost; `.env.example` để trống
+hai biến Meili; mục 4 · 7 · 8 · 10 của PLAN cập nhật đủ, **kể cả dòng lật quyết định**.
+
 **Chưa làm sau v1 (đừng lấn):** PWA/offline, app native, fields cấu trúc theo sub, đồng tác
-giả, search (mọi mức), websocket, mention.
+giả, websocket, mention. ~~search (mọi mức)~~ — **đã lật 2026-08-23, thành Phase 7**; phần
+còn nợ của nó là **index bình luận** và **`?sort=nhieu_diem` cho tìm kiếm** (lý do ở 8.7).
 
 ---
 

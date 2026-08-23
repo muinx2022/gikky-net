@@ -1,0 +1,127 @@
+.khung {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 26px 22px 60px;
+}
+
+.tieu_de {
+  font-family: var(--f-display);
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0 0 14px;
+}
+
+.thanh {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.nhap {
+  flex: 1 1 240px;
+  min-width: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+}
+
+.nhap:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.nhap::-webkit-search-cancel-button {
+  appearance: none;
+}
+
+.chon {
+  padding: 8px 10px;
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+}
+
+.nut {
+  padding: 8px 18px;
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.nut:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.nhac,
+.dem {
+  font-size: 13.5px;
+  color: var(--ink-3);
+  line-height: 1.6;
+  margin: 0 0 14px;
+}
+
+/* Xuống thang. Khác `.nhac` ở chỗ nó có viền: "tìm kiếm đang hỏng" là một trạng thái của
+ * HỆ THỐNG, không phải một gợi ý cho người dùng, nên nó không được trông giống nhau. */
+.hong {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  background: var(--surface);
+  border: 1px solid var(--line-2);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  padding: 11px 14px;
+  margin: 0;
+}
+
+.danh_sach {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.lat {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 20px;
+  font-size: 13.5px;
+}
+
+.lat a {
+  color: var(--ink-2);
+}
+
+.lat a:hover {
+  color: var(--accent);
+}
+
+/* Chỉ có một nút thì nó phải đứng đúng phía của nó, không nhảy sang trái vì
+   `space-between` không có gì để đẩy. */
+.lat a:only-child:last-child {
+  margin-left: auto;
+}
+
+@media (max-width: 640px) {
+  .khung {
+    padding: 20px 15px 48px;
+  }
+}

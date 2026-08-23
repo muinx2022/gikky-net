@@ -569,26 +569,51 @@ mới thấy. Loài "chữ nói quá code" lần thứ 16.
 
 ---
 
-# B2 · PHÁT HIỆN MỚI trong lượt vá V1 (chưa sửa — ngoài phạm vi)
+# B2 · PHÁT HIỆN MỚI trong lượt vá V1 — **cả ba ĐÃ VÁ ở lượt Phase 7 (2026-08-23)**
 
 ### L38 · VỪA · `api_admin` không có lưới bắt `Comment.DoesNotExist` — cùng họ với L08
-**MỞ.** L08 gắn `exception_handler(Comment.DoesNotExist)` cho `api_v1`, nhưng
-`core/ghi.py::dat_an_binh_luan` (`:1135`) cũng `select_for_update().get()` trên một hàng
-`Comment`. Tác giả xoá THẬT đúng lúc mod bấm "Ẩn" ⇒ **HTTP 500 ở khu quản trị**. Cùng cuộc
-đua, cùng cách chữa (≈ 10 dòng), chỉ khác `NinjaAPI`. Không sửa ở V1 vì nó nằm ngoài danh
-sách được giao và nó đổi hợp đồng lỗi của khu quản trị.
+**ĐÃ VÁ (Phase 7, 2026-08-23).** L08 gắn `exception_handler(Comment.DoesNotExist)` cho
+`api_v1`, nhưng `core/ghi.py::dat_an_binh_luan` cũng `select_for_update().get()` trên một
+hàng `Comment`. Tác giả xoá THẬT đúng lúc mod bấm "Ẩn" ⇒ **HTTP 500 ở khu quản trị**.
+
+Nguyên nhân gốc là chỗ ĐẶT chứ không phải chỗ thiếu: handler bị chôn bên trong
+`dang_ky_xu_ly_loi_ghi`, mà khu quản trị **không** gọi hàm ấy — nó có bản auth/CSRF riêng.
+Bản vá tách ra `api/quyen.py::dang_ky_binh_luan_bien_mat(api)` và gọi cho **cả hai**
+`NinjaAPI`.
+
+Hai bài đo, và cái thứ hai mới là cái chặn lượt sau: `test_l38_quan_tri_binh_luan_bien_mat
+.py` đo đường đi thật (mod bấm Ẩn giữa lúc hàng biến mất ⇒ 409), **cộng** một bài **cấu
+trúc** duyệt mọi `NinjaAPI` của repo và đòi từng cái có lưới — API thứ ba mở ra mà quên
+gắn thì ĐỎ, chứ không phải lặp lại L38 lần nữa.
 
 ### L39 · NHỎ · Hạn mức theo IP là NO-OP (hoặc chặn cả thế giới) nếu prod quên một biến
-**MỞ (rủi ro triển khai, không phải lỗi code).** `HAN_MUC_DANG_KY_MOI_IP_NGAY` chỉ có
-nghĩa khi `TIN_X_FORWARDED_FOR=True`: sau Caddy, `REMOTE_ADDR` của **mọi** request là
-`127.0.0.1`, nên để `False` thì cả thế giới dùng chung một khoá đếm và người thứ sáu trong
-ngày bị chặn oan. Mặc định `False` là đúng cho dev và **sai cho prod**, và không có gì
-kêu — `api/.env.example` nói ra bằng chữ, nhưng chữ không phải hàng rào. Nó chỉ đo được ở
-lần deploy đầu tiên, cùng lúc với bốn phép thử Caddy.
+**ĐÃ VÁ (Phase 7, 2026-08-23).** `HAN_MUC_DANG_KY_MOI_IP_NGAY` chỉ có nghĩa khi
+`TIN_X_FORWARDED_FOR=True`: sau Caddy, `REMOTE_ADDR` của **mọi** request là `127.0.0.1`,
+nên để `False` thì cả thế giới dùng chung một khoá đếm và người thứ sáu trong ngày bị chặn
+oan.
+
+Câu chốt của mục này lúc mở là *"`api/.env.example` nói ra bằng chữ, nhưng chữ không phải
+hàng rào"* — nên bản vá là **một hàng rào chạy được**, không phải thêm chữ:
+`core/kiem_trien_khai.py::kiem_han_muc_ip`, một `django.core.checks` chạy trước **mọi**
+management command. Prod cấu hình sai thì `migrate` **thất bại và nói ra phải làm gì**,
+thay vì chạy tiếp rồi chặn oan người thứ sáu.
+
+Im lặng ở ba ca hợp lệ (dev `DEBUG=True` · đã tin proxy · hạn mức đặt `0`) — đo cả bốn ô
+của bảng chân trị ở `test_l39_kiem_han_muc_ip.py`, vì một bản cài kêu vô điều kiện cũng
+xanh nếu chỉ đo ca đỏ, và nó sẽ là thứ người ta tắt bằng `SILENCED_SYSTEM_CHECKS` ngay
+hôm đầu. Bài thứ năm đo phép kiểm **thật sự nằm trong registry** — một `@register()` trong
+module không ai import là hàng rào không tồn tại.
 
 ### L40 · NHỎ · `dem_dang_ky_trong_ngay_vn` quét bảng `core_user` không index
-**MỞ.** `filter(dang_ky_ip=…, date_joined__gte=…)` chạy mỗi lượt đăng ký, không có index
-nào phủ. Vô hại ở quy mô v1 (vài nghìn hàng); ghi ra để lần sau không phải đi tìm.
+**ĐÃ VÁ (Phase 7, 2026-08-23).** `filter(dang_ky_ip=…, date_joined__gte=…)` chạy mỗi lượt
+đăng ký, không có index nào phủ. Thêm `Meta.indexes` trên `User` +
+`0011_phase7_l40_index_dang_ky_ip`.
+
+Thứ tự cột không đảo được: `dang_ky_ip` (so BẰNG) trước, `date_joined` (so KHOẢNG) sau —
+đảo lại thì Postgres chỉ dùng được cột đầu. `test_l40_index_dang_ky_ip.py` soi
+`pg_indexes` của schema THẬT, không soi `Meta.indexes` của model: khai trong model mà quên
+`makemigrations` là cách sai duy nhất có thể xảy ra ở đây, và một bài đo đọc model sẽ xanh
+cho đúng cái sai đó.
 
 ---
 
@@ -598,6 +623,7 @@ nào phủ. Vô hại ở quy mô v1 (vài nghìn hàng); ghi ra để lần sau
 |---|---|
 | **Caddy** | `deploy/Caddyfile` chưa qua `caddy validate`, chưa một request nào — **vẫn đúng sau lượt vá V1** (`caddy version` → command not found trên máy dev). Bản vá L01 đổi cấu trúc block admin, nên nó cần đúng bốn phép thử ở cuối file hơn bao giờ hết. Đòi bản dựng bằng `xcaddy --with caddy-ratelimit` — bản tiêu chuẩn **không khởi động được**. Xem L01. |
 | **SMTP** | chưa gửi thư thật lần nào. Dev ghi ra `api/.mail/`. |
+| **systemd unit của Meilisearch** | `deploy/meilisearch.service` (Phase 7) chưa qua `systemd-analyze verify`, chưa khởi động lần nào — máy dev là Windows. Cùng hạng với `Caddyfile`. **Bản thân Meilisearch thì ĐÃ chạy thật** (1.53.1, `127.0.0.1:7700`), 16 bài đo của `test_tim_kiem_that.py` chạy trên nó; thứ chưa kiểm là *cách khởi động nó trên VPS*, không phải nó. |
 | **Google OAuth** | không có credential. Chỉ chứng minh được vế "không có credential ⇒ nút VẮNG MẶT". |
 | **Scheduler backup** | `pnpm db:sao-luu` đã chạy vòng đầy đủ **trong worktree**; ở cây chính chưa ai đo. Chưa có Task Scheduler/cron, chưa có đích ngoài máy. |
 | **Phase 5 — ảnh** | HOÃN có chủ đích: máy không có Docker (user chốt 2026-08-21), chưa có R2. |

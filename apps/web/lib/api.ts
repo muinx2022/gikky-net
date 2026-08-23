@@ -4,6 +4,7 @@ import {
   lietKeFeedDangDienRa,
   lietKeFeedMoi,
   lietKeSub,
+  timKiem,
   xemHoSo,
   xemMach,
   xemSub,
@@ -14,6 +15,7 @@ import {
   type MachChiTietOut,
   type NganKeoOut,
   type SubChiTietOut,
+  type TimKiemOut,
 } from "@gikky/api-client";
 
 import type { SortKhanDai } from "./khan-dai";
@@ -579,4 +581,38 @@ async function feedTho(
     return { du_lieu: lay(await goi(null), viec), cursorHong: true };
   }
   return { du_lieu: lay(kq, viec), cursorHong: cursor_bi_bo };
+}
+
+/** Số kết quả mỗi trang tìm kiếm. */
+export const SO_KET_QUA_MOI_TRANG = 20;
+
+/** `GET /tim-kiem` — Phase 7.
+ *
+ * **`cache: "no-store"` là bắt buộc, không phải mặc định đi theo `CHUNG`.** Kết quả phụ
+ * thuộc trạng thái ẩn của nội dung: một trang tìm kiếm được cache là một trang phục vụ
+ * lại bài mod vừa gỡ, và nó không có cửa on-demand revalidate nào để chữa.
+ *
+ * `null` khi 404 — nghĩa duy nhất ở đây là `?sub=` gõ sai. Trang tìm kiếm hiện câu giải
+ * thích chứ không `notFound()`: người dùng vẫn đang ở đúng trang họ muốn, chỉ bộ lọc là
+ * sai, nên ném cả trang đi là làm mất luôn ô nhập và câu họ vừa gõ.
+ */
+export async function docTimKiem(opts: {
+  q: string;
+  sub?: string;
+  sort?: "lien_quan" | "moi";
+  offset?: number;
+}): Promise<TimKiemOut | null> {
+  return lay(
+    await timKiem({
+      ...CHUNG,
+      query: {
+        q: opts.q,
+        sub: opts.sub ?? null,
+        sort: opts.sort ?? "lien_quan",
+        offset: opts.offset ?? 0,
+        limit: SO_KET_QUA_MOI_TRANG,
+      },
+    }),
+    `tim_kiem(${opts.q})`,
+  );
 }

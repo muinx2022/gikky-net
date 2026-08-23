@@ -1,0 +1,52 @@
+.o {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  /* Co được nhưng không biến mất: thanh trên cùng có bốn thứ tranh chỗ, và ô này phải
+     nhường trước tên người dùng chứ không đẩy ai ra khỏi màn hình. */
+  flex: 0 1 260px;
+  min-width: 0;
+}
+
+.o:focus-within {
+  border-color: var(--accent);
+}
+
+.kinh {
+  color: var(--ink-3);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.nhap {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
+.nhap::placeholder {
+  color: var(--ink-3);
+}
+
+/* Chrome/Safari vẽ một dấu ✕ riêng cho `type=search`, lệch hẳn khỏi ngôn ngữ thị giác
+   của trang (9.1). Bỏ nó đi; xoá chữ bằng Esc hoặc bằng phím xoá. */
+.nhap::-webkit-search-cancel-button {
+  appearance: none;
+}
+
+@media (max-width: 860px) {
+  /* Dưới ngưỡng này thanh trên cùng hết chỗ cho một ô nhập. Ẩn ô, KHÔNG bỏ hẳn tính năng:
+     trang `/tim-kiem` vẫn vào được và vẫn có ô nhập riêng của nó. */
+  .o {
+    display: none;
+  }
+}
