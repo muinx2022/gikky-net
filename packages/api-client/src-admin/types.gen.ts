@@ -11,9 +11,12 @@ export type ClientOptions = {
  *
  * Body của `POST /users/{username}/ban`.
  *
- * `vinh_vien` và `den_khi` **loại trừ nhau**: đúng một trong hai. `core/ghi.py::ban_user`
- * là chỗ ném lỗi nếu vi phạm, không phải pydantic — luật ấy thuộc đường ghi, và nó phải
- * đúng cả khi ai đó gọi hàm từ `manage.py shell`.
+ * `vinh_vien`, `den_khi` và `so_ngay` **loại trừ nhau**: đúng một trong ba.
+ * `core/ghi.py::ban_user` là chỗ ném lỗi cho cặp `vinh_vien`/`den_khi`, không phải
+ * pydantic — luật ấy thuộc đường ghi, và nó phải đúng cả khi ai đó gọi hàm từ
+ * `manage.py shell`. `so_ngay` thì **không** xuống tới đường ghi: nó được quy đổi thành
+ * `den_khi` ở tầng API (`api/quan_tri_nguoi_dung.py`), nên `ban_user` vẫn chỉ biết đúng
+ * hai kiểu ban và bất biến của nó không rộng ra.
  */
 export type BanIn = {
     /**
@@ -24,6 +27,10 @@ export type BanIn = {
      * Ly Do
      */
     ly_do: string;
+    /**
+     * So Ngay
+     */
+    so_ngay?: number | null;
     /**
      * Vinh Vien
      */
@@ -435,6 +442,10 @@ export type NoiDungBiBaoCaoOut = {
      */
     loai: 'mach' | 'moc' | 'comment';
     /**
+     * Mach Da Khoa
+     */
+    mach_da_khoa: boolean;
+    /**
      * Mach Id
      */
     mach_id: number | null;
@@ -447,6 +458,10 @@ export type NoiDungBiBaoCaoOut = {
      */
     seq: number | null;
     tac_gia: NguoiDungTomTatOut | null;
+    /**
+     * Tac Gia Bi Ban
+     */
+    tac_gia_bi_ban: boolean | null;
     /**
      * Trich Yeu
      */

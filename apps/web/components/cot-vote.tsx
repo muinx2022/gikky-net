@@ -5,7 +5,12 @@ import { useState } from "react";
 
 import { diemCoDau } from "@/lib/dinh-dang";
 import { GOC_TRINH_DUYET, headerGhi } from "@/lib/tai-khoan";
-import { LY_DO_CHUA_DANG_NHAP, LY_DO_KHOA, type DichVote } from "@/lib/vote";
+import {
+  LY_DO_CHUA_DANG_NHAP,
+  LY_DO_DANG_TAI,
+  LY_DO_KHOA,
+  type DichVote,
+} from "@/lib/vote";
 
 import css from "./cot-vote.module.css";
 import { useMach } from "./mach-ngu-canh";
@@ -45,7 +50,11 @@ import { useTrangThaiToi } from "./trang-thai-toi";
  *
  * Bài học `error.tsx` của 1c. Ba đường cùng lúc: `disabled` (trình duyệt chặn), `title`
  * (hover thấy), `aria-label` (trình đọc màn hình nghe được — `title` một mình thì không).
- * Và lý do phải ĐÚNG: chưa đăng nhập ≠ mạch bị khoá.
+ * Và lý do phải ĐÚNG: chưa đăng nhập ≠ mạch bị khoá ≠ **chưa biết mình là ai**.
+ *
+ * Vế thứ ba là L15, vá 2026-08-23. Câu ở đây từng chỉ kể hai ca trong khi code chỉ cài
+ * hai ca, nên nó đúng với code và **sai với người dùng**: suốt nhịp `GET /me` chưa về,
+ * người đã đăng nhập bị bảo "Đăng nhập để vote". Xem `LY_DO_DANG_TAI`.
  */
 export function CotVote({
   diem,
@@ -70,7 +79,7 @@ export function CotVote({
    * thẻ này là bia mộ) và mũi tên tắt kèm lý do. */
   dich: DichVote | null;
 }) {
-  const { toi } = usePhien();
+  const { toi, dangTai } = usePhien();
   // Mạch bị mod khoá đọc từ ngữ cảnh, không từ prop: cột vote nằm sâu dưới bốn tầng
   // server component, và một prop xâu qua bốn tầng là prop sẽ bị quên ở tầng thứ năm.
   // Ngoài trang mạch (feed, hồ sơ) ngữ cảnh mặc định cho `khoa = false` — đúng, vì thẻ ở
@@ -85,7 +94,17 @@ export function CotVote({
 
   const phieu = phieuTay ?? (dich === null ? 0 : phieuCua(dich));
   const dang_nhap = toi?.dang_nhap === true;
-  const ly_do = khoa ? LY_DO_KHOA : !dang_nhap ? LY_DO_CHUA_DANG_NHAP : null;
+  // Thứ tự ba nhánh là thứ tự của sự thật, không phải thứ tự tiện tay: mạch bị khoá thì
+  // khoá bất kể ai đang xem; còn lại, **chưa biết** ("đang hỏi `/me`") phải đứng TRƯỚC
+  // "chưa đăng nhập", vì trong nhịp ấy `dang_nhap` là `false` cho cả hai loại người và
+  // chỉ một trong hai câu là đúng (L15).
+  const ly_do = khoa
+    ? LY_DO_KHOA
+    : dangTai
+      ? LY_DO_DANG_TAI
+      : !dang_nhap
+        ? LY_DO_CHUA_DANG_NHAP
+        : null;
   const tat = ly_do !== null || dich === null || dangGui;
 
   const bam = async (huong: 1 | -1) => {

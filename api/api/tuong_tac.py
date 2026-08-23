@@ -25,6 +25,7 @@ from api.quyen import (
     doi_mach_tuong_tac_duoc,
 )
 from api.schemas import ReactionOut, VoteOut
+from api.trinh_bay import dem_reaction_rong
 from api.schemas_ghi import ReactionIn, VoteIn
 
 router = Router()
@@ -141,3 +142,24 @@ def dem_reaction(moc: Moc) -> dict[str, int]:
         .annotate(n=Count("pk"))
     )
     return {khoa: thuc.get(khoa, 0) for khoa in Reaction.Emoji.values}
+
+
+def dem_reaction_theo_mach(mach) -> dict[int, dict[str, int]]:
+    """`{moc_id: {khoá: số}}` cho CẢ mạch bằng **một** truy vấn.
+
+    Trang mạch render 9–21 thẻ mốc; gọi `dem_reaction` trong vòng lặp là 21 truy vấn thừa
+    mỗi lượt tải trang mạch — endpoint nặng nhất của sản phẩm.
+    `tests/test_api_so_query.py::SO_QUERY["xem_mach"]` ghim con số này, nên một lượt vá
+    sau vô tình biến nó thành N+1 sẽ đỏ chứ không chỉ chậm.
+
+    Chỉ trả khoá cho mốc **có ít nhất một** reaction; người gọi rơi về
+    `dem_reaction_rong()` cho phần còn lại.
+    """
+    ra: dict[int, dict[str, int]] = {}
+    for moc_id, emoji, n in (
+        Reaction.objects.filter(moc__mach=mach)
+        .values_list("moc_id", "emoji")
+        .annotate(n=Count("pk"))
+    ):
+        ra.setdefault(moc_id, dem_reaction_rong())[emoji] = n
+    return ra

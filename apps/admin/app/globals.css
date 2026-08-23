@@ -66,6 +66,10 @@ a {
   padding: 0.75rem 1rem;
 }
 
+/* `margin-right: auto` ở đây đẩy MỌI thứ sau nó (link · ô tra cứu · tên mod) sang phải,
+   và nó phải là `auto` DUY NHẤT trên hàng: hai `auto` cùng hàng thì flexbox CHIA ĐÔI
+   khoảng trống và cả hai cụm trôi ra giữa. Cái bẫy này đã gặp một lần thật ở
+   `apps/web/components/chrome.tsx` — đừng thêm `margin-left: auto` cho `.tra-cuu`. */
 .dieu-huong strong {
   margin-right: auto;
 }
@@ -159,4 +163,57 @@ textarea {
   border-radius: 3px;
   padding: 0 0.3rem;
   white-space: nowrap;
+}
+
+/* Nhãn của một KHỐI nút trong ô bảng — L04.
+ *
+ * Ô "Xử lý" nay có hai khối làm hai việc khác hẳn nhau ("thi hành" vs "ghi vào sổ"), và
+ * bốn cái nút nằm cạnh nhau không có nhãn là đúng cách người ta bấm nhầm. Nhãn nhỏ, mực
+ * nhạt: nó là chỉ dẫn, không phải tiêu đề. */
+.nhan-khoi {
+  margin: 0.5rem 0 0.25rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muc-mo);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.nhan-khoi:first-child {
+  margin-top: 0;
+}
+
+.nhan-khoi .mono {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* Ô tra cứu trên thanh điều hướng — L22. */
+.tra-cuu {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  align-items: center;
+}
+
+.tra-cuu-form {
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+.tra-cuu-nhan {
+  font-size: 0.82rem;
+  color: var(--muc-mo);
+  font-family: ui-monospace, "Cascadia Mono", "Consolas", monospace;
+}
+
+.tra-cuu-form input {
+  padding: 0.25rem 0.4rem;
+}
+
+.tra-cuu-form button {
+  padding: 0.25rem 0.55rem;
+  font-size: 0.85rem;
 }

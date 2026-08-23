@@ -323,7 +323,25 @@ export async function TrangMach({
               <p className={css.khoa}>Mạch bị khoá: đọc được, không tương tác được.</p>
             )}
 
-            <LoiMoiDoiMat matDangRender={mat} href={`${co_ban}?view=bao`} />
+            {/* **Toggle BÃO/CẶN, chiều còn lại** — L21, vá 2026-08-23.
+                `grep "view=can"` ngoài e2e từng trả về **0**: cả sản phẩm chỉ có đường
+                CẶN → BÃO. Mà PLAN 5.5 dựng cái toggle này với lý do ngược lại — *"người
+                nghiêm túc bật 'thuần' một lần rồi vĩnh viễn không thấy bình luận"* — tức
+                hướng BÃO → CẶN mới là hướng nó sinh ra để phục vụ, và nó là hướng thiếu.
+                Là một `Link` thường, không phải `LoiMoiDoiMat`: chiều kia là một LỜI MỜI
+                phụ thuộc dữ liệu per-user (đã follow chưa, đã bình luận chưa), chiều này
+                là một lối đi luôn có, không hỏi gì về người xem — nên nó cũng render được
+                ở server và nằm được trong HTML đã cache. */}
+            {la_bao ? (
+              <p className={css.doi_mat} data-testid="doi-mat-bao">
+                Đang xem <strong>mặt BÃO</strong> — khán đài là thân bài.{" "}
+                <Link href={`${co_ban}?view=can`} data-testid="doi-sang-mat-can">
+                  xem mặt CẶN (nhật ký thuần)
+                </Link>
+              </p>
+            ) : (
+              <LoiMoiDoiMat matDangRender={mat} href={`${co_ban}?view=bao`} />
+            )}
 
             <NganKeoProvider>
               {la_bao && la_mach ? (
@@ -381,11 +399,15 @@ export async function TrangMach({
 
             {/* Mặt BÃO: composer + câu mồi theo trạng thái đứng TRƯỚC cây khán đài
                 (wireframe 9.2). Mặt CẶN thì composer nằm ở cuối khán đài — hai chỗ khác
-                nhau vì hai mặt đọc theo hai chiều khác nhau. */}
+                nhau vì hai mặt đọc theo hai chiều khác nhau.
+                **Đúng MỘT trong hai được render** (L05): `KhanDai` nhận
+                `hienComposer={!la_bao}`, nên mặt BÃO không còn hai ô nhập cùng hình dạng
+                mà khác luật neo. */}
             {la_bao && (
               <div className={css.composer_bao} data-testid="composer-mat-bao">
                 <Composer
                   anchorMocSeq={moc_moi_nhat?.seq ?? null}
+                  neoDoiDuoc
                   moi={cauMoiComposer(moc_moi_nhat, mach.status === "closed")}
                 />
               </div>
@@ -400,6 +422,8 @@ export async function TrangMach({
                 duongDanKhanDai={duong_dan_khan_dai}
                 hienSoDem={hien_so_dem}
                 cauDangDoc={cau_dang_doc}
+                anchorMocSeq={moc_moi_nhat?.seq ?? null}
+                hienComposer={!la_bao}
               />
             ) : (
               <LoiMoiBungKhanDai

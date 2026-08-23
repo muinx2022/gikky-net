@@ -7,11 +7,21 @@
   border-bottom: 1px solid var(--line);
 }
 
+/* `flex-wrap: wrap` là bắt buộc, không phải phòng xa — **đo được ở 360px**.
+ *
+ * Cụm phải (Đăng bài · chuông · công tắc theme · thanh tài khoản) rộng 254px; cộng logo và
+ * hàng sub thì `.trong` tràn ra 397px trên khung nhìn 360px, tức **cả trang cuộn ngang**
+ * (tiêu chí T7 cấm đúng chuyện đó). Công tắc theme của lượt này là giọt nước cuối; cụm ấy
+ * vốn đã sát mép.
+ *
+ * Cho nó xuống dòng thay vì nén chữ: nén là chữ 10px và vùng bấm dưới 44px, tức đổi một
+ * lỗi bố cục lấy hai lỗi trợ năng. */
 .trong {
   max-width: var(--khung);
   margin: 0 auto;
   padding: 11px 22px;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 14px;
 }
@@ -37,6 +47,8 @@
 
 .dieu_huong {
   display: flex;
+  flex-wrap: wrap;
+  min-width: 0;
   gap: 13px;
   font-size: 13px;
   color: var(--ink-3);
@@ -44,6 +56,16 @@
 
 .dieu_huong a:hover {
   color: var(--accent);
+}
+
+/* **Chỗ đứng của ô tìm kiếm — Phase 7.** Một hộp rỗng có `flex: 1`, không có gì bên
+   trong. Nó tồn tại để thanh header hôm nay có ĐÚNG hình dạng của thanh header ngày mai:
+   logo trái · khoảng giữa co giãn · cụm thao tác phải. Gắn ô search thật vào chỉ là điền
+   vào hộp này, không phải bố trí lại. Không render một ô nhập chết ở đây — xem
+   `plans/2026-08-23-giao-dien-reddit-va-theme.md` §0. */
+.cho_tim_kiem {
+  flex: 1;
+  min-width: 0;
 }
 
 /* Góc phải: nút "Đăng bài" + thanh tài khoản. Xem chú thích trong `chrome.tsx` để biết vì
@@ -58,5 +80,17 @@
 @media (max-width: 640px) {
   .trong {
     padding: 10px 15px;
+    gap: 10px;
+  }
+
+  /* Chỗ đứng của ô tìm kiếm biến mất trên điện thoại: nó là một hộp RỖNG, và một hộp rỗng
+     `flex: 1` ở đây đẩy cụm phải xuống dòng thứ ba. Khi Phase 7 gắn ô thật vào, chỗ này
+     phải đổi thành một hàng riêng dưới logo — đó là lối mọi app mobile dùng. */
+  .cho_tim_kiem {
+    display: none;
+  }
+
+  .phai {
+    gap: 8px;
   }
 }

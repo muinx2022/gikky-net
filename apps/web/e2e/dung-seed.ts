@@ -56,15 +56,37 @@ async function globalSetup() {
  * (`seed_dev.py`, `seed_e2e.py`). Hai miền tách hẳn nhau, nên không có ca biên nào để cân
  * nhắc — và nếu ai đó đổi miền email của bộ e2e, hậu quả là dọn HỤT (rác ở lại, bài đo đỏ
  * dần như cũ), không phải dọn NHẦM.
+ *
+ * ### Đi qua `core/ghi.py::dat_an_mach`, KHÔNG ghi thẳng `hidden_at` — L32
+ *
+ * Bản trước chạy `rac.update(hidden_at=timezone.now())`, tức đi vòng qua đường ghi. Luật
+ * *"không một dòng nào ghi thẳng `hidden_at`"* được viết ở `core/ghi.py:70` và
+ * `api/quan_tri_kiem_duyet.py:3`, và bản `update()` ấy là dòng duy nhất trong repo phá nó.
+ *
+ * Vô hại về SỐ hôm nay (đã đối soát: ẩn mạch cố ý không đụng cột đếm nào). Không vô hại về
+ * cấu trúc: `dat_an_mach` còn gọi `dong_bo_kho_anh` cho mọi mốc — tức chuyển ảnh sang kho
+ * không server nào phục vụ (A9). Bản `update()` bỏ qua bước đó, nên **ảnh của mạch rác vẫn
+ * phục vụ được qua `/media/`** dù mạch đã biến khỏi mọi cửa đọc. Đó không phải giả thuyết
+ * về tương lai; nó đã đúng từ lúc Phase 5 gộp vào.
+ *
+ * `boi` là tài khoản staff của seed — `AuditLog` đòi một actor, và một dòng audit nói
+ * "seed e2e dọn rác" là thứ đọc được khi ai đó thấy một mạch bị ẩn mà không nhớ vì sao.
  */
 function donRacLanTruoc(goc: string): void {
   const lenh = [
-    "from django.utils import timezone",
+    "from core.ghi import dat_an_mach",
     "from core.models.dien_dan import Mach",
-    "rac = Mach.objects.filter(",
+    "from core.models.nguoi_dung import User",
+    "boi = User.objects.filter(is_staff=True).order_by('pk').first()",
+    "if boi is None:",
+    "    raise SystemExit('Khong co tai khoan staff nao — chay `seed_dev` truoc.')",
+    "rac = list(Mach.objects.filter(",
     "    author__email__endswith='@gikky.test', hidden_at__isnull=True",
-    ")",
-    "n = rac.update(hidden_at=timezone.now())",
+    "))",
+    "n = 0",
+    "for m in rac:",
+    "    if dat_an_mach(mach=m, boi=boi, an=True, ly_do='dọn rác e2e'):",
+    "        n += 1",
     "print(f'Đã ẩn {n} mạch rác của các lần chạy e2e trước.')",
   ].join("\n");
   execFileSync(

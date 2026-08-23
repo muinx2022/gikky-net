@@ -1,0 +1,73 @@
+/* Nhãn "đã sửa N lần" — vẫn là **con dấu** (`--stamp`, hoàng thổ), y như khi nó còn là
+   một `<span>` trơ ở `the-moc.module.css#.da_sua`. PLAN 9.1 giao hoàng thổ cho *"đã
+   sửa"*, và nó không thôi là con dấu chỉ vì nay bấm được.
+
+   Allowlist của hàng rào màu (`e2e/don-vi/mau-token.spec.ts`) đã được mở thêm đúng một
+   dòng cho selector này, dưới CÙNG mục PLAN `"đã sửa"` — không phải một vai mới. */
+.nhan {
+  color: var(--stamp);
+  font: inherit;
+  font-size: inherit;
+  padding: 0;
+  cursor: pointer;
+  border-bottom: 1px dotted currentColor;
+}
+
+.nhan:hover {
+  border-bottom-style: solid;
+}
+
+.khoi {
+  margin: 8px 0 0;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--inset);
+  padding: 9px 12px;
+}
+
+.trang_thai {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.danh_sach {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.mot_ban + .mot_ban {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.khi {
+  margin: 0 0 4px;
+  font-family: var(--f-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+
+/* `pre` giữ nguyên xuống dòng của bản gốc, nhưng phải **xuống dòng mềm** — một bản cũ
+   dài không được làm cả trang cuộn ngang (tiêu chí T7). */
+.than {
+  margin: 0;
+  font-family: var(--f-ui);
+  font-size: 13.5px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+}
+
+.figures {
+  margin: 5px 0 0;
+  font-family: var(--f-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  color: var(--ink-2);
+}

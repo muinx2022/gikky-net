@@ -9,21 +9,48 @@
 
 ## Cách đọc nhanh
 
-**Cập nhật sau LƯỢT VÁ V1 (backend + bảo mật), 2026-08-23.** 22 mục đóng, 15 còn mở.
+**Cập nhật sau LƯỢT VÁ V2 (giao diện), 2026-08-23.** 37 mục đóng, 4 còn mở.
 Mục đã đóng vẫn nằm nguyên chỗ cũ kèm bằng chứng gốc gập lại — lịch sử lỗi là thứ dạy được
 nhiều nhất ở repo này.
 
-| | Tổng | Còn MỞ sau V1 |
+| | Tổng | Còn MỞ sau V2 |
 |---|---|---|
-| CHẶN | 5 (L01–L05) | **2** — L04, L05 (cả hai thuộc lượt V2) |
-| NẶNG | 2 (L06–L07) | 0 |
-| VỪA | 12 (L08–L19) | **3** — L15, L16, L19 (V2) |
-| NHỎ | 18 (L20–L37) | **10** — L20, L21, L22, L25, L30, L32, L33, L35, L36, L37 (V2) |
-| Nợ có tên | 8 mang từ Phase 1 + **3 mới ở V1** | — |
-| "Chưa bao giờ chạy thật" | 5 | 5 |
+| CHẶN | 5 (L01–L05) | 0 (L01 đóng nhưng **chưa kiểm chạy** — xem cảnh báo dưới) |
+| NẶNG | 3 (L06–L07, L41) | 0 |
+| VỪA | 13 (L08–L19, L42) | **1** — L38 (thuộc nhóm B2, ngoài phạm vi V2) |
+| NHỎ | 18 (L20–L37) | 0 |
+| Mới ở V2 | L43 | **1** — L43 (tương phản hoàng thổ, đụng PLAN 9.1) |
+| Nợ có tên | 8 mang từ Phase 1 + 3 ở V1 | **4 đã trả ở V2** |
+| "Chưa bao giờ chạy thật" | 5 | 4 (Phase 5 đã chạy) |
+
+Hai mục còn mở khác là **L39** và **L40** (rủi ro triển khai / hiệu năng quy mô, nhóm B2).
 
 ⚠ **L01 đóng nhưng CHƯA KIỂM CHẠY** — không có Caddy trên máy. Đọc mục ấy trước khi coi
 hàng rào host admin là đã xong.
+
+### Lượt vá V2 (giao diện) đóng những mục nào
+
+**Bốn mục CHẶN/NẶNG:** L04 (nút Khoá/Ban THẬT trên hàng + nhãn `Ghi:` thôi nói dối) ·
+L05 (composer khán đài neo thật, chip đổi/gỡ được, mặt BÃO còn một ô nhập) ·
+L41 (bước dọn `.next/cache/fetch-cache` nối vào `pnpm build` của cả hai app) ·
+L15 (`CotVote` xử nhịp `dangTai`).
+
+**Sổ lỗi:** L16 · L19 · L20 · L21 · L22 · L25 · L30 · L32 · L33 · L35 · L37.
+
+**Nợ có tên đã trả:** `REACTION-CHUA-CO-UI` · `FORM-FIGURES` · `UI-DIFF-REVISION` ·
+`TRANG-CAI-DAT`.
+
+**Mở mới:** **L43** — hoàng thổ `--stamp` bản SÁNG chưa đạt WCAG AA cho chữ nhỏ
+(3.71:1 / 3.31:1). Sửa nó đòi đổi `PLAN.md` 9.1, thứ lượt này bị cấm chạm vào.
+
+Số đo của lượt: **921 pytest** (nền 906) · **442 e2e** = 283 don-vi (nền 242) + 159 web
+(nền 138) · 0 warning · `codegen:check` khớp 34 file · lint/build/tsc sạch ·
+**Lighthouse SEO 100/100 và Accessibility 100/100** (mốc Accessibility mới của lượt này).
+Chi tiết thử phá nằm trong từng mục.
+
+⚠ Điểm Lighthouse Accessibility 100 **không** có nghĩa bảng màu đạt AA khắp nơi: audit ấy
+chỉ soi những cặp màu CÓ MẶT trên đúng trang được đo. Phép đo bằng số trên cả bảng token
+(`e2e/don-vi/tuong-phan.spec.ts`) tìm ra **L43** — xem mục ấy.
 
 ### Lượt vá V1 đóng những mục nào
 
@@ -72,28 +99,72 @@ lượt nào ghi đây là nợ.**
 </details>
 
 ### L04 · CHẶN · Nút "Đóng: Đã ban / Đã khoá / Đã ẩn" khẳng định một hành động KHÔNG xảy ra
-**MỞ.** `apps/admin/app/page.tsx:222` + `components/dung-mo-ta.ts:23`.
+**ĐÓNG (lượt vá V2 — giao diện, 2026-08-23).** Cột "Xử lý" nay chia làm **hai khối có nhãn**:
+
+- **Thi hành** — Ẩn/Gỡ ẩn · Khoá mạch/Mở khoá (`quanTriDatKhoaMach`) · Ban tác giả/Gỡ ban
+  (`FormBan` / `quanTriGoBanNguoiDung`). Ba lời gọi thật, ngay trên hàng.
+- **Ghi nhận & đóng** — bốn nút cũ, nhãn đổi từ `Đóng: Đã ban` sang **`Ghi: đã ban`**
+  (`CHU_GHI_NHAN`), kèm `title` nói thẳng *"chỉ ghi vào sổ, không thi hành gì"*.
+
+Nút bật/tắt đọc **trạng thái thật** từ hai trường mới của `NoiDungBiBaoCaoOut`:
+`mach_da_khoa` và `tac_gia_bi_ban` (không truy vấn thêm — `dang_bi_ban()` là ba cột đã nạp).
+Một nút bật/tắt không biết chiều là nút mà nửa số lần bấm trả `da_doi=false` và màn hình
+không đổi. `FormBan` là **một bản duy nhất**, dùng chung với trang hồ sơ.
+
+Đo hai nửa, và phải cộng cả hai mới thành L04:
+`api/tests/test_va_v2_quan_tri.py` (9 bài — ban **chặn thật** cửa ghi 403 · hàng đợi phản
+ánh đúng hai trạng thái · `hanh_dong` **vẫn** không thi hành gì) và
+`apps/web/e2e/don-vi/hang-doi-quan-tri.spec.ts` (8 bài — hàng gọi đúng endpoint, nhãn thôi
+nói dối, form ban không có bản thứ hai).
+⚠ **Chưa bấm tận tay trong trình duyệt**: `pnpm e2e` chỉ dựng `apps/web` (3000) + Django
+(8000); khu quản trị ở 3001 không nằm trong `webServer`. Ghi ra để không ai tưởng đây là
+chỗ đã đo bằng chuột.
+
+<details><summary>bằng chứng gốc</summary>
+`apps/admin/app/page.tsx:222` + `components/dung-mo-ta.ts:23`.
 Backend nói rõ `action` **chỉ ghi lại** mod đã làm gì, không thi hành (`quan_tri_bao_cao.py:118`,
 `ghi.py:1283`). Mod bấm "Đóng: Đã ban" trên báo cáo lừa đảo ⇒ 200, hàng sang "Đã xử lý", audit log
 đầy đủ, **kẻ kia không bị ban một giây nào**.
 Nặng gấp đôi: trên hàng **không có nút khoá hay ban thật** (chỉ Ẩn/Gỡ ẩn), trong khi docstring cùng
 file trích PLAN 9.3 *"nút ẩn/khoá/ban ngay trên hàng"* rồi viết *"'Ngay trên hàng' là cả yêu cầu"*.
 Cài 1/3 ⇒ bốn nút `Đóng:` là thứ duy nhất trông giống hành động.
-→ Thêm nút **Khoá** và **Ban** thật (endpoint đã có) + đổi nhãn `Đóng:` sang thì hiện tại, nói rõ
-nó chỉ ghi nhận.
+</details>
 
 ### L22 · NHỎ · PLAN 9.3 mục 2 "tra cứu mạch/user" không có
-**MỞ.** `apps/admin/components/cong-quan-tri.tsx:52` chỉ có 3 link. `/m/[machId]` và `/u/[username]`
+**ĐÓNG (lượt vá V2 — giao diện, 2026-08-23).** `apps/admin/components/o-tra-cuu.tsx`, gắn trên **thanh điều
+hướng** (lối vào nằm sau một cú bấm là lối vào mod sẽ thay bằng gõ URL tay). Hai ô riêng —
+`Mạch #` và `u/` — chứ không một ô đoán: `username` toàn chữ số là hợp lệ, nên "chuỗi số ⇒
+mạch" sai ngay ở ca đầu tiên. Không gọi API nào, chỉ `router.push`; trang đích tự xử 404.
+
+<details><summary>bằng chứng gốc</summary>
+`apps/admin/components/cong-quan-tri.tsx:52` chỉ có 3 link. `/m/[machId]` và `/u/[username]`
 chỉ tới được từ một hàng báo cáo — và từ lượt vá V1 thì hàng đợi **đã có hàng thật** (L03 đóng), nên
 mục này nhẹ đi một bậc về hậu quả: vẫn thiếu ô tra cứu, nhưng không còn ca "không có đường nào tới
-nút ban/khoá thật".
+nút ban/khoá thật".</details>
 
 ### L30 · NHỎ · Nút "Xoá" thiếu `aria-label`
-**MỞ.** `apps/admin/app/subs/page.tsx:201` có `disabled` + `title`, thiếu đường thứ ba. Luật ba
-đường được tuân thủ đầy đủ ở `apps/web/components/cot-vote.tsx:176`.
+**ĐÓNG (lượt vá V2 — giao diện, 2026-08-23).** Đường thứ ba đã có, và nó **nêu lý do** chứ không chỉ nêu
+tên hành động: `Xoá s/<slug> — không xoá được: sub còn N mạch`. `title` một mình thì phần
+lớn trình đọc màn hình bỏ qua, nên nút chỉ đọc thành "Xoá, không dùng được" — đúng, và
+không nói được vì sao.
+
+<details><summary>bằng chứng gốc</summary>
+`apps/admin/app/subs/page.tsx:201` có `disabled` + `title`, thiếu đường thứ ba. Luật ba
+đường được tuân thủ đầy đủ ở `apps/web/components/cot-vote.tsx:176`.</details>
 
 ### L33 · NHỎ · `den_khi` tính ở client
-**MỞ.** `apps/admin/app/u/[username]/page.tsx:73` — `now + N ngày`. Nguyên tắc 10 ở mức nhẹ.
+**ĐÓNG (lượt vá V2 — giao diện, 2026-08-23).** `BanIn` mọc trường **`so_ngay`**, và `api/quan_tri_nguoi_dung.py`
+quy đổi nó bằng đồng hồ **máy chủ**. `core/ghi.py::ban_user` không đổi một dòng — nó vẫn
+chỉ biết `vinh_vien`/`den_khi`, nên bất biến của đường ghi không rộng ra.
+
+Phép kiểm "đúng một trong ba" phải đếm cả ba: để `ban_user` xử cặp cũ là
+`{so_ngay: 7, vinh_vien: true}` đi lọt — `so_ngay` bị bỏ qua **im lặng** và mod tin mình
+vừa ban 7 ngày trong khi kẻ kia bị ban vĩnh viễn.
+Đo: `test_va_v2_quan_tri.py` (hạn rơi đúng cửa sổ ±1 phút quanh `now + 7 ngày` · 4 hình
+dạng sai ⇒ 400 và **không ban ai** · hai cách khai cũ vẫn chạy).
+
+<details><summary>bằng chứng gốc</summary>
+`apps/admin/app/u/[username]/page.tsx:73` — `now + N ngày`. Nguyên tắc 10 ở mức nhẹ.</details>
 
 ---
 
@@ -159,9 +230,15 @@ Django"* — Django không làm; Caddyfile thì chưa bao giờ chạy. ⇒ hôm
 nhiêu mạch tuỳ thích; một IP đăng ký 20 tài khoản mỗi phút** (mặc định allauth).</details>
 
 ### L16 · VỪA · OG card của sub rỗng in "0 mạch"
-**MỞ.** `apps/web/lib/og.ts:169` vô điều kiện, trong khi `lib/dinh-dang.ts:101` có sẵn
+**ĐÓNG (lượt vá V2 — giao diện, 2026-08-23).** `ogSub` bỏ hẳn mảnh ấy khi `so_mach === 0` (`ghepDongPhu` đã
+lọc mảnh rỗng nên không để lại dấu `·` cụt). Chỗ này đắt hơn các chỗ khác cùng loại vì thẻ
+OG **được cache ở phía Facebook**: một sub vừa mở được chia đi kèm dòng "0 mạch" thì cái ấn
+tượng đầu tiên ở lại rất lâu.
+
+<details><summary>bằng chứng gốc</summary>
+`apps/web/lib/og.ts:169` vô điều kiện, trong khi `lib/dinh-dang.ts:101` có sẵn
 `dongSoMachSub` để tránh đúng chuyện đó (dùng ở trang sub và sidebar). Nguyên tắc 9 không có ngoại
-lệ cho `so_mach` — ngoại lệ duy nhất đã chốt là điểm vote.
+lệ cho `so_mach` — ngoại lệ duy nhất đã chốt là điểm vote.</details>
 
 ---
 
@@ -265,9 +342,19 @@ Kèm: PLAN 5.8 và tiêu chí Phase 3 đòi **email mốc mới** cho follower;
 `grep "send_mail\|EmailMultiAlternatives"` chỉ khớp `gui_digest.py`. Không ai khai.</details>
 
 ### L21 · NHỎ · `TOGGLE-MAT-MOT-CHIEU` — hướng thiếu là hướng CHÍNH
-**MỞ.** `grep "view=can"` (trừ e2e) = **0**; chỉ có `?view=bao`. PLAN 5.5 dựng toggle này với lý do
+**ĐÓNG (lượt vá V2 — giao diện, 2026-08-23).** Mặt BÃO nay có một dòng *"Đang xem **mặt BÃO** — khán đài là
+thân bài. [xem mặt CẶN (nhật ký thuần)]"* trỏ `?view=can`
+(`trang-mach.tsx`, `data-testid="doi-mat-bao"`).
+
+Là một `Link` thường chứ không phải `LoiMoiDoiMat`: chiều CẶN→BÃO là một **lời mời** phụ
+thuộc dữ liệu per-user (đã follow chưa, đã bình luận chưa) nên nó phải do client vẽ; chiều
+này là một lối đi luôn có, không hỏi gì về người xem — nên nó render ở server và nằm được
+trong HTML đã cache.
+
+<details><summary>bằng chứng gốc</summary>
+`grep "view=can"` (trừ e2e) = **0**; chỉ có `?view=bao`. PLAN 5.5 dựng toggle này với lý do
 *"người nghiêm túc bật 'thuần' một lần rồi vĩnh viễn không thấy bình luận"* — tức hướng **BÃO →
-CẶN**, đúng hướng đang thiếu. Nợ đã khai một dòng nhưng khai nhẹ hơn thực tế.
+CẶN**, đúng hướng đang thiếu. Nợ đã khai một dòng nhưng khai nhẹ hơn thực tế.</details>
 
 ### L23 · NHỎ · Cửa `/lam-moi-cache` không có bài đo cho nhánh TỪ CHỐI
 **ĐÓNG (lượt vá V1, 2026-08-23).** `e2e/don-vi/cua-lam-moi-cache.spec.ts` (7 bài): secret rỗng ⇒ 503 · secret sai ⇒
@@ -311,7 +398,27 @@ vô hại; hai câu mâu thuẫn nhau và câu đầu là câu người sau sẽ
 ## Phase 2 — tài khoản + đường ghi
 
 ### L05 · CHẶN · Neo bình luận: mặc định sai, không gỡ được, hai composer khác luật cùng một trang
-**MỞ.** `khan-dai.tsx:166` và `:233` gọi `<Composer />` **không prop** ⇒ `anchor_moc_seq: null`.
+**ĐÓNG (lượt vá V2 — giao diện, 2026-08-23).** Ba vế, ba bản vá:
+
+1. **Khán đài neo thật** — `KhanDai` nhận `anchorMocSeq` (mốc mới nhất) và truyền xuống cả
+   hai nhánh (khán đài rỗng lẫn khán đài có hàng).
+2. **Chip đổi/gỡ được** — `NeoDoiDuoc`: một `<select>` liệt kê mọi mốc (kể cả mục "cả mạch
+   (không neo)") + nút `×`. `<select>` chứ không menu tự vẽ: đúng ngữ nghĩa, nghe được
+   bằng trình đọc màn hình mà không cần một dòng `aria-*`, và trên mobile nó mở bằng bánh
+   xe gốc của hệ điều hành. Đây là cơ chế mà `PLAN.md` mục 4 viện dẫn — nay nó có thật.
+3. **Mặt BÃO còn ĐÚNG một ô nhập** — `hienComposer={!la_bao}`. Cờ chứ không suy từ
+   `anchorMocSeq === null`: "không neo" là một lựa chọn hợp lệ của người dùng, nó không
+   được kiêm nghĩa "đừng vẽ ô nhập".
+
+Composer trong **ngăn kéo** giữ nguyên `neoDoiDuoc = false`: ngăn kéo LÀ mốc, một chip gỡ
+được ở đó nghĩa là câu vừa viết trong ngăn kéo mốc N rơi ra khỏi mốc N.
+Hai câu nói quá đã sửa: `composer.tsx:19` và `the-moc.tsx:181`.
+Đo **trong trình duyệt thật**: `e2e/va-v2.spec.ts` — đăng mạch → nối mốc 2 → viết ở ô cuối
+khán đài → **Django** xác nhận câu ấy nằm trong ngăn kéo mốc 2 và **không** ở mốc 1; bấm
+`×` → câu về cả mạch, `so_binh_luan` của mọi mốc vẫn 0; mặt BÃO đếm được đúng 1 composer.
+
+<details><summary>bằng chứng gốc</summary>
+`khan-dai.tsx:166` và `:233` gọi `<Composer />` **không prop** ⇒ `anchor_moc_seq: null`.
 Chip neo là `<span>` trơ, không `onClick`. Trang BÃO có **hai ô nhập trông y hệt nhau, hai luật
 neo khác nhau** (`trang-mach.tsx:388` neo mốc mới nhất; ô cuối khán đài neo `null`).
 Hệ quả: người đọc mặt CẶN gõ vào ô cuối trang ⇒ bình luận **không vào ngăn kéo nào**; mọi ngăn kéo
@@ -320,8 +427,7 @@ Chua nhất: `PLAN.md` mục 4 dùng đúng cơ chế *"gỡ chip → `anchor = 
 xuất khác — cơ chế mà lý lẽ ấy dựa vào thì chưa tồn tại.
 Kèm hai câu nói quá: `composer.tsx:19` (*"chip đổi/gỡ được"*) và `the-moc.tsx:181` (*"đó là toàn bộ
 khác biệt với composer khán đài"*).
-→ Truyền `anchorMocSeq` (mốc mới nhất) cho composer khán đài · chip có `×` đặt `null` và cách đổi
-mốc · bỏ composer trùng ở mặt BÃO.
+</details>
 
 ### L08 · VỪA · `Comment.DoesNotExist` → HTTP 500 ở ba đường
 **ĐÓNG (lượt vá V1, 2026-08-23).** Một `exception_handler(Comment.DoesNotExist)` cho `api_v1`
@@ -385,10 +491,24 @@ trong một ngày).
 `Mach`. Double-click ⇒ cả hai đọc `2 < 3` ⇒ **4 mốc trong một ngày**, 201 cả hai lần, không log.</details>
 
 ### L15 · VỪA · `CotVote` không xử nhịp `dangTai` ⇒ người ĐÃ đăng nhập nhận lý do SAI
-**MỞ.** `cot-vote.tsx:87`. `usePhien()` trả `{toi: null, dangTai: true}` tới khi `/me` về; trong
+**ĐÓNG (lượt vá V2 — giao diện, 2026-08-23).** Hằng thứ ba `LY_DO_DANG_TAI = "Đang tải phiên…"`, và thứ tự ba
+nhánh là thứ tự của sự thật: khoá → **chưa biết** → chưa đăng nhập. Nhánh "chưa biết" phải
+đứng TRƯỚC "chưa đăng nhập" vì trong nhịp ấy `dang_nhap` là `false` cho **cả hai** loại
+người và chỉ một trong hai câu là đúng.
+
+`CotVote` không dùng được cửa thoát của mọi component khác (`if (dangTai) return null`):
+con số điểm là **nội dung** của trang, không phải một tiện ích ẩn được. Cùng bộ hằng nay
+áp cho `HangReaction` — loạt nút mới của lượt này.
+Đo: `e2e/va-v2.spec.ts` giữ `/api/v1/me` lại rồi đọc `title`/`aria-label` của mũi tên, và
+**nhả ra** để xác nhận câu đổi sang lý do đúng của khách — không có vế thứ hai thì một
+`LY_DO_DANG_TAI` gán vĩnh viễn cũng làm vế thứ nhất xanh.
+Câu nói quá ở `cot-vote.tsx:48` đã viết lại (L20).
+
+<details><summary>bằng chứng gốc</summary>
+`cot-vote.tsx:87`. `usePhien()` trả `{toi: null, dangTai: true}` tới khi `/me` về; trong
 khoảng đó mũi tên `disabled` + `title="Đăng nhập để vote"`. `Composer`, `NutTheoMach`,
 `KhoiChuMach`, `HanhDongBinhLuan` đều xử `dangTai`; chỉ `CotVote` không — và chính file đó viết
-*"lý do phải ĐÚNG: chưa đăng nhập ≠ mạch bị khoá"*.
+*"lý do phải ĐÚNG: chưa đăng nhập ≠ mạch bị khoá"*.</details>
 
 ### L17 · VỪA · `viet_binh_luan` không gọi `doi_con_song(parent)`
 **ĐÓNG (lượt vá V1, 2026-08-23).** Cửa ghi cuối cùng còn thiếu phép kiểm ấy; nay 409 `noi_dung_da_go`.
@@ -441,22 +561,67 @@ Docstring `core/models/tuong_tac.py` sửa lại câu "đã dọn `Vote` tay" ch
 mà **người khác** đã vote. Đo thật: **14 hàng mồ côi**. Rác, không sai số.</details>
 
 ### L37 · NHỎ · `coBaseUrl` nới đúng một chiều sau khi viết lại
-**MỞ.** Bản quét-ngoặc-cân-bằng cho lọt `const C = { fetch: (u) => fetch(u, { baseUrl: 0 }) }` +
+**ĐÓNG (lượt vá V2 — giao diện, 2026-08-23).** `coBaseUrl` nay hỏi
+`coKhoaTangDau(khai, "baseUrl")` thay vì `/\bbaseUrl\b/`: khoá phải nằm ở **tầng đầu** của
+thân hằng, độ sâu đếm qua cả ba loại ngoặc `{}` `[]` `()`. Một `baseUrl` nằm trong một hàm,
+một mảng hay một object con thì không phải khoá của object ấy, và spread nó vào một lời gọi
+API không đặt `baseUrl` cho lời gọi nào.
+
+Hai bài đo đi CẶP, và cái cặp ấy là điểm chính: ca giả bị chặn **và** `CHUNG_ISR` thật vẫn
+qua — bịt L37 bằng cách siết chết là chặn cứng cơ chế ISR của PLAN 8.4.
+Phép quét nay sống ở `e2e/don-vi/quet-ngoac.ts`, dùng chung với bản admin (xem L25).
+**Thử phá:** đổi ngược về `/\bbaseUrl\b/.test(khai)` ⇒ **1 bài đỏ** — `L37 — baseUrl nằm
+SÂU trong thân hằng KHÔNG được tính`, `Expected: false / Received: true`.
+
+⚠ Vẫn là phân tích chuỗi, không phải parser: nó không hiểu chuỗi ký tự, template literal
+hay comment có chứa dấu ngoặc. Bản đúng nghĩa là dùng type checker của TypeScript (cùng lối
+`scripts/rao-can-client.mjs`) — một mục việc riêng, ghi ở docstring `quet-ngoac.ts`.
+
+<details><summary>bằng chứng gốc</summary>
+Bản quét-ngoặc-cân-bằng cho lọt `const C = { fetch: (u) => fetch(u, { baseUrl: 0 }) }` +
 `xemMach({ ...C })` — bản một-tầng-ngoặc cũ **không** cho lọt. Nên câu *"Luật KHÔNG bị nới"* ở
-`type-frontend.spec.ts:291` không hoàn toàn đúng. Không đạt tới được từ code hiện tại.
+`type-frontend.spec.ts:291` không hoàn toàn đúng. Không đạt tới được từ code hiện tại.</details>
 
 ---
 
 ## Xuyên suốt
 
 ### L19 · VỪA · `README.md` sai ở 6 dòng liên tiếp
-**MỞ.** Vẫn viết *"Phase 1 đã xong — trang CHỈ ĐỌC"*, *"Chưa có: Đăng nhập / Mọi thao tác ghi / Mặt
+**ĐÓNG (lượt vá V2 — giao diện, 2026-08-23).** Bảng "Trạng thái" viết lại từ đầu: cột "Đã chạy" nay liệt kê
+tài khoản · đường ghi (kể cả reaction) · hai mặt BÃO/CẶN · follow/chuông · khu quản trị ·
+ảnh local · công tắc theme; cột "Chưa có" giữ đúng những thứ **thật sự** chưa có (Google
+OAuth, tìm kiếm, email mốc mới cho follower, SMTP thật, Caddy, sao lưu ngoài máy). Ba câu
+sai khác cũng sửa: *"apps/admin — khung, Phase 4 mới làm"*, *"khu quản trị… Phase 4"*, và
+dòng lệnh Lighthouse nay ghi cả Accessibility. Thêm một link tới chính `LOI-VA-NO.md` —
+người clone repo nên biết sổ này có.
+
+<details><summary>bằng chứng gốc</summary>
+Vẫn viết *"Phase 1 đã xong — trang CHỈ ĐỌC"*, *"Chưa có: Đăng nhập / Mọi thao tác ghi / Mặt
 BÃO, follow, notification / Khu quản trị"*, *"mũi tên vote bị khoá"*, *"`apps/admin` — khung, Phase
 4 mới làm"*. Commit `f0a72d9` **có** sửa README (một câu về `/api/admin/`) rồi để nguyên bảng này.
-Người ngoài clone repo đọc README sẽ kết luận sai về gần như mọi năng lực.
+Người ngoài clone repo đọc README sẽ kết luận sai về gần như mọi năng lực.</details>
 
 ### L20 · NHỎ · Mười ba câu "chữ nói quá thứ code làm"
-**MỞ — nhưng đã bớt.** Lượt vá V1 đóng phần thuộc L03/L13/L18 (câu đã khớp code), cùng
+**ĐÓNG (lượt vá V2 — giao diện, 2026-08-23).** Mọi câu **còn sửa được** đã sửa. Theo dấu từng câu:
+
+| Câu | Xử ở đâu |
+|---|---|
+| `apps/admin` — nhãn `Đóng: Đã ban` | L04 — nhãn đổi, và hành động thành có thật |
+| `composer.tsx:19` *"chip đổi/gỡ được"* | L05 — cơ chế đã có thật |
+| `the-moc.tsx:181` *"đó là toàn bộ khác biệt"* | L05 — nay là **hai** khác biệt, viết đúng |
+| `README.md` bảng trạng thái | L19 — viết lại |
+| `app/luat/page.tsx:47` *"thuộc giai đoạn sau"* | L35 — thay bằng mục **Chế tài** |
+| `cot-vote.tsx:48` *"lý do phải ĐÚNG"* | L15 — nay kể đủ **ba** ca |
+| `revalidate.py:14` · `deploy/Caddyfile:36` | đã xử ở V1 |
+| `type-frontend.spec.ts:291` *"Luật KHÔNG bị nới"* | L37 — nay câu ấy đúng |
+| commit `64b1a94` · commit `ab77957` | **không sửa được** — thông điệp commit đã đẩy |
+
+Hai dòng cuối là lý do mục này không đóng sạch theo nghĩa tuyệt đối: một câu sai nằm trong
+lịch sử git chỉ sửa được bằng cách viết lại lịch sử, và cái giá ấy cao hơn cái hại. Chúng
+ở lại đây làm vết.
+
+<details><summary>bằng chứng gốc</summary>
+Lượt vá V1 đóng phần thuộc L03/L13/L18 (câu đã khớp code), cùng
 `revalidate.py:14` (L29) và `deploy/Caddyfile:36` (nay ĐÚNG: Django thật sự làm hạn mức
 theo user và theo ngày lịch VN — xem L12). Còn lại là việc của V2.
 Danh sách đầy đủ ở báo cáo phản biện trục sản phẩm. Gồm L04/L05/L19 ở trên,
@@ -464,11 +629,21 @@ cộng: `deploy/Caddyfile:36` (*"hạn mức là việc của Django"*) · `reva
 commit `64b1a94` (*"cắm nguồn người nhận cho digest"* — cắm vào cờ không ai bật được) ·
 `app/luat/page.tsx:47` (*"quy trình xử lý của quản trị viên thuộc giai đoạn sau"* — đã có) ·
 commit `ab77957` (*"365 e2e"* — không tái lập được từ clone sạch, xem L07) ·
-`cot-vote.tsx:48` (*"lý do phải ĐÚNG"* — xem L15).
+`cot-vote.tsx:48` (*"lý do phải ĐÚNG"* — xem L15).</details>
 
 ### L25 · NHỎ · Hai bản của cùng một luật đã lệch nhau
-**MỞ.** `type-admin.spec.ts:99` vẫn `\{([^{}]*)\}` một tầng ngoặc, bản web đã chuyển sang quét cân
-bằng. Lệch theo chiều an toàn (admin báo vi phạm giả nếu ai thêm hằng lồng) nhưng là bẫy chờ sẵn.
+**ĐÓNG (lượt vá V2 — giao diện, 2026-08-23).** Không còn hai bản: `thanHang` / `coBaseUrl` dời sang
+**`e2e/don-vi/quet-ngoac.ts`**, và cả `type-frontend.spec.ts` lẫn `type-admin.spec.ts`
+`import` từ đó. File chung **không phải `.spec.ts`** — Playwright không thu nó, nên hai
+spec dùng chung được mà không đăng ký bài đo hai lần.
+
+`quet-ngoac.spec.ts` ghim luôn vế "cả hai THẬT SỰ dùng nó": đọc nguồn hai spec, đòi có dòng
+`import`, và đòi **không** file nào tự khai lại `coBaseUrl`/`thanHang` — chính hình dạng
+của L25. Bản chung cũng bịt L37 cùng lúc.
+
+<details><summary>bằng chứng gốc</summary>
+`type-admin.spec.ts:99` vẫn `\{([^{}]*)\}` một tầng ngoặc, bản web đã chuyển sang quét cân
+bằng. Lệch theo chiều an toàn (admin báo vi phạm giả nếu ai thêm hằng lồng) nhưng là bẫy chờ sẵn.</details>
 
 ### L28 · NHỎ · `settings.py:243` nói thư ra `api/sent_emails/`
 **ĐÓNG (lượt vá V1, 2026-08-23) — nhưng đây là ĐỌC HỤT, không phải câu sai.** Dòng ấy đang mô tả một khối cấu hình
@@ -487,15 +662,34 @@ Còn cảnh báo *"chiều này CHƯA có tác dụng thật… `page.tsx` vẫn
 này sẽ kết luận sai rằng cả cơ chế là no-op.</details>
 
 ### L32 · NHỎ · `e2e/dung-seed.ts` ghi thẳng `hidden_at`, đi vòng qua `core/ghi.py`
-**MỞ.** Luật "không một dòng nào ghi thẳng `hidden_at`" được viết ở `ghi.py:70` và
+**ĐÓNG (lượt vá V2 — giao diện, 2026-08-23).** `donRacLanTruoc` nay lặp qua từng mạch rác và gọi
+`core.ghi.dat_an_mach(mach=…, boi=<staff của seed>, an=True, ly_do="dọn rác e2e")`.
+
+⚠ **Và nó KHÔNG vô hại như mục này từng ghi.** `dat_an_mach` còn gọi `dong_bo_kho_anh` cho
+mọi mốc — chuyển ảnh sang kho không server nào phục vụ (A9). Bản `update()` bỏ qua bước ấy,
+nên **ảnh của mạch rác vẫn phục vụ được qua `/media/`** dù mạch đã biến khỏi mọi cửa đọc.
+Điều đó đúng từ lúc Phase 5 gộp vào, tức mục này đã nặng hơn hạng NHỎ của nó mà không ai đo
+lại. Câu "vô hại về số" chỉ đúng với các cột đếm.
+
+<details><summary>bằng chứng gốc</summary>
+Luật "không một dòng nào ghi thẳng `hidden_at`" được viết ở `ghi.py:70` và
 `quan_tri_kiem_duyet.py:3`. Hôm nay vô hại về số (đã đối soát). Nếu mai `dat_an_mach` phải kéo theo
-một cột, đây là chỗ quên.
+một cột, đây là chỗ quên.</details>
 
 ### L35 · NHỎ · `/luat` nói nửa sai
-**MỞ.** `app/luat/page.tsx:47` — quy trình xử lý của quản trị viên **đã có**. Vế thứ hai
+**ĐÓNG (lượt vá V2 — giao diện, 2026-08-23).** Đoạn *"Nút báo cáo và quy trình xử lý của quản trị viên thuộc
+giai đoạn sau"* thay bằng một mục **Chế tài** nói đúng thứ đang chạy: menu `⋯` có mục Báo
+cáo, báo cáo vào hàng đợi mod, mod ẩn/khoá/ban, mọi quyết định để lại một dòng nhật ký
+không xoá được, mạch bị khoá vẫn đọc được. Mục "Chưa có ở bản này" thu về đúng phạm vi thật
+của nó (draft nguyên tắc, chưa phải điều khoản sử dụng).
+
+Đây là chữ nói **THIẾU** thay vì nói quá, và nó tệ ngang: trang LUẬT bảo người đọc rằng
+không có chế tài nào, đúng lúc chế tài đã chạy — tức nó dạy người ta đừng buồn báo cáo.
+
+<details><summary>bằng chứng gốc</summary>
+`app/luat/page.tsx:47` — quy trình xử lý của quản trị viên **đã có**. Vế thứ hai
 của mục này (*"chỉ nút báo cáo là chưa"*) đã hết đúng từ lượt vá V1: nút báo cáo nay có
-thật (L03). Nghĩa là câu ở `/luat` nay sai **hoàn toàn**, không còn nửa đúng nào. Sửa câu
-là việc của V2.
+thật (L03). Nghĩa là câu ở `/luat` nay sai **hoàn toàn**, không còn nửa đúng nào.</details>
 
 ### L36 · NHỎ · "Flake" 1/3 ở bài vote — **KHÔNG phải flake, đã tìm ra nguyên nhân**
 **ĐÓNG (lượt gộp Phase 5, 2026-08-23).** Nguyên nhân là **L41**: `.next/cache` giữ payload
@@ -508,14 +702,42 @@ B2 báo bài "mũi tên vote SỐNG" đỏ 1 trong 3 lượt, chạy riêng file
 3 lượt đầy đủ tuần tự: 365/365 cả ba, không tái hiện.</details>
 
 ### L41 · **NẶNG** · Cache dữ liệu của Next sống qua thay đổi schema ⇒ **500 trên prod sau deploy**
-**MỞ.** Phát hiện ở lượt gộp Phase 5, 2026-08-23.
+**ĐÓNG (lượt vá V2 — giao diện, 2026-08-23).** Một **cơ chế**, không phải một dòng tài liệu:
+`scripts/xoa-cache-du-lieu.mjs` xoá `.next/cache/fetch-cache` (và `incremental-cache` nếu
+có), và nó **được nối vào `build` của CẢ HAI app**:
+`node ../../scripts/xoa-cache-du-lieu.mjs && next build`. Vì `pnpm e2e` chạy `pnpm run
+build`, bộ đo cũng thôi ăn payload cũ — tức L36 chết ở gốc, không chỉ ở triệu chứng.
+
+Xoá **chọn lọc** chứ không `rm -rf .next/cache`: `webpack`/`swc` ở lại, nếu không mọi lần
+build đều lạnh và bước này sẽ bị ai đó gỡ ra trong ba tháng. Hai hằng
+`THU_MUC_CACHE_DU_LIEU` / `THU_MUC_GIU_LAI` khai tường minh — "xoá cái gì" và "giữ cái gì"
+là hai khẳng định khác nhau, và bài đo đòi chúng không giao nhau.
+
+Đo: `apps/web/e2e/don-vi/cache-du-lieu.spec.ts` (4 bài) — dựng lại đúng bố cục
+`.next/cache` thật kèm payload **thiếu `anhs`** (khẳng định TRƯỚC rằng nó thật sự thiếu,
+không phải một chuỗi rác), đòi nó không sống sót · cache biên dịch sống sót · máy sạch
+không ném · và **bước dọn có mặt trong `scripts.build` của cả hai `package.json`**.
+**Thử phá:** (1) `THU_MUC_CACHE_DU_LIEU = []` ⇒ **1 bài đỏ**
+(`Expected value: "fetch-cache" / Received array: []`); (2) gỡ bước khỏi
+`apps/web/package.json` ⇒ **1 bài đỏ** (`Received string: "next build"`).
+
+⚠ **Cái bài đo KHÔNG chứng minh:** rằng Next 15.5 crash khi gặp payload thiếu trường.
+Chuyện ấy đã xảy ra một lần trên cây này (stack trace ngay dưới); dựng lại nó trong một bài
+đo đòi chạy trọn vòng build → deploy → build, tức đúng thứ chỉ lộ ra sau khi deploy. Ghi ra
+thay vì để con số "4 bài xanh" nói hộ.
+
+⚠ Và lượt này **tự dựng lại đúng ca ấy**: `MocOut` mọc thêm trường **bắt buộc** `reactions`.
+Không có bước dọn thì mọi trang mạch còn payload cũ sẽ đọc `undefined` sau khi deploy.
+
+<details><summary>bằng chứng gốc</summary>
+Phát hiện ở lượt gộp Phase 5, 2026-08-23.
 `.next/cache` (fetch/data cache của ISR) **không bị xoá khi build lại**. Deploy một bản thêm
 trường bắt buộc vào response API ⇒ trang nào còn được phục vụ từ payload cũ sẽ đọc `undefined`
 và **crash server-side**, không phải render thiếu.
 Đo thật: sau khi gộp Phase 5 (`MocOut` mọc `anhs`), render trang mạch ném
 `TypeError: Cannot read properties of undefined (reading 'length')` ở `stringify` — tức **500**
 với người dùng thật, trong khi `anhs` là trường **bắt buộc** ở cả schema Python lẫn TS.
-Xoá `.next/cache` ⇒ hết ngay. Đây là lý do của L36.
+Xoá `.next/cache` ⇒ hết ngay. Đây là lý do của L36.</details>
 → Cần một cơ chế: xoá cache dữ liệu như một bước của deploy, hoặc gắn phiên bản schema vào
 khoá cache. **Chữ trong tài liệu không đủ** — đây là thứ chỉ lộ ra sau khi deploy.
 
@@ -527,6 +749,38 @@ Django 8000"* — **nhưng rewrite đó không tồn tại**. Upload trả 201, 
 mới thấy. Loài "chữ nói quá code" lần thứ 16.
 → Đã thêm rewrite `/media/:path*` vào `apps/web/next.config.ts`. `e2e/anh.spec.ts::A1` bắt
 đúng ca này bằng cách fetch lại chính `src` nó vừa đọc từ DOM.
+
+### L43 · VỪA · Hoàng thổ bản SÁNG chưa đạt WCAG AA cho chữ nhỏ — và sửa nó phải đụng PLAN 9.1
+**MỞ (mở mới ở lượt vá V2 — giao diện, 2026-08-23).**
+
+Đo bằng số, công thức WCAG 2.1 (`apps/web/e2e/don-vi/tuong-phan.spec.ts`):
+
+| cặp | tỉ số | ngưỡng chữ nhỏ | chỗ dùng |
+|---|---|---|---|
+| `--stamp` `#B07A2B` trên `--surface` `#FFFFFF` | **3.71:1** | 4.5 | "đã sửa N lần" · "DRAFT" · "Được trích ×N" |
+| `--stamp` `#B07A2B` trên `--bg` `#F1F2F5` | **3.31:1** | 4.5 | vạch mới · "ĐÃ ĐÓNG SỔ" 10.5px |
+
+Bản TỐI đạt thoải mái (`#D8A455` trên `#161A21` = 7.78:1). Chỉ bản sáng hỏng, và mọi chỗ
+dùng hoàng thổ đều là **chữ nhỏ** — không cái nào đủ điều kiện "large text" (≥18.66px đậm).
+
+**Vì sao lượt V2 không sửa:** `#B07A2B` do `PLAN.md` 9.1 ghim đích danh, và mục 9.1 bị ghim
+SHA-256 ở `mau-token.spec.ts`. Lượt giao diện bị cấm tường minh chạm vào 9.1 — đúng thứ lớp
+băm ấy sinh ra để bắt phải cố ý. Bài đo vì thế hạ hai cặp này xuống ngưỡng **phi văn bản**
+(3:1) kèm nhãn `MIỄN TRỪ L43`: nghĩa là *"hôm nay hoàng thổ chỉ đủ tư cách một dấu hiệu phi
+văn bản"* — đúng sự thật, và nó vẫn ĐỎ nếu ai làm nó tệ thêm. **Xoá hai dòng ấy khỏi bảng
+thì bài đo im lặng, và im lặng đọc thành "đã đạt".**
+
+**Hai cách chữa, và cái giá của mỗi cách:**
+1. **Đổi `#B07A2B` sang một hoàng thổ đậm hơn** (cần ≈ `#8A5F1F` để chạm 4.5:1 trên trắng).
+   Rẻ về code, đắt về quy trình: sửa PLAN 9.1 · cập nhật `HEX_STAMP` · dán lại
+   `BAM_MUC_91` · một người phải đọc lại toàn bộ allowlist. Và nó đổi diện mạo của mọi con
+   dấu trên site.
+2. **Thêm một token thứ hai** (`--stamp-chu`) chỉ dùng cho CHỮ, giữ `--stamp` cho vạch và
+   viền. Không đụng giá trị PLAN ghim, nhưng thêm một màu PLAN không nói tới — tức vẫn là
+   một quyết định thẩm mỹ phải ghi vào plan con.
+
+⇒ Cả hai đều là quyết định của người, không phải của một lượt vá. **Tiêu chí T5 của plan
+giao diện ("AA mọi cặp ở cả hai theme") vì thế CHƯA đạt trọn** — đạt 19/21 cặp.
 
 ---
 
@@ -551,10 +805,10 @@ mới thấy. Loài "chữ nói quá code" lần thứ 16.
 | `KHOI-DANG-DOC-GOC-AN` | `so_ung_vien_bo_lai = 0` chỉ nói về thread GỐC đọc được | khi có ca thật |
 | `1b #6` | hồ sơ cắt ở `limit=20`, không có cursor | khi có người vượt 20 mạch |
 | `1b #8` | deep-link từ khối trích có thể trỏ vào trang sau của khán đài | Phase 3 (chưa làm) |
-| `REACTION-CHUA-CO-UI` | API + `my_reactions` đã có, UI thì chưa (wireframe 9.2 có hàng `📈 12 · 🔥 9`) | — |
+| `REACTION-CHUA-CO-UI` | **đã trả** ở V2 — `components/hang-reaction.tsx`; `MocOut` mọc `reactions` (đếm chung, cache được), `my_reactions` vẫn đi cửa `/me` | ĐÓNG |
 | `GOOGLE-CHUA-DO` | code OAuth viết theo tài liệu, chưa chạy lần nào | khi có credential |
-| `FORM-FIGURES` | chưa có UI cho `figures` (trường thứ 5 của PLAN 5.2) | — |
-| `UI-DIFF-REVISION` | "đã sửa N lần" chưa bấm xem diff được; endpoint đã có | — |
+| `FORM-FIGURES` | **đã trả** ở V2 — `TruongFigures` trong `components/truong-moc.tsx`, ≤6 cặp, dùng chung cho cả ba form ghi | ĐÓNG |
+| `UI-DIFF-REVISION` | **đã trả** ở V2 — `components/ban-cu-moc.tsx`, nhãn "đã sửa N lần" thành nút, nạp KHI BẤM. Là ĐỐI CHIẾU nguyên văn, không tô xanh/đỏ từng từ (PLAN 9.1 khoá hai màu ấy cho con số lãi/lỗ) | ĐÓNG |
 | `OG-HOANG-THO` | nhãn "ĐÃ ĐÓNG SỔ" trên ảnh OG không có hoàng thổ (satori không giải `var()`) | — |
 | `OG-MAU-BAN-SAO` · `URL-MACH-HAI-BAN` · `XML-QUET-NONG` | ba bản sao/xấp xỉ có ghi chú tại chỗ | — |
 | `BACKUP-CUNG-MAY` | bản dump nằm cùng máy với DB thì không phải bản sao lưu | khi có đích ngoài máy |
@@ -565,7 +819,7 @@ mới thấy. Loài "chữ nói quá code" lần thứ 16.
 |---|---|---|
 | `BAN-CHUA-CHAN-DANG-NHAP` | PLAN 5.10 đòi *"hiện lý do khi bị chặn đăng nhập"*; hôm nay ban **không** chặn đăng nhập, chỉ chặn cửa GHI và cửa quản trị. Hook đúng là `DefaultAccountAdapter.pre_login` (`core/allauth_adapter.py`); cái khó là trả **lý do** qua bề mặt headless — allauth chỉ có sẵn một response "tài khoản không hoạt động" không mang được chữ của mình. Xem L18 | mục việc riêng |
 | `SHADOW-LIMIT-XOA-THAT` | hạn mức 5 bình luận/giờ đếm trên bảng `core_comment`, nên nhánh **xoá THẬT** của PLAN 5.3 (bình luận không reply, chưa từng được trích) lách được: viết 5 → xoá 5 → viết tiếp. Bia mộ và bình luận bị ẩn thì vẫn đếm (có bài đo). Trả nó cần một bộ đếm sống độc lập với hàng bị xoá, tức một bảng mới | khi có dấu hiệu bị lách thật |
-| `TRANG-CAI-DAT` | `PATCH /api/v1/me` đã mở và `GET /me` đã trả `nhan_digest`, nhưng `apps/web/app/cai-dat` **chưa tồn tại** ⇒ chưa có nút nào bật digest. Câu cuối thư digest đã bỏ link chết, và `test_digest.py` ghim `"/cai-dat" not in than` để nó không quay lại trước khi trang có thật | lượt V2 |
+| `TRANG-CAI-DAT` | **đã trả** ở V2 — `app/cai-dat/page.tsx` + `components/form-cai-dat.tsx`, vào được từ menu tài khoản. ⚠ `test_digest.py` vẫn ghim `"/cai-dat" not in thu.than` và **cố ý giữ nguyên**: gắn link huỷ đăng ký vào thư là việc của `core/digest.py`, mà SMTP thì "chưa bao giờ chạy thật" — mở lại link trong một lượt không đo được thư là đúng loài "chữ nói quá code" | ĐÓNG (một nửa: link trong thư vẫn chờ lượt có SMTP) |
 
 ---
 
@@ -600,7 +854,8 @@ nào phủ. Vô hại ở quy mô v1 (vài nghìn hàng); ghi ra để lần sau
 | **SMTP** | chưa gửi thư thật lần nào. Dev ghi ra `api/.mail/`. |
 | **Google OAuth** | không có credential. Chỉ chứng minh được vế "không có credential ⇒ nút VẮNG MẶT". |
 | **Scheduler backup** | `pnpm db:sao-luu` đã chạy vòng đầy đủ **trong worktree**; ở cây chính chưa ai đo. Chưa có Task Scheduler/cron, chưa có đích ngoài máy. |
-| **Phase 5 — ảnh** | HOÃN có chủ đích: máy không có Docker (user chốt 2026-08-21), chưa có R2. |
+| **Phase 5 — ảnh** | **ĐÃ CHẠY** từ lượt gộp Phase 5 (lưu LOCAL, không Docker, không R2). Object storage vẫn hoãn có chủ đích. |
+| **Khu quản trị trong trình duyệt** | `apps/admin` (3001) **không** nằm trong `webServer` của `pnpm e2e`, nên mọi bài đo của nó là phân tích tĩnh + test Django. Nút Khoá/Ban của L04 chưa từng được bấm bằng chuột trong một lượt đo tự động. |
 
 ---
 

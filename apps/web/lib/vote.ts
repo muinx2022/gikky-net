@@ -20,6 +20,20 @@ export type DichVote = { loai: "moc" | "comment"; id: number };
 /** Khách chưa đăng nhập. Từ Phase 2 đây là ca **tạm thời** — bấm Đăng nhập là xong. */
 export const LY_DO_CHUA_DANG_NHAP = "Đăng nhập để vote";
 
+/** Nhịp `GET /me` chưa về (L15, 2026-08-23).
+ *
+ * `usePhien()` trả `{toi: null, dangTai: true}` cho tới khi `/me` trả lời, nên trong
+ * khoảng ấy `toi?.dang_nhap === true` là `false` **với cả người đã đăng nhập**. Mọi
+ * component khác xử nhịp này bằng cách không vẽ gì (`Composer`, `NutTheoMach`,
+ * `KhoiChuMach`, `HanhDongBinhLuan`); `CotVote` **không** có cửa đó — con số điểm là nội
+ * dung của trang, không phải một tiện ích ẩn được. Nên nó phải nói ra lý do THẬT: đang
+ * hỏi, chứ không phải "bạn chưa đăng nhập".
+ *
+ * Phải là một câu KHÁC `LY_DO_CHUA_DANG_NHAP` với cùng lý lẽ đã viết cho `LY_DO_KHOA`:
+ * bảo người đang đăng nhập đi đăng nhập là chỉ sai đường.
+ */
+export const LY_DO_DANG_TAI = "Đang tải phiên…";
+
 /** Mạch bị mod khoá (PLAN 5.10: "đọc được, không tương tác").
  *
  * Phải là một câu KHÁC `LY_DO_CHUA_DANG_NHAP`: dùng chung một câu nghĩa là người đang

@@ -21,10 +21,13 @@ pytestmark = pytest.mark.django_db
 
 #: Số truy vấn kỳ vọng, viết cứng. Con số tăng lên là một quyết định phải nhìn thấy.
 #:
-#: `GET /machs/{id}` = 5: mạch (kèm sub + author) · mốc · đếm bình luận theo mốc · trích ·
-#: **ảnh của mọi mốc** (Phase 5, 2026-08-23). Truy vấn ảnh là MỘT cho cả mạch rồi phát
-#: theo `moc_id`, cùng lối `trich_theo_moc` — `m.anhs.all()` trong vòng lặp là N+1 trên
-#: đúng endpoint nặng nhất (9 mốc = 9 truy vấn thừa mỗi lượt tải trang).
+#: `GET /machs/{id}` = 6: mạch (kèm sub + author) · mốc · đếm bình luận theo mốc · trích ·
+#: **ảnh của mọi mốc** (Phase 5, 2026-08-23) · **đếm reaction của mọi mốc** (lượt giao
+#: diện, 2026-08-23 — nợ `REACTION-CHUA-CO-UI`: wireframe 9.2 có hàng `📈 12 · 🔥 9`, mà
+#: `MocOut` chưa mang con số nào để vẽ nó).
+#: Hai truy vấn cuối đều là MỘT cho cả mạch rồi phát theo `moc_id`, cùng lối
+#: `trich_theo_moc` — `m.anhs.all()` / `dem_reaction(m)` trong vòng lặp là N+1 trên đúng
+#: endpoint nặng nhất (9 mốc = 9 truy vấn thừa mỗi lượt tải trang).
 #: Hai endpoint bình luận = 3: đối tượng gốc · toàn bộ bình luận của mạch · **tập id
 #: bình luận đã TỪNG được trích**. Truy vấn thứ ba vào ở đợt vá Z1 (2026-08-22): PLAN 5.3
 #: dòng 175 có HAI điều kiện giữ bia mộ, và vế "đã từng được trích" không suy ra được từ
@@ -40,7 +43,7 @@ pytestmark = pytest.mark.django_db
 #: — và đó chính là thứ `test_them_mach_KHONG_lam_tang_so_query_cua_feed` ở cuối file
 #: chứng minh: 22 thẻ vẫn đúng con số này.
 SO_QUERY = {
-    "xem_mach": 5,
+    "xem_mach": 6,
     "khan_dai": 3,
     "ngan_keo": 3,
     "revisions": 2,

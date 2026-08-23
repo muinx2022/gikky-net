@@ -11,10 +11,17 @@
   gap: 20px;
 }
 
+/* **Không còn `border-left` ở đây** (lượt giao diện, 2026-08-23).
+ *
+ * Vạch dọc nay do `gap-nhanh.module.css::.thanh` vẽ, ở cột trái của bình luận CHA — tức
+ * đúng chỗ Reddit đặt nó, và quan trọng hơn: nó **bấm được** để gập cả nhánh. Giữ cả hai
+ * là hai vạch song song cách nhau vài pixel, và cái người ta nhắm chuột vào sẽ là cái
+ * không làm gì.
+ *
+ * `padding-left` co lại theo: phần thụt vào nay đến từ lưới 18px + 4px của `.khung`. */
 .tra_loi {
   margin: 15px 0 0;
-  padding-left: 17px;
-  border-left: 2px solid var(--line);
+  padding-left: 8px;
   display: flex;
   flex-direction: column;
   gap: 16px;

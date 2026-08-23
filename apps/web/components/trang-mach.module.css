@@ -94,12 +94,35 @@
 }
 
 /* Hàng tiêu đề: chữ ký bên trái, nút "Theo mạch" đẩy sang phải. */
+/* **Header sub DÍNH** — plan giao diện §2.4.
+ *
+ * Trang mạch dài (mạch 21 mốc + khán đài trăm câu), và khi cuộn tới giữa khán đài thì
+ * người đọc mất hai thứ cùng lúc: mình đang ở sub nào, và nút "Theo mạch". Dính hàng này
+ * dưới thanh header trả lại cả hai mà không tốn thêm một pixel chiều cao nào lúc đứng yên.
+ *
+ * `top: var(--cao-chrome)` — không phải `0`: thanh `Chrome` cũng dính, nên `0` là hàng
+ * này trượt xuống NẰM DƯỚI nó và biến mất.
+ *
+ * Lề âm để nó chạm hai mép thẻ: nếu không, phần nền mờ chỉ rộng bằng vùng chữ và nội dung
+ * cuộn qua sẽ lộ ra ở hai bên. `border-radius` khớp với `.the` cho khỏi hở góc.
+ *
+ * ⚠ Đừng thêm `overflow: hidden` lên `.the` hay `.dau` — bất kỳ tổ tiên nào có `overflow`
+ * khác `visible` là `sticky` chết im lặng (nó không lỗi, nó chỉ thôi dính). */
 .hang_tren {
+  position: sticky;
+  top: var(--cao-chrome);
+  z-index: 5;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  margin: -24px -26px 0;
+  padding: 10px 26px;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line);
+  border-radius: 6px 6px 0 0;
 }
 
 /* Mặt BÃO: composer đứng giữa nhật ký và khán đài (wireframe 9.2). */
@@ -110,5 +133,55 @@
 @media (max-width: 640px) {
   .composer_bao {
     padding: 0 16px 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  /* **Trên điện thoại hàng này KHÔNG dính**, và đó là quyết định chứ không phải bỏ sót.
+     Hai lý do, lý do thứ hai mới là lý do cứng:
+
+     1. màn hình cao 780px mà mất thêm 40px cố định cho một hàng phụ là đắt;
+     2. `top: var(--cao-chrome)` giả định thanh header cao ĐÚNG một dòng. Dưới 640px header
+        xuống dòng (xem `chrome.module.css`), nên hằng ấy hết đúng và hàng dính sẽ nằm lấp
+        dưới header. Một con số cứng cho một chiều cao co giãn là bẫy chờ sẵn — thà tắt hẳn
+        cơ chế ở dải mà nó không còn đúng.
+
+     Lề âm cũng phải về 0: `-26px` là lề của `padding` desktop, ở đây `.dau` chỉ có 16px và
+     phần thừa thò ra ngoài mép thẻ ⇒ trang cuộn ngang, đúng thứ T7 cấm. */
+  .hang_tren {
+    position: static;
+    margin: 0;
+    padding: 0;
+    background: none;
+    backdrop-filter: none;
+    border-bottom: none;
+  }
+}
+
+/* Dòng "đang xem mặt BÃO — xem mặt CẶN" (L21). Cùng kiểu dáng với `loi-moi-doi-mat` ở
+   chiều ngược lại: hai lối đi ngang vai nhau thì phải trông ngang vai nhau. */
+.doi_mat {
+  margin: 0 26px 14px;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+.doi_mat strong {
+  color: var(--ink-2);
+  font-weight: 600;
+}
+
+.doi_mat a {
+  color: var(--accent);
+  border-bottom: 1px solid transparent;
+}
+
+.doi_mat a:hover {
+  border-bottom-color: var(--accent);
+}
+
+@media (max-width: 640px) {
+  .doi_mat {
+    margin: 0 16px 12px;
   }
 }

@@ -1,8 +1,20 @@
-// Đo Lighthouse **category SEO** trên một URL đang chạy — tiêu chí V13 của plan con 1c
-// ("Lighthouse SEO ≥ 90 trên trang mạch — chạy thật, dán số").
+// Đo Lighthouse **SEO** và **Accessibility** trên một URL đang chạy.
 //
 //   node scripts/lighthouse-seo.mjs                 # mặc định: trang mạch HPG của seed
 //   node scripts/lighthouse-seo.mjs <url> [nguong]
+//
+// SEO là tiêu chí V13 của plan con 1c; **Accessibility là mốc MỚI của lượt giao diện**
+// (2026-08-23, `plans/2026-08-23-giao-dien-reddit-va-theme.md` T10). Cùng một ngưỡng, cùng
+// một lượt chạy Chrome: hai lần khởi động Chrome cho hai category là gấp đôi thời gian đo
+// mà không thêm thông tin nào.
+//
+// Cả hai category phải ĐẠT thì lệnh mới exit 0. Không lấy trung bình, không "đạt một
+// trong hai": chúng đo hai thứ khác nhau, và một cái 100 không bù được cái kia 40.
+//
+// ⚠ Lighthouse Accessibility là phép kiểm TỰ ĐỘNG — nó bắt được nhãn thiếu, tương phản
+// kém, thứ tự heading sai; nó KHÔNG bắt được "nhãn có mà nói sai nghĩa". Điểm 100 ở đây
+// không phải chứng chỉ WCAG. Tương phản của bảng token được đo riêng bằng số ở
+// `apps/web/e2e/don-vi/tuong-phan.spec.ts`.
 //
 // Yêu cầu: `next start` đang chạy ở cổng 3000 **trên bản build mới nhất**, Django ở 8000,
 // và một Chrome thật trên máy (`chrome-launcher` tự tìm). Chromium của Playwright là bản
@@ -41,41 +53,52 @@ try {
   const { lhr } = await lighthouse(
     url,
     { port: chrome.port, output: "json", logLevel: "error" },
-    { extends: "lighthouse:default", settings: { onlyCategories: ["seo"] } },
+    {
+      extends: "lighthouse:default",
+      settings: { onlyCategories: ["seo", "accessibility"] },
+    },
   );
 
-  // `Number.isFinite` chứ không chỉ so `< nguong` (vá F5, 2026-08-22). `score` có ba ca,
-  // không phải hai: số (bình thường), `null` (Lighthouse chạy nhưng không chấm được →
-  // `Math.round(null * 100)` ra `0` → dưới ngưỡng → đỏ, đúng), và **`undefined`** (không
-  // có category `seo` trong `lhr` — tên category đổi, bản Lighthouse mới, phản hồi cụt).
-  // Ca thứ ba ra `NaN`, mà `NaN < 90` là `false`: bản cũ in `NaN/100` rồi **exit 0**. Một
-  // ngưỡng mà ca "không đo được" đi lọt qua cửa thì nó không còn là ngưỡng.
-  const tho = lhr.categories?.seo?.score;
-  const diem = Math.round(tho * 100);
   console.log(`URL      : ${url}`);
 
-  // `process.exitCode` chứ KHÔNG `process.exit(1)`: `process.exit` cắt ngang, khối
-  // `finally` dưới không chạy và một tiến trình Chrome ở lại trên máy.
-  if (!Number.isFinite(diem)) {
-    console.error(
-      `KHÔNG ĐO ĐƯỢC: lhr.categories.seo.score = ${JSON.stringify(tho)} — không có điểm SEO để so với ngưỡng.`,
-    );
-    process.exitCode = 1;
-  } else {
-    console.log(`Lighthouse SEO: ${diem}/100  (ngưỡng ${nguong})`);
+  // Hai category, một vòng lặp. Chép thân bài ra hai lần là bản thứ hai sẽ quên phép kiểm
+  // `Number.isFinite` — mà đó chính là cái bẫy vá F5 đã mất công bịt một lần.
+  for (const khoa of ["seo", "accessibility"]) {
+    const muc = lhr.categories?.[khoa];
+    const tho = muc?.score;
+    const diem = Math.round(tho * 100);
+
+    // `Number.isFinite` chứ không chỉ so `< nguong` (vá F5, 2026-08-22). `score` có ba ca,
+    // không phải hai: số (bình thường), `null` (Lighthouse chạy nhưng không chấm được →
+    // `Math.round(null * 100)` ra `0` → dưới ngưỡng → đỏ, đúng), và **`undefined`** (không
+    // có category ấy trong `lhr` — tên category đổi, bản Lighthouse mới, phản hồi cụt).
+    // Ca thứ ba ra `NaN`, mà `NaN < 90` là `false`: bản cũ in `NaN/100` rồi **exit 0**. Một
+    // ngưỡng mà ca "không đo được" đi lọt qua cửa thì nó không còn là ngưỡng.
+    //
+    // `process.exitCode` chứ KHÔNG `process.exit(1)`: `process.exit` cắt ngang, khối
+    // `finally` dưới không chạy và một tiến trình Chrome ở lại trên máy.
+    if (!Number.isFinite(diem)) {
+      console.error(
+        `KHÔNG ĐO ĐƯỢC: lhr.categories.${khoa}.score = ${JSON.stringify(tho)} — không có điểm để so với ngưỡng.`,
+      );
+      process.exitCode = 1;
+      continue;
+    }
+
+    console.log(`\nLighthouse ${muc.title ?? khoa}: ${diem}/100  (ngưỡng ${nguong})`);
 
     const truot = Object.values(lhr.audits).filter(
-      (a) => a.score !== null && a.score < 1 && lhr.categories.seo.auditRefs.some((r) => r.id === a.id),
+      (a) => a.score !== null && a.score < 1 && muc.auditRefs.some((r) => r.id === a.id),
     );
     if (truot.length > 0) {
-      console.log("\nAudit chưa đạt:");
+      console.log("Audit chưa đạt:");
       for (const a of truot) console.log(`  - ${a.id}: ${a.title}`);
     } else {
-      console.log("\nMọi audit SEO đều đạt.");
+      console.log(`Mọi audit ${khoa} đều đạt.`);
     }
 
     if (diem < nguong) {
-      console.error(`\nDƯỚI NGƯỠNG: ${diem} < ${nguong}`);
+      console.error(`DƯỚI NGƯỠNG: ${diem} < ${nguong}`);
       process.exitCode = 1;
     }
   }

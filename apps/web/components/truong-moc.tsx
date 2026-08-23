@@ -11,10 +11,18 @@ import css from "./truong-moc.module.css";
  * chỗ dễ quên nhất: `max` của ô ngày. Thiếu nó thì người dùng chọn được ngày mai, bấm gửi,
  * và nhận một lỗi 400 mà đáng ra trình duyệt đã chặn từ đầu.
  *
- * **`figures` KHÔNG có ở đây** — nợ có tên `FORM-FIGURES`. Dải số là trường thứ năm của
- * PLAN 5.2 và API nhận nó đầy đủ; UI của nó là một trình soạn danh sách ≤6 cặp, việc riêng.
- * Vì `PATCH /mocs/{id}` là PATCH THẬT (trường vắng = không đổi), form sửa ở đây **không**
- * xoá mất `figures` của một mốc đã có — đó là điều kiện để hoãn được mà không mất dữ liệu.
+ * **`figures` — trường thứ NĂM, có mặt từ 2026-08-23** (nợ `FORM-FIGURES` đã trả). Dải
+ * "GIÁ VÀO 27.80 · DỪNG LỖ 26.40" của PLAN 5.2: tối đa 6 cặp `label`/`value`, mỗi vế ≤24
+ * ký tự. API nhận nó đầy đủ từ Phase 1; thiếu đúng chỗ nhập, nên hôm qua cách duy nhất
+ * đặt được dải số là gọi API bằng tay.
+ *
+ * ⚠ **Ba giới hạn dưới đây là bản SAO của `core/models/moc.py`** (`SO_FIGURES_TOI_DA=6`,
+ * `DAI_FIGURE_LABEL=24`, `DAI_FIGURE_VALUE=24`). Chúng không đi qua OpenAPI được:
+ * `kiem_figures` là một validator của Django chứ không phải ràng buộc pydantic, nên
+ * `FigureIn` ở TS chỉ có `{label: string; value: string}`. Bản sao ấy **có chuông** —
+ * `e2e/don-vi/figures.spec.ts` đọc thẳng file Python và đòi ba con số khớp. Nới ở Django
+ * mà quên đây ⇒ ĐỎ (và ngược lại: nới ở đây thì form cho gõ dài hơn thứ server nhận, tức
+ * người dùng viết xong mới ăn 400).
  */
 
 /** Bốn trường người dùng gõ. Không phải kiểu của API — `MocMoiIn`/`MocSuaIn` mới là hợp
@@ -24,11 +32,27 @@ export type NoiDungMoc = {
   occurred_at: string;
   loai: string;
   question_for_crowd: string;
+  /** Dải số. Hàng **rỗng cả hai vế** là chuyện bình thường trong lúc gõ — `thanMoc` lọc
+   * chúng đi. Giữ chúng trong state chứ không lọc ngay: xoá một hàng ngay khi người ta
+   * vừa xoá ký tự cuối của nó là ô nhập biến mất dưới con trỏ. */
+  figures: { label: string; value: string }[];
 };
+
+/** Giới hạn của `figures` — **bản sao có chuông** của `api/core/models/moc.py`.
+ * Xem cảnh báo ở docstring đầu file trước khi đổi. */
+export const SO_FIGURES_TOI_DA = 6;
+export const DAI_FIGURE_LABEL = 24;
+export const DAI_FIGURE_VALUE = 24;
 
 /** Giá trị khởi tạo của một mốc MỚI: thân rỗng, ngày sự việc = hôm nay giờ VN (PLAN 5.2). */
 export function mocRong(): NoiDungMoc {
-  return { body: "", occurred_at: homNayVN(), loai: "", question_for_crowd: "" };
+  return {
+    body: "",
+    occurred_at: homNayVN(),
+    loai: "",
+    question_for_crowd: "",
+    figures: [],
+  };
 }
 
 export function TruongMoc({
@@ -104,6 +128,8 @@ export function TruongMoc({
         </label>
       </div>
 
+      <TruongFigures gia_tri={gia_tri.figures} dat={(f) => dat("figures", f)} tienTo={tienTo} />
+
       <label className={css.o}>
         <span className={css.nhan}>
           Câu hỏi cho đám đông <span className={css.tuy_chon}>tuỳ chọn</span>
@@ -133,10 +159,108 @@ export function TruongMoc({
  */
 export function thanMoc(m: NoiDungMoc) {
   const gon = (s: string) => (s.trim() === "" ? null : s.trim());
+  // Hàng nào còn trống MỘT trong hai vế thì bỏ hẳn: `kiem_figures` đòi cả `label` lẫn
+  // `value` là chuỗi không rỗng, nên gửi một cặp nửa vời là 400 — và người dùng chỉ đơn
+  // giản là chưa gõ xong hàng cuối. Danh sách rỗng gửi lên `null`, không phải `[]`: `null`
+  // là "không có dải số" (đúng thứ `MocOut.figures: list | None` phân biệt), còn `[]` ở
+  // đường PATCH nghĩa là "xoá sạch dải số đang có" — hai ý định khác nhau.
+  const cap = m.figures
+    .map((f) => ({ label: f.label.trim(), value: f.value.trim() }))
+    .filter((f) => f.label !== "" && f.value !== "");
   return {
     body: m.body,
     occurred_at: m.occurred_at,
     loai: gon(m.loai),
     question_for_crowd: gon(m.question_for_crowd),
+    figures: cap.length === 0 ? null : cap,
   };
+}
+
+/** Trình soạn dải số — `figures`, trường thứ năm của PLAN 5.2.
+ *
+ * ## Vì sao là một danh sách cặp tự do, không phải các ô cố định
+ *
+ * PLAN mục 4 đã **loại** structured fields: không sub nào bị ép phải có ô "giá vào". Dải
+ * số là "thuần hiển thị" — người viết tự đặt tên nhãn. Một bộ ô cố định ở đây là cài lại
+ * đúng thứ mục 4 vừa bác.
+ *
+ * ## Nhãn cho từng ô, không phải một nhãn cho cả hàng
+ *
+ * Sáu hàng × hai ô = 12 ô nhập. Một `<label>` chung ở đầu bảng thì trình đọc màn hình đọc
+ * ô thứ bảy thành "edit text" — không biết đang ở hàng nào, không biết là nhãn hay giá
+ * trị. Mỗi ô mang `aria-label` riêng có số thứ tự.
+ */
+function TruongFigures({
+  gia_tri,
+  dat,
+  tienTo,
+}: {
+  gia_tri: NoiDungMoc["figures"];
+  dat: (f: NoiDungMoc["figures"]) => void;
+  tienTo: string;
+}) {
+  const sua = (i: number, k: "label" | "value", v: string) =>
+    dat(gia_tri.map((f, j) => (j === i ? { ...f, [k]: v } : f)));
+
+  return (
+    <fieldset className={css.figures} data-testid={`${tienTo}-figures`}>
+      <legend className={css.nhan}>
+        Dải số <span className={css.tuy_chon}>tuỳ chọn</span>
+      </legend>
+      {gia_tri.map((f, i) => (
+        <div className={css.mot_fig} key={i}>
+          <input
+            className={css.fig_label}
+            type="text"
+            value={f.label}
+            maxLength={DAI_FIGURE_LABEL}
+            onChange={(e) => sua(i, "label", e.target.value)}
+            placeholder="GIÁ VÀO"
+            aria-label={`Nhãn của cặp số thứ ${i + 1}`}
+            data-testid={`${tienTo}-fig-label-${i}`}
+          />
+          <input
+            className={`${css.fig_value} mono`}
+            type="text"
+            value={f.value}
+            maxLength={DAI_FIGURE_VALUE}
+            onChange={(e) => sua(i, "value", e.target.value)}
+            placeholder="27.80"
+            aria-label={`Giá trị của cặp số thứ ${i + 1}`}
+            data-testid={`${tienTo}-fig-value-${i}`}
+          />
+          <button
+            type="button"
+            className={css.fig_xoa}
+            onClick={() => dat(gia_tri.filter((_, j) => j !== i))}
+            aria-label={`Xoá cặp số thứ ${i + 1}${f.label === "" ? "" : ` (${f.label})`}`}
+            data-testid={`${tienTo}-fig-xoa-${i}`}
+          >
+            ×
+          </button>
+        </div>
+      ))}
+      {gia_tri.length < SO_FIGURES_TOI_DA ? (
+        <button
+          type="button"
+          className={css.fig_them}
+          onClick={() => dat([...gia_tri, { label: "", value: "" }])}
+          data-testid={`${tienTo}-fig-them`}
+        >
+          ＋ thêm cặp số
+        </button>
+      ) : (
+        // Nói ra vì sao cái nút biến mất. Một nút vắng mặt không lý do là người ta bấm
+        // quanh chỗ đó rồi tưởng trang hỏng.
+        <p className={css.goi_y} data-testid={`${tienTo}-fig-het-cho`}>
+          Tối đa {SO_FIGURES_TOI_DA} cặp — xoá bớt một cặp nếu cần thêm.
+        </p>
+      )}
+      <span className={css.goi_y}>
+        Dải hiện dưới thân mốc: <span className="mono">GIÁ VÀO 27.80 · DỪNG LỖ 26.40</span>.
+        Số mang dấu <span className="mono">+</span>/<span className="mono">−</span> sẽ được
+        tô màu lãi/lỗ.
+      </span>
+    </fieldset>
+  );
 }

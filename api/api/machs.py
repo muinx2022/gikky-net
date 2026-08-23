@@ -88,7 +88,15 @@ from api.quyen import (
 )
 from api.schemas import BinhLuanOut, KhanDaiOut, MachChiTietOut, MocOut
 from api.schemas_ghi import BinhLuanMoiIn, DongSoIn, MachMoiIn, MocMoiIn
-from api.trinh_bay import han_mo_lai, mach_tom_tat_ra, moc_ra, nut_ra, spine_ra
+from api.trinh_bay import (
+    dem_reaction_rong,
+    han_mo_lai,
+    mach_tom_tat_ra,
+    moc_ra,
+    nut_ra,
+    spine_ra,
+)
+from api.tuong_tac import dem_reaction_theo_mach
 
 router = Router()
 
@@ -149,6 +157,7 @@ def mach_chi_tiet_ra(mach: Mach) -> MachChiTietOut:
         moc__mach=mach, status=MocAnh.TrangThai.XAC_NHAN
     ).order_by("position", "id"):
         anh_theo_moc.setdefault(a.moc_id, []).append(a)
+    reaction_theo_moc = dem_reaction_theo_mach(mach)
     trich_theo_moc = {
         t.moc_id: t
         for t in Trich.objects.filter(
@@ -182,6 +191,7 @@ def mach_chi_tiet_ra(mach: Mach) -> MachChiTietOut:
                 so_binh_luan=dem.get(m.seq, 0),
                 trich=trich_theo_moc.get(m.pk),
                 anhs=anh_theo_moc.get(m.pk, []),
+                reactions=reaction_theo_moc.get(m.pk) or dem_reaction_rong(),
             )
             for m in mocs
         ],
@@ -569,7 +579,13 @@ def noi_moc(request, mach_id: int, du_lieu: MocMoiIn):
     # `anhs=[]`: mốc vừa sinh ra chưa có ảnh nào — ảnh được gắn ở lượt `POST
     # /mocs/{id}/anh` sau đó (upload một nhịp, nhưng vẫn là request riêng vì multipart
     # và JSON không đi chung một thân).
-    return Status(201, moc_ra(moc, so_binh_luan=0, trich=None, anhs=[]))
+    # Mốc vừa tạo xong: chưa ai react được, nên khỏi hỏi DB.
+    return Status(
+        201,
+        moc_ra(
+            moc, so_binh_luan=0, trich=None, anhs=[], reactions=dem_reaction_rong()
+        ),
+    )
 
 
 @router.post(

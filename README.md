@@ -12,23 +12,30 @@ Thiết kế sản phẩm đầy đủ: [`PLAN.md`](PLAN.md). Kế hoạch + nh�
 
 ## Trạng thái
 
-**Phase 1 đã xong — trang CHỈ ĐỌC.** Nói thẳng những gì CHƯA có, để không ai clone về rồi mới biết:
+**Phase 1 → 6 đã gộp; vòng lặp lõi chạy được từ trình duyệt.** Bảng dưới nói thẳng những gì
+CHƯA có, để không ai clone về rồi mới biết. Sổ lỗi và nợ còn mở: [`LOI-VA-NO.md`](LOI-VA-NO.md).
 
 | Đã chạy | Chưa có |
 |---|---|
-| Feed "Mới" · "Đang diễn ra" · "Nhiều điểm nhất" (kèm khoảng ngày/tuần/tháng) | **Đăng nhập** — không có tài khoản, không có phiên |
-| Trang mạch mặt CẶN: mốc 1 · dải gập · ngăn kéo theo mốc · khối trích | **Mọi thao tác ghi** — đăng, nối mốc, bình luận, vote |
-| Khán đài: cây bình luận, 3 sort, khối "Câu đáng đọc", gập nhánh | Mặt BÃO (mạch đang chạy), follow, notification |
-| Trang chuyên mục `/s/<sub>`, hồ sơ `/u/<user>`, `/luat` | Khu quản trị, kiểm duyệt |
-| SEO: JSON-LD, sitemap, canonical | Ảnh (cần object storage) |
+| **Tài khoản**: đăng ký · đăng nhập · xác thực email · quên/đổi mật khẩu | **Google OAuth** — code viết theo tài liệu, chưa có credential nên nút vắng mặt |
+| **Đường ghi**: đăng mạch · nối mốc · sửa/xoá · bình luận · vote · reaction · trích vào sổ | **Tìm kiếm** — Phase 7 (Meilisearch); header đã chừa chỗ, chưa render ô nào |
+| Feed "Mới" · "Đang diễn ra" · "Nhiều điểm nhất" (kèm khoảng ngày/tuần/tháng) | **Email mốc mới cho follower** (PLAN 5.8) — mới có digest tuần |
+| Trang mạch **cả hai mặt**: CẶN (nhật ký là thân bài) và BÃO (khán đài là thân bài, vạch mới) | **SMTP thật** — dev ghi thư ra `api/.mail/` |
+| Khán đài: cây bình luận, 3 sort, khối "Câu đáng đọc", gập nhánh | **Caddy trên prod** — `deploy/Caddyfile` chưa qua `caddy validate` lần nào |
+| Follow mạch · chuông thông báo · vạch "chưa đọc" | Sao lưu ra **ngoài máy** (dump hiện nằm cùng máy với DB) |
+| **Khu quản trị**: hàng đợi báo cáo, ẩn/khoá/ban ngay trên hàng, nhật ký kiểm duyệt, quản lý sub | |
+| Ảnh trong mốc (lưu **local**, chưa dùng object storage) | |
+| Giao diện: **công tắc Sáng/Tối/Theo hệ thống**, hai kiểu xem feed, rail dính | |
+| SEO: JSON-LD, sitemap, canonical, RSS, ảnh OG · ISR cho trang mạch | |
 
-Cột vote có render nhưng **mũi tên bị khoá** kèm lý do — chỗ đứng của nó có thật, Phase 2 mới sống.
+Mũi tên vote, reaction, composer, menu `⋯` — **tất cả đều sống**. Nút nào tắt đều nói ra lý do,
+và lý do phải đúng ca (chưa đăng nhập ≠ mạch bị khoá ≠ chưa biết bạn là ai).
 
 ## Kiến trúc
 
 ```
 apps/web       Next.js 15 App Router (public)      :3000
-apps/admin     Next.js 15 App Router (quản trị)    :3001   — khung, Phase 4 mới làm
+apps/admin     Next.js 15 App Router (quản trị)    :3001
 api            Django 5.2 + django-ninja           :8000
 packages/api-client   TS client SINH RA từ OpenAPI  — không sửa tay
 ```
@@ -113,7 +120,7 @@ Chạy ở gốc repo.
 | Lint (`--max-warnings=0`) | `pnpm lint` |
 | Sinh lại TS client | `pnpm codegen` |
 | Kiểm drift codegen | `pnpm codegen:check` |
-| Đo Lighthouse SEO | `pnpm lighthouse` |
+| Đo Lighthouse SEO + Accessibility | `pnpm lighthouse` |
 | Sao lưu PostgreSQL | `pnpm db:sao-luu` |
 | Gửi digest tuần | `pnpm digest` |
 
@@ -122,8 +129,8 @@ dùng chung hai thứ đó.
 
 ## API
 
-Hai `NinjaAPI`: **`/api/v1/`** (công khai) và **`/api/admin/`** (khu quản trị, staff-only —
-Phase 4). Bảng đầy đủ của cả hai ở `PLAN.md` mục 7. Lược đồ tương tác chỉ mở khi `DEBUG=True`
+Hai `NinjaAPI`: **`/api/v1/`** (công khai) và **`/api/admin/`** (khu quản trị, staff-only).
+Bảng đầy đủ của cả hai ở `PLAN.md` mục 7. Lược đồ tương tác chỉ mở khi `DEBUG=True`
 (`/api/v1/docs`, `/api/admin/docs`) — ngoài DEBUG thì tắt hẳn, vì nó phơi toàn bộ bề mặt API.
 
 Django admin nằm ở **`/api/admin/django/`**, không phải `/api/admin/` — chỗ sau là router
@@ -135,7 +142,7 @@ quản trị Ninja. TS client của nó ở subpath `@gikky/api-client/admin`.
 |---|---|---|
 | Reverse proxy + rate limit tầng biên | [`deploy/Caddyfile`](deploy/Caddyfile) | **Chưa** — không có Caddy/tên miền trên máy dev. Cần bản Caddy dựng kèm plugin `caddy-ratelimit`. |
 | Sao lưu / phục hồi Postgres | [`docs/sao-luu-phuc-hoi.md`](docs/sao-luu-phuc-hoi.md) | Dump + `pg_restore` **đã chạy**; scheduler và đẩy bản sao ra khỏi máy thì **chưa** |
-| Email digest tuần (8:00 T7 giờ VN) | `pnpm digest`, `api/core/digest.py` | Nội dung + giao cho backend **đã chạy** (backend `filebased`); **SMTP chưa bao giờ chạy**, và danh sách người nhận còn rỗng cho tới Phase 3 |
+| Email digest tuần (8:00 T7 giờ VN) | `pnpm digest`, `api/core/digest.py` | Nội dung + giao cho backend **đã chạy** (backend `filebased`); **SMTP chưa bao giờ chạy**. Bật/tắt ở `/cai-dat` |
 
 ## Cách làm việc trong repo này
 

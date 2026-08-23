@@ -115,6 +115,18 @@ export function CauDangDoc({
  * thay cho ô `disabled` của 1c) — khách chưa đăng nhập thấy lời mời đăng nhập, mạch bị
  * mod khoá thấy câu giải thích, người đăng nhập thấy ô gõ thật.
  *
+ * **Hai điều kiện mới của L05 (2026-08-23):**
+ *
+ * 1. Nó nhận `anchorMocSeq` — mốc mới nhất — và chip **đổi/gỡ được**. Trước đó khán đài
+ *    gọi `<Composer />` không prop, nên mọi câu viết ở đây gửi `anchor_moc_seq: null` và
+ *    không rơi vào ngăn kéo nào; mọi ngăn kéo cứ nói "Chưa ai neo bình luận vào mốc này"
+ *    trong khi khán đài đầy chữ.
+ * 2. `hienComposer` — mặt BÃO **tắt** nó. Ở đó `trang-mach.tsx` đã đặt một composer
+ *    ngay trên cây khán đài (wireframe 9.2), nên giữ thêm cái ở cuối là dựng lại đúng ca
+ *    "hai ô nhập trông y hệt nhau, hai luật neo khác nhau, cùng một trang" của L05. Cờ
+ *    chứ không phải `anchorMocSeq === null`: "không neo" là một lựa chọn hợp lệ của
+ *    người dùng, nó không được kiêm nghĩa "đừng vẽ ô nhập".
+ *
  * **Nguyên tắc 9 áp ở ĐÂY nữa, không chỉ ở chân trang** (vá A2, 2026-08-22). Bản đầu của
  * 1c render `{tong_thread} thread` vô điều kiện, nên:
  *
@@ -143,6 +155,8 @@ export function KhanDai({
   duongDanKhanDai,
   hienSoDem,
   cauDangDoc = null,
+  anchorMocSeq = null,
+  hienComposer = true,
 }: {
   khanDai: KhanDaiOut;
   sort: SortKhanDai;
@@ -153,6 +167,10 @@ export function KhanDai({
   hienSoDem: boolean;
   /** Tập "câu đáng đọc" do server tính (`?dang_doc=1`), hoặc `null` để không render khối. */
   cauDangDoc?: KhanDaiOut | null;
+  /** Mốc composer khán đài neo mặc định — mốc MỚI NHẤT (PLAN 5.4 luật 3). */
+  anchorMocSeq?: number | null;
+  /** Mặt BÃO tắt cờ này: composer của nó nằm TRÊN cây, không ở cuối. */
+  hienComposer?: boolean;
 }) {
   if (khanDai.tong_thread === 0) {
     return (
@@ -163,7 +181,7 @@ export function KhanDai({
         <p className={css.mot_dong_moi} data-testid="khan-dai-mot-dong-moi">
           Chưa có mấy ai nói gì — mở lời trước đi.
         </p>
-        <Composer />
+        {hienComposer && <Composer anchorMocSeq={anchorMocSeq} neoDoiDuoc />}
       </section>
     );
   }
@@ -231,7 +249,7 @@ export function KhanDai({
         </Link>
       )}
 
-      <Composer />
+      {hienComposer && <Composer anchorMocSeq={anchorMocSeq} neoDoiDuoc />}
     </section>
   );
 }

@@ -84,9 +84,9 @@
   white-space: nowrap;
 }
 
-.da_sua {
-  color: var(--stamp);
-}
+/* `.da_sua` ĐÃ GỠ 2026-08-23: nhãn "đã sửa N lần" nay là một nút mở danh sách bản cũ,
+   và kiểu dáng của nó sống ở `ban-cu-moc.module.css#.nhan` (cùng vai đóng dấu, cùng mục
+   PLAN 9.1, allowlist hàng rào màu đã dời theo). Ghi lại thay vì xoá không dấu vết. */
 
 .than {
   margin: 0;

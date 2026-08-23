@@ -17,8 +17,29 @@
  * một màu chữ cố định thì một trong hai theme sai. Badge CHỦ MẠCH từng là mã hex cứng duy
  * nhất lọt ra ngoài hệ token, và ở dark nó cho tương phản ≈2.65:1 (WCAG AA đòi 4.5:1).
  *
- * light/dark: `prefers-color-scheme` + `[data-theme]` ghi đè. 1c **không lưu** lựa chọn
- * (plan con §1) — chưa có nút đổi theme, `[data-theme]` để sẵn cho Phase sau.
+ * light/dark: `prefers-color-scheme` + `[data-theme]` ghi đè. **Từ 2026-08-23 lựa chọn
+ * ĐƯỢC LƯU** — một script inline trong `<head>` đọc `localStorage` và đặt `data-theme`
+ * trước lần vẽ đầu tiên (`lib/theme.ts`). Nó **không** đi qua HTML đã cache: chuỗi script
+ * là hằng, thứ khác nhau giữa hai người là `localStorage` của họ. Đọc theme từ cookie ở
+ * server là điều cấm — trang mạch chạy ISR, HTML dùng chung cho mọi người (PLAN 8.4).
+ *
+ * ⚠ **Tương phản của bảng này được ĐO BẰNG SỐ**, cả hai theme, ở
+ * `e2e/don-vi/tuong-phan.spec.ts` (WCAG 2.1, công thức thật). Đổi một mã hex ở đây mà làm
+ * tụt một cặp xuống dưới AA ⇒ bài đo ĐỎ. Hai chỗ đã phải đổi vì phép đo ấy:
+ *
+ * - `--ink-3` sáng `#868D9B` → **`#686F7D`** (3.33:1 → 5.05:1 trên `--surface`);
+ * - `--ink-3` tối `#6F7787` → **`#7A8292`** (3.87:1 → 4.52:1 trên `--surface`).
+ *
+ * `--ink-3` là mực nhạt nhất — dấu thời gian, nhãn nhóm, dòng gợi ý — tức **chữ nhỏ**, nên
+ * ngưỡng của nó là 4.5:1 chứ không phải 3:1. Nó KHÔNG nằm trong danh sách màu mà PLAN 9.1
+ * ghim (9.1 chỉ ghim nền/mực/nhấn/hoàng thổ/lãi-lỗ), nên sửa nó không đụng vào 9.1 và
+ * không đụng băm của nó.
+ *
+ * ⚠ **Còn một cặp CHƯA đạt và nó không sửa được ở đây**: hoàng thổ `--stamp` sáng
+ * `#B07A2B` cho **3.71:1** trên `--surface` và **3.31:1** trên `--bg` — dưới AA cho chữ
+ * nhỏ ("đã sửa", "ĐÃ ĐÓNG SỔ", "DRAFT"). Mã ấy do PLAN 9.1 ghim đích danh, và mục 9.1 bị
+ * ghim băm, nên sửa nó là một quyết định của người, không phải của lượt vá này. Đã ghi vào
+ * `LOI-VA-NO.md` (L43). Bản tối thì đạt thoải mái (7.78:1).
  */
 
 :root {
@@ -28,7 +49,7 @@
   --inset: #f7f8fa;
   --ink: #14161b;
   --ink-2: #535a67;
-  --ink-3: #868d9b;
+  --ink-3: #686f7d;
   --line: #dbdee5;
   --line-2: #c7cbd4;
   --accent: #3a46a8;
@@ -47,6 +68,12 @@
   --rail: 34px;
   --gutter: 18px;
   --khung: 860px;
+
+  /* Chiều cao THẬT của thanh header dính (`components/chrome.module.css`: padding 11px ×
+   * 2 + dòng cao 23px + viền 1px ≈ 57px). Ba chỗ cần đúng con số này — rail dính, header
+   * sub dính, và `scroll-margin-top` của deep-link — nên nó là token chứ không phải một
+   * số gõ ba lần rồi lệch ở chỗ thứ ba. */
+  --cao-chrome: 57px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -57,7 +84,7 @@
     --inset: #12161c;
     --ink: #e7eaf0;
     --ink-2: #a3aab8;
-    --ink-3: #6f7787;
+    --ink-3: #7a8292;
     --line: #272d38;
     --line-2: #39414f;
     --accent: #8b99f2;
@@ -78,7 +105,7 @@
   --inset: #12161c;
   --ink: #e7eaf0;
   --ink-2: #a3aab8;
-  --ink-3: #6f7787;
+  --ink-3: #7a8292;
   --line: #272d38;
   --line-2: #39414f;
   --accent: #8b99f2;
@@ -155,7 +182,7 @@ a:hover {
 
 /* Deep-link tới bình luận (`#bl-<id>`) không được dán vào mép trên màn hình. */
 :target {
-  scroll-margin-top: 84px;
+  scroll-margin-top: calc(var(--cao-chrome) + 27px);
 }
 
 @media (prefers-reduced-motion: reduce) {

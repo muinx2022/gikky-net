@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { expect, test } from "@playwright/test";
 
 import { boImport, quetNguon } from "./quet";
+import { coBaseUrl } from "./quet-ngoac";
 
 /** Hàng rào chống rò session cho **`apps/admin`** — bản song song của
  * `type-frontend.spec.ts`, vốn chỉ quét `apps/web`.
@@ -95,17 +96,12 @@ function loiGoiApi(than: string): { ten: string; doi_so: string }[] {
   return ra;
 }
 
-/** Có `baseUrl` không — trực tiếp, hay qua MỘT lớp spread hằng số. */
-function coBaseUrl(doi_so: string, than: string): boolean {
-  if (/\bbaseUrl\b/.test(doi_so)) return true;
-  for (const m of doi_so.matchAll(/\.\.\.([A-Za-z_$][\w$]*)/g)) {
-    const khai = new RegExp(
-      `\\b(?:const|let|var)\\s+${m[1]}\\s*=\\s*\\{([^{}]*)\\}`,
-    ).exec(than);
-    if (khai !== null && /\bbaseUrl\b/.test(khai[1])) return true;
-  }
-  return false;
-}
+// `coBaseUrl` **dùng chung với `type-frontend.spec.ts`** — L25, 2026-08-23.
+//
+// Bản riêng ở đây từng là `\{([^{}]*)\}` một tầng ngoặc trong khi bản web đã chuyển sang
+// quét cân bằng. Lệch theo chiều an toàn (admin báo vi phạm GIẢ nếu ai thêm một hằng có
+// ngoặc lồng), nhưng một hàng rào báo động giả là một hàng rào sẽ bị gỡ — L24 đã ghi đúng
+// câu đó. Hai bản của một luật thì bản ít chạy hơn sẽ là bản trôi.
 
 test("mọi lời gọi hàm API trong apps/admin đều truyền `baseUrl` theo từng lần gọi", () => {
   const viPham = FILES.flatMap((f) =>

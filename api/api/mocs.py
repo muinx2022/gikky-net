@@ -40,6 +40,7 @@ from api.quyen import (
 from api.schemas import MocOut, MocRevisionsOut, NganKeoOut, TrichKetQuaOut
 from api.schemas_ghi import MocSuaIn, TrichIn
 from api.trinh_bay import moc_ra, nut_ra, revision_ra
+from api.tuong_tac import dem_reaction
 
 logger = logging.getLogger(__name__)
 
@@ -152,7 +153,13 @@ def _moc_ra_day_du(moc: Moc) -> MocOut:
             "position", "id"
         )
     )
-    return moc_ra(moc, so_binh_luan=dem.get(moc.seq, 0), trich=trich, anhs=anhs)
+    return moc_ra(
+        moc,
+        so_binh_luan=dem.get(moc.seq, 0),
+        trich=trich,
+        anhs=anhs,
+        reactions=dem_reaction(moc),
+    )
 
 
 @router.patch(

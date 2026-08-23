@@ -20,11 +20,34 @@ export const CHU_DICH: Record<NonNullable<BaoCaoOut["dich"]>["loai"], string> = 
   comment: "Bình luận",
 };
 
+/** Chữ cho `Report.action` — **một lời GHI CHÉP về quá khứ**, không phải một hành động.
+ *
+ * Backend nói rõ: `hanh_dong` chỉ được ghi lại, nó **không thi hành gì**
+ * (`api/quan_tri_bao_cao.py::dong_bao_cao_endpoint`). Bảng này vì thế chỉ đúng ở đúng một
+ * chỗ: cột "Xử lý" của một hàng ĐÃ đóng, nơi nó đọc là *"mod đã ghi: đã ban"*.
+ *
+ * ⚠ **Đừng dùng nó làm nhãn nút** (L04). Bốn cái nút `Đóng: Đã ban` từng là thứ duy nhất
+ * trên hàng trông giống một hành động, trong khi kẻ bị tố không bị ban một giây nào. Nhãn
+ * nút nay lấy từ `CHU_GHI_NHAN` ngay dưới, và hành động THẬT có nút riêng.
+ */
 export const CHU_HANH_DONG: Record<DongBaoCaoIn["hanh_dong"], string> = {
-  an: "Đã ẩn",
-  khoa: "Đã khoá",
-  ban: "Đã ban",
-  bo_qua: "Bỏ qua",
+  an: "đã ẩn",
+  khoa: "đã khoá",
+  ban: "đã ban",
+  bo_qua: "bỏ qua",
+};
+
+/** Chữ trên NÚT đóng báo cáo — thì hiện tại, chủ ngữ là mod, động từ là "ghi".
+ *
+ * "Ghi: đã ban" đọc ra đúng thứ cú bấm làm: nó ghi vào sổ rằng mod đã ban ở đâu đó, và
+ * nó đóng báo cáo. Nó không ban ai. So với "Đóng: Đã ban" — một câu mà cách đọc tự nhiên
+ * nhất là *"đóng báo cáo này BẰNG CÁCH ban"*.
+ */
+export const CHU_GHI_NHAN: Record<DongBaoCaoIn["hanh_dong"], string> = {
+  an: "Ghi: đã ẩn",
+  khoa: "Ghi: đã khoá",
+  ban: "Ghi: đã ban",
+  bo_qua: "Ghi: bỏ qua",
 };
 
 /** Mọi hành động đóng báo cáo, theo thứ tự bày ra nút. Suy từ bảng chữ ở trên, không gõ

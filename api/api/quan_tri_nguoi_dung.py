@@ -15,8 +15,11 @@ Cả hai phụ thuộc **người gọi**, nên chúng không phải bất biế
 trong đường ghi. Cùng lý lẽ với rate limit ở `core/ghi.py::them_moc`.
 """
 
+from datetime import timedelta
+
 from django.core.exceptions import ValidationError
 from django.db.models import Count
+from django.utils import timezone
 from ninja import Router
 
 from core.ghi import ban_user, go_ban_user
@@ -104,8 +107,12 @@ def ban_nguoi_dung(request, username: str, du_lieu: BanIn):
 
     `ly_do` bắt buộc và không được rỗng — PLAN 5.10 nói người bị chặn phải đọc được nó.
 
+    Ba cách khai hạn, **đúng một cách mỗi lần gọi**: `vinh_vien`, `den_khi` (mốc tuyệt
+    đối), hoặc `so_ngay` (N ngày kể từ bây giờ, **đồng hồ máy chủ** — L33). `so_ngay` được
+    quy đổi ngay tại đây; `core/ghi.py::ban_user` vẫn chỉ nhận `vinh_vien`/`den_khi`.
+
     409 `xung_dot` khi đích là chính mình hoặc là một mod khác (xem docstring module).
-    400 `tham_so_khong_hop_le` khi vừa `vinh_vien` vừa có `den_khi`, hoặc không có cái nào.
+    400 `tham_so_khong_hop_le` khi số cách khai hạn khác 1, hoặc `so_ngay` không dương.
     """
     u = _tim(username)
     if u is None:
@@ -130,12 +137,30 @@ def ban_nguoi_dung(request, username: str, du_lieu: BanIn):
             "Không ban được một tài khoản quản trị khác; gỡ quyền staff ở Django admin trước.",
         )
 
+    # Quy đổi `so_ngay` TRƯỚC khi xuống đường ghi. Phép kiểm "đúng một cách" phải đếm cả
+    # ba: nếu chỉ để `ban_user` xử cặp cũ thì `{so_ngay: 7, vinh_vien: true}` đi lọt —
+    # `so_ngay` bị bỏ qua im lặng và mod tin là mình vừa ban 7 ngày.
+    cach_khai = [du_lieu.vinh_vien, du_lieu.den_khi is not None, du_lieu.so_ngay is not None]
+    if sum(1 for x in cach_khai if x) != 1:
+        return loi(
+            400,
+            THAM_SO_KHONG_HOP_LE,
+            "Ban phải khai ĐÚNG MỘT trong ba: `vinh_vien`, `den_khi`, `so_ngay`.",
+        )
+    den_khi = du_lieu.den_khi
+    if du_lieu.so_ngay is not None:
+        if du_lieu.so_ngay < 1:
+            return loi(
+                400, THAM_SO_KHONG_HOP_LE, "`so_ngay` phải là số ngày dương."
+            )
+        den_khi = timezone.now() + timedelta(days=du_lieu.so_ngay)
+
     try:
         da_doi = ban_user(
             user=u,
             boi=request.user,
             vinh_vien=du_lieu.vinh_vien,
-            den_khi=du_lieu.den_khi,
+            den_khi=den_khi,
             ly_do=du_lieu.ly_do,
         )
     except ValidationError as e:

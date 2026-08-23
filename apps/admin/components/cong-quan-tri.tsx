@@ -4,6 +4,7 @@ import { quanTriToi, type ModOut } from "@gikky/api-client/admin";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
+import { OTraCuu } from "./o-tra-cuu";
 import {
   GOC_API,
   MA_CHUA_DANG_NHAP,
@@ -54,6 +55,10 @@ export function CongQuanTri({ children }: { children: React.ReactNode }) {
           <Link href="/">Hàng đợi</Link>
           <Link href="/subs">Chuyên mục</Link>
           <Link href="/nhat-ky">Nhật ký</Link>
+          {/* Tra cứu mạch/user — PLAN 9.3 mục 2 (L22). Trên THANH ĐIỀU HƯỚNG chứ không
+              trên một trang riêng: nó là lối vào, và một lối vào nằm sau một cú bấm là
+              lối vào mod sẽ thay bằng gõ URL tay. */}
+          <OTraCuu />
           <span className="mono">
             {mod.display_name || mod.username}
             {mod.is_superuser ? " · superuser" : ""}

@@ -99,3 +99,73 @@
 .moi_dang_nhap a:hover {
   text-decoration: underline;
 }
+
+/* Chip neo bấm được — L05. Trông vẫn là một cái chip (mono, bo tròn, mực nhạt) để nó
+   không tranh chú ý với nút Gửi, nhưng nó là hai điều khiển thật nằm trong đó. */
+.neo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+}
+
+.neo_nhan {
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+
+.neo_chon {
+  font-family: var(--f-mono);
+  font-size: 11.5px;
+  color: var(--ink-2);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px 8px;
+  cursor: pointer;
+  max-width: 13em;
+}
+
+.neo_chon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 28px, không 44px: nó nằm cạnh một `<select>` cao 28px và một hàng nút cao 30px, nên
+   một ô 44px ở đây kéo lệch cả dải chân composer. Vùng bấm được nới bằng `padding` chứ
+   không bằng chiều cao — xem `@media (pointer: coarse)` ngay dưới. */
+.neo_go {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink-2);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.neo_go:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.neo_go:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Ngón tay, không phải con trỏ: mốc 44px của WCAG 2.5.5 áp ở đây. */
+@media (pointer: coarse) {
+  .neo_go {
+    width: 44px;
+    height: 44px;
+  }
+
+  .neo_chon {
+    min-height: 44px;
+  }
+}

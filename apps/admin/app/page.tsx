@@ -4,7 +4,9 @@ import {
   quanTriDatAnBinhLuan,
   quanTriDatAnMach,
   quanTriDatAnMoc,
+  quanTriDatKhoaMach,
   quanTriDongBaoCao,
+  quanTriGoBanNguoiDung,
   quanTriLietKeBaoCao,
   type BaoCaoOut,
   type DongBaoCaoIn,
@@ -16,11 +18,13 @@ import { useCallback, useEffect, useState } from "react";
 import { CongQuanTri } from "../components/cong-quan-tri";
 import {
   CHU_DICH,
+  CHU_GHI_NHAN,
   CHU_HANH_DONG,
   CHU_LY_DO,
   HANH_DONG_DONG,
   gioVN,
 } from "../components/dung-mo-ta";
+import { FormBan } from "../components/form-ban";
 import { GOC_API, headerGhi, moTaLoi } from "../lib/api";
 
 /** Hàng đợi báo cáo — màn hình ưu tiên SỐ MỘT của khu quản trị (PLAN 9.3 mục 1):
@@ -28,6 +32,25 @@ import { GOC_API, headerGhi, moTaLoi } from "../lib/api";
  *
  * "Ngay trên hàng" là cả yêu cầu, không phải cách nói: bắt mod mở tab thứ hai cho từng
  * dòng thì cái giá thật là mod đọc lướt rồi bấm bừa.
+ *
+ * ## L04 — cả ba nút nay CÓ THẬT, và bốn nút "Đóng:" thôi giả vờ
+ *
+ * Tới 2026-08-23 màn hình này cài **1 trong 3**: chỉ có Ẩn/Gỡ ẩn. Không có khoá, không
+ * có ban. Thứ duy nhất trông giống hành động là bốn cái nút `Đóng: Đã ban` — mà
+ * `hanh_dong` ở backend **chỉ ghi lại**, nó không thi hành gì. Mod bấm "Đóng: Đã ban"
+ * trên một báo cáo lừa đảo nhận 200, hàng chuyển sang "Đã xử lý", audit log đầy đủ, và
+ * kẻ kia không bị ban một giây nào.
+ *
+ * Nay cột "Xử lý" chia làm hai khối có nhãn:
+ *
+ * - **Thi hành** — Ẩn/Gỡ ẩn · Khoá mạch/Mở khoá · Ban tác giả/Gỡ ban. Ba lời gọi thật.
+ * - **Ghi nhận & đóng** — bốn nút cũ, đổi nhãn sang `Ghi: đã ban` và kèm một câu nói
+ *   thẳng rằng chúng không thi hành gì (`CHU_GHI_NHAN`).
+ *
+ * Nút bật/tắt đọc trạng thái THẬT từ `dich.mach_da_khoa` / `dich.tac_gia_bi_ban` (hai
+ * trường thêm cùng lượt này). Một nút bật/tắt không biết mình đang ở chiều nào là một nút
+ * mà nửa số lần bấm trả `da_doi=false` và không đổi gì trên màn hình — tức một nút chết
+ * theo lịch.
  */
 export default function TrangHangDoi() {
   return (
@@ -147,6 +170,17 @@ function Dong({
 }) {
   const dich = r.dich;
   const daDong = r.resolved_at !== null;
+  /** Form ban mở ngay dưới hàng. Không `window.confirm`: ban đòi một LÝ DO mà người bị
+   * ban đọc được (PLAN 5.10), và một hộp thoại gốc của trình duyệt không hỏi được nó. */
+  const [moBan, setMoBan] = useState(false);
+  /** Mạch để khoá: đích là mốc/bình luận thì lấy `mach_id`, đích là mạch thì chính nó. */
+  const machId = dich === null ? null : (dich.mach_id ?? dich.id);
+  /** Username tác giả, tách thành một `string | null` riêng.
+   *
+   * TypeScript không giữ được phép thu hẹp `dich.tac_gia !== null` xuyên qua closure của
+   * một `onClick`, nên viết thẳng `dich.tac_gia.username` trong đó là lỗi biên dịch và
+   * lối thoát rẻ là một dấu `!` — thứ vô hiệu hoá đúng phép kiểm vừa viết ra. */
+  const tacGia = dich?.tac_gia?.username ?? null;
 
   return (
     <tr>
@@ -196,49 +230,129 @@ function Dong({
       <td>
         {daDong ? (
           <span className="mono">
-            {CHU_HANH_DONG[(r.action ?? "bo_qua") as DongBaoCaoIn["hanh_dong"]]} ·{" "}
-            {r.resolved_by === null ? "?" : `u/${r.resolved_by.username}`}
+            mod ghi: {CHU_HANH_DONG[(r.action ?? "bo_qua") as DongBaoCaoIn["hanh_dong"]]}{" "}
+            · {r.resolved_by === null ? "?" : `u/${r.resolved_by.username}`}
           </span>
         ) : (
-          <div className="hang-nut">
-            {dich !== null && !dich.da_bi_an && (
-              <button
-                type="button"
-                disabled={dangChay}
-                onClick={() => chay(() => anDich(dich, true))}
-              >
-                Ẩn
-              </button>
+          <>
+            <p className="nhan-khoi">Thi hành</p>
+            <div className="hang-nut" data-testid="nut-thi-hanh">
+              {dich !== null && !dich.da_bi_an && (
+                <button
+                  type="button"
+                  disabled={dangChay}
+                  onClick={() => chay(() => anDich(dich, true))}
+                >
+                  Ẩn
+                </button>
+              )}
+              {dich !== null && dich.da_bi_an && (
+                <button
+                  type="button"
+                  disabled={dangChay}
+                  onClick={() => chay(() => anDich(dich, false))}
+                >
+                  Gỡ ẩn
+                </button>
+              )}
+              {dich !== null && machId !== null && (
+                <button
+                  type="button"
+                  disabled={dangChay}
+                  data-testid="nut-khoa-mach"
+                  onClick={() =>
+                    chay(() =>
+                      quanTriDatKhoaMach({
+                        baseUrl: GOC_API,
+                        headers: headerGhi(),
+                        path: { mach_id: machId },
+                        // Lý do lấy từ chính báo cáo: mod không phải gõ lại thứ đang nằm
+                        // ở cột bên trái, và `AuditLog` giữ được đường nối giữa hai bên.
+                        body: {
+                          khoa: !dich.mach_da_khoa,
+                          ly_do: `Báo cáo #${r.id}: ${CHU_LY_DO[r.ly_do]}`,
+                        },
+                      }),
+                    )
+                  }
+                >
+                  {dich.mach_da_khoa ? "Mở khoá mạch" : "Khoá mạch"}
+                </button>
+              )}
+              {tacGia !== null && dich?.tac_gia_bi_ban === true && (
+                <button
+                  type="button"
+                  disabled={dangChay}
+                  data-testid="nut-go-ban"
+                  onClick={() =>
+                    chay(() =>
+                      quanTriGoBanNguoiDung({
+                        baseUrl: GOC_API,
+                        headers: headerGhi(),
+                        path: { username: tacGia },
+                      }),
+                    )
+                  }
+                >
+                  Gỡ ban tác giả
+                </button>
+              )}
+              {tacGia !== null && dich?.tac_gia_bi_ban === false && (
+                <button
+                  type="button"
+                  disabled={dangChay}
+                  aria-expanded={moBan}
+                  data-testid="nut-ban-tac-gia"
+                  onClick={() => setMoBan((x) => !x)}
+                >
+                  {moBan ? "Thôi ban" : "Ban tác giả…"}
+                </button>
+              )}
+            </div>
+
+            {moBan && tacGia !== null && (
+              <FormBan
+                username={tacGia}
+                // Hàng đợi không biết đích có phải staff không — API trả 409 kèm câu giải
+                // thích và `chay` hiện nó ra. `false` ở đây nghĩa "chưa biết", KHÔNG phải
+                // "chắc chắn không phải staff": cửa chặn thật vẫn nằm ở server.
+                laStaff={false}
+                dangChay={dangChay}
+                chay={async (viec) => {
+                  await chay(viec);
+                  setMoBan(false);
+                }}
+                gonNhe
+              />
             )}
-            {dich !== null && dich.da_bi_an && (
-              <button
-                type="button"
-                disabled={dangChay}
-                onClick={() => chay(() => anDich(dich, false))}
-              >
-                Gỡ ẩn
-              </button>
-            )}
-            {HANH_DONG_DONG.map((hd) => (
-              <button
-                key={hd}
-                type="button"
-                disabled={dangChay}
-                onClick={() =>
-                  chay(() =>
-                    quanTriDongBaoCao({
-                      baseUrl: GOC_API,
-                      headers: headerGhi(),
-                      path: { report_id: r.id },
-                      body: { hanh_dong: hd },
-                    }),
-                  )
-                }
-              >
-                Đóng: {CHU_HANH_DONG[hd]}
-              </button>
-            ))}
-          </div>
+
+            <p className="nhan-khoi">
+              Ghi nhận &amp; đóng{" "}
+              <span className="mono">(chỉ ghi vào sổ, không thi hành gì)</span>
+            </p>
+            <div className="hang-nut" data-testid="nut-ghi-nhan">
+              {HANH_DONG_DONG.map((hd) => (
+                <button
+                  key={hd}
+                  type="button"
+                  disabled={dangChay}
+                  title="Đóng báo cáo và ghi lại mod đã làm gì. Không tự ẩn/khoá/ban."
+                  onClick={() =>
+                    chay(() =>
+                      quanTriDongBaoCao({
+                        baseUrl: GOC_API,
+                        headers: headerGhi(),
+                        path: { report_id: r.id },
+                        body: { hanh_dong: hd },
+                      }),
+                    )
+                  }
+                >
+                  {CHU_GHI_NHAN[hd]}
+                </button>
+              ))}
+            </div>
+          </>
         )}
       </td>
     </tr>

@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  quanTriBanNguoiDung,
   quanTriGoBanNguoiDung,
   quanTriXemNguoiDung,
   type NguoiDungQuanTriOut,
@@ -12,6 +11,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { CongQuanTri } from "../../../components/cong-quan-tri";
 import { gioVN } from "../../../components/dung-mo-ta";
+import { FormBan } from "../../../components/form-ban";
 import { GOC_API, headerGhi, moTaLoi } from "../../../lib/api";
 
 /** Hồ sơ một tài khoản dưới góc nhìn mod, kèm nút ban/gỡ ban — PLAN 5.10, 9.3 mục 2. */
@@ -23,18 +23,12 @@ export default function TrangNguoiDung() {
   );
 }
 
-/** Số ngày cho ban TẠM. `0` nghĩa là ban vĩnh viễn — hai kiểu ban loại trừ nhau ở API
- * (`core/ghi.py::ban_user`), nên form phải gửi ĐÚNG một trong hai. */
-const SO_NGAY = [0, 1, 7, 30] as const;
-
 function ChiTietNguoiDung() {
   const tham_so = useParams<{ username: string }>();
   const username = tham_so.username;
   const [u, setU] = useState<NguoiDungQuanTriOut | null>(null);
   const [loi, setLoi] = useState<string | null>(null);
   const [dangChay, setDangChay] = useState(false);
-  const [lyDo, setLyDo] = useState("");
-  const [soNgay, setSoNgay] = useState<number>(7);
 
   const nap = useCallback(async () => {
     setLoi(null);
@@ -68,11 +62,6 @@ function ChiTietNguoiDung() {
 
   if (loi !== null && u === null) return <div className="loi">{loi}</div>;
   if (u === null) return <p>Đang tải…</p>;
-
-  const denKhi =
-    soNgay === 0
-      ? null
-      : new Date(Date.now() + soNgay * 24 * 3600 * 1000).toISOString();
 
   return (
     <>
@@ -119,61 +108,12 @@ function ChiTietNguoiDung() {
           Gỡ ban
         </button>
       ) : (
-        <form
-          className="the"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void chay(() =>
-              quanTriBanNguoiDung({
-                baseUrl: GOC_API,
-                headers: headerGhi(),
-                path: { username },
-                body: {
-                  ly_do: lyDo,
-                  vinh_vien: soNgay === 0,
-                  den_khi: denKhi,
-                },
-              }),
-            );
-          }}
-        >
-          <p>
-            <label>
-              Lý do (người bị ban ĐỌC ĐƯỢC câu này — PLAN 5.10)
-              <br />
-              <input
-                value={lyDo}
-                onChange={(e) => setLyDo(e.target.value)}
-                required
-                maxLength={200}
-                size={50}
-              />
-            </label>
-          </p>
-          <p>
-            <label>
-              Thời hạn{" "}
-              <select
-                value={soNgay}
-                onChange={(e) => setSoNgay(Number(e.target.value))}
-              >
-                {SO_NGAY.map((n) => (
-                  <option key={n} value={n}>
-                    {n === 0 ? "Vĩnh viễn" : `${n} ngày`}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </p>
-          <button type="submit" disabled={dangChay || u.is_staff}>
-            Ban tài khoản
-          </button>
-          {u.is_staff && (
-            <p className="mono">
-              Không ban được một tài khoản quản trị — gỡ quyền staff ở Django admin trước.
-            </p>
-          )}
-        </form>
+        <FormBan
+          username={username}
+          laStaff={u.is_staff}
+          dangChay={dangChay}
+          chay={chay}
+        />
       )}
     </>
   );

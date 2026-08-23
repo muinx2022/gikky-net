@@ -165,6 +165,19 @@ KHOA_CHO_PHEP = {
     # cũng nhận đúng chuỗi ấy — không có nhánh nào hỏi người xem là ai. Bia mộ / mốc bị
     # ẩn nhận `[]`, cùng chuẩn với `body` và `trich`.
     "anhs", "url", "url_thumb", "w", "h", "position", "exif_taken_at",
+    # Đếm reaction của mốc (lượt giao diện, 2026-08-23 — nợ `REACTION-CHUA-CO-UI`).
+    #
+    # **Cache được, và đây là chỗ phải nói ra vì sao**: nó là con số CHUNG — ai xem cũng
+    # nhận đúng bấy nhiêu, không có nhánh nào hỏi người xem là ai. Thứ per-user của cùng
+    # cơ chế ấy là `my_reactions`, và nó nằm ở `GET /machs/{id}/me` (`no-store`), không ở
+    # đây. Nhét nó vào đây "cho tiện client" là đúng cái PLAN 8.4 điểm 4 gọi là điểm dễ
+    # làm sai nhất.
+    #
+    # Năm khoá con là bộ emoji CỐ ĐỊNH của PLAN 5.7 (`Reaction.Emoji`). Chúng phải có tên
+    # ở đây vì `khoa_json` đi xuống mọi tầng — và đó là một cái chuông nữa: thêm emoji thứ
+    # sáu ở Django mà quên chỗ này thì bài R3 ĐỎ, cùng lúc với
+    # `apps/web/e2e/don-vi/ban-sao-python.spec.ts`.
+    "reactions", "len", "xuong", "lua", "bang", "trung",
     # figures
     "label", "value",
     # trích

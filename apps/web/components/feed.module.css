@@ -31,11 +31,19 @@
   max-width: 62ch;
 }
 
+/* Hàng điều khiển: tab trái, nút đổi kiểu xem phải. */
+.hang_dieu_khien {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
 .tab {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 10px;
 }
 
 .mot_tab {
@@ -106,4 +114,45 @@
   .khung {
     padding: 14px 12px 34px;
   }
+}
+
+/* ===========================================================================
+ * Rail phải DÍNH
+ * ===========================================================================
+ *
+ * `top` phải chừa đúng chiều cao thanh header dính (`chrome.module.css`), nếu không rail
+ * trượt lên nằm DƯỚI header và mất mấy dòng đầu. `--cao-chrome` khai ở `globals.css` để
+ * hai file không phải nhớ cùng một con số.
+ *
+ * `max-height` + `overflow-y: auto` là vế bắt buộc thứ hai: rail dài hơn màn hình mà
+ * không có nó thì phần cuối **không bao giờ cuộn tới được** — nó dính, nên nó không trôi
+ * lên, nên đáy của nó nằm ngoài khung nhìn vĩnh viễn. Đó là cách hỏng kinh điển của mọi
+ * sidebar sticky, và nó chỉ lộ ra khi rail mọc thêm một khối.
+ *
+ * `align-items: start` trên `.khung` là điều kiện để `sticky` có tác dụng trong grid: mặc
+ * định `stretch` kéo item cao bằng hàng, và một phần tử đã cao bằng khung thì không còn
+ * chỗ nào để dính.
+ */
+.rail {
+  position: sticky;
+  top: calc(var(--cao-chrome) + 14px);
+  max-height: calc(100vh - var(--cao-chrome) - 28px);
+  overflow-y: auto;
+  /* Thanh cuộn riêng của rail không được đẩy nội dung nhảy ngang khi nó hiện ra. */
+  scrollbar-gutter: stable;
+}
+
+@media (max-width: 900px) {
+  /* Dưới 900px rail xuống dưới feed. Dính ở đó là vô nghĩa (nó là phần tử cuối trang) và
+     `max-height` sẽ cắt cụt nội dung của chính nó — nên tắt cả ba thuộc tính, không chỉ
+     `position`. */
+  .rail {
+    position: static;
+    max-height: none;
+    overflow-y: visible;
+  }
+}
+
+:global(:root[data-kieu-xem="gon"]) .danh_sach {
+  gap: 4px;
 }

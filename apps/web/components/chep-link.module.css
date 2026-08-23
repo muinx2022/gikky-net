@@ -1,0 +1,46 @@
+/* Cùng hình dạng với `.nut_binh_luan` của thẻ mạch — hai thứ nằm cạnh nhau trên một
+   thanh thao tác thì phải đọc như một hàng, không như hai loài khác nhau. */
+.nut {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--f-mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-2);
+  background: var(--surface-2);
+  border-radius: 3px;
+  padding: 1px 7px;
+  cursor: pointer;
+}
+
+.nut:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* Phản hồi "đã chép" đi bằng CHỮ (nhãn nút đổi), không bằng màu: một cú đổi màu trong
+   1,8 giây là thứ người không phân biệt được sắc độ sẽ không thấy, và nó cũng không đọc
+   được bằng trình đọc màn hình. Viền chỉ để nhấn thêm. */
+.nut[data-trang-thai="roi"] {
+  border: 1px solid var(--accent);
+  padding: 0 6px;
+}
+
+.nut[data-trang-thai="hong"] {
+  border: 1px solid var(--line-2);
+  padding: 0 6px;
+  color: var(--ink);
+}
+
+@media (pointer: coarse) {
+  .nut {
+    min-height: 44px;
+    padding: 0 12px;
+  }
+
+  .nut[data-trang-thai="roi"],
+  .nut[data-trang-thai="hong"] {
+    padding: 0 11px;
+  }
+}

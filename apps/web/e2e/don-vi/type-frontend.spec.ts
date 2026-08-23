@@ -4,6 +4,7 @@ import { expect, test } from "@playwright/test";
 
 import { KHOANG_FEED, SORT_API } from "../../lib/api";
 import { boImport, quetNguon } from "./quet";
+import { coBaseUrl, thanHang } from "./quet-ngoac";
 
 const WEB = resolve(__dirname, "..", "..");
 const GOC = resolve(WEB, "..", "..");
@@ -275,52 +276,13 @@ function doiSo(s: string, mo: number): string {
   return s.slice(mo + 1);
 }
 
-/** Thân của object literal khởi tạo hằng `ten`, hoặc `null` nếu không thấy.
- *
- * ⚠ **Đếm ngoặc CÂN BẰNG, không phải `\{([^{}]*)\}`** *(sửa 2026-08-23, mảng B2)*. Bản cũ
- * dừng ở tầng ngoặc thứ nhất, nên nó **mù** với đúng hình dạng Phase 3 cần:
- *
- *     const CHUNG_ISR = { baseUrl: API_ORIGIN, next: { revalidate: 3600 } } as const;
- *
- * `[^{}]*` không vượt qua được dấu `{` của `next:`, regex không khớp gì, `khai === null`,
- * và mọi lời gọi `{ ...CHUNG_ISR, … }` bị báo **thiếu baseUrl**. Hỏng về phía an toàn —
- * nhưng nó chặn cứng cơ chế ISR của PLAN 8.4, và hai lối thoát còn lại đều xấu: một dòng
- * giấy miễn trừ cho đúng cái luật W2 vừa dọn sạch giấy, hoặc chép `baseUrl:` vào từng lời
- * gọi để chiều một hàng rào đọc kém. Nên hàng rào học đọc ngoặc lồng.
- *
- * **Luật KHÔNG bị nới**: hàm vẫn chỉ đi theo đúng MỘT lớp spread của một hằng khai bằng
- * object literal ở tầng module, và vẫn chỉ nhận `baseUrl` xuất hiện trong thân hằng đó.
- * Thứ đổi là nó đọc được cả thân có ngoặc lồng, chứ không phải nó chấp nhận thêm ca nào.
- */
-function thanHang(ten: string, than: string): string | null {
-  const dau = new RegExp(`\\b(?:const|let|var)\\s+${ten}\\s*=\\s*\\{`).exec(than);
-  if (dau === null) return null;
-  const mo = dau.index + dau[0].length - 1;
-  let sau = 0;
-  for (let i = mo; i < than.length; i += 1) {
-    if (than[i] === "{") sau += 1;
-    else if (than[i] === "}") {
-      sau -= 1;
-      if (sau === 0) return than.slice(mo + 1, i);
-    }
-  }
-  return null;
-}
-
-/** Đối số này có mang `baseUrl` không — trực tiếp, hay qua MỘT lớp spread hằng số?
- *
- * `lib/api.ts` gom `{ baseUrl, cache }` vào hằng `CHUNG` rồi `{ ...CHUNG, … }` ở từng
- * lời gọi. Không đi theo được một lớp spread thì hàng rào bắt buộc mọi lời gọi phải chép
- * lại `baseUrl:` — tức nó ép một kiểu viết xấu hơn để chính nó đọc được.
- */
-function coBaseUrl(doi_so: string, than: string): boolean {
-  if (/\bbaseUrl\b/.test(doi_so)) return true;
-  for (const m of doi_so.matchAll(/\.\.\.([A-Za-z_$][\w$]*)/g)) {
-    const khai = thanHang(m[1], than);
-    if (khai !== null && /\bbaseUrl\b/.test(khai)) return true;
-  }
-  return false;
-}
+// `thanHang` / `coBaseUrl` **đã dời sang `./quet-ngoac`** — L25, 2026-08-23.
+//
+// Hai hàng rào (`type-frontend` cho `apps/web`, `type-admin` cho `apps/admin`) hiện thực
+// CÙNG một luật và đã trôi khỏi nhau: bản này học đọc ngoặc lồng ở mảng B2, bản admin ở
+// lại với `\{([^{}]*)\}` một tầng. Nay cả hai `import` một bản duy nhất, nên chúng không
+// còn chỗ để lệch. Bản chung cũng bịt L37 (`baseUrl` phải ở TẦNG ĐẦU của thân hằng) —
+// đọc docstring `quet-ngoac.ts` trước khi sửa.
 
 /** Mọi vị trí `<tênHàmAPI>(` trong một file, kèm chuỗi đối số. */
 function loiGoiApi(than: string): { ten: string; doi_so: string; tai: number }[] {
@@ -380,12 +342,21 @@ test("luật trên có quét trúng lời gọi THẬT ở MỌI cửa (không q
   expect([...theo_file.keys()].sort()).toEqual([
     "app/chan-doan/health-same-origin.tsx",
     "app/chan-doan/page.tsx",
+    // Lượt GIAO DIỆN (2026-08-23) — ba cửa mới, cả ba là client component và cả ba trả một
+    // nợ có tên:
+    //   `ban-cu-moc`    `UI-DIFF-REVISION` — `GET /mocs/{id}/revisions`, nạp KHI BẤM nhãn
+    //                   "đã sửa N lần" (21 mốc mà nạp sẵn là 21 lời gọi cho thứ ít ai mở);
+    //   `form-cai-dat`  `TRANG-CAI-DAT` — `PATCH /me`, cửa DUY NHẤT bật được digest tuần;
+    //   `hang-reaction` `REACTION-CHUA-CO-UI` — `POST /mocs/{id}/reactions`.
+    "components/ban-cu-moc.tsx",
     // Lượt vá V1 (L03) — form báo cáo, client component, `baseUrl` rỗng (same-origin).
     "components/bao-cao.tsx",
     "components/chuong.tsx", // B2 — chuông thông báo, poll 60s
     "components/composer.tsx", // Phase 2
     "components/cot-vote.tsx", // Phase 2
+    "components/form-cai-dat.tsx", // giao diện — trang /cai-dat
     "components/form-dang-mach.tsx", // form ghi
+    "components/hang-reaction.tsx", // giao diện — hàng 📈📉🔥🧊🎯 của wireframe 9.2
     "components/hanh-dong-binh-luan.tsx", // form ghi
     "components/hanh-dong-moc.tsx", // form ghi
     "components/khoi-chu-mach.tsx", // form ghi

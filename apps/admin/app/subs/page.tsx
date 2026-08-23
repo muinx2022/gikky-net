@@ -198,10 +198,21 @@ function DongSub({
           >
             Lưu
           </button>
+          {/* **Luật ba đường** (L30, vá 2026-08-23): `disabled` chặn cú bấm · `title`
+              cho người rê chuột · `aria-label` cho trình đọc màn hình. Đường thứ ba là
+              đường hay bị quên nhất, và nó là đường duy nhất của người không nhìn thấy:
+              `title` một mình thì phần lớn trình đọc màn hình bỏ qua, nên nút chỉ đọc
+              thành "Xoá, không dùng được" — đúng, và không nói được VÌ SAO.
+              Bản đầy đủ của luật này nằm ở `apps/web/components/cot-vote.tsx`. */}
           <button
             type="button"
             disabled={dangChay || s.so_mach > 0}
             title={s.so_mach > 0 ? "Sub còn mạch — chuyển hoặc xoá chúng trước." : ""}
+            aria-label={
+              s.so_mach > 0
+                ? `Xoá s/${s.slug} — không xoá được: sub còn ${s.so_mach} mạch`
+                : `Xoá s/${s.slug}`
+            }
             onClick={() =>
               chay(() =>
                 quanTriXoaSub({

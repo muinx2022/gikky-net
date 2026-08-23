@@ -1,0 +1,54 @@
+/* Hàng reaction dưới thẻ mốc. Nhẹ hơn hẳn cột vote: PLAN 5.7 gọi nó là "bậc thang tham
+   gia RẺ", nên nó không được trông nặng bằng một lá phiếu. */
+.hang {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 9px;
+}
+
+.nut {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--inset);
+  font-size: 12.5px;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.nut:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.nut:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* "Đang chọn" đổi CẢ nền lẫn viền lẫn mực, không chỉ một trong ba — và `aria-pressed` lo
+   phần nghe được. Một trạng thái chỉ khác nhau ở sắc độ là trạng thái không đọc được với
+   người nhìn màu kém, mà đây là hàng nút bấm đi bấm lại. */
+.chon {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.so {
+  font-family: var(--f-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 11.5px;
+}
+
+@media (pointer: coarse) {
+  .nut {
+    min-height: 44px;
+    padding: 0 12px;
+  }
+}

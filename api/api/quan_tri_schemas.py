@@ -65,6 +65,16 @@ class NoiDungBiBaoCaoOut(Schema):
     #: `seq` của mốc, hoặc của mốc mà thread neo vào; `None` nếu không thuộc mốc nào.
     seq: int | None
     da_bi_an: bool
+    #: Mạch chứa nó (hoặc chính nó) đang bị mod KHOÁ chưa — PLAN 5.10.
+    #:
+    #: Có mặt vì hàng đợi có nút "Khoá mạch" ngay trên hàng (L04), và một nút bật/tắt
+    #: không biết trạng thái hiện tại thì mod phải đoán. `dat_khoa_mach` idempotent nên
+    #: bấm nhầm chiều không hỏng gì — nhưng nó trả `da_doi=false` và màn hình không đổi,
+    #: tức mod nhận đúng phản hồi của một nút chết.
+    mach_da_khoa: bool
+    #: Tác giả của nội dung này đang bị ban chưa (`User.dang_bi_ban()` — ba cột, một phép
+    #: đọc, không truy vấn thêm). `None` khi không còn tác giả (bia mộ).
+    tac_gia_bi_ban: bool | None
     #: Đường dẫn CÔNG KHAI để mod mở ra xem tận nơi, vd `/m/nhat-ky-lenh-hpg-12`.
     duong_dan_cong_khai: str
 
@@ -199,14 +209,24 @@ class NguoiDungQuanTriOut(Schema):
 class BanIn(Schema):
     """Body của `POST /users/{username}/ban`.
 
-    `vinh_vien` và `den_khi` **loại trừ nhau**: đúng một trong hai. `core/ghi.py::ban_user`
-    là chỗ ném lỗi nếu vi phạm, không phải pydantic — luật ấy thuộc đường ghi, và nó phải
-    đúng cả khi ai đó gọi hàm từ `manage.py shell`.
+    `vinh_vien`, `den_khi` và `so_ngay` **loại trừ nhau**: đúng một trong ba.
+    `core/ghi.py::ban_user` là chỗ ném lỗi cho cặp `vinh_vien`/`den_khi`, không phải
+    pydantic — luật ấy thuộc đường ghi, và nó phải đúng cả khi ai đó gọi hàm từ
+    `manage.py shell`. `so_ngay` thì **không** xuống tới đường ghi: nó được quy đổi thành
+    `den_khi` ở tầng API (`api/quan_tri_nguoi_dung.py`), nên `ban_user` vẫn chỉ biết đúng
+    hai kiểu ban và bất biến của nó không rộng ra.
     """
 
     ly_do: str
     vinh_vien: bool = False
     den_khi: datetime | None = None
+    #: Ban tạm **N ngày kể từ BÂY GIỜ**, đồng hồ của máy chủ — L33.
+    #:
+    #: Có mặt vì khu quản trị đang tự tính `now + N ngày` bằng đồng hồ trình duyệt rồi gửi
+    #: `den_khi` lên (`apps/admin/app/u/[username]/page.tsx`). Máy mod lệch giờ, hoặc để
+    #: sai múi, là hạn ban lệch theo — và không có gì kêu, vì server nhận một mốc thời
+    #: gian hợp lệ. Nguyên tắc 10: luật domain thuộc về Django.
+    so_ngay: int | None = None
 
 
 class SubQuanTriOut(Schema):

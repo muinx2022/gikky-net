@@ -3,11 +3,13 @@ import type { MocOut, NganKeoOut } from "@gikky/api-client";
 import { dauThoiGianServer, ngayDayDu } from "@/lib/dinh-dang";
 import { SAU_NGAN_KEO } from "@/lib/khan-dai";
 
+import { BanCuMoc } from "./ban-cu-moc";
 import { BinhLuan, DanhSachBinhLuan } from "./binh-luan";
 import { Composer } from "./composer";
 import { SoLaiLo } from "./con-so";
 import { CotVote } from "./cot-vote";
 import { GalleryMoc } from "./gallery-moc";
+import { HangReaction } from "./hang-reaction";
 import { HanhDongMoc } from "./hanh-dong-moc";
 import { KhoiTrich } from "./khoi-trich";
 import { KhungNganKeo, NutNganKeo } from "./ngan-keo";
@@ -96,7 +98,13 @@ export function TheMoc({
           <span className={css.bien_lai} data-testid="moc-created-at">
             ghi {dauThoiGianServer(moc.created_at)}
             {moc.edit_count > 0 && (
-              <span className={css.da_sua}> · đã sửa {moc.edit_count} lần</span>
+              <>
+                {" · "}
+                {/* Nhãn "đã sửa N lần" nay **bấm được** — nợ `UI-DIFF-REVISION`, trả
+                    2026-08-23. Vẫn cùng vai đóng dấu, chỉ khác là nó dẫn tới bằng chứng
+                    thay vì dừng ở lời khẳng định. Xem `components/ban-cu-moc.tsx`. */}
+                <BanCuMoc mocId={moc.id} soLan={moc.edit_count} />
+              </>
             )}
           </span>
         </div>
@@ -148,6 +156,12 @@ export function TheMoc({
           </p>
         )}
 
+        {/* Hàng reaction — `📈 12 · 🔥 9` của wireframe 9.2, nợ `REACTION-CHUA-CO-UI`.
+            Đứng SAU thân mốc và TRƯỚC hàng nút: nó là phản ứng với nội dung, không phải
+            một thao tác quản lý nội dung. Bia mộ không có gì để phản ứng — và `reactions`
+            của nó đã bị `moc_ra` zero hoá, nên hàng nút ở đó sẽ là năm cái nút trống. */}
+        {hien && <HangReaction mocId={moc.id} dem={moc.reactions} />}
+
         <div className={css.chan}>
           {laMach && (
             <NutNganKeo
@@ -184,8 +198,12 @@ export function TheMoc({
             )}
             {/* PLAN 5.4 luật 3: "Composer trong ngăn kéo **tự neo mốc đó**". Nó không
                 đọc chip từ đâu cả — `anchorMocSeq` là `seq` của chính cái ngăn kéo này,
-                và đó là toàn bộ khác biệt với composer khán đài. Câu mồi
-                (`question_for_crowd`) làm placeholder khi ngăn kéo còn trống (luật 4). */}
+                và nó **cố định**: `neoDoiDuoc` để mặc định `false`, vì một cái chip gỡ
+                được ở đây nghĩa là câu vừa viết trong ngăn kéo mốc N rơi ra khỏi mốc N.
+                Đó là hai khác biệt với composer khán đài, không phải một — câu cũ ở đây
+                viết "toàn bộ khác biệt" khi cơ chế đổi/gỡ còn chưa tồn tại (L05/L20).
+                Câu mồi (`question_for_crowd`) làm placeholder khi ngăn kéo còn trống
+                (luật 4). */}
             <Composer
               anchorMocSeq={moc.seq}
               moi={

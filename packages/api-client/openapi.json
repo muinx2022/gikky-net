@@ -1287,6 +1287,13 @@
             ],
             "title": "Question For Crowd"
           },
+          "reactions": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Reactions",
+            "type": "object"
+          },
           "score": {
             "title": "Score",
             "type": "integer"
@@ -1340,6 +1347,7 @@
           "score",
           "trang_thai",
           "so_binh_luan",
+          "reactions",
           "trich",
           "anhs"
         ],

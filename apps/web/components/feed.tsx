@@ -13,6 +13,7 @@ import {
 } from "@/lib/api";
 
 import { BaoCursorHong } from "./bao-cursor-hong";
+import { ChonKieuXem } from "./chon-kieu-xem";
 import css from "./feed.module.css";
 import { TheMach } from "./the-mach";
 
@@ -104,19 +105,25 @@ export function Feed({
 
         {cursorHong && <BaoCursorHong />}
 
-        <nav className={css.tab} data-testid="tab-feed" aria-label="Sắp xếp feed">
-          {TAB_FEED.map((t) => (
-            <Link
-              key={t}
-              href={hrefTab(t)}
-              className={t === tab ? `${css.mot_tab} ${css.tab_dang_chon}` : css.mot_tab}
-              aria-current={t === tab ? "page" : undefined}
-              data-testid={`tab-${t}`}
-            >
-              {NHAN_TAB[t]}
-            </Link>
-          ))}
-        </nav>
+        {/* Hàng tab và nút đổi kiểu xem đi CHUNG một hàng, đúng chỗ Reddit đặt chúng:
+            cả hai đều nói về "danh sách này bày ra thế nào". `ChonKieuXem` tự đẩy mình
+            sang phải bằng `margin-left: auto`. */}
+        <div className={css.hang_dieu_khien}>
+          <nav className={css.tab} data-testid="tab-feed" aria-label="Sắp xếp feed">
+            {TAB_FEED.map((t) => (
+              <Link
+                key={t}
+                href={hrefTab(t)}
+                className={t === tab ? `${css.mot_tab} ${css.tab_dang_chon}` : css.mot_tab}
+                aria-current={t === tab ? "page" : undefined}
+                data-testid={`tab-${t}`}
+              >
+                {NHAN_TAB[t]}
+              </Link>
+            ))}
+          </nav>
+          <ChonKieuXem />
+        </div>
 
         {tabCoKhoang(tab) && (
           <nav className={css.khoang} data-testid="chon-khoang" aria-label="Khoảng thời gian">
@@ -161,7 +168,14 @@ export function Feed({
         )}
       </main>
 
-      {sidebar}
+      {/* Rail phải DÍNH khi cuộn — plan giao diện §2.2.
+          Bọc thêm một lớp thay vì đặt `position: sticky` lên chính `<Sidebar>`: hai trang
+          feed truyền hai component khác nhau vào đây, và một luật bố cục thuộc về chỗ
+          BỐ TRÍ chứ không thuộc về thứ được bố trí. `<aside>` cũng là landmark đúng cho
+          nội dung phụ trợ — thứ `<Sidebar>` (một `<div>`) không có. */}
+      <aside className={css.rail} aria-label="Thông tin bên lề">
+        {sidebar}
+      </aside>
     </div>
   );
 }

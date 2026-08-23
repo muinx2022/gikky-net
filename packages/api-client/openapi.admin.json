@@ -2,7 +2,7 @@
   "components": {
     "schemas": {
       "BanIn": {
-        "description": "Body của `POST /users/{username}/ban`.\n\n`vinh_vien` và `den_khi` **loại trừ nhau**: đúng một trong hai. `core/ghi.py::ban_user`\nlà chỗ ném lỗi nếu vi phạm, không phải pydantic — luật ấy thuộc đường ghi, và nó phải\nđúng cả khi ai đó gọi hàm từ `manage.py shell`.",
+        "description": "Body của `POST /users/{username}/ban`.\n\n`vinh_vien`, `den_khi` và `so_ngay` **loại trừ nhau**: đúng một trong ba.\n`core/ghi.py::ban_user` là chỗ ném lỗi cho cặp `vinh_vien`/`den_khi`, không phải\npydantic — luật ấy thuộc đường ghi, và nó phải đúng cả khi ai đó gọi hàm từ\n`manage.py shell`. `so_ngay` thì **không** xuống tới đường ghi: nó được quy đổi thành\n`den_khi` ở tầng API (`api/quan_tri_nguoi_dung.py`), nên `ban_user` vẫn chỉ biết đúng\nhai kiểu ban và bất biến của nó không rộng ra.",
         "properties": {
           "den_khi": {
             "anyOf": [
@@ -19,6 +19,17 @@
           "ly_do": {
             "title": "Ly Do",
             "type": "string"
+          },
+          "so_ngay": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "So Ngay"
           },
           "vinh_vien": {
             "default": false,
@@ -572,6 +583,10 @@
             "title": "Loai",
             "type": "string"
           },
+          "mach_da_khoa": {
+            "title": "Mach Da Khoa",
+            "type": "boolean"
+          },
           "mach_id": {
             "anyOf": [
               {
@@ -608,6 +623,17 @@
               }
             ]
           },
+          "tac_gia_bi_ban": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tac Gia Bi Ban"
+          },
           "trich_yeu": {
             "title": "Trich Yeu",
             "type": "string"
@@ -622,6 +648,8 @@
           "trich_yeu",
           "seq",
           "da_bi_an",
+          "mach_da_khoa",
+          "tac_gia_bi_ban",
           "duong_dan_cong_khai"
         ],
         "title": "NoiDungBiBaoCaoOut",
@@ -1856,7 +1884,7 @@
     },
     "/api/admin/users/{username}/ban": {
       "post": {
-        "description": "Ban một tài khoản: vĩnh viễn, hoặc tạm tới `den_khi`. **Đúng một trong hai.**\n\n`ly_do` bắt buộc và không được rỗng — PLAN 5.10 nói người bị chặn phải đọc được nó.\n\n409 `xung_dot` khi đích là chính mình hoặc là một mod khác (xem docstring module).\n400 `tham_so_khong_hop_le` khi vừa `vinh_vien` vừa có `den_khi`, hoặc không có cái nào.",
+        "description": "Ban một tài khoản: vĩnh viễn, hoặc tạm tới `den_khi`. **Đúng một trong hai.**\n\n`ly_do` bắt buộc và không được rỗng — PLAN 5.10 nói người bị chặn phải đọc được nó.\n\nBa cách khai hạn, **đúng một cách mỗi lần gọi**: `vinh_vien`, `den_khi` (mốc tuyệt\nđối), hoặc `so_ngay` (N ngày kể từ bây giờ, **đồng hồ máy chủ** — L33). `so_ngay` được\nquy đổi ngay tại đây; `core/ghi.py::ban_user` vẫn chỉ nhận `vinh_vien`/`den_khi`.\n\n409 `xung_dot` khi đích là chính mình hoặc là một mod khác (xem docstring module).\n400 `tham_so_khong_hop_le` khi số cách khai hạn khác 1, hoặc `so_ngay` không dương.",
         "operationId": "quan_tri_ban_nguoi_dung",
         "parameters": [
           {

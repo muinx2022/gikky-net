@@ -117,3 +117,37 @@
   letter-spacing: 0.09em;
   color: var(--stamp);
 }
+
+/* ===========================================================================
+ * Kiểu xem GỌN — `:root[data-kieu-xem="gon"]`, đặt bởi script inline trong `<head>`
+ * ===========================================================================
+ *
+ * Đây là "mật độ", biến thứ hai mà plan giao diện mượn của Reddit sau bố cục. Nó nén
+ * padding, hạ cỡ tiêu đề và bỏ khoảng thở giữa các dòng meta — **không** giấu thông tin
+ * nào. Ẩn bớt trường ở chế độ gọn là dựng hai phiên bản của cùng một thẻ, và người ta sẽ
+ * đổi qua đổi lại để đọc cho đủ.
+ *
+ * `:global(:root[...])` là bắt buộc: CSS Modules băm mọi tên lớp cục bộ, mà `:root` là
+ * phần tử `<html>` nằm ngoài mọi component. Selector con (`.the`) vẫn được băm bình
+ * thường, nên luật này vẫn chỉ chạm đúng thẻ mạch.
+ */
+:global(:root[data-kieu-xem="gon"]) .the {
+  padding: 5px 10px 5px 6px;
+  border-radius: 4px;
+}
+
+:global(:root[data-kieu-xem="gon"]) .tieu_de {
+  font-size: 15px;
+  line-height: 1.25;
+  margin: 1px 0 3px;
+}
+
+:global(:root[data-kieu-xem="gon"]) .dau {
+  font-size: 11.5px;
+  gap: 5px;
+}
+
+:global(:root[data-kieu-xem="gon"]) .chan {
+  gap: 6px;
+  font-size: 12px;
+}

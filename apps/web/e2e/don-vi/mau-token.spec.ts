@@ -258,7 +258,10 @@ const STAMP_THEO_MUC: Readonly<Record<string, readonly string[]>> = {
     "components/khoi-trich.module.css#.nhay",
   ],
   'nhãn "ĐÃ ĐÓNG SỔ" trên thẻ feed': ["components/the-mach.module.css#.dong_so"],
-  '"đã sửa"': ["components/the-moc.module.css#.da_sua"],
+  // Nhãn "đã sửa N lần" chuyển từ một `<span>` trơ sang một cái NÚT mở danh sách bản cũ
+  // (nợ `UI-DIFF-REVISION`, 2026-08-23), nên selector đổi file. **Cùng một vai đóng dấu
+  // của PLAN 9.1**, không phải vai mới — đó là điều kiện để nó được đứng dưới khoá này.
+  '"đã sửa"': ["components/ban-cu-moc.module.css#.nhan"],
   'chỉ số "Được trích ×N" trên hồ sơ': [
     "app/u/[username]/ho-so.module.css#.trich dt, .trich dd",
   ],

@@ -7,6 +7,22 @@
   align-items: start;
 }
 
+/* Cột trái CHIẾM TRỌN chiều cao của nhánh (`grid-row: 1 / -1`), nếu không thì đường dẫn
+   thụt chỉ dài bằng dòng đầu và nó thôi là một đường dẫn. */
+.cot {
+  grid-column: 1;
+  grid-row: 1 / -1;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tom_tat,
+.than {
+  grid-column: 2;
+}
+
 .nut {
   font-family: var(--f-mono);
   font-size: 11px;
@@ -18,6 +34,35 @@
 
 .nut:hover {
   color: var(--accent);
+}
+
+/* Vạch dọc chạy hết nhánh. Vùng BẤM rộng bằng cả cột 18px, còn thứ nhìn thấy là một
+   đường 2px vẽ bằng `::before` — nếu vùng bấm chỉ rộng 2px thì nó không bấm trúng được. */
+.thanh {
+  flex: 1;
+  width: 100%;
+  min-height: 10px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  position: relative;
+}
+
+.thanh::before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--line);
+  border-radius: 1px;
+}
+
+.thanh:hover::before {
+  background: var(--accent);
 }
 
 .tom_tat {

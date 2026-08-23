@@ -52,6 +52,12 @@ type NguCanh = {
   dangTai: boolean;
   /** Phiếu của tôi trên một đích, `0` khi chưa vote (hoặc chưa biết). */
   phieuCua: (dich: DichVote) => -1 | 0 | 1;
+  /** Reaction của tôi trên một mốc, `null` khi chưa react (hoặc chưa biết).
+   *
+   * Cùng đường với `phieuCua`, và cùng lý do nó không nằm trong `GET /machs/{id}`: đây là
+   * dữ liệu per-user, mà trang mạch có cache dùng chung (PLAN 8.4). Con số ĐẾM thì nằm ở
+   * `MocOut.reactions` — nó không phải của riêng ai. */
+  reactionCua: (mocId: number) => string | null;
   /** Hỏi lại `/me` — gọi sau khi theo/bỏ theo, hoặc sau khi đăng nhập. */
   taiLai: () => Promise<void>;
   /** Cập nhật **lạc quan** cờ theo mạch, không đợi một vòng `/me` nữa. */
@@ -62,6 +68,7 @@ const RONG: NguCanh = {
   trangThai: null,
   dangTai: false,
   phieuCua: () => 0,
+  reactionCua: () => null,
   taiLai: async () => {},
   datTheoMach: () => {},
 };
@@ -134,6 +141,12 @@ export function TrangThaiToiProvider({
     [trangThai],
   );
 
+  const reactionCua = useCallback(
+    (mocId: number): string | null =>
+      trangThai?.my_reactions.find((x) => x.moc_id === mocId)?.emoji ?? null,
+    [trangThai],
+  );
+
   const datTheoMach = useCallback((dangTheo: boolean) => {
     datTrangThai((cu) => (cu === null ? cu : { ...cu, following: dangTheo }));
   }, []);
@@ -144,6 +157,7 @@ export function TrangThaiToiProvider({
         trangThai,
         dangTai,
         phieuCua,
+        reactionCua,
         taiLai: async () => {
           await taiLai();
         },

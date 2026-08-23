@@ -329,8 +329,12 @@ export const quanTriXemNguoiDung = <ThrowOnError extends boolean = false>(option
  *
  * `ly_do` bắt buộc và không được rỗng — PLAN 5.10 nói người bị chặn phải đọc được nó.
  *
+ * Ba cách khai hạn, **đúng một cách mỗi lần gọi**: `vinh_vien`, `den_khi` (mốc tuyệt
+ * đối), hoặc `so_ngay` (N ngày kể từ bây giờ, **đồng hồ máy chủ** — L33). `so_ngay` được
+ * quy đổi ngay tại đây; `core/ghi.py::ban_user` vẫn chỉ nhận `vinh_vien`/`den_khi`.
+ *
  * 409 `xung_dot` khi đích là chính mình hoặc là một mod khác (xem docstring module).
- * 400 `tham_so_khong_hop_le` khi vừa `vinh_vien` vừa có `den_khi`, hoặc không có cái nào.
+ * 400 `tham_so_khong_hop_le` khi số cách khai hạn khác 1, hoặc `so_ngay` không dương.
  */
 export const quanTriBanNguoiDung = <ThrowOnError extends boolean = false>(options: Options<QuanTriBanNguoiDungData, ThrowOnError>): RequestResult<QuanTriBanNguoiDungResponses, QuanTriBanNguoiDungErrors, ThrowOnError> => (options.client ?? client).post<QuanTriBanNguoiDungResponses, QuanTriBanNguoiDungErrors, ThrowOnError>({
     security: [{

@@ -160,11 +160,26 @@ test("KHÔNG file nào ở apps/web dùng `dangerouslySetInnerHTML`", () => {
   // cây node bằng JSX, nên React escape mọi văn bản; đổi sang chèn HTML là đổi cả mô
   // hình, không phải đổi một cách render — và nó phải là một quyết định nhìn thấy được.
   //
-  // Ngoại lệ duy nhất: `components/json-ld.tsx`, chỗ chèn JSON-LD của 1c. Nó KHÔNG nhận
-  // chữ người dùng gõ theo đường thô — `lib/json-ld.ts` dựng object rồi `JSON.stringify`,
-  // nên nội dung đi qua phép escape của JSON. Miễn trừ tường minh, không phải một điều
-  // kiện suy ra.
-  const MIEN = new Set(["components/json-ld.tsx", "e2e/don-vi/markdown.spec.ts"]);
+  // Hai ngoại lệ, cả hai tường minh — không phải một điều kiện suy ra:
+  //
+  // 1. `components/json-ld.tsx`, chỗ chèn JSON-LD của 1c. Nó KHÔNG nhận chữ người dùng gõ
+  //    theo đường thô — `lib/json-ld.ts` dựng object rồi `JSON.stringify`, nên nội dung đi
+  //    qua phép escape của JSON.
+  // 2. `app/layout.tsx`, script inline của công tắc theme (lượt giao diện, 2026-08-23).
+  //    Chuỗi nó chèn là **HẰNG BIÊN DỊCH**: `lib/theme.ts::nguonScriptTheme()` và
+  //    `lib/kieu-xem.ts::nguonScriptKieuXem()` ghép từ hằng của chính module, không có một
+  //    đường nào cho dữ liệu bên ngoài đi vào. Không dùng được `next/script` thay: mọi
+  //    `strategy` của nó đều chạy SAU lần vẽ đầu, tức không tránh được cú nháy sai theme —
+  //    mà tránh cú nháy ấy là toàn bộ lý do script tồn tại.
+  //
+  //    Cửa duy nhất biến nó thành lỗ: cho một biến chạy vào chuỗi. Bài
+  //    `e2e/don-vi/theme.spec.ts` canh đúng chỗ đó — nó chạy chuỗi trên một DOM giả và
+  //    khớp kết quả với hàm thuần, nên một tham số lạ chen vào sẽ lộ.
+  const MIEN = new Set([
+    "components/json-ld.tsx",
+    "app/layout.tsx",
+    "e2e/don-vi/markdown.spec.ts",
+  ]);
   const pham = quetNguon(WEB, /\.tsx?$/)
     .filter((f) => !MIEN.has(f.ten))
     .filter((f) => f.sach.includes("dangerouslySetInnerHTML"))
@@ -172,11 +187,16 @@ test("KHÔNG file nào ở apps/web dùng `dangerouslySetInnerHTML`", () => {
   expect(pham).toEqual([]);
 });
 
-test("bài trên không rỗng: file được miễn trừ THẬT SỰ có dùng nó", () => {
-  // Giấy miễn trừ chết là giấy miễn trừ sẽ được nới. Nếu `json-ld.tsx` thôi dùng
-  // `dangerouslySetInnerHTML` thì dòng miễn trừ phải bị xoá, và bài này nói ra lúc đó.
-  const json_ld = readFileSync(resolve(WEB, "components/json-ld.tsx"), "utf8");
-  expect(json_ld).toContain("dangerouslySetInnerHTML");
+test("bài trên không rỗng: MỌI file được miễn trừ THẬT SỰ có dùng nó", () => {
+  // Giấy miễn trừ chết là giấy miễn trừ sẽ được nới. Quét CẢ HAI dòng chứ không chỉ dòng
+  // đầu: bản trước chỉ soi `json-ld.tsx`, nên dòng miễn trừ thứ hai thêm vào lúc nào cũng
+  // được mà không ai kiểm nó có cần thật không.
+  for (const ten of ["components/json-ld.tsx", "app/layout.tsx"]) {
+    const nguon = readFileSync(resolve(WEB, ten), "utf8");
+    expect(nguon, `${ten} được miễn trừ mà không dùng dangerouslySetInnerHTML`).toContain(
+      "dangerouslySetInnerHTML",
+    );
+  }
 });
 
 test("ThanVan in `body` qua docMarkdown, và trong THÂN nó không có chèn HTML thô", () => {

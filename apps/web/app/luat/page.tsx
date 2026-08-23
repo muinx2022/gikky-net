@@ -42,10 +42,24 @@ export default function TrangLuat() {
         thành kênh bán hàng, và biến mọi nhật ký thật thành nền cho quảng cáo.
       </p>
 
+      {/* **L35, sửa 2026-08-23.** Câu cũ ở đây — *"Nút báo cáo và quy trình xử lý của
+          quản trị viên thuộc giai đoạn sau"* — nay SAI hoàn toàn, không còn nửa đúng nào:
+          quy trình mod đã có từ Phase 4, và nút báo cáo đã có từ lượt vá V1 (L03). Để
+          nguyên nghĩa là trang LUẬT của site nói với người đọc rằng không có chế tài nào,
+          đúng lúc chế tài đã chạy. Đây là loài "chữ nói quá thứ code làm" theo chiều ngược
+          — chữ nói THIẾU — và nó tệ ngang, vì nó dạy người ta đừng buồn báo cáo. */}
+      <h2 className={css.phu_tieu_de}>Chế tài</h2>
+      <p className={css.than}>
+        Mỗi mốc và mỗi bình luận có mục <strong>Báo cáo</strong> trong menu <code>⋯</code>.
+        Báo cáo vào hàng đợi của quản trị viên; mod ẩn nội dung, khoá mạch hoặc ban tài
+        khoản, và mọi quyết định đều để lại một dòng nhật ký không xoá được. Mạch bị khoá
+        vẫn <em>đọc</em> được — gikky không xoá lịch sử, kể cả lịch sử xấu.
+      </p>
+
       <h2 className={css.phu_tieu_de}>Chưa có ở bản này</h2>
       <p className={css.than}>
-        Nút báo cáo và quy trình xử lý của quản trị viên thuộc giai đoạn sau. Bản draft
-        này mô tả điều cấm, chưa mô tả chế tài.
+        Bản draft này mô tả điều cấm và chế tài ở mức nguyên tắc; nó chưa phải văn bản
+        điều khoản sử dụng đầy đủ.
       </p>
     </main>
   );

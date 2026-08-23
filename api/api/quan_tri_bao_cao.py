@@ -162,6 +162,8 @@ def _nap_ngu_canh(bao_cao: list[Report]) -> dict[tuple[str, int], NoiDungBiBaoCa
             trich_yeu=trich_yeu(mach.title),
             seq=None,
             da_bi_an=mach.hidden_at is not None,
+            mach_da_khoa=mach.locked_at is not None,
+            tac_gia_bi_ban=mach.author.dang_bi_ban(),
             duong_dan_cong_khai=duong_dan_mach(mach),
         )
 
@@ -177,6 +179,8 @@ def _nap_ngu_canh(bao_cao: list[Report]) -> dict[tuple[str, int], NoiDungBiBaoCa
             trich_yeu=trich_yeu(moc.body),
             seq=moc.seq,
             da_bi_an=moc.hidden_at is not None,
+            mach_da_khoa=moc.mach.locked_at is not None,
+            tac_gia_bi_ban=_bi_ban(moc.author),
             duong_dan_cong_khai=duong_dan_mach(moc.mach),
         )
 
@@ -195,10 +199,22 @@ def _nap_ngu_canh(bao_cao: list[Report]) -> dict[tuple[str, int], NoiDungBiBaoCa
             # phép tra ấy là một truy vấn nữa cho mỗi dòng.
             seq=c.anchor_moc_seq,
             da_bi_an=c.hidden_at is not None,
+            mach_da_khoa=c.mach.locked_at is not None,
+            tac_gia_bi_ban=_bi_ban(c.author),
             duong_dan_cong_khai=duong_dan_mach(c.mach),
         )
 
     return ra
+
+
+def _bi_ban(tac_gia) -> bool | None:
+    """`None` khi không còn tác giả — bia mộ giữ nguyên hàng nhưng nhả `author`.
+
+    `None` chứ không `False`: "tác giả này không bị ban" và "không có tác giả để mà ban"
+    là hai câu khác nhau, và nút "Ban" trên hàng phải VẮNG MẶT ở câu thứ hai chứ không
+    hiện ra rồi 404.
+    """
+    return None if tac_gia is None else tac_gia.dang_bi_ban()
 
 
 def _bao_cao_ra(r: Report, ngu_canh) -> BaoCaoOut:

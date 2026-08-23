@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { Chuong } from "./chuong";
 import css from "./chrome.module.css";
+import { CongTacTheme } from "./cong-tac-theme";
 import { DieuHuongSub } from "./dieu-huong-sub";
 import { NutDangMach } from "./nut-dang-mach";
 import { ThanhTaiKhoan } from "./thanh-tai-khoan";
@@ -39,9 +40,18 @@ export function Chrome() {
             `margin-left: auto`, và hai `auto` cùng hàng thì flexbox **chia đôi** khoảng
             trống — nút "Đăng bài" trôi ra giữa thanh. Trong hộp này nó không còn khoảng
             trống nào để chia. */}
+        {/* **Chỗ đứng của ô tìm kiếm — Phase 7 (Meilisearch).**
+
+            Cố ý để TRỐNG, không render một ô search chết: một ô nhập không tìm được gì là
+            loài lỗi repo này đã đếm nhiều lần ("nút Thử lại" của trang lỗi 1c). Nhưng chỗ
+            đứng thì có thật và nó chiếm khoảng giữa của thanh — nhờ vậy lượt gắn ô thật
+            vào không phải bố trí lại cả header. Xem
+            `plans/2026-08-23-phase-7-tim-kiem-meilisearch.md`. */}
+        <div className={css.cho_tim_kiem} aria-hidden />
         <div className={css.phai}>
           <NutDangMach />
           <Chuong />
+          <CongTacTheme />
           <ThanhTaiKhoan />
         </div>
       </div>

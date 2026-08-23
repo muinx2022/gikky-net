@@ -268,13 +268,17 @@ export function HanhDongMoc({ moc }: { moc: MocOut }) {
   );
 }
 
-/** `MocOut` → bốn ô của `TruongMoc`. `null` của API thành `""` của ô nhập. */
+/** `MocOut` → năm ô của `TruongMoc`. `null` của API thành `""` / `[]` của ô nhập. */
 function tuMoc(moc: MocOut): NoiDungMoc {
   return {
     body: moc.body ?? "",
     occurred_at: moc.occurred_at,
     loai: moc.loai ?? "",
     question_for_crowd: moc.question_for_crowd ?? "",
+    // Chép ra mảng MỚI, không dùng thẳng `moc.figures`: `TruongFigures` sửa state bằng
+    // `map`/`filter` nên nó không mutate — nhưng `tuMoc` còn được gọi lại ở nút "Huỷ" để
+    // đặt lại form, và hai lần gọi dùng chung một mảng là hai form chia nhau một state.
+    figures: (moc.figures ?? []).map((f) => ({ label: f.label, value: f.value })),
   };
 }
 
@@ -295,6 +299,13 @@ function chiPhanDoi(
   if (day_du.loai !== cu.loai) ra.loai = day_du.loai;
   if (day_du.question_for_crowd !== cu.question_for_crowd) {
     ra.question_for_crowd = day_du.question_for_crowd;
+  }
+  // `figures` là danh sách ⇒ so bằng JSON, không bằng `!==` (hai mảng khác nhau về tham
+  // chiếu là chuyện mặc định, và `!==` ở đây sẽ gửi `figures` ở **mọi** lượt Lưu, tức
+  // sinh một `MocRevision` cho một lượt bấm không đổi gì). Thứ tự cặp là dữ liệu — người
+  // viết xếp "GIÁ VÀO" trước "DỪNG LỖ" là có ý — nên đảo thứ tự ĐÚNG là một thay đổi.
+  if (JSON.stringify(day_du.figures) !== JSON.stringify(cu.figures)) {
+    ra.figures = day_du.figures;
   }
   return Object.keys(ra).length === 0 ? null : ra;
 }

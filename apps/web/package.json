@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --port 3000",
-    "build": "next build",
+    "build": "node ../../scripts/xoa-cache-du-lieu.mjs && next build",
     "start": "next start --port 3000",
     "lint": "eslint --max-warnings=0",
     "e2e": "playwright test",

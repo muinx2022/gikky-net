@@ -74,6 +74,9 @@ export function ThanhTaiKhoan() {
           <Link href={duongDanHoSo(toi.username ?? "")} role="menuitem" onClick={() => datMo(false)}>
             Hồ sơ của tôi
           </Link>
+          <Link href="/cai-dat" role="menuitem" onClick={() => datMo(false)}>
+            Cài đặt
+          </Link>
           <Link href="/doi-mat-khau" role="menuitem" onClick={() => datMo(false)}>
             Đổi mật khẩu
           </Link>

@@ -6,6 +6,7 @@ import { nenHienSoDem } from "@/lib/dem";
 import { ngayCuaThoiDiem } from "@/lib/dinh-dang";
 import { duongDanHoSo, duongDanKhanDai, duongDanMach, duongDanSub } from "@/lib/url";
 
+import { ChepLink } from "./chep-link";
 import { CotVote } from "./cot-vote";
 import css from "./the-mach.module.css";
 
@@ -97,6 +98,10 @@ export function TheMach({ mach }: { mach: MachTomTatOut }) {
               {mach.ket_qua}
             </span>
           )}
+          {/* Thao tác thứ hai của thanh, chạy trọn ở trình duyệt — không cần endpoint,
+              nên nó không phạm luật "không nút chết" của lượt giao diện. Đặt CUỐI hàng:
+              lối vào khán đài mới là thao tác chính. */}
+          <ChepLink duongDan={duongDanMach(mach.slug, mach.id)} nhan={mach.title} />
         </div>
       </div>
     </li>

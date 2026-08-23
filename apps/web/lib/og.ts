@@ -38,7 +38,10 @@ export const MAU_OG = {
   the: "#ffffff",
   muc: "#14161b",
   muc_2: "#535a67",
-  muc_3: "#868d9b",
+  // Theo `--ink-3` — đổi 2026-08-23 cùng lượt vá tương phản (`#868D9B` cho 3.33:1 trên
+  // nền trắng, dưới AA cho chữ nhỏ). Bản sao này KHÔNG tự đổi theo `globals.css`; thứ bắt
+  // nó đổi là `e2e/don-vi/og-anh.spec.ts`, và nó đã đỏ đúng lúc.
+  muc_3: "#686f7d",
   vach: "#c7cbd4",
   nhan: "#3a46a8",
 } as const;
@@ -166,9 +169,20 @@ export function ogSub(sub: {
   return {
     nhan: `s/${sub.slug}`,
     tieuDe: catChu(sub.ten, TRAN_TIEU_DE_OG),
+    // **L16**: `so_mach === 0` thì KHÔNG in "0 mạch".
+    //
+    // Nguyên tắc 9 ("không phô sự im lặng") không có ngoại lệ cho `so_mach` — ngoại lệ
+    // duy nhất đã chốt là điểm vote, vì "0 điểm" là một kết quả chứ không phải một chỗ
+    // trống. Trang sub và sidebar đã tuân luật này từ 1c qua `dinh-dang.ts::dongSoMachSub`;
+    // ảnh OG thì in vô điều kiện, nên một sub vừa mở được chia lên Facebook kèm dòng chữ
+    // "0 mạch" — đúng cái ấn tượng đầu tiên mà nguyên tắc 9 sinh ra để tránh, và là chỗ
+    // nó đắt nhất vì thẻ OG **được cache ở phía Facebook**.
+    //
+    // `ghepDongPhu` đã lọc mảnh rỗng, nên `null` ở đây là bỏ hẳn mảnh chứ không để lại
+    // một dấu `·` cụt.
     dongPhu: ghepDongPhu([
       catChu(sub.mo_ta, 90),
-      `${sub.so_mach} mạch`,
+      sub.so_mach === 0 ? null : `${sub.so_mach} mạch`,
     ]),
     soOSpine: 0,
     dongSo: false,

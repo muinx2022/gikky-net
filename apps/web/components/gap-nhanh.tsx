@@ -34,18 +34,41 @@ export function GapNhanh({
   const [gap, datGap] = useState(false);
   return (
     <div className={css.khung} data-gap={gap ? "1" : "0"}>
-      <button
-        type="button"
-        className={css.nut}
-        aria-expanded={!gap}
-        onClick={() => datGap((cu) => !cu)}
-        data-testid="nut-gap-nhanh"
-        // Nhãn nói ra việc SẼ làm, không nói trạng thái: `[−]` một mình thì trình đọc màn
-        // hình phát ra "dấu trừ".
-        aria-label={gap ? `Mở lại: ${tomTat}` : `Gập nhánh: ${tomTat}`}
-      >
-        {gap ? "[+]" : "[−]"}
-      </button>
+      <div className={css.cot}>
+        <button
+          type="button"
+          className={css.nut}
+          aria-expanded={!gap}
+          onClick={() => datGap((cu) => !cu)}
+          data-testid="nut-gap-nhanh"
+          // Nhãn nói ra việc SẼ làm, không nói trạng thái: `[−]` một mình thì trình đọc màn
+          // hình phát ra "dấu trừ".
+          aria-label={gap ? `Mở lại: ${tomTat}` : `Gập nhánh: ${tomTat}`}
+        >
+          {gap ? "[+]" : "[−]"}
+        </button>
+        {!gap && (
+          // **Đường dẫn thụt, bấm được** — plan giao diện §2.4. Cái vạch dọc chạy dọc bên
+          // trái một nhánh vốn chỉ là trang trí; ở Reddit nó là vùng bấm chính để gập cả
+          // nhánh, vì nó dài bằng cả nhánh và luôn nằm trong tầm chuột. `[−]` 18px ở trên
+          // là một mục tiêu nhỏ mà người ta phải nhắm.
+          //
+          // `aria-hidden` + `tabIndex={-1}`: nó **trùng chức năng** với nút `[−]` ngay
+          // trên nó. Cho nó vào cây trợ năng là mỗi bình luận có hai nút "gập nhánh" đọc
+          // giống hệt nhau, và đi bằng bàn phím thì mỗi nhánh tốn hai lần Tab. Đường bàn
+          // phím và đường trình đọc màn hình đã trọn vẹn ở nút trên; đây thuần tuý là
+          // tiện ích cho chuột. `tabIndex={-1}` là điều kiện để `aria-hidden` hợp lệ —
+          // một phần tử ẩn khỏi trợ năng mà vẫn tab tới được là lỗi `aria-hidden-focus`.
+          <button
+            type="button"
+            className={css.thanh}
+            tabIndex={-1}
+            aria-hidden
+            onClick={() => datGap(true)}
+            data-testid="thanh-gap-nhanh"
+          />
+        )}
+      </div>
       {gap && (
         <span className={css.tom_tat} data-testid="tom-tat-nhanh">
           {tomTat}

@@ -977,6 +977,12 @@ export type MocOut = {
      */
     question_for_crowd: string | null;
     /**
+     * Reactions
+     */
+    reactions: {
+        [key: string]: number;
+    };
+    /**
      * Score
      */
     score: number;

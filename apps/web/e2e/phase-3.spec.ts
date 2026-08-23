@@ -59,15 +59,25 @@ async function noiMocQuaForm(page: Page, than: string): Promise<void> {
   await expect(page.getByTestId("form-noi-moc")).toBeHidden();
 }
 
-/** Gửi một bình luận **bằng giao diện**, qua composer ở CHÂN KHÁN ĐÀI.
+/** Gửi một bình luận **bằng giao diện**, qua ô nhập ĐANG HIỆN của trang mạch.
  *
- * Phải khoanh vùng `khan-dai`, không được `getByTestId("composer-o").first()`: trang mạch
- * có ba loại composer, và loại đứng đầu DOM là composer của **ngăn kéo** — nó nằm trong
- * một `<details>` đang đóng, tức không nhìn thấy được. `.first()` ở đây là một locator
- * trỏ vào phần tử ẩn, và Playwright chờ 30 giây rồi mới nói ra.
+ * ## Vì sao locator đổi ở lượt vá V2 (L05) — và vì sao khẳng định KHÔNG bị nới
+ *
+ * Bản cũ khoanh vùng `khan-dai`, đúng với thời điểm nó được viết: composer luôn nằm ở
+ * chân khán đài. **L05 đổi chuyện đó**: mặt BÃO nay đặt ô nhập ở TRÊN cây khán đài
+ * (`composer-mat-bao`, đúng wireframe 9.2) và khán đài ở đó **không** còn ô thứ hai — vì
+ * hai ô cùng hình dạng với hai luật neo khác nhau chính là lỗi L05. Mạch mới dựng trong
+ * file này rơi vào mặt BÃO, nên locator cũ trỏ vào một chỗ nay trống.
+ *
+ * Locator mới: **ô nhập duy nhất đang HIỆN**. Nó vẫn loại đúng thứ bản cũ loại — composer
+ * của ngăn kéo nằm trong `<details>` đang đóng nên `hidden`, và `.first()` không khoanh
+ * vùng sẽ trỏ vào nó rồi chờ 30 giây mới nói ra. Khác biệt duy nhất là nó không còn giả
+ * định ô ấy nằm ở đâu, tức nó đúng cho CẢ HAI mặt.
+ *
+ * Phép khẳng định phía sau (**chữ phải hiện trong `cay-khan-dai`**) giữ nguyên từng chữ.
  */
 async function binhLuan(page: Page, than: string): Promise<void> {
-  const composer = page.getByTestId("khan-dai").getByTestId("composer");
+  const composer = page.getByTestId("composer").filter({ visible: true });
   await composer.getByTestId("composer-o").fill(than);
   await composer.getByTestId("composer-gui").click();
   // Chờ chữ hiện trong **CÂY KHÁN ĐÀI**, không phải "đâu đó trên trang": khi gửi hỏng,
@@ -257,7 +267,15 @@ test.describe("Phase 3 — mặt BÃO, vòng lặp quay lại, cache", () => {
     await expect(khan_gia.getByTestId("nut-mo-trich")).toHaveCount(0);
 
     await chu.goto(duong_dan_mach);
-    await chu.getByTestId("nut-mo-trich").first().click();
+    // Khoanh vùng `cay-khan-dai` — locator đổi ở lượt vá V2, và lý do là **hệ quả trực
+    // tiếp của L05**: composer khán đài nay NEO vào mốc mới nhất, nên câu vừa viết cũng
+    // xuất hiện trong ngăn kéo của mốc ấy. Ngăn kéo render TRƯỚC khán đài trong DOM và nó
+    // đang gập (`hidden`), nên `.first()` không khoanh vùng trỏ vào một nút vô hình rồi
+    // chờ 30 giây. Trước L05 mọi câu ở khán đài đều `anchor = null` nên không có bản thứ
+    // hai nào — đó là lý do `.first()` từng đúng.
+    //
+    // Khẳng định không đổi: vẫn là nút "Trích vào sổ" dưới đúng câu ấy, vẫn chọn Mốc 3.
+    await chu.getByTestId("cay-khan-dai").getByTestId("nut-mo-trich").first().click();
     await chu.getByTestId("trich-chon-moc").selectOption({ label: "Mốc 3" });
     await chu.getByTestId("trich-gui").click();
 

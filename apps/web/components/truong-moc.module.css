@@ -73,3 +73,90 @@
   flex: 1 1 190px;
   min-width: 0;
 }
+
+/* ===========================================================================
+ * Trình soạn dải số (`figures`) — trường thứ năm của PLAN 5.2
+ * ===========================================================================
+ *
+ * `<fieldset>` chứ không một `<div>` + `<span>` nhãn: nhóm 12 ô nhập cần một tên nhóm mà
+ * trình đọc màn hình phát ra khi con trỏ vào nhóm, và `<legend>` là thứ duy nhất làm được
+ * chuyện đó mà không phải dựng `aria-labelledby` bằng tay. Viền mặc định của `fieldset`
+ * bị gỡ — nó không hợp với hệ thị giác ở đây, và cái nhóm đã đủ rõ nhờ khoảng cách. */
+.figures {
+  border: none;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.mot_fig {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 32px;
+  gap: 6px;
+  align-items: center;
+}
+
+.fig_label,
+.fig_value {
+  font: inherit;
+  font-size: 14px;
+  padding: 7px 10px;
+  border: 1px solid var(--line-2);
+  border-radius: 5px;
+  background: var(--surface);
+  color: var(--ink);
+  min-width: 0;
+}
+
+.fig_label {
+  text-transform: uppercase;
+}
+
+.fig_xoa {
+  justify-self: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--line-2);
+  border-radius: 5px;
+  color: var(--ink-2);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.fig_xoa:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.fig_them {
+  justify-self: start;
+  font-size: 13px;
+  color: var(--accent);
+  border: 1px dashed var(--line-2);
+  border-radius: 999px;
+  padding: 5px 12px;
+  cursor: pointer;
+}
+
+.fig_them:hover {
+  border-color: var(--accent);
+  border-style: solid;
+}
+
+@media (pointer: coarse) {
+  .fig_xoa {
+    width: 44px;
+    height: 44px;
+  }
+
+  .mot_fig {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 48px;
+  }
+
+  .fig_them {
+    min-height: 44px;
+  }
+}

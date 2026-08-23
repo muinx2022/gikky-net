@@ -143,3 +143,47 @@
 .lien_ket:hover {
   text-decoration: underline;
 }
+
+/* Công tắc của `/cai-dat` — nợ `TRANG-CAI-DAT`.
+ *
+ * `<label>` bọc cả ô tick lẫn chữ, nên **cả khối** là vùng bấm: một checkbox 13px đứng
+ * một mình là mục tiêu nhỏ nhất trên toàn site, và trên điện thoại thì gần như không
+ * bấm trúng. Không cần `htmlFor` — bọc trong `<label>` là cách nối hợp lệ. */
+.cong_tac {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 13px;
+  border: 1px solid var(--line-2);
+  border-radius: 5px;
+  background: var(--inset);
+  cursor: pointer;
+  margin-bottom: 15px;
+}
+
+.cong_tac input {
+  margin: 2px 0 0;
+  width: 17px;
+  height: 17px;
+  flex: none;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.cong_tac_nhan {
+  display: block;
+  font-size: 14px;
+  color: var(--ink);
+  font-weight: 500;
+}
+
+@media (pointer: coarse) {
+  .cong_tac {
+    min-height: 44px;
+  }
+
+  .cong_tac input {
+    width: 22px;
+    height: 22px;
+  }
+}
