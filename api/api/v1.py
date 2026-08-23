@@ -100,6 +100,7 @@ def health(request):
 # tồn tại trước khi `config/api_registry.py` đọc tới. Đặt import ở đây tránh vòng lặp
 # import mà không cần một module "app" thứ ba chỉ để nối dây.
 from api.bao_cao import router as router_bao_cao  # noqa: E402
+from api.anh import router as router_anh  # noqa: E402
 from api.binh_luan import router as router_binh_luan  # noqa: E402
 from api.feeds import router as router_feeds  # noqa: E402
 from api.loi import dang_ky_xu_ly_loi  # noqa: E402
@@ -130,3 +131,7 @@ api_v1.add_router("", router_users)
 # response của nó phải cache được (PLAN 8.4). Xem docstring `api/theo_doi.py`.
 api_v1.add_router("", router_theo_doi)
 api_v1.add_router("", router_thong_bao)
+# Phase 5 — `POST /mocs/{id}/anh` (multipart) + `DELETE /anh/{id}`. Tách khỏi `mocs.py`
+# vì nó là cửa duy nhất nhận **file** từ internet, và bảy phép kiểm của nó đáng được đọc
+# mà không phải cuộn qua ngăn kéo bình luận. Xem `api/anh.py`.
+api_v1.add_router("", router_anh)

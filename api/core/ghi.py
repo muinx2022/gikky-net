@@ -60,6 +60,32 @@ khoá SAU CÙNG trong nhóm mạch, còn `User` là một bảng khác hẳn), v
 `go_ban_user`, cả hai chỉ ghi `AuditLog` sau đó. Thêm một đường ghi khoá `User` rồi mới
 đụng `Mach` là dựng chu trình.
 
+**Cạnh thứ tư, thêm ở Phase 5: `Mach` → `MocAnh`, và `MocAnh` là hàng khoá SAU CÙNG.**
+
+Luật cũ đọc là "`Mach` khoá sau cùng". Phase 5 thêm một bảng nữa vào đồ thị, và nó nằm
+**sau cả `Mach`**. Thứ tự đầy đủ nay là:
+
+    Comment / Moc  →  Mach  →  MocAnh
+
+Bốn đường chạm `MocAnh`, và cả bốn phải đi đúng chiều ấy:
+
+- `them_anh_moc`: `Moc` (FOR UPDATE) → `INSERT MocAnh`. Không chạm `Mach`;
+- `xoa_anh_moc`: `Moc` (FOR UPDATE) → `DELETE MocAnh`. Dòng khoá `Moc` ở đó **trông
+  như thừa** vì hàm không đọc gì ở `Moc` — nó có mặt để chặn đúng cạnh ngược, xem
+  docstring của nó;
+- `xoa_moc` / `dat_an_moc`: `Moc` → `Mach` (`cap_nhat_dem_mach`) → `dong_bo_kho_anh`;
+- `dat_an_mach`: `Mach` → `dong_bo_kho_anh` cho từng mốc.
+
+⚠ Bản đầu của Phase 5 gọi `dong_bo_kho_anh` **trước** `cap_nhat_dem_mach` (tưởng là giữ
+đúng luật "`Mach` sau cùng") và **dựng ra một chu trình**: `xoa_moc` đi
+`MocAnh → Mach` trong khi `dat_an_mach` đi `Mach → MocAnh`. Hai transaction đồng thời —
+một người tự xoá mốc, một mod ẩn cả mạch — ôm nhau chết. Bài đo cấu trúc
+`tests/test_anh_thu_tu_khoa.py` ghim lại chiều đúng.
+
+⚠ Khoá NGẦM của khoá ngoại vẫn tính, y như với `Trich`: `INSERT`/`DELETE` một hàng
+`MocAnh` đều lấy `FOR KEY SHARE` trên hàng `Moc` nó tham chiếu, **mà không có dòng
+`select_for_update` nào nói ra**.
+
 Ngoại lệ DUY NHẤT và có chủ đích: bình luận GỐC không có hàng cha nào để khoá, nên
 `cap_phat_path` khoá thẳng `Mach` (mọi bình luận gốc của một mạch là sibling của nhau).
 Đường đó chỉ chạm MỘT hàng khoá, nên nó không tham gia được vào chu trình nào.
@@ -83,17 +109,23 @@ from django.db import IntegrityError, transaction
 from django.db.models import Max
 from django.utils import timezone
 
+from core.anh import AnhDaXuLy
+from core.anh_luu import an_anh, ghi_anh, hien_anh, khoa_moi, xoa_anh_that
 from core.cay_binh_luan import cap_phat_path
 from core.doc_noi_dung import doc_duoc
 from core.models.binh_luan import Comment
 from core.models.dien_dan import Mach, Sub
 from core.models.he_thong import AuditLog, Report
-from core.models.moc import Moc, MocRevision, kiem_figures
+from core.models.moc import Moc, MocAnh, MocRevision, kiem_figures
 from core.models.tuong_tac import Follow, Reaction, Trich, Vote
 from core.thoi_gian import TZ_VN, ngay_vn
 
 #: PLAN 5.1 — tối đa 3 mốc mỗi **ngày lịch VN** mỗi mạch.
 SO_MOC_TOI_DA_MOI_NGAY = 3
+
+#: PLAN 5.2 / mục 6 — tối đa 10 ảnh `confirmed` mỗi mốc. Enforce **trong khoá hàng
+#: `Moc`**, xem `them_anh_moc`.
+SO_ANH_TOI_DA_MOI_MOC = 10
 
 #: PLAN nguyên tắc 2 — sửa mốc trong 15 phút đầu thì im lặng, sau đó để lại `MocRevision`.
 PHUT_SUA_IM_LANG = 15
@@ -755,8 +787,148 @@ def xoa_moc(*, moc: Moc, khi=None) -> Moc:
             moc.deleted_at = khi
             moc.save(update_fields=["deleted_at"])
         cap_nhat_dem_mach(moc.mach)
+        # Ảnh của bia mộ phải rời kho đang phục vụ, không chỉ rời `MocOut` (A9).
+        #
+        # ⚠ Gọi **SAU** `cap_nhat_dem_mach`, và thứ tự này là bắt buộc: `MocAnh` phải là
+        # hàng khoá SAU CÙNG (xem docstring module, khối "cạnh thứ tư"). Gọi trước thì
+        # đường này thành `Moc → MocAnh → Mach`, mà `dat_an_mach` đi `Mach → MocAnh` —
+        # hai chiều ngược nhau trên cùng một cặp bảng là deadlock dưới tải.
+        dong_bo_kho_anh(moc)
     moc.refresh_from_db()
     return moc
+
+
+# =============================================================================
+# ẢNH CỦA MỐC — Phase 5
+# =============================================================================
+
+
+class QuaNhieuAnh(Exception):
+    """Mốc đã đủ `SO_ANH_TOI_DA_MOI_MOC` ảnh. Tầng API dịch thành 409.
+
+    Ngoại lệ riêng chứ không `ValidationError`: đây là một luật **hạn mức**, và tầng API
+    phải phân biệt được nó với "dữ liệu gửi lên sai" để trả đúng mã cho UI.
+    """
+
+    def __init__(self, dem: int) -> None:
+        self.dem = dem
+        super().__init__(f"Mốc đã có {dem} ảnh, tối đa {SO_ANH_TOI_DA_MOI_MOC}.")
+
+
+def them_anh_moc(*, moc: Moc, anh: AnhDaXuLy) -> MocAnh:
+    """Gắn một ảnh ĐÃ QUA BẢY PHÉP KIỂM vào mốc. **Phép kiểm 7 nằm ở đây.**
+
+    Nhận `AnhDaXuLy` chứ không nhận byte thô, và đó là ranh giới có chủ đích: hàm này
+    **không được** là chỗ thứ hai biết cách kiểm ảnh. Kiểm + tái mã hoá là việc của
+    `core/anh.py`, và nó chạy **ngoài** khoá (một lượt resize ảnh 8MB mất khoảng một
+    giây — giữ khoá hàng `Moc` suốt thời gian đó là bắt mọi lượt upload của cùng mốc xếp
+    hàng sau nó).
+
+    ⚠ **Trần 10 ảnh đếm TRONG khoá `select_for_update` hàng `Moc`** — đây là lỗi `L11`
+    vừa tìm ra ở hạn mức 3 mốc/ngày (`machs.py` đếm TRƯỚC `atomic()`), và phase này cố ý
+    không tái phát nó. Đếm ngoài khoá thì hai request đồng thời (double-click, hai tab)
+    cùng đọc `9 < 10` và cùng ghi ⇒ **11 ảnh**, HTTP 201 cả hai lần, không log, không gì
+    đỏ. Có khoá thì lượt thứ hai chờ, đọc lại thấy `10`, và bị từ chối.
+
+    **Không gọi `cap_nhat_dem_mach`** (và vì thế không chạm hàng `Mach`): ảnh không phải
+    `Moc` cũng không phải `Comment`, nên không cột nào trong bốn cột denormalize đếm nó.
+    Gọi "cho chắc" ở đây là dựng một cạnh khoá `Moc → Mach` không ai cần.
+
+    File chỉ được ghi xuống đĩa **sau** khi phép kiểm 7 đã qua, và nếu bất cứ điều gì
+    phía sau ném thì file vừa ghi bị xoá lại — không có ảnh nào nằm trên đĩa mà không có
+    hàng DB nào trỏ tới. (Chiều ngược lại — hàng còn, file mất — vẫn có thể xảy ra khi
+    đĩa lỗi, và `don_anh_mo_coi` là cái lưới hứng nó.)
+    """
+    khoa = khoa_moi(anh.duoi)
+    da_ghi = False
+    try:
+        with transaction.atomic():
+            moc_khoa = Moc.objects.select_for_update().get(pk=moc.pk)
+            dem = MocAnh.objects.filter(
+                moc=moc_khoa, status=MocAnh.TrangThai.XAC_NHAN
+            ).count()
+            if dem >= SO_ANH_TOI_DA_MOI_MOC:
+                raise QuaNhieuAnh(dem)
+
+            # `position` cấp bằng `max + 1` dưới cùng khoá, cùng lối `them_moc` cấp `seq`
+            # — hai ảnh tải lên đồng thời không được nhận cùng một chỗ đứng.
+            vi_tri_cuoi = MocAnh.objects.filter(moc=moc_khoa).aggregate(Max("position"))[
+                "position__max"
+            ]
+            ghi_anh(khoa, byte_chinh=anh.byte_chinh, byte_thumb=anh.byte_thumb)
+            da_ghi = True
+            hang = MocAnh.objects.create(
+                moc=moc_khoa,
+                khoa_luu_tru=khoa,
+                exif_taken_at=anh.exif_taken_at,
+                # Một nhịp ⇒ `confirmed` ngay. Cột ở lại cho ngày R2 quay lại hai nhịp —
+                # xem docstring `MocAnh`.
+                status=MocAnh.TrangThai.XAC_NHAN,
+                position=(vi_tri_cuoi or 0) + 1,
+                w=anh.w,
+                h=anh.h,
+            )
+    except Exception:
+        if da_ghi:
+            xoa_anh_that(khoa)
+        raise
+    hang.moc = moc
+    return hang
+
+
+def xoa_anh_moc(*, anh: MocAnh) -> None:
+    """Xoá hàng **và** file (A8). Không bia mộ — ảnh không có `seq` nào để giữ chỗ.
+
+    Khác `xoa_moc`/`xoa_binh_luan` (bia mộ, PLAN nguyên tắc 2) một cách có chủ đích: bia
+    mộ tồn tại để dãy `seq` không thủng và để "đã từng có gì ở đây" còn đọc được. Ảnh
+    không đứng trong dãy nào và một ô ảnh trống không kể được chuyện gì — nó chỉ chiếm
+    đĩa. `position` để lại lỗ hổng, và điều đó không sao: thứ tự đọc từ `ORDER BY
+    position, id`, không từ giá trị tuyệt đối.
+
+    **Xoá file TRƯỚC khi commit hàng**: ngược lại thì một lần rollback để lại hàng DB trỏ
+    vào file đã mất — thẻ `<img>` gãy trên trang, và không lệnh dọn nào tìm ra vì hàng
+    vẫn "hợp lệ".
+
+    ⚠ **Khoá hàng `Moc` TRƯỚC**, dù hàm này không đọc gì ở đó. Lý do là một khoá NGẦM:
+    `DELETE FROM core_mocanh` lấy `FOR KEY SHARE` trên hàng `Moc` được tham chiếu (khoá
+    ngoại), nên không có dòng này thì đường đi là `MocAnh → Moc` — **ngược chiều** với
+    `them_anh_moc` (`Moc → MocAnh`) và với `dong_bo_kho_anh`. Hai chiều ngược nhau trên
+    cùng một cặp bảng là deadlock dưới tải, và nó gần như không tái hiện được ở dev.
+    Xem docstring module, khối "cạnh thứ tư".
+    """
+    khoa = anh.khoa_luu_tru
+    with transaction.atomic():
+        Moc.objects.select_for_update().filter(pk=anh.moc_id).first()
+        MocAnh.objects.filter(pk=anh.pk).delete()
+        xoa_anh_that(khoa)
+
+
+def dong_bo_kho_anh(moc: Moc) -> int:
+    """Đưa file ảnh của một mốc về đúng kho theo trạng thái HIỆN TẠI của mốc. Trả số ảnh đã chuyển.
+
+    Đây là vế A9 mà "ẩn ở tầng API" không làm được — đọc docstring `core/anh_luu.py`
+    trước khi sửa hàm này. Tóm tắt: prod cho Caddy phục vụ file **thẳng từ đĩa, không
+    qua Django**, nên bỏ ảnh khỏi `MocOut` chỉ giấu nó khỏi *trang*, không khỏi *URL*.
+
+    "Đúng kho" = kho đang phục vụ khi mốc còn đọc được **và** mạch của nó chưa bị ẩn;
+    kho cách ly trong mọi trường hợp còn lại. Hàm **idempotent**: gọi hai lần không đổi
+    gì thêm, nên ba cửa gọi nó (`xoa_moc`, `dat_an_moc`, `dat_an_mach`) không phải biết
+    trạng thái trước đó là gì.
+
+    Gọi TRONG transaction của lời ghi trạng thái: rollback ở đó phải cuốn theo cả cột
+    `da_cach_ly`. Cửa sổ còn lại — file đã chuyển xong nhưng commit thất bại — để lại
+    file ở kho mới với cột nói kho cũ; `don_anh_mo_coi` phát hiện được ca đó.
+    """
+    nen_an = not doc_duoc(moc) or moc.mach.hidden_at is not None
+    da_doi = 0
+    for hang in MocAnh.objects.select_for_update().filter(moc=moc):
+        if hang.da_cach_ly == nen_an:
+            continue
+        (an_anh if nen_an else hien_anh)(hang.khoa_luu_tru)
+        hang.da_cach_ly = nen_an
+        hang.save(update_fields=["da_cach_ly"])
+        da_doi += 1
+    return da_doi
 
 
 def sua_binh_luan(*, comment: Comment, body: str, khi=None) -> Comment:
@@ -1151,6 +1323,12 @@ def dat_an_moc(*, moc: Moc, boi, an: bool, ly_do: str = "") -> bool:
         if not _dat_co_an(hang, boi=boi, bat=an):
             return False
         cap_nhat_dem_mach(Mach.objects.get(pk=hang.mach_id))
+        # Ẩn/gỡ ẩn phải kéo theo FILE, không chỉ `MocOut` — Caddy phục vụ ảnh không qua
+        # Django (A9, xem `core/anh_luu.py`). Đảo ngược được: gỡ ẩn chuyển file về lại
+        # đúng chỗ cũ, URL cũ sống lại nguyên vẹn.
+        #
+        # ⚠ SAU `cap_nhat_dem_mach` — `MocAnh` khoá sau cùng, xem `xoa_moc`.
+        dong_bo_kho_anh(hang)
         ghi_audit(
             actor=boi,
             action=AUDIT_AN_MOC if an else AUDIT_GO_AN_MOC,
@@ -1205,6 +1383,11 @@ def dat_an_mach(*, mach: Mach, boi, an: bool, ly_do: str = "") -> bool:
         hang = Mach.objects.select_for_update().get(pk=mach.pk)
         if not _dat_co_an(hang, boi=boi, bat=an):
             return False
+        # Ẩn cả mạch phải kéo theo ảnh của MỌI mốc trong đó (A9). Mốc nào vốn đã là bia
+        # mộ / đã bị ẩn riêng thì `dong_bo_kho_anh` bỏ qua — nó idempotent — nên gỡ ẩn
+        # mạch KHÔNG vô tình phục vụ lại ảnh của một mốc vẫn đang bị ẩn.
+        for m in Moc.objects.filter(mach=hang).select_related("mach"):
+            dong_bo_kho_anh(m)
         ghi_audit(
             actor=boi,
             action=AUDIT_AN_MACH if an else AUDIT_GO_AN_MACH,

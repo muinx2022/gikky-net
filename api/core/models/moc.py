@@ -171,11 +171,25 @@ class MocRevision(models.Model):
 
 
 class MocAnh(models.Model):
-    """Ảnh đính kèm mốc. **Phase 1a chỉ dựng BẢNG** — flow upload là PLAN 8.5 / Phase 5.
+    """Ảnh đính kèm mốc — PLAN mục 6, flow ở PLAN 8.5 (đã lệch, xem dưới).
 
-    `status` tồn tại vì upload đi hai nhịp: `presign` tạo hàng `pending`, `confirm` mới
-    đổi thành `confirmed`. Giới hạn ≤10 ảnh/mốc enforce ở tầng app lúc confirm (một
-    `pending` mồ côi không được chiếm suất của ảnh thật).
+    **`r2_key` đã đổi tên thành `khoa_luu_tru`** (chốt 2026-08-23, `plans/2026-08-23-
+    phase-5-anh-local.md` §0). Một cột tên `r2_key` chứa đường dẫn trên đĩa local là
+    đúng loài "chữ nói quá code": người đọc kết luận có R2 ở đâu đó, đi tìm, không thấy.
+    Khoá là như nhau ở mọi backend vì `STORAGES` của Django trừu tượng đúng chỗ đó, nên
+    một cái tên trung tính đúng cho cả hai thời kỳ. Đổi tên rẻ vì cột chưa từng có dữ
+    liệu: Phase 1a chỉ dựng bảng, Phase 5 là lượt đầu tiên ghi vào nó.
+
+    **`status` GIỮ LẠI dù upload nay chỉ một nhịp.** Cửa `POST /mocs/{id}/anh` nhận
+    multipart, xử lý xong ghi thẳng `confirmed` — không có hàng `pending` nào được sinh
+    ra hôm nay. Cột ở lại vì PLAN mục 6 dựng sẵn nó cho hai nhịp `presign`/`confirm`, và
+    ngày có R2 thì hai nhịp quay lại y nguyên thiết kế cũ (server không cầm được file
+    nữa thì phải có trạng thái trung gian). Trần 10 ảnh/mốc đếm **`confirmed`**, nên một
+    `pending` mồ côi của tương lai không chiếm suất của ảnh thật.
+
+    `w`/`h` là kích thước ảnh **đã tái mã hoá** (`core/anh.py` thu nhỏ về cạnh
+    `CANH_TOI_DA`), không phải của file gốc — chúng dùng để đặt `width`/`height` trên thẻ
+    `<img>` chống layout shift, nên phải khớp đúng file đang được phục vụ.
     """
 
     class TrangThai(models.TextChoices):
@@ -183,9 +197,12 @@ class MocAnh(models.Model):
         XAC_NHAN = "confirmed", "Đã xác nhận"
 
     moc = models.ForeignKey(Moc, on_delete=models.CASCADE, related_name="anhs")
-    r2_key = models.CharField(max_length=255)
-    thumb_key = models.CharField(max_length=255, null=True, blank=True)
-    #: EXIF `DateTimeOriginal` client đọc TRƯỚC khi resize (PLAN 8.5 — resize xoá EXIF).
+    #: Tên file ngẫu nhiên + đuôi suy từ định dạng đã nhận dạng — `core/anh_luu.py::khoa_moi`.
+    #: MỘT khoá dùng cho cả ảnh chính lẫn thumbnail (khác thư mục), nên không có cột
+    #: khoá thứ hai để hai bên lệch nhau.
+    khoa_luu_tru = models.CharField(max_length=255)
+    #: EXIF `DateTimeOriginal` **server** đọc từ file GỐC, trước khi tái mã hoá xoá sạch
+    #: EXIF (lệch PLAN 8.5, vốn để client đọc bằng exifr — xem `core/anh.py`).
     exif_taken_at = models.DateTimeField(null=True, blank=True)
     status = models.CharField(max_length=10, choices=TrangThai, default=TrangThai.CHO)
     position = models.PositiveSmallIntegerField(default=0)
@@ -193,10 +210,20 @@ class MocAnh(models.Model):
     h = models.PositiveIntegerField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now, editable=False)
 
+    #: File hiện nằm ở kho CÁCH LY (`STORAGES["an"]`), không phải kho đang phục vụ —
+    #: mốc đã thành bia mộ hoặc bị mod ẩn. Xem docstring `core/anh_luu.py` (A9).
+    #:
+    #: Vì sao là một CỘT chứ không suy từ `moc.deleted_at`/`moc.hidden_at`/
+    #: `moc.mach.hidden_at`: cột nói file **đang thật sự nằm ở đâu**, còn ba cột kia nói
+    #: file *đáng lẽ* nằm ở đâu. Hai thứ đó lệch nhau bất cứ khi nào một lượt chuyển
+    #: file thất bại giữa chừng — và `don_anh_mo_coi` cần biết chỗ thật để đi tìm, chứ
+    #: không cần biết chỗ đáng lẽ.
+    da_cach_ly = models.BooleanField(default=False)
+
     class Meta:
         verbose_name = "ảnh của mốc"
         verbose_name_plural = "ảnh của mốc"
         ordering = ["position", "id"]
 
     def __str__(self) -> str:
-        return f"ảnh {self.r2_key} (mốc {self.moc_id})"
+        return f"ảnh {self.khoa_luu_tru} (mốc {self.moc_id})"

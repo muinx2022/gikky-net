@@ -4,6 +4,7 @@
 //   node scripts/sao-luu-db.mjs --thu-muc D:\sao   # đổi chỗ ghi
 //   node scripts/sao-luu-db.mjs --giu 14           # giữ 14 bản gần nhất, xoá phần cũ
 //   node scripts/sao-luu-db.mjs --kiem             # chỉ kiểm điều kiện, không dump
+//   node scripts/sao-luu-db.mjs --khong-anh        # BỎ QUA ảnh, chỉ dump database
 //
 // Phục hồi: xem `docs/sao-luu-phuc-hoi.md` — và ĐỌC NÓ TRƯỚC khi cần tới, chứ không
 // phải lúc đang cần.
@@ -18,10 +19,35 @@
 //    `.sql` không cho. Nó cũng nén sẵn.
 // 3. **Mật khẩu đi qua `PGPASSWORD` trong env của tiến trình CON**, không qua dòng lệnh.
 //    Tham số dòng lệnh nằm trong danh sách tiến trình, ai trên máy cũng đọc được.
+//
+// ## Phase 5 đổi câu chuyện: có trạng thái NẰM NGOÀI database
+//
+// Tới Phase 4, `pg_dump` là bản sao lưu ĐỦ — mọi thứ sản phẩm biết đều nằm trong
+// Postgres. Phase 5 cho người dùng tải ảnh xuống **đĩa** (`MEDIA_ROOT`), và từ đó một
+// bản dump database một mình là bản sao lưu **thiếu**: phục hồi nó ra thì mọi hàng
+// `MocAnh` còn nguyên, mọi thẻ `<img>` gãy hết, và không có gì báo.
+//
+// Vì thế script này nay sao lưu **cả hai kho ảnh** (`MEDIA_ROOT` và `MEDIA_AN_ROOT` —
+// kho cách ly, chứa ảnh của mốc bị mod ẩn, mà ẩn thì đảo ngược được nên nó là dữ liệu
+// thật). `--khong-anh` tắt được, và khi tắt thì script **nói ra** rằng bản sao lưu này
+// không có ảnh — im lặng bỏ qua là để người ta tin nhầm là đã sao lưu đủ.
+//
+// **Ảnh chép theo lối GƯƠNG (mirror), không phải bản mới mỗi lần.** Tên file là uuid và
+// nội dung sau một tên không bao giờ đổi (`core/anh_luu.py`), nên chép lại thứ đã có là
+// tốn đĩa thuần tuý. Hệ quả cố ý: gương là **superset** — ảnh đã bị xoá khỏi máy chủ vẫn
+// nằm lại trong bản sao lưu, và đó là điều một bản sao lưu nên làm.
 
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, unlinkSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  statSync,
+  unlinkSync,
+} from "node:fs";
+import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const GOC = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -88,6 +114,69 @@ export function tachUrl(url) {
   };
 }
 
+/** Đọc một biến bất kỳ trong `api/.env`, hoặc `null` nếu không có / để trống.
+ *
+ * Cùng nguồn với `docDatabaseUrl` và cùng lý lẽ: `settings.py` đọc đúng file này, nên
+ * script phải đọc đúng file này. Lấy từ `process.env` là sao lưu nhầm thư mục.
+ */
+export function docBien(ten, duong_dan = join(GOC, "api", ".env")) {
+  if (!existsSync(duong_dan)) return null;
+  const khop = new RegExp(`^${ten}=(.*)$`, "m").exec(readFileSync(duong_dan, "utf8"));
+  const gia_tri = khop === null ? "" : khop[1].trim();
+  return gia_tri === "" ? null : gia_tri;
+}
+
+/** Hai kho ảnh của Phase 5, theo đúng mặc định của `config/settings.py`.
+ *
+ * Mặc định phải TRÙNG `settings.py` — hai bản mặc định lệch nhau là script sao lưu một
+ * thư mục rỗng và báo "xong", trong khi ảnh thật nằm ở chỗ khác. Đây là **nợ có tên**:
+ * không có gì tự kiểm hai bên khớp nhau.
+ */
+export function thuMucAnh() {
+  const goc = docBien("MEDIA_ROOT") ?? join(GOC, "api", "media");
+  const an = docBien("MEDIA_AN_ROOT") ?? join(dirname(resolve(goc)), "media-an");
+  return { phucVu: resolve(goc), cachLy: resolve(an) };
+}
+
+/** Chép GƯƠNG một thư mục: chỉ những file đích chưa có. Trả `{chép, bỏ qua, byte}`.
+ *
+ * So sánh bằng **sự tồn tại + kích thước**, không đọc nội dung: file ảnh là bất biến
+ * (tên uuid, nội dung không bao giờ đổi sau một tên), nên băm lại từng file mỗi đêm là
+ * đọc cả kho ảnh để biết một điều đã biết. Kích thước lệch ⇒ chép đè: đó là dấu của một
+ * lượt chép trước bị cắt ngang.
+ *
+ * Thư mục nguồn không tồn tại ⇒ `{ chep: 0, ... , thieu: true }`, KHÔNG ném: chưa ai
+ * upload lần nào là trạng thái hợp lệ của một máy chủ mới.
+ */
+export function chepGuong(nguon, dich) {
+  if (!existsSync(nguon)) return { chep: 0, boQua: 0, byte: 0, thieu: true };
+  let chep = 0;
+  let boQua = 0;
+  let byte = 0;
+  const di = (thu_muc) => {
+    for (const muc of readdirSync(thu_muc, { withFileTypes: true })) {
+      const tu = join(thu_muc, muc.name);
+      if (muc.isDirectory()) {
+        di(tu);
+        continue;
+      }
+      if (!muc.isFile()) continue;
+      const den = join(dich, relative(nguon, tu));
+      const co_that = statSync(tu);
+      if (existsSync(den) && statSync(den).size === co_that.size) {
+        boQua += 1;
+        continue;
+      }
+      mkdirSync(dirname(den), { recursive: true });
+      copyFileSync(tu, den);
+      chep += 1;
+      byte += co_that.size;
+    }
+  };
+  di(nguon);
+  return { chep, boQua, byte, thieu: false };
+}
+
 /** `2026-08-22T19-04-31` — dấu thời gian dùng được làm tên file trên Windows (`:` bị cấm).
  *
  * Giờ **địa phương**, không phải UTC: người đi tìm bản backup "tối qua" nghĩ theo đồng
@@ -132,6 +221,7 @@ function docCo(argv) {
     thuMuc: resolve(lay("--thu-muc", join(GOC, "backup"))),
     giu: Number(lay("--giu", "7")),
     chiKiem: argv.includes("--kiem"),
+    khongAnh: argv.includes("--khong-anh"),
   };
 }
 
@@ -147,6 +237,9 @@ function chay(argv) {
   console.log(`[sao-luu] nguồn:   ${dich.user}@${dich.host}:${dich.port}/${dich.db}`);
 
   if (co.chiKiem) {
+    const kho = thuMucAnh();
+    console.log(`[sao-luu] ảnh:     ${kho.phucVu}${existsSync(kho.phucVu) ? "" : " (chưa có)"}`);
+    console.log(`[sao-luu] ảnh ẩn:  ${kho.cachLy}${existsSync(kho.cachLy) ? "" : " (chưa có)"}`);
     console.log("[sao-luu] --kiem: điều kiện đủ, KHÔNG dump.");
     return 0;
   }
@@ -192,6 +285,32 @@ function chay(argv) {
   const da_xoa = donBanCu(co.thuMuc, dich.db, co.giu);
   if (da_xoa.length > 0) {
     console.log(`[sao-luu] giữ ${co.giu} bản, đã xoá ${da_xoa.length}: ${da_xoa.join(", ")}`);
+  }
+
+  // --- Ảnh (Phase 5). Xem khối "trạng thái NẰM NGOÀI database" ở đầu file. ---
+  if (co.khongAnh) {
+    // Nói THẲNG, không im lặng bỏ qua: người đọc log phải biết bản sao lưu này thiếu gì.
+    console.warn(
+      "[sao-luu] ⚠ --khong-anh: bản sao lưu này CHỈ CÓ DATABASE, KHÔNG có ảnh.\n"
+        + "[sao-luu]   Phục hồi nó ra thì mọi hàng MocAnh còn nguyên và mọi ảnh gãy.",
+    );
+    return 0;
+  }
+  const kho = thuMucAnh();
+  for (const [nhan, nguon, ten_dich] of [
+    ["ảnh", kho.phucVu, "media"],
+    ["ảnh đã ẩn", kho.cachLy, "media-an"],
+  ]) {
+    const kq = chepGuong(nguon, join(co.thuMuc, ten_dich));
+    if (kq.thieu) {
+      console.log(`[sao-luu] ${nhan}: ${nguon} chưa tồn tại — bỏ qua (chưa ai upload).`);
+      continue;
+    }
+    console.log(
+      `[sao-luu] ${nhan}: chép ${kq.chep} file mới `
+        + `(${(kq.byte / 1024 / 1024).toFixed(1)} MB), đã có sẵn ${kq.boQua} — `
+        + `${join(co.thuMuc, ten_dich)}`,
+    );
   }
   return 0;
 }

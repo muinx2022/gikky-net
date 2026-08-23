@@ -4,10 +4,12 @@ import { taoMach, type SubChiTietOut } from "@gikky/api-client";
 import Link from "next/link";
 import { useState } from "react";
 
+import { cauLoiTaiAnh, taiAnhLanLuot } from "@/lib/anh";
 import { cauLoi, layDuLieu } from "@/lib/ghi";
 import { GOC_TRINH_DUYET, headerGhi } from "@/lib/tai-khoan";
 import { duongDanMach } from "@/lib/url";
 
+import { ChonAnh } from "./chon-anh";
 import css from "./form-dang-mach.module.css";
 import { usePhien } from "./phien";
 import { TruongMoc, mocRong, thanMoc, type NoiDungMoc } from "./truong-moc";
@@ -37,6 +39,7 @@ export function FormDangMach({
   const [sub, datSub] = useState(dau);
   const [title, datTitle] = useState("");
   const [moc, datMoc] = useState<NoiDungMoc>(mocRong);
+  const [anhs, datAnhs] = useState<File[]>([]);
   const [dangGui, datDangGui] = useState(false);
   const [loi, datLoi] = useState<string | null>(null);
 
@@ -54,7 +57,9 @@ export function FormDangMach({
     );
   }
 
-  if (!(toi?.dang_nhap ?? false)) {
+  // `toi === null` viết TƯỜNG MINH (không phải `toi?.dang_nhap ?? false`): TypeScript
+  // không thu hẹp được `toi` qua toán tử `?.`, mà nhánh dưới đọc `toi.tran_anh_moi_moc`.
+  if (toi === null || !toi.dang_nhap) {
     return (
       <p className={css.moi} data-testid="dang-mach-khach">
         <Link href="/dang-nhap">Đăng nhập</Link> để đăng bài. Chưa có tài khoản?{" "}
@@ -87,6 +92,25 @@ export function FormDangMach({
         }),
         "Không đăng được bài.",
       );
+      // Ảnh lên SAU nội dung, và không có cách nào khác: cửa upload là
+      // `POST /mocs/{id}/anh`, mà `id` của mốc 1 chỉ tồn tại sau khi mạch được tạo.
+      // Bài đã đăng rồi nên một tấm ảnh hỏng KHÔNG được cuốn nó theo — ta đi tiếp và nói
+      // ra tấm nào không lên.
+      if (anhs.length > 0) {
+        const moc1 = mach.mocs[0];
+        const cau =
+          moc1 === undefined
+            ? "Không tìm thấy mốc 1 để gắn ảnh."
+            : cauLoiTaiAnh(await taiAnhLanLuot(moc1.id, anhs));
+        if (cau !== null) {
+          // Dừng lại ở đây thay vì điều hướng: bài đã đăng an toàn, nhưng người viết
+          // phải BIẾT ảnh nào thiếu trước khi rời trang — sang trang mạch rồi thì câu
+          // này không còn chỗ nào để hiện.
+          datLoi(`Bài đã đăng, nhưng ${cau}`);
+          datDangGui(false);
+          return;
+        }
+      }
       // Điều hướng bằng `location.assign` chứ không `router.push`: trang mạch là server
       // component và ta muốn nó nạp từ đầu với dữ liệu vừa ghi, không dùng lại bất kỳ
       // payload RSC nào đang nằm trong bộ nhớ của router.
@@ -145,6 +169,14 @@ export function FormDangMach({
         datGiaTri={datMoc}
         tienTo="dang-mach"
         nhanThan="Mốc 1 — bài gốc"
+      />
+
+      <ChonAnh
+        files={anhs}
+        datFiles={datAnhs}
+        tran={toi.tran_anh_moi_moc}
+        tienTo="dang-mach"
+        dangGui={dangGui}
       />
 
       <div className={css.chan}>

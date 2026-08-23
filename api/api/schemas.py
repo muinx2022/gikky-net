@@ -164,6 +164,32 @@ class TrichOut(Schema):
     anchor_moc_seq: int | None
 
 
+class AnhOut(Schema):
+    """Một ảnh trong gallery của mốc — Phase 5.
+
+    **Không trả `khoa_luu_tru` ra ngoài.** Client cần URL, và URL là thứ `STORAGES` sinh
+    ra; trả thêm khoá thô là mời frontend tự ghép đường dẫn, rồi ngày đổi sang R2 (nơi
+    URL có chữ ký và hạn dùng) thì bản ghép tay ấy vẫn "chạy" ở dev và chết trên prod.
+
+    `w`/`h` là kích thước ảnh **đã lưu**, không phải file gốc — chúng dùng để đặt
+    `width`/`height` trên thẻ `<img>` chống layout shift, nên phải khớp đúng file đang
+    được phục vụ. `null` chỉ xảy ra với hàng cũ ghi trước Phase 5 (không có hàng nào).
+
+    `exif_taken_at` là ngày chụp **server** đọc từ file gốc trước khi tái mã hoá xoá sạch
+    EXIF. Nó là *gợi ý* cho `occurred_at`, không phải nguồn của nó: PLAN nguyên tắc 3 nói
+    `occurred_at` do người dùng đặt, và một tấm ảnh chụp lại màn hình cũ có ngày chụp
+    chẳng liên quan gì tới ngày sự việc.
+    """
+
+    id: int
+    url: str
+    url_thumb: str
+    w: int | None
+    h: int | None
+    position: int
+    exif_taken_at: datetime | None
+
+
 class MocOut(Schema):
     """Một mốc trong mạch. Bài gốc là `seq = 1`, không có ngoại lệ (PLAN mục 2).
 
@@ -211,6 +237,16 @@ class MocOut(Schema):
     #: viết ở thời điểm mốc khác (PLAN nguyên tắc 6).
     so_binh_luan: int
     trich: TrichOut | None
+    #: Gallery của mốc, sắp theo `position` (PLAN 5.2 — ≤10 ảnh/mốc).
+    #:
+    #: **`[]` ở bia mộ và ở mốc bị mod ẩn** — cùng chuẩn với `body`/`figures`/`trich`, và
+    #: đó là vế A9 mà tầng API làm được. Vế còn lại (file trên đĩa, do Caddy phục vụ
+    #: KHÔNG qua Django) không nằm trong schema nào: xem `core/anh_luu.py`.
+    #:
+    #: Danh sách rỗng chứ không `null`: nguyên tắc 9 nói mốc không ảnh thì **không render
+    #: gì cả**, và `[]` với `null` cho cùng một câu trả lời cho câu hỏi đó trong khi `[]`
+    #: bớt cho UI một nhánh.
+    anhs: list[AnhOut]
 
 
 class SpineOut(Schema):
@@ -529,6 +565,20 @@ class ToiOut(Schema):
     #: `PATCH /me`. Có mặt ở đây vì một công tắc không đọc lại được trạng thái là một công
     #: tắc UI phải đoán; khách chưa đăng nhập nhận `false`.
     nhan_digest: bool
+
+    #: Trần "N ảnh mỗi mốc" của PLAN 5.2 — **hằng cấu hình server** (Phase 5), cùng loài
+    #: `google_bat` ngay trên: không phải trạng thái người dùng, mà là thứ UI cần biết
+    #: trước khi vẽ.
+    #:
+    #: Nằm ở `GET /me` chứ không ở `MachChiTietOut` (nơi `tran_moc_moi_ngay` ở) vì **ba**
+    #: form cần nó, và một trong ba là form **đăng mạch** — ở đó chưa có mạch nào để hỏi.
+    #: Đặt ở cả hai chỗ là hai nguồn cho một con số; đặt ở đây là một nguồn cho cả ba, và
+    #: cả ba form đã gọi `usePhien()` sẵn nên không tốn thêm lượt fetch nào.
+    #:
+    #: Không gõ cứng `10` vào `apps/web/lib/anh.ts`: repo này đã trả đúng món nợ ấy hai
+    #: lần (`API-THIEU-MOC-THOI-GIAN`), và một hằng chép tay ở frontend là hằng sẽ trôi
+    #: khi server đổi số — im lặng, và về phía cho phép nhiều hơn thực tế.
+    tran_anh_moi_moc: int
 
 
 class BaoCaoDaGuiOut(Schema):

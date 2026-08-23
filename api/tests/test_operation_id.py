@@ -87,6 +87,13 @@ def test_du_endpoint_cua_plan_muc_7():
     hai cửa per-user của trang mạch (`/me`, `/seen`), hai cửa follow, hai cửa chuông và
     hai cửa trích. Bảng PLAN mục 7 đã có sẵn dòng cho cả tám — Phase 3 không mở endpoint
     nào ngoài hợp đồng, nó chỉ cài những dòng đã hứa từ đầu.
+
+    **Phase 5 thay THẾ hai dòng đã hứa bằng hai dòng khác**, và đó là ca đầu tiên bảng
+    PLAN bị sửa chứ không chỉ được cài: mục 7 hứa `POST /media/presign` +
+    `POST /media/confirm` (flow R2 hai nhịp của PLAN 8.5), nhưng user chốt 2026-08-23
+    lưu ảnh xuống đĩa ⇒ upload một nhịp ⇒ hai cửa ấy không còn lý do tồn tại. Bảng mục 7
+    và mục 8.5 đã sửa cùng lượt; `test_bang_API_cua_PLAN_co_du_dong_sub` ngay dưới là
+    thứ giữ cho hai bên không lệch.
     """
     thuc_te = {
         (tuple(sorted(op.methods)), duong_dan)
@@ -135,6 +142,13 @@ def test_du_endpoint_cua_plan_muc_7():
         # Phase 3 mà không endpoint nào đặt được, tức digest không ai bật được.
         (("POST",), "/reports"),
         (("PATCH",), "/me"),
+        # --- ảnh (Phase 5) ---
+        # MỘT nhịp, multipart. PLAN mục 7 hứa `POST /media/presign` + `POST /media/confirm`
+        # cho flow R2 hai nhịp của PLAN 8.5; user chốt 2026-08-23 lưu xuống đĩa nên hai
+        # cửa ấy **không tồn tại** và bảng PLAN đã được sửa theo. Xem
+        # `plans/2026-08-23-phase-5-anh-local.md` §0.
+        (("POST",), "/mocs/{int:moc_id}/anh"),
+        (("DELETE",), "/anh/{int:anh_id}"),
     }
 
 

@@ -21,6 +21,17 @@ const nextConfig: NextConfig = {
         source: "/api/:path*",
         destination: `${API_ORIGIN}/api/:path*`,
       },
+      // Ảnh ở DEV (Phase 5). Prod thì Caddy phục vụ `/media/*` thẳng từ đĩa, không qua
+      // Django và cũng không qua Next — xem `deploy/Caddyfile` và `api/config/urls.py`.
+      //
+      // Thiếu đúng dòng này thì upload trả 201, hàng trong DB đúng, `<img src>` đúng, và
+      // MỌI tấm ảnh 404. Không có gì đỏ ở tầng Python vì Django phục vụ được; chỉ trình
+      // duyệt mới thấy. Bài đo `e2e/anh.spec.ts::A1` bắt đúng ca đó bằng cách fetch lại
+      // chính `src` mà nó vừa đọc từ DOM.
+      {
+        source: "/media/:path*",
+        destination: `${API_ORIGIN}/media/:path*`,
+      },
     ];
   },
 };

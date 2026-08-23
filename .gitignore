@@ -12,8 +12,18 @@ dist/
 # đích của `collectstatic` (STATIC_ROOT) — sinh ra, không commit
 api/staticfiles/
 
-# đích mặc định của `pnpm db:sao-luu` — bản dump database, không bao giờ commit
+# đích mặc định của `pnpm db:sao-luu` — bản dump database VÀ bản gương của ảnh,
+# không bao giờ commit
 backup/
+
+# Ảnh người dùng tải lên (Phase 5). `MEDIA_ROOT` / `MEDIA_AN_ROOT` mặc định ở dev —
+# xem `api/config/settings.py`. Đây là DỮ LIỆU, không phải mã nguồn: nó vào bản sao lưu
+# (`pnpm db:sao-luu`), không vào git.
+#
+# `media-an/` là kho CÁCH LY: ảnh của mốc đã thành bia mộ / bị mod ẩn. Commit nó là công
+# khai đúng những tấm vừa bị gỡ, vĩnh viễn, trong lịch sử git.
+api/media/
+api/media-an/
 
 # build/tooling caches
 *.egg-info/

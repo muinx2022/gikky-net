@@ -108,6 +108,52 @@ gikky.net, www.gikky.net {
 		reverse_proxy 127.0.0.1:8000
 	}
 
+	# ---------------------------------------------------------------------
+	# ẢNH (Phase 5) — Caddy đọc THẲNG TỪ ĐĨA, không qua Django
+	# ---------------------------------------------------------------------
+	#
+	# `handle_path` (không phải `handle`): nó **cắt bỏ** tiền tố `/media` trước
+	# khi `file_server` tra đường dẫn, nên `root` trỏ thẳng vào `MEDIA_ROOT`.
+	# Dùng `handle` thì Caddy đi tìm `<MEDIA_ROOT>/media/anh/<file>` và mọi ảnh
+	# ra 404 — với `root` đúng, đường dẫn đúng, và không có gì trong log nói vì sao.
+	#
+	# ⚠ `root` PHẢI bằng đúng `MEDIA_ROOT` trong `api/.env`. Hai giá trị này ở
+	# hai file khác nhau và **không có gì kiểm chúng khớp nhau** — lệch một chữ
+	# thì upload vẫn 201, hàng DB vẫn đúng, và mọi thẻ `<img>` gãy. Đây là nợ có
+	# tên của Phase 5.
+	#
+	# ⚠ **KHÔNG BAO GIỜ trỏ root vào thư mục cha của `MEDIA_AN_ROOT`.** Kho cách
+	# ly (`media-an/`) chứa ảnh của mốc đã bị gỡ/ẩn; nó cố ý nằm NGOÀI `MEDIA_ROOT`
+	# vì đó là cả cơ chế A9 — xem `api/core/anh_luu.py`. Trỏ `root` lên một cấp
+	# "cho tiện" là phục vụ lại đúng những tấm ảnh vừa bị gỡ.
+	handle_path /media/* {
+		root * /var/lib/gikky/media
+		# Không `browse`: liệt kê thư mục là phát cho cả internet danh sách mọi
+		# ảnh từng được tải lên, kể cả ảnh của mạch chưa ai biết đường dẫn.
+		# File không có ⇒ `file_server` trả 404, đúng cái ta muốn.
+		file_server
+		header {
+			# Tên file là uuid do server đặt và đuôi suy từ định dạng đã nhận
+			# dạng (`core/anh.py`), nên `Content-Type` Caddy đoán theo đuôi luôn
+			# đúng. `nosniff` chốt lại: trình duyệt không được đoán khác đi.
+			X-Content-Type-Options nosniff
+			# Lớp phòng thủ thứ hai, cho ca bảy phép kiểm thủng: nếu ai đó mở
+			# thẳng URL ảnh như một trang, CSP này làm nó không tải/chạy được gì.
+			# Đây là khuôn mẫu chuẩn cho nội dung người dùng tải lên (GitHub đặt
+			# đúng hai chỉ thị này trên `raw.githubusercontent.com`).
+			#
+			# Cố ý **KHÔNG** dùng `Content-Disposition: attachment`: hành vi của
+			# nó với ảnh nhúng qua `<img>` khác nhau giữa các trình duyệt, và
+			# không có Caddy trên máy này để thử — một header làm gallery trắng
+			# xoá trên prod thì tệ hơn hẳn cái nó phòng.
+			Content-Security-Policy "default-src 'none'; sandbox"
+			# Ảnh là bất biến — mỗi lượt upload sinh một uuid mới, nên nội dung
+			# sau một URL không bao giờ đổi. Cache vĩnh viễn là an toàn và đúng.
+			Cache-Control "public, max-age=31536000, immutable"
+			-Server
+		}
+	}
+
 	# Next public. `/feed.xml`, `/sitemap.xml`, `/opengraph-image` và mọi trang
 	# đều đi qua đây — chúng là route của Next, không phải file tĩnh.
 	handle {
@@ -188,3 +234,22 @@ admin.gikky.net {
 #                                                           → vài lần cuối 429
 #
 # Chưa chạy được bốn phép này thì file này vẫn là NHÁP, kể cả khi site đã lên.
+#
+# ---------------------------------------------------------------------------
+# BA phép thử THÊM của Phase 5 (ảnh) — cũng chưa chạy lần nào
+# ---------------------------------------------------------------------------
+#
+#   5. tải một ảnh lên rồi curl chính URL nó trả về:
+#      curl -i https://gikky.net/media/anh/<uuid>.jpg
+#        → 200 · Content-Type: image/jpeg · X-Content-Type-Options: nosniff
+#      Ra **404** nghĩa là `root` không khớp `MEDIA_ROOT` trong `api/.env`, hoặc
+#      ai đó đổi `handle_path` thành `handle` (xem ghi chú ở khối /media/*).
+#
+#   6. curl -i https://gikky.net/media/anh/                  → 404, KHÔNG phải
+#      danh sách file. Ra danh sách nghĩa là `browse` đã lọt vào `file_server`.
+#
+#   7. ẩn một mốc có ảnh ở khu quản trị, rồi curl lại đúng URL ở phép 5
+#                                                           → 404
+#      Đây là phép thử của A9, và nó là phép **duy nhất** phân biệt được "ảnh đã
+#      bị gỡ thật" với "ảnh chỉ biến khỏi trang". Vẫn 200 nghĩa là `MEDIA_AN_ROOT`
+#      đang nằm TRONG `MEDIA_ROOT` — sai cấu hình, xem `api/core/anh_luu.py`.

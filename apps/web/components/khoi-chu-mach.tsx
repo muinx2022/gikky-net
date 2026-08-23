@@ -4,10 +4,12 @@ import { dongSoMach, moLaiMach, noiMoc } from "@gikky/api-client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { cauLoiTaiAnh, taiAnhLanLuot } from "@/lib/anh";
 import { MA_LOI, cauLoi, layDuLieu, LoiGhi } from "@/lib/ghi";
 import { GOC_TRINH_DUYET, headerGhi } from "@/lib/tai-khoan";
 import { conMoLaiDuoc, gioPhutVN } from "@/lib/vong-doi";
 
+import { ChonAnh } from "./chon-anh";
 import css from "./khoi-chu-mach.module.css";
 import { usePhien } from "./phien";
 import { TruongMoc, mocRong, thanMoc, type NoiDungMoc } from "./truong-moc";
@@ -75,12 +77,15 @@ export function KhoiChuMach({
   const router = useRouter();
   const [mo, datMo] = useState<"khong" | "noi" | "dong_so">("khong");
   const [moc, datMoc] = useState<NoiDungMoc>(mocRong);
+  const [anhs, datAnhs] = useState<File[]>([]);
   const [ketQua, datKetQua] = useState("");
   const [dangGui, datDangGui] = useState(false);
   const [loi, datLoi] = useState<string | null>(null);
 
   if (dangTai) return null;
-  if (!(toi?.dang_nhap ?? false) || toi?.username !== chuMach) return null;
+  // `toi === null` viết TƯỜNG MINH: TypeScript không thu hẹp `toi` qua `?.`, mà form
+  // dưới đọc `toi.tran_anh_moi_moc`.
+  if (toi === null || !toi.dang_nhap || toi.username !== chuMach) return null;
 
   if (khoa) {
     return (
@@ -117,7 +122,7 @@ export function KhoiChuMach({
   const guiMoc = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     void chay(async () => {
-      layDuLieu(
+      const moc_moi = layDuLieu(
         await noiMoc({
           baseUrl: GOC_TRINH_DUYET,
           headers: await headerGhi(),
@@ -126,8 +131,15 @@ export function KhoiChuMach({
         }),
         "Không nối được mốc.",
       );
+      // Ảnh lên SAU: cửa upload cần `id` của mốc, và `id` ấy vừa mới tồn tại. Một tấm
+      // hỏng không cuốn theo cái mốc đã ghi — ta ném câu lỗi lên để `chay()` hiện nó,
+      // nhưng chỉ sau khi đã dọn form, vì mốc thì đã vào sổ thật.
+      const cau =
+        anhs.length > 0 ? cauLoiTaiAnh(await taiAnhLanLuot(moc_moi.id, anhs)) : null;
       datMoc(mocRong());
+      datAnhs([]);
       datMo("khong");
+      if (cau !== null) throw new LoiGhi(0, "", `Mốc đã ghi, nhưng ${cau}`);
     }, "Không nối được mốc. Kiểm tra kết nối rồi thử lại.");
   };
 
@@ -205,6 +217,13 @@ export function KhoiChuMach({
             tienTo="noi-moc"
             nhanThan={`Nội dung mốc ${soMoc + 1}`}
             goiYThan="Chuyện gì vừa xảy ra, và bạn định làm gì tiếp?"
+          />
+          <ChonAnh
+            files={anhs}
+            datFiles={datAnhs}
+            tran={toi.tran_anh_moi_moc}
+            tienTo="noi-moc"
+            dangGui={dangGui}
           />
           <div className={css.hang}>
             <button

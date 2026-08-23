@@ -66,9 +66,14 @@ def test_du_14_model_va_deu_dang_ky_vao_app_core():
              "revised_at"],
         ),
         (
+            # Phase 5 (2026-08-23) đổi `r2_key` → `khoa_luu_tru` và bỏ `thumb_key`:
+            # ảnh lưu xuống ĐĨA chứ không R2, và một cột tên `r2_key` chứa đường dẫn
+            # local là chữ nói quá code. Thumbnail dùng CHUNG khoá với ảnh chính, khác
+            # thư mục — hai cột khoá độc lập chỉ tạo cơ hội cho chúng lệch nhau.
+            # `da_cach_ly` nói file đang nằm ở kho nào (A9). Xem `core/anh_luu.py`.
             "MocAnh",
-            ["moc", "r2_key", "thumb_key", "exif_taken_at", "status", "position",
-             "w", "h", "created_at"],
+            ["moc", "khoa_luu_tru", "exif_taken_at", "status", "position",
+             "w", "h", "created_at", "da_cach_ly"],
         ),
         (
             "Comment",

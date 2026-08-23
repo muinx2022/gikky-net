@@ -13,6 +13,8 @@ from ninja import Router
 
 from api.loi import LoiOut
 from api.quyen import dang_nhap
+from core.ghi import SO_ANH_TOI_DA_MOI_MOC
+
 from api.schemas import ToiOut
 from api.schemas_ghi import ToiSuaIn
 
@@ -53,6 +55,7 @@ def xem_toi(request):
         la_staff=bool(user.is_staff),
         google_bat=settings.GOOGLE_BAT,
         nhan_digest=bool(user.nhan_digest),
+        tran_anh_moi_moc=SO_ANH_TOI_DA_MOI_MOC,
     )
 
 
@@ -119,6 +122,7 @@ def _khach() -> ToiOut:
         la_staff=False,
         google_bat=settings.GOOGLE_BAT,
         nhan_digest=False,
+        tran_anh_moi_moc=SO_ANH_TOI_DA_MOI_MOC,
     )
 
 

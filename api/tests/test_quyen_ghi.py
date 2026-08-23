@@ -156,11 +156,23 @@ CUA_GHI = [
     # `PATCH /me` (L14) — chủ suy ra từ PHIÊN, không từ tham số; cùng nhóm với `seen`/
     # `follow`, xem ghi chú của `CUA_CO_CHU`.
     ("patch", "/api/v1/me", {"nhan_digest": True}),
+    # --- Phase 5 ---
+    # Hai cửa này nhận **multipart** / không nhận thân nào, nhưng vẫn thuộc bảng này:
+    # bài đo 401 ngay dưới chạy được vì django-ninja chạy lớp auth **trước** khi parse
+    # tham số (`Operation.run` gọi `_run_authentication()` đầu tiên) — khách bị chặn
+    # trước khi ai hỏi tới cái file. Vế 403 của chúng KHÔNG đo ở `CUA_CO_CHU` được, vì
+    # lúc đó auth đã qua và Ninja sẽ trả **422** (thiếu phần `file`) chứ không 403; nó
+    # có bài đo riêng gửi multipart thật — `test_api_anh.py::test_A7_*`.
+    ("post", "/api/v1/mocs/{moc}/anh", {}),
+    ("delete", "/api/v1/anh/{anh}", {}),
 ]
 
 
 def _sao(duong: str) -> str:
-    for x in ("{mach}", "{moc}", "{comment}", "{int:mach_id}", "{int:moc_id}", "{int:comment_id}"):
+    for x in (
+        "{mach}", "{moc}", "{comment}", "{anh}",
+        "{int:mach_id}", "{int:moc_id}", "{int:comment_id}", "{int:anh_id}",
+    ):
         duong = duong.replace(x, "*")
     return duong
 
@@ -179,11 +191,12 @@ def test_bang_cua_ghi_phu_du_api_v1():
     assert trong_bang == thuc_te
 
 
-def _dien(duong: str, *, mach, moc, comment) -> str:
+def _dien(duong: str, *, mach, moc, comment, anh=0) -> str:
     return (
         duong.replace("{mach}", str(mach))
         .replace("{moc}", str(moc))
         .replace("{comment}", str(comment))
+        .replace("{anh}", str(anh))
     )
 
 

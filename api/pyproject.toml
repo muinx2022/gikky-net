@@ -13,6 +13,10 @@ dependencies = [
     # (xem `config/settings.py`), nhưng gói thì phải có sẵn để `INSTALLED_APPS` nạp được
     # `allauth.socialaccount` một cách vô điều kiện.
     "django-allauth[socialaccount]>=65.4",
+    # Ảnh (Phase 5). Pillow là thứ NHẬN DẠNG ảnh bằng nội dung và TÁI MÃ HOÁ nó —
+    # hai phép kiểm mà tên file và `Content-Type` do client gửi không thay được.
+    # Xem `core/anh.py`.
+    "Pillow>=11.0",
 ]
 
 [project.optional-dependencies]

@@ -7,6 +7,55 @@ export type ClientOptions = {
 };
 
 /**
+ * AnhOut
+ *
+ * Một ảnh trong gallery của mốc — Phase 5.
+ *
+ * **Không trả `khoa_luu_tru` ra ngoài.** Client cần URL, và URL là thứ `STORAGES` sinh
+ * ra; trả thêm khoá thô là mời frontend tự ghép đường dẫn, rồi ngày đổi sang R2 (nơi
+ * URL có chữ ký và hạn dùng) thì bản ghép tay ấy vẫn "chạy" ở dev và chết trên prod.
+ *
+ * `w`/`h` là kích thước ảnh **đã lưu**, không phải file gốc — chúng dùng để đặt
+ * `width`/`height` trên thẻ `<img>` chống layout shift, nên phải khớp đúng file đang
+ * được phục vụ. `null` chỉ xảy ra với hàng cũ ghi trước Phase 5 (không có hàng nào).
+ *
+ * `exif_taken_at` là ngày chụp **server** đọc từ file gốc trước khi tái mã hoá xoá sạch
+ * EXIF. Nó là *gợi ý* cho `occurred_at`, không phải nguồn của nó: PLAN nguyên tắc 3 nói
+ * `occurred_at` do người dùng đặt, và một tấm ảnh chụp lại màn hình cũ có ngày chụp
+ * chẳng liên quan gì tới ngày sự việc.
+ */
+export type AnhOut = {
+    /**
+     * Exif Taken At
+     */
+    exif_taken_at: string | null;
+    /**
+     * H
+     */
+    h: number | null;
+    /**
+     * Id
+     */
+    id: number;
+    /**
+     * Position
+     */
+    position: number;
+    /**
+     * Url
+     */
+    url: string;
+    /**
+     * Url Thumb
+     */
+    url_thumb: string;
+    /**
+     * W
+     */
+    w: number | null;
+};
+
+/**
  * BaoCaoDaGuiOut
  *
  * Biên nhận của `POST /reports` — PLAN 5.10 (L03, lượt vá V1).
@@ -886,6 +935,10 @@ export type MocMoiIn = {
  * (PLAN 5.2).
  */
 export type MocOut = {
+    /**
+     * Anhs
+     */
+    anhs: Array<AnhOut>;
     author: NguoiDungTomTatOut | null;
     /**
      * Body
@@ -1379,6 +1432,10 @@ export type ToiOut = {
      */
     nhan_digest: boolean;
     /**
+     * Tran Anh Moi Moc
+     */
+    tran_anh_moi_moc: number;
+    /**
      * Username
      */
     username: string | null;
@@ -1563,6 +1620,44 @@ export type VoteOut = {
      */
     value: number;
 };
+
+export type XoaAnhMocData = {
+    body?: never;
+    path: {
+        /**
+         * Anh Id
+         */
+        anh_id: number;
+    };
+    query?: never;
+    url: '/api/v1/anh/{anh_id}';
+};
+
+export type XoaAnhMocErrors = {
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type XoaAnhMocError = XoaAnhMocErrors[keyof XoaAnhMocErrors];
+
+export type XoaAnhMocResponses = {
+    /**
+     * OK
+     */
+    200: AnhOut;
+};
+
+export type XoaAnhMocResponse = XoaAnhMocResponses[keyof XoaAnhMocResponses];
 
 export type XoaBinhLuanData = {
     body?: never;
@@ -2367,6 +2462,64 @@ export type SuaMocResponses = {
 };
 
 export type SuaMocResponse = SuaMocResponses[keyof SuaMocResponses];
+
+export type TaiAnhMocData = {
+    /**
+     * FileParams
+     */
+    body: {
+        /**
+         * File
+         */
+        file: Blob | File;
+    };
+    path: {
+        /**
+         * Moc Id
+         */
+        moc_id: number;
+    };
+    query?: never;
+    url: '/api/v1/mocs/{moc_id}/anh';
+};
+
+export type TaiAnhMocErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+    /**
+     * Conflict
+     */
+    409: LoiOut;
+    /**
+     * Request Entity Too Large
+     */
+    413: LoiOut;
+};
+
+export type TaiAnhMocError = TaiAnhMocErrors[keyof TaiAnhMocErrors];
+
+export type TaiAnhMocResponses = {
+    /**
+     * Created
+     */
+    201: AnhOut;
+};
+
+export type TaiAnhMocResponse = TaiAnhMocResponses[keyof TaiAnhMocResponses];
 
 export type LietKeBinhLuanMocData = {
     body?: never;

@@ -164,6 +164,53 @@ STATIC_URL = "static/"
 # Thiếu STATIC_ROOT thì `collectstatic` báo lỗi và Django admin lên prod mất sạch CSS.
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+# =============================================================================
+# ẢNH — lưu xuống ĐĨA, cả dev lẫn VPS (PLAN 8.5 · Phase 5)
+# =============================================================================
+#
+# PLAN 8.5 viết cho R2/minio: hai nhịp `presign` → PUT thẳng lên storage → `confirm`.
+# User chốt 2026-08-23 **lưu thẳng xuống đĩa, chưa cần dịch vụ** ⇒ upload MỘT nhịp,
+# multipart thẳng vào Django. Hai nhịp tồn tại *chỉ vì* server không cầm được file;
+# server cầm được rồi thì lý do đó mất, và cùng với nó mất luôn ngoại lệ CORS duy nhất
+# của PLAN 8.6. Chi tiết ba chỗ lệch: `plans/2026-08-23-phase-5-anh-local.md` §0.
+#
+# **Đổi sang R2 sau này = đổi ĐÚNG khối `STORAGES` dưới đây**, không đụng đường ghi:
+# `core/anh_luu.py` chỉ nói chuyện qua API storage của Django (`save`/`open`/`delete`/
+# `exists`), không có một lời gọi `open()` hay `os.path` nào.
+
+#: Gốc thư mục ảnh. Dev: `api/media/`. VPS: một thư mục **ngoài cây mã nguồn**
+#: (`MEDIA_ROOT=/var/lib/gikky/media`) — deploy bằng `git pull` không được xoá mất ảnh
+#: của người dùng, và cây mã nguồn thì có thể bị thay nguyên khối.
+MEDIA_ROOT = env("MEDIA_ROOT", default=str(BASE_DIR / "media"))
+MEDIA_URL = "/media/"
+
+#: Thư mục CÁCH LY — ảnh của mốc đã thành bia mộ / bị mod ẩn được **chuyển sang đây**.
+#:
+#: Nó phải nằm **NGOÀI `MEDIA_ROOT`**, và đó là cả cơ chế: prod cho Caddy `root` thẳng
+#: vào `MEDIA_ROOT` rồi `file_server`, tức Caddy phục vụ file **không qua Django**. Một
+#: thư mục con của `MEDIA_ROOT` sẽ được Caddy phục vụ y như mọi thư mục con khác, nên
+#: "ẩn ở tầng API" một mình KHÔNG làm ảnh biến mất — xem `core/anh_luu.py::an_anh_cua_moc`.
+MEDIA_AN_ROOT = env("MEDIA_AN_ROOT", default=str(Path(MEDIA_ROOT).parent / "media-an"))
+
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+        "OPTIONS": {"location": MEDIA_ROOT, "base_url": MEDIA_URL},
+    },
+    #: Cùng backend, khác thư mục, **không có `base_url`** — không sinh được URL nào từ
+    #: nó là có chủ đích: một `.url()` gọi nhầm trên kho này phải NỔ, không phải trả về
+    #: một đường dẫn trông hợp lệ dẫn tới ảnh vừa bị gỡ.
+    "an": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+        "OPTIONS": {"location": MEDIA_AN_ROOT},
+    },
+    #: Phải khai lại: `STORAGES` thay thế NGUYÊN KHỐI mặc định của Django, nên bỏ khoá
+    #: này đi là `collectstatic` và `{% static %}` chết với `InvalidStorageError`.
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # =============================================================================

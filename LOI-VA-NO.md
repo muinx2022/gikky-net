@@ -497,10 +497,36 @@ của mục này (*"chỉ nút báo cáo là chưa"*) đã hết đúng từ lư
 thật (L03). Nghĩa là câu ở `/luat` nay sai **hoàn toàn**, không còn nửa đúng nào. Sửa câu
 là việc của V2.
 
-### L36 · NHỎ · Một lượt `pnpm e2e` flake 1/3, KHÔNG tái hiện
-**MỞ (quan sát).** B2 báo bài *"mũi tên vote SỐNG"* đỏ 1 trong 3 lượt, chạy riêng file thì xanh.
-Nghiệm thu chạy **3 lượt đầy đủ tuần tự: 365/365 cả ba**, không tái hiện. Nhưng 3 lượt xanh không
-loại trừ được flake tần suất 1/3 (xác suất bỏ sót ≈ 30%). Nghi race giữa `/me` và cú bấm đầu tiên.
+### L36 · NHỎ · "Flake" 1/3 ở bài vote — **KHÔNG phải flake, đã tìm ra nguyên nhân**
+**ĐÓNG (lượt gộp Phase 5, 2026-08-23).** Nguyên nhân là **L41**: `.next/cache` giữ payload
+từ trước khi schema đổi. Bài nào trúng một mạch có payload cũ thì đỏ, không trúng thì xanh —
+đúng hình dạng một flake, nhưng tất định. Xoá `.next/cache` ⇒ xanh ngay, tái hiện được cả hai
+chiều. Nghiệm thu chạy 3 lượt không bắt lại được vì cache lúc đó đã ấm bằng payload mới.
+
+<details><summary>bằng chứng gốc</summary>
+B2 báo bài "mũi tên vote SỐNG" đỏ 1 trong 3 lượt, chạy riêng file thì xanh. Nghiệm thu chạy
+3 lượt đầy đủ tuần tự: 365/365 cả ba, không tái hiện.</details>
+
+### L41 · **NẶNG** · Cache dữ liệu của Next sống qua thay đổi schema ⇒ **500 trên prod sau deploy**
+**MỞ.** Phát hiện ở lượt gộp Phase 5, 2026-08-23.
+`.next/cache` (fetch/data cache của ISR) **không bị xoá khi build lại**. Deploy một bản thêm
+trường bắt buộc vào response API ⇒ trang nào còn được phục vụ từ payload cũ sẽ đọc `undefined`
+và **crash server-side**, không phải render thiếu.
+Đo thật: sau khi gộp Phase 5 (`MocOut` mọc `anhs`), render trang mạch ném
+`TypeError: Cannot read properties of undefined (reading 'length')` ở `stringify` — tức **500**
+với người dùng thật, trong khi `anhs` là trường **bắt buộc** ở cả schema Python lẫn TS.
+Xoá `.next/cache` ⇒ hết ngay. Đây là lý do của L36.
+→ Cần một cơ chế: xoá cache dữ liệu như một bước của deploy, hoặc gắn phiên bản schema vào
+khoá cache. **Chữ trong tài liệu không đủ** — đây là thứ chỉ lộ ra sau khi deploy.
+
+### L42 · VỪA · `/media/*` không có đường nào ở dev ⇒ mọi ảnh 404
+**ĐÓNG (lượt gộp Phase 5, 2026-08-23).** `api/config/urls.py` mount `static()` đúng, và
+docstring của nó khẳng định *"trình duyệt → Next 3000 (`rewrites` trong `next.config.ts`) →
+Django 8000"* — **nhưng rewrite đó không tồn tại**. Upload trả 201, hàng DB đúng, `<img src>`
+đúng, và mọi tấm ảnh 404. Không gì đỏ ở tầng Python vì Django phục vụ được; chỉ trình duyệt
+mới thấy. Loài "chữ nói quá code" lần thứ 16.
+→ Đã thêm rewrite `/media/:path*` vào `apps/web/next.config.ts`. `e2e/anh.spec.ts::A1` bắt
+đúng ca này bằng cách fetch lại chính `src` nó vừa đọc từ DOM.
 
 ---
 
