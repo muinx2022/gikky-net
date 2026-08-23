@@ -68,6 +68,21 @@ export async function headerGhi(): Promise<Record<string, string>> {
   };
 }
 
+/** Header cho một request ghi **multipart** (upload ảnh — Phase 5). CSRF, không hơn.
+ *
+ * Tách khỏi `headerGhi` vì đúng một dòng, và dòng ấy phá: `Content-Type:
+ * application/json` đè lên header mà `FormData` phải tự đặt, và `FormData` cần đặt
+ * `multipart/form-data; boundary=…` với một boundary **ngẫu nhiên sinh lúc gửi**. Ghi đè
+ * nó là server nhận một thân không parse được — Django trả 400 hoặc thấy `file` rỗng, và
+ * thông báo lỗi không chỉ được về phía header.
+ *
+ * (Client sinh từ OpenAPI đã đặt `'Content-Type': null` cho cửa multipart để `fetch` tự
+ * điền. Truyền `headerGhi()` vào là ghi đè đúng cái `null` đó.)
+ */
+export async function headerGhiFile(): Promise<Record<string, string>> {
+  return { "X-CSRFToken": await baoDamCsrf() };
+}
+
 type ThanLoi = {
   errors?: { message?: string; param?: string; code?: string }[];
   detail?: string;

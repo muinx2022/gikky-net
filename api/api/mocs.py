@@ -21,7 +21,7 @@ from core.doc_noi_dung import (
 )
 from core.ghi import go_trich, sua_moc, trich_vao_so, xoa_moc
 from core.models.binh_luan import Comment
-from core.models.moc import Moc, MocRevision
+from core.models.moc import Moc, MocAnh, MocRevision
 from core.models.tuong_tac import Trich
 from core.revalidate import lam_moi_mach
 from core.thong_bao import bao_duoc_trich
@@ -143,7 +143,12 @@ def _moc_ra_day_du(moc: Moc) -> MocOut:
         .select_related("comment", "comment__author")
         .first()
     )
-    return moc_ra(moc, so_binh_luan=dem.get(moc.seq, 0), trich=trich)
+    anhs = list(
+        MocAnh.objects.filter(moc=moc, status=MocAnh.TrangThai.XAC_NHAN).order_by(
+            "position", "id"
+        )
+    )
+    return moc_ra(moc, so_binh_luan=dem.get(moc.seq, 0), trich=trich, anhs=anhs)
 
 
 @router.patch(

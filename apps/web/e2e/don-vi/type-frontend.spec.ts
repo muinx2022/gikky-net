@@ -393,6 +393,16 @@ test("luật trên có quét trúng lời gọi THẬT ở MỌI cửa (không q
     // trong danh sách này để mọi lượt thêm một chỗ đọc dữ liệu per-user đều phải qua diff.
     "components/trang-thai-toi.tsx",
     "components/trich.tsx", // B2 — trích / gỡ trích vào sổ
+    // Phase 5 — hai cửa ảnh (`taiAnhMoc`, `xoaAnhMoc`). Đây là file DUY NHẤT của Phase 5
+    // gọi API: ô chọn ảnh (`components/chon-anh.tsx`) và ba form ghi đi qua
+    // `taiAnhLanLuot`/`goAnh` ở đây, nên chúng không xuất hiện trong danh sách này.
+    //
+    // Hai lời gọi ấy là **multipart**, và đó là chỗ chúng khác mọi dòng còn lại: chúng
+    // truyền `headerGhiFile()` chứ không `headerGhi()`. `headerGhi` đặt
+    // `Content-Type: application/json`, thứ ghi đè lên `Content-Type` mà `FormData` phải
+    // tự sinh kèm `boundary` — server nhận một thân không parse được. `baseUrl` thì vẫn
+    // là `GOC_TRINH_DUYET` (rỗng, same-origin) như mọi lời gọi trong trình duyệt.
+    "lib/anh.ts",
     "lib/api.ts",
   ]);
   expect(theo_file.get("lib/api.ts")).toBeGreaterThanOrEqual(6);

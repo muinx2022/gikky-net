@@ -16,6 +16,8 @@ Về bảo mật hạ tầng: luật Caddy `gikky.net/api/admin/*` → 403 ở P
 `/api/admin/django/` vì nó nằm trong cùng prefix ⇒ **không phải thêm luật Caddy nào**.
 """
 
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
@@ -49,3 +51,17 @@ urlpatterns = [
     # `config/host_admin.py` (PLAN 8.2), rồi mới tới `ChiMod` của Ninja.
     path("api/admin/", api_admin.urls),
 ]
+
+# --- Ảnh ở DEV (Phase 5) -----------------------------------------------------
+#
+# `static()` trả về danh sách RỖNG khi `DEBUG = False`, nên dòng này tự tắt trên prod —
+# ở đó **Caddy phục vụ `/media/*` thẳng từ đĩa**, không qua Django (`deploy/Caddyfile`).
+# Đó không phải tối ưu hoá: `django.views.static.serve` đọc file bằng chính tiến trình
+# WSGI, nên mỗi tấm ảnh chiếm một worker suốt thời gian truyền.
+#
+# Đường đi ở dev: trình duyệt → Next 3000 (`rewrites` trong `next.config.ts`) → Django
+# 8000 → đây. Same-origin cả chặng, đúng lối `/api/*` đã đi.
+#
+# ⚠ **Chỉ `MEDIA_ROOT` được mount, KHÔNG BAO GIỜ `MEDIA_AN_ROOT`.** Kho cách ly chứa ảnh
+# của mốc đã bị gỡ/ẩn; mount nó ra là bỏ đi đúng cái cơ chế A9 dựng lên (`core/anh_luu.py`).
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

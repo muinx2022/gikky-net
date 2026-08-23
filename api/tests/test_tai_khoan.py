@@ -18,6 +18,7 @@ from allauth.account.models import EmailAddress
 from django.conf import settings
 from django.core import mail
 
+from core.ghi import SO_ANH_TOI_DA_MOI_MOC
 from core.models.nguoi_dung import User
 
 BROWSER = "/api/_allauth/browser/v1"
@@ -233,6 +234,23 @@ def test_google_TAT_khi_khong_co_credential():
 @pytest.mark.django_db
 def test_me_noi_ra_google_bat_hay_tat(client):
     assert toi(client)["google_bat"] is settings.GOOGLE_BAT
+
+
+@pytest.mark.django_db
+def test_me_noi_ra_tran_anh_moi_moc_cho_ca_KHACH(client, nguoi_a):
+    """`tran_anh_moi_moc` — hằng cấu hình server cho ô chọn ảnh (Phase 5).
+
+    Cùng vai `google_bat`: không phải trạng thái người dùng, mà là thứ UI cần biết trước
+    khi vẽ. Ô chọn ảnh phải chặn tại chỗ khi đã đủ, chứ không để người ta chọn tấm thứ
+    11 rồi chờ một request chỉ để ăn 409.
+
+    **Khách cũng nhận đúng con số**, không phải `null`: `GET /me` là một hình dạng duy
+    nhất cho cả hai trạng thái (xem `_khach()`), và một trường cấu hình biến mất với
+    khách là một nhánh `undefined` mà mọi form phải nhớ xử.
+    """
+    assert toi(client)["tran_anh_moi_moc"] == SO_ANH_TOI_DA_MOI_MOC
+    client.force_login(nguoi_a)
+    assert toi(client)["tran_anh_moi_moc"] == SO_ANH_TOI_DA_MOI_MOC
 
 
 # --- cấu hình CSRF / cookie (PLAN 8.2) ---------------------------------------

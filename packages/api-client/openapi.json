@@ -1,6 +1,72 @@
 {
   "components": {
     "schemas": {
+      "AnhOut": {
+        "description": "Một ảnh trong gallery của mốc — Phase 5.\n\n**Không trả `khoa_luu_tru` ra ngoài.** Client cần URL, và URL là thứ `STORAGES` sinh\nra; trả thêm khoá thô là mời frontend tự ghép đường dẫn, rồi ngày đổi sang R2 (nơi\nURL có chữ ký và hạn dùng) thì bản ghép tay ấy vẫn \"chạy\" ở dev và chết trên prod.\n\n`w`/`h` là kích thước ảnh **đã lưu**, không phải file gốc — chúng dùng để đặt\n`width`/`height` trên thẻ `<img>` chống layout shift, nên phải khớp đúng file đang\nđược phục vụ. `null` chỉ xảy ra với hàng cũ ghi trước Phase 5 (không có hàng nào).\n\n`exif_taken_at` là ngày chụp **server** đọc từ file gốc trước khi tái mã hoá xoá sạch\nEXIF. Nó là *gợi ý* cho `occurred_at`, không phải nguồn của nó: PLAN nguyên tắc 3 nói\n`occurred_at` do người dùng đặt, và một tấm ảnh chụp lại màn hình cũ có ngày chụp\nchẳng liên quan gì tới ngày sự việc.",
+        "properties": {
+          "exif_taken_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exif Taken At"
+          },
+          "h": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "H"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "position": {
+            "title": "Position",
+            "type": "integer"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          },
+          "url_thumb": {
+            "title": "Url Thumb",
+            "type": "string"
+          },
+          "w": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "W"
+          }
+        },
+        "required": [
+          "id",
+          "url",
+          "url_thumb",
+          "w",
+          "h",
+          "position",
+          "exif_taken_at"
+        ],
+        "title": "AnhOut",
+        "type": "object"
+      },
       "BinhLuanMoiIn": {
         "description": "Viết bình luận — `POST /machs/{id}/comments` (PLAN 5.4, nguyên tắc 4 và 6).\n\n`anchor_moc_seq` **chỉ đặt được trên bình luận gốc**: reply kế thừa neo của gốc, nên\ngửi kèm `parent_id` là 400 chứ không phải bỏ qua im lặng — bỏ qua im lặng là cách một\nbình luận biến mất khỏi ngăn kéo mà không ai hiểu tại sao.\n\nGốc mang `anchor_moc_seq = null` nghĩa là người viết **đã gỡ chip** — không thuộc ngăn\nkéo nào. Đó là một lựa chọn, không phải dữ liệu thiếu.",
         "properties": {
@@ -1030,6 +1096,13 @@
       "MocOut": {
         "description": "Một mốc trong mạch. Bài gốc là `seq = 1`, không có ngoại lệ (PLAN mục 2).\n\nKhi `trang_thai != \"binh_thuong\"` thì đây là **bia mộ**: `body`, `loai`, `figures`,\n`question_for_crowd`, `edited_at`, **`author`** đều `null`, còn `edit_count` và\n`score` về `0` — số phiếu của nội dung đã gỡ không được trả ra, cùng chuẩn với\n`BinhLuanOut`. `seq`, `occurred_at`, `so_binh_luan` và chỗ đứng trên spine vẫn còn:\n`seq` bất biến, giấu hẳn một ô là thủng dãy số, và ngăn kéo của bia mộ vẫn mở được\n(PLAN 5.2).",
         "properties": {
+          "anhs": {
+            "items": {
+              "$ref": "#/components/schemas/AnhOut"
+            },
+            "title": "Anhs",
+            "type": "array"
+          },
           "author": {
             "anyOf": [
               {
@@ -1170,7 +1243,8 @@
           "score",
           "trang_thai",
           "so_binh_luan",
-          "trich"
+          "trich",
+          "anhs"
         ],
         "title": "MocOut",
         "type": "object"
@@ -1672,6 +1746,10 @@
             "title": "La Staff",
             "type": "boolean"
           },
+          "tran_anh_moi_moc": {
+            "title": "Tran Anh Moi Moc",
+            "type": "integer"
+          },
           "username": {
             "anyOf": [
               {
@@ -1691,7 +1769,8 @@
           "email",
           "email_da_xac_thuc",
           "la_staff",
-          "google_bat"
+          "google_bat",
+          "tran_anh_moi_moc"
         ],
         "title": "ToiOut",
         "type": "object"
@@ -1900,6 +1979,74 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/anh/{anh_id}": {
+      "delete": {
+        "description": "Gỡ một ảnh — **hàng đi, file đi** (A8). Chỉ tác giả của mốc.\n\nTrả về chính thẻ ảnh vừa xoá chứ không 204: UI cần `id` để gỡ đúng ô khỏi gallery mà\nkhông phải tải lại cả mốc, và một 204 rỗng bắt nó tin vào biến nó vừa gửi đi.\n\n**Không có bia mộ cho ảnh** — xem `core/ghi.py::xoa_anh_moc` để biết vì sao ảnh khác\nmốc và bình luận ở điểm này.\n\nKhông kiểm `doi_con_song`: gỡ ảnh khỏi một mốc mình vừa xoá vẫn là việc hợp lý (nó\ngiải phóng đĩa), và mốc bia mộ thì ảnh đã không hiện ở đâu nữa nên không có gì để\nbảo vệ. `doi_mach_tuong_tac_duoc` thì **có** — mạch bị mod khoá là cấm mọi tương tác,\nkể cả của chính tác giả (PLAN 5.10).",
+        "operationId": "xoa_anh_moc",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "anh_id",
+            "required": true,
+            "schema": {
+              "title": "Anh Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnhOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Xoa Anh Moc Api",
+        "tags": [
+          "anh"
+        ]
+      }
+    },
     "/api/v1/comments/{comment_id}": {
       "delete": {
         "description": "Xoá bình luận theo **luật hai vế** của PLAN 5.3 — nợ 1a bàn giao, trả ở đây.\n\n**Quyền: CHỈ tác giả của bình luận.** Mạch bị mod khoá ⇒ 403; đã xoá rồi ⇒ 409.\n\nLuật, nguyên văn: giữ chỗ \"[đã xoá]\" nếu **có reply con** HOẶC **đã TỪNG được trích\nvào sổ (kể cả trích đã gỡ)**; xoá thật chỉ khi không dính cả hai. Chữ \"đã TỪNG\" khớp\nđúng `Trich.comment = PROTECT` — `PROTECT` chặn theo hàng, nó không biết `removed_at`\nlà gì. Đọc thành \"đang được trích\" là tiền-kiểm `removed_at IS NULL`, quyết \"xoá\nthật\", rồi ăn `ProtectedError` ⇒ 500 trên một thao tác hợp lệ của chính chủ.\n\n**Xoá thật thì dọn `Vote` mồ côi trong cùng transaction** — `Vote` cố ý không có FK\ntới đích nên không có `ON DELETE` nào; nợ này ghi sẵn trong docstring của model từ 1a.\n\n`xoa_that = false` nghĩa là nút ở lại làm bia mộ: UI phải **render lại** nó chứ không\ngỡ khỏi cây, nếu không cả nhánh con mất chỗ bám.",
@@ -3384,6 +3531,125 @@
         "summary": "Sua Moc Api",
         "tags": [
           "moc"
+        ]
+      }
+    },
+    "/api/v1/mocs/{moc_id}/anh": {
+      "post": {
+        "description": "Tải MỘT ảnh lên một mốc (multipart). Tối đa `SO_ANH_TOI_DA_MOI_MOC` ảnh/mốc.\n\n**Quyền: CHỈ `Moc.author`** — cùng cột mà `PATCH`/`DELETE /mocs/{id}` hỏi, không phải\n`Mach.author`. Ảnh là nội dung của mốc, nên nó theo quyền của mốc.\n\nBa ca từ chối theo trạng thái, mỗi ca một mã:\n\n- mạch bị mod **khoá** ⇒ 403 `mach_bi_khoa` (đọc được, cấm tương tác — PLAN 5.10);\n- mốc đã là **bia mộ** hoặc bị mod ẩn ⇒ 409 `noi_dung_da_go`;\n- mốc đã đủ 10 ảnh ⇒ 409 `qua_nhieu_anh`.\n\n**Mạch ĐÃ ĐÓNG SỔ vẫn tải ảnh lên được**, và đó là chủ đích chứ không phải sót:\n`PATCH /mocs/{id}` cũng không kiểm `status` (PLAN 5.1 — đóng sổ chặn *nối mốc mới*,\nkhông chặn sửa mốc cũ). Bổ sung một tấm ảnh vào mốc đã viết là sửa mốc cũ. Nếu luật\nsản phẩm muốn ngược lại thì đó là một quyết định phải ghi vào PLAN 5.1 trước, không\nphải một dòng `if` thêm ở đây.\n\n**Một ảnh mỗi request**, không nhận nhiều file một lượt: mỗi ảnh có thể hỏng theo một\nkiểu khác nhau, và một response duy nhất cho 5 ảnh thì hoặc phải mang 5 mã lỗi (một\nhình dạng lỗi thứ hai, PLAN mục 7 chỉ có `{detail, code}`), hoặc phải huỷ cả lượt vì\nmột tấm sai. UI gửi tuần tự và báo lỗi từng tấm — xem `apps/web/lib/anh.ts`.",
+        "operationId": "tai_anh_moc",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "moc_id",
+            "required": true,
+            "schema": {
+              "title": "Moc Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "file": {
+                    "format": "binary",
+                    "title": "File",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "file"
+                ],
+                "title": "FileParams",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnhOut"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Tai Anh Moc",
+        "tags": [
+          "anh"
         ]
       }
     },

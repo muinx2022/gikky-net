@@ -4,10 +4,12 @@ import { suaMoc, xoaMoc, type MocOut } from "@gikky/api-client";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
+import { cauLoiTaiAnh, taiAnhLanLuot } from "@/lib/anh";
 import { cauLoi, layDuLieu } from "@/lib/ghi";
 import { GOC_TRINH_DUYET, headerGhi } from "@/lib/tai-khoan";
 import { gioPhutVN, phutSuaImLangConLai } from "@/lib/vong-doi";
 
+import { AnhDaLuu, ChonAnh } from "./chon-anh";
 import css from "./hanh-dong-moc.module.css";
 import { useMach } from "./mach-ngu-canh";
 import { usePhien } from "./phien";
@@ -50,6 +52,7 @@ export function HanhDongMoc({ moc }: { moc: MocOut }) {
   const router = useRouter();
   const [mo, datMo] = useState(false);
   const [gia_tri, datGiaTri] = useState<NoiDungMoc>(() => tuMoc(moc));
+  const [anhs, datAnhs] = useState<File[]>([]);
   const [dangGui, datDangGui] = useState(false);
   const [loi, datLoi] = useState<string | null>(null);
   const hopRef = useRef<HTMLDetailsElement>(null);
@@ -62,7 +65,11 @@ export function HanhDongMoc({ moc }: { moc: MocOut }) {
 
   if (dangTai || khoa) return null;
   if (moc.trang_thai !== "binh_thuong") return null;
-  if (!(toi?.dang_nhap ?? false) || toi?.username !== moc.author?.username) return null;
+  // `toi === null` viết TƯỜNG MINH: TypeScript không thu hẹp `toi` qua `?.`, mà form
+  // sửa bên dưới đọc `toi.tran_anh_moi_moc`.
+  if (toi === null || !toi.dang_nhap || toi.username !== moc.author?.username) {
+    return null;
+  }
 
   const con = phutSuaImLangConLai(moc.sua_im_lang_den);
   const het_luc = gioPhutVN(moc.sua_im_lang_den);
@@ -75,22 +82,37 @@ export function HanhDongMoc({ moc }: { moc: MocOut }) {
     e.preventDefault();
     if (dangGui || gia_tri.body.trim() === "") return;
     const thay_doi = chiPhanDoi(moc, gia_tri);
-    if (thay_doi === null) {
+    // Không đổi chữ **và** không thêm ảnh ⇒ đóng form, không gọi API nào. Đây là luật
+    // "không gửi cái không đổi" ở đầu file, nay phải hỏi thêm vế ảnh: mở form ra rồi
+    // thêm một tấm mà không sửa chữ vẫn là một thay đổi thật.
+    if (thay_doi === null && anhs.length === 0) {
       datMo(false);
       return;
     }
     datDangGui(true);
     datLoi(null);
     try {
-      layDuLieu(
-        await suaMoc({
-          baseUrl: GOC_TRINH_DUYET,
-          headers: await headerGhi(),
-          path: { moc_id: moc.id },
-          body: thay_doi,
-        }),
-        "Không lưu được.",
-      );
+      if (thay_doi !== null) {
+        layDuLieu(
+          await suaMoc({
+            baseUrl: GOC_TRINH_DUYET,
+            headers: await headerGhi(),
+            path: { moc_id: moc.id },
+            body: thay_doi,
+          }),
+          "Không lưu được.",
+        );
+      }
+      // Ảnh gửi SAU phần chữ, và một tấm hỏng không cuốn theo phần chữ đã lưu — mốc thì
+      // đã sửa thật, nên câu lỗi phải nói đúng chuyện đó.
+      const cau =
+        anhs.length > 0 ? cauLoiTaiAnh(await taiAnhLanLuot(moc.id, anhs)) : null;
+      datAnhs([]);
+      if (cau !== null) {
+        datLoi(`Đã lưu, nhưng ${cau}`);
+        router.refresh();
+        return;
+      }
       datMo(false);
       router.refresh();
     } catch (e2) {
@@ -176,6 +198,16 @@ export function HanhDongMoc({ moc }: { moc: MocOut }) {
             datGiaTri={datGiaTri}
             tienTo="sua-moc"
             nhanThan={`Nội dung mốc ${moc.seq}`}
+          />
+          <AnhDaLuu anhs={moc.anhs} onXong={() => router.refresh()} />
+          <ChonAnh
+            files={anhs}
+            datFiles={datAnhs}
+            // Chỗ còn lại tính TRỪ số ảnh đã lưu — nếu không, người ta chọn thêm 10 tấm
+            // vào một mốc đã có 8 và chỉ biết mình vượt trần khi hai tấm cuối ăn 409.
+            tran={Math.max(0, toi.tran_anh_moi_moc - moc.anhs.length)}
+            tienTo="sua-moc"
+            dangGui={dangGui}
           />
           <div className={css.chan}>
             <button

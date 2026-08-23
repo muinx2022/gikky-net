@@ -7,6 +7,7 @@ import { BinhLuan, DanhSachBinhLuan } from "./binh-luan";
 import { Composer } from "./composer";
 import { SoLaiLo } from "./con-so";
 import { CotVote } from "./cot-vote";
+import { GalleryMoc } from "./gallery-moc";
 import { HanhDongMoc } from "./hanh-dong-moc";
 import { KhoiTrich } from "./khoi-trich";
 import { KhungNganKeo, NutNganKeo } from "./ngan-keo";
@@ -116,6 +117,11 @@ export function TheMoc({
                 ))}
               </dl>
             )}
+
+            {/* Ảnh đứng SAU con số, TRƯỚC khối trích: thứ tự đọc là chữ → số → ảnh →
+                câu được trích. Nguyên tắc 9 — `GalleryMoc` tự trả `null` khi không có
+                ảnh, nên không có khung rỗng nào ở đây. */}
+            <GalleryMoc anhs={moc.anhs} seq={moc.seq} />
 
             {moc.trich !== null && (
               <KhoiTrich

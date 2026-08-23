@@ -15,9 +15,16 @@ import pytest
 from django.utils import timezone
 
 from api.v1 import api_v1
-from core.ghi import NGAY_MO_LAI, PHUT_SUA_IM_LANG, SO_MOC_TOI_DA_MOI_NGAY
+from core.anh import xu_ly_anh_tai_len
+from core.ghi import (
+    NGAY_MO_LAI,
+    PHUT_SUA_IM_LANG,
+    SO_MOC_TOI_DA_MOI_NGAY,
+    them_anh_moc,
+)
 from core.mat import MAT_BAO, MAT_CAN, NGUONG_BAO
 from core.models import Mach, Moc, Trich
+from tests._anh import anh_byte
 from tests.conftest import khoa_json, lay
 from tests.test_operation_id import moi_operation
 
@@ -142,6 +149,10 @@ KHOA_CHO_PHEP = {
     # mở cùng URL nhận cùng con số, nên nó cache được (nợ `API-THIEU-MOC-THOI-GIAN`).
     "mo_lai_den",
     # trần 3 mốc/ngày — HẰNG cấu hình server, giống nhau với mọi người xem.
+    #
+    # Trần 10 ảnh/mốc **cố ý KHÔNG ở đây** mà ở `GET /me` (`ToiOut.tran_anh_moi_moc`):
+    # ba form cần nó và một trong ba là form ĐĂNG MẠCH, nơi chưa có mạch nào để hỏi.
+    # Một con số ở hai response là hai nguồn cho cùng một luật.
     "tran_moc_moi_ngay",
     # sub + tác giả
     "ten", "username", "display_name",
@@ -150,6 +161,10 @@ KHOA_CHO_PHEP = {
     "edited_at", "edit_count", "score", "trang_thai", "so_binh_luan", "trich",
     # hạn sửa im lặng (`created_at + 15 phút`) — cùng lý lẽ `mo_lai_den`.
     "sua_im_lang_den",
+    # gallery ảnh của mốc (Phase 5). Cache được: URL suy từ `khoa_luu_tru`, và ai xem
+    # cũng nhận đúng chuỗi ấy — không có nhánh nào hỏi người xem là ai. Bia mộ / mốc bị
+    # ẩn nhận `[]`, cùng chuẩn với `body` và `trich`.
+    "anhs", "url", "url_thumb", "w", "h", "position", "exif_taken_at",
     # figures
     "label", "value",
     # trích
@@ -164,13 +179,22 @@ KHOA_CHO_PHEP = {
 MANH_PER_USER = ("my_", "_cua_toi", "toi_", "following", "da_follow", "last_seen", "viewer")
 
 
-def test_khong_co_truong_nao_phu_thuoc_nguoi_xem(client, seed):
+def test_khong_co_truong_nao_phu_thuoc_nguoi_xem(client, seed, kho_anh):
     """R3 — `GET /machs/{id}` phải cache được (PLAN 8.4 điểm 4).
 
     PLAN gọi đây là "điểm dễ làm sai nhất". Cách làm sai: nhét `my_vote`/`following` vào
     response cho tiện 1c. Trang được ISR cache theo URL, nên người thứ hai mở cùng URL
     sẽ nhận trạng thái của người thứ nhất — HTTP 200, không có gì đỏ.
+
+    **Phải gắn một tấm ảnh thật trước khi đo** (Phase 5): phép so là so tập khoá BẰNG
+    NHAU, nên `anhs: []` của seed làm mọi khoá bên trong `AnhOut` không bao giờ xuất hiện
+    — và một trường per-user thêm vào gallery sau này sẽ lọt qua hàng rào này trong im
+    lặng. Liệt kê chúng vào `KHOA_CHO_PHEP` mà không dựng dữ liệu là cách làm cho bài đo
+    ĐỎ ngay hôm nay; dựng dữ liệu là cách làm cho nó đo thật.
     """
+    them_anh_moc(
+        moc=Moc.objects.get(mach=seed, seq=1), anh=xu_ly_anh_tai_len(anh_byte())
+    )
     khoa = khoa_json(lay(client, f"/api/v1/machs/{seed.pk}"))
 
     assert khoa == KHOA_CHO_PHEP, (

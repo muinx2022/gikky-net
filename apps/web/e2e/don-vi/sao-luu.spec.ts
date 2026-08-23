@@ -1,4 +1,4 @@
-import { mkdtempSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { expect, test } from "@playwright/test";
@@ -34,6 +34,12 @@ type ModSaoLuu = {
   tenFileDump: (db: string, luc?: Date) => string;
   donBanCu: (thu_muc: string, db: string, giu: number) => string[];
   docDatabaseUrl: (duong_dan?: string) => string;
+  docBien: (ten: string, duong_dan?: string) => string | null;
+  chepGuong: (
+    nguon: string,
+    dich: string,
+  ) => { chep: number; boQua: number; byte: number; thieu: boolean };
+  thuMucAnh: () => { phucVu: string; cachLy: string };
 };
 
 async function nap(): Promise<ModSaoLuu> {
@@ -124,4 +130,87 @@ test("docDatabaseUrl nói RA việc phải làm khi thiếu `api/.env`", async (
   expect(() => docDatabaseUrl(join(tmpdir(), "khong-co-file-nay.env"))).toThrow(
     /pnpm setup:env/,
   );
+});
+
+
+// --- Ảnh (Phase 5): sao lưu phải gồm cả trạng thái NGOÀI database ------------
+//
+// Tới Phase 4, `pg_dump` là bản sao lưu ĐỦ. Phase 5 cho người dùng tải ảnh xuống đĩa, và
+// từ đó một bản dump database một mình là bản sao lưu **thiếu** — phục hồi ra thì mọi
+// hàng `MocAnh` còn nguyên và mọi thẻ `<img>` gãy, không có gì báo. Ba bài dưới đo phần
+// chép ảnh; phần `pg_dump` vẫn không đo ở đây (cần PostgreSQL sống).
+
+test("docBien đọc được biến trong .env, và trả null khi vắng hoặc để trống", async () => {
+  const { docBien } = await nap();
+  const thu_muc = mkdtempSync(join(tmpdir(), "gikky-env-"));
+  const env = join(thu_muc, ".env");
+  writeFileSync(env, ["MEDIA_ROOT=/var/lib/gikky/media", "MEDIA_AN_ROOT=", "KHAC=1"].join("\n"));
+
+  expect(docBien("MEDIA_ROOT", env)).toBe("/var/lib/gikky/media");
+  // Để TRỐNG phải ra `null`, không phải `""`: `""` đi tiếp vào `resolve()` và thành thư
+  // mục làm việc hiện tại — script sẽ sao lưu nhầm cả cây mã nguồn.
+  expect(docBien("MEDIA_AN_ROOT", env)).toBeNull();
+  expect(docBien("KHONG_CO", env)).toBeNull();
+  expect(docBien("MEDIA_ROOT", join(tmpdir(), "khong-co-file-nay.env"))).toBeNull();
+});
+
+test("chepGuong chép file mới, BỎ QUA file đã có, và giữ cây thư mục", async () => {
+  const { chepGuong } = await nap();
+  const nguon = mkdtempSync(join(tmpdir(), "gikky-anh-nguon-"));
+  const dich = mkdtempSync(join(tmpdir(), "gikky-anh-dich-"));
+  mkdirSync(join(nguon, "anh"), { recursive: true });
+  mkdirSync(join(nguon, "anh-thumb"), { recursive: true });
+  writeFileSync(join(nguon, "anh", "a.jpg"), "AAAA");
+  writeFileSync(join(nguon, "anh-thumb", "a.jpg"), "aa");
+
+  const lan1 = chepGuong(nguon, dich);
+  expect(lan1).toMatchObject({ chep: 2, boQua: 0, thieu: false });
+  expect(readFileSync(join(dich, "anh", "a.jpg"), "utf8")).toBe("AAAA");
+  expect(readFileSync(join(dich, "anh-thumb", "a.jpg"), "utf8")).toBe("aa");
+
+  // Lần hai KHÔNG chép lại: tên ảnh là uuid và nội dung sau một tên không bao giờ đổi,
+  // nên chép lại thứ đã có là tốn đĩa thuần tuý. Chạy hằng đêm mà không có nhánh này thì
+  // bản sao lưu phình theo số đêm, không theo số ảnh.
+  expect(chepGuong(nguon, dich)).toMatchObject({ chep: 0, boQua: 2 });
+
+  // File mới xuất hiện thì lần chạy sau phải bắt được.
+  writeFileSync(join(nguon, "anh", "b.png"), "BBB");
+  expect(chepGuong(nguon, dich)).toMatchObject({ chep: 1, boQua: 2 });
+});
+
+test("chepGuong chép ĐÈ khi kích thước lệch (dấu của lượt chép trước bị cắt ngang)", async () => {
+  const { chepGuong } = await nap();
+  const nguon = mkdtempSync(join(tmpdir(), "gikky-anh-nguon-"));
+  const dich = mkdtempSync(join(tmpdir(), "gikky-anh-dich-"));
+  mkdirSync(join(nguon, "anh"), { recursive: true });
+  mkdirSync(join(dich, "anh"), { recursive: true });
+  writeFileSync(join(nguon, "anh", "a.jpg"), "NGUYEN VEN");
+  writeFileSync(join(dich, "anh", "a.jpg"), "CUT");
+
+  expect(chepGuong(nguon, dich)).toMatchObject({ chep: 1, boQua: 0 });
+  expect(readFileSync(join(dich, "anh", "a.jpg"), "utf8")).toBe("NGUYEN VEN");
+});
+
+test("chepGuong KHÔNG ném khi chưa ai upload lần nào", async () => {
+  const { chepGuong } = await nap();
+  // Máy chủ mới toanh: `MEDIA_ROOT` chưa tồn tại. Đó là trạng thái hợp lệ, không phải
+  // lỗi — ném ở đây là làm cả lượt sao lưu database thất bại vì chưa có ảnh nào.
+  const kq = chepGuong(join(tmpdir(), "khong-co-thu-muc-nay"), mkdtempSync(join(tmpdir(), "d-")));
+  expect(kq).toMatchObject({ chep: 0, thieu: true });
+});
+
+test("thuMucAnh mặc định TRÙNG `config/settings.py` (hai bên lệch = sao lưu thư mục rỗng)", async () => {
+  const { thuMucAnh } = await nap();
+  const kho = thuMucAnh();
+  // Không so đường dẫn tuyệt đối (nó phụ thuộc chỗ checkout), mà so **hình dạng**: kho
+  // cách ly phải nằm NGOÀI kho phục vụ. Đó là cả cơ chế A9 — `MEDIA_AN_ROOT` nằm TRONG
+  // `MEDIA_ROOT` là Caddy phục vụ lại đúng những tấm ảnh vừa bị gỡ.
+  const chuan = (p: string) => p.replaceAll("\\", "/");
+  expect(chuan(kho.phucVu)).toMatch(/\/media$/);
+  expect(chuan(kho.cachLy)).toMatch(/\/media-an$/);
+  // `startsWith(phucVu)` một mình là SAI ở đây, và bài đo này đã ăn đúng cái bẫy đó một
+  // lần: `…/api/media-an` **có** bắt đầu bằng `…/api/media` mà không hề nằm trong nó.
+  // Phép chứa của đường dẫn phải tính tới dấu phân cách, không phải tiền tố chuỗi.
+  expect(chuan(kho.cachLy).startsWith(`${chuan(kho.phucVu)}/`)).toBe(false);
+  expect(chuan(kho.cachLy)).not.toBe(chuan(kho.phucVu));
 });

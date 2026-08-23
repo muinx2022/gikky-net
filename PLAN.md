@@ -369,9 +369,14 @@ Moc             id, mach FK, seq INT, author FK,
 MocRevision     id, moc FK, body, figures, occurred_at, loai, question_for_crowd,
                 revised_at                         # bản TRƯỚC — đủ cả 5 trường sửa được (5.2)
 
-MocAnh          id, moc FK, r2_key, thumb_key NULL, exif_taken_at NULL,
-                status ENUM(pending, confirmed), position INT, w, h, created_at
-                # ≤10 confirmed/mốc — enforce ở app khi confirm (Phase 5)
+MocAnh          id, moc FK, khoa_luu_tru, exif_taken_at NULL,
+                status ENUM(pending, confirmed), position INT, w, h, created_at,
+                da_cach_ly BOOL DEFAULT false
+                # ≤10 confirmed/mốc — enforce ở app, TRONG khoá hàng Moc (Phase 5)
+                # `r2_key` → `khoa_luu_tru` và `thumb_key` bỏ hẳn (2026-08-23, xem 8.5):
+                #   ảnh lưu xuống đĩa nên tên cột không được nói "R2"; ảnh chính và
+                #   thumbnail dùng CHUNG một khoá, khác thư mục
+                # `da_cach_ly`: file đang ở kho cách ly (mốc bia mộ / bị mod ẩn) — 8.5
 
 Comment         id, mach FK, parent FK NULL, author FK,
                 anchor_moc_seq INT NULL,   # chỉ có nghĩa khi parent IS NULL; reply kế thừa
@@ -490,7 +495,8 @@ Ai chỉ đọc `detail`/`code` không phải biết lớp ấy tồn tại; hà
 | `POST /machs/{id}/seen` | cập nhật last_seen_entry_seq | gọi khi mở trang. *(Phase 3, 2026-08-23)* thân `{entry_seq?}`, vắng ⇒ "đã xem tới mốc mới nhất". Con số **chỉ tiến không lùi** + kẹp trần `entry_count` (peek mốc cũ không kéo vạch mới về sau). Chưa follow ⇒ **200 kèm `following:false` và không ghi gì** — cột này sống trên hàng `Follow` (mục 6), và tạo `Follow` hộ là âm thầm bắt người ta theo mạch vì họ mở một trang |
 | `POST /machs/{id}/close` · `/reopen` | đóng sổ (kèm ket_qua?) / mở lại ≤7 ngày | *(Phase 2)* **chỉ author**; đóng lần hai ⇒ 409 `mach_da_dong` (nếu không, bấm hai lần là dời hạn 7 ngày); mở lại **xoá `ket_qua`** |
 | `GET /notifications` · `POST /notifications/read` | chuông poll 60s | *(Phase 3, 2026-08-23)* **per-user tuyệt đối, cấm cache**; khách nhận **401** — khác `GET /me` và `/machs/{id}/me` (200 rỗng) vì chuông chỉ được poll khi header đã biết có người đăng nhập. `GET` cursor keyset trên `(created_at, id)` giảm dần, kèm `so_chua_doc` của **cả hộp thư** (không phải của trang). `read` nhận `{ids?}`: `null` = đọc hết, `[]` = không dòng nào; id của người khác **bị bỏ qua im lặng**, không 403 — 403 xác nhận id đó có thật. Sinh thông báo nằm TRONG transaction của hành động (mốc mới cho follower, gộp 1/mạch/ngày lịch VN · được trích · reply) |
-| `POST /media/presign` · `POST /media/confirm` | flow upload 8.5 | Phase 5 |
+| `POST /mocs/{id}/anh` | tải MỘT ảnh lên mốc (**multipart**) | *(Phase 5, 2026-08-23)* **thay thế** `POST /media/presign` + `/media/confirm` của bản trước — ảnh lưu xuống ĐĨA nên upload một nhịp, xem 8.5. Chỉ `Moc.author`; mạch khoá ⇒ 403 `mach_bi_khoa`, mốc bia mộ/bị ẩn ⇒ 409 `noi_dung_da_go`, đủ 10 ảnh ⇒ 409 `qua_nhieu_anh`, ảnh >8MB ⇒ **413** `anh_qua_nang`, không nhận dạng được ⇒ 400 `anh_hong` / `dinh_dang_khong_nhan` / `anh_qua_lon`. **Mạch đã đóng sổ VẪN tải lên được** (5.1 chặn nối mốc mới, không chặn sửa mốc cũ). Một ảnh mỗi request — nhiều ảnh thì UI gửi tuần tự |
+| `DELETE /anh/{id}` | gỡ một ảnh | *(Phase 5, 2026-08-23)* chỉ `Moc.author`. **Không có bia mộ cho ảnh**: hàng đi, **file cũng biến khỏi đĩa**. Trả về chính thẻ ảnh vừa xoá (không 204) để UI gỡ đúng ô khỏi gallery |
 | `POST /reports` | báo cáo | |
 | `GET /users/{username}` | hồ sơ công khai | |
 | **Admin (`/api/admin`, staff-only)** | reports queue, hide/lock/ban/unban, subs CRUD, audit log | router riêng; **chỉ truy cập được qua host admin — xem 8.2** |
@@ -603,8 +609,11 @@ admin.gikky.net/api/*   → allowlist IP → Django (kể cả /api/admin)
   dev thêm `"http://localhost:3000","http://localhost:3001"`. Thiếu các dòng này thì POST từ
   admin (và từ dev) ăn 403 CSRF — đây là lỗi sẽ gặp NGAY Phase 2 nếu bỏ qua.
 - **Không JWT** — mọi lý do "cần JWT" ở giai đoạn này đều là tách domain sớm không cần thiết.
-- Ngoại lệ CORS duy nhất: presigned PUT lên R2/minio (8.5) — cross-origin thật, cấu hình trên
-  bucket, không phải trên Django.
+- **KHÔNG có ngoại lệ CORS nào.** *(sửa 2026-08-23 — dòng cũ nói "ngoại lệ duy nhất:
+  presigned PUT lên R2/minio (8.5)")*. Ngoại lệ ấy tồn tại vì upload đi thẳng lên bucket,
+  tức một origin thứ hai. Ảnh nay lưu xuống đĩa và upload là `POST` multipart vào chính
+  Django qua `/api/*` — same-origin ở cả dev (rewrites) lẫn prod (Caddy). Bớt được một bề
+  mặt, và bớt luôn một thứ phải cấu hình đúng ở nơi không ai kiểm được từ repo.
 
 ### 8.3 Type một chiều: Ninja → OpenAPI → TS
 
@@ -635,14 +644,56 @@ Cơ chế chốt:
 4. **Dữ liệu per-user trên trang cached** (vote của tôi, đã theo chưa, vạch mới): client
    component gọi `GET /machs/{id}/me` — tuyệt đối không nướng vào HTML cache.
 
-### 8.5 Media (Phase 5)
+### 8.5 Media (Phase 5) — **ảnh lưu xuống ĐĨA** (chốt lại 2026-08-23)
 
-Client: đọc EXIF `DateTimeOriginal` **trước khi resize** bằng exifr (~10KB) — canvas resize
-XÓA sạch EXIF, đọc sau là mất; resize xong xin presigned URL (`POST /media/presign`) → PUT
-thẳng lên R2/minio → `POST /media/confirm` kèm exif_taken_at đã đọc. Server đối chiếu, đổi
-`MocAnh.status=confirmed`, enforce ≤10/mốc, queue job thumbnail (Django command chạy cron —
-chưa cần Celery). **Bắt buộc cấu hình CORS trên bucket** (AllowedOrigins: gikky.net +
-localhost:3000; AllowedMethods: PUT) — cả R2 lẫn minio dev; thiếu là chết ngay preflight.
+> Mục này đã được **viết lại**. Bản trước thiết kế cho R2/minio (hai nhịp presign →
+> PUT → confirm). Phase 5 kẹt vì thiết kế ấy đòi R2 hoặc minio, mà máy dev không có
+> Docker và chưa có tài khoản lưu trữ nào. **User chốt 2026-08-23: lưu thẳng xuống đĩa,
+> cả dev lẫn VPS, chưa cần dịch vụ.** Plan con: `plans/2026-08-23-phase-5-anh-local.md`.
+
+**Lưu:** `STORAGES["default"]` = `FileSystemStorage`, `MEDIA_ROOT` đọc từ env (dev
+`api/media/`, VPS một thư mục **ngoài cây mã nguồn** — `git pull` không được xoá ảnh của
+người dùng), `MEDIA_URL = /media/`. Đổi sang R2 sau này là đổi **một khối `STORAGES`**,
+không đụng đường ghi: `core/anh_luu.py` chỉ nói chuyện qua API storage của Django.
+
+**Phục vụ:** dev qua Django `static()` + `rewrites` của Next; **prod Caddy đọc thẳng từ
+đĩa, KHÔNG qua Django** (`handle_path /media/*` + `file_server`, kèm `nosniff` và
+`Content-Security-Policy: default-src 'none'; sandbox`). Xem `deploy/Caddyfile`.
+
+**Ba chỗ lệch so với bản trước, mỗi cái có lý do:**
+
+1. **MỘT nhịp, không phải hai.** `POST /mocs/{id}/anh` nhận multipart thẳng vào Django.
+   Hai nhịp tồn tại *chỉ vì* server không cầm được file; server cầm được rồi thì lý do
+   đó mất. Cột `MocAnh.status` **giữ lại** và đặt `confirmed` ngay — nó là chỗ hai nhịp
+   quay về khi có R2.
+2. **SERVER đọc EXIF `DateTimeOriginal`**, từ file gốc, trước khi tái mã hoá — không phải
+   client đọc bằng exifr rồi gửi kèm. Đáng tin hơn hẳn: không phụ thuộc client trung
+   thực, không có chuyện hai bên bất đồng về cùng một tấm ảnh. Nghiệm thu đổi thành
+   *"server đọc đúng `DateTimeOriginal` từ file gốc, và ảnh đã lưu KHÔNG còn EXIF"*.
+3. **Thumbnail sinh ĐỒNG BỘ** lúc upload, không queue job cron. Job queue được thiết kế
+   cho R2 nơi server phải tải file về mới resize được; server đang cầm ảnh trong RAM thì
+   một lần `resize` rẻ hơn hẳn việc dựng và trông một hàng đợi — và nó xoá luôn trạng
+   thái trung gian "ảnh đã lên nhưng chưa có thumb" mà UI sẽ phải biết vẽ.
+
+**Bảy phép kiểm ở cửa nhận file** — đây là bề mặt nhận dữ liệu từ internet, phần đắt nhất
+của phase. Đầy đủ ở `api/core/anh.py`; tóm tắt: ① trần byte chặn TRƯỚC khi đọc gì ·
+② nhận dạng bằng **nội dung**, không bằng tên file hay `Content-Type` (cả hai do client
+gửi) · ③ **allowlist** JPEG/PNG/WebP (không GIF, không SVG — SVG là XML và chạy script) ·
+④ kiểm `w×h` từ header, chống bom giải nén · ⑤ **TÁI MÃ HOÁ mọi ảnh** — thứ vô hiệu hoá
+file đa định dạng (polyglot) và xoá sạch EXIF cùng lúc · ⑥ tên file **uuid4**, đuôi suy
+từ định dạng đã nhận dạng · ⑦ trần 10 ảnh/mốc enforce **trong khoá hàng `Moc`** (đếm
+ngoài khoá là lỗi `L11`).
+
+**Xoá và bia mộ.** `DELETE /anh/{id}` xoá hàng **và file** — không bia mộ cho ảnh. Mốc
+thành bia mộ / bị mod ẩn thì ảnh **được chuyển sang một kho cách ly** (`MEDIA_AN_ROOT`,
+nằm NGOÀI `MEDIA_ROOT`) chứ không chỉ biến khỏi API: Caddy phục vụ file không qua Django,
+nên ẩn ở tầng API một mình để nguyên URL cũ sống mãi. Đảo ngược được (mod bỏ ẩn ⇒ file
+về chỗ cũ, URL cũ sống lại). Kèm `manage.py don_anh_mo_coi --dry-run` dọn file mồ côi.
+
+**Sao lưu đổi câu chuyện:** từ đây có trạng thái **ngoài database**, nên `pg_dump` một
+mình không còn là bản sao lưu đủ — `docs/sao-luu-phuc-hoi.md`.
+
+**Không còn ngoại lệ CORS nào** (xem 8.6): upload là same-origin.
 
 ### 8.6 Môi trường máy dev (Windows 11 — máy hiện tại của user)
 
@@ -650,7 +701,9 @@ localhost:3000; AllowedMethods: PUT) — cả R2 lẫn minio dev; thiếu là ch
   `"C:\Users\Ng Xuan Mui\AppData\Local\Programs\Python\Python312\python.exe" -m venv .venv`
   (gõ `python` trần trúng stub Microsoft Store).
 - Repo: `D:\Projects\gikky-net` (đã tạo, trống). `git init` ở Phase 0.
-- Ports dev: web 3000 · admin 3001 · api 8000 · postgres 5432 · minio 9000/9001.
+- Ports dev: web 3000 · admin 3001 · api 8000 · postgres 5432 · ~~minio 9000/9001~~
+  (**Phase 5 không dùng minio nữa** — ảnh lưu xuống đĩa, xem 8.5; hai cổng ấy chỉ còn
+  nghĩa nếu một ngày quay lại object storage).
   Windows + Hyper-V thỉnh thoảng chiếm sẵn port sau reboot (EACCES khó hiểu) — lệnh chẩn đoán
   ghi vào CLAUDE.md repo: `netsh interface ipv4 show excludedportrange protocol=tcp`.
 - Docker Desktop cần chạy cho compose; chưa cài thì báo user, đừng tự cài.
@@ -791,13 +844,21 @@ permission lẫn tầng host); report → queue → ẩn → biến khỏi publi
 nhãn; mạch khoá: đọc được, mọi POST tương tác bị chặn; user bị ban thấy lý do khi đăng nhập;
 mỗi hành động 1 dòng AuditLog.
 
-### Phase 5 — Ảnh (M)
-Flow 8.5 trọn: exifr client trước resize → presign → PUT → confirm (exif_taken_at gửi kèm);
-enforce ≤10 confirmed/mốc; thumbnail job; gallery trong mốc; CORS bucket (cả minio dev lẫn
-hướng dẫn R2 prod).
-**Nghiệm thu:** ảnh có EXIF → form gợi ý đúng ngày chụp DÙ đã resize client (test với ảnh
-thật có DateTimeOriginal); ảnh 8MB xử lý ≤5s local; ảnh thứ 11 bị từ chối; trang mạch có ảnh
-Lighthouse Performance ≥ 80 mobile.
+### Phase 5 — Ảnh, lưu LOCAL (M) *(viết lại 2026-08-23)*
+Flow 8.5 bản đĩa: `POST /mocs/{id}/anh` multipart một nhịp; **bảy phép kiểm** ở cửa nhận
+file; server đọc EXIF từ file gốc rồi **tái mã hoá** (xoá sạch EXIF, vô hiệu hoá polyglot);
+thumbnail đồng bộ; trần 10 ảnh/mốc enforce **trong khoá hàng `Moc`**; `DELETE /anh/{id}`
+xoá cả file; ảnh của mốc bia mộ / bị ẩn **chuyển sang kho cách ly**; gallery trong thẻ mốc
++ ô chọn ảnh ở cả ba form ghi; Caddy phục vụ `/media/*`; sao lưu gồm cả ảnh.
+Không còn minio, không còn CORS.
+
+**Nghiệm thu:** ảnh có EXIF → **server** đọc đúng `DateTimeOriginal` từ file gốc **và**
+ảnh đã lưu KHÔNG còn EXIF; ảnh 8MB xử lý ≤5s local; ảnh thứ 11 bị từ chối **kể cả khi
+double-click** (trần giữ dưới đua); `.php`/`.html`/`.svg` đổi đuôi `.jpg` bị từ chối và
+polyglot JPEG+HTML bị tái mã hoá thành vô hại; bom giải nén bị chặn ở header; user B
+không tải/xoá được ảnh của mốc user A; xoá ảnh ⇒ **file biến khỏi đĩa**; mốc bia mộ/bị ẩn
+⇒ ảnh rời cả API lẫn kho đang phục vụ; trang mạch có ảnh Lighthouse Performance ≥ 80
+mobile *(chưa đo — cần `pnpm lighthouse`, xem "còn nợ" ở plan con)*.
 
 ### Phase 6 — Polish ra mắt (M)
 OG card tự sinh mỗi mạch (title + ket_qua + spine — ảnh để user khoe lên Facebook, kênh phát

@@ -157,6 +157,67 @@ def ma_loi(client, url: str, du_lieu=None, *, status: int, method: str = "post")
     return than["code"]
 
 
+# --- Ảnh (Phase 5) -----------------------------------------------------------
+
+
+@pytest.fixture
+def kho_anh(settings, tmp_path):
+    """Dời cả hai kho ảnh sang `tmp_path`. Trả `(thư mục phục vụ, thư mục cách ly)`.
+
+    **Bắt buộc với mọi bài đo chạm ảnh.** Không có nó thì test ghi thẳng vào `api/media/`
+    của máy dev: rác tích lại sau mỗi lượt chạy, và tệ hơn — hai bài đo thấy file của
+    nhau, nên một bài đo "file đã biến mất chưa" có thể xanh nhờ lượt chạy trước.
+
+    Gán lại `STORAGES` chứ không chỉ `MEDIA_ROOT`: `FileSystemStorage` chốt `location`
+    lúc **khởi tạo**, và `storages["default"]` là một thể hiện được cache. Đổi mỗi
+    `settings.MEDIA_ROOT` thì kho vẫn ghi vào chỗ cũ, im lặng. (Tín hiệu `setting_changed`
+    của Django dọn cache `storages` khi `STORAGES` đổi — đó là thứ làm fixture này chạy.)
+    """
+    phuc_vu = tmp_path / "media"
+    cach_ly = tmp_path / "media-an"
+    settings.MEDIA_ROOT = str(phuc_vu)
+    settings.MEDIA_AN_ROOT = str(cach_ly)
+    settings.STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+            "OPTIONS": {"location": str(phuc_vu), "base_url": settings.MEDIA_URL},
+        },
+        "an": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+            "OPTIONS": {"location": str(cach_ly)},
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
+    return phuc_vu, cach_ly
+
+
+def file_trong(thu_muc) -> set[str]:
+    """Tập **khoá ảnh** có mặt dưới một thư mục — tức tên file, đã gộp chính + thumbnail.
+
+    Ảnh chính và thumbnail dùng CHUNG một khoá ở hai thư mục khác nhau
+    (`core/anh_luu.py`), nên một ảnh góp đúng **một** phần tử vào tập này. Đó là đơn vị
+    mà hầu hết bài đo muốn hỏi ("ảnh nào còn trên đĩa"), và nó so thẳng được với
+    `MocAnh.khoa_luu_tru`.
+
+    Cần đếm từng file thật (để bắt ca "thumbnail còn, ảnh chính mất") thì dùng `so_file`.
+
+    Dùng để đo "file có THẬT SỰ biến khỏi đĩa không" (A8) — đếm hàng DB không trả lời
+    được câu đó, và đó chính là loài hỏng phase này sinh ra để chặn.
+    """
+    if not thu_muc.exists():
+        return set()
+    return {p.name for p in thu_muc.rglob("*") if p.is_file()}
+
+
+def so_file(thu_muc) -> int:
+    """Số file THẬT dưới một thư mục, đệ quy — chính và thumbnail đếm riêng."""
+    if not thu_muc.exists():
+        return 0
+    return sum(1 for p in thu_muc.rglob("*") if p.is_file())
+
+
 @pytest.fixture
 def nguoi_a(db) -> User:
     """Người dùng A — **chủ** của mọi thứ trong `mach_cua_a`."""

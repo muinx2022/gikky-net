@@ -11,6 +11,8 @@ nó quan trọng hơn nội dung:
 from django.conf import settings
 from ninja import Router
 
+from core.ghi import SO_ANH_TOI_DA_MOI_MOC
+
 from api.schemas import ToiOut
 
 router = Router()
@@ -49,6 +51,7 @@ def xem_toi(request):
         ).exists(),
         la_staff=bool(user.is_staff),
         google_bat=settings.GOOGLE_BAT,
+        tran_anh_moi_moc=SO_ANH_TOI_DA_MOI_MOC,
     )
 
 
@@ -62,6 +65,7 @@ def _khach() -> ToiOut:
         email_da_xac_thuc=False,
         la_staff=False,
         google_bat=settings.GOOGLE_BAT,
+        tran_anh_moi_moc=SO_ANH_TOI_DA_MOI_MOC,
     )
 
 

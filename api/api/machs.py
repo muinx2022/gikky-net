@@ -38,7 +38,7 @@ from core.ghi import (
 )
 from core.mat import tinh_mat_theo_thoi_gian
 from core.models.dien_dan import Mach, Sub
-from core.models.moc import Moc
+from core.models.moc import Moc, MocAnh
 from core.models.tuong_tac import Trich
 from core.revalidate import lam_moi_mach
 from core.thoi_gian import nua_dem_vn_ke_tiep
@@ -130,6 +130,15 @@ def mach_chi_tiet_ra(mach: Mach) -> MachChiTietOut:
     # Không có nó thì mỗi thẻ mốc là một truy vấn `User` — N+1 trên đúng endpoint nặng nhất.
     mocs = list(Moc.objects.filter(mach=mach).select_related("author").order_by("seq"))
     dem = dem_binh_luan_theo_moc(mach)
+    # Gallery của Phase 5. Gom MỘT truy vấn cho cả mạch rồi phát theo `moc_id`, cùng lối
+    # `trich_theo_moc` ngay dưới — `m.anhs.all()` trong vòng lặp là N+1 trên đúng
+    # endpoint nặng nhất của sản phẩm (9 mốc = 9 truy vấn thừa mỗi lượt tải trang).
+    # `SO_QUERY["xem_mach"]` ở `tests/test_api_so_query.py` ghim con số này.
+    anh_theo_moc: dict[int, list[MocAnh]] = {}
+    for a in MocAnh.objects.filter(
+        moc__mach=mach, status=MocAnh.TrangThai.XAC_NHAN
+    ).order_by("position", "id"):
+        anh_theo_moc.setdefault(a.moc_id, []).append(a)
     trich_theo_moc = {
         t.moc_id: t
         for t in Trich.objects.filter(
@@ -158,7 +167,12 @@ def mach_chi_tiet_ra(mach: Mach) -> MachChiTietOut:
             last_activity_at=mach.last_activity_at,
         ),
         mocs=[
-            moc_ra(m, so_binh_luan=dem.get(m.seq, 0), trich=trich_theo_moc.get(m.pk))
+            moc_ra(
+                m,
+                so_binh_luan=dem.get(m.seq, 0),
+                trich=trich_theo_moc.get(m.pk),
+                anhs=anh_theo_moc.get(m.pk, []),
+            )
             for m in mocs
         ],
         spine=[spine_ra(m, so_binh_luan=dem.get(m.seq, 0)) for m in mocs],
@@ -497,7 +511,10 @@ def noi_moc(request, mach_id: int, du_lieu: MocMoiIn):
         # sớm hơn thì Next fetch về đọc phải dữ liệu cũ rồi cache đúng bản cũ đó.
         lam_moi_mach(mach)
     moc.refresh_from_db()
-    return Status(201, moc_ra(moc, so_binh_luan=0, trich=None))
+    # `anhs=[]`: mốc vừa sinh ra chưa có ảnh nào — ảnh được gắn ở lượt `POST
+    # /mocs/{id}/anh` sau đó (upload một nhịp, nhưng vẫn là request riêng vì multipart
+    # và JSON không đi chung một thân).
+    return Status(201, moc_ra(moc, so_binh_luan=0, trich=None, anhs=[]))
 
 
 @router.post(

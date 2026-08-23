@@ -1,0 +1,52 @@
+/* Gallery ảnh trong thẻ mốc — Phase 5.
+ *
+ * Cùng ngôn ngữ hình với `.figures` của `the-moc.module.css` (nền `--inset`, viền
+ * `--line`, bo 5px): hai khối này đứng cạnh nhau trong cùng một thẻ, và hai kiểu bo góc
+ * khác nhau ở đó đọc như hai thành phần của hai sản phẩm.
+ *
+ * Không hex viết thẳng, không `--stamp`, không `--gain`/`--loss`
+ * (`e2e/don-vi/mau-token.spec.ts`).
+ */
+
+.luoi {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.o {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  overflow: hidden;
+  background: var(--inset);
+}
+
+.o a {
+  display: block;
+}
+
+.o a:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.o img {
+  display: block;
+  /* `width`/`height` trên thẻ đến từ `w`/`h` của ảnh ĐÃ LƯU — chúng giữ tỉ lệ đúng cho
+     trình duyệt đặt chỗ trước khi ảnh về (chống layout shift). CSS ở đây chỉ ép khung
+     hiển thị; `height: auto` là thứ giữ cho tỉ lệ không bị bóp khi `width` bị ghi đè. */
+  width: auto;
+  height: 132px;
+  max-width: 100%;
+  object-fit: cover;
+}
+
+/* Màn hình hẹp: một hàng hai tấm thay vì bốn tấm tí xíu. */
+@media (max-width: 560px) {
+  .o img {
+    height: 104px;
+  }
+}

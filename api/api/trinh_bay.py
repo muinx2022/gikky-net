@@ -26,10 +26,12 @@ from core.doc_noi_dung import DA_AN, Nut, doc_duoc, trang_thai_noi_dung
 from core.ghi import NGAY_MO_LAI, PHUT_SUA_IM_LANG
 from core.models.binh_luan import Comment
 from core.models.dien_dan import Mach
-from core.models.moc import Moc, MocRevision
+from core.anh_luu import url_anh, url_thumb
+from core.models.moc import Moc, MocAnh, MocRevision
 from core.models.tuong_tac import Trich
 
 from api.schemas import (
+    AnhOut,
     BinhLuanOut,
     FigureOut,
     MachTomTatOut,
@@ -148,7 +150,26 @@ def trich_ra(trich: Trich | None) -> TrichOut | None:
     )
 
 
-def moc_ra(moc: Moc, *, so_binh_luan: int, trich: Trich | None) -> MocOut:
+def anh_ra(anh: MocAnh) -> AnhOut:
+    """Một ảnh trong gallery. URL do `STORAGES` sinh, không ghép tay ở đây.
+
+    `url_anh`/`url_thumb` gọi `storage.url(...)`, nên đổi `MEDIA_URL` hay đổi hẳn sang R2
+    đều không phải sửa dòng nào ở file này.
+    """
+    return AnhOut(
+        id=anh.pk,
+        url=url_anh(anh.khoa_luu_tru),
+        url_thumb=url_thumb(anh.khoa_luu_tru),
+        w=anh.w,
+        h=anh.h,
+        position=anh.position,
+        exif_taken_at=anh.exif_taken_at,
+    )
+
+
+def moc_ra(
+    moc: Moc, *, so_binh_luan: int, trich: Trich | None, anhs: list[MocAnh]
+) -> MocOut:
     """Một thẻ mốc. Bia mộ mất sạch 5 trường nội dung, giữ nguyên `seq`/`occurred_at`.
 
     `score` của bia mộ về **0**, cùng chuẩn với `nut_ra` (số phiếu của nội dung đã gỡ
@@ -181,6 +202,10 @@ def moc_ra(moc: Moc, *, so_binh_luan: int, trich: Trich | None) -> MocOut:
         # Trích là chú thích gắn vào thân mốc (PLAN 5.6 rào 4) — mốc đã thành bia mộ thì
         # không còn thân nào để gắn.
         trich=trich_ra(trich) if hien else None,
+        # A9, vế tầng API: bia mộ và mốc bị mod ẩn không trả ảnh nào. Vế tầng ĐĨA nằm ở
+        # `core/ghi.py::dong_bo_kho_anh` — nó chuyển file sang kho không server nào phục
+        # vụ, vì Caddy đọc thẳng đĩa và không bao giờ hỏi dòng code này.
+        anhs=[anh_ra(a) for a in anhs] if hien else [],
     )
 
 
