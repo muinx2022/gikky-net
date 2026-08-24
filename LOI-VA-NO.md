@@ -877,6 +877,26 @@ chứng minh S1–S4/S8 đã được đo. Mốc đúng cho Phase 7 là **987 kh
 phải viết rõ **"971 + 16 skipped"** — không được ghi trống "xanh".
 Dựng lại: xem docstring đầu `api/tests/test_tim_kiem_that.py`.
 
+### L45 · NHỎ (nhưng ăn mòn niềm tin) · `test_W6_phep_cat_KHONG_nuot_he_so_tuoi` **flake theo thứ tự chạy**
+**MỞ.** Bắt được 2026-08-24: chạy `pnpm test` đầy đủ thì ĐỎ (`1 failed, 1022 passed`), chạy lại y
+nguyên thì XANH (`1023 passed`), và chạy riêng file `tests/test_pha_hoa_wilson.py` thì xanh **3/3
+lần**. Không liên quan tới việc đang làm lúc đó (phân trang khu quản trị — chỉ đụng
+`api/quan_tri_*`; bài này gọi `/api/v1/machs/{id}/comments`).
+
+Vì sao đáng ghi chứ không phải "chạy lại là xong": một bài đo đỏ ngẫu nhiên dạy người ta **bấm chạy
+lại**, và cái phản xạ đó sẽ nuốt luôn lần đỏ THẬT đầu tiên.
+
+Nghi phạm, **chưa xác minh**: điều kiện hệ số tươi là `created_at > last_entry_at`
+(`core/xep_hang.py::_duoc_he_so_tuoi`). Fixture `mach` dựng mốc 1 ở `timezone.now()`, còn bài đo
+dựng bình luận "vừa viết" cũng ở `timezone.now()` — hai mốc cách nhau vài mili giây, và nếu chúng
+bằng nhau thì `<=` cho `False` ⇒ mất `+0.15` ⇒ `wilson(1,3) = 0.078` thắng ⇒ đúng câu assert đã đỏ.
+**Cùng loài** với flake `test_response_mang_du_HAI_dau_thoi_gian` đã vá cùng ngày, và cách vá ở đó
+dùng lại được: lùi mốc của fixture một giây, **không** nới `<` thành `<=` (nới là bỏ mất chính ca
+biên mà hàng rào ấy tồn tại để bắt).
+
+Dựng lại: `pnpm test` nhiều lượt liên tiếp; chưa có lệnh nào ép nó đỏ theo ý muốn — và **đó là phần
+tệ nhất của mục này**.
+
 # C · CHƯA BAO GIỜ CHẠY THẬT
 
 | Thứ | Trạng thái |

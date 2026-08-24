@@ -491,7 +491,7 @@ Ai chỉ đọc `detail`/`code` không phải biết lớp ấy tồn tại; hà
 |---|---|---|
 | `POST /api/_allauth/browser/v1/auth/*` | allauth headless: đăng ký · đăng nhập · đăng xuất · xác thực email · quên/đổi mật khẩu · Google OAuth | *(chốt Phase 2, 2026-08-22)* **không** nằm dưới `/api/v1` — đó là URLconf của allauth, mount nguyên khối ở `/api/_allauth/`. `HEADLESS_CLIENTS = ("browser",)` ⇒ chỉ session cookie. Redirect URI Google của bản headless là `/api/_allauth/browser/v1/auth/provider/callback`, **không** phải `/api/accounts/google/login/callback/` |
 | `GET /me` | phiên hiện tại: `dang_nhap`, `username`, `display_name`, `email`, `email_da_xac_thuc`, `la_staff`, `google_bat` | *(thêm Phase 2, 2026-08-22)* khách nhận **200** kèm `dang_nhap:false`, không phải 401. Per-user tuyệt đối — **không cache** (8.4 điểm 4). `google_bat=false` ⇒ trang đăng nhập **không render** nút Google (mục 4) |
-| `GET /feeds/moi`, `GET /feeds/dang-dien-ra` | 2 feed, cursor keyset | `?sub=` lọc |
+| `GET /feeds/moi`, `GET /feeds/dang-dien-ra` | 2 feed, cursor keyset | `?sub=` lọc. *(2026-08-23)* mỗi thẻ kèm `xem_truoc` — nội dung lấy từ **mốc 1**: ảnh đầu của gallery (`anh` + `so_anh`) và trích đoạn **văn bản thuần** (`trich`, đã gỡ dấu markdown, ≤240 ký tự). `null` khi mốc 1 là bia mộ hoặc bị mod ẩn — thẻ feed **không** được thành cửa thứ hai đọc thứ vừa bị gỡ. Ảnh đã vào kho cách ly không ra tới đây. **Không có tầng "ảnh trong nội dung"**: markdown của `body` cố ý không có cú pháp ảnh |
 | `GET /subs/{slug}` | header trang chuyên mục: `ten`, `mo_ta`, `so_mach`, `created_at` | *(thêm Phase 1d, 2026-08-22)* chỉ đọc, không per-user; slug lạ → 404 |
 | `GET /subs` | liệt kê MỌI sub, sắp theo `slug` | *(thêm Phase 1d vá, 2026-08-22)* sidebar + `sitemap.ts` phải hỏi đây, **cấm ghi cứng danh sách slug ở frontend** — sub thứ ba mở ra mà vắng mặt im lặng ở cả hai chỗ là đúng loài hỏng nợ #11 vừa được vá để diệt |
 | `POST /machs` | tạo bài (= mốc 1) | *(Phase 2)* ai đăng nhập cũng được; `sub` là **slug**; tác giả nhận sẵn +1 của mình (5.7) |
@@ -540,6 +540,11 @@ nhận **403 `sai_host_quan_tri`** trước cả hai. TS client ở subpath `@gi
 | `GET /admin/subs` · `POST /admin/subs` | liệt kê (kèm `so_mach`) · tạo | slug phải ở dạng chuẩn, server **không** slugify hộ |
 | `PATCH /admin/subs/{slug}` · `DELETE` | sửa `ten`/`mo_ta` · xoá | `slug` **không sửa được** (URL công khai); xoá chỉ khi sub rỗng, ngược lại 409 |
 | `GET /admin/nhat-ky` | `AuditLog`, cursor keyset | `?action=` lọc **bằng đúng**; chỉ đọc — không có cửa ghi hay xoá |
+| `GET /admin/thong-ke` | số liệu bảng điều khiển | *(Phase 8, 2026-08-23)* tổng 5 bảng · `cho_xu_ly` (badge chuông) · `hom_nay`/`bay_ngay` · `chuoi_ngay` **đúng 30 ô, kể cả ngày rỗng** · `theo_trang_thai` **bốn nhóm LOẠI TRỪ NHAU** (ẩn → khoá → đóng → mở, cộng lại bằng tổng) · `top_sub`. Ngày là **ngày lịch VN**, không phải UTC. `no-store`. Số truy vấn có **trần ghim bằng `assertNumQueries`** |
+| `GET /admin/machs` | bảng mạch cho mod, cursor keyset | *(Phase 8)* `?q=` (tiêu đề, khớp một phần) · `?sub=` · `?tac_gia=` · `?trang_thai=tat_ca\|mo\|dong\|bi_khoa\|bi_an`. **Gồm cả mạch đã bị ẩn** — đây là cửa duy nhất gỡ ẩn được, lọc chúng đi là làm mù đúng thứ cần quản trị. Cố ý **không** đi qua Meilisearch: mạch ẩn bị gỡ khỏi index theo đúng thiết kế Phase 7 |
+| `GET /admin/comments` | bảng bình luận cho mod, cursor keyset | *(Phase 8)* `?q=` · `?tac_gia=` · `?mach_id=` · `?trang_thai=tat_ca\|hien\|bi_an\|bia_mo`. **Gồm cả bia mộ và bình luận bị ẩn**; `hien` = chưa xoá **và** chưa bị ẩn (hai cột, không phải một) |
+| `GET /admin/users` | bảng tài khoản, cursor keyset | *(Phase 8)* `?q=` khớp `username` **hoặc** `display_name` — **cố ý không tìm theo email**; `?trang_thai=tat_ca\|bi_ban\|staff\|moi`. `bi_ban` dùng đúng điều kiện `User.dang_bi_ban()`, có bài đo ghim hai bên không lệch |
+| ~~cấp/thu `is_staff`~~ | **KHÔNG có và sẽ không có** | *(Phase 8)* một mod cấp quyền mod cho tài khoản khác là bỏ qua mọi phép duyệt; và `ban_user` từ chối ban một mod khác (409) ⇒ ai tự cấp `is_staff` là **tự miễn nhiễm ban**. Việc này ở Django admin, chỉ superuser vào được |
 | `GET /tim-kiem` | tìm mạch: `?q=` · `?sub=` · `?sort=lien_quan\|moi` · `?offset=` · `?limit=` | *(thêm Phase 7, 2026-08-23 — **lật** dòng bác ở mục 4)* Đi qua Django, **trình duyệt không bao giờ gọi thẳng Meilisearch** (8.5). Không per-user, **`Cache-Control: no-store`** — kết quả phụ thuộc trạng thái ẩn, cache lại là hồi sinh nội dung vừa gỡ. Gõ **không dấu ra kết quả có dấu**; mã ngắn (`HPG`) khớp **chính xác**. `sub` lạ → 404 `sub_khong_ton_tai`; `q` rỗng → danh sách rỗng, **không** phải liệt kê mọi mạch. Meilisearch hỏng/chưa cấu hình ⇒ vẫn **200** kèm `co_the_tim:false` (xuống thang, không phải sự cố). `tong` là **ước lượng** — nó đếm trước lớp lọc Postgres, nên `len(items)` có thể nhỏ hơn |
 
 OpenAPI schema xuất bằng management command **tự ghi file**, chạy từ **gốc repo**:
@@ -601,6 +606,14 @@ gikky-net/
 ```
 
 pnpm workspace cho JS; Python venv riêng trong `api/`.
+
+**CSS — hai app, hai hệ, có chủ đích** *(Phase 8, 2026-08-23 — thu hẹp quyết định "không
+Tailwind" của bản đầu)*: `apps/web` giữ **CSS Modules + token**, `apps/admin` dùng
+**Tailwind v4**. Không lan sang `apps/web` vì hàng rào màu của 9.1
+(`e2e/don-vi/mau-token.spec.ts`) ghim allowlist tới từng **selector CSS**, mà Tailwind xoá
+selector và thay bằng chuỗi class trong TSX — chuyển `apps/web` sang Tailwind là phải viết
+lại hàng rào ấy trước. `postcss.config.mjs` vì thế **phải nằm trong `apps/admin/`**: Next đi
+ngược cây thư mục tìm config, một bản ở gốc repo sẽ chui vào cả `apps/web`.
 
 ### 8.2 Same-origin qua reverse proxy — các chốt BẮT BUỘC
 
@@ -806,8 +819,21 @@ chỉ dùng làm chuẩn **màu / chữ / chất liệu**, KHÔNG dùng làm chu
   2026-08-22)*. **Danh sách này là NGUỒN của allowlist trong `e2e/don-vi/mau-token.spec.ts`** —
   hàng rào phải suy từ đây, không được tự nới. **Xanh `#1C7A4F` / đỏ `#B33A2B`
   CẤM dùng trang trí** — chỉ được xuất hiện ở con số lãi/lỗ.
-- Chữ: Newsreader (tiêu đề mạch) · Be Vietnam Pro (UI) · IBM Plex Mono (mọi timestamp + con số,
-  `tabular-nums` — mốc phải *trông như biên lai*).
+- Chữ **(đổi 2026-08-23 — user: "dùng font chữ như của Reddit")**: **IBM Plex Sans** cho
+  cả tiêu đề mạch lẫn UI · **IBM Plex Mono** cho mọi timestamp + con số (`tabular-nums` —
+  mốc phải *trông như biên lai*). Plex Sans là mặt chữ Reddit dùng, và nó **cùng họ** với
+  Plex Mono vốn đã có ở đây, nên số trong bảng khớp chiều cao chữ x với chữ quanh nó.
+  - **Cái mất, ghi ra để không ai tưởng là sót:** tương phản serif/sans giữa "tiêu đề
+    mạch" (Newsreader cũ) và "UI" (Be Vietnam Pro cũ) biến mất. Đó là một tín hiệu của
+    "sổ nghiêm vs khán đài xuề xoà" ở gạch đầu dòng ngay dưới, và từ nay nó phải sống
+    bằng **cỡ chữ + độ đậm + màu**, không còn bằng hình dáng chữ.
+  - `docs/mockup-tham-khao.html` vẫn nạp ba font CŨ — nó là mockup **màu và chất liệu**,
+    đông cứng từ Phase 0, không phải bản dựng đang chạy. Đừng "sửa cho khớp".
+  - ⚠ **Ảnh OG vẫn dùng ba file `.ttf` cũ** (`apps/web/assets/font/`, xem `lib/og.ts`):
+    satori cần `.ttf` thật mà `next/font` chỉ sinh `.woff2`. Nợ có tên
+    **`OG-FONT-CHUA-DOI`** — tiêu đề trên ảnh OG còn là Newsreader trong khi trang là
+    Plex Sans. Trả nó = thả `IBMPlexSans-SemiBold.ttf` vào thư mục ấy rồi đổi
+    `TEN_FILE_FONT`; `og-anh.spec.ts` ghim tên ba mặt chữ nên nó sẽ đỏ đúng lúc cần.
 - Hai chất liệu: **sổ nghiêm** (card viền cứng, mono, dải figures) vs **khán đài xuề xòa**
   (avatar, bo tròn, placeholder kiểu "Chém gió với chủ mạch…") — tương phản là chủ đích:
   giao diện phát tín hiệu "ở đây được đùa", sự lôi thôi của khán đài tôn cái nghiêm của sổ.
@@ -849,11 +875,39 @@ chỉ dùng làm chuẩn **màu / chữ / chất liệu**, KHÔNG dùng làm chu
 └──────────────────────────────────────────────┘
 ```
 
-### 9.3 Admin (tự build, tối giản)
+### 9.3 Admin (tự build) — bảng điều khiển đầy đủ
 
-Màn hình v1, theo thứ tự ưu tiên: (1) hàng đợi Report — bảng, xem ngữ cảnh, nút ẩn/khoá/ban
-ngay trên hàng; (2) tra cứu mạch/user + trang chi tiết với hành động mod; (3) Sub CRUD;
-(4) Audit log (bảng đọc). Django admin mặc định giữ làm cửa hậu — không tốn công gì.
+> **Viết lại 2026-08-23 (Phase 8)**, thay câu cũ *"tự build, **tối giản**"* + bốn màn hình v1.
+> User chốt: *"phần quản trị sơ sài quá, dựng 1 bản admin đẹp như temp để sử dụng"*, giao diện
+> theo một template dashboard (sidebar nhóm · thanh trên · thẻ KPI · biểu đồ · bảng dữ liệu).
+> Bản v1 vẫn còn nguyên trong lịch sử git nếu cần đối chiếu.
+
+**Bộ khung**: sidebar trái 260px có nhóm mục (gập còn rail 72px, nhớ lựa chọn; ngăn kéo có lớp
+phủ + bẫy focus + `Esc` dưới 1024px) · thanh trên dính 64px (ô tìm → `/machs?q=`, mở nhanh theo
+`id`/`username`, chuông mang **số báo cáo đang chờ THẬT**, công tắc theme, danh tính mod) ·
+vùng nội dung có breadcrumb suy từ khai báo menu.
+
+**Màn hình**: (1) **Bảng điều khiển** — 4 thẻ KPI, biểu đồ cột 30 ngày, vành khuyên trạng thái
+mạch, bảng top chuyên mục; (2) **Hàng đợi báo cáo** — bảng, xem ngữ cảnh, nút ẩn/khoá/ban ngay
+trên hàng; (3) **Mạch · Bình luận · Người dùng** — ba bảng tra cứu có bộ lọc, hành động ngay
+trên hàng; (4) **Nhật ký** (chỉ đọc, lọc theo hành động); (5) **Chuyên mục** CRUD; (6) trang chi
+tiết mạch/tài khoản. Django admin giữ làm cửa hậu, và là **chỗ duy nhất** cấp/thu `is_staff`.
+
+**Bốn ràng buộc, mỗi cái có hàng rào chạy được** — chúng là phần khác nhau giữa lượt này và một
+lượt để lại sổ lỗi:
+
+1. **Không nút chết.** Template gốc đầy mục (`E-commerce`, `Charts`, `Widget`, `Documentation`)
+   không tồn tại ở gikky. Menu khai **một chỗ** (`components/khung/menu.ts`) và
+   `e2e/don-vi/quan-tri-giao-dien.spec.ts` đòi mỗi `duong_dan` có một `page.tsx` thật.
+2. **Không dữ liệu bịa.** Mọi con số trên biểu đồ tới từ `GET /admin/thong-ke`.
+3. **Không chép bảng màu 9.1.** Khu quản trị có hệ token riêng; hàng rào trên cấm cả tám mã của
+   9.1 **và** mọi giá trị màu ứng biến (`bg-[#…]`) — cửa mà Tailwind mở ra.
+4. **Biểu đồ vẽ bằng SVG, không thư viện.** Canvas không đọc được bằng DOM, nên bài đo duy nhất
+   còn lại sẽ là so ảnh. Mỗi biểu đồ kèm một bảng số `sr-only`.
+
+**Đã đo** (2026-08-23, trình duyệt thật): tương phản **WCAG AA** trên 193 cặp chữ/nền ở **cả hai**
+theme · không cuộn ngang ở 375px · mọi nút ≥44px dưới 768px · một vòng khoá/mở khoá đi trọn từ
+nút tới `AuditLog`.
 
 ---
 

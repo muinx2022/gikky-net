@@ -163,6 +163,30 @@ Django admin ở **`/api/admin/django/`** — không phải `/api/admin/`; xem d
 - **`.npmrc` có `public-hoist-pattern[]=*eslint*`**: `eslint-config-next` require() plugin từ thư mục
   app, node_modules cô lập của pnpm làm nó không thấy plugin. Xoá dòng này thì `next build` báo
   "Cannot find module 'eslint-plugin-react-hooks'".
+- ⚠ **`pnpm build` PHÁ `next dev` của cùng app đang chạy** — hai tiến trình tranh nhau
+  `.next/`, và triệu chứng là `Cannot find module './999.js'` rồi trang trả 500.
+  ⇒ Build xong thì **khởi động lại mọi `next dev` đang mở**; gặp lỗi module số thì xoá
+  hẳn `.next/` của app đó trước khi khởi động lại.
+  - **Triệu chứng đánh lừa: trang "mất hết CSS"**, hoặc khu quản trị kẹt vĩnh viễn ở
+    "Đang kiểm tra phiên…" — cả hai trông y hệt lỗi của đoạn code vừa viết, và cả hai
+    KHÔNG phải. Đọc log dev server TRƯỚC khi đi sửa code.
+  - `pnpm codegen` / `codegen:check` **từng có cùng bệnh** (xoá `packages/api-client/src/`
+    rồi sinh lại; watcher đọc trúng lúc thư mục trống là hỏng vĩnh viễn). **Đã vá
+    2026-08-23** — nay sinh vào thư mục tạm rồi chép đè, `src/` không bao giờ biến mất.
+    Xem `scripts/codegen.mjs::sinhVaTraoDoi`; đừng đổi về `rmSync` cho gọn.
+- **Tailwind CSS chỉ ở `apps/admin`** *(Phase 8, 2026-08-23)*. `apps/web` giữ CSS Modules +
+  token, và **đừng chuyển nó sang Tailwind như một việc tiện tay**: hàng rào màu của PLAN 9.1
+  (`apps/web/e2e/don-vi/mau-token.spec.ts`) ghim allowlist tới từng **selector CSS**, mà
+  Tailwind xoá selector. Chuyển được, nhưng phải viết lại hàng rào ấy trước.
+  - `postcss.config.mjs` **phải nằm trong `apps/admin/`**. Next đi ngược cây thư mục tìm config
+    PostCSS; một bản ở gốc repo chui vào cả `apps/web` và đổi pipeline CSS của app không được
+    chạm — `next build` vẫn xanh, CSS thì khác đi.
+  - Token khai **một lần** trong khối `@theme` của `apps/admin/app/globals.css`, theme tối ghi
+    đè trong `[data-theme="toi"]`. **Cấm màu ứng biến** (`bg-[#…]`, `style={{color:"#…"}}`) —
+    `apps/web/e2e/don-vi/quan-tri-giao-dien.spec.ts` chặn, cùng file chặn cả 8 mã của PLAN 9.1
+    và mọi mục menu không có trang thật.
+  - Hook viết bằng tiếng Việt vẫn **phải mở đầu bằng `use`** (`useQuanTri`, `useDanhSach`):
+    `react-hooks/rules-of-hooks` nhận diện hook theo tên, và `pnpm lint` chạy `--max-warnings=0`.
 - Same-origin ở dev đi qua `rewrites` trong `next.config.ts` của **cả hai** app
   (`/api/:path*` → `API_ORIGIN`, mặc định `http://localhost:8000`). Prod là việc của Caddy (PLAN 8.2).
 
