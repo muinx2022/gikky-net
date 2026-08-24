@@ -1126,6 +1126,16 @@
           "title": {
             "title": "Title",
             "type": "string"
+          },
+          "xem_truoc": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/XemTruocOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -1142,7 +1152,8 @@
           "last_entry_at",
           "last_activity_at",
           "diem",
-          "moc_1_id"
+          "moc_1_id",
+          "xem_truoc"
         ],
         "title": "MachTomTatOut",
         "type": "object"
@@ -2194,6 +2205,36 @@
           "down_count"
         ],
         "title": "VoteOut",
+        "type": "object"
+      },
+      "XemTruocOut": {
+        "description": "Nội dung xem trước của một thẻ feed, lấy từ **mốc 1**.\n\n## Thứ tự ưu tiên, và vì sao chỉ có HAI tầng chứ không ba\n\nYêu cầu ban đầu là ba tầng: **gallery → ảnh trong nội dung → chữ**. Tầng giữa hôm nay\n**không có nguồn nào**: `body` của mốc đi qua bộ markdown tập-con ở\n`apps/web/lib/markdown.ts`, và bộ ấy **cố ý không có cú pháp ảnh** (`![]()` in ra\nthành văn bản thường). Nên không tồn tại đường nào để một tấm ảnh nằm *trong* nội\ndung — ảnh chỉ sống ở gallery (`MocAnh`).\n\nTrường `anh` vì thế mang đúng một nghĩa hôm nay: **ảnh đầu của gallery**. Ngày nào\nmarkdown mở cú pháp ảnh thì tầng giữa cắm vào đây mà không đổi hình dạng schema —\nngười gọi vẫn chỉ hỏi \"có ảnh không\", không hỏi \"ảnh từ đâu ra\".\n\n## `trich` LUÔN có mặt, kể cả khi đã có ảnh\n\nKhông phải để vẽ cả hai: nó là `alt` của tấm ảnh, và là thứ hiện ra khi ảnh chưa tải\nxong hoặc tải hỏng. Một thẻ feed rỗng vì một tấm ảnh 404 là một thẻ không ai bấm.",
+        "properties": {
+          "anh": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnhOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "so_anh": {
+            "title": "So Anh",
+            "type": "integer"
+          },
+          "trich": {
+            "title": "Trich",
+            "type": "string"
+          }
+        },
+        "required": [
+          "trich",
+          "anh",
+          "so_anh"
+        ],
+        "title": "XemTruocOut",
         "type": "object"
       }
     },

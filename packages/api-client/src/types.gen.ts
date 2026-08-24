@@ -914,6 +914,7 @@ export type MachTomTatOut = {
      * Title
      */
     title: string;
+    xem_truoc: XemTruocOut | null;
 };
 
 /**
@@ -1683,6 +1684,40 @@ export type VoteOut = {
      * Value
      */
     value: number;
+};
+
+/**
+ * XemTruocOut
+ *
+ * Nội dung xem trước của một thẻ feed, lấy từ **mốc 1**.
+ *
+ * ## Thứ tự ưu tiên, và vì sao chỉ có HAI tầng chứ không ba
+ *
+ * Yêu cầu ban đầu là ba tầng: **gallery → ảnh trong nội dung → chữ**. Tầng giữa hôm nay
+ * **không có nguồn nào**: `body` của mốc đi qua bộ markdown tập-con ở
+ * `apps/web/lib/markdown.ts`, và bộ ấy **cố ý không có cú pháp ảnh** (`![]()` in ra
+ * thành văn bản thường). Nên không tồn tại đường nào để một tấm ảnh nằm *trong* nội
+ * dung — ảnh chỉ sống ở gallery (`MocAnh`).
+ *
+ * Trường `anh` vì thế mang đúng một nghĩa hôm nay: **ảnh đầu của gallery**. Ngày nào
+ * markdown mở cú pháp ảnh thì tầng giữa cắm vào đây mà không đổi hình dạng schema —
+ * người gọi vẫn chỉ hỏi "có ảnh không", không hỏi "ảnh từ đâu ra".
+ *
+ * ## `trich` LUÔN có mặt, kể cả khi đã có ảnh
+ *
+ * Không phải để vẽ cả hai: nó là `alt` của tấm ảnh, và là thứ hiện ra khi ảnh chưa tải
+ * xong hoặc tải hỏng. Một thẻ feed rỗng vì một tấm ảnh 404 là một thẻ không ai bấm.
+ */
+export type XemTruocOut = {
+    anh: AnhOut | null;
+    /**
+     * So Anh
+     */
+    so_anh: number;
+    /**
+     * Trich
+     */
+    trich: string;
 };
 
 export type XoaAnhMocData = {

@@ -130,6 +130,65 @@
         "title": "BaoCaoOut",
         "type": "object"
       },
+      "BinhLuanDongOut": {
+        "description": "Một hàng của bảng bình luận.\n\n`trich_yeu` **không bị che** kể cả khi bình luận đã bị ẩn hoặc đã thành bia mộ — cùng\nlý lẽ với `NoiDungBiBaoCaoOut`, và cùng điều kiện an toàn: chỉ ra sau `ChiMod`.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "da_bi_an": {
+            "title": "Da Bi An",
+            "type": "boolean"
+          },
+          "da_xoa": {
+            "title": "Da Xoa",
+            "type": "boolean"
+          },
+          "duong_dan_cong_khai": {
+            "title": "Duong Dan Cong Khai",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "mach_id": {
+            "title": "Mach Id",
+            "type": "integer"
+          },
+          "mach_title": {
+            "title": "Mach Title",
+            "type": "string"
+          },
+          "score": {
+            "title": "Score",
+            "type": "integer"
+          },
+          "tac_gia": {
+            "$ref": "#/components/schemas/NguoiDungTomTatOut"
+          },
+          "trich_yeu": {
+            "title": "Trich Yeu",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "mach_id",
+          "mach_title",
+          "tac_gia",
+          "trich_yeu",
+          "created_at",
+          "score",
+          "da_bi_an",
+          "da_xoa",
+          "duong_dan_cong_khai"
+        ],
+        "title": "BinhLuanDongOut",
+        "type": "object"
+      },
       "DatAnIn": {
         "description": "Body của mọi endpoint ẩn/gỡ ẩn.\n\n**Một endpoint đặt-trạng-thái thay vì hai endpoint `hide`/`unhide`** — hai chiều nhận\ncùng bộ đầu vào, nên tách ra chỉ nhân đôi số chỗ phải kiểm quyền. Và nó **idempotent**:\ngửi `an=true` hai lần cho ra cùng một trạng thái.",
         "properties": {
@@ -166,6 +225,41 @@
           "khoa"
         ],
         "title": "DatKhoaMachIn",
+        "type": "object"
+      },
+      "DemTheoNgayOut": {
+        "description": "Một ô của biểu đồ 30 ngày. `ngay` là **ngày lịch Việt Nam**, không phải UTC.",
+        "properties": {
+          "binh_luan_moi": {
+            "title": "Binh Luan Moi",
+            "type": "integer"
+          },
+          "mach_moi": {
+            "title": "Mach Moi",
+            "type": "integer"
+          },
+          "moc_moi": {
+            "title": "Moc Moi",
+            "type": "integer"
+          },
+          "ngay": {
+            "format": "date",
+            "title": "Ngay",
+            "type": "string"
+          },
+          "nguoi_dung_moi": {
+            "title": "Nguoi Dung Moi",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ngay",
+          "mach_moi",
+          "moc_moi",
+          "binh_luan_moi",
+          "nguoi_dung_moi"
+        ],
+        "title": "DemTheoNgayOut",
         "type": "object"
       },
       "DongBaoCaoIn": {
@@ -243,6 +337,81 @@
           "code"
         ],
         "title": "LoiOut",
+        "type": "object"
+      },
+      "MachDongOut": {
+        "description": "Một hàng của bảng mạch trong khu quản trị.",
+        "properties": {
+          "comment_count": {
+            "title": "Comment Count",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "da_bi_an": {
+            "title": "Da Bi An",
+            "type": "boolean"
+          },
+          "da_khoa": {
+            "title": "Da Khoa",
+            "type": "boolean"
+          },
+          "diem": {
+            "title": "Diem",
+            "type": "integer"
+          },
+          "duong_dan_cong_khai": {
+            "title": "Duong Dan Cong Khai",
+            "type": "string"
+          },
+          "entry_count": {
+            "title": "Entry Count",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "last_activity_at": {
+            "format": "date-time",
+            "title": "Last Activity At",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "sub_slug": {
+            "title": "Sub Slug",
+            "type": "string"
+          },
+          "tac_gia": {
+            "$ref": "#/components/schemas/NguoiDungTomTatOut"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "sub_slug",
+          "tac_gia",
+          "status",
+          "created_at",
+          "last_activity_at",
+          "entry_count",
+          "comment_count",
+          "diem",
+          "da_bi_an",
+          "da_khoa",
+          "duong_dan_cong_khai"
+        ],
+        "title": "MachDongOut",
         "type": "object"
       },
       "MachQuanTriOut": {
@@ -719,6 +888,34 @@
         "title": "SubQuanTriOut",
         "type": "object"
       },
+      "SubTomTatOut": {
+        "properties": {
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "so_mach": {
+            "title": "So Mach",
+            "type": "integer"
+          },
+          "so_mach_30_ngay": {
+            "title": "So Mach 30 Ngay",
+            "type": "integer"
+          },
+          "ten": {
+            "title": "Ten",
+            "type": "string"
+          }
+        },
+        "required": [
+          "slug",
+          "ten",
+          "so_mach",
+          "so_mach_30_ngay"
+        ],
+        "title": "SubTomTatOut",
+        "type": "object"
+      },
       "TaoSubIn": {
         "properties": {
           "mo_ta": {
@@ -742,6 +939,86 @@
         "title": "TaoSubIn",
         "type": "object"
       },
+      "ThongKeOut": {
+        "description": "Số liệu cho bảng điều khiển. Không cache — xem `Cache-Control` ở endpoint.",
+        "properties": {
+          "bay_ngay": {
+            "$ref": "#/components/schemas/DemTheoNgayOut"
+          },
+          "cho_xu_ly": {
+            "title": "Cho Xu Ly",
+            "type": "integer"
+          },
+          "chuoi_ngay": {
+            "items": {
+              "$ref": "#/components/schemas/DemTheoNgayOut"
+            },
+            "title": "Chuoi Ngay",
+            "type": "array"
+          },
+          "hom_nay": {
+            "$ref": "#/components/schemas/DemTheoNgayOut"
+          },
+          "theo_trang_thai": {
+            "$ref": "#/components/schemas/TrangThaiMachOut"
+          },
+          "tong": {
+            "$ref": "#/components/schemas/TongOut"
+          },
+          "top_sub": {
+            "items": {
+              "$ref": "#/components/schemas/SubTomTatOut"
+            },
+            "title": "Top Sub",
+            "type": "array"
+          }
+        },
+        "required": [
+          "tong",
+          "cho_xu_ly",
+          "hom_nay",
+          "bay_ngay",
+          "chuoi_ngay",
+          "theo_trang_thai",
+          "top_sub"
+        ],
+        "title": "ThongKeOut",
+        "type": "object"
+      },
+      "TongOut": {
+        "description": "Bốn con số lớn của hàng thẻ KPI.",
+        "properties": {
+          "binh_luan": {
+            "title": "Binh Luan",
+            "type": "integer"
+          },
+          "mach": {
+            "title": "Mach",
+            "type": "integer"
+          },
+          "moc": {
+            "title": "Moc",
+            "type": "integer"
+          },
+          "nguoi_dung": {
+            "title": "Nguoi Dung",
+            "type": "integer"
+          },
+          "sub": {
+            "title": "Sub",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "nguoi_dung",
+          "mach",
+          "moc",
+          "binh_luan",
+          "sub"
+        ],
+        "title": "TongOut",
+        "type": "object"
+      },
       "TrangBaoCaoOut": {
         "description": "Một trang hàng đợi, cursor keyset theo `(created_at, id)` giảm dần.",
         "properties": {
@@ -762,13 +1039,117 @@
             },
             "title": "Items",
             "type": "array"
+          },
+          "tong": {
+            "title": "Tong",
+            "type": "integer"
           }
         },
         "required": [
           "items",
-          "cursor_ke_tiep"
+          "cursor_ke_tiep",
+          "tong"
         ],
         "title": "TrangBaoCaoOut",
+        "type": "object"
+      },
+      "TrangBinhLuanOut": {
+        "properties": {
+          "cursor_ke_tiep": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cursor Ke Tiep"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BinhLuanDongOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "tong": {
+            "title": "Tong",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "cursor_ke_tiep",
+          "tong"
+        ],
+        "title": "TrangBinhLuanOut",
+        "type": "object"
+      },
+      "TrangMachOut": {
+        "properties": {
+          "cursor_ke_tiep": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cursor Ke Tiep"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MachDongOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "tong": {
+            "title": "Tong",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "cursor_ke_tiep",
+          "tong"
+        ],
+        "title": "TrangMachOut",
+        "type": "object"
+      },
+      "TrangNguoiDungOut": {
+        "properties": {
+          "cursor_ke_tiep": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cursor Ke Tiep"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/NguoiDungQuanTriOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "tong": {
+            "title": "Tong",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "cursor_ke_tiep",
+          "tong"
+        ],
+        "title": "TrangNguoiDungOut",
         "type": "object"
       },
       "TrangNhatKyOut": {
@@ -790,13 +1171,47 @@
             },
             "title": "Items",
             "type": "array"
+          },
+          "tong": {
+            "title": "Tong",
+            "type": "integer"
           }
         },
         "required": [
           "items",
-          "cursor_ke_tiep"
+          "cursor_ke_tiep",
+          "tong"
         ],
         "title": "TrangNhatKyOut",
+        "type": "object"
+      },
+      "TrangThaiMachOut": {
+        "description": "Bốn nhóm **LOẠI TRỪ NHAU**, cộng lại đúng bằng tổng số mạch.\n\nChồng lấn là chuyện có thật trong dữ liệu — một mạch bị ẩn cũng có `status`, một mạch\nbị khoá cũng đang mở hoặc đã đóng. Một biểu đồ vành khuyên vẽ bằng bốn con số chồng\nnhau thì tổng các lát lớn hơn 100%, và không ai nhìn ra điều đó; nó chỉ trông hơi lệch.\n\nThứ tự phân loại, xét từ trên xuống, dừng ở nhánh đầu tiên khớp:\nẩn → khoá → đã đóng sổ → đang mở.",
+        "properties": {
+          "bi_an": {
+            "title": "Bi An",
+            "type": "integer"
+          },
+          "bi_khoa": {
+            "title": "Bi Khoa",
+            "type": "integer"
+          },
+          "dong": {
+            "title": "Dong",
+            "type": "integer"
+          },
+          "mo": {
+            "title": "Mo",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "bi_an",
+          "bi_khoa",
+          "dong",
+          "mo"
+        ],
+        "title": "TrangThaiMachOut",
         "type": "object"
       }
     },
@@ -815,6 +1230,149 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/admin/comments": {
+      "get": {
+        "description": "Bảng bình luận cho mod, mới nhất trước, cursor keyset `(created_at, id)`.\n\nGồm **cả bia mộ và bình luận đã bị ẩn**. Bia mộ có mặt vì `deleted_at` không xoá\n`body` khỏi DB (PLAN 5.3 giữ chỗ), và mod đôi khi cần đọc đúng cái đã bị tác giả rút\nlại sau khi bị tố.\n\n`trang_thai=hien` = còn sống **và** chưa bị ẩn — hai cột, không phải một.",
+        "operationId": "quan_tri_liet_ke_binh_luan",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "tac_gia",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tac Gia"
+            }
+          },
+          {
+            "in": "query",
+            "name": "mach_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Mach Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "trang_thai",
+            "required": false,
+            "schema": {
+              "default": "tat_ca",
+              "enum": [
+                "tat_ca",
+                "hien",
+                "bi_an",
+                "bia_mo"
+              ],
+              "title": "Trang Thai",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrangBinhLuanOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Liet Ke Binh Luan",
+        "tags": [
+          "quan-tri-bang"
+        ]
+      }
+    },
     "/api/admin/comments/{comment_id}/an": {
       "post": {
         "description": "Mod ẩn / gỡ ẩn một bình luận. Idempotent.\n\nGỡ ẩn **không** hồi sinh bình luận mà tác giả đã tự xoá — `deleted_at` là trục khác\nvà endpoint này không chạm tới nó.",
@@ -890,6 +1448,151 @@
         "summary": "Dat An Binh Luan Endpoint",
         "tags": [
           "quan-tri-kiem-duyet"
+        ]
+      }
+    },
+    "/api/admin/machs": {
+      "get": {
+        "description": "Bảng mạch cho mod, mới nhất trước, cursor keyset `(created_at, id)`.\n\n`?q=` khớp **một phần, không phân biệt hoa thường** trên tiêu đề. Cố ý không dùng\nMeilisearch ở đây: đây là bảng quản trị, nó phải thấy **cả mạch đã bị ẩn** — mà mạch\nẩn thì bị gỡ khỏi index đúng theo thiết kế của Phase 7. Dùng search ở đây là dựng một\nbảng quản trị mù đúng với thứ cần quản trị nhất.\n\n`?trang_thai=` chia **bốn nhóm LOẠI TRỪ NHAU** — `ẩn → khoá → đã đóng sổ → đang mở`,\nxét từ trên xuống (`api/quan_tri_loc.py`). Nghĩa là **`mo` KHÔNG bao gồm bài đã bị\nẩn**, dù một bài bị ẩn vẫn \"đang mở\" trên trục `status`. Mặc định `tat_ca` gồm tất,\nkể cả bài đã gỡ — mod phải thấy để gỡ ẩn.",
+        "operationId": "quan_tri_liet_ke_mach",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sub",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sub"
+            }
+          },
+          {
+            "in": "query",
+            "name": "tac_gia",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tac Gia"
+            }
+          },
+          {
+            "in": "query",
+            "name": "trang_thai",
+            "required": false,
+            "schema": {
+              "default": "tat_ca",
+              "enum": [
+                "tat_ca",
+                "chua_go",
+                "mo",
+                "dong",
+                "bi_khoa",
+                "bi_an"
+              ],
+              "title": "Trang Thai",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrangMachOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Liet Ke Mach",
+        "tags": [
+          "quan-tri-bang"
         ]
       }
     },
@@ -1811,6 +2514,165 @@
         "summary": "Sua Sub",
         "tags": [
           "quan-tri-sub"
+        ]
+      }
+    },
+    "/api/admin/thong-ke": {
+      "get": {
+        "description": "Số liệu tổng quan: bốn con số lớn, hoạt động 30 ngày, tỉ trọng trạng thái, top sub.\n\n`hom_nay` và `bay_ngay` **suy từ `chuoi_ngay`**, không phải bốn truy vấn nữa: chuỗi đã\nphủ 30 ngày, nên hai con số ấy là phép cộng trong Python. Ngoài chuyện rẻ, nó còn đảm\nbảo ba chỗ trên màn hình không bao giờ nói lệch nhau vì được đo ở ba thời điểm khác\nnhau trong cùng một request.\n\nMọi mốc \"ngày\" ở đây là **ngày lịch Việt Nam**.",
+        "operationId": "quan_tri_thong_ke",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThongKeOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Thong Ke",
+        "tags": [
+          "quan-tri-thong-ke"
+        ]
+      }
+    },
+    "/api/admin/users": {
+      "get": {
+        "description": "Bảng tài khoản, mới đăng ký trước, cursor keyset `(date_joined, id)`.\n\n`?q=` khớp một phần trên `username` **hoặc** `display_name`. Cố ý **không** tìm theo\nemail: khu quản trị không cần nó để phán xử nội dung, và một ô tìm-theo-email là cách\nrẻ nhất để một mod tra ngược địa chỉ của một người từ một mẩu địa chỉ đoán được.\n\n`trang_thai=bi_ban` dùng đúng điều kiện của `User.dang_bi_ban()` — vĩnh viễn **hoặc**\nhạn tạm chưa qua. Viết lại điều kiện ấy ở đây là bản sao thứ hai, nên nó được đặt cạnh\nmột bài đo ghim rằng hai bên không lệch nhau\n(`tests/test_api_quan_tri_bang.py::test_loc_bi_ban_trung_voi_dang_bi_ban`).",
+        "operationId": "quan_tri_liet_ke_nguoi_dung",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "trang_thai",
+            "required": false,
+            "schema": {
+              "default": "tat_ca",
+              "enum": [
+                "tat_ca",
+                "bi_ban",
+                "staff",
+                "moi"
+              ],
+              "title": "Trang Thai",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrangNguoiDungOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Liet Ke Nguoi Dung",
+        "tags": [
+          "quan-tri-bang"
         ]
       }
     },

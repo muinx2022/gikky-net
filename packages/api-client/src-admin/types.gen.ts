@@ -73,6 +73,54 @@ export type BaoCaoOut = {
 };
 
 /**
+ * BinhLuanDongOut
+ *
+ * Một hàng của bảng bình luận.
+ *
+ * `trich_yeu` **không bị che** kể cả khi bình luận đã bị ẩn hoặc đã thành bia mộ — cùng
+ * lý lẽ với `NoiDungBiBaoCaoOut`, và cùng điều kiện an toàn: chỉ ra sau `ChiMod`.
+ */
+export type BinhLuanDongOut = {
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Da Bi An
+     */
+    da_bi_an: boolean;
+    /**
+     * Da Xoa
+     */
+    da_xoa: boolean;
+    /**
+     * Duong Dan Cong Khai
+     */
+    duong_dan_cong_khai: string;
+    /**
+     * Id
+     */
+    id: number;
+    /**
+     * Mach Id
+     */
+    mach_id: number;
+    /**
+     * Mach Title
+     */
+    mach_title: string;
+    /**
+     * Score
+     */
+    score: number;
+    tac_gia: NguoiDungTomTatOut;
+    /**
+     * Trich Yeu
+     */
+    trich_yeu: string;
+};
+
+/**
  * DatAnIn
  *
  * Body của mọi endpoint ẩn/gỡ ẩn.
@@ -109,6 +157,34 @@ export type DatKhoaMachIn = {
      * Ly Do
      */
     ly_do?: string;
+};
+
+/**
+ * DemTheoNgayOut
+ *
+ * Một ô của biểu đồ 30 ngày. `ngay` là **ngày lịch Việt Nam**, không phải UTC.
+ */
+export type DemTheoNgayOut = {
+    /**
+     * Binh Luan Moi
+     */
+    binh_luan_moi: number;
+    /**
+     * Mach Moi
+     */
+    mach_moi: number;
+    /**
+     * Moc Moi
+     */
+    moc_moi: number;
+    /**
+     * Ngay
+     */
+    ngay: string;
+    /**
+     * Nguoi Dung Moi
+     */
+    nguoi_dung_moi: number;
 };
 
 /**
@@ -182,6 +258,63 @@ export type LoiOut = {
      * Detail
      */
     detail: string;
+};
+
+/**
+ * MachDongOut
+ *
+ * Một hàng của bảng mạch trong khu quản trị.
+ */
+export type MachDongOut = {
+    /**
+     * Comment Count
+     */
+    comment_count: number;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Da Bi An
+     */
+    da_bi_an: boolean;
+    /**
+     * Da Khoa
+     */
+    da_khoa: boolean;
+    /**
+     * Diem
+     */
+    diem: number;
+    /**
+     * Duong Dan Cong Khai
+     */
+    duong_dan_cong_khai: string;
+    /**
+     * Entry Count
+     */
+    entry_count: number;
+    /**
+     * Id
+     */
+    id: number;
+    /**
+     * Last Activity At
+     */
+    last_activity_at: string;
+    /**
+     * Status
+     */
+    status: string;
+    /**
+     * Sub Slug
+     */
+    sub_slug: string;
+    tac_gia: NguoiDungTomTatOut;
+    /**
+     * Title
+     */
+    title: string;
 };
 
 /**
@@ -517,6 +650,28 @@ export type SubQuanTriOut = {
 };
 
 /**
+ * SubTomTatOut
+ */
+export type SubTomTatOut = {
+    /**
+     * Slug
+     */
+    slug: string;
+    /**
+     * So Mach
+     */
+    so_mach: number;
+    /**
+     * So Mach 30 Ngay
+     */
+    so_mach_30_ngay: number;
+    /**
+     * Ten
+     */
+    ten: string;
+};
+
+/**
  * TaoSubIn
  */
 export type TaoSubIn = {
@@ -535,6 +690,58 @@ export type TaoSubIn = {
 };
 
 /**
+ * ThongKeOut
+ *
+ * Số liệu cho bảng điều khiển. Không cache — xem `Cache-Control` ở endpoint.
+ */
+export type ThongKeOut = {
+    bay_ngay: DemTheoNgayOut;
+    /**
+     * Cho Xu Ly
+     */
+    cho_xu_ly: number;
+    /**
+     * Chuoi Ngay
+     */
+    chuoi_ngay: Array<DemTheoNgayOut>;
+    hom_nay: DemTheoNgayOut;
+    theo_trang_thai: TrangThaiMachOut;
+    tong: TongOut;
+    /**
+     * Top Sub
+     */
+    top_sub: Array<SubTomTatOut>;
+};
+
+/**
+ * TongOut
+ *
+ * Bốn con số lớn của hàng thẻ KPI.
+ */
+export type TongOut = {
+    /**
+     * Binh Luan
+     */
+    binh_luan: number;
+    /**
+     * Mach
+     */
+    mach: number;
+    /**
+     * Moc
+     */
+    moc: number;
+    /**
+     * Nguoi Dung
+     */
+    nguoi_dung: number;
+    /**
+     * Sub
+     */
+    sub: number;
+};
+
+/**
  * TrangBaoCaoOut
  *
  * Một trang hàng đợi, cursor keyset theo `(created_at, id)` giảm dần.
@@ -548,6 +755,64 @@ export type TrangBaoCaoOut = {
      * Items
      */
     items: Array<BaoCaoOut>;
+    /**
+     * Tong
+     */
+    tong: number;
+};
+
+/**
+ * TrangBinhLuanOut
+ */
+export type TrangBinhLuanOut = {
+    /**
+     * Cursor Ke Tiep
+     */
+    cursor_ke_tiep: string | null;
+    /**
+     * Items
+     */
+    items: Array<BinhLuanDongOut>;
+    /**
+     * Tong
+     */
+    tong: number;
+};
+
+/**
+ * TrangMachOut
+ */
+export type TrangMachOut = {
+    /**
+     * Cursor Ke Tiep
+     */
+    cursor_ke_tiep: string | null;
+    /**
+     * Items
+     */
+    items: Array<MachDongOut>;
+    /**
+     * Tong
+     */
+    tong: number;
+};
+
+/**
+ * TrangNguoiDungOut
+ */
+export type TrangNguoiDungOut = {
+    /**
+     * Cursor Ke Tiep
+     */
+    cursor_ke_tiep: string | null;
+    /**
+     * Items
+     */
+    items: Array<NguoiDungQuanTriOut>;
+    /**
+     * Tong
+     */
+    tong: number;
 };
 
 /**
@@ -562,7 +827,100 @@ export type TrangNhatKyOut = {
      * Items
      */
     items: Array<NhatKyOut>;
+    /**
+     * Tong
+     */
+    tong: number;
 };
+
+/**
+ * TrangThaiMachOut
+ *
+ * Bốn nhóm **LOẠI TRỪ NHAU**, cộng lại đúng bằng tổng số mạch.
+ *
+ * Chồng lấn là chuyện có thật trong dữ liệu — một mạch bị ẩn cũng có `status`, một mạch
+ * bị khoá cũng đang mở hoặc đã đóng. Một biểu đồ vành khuyên vẽ bằng bốn con số chồng
+ * nhau thì tổng các lát lớn hơn 100%, và không ai nhìn ra điều đó; nó chỉ trông hơi lệch.
+ *
+ * Thứ tự phân loại, xét từ trên xuống, dừng ở nhánh đầu tiên khớp:
+ * ẩn → khoá → đã đóng sổ → đang mở.
+ */
+export type TrangThaiMachOut = {
+    /**
+     * Bi An
+     */
+    bi_an: number;
+    /**
+     * Bi Khoa
+     */
+    bi_khoa: number;
+    /**
+     * Dong
+     */
+    dong: number;
+    /**
+     * Mo
+     */
+    mo: number;
+};
+
+export type QuanTriLietKeBinhLuanData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Q
+         */
+        q?: string;
+        /**
+         * Tac Gia
+         */
+        tac_gia?: string | null;
+        /**
+         * Mach Id
+         */
+        mach_id?: number | null;
+        /**
+         * Trang Thai
+         */
+        trang_thai?: 'tat_ca' | 'hien' | 'bi_an' | 'bia_mo';
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+    };
+    url: '/api/admin/comments';
+};
+
+export type QuanTriLietKeBinhLuanErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+};
+
+export type QuanTriLietKeBinhLuanError = QuanTriLietKeBinhLuanErrors[keyof QuanTriLietKeBinhLuanErrors];
+
+export type QuanTriLietKeBinhLuanResponses = {
+    /**
+     * OK
+     */
+    200: TrangBinhLuanOut;
+};
+
+export type QuanTriLietKeBinhLuanResponse = QuanTriLietKeBinhLuanResponses[keyof QuanTriLietKeBinhLuanResponses];
 
 export type QuanTriDatAnBinhLuanData = {
     body: DatAnIn;
@@ -601,6 +959,64 @@ export type QuanTriDatAnBinhLuanResponses = {
 };
 
 export type QuanTriDatAnBinhLuanResponse = QuanTriDatAnBinhLuanResponses[keyof QuanTriDatAnBinhLuanResponses];
+
+export type QuanTriLietKeMachData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Q
+         */
+        q?: string;
+        /**
+         * Sub
+         */
+        sub?: string | null;
+        /**
+         * Tac Gia
+         */
+        tac_gia?: string | null;
+        /**
+         * Trang Thai
+         */
+        trang_thai?: 'tat_ca' | 'chua_go' | 'mo' | 'dong' | 'bi_khoa' | 'bi_an';
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+    };
+    url: '/api/admin/machs';
+};
+
+export type QuanTriLietKeMachErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+};
+
+export type QuanTriLietKeMachError = QuanTriLietKeMachErrors[keyof QuanTriLietKeMachErrors];
+
+export type QuanTriLietKeMachResponses = {
+    /**
+     * OK
+     */
+    200: TrangMachOut;
+};
+
+export type QuanTriLietKeMachResponse = QuanTriLietKeMachResponses[keyof QuanTriLietKeMachResponses];
 
 export type QuanTriXemMachData = {
     body?: never;
@@ -1064,6 +1480,85 @@ export type QuanTriSuaSubResponses = {
 };
 
 export type QuanTriSuaSubResponse = QuanTriSuaSubResponses[keyof QuanTriSuaSubResponses];
+
+export type QuanTriThongKeData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/admin/thong-ke';
+};
+
+export type QuanTriThongKeErrors = {
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+};
+
+export type QuanTriThongKeError = QuanTriThongKeErrors[keyof QuanTriThongKeErrors];
+
+export type QuanTriThongKeResponses = {
+    /**
+     * OK
+     */
+    200: ThongKeOut;
+};
+
+export type QuanTriThongKeResponse = QuanTriThongKeResponses[keyof QuanTriThongKeResponses];
+
+export type QuanTriLietKeNguoiDungData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Q
+         */
+        q?: string;
+        /**
+         * Trang Thai
+         */
+        trang_thai?: 'tat_ca' | 'bi_ban' | 'staff' | 'moi';
+        /**
+         * Limit
+         */
+        limit?: number;
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+    };
+    url: '/api/admin/users';
+};
+
+export type QuanTriLietKeNguoiDungErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+};
+
+export type QuanTriLietKeNguoiDungError = QuanTriLietKeNguoiDungErrors[keyof QuanTriLietKeNguoiDungErrors];
+
+export type QuanTriLietKeNguoiDungResponses = {
+    /**
+     * OK
+     */
+    200: TrangNguoiDungOut;
+};
+
+export type QuanTriLietKeNguoiDungResponse = QuanTriLietKeNguoiDungResponses[keyof QuanTriLietKeNguoiDungResponses];
 
 export type QuanTriXemNguoiDungData = {
     body?: never;

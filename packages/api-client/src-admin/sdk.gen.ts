@@ -4,7 +4,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { QuanTriBanNguoiDungData, QuanTriBanNguoiDungErrors, QuanTriBanNguoiDungResponses, QuanTriDatAnBinhLuanData, QuanTriDatAnBinhLuanErrors, QuanTriDatAnBinhLuanResponses, QuanTriDatAnMachData, QuanTriDatAnMachErrors, QuanTriDatAnMachResponses, QuanTriDatAnMocData, QuanTriDatAnMocErrors, QuanTriDatAnMocResponses, QuanTriDatKhoaMachData, QuanTriDatKhoaMachErrors, QuanTriDatKhoaMachResponses, QuanTriDongBaoCaoData, QuanTriDongBaoCaoErrors, QuanTriDongBaoCaoResponses, QuanTriGoBanNguoiDungData, QuanTriGoBanNguoiDungErrors, QuanTriGoBanNguoiDungResponses, QuanTriLietKeBaoCaoData, QuanTriLietKeBaoCaoErrors, QuanTriLietKeBaoCaoResponses, QuanTriLietKeNhatKyData, QuanTriLietKeNhatKyErrors, QuanTriLietKeNhatKyResponses, QuanTriLietKeSubData, QuanTriLietKeSubErrors, QuanTriLietKeSubResponses, QuanTriSuaSubData, QuanTriSuaSubErrors, QuanTriSuaSubResponses, QuanTriTaoSubData, QuanTriTaoSubErrors, QuanTriTaoSubResponses, QuanTriToiData, QuanTriToiErrors, QuanTriToiResponses, QuanTriXemMachData, QuanTriXemMachErrors, QuanTriXemMachResponses, QuanTriXemNguoiDungData, QuanTriXemNguoiDungErrors, QuanTriXemNguoiDungResponses, QuanTriXoaSubData, QuanTriXoaSubErrors, QuanTriXoaSubResponses } from './types.gen';
+import type { QuanTriBanNguoiDungData, QuanTriBanNguoiDungErrors, QuanTriBanNguoiDungResponses, QuanTriDatAnBinhLuanData, QuanTriDatAnBinhLuanErrors, QuanTriDatAnBinhLuanResponses, QuanTriDatAnMachData, QuanTriDatAnMachErrors, QuanTriDatAnMachResponses, QuanTriDatAnMocData, QuanTriDatAnMocErrors, QuanTriDatAnMocResponses, QuanTriDatKhoaMachData, QuanTriDatKhoaMachErrors, QuanTriDatKhoaMachResponses, QuanTriDongBaoCaoData, QuanTriDongBaoCaoErrors, QuanTriDongBaoCaoResponses, QuanTriGoBanNguoiDungData, QuanTriGoBanNguoiDungErrors, QuanTriGoBanNguoiDungResponses, QuanTriLietKeBaoCaoData, QuanTriLietKeBaoCaoErrors, QuanTriLietKeBaoCaoResponses, QuanTriLietKeBinhLuanData, QuanTriLietKeBinhLuanErrors, QuanTriLietKeBinhLuanResponses, QuanTriLietKeMachData, QuanTriLietKeMachErrors, QuanTriLietKeMachResponses, QuanTriLietKeNguoiDungData, QuanTriLietKeNguoiDungErrors, QuanTriLietKeNguoiDungResponses, QuanTriLietKeNhatKyData, QuanTriLietKeNhatKyErrors, QuanTriLietKeNhatKyResponses, QuanTriLietKeSubData, QuanTriLietKeSubErrors, QuanTriLietKeSubResponses, QuanTriSuaSubData, QuanTriSuaSubErrors, QuanTriSuaSubResponses, QuanTriTaoSubData, QuanTriTaoSubErrors, QuanTriTaoSubResponses, QuanTriThongKeData, QuanTriThongKeErrors, QuanTriThongKeResponses, QuanTriToiData, QuanTriToiErrors, QuanTriToiResponses, QuanTriXemMachData, QuanTriXemMachErrors, QuanTriXemMachResponses, QuanTriXemNguoiDungData, QuanTriXemNguoiDungErrors, QuanTriXemNguoiDungResponses, QuanTriXoaSubData, QuanTriXoaSubErrors, QuanTriXoaSubResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -19,6 +19,27 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
      */
     meta?: keyof ClientMeta extends never ? Record<string, unknown> : ClientMeta;
 };
+
+/**
+ * Liet Ke Binh Luan
+ *
+ * Bảng bình luận cho mod, mới nhất trước, cursor keyset `(created_at, id)`.
+ *
+ * Gồm **cả bia mộ và bình luận đã bị ẩn**. Bia mộ có mặt vì `deleted_at` không xoá
+ * `body` khỏi DB (PLAN 5.3 giữ chỗ), và mod đôi khi cần đọc đúng cái đã bị tác giả rút
+ * lại sau khi bị tố.
+ *
+ * `trang_thai=hien` = còn sống **và** chưa bị ẩn — hai cột, không phải một.
+ */
+export const quanTriLietKeBinhLuan = <ThrowOnError extends boolean = false>(options?: Options<QuanTriLietKeBinhLuanData, ThrowOnError>): RequestResult<QuanTriLietKeBinhLuanResponses, QuanTriLietKeBinhLuanErrors, ThrowOnError> => (options?.client ?? client).get<QuanTriLietKeBinhLuanResponses, QuanTriLietKeBinhLuanErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/admin/comments',
+    ...options
+});
 
 /**
  * Dat An Binh Luan Endpoint
@@ -40,6 +61,31 @@ export const quanTriDatAnBinhLuan = <ThrowOnError extends boolean = false>(optio
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * Liet Ke Mach
+ *
+ * Bảng mạch cho mod, mới nhất trước, cursor keyset `(created_at, id)`.
+ *
+ * `?q=` khớp **một phần, không phân biệt hoa thường** trên tiêu đề. Cố ý không dùng
+ * Meilisearch ở đây: đây là bảng quản trị, nó phải thấy **cả mạch đã bị ẩn** — mà mạch
+ * ẩn thì bị gỡ khỏi index đúng theo thiết kế của Phase 7. Dùng search ở đây là dựng một
+ * bảng quản trị mù đúng với thứ cần quản trị nhất.
+ *
+ * `?trang_thai=` chia **bốn nhóm LOẠI TRỪ NHAU** — `ẩn → khoá → đã đóng sổ → đang mở`,
+ * xét từ trên xuống (`api/quan_tri_loc.py`). Nghĩa là **`mo` KHÔNG bao gồm bài đã bị
+ * ẩn**, dù một bài bị ẩn vẫn "đang mở" trên trục `status`. Mặc định `tat_ca` gồm tất,
+ * kể cả bài đã gỡ — mod phải thấy để gỡ ẩn.
+ */
+export const quanTriLietKeMach = <ThrowOnError extends boolean = false>(options?: Options<QuanTriLietKeMachData, ThrowOnError>): RequestResult<QuanTriLietKeMachResponses, QuanTriLietKeMachErrors, ThrowOnError> => (options?.client ?? client).get<QuanTriLietKeMachResponses, QuanTriLietKeMachErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/admin/machs',
+    ...options
 });
 
 /**
@@ -301,6 +347,52 @@ export const quanTriSuaSub = <ThrowOnError extends boolean = false>(options: Opt
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * Thong Ke
+ *
+ * Số liệu tổng quan: bốn con số lớn, hoạt động 30 ngày, tỉ trọng trạng thái, top sub.
+ *
+ * `hom_nay` và `bay_ngay` **suy từ `chuoi_ngay`**, không phải bốn truy vấn nữa: chuỗi đã
+ * phủ 30 ngày, nên hai con số ấy là phép cộng trong Python. Ngoài chuyện rẻ, nó còn đảm
+ * bảo ba chỗ trên màn hình không bao giờ nói lệch nhau vì được đo ở ba thời điểm khác
+ * nhau trong cùng một request.
+ *
+ * Mọi mốc "ngày" ở đây là **ngày lịch Việt Nam**.
+ */
+export const quanTriThongKe = <ThrowOnError extends boolean = false>(options?: Options<QuanTriThongKeData, ThrowOnError>): RequestResult<QuanTriThongKeResponses, QuanTriThongKeErrors, ThrowOnError> => (options?.client ?? client).get<QuanTriThongKeResponses, QuanTriThongKeErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/admin/thong-ke',
+    ...options
+});
+
+/**
+ * Liet Ke Nguoi Dung
+ *
+ * Bảng tài khoản, mới đăng ký trước, cursor keyset `(date_joined, id)`.
+ *
+ * `?q=` khớp một phần trên `username` **hoặc** `display_name`. Cố ý **không** tìm theo
+ * email: khu quản trị không cần nó để phán xử nội dung, và một ô tìm-theo-email là cách
+ * rẻ nhất để một mod tra ngược địa chỉ của một người từ một mẩu địa chỉ đoán được.
+ *
+ * `trang_thai=bi_ban` dùng đúng điều kiện của `User.dang_bi_ban()` — vĩnh viễn **hoặc**
+ * hạn tạm chưa qua. Viết lại điều kiện ấy ở đây là bản sao thứ hai, nên nó được đặt cạnh
+ * một bài đo ghim rằng hai bên không lệch nhau
+ * (`tests/test_api_quan_tri_bang.py::test_loc_bi_ban_trung_voi_dang_bi_ban`).
+ */
+export const quanTriLietKeNguoiDung = <ThrowOnError extends boolean = false>(options?: Options<QuanTriLietKeNguoiDungData, ThrowOnError>): RequestResult<QuanTriLietKeNguoiDungResponses, QuanTriLietKeNguoiDungErrors, ThrowOnError> => (options?.client ?? client).get<QuanTriLietKeNguoiDungResponses, QuanTriLietKeNguoiDungErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/admin/users',
+    ...options
 });
 
 /**
