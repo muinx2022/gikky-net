@@ -8,6 +8,7 @@ import { duongDanHoSo, duongDanKhanDai, duongDanMach, duongDanSub } from "@/lib/
 
 import { ChepLink } from "./chep-link";
 import { CotVote } from "./cot-vote";
+import { NoiDungThe } from "./noi-dung-the";
 import css from "./the-mach.module.css";
 
 /** Thẻ mạch trong feed và trong hồ sơ — plan con 1c §2.3, dựng lại theo vỏ Reddit ở 1d.
@@ -73,6 +74,18 @@ export function TheMach({ mach }: { mach: MachTomTatOut }) {
             {mach.title}
           </Link>
         </h2>
+
+        {/* Nội dung xem trước lấy từ MỐC 1 — ảnh gallery trước, chữ sau (2026-08-23).
+            `null` khi mốc 1 là bia mộ hoặc bị mod ẩn: thẻ khi đó về đúng hình dạng cũ
+            (chỉ tiêu đề) và **không** thông báo gì. Feed không phải chỗ kể chuyện kiểm
+            duyệt — xem `api/trinh_bay.py::du_lieu_the`. */}
+        {mach.xem_truoc !== null && (
+          <NoiDungThe
+            xem_truoc={mach.xem_truoc}
+            href={duongDanMach(mach.slug, mach.id)}
+            tieu_de={mach.title}
+          />
+        )}
 
         <div className={css.chan}>
           {mach.entry_count >= 2 && (

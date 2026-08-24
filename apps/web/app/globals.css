@@ -61,8 +61,12 @@
   --loss: #b33a2b;
   --focus: #3a46a8;
 
-  --f-display: var(--font-newsreader), Georgia, "Times New Roman", serif;
-  --f-ui: var(--font-be-vietnam-pro), "Segoe UI", system-ui, sans-serif;
+  /* Đổi 2026-08-23: cả hai vai về IBM Plex Sans (mặt chữ của Reddit) — xem chú thích
+     đầy đủ ở `app/layout.tsx`. `--f-display` GIỮ LẠI như một vai riêng dù nay trùng họ
+     với `--f-ui`: nó đánh dấu "đây là chỗ tiêu đề", và ngày nào muốn tách hai mặt chữ
+     ra lần nữa thì chỉ phải sửa đúng một dòng thay vì đi tìm khắp 30 file CSS Module. */
+  --f-display: var(--font-plex-sans), "Segoe UI", system-ui, sans-serif;
+  --f-ui: var(--font-plex-sans), "Segoe UI", system-ui, sans-serif;
   --f-mono: var(--font-ibm-plex-mono), ui-monospace, "Cascadia Mono", Consolas, monospace;
 
   --rail: 34px;

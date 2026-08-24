@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Be_Vietnam_Pro, IBM_Plex_Mono, Newsreader } from "next/font/google";
+import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 
 import { ChanTrang } from "@/components/chan-trang";
 import { Chrome } from "@/components/chrome";
@@ -10,19 +10,30 @@ import { nguonScriptTheme } from "@/lib/theme";
 
 import "./globals.css";
 
-// Ba mặt chữ của PLAN 9.1, không hơn: Newsreader cho tiêu đề mạch, Be Vietnam Pro cho
-// UI, IBM Plex Mono cho MỌI timestamp + con số. `next/font` tự host file font (không gọi
-// Google lúc chạy) và tự sinh `font-display: swap` + preload.
-const newsreader = Newsreader({
-  subsets: ["latin", "vietnamese"],
-  weight: ["400", "600"],
-  variable: "--font-newsreader",
-});
-
-const beVietnamPro = Be_Vietnam_Pro({
+// Mặt chữ của PLAN 9.1 — **đổi 2026-08-23** theo yêu cầu "font như của Reddit".
+//
+// Trước: Newsreader (serif, tiêu đề mạch) + Be Vietnam Pro (UI) + IBM Plex Mono (số).
+// Nay: **IBM Plex Sans** gánh cả tiêu đề lẫn UI, IBM Plex Mono giữ nguyên.
+//
+// Vì sao Plex Sans: đó chính là mặt chữ Reddit dùng cho tiêu đề bài và thân bài, và nó
+// **cùng một họ** với IBM Plex Mono vốn đã có ở đây — nên số trong bảng và chữ quanh nó
+// khớp chiều cao chữ x, thứ mà một cặp font khác họ không bao giờ khớp.
+//
+// Cái mất, nói thẳng: tương phản serif/sans giữa "tiêu đề mạch" và "UI" biến mất. Đó là
+// một tín hiệu thị giác PLAN 9.1 cố ý dựng ("sổ nghiêm vs khán đài xuề xoà"), và từ nay
+// nó phải sống bằng **cỡ chữ + độ đậm + màu**, không còn bằng hình dáng chữ nữa.
+//
+// ⚠ **Ảnh OG vẫn dùng ba file .ttf cũ** (`lib/og.ts`) — satori cần file `.ttf` thật, mà
+// `next/font` chỉ sinh `.woff2`. Nợ có tên `OG-FONT-CHUA-DOI`: tiêu đề trên ảnh OG còn
+// là Newsreader trong khi trang là Plex Sans. Trả nó = thả `IBMPlexSans-SemiBold.ttf`
+// vào `assets/font/` rồi đổi `TEN_FILE_FONT`.
+//
+// `next/font` tự host file font (không gọi Google lúc chạy), tự sinh `font-display: swap`
+// và preload.
+const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin", "vietnamese"],
   weight: ["400", "500", "600", "700"],
-  variable: "--font-be-vietnam-pro",
+  variable: "--font-plex-sans",
 });
 
 const ibmPlexMono = IBM_Plex_Mono({
@@ -66,7 +77,7 @@ export default function RootLayout({
   return (
     <html
       lang="vi"
-      className={`${newsreader.variable} ${beVietnamPro.variable} ${ibmPlexMono.variable}`}
+      className={`${ibmPlexSans.variable} ${ibmPlexMono.variable}`}
     >
       <head>
         {/* **Phải nằm trong `<head>`, và phải là script THƯỜNG.**

@@ -1,0 +1,93 @@
+/* Nội dung xem trước trên thẻ feed — ảnh gallery hoặc trích đoạn chữ.
+ *
+ * Cả khối là một vùng bấm được, đúng như Reddit: người ta bấm vào chữ xem trước để mở
+ * bài, không chỉ bấm đúng dòng tiêu đề. `tabIndex={-1}` ở JSX là chủ đích — link này
+ * trỏ cùng chỗ với tiêu đề, nên để nó vào vòng `Tab` là bắt người dùng bàn phím đi qua
+ * hai lần cùng một đích trên MỖI thẻ.
+ */
+.khoi {
+  display: block;
+  margin: 0 0 6px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.khung_anh {
+  position: relative;
+  display: block;
+  margin-bottom: 6px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  /* Trần chiều cao, không phải tỉ lệ cố định: ảnh dọc (ảnh chụp màn hình điện thoại —
+     thứ người ta dán nhiều nhất ở đây) mà ép 16:9 thì bị cắt mất phần quan trọng nhất.
+     `object-fit: cover` chỉ vào việc khi ảnh vượt trần. */
+  max-height: 340px;
+}
+
+.anh {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 340px;
+  object-fit: cover;
+  object-position: top;
+  background: var(--surface-2, var(--surface));
+}
+
+/* "+N" cho phần gallery không hiện ra. Góc dưới-phải: góc trên-phải là chỗ mắt tìm nút
+   đóng, và trên thẻ feed thì không có nút đóng nào. */
+.them_anh {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.62);
+  color: #fff;
+  font-family: var(--f-mono);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.6;
+}
+
+.trich {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  /* Ba dòng khi chỉ có chữ. Thẻ feed là chỗ QUYẾT ĐỊNH CÓ MỞ HAY KHÔNG, không phải chỗ
+     đọc bài — bốn dòng trở lên là feed biến thành một cột văn bản liền mạch và mật độ
+     (PLAN 9.1) đi mất. */
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+/* Đã có ảnh thì chữ tụt xuống vai chú thích — một dòng. Hai khối cùng đòi chú ý là thẻ
+   không còn điểm nhìn nào. */
+.trich_mot_dong {
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+/* Kiểu xem GỌN (`ChonKieuXem`): bỏ hẳn ảnh, chữ còn một dòng. Người chọn "gọn" đang nói
+   họ muốn nhiều thẻ trên một màn hình — trả lại một dải ảnh 340px là làm ngược. */
+:global([data-kieu-xem="gon"]) .khung_anh {
+  display: none;
+}
+
+:global([data-kieu-xem="gon"]) .trich {
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+}
+
+@media (max-width: 640px) {
+  .khung_anh,
+  .anh {
+    max-height: 260px;
+  }
+}
