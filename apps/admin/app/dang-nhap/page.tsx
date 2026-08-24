@@ -97,21 +97,33 @@ export default function TrangDangNhap() {
   }
 
   return (
-    <main className="vo">
-      <h1>Đăng nhập quản trị</h1>
+    <main className="grid min-h-dvh place-items-center p-6">
+      <div className="w-full max-w-sm">
+        <div className="mb-6 flex items-center gap-2">
+          <span
+            className="grid size-9 place-items-center rounded-lg bg-nhan text-base
+              font-bold text-tren-nhan"
+            aria-hidden="true"
+          >
+            g
+          </span>
+          <span className="leading-tight">
+            <span className="block font-semibold">gikky.net</span>
+            <span className="mono block text-[11px] text-muc-mo">QUẢN TRỊ</span>
+          </span>
+        </div>
 
-      <p>
-        Đăng nhập bằng tài khoản gikky của bạn. Khu quản trị chỉ mở cho tài khoản{" "}
-        <code>is_staff</code>; tài khoản thường đăng nhập được nhưng sẽ bị từ chối ở cửa
-        quản trị. Vẫn còn đường cũ: <a href="/api/admin/django/">Django admin</a> — cùng một
-        session cookie.
-      </p>
+        <h1 className="mb-1 text-xl font-semibold">Đăng nhập</h1>
+        <p className="mb-5 text-sm text-muc-mo">
+          Khu quản trị chỉ mở cho tài khoản <code className="mono">is_staff</code>; tài
+          khoản thường đăng nhập được nhưng sẽ bị từ chối ở cửa quản trị.
+        </p>
 
-      <form className="the" onSubmit={gui}>
-        <p>
-          <label>
-            Email{" "}
+        <form className="the space-y-3 p-5" onSubmit={gui}>
+          <label className="block text-sm">
+            <span className="mb-1 block text-muc-mo">Email</span>
             <input
+              className="o-nhap"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -119,11 +131,10 @@ export default function TrangDangNhap() {
               autoComplete="username"
             />
           </label>
-        </p>
-        <p>
-          <label>
-            Mật khẩu{" "}
+          <label className="block text-sm">
+            <span className="mb-1 block text-muc-mo">Mật khẩu</span>
             <input
+              className="o-nhap"
               type="password"
               value={matKhau}
               onChange={(e) => setMatKhau(e.target.value)}
@@ -131,17 +142,35 @@ export default function TrangDangNhap() {
               autoComplete="current-password"
             />
           </label>
+          <button
+            type="submit"
+            className="nut nut-chinh w-full"
+            disabled={dangGui}
+            data-testid="nut-dang-nhap"
+          >
+            {dangGui ? "Đang gửi…" : "Đăng nhập"}
+          </button>
+        </form>
+
+        {ketQua !== null && (
+          <div
+            className="the mt-4 border-xau p-4 text-sm text-xau"
+            role="alert"
+            data-testid="loi-dang-nhap"
+          >
+            {ketQua}
+          </div>
+        )}
+
+        <p className="mono mt-5 flex justify-between text-xs text-muc-mo">
+          <Link href="/" className="hover:underline">
+            ← Về bảng điều khiển
+          </Link>
+          <a href="/api/admin/django/" className="hover:underline">
+            Django admin ↗
+          </a>
         </p>
-        <button type="submit" disabled={dangGui}>
-          Đăng nhập
-        </button>
-      </form>
-
-      {ketQua !== null && <div className="loi">{ketQua}</div>}
-
-      <p>
-        <Link href="/">← Về hàng đợi</Link>
-      </p>
+      </div>
     </main>
   );
 }

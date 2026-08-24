@@ -1,219 +1,179 @@
-/* Khu quản trị — PLAN 9.3: "tự build, **tối giản**".
+@import "tailwindcss";
+
+/* Khu quản trị — Tailwind v4, hệ token RIÊNG.
  *
- * Cố ý KHÔNG dùng hệ token của `apps/web/app/globals.css`. Hai lý do, và cái thứ hai mới
- * là lý do thật:
+ * ## Vì sao không dùng bảng màu của `apps/web`
  *
  * 1. PLAN 9.1 mô tả ngôn ngữ thị giác của **mặt tiền** ("mực và dấu", giấy lạnh, hoàng
- *    thổ đóng dấu). Khu quản trị không phải mặt tiền; nó là một bảng điều khiển và nó nên
- *    trông như một bảng điều khiển.
- * 2. Hoàng thổ `--stamp` và xanh/đỏ lãi-lỗ có LUẬT riêng trong PLAN 9.1, và hàng rào
- *    `apps/web/e2e/don-vi/mau-token.spec.ts` chỉ quét `apps/web`. Chép bảng màu sang đây
- *    là dựng một bản sao không ai canh — rồi một nút "xoá" tô đỏ `#B33A2B` ở khu quản trị
- *    sẽ không làm gì đỏ cả, trong khi đúng mã ấy ở `apps/web` thì bị chặn. Dùng màu hệ
- *    thống trung tính là cách giữ cho không có bản sao nào để trôi.
+ *    thổ đóng dấu). Khu quản trị không phải mặt tiền; nó là một bảng điều khiển và nó
+ *    nên trông như một bảng điều khiển.
+ * 2. Hoàng thổ và xanh/đỏ lãi-lỗ có LUẬT riêng trong PLAN 9.1, và hàng rào
+ *    `apps/web/e2e/don-vi/mau-token.spec.ts` **chỉ quét `apps/web`**. Chép bảng màu sang
+ *    đây là dựng một bản sao không ai canh — rồi một nút "xoá" tô `#B33A2B` ở khu quản
+ *    trị sẽ không làm gì đỏ cả, trong khi đúng mã ấy ở `apps/web` bị chặn.
+ *
+ * `--color-tot` / `--color-xau` dưới đây **KHÔNG phải màu lãi/lỗ**. Chúng là màu trạng
+ * thái của bảng điều khiển (thành công / hỏng), và mã hex của chúng cố ý khác hẳn hai mã
+ * mà PLAN 9.1 giao riêng cho con số lãi lỗ.
+ *
+ * ## Cửa mà Tailwind mở ra, và hàng rào đóng nó lại
+ *
+ * `bg-[#B33A2B]`, `text-[rgb(...)]`, `style={{ color: "#..." }}` — giá trị màu ứng biến
+ * là cách nhanh nhất để một mã màu lọt vào lúc nửa đêm, và nó không rơi vào bất kỳ hàng
+ * rào nào có sẵn. `apps/web/e2e/don-vi/mau-quan-tri.spec.ts` quét cả `apps/admin/` và
+ * cấm chúng: **nơi duy nhất được viết mã màu là khối `@theme` ngay dưới đây.**
  */
 
-:root {
-  color-scheme: light dark;
-  --nen: #ffffff;
-  --nen-mo: #f4f5f7;
-  --muc: #16181d;
-  --muc-mo: #5b6270;
-  --vien: #d8dbe2;
-  --nhan: #2f4bd8;
-  --canh-bao: #8a4b00;
+@theme {
+  --color-nen: #ffffff;
+  --color-nen-trang: #f3f5f9;
+  --color-nen-mo: #eef1f6;
+  --color-muc: #17202e;
+  /* Đủ đậm để đạt AA trên CẢ `--color-nen-trang` lẫn `--color-nen-mo`, không chỉ trên
+     trắng tinh: chữ mờ hầu như luôn nằm trên một trong hai nền xám ấy, nên đo trên
+     `#ffffff` là đo một ca không tồn tại (bản trước — `#64748b` — được 4,76 trên trắng
+     nhưng chỉ 4,36 trên nền thật). */
+  --color-muc-mo: #5a6678;
+  --color-vien: #e2e7ef;
+  /* Đậm hơn một nấc so với xanh mặc định của template: mục menu ĐANG MỞ vẽ chữ màu này
+     trên nền `--color-nhan-mo`, và cặp ấy mới là cặp chặt nhất — không phải chữ xanh trên
+     nền trắng. Bản #2f6df6 được 5,8 trên trắng nhưng chỉ 3,9 trên nền nhấn. */
+  --color-nhan: #1f5ce0;
+  --color-nhan-mo: #e7effe;
+  --color-tot: #0a7d5e;
+  --color-xau: #cc3333;
+  --color-chu-y: #96560a;
+
+  /* Chữ đặt TRÊN nền `--color-nhan` / `--color-xau` (nút chính, badge, ô logo).
+   *
+   * Phải là token riêng chứ không phải `text-white` cứng: ở theme tối, hai màu kia là
+   * pastel sáng, nên chữ trắng trên chúng chỉ đạt 2,4–2,6:1 — dưới AA khá xa, và đó
+   * đúng là ba chỗ phép đo bắt được ở lượt này. Một cặp token thì phép đảo màu đi theo
+   * theme mà không chỗ dùng nào phải biết. */
+  --color-tren-nhan: #ffffff;
+  --color-tren-xau: #ffffff;
+
+  /* Bốn màu chuỗi của biểu đồ. Số lượng là một hợp đồng: `components/bieu-do/*` lặp
+     theo chỉ số, nên bớt một màu là chuỗi thứ tư vẽ ra `undefined`. */
+  --color-chuoi-1: #2f6df6;
+  --color-chuoi-2: #7c5cf0;
+  --color-chuoi-3: #10a5a5;
+  --color-chuoi-4: #ef9d2a;
+
+  --font-mono:
+    ui-monospace, "Cascadia Mono", Consolas, "Liberation Mono", monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --nen: #14161a;
-    --nen-mo: #1c1f25;
-    --muc: #e7eaf0;
-    --muc-mo: #a0a7b4;
-    --vien: #2e333c;
-    --nhan: #93a4ff;
-    --canh-bao: #d9a24a;
+/* Theme TỐI. Script inline trong `app/layout.tsx` giải "theo hệ thống" thành một giá trị
+ * cụ thể rồi mới ghi `data-theme`, nên CSS **chỉ phải biết hai trạng thái** — không có
+ * nhánh `prefers-color-scheme` ở đây, tức không có hai nhánh để trôi khỏi nhau. */
+[data-theme="toi"] {
+  --color-nen: #171b24;
+  --color-nen-trang: #0f1319;
+  --color-nen-mo: #1f2632;
+  --color-muc: #e7eaf0;
+  --color-muc-mo: #94a0b4;
+  --color-vien: #2b3342;
+  --color-nhan: #7ba4ff;
+  --color-nhan-mo: #1c2740;
+  --color-tot: #34c99b;
+  --color-xau: #f07f7f;
+  --color-chu-y: #e0a94a;
+  --color-tren-nhan: #12161f;
+  --color-tren-xau: #12161f;
+
+  --color-chuoi-1: #6f9bff;
+  --color-chuoi-2: #a58bff;
+  --color-chuoi-3: #35c2c2;
+  --color-chuoi-4: #f2b950;
+}
+
+/* Biến thể `toi:` cho những chỗ cần khác nhau về CẤU TRÚC chứ không chỉ về màu (độ đậm
+ * của bóng đổ, chẳng hạn). Phần lớn giao diện không cần nó — đổi token là đủ. */
+@custom-variant toi (&:where([data-theme="toi"], [data-theme="toi"] *));
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+
+  html[data-theme="toi"] {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--color-nen-trang);
+    color: var(--color-muc);
+    font-family:
+      system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Vòng focus phải thấy được ở CẢ HAI theme — `outline-color` đi theo token nên nó
+     tự đúng khi đổi theme, không phải hai luật. */
+  :focus-visible {
+    outline: 2px solid var(--color-nhan);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Tôn trọng người tắt hiệu ứng. Sidebar trượt và skeleton nhấp nháy là hai chỗ duy
+     nhất có animation, và cả hai đều bỏ được mà không mất chức năng nào. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
-* {
-  box-sizing: border-box;
-}
+@layer components {
+  /* `.mono` giữ lại từ hệ CSS cũ, có chủ đích: nó là một QUY ƯỚC ("timestamp và con số
+     dùng font mono, `tabular-nums`"), không phải một chùm utility tiện tay. Số trong
+     bảng mà không `tabular-nums` thì các cột số nhảy lung tung khi giá trị đổi. */
+  .mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
 
-body {
-  margin: 0;
-  background: var(--nen);
-  color: var(--muc);
-  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
-}
+  .the {
+    @apply rounded-xl border border-vien bg-nen shadow-[0_1px_2px_rgb(0_0_0_/_0.04)];
+  }
 
-a {
-  color: var(--nhan);
-}
+  /* `min-h-9` ở desktop, **`min-h-11` (44px) dưới 768px**: mod xử lý báo cáo trên điện
+     thoại (đó là lý do mọi bảng ở đây cuộn ngang được), và một nút cao 31px là một nút
+     bấm trượt. Đặt ở `.nut` chứ không rải từng chỗ — nút nào cũng đi qua class này, kể
+     cả `<select>` của công tắc theme. */
+  .nut {
+    @apply inline-flex min-h-9 cursor-pointer items-center justify-center gap-1.5
+      rounded-lg border border-vien bg-nen px-3 py-1.5 text-sm font-medium text-muc
+      transition-colors hover:bg-nen-mo disabled:cursor-progress disabled:opacity-50
+      max-md:min-h-11;
+  }
 
-.vo {
-  max-width: 68rem;
-  margin: 0 auto;
-  padding: 1rem;
-}
+  /* `hover:bg-nhan` KHÔNG thừa. `.nut` khai `hover:bg-nen-mo`, và `.nut:hover` (0,2,0)
+     đè `.nut-chinh` (0,1,0) — nên nút chính mất sạch màu nền khi rê chuột và chuyển
+     thành xám gần trắng. Lỗi chỉ thấy được lúc hover, tức không bao giờ thấy trong ảnh
+     chụp hay trong lần đọc code. Đặt lại nền ở `.nut-chinh:hover` (cùng 0,2,0, khai
+     SAU) là chỗ duy nhất thắng lại mà không phải dùng `!important`. */
+  .nut-chinh {
+    @apply border-transparent bg-nhan text-tren-nhan hover:bg-nhan hover:opacity-90;
+  }
 
-.dieu-huong {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  align-items: baseline;
-  border-bottom: 1px solid var(--vien);
-  padding: 0.75rem 1rem;
-}
+  .nut-nho {
+    @apply px-2 py-1 text-xs;
+  }
 
-/* `margin-right: auto` ở đây đẩy MỌI thứ sau nó (link · ô tra cứu · tên mod) sang phải,
-   và nó phải là `auto` DUY NHẤT trên hàng: hai `auto` cùng hàng thì flexbox CHIA ĐÔI
-   khoảng trống và cả hai cụm trôi ra giữa. Cái bẫy này đã gặp một lần thật ở
-   `apps/web/components/chrome.tsx` — đừng thêm `margin-left: auto` cho `.tra-cuu`. */
-.dieu-huong strong {
-  margin-right: auto;
-}
+  .o-nhap {
+    @apply min-h-9 w-full rounded-lg border border-vien bg-nen px-3 py-1.5 text-sm
+      text-muc placeholder:text-muc-mo max-md:min-h-11;
+  }
 
-/* Bảng luôn cuộn được theo chiều ngang: hàng đợi báo cáo có 6 cột và khu này vẫn phải
-   dùng được trên màn hình hẹp — mod thường xử lý báo cáo trên điện thoại. */
-.cuon-ngang {
-  overflow-x: auto;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.92rem;
-}
-
-th,
-td {
-  border-bottom: 1px solid var(--vien);
-  padding: 0.5rem 0.6rem;
-  text-align: left;
-  vertical-align: top;
-}
-
-th {
-  font-weight: 600;
-  color: var(--muc-mo);
-  white-space: nowrap;
-}
-
-.mono {
-  font-family: ui-monospace, "Cascadia Mono", "Consolas", monospace;
-  font-variant-numeric: tabular-nums;
-  font-size: 0.85rem;
-  color: var(--muc-mo);
-}
-
-button {
-  font: inherit;
-  padding: 0.3rem 0.7rem;
-  border: 1px solid var(--vien);
-  border-radius: 4px;
-  background: var(--nen-mo);
-  color: var(--muc);
-  cursor: pointer;
-}
-
-button:disabled {
-  opacity: 0.5;
-  cursor: progress;
-}
-
-input,
-select,
-textarea {
-  font: inherit;
-  padding: 0.35rem 0.5rem;
-  border: 1px solid var(--vien);
-  border-radius: 4px;
-  background: var(--nen);
-  color: var(--muc);
-  max-width: 100%;
-}
-
-.hang-nut {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-}
-
-.the {
-  border: 1px solid var(--vien);
-  border-radius: 6px;
-  padding: 0.9rem;
-  margin-bottom: 1rem;
-  background: var(--nen-mo);
-}
-
-.loi {
-  border: 1px solid var(--canh-bao);
-  border-radius: 6px;
-  padding: 0.6rem 0.8rem;
-  margin: 0.8rem 0;
-  color: var(--canh-bao);
-}
-
-.nhan-an {
-  font-size: 0.78rem;
-  border: 1px solid var(--canh-bao);
-  color: var(--canh-bao);
-  border-radius: 3px;
-  padding: 0 0.3rem;
-  white-space: nowrap;
-}
-
-/* Nhãn của một KHỐI nút trong ô bảng — L04.
- *
- * Ô "Xử lý" nay có hai khối làm hai việc khác hẳn nhau ("thi hành" vs "ghi vào sổ"), và
- * bốn cái nút nằm cạnh nhau không có nhãn là đúng cách người ta bấm nhầm. Nhãn nhỏ, mực
- * nhạt: nó là chỉ dẫn, không phải tiêu đề. */
-.nhan-khoi {
-  margin: 0.5rem 0 0.25rem;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--muc-mo);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.nhan-khoi:first-child {
-  margin-top: 0;
-}
-
-.nhan-khoi .mono {
-  font-weight: 400;
-  text-transform: none;
-  letter-spacing: 0;
-}
-
-/* Ô tra cứu trên thanh điều hướng — L22. */
-.tra-cuu {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.8rem;
-  align-items: center;
-}
-
-.tra-cuu-form {
-  display: flex;
-  gap: 0.3rem;
-  align-items: center;
-}
-
-.tra-cuu-nhan {
-  font-size: 0.82rem;
-  color: var(--muc-mo);
-  font-family: ui-monospace, "Cascadia Mono", "Consolas", monospace;
-}
-
-.tra-cuu-form input {
-  padding: 0.25rem 0.4rem;
-}
-
-.tra-cuu-form button {
-  padding: 0.25rem 0.55rem;
-  font-size: 0.85rem;
+  .nhan-trang-thai {
+    @apply inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium
+      whitespace-nowrap;
+  }
 }

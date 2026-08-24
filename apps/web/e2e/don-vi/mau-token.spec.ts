@@ -61,6 +61,15 @@ const NOI_DUOC_DUNG = "components/con-so.module.css";
 /** Chính file này liệt kê mọi mã hex trong `HEX_TOKEN` — mã thật, không phải chú thích. */
 const TU_TRU = "e2e/don-vi/mau-token.spec.ts";
 
+/** File thứ HAI được phép mang tám mã ấy: hàng rào song song cho `apps/admin` (Phase 8).
+ *
+ * Nó liệt kê đúng tám mã để **cấm** chúng lọt sang khu quản trị — cùng lý do `TU_TRU`
+ * được miễn. Miễn trừ ghi tường minh từng tên file, không phải một pattern
+ * `e2e/don-vi/*.spec.ts`: một pattern là giấy phép mở cho mọi file đo sau này, và giấy
+ * phép mở là thứ luật này tồn tại để không có.
+ */
+const TU_TRU_QUAN_TRI = "e2e/don-vi/quan-tri-giao-dien.spec.ts";
+
 /** Danh sách "thứ mang tính đóng dấu" **ĐỌC THẲNG TỪ `PLAN.md` mục 9.1** — quyết định 4
  * của user, 2026-08-22: *"Danh sách này là NGUỒN của allowlist … hàng rào phải suy từ
  * đây, không được tự nới."*
@@ -230,8 +239,16 @@ export function bamMuc91(plan: string): string {
  * hành vi mà cả nhóm bài A14 sinh ra để chặn — và nó là hành vi của một con người, thứ
  * không hàng rào nào chặn được; cái hàng rào làm được là bắt người ấy phải cố ý.
  */
+//
+// **Đổi 2026-08-23** (lượt "font như Reddit"). Thứ tự đã làm, đúng như đoạn trên đòi:
+// 1. sửa PLAN 9.1 — **chỉ gạch đầu dòng CHỮ** (Newsreader + Be Vietnam Pro → IBM Plex
+//    Sans), cộng ba gạch con ghi cái mất và nợ `OG-FONT-CHUA-DOI`;
+// 2. đọc lại `STAMP_THEO_MUC` / `CHUA_TOI_PHASE` và đối chiếu `docMucDongDau` của bản
+//    CŨ với bản MỚI — ra **đúng 7 mục, giống nhau từng ký tự**: câu liệt kê "đóng dấu"
+//    không bị chạm, nên allowlist hoàng thổ không phải sửa dòng nào;
+// 3. RỒI mới dán băm mới vào đây.
 const BAM_MUC_91 =
-  "37f14191df03fab0ac8936eea3b565bf2f94c4dd12ccfd7a497cb4d6ee8e1241";
+  "633b0106a858ff71a7a17841dd9b5acb1b030bd9a6fef6f2766793cb4bd80e4c";
 
 const PLAN_THAT = readFileSync(resolve(GOC, "PLAN.md"), "utf8");
 const MUC_PLAN = docMucDongDau(PLAN_THAT);
@@ -306,6 +323,7 @@ test("bộ file quét được không rỗng (bài đo này tự chứng minh m�
   expect(ten).toContain(NOI_KHAI_TOKEN);
   expect(ten).toContain(NOI_DUOC_DUNG);
   expect(ten).toContain(TU_TRU);
+  expect(ten).toContain(TU_TRU_QUAN_TRI);
 });
 
 test("mã hex xanh/đỏ + hoàng thổ chỉ nằm ở chỗ khai token", () => {
@@ -313,6 +331,7 @@ test("mã hex xanh/đỏ + hoàng thổ chỉ nằm ở chỗ khai token", () =>
     (f) =>
       f.ten !== NOI_KHAI_TOKEN &&
       f.ten !== TU_TRU &&
+      f.ten !== TU_TRU_QUAN_TRI &&
       HEX_TOKEN.some((h) => f.sach.toUpperCase().includes(h)),
   );
   expect(pham.map((f) => f.ten)).toEqual([]);
@@ -335,6 +354,7 @@ test("var(--gain) / var(--loss) chỉ được dùng ở con-so.module.css — C
       f.ten !== NOI_KHAI_TOKEN &&
       f.ten !== NOI_DUOC_DUNG &&
       f.ten !== TU_TRU &&
+      f.ten !== TU_TRU_QUAN_TRI &&
       /var\(\s*--(gain|loss)\s*\)/.test(f.sach),
   );
   expect(pham.map((f) => f.ten)).toEqual([]);
@@ -394,7 +414,11 @@ const NEO = {
   het_bold: "chỉ số \"Được trích ×N\" trên hồ sơ**",
   ngoac: "*(ba cái sau chốt\n  2026-08-22)*",
   het_cau_nguon: "hàng rào phải suy từ đây, không được tự nới.",
-  gach_ke_tiep: "\n- Chữ: Newsreader",
+  // Neo là DÒNG ĐẦU của gạch đầu dòng kế tiếp trong 9.1. Bài đo chỉ cần nó **tồn tại và
+  // đứng đúng chỗ** để có chỗ chèn mục giả vào — nội dung của chính gạch ấy không phải
+  // thứ nhóm bài này khẳng định. Cập nhật 2026-08-23, khi gạch "Chữ" đổi mặt chữ sang
+  // IBM Plex Sans; các biến thể D3/V10 vẫn chèn y nguyên và vẫn phải ĐỎ.
+  gach_ke_tiep: "\n- Chữ **(đổi 2026-08-23",
   het_muc: "\n\n### 9.2",
 } as const;
 
@@ -658,6 +682,7 @@ test("var(--stamp) KHÔNG được viết thẳng trong .tsx (cùng điểm mù 
     (f) =>
       /\.tsx?$/.test(f.ten) &&
       f.ten !== TU_TRU &&
+      f.ten !== TU_TRU_QUAN_TRI &&
       /var\(\s*--stamp/.test(f.sach),
   );
   expect(pham.map((f) => f.ten)).toEqual([]);

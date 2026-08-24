@@ -2,9 +2,10 @@
 
 import { quanTriToi, type ModOut } from "@gikky/api-client/admin";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
-import { OTraCuu } from "./o-tra-cuu";
+import { Khung } from "./khung/khung";
 import {
   GOC_API,
   MA_CHUA_DANG_NHAP,
@@ -27,52 +28,74 @@ import {
  * Đây là **client component**, và đó là chủ đích chứ không phải tiện tay: khu quản trị
  * không có gì để SEO, không có gì cache được, và một server component đọc cookie của
  * viewer là đúng đường mà luật cấm `client` singleton dựng lên để chặn (CLAUDE.md).
+ *
+ * ## Từ Phase 8: gắn ở LAYOUT, không phải ở từng trang
+ *
+ * Trước đây mỗi trang tự bọc mình trong `<CongQuanTri>`, nên mỗi lần điều hướng là một
+ * lần gọi lại `/me` và một lần dựng lại cả khung. Nay `app/layout.tsx` bọc một lần: cổng
+ * và khung sống qua mọi lần chuyển trang phía client, và trạng thái của sidebar (gập /
+ * ngăn kéo) không bị mất mỗi lần bấm một mục menu.
+ *
+ * `/dang-nhap` là ngoại lệ có tên: nó phải render được khi **chưa** có phiên nào, nên nó
+ * đi vòng qua cổng. Danh sách ngoại lệ để ở đây, tường minh — một `if` trong cổng thì đọc
+ * được; một cây layout lồng nhau cho đúng một trang thì không.
  */
+const NGOAI_CONG = ["/dang-nhap"];
+
 export function CongQuanTri({ children }: { children: React.ReactNode }) {
+  const duong_dan = usePathname();
   const [mod, setMod] = useState<ModOut | null>(null);
   const [loi, setLoi] = useState<{ ma: string | null; mo_ta: string } | null>(null);
+  const [dang_hoi, datDangHoi] = useState(true);
+
+  const ngoai_cong = NGOAI_CONG.includes(duong_dan);
 
   const hoi = useCallback(async () => {
     setLoi(null);
-    const { data, error } = await quanTriToi({ baseUrl: GOC_API, cache: "no-store" });
-    if (error !== undefined) {
+    datDangHoi(true);
+    // `try/finally` là bắt buộc, không phải phòng thủ thừa. Client sinh từ OpenAPI trả
+    // `{data, error}` cho mọi lỗi CÓ HTTP — nhưng nó **ném** khi fetch chết trước khi có
+    // HTTP: Django chưa chạy, sai cổng, hoặc bundle hỏng. Bản đầu `await` trần, nên một
+    // lần ném là `datDangHoi(false)` không bao giờ chạy và cả khu quản trị **kẹt vĩnh
+    // viễn ở "Đang kiểm tra phiên…"** — màn hình nói rằng nó đang làm việc gì đó, trong
+    // khi nó đã chết. Đúng loài hỏng tệ nhất: không lỗi, không nút, không lối ra.
+    try {
+      const { data, error } = await quanTriToi({ baseUrl: GOC_API, cache: "no-store" });
+      if (error !== undefined) {
+        setMod(null);
+        setLoi({ ma: maLoi(error), mo_ta: moTaLoi(error) });
+        return;
+      }
+      setMod(data);
+    } catch (e) {
       setMod(null);
-      setLoi({ ma: maLoi(error), mo_ta: moTaLoi(error) });
-      return;
+      setLoi({ ma: null, mo_ta: moTaLoi(e) });
+    } finally {
+      datDangHoi(false);
     }
-    setMod(data);
   }, []);
 
   useEffect(() => {
+    if (ngoai_cong) return;
     void hoi();
-  }, [hoi]);
+  }, [hoi, ngoai_cong]);
+
+  if (ngoai_cong) return <>{children}</>;
 
   if (mod !== null) {
-    return (
-      <>
-        <nav className="dieu-huong">
-          <strong>gikky · quản trị</strong>
-          <Link href="/">Hàng đợi</Link>
-          <Link href="/subs">Chuyên mục</Link>
-          <Link href="/nhat-ky">Nhật ký</Link>
-          {/* Tra cứu mạch/user — PLAN 9.3 mục 2 (L22). Trên THANH ĐIỀU HƯỚNG chứ không
-              trên một trang riêng: nó là lối vào, và một lối vào nằm sau một cú bấm là
-              lối vào mod sẽ thay bằng gõ URL tay. */}
-          <OTraCuu />
-          <span className="mono">
-            {mod.display_name || mod.username}
-            {mod.is_superuser ? " · superuser" : ""}
-          </span>
-        </nav>
-        <main className="vo">{children}</main>
-      </>
-    );
+    return <Khung mod={mod}>{children}</Khung>;
   }
 
   return (
-    <main className="vo">
-      <h1>Khu quản trị gikky.net</h1>
-      {loi === null ? <p>Đang kiểm tra phiên…</p> : <ManChan loi={loi} thuLai={hoi} />}
+    <main className="mx-auto grid min-h-dvh max-w-md place-items-center p-6">
+      <div className="w-full">
+        <h1 className="mb-4 text-xl font-semibold">Khu quản trị gikky.net</h1>
+        {dang_hoi && loi === null ? (
+          <p className="text-muc-mo">Đang kiểm tra phiên…</p>
+        ) : loi === null ? null : (
+          <ManChan loi={loi} thuLai={hoi} />
+        )}
+      </div>
     </main>
   );
 }
@@ -86,38 +109,42 @@ function ManChan({
 }) {
   if (loi.ma === MA_CHUA_DANG_NHAP) {
     return (
-      <div className="the">
-        <p>Chưa đăng nhập.</p>
-        <p>
-          <Link href="/dang-nhap">Tới trang đăng nhập</Link>
-        </p>
+      <div className="the p-5" data-testid="man-chua-dang-nhap">
+        <p className="mb-3">Chưa đăng nhập.</p>
+        <Link href="/dang-nhap" className="nut nut-chinh">
+          Tới trang đăng nhập
+        </Link>
       </div>
     );
   }
   if (loi.ma === MA_KHONG_DU_QUYEN) {
     return (
-      <div className="loi">
+      <div
+        className="the border-xau p-5 text-xau"
+        data-testid="man-khong-du-quyen"
+        role="alert"
+      >
         Tài khoản này không có quyền quản trị. Đăng nhập bằng một tài khoản{" "}
-        <code>is_staff</code>, hoặc cấp quyền ở Django admin.
+        <code className="mono">is_staff</code>, hoặc cấp quyền ở Django admin.
       </div>
     );
   }
   if (loi.ma === MA_SAI_HOST) {
     return (
-      <div className="loi">
+      <div className="the border-xau p-5 text-xau" role="alert">
         Khu quản trị chỉ mở qua host quản trị (PLAN 8.2). Host hiện tại không nằm trong{" "}
-        <code>ADMIN_HOSTS</code> của Django.
+        <code className="mono">ADMIN_HOSTS</code> của Django.
       </div>
     );
   }
   return (
-    <div className="loi">
-      Không hỏi được <code>/api/admin/me</code>: {loi.mo_ta}
-      <p>
-        <button type="button" onClick={thuLai}>
-          Thử lại
-        </button>
+    <div className="the border-xau p-5" role="alert">
+      <p className="mb-3 text-xau">
+        Không hỏi được <code className="mono">/api/admin/me</code>: {loi.mo_ta}
       </p>
+      <button type="button" className="nut" onClick={thuLai}>
+        Thử lại
+      </button>
     </div>
   );
 }

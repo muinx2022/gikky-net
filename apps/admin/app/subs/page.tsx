@@ -7,10 +7,19 @@ import {
   quanTriXoaSub,
   type SubQuanTriOut,
 } from "@gikky/api-client/admin";
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
-import { CongQuanTri } from "../../components/cong-quan-tri";
-import { gioVN } from "../../components/dung-mo-ta";
+import { HangNutForm, NganKeo } from "../../components/ngan-keo";
+import {
+  HangTieuDe,
+  HienLoi,
+  KhungBang,
+  Skeleton,
+  The,
+  TieuDeTrang,
+  gioVN,
+} from "../../components/ui";
 import { GOC_API, headerGhi, moTaLoi } from "../../lib/api";
 
 /** CRUD chuyên mục — PLAN 9.3 mục 3.
@@ -21,31 +30,51 @@ import { GOC_API, headerGhi, moTaLoi } from "../../lib/api";
  * `slug` **không sửa được**: nó nằm trong URL công khai `/s/<slug>` và trong `sitemap.ts`,
  * nên đổi nó phải kèm redirect 301 — một kế hoạch, không phải một ô trong form. Vì thế ô
  * slug chỉ có ở form TẠO.
+ *
+ * Không phân trang: số chuyên mục của một diễn đàn đếm trên đầu ngón tay, và một nút
+ * "Tải thêm" cho bốn dòng là nhiễu. Nếu ngày nào đó nó lên tới hàng trăm thì
+ * `api/quan_tri_sub.py` phải đổi trước (nay nó trả về cả danh sách, không cursor).
  */
 export default function TrangSub() {
-  return (
-    <CongQuanTri>
-      <BangSub />
-    </CongQuanTri>
-  );
-}
+  const [subs, datSubs] = useState<SubQuanTriOut[] | null>(null);
+  const [loi, datLoi] = useState<string | null>(null);
+  const [dang_chay, datDangChay] = useState(false);
+  /** `null` = ngăn kéo đóng · `""` = đang TẠO MỚI · `"<slug>"` = đang SỬA sub đó.
+   *
+   * Một biến ba trạng thái thay vì hai cờ (`mo_them` + `dang_sua`): hai cờ cho phép một
+   * tổ hợp vô nghĩa ("vừa tạo vừa sửa"), và tổ hợp ấy sẽ xảy ra đúng lúc ai đó thêm
+   * đường mở thứ ba. */
+  const [dang_mo, datDangMo] = useState<string | null>(null);
+  const [slug, datSlug] = useState("");
+  const [ten, datTen] = useState("");
+  const [mo_ta, datMoTa] = useState("");
 
-function BangSub() {
-  const [subs, setSubs] = useState<SubQuanTriOut[] | null>(null);
-  const [loi, setLoi] = useState<string | null>(null);
-  const [dangChay, setDangChay] = useState(false);
-  const [slug, setSlug] = useState("");
-  const [ten, setTen] = useState("");
-  const [moTa, setMoTa] = useState("");
+  const dong = useCallback(() => datDangMo(null), []);
+
+  const moTao = () => {
+    datSlug("");
+    datTen("");
+    datMoTa("");
+    datDangMo("");
+  };
+
+  const moSua = (s: SubQuanTriOut) => {
+    datSlug(s.slug);
+    datTen(s.ten);
+    datMoTa(s.mo_ta);
+    datDangMo(s.slug);
+  };
+
+  const dang_sua = dang_mo !== null && dang_mo !== "";
 
   const nap = useCallback(async () => {
-    setLoi(null);
+    datLoi(null);
     const { data, error } = await quanTriLietKeSub({
       baseUrl: GOC_API,
       cache: "no-store",
     });
-    if (error !== undefined) setLoi(moTaLoi(error));
-    else setSubs(data);
+    if (error !== undefined) datLoi(moTaLoi(error));
+    else datSubs(data);
   }, []);
 
   useEffect(() => {
@@ -54,14 +83,14 @@ function BangSub() {
 
   const chay = useCallback(
     async (viec: () => Promise<{ error?: unknown }>) => {
-      setDangChay(true);
-      setLoi(null);
+      datDangChay(true);
+      datLoi(null);
       try {
         const { error } = await viec();
-        if (error !== undefined) setLoi(moTaLoi(error));
+        if (error !== undefined) datLoi(moTaLoi(error));
         else await nap();
       } finally {
-        setDangChay(false);
+        datDangChay(false);
       }
     },
     [nap],
@@ -69,144 +98,167 @@ function BangSub() {
 
   return (
     <>
-      <h1>Chuyên mục</h1>
-      {loi !== null && <div className="loi">{loi}</div>}
-      {subs === null && <p>Đang tải…</p>}
+      <TieuDeTrang
+        hanh_dong={
+          <button
+            type="button"
+            className="nut nut-chinh"
+            onClick={moTao}
+            data-testid="nut-mo-them-sub"
+          >
+            Thêm chuyên mục
+          </button>
+        }
+      />
+      <HienLoi loi={loi} />
 
-      {subs !== null && (
-        <div className="cuon-ngang">
-          <table>
-            <thead>
-              <tr>
-                <th>slug</th>
-                <th>Tên</th>
-                <th>Mô tả</th>
-                <th>Mạch</th>
-                <th>Lập</th>
-                <th></th>
-              </tr>
-            </thead>
+      <The>
+        {subs === null ? (
+          <Skeleton dong={4} />
+        ) : (
+          <KhungBang>
+            <HangTieuDe cot={["slug", "Tên", "Mô tả", "Số bài", "Lập", ""]} />
             <tbody>
               {subs.map((s) => (
-                <DongSub key={s.slug} s={s} dangChay={dangChay} chay={chay} />
+                <DongSub
+                  key={s.slug}
+                  s={s}
+                  dang_chay={dang_chay}
+                  chay={chay}
+                  moSua={() => moSua(s)}
+                />
               ))}
             </tbody>
-          </table>
-        </div>
-      )}
+          </KhungBang>
+        )}
+      </The>
 
-      <h2>Thêm chuyên mục</h2>
-      <form
-        className="the"
-        onSubmit={(e) => {
-          e.preventDefault();
-          void chay(async () => {
-            const ket_qua = await quanTriTaoSub({
-              baseUrl: GOC_API,
-              headers: headerGhi(),
-              body: { slug, ten, mo_ta: moTa },
-            });
-            if (ket_qua.error === undefined) {
-              setSlug("");
-              setTen("");
-              setMoTa("");
-            }
-            return ket_qua;
-          });
-        }}
+      <NganKeo
+        mo={dang_mo !== null}
+        dong={dong}
+        tieu_de={dang_sua ? `Sửa s/${dang_mo}` : "Thêm chuyên mục"}
+        mo_ta={
+          dang_sua
+            ? "slug nằm trong URL công khai nên không sửa được — xem chú thích trong file."
+            : "slug phải ở dạng chuẩn sẵn; server KHÔNG tự sửa hộ."
+        }
       >
-        <p className="mono">
-          slug phải ở dạng chuẩn sẵn (chữ thường, số, gạch ngang) — server KHÔNG tự sửa hộ,
-          vì sửa hộ nghĩa là bạn nhận về một URL khác cái mình gõ mà không biết.
-        </p>
-        <p>
-          <label>
-            slug{" "}
+        <form
+          className="space-y-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void chay(async () => {
+              const ket_qua = dang_sua
+                ? await quanTriSuaSub({
+                    baseUrl: GOC_API,
+                    headers: headerGhi(),
+                    path: { slug: dang_mo },
+                    body: { ten, mo_ta },
+                  })
+                : await quanTriTaoSub({
+                    baseUrl: GOC_API,
+                    headers: headerGhi(),
+                    body: { slug, ten, mo_ta },
+                  });
+              // Chỉ đóng khi server ĐÃ nhận. Đóng ngay lúc bấm là nuốt mất 409 "slug
+              // trùng" — mod thấy ngăn kéo biến mất và tưởng đã tạo xong.
+              if (ket_qua.error === undefined) dong();
+              return ket_qua;
+            });
+          }}
+        >
+          <label className="block text-sm">
+            <span className="mb-1 block text-muc-mo">slug</span>
             <input
+              className="o-nhap mono"
               value={slug}
-              onChange={(e) => setSlug(e.target.value)}
+              onChange={(e) => datSlug(e.target.value)}
               required
               maxLength={40}
+              autoCapitalize="none"
+              spellCheck={false}
+              // `slug` **không sửa được**: nó nằm trong URL công khai `/s/<slug>` và
+              // trong `sitemap.ts`, nên đổi nó phải kèm redirect 301 — một kế hoạch,
+              // không phải một ô trong form.
+              disabled={dang_sua}
+              data-testid="sub-slug"
             />
-          </label>{" "}
-          <label>
-            Tên{" "}
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block text-muc-mo">Tên</span>
             <input
+              className="o-nhap"
               value={ten}
-              onChange={(e) => setTen(e.target.value)}
+              onChange={(e) => datTen(e.target.value)}
               required
               maxLength={80}
+              data-testid="sub-ten"
             />
           </label>
-        </p>
-        <p>
-          <label>
-            Mô tả{" "}
+          <label className="block text-sm">
+            <span className="mb-1 block text-muc-mo">Mô tả</span>
             <input
-              value={moTa}
-              onChange={(e) => setMoTa(e.target.value)}
-              size={60}
+              className="o-nhap"
+              value={mo_ta}
+              onChange={(e) => datMoTa(e.target.value)}
+              data-testid="sub-mo-ta"
             />
           </label>
-        </p>
-        <button type="submit" disabled={dangChay}>
-          Tạo
-        </button>
-      </form>
+
+          <HangNutForm
+            dong={dong}
+            nhan_chinh={dang_sua ? "Lưu" : "Tạo"}
+            dang_chay={dang_chay}
+          />
+        </form>
+      </NganKeo>
     </>
   );
 }
 
 function DongSub({
   s,
-  dangChay,
+  dang_chay,
   chay,
+  moSua,
 }: {
   s: SubQuanTriOut;
-  dangChay: boolean;
+  dang_chay: boolean;
   chay: (viec: () => Promise<{ error?: unknown }>) => Promise<void>;
+  moSua: () => void;
 }) {
-  const [ten, setTen] = useState(s.ten);
-  const [moTa, setMoTa] = useState(s.mo_ta);
-
   return (
-    <tr>
-      <td className="mono">{s.slug}</td>
-      <td>
-        <input value={ten} onChange={(e) => setTen(e.target.value)} maxLength={80} />
+    <tr className="border-b border-vien last:border-0 hover:bg-nen-mo/50">
+      <td className="mono px-3 py-2.5">
+        <Link href={`/machs?sub=${s.slug}`} className="text-nhan hover:underline">
+          s/{s.slug}
+        </Link>
       </td>
-      <td>
-        <input value={moTa} onChange={(e) => setMoTa(e.target.value)} size={40} />
+      <td className="px-3 py-2.5">{s.ten}</td>
+      <td className="max-w-md px-3 py-2.5 text-muc-mo">{s.mo_ta || "—"}</td>
+      <td className="mono px-3 py-2.5">{s.so_mach}</td>
+      <td className="mono px-3 py-2.5 text-xs whitespace-nowrap text-muc-mo">
+        {gioVN(s.created_at)}
       </td>
-      <td className="mono">{s.so_mach}</td>
-      <td className="mono">{gioVN(s.created_at)}</td>
-      <td>
-        <div className="hang-nut">
+      <td className="px-3 py-2.5">
+        <span className="flex justify-end gap-1.5">
           <button
             type="button"
-            disabled={dangChay || (ten === s.ten && moTa === s.mo_ta)}
-            onClick={() =>
-              chay(() =>
-                quanTriSuaSub({
-                  baseUrl: GOC_API,
-                  headers: headerGhi(),
-                  path: { slug: s.slug },
-                  body: { ten, mo_ta: moTa },
-                }),
-              )
-            }
+            className="nut nut-nho"
+            onClick={moSua}
+            data-testid={`nut-sua-${s.slug}`}
           >
-            Lưu
+            Sửa
           </button>
           {/* **Luật ba đường** (L30, vá 2026-08-23): `disabled` chặn cú bấm · `title`
-              cho người rê chuột · `aria-label` cho trình đọc màn hình. Đường thứ ba là
-              đường hay bị quên nhất, và nó là đường duy nhất của người không nhìn thấy:
-              `title` một mình thì phần lớn trình đọc màn hình bỏ qua, nên nút chỉ đọc
-              thành "Xoá, không dùng được" — đúng, và không nói được VÌ SAO.
-              Bản đầy đủ của luật này nằm ở `apps/web/components/cot-vote.tsx`. */}
+              cho người rê chuột · `aria-label` cho trình đọc màn hình. Đường thứ ba hay
+              bị quên nhất, và nó là đường duy nhất của người không nhìn thấy: `title`
+              một mình thì phần lớn trình đọc màn hình bỏ qua, nên nút chỉ đọc thành
+              "Xoá, không dùng được" — đúng, và không nói được VÌ SAO. */}
           <button
             type="button"
-            disabled={dangChay || s.so_mach > 0}
+            className="nut nut-nho"
+            disabled={dang_chay || s.so_mach > 0}
             title={s.so_mach > 0 ? "Sub còn mạch — chuyển hoặc xoá chúng trước." : ""}
             aria-label={
               s.so_mach > 0
@@ -225,7 +277,7 @@ function DongSub({
           >
             Xoá
           </button>
-        </div>
+        </span>
       </td>
     </tr>
   );

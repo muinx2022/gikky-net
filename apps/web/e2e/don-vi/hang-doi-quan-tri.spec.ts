@@ -7,6 +7,10 @@ import { boChuThich } from "./quet";
 const GOC = resolve(__dirname, "..", "..", "..", "..");
 const ADMIN = resolve(GOC, "apps/admin");
 
+/** Hàng đợi báo cáo **dời từ `app/page.tsx` sang `app/bao-cao/page.tsx` ở Phase 8** —
+ * `/` nay là bảng điều khiển. Chỉ đổi chỗ đọc; mọi khẳng định bên dưới giữ nguyên. */
+const TRANG_HANG_DOI = "app/bao-cao/page.tsx";
+
 function doc(duong_dan: string): string {
   return boChuThich(readFileSync(resolve(ADMIN, duong_dan), "utf8"));
 }
@@ -35,7 +39,7 @@ function doc(duong_dan: string): string {
  */
 
 test("L04 — hàng đợi gọi endpoint KHOÁ MẠCH và BAN thật", () => {
-  const hang_doi = doc("app/page.tsx");
+  const hang_doi = doc(TRANG_HANG_DOI);
   const form_ban = doc("components/form-ban.tsx");
   expect(hang_doi, "hàng phải có nút khoá mạch thật").toContain("quanTriDatKhoaMach");
   expect(hang_doi, "hàng phải có đường gỡ ban").toContain("quanTriGoBanNguoiDung");
@@ -53,7 +57,7 @@ test("L04 — hàng đợi gọi endpoint KHOÁ MẠCH và BAN thật", () => {
 
 test("L04 — nhãn nút đóng báo cáo KHÔNG còn khẳng định một hành động", () => {
   const chu = doc("components/dung-mo-ta.ts");
-  const hang_doi = doc("app/page.tsx");
+  const hang_doi = doc(TRANG_HANG_DOI);
   // Nhãn nút lấy từ `CHU_GHI_NHAN` ("Ghi: đã ban"), không từ `CHU_HANH_DONG` ("đã ban").
   expect(chu).toContain("CHU_GHI_NHAN");
   expect(hang_doi, "nút đóng phải dùng CHU_GHI_NHAN").toContain("CHU_GHI_NHAN[hd]");
@@ -70,7 +74,7 @@ test("L04 — nút bật/tắt đọc TRẠNG THÁI THẬT, không đoán", () =
   // Một nút bật/tắt không biết mình đang ở chiều nào thì nửa số lần bấm trả `da_doi=false`
   // và màn hình không đổi — tức một nút chết theo lịch. Hai trường này thêm vào
   // `NoiDungBiBaoCaoOut` cùng lượt.
-  const hang_doi = doc("app/page.tsx");
+  const hang_doi = doc(TRANG_HANG_DOI);
   expect(hang_doi).toContain("dich.mach_da_khoa");
   expect(hang_doi).toContain("tac_gia_bi_ban");
   expect(hang_doi, "nhãn nút khoá phải đổi theo trạng thái").toContain("Mở khoá mạch");
@@ -95,9 +99,12 @@ test("L33 — hạn ban tính ở SERVER: form gửi `so_ngay`, không gửi `de
 });
 
 test("L22 — có ô tra cứu mạch/user, và nó nằm trên thanh điều hướng", () => {
-  const cong = doc("components/cong-quan-tri.tsx");
+  // Phase 8 tách khung ra khỏi cổng: thanh điều hướng nay là `khung/thanh-tren.tsx`,
+  // `cong-quan-tri.tsx` chỉ còn phần cổng (401/403/sai-host). Khẳng định không đổi —
+  // ô tra cứu vẫn phải nằm trên thanh điều hướng, chỉ là thanh ấy đổi file.
+  const thanh = doc("components/khung/thanh-tren.tsx");
   const o = doc("components/o-tra-cuu.tsx");
-  expect(cong, "cổng quản trị phải gắn ô tra cứu").toContain("OTraCuu");
+  expect(thanh, "thanh điều hướng phải gắn ô tra cứu").toContain("OTraCuu");
   expect(o).toContain("/m/");
   expect(o).toContain("/u/");
 });
@@ -111,13 +118,14 @@ test("L30 — nút Xoá sub có đủ BA đường (disabled · title · aria-la
 
 test("bài đo trên có đọc trúng file thật (chống quét vào chỗ trống)", () => {
   for (const f of [
-    "app/page.tsx",
+    TRANG_HANG_DOI,
     "components/form-ban.tsx",
     "components/o-tra-cuu.tsx",
     "components/dung-mo-ta.ts",
     "app/subs/page.tsx",
     "app/u/[username]/page.tsx",
     "components/cong-quan-tri.tsx",
+    "components/khung/thanh-tren.tsx",
   ]) {
     expect(doc(f).length, `${f} rỗng?`).toBeGreaterThan(200);
   }

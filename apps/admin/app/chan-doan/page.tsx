@@ -30,16 +30,28 @@ async function docHealth(): Promise<string> {
 
 export default async function Home() {
   const health = await docHealth();
+  // KHÔNG bọc `<main>`: khung quản trị (`components/khung/khung.tsx`) đã có một cái, và
+  // hai `<main>` lồng nhau là HTML không hợp lệ — trình đọc màn hình mất mốc "nội dung
+  // chính".
   return (
-    <main>
-      <h1>gikky.net — admin</h1>
-      <p>
-        server component → Django <code>{API_ORIGIN}</code>:{" "}
-        <strong data-testid="health">{health}</strong>
+    <>
+      <h1 className="mb-1 text-2xl font-semibold">Chẩn đoán</h1>
+      <p className="mb-5 text-sm text-muc-mo">
+        Hai đường tới Django phải cùng xanh: server component gọi thẳng, và trình duyệt gọi
+        same-origin qua rewrite.
       </p>
-      <p>
-        trình duyệt → same-origin <code>/api/v1/health</code>: <HealthSameOrigin />
-      </p>
-    </main>
+      <div className="the space-y-3 p-4 text-sm">
+        <p>
+          server component → Django <code className="mono">{API_ORIGIN}</code>:{" "}
+          <strong className="mono" data-testid="health">
+            {health}
+          </strong>
+        </p>
+        <p>
+          trình duyệt → same-origin <code className="mono">/api/v1/health</code>:{" "}
+          <HealthSameOrigin />
+        </p>
+      </div>
+    </>
   );
 }

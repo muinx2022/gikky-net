@@ -15,7 +15,7 @@ export const CHU_LY_DO: Record<BaoCaoOut["ly_do"], string> = {
 };
 
 export const CHU_DICH: Record<NonNullable<BaoCaoOut["dich"]>["loai"], string> = {
-  mach: "Mạch",
+  mach: "Bài viết",
   moc: "Mốc",
   comment: "Bình luận",
 };

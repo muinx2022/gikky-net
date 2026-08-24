@@ -32,9 +32,9 @@ export function OTraCuu() {
   const [username, setUsername] = useState("");
 
   return (
-    <div className="tra-cuu" data-testid="o-tra-cuu">
+    <div className="flex items-center gap-2" data-testid="o-tra-cuu">
       <form
-        className="tra-cuu-form"
+        className="flex items-center gap-1"
         onSubmit={(e) => {
           e.preventDefault();
           const id = machId.trim();
@@ -42,29 +42,28 @@ export function OTraCuu() {
           router.push(`/m/${encodeURIComponent(id)}`);
         }}
       >
-        <label className="tra-cuu-nhan" htmlFor="tra-cuu-mach">
+        <label className="mono text-xs text-muc-mo" htmlFor="tra-cuu-mach">
           Mạch #
         </label>
         <input
           id="tra-cuu-mach"
-          className="mono"
+          className="o-nhap mono w-20 py-1 text-xs"
           // `inputMode` chứ không `type="number"`: `type=number` mọc hai cái mũi tên tăng
           // giảm vô nghĩa cho một id, và nó nuốt luôn thao tác dán một chuỗi có khoảng
           // trắng thừa. `inputMode` chỉ đổi bàn phím trên điện thoại.
           inputMode="numeric"
           value={machId}
           onChange={(e) => setMachId(e.target.value)}
-          size={8}
           placeholder="1031"
           data-testid="tra-cuu-mach"
         />
-        <button type="submit" data-testid="tra-cuu-mach-di">
+        <button type="submit" className="nut nut-nho" data-testid="tra-cuu-mach-di">
           Mở
         </button>
       </form>
 
       <form
-        className="tra-cuu-form"
+        className="flex items-center gap-1"
         onSubmit={(e) => {
           e.preventDefault();
           const u = username.trim().replace(/^u\//, "");
@@ -72,22 +71,21 @@ export function OTraCuu() {
           router.push(`/u/${encodeURIComponent(u)}`);
         }}
       >
-        <label className="tra-cuu-nhan" htmlFor="tra-cuu-user">
+        <label className="mono text-xs text-muc-mo" htmlFor="tra-cuu-user">
           u/
         </label>
         <input
           id="tra-cuu-user"
-          className="mono"
+          className="o-nhap mono w-28 py-1 text-xs"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          size={12}
           placeholder="tenNguoiDung"
           autoCapitalize="none"
           autoCorrect="off"
           spellCheck={false}
           data-testid="tra-cuu-user"
         />
-        <button type="submit" data-testid="tra-cuu-user-di">
+        <button type="submit" className="nut nut-nho" data-testid="tra-cuu-user-di">
           Mở
         </button>
       </form>

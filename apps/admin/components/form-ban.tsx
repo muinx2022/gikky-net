@@ -3,6 +3,7 @@
 import { quanTriBanNguoiDung } from "@gikky/api-client/admin";
 import { useState } from "react";
 
+import { HangNutForm } from "./ngan-keo";
 import { GOC_API, headerGhi } from "../lib/api";
 
 /** Form ban một tài khoản — **một bản duy nhất**, dùng ở cả trang hồ sơ lẫn hàng đợi.
@@ -35,22 +36,25 @@ export function FormBan({
   laStaff,
   dangChay,
   chay,
-  gonNhe = false,
+  dong,
 }: {
   username: string;
   /** Mod không ban được mod khác (409 ở API) — nói ra trước khi bấm, không sau. */
   laStaff: boolean;
   dangChay: boolean;
   chay: (viec: () => Promise<{ error?: unknown }>) => Promise<void>;
-  /** Bản gọn cho một ô trong bảng: nhãn ngắn hơn, không có khung `.the`. */
-  gonNhe?: boolean;
+  /** Đóng ngăn kéo. Form gọi nó ở nút **Huỷ**; đường LƯU thì do người gọi đóng, sau khi
+   *  `chay` xong — xem `apps/admin/app/users/page.tsx`. Đóng ngay lúc bấm "Ban" là đóng
+   *  trước khi biết server trả gì, và một 409 "không ban được mod khác" sẽ hiện ra sau
+   *  lưng một ngăn kéo vừa biến mất. */
+  dong: () => void;
 }) {
   const [lyDo, setLyDo] = useState("");
   const [soNgay, setSoNgay] = useState<number>(7);
 
   return (
     <form
-      className={gonNhe ? undefined : "the"}
+      className="space-y-3"
       data-testid="form-ban"
       onSubmit={(e) => {
         e.preventDefault();
@@ -70,44 +74,43 @@ export function FormBan({
         );
       }}
     >
-      <p>
-        <label>
-          {gonNhe ? "Lý do (người bị ban đọc được)" : "Lý do (người bị ban ĐỌC ĐƯỢC câu này — PLAN 5.10)"}
-          <br />
-          <input
-            value={lyDo}
-            onChange={(e) => setLyDo(e.target.value)}
-            required
-            maxLength={200}
-            size={gonNhe ? 28 : 50}
-            data-testid="ban-ly-do"
-          />
-        </label>
-      </p>
-      <p>
-        <label>
-          Thời hạn{" "}
-          <select
-            value={soNgay}
-            onChange={(e) => setSoNgay(Number(e.target.value))}
-            data-testid="ban-thoi-han"
-          >
-            {SO_NGAY.map((n) => (
-              <option key={n} value={n}>
-                {n === 0 ? "Vĩnh viễn" : `${n} ngày`}
-              </option>
-            ))}
-          </select>
-        </label>
-      </p>
-      <button type="submit" disabled={dangChay || laStaff} data-testid="ban-xac-nhan">
-        Ban tài khoản
-      </button>
+      <label className="block text-sm">
+        <span className="mb-1 block text-muc-mo">
+          Lý do — <strong className="font-medium">người bị ban đọc được câu này</strong>
+        </span>
+        <input
+          className="o-nhap"
+          value={lyDo}
+          onChange={(e) => setLyDo(e.target.value)}
+          required
+          maxLength={200}
+          data-testid="ban-ly-do"
+        />
+      </label>
+
+      <label className="block text-sm">
+        <span className="mb-1 block text-muc-mo">Thời hạn</span>
+        <select
+          className="nut w-full cursor-pointer"
+          value={soNgay}
+          onChange={(e) => setSoNgay(Number(e.target.value))}
+          data-testid="ban-thoi-han"
+        >
+          {SO_NGAY.map((n) => (
+            <option key={n} value={n}>
+              {n === 0 ? "Vĩnh viễn" : `${n} ngày`}
+            </option>
+          ))}
+        </select>
+      </label>
+
       {laStaff && (
-        <p className="mono">
+        <p className="mono text-xs text-chu-y">
           Không ban được một tài khoản quản trị — gỡ quyền staff ở Django admin trước.
         </p>
       )}
+
+      <HangNutForm dong={dong} nhan_chinh="Ban tài khoản" dang_chay={dangChay || laStaff} />
     </form>
   );
 }
