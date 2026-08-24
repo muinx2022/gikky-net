@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { Icon } from "./icon";
 
@@ -32,6 +32,26 @@ import { Icon } from "./icon";
  * dưới `prefers-reduced-motion`, và khi đó `transitionend` **không bao giờ bắn** — panel
  * sẽ kẹt lại trong DOM vĩnh viễn, đè lên trang, đúng với người đã tắt hiệu ứng. Một hẹn
  * giờ thì đúng ở cả hai chế độ.
+ *
+ * ## Mở: ÉP TÍNH LẠI STYLE, không đợi `requestAnimationFrame` *(vá 2026-08-24)*
+ *
+ * Transition CSS chỉ chạy khi giá trị tính toán đổi giữa **hai lượt tính style**. Panel
+ * vừa được chèn vào DOM thì trình duyệt chưa tính style cho nó lần nào — nên nếu lượt
+ * tính đầu tiên đã mang `translate-x-0` thì không có "giá trị trước" để chuyển từ đó,
+ * và panel **hiện thẳng ở vị trí cuối**. Không trượt, chỉ bụp.
+ *
+ * Bản trước hoãn một nhịp bằng `requestAnimationFrame`. Nhưng callback của `useEffect`
+ * chạy **sau commit và có thể TRƯỚC lúc vẽ**, nên `requestAnimationFrame` gọi từ đó
+ * thường rơi vào pha rAF của **chính khung hình đang dựng** — tức vẫn trước lượt vẽ đầu
+ * tiên của panel. Kết quả là một lỗi *thỉnh thoảng*: cùng một ngăn kéo, mở lần này thì
+ * trượt, lần khác thì bụp, tuỳ React commit nhanh chậm ra sao. Người dùng bắt được ở nút
+ * "Thêm chuyên mục" (2026-08-24).
+ *
+ * Đọc `offsetWidth` **ép trình duyệt tính style + layout ngay tại đó**, khi panel còn
+ * mang `translate-x-full`. Lượt tính ấy trở thành "giá trị trước"; đổi class sau đó là
+ * lượt thứ hai, và transition chạy. Tất định — không phụ thuộc khung hình nào cả, nên nó
+ * đúng cả ở tab nền (chỗ rAF bị **dừng hẳn**, không phải bị bóp tần suất — ca đó từng làm
+ * lớp phủ tối che cả trang mà không có hộp thoại nào).
  */
 
 /** Phải khớp `duration-200` của panel bên dưới. Lệch xuống là panel bị gỡ giữa chừng
@@ -60,26 +80,7 @@ export function NganKeo({
     if (mo) {
       focus_cu.current = document.activeElement as HTMLElement | null;
       datTrongDom(true);
-      // Một nhịp để trình duyệt kịp vẽ panel ở vị trí ngoài màn hình TRƯỚC khi đổi
-      // transform — không có nhịp này thì nó xuất hiện luôn ở chỗ cuối, không trượt.
-      //
-      // ⚠ **rAF một mình là không đủ, và nó hỏng KÍN.** Trình duyệt *dừng hẳn*
-      // `requestAnimationFrame` khi trang không vẽ khung hình nào — tab chạy nền, cửa sổ
-      // thu nhỏ, hoặc pane ẩn. Lúc đó callback không bao giờ chạy: `dang_hien` kẹt ở
-      // `false`, panel nằm nguyên ngoài màn hình, và người dùng thấy **một lớp phủ tối
-      // che cả trang mà không có hộp thoại nào** — bấm gì cũng không được ngoài `Esc`.
-      // (Bắt được đúng ca này lúc đo bằng trình duyệt thật, 2026-08-23.)
-      //
-      // `setTimeout` thì bị *giới hạn tần suất* ở tab nền chứ không bị dừng, nên nó vẫn
-      // tới. Chạy cả hai: tab đang hiện thì rAF thắng ở ~16ms và có hoạt cảnh; tab ẩn thì
-      // hẹn giờ mở panel không hoạt cảnh — đúng thứ cần, vì tab ẩn có hoạt cảnh cũng
-      // chẳng ai thấy.
-      const khung = requestAnimationFrame(() => datDangHien(true));
-      const du_phong = setTimeout(() => datDangHien(true), 50);
-      return () => {
-        cancelAnimationFrame(khung);
-        clearTimeout(du_phong);
-      };
+      return;
     }
     datDangHien(false);
     const id = setTimeout(() => {
@@ -88,6 +89,21 @@ export function NganKeo({
     }, THOI_GIAN_TRUOT);
     return () => clearTimeout(id);
   }, [mo]);
+
+  // Panel đã nằm trong DOM ở trạng thái ĐÓNG. Ép tính lại style ngay tại đây rồi mới bật
+  // sang mở — xem khối "Mở: ÉP TÍNH LẠI STYLE" trong docstring đầu file.
+  //
+  // `useLayoutEffect` chứ không `useEffect`: nó chạy **đồng bộ sau khi DOM đã đổi và
+  // trước khi trình duyệt vẽ**, nên phép đọc `offsetWidth` chắc chắn rơi vào lúc panel
+  // còn `translate-x-full`. Với `useEffect` thì React được phép hoãn, và hoãn đúng qua
+  // lượt vẽ đầu tiên là mất "giá trị trước" — đúng lỗi vừa vá.
+  useLayoutEffect(() => {
+    if (!trong_dom || !mo) return;
+    // Giá trị vứt đi; thứ cần là TÁC DỤNG PHỤ (buộc tính style + layout). Đừng "dọn" dòng
+    // này — nó trông như code chết và nó là toàn bộ bản vá.
+    void panel.current?.offsetWidth;
+    datDangHien(true);
+  }, [trong_dom, mo]);
 
   // Focus vào ô nhập đầu tiên khi mở: mod bấm "Ban…" là để gõ lý do, không phải để bấm
   // thêm một lần nữa vào ô.
