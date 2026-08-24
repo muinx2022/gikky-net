@@ -11,6 +11,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
 
+import { Icon } from "../../components/icon";
 import { useQuanTri } from "../../components/khung/ngu-canh";
 import {
   HangTieuDe,
@@ -308,12 +309,23 @@ function BangMach() {
                     {gioVN(m.created_at)}
                   </td>
                   <td className="px-3 py-2.5">
-                    <span className="flex flex-wrap justify-end gap-1.5">
+                    {/* Ba icon MỘT HÀNG (user chốt 2026-08-24). `flex-nowrap` + `shrink-0`
+                        là cặp không tách được: bỏ `flex-nowrap` thì cột hẹp lại đẩy nút
+                        thứ ba xuống dòng; bỏ `shrink-0` thì ba nút co lại chồng lên nhau.
+                        Nhãn chuyển sang icon để hàng đủ hẹp mà không phải nới cột.
+
+                        **Luật ba đường** (L30): icon một mình thì trình đọc màn hình
+                        không đọc được gì (icon `aria-hidden`), nên `aria-label` + `title`
+                        là bắt buộc, không phải trang trí — và cả hai đổi theo trạng thái,
+                        vì cùng một nút vừa "Ẩn" vừa "Gỡ ẩn". */}
+                    <span className="flex flex-nowrap items-center justify-end gap-1">
                       <button
                         type="button"
-                        className="nut nut-nho"
+                        className="nut nut-nho shrink-0 px-1.5"
                         disabled={dang_chay}
                         data-testid={`nut-an-${m.id}`}
+                        title={m.da_bi_an ? "Gỡ ẩn" : "Ẩn"}
+                        aria-label={m.da_bi_an ? `Gỡ ẩn: ${m.title}` : `Ẩn: ${m.title}`}
                         onClick={() =>
                           chay(() =>
                             quanTriDatAnMach({
@@ -325,13 +337,17 @@ function BangMach() {
                           )
                         }
                       >
-                        {m.da_bi_an ? "Gỡ ẩn" : "Ẩn"}
+                        <Icon ten={m.da_bi_an ? "hien" : "an"} className="size-4" />
                       </button>
                       <button
                         type="button"
-                        className="nut nut-nho"
+                        className="nut nut-nho shrink-0 px-1.5"
                         disabled={dang_chay}
                         data-testid={`nut-khoa-${m.id}`}
+                        title={m.da_khoa ? "Mở khoá" : "Khoá"}
+                        aria-label={
+                          m.da_khoa ? `Mở khoá: ${m.title}` : `Khoá: ${m.title}`
+                        }
                         onClick={() =>
                           chay(() =>
                             quanTriDatKhoaMach({
@@ -343,15 +359,20 @@ function BangMach() {
                           )
                         }
                       >
-                        {m.da_khoa ? "Mở khoá" : "Khoá"}
+                        <Icon
+                          ten={m.da_khoa ? "mo-khoa" : "khoa"}
+                          className="size-4"
+                        />
                       </button>
                       <a
                         href={m.duong_dan_cong_khai}
                         target="_blank"
                         rel="noreferrer"
-                        className="nut nut-nho"
+                        className="nut nut-nho shrink-0 px-1.5"
+                        title="Mở trang công khai"
+                        aria-label={`Mở trang công khai của: ${m.title}`}
                       >
-                        ↗
+                        <Icon ten="mo-ngoai" className="size-4" />
                       </a>
                     </span>
                   </td>
