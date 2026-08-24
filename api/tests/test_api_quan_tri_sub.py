@@ -31,6 +31,9 @@ def test_tao_sua_liet_ke_sub_di_tron_mot_vong(canh):
         "mo_ta": "",
         "created_at": r.json()["created_at"],
         "so_mach": 0,
+        # Sub mới không có mod nào. Phép so là dict ĐẦY ĐỦ chứ không phải vài khoá —
+        # thêm trường vào SubQuanTriOut mà quên chỗ này thì bài đo ĐỎ, đúng ý định.
+        "mods": [],
     }
 
     r = goi(mod, "patch", "/api/admin/subs/crypto", {"mo_ta": "Tiền mã hoá"})

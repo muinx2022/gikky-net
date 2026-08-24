@@ -6,7 +6,7 @@ lần sửa `Comment` đều phải cuộn qua `Notification`. Chia theo *cụm 
 theo kiểu ("tất cả FK", "tất cả enum"):
 
 - `nguoi_dung`  — `User`
-- `dien_dan`    — `Sub`, `Mach`
+- `dien_dan`    — `Sub`, `ModSub`, `Mach`
 - `moc`         — `Moc`, `MocRevision`, `MocAnh`
 - `binh_luan`   — `Comment`
 - `tuong_tac`   — `Vote`, `Reaction`, `Trich`, `Follow`
@@ -21,7 +21,7 @@ registry mới là thứ `makemigrations` dùng.
 """
 
 from core.models.binh_luan import Comment
-from core.models.dien_dan import Mach, Sub
+from core.models.dien_dan import Mach, ModSub, Sub
 from core.models.he_thong import AuditLog, Notification, Report
 from core.models.moc import Moc, MocAnh, MocRevision
 from core.models.nguoi_dung import User
@@ -38,6 +38,7 @@ __all__ = [
     "Notification",
     "Reaction",
     "Report",
+    "ModSub",
     "Sub",
     "Trich",
     "User",

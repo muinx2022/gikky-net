@@ -4,7 +4,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { QuanTriBanNguoiDungData, QuanTriBanNguoiDungErrors, QuanTriBanNguoiDungResponses, QuanTriDatAnBinhLuanData, QuanTriDatAnBinhLuanErrors, QuanTriDatAnBinhLuanResponses, QuanTriDatAnMachData, QuanTriDatAnMachErrors, QuanTriDatAnMachResponses, QuanTriDatAnMocData, QuanTriDatAnMocErrors, QuanTriDatAnMocResponses, QuanTriDatKhoaMachData, QuanTriDatKhoaMachErrors, QuanTriDatKhoaMachResponses, QuanTriDongBaoCaoData, QuanTriDongBaoCaoErrors, QuanTriDongBaoCaoResponses, QuanTriGoBanNguoiDungData, QuanTriGoBanNguoiDungErrors, QuanTriGoBanNguoiDungResponses, QuanTriLietKeBaoCaoData, QuanTriLietKeBaoCaoErrors, QuanTriLietKeBaoCaoResponses, QuanTriLietKeBinhLuanData, QuanTriLietKeBinhLuanErrors, QuanTriLietKeBinhLuanResponses, QuanTriLietKeMachData, QuanTriLietKeMachErrors, QuanTriLietKeMachResponses, QuanTriLietKeNguoiDungData, QuanTriLietKeNguoiDungErrors, QuanTriLietKeNguoiDungResponses, QuanTriLietKeNhatKyData, QuanTriLietKeNhatKyErrors, QuanTriLietKeNhatKyResponses, QuanTriLietKeSubData, QuanTriLietKeSubErrors, QuanTriLietKeSubResponses, QuanTriSuaSubData, QuanTriSuaSubErrors, QuanTriSuaSubResponses, QuanTriTaoSubData, QuanTriTaoSubErrors, QuanTriTaoSubResponses, QuanTriThongKeData, QuanTriThongKeErrors, QuanTriThongKeResponses, QuanTriToiData, QuanTriToiErrors, QuanTriToiResponses, QuanTriXemMachData, QuanTriXemMachErrors, QuanTriXemMachResponses, QuanTriXemNguoiDungData, QuanTriXemNguoiDungErrors, QuanTriXemNguoiDungResponses, QuanTriXoaSubData, QuanTriXoaSubErrors, QuanTriXoaSubResponses } from './types.gen';
+import type { QuanTriBanNguoiDungData, QuanTriBanNguoiDungErrors, QuanTriBanNguoiDungResponses, QuanTriDatAnBinhLuanData, QuanTriDatAnBinhLuanErrors, QuanTriDatAnBinhLuanResponses, QuanTriDatAnMachData, QuanTriDatAnMachErrors, QuanTriDatAnMachResponses, QuanTriDatAnMocData, QuanTriDatAnMocErrors, QuanTriDatAnMocResponses, QuanTriDatKhoaMachData, QuanTriDatKhoaMachErrors, QuanTriDatKhoaMachResponses, QuanTriDongBaoCaoData, QuanTriDongBaoCaoErrors, QuanTriDongBaoCaoResponses, QuanTriGanModSubData, QuanTriGanModSubErrors, QuanTriGanModSubResponses, QuanTriGoBanNguoiDungData, QuanTriGoBanNguoiDungErrors, QuanTriGoBanNguoiDungResponses, QuanTriGoModSubData, QuanTriGoModSubErrors, QuanTriGoModSubResponses, QuanTriLietKeBaoCaoData, QuanTriLietKeBaoCaoErrors, QuanTriLietKeBaoCaoResponses, QuanTriLietKeBinhLuanData, QuanTriLietKeBinhLuanErrors, QuanTriLietKeBinhLuanResponses, QuanTriLietKeMachData, QuanTriLietKeMachErrors, QuanTriLietKeMachResponses, QuanTriLietKeNguoiDungData, QuanTriLietKeNguoiDungErrors, QuanTriLietKeNguoiDungResponses, QuanTriLietKeNhatKyData, QuanTriLietKeNhatKyErrors, QuanTriLietKeNhatKyResponses, QuanTriLietKeSubData, QuanTriLietKeSubErrors, QuanTriLietKeSubResponses, QuanTriSuaSubData, QuanTriSuaSubErrors, QuanTriSuaSubResponses, QuanTriTaoSubData, QuanTriTaoSubErrors, QuanTriTaoSubResponses, QuanTriThongKeData, QuanTriThongKeErrors, QuanTriThongKeResponses, QuanTriToiData, QuanTriToiErrors, QuanTriToiResponses, QuanTriXemMachData, QuanTriXemMachErrors, QuanTriXemMachResponses, QuanTriXemNguoiDungData, QuanTriXemNguoiDungErrors, QuanTriXemNguoiDungResponses, QuanTriXoaSubData, QuanTriXoaSubErrors, QuanTriXoaSubResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -347,6 +347,58 @@ export const quanTriSuaSub = <ThrowOnError extends boolean = false>(options: Opt
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * Gan Mod Sub
+ *
+ * Phân công một tài khoản phụ trách chuyên mục. Trả về **cả hàng sub** đã cập nhật.
+ *
+ * Trả cả hàng thay vì `204`: bảng cần vẽ lại đúng ô vừa đổi, và `204` buộc frontend hoặc
+ * gọi thêm một lượt liệt kê, hoặc tự đoán trạng thái mới — đoán sai thì cột hiện một
+ * danh sách không khớp DB mà không ai biết.
+ *
+ * Ba lời từ chối, và không lời nào là "thành công im lặng":
+ *
+ * - **đã là mod ⇒ 409.** Idempotent 200 nghe hiền hơn nhưng nó nói dối: mod bấm gán một
+ * người đã có trong danh sách cần biết là *đã có*, không phải tưởng mình vừa thêm.
+ * - **đang bị ban ⇒ 409.** `ChiMod` từ chối tài khoản bị ban ở cổng, nên hàng này sẽ vô
+ * nghĩa ngay khi tạo; và một cái tên bị ban nằm trong cột "Mod" là thông tin sai trên
+ * màn hình.
+ * - **`is_active=False` ⇒ 409.** Đó là cờ `core/models/nguoi_dung.py` dùng cho "xoá tài
+ * khoản GDPR-lite". Phân công cho một tài khoản đã ẩn danh hoá là dựng lại một cái tên
+ * người ta vừa rời bỏ.
+ */
+export const quanTriGanModSub = <ThrowOnError extends boolean = false>(options: Options<QuanTriGanModSubData, ThrowOnError>): RequestResult<QuanTriGanModSubResponses, QuanTriGanModSubErrors, ThrowOnError> => (options.client ?? client).post<QuanTriGanModSubResponses, QuanTriGanModSubErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/admin/subs/{slug}/mods',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Go Mod Sub
+ *
+ * Gỡ phân công. **404 nếu người đó không phải mod của sub** — không phải 200 im lặng.
+ *
+ * 200 cho một lệnh gỡ không gỡ gì cả là cách nhanh nhất để một lỗi chính tả trong
+ * `username` trông y hệt một thao tác thành công.
+ */
+export const quanTriGoModSub = <ThrowOnError extends boolean = false>(options: Options<QuanTriGoModSubData, ThrowOnError>): RequestResult<QuanTriGoModSubResponses, QuanTriGoModSubErrors, ThrowOnError> => (options.client ?? client).delete<QuanTriGoModSubResponses, QuanTriGoModSubErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/admin/subs/{slug}/mods/{username}',
+    ...options
 });
 
 /**

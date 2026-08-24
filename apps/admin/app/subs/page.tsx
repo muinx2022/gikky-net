@@ -1,6 +1,8 @@
 "use client";
 
 import {
+  quanTriGanModSub,
+  quanTriGoModSub,
   quanTriLietKeSub,
   quanTriSuaSub,
   quanTriTaoSub,
@@ -11,10 +13,12 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import { HangNutForm, NganKeo } from "../../components/ngan-keo";
+import { OGoiYUser } from "../../components/o-goi-y-user";
 import {
   HangTieuDe,
   HienLoi,
   KhungBang,
+  NhanTrangThai,
   Skeleton,
   The,
   TieuDeTrang,
@@ -49,7 +53,13 @@ export default function TrangSub() {
   const [ten, datTen] = useState("");
   const [mo_ta, datMoTa] = useState("");
 
+  /** slug của sub đang mở ngăn kéo MOD, hoặc `null`. Tách hẳn khỏi `dang_mo` (ngăn kéo
+   * sửa/tạo): gộp hai ngăn kéo vào một biến là dựng sẵn tổ hợp "vừa sửa vừa gán mod", và
+   * tổ hợp ấy sẽ xảy ra đúng lúc ai đó thêm đường mở thứ ba. */
+  const [mo_mod, datMoMod] = useState<string | null>(null);
+
   const dong = useCallback(() => datDangMo(null), []);
+  const dongMod = useCallback(() => datMoMod(null), []);
 
   const moTao = () => {
     datSlug("");
@@ -117,7 +127,7 @@ export default function TrangSub() {
           <Skeleton dong={4} />
         ) : (
           <KhungBang>
-            <HangTieuDe cot={["slug", "Tên", "Mô tả", "Số bài", "Lập", ""]} />
+            <HangTieuDe cot={["slug", "Tên", "Mô tả", "Mod", "Số bài", "Lập", ""]} />
             <tbody>
               {subs.map((s) => (
                 <DongSub
@@ -126,6 +136,7 @@ export default function TrangSub() {
                   dang_chay={dang_chay}
                   chay={chay}
                   moSua={() => moSua(s)}
+                  moMod={() => datMoMod(s.slug)}
                 />
               ))}
             </tbody>
@@ -212,7 +223,105 @@ export default function TrangSub() {
           />
         </form>
       </NganKeo>
+
+      <NganKeo
+        mo={mo_mod !== null}
+        dong={dongMod}
+        tieu_de={mo_mod === null ? "" : `Mod của s/${mo_mod}`}
+        mo_ta="Phân công phụ trách. CHƯA cấp thêm quyền gì — xem plans/2026-08-24-mod-chuyen-muc.md."
+      >
+        <KhoiMod
+          sub={subs?.find((x) => x.slug === mo_mod) ?? null}
+          dang_chay={dang_chay}
+          chay={chay}
+        />
+      </NganKeo>
     </>
+  );
+}
+
+/** Thân ngăn kéo "Mod của s/…": danh sách hiện tại + ô gợi ý để thêm.
+ *
+ * ## Không có nút "Reassign"
+ *
+ * User chốt nhiều mod mỗi chuyên mục, nên "gán lại" = gỡ người cũ + gán người mới, hai
+ * thao tác rời. API cũng cố ý không có `PUT` thay cả danh sách: đó là cửa ghi đè mù —
+ * hai mod cùng mở bảng, người bấm sau xoá mất người bấm trước vừa thêm, không ai thấy gì.
+ *
+ * ## Đọc `sub` từ danh sách cha, không giữ bản sao riêng
+ *
+ * `chay` nạp lại toàn bộ danh sách sau mỗi lời gọi, nên chỗ này chỉ việc đọc lại hàng
+ * tương ứng. Giữ một bản sao ở đây là hai nguồn sự thật, và cái sai sẽ là cái đang hiện.
+ */
+function KhoiMod({
+  sub,
+  dang_chay,
+  chay,
+}: {
+  sub: SubQuanTriOut | null;
+  dang_chay: boolean;
+  chay: (viec: () => Promise<{ error?: unknown }>) => Promise<void>;
+}) {
+  if (sub === null) return null;
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <p className="mb-1.5 text-sm text-muc-mo">
+          Đang phụ trách ({sub.mods.length})
+        </p>
+        {sub.mods.length === 0 ? (
+          <p className="text-sm text-muc-mo" data-testid="mod-rong">
+            Chưa có ai.
+          </p>
+        ) : (
+          <ul className="divide-y divide-vien rounded-lg border border-vien">
+            {sub.mods.map((m) => (
+              <li
+                key={m.username}
+                className="flex items-center gap-2 px-3 py-2 text-sm"
+              >
+                <span className="mono">u/{m.username}</span>
+                <span className="truncate text-muc-mo">{m.display_name}</span>
+                <button
+                  type="button"
+                  className="nut nut-nho ml-auto shrink-0"
+                  disabled={dang_chay}
+                  onClick={() =>
+                    chay(() =>
+                      quanTriGoModSub({
+                        baseUrl: GOC_API,
+                        headers: headerGhi(),
+                        path: { slug: sub.slug, username: m.username },
+                      }),
+                    )
+                  }
+                  aria-label={`Gỡ u/${m.username} khỏi s/${sub.slug}`}
+                  data-testid={`nut-go-mod-${m.username}`}
+                >
+                  Gỡ
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <OGoiYUser
+        dang_chay={dang_chay}
+        bo_qua={sub.mods.map((m) => m.username)}
+        onChon={(username) =>
+          void chay(() =>
+            quanTriGanModSub({
+              baseUrl: GOC_API,
+              headers: headerGhi(),
+              path: { slug: sub.slug },
+              body: { username },
+            }),
+          )
+        }
+      />
+    </div>
   );
 }
 
@@ -221,11 +330,13 @@ function DongSub({
   dang_chay,
   chay,
   moSua,
+  moMod,
 }: {
   s: SubQuanTriOut;
   dang_chay: boolean;
   chay: (viec: () => Promise<{ error?: unknown }>) => Promise<void>;
   moSua: () => void;
+  moMod: () => void;
 }) {
   return (
     <tr className="border-b border-vien last:border-0 hover:bg-nen-mo/50">
@@ -236,12 +347,33 @@ function DongSub({
       </td>
       <td className="px-3 py-2.5">{s.ten}</td>
       <td className="max-w-md px-3 py-2.5 text-muc-mo">{s.mo_ta || "—"}</td>
+      <td className="px-3 py-2.5" data-testid={`o-mod-${s.slug}`}>
+        {s.mods.length === 0 ? (
+          <span className="text-muc-mo">—</span>
+        ) : (
+          <span className="flex flex-wrap gap-1">
+            {s.mods.map((m) => (
+              <NhanTrangThai key={m.username}>
+                u/{m.username}
+              </NhanTrangThai>
+            ))}
+          </span>
+        )}
+      </td>
       <td className="mono px-3 py-2.5">{s.so_mach}</td>
       <td className="mono px-3 py-2.5 text-xs whitespace-nowrap text-muc-mo">
         {gioVN(s.created_at)}
       </td>
       <td className="px-3 py-2.5">
         <span className="flex justify-end gap-1.5">
+          <button
+            type="button"
+            className="nut nut-nho"
+            onClick={moMod}
+            data-testid={`nut-mod-${s.slug}`}
+          >
+            Mod
+          </button>
           <button
             type="button"
             className="nut nut-nho"

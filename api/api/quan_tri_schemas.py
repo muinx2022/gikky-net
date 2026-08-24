@@ -231,19 +231,38 @@ class BanIn(Schema):
 
 
 class SubQuanTriOut(Schema):
-    """Một sub trong khu quản trị — kèm `so_mach`, con số quyết định có xoá được hay không."""
+    """Một sub trong khu quản trị — kèm `so_mach`, con số quyết định có xoá được hay không.
+
+    `mods` — người được phân công phụ trách chuyên mục (2026-08-24).
+
+    ⚠ **Danh sách này CHƯA cấp quyền gì cho ai.** Không endpoint kiểm duyệt nào hỏi tới
+    nó; `ChiMod` vẫn chỉ nhìn `is_staff`. Xem `core/models/dien_dan.py::ModSub` và
+    `plans/2026-08-24-mod-chuyen-muc.md` §0. Đọc nó thành "những người này đang moderate
+    được" là hiểu sai theo hướng nguy hiểm.
+    """
 
     slug: str
     ten: str
     mo_ta: str
     created_at: datetime
     so_mach: int
+    mods: list[NguoiDungTomTatOut]
 
 
 class TaoSubIn(Schema):
     slug: str
     ten: str
     mo_ta: str = ""
+
+
+class GanModSubIn(Schema):
+    """Body của `POST /admin/subs/{slug}/mods`.
+
+    Nhận `username` chứ không `id`: id của `User` không hiện ở đâu trên giao diện quản
+    trị, nên một body mang id là một body không ai dựng lại được bằng tay để thử.
+    """
+
+    username: str
 
 
 class SuaSubIn(Schema):

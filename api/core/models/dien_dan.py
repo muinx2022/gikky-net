@@ -51,6 +51,67 @@ class Sub(models.Model):
         return f"s/{self.slug}"
 
 
+class ModSub(models.Model):
+    """Ai phụ trách chuyên mục nào — bảng nối `Sub` × `User` (2026-08-24).
+
+    ## ⚠ Vai trò này CHƯA cho thêm quyền gì
+
+    User chốt nó **sẽ** có quyền thật ("các mod sẽ thay đổi được trạng thái của post"),
+    nên nó dựng như một vai trò chứ không như một cái nhãn. Nhưng **không endpoint nào
+    hỏi tới nó ở lượt này**, và đó là chủ đích: nối quyền nghĩa là nới `api/quan_tri.py::
+    ChiMod` — cái cổng đang đòi `is_staff` cho toàn khu quản trị — rồi thêm phép kiểm
+    theo-sub vào mọi đường kiểm duyệt. Đó là thay đổi bảo mật, có plan riêng
+    (`plans/2026-08-24-mod-chuyen-muc.md` §0).
+
+    Ai đọc bảng "Mod" mà tưởng những người trong đó đang moderate được là hiểu sai, và
+    hiểu sai theo hướng nguy hiểm.
+
+    ## Vì sao BẢNG NỐI chứ không một khoá ngoại trên `Sub`
+
+    User chốt "nhiều mod". Một `Sub.mod_id` nullable gọn hơn đúng tới hôm cần người thứ
+    hai, và hôm đó là một migration đổi cấu trúc kèm dữ liệu.
+
+    ## `assigned_by` là SET_NULL, không CASCADE
+
+    Mod A gán mod B rồi A rời đi: với CASCADE, hàng phân công của **B** — người vẫn đang
+    làm — bị xoá theo. Mất dữ liệu âm thầm, và mất đúng câu trả lời cho "ai cho người này
+    làm mod".
+
+    ## Khoá
+
+    Bảng lá, không sinh cạnh mới trong thứ tự `Comment/Moc → Mach → MocAnh`: `INSERT`
+    chỉ lấy `FOR KEY SHARE` trên hàng `Sub` và `User`, và không đường nào trong repo
+    khoá `ModSub` rồi mới xin hai bảng đó.
+    """
+
+    sub = models.ForeignKey(Sub, on_delete=models.CASCADE, related_name="mods")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="sub_dang_mod",
+    )
+    assigned_at = models.DateTimeField(default=timezone.now, editable=False)
+    assigned_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+
+    class Meta:
+        verbose_name = "mod chuyên mục"
+        verbose_name_plural = "mod chuyên mục"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["sub", "user"], name="modsub_duy_nhat_sub_user"
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"s/{self.sub.slug} ← u/{self.user.username}"
+
+
 class TrangThaiMach(models.TextChoices):
     """Trạng thái sổ của mạch. Khai ở tầng module, không lồng trong `Mach`, vì
     `Meta.indexes` bên dưới cần tham chiếu nó — thân `class Meta` không nhìn thấy được

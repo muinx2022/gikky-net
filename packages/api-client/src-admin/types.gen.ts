@@ -200,6 +200,21 @@ export type DongBaoCaoIn = {
 };
 
 /**
+ * GanModSubIn
+ *
+ * Body của `POST /admin/subs/{slug}/mods`.
+ *
+ * Nhận `username` chứ không `id`: id của `User` không hiện ở đâu trên giao diện quản
+ * trị, nên một body mang id là một body không ai dựng lại được bằng tay để thử.
+ */
+export type GanModSubIn = {
+    /**
+     * Username
+     */
+    username: string;
+};
+
+/**
  * KetQuaDoiTrangThaiOut
  *
  * Kết quả CHUNG của mọi hành động moderation bật/tắt một trạng thái.
@@ -625,6 +640,13 @@ export type SuaSubIn = {
  * SubQuanTriOut
  *
  * Một sub trong khu quản trị — kèm `so_mach`, con số quyết định có xoá được hay không.
+ *
+ * `mods` — người được phân công phụ trách chuyên mục (2026-08-24).
+ *
+ * ⚠ **Danh sách này CHƯA cấp quyền gì cho ai.** Không endpoint kiểm duyệt nào hỏi tới
+ * nó; `ChiMod` vẫn chỉ nhìn `is_staff`. Xem `core/models/dien_dan.py::ModSub` và
+ * `plans/2026-08-24-mod-chuyen-muc.md` §0. Đọc nó thành "những người này đang moderate
+ * được" là hiểu sai theo hướng nguy hiểm.
  */
 export type SubQuanTriOut = {
     /**
@@ -635,6 +657,10 @@ export type SubQuanTriOut = {
      * Mo Ta
      */
     mo_ta: string;
+    /**
+     * Mods
+     */
+    mods: Array<NguoiDungTomTatOut>;
     /**
      * Slug
      */
@@ -1480,6 +1506,102 @@ export type QuanTriSuaSubResponses = {
 };
 
 export type QuanTriSuaSubResponse = QuanTriSuaSubResponses[keyof QuanTriSuaSubResponses];
+
+export type QuanTriGanModSubData = {
+    body: GanModSubIn;
+    path: {
+        /**
+         * Slug
+         */
+        slug: string;
+    };
+    query?: never;
+    url: '/api/admin/subs/{slug}/mods';
+};
+
+export type QuanTriGanModSubErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+    /**
+     * Conflict
+     */
+    409: LoiOut;
+};
+
+export type QuanTriGanModSubError = QuanTriGanModSubErrors[keyof QuanTriGanModSubErrors];
+
+export type QuanTriGanModSubResponses = {
+    /**
+     * OK
+     */
+    200: SubQuanTriOut;
+};
+
+export type QuanTriGanModSubResponse = QuanTriGanModSubResponses[keyof QuanTriGanModSubResponses];
+
+export type QuanTriGoModSubData = {
+    body?: never;
+    path: {
+        /**
+         * Slug
+         */
+        slug: string;
+        /**
+         * Username
+         */
+        username: string;
+    };
+    query?: never;
+    url: '/api/admin/subs/{slug}/mods/{username}';
+};
+
+export type QuanTriGoModSubErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+    /**
+     * Conflict
+     */
+    409: LoiOut;
+};
+
+export type QuanTriGoModSubError = QuanTriGoModSubErrors[keyof QuanTriGoModSubErrors];
+
+export type QuanTriGoModSubResponses = {
+    /**
+     * OK
+     */
+    200: SubQuanTriOut;
+};
+
+export type QuanTriGoModSubResponse = QuanTriGoModSubResponses[keyof QuanTriGoModSubResponses];
 
 export type QuanTriThongKeData = {
     body?: never;

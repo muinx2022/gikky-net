@@ -158,6 +158,18 @@ def bang_endpoint(dl: dict) -> list[tuple[str, str, str, dict | None]]:
             {"ten": "Tên mới"},
         ),
         ("quan_tri_xoa_sub", "delete", f"/api/admin/subs/{dl['sub'].slug}", None),
+        (
+            "quan_tri_gan_mod_sub",
+            "post",
+            f"/api/admin/subs/{dl['sub'].slug}/mods",
+            {"username": dl["tac_gia"].username},
+        ),
+        (
+            "quan_tri_go_mod_sub",
+            "delete",
+            f"/api/admin/subs/{dl['sub'].slug}/mods/{dl['tac_gia'].username}",
+            None,
+        ),
         ("quan_tri_liet_ke_nhat_ky", "get", "/api/admin/nhat-ky", None),
         # Bảng điều khiển + ba bảng danh sách (Phase 8). Cả bốn đều CHỈ ĐỌC, nhưng cả bốn
         # đều trả nội dung **chưa bị che** (mạch ẩn, bình luận bị ẩn, bia mộ) — nên bài đo

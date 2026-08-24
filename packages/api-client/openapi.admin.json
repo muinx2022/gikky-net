@@ -282,6 +282,20 @@
         "title": "DongBaoCaoIn",
         "type": "object"
       },
+      "GanModSubIn": {
+        "description": "Body của `POST /admin/subs/{slug}/mods`.\n\nNhận `username` chứ không `id`: id của `User` không hiện ở đâu trên giao diện quản\ntrị, nên một body mang id là một body không ai dựng lại được bằng tay để thử.",
+        "properties": {
+          "username": {
+            "title": "Username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "username"
+        ],
+        "title": "GanModSubIn",
+        "type": "object"
+      },
       "KetQuaDoiTrangThaiOut": {
         "description": "Kết quả CHUNG của mọi hành động moderation bật/tắt một trạng thái.\n\nHai trường, và cả hai đều cần:\n\n- `da_doi` — hành động này có đổi gì không. Bấm \"ẩn\" lần thứ hai trả `false`, và đó\n  **không** phải lỗi: `core/ghi.py` cố ý không reset `hidden_at` (mất mốc thời gian\n  moderation thật) và không đẻ dòng `AuditLog` thứ hai. UI đọc trường này để không\n  báo \"đã ẩn xong\" cho một cú bấm chẳng làm gì;\n- `dang_bat` — trạng thái SAU khi gọi. Đây là thứ UI vẽ, và nó đúng ở cả hai nhánh\n  của `da_doi` — nên hai mod bấm cùng lúc vẫn thấy cùng một màn hình.",
         "properties": {
@@ -854,7 +868,7 @@
         "type": "object"
       },
       "SubQuanTriOut": {
-        "description": "Một sub trong khu quản trị — kèm `so_mach`, con số quyết định có xoá được hay không.",
+        "description": "Một sub trong khu quản trị — kèm `so_mach`, con số quyết định có xoá được hay không.\n\n`mods` — người được phân công phụ trách chuyên mục (2026-08-24).\n\n⚠ **Danh sách này CHƯA cấp quyền gì cho ai.** Không endpoint kiểm duyệt nào hỏi tới\nnó; `ChiMod` vẫn chỉ nhìn `is_staff`. Xem `core/models/dien_dan.py::ModSub` và\n`plans/2026-08-24-mod-chuyen-muc.md` §0. Đọc nó thành \"những người này đang moderate\nđược\" là hiểu sai theo hướng nguy hiểm.",
         "properties": {
           "created_at": {
             "format": "date-time",
@@ -864,6 +878,13 @@
           "mo_ta": {
             "title": "Mo Ta",
             "type": "string"
+          },
+          "mods": {
+            "items": {
+              "$ref": "#/components/schemas/NguoiDungTomTatOut"
+            },
+            "title": "Mods",
+            "type": "array"
           },
           "slug": {
             "title": "Slug",
@@ -883,7 +904,8 @@
           "ten",
           "mo_ta",
           "created_at",
-          "so_mach"
+          "so_mach",
+          "mods"
         ],
         "title": "SubQuanTriOut",
         "type": "object"
@@ -2512,6 +2534,201 @@
           }
         ],
         "summary": "Sua Sub",
+        "tags": [
+          "quan-tri-sub"
+        ]
+      }
+    },
+    "/api/admin/subs/{slug}/mods": {
+      "post": {
+        "description": "Phân công một tài khoản phụ trách chuyên mục. Trả về **cả hàng sub** đã cập nhật.\n\nTrả cả hàng thay vì `204`: bảng cần vẽ lại đúng ô vừa đổi, và `204` buộc frontend hoặc\ngọi thêm một lượt liệt kê, hoặc tự đoán trạng thái mới — đoán sai thì cột hiện một\ndanh sách không khớp DB mà không ai biết.\n\nBa lời từ chối, và không lời nào là \"thành công im lặng\":\n\n- **đã là mod ⇒ 409.** Idempotent 200 nghe hiền hơn nhưng nó nói dối: mod bấm gán một\n  người đã có trong danh sách cần biết là *đã có*, không phải tưởng mình vừa thêm.\n- **đang bị ban ⇒ 409.** `ChiMod` từ chối tài khoản bị ban ở cổng, nên hàng này sẽ vô\n  nghĩa ngay khi tạo; và một cái tên bị ban nằm trong cột \"Mod\" là thông tin sai trên\n  màn hình.\n- **`is_active=False` ⇒ 409.** Đó là cờ `core/models/nguoi_dung.py` dùng cho \"xoá tài\n  khoản GDPR-lite\". Phân công cho một tài khoản đã ẩn danh hoá là dựng lại một cái tên\n  người ta vừa rời bỏ.",
+        "operationId": "quan_tri_gan_mod_sub",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GanModSubIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubQuanTriOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Gan Mod Sub",
+        "tags": [
+          "quan-tri-sub"
+        ]
+      }
+    },
+    "/api/admin/subs/{slug}/mods/{username}": {
+      "delete": {
+        "description": "Gỡ phân công. **404 nếu người đó không phải mod của sub** — không phải 200 im lặng.\n\n200 cho một lệnh gỡ không gỡ gì cả là cách nhanh nhất để một lỗi chính tả trong\n`username` trông y hệt một thao tác thành công.",
+        "operationId": "quan_tri_go_mod_sub",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "username",
+            "required": true,
+            "schema": {
+              "title": "Username",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubQuanTriOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Go Mod Sub",
         "tags": [
           "quan-tri-sub"
         ]

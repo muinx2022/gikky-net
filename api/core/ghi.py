@@ -1274,6 +1274,10 @@ AUDIT_DONG_BAO_CAO = "dong_bao_cao"
 AUDIT_TAO_SUB = "tao_sub"
 AUDIT_SUA_SUB = "sua_sub"
 AUDIT_XOA_SUB = "xoa_sub"
+#: Phân công quyền — PLAN 5.10 đòi ghi sổ mọi hành động mod, và đây là hành động mà
+#: câu hỏi "ai cho người này làm mod chuyên mục" chỉ trả lời được qua nhật ký.
+AUDIT_GAN_MOD_SUB = "gan_mod_sub"
+AUDIT_GO_MOD_SUB = "go_mod_sub"
 
 #: `AuditLog.target_type` — cột `varchar(16)`, giữ chuỗi ngắn.
 DICH_MOC = "moc"

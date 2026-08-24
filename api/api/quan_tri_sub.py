@@ -21,17 +21,28 @@ from django.db.models import Count, ProtectedError
 from django.utils.text import slugify
 from ninja import Router, Status
 
-from core.ghi import AUDIT_SUA_SUB, AUDIT_TAO_SUB, AUDIT_XOA_SUB, DICH_SUB, ghi_audit
-from core.models.dien_dan import Sub
+from core.ghi import (
+    AUDIT_GAN_MOD_SUB,
+    AUDIT_GO_MOD_SUB,
+    AUDIT_SUA_SUB,
+    AUDIT_TAO_SUB,
+    AUDIT_XOA_SUB,
+    DICH_SUB,
+    ghi_audit,
+)
+from core.models.dien_dan import ModSub, Sub
+from core.models.nguoi_dung import User
 from core.tim_kiem import dong_bo_theo_sub
 
 from api.loi import THAM_SO_KHONG_HOP_LE, XUNG_DOT, LoiOut, khong_tim_thay, loi
 from api.quan_tri_schemas import (
+    GanModSubIn,
     KetQuaXoaSubOut,
     SuaSubIn,
     SubQuanTriOut,
     TaoSubIn,
 )
+from api.trinh_bay import nguoi_dung_ra
 
 router = Router()
 
@@ -42,7 +53,20 @@ DAI_SLUG_TOI_DA = 40
 
 
 def _co_so_mach():
-    return Sub.objects.annotate(_so_mach=Count("machs"))
+    """Queryset dùng chung cho MỌI đường trả `SubQuanTriOut`.
+
+    `prefetch_related` chứ không để `_ra` tự hỏi `sub.mods.all()`: cái sau là một truy
+    vấn **cho mỗi hàng**, và với bảng này nó không nổ ở đâu cả — chỉ chậm dần theo số
+    chuyên mục. `tests/test_api_quan_tri_sub.py` ghim số query ở 1 sub và ở 3 sub phải
+    BẰNG NHAU; đó là chuông duy nhất cho chuyện này.
+    """
+    return Sub.objects.annotate(_so_mach=Count("machs", distinct=True)).prefetch_related(
+        "mods__user"
+    )
+
+
+def _mot_sub(slug: str) -> Sub | None:
+    return _co_so_mach().filter(slug=slug).first()
 
 
 def _ra(sub: Sub) -> SubQuanTriOut:
@@ -52,6 +76,13 @@ def _ra(sub: Sub) -> SubQuanTriOut:
         mo_ta=sub.mo_ta,
         created_at=sub.created_at,
         so_mach=getattr(sub, "_so_mach", 0),
+        # Sắp theo username để hai lượt gọi liên tiếp không đổi thứ tự cột trên bảng.
+        # `sorted` trong Python chứ không `order_by`: `prefetch_related` đã nạp sẵn,
+        # thêm `order_by` ở đây là ném bộ nhớ đệm đi và bắn lại một truy vấn mỗi hàng.
+        mods=[
+            nguoi_dung_ra(m.user)
+            for m in sorted(sub.mods.all(), key=lambda m: m.user.username)
+        ],
     )
 
 
@@ -226,3 +257,112 @@ def xoa_sub(request, slug: str):
         return loi(409, XUNG_DOT, f"Sub {slug!r} vừa có mạch mới — không xoá được.")
 
     return KetQuaXoaSubOut(slug=slug, da_xoa=True)
+
+
+# --- Mod chuyên mục (2026-08-24) -----------------------------------------------------
+#
+# ⚠ **Hai endpoint dưới đây PHÂN CÔNG, không CẤP QUYỀN.** Không đường kiểm duyệt nào hỏi
+# tới `ModSub`; `api/quan_tri.py::ChiMod` vẫn chỉ nhìn `is_staff`. Nối quyền là plan riêng
+# (`plans/2026-08-24-mod-chuyen-muc.md` §0) vì nó đòi nới `ChiMod` — cổng đang chặn toàn
+# khu quản trị — rồi thêm phép kiểm theo-sub vào mọi endpoint.
+#
+# Chính hai endpoint này thì **vẫn chỉ `is_staff` gọi được**, như mọi thứ trong router.
+# Đó là chủ đích, cùng lý lẽ PLAN mục 7 dùng để giữ cấp/thu `is_staff` ngoài khu quản trị:
+# ai tự phong quyền cho người khác là bỏ qua mọi phép duyệt.
+#
+# **KHÔNG có `PUT` thay cả danh sách.** Nghe gọn hơn hai cửa gán/gỡ, nhưng nó là cửa **ghi
+# đè mù**: hai mod cùng mở bảng, người bấm sau xoá mất người bấm trước vừa thêm, và không
+# bên nào thấy gì. "Reassign" ở đây = gỡ + gán, hai lời gọi, mỗi cái một dòng nhật ký.
+
+TRA_LOI_MOD = {400: LoiOut, 401: LoiOut, 403: LoiOut, 404: LoiOut, 409: LoiOut}
+
+
+@router.post(
+    "/subs/{slug}/mods",
+    response={200: SubQuanTriOut, **TRA_LOI_MOD},
+    operation_id="quan_tri_gan_mod_sub",
+    tags=["quan-tri-sub"],
+)
+def gan_mod_sub(request, slug: str, du_lieu: GanModSubIn):
+    """Phân công một tài khoản phụ trách chuyên mục. Trả về **cả hàng sub** đã cập nhật.
+
+    Trả cả hàng thay vì `204`: bảng cần vẽ lại đúng ô vừa đổi, và `204` buộc frontend hoặc
+    gọi thêm một lượt liệt kê, hoặc tự đoán trạng thái mới — đoán sai thì cột hiện một
+    danh sách không khớp DB mà không ai biết.
+
+    Ba lời từ chối, và không lời nào là "thành công im lặng":
+
+    - **đã là mod ⇒ 409.** Idempotent 200 nghe hiền hơn nhưng nó nói dối: mod bấm gán một
+      người đã có trong danh sách cần biết là *đã có*, không phải tưởng mình vừa thêm.
+    - **đang bị ban ⇒ 409.** `ChiMod` từ chối tài khoản bị ban ở cổng, nên hàng này sẽ vô
+      nghĩa ngay khi tạo; và một cái tên bị ban nằm trong cột "Mod" là thông tin sai trên
+      màn hình.
+    - **`is_active=False` ⇒ 409.** Đó là cờ `core/models/nguoi_dung.py` dùng cho "xoá tài
+      khoản GDPR-lite". Phân công cho một tài khoản đã ẩn danh hoá là dựng lại một cái tên
+      người ta vừa rời bỏ.
+    """
+    sub = _mot_sub(slug)
+    if sub is None:
+        return khong_tim_thay(f"sub {slug!r}")
+
+    username = du_lieu.username.strip()
+    user = User.objects.filter(username=username).first()
+    if user is None:
+        return khong_tim_thay(f"tài khoản {username!r}")
+    if not user.is_active:
+        return loi(409, XUNG_DOT, f"Tài khoản {username!r} đã bị vô hiệu hoá.")
+    if user.dang_bi_ban():
+        return loi(409, XUNG_DOT, f"Tài khoản {username!r} đang bị ban.")
+
+    try:
+        with transaction.atomic():
+            ModSub.objects.create(sub=sub, user=user, assigned_by=request.user)
+            ghi_audit(
+                actor=request.user,
+                action=AUDIT_GAN_MOD_SUB,
+                target_type=DICH_SUB,
+                target_id=sub.pk,
+                slug=slug,
+                username=username,
+            )
+    except IntegrityError:
+        # `UniqueConstraint(sub, user)` bắt. Kiểm trước bằng `exists()` rồi mới ghi vẫn để
+        # hở cửa đua giữa hai mod bấm cùng lúc — ràng buộc DB là chỗ duy nhất đóng kín
+        # được, nên nó là chỗ được tin.
+        return loi(409, XUNG_DOT, f"{username!r} đã là mod của s/{slug}.")
+
+    return _ra(_mot_sub(slug))
+
+
+@router.delete(
+    "/subs/{slug}/mods/{username}",
+    response={200: SubQuanTriOut, **TRA_LOI_MOD},
+    operation_id="quan_tri_go_mod_sub",
+    tags=["quan-tri-sub"],
+)
+def go_mod_sub(request, slug: str, username: str):
+    """Gỡ phân công. **404 nếu người đó không phải mod của sub** — không phải 200 im lặng.
+
+    200 cho một lệnh gỡ không gỡ gì cả là cách nhanh nhất để một lỗi chính tả trong
+    `username` trông y hệt một thao tác thành công.
+    """
+    sub = _mot_sub(slug)
+    if sub is None:
+        return khong_tim_thay(f"sub {slug!r}")
+
+    with transaction.atomic():
+        so_xoa, _ = ModSub.objects.filter(
+            sub=sub, user__username=username
+        ).delete()
+        if so_xoa == 0:
+            return khong_tim_thay(f"phân công mod {username!r} ở s/{slug}")
+        ghi_audit(
+            actor=request.user,
+            action=AUDIT_GO_MOD_SUB,
+            target_type=DICH_SUB,
+            target_id=sub.pk,
+            slug=slug,
+            username=username,
+        )
+
+    return _ra(_mot_sub(slug))
