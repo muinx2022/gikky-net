@@ -29,6 +29,7 @@ from api.phan_trang import (
     GIOI_HAN_MAC_DINH,
     CursorHong,
     cat_trang,
+    dem_tong,
     giai_ma_cursor,
     kiem_gioi_han,
     loc_keyset,
@@ -82,6 +83,8 @@ def liet_ke_bao_cao(
     elif trang_thai == LOC_DA_XU_LY:
         qs = qs.filter(resolved_at__isnull=False)
 
+    tong = dem_tong(qs)
+
     if cursor is not None:
         try:
             khi, id = giai_ma_cursor(cursor)
@@ -97,7 +100,9 @@ def liet_ke_bao_cao(
 
     ngu_canh = _nap_ngu_canh(trang)
     return TrangBaoCaoOut(
-        items=[_bao_cao_ra(r, ngu_canh) for r in trang], cursor_ke_tiep=ke_tiep
+        items=[_bao_cao_ra(r, ngu_canh) for r in trang],
+        cursor_ke_tiep=ke_tiep,
+        tong=tong,
     )
 
 

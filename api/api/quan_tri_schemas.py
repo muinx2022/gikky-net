@@ -98,6 +98,7 @@ class TrangBaoCaoOut(Schema):
 
     items: list[BaoCaoOut]
     cursor_ke_tiep: str | None
+    tong: int
 
 
 class DongBaoCaoIn(Schema):
@@ -284,6 +285,7 @@ class NhatKyOut(Schema):
 class TrangNhatKyOut(Schema):
     items: list[NhatKyOut]
     cursor_ke_tiep: str | None
+    tong: int
 
 
 def trich_yeu(body: str) -> str:
@@ -297,3 +299,131 @@ def trich_yeu(body: str) -> str:
     if len(gon) <= DAI_TRICH_YEU:
         return gon
     return gon[:DAI_TRICH_YEU] + "…"
+
+
+# ===========================================================================
+# Bảng điều khiển + ba bảng danh sách (Phase 8, 2026-08-23)
+# ===========================================================================
+
+
+class DemTheoNgayOut(Schema):
+    """Một ô của biểu đồ 30 ngày. `ngay` là **ngày lịch Việt Nam**, không phải UTC."""
+
+    ngay: date
+    mach_moi: int
+    moc_moi: int
+    binh_luan_moi: int
+    nguoi_dung_moi: int
+
+
+class TongOut(Schema):
+    """Bốn con số lớn của hàng thẻ KPI."""
+
+    nguoi_dung: int
+    mach: int
+    moc: int
+    binh_luan: int
+    sub: int
+
+
+class TrangThaiMachOut(Schema):
+    """Bốn nhóm **LOẠI TRỪ NHAU**, cộng lại đúng bằng tổng số mạch.
+
+    Chồng lấn là chuyện có thật trong dữ liệu — một mạch bị ẩn cũng có `status`, một mạch
+    bị khoá cũng đang mở hoặc đã đóng. Một biểu đồ vành khuyên vẽ bằng bốn con số chồng
+    nhau thì tổng các lát lớn hơn 100%, và không ai nhìn ra điều đó; nó chỉ trông hơi lệch.
+
+    Thứ tự phân loại, xét từ trên xuống, dừng ở nhánh đầu tiên khớp:
+    ẩn → khoá → đã đóng sổ → đang mở.
+    """
+
+    bi_an: int
+    bi_khoa: int
+    dong: int
+    mo: int
+
+
+class SubTomTatOut(Schema):
+    slug: str
+    ten: str
+    so_mach: int
+    so_mach_30_ngay: int
+
+
+class ThongKeOut(Schema):
+    """Số liệu cho bảng điều khiển. Không cache — xem `Cache-Control` ở endpoint."""
+
+    tong: TongOut
+    #: Số báo cáo đang mở. Cũng là con số trên badge chuông của thanh trên.
+    cho_xu_ly: int
+    hom_nay: DemTheoNgayOut
+    bay_ngay: DemTheoNgayOut
+    #: **Đúng 30 phần tử**, cũ → mới, kể cả ngày không có gì xảy ra.
+    chuoi_ngay: list[DemTheoNgayOut]
+    theo_trang_thai: TrangThaiMachOut
+    top_sub: list[SubTomTatOut]
+
+
+#: Bộ lọc của bảng mạch. `tat_ca` gồm **cả mạch đã bị ẩn** — mod phải thấy để phán xử.
+#: `chua_go` = mọi bài chưa bị ẩn (khoá + đóng sổ + đang mở); nó CHỒNG LẤN ba nhóm ấy và
+#: cố ý không có mặt trên vành khuyên — xem `api/quan_tri_loc.py`.
+LocMach = Literal["tat_ca", "chua_go", "mo", "dong", "bi_khoa", "bi_an"]
+#: Bộ lọc của bảng bình luận. `hien` = còn sống và chưa bị ẩn.
+LocBinhLuan = Literal["tat_ca", "hien", "bi_an", "bia_mo"]
+#: Bộ lọc của bảng người dùng. `moi` = 7 ngày gần nhất.
+LocNguoiDung = Literal["tat_ca", "bi_ban", "staff", "moi"]
+
+
+class MachDongOut(Schema):
+    """Một hàng của bảng mạch trong khu quản trị."""
+
+    id: int
+    title: str
+    sub_slug: str
+    tac_gia: NguoiDungTomTatOut
+    status: str
+    created_at: datetime
+    last_activity_at: datetime
+    entry_count: int
+    comment_count: int
+    diem: int
+    da_bi_an: bool
+    da_khoa: bool
+    duong_dan_cong_khai: str
+
+
+class TrangMachOut(Schema):
+    items: list[MachDongOut]
+    cursor_ke_tiep: str | None
+    tong: int
+
+
+class BinhLuanDongOut(Schema):
+    """Một hàng của bảng bình luận.
+
+    `trich_yeu` **không bị che** kể cả khi bình luận đã bị ẩn hoặc đã thành bia mộ — cùng
+    lý lẽ với `NoiDungBiBaoCaoOut`, và cùng điều kiện an toàn: chỉ ra sau `ChiMod`.
+    """
+
+    id: int
+    mach_id: int
+    mach_title: str
+    tac_gia: NguoiDungTomTatOut
+    trich_yeu: str
+    created_at: datetime
+    score: int
+    da_bi_an: bool
+    da_xoa: bool
+    duong_dan_cong_khai: str
+
+
+class TrangBinhLuanOut(Schema):
+    items: list[BinhLuanDongOut]
+    cursor_ke_tiep: str | None
+    tong: int
+
+
+class TrangNguoiDungOut(Schema):
+    items: list[NguoiDungQuanTriOut]
+    cursor_ke_tiep: str | None
+    tong: int

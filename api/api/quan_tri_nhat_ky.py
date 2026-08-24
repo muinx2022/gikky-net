@@ -19,6 +19,7 @@ from api.phan_trang import (
     GIOI_HAN_MAC_DINH,
     CursorHong,
     cat_trang,
+    dem_tong,
     giai_ma_cursor,
     kiem_gioi_han,
     loc_keyset,
@@ -60,6 +61,8 @@ def liet_ke_nhat_ky(
     if action:
         qs = qs.filter(action=action)
 
+    tong = dem_tong(qs)
+
     if cursor is not None:
         try:
             khi, id = giai_ma_cursor(cursor)
@@ -86,4 +89,5 @@ def liet_ke_nhat_ky(
             for d in trang
         ],
         cursor_ke_tiep=ke_tiep,
+        tong=tong,
     )

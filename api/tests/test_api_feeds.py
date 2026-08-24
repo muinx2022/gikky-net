@@ -6,13 +6,16 @@ gian (không mang `id`) hoặc dùng `<=` thay vì `<` sẽ trùng hoặc sót �
 thường, nơi mọi `created_at` khác nhau, ca đó không bao giờ xuất hiện.
 """
 
+import json
 from datetime import timedelta
 
 import pytest
 from django.utils import timezone
 
 from core.ghi import tao_mach, them_moc
-from core.models import Mach, Moc, Sub
+from core.models import Mach, Moc, MocAnh, Sub
+
+from api.schemas import DAI_TRICH_FEED
 from tests.conftest import lay
 
 pytestmark = pytest.mark.django_db
@@ -250,7 +253,137 @@ def test_the_feed_du_truong_cho_1c(client, seed):
         # Phase 2: đích của mũi tên vote. Thẻ feed không có `mocs`, nên nó cần `id` của
         # mốc 1 để gọi `POST /votes` — không có nó thì mũi tên trên feed là nút chết.
         "moc_1_id",
+        # 2026-08-23: nội dung xem trước lấy từ mốc 1 (ảnh gallery, hoặc trích đoạn chữ).
+        "xem_truoc",
     }
     assert the["moc_1_id"] == Moc.objects.get(mach=seed, seq=1).pk
     assert the["ket_qua"] == "+18.2% · 163 ngày"
     assert the["author"]["display_name"] == "Ba Mươi Phiên"
+
+
+# --- nội dung xem trước trên thẻ feed (2026-08-23) ---------------------------
+
+
+@pytest.mark.django_db
+def test_xem_truoc_lay_TRICH_DOAN_cua_moc_1_khong_phai_moc_moi_nhat(client, seed):
+    """Thẻ feed chiếu **mốc 1**, đúng như cột vote chiếu điểm mốc 1.
+
+    Lấy mốc mới nhất thì thẻ đổi nội dung mỗi lần tác giả nối thêm — tức feed "Mới" biến
+    thành một thứ nhấp nháy, và người quay lại không nhận ra bài mình đã đọc.
+    """
+    d = lay(client, "/api/v1/feeds/moi?limit=50")
+    the = next(m for m in d["items"] if m["id"] == seed.pk)
+    moc_1 = Moc.objects.get(mach=seed, seq=1)
+
+    assert the["xem_truoc"] is not None
+    trich = the["xem_truoc"]["trich"]
+    assert trich, "mốc 1 có chữ thì trích đoạn không được rỗng"
+    assert trich[:30] in " ".join(moc_1.body.split())
+    moc_cuoi = Moc.objects.filter(mach=seed).order_by("-seq").first()
+    assert moc_cuoi.seq == 9
+    assert trich[:30] not in " ".join(moc_cuoi.body.split())
+
+
+@pytest.mark.django_db
+def test_trich_doan_go_dau_markdown_va_cat_o_khoang_trang(client, seed_post_thuong):
+    """Trích đoạn là VĂN BẢN THUẦN: `**đậm**` in ra bốn dấu sao là hỏng thấy được ngay."""
+    moc_1 = Moc.objects.get(mach=seed_post_thuong, seq=1)
+    moc_1.body = (
+        "> **Cảnh báo** đọc kỹ. Xem [tài liệu](https://gikky.net/luat) và `mã lệnh`, "
+        "rồi *cân nhắc* trước khi vào. " + "chữ đệm cho đủ dài. " * 20
+    )
+    moc_1.save(update_fields=["body"])
+
+    d = lay(client, "/api/v1/feeds/moi?limit=50")
+    the = next(m for m in d["items"] if m["id"] == seed_post_thuong.pk)
+    trich = the["xem_truoc"]["trich"]
+
+    for dau in ["**", "`", "](", "> "]:
+        assert dau not in trich, f"còn dấu markdown {dau!r} trong trích đoạn"
+    assert "Cảnh báo" in trich and "tài liệu" in trich and "mã lệnh" in trich
+    assert trich.endswith("…"), "quá dài thì phải có dấu cắt"
+    assert not trich.rstrip("…").endswith(" "), "không để khoảng trắng lửng trước dấu cắt"
+    assert len(trich) <= DAI_TRICH_FEED + 1
+
+
+@pytest.mark.django_db
+def test_moc_1_bia_mo_hoac_bi_an_KHONG_ro_noi_dung_ra_feed(client, seed_post_thuong):
+    """Thẻ feed không được thành cửa thứ hai đọc thứ vừa bị gỡ — và là cửa ở trang chủ.
+
+    `moc_1_id` **vẫn** trả về: nó là đích của mũi tên vote, và vote vào bia mộ là thao
+    tác hợp lệ. Chỉ NỘI DUNG bị chặn.
+    """
+    moc_1 = Moc.objects.get(mach=seed_post_thuong, seq=1)
+    bi_mat = "MOI-BI-MAT-KHONG-DUOC-RO-RA-FEED"
+    Moc.objects.filter(pk=moc_1.pk).update(body=bi_mat)
+
+    def the():
+        d = lay(client, "/api/v1/feeds/moi?limit=50")
+        return next(m for m in d["items"] if m["id"] == seed_post_thuong.pk)
+
+    assert bi_mat in the()["xem_truoc"]["trich"], "tiền đề: bình thường thì có ra"
+
+    Moc.objects.filter(pk=moc_1.pk).update(hidden_at=timezone.now())
+    t = the()
+    assert t["xem_truoc"] is None
+    assert bi_mat not in json.dumps(t, ensure_ascii=False)
+    assert t["moc_1_id"] == moc_1.pk, "mũi tên vote vẫn phải có đích"
+
+    Moc.objects.filter(pk=moc_1.pk).update(hidden_at=None, deleted_at=timezone.now())
+    t = the()
+    assert t["xem_truoc"] is None
+    assert bi_mat not in json.dumps(t, ensure_ascii=False)
+
+
+@pytest.mark.django_db
+def test_gallery_THANG_chu_khi_moc_1_co_ca_hai(client, seed_post_thuong):
+    """Thứ tự ưu tiên của nội dung thẻ: **gallery trước, chữ sau**.
+
+    ⚠ Tầng giữa mà yêu cầu ban đầu nêu — "ảnh nằm trong nội dung" — **không có nguồn nào
+    hôm nay**: bộ markdown của `body` (`apps/web/lib/markdown.ts`) cố ý không có cú pháp
+    ảnh, nên `![]()` in ra thành văn bản thường. Ảnh chỉ sống ở gallery. Bài đo này vì thế
+    đo đúng hai tầng đang tồn tại; ngày markdown mở cú pháp ảnh thì thêm tầng giữa vào
+    `trinh_bay.du_lieu_the` và thêm một bài đo nữa ở đây.
+
+    `trich` vẫn phải có mặt cùng lúc với ảnh — nó là `alt` của tấm ảnh và là thứ hiện ra
+    khi ảnh tải hỏng. Một thẻ rỗng vì một tấm ảnh 404 là một thẻ không ai bấm.
+    """
+    moc_1 = Moc.objects.get(mach=seed_post_thuong, seq=1)
+    for i in range(3):
+        MocAnh.objects.create(
+            moc=moc_1,
+            khoa_luu_tru=f"anh-thu-{i}.jpg",
+            status=MocAnh.TrangThai.XAC_NHAN,
+            position=i,
+            w=800,
+            h=600,
+        )
+    # Một ảnh CHỜ và một ảnh đã CÁCH LY: cả hai không được tính, và không được chọn làm
+    # ảnh đại diện. Ảnh cách ly có URL trả 404 — chọn nó là thẻ feed hiện ô ảnh vỡ.
+    MocAnh.objects.create(
+        moc=moc_1, khoa_luu_tru="cho.jpg", status=MocAnh.TrangThai.CHO, position=9
+    )
+    MocAnh.objects.create(
+        moc=moc_1,
+        khoa_luu_tru="cach-ly.jpg",
+        status=MocAnh.TrangThai.XAC_NHAN,
+        da_cach_ly=True,
+        position=10,
+    )
+
+    d = lay(client, "/api/v1/feeds/moi?limit=50")
+    xt = next(m for m in d["items"] if m["id"] == seed_post_thuong.pk)["xem_truoc"]
+
+    assert xt["so_anh"] == 3, "ảnh CHỜ và ảnh CÁCH LY không được tính"
+    assert xt["anh"] is not None
+    assert xt["anh"]["position"] == 0, "phải là tấm ĐẦU của gallery"
+    assert "anh-thu-0" in xt["anh"]["url_thumb"]
+    assert xt["trich"], "có ảnh thì chữ VẪN phải đi kèm (alt + phương án dự phòng)"
+
+
+@pytest.mark.django_db
+def test_moc_1_khong_anh_thi_chi_co_chu(client, seed_post_thuong):
+    d = lay(client, "/api/v1/feeds/moi?limit=50")
+    xt = next(m for m in d["items"] if m["id"] == seed_post_thuong.pk)["xem_truoc"]
+    assert xt["anh"] is None and xt["so_anh"] == 0
+    assert xt["trich"]

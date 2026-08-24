@@ -61,7 +61,7 @@ def _tim(username: str) -> User | None:
     )
 
 
-def _ra(u: User) -> NguoiDungQuanTriOut:
+def nguoi_dung_quan_tri_ra(u: User) -> NguoiDungQuanTriOut:
     return NguoiDungQuanTriOut(
         username=u.username,
         display_name=u.display_name,
@@ -93,7 +93,7 @@ def xem_nguoi_dung(request, username: str):
     u = _tim(username)
     if u is None:
         return khong_tim_thay("tài khoản")
-    return _ra(u)
+    return nguoi_dung_quan_tri_ra(u)
 
 
 @router.post(

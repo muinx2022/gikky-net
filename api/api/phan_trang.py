@@ -175,3 +175,23 @@ def cat_trang(hang: list, gioi_han: int) -> tuple[list, bool]:
     trên một bảng đang lớn dần.
     """
     return hang[:gioi_han], len(hang) > gioi_han
+
+
+def dem_tong(qs: QuerySet) -> int:
+    """Tổng số hàng của tập **đã lọc** — con số cho thanh phân trang.
+
+    ⚠ **Gọi TRƯỚC `loc_keyset`, không bao giờ sau.** `loc_keyset` cắt bỏ phần đầu danh
+    sách, nên đếm sau nó ra *số hàng còn lại từ cursor trở đi*: trang 1 báo "295 mục",
+    trang 2 báo "270", trang 3 báo "245". Không có gì nổ, không có log — chỉ là một con
+    số tụt dần mà người đọc sẽ tin, vì nó trông y hệt một con số thật.
+
+    Đó là lý do hàm này tồn tại thay vì gõ thẳng `qs.count()` ở năm chỗ: một cái tên để
+    grep ra mọi chỗ đếm, và một chỗ duy nhất để viết cái bẫy xuống. Bảo đảm thật nằm ở
+    bài đo `tests/test_api_quan_tri_phan_trang.py::test_tong_khong_doi_qua_cac_trang` —
+    nó lật hết các trang và đòi `tong` giữ nguyên.
+
+    Cái giá: **thêm một `COUNT(*)`** mỗi lần nạp bảng. Chấp nhận ở khu quản trị — lượt
+    truy cập tính bằng chục mỗi ngày, và không có endpoint nào ở đây bị ghim số query.
+    Đừng bê hàm này sang feed công khai mà không đo lại.
+    """
+    return qs.count()

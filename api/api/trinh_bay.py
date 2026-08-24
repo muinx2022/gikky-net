@@ -20,6 +20,7 @@ ngoài `doc_noi_dung` ở ngay đầu module đó.
 """
 
 import logging
+import re
 from datetime import timedelta
 
 from core.doc_noi_dung import DA_AN, Nut, doc_duoc, trang_thai_noi_dung
@@ -31,6 +32,7 @@ from core.models.moc import Moc, MocAnh, MocRevision
 from core.models.tuong_tac import Reaction, Trich
 
 from api.schemas import (
+    DAI_TRICH_FEED,
     AnhOut,
     BinhLuanOut,
     FigureOut,
@@ -41,6 +43,7 @@ from api.schemas import (
     SpineOut,
     SubTomTatOut,
     TrichOut,
+    XemTruocOut,
 )
 
 logger = logging.getLogger(__name__)
@@ -84,7 +87,12 @@ def figures_ra(figures) -> list[FigureOut] | None:
     ]
 
 
-def mach_tom_tat_ra(mach: Mach, *, moc_1_id: int | None = None) -> MachTomTatOut:
+def mach_tom_tat_ra(
+    mach: Mach,
+    *,
+    moc_1_id: int | None = None,
+    xem_truoc: XemTruocOut | None = None,
+) -> MachTomTatOut:
     """Thẻ mạch cho feed và cho hồ sơ. Cần `sub` + `author` đã `select_related`.
 
     `moc_1_id` **phải do người gọi nạp sẵn theo LÔ** (Phase 2 — đích của mũi tên vote trên
@@ -107,6 +115,7 @@ def mach_tom_tat_ra(mach: Mach, *, moc_1_id: int | None = None) -> MachTomTatOut
         last_activity_at=mach.last_activity_at,
         diem=mach.diem_bai_goc,
         moc_1_id=moc_1_id,
+        xem_truoc=xem_truoc,
     )
 
 
@@ -119,6 +128,88 @@ def moc_1_theo_mach(machs) -> dict[int, int]:
     return dict(
         Moc.objects.filter(mach__in=machs, seq=1).values_list("mach_id", "id")
     )
+
+
+def du_lieu_the(machs) -> dict[int, tuple[int | None, XemTruocOut | None]]:
+    """`{mach_id: (id mốc 1, nội dung xem trước)}` cho một LÔ mạch — **HAI truy vấn**.
+
+    Gộp hai phép nạp vào một hàm chứ không để hai hàm cạnh nhau, vì cả hai đọc **cùng
+    một tập hàng**: mốc 1 của trang. Tách ra là hai lần `WHERE seq=1 AND mach_id IN (…)`
+    cho đúng những hàng ấy — bản đầu của lượt này làm thế và `test_api_so_query.py` bắt
+    được ngay (feed 2 → 4 truy vấn thay vì 2 → 3).
+
+    ⚠ **Mốc 1 không đọc được thì không có xem trước** — nhưng `moc_1_id` VẪN trả về.
+    Hai thứ khác nhau: `moc_1_id` là đích của mũi tên vote, và vote vào một bia mộ vẫn là
+    thao tác hợp lệ (`MocOut.score` của bia mộ là `0`, không phải `null`). Còn nội dung
+    thì `doc_duoc` chặn — cùng phép kiểm mà trang mạch dùng
+    (`core/doc_noi_dung.py`): bia mộ và mốc bị mod ẩn không trả nội dung ra cửa công
+    khai. Bỏ qua nó ở đây là dựng một cửa thứ hai đọc được thứ vừa bị gỡ, và là cửa nằm
+    ngay trên trang chủ.
+
+    ⚠ **Ảnh phải còn PHỤC VỤ ĐƯỢC.** `da_cach_ly=True` nghĩa file đã bị chuyển sang kho
+    cách ly (mốc bia mộ / bị ẩn) nên URL của nó trả 404; `status` phải là `confirmed`.
+    Thiếu một trong hai phép lọc là thẻ feed hiện một ô ảnh vỡ.
+    """
+    mocs = list(
+        Moc.objects.filter(mach__in=machs, seq=1).only(
+            "id", "mach_id", "body", "deleted_at", "hidden_at"
+        )
+    )
+    doc_duoc_ids = [m.pk for m in mocs if doc_duoc(m)]
+
+    anh_theo_moc: dict[int, list[MocAnh]] = {}
+    if doc_duoc_ids:
+        for a in MocAnh.objects.filter(
+            moc_id__in=doc_duoc_ids,
+            status=MocAnh.TrangThai.XAC_NHAN,
+            da_cach_ly=False,
+        ).order_by("position", "id"):
+            anh_theo_moc.setdefault(a.moc_id, []).append(a)
+
+    ra: dict[int, tuple[int | None, XemTruocOut | None]] = {}
+    for m in mocs:
+        if not doc_duoc(m):
+            ra[m.mach_id] = (m.pk, None)
+            continue
+        anh = anh_theo_moc.get(m.pk, [])
+        ra[m.mach_id] = (
+            m.pk,
+            XemTruocOut(
+                trich=trich_van_ban(m.body),
+                anh=anh_ra(anh[0]) if anh else None,
+                so_anh=len(anh),
+            ),
+        )
+    return ra
+
+
+def trich_van_ban(body: str) -> str:
+    """`body` markdown → một dòng VĂN BẢN THUẦN, cắt ở `DAI_TRICH_FEED`.
+
+    Gỡ dấu markdown chứ không render: thẻ feed in ra bằng `<p>` thường, nên để nguyên
+    `**đậm**` là người đọc thấy đúng bốn dấu sao. Đây là phép cắt để HIỂN THỊ — nó **không
+    phải** sanitize, và không cần phải thế: chuỗi này đi vào JSON rồi được React render
+    như văn bản, nên `<script>` in ra thành đúng tám ký tự đó.
+
+    Gộp khoảng trắng vì `body` nhiều dòng: một thẻ feed mang cả `
+` là một thẻ có ba
+    dòng trắng ở giữa.
+    """
+    gon = " ".join(body.split())
+    # Bốn phép gỡ, theo đúng tập con markdown mà `apps/web/lib/markdown.ts` hỗ trợ:
+    # link `[chữ](url)` → chữ · đậm · nghiêng · mã. Không có ảnh trong tập con đó.
+    gon = re.sub(r"^\s*[>\-]\s+", "", gon)
+    gon = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", gon)
+    gon = re.sub(r"(\*\*|__)(.+?)\1", r"\2", gon)
+    gon = re.sub(r"(?<!\*)\*(?!\*)([^*]+)\*(?!\*)", r"\1", gon)
+    gon = gon.replace("`", "")
+    gon = gon.strip()
+    if len(gon) <= DAI_TRICH_FEED:
+        return gon
+    # Cắt ở khoảng trắng gần nhất: cắt giữa từ ra "…kho quặng giá thấ…" đọc như lỗi.
+    cat = gon[:DAI_TRICH_FEED]
+    khoang = cat.rfind(" ")
+    return (cat[:khoang] if khoang > DAI_TRICH_FEED * 0.6 else cat).rstrip() + "…"
 
 
 def trich_ra(trich: Trich | None) -> TrichOut | None:

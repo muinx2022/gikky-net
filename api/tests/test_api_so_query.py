@@ -35,21 +35,30 @@ pytestmark = pytest.mark.django_db
 #: Nó là MỘT truy vấn cho cả mạch, không phải một truy vấn cho mỗi bình luận; hai bài
 #: chống-rỗng ở cuối file là thứ chứng minh chỗ đó.
 #: `/revisions` = 2: mốc · bản cũ.
-#: Hồ sơ = 7: user · danh sách mạch · `moc_1_id` theo lô · 4 phép đếm trên 4 bảng.
-#: Feed = 2: trang mạch · **`moc_1_id` theo lô**.
+#: Hồ sơ = 8: user · danh sách mạch · **2 cho thẻ** · 4 phép đếm trên 4 bảng.
+#: Feed = 3: trang mạch · **2 cho thẻ**.
 #:
-#: Truy vấn `moc_1_id` vào ở **Phase 2**: thẻ feed cần `id` của mốc 1 làm đích cho mũi tên
-#: vote (`POST /votes`). Nó là MỘT truy vấn cho cả trang, không phải một truy vấn mỗi thẻ
-#: — và đó chính là thứ `test_them_mach_KHONG_lam_tang_so_query_cua_feed` ở cuối file
-#: chứng minh: 22 thẻ vẫn đúng con số này.
+#: "2 cho thẻ" = `trinh_bay.du_lieu_the`: một truy vấn nạp **mốc 1** của cả trang (id cho
+#: mũi tên vote — Phase 2; body + hai cột trạng thái cho nội dung xem trước — 2026-08-23),
+#: một truy vấn nạp **ảnh gallery** của những mốc ấy.
+#:
+#: **Feed đi từ 2 lên 3 ở lượt thêm nội dung cho thẻ (2026-08-23)**, và con số này tăng có
+#: chủ đích chứ không trôi: thẻ feed nay hiện ảnh hoặc trích đoạn của mốc 1, mà hai thứ
+#: đó không có cách nào lấy được từ hàng `Mach`. Bản đầu của lượt ấy tách thành **hai**
+#: hàm nạp (`moc_1_theo_mach` + `xem_truoc_theo_mach`) và chính bài đo này bắt được: cùng
+#: một tập hàng bị hỏi hai lần, feed 2 → 4. Gộp lại còn 3.
+#:
+#: Cả hai đều là MỘT truy vấn cho cả trang, không phải một truy vấn mỗi thẻ — và đó chính
+#: là thứ `test_them_mach_KHONG_lam_tang_so_query_cua_feed` ở cuối file chứng minh: 22 thẻ
+#: vẫn đúng con số này.
 SO_QUERY = {
     "xem_mach": 6,
     "khan_dai": 3,
     "ngan_keo": 3,
     "revisions": 2,
-    "feed": 2,
-    "feed_co_sub": 3,
-    "ho_so": 7,
+    "feed": 3,
+    "feed_co_sub": 4,
+    "ho_so": 8,
 }
 
 

@@ -12,7 +12,7 @@ from core.models.tuong_tac import Trich
 from api.loi import LoiOut, khong_tim_thay
 from api.phan_trang import kiem_gioi_han
 from api.schemas import HoSoOut
-from api.trinh_bay import mach_tom_tat_ra, moc_1_theo_mach
+from api.trinh_bay import du_lieu_the, mach_tom_tat_ra
 
 router = Router()
 
@@ -73,9 +73,9 @@ def xem_ho_so(request, username: str, limit: int = SO_MACH_TREN_HO_SO):
     machs = list(
         mach_hien.select_related("sub", "author").order_by("-created_at", "-pk")[:limit]
     )
-    # `moc_1_id` (đích của mũi tên vote trên thẻ) nạp theo LÔ — MỘT truy vấn cho cả trang.
-    # Gọi `moc_1_theo_mach` bên trong list comprehension là N+1, và nó không đỏ ở đâu cả.
-    moc_1 = moc_1_theo_mach(machs)
+    # `moc_1_id` (đích mũi tên vote) + nội dung xem trước của thẻ, nạp theo LÔ — HAI
+    # truy vấn cho cả trang. Gọi trong list comprehension là N+1, và nó không đỏ ở đâu cả.
+    the = du_lieu_the(machs)
     doc_duoc = {
         "deleted_at__isnull": True,
         "hidden_at__isnull": True,
@@ -110,5 +110,9 @@ def xem_ho_so(request, username: str, limit: int = SO_MACH_TREN_HO_SO):
             .distinct()
             .count()
         ),
-        machs=[mach_tom_tat_ra(m, moc_1_id=moc_1.get(m.pk)) for m in machs],
+        machs=[
+            mach_tom_tat_ra(m, moc_1_id=moc_1_id, xem_truoc=xem_truoc)
+            for m in machs
+            for moc_1_id, xem_truoc in [the.get(m.pk, (None, None))]
+        ],
     )

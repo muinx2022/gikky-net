@@ -55,6 +55,68 @@ class FigureOut(Schema):
     value: str
 
 
+class AnhOut(Schema):
+    """Một ảnh trong gallery của mốc — Phase 5.
+
+    **Không trả `khoa_luu_tru` ra ngoài.** Client cần URL, và URL là thứ `STORAGES` sinh
+    ra; trả thêm khoá thô là mời frontend tự ghép đường dẫn, rồi ngày đổi sang R2 (nơi
+    URL có chữ ký và hạn dùng) thì bản ghép tay ấy vẫn "chạy" ở dev và chết trên prod.
+
+    `w`/`h` là kích thước ảnh **đã lưu**, không phải file gốc — chúng dùng để đặt
+    `width`/`height` trên thẻ `<img>` chống layout shift, nên phải khớp đúng file đang
+    được phục vụ. `null` chỉ xảy ra với hàng cũ ghi trước Phase 5 (không có hàng nào).
+
+    `exif_taken_at` là ngày chụp **server** đọc từ file gốc trước khi tái mã hoá xoá sạch
+    EXIF. Nó là *gợi ý* cho `occurred_at`, không phải nguồn của nó: PLAN nguyên tắc 3 nói
+    `occurred_at` do người dùng đặt, và một tấm ảnh chụp lại màn hình cũ có ngày chụp
+    chẳng liên quan gì tới ngày sự việc.
+    """
+
+    id: int
+    url: str
+    url_thumb: str
+    w: int | None
+    h: int | None
+    position: int
+    exif_taken_at: datetime | None
+
+
+#: Độ dài trích đoạn trên thẻ feed. Đủ ba dòng ở bề rộng cột chính, không hơn: thẻ feed
+#: là chỗ QUYẾT ĐỊNH CÓ MỞ HAY KHÔNG, không phải chỗ đọc bài.
+DAI_TRICH_FEED = 240
+
+
+class XemTruocOut(Schema):
+    """Nội dung xem trước của một thẻ feed, lấy từ **mốc 1**.
+
+    ## Thứ tự ưu tiên, và vì sao chỉ có HAI tầng chứ không ba
+
+    Yêu cầu ban đầu là ba tầng: **gallery → ảnh trong nội dung → chữ**. Tầng giữa hôm nay
+    **không có nguồn nào**: `body` của mốc đi qua bộ markdown tập-con ở
+    `apps/web/lib/markdown.ts`, và bộ ấy **cố ý không có cú pháp ảnh** (`![]()` in ra
+    thành văn bản thường). Nên không tồn tại đường nào để một tấm ảnh nằm *trong* nội
+    dung — ảnh chỉ sống ở gallery (`MocAnh`).
+
+    Trường `anh` vì thế mang đúng một nghĩa hôm nay: **ảnh đầu của gallery**. Ngày nào
+    markdown mở cú pháp ảnh thì tầng giữa cắm vào đây mà không đổi hình dạng schema —
+    người gọi vẫn chỉ hỏi "có ảnh không", không hỏi "ảnh từ đâu ra".
+
+    ## `trich` LUÔN có mặt, kể cả khi đã có ảnh
+
+    Không phải để vẽ cả hai: nó là `alt` của tấm ảnh, và là thứ hiện ra khi ảnh chưa tải
+    xong hoặc tải hỏng. Một thẻ feed rỗng vì một tấm ảnh 404 là một thẻ không ai bấm.
+    """
+
+    #: Trích đoạn **văn bản thuần** của `body` mốc 1 — đã gỡ dấu markdown, gộp khoảng
+    #: trắng, cắt ở `DAI_TRICH_FEED`. Rỗng khi mốc 1 không có chữ nào.
+    trich: str
+    #: Ảnh ĐẦU TIÊN của gallery mốc 1, hoặc `null`. Chỉ ảnh đang thật sự phục vụ được —
+    #: ảnh đã vào kho cách ly (mốc bia mộ / bị ẩn) không ra tới đây.
+    anh: AnhOut | None
+    #: Tổng số ảnh phục vụ được của mốc 1 — UI vẽ "+N" trên tấm đầu. `0` khi không có.
+    so_anh: int
+
+
 class MachTomTatOut(Schema):
     """Một mạch ở mức thẻ feed / danh sách hồ sơ.
 
@@ -105,6 +167,12 @@ class MachTomTatOut(Schema):
     #: `Mach` không mốc — PLAN 5.1). UI phải coi `null` là "không vote được ở đây" chứ
     #: không đoán một id.
     moc_1_id: int | None
+    #: Nội dung xem trước trên thẻ feed, lấy từ **MỐC 1** — thêm 2026-08-23.
+    #:
+    #: `null` khi mốc 1 không đọc được (bia mộ hoặc bị mod ẩn) hoặc không có mốc 1. UI
+    #: khi đó vẽ thẻ chỉ-tiêu-đề như trước, **không** bịa một dòng "nội dung đã bị gỡ" —
+    #: thẻ feed không phải chỗ thông báo chuyện kiểm duyệt.
+    xem_truoc: XemTruocOut | None
 
 
 class SubChiTietOut(Schema):
@@ -198,32 +266,6 @@ class TrichOut(Schema):
     #: Lúc chủ mạch TRÍCH nó vào sổ.
     trich_created_at: datetime
     anchor_moc_seq: int | None
-
-
-class AnhOut(Schema):
-    """Một ảnh trong gallery của mốc — Phase 5.
-
-    **Không trả `khoa_luu_tru` ra ngoài.** Client cần URL, và URL là thứ `STORAGES` sinh
-    ra; trả thêm khoá thô là mời frontend tự ghép đường dẫn, rồi ngày đổi sang R2 (nơi
-    URL có chữ ký và hạn dùng) thì bản ghép tay ấy vẫn "chạy" ở dev và chết trên prod.
-
-    `w`/`h` là kích thước ảnh **đã lưu**, không phải file gốc — chúng dùng để đặt
-    `width`/`height` trên thẻ `<img>` chống layout shift, nên phải khớp đúng file đang
-    được phục vụ. `null` chỉ xảy ra với hàng cũ ghi trước Phase 5 (không có hàng nào).
-
-    `exif_taken_at` là ngày chụp **server** đọc từ file gốc trước khi tái mã hoá xoá sạch
-    EXIF. Nó là *gợi ý* cho `occurred_at`, không phải nguồn của nó: PLAN nguyên tắc 3 nói
-    `occurred_at` do người dùng đặt, và một tấm ảnh chụp lại màn hình cũ có ngày chụp
-    chẳng liên quan gì tới ngày sự việc.
-    """
-
-    id: int
-    url: str
-    url_thumb: str
-    w: int | None
-    h: int | None
-    position: int
-    exif_taken_at: datetime | None
 
 
 class MocOut(Schema):

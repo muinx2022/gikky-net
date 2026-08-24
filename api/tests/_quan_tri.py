@@ -159,6 +159,14 @@ def bang_endpoint(dl: dict) -> list[tuple[str, str, str, dict | None]]:
         ),
         ("quan_tri_xoa_sub", "delete", f"/api/admin/subs/{dl['sub'].slug}", None),
         ("quan_tri_liet_ke_nhat_ky", "get", "/api/admin/nhat-ky", None),
+        # Bảng điều khiển + ba bảng danh sách (Phase 8). Cả bốn đều CHỈ ĐỌC, nhưng cả bốn
+        # đều trả nội dung **chưa bị che** (mạch ẩn, bình luận bị ẩn, bia mộ) — nên bài đo
+        # rò rỉ trong `test_api_quan_tri_phan_quyen.py` phải phủ chúng đúng như phủ hàng
+        # đợi báo cáo. Một bảng danh sách quên hàng rào là một cửa đọc nội dung đã gỡ.
+        ("quan_tri_thong_ke", "get", "/api/admin/thong-ke", None),
+        ("quan_tri_liet_ke_mach", "get", "/api/admin/machs", None),
+        ("quan_tri_liet_ke_binh_luan", "get", "/api/admin/comments", None),
+        ("quan_tri_liet_ke_nguoi_dung", "get", "/api/admin/users", None),
     ]
 
 

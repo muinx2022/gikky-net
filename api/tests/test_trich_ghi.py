@@ -24,6 +24,7 @@ from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
 from core.ghi import tao_binh_luan, them_moc, trich_vao_so
+from core.models.binh_luan import Comment
 from core.models.moc import Moc
 from core.models.tuong_tac import Trich
 
@@ -40,6 +41,18 @@ def bo_ba(mach_cua_a, nguoi_a, nguoi_b):
     """
     moc = Moc.objects.get(mach=mach_cua_a, seq=2)
     c = tao_binh_luan(mach=mach_cua_a, author=nguoi_b, body="Câu của B đáng ghi vào sổ.")
+    # **Lùi `created_at` một giây** — sửa một bài đo FLAKY, không nới nó.
+    #
+    # `test_response_mang_du_HAI_dau_thoi_gian` khẳng định `comment_created_at <
+    # trich_created_at` (rào 2 của PLAN 5.6: câu phải được VIẾT trước lúc vào sổ). Trong
+    # bài đo, cả hai xảy ra trong cùng một lời gọi hàm, nên trên máy nhanh chúng rơi vào
+    # **cùng một mili-giây** và phép `<` đỏ — đỏ vì đồng hồ, không vì luật bị vi phạm.
+    # Bắt được ở lượt 2026-08-23 (đỏ trong bộ đầy đủ, xanh khi chạy riêng hai lần).
+    #
+    # Lùi ở đây chứ không đổi `<` thành `<=`: `<=` sẽ nuốt luôn ca THẬT mà rào 2 tồn tại
+    # để bắt — một lượt trích ghi đè `comment_created_at` bằng "bây giờ" vẫn qua được.
+    Comment.objects.filter(pk=c.pk).update(created_at=c.created_at - timedelta(seconds=1))
+    c.refresh_from_db()
     return moc, c, nguoi_a
 
 

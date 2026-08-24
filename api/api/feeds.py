@@ -38,7 +38,7 @@ from api.phan_trang import (
     ma_hoa_cursor_so,
 )
 from api.schemas import FeedOut, SubChiTietOut
-from api.trinh_bay import mach_tom_tat_ra, moc_1_theo_mach
+from api.trinh_bay import du_lieu_the, mach_tom_tat_ra
 
 router = Router()
 
@@ -61,14 +61,19 @@ TRUONG_DIEM = "diem_bai_goc"
 
 
 def _the_ra(trang) -> list:
-    """Một trang mạch → danh sách thẻ, `moc_1_id` nạp theo LÔ bằng MỘT truy vấn.
+    """Một trang mạch → danh sách thẻ. Mọi thứ cần DB đều nạp theo LÔ.
 
-    Thẻ feed cần `moc_1_id` làm đích cho mũi tên vote (Phase 2). Hỏi lẻ từng thẻ là N+1
-    trên mọi feed và nó không đỏ ở đâu cả, chỉ chậm dần theo số thẻ — nên phép gom nằm ở
-    đây, và `mach_tom_tat_ra` cố ý không tự truy vấn.
+    Thẻ feed cần `moc_1_id` làm đích cho mũi tên vote (Phase 2) và `xem_truoc` để vẽ nội
+    dung (2026-08-23). Hỏi lẻ từng thẻ là N+1 trên mọi feed và nó không đỏ ở đâu cả, chỉ
+    chậm dần theo số thẻ — nên phép gom nằm ở đây, và `mach_tom_tat_ra` cố ý không tự
+    truy vấn. Tổng cộng **ba** truy vấn cho cả trang, bất kể trang có 10 hay 50 thẻ.
     """
-    theo_mach = moc_1_theo_mach(trang)
-    return [mach_tom_tat_ra(m, moc_1_id=theo_mach.get(m.pk)) for m in trang]
+    theo_mach = du_lieu_the(trang)
+    return [
+        mach_tom_tat_ra(m, moc_1_id=moc_1_id, xem_truoc=xem_truoc)
+        for m in trang
+        for moc_1_id, xem_truoc in [theo_mach.get(m.pk, (None, None))]
+    ]
 
 
 def _mach_hien(sub: str | None) -> QuerySet:
