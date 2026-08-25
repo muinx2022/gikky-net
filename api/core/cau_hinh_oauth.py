@@ -33,6 +33,7 @@ from allauth.socialaccount.models import SocialApp
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.http import HttpRequest
+from django.urls import reverse
 
 #: `provider` của allauth. Chuỗi trần vì allauth cũng dùng chuỗi trần.
 PROVIDER = "google"
@@ -53,6 +54,36 @@ class TrangThaiGoogle:
     client_id: str
     secret_da_dat: bool
     secret_duoi: str
+    #: URL phải dán vào "Authorized redirect URIs" của Google Cloud Console.
+    redirect_uri: str
+
+
+def redirect_uri() -> str:
+    """URL để đăng ký với Google — `FRONTEND_ORIGIN` + đường callback thật.
+
+    ## Đường lấy bằng `reverse`, không gõ tay
+
+    `OAuth2Adapter.get_callback_url` dựng URL bằng `reverse("google_callback")`, nên gõ
+    tay một chuỗi ở đây là dựng bản thứ hai sẽ trôi khỏi bản thứ nhất — và triệu chứng của
+    lệch là Google từ chối bằng `redirect_uri_mismatch`, một lỗi chỉ hiện ra giữa luồng
+    đăng nhập thật.
+
+    ⚠ Chuỗi cũ ghi trong code trước 2026-08-25
+    (`/api/_allauth/browser/v1/auth/provider/callback`) **không tồn tại** — allauth
+    headless không khai callback nào. Đó chính là loại lệch mà `reverse` chặn.
+
+    ## Vì sao lấy gốc từ `FRONTEND_ORIGIN`, không từ request
+
+    allauth dựng `redirect_uri` bằng `request.build_absolute_uri`, tức **host Django nhìn
+    thấy lúc chạy luồng OAuth** — mà luồng ấy khởi đi từ **site công khai**, không phải từ
+    khu quản trị. Lấy gốc từ request của trang Cài đặt sẽ ra origin của app admin, và giá
+    trị ấy sai ở đúng chỗ người ta không kiểm lại: nó *trông* hợp lệ khi dán vào Google.
+
+    `FRONTEND_ORIGIN` là khai báo chính thức của "gốc site công khai" (prod đặt
+    `https://gikky.net`), nên nó là nguồn đúng — với điều kiện reverse proxy giữ nguyên
+    header `Host`, điều Caddy làm.
+    """
+    return f"{settings.FRONTEND_ORIGIN.rstrip('/')}{reverse('google_callback')}"
 
 
 def _hang_db() -> SocialApp | None:
@@ -110,6 +141,7 @@ def doc_trang_thai(request=None) -> TrangThaiGoogle:
             client_id=hang.client_id,
             secret_da_dat=bool(hang.secret),
             secret_duoi=hang.secret[-DAI_DUOI:] if hang.secret else "",
+            redirect_uri=redirect_uri(),
         )
     if settings.GOOGLE_ENV_CO:
         return TrangThaiGoogle(
@@ -118,9 +150,15 @@ def doc_trang_thai(request=None) -> TrangThaiGoogle:
             client_id=settings.GOOGLE_CLIENT_ID,
             secret_da_dat=True,
             secret_duoi=settings.GOOGLE_CLIENT_SECRET[-DAI_DUOI:],
+            redirect_uri=redirect_uri(),
         )
     return TrangThaiGoogle(
-        bat=False, nguon=None, client_id="", secret_da_dat=False, secret_duoi=""
+        bat=False,
+        nguon=None,
+        client_id="",
+        secret_da_dat=False,
+        secret_duoi="",
+        redirect_uri=redirect_uri(),
     )
 
 

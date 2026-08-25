@@ -165,6 +165,10 @@ export type CaiDatGoogleOut = {
      */
     nguon: string | null;
     /**
+     * Redirect Uri
+     */
+    redirect_uri: string;
+    /**
      * Secret Da Dat
      */
     secret_da_dat: boolean;

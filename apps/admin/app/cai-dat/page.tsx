@@ -222,13 +222,67 @@ function KhoiGoogle() {
           )}
         </form>
 
-        <p className="text-xs text-muc-mo">
-          Redirect URI phải khai với Google:{" "}
-          <code className="mono">
-            {"<origin>"}/api/_allauth/browser/v1/auth/provider/callback
-          </code>
-        </p>
+        <ORedirectUri url={tt.redirect_uri} />
       </div>
     </The>
+  );
+}
+
+/** Ô chỉ-đọc kèm nút chép — URL để dán vào "Authorized redirect URIs" của Google.
+ *
+ * ## Vì sao là `<input readOnly>` chứ không `<code>`
+ *
+ * Chuỗi này tồn tại để **được chép**. Một thẻ `<code>` bắt người ta bôi đen bằng chuột, và
+ * bôi hụt một ký tự thì Google từ chối bằng `redirect_uri_mismatch` — lỗi chỉ hiện ra giữa
+ * luồng đăng nhập thật, và nó không nói ra là do thiếu ký tự.
+ *
+ * ## `navigator.clipboard` có thể vắng mặt
+ *
+ * Nó chỉ tồn tại ở secure context (https, hoặc localhost). Khu quản trị chạy http trên một
+ * host LAN là mất hẳn API ấy — nên vẫn phải để ô chọn được bằng tay, và nút chép chỉ là
+ * đường tắt. `onFocus` bôi sẵn cả chuỗi để đường tay cũng nhanh.
+ */
+function ORedirectUri({ url }: { url: string }) {
+  const [da_chep, datDaChep] = useState(false);
+
+  return (
+    <div className="space-y-1.5 border-t border-vien pt-4">
+      <p className="text-sm font-semibold">Redirect URI</p>
+      <p className="text-xs text-muc-mo">
+        Dán đúng chuỗi này vào <strong>Authorized redirect URIs</strong> trong Google
+        Cloud Console. Lệch một ký tự là Google trả <code className="mono">
+        redirect_uri_mismatch</code>.
+      </p>
+      <div className="flex gap-2">
+        <input
+          className="o-nhap mono text-xs"
+          value={url}
+          readOnly
+          onFocus={(e) => e.currentTarget.select()}
+          data-testid="google-redirect-uri"
+        />
+        <button
+          type="button"
+          className="nut shrink-0"
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(url);
+              datDaChep(true);
+              setTimeout(() => datDaChep(false), 1500);
+            } catch {
+              // Không có clipboard API (http, không phải localhost) — ô vẫn chọn được
+              // bằng tay, nên đây không phải lỗi đáng báo.
+            }
+          }}
+          data-testid="nut-chep-redirect-uri"
+        >
+          {da_chep ? "Đã chép" : "Chép"}
+        </button>
+      </div>
+      <p className="text-xs text-muc-mo">
+        Lấy theo <code className="mono">FRONTEND_ORIGIN</code> — gốc site công khai, không
+        phải gốc khu quản trị.
+      </p>
+    </div>
   );
 }

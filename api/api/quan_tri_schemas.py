@@ -327,6 +327,10 @@ class CaiDatGoogleOut(Schema):
     client_id: str
     secret_da_dat: bool
     secret_duoi: str
+    #: URL dán vào "Authorized redirect URIs" của Google Cloud Console. Dựng từ
+    #: `FRONTEND_ORIGIN` + `reverse("google_callback")` — xem
+    #: `core/cau_hinh_oauth.py::redirect_uri`.
+    redirect_uri: str
     #: Người đang xem có được GHI không. Giao diện dùng nó để khoá form thay vì bày ra một
     #: nút bấm vào thì 403 (PLAN mục 4).
     sua_duoc: bool

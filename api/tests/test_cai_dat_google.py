@@ -26,6 +26,7 @@ from allauth.socialaccount.models import SocialApp
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.http import HttpRequest
+from allauth.socialaccount.adapter import get_adapter as get_adapter_xh
 from django.test import override_settings
 
 from core.cau_hinh_oauth import (
@@ -256,3 +257,68 @@ def test_google_bat_doi_NGAY_trong_cung_mot_tien_trinh(db, client):
 def test_site_fixture_ton_tai(db):
     """Tiền đề của cả file: `SITE_ID` trỏ vào một hàng có thật."""
     assert Site.objects.filter(pk=settings.SITE_ID).exists()
+
+
+# --- Redirect URI (§ thêm 2026-08-25) -------------------------------------------------
+
+
+def test_redirect_uri_KHOP_dung_cai_allauth_gui_cho_google(db):
+    """Bài đo chống loại lệch đã từng xảy ra thật.
+
+    Trước 2026-08-25, code ghi redirect URI là
+    `/api/_allauth/browser/v1/auth/provider/callback` — **một đường không tồn tại**. Nó
+    được viết theo tài liệu chứ không theo quan sát, và không có gì cãi lại vì luồng OAuth
+    chưa từng chạy.
+
+    Bài này so **chuỗi khu quản trị bày ra** với **chuỗi allauth thật sự gửi cho Google**,
+    nên hai bên không thể trôi khỏi nhau nữa. So phần ĐƯỜNG DẪN, không so cả origin: origin
+    của cái allauth gửi lấy từ host của request lúc chạy, còn cái ta bày ra lấy từ
+    `FRONTEND_ORIGIN` (gốc site công khai) — hai gốc khác nhau ở dev là ĐÚNG, xem
+    `core/cau_hinh_oauth.py::redirect_uri`.
+    """
+    from urllib.parse import urlsplit
+
+    from django.http import HttpRequest
+
+    from core.cau_hinh_oauth import redirect_uri
+
+    with env_trong():
+        luu_google(client_id=ID_DB, secret=BM_DB)
+
+        req = HttpRequest()
+        req.META["HTTP_HOST"] = "localhost"
+        req.META["SERVER_NAME"] = "localhost"
+        req.META["SERVER_PORT"] = "80"
+        p = get_adapter_xh().get_provider(req, "google")
+        cua_allauth = p.get_oauth2_adapter(req).get_callback_url(req, p.app)
+
+        assert urlsplit(redirect_uri()).path == urlsplit(cua_allauth).path
+        # Và nó phải là đường CÓ THẬT, không phải một chuỗi tự bịa.
+        assert urlsplit(redirect_uri()).path == "/api/_allauth/google/login/callback/"
+
+
+def test_route_callback_CO_TON_TAI(db):
+    """Không có route này thì `provider/redirect` nổ `NoReverseMatch` ngay bước đầu.
+
+    Đó là trạng thái thật của repo trước 2026-08-25: đăng nhập Google **không chạy được**,
+    chứ không phải "chưa kiểm chứng".
+    """
+    from django.urls import resolve, reverse
+
+    duong = reverse("google_callback")
+    assert duong == "/api/_allauth/google/login/callback/"
+    assert resolve(duong) is not None
+
+
+def test_redirect_uri_lay_goc_tu_FRONTEND_ORIGIN(db):
+    """Gốc là site CÔNG KHAI, không phải khu quản trị — xem docstring `redirect_uri`."""
+    from django.test import override_settings
+
+    from core.cau_hinh_oauth import redirect_uri
+
+    with override_settings(FRONTEND_ORIGIN="https://gikky.net"):
+        assert redirect_uri() == "https://gikky.net/api/_allauth/google/login/callback/"
+
+    # Dấu `/` thừa ở cuối không được sinh ra `//`.
+    with override_settings(FRONTEND_ORIGIN="https://gikky.net/"):
+        assert redirect_uri() == "https://gikky.net/api/_allauth/google/login/callback/"

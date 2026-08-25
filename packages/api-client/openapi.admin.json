@@ -236,6 +236,10 @@
             ],
             "title": "Nguon"
           },
+          "redirect_uri": {
+            "title": "Redirect Uri",
+            "type": "string"
+          },
           "secret_da_dat": {
             "title": "Secret Da Dat",
             "type": "boolean"
@@ -255,6 +259,7 @@
           "client_id",
           "secret_da_dat",
           "secret_duoi",
+          "redirect_uri",
           "sua_duoc"
         ],
         "title": "CaiDatGoogleOut",

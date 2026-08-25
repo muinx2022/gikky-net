@@ -55,6 +55,7 @@ def _ra(request) -> CaiDatGoogleOut:
         client_id=tt.client_id,
         secret_da_dat=tt.secret_da_dat,
         secret_duoi=tt.secret_duoi,
+        redirect_uri=tt.redirect_uri,
         sua_duoc=bool(request.user.is_superuser),
     )
 
