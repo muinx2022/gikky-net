@@ -471,12 +471,12 @@ test.describe("V6 — chân trang bung khán đài", () => {
   test("chân trang → khán đài, 3 sort đổi qua URL param, composer cuối mời đăng nhập", async ({
     page,
   }) => {
+    // **Khán đài mở SẴN từ 2026-08-24** (user chốt) — không còn chân trang gập, không
+    // còn cú bấm. `?khan_dai=1` vẫn nhận, nay là no-op, nên link cũ không gãy.
     await page.goto(duongDan(hpg));
-    await expect(page.getByTestId("khan-dai")).toHaveCount(0);
-    await page.getByTestId("nut-bung-khan-dai").click();
-
-    await expect(page).toHaveURL(/khan_dai=1/);
     await expect(page.getByTestId("khan-dai")).toBeVisible();
+    await expect(page.getByTestId("chan-trang-khan-dai")).toHaveCount(0);
+    await expect(page.getByTestId("nut-bung-khan-dai")).toHaveCount(0);
     await expect(page.getByTestId("sort-hay_nhat")).toHaveAttribute(
       "aria-current",
       "true",
@@ -541,8 +541,11 @@ test.describe("V8 — nguyên tắc 9: dưới 4 bình luận thì ẩn MỌI s�
     expect(post.comment_count).toBeGreaterThan(0);
 
     await page.goto(duongDan(post));
-    await expect(page.getByTestId("chan-mot-dong-moi")).toBeVisible();
+    // Chân trang gập đã bị gỡ (2026-08-24): mọi con số cũ của nó phải BIẾN MẤT, không
+    // được chuyển hộ sang chỗ khác. `khan-dai-tong-thread` là chỗ dễ chuyển hộ nhất.
+    await expect(page.getByTestId("khan-dai")).toBeVisible();
     await expect(page.getByTestId("chan-so-binh-luan")).toHaveCount(0);
+    await expect(page.getByTestId("khan-dai-tong-thread")).toHaveCount(0);
     await expect(page.getByTestId("chu-ky-so-binh-luan")).toHaveCount(0);
     await expect(page.getByTestId("so-binh-luan-moc")).toHaveCount(0);
 
@@ -555,8 +558,8 @@ test.describe("V8 — nguyên tắc 9: dưới 4 bình luận thì ẩn MỌI s�
     page,
   }) => {
     // Vá A2. Bài V8 cũ chỉ quét `/\d+\s*bình luận/` trên trang CHƯA bung, nên chữ
-    // "2 thread" ở đầu khán đài lọt sạch: bấm đúng cái link ngay dưới "Chưa có mấy ai
-    // nói gì" là thấy một con số mà V8 vừa chứng minh phải im lặng.
+    // "2 thread" ở đầu khán đài lọt sạch: bấm đúng cái link ngay dưới "Chưa có bình
+    // luận nào" là thấy một con số mà V8 vừa chứng minh phải im lặng.
     expect(post.comment_count).toBeLessThan(4);
 
     await page.goto(`${duongDan(post)}?khan_dai=1&sort=hay_nhat`);
@@ -569,22 +572,22 @@ test.describe("V8 — nguyên tắc 9: dưới 4 bình luận thì ẩn MỌI s�
     expect(than).not.toContain("💬");
   });
 
-  test("mạch 24 bình luận thì 'N thread' ĐƯỢC hiện (nếu không, luật trên là 'ẩn hết')", async ({
+  test("mạch 24 bình luận thì 'N cuộc trao đổi' ĐƯỢC hiện (nếu không, luật trên là 'ẩn hết')", async ({
     page,
   }) => {
     const kd = await khanDai(hpg.id, "hay_nhat");
     await page.goto(`${duongDan(hpg)}?khan_dai=1&sort=hay_nhat`);
+    // Chữ **gõ tay**, không dựng từ hằng nào: đây là nhãn người đọc thấy, nên nó phải đỏ
+    // khi ai đó lỡ đổi nó về "thread" hay đổi thành "bình luận" (con số này đếm THREAD
+    // GỐC, không đếm reply — in "bình luận" là nói sai).
     await expect(page.getByTestId("khan-dai-tong-thread")).toHaveText(
-      `${kd.tong_thread} thread`,
+      `${kd.tong_thread} cuộc trao đổi`,
     );
   });
 
   test("mạch 24 bình luận thì các số đếm ĐỀU hiện", async ({ page }) => {
     expect(hpg.comment_count).toBeGreaterThanOrEqual(4);
     await page.goto(duongDan(hpg));
-    await expect(page.getByTestId("chan-so-binh-luan")).toHaveText(
-      `💬 ${hpg.comment_count} bình luận`,
-    );
     await expect(page.getByTestId("chu-ky-so-binh-luan")).toHaveText(
       `${hpg.comment_count} bình luận`,
     );
@@ -711,7 +714,7 @@ test.describe("W2 — khán đài rỗng không được phô số 0", () => {
     page,
   }) => {
     // 21 mạch của `seed_e2e` không có bình luận nào, và đây đúng là đường người dùng đi:
-    // chân trang nói "Chưa có mấy ai nói gì" rồi bấm chính cái link ngay dưới nó, ra
+    // chân trang nói "Chưa có bình luận nào" rồi bấm chính cái link ngay dưới nó, ra
     // "Khán đài · 0 thread" + một `<ul>` rỗng. PLAN nguyên tắc 9 cấm đúng chuyện đó.
     const hs = await hoSo(USER_NHIEU_MACH);
     const the = hs.machs[0];
@@ -720,9 +723,6 @@ test.describe("W2 — khán đài rỗng không được phô số 0", () => {
     expect(mach.comment_count).toBe(0);
 
     await page.goto(duongDan(mach));
-    await expect(page.getByTestId("chan-mot-dong-moi")).toBeVisible();
-    await page.getByTestId("nut-bung-khan-dai").click();
-
     await expect(page.getByTestId("khan-dai")).toBeVisible();
     await expect(page.getByTestId("khan-dai-tong-thread")).toHaveCount(0);
     await expect(page.getByTestId("khan-dai-mot-dong-moi")).toBeVisible();

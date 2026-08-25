@@ -95,10 +95,9 @@ test.describe("B — form ghi: vòng lặp lõi chạy thật trong trình duy�
     // Mốc 2: UI mạch bật (spine + ngăn kéo) — PLAN 5.1 "UI mạch bật từ mốc 2".
     await noiMocQuaForm(page, "Mốc 2 — nâng dừng lỗ lên 26.40.");
     await expect(page.getByTestId("moc-2")).toBeVisible({ timeout: 20_000 });
-    // Từ Phase 3, mạch đang sống ra **mặt BÃO**: chỉ mốc mới nhất mở sẵn, phần còn lại
-    // nằm sau "mở cả mạch ▾" (PLAN 5.5). Mốc 1 vẫn phải ở đó và vẫn phải là thẻ "mach" —
-    // chỉ khác chỗ nó không hiện ngay.
-    await page.getByTestId("nut-mo-ca-mach").click();
+    // Từ Phase 3, mạch đang sống ra **mặt BÃO**. Từ 2026-08-24 mặt ấy luôn hiện mốc 1
+    // (bài gốc) cạnh mốc mới nhất, và mạch 2 mốc thì không gập gì cả — nên mốc 1 phải là
+    // thẻ "mach" NGAY, không qua cú bấm nào.
     await expect(page.getByTestId("moc-1")).toHaveAttribute("data-kieu", "mach");
     await expect(page.getByTestId("chu-ky-so-moc")).toHaveText("2 mốc");
 

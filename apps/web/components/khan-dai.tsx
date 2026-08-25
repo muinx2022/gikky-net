@@ -13,44 +13,6 @@ import { BinhLuan, DanhSachBinhLuan } from "./binh-luan";
 import { Composer } from "./composer";
 import css from "./khan-dai.module.css";
 
-/** Chân trang mặt CẶN khi khán đài **chưa bung** — PLAN 5.5:
- *
- *     💬 247 bình luận · [xem các câu đáng đọc ▾]
- *
- * Bấm là đi tới cùng URL kèm `?khan_dai=1`. Dùng URL chứ không dùng state client là có
- * lý do: PLAN 5.5 đòi khán đài bung ra "đổi được 3 sort", mà sort đã sống trên URL
- * (`?sort=`) — hai nửa của cùng một trạng thái nằm ở hai chỗ thì bấm Back sẽ ra một
- * trang không ai đoán được. Kèm theo: link chia sẻ dẫn thẳng tới khán đài đang mở.
- */
-export function LoiMoiBungKhanDai({
-  soBinhLuan,
-  hienSoDem,
-  href,
-}: {
-  soBinhLuan: number;
-  hienSoDem: boolean;
-  href: string;
-}) {
-  return (
-    <div className={css.khu} data-testid="chan-trang-khan-dai">
-      {hienSoDem ? (
-        <p className={css.dem} data-testid="chan-so-binh-luan">
-          💬 {soBinhLuan} bình luận
-        </p>
-      ) : (
-        // Nguyên tắc 9: dưới 4 bình luận thì khán đài "thu về một dòng mời", không con
-        // số nào. Không bao giờ hiện "💬 0".
-        <p className={css.mot_dong_moi} data-testid="chan-mot-dong-moi">
-          Chưa có mấy ai nói gì — mở lời trước đi.
-        </p>
-      )}
-      <Link className={css.moi_bung_khan_dai} href={href} data-testid="nut-bung-khan-dai">
-        xem các câu đáng đọc ▾
-      </Link>
-    </div>
-  );
-}
-
 /** Khối "Câu đáng đọc" — PLAN 5.5, chốt 2026-08-22.
  *
  * **Vì sao nó tồn tại:** cái nút ở chân trang mặt CẶN ghi *"xem các câu đáng đọc ▾"*, và
@@ -86,9 +48,9 @@ export function CauDangDoc({
   return (
     <section className={css.dang_doc} data-testid="cau-dang-doc">
       <div className={css.dang_doc_dau}>
-        <h3 className={css.dang_doc_tieu_de}>Câu đáng đọc</h3>
+        <h3 className={css.dang_doc_tieu_de}>Đáng chú ý</h3>
         <p className={css.dang_doc_giai_thich}>
-          Bình luận đã được chủ mạch trích vào sổ, cộng những câu được đánh giá cao nhất.
+          Bình luận được chủ mạch trích vào sổ, cùng những câu điểm cao nhất.
         </p>
       </div>
       <DanhSachBinhLuan data-testid="cay-cau-dang-doc">
@@ -110,6 +72,22 @@ export function CauDangDoc({
 
 /** Khán đài đã bung: 3 sort đổi qua URL param + composer ở cuối (PLAN 5.5).
  *
+ * ### Chữ trên màn hình ≠ chữ trong code *(user chốt 2026-08-24)*
+ *
+ * Tiêu đề hiện ra là **"Bình luận"**, con số là **"N cuộc trao đổi"**. Trước đó là
+ * "Khán đài" + "N thread" — cả hai đều là tiếng lóng của người dựng sản phẩm, không phải
+ * tiếng của người đọc.
+ *
+ * "N **cuộc trao đổi**" chứ không phải "N bình luận", và khác biệt ấy có thật:
+ * `tong_thread` đếm **thread gốc**, không đếm reply lồng bên trong. Một mạch 24 bình luận
+ * có thể chỉ có 9 thread — in "9 bình luận" ở đây là nói sai, mà chân trang ngay trên nó
+ * lại in `💬 24 bình luận` từ một nguồn khác, nên hai con số sẽ cãi nhau ngay trên cùng
+ * một màn hình.
+ *
+ * **Tên trong code giữ nguyên `khan-dai`** (component, `data-testid`, `id="khan-dai"`,
+ * `?khan_dai=`, mọi hàng rào e2e). Đổi cả hai lớp cùng lúc là gộp một việc đổi chữ với
+ * một việc đổi API — và PLAN vẫn gọi khu này là khán đài.
+ *
  * Composer ở cuối là **bắt buộc có mặt**: PLAN 5.1 chốt "mạch đóng vẫn bình luận được",
  * nên chân khán đài phải kết thúc bằng chỗ để viết. **Từ Phase 2 nó SỐNG** (`Composer`,
  * thay cho ô `disabled` của 1c) — khách chưa đăng nhập thấy lời mời đăng nhập, mạch bị
@@ -130,8 +108,8 @@ export function CauDangDoc({
  * **Nguyên tắc 9 áp ở ĐÂY nữa, không chỉ ở chân trang** (vá A2, 2026-08-22). Bản đầu của
  * 1c render `{tong_thread} thread` vô điều kiện, nên:
  *
- * - mạch 0 bình luận (21 mạch của `seed_e2e`) → chân trang nói đúng "Chưa có mấy ai nói
- *   gì", bấm chính cái link ngay dưới nó ra **"Khán đài · 0 thread"** + `<ul>` rỗng.
+ * - mạch 0 bình luận (21 mạch của `seed_e2e`) → chân trang nói đúng "Chưa có bình luận
+ *   nào", bấm chính cái link ngay dưới nó ra **"Khán đài · 0 thread"** + `<ul>` rỗng.
  *   PLAN nguyên tắc 9: *"Không bao giờ hiển thị '0 bình luận'… không phô sự im lặng"*;
  * - post thường 2 bình luận → **"2 thread"**, trong khi V8 vừa chứng minh trang đó phải
  *   im lặng về mọi con số.
@@ -176,10 +154,24 @@ export function KhanDai({
     return (
       <section className={css.khu} id="khan-dai" data-testid="khan-dai">
         <div className={css.dau}>
-          <h2>Khán đài</h2>
+          <h2>Bình luận</h2>
         </div>
+        {/* Câu này viết lại 2026-08-25 (user: "nghe hơi phản cảm"). Bản cũ —
+            *"Chưa có mấy ai nói gì — mở lời trước đi."* — sai hai chỗ, cả hai đều là
+            giọng chứ không phải nội dung:
+
+            1. **"chưa có mấy ai"** không phải một câu trung tính, nó là một nhận xét về
+               ĐÁM ĐÔNG: "chẳng mấy ai buồn nói". Đó là quảng cáo sự vắng vẻ — đúng thứ
+               PLAN loại `presence realtime` vì nó (*"hiển thị '0 đang xem' là quảng cáo
+               công khai sự vắng vẻ — phản social proof"*).
+            2. **"mở lời trước đi"** là một mệnh lệnh. Trang không ở vị thế sai bảo người
+               đọc, và tiểu từ "đi" đọc lên là kẻ cả.
+
+            Bản mới: nói đúng sự thật một lần, rồi MỜI. Không đếm, không nhận xét ai, và
+            **không lặp lại câu hỏi trong ô soạn ngay trên** ("…bạn nghĩ sao?") — hai câu
+            gần giống nhau trên một màn hình đọc như lỗi copy. */}
         <p className={css.mot_dong_moi} data-testid="khan-dai-mot-dong-moi">
-          Chưa có mấy ai nói gì — mở lời trước đi.
+          Chưa có bình luận nào — mời bạn nêu ý kiến.
         </p>
         {hienComposer && <Composer anchorMocSeq={anchorMocSeq} neoDoiDuoc />}
       </section>
@@ -189,10 +181,10 @@ export function KhanDai({
   return (
     <section className={css.khu} id="khan-dai" data-testid="khan-dai">
       <div className={css.dau}>
-        <h2>Khán đài</h2>
+        <h2>Bình luận</h2>
         {hienSoDem && (
           <span className={css.dem} data-testid="khan-dai-tong-thread">
-            {khanDai.tong_thread} thread
+            {khanDai.tong_thread} cuộc trao đổi
           </span>
         )}
       </div>

@@ -6,12 +6,14 @@
    sách ấy. Lỗi và thành công vì thế phát tín hiệu bằng ĐƯỜNG VIỀN và NỀN (cùng lối với
    `components/bao-cursor-hong.module.css`), không bằng màu cảnh báo. */
 
+/* Từ 2026-08-24 mọi trang dùng `.khung` này đều nằm TRONG `KhungHaiCot` (cột chính đã có
+   `max-width` + padding của riêng nó). Giữ lại `max-width`/`padding` ở đây là **cộng dồn
+   hai lớp lề** — thẻ tụt xuống và hẹp lại so với mọi trang khác. Nay nó chỉ còn làm đúng
+   một việc: canh giữa cái thẻ trong cột. */
 .khung {
-  max-width: var(--khung);
-  margin: 0 auto;
-  padding: 44px 18px 72px;
   display: flex;
   justify-content: center;
+  padding-top: 10px;
 }
 
 .the {
@@ -60,8 +62,11 @@
 }
 
 .o input:focus-visible {
-  outline: 2px solid var(--focus);
+  /* Nhẹ hơn vòng focus của nút/link — xem chú thích cùng nội dung ở `composer.module.css`. */
+  outline: 1px solid var(--focus);
   outline-offset: -1px;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
 /* Ô sai: viền ĐẬM + nét đứt. Không đổi màu — người phân biệt màu kém vẫn thấy được, và
@@ -186,4 +191,143 @@
     width: 22px;
     height: 22px;
   }
+}
+
+/* --- Sửa hồ sơ (form-ho-so.tsx) — avatar + tên + giới thiệu, 2026-08-24 --- */
+.hang_avatar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 6px 0 4px;
+}
+
+.avatar_nut {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Nút phụ (đổi ảnh / gỡ ảnh): viền mảnh, không nền — không tranh trọng lượng với nút
+   "Lưu hồ sơ" (`.gui`). `<label>` cần `inline-flex` để căn giữa chữ và bấm được cả ô. */
+.nut_phu,
+.nut_go {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: inherit;
+  font-size: 13px;
+  padding: 7px 13px;
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.nut_phu:hover,
+.nut_go:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.nut_phu[aria-disabled="true"],
+.nut_go:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.nut_go {
+  color: var(--ink-3);
+}
+
+.vung_van {
+  font: inherit;
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  resize: vertical;
+  min-height: 84px;
+}
+
+.vung_van:focus-visible {
+  outline: 1px solid var(--focus);
+  outline-offset: -1px;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+/* Cột dọc cho trang /cai-dat: nhiều thẻ xếp chồng, cùng bề rộng, cách đều. Cột này chỉ
+   lo thứ tự dọc + khoảng cách; bề rộng là bề rộng cột chính của `KhungHaiCot`.
+
+   ⚠ **Không đặt `max-width` ở đây** *(sửa 2026-08-24)*. Bản trước ghim `460px` mà không
+   canh giữa, nên trang cài đặt là một dải hẹp **dính lề trái** của một cột rộng 706px —
+   trông như trang tải hỏng, và nó là trang DUY NHẤT trên site không lấp đầy cột chính.
+   Muốn hẹp lại thì hẹp Ở TRƯỜNG NHẬP (`.cot_cai_dat .o input` bên dưới), không hẹp ở
+   cái thẻ: dòng chữ mô tả và tiêu đề vẫn nên chạy hết bề ngang như mọi trang khác. */
+.cot_cai_dat {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cot_cai_dat .the {
+  max-width: none;
+}
+
+/* Trường nhập KHÔNG kéo hết 706px: "Tên hiển thị" tối đa 60 ký tự mà ô dài gần gấp đôi
+   chỗ cần là mắt phải chạy quãng trống. Cap ở đây chứ không ở `.o input` chung — năm
+   trang đăng nhập/đăng ký nằm trong `.the` rộng 420px nên cap ấy vô hình với chúng, và
+   một luật vô hình là luật sẽ bị gỡ nhầm ở lần sửa sau. */
+.cot_cai_dat .o input,
+.cot_cai_dat .vung_van {
+  max-width: 440px;
+}
+
+/* Nút lưu co theo chữ. `width: 100%` của `.gui` hợp với form đăng nhập (một hành động,
+   một cột hẹp); ở trang cài đặt nó thành một thanh dài 706px trông như banner. */
+.cot_cai_dat .gui {
+  width: auto;
+  padding-left: 22px;
+  padding-right: 22px;
+}
+
+/* Lede đầu trang: bỏ lề dưới vì `.cot_cai_dat` đã có `gap: 16px`. Để nguyên `20px` của
+   `.mo_ta` là cộng dồn thành 36px — khoảng hở giữa tiêu đề và thẻ đầu rộng gấp đôi mọi
+   khoảng hở khác trên trang. */
+.cot_cai_dat > header .mo_ta {
+  margin-bottom: 0;
+}
+
+/* Nút trông như link — dùng ở khối "Bạn đang đăng nhập" *(2026-08-25)*.
+
+   `<button>` chứ không `<a href="#">`: đăng xuất là một HÀNH ĐỘNG có tác dụng phụ, không
+   phải một chỗ để đi tới. Một cái `<a>` giả ở đây là bàn phím và trình đọc màn hình nhận
+   sai loại phần tử, và trình duyệt cho phép mở nó ở tab mới — nơi cú bấm không làm gì. */
+.lien_ket_nut {
+  border: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.lien_ket_nut:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.lien_ket_nut:disabled {
+  color: var(--ink-3);
+  cursor: progress;
+}
+
+/* `.gui` vốn là `<button>`; ở khối trên nó là một `<a>` nên cần hai dòng canh chữ. */
+a.gui {
+  display: block;
+  text-align: center;
+  text-decoration: none;
 }

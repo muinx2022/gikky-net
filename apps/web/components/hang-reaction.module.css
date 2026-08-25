@@ -52,3 +52,19 @@
     padding: 0 12px;
   }
 }
+
+/* Nhãn chữ cạnh emoji *(2026-08-25)*. Nhỏ hơn và nhạt hơn con số: con số là dữ liệu, nhãn
+   là chỉ dẫn — người đã hiểu bộ nút thì mắt lướt qua nó, người chưa hiểu thì đọc nó. */
+.chu {
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+/* ⚠ **KHÔNG ẩn `.chu` trên màn hình hẹp.** Bản đầu của lượt này có một media query
+   `max-width: 420px { .chu { display: none } }` — và nó **hoàn tác chính bản vá** đúng ở
+   nơi cần nhất: trên điện thoại không có hover, nên `title` không tồn tại, nên emoji trần
+   ở đó là hoàn toàn không đọc được. Đo ở 375px: giấu nhãn ⇒ bốn nút thành `🧠 📎 ❓ 🔥`,
+   tức y hệt trạng thái user vừa báo lỗi.
+
+   `.hang` đã có `flex-wrap: wrap`, nên bốn nút kèm nhãn tự xuống hai dòng — đo ở 375px:
+   **0px cuộn ngang**. Hai dòng nút đọc được tốt hơn một dòng nút không hiểu được. */

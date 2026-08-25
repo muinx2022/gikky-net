@@ -505,9 +505,10 @@ test.describe("A10 — `[−]` gập/mở nhánh ở cả khán đài lẫn ngă
 /* ---- Khối "Câu đáng đọc" (PLAN 5.5) --------------------------------------- */
 
 test.describe("A5 (render) — khối 'Câu đáng đọc' nằm TRÊN CÙNG khối vừa bung", () => {
-  test("bấm chân trang ⇒ khối hiện ra, đứng trước cây đầy đủ", async ({ page }) => {
+  test("mở trang ⇒ khối hiện ra, đứng trước cây đầy đủ", async ({ page }) => {
+    // Từ 2026-08-24 khán đài mở sẵn, nên khối này có mặt ngay — không còn "bấm chân
+    // trang" nào. Vị trí thì không đổi: nó vẫn phải đứng TRÊN CÙNG (PLAN 5.5).
     await page.goto(duongDan(hpg));
-    await page.getByTestId("nut-bung-khan-dai").click();
     const khoi = page.getByTestId("cau-dang-doc");
     await expect(khoi).toBeVisible();
 

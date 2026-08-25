@@ -6,10 +6,12 @@ import { dauThoiGianServer, diemCoDau } from "@/lib/dinh-dang";
 import { neoBinhLuan } from "@/lib/khan-dai";
 import { duongDanHoSo } from "@/lib/url";
 
+import { Avatar } from "./avatar";
 import css from "./binh-luan.module.css";
 import { CotVote } from "./cot-vote";
 import { GapNhanh } from "./gap-nhanh";
 import { HanhDongBinhLuan } from "./hanh-dong-binh-luan";
+import { HanhDongMod } from "./hanh-dong-mod";
 import { ThanVan } from "./than-van";
 
 // `SAU_KHAN_DAI` / `SAU_NGAN_KEO` đã dời sang `lib/khan-dai.ts`: `idTrongTrang` phải
@@ -131,6 +133,12 @@ function NoiDung({ nut }: { nut: BinhLuanOut }) {
       <div className={css.dau}>
         {/* Tên tác giả là chữ người dùng gõ (Y3) — thân bình luận cũng vậy, nhưng dấu
             của nó nằm trong `ThanVan`, chỗ duy nhất in `body`. */}
+        <Avatar
+          ten={nut.author?.username ?? ""}
+          hienThi={nut.author?.display_name}
+          url={nut.author?.avatar_url}
+          co={22}
+        />
         <Link
           className={css.ai}
           href={duongDanHoSo(nut.author?.username ?? "")}
@@ -171,6 +179,14 @@ function NoiDung({ nut }: { nut: BinhLuanOut }) {
           than={nut.body ?? ""}
           daXoa={nut.trang_thai !== "binh_thuong"}
           anchorMocSeq={nut.anchor_moc_seq}
+        />
+        {/* Công cụ mod — chỉ mod thấy, xem `HanhDongMod`. Đặt CUỐI hàng chân: nó là công
+            cụ của một nhóm nhỏ, không được tranh chỗ với vote và "Trả lời". */}
+        <HanhDongMod
+          loai="binh-luan"
+          id={nut.id}
+          dangAn={nut.trang_thai === "da_an"}
+          nhan="bình luận này"
         />
       </div>
     </>

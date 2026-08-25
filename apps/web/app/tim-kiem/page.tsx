@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { DongKetQua } from "@/components/ket-qua-tim-kiem";
+import { KhungHaiCot } from "@/components/khung-hai-cot";
 import { docCacSub, docTimKiem, SO_KET_QUA_MOI_TRANG } from "@/lib/api";
 
 import css from "./tim-kiem.module.css";
@@ -52,7 +53,7 @@ export default async function TrangTimKiem({
   const sub_hong = q !== "" && ket === null;
 
   return (
-    <main className={css.khung}>
+    <KhungHaiCot>
       <h1 className={css.tieu_de}>Tìm kiếm</h1>
 
       <form className={css.thanh} action="/tim-kiem" method="get" role="search">
@@ -145,7 +146,7 @@ export default async function TrangTimKiem({
           )}
         </>
       )}
-    </main>
+    </KhungHaiCot>
   );
 }
 

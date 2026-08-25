@@ -1,0 +1,61 @@
+/* Nút chính của header chuyên mục: nền `--accent` khi CHƯA theo (mời gọi), viền mảnh khi
+   ĐÃ theo (trạng thái, không mời gọi nữa). Cùng ngữ pháp với `nut-theo-mach.module.css`. */
+.nut {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 15px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.nut:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.nut:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.dang_theo {
+  background: none;
+  border-color: var(--line-2);
+  color: var(--ink-2);
+  font-weight: 500;
+}
+
+.dang_theo:hover:not(:disabled) {
+  filter: none;
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Nút "Hủy" trong danh sách hồ sơ: phụ, không tranh trọng lượng với tên chuyên mục. */
+.nut_go {
+  flex: none;
+  padding: 6px 13px;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  background: none;
+  color: var(--ink-3);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.nut_go:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.nut_go:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}

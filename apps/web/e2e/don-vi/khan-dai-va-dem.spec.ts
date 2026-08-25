@@ -43,7 +43,7 @@ function chuoiSau(sau: number): BinhLuanOut[] {
     parent_id: depth === 1 ? null : depth - 1,
     depth,
     anchor_moc_seq: depth === 1 ? 1 : null,
-    author: { username: "ai_do", display_name: "Ai Đó" },
+    author: { username: "ai_do", display_name: "Ai Đó", avatar_url: null },
     body: `tầng ${depth}`,
     created_at: "2026-03-04T02:20:00Z",
     edited_at: null,

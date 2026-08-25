@@ -1,11 +1,35 @@
 /* Header của trang chuyên mục — dải nhận diện đứng trên feed, chất liệu "sổ nghiêm" nhẹ
  * (PLAN 9.1): viền cứng, slug bằng mono, không bo tròn nhiều. */
+/* Chữ bên trái, nút "Theo dõi" bên phải — user chốt 2026-08-24.
+
+   `align-items: flex-start` chứ không `center`: mô tả chuyên mục dài ngắn tuỳ nơi, và
+   canh giữa theo chiều dọc thì cái nút TRÔI theo độ dài đoạn văn — cùng một nút, ba trang
+   chuyên mục, ba độ cao khác nhau. Neo nó lên đỉnh là chỗ đứng cố định. */
 .dau {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 6px;
   padding: 14px 16px;
   margin-bottom: 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+/* `min-width: 0` là vế bắt buộc của một flex item chứa chữ: thiếu nó thì `min-width:
+   auto` ngầm giữ item rộng bằng từ dài nhất, và một mô tả không có dấu cách sẽ đẩy cái
+   nút ra khỏi thẻ. */
+.dau_chu {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 560px) {
+  /* Nút xuống dòng dưới chữ thay vì bóp cả hai — dưới ngưỡng này thẻ không đủ chỗ cho
+     một cột chữ đọc được cộng một nút 100px. */
+  .dau {
+    flex-wrap: wrap;
+  }
 }
 
 .slug {

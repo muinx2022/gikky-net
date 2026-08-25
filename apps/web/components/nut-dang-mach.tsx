@@ -1,5 +1,6 @@
 "use client";
 
+import { Plus } from "lucide-react";
 import Link from "next/link";
 
 import css from "./nut-dang-mach.module.css";
@@ -23,7 +24,8 @@ export function NutDangMach() {
 
   return (
     <Link href="/dang-mach" className={css.nut} data-testid="nut-dang-mach">
-      <span aria-hidden>＋</span> Đăng bài
+      <Plus size={15} strokeWidth={2.2} aria-hidden />
+      Đăng bài
     </Link>
   );
 }

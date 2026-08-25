@@ -4,6 +4,23 @@
   padding: 26px 22px 40px;
 }
 
+/* Hàng đầu hồ sơ: avatar lớn + (tên · username). Avatar 64px nên căn giữa theo trục dọc
+   với khối hai dòng chữ bên cạnh. */
+.dau_ho_so {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Nút "Sửa hồ sơ" đẩy sang phải, tách khỏi cụm avatar + tên. */
+.dau_ho_so > a {
+  margin-left: auto;
+}
+
+.dau_chu {
+  min-width: 0;
+}
+
 .ten {
   font-family: var(--f-display);
   font-size: clamp(23px, 3.6vw, 29px);

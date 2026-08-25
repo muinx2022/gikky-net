@@ -33,34 +33,103 @@ async function daChon(page: Page, khoa: string, gia_tri: string) {
   );
 }
 
-test.describe("T1 — ba trạng thái theme, và lựa chọn SỐNG qua tải lại", () => {
+test.describe("T1 — công tắc hai trạng thái, và lựa chọn SỐNG qua tải lại", () => {
   test.use({ colorScheme: "light" });
 
-  test("chọn Tối trên máy đang sáng ⇒ trang tối, và F5 vẫn tối", async ({ page }) => {
+  test("bấm công tắc trên máy đang sáng ⇒ trang tối, và F5 vẫn tối", async ({ page }) => {
     await page.goto("/luat");
     expect(await nenBody(page), "khởi điểm: máy sáng, chưa chọn gì").toBe(NEN_SANG);
 
-    await page.getByTestId("cong-tac-theme").selectOption("toi");
+    const nut = page.getByTestId("cong-tac-theme");
+    await expect(nut, "đang sáng ⇒ đích của cú bấm là TỐI").toHaveAttribute(
+      "data-muc-tieu",
+      "toi",
+    );
+    await nut.click();
     expect(await nenBody(page), "đổi có tác dụng NGAY, không đợi reload").toBe(NEN_TOI);
 
     // Vế "được nhớ" — và nó phải đo bằng một lượt tải THẬT. Đọc lại `localStorage` chỉ
     // chứng minh có ghi, không chứng minh lượt tải sau đọc được nó.
     await page.reload();
     expect(await nenBody(page), "sống qua F5").toBe(NEN_TOI);
-    expect(
-      await page.getByTestId("cong-tac-theme").inputValue(),
-      "công tắc hiện đúng lựa chọn đang bật",
-    ).toBe("toi");
+    await expect(
+      page.getByTestId("cong-tac-theme"),
+      "đang tối ⇒ đích lật sang SÁNG",
+    ).toHaveAttribute("data-muc-tieu", "sang");
   });
 
-  test('"Theo hệ thống" trả quyền lại cho máy — XOÁ lựa chọn, không ghi giá trị thứ ba', async ({
+  test("MỌI cú bấm đều đổi nền — không nước đi nào là no-op", async ({ page }) => {
+    /* **Bài đo của chính cái lỗi user báo 2026-08-24.**
+     *
+     * Ô chọn ba trạng thái cũ có một nước đi vô hình: trên máy đang để TỐI, mặc định là
+     * "theo hệ thống" nên trang đã tối, và chọn "Tối" đổi `data-theme` mà không đổi một
+     * pixel nào. Người dùng kết luận công tắc hỏng — kết luận đúng với thứ họ thấy.
+     *
+     * Nút hai trạng thái luôn đặt lựa chọn NGƯỢC với thứ đang hiện, nên vòng lặp dưới đây
+     * phải thấy nền **đổi ở mọi bước**. Đo trên máy để TỐI, tức đúng ca đã hỏng.
+     */
+    await page.emulateMedia({ colorScheme: "dark" });
+    await page.goto("/luat");
+    expect(await nenBody(page), "máy tối, chưa chọn gì").toBe(NEN_TOI);
+
+    const nut = page.getByTestId("cong-tac-theme");
+    const mong = [NEN_SANG, NEN_TOI, NEN_SANG, NEN_TOI];
+    for (const [i, nen] of mong.entries()) {
+      await nut.click();
+      expect(await nenBody(page), `cú bấm thứ ${i + 1} phải đổi nền`).toBe(nen);
+    }
+  });
+});
+
+test.describe("T1c — hai control, MỘT trạng thái", () => {
+  test.use({ colorScheme: "light" });
+
+  test("bấm nút ở header ⇒ ô chọn ở chân trang đi theo NGAY", async ({ page }) => {
+    /* Lỗi đo được ở bản đầu của lượt 2026-08-24: mỗi control giữ `useState` riêng và đọc
+     * `localStorage` đúng một lần lúc mount. Bấm nút ⇒ trang đổi màu, `localStorage` đổi,
+     * mà ô chọn ở chân trang **vẫn hiện giá trị cũ**. Hai control nói hai chuyện khác
+     * nhau về cùng một trạng thái, và không có gì báo.
+     *
+     * Cách vá: cả hai đi qua `useLuaChonTheme` — `<html>[data-theme]` làm bus, đọc lại
+     * `localStorage` mỗi lần nó đổi. Bài này ghim rằng chúng còn dính nhau.
+     */
+    await page.goto("/luat");
+    const nut = page.getByTestId("cong-tac-theme");
+    const o_chon = page.getByTestId("chon-giao-dien-select");
+
+    expect(await o_chon.inputValue(), "chưa chọn gì ⇒ theo hệ thống").toBe("he");
+
+    await nut.click();
+    expect(await o_chon.inputValue(), "ô chọn phải đi theo cú bấm ở header").toBe("toi");
+
+    await nut.click();
+    expect(await o_chon.inputValue()).toBe("sang");
+  });
+});
+
+test.describe('T1b — "Theo hệ thống" chọn lại được ở CHÂN TRANG, không cần đăng nhập', () => {
+  test.use({ colorScheme: "light" });
+
+  test("chọn lại Theo hệ thống ⇒ XOÁ lựa chọn, không ghi giá trị thứ ba", async ({
     page,
   }) => {
+    /* Đây là **cái giá của nút hai trạng thái**, và nó phải có một bài đo riêng.
+     *
+     * Nút ở header không còn đặt được "theo hệ thống": bấm nó luôn ghi `sang` hoặc `toi`.
+     * Nếu không có cửa thứ hai thì người đã bấm một lần bị ghim vĩnh viễn vào một theme
+     * cứng, và mất mát ấy chỉ lộ ra vào buổi tối — không ai báo lỗi được. Cửa thứ hai là
+     * ô chọn ba trạng thái ở CHÂN TRANG; bài này ghim rằng nó còn sống, còn xoá đúng
+     * khoá, và **KHÔNG đòi đăng nhập** — chính người báo lỗi gốc đang là khách, nên một
+     * cửa nằm sau `/cai-dat` sẽ vá cho đúng người không cần vá.
+     *
+     * Đo trên `/luat` vì đó là route TĨNH: nó chứng minh luôn rằng ô chọn không kéo cả
+     * cây route thành dynamic.
+     */
     await daChon(page, KHOA_THEME, "toi");
     await page.goto("/luat");
     expect(await nenBody(page)).toBe(NEN_TOI);
 
-    await page.getByTestId("cong-tac-theme").selectOption("he");
+    await page.getByTestId("chon-giao-dien-select").selectOption("he");
     // Máy đang `colorScheme: light` ⇒ theo hệ thống nghĩa là sáng.
     expect(await nenBody(page)).toBe(NEN_SANG);
     expect(

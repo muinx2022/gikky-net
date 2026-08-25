@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { Avatar } from "@/components/avatar";
+import { KhungHaiCot } from "@/components/khung-hai-cot";
+import { NutSuaHoSo } from "@/components/nut-sua-ho-so";
+import { DanhSachRieng, DanhSachSubTheo, TabHoSoNav } from "@/components/tab-ho-so";
 import { TheMach } from "@/components/the-mach";
 import { docHoSo } from "@/lib/api";
 import { CHU_NGUOI_DUNG } from "@/lib/chu-nguoi-dung";
 import { ngayCuaThoiDiem } from "@/lib/dinh-dang";
+import { docTabHoSo, laTabRieng } from "@/lib/tab-ho-so";
 
 import css from "./ho-so.module.css";
 
@@ -24,8 +29,15 @@ export async function generateMetadata({
   return { title: `u/${username}` };
 }
 
-export default async function TrangHoSo({ params }: { params: Promise<ThamSo> }) {
+export default async function TrangHoSo({
+  params,
+  searchParams,
+}: {
+  params: Promise<ThamSo>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { username } = await params;
+  const tab = docTabHoSo((await searchParams).tab);
   const ho_so = await docHoSo(username);
   if (ho_so === null) notFound();
 
@@ -54,16 +66,28 @@ export default async function TrangHoSo({ params }: { params: Promise<ThamSo> })
     ho_so.duoc_trich > 0;
 
   return (
-    <main className={css.khung}>
+    <KhungHaiCot>
       {/* Ba nút dưới mang dấu `CHU_NGUOI_DUNG` (Y3): chúng in chữ do chính người dùng gõ,
           nên hàng rào "ứng dụng không được quả quyết / không được rò kiểm duyệt" phải
           loại chúng ra — xem `lib/chu-nguoi-dung.ts`. */}
-      <h1 className={css.ten} {...CHU_NGUOI_DUNG}>
-        {ho_so.display_name || ho_so.username}
-      </h1>
-      <p className={css.username} {...CHU_NGUOI_DUNG}>
-        u/{ho_so.username}
-      </p>
+      <div className={css.dau_ho_so}>
+        <Avatar
+          ten={ho_so.username}
+          hienThi={ho_so.display_name}
+          url={ho_so.avatar_url}
+          co={64}
+        />
+        <div className={css.dau_chu}>
+          <h1 className={css.ten} {...CHU_NGUOI_DUNG}>
+            {ho_so.display_name || ho_so.username}
+          </h1>
+          <p className={css.username} {...CHU_NGUOI_DUNG}>
+            u/{ho_so.username}
+          </p>
+        </div>
+        {/* Chỉ chủ hồ sơ thấy — client quyết, xem `NutSuaHoSo`. */}
+        <NutSuaHoSo username={ho_so.username} />
+      </div>
       {ho_so.bio !== "" && (
         <p className={css.bio} {...CHU_NGUOI_DUNG}>
           {ho_so.bio}
@@ -105,12 +129,23 @@ export default async function TrangHoSo({ params }: { params: Promise<ThamSo> })
 
       <p className={css.username}>Tham gia {ngayCuaThoiDiem(ho_so.date_joined)}</p>
 
-      {/* Chỉ khúc `u/{username}` mang dấu, không phải cả `<h2>`: "Mạch của" là chữ của
-          ứng dụng và phải ở lại trong phép quét. */}
-      <h2 className={css.phu_tieu_de}>
-        Mạch của <span {...CHU_NGUOI_DUNG}>u/{ho_so.username}</span>
-      </h2>
-      {ho_so.machs.length === 0 ? (
+      {/* Thanh tab quyết định phần dưới. BA tab riêng do CLIENT vẽ (chỉ chủ hồ sơ thấy)
+          — xem `components/tab-ho-so.tsx`. */}
+      <TabHoSoNav username={ho_so.username} tabHienTai={tab} />
+
+      {/* `chuyen-muc` tách ra TRƯỚC, không gộp vào `DanhSachRieng`: nó liệt kê chuyên mục
+          chứ không mạch. Trước lượt này chỗ đây viết `tab as "da-vote" | "dang-theo"` —
+          một khẳng định đúng khi chỉ có hai tab riêng, và là **lời nói dối với `tsc`**
+          ngay khi có tab riêng thứ ba. Nhánh tường minh dưới đây làm cái ép kiểu ấy thành
+          sự thật trở lại. */}
+      {tab === "chuyen-muc" ? (
+        <DanhSachSubTheo username={ho_so.username} />
+      ) : laTabRieng(tab) ? (
+        <DanhSachRieng
+          username={ho_so.username}
+          tab={tab as "da-vote" | "dang-theo"}
+        />
+      ) : ho_so.machs.length === 0 ? (
         // X1 — **cửa anh em của W4, cách đó 8 dòng, cùng file.** W4 xoá một khẳng định
         // về quá khứ ở khối chỉ số rồi để nguyên đúng khẳng định ấy ở đây: `users.py`
         // lọc `hidden_at__isnull=True`, nên user bị mod ẩn sạch bài cũng có
@@ -129,12 +164,12 @@ export default async function TrangHoSo({ params }: { params: Promise<ThamSo> })
         </ul>
       )}
 
-      {bi_cat > 0 && (
+      {!laTabRieng(tab) && bi_cat > 0 && (
         <p className={css.bi_cat} data-testid="ho-so-bi-cat">
           Danh sách trên mới là {ho_so.machs.length} mạch mới nhất. Còn {bi_cat} mạch nữa
           chưa hiện được — hồ sơ chưa có trang tiếp.
         </p>
       )}
-    </main>
+    </KhungHaiCot>
   );
 }

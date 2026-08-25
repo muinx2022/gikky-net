@@ -175,9 +175,26 @@ test("KHÔNG file nào ở apps/web dùng `dangerouslySetInnerHTML`", () => {
   //    Cửa duy nhất biến nó thành lỗ: cho một biến chạy vào chuỗi. Bài
   //    `e2e/don-vi/theme.spec.ts` canh đúng chỗ đó — nó chạy chuỗi trên một DOM giả và
   //    khớp kết quả với hàm thuần, nên một tham số lạ chen vào sẽ lộ.
+  // 3. `components/than-html.tsx`, thân MỐC do Tiptap soạn (user chốt 2026-08-24: "Tiptap
+  //    lưu HTML đầy đủ"). Đây là ngoại lệ **nặng nhất** trong ba cái, vì nó là chỗ duy
+  //    nhất chèn chữ NGƯỜI DÙNG GÕ vào DOM mà không qua JSX. Nó được phép vì độ an toàn
+  //    nằm ở một chỗ khác và nằm ở PHÍA SERVER: `api/core/lam_sach_html.py::lam_sach`
+  //    chạy trong `core/ghi.py` trên **mọi** đường ghi `body` (tạo mạch · nối mốc · sửa
+  //    mốc) — allowlist 15 thẻ, thuộc tính chỉ `a[href]`, giao thức chỉ
+  //    `http`/`https`/`mailto`. Không có đường ghi thứ tư.
+  //
+  //    Hai vế giữ cho câu trên không mục:
+  //    - `api/tests/test_lam_sach_html.py` đo chính bộ lọc ấy;
+  //    - một bài đo BẤT BIẾN ở phía Django: mọi `body` trong DB phải **bằng chính nó**
+  //      sau khi `lam_sach` lần nữa — chuông báo nếu có dữ liệu lọt vào bằng đường khác.
+  //
+  //    ⚠ `Comment.body` và `MocRevision.body` **chưa từng qua `lam_sach`**; chúng có
+  //    đường render riêng (`ThanVan` và `<pre>`). Đưa chúng vào `ThanHtml` là dựng lại
+  //    đúng lỗ XSS mà cả lượt ấy bỏ công tránh.
   const MIEN = new Set([
     "components/json-ld.tsx",
     "app/layout.tsx",
+    "components/than-html.tsx",
     "e2e/don-vi/markdown.spec.ts",
   ]);
   const pham = quetNguon(WEB, /\.tsx?$/)
@@ -191,7 +208,11 @@ test("bài trên không rỗng: MỌI file được miễn trừ THẬT SỰ có
   // Giấy miễn trừ chết là giấy miễn trừ sẽ được nới. Quét CẢ HAI dòng chứ không chỉ dòng
   // đầu: bản trước chỉ soi `json-ld.tsx`, nên dòng miễn trừ thứ hai thêm vào lúc nào cũng
   // được mà không ai kiểm nó có cần thật không.
-  for (const ten of ["components/json-ld.tsx", "app/layout.tsx"]) {
+  for (const ten of [
+    "components/json-ld.tsx",
+    "app/layout.tsx",
+    "components/than-html.tsx",
+  ]) {
     const nguon = readFileSync(resolve(WEB, ten), "utf8");
     expect(nguon, `${ten} được miễn trừ mà không dùng dangerouslySetInnerHTML`).toContain(
       "dangerouslySetInnerHTML",

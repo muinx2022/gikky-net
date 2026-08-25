@@ -11,7 +11,9 @@ import { BannerMach } from "@/components/banner-mach";
 import { BaoCursorHong } from "@/components/bao-cursor-hong";
 import { DaiGapBung } from "@/components/dai-gap";
 import { JsonLd } from "@/components/json-ld";
-import { KhanDai, LoiMoiBungKhanDai } from "@/components/khan-dai";
+import { KhanDai } from "@/components/khan-dai";
+import { KhungHaiCot } from "@/components/khung-hai-cot";
+import { HanhDongMod } from "@/components/hanh-dong-mod";
 import { KhoiChuMach } from "@/components/khoi-chu-mach";
 import { LoiMoiDoiMat } from "@/components/loi-moi-doi-mat";
 import { MachProvider } from "@/components/mach-ngu-canh";
@@ -164,10 +166,6 @@ export async function TrangMach({
   const offset = offset_dung ? offset_so : 0;
   const offset_hong = offset_tho !== undefined && !offset_dung;
 
-  // Mặt BÃO: **khán đài LÀ thân bài** (PLAN 5.5), nên nó mở sẵn, không đợi `?khan_dai=1`.
-  // Mặt CẶN thì ngược lại: nhật ký là thân bài, khán đài nằm sau một cú bấm.
-  const bung_khan_dai = la_bao || motChuoi(q.khan_dai) === "1";
-
   const la_mach = mach.entry_count >= 2;
   const hien_so_dem = nenHienSoDem(mach.comment_count);
   const dai = tinhDaiGap(mach.entry_count);
@@ -179,19 +177,28 @@ export async function TrangMach({
   // 1. **mồi bung** của dải gập — tính từ trang đầu của chính sort đó (plan con 1c §1),
   //    KHÔNG theo sort người dùng đang chọn;
   // 2. **deep-link của khối trích** — xem `duong_dan_trich` bên dưới.
-  const can_hay_nhat = dai.gap || co_trich || (bung_khan_dai && sort === "hay_nhat");
+  const can_hay_nhat = dai.gap || co_trich || sort === "hay_nhat";
   const hay_nhat = can_hay_nhat
     ? (await docKhanDai(mach.id, "hay_nhat", doc)).du_lieu
     : null;
 
-  // Trang khán đài ĐANG HIỆN. Chỉ nạp khi thật sự bung ra — trước đợt vá nó được nạp cả
-  // khi chân trang còn đang gập, tức một lời gọi thừa nữa.
+  // Trang khán đài ĐANG HIỆN — **luôn nạp** *(user chốt 2026-08-24)*.
+  //
+  // Tới hôm ấy mặt CẶN giấu bình luận sau một cú bấm (`?khan_dai=1`) và lời gọi này chỉ
+  // chạy khi đã bấm. Nay khán đài mở sẵn ở CẢ HAI mặt, vì hai lý do: người đọc một mạch
+  // đã đóng phải bấm mới thấy phần cộng đồng nói gì về kết quả — đúng thứ họ tới để đọc;
+  // và mặt CẶN là mặt Google index, giấu nội dung sau một URL khác là tự cắt đi phần lớn
+  // thứ mình muốn được index. `?khan_dai=1` **vẫn nhận** và nay là no-op, nên link đã
+  // chia sẻ và `hrefSort` không gãy.
+  //
+  // Cái giá: một lời gọi Django nữa cho mọi lượt xem mặt CẶN. Với `doc = "isr"` nó nằm
+  // trong data cache của Next (PLAN 8.4) nên chỉ chạm Django một lần mỗi giờ.
+  //
   // `| null` viết TƯỜNG MINH (vá F1): `TrangCursor<T>` không còn tự thêm `null` vào mọi
   // lời gọi. Ở đây `null` có nghĩa thật — `liet_ke_binh_luan_mach` trả 404 khi mạch biến
   // mất giữa hai lời gọi — nên chỗ này là chỗ được phép khai nullable.
-  const trang_dang_xem: TrangCursor<KhanDaiOut | null> = !bung_khan_dai
-    ? { du_lieu: null, cursorHong: false }
-    : sort === "hay_nhat" && offset === 0 && cursor === undefined && hay_nhat !== null
+  const trang_dang_xem: TrangCursor<KhanDaiOut | null> =
+    sort === "hay_nhat" && offset === 0 && cursor === undefined && hay_nhat !== null
       ? { du_lieu: hay_nhat, cursorHong: false }
       : await docKhanDai(mach.id, sort, doc, { offset, cursor });
   const khan_dai_trang = trang_dang_xem.du_lieu;
@@ -200,7 +207,7 @@ export async function TrangMach({
   // "Câu đáng đọc" (PLAN 5.5) — khối của mặt CẶN, và chỉ của mặt CẶN. Ở mặt BÃO khán đài
   // đã là thân bài và mở sẵn, nên một khối "lọc sẵn 10 câu" ngay trên cây đầy đủ là đúng
   // cái bản-sao-của-chính-nó mà ngoại lệ 2026-08-22 loại bỏ.
-  const cau_dang_doc = bung_khan_dai && !la_bao ? await docCauDangDoc(mach.id, doc) : null;
+  const cau_dang_doc = !la_bao ? await docCauDangDoc(mach.id, doc) : null;
 
   // Ngăn kéo nạp sẵn cho MỌI mốc của mạch — kể cả mốc `so_binh_luan === 0` (vá B1: mốc
   // chỉ còn bia mộ vẫn có lát cắt), và kể cả mốc nằm trong dải gập, vì dải gập bung ra
@@ -256,7 +263,7 @@ export async function TrangMach({
   );
 
   return (
-    <main className={css.khung}>
+    <KhungHaiCot>
       <JsonLd duLieu={jsonLdMach(mach)} />
       {/* Ba sự thật về mạch, chia cho mọi widget CLIENT nằm sâu bên trong (cột vote,
           composer, menu `⋯`). Provider là client component nhưng children của nó vẫn là
@@ -286,6 +293,16 @@ export async function TrangMach({
                   s/{mach.sub.slug}
                 </Link>
                 <NutTheoMach />
+                {/* Công cụ mod của MẠCH: ẩn + khoá. `dangAn` luôn `false` — mạch bị ẩn
+                    trả 404 ở cửa công khai nên không tới được đây; xem docstring
+                    `HanhDongMod`. */}
+                <HanhDongMod
+                  loai="mach"
+                  id={mach.id}
+                  dangAn={false}
+                  dangKhoa={mach.locked}
+                  nhan="mạch này"
+                />
               </div>
               <h1 className={css.tieu_de}>{mach.title}</h1>
               <div className={css.chu_ky}>
@@ -334,9 +351,20 @@ export async function TrangMach({
                 ở server và nằm được trong HTML đã cache. */}
             {la_bao ? (
               <p className={css.doi_mat} data-testid="doi-mat-bao">
-                Đang xem <strong>mặt BÃO</strong> — khán đài là thân bài.{" "}
+                {/* **Chữ trên màn hình KHÔNG nói "mặt BÃO/CẶN"** *(user chốt 2026-08-25:
+                    "câu này khó hiểu quá")*. "Mặt BÃO", "mặt CẶN", "khán đài", "thân bài",
+                    "nhật ký thuần" là **từ vựng nội bộ của PLAN 5.5** — chúng gọn cho
+                    người viết code, và với người đọc lần đầu thì năm chữ lạ trong một câu
+                    mười ba chữ là không đọc được. Tên nội bộ ở lại trong code, trong PLAN
+                    và trong `?view=bao|can`; trên màn hình chỉ còn thứ nó THẬT SỰ khác
+                    nhau: có bình luận xen giữa các mốc, hay không.
+
+                    Hai tên hiển thị dùng NHẤT QUÁN cả hai chiều — "bản đầy đủ" và "nhật
+                    ký của tác giả" — xem `loi-moi-doi-mat.tsx` cho chiều còn lại. Đặt hai
+                    tên khác nhau cho cùng một thứ ở hai chỗ là bắt người dùng học hai lần. */}
+                Đang xem <strong>bản đầy đủ</strong> — bình luận hiện xen giữa các mốc.{" "}
                 <Link href={`${co_ban}?view=can`} data-testid="doi-sang-mat-can">
-                  xem mặt CẶN (nhật ký thuần)
+                  Chỉ đọc nhật ký của tác giả
                 </Link>
               </p>
             ) : (
@@ -345,12 +373,13 @@ export async function TrangMach({
 
             <NganKeoProvider>
               {la_bao && la_mach ? (
-                // Mặt BÃO — PLAN 5.5: spine 1 dòng → thẻ mốc mới nhất mở sẵn → "mở cả
-                // mạch ▾" (timeline đầy đủ, có vạch mới). Thẻ mốc vẫn render ở SERVER và
-                // đi vào đây dưới dạng `ReactNode` — xem docstring `MatBao`.
+                // Mặt BÃO — PLAN 5.5: spine 1 dòng → thẻ mốc 1 + dải gập + thẻ mốc mới
+                // nhất → bung ra là timeline đầy đủ, có vạch mới. Thẻ mốc vẫn render ở
+                // SERVER và đi vào đây dưới dạng `ReactNode` — xem docstring `MatBao`.
+                // Công thức gập của mặt này ở `lib/dai-gap.ts::tinhDaiGapBao`, và `MatBao`
+                // tự gọi: cả hai đầu đều lấy từ `tatCaMoc`, không có nguồn thứ hai.
                 <MatBao
                   spine={mach.spine}
-                  mocMoiNhat={moc_moi_nhat === undefined ? null : the_moc(moc_moi_nhat.seq)}
                   tatCaMoc={mach.mocs.map((m) => ({ seq: m.seq, the: the_moc(m.seq) }))}
                 />
               ) : (
@@ -413,7 +442,11 @@ export async function TrangMach({
               </div>
             )}
 
-            {bung_khan_dai && khan_dai_trang !== null ? (
+            {/* `null` = mạch vừa biến mất giữa hai lời gọi (404). Không render gì —
+                phần còn lại của trang vẫn đọc được. Tới 2026-08-24 nhánh này còn là chân
+                trang `LoiMoiBungKhanDai` ("xem các câu đáng đọc ▾"), thứ nay không còn
+                nghĩa: không còn gì để bung. */}
+            {khan_dai_trang !== null && (
               <KhanDai
                 khanDai={khan_dai_trang}
                 sort={sort}
@@ -425,17 +458,11 @@ export async function TrangMach({
                 anchorMocSeq={moc_moi_nhat?.seq ?? null}
                 hienComposer={!la_bao}
               />
-            ) : (
-              <LoiMoiBungKhanDai
-                soBinhLuan={mach.comment_count}
-                hienSoDem={hien_so_dem}
-                href={`${co_ban}?khan_dai=1&sort=${sort}#khan-dai`}
-              />
             )}
           </article>
         </TrangThaiToiProvider>
       </MachProvider>
-    </main>
+    </KhungHaiCot>
   );
 }
 

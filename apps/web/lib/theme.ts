@@ -78,6 +78,55 @@ export function luocDoMau(chon: LuaChonTheme): string {
   return thuocTinhTheme(chon) ?? "light dark";
 }
 
+/** Theme **đang hiện trên màn hình**, sau khi đã tính cả "theo hệ thống".
+ *
+ * `LuaChonTheme` là thứ người dùng đã CHỌN; hàm này trả thứ họ đang THẤY. Hai khái niệm
+ * ấy khác nhau ở đúng một trường hợp — `"he"` — và đó lại là trường hợp mặc định, tức
+ * trường hợp của gần như mọi người ở lượt truy cập đầu.
+ *
+ * Trộn lẫn hai khái niệm là nguồn của lỗi user báo 2026-08-24: *"chưa đăng nhập không
+ * chọn được theme"*. Thực tế công tắc chạy đúng — nhưng máy họ đang để tối, mặc định là
+ * "theo hệ thống", nên bấm "Tối" đổi `data-theme` mà **không đổi một pixel nào**. Đo
+ * được: nền trước và sau đều `rgb(14,17,22)`.
+ */
+export function themeDangDung(chon: LuaChonTheme, heToi: boolean): "sang" | "toi" {
+  if (chon === "sang") return "sang";
+  if (chon === "toi") return "toi";
+  return heToi ? "toi" : "sang";
+}
+
+/** Lựa chọn mà **nút hai trạng thái** trên thanh header sẽ đặt khi được bấm.
+ *
+ * Luôn NGƯỢC với thứ đang hiện ⇒ **mỗi cú bấm luôn đổi được cái gì đó nhìn thấy được**.
+ * Đó là cả lý do nút này thay cho ô chọn ba trạng thái cũ (user chốt 2026-08-24): trong
+ * ô chọn cũ, "Tối" và "Theo hệ thống" trùng nhau về mặt hình ảnh trên một máy đang để
+ * tối, và một control không phản hồi thì không phân biệt được với một control hỏng.
+ *
+ * "Theo hệ thống" **không** biến mất khỏi sản phẩm — nó vẫn là mặc định của người chưa
+ * bấm bao giờ, và vẫn chọn lại được ở `/cai-dat` (`components/chon-giao-dien.tsx`).
+ */
+export function mucTieuCongTac(chon: LuaChonTheme, heToi: boolean): "sang" | "toi" {
+  return themeDangDung(chon, heToi) === "toi" ? "sang" : "toi";
+}
+
+/** Ghi lựa chọn xuống `localStorage` — **một trạng thái, một cách biểu diễn**.
+ *
+ * "Theo hệ thống" **xoá** khoá thay vì ghi `"he"`: người chưa bao giờ bấm và người vừa
+ * chọn lại "theo hệ thống" là cùng một trạng thái, và hai cách biểu diễn cho một trạng
+ * thái là chỗ hai nhánh code sẽ lệch nhau.
+ *
+ * Nhận `kho` thay vì tự đọc `window.localStorage`: hai component cùng ghi (nút ở header,
+ * ô chọn ở `/cai-dat`) nên luật phải nằm ở MỘT chỗ, và chỗ ấy phải đo được không cần
+ * trình duyệt. Không nuốt lỗi ở đây — chỗ gọi quyết định làm gì khi kho ném.
+ */
+export function luuLuaChon(
+  kho: Pick<Storage, "setItem" | "removeItem">,
+  chon: LuaChonTheme,
+): void {
+  if (chon === THEME_MAC_DINH) kho.removeItem(KHOA_THEME);
+  else kho.setItem(KHOA_THEME, chon);
+}
+
 /** Áp một lựa chọn lên `<html>`. Dùng ở CẢ hai chỗ — script inline lúc tải, và công tắc
  * lúc người ta bấm — nên hai đường không thể lệch nhau.
  *

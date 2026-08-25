@@ -1,8 +1,17 @@
 import type { Metadata } from "next";
 
 import { DIEU_CAM, DISCLAIMER_CHAN_TRANG, NHAN_DRAFT } from "@/lib/phap-ly";
+import { KhungHaiCot } from "@/components/khung-hai-cot";
 
 import css from "./luat.module.css";
+
+// `KhungHaiCot` gọi `GET /subs` ở phía SERVER với `cache: "no-store"`
+// (`lib/api.ts::CHUNG`) ⇒ route này không tiền dựng được nữa. Thiếu dòng dưới thì
+// `next build` ĐỎ ở bước export: Next ném `DynamicServerError`, `lay()` bọc nó lại
+// nên Next không tự chuyển route sang dynamic được.
+// Thêm 2026-08-25 lúc dựng bản Docker đầu tiên —
+// xem `plans/2026-08-25-deploy-vps-docker.md` §"Trang tĩnh vỡ vì KhungHaiCot".
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Luật cộng đồng",
@@ -16,7 +25,7 @@ export const metadata: Metadata = {
  * không phải chỉ nằm trong git history. */
 export default function TrangLuat() {
   return (
-    <main className={css.khung}>
+    <KhungHaiCot>
       <p className={`${css.draft} mono`} data-testid="nhan-draft">
         {NHAN_DRAFT}
       </p>
@@ -61,6 +70,6 @@ export default function TrangLuat() {
         Bản draft này mô tả điều cấm và chế tài ở mức nguyên tắc; nó chưa phải văn bản
         điều khoản sử dụng đầy đủ.
       </p>
-    </main>
+    </KhungHaiCot>
   );
 }

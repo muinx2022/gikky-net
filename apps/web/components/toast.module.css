@@ -1,0 +1,83 @@
+/* Góc dưới bên phải, trên mọi thứ. `z-index` phải lớn hơn `.chrome` (20) — thanh header
+   dính, nên một toast nằm dưới nó sẽ bị nuốt mất khi trang đang ở đầu. */
+.khung {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  /* Vùng `aria-live` luôn có mặt kể cả khi rỗng (xem docstring `toast.tsx`) ⇒ nó phải
+     KHÔNG chắn chuột. Từng dòng bật lại `pointer-events` cho mình. */
+  pointer-events: none;
+}
+
+.mot {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(360px, calc(100vw - 36px));
+  padding: 11px 11px 11px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13.5px;
+  line-height: 1.5;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 12%);
+  animation: vao 160ms ease-out;
+}
+
+@keyframes vao {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mot {
+    animation: none;
+  }
+}
+
+.chu {
+  min-width: 0;
+}
+
+.dong {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+
+.dong:hover {
+  color: var(--ink);
+  background: var(--inset);
+}
+
+@media (max-width: 640px) {
+  /* Trên điện thoại kéo hết bề ngang: một hộp 360px lơ lửng góc phải màn hình 375px vừa
+     che nội dung vừa chừa một dải trống vô nghĩa bên trái. */
+  .khung {
+    left: 15px;
+    right: 15px;
+    bottom: 15px;
+  }
+
+  .mot {
+    max-width: none;
+  }
+}

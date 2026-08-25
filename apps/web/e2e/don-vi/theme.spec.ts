@@ -8,7 +8,10 @@ import {
   THEME_MAC_DINH,
   docLuaChon,
   luocDoMau,
+  luuLuaChon,
+  mucTieuCongTac,
   nguonScriptTheme,
+  themeDangDung,
   thuocTinhTheme,
 } from "../../lib/theme";
 import {
@@ -150,4 +153,56 @@ test("T3 — KHÔNG chỗ nào đọc theme từ cookie hay từ phía server", 
   }
   expect(layout, "layout không được đọc cookies()").not.toMatch(/\bcookies\s*\(/);
   expect(theme).toContain("localStorage");
+});
+
+/* --- công tắc HAI trạng thái trên header (2026-08-24) ---------------------- */
+
+test("themeDangDung: “theo hệ thống” đọc máy, lựa chọn tường minh THẮNG máy", () => {
+  // Đây là chỗ hai khái niệm hay bị trộn: `LuaChonTheme` là thứ người ta CHỌN,
+  // `themeDangDung` là thứ họ THẤY. Chúng chỉ khác nhau ở `"he"` — mà `"he"` lại là
+  // trạng thái của gần như mọi người ở lượt truy cập đầu.
+  expect(themeDangDung("he", false)).toBe("sang");
+  expect(themeDangDung("he", true)).toBe("toi");
+  expect(themeDangDung("sang", true), "chọn Sáng thắng máy đang tối").toBe("sang");
+  expect(themeDangDung("toi", false), "chọn Tối thắng máy đang sáng").toBe("toi");
+});
+
+test("mucTieuCongTac: KHÔNG cấu hình nào cho ra một cú bấm vô hình", () => {
+  /* **Bài đo của lỗi user báo 2026-08-24.**
+   *
+   * Ô chọn ba trạng thái cũ có một nước đi no-op: máy để tối + mặc định "theo hệ thống"
+   * ⇒ chọn "Tối" không đổi một pixel nào, và một control không phản hồi thì không phân
+   * biệt được với một control hỏng.
+   *
+   * Luật thay thế: đích LUÔN ngược với thứ đang hiện. Duyệt cả 6 tổ hợp thay vì chọn vài
+   * ca đẹp — sáu là toàn bộ không gian, nên bài này không thể bỏ sót ca nào.
+   */
+  for (const chon of CAC_THEME) {
+    for (const he_toi of [false, true]) {
+      expect(
+        mucTieuCongTac(chon, he_toi),
+        `chọn=${chon} máy_tối=${he_toi}: đích phải NGƯỢC thứ đang hiện`,
+      ).not.toBe(themeDangDung(chon, he_toi));
+    }
+  }
+});
+
+test("luuLuaChon: “theo hệ thống” XOÁ khoá, không ghi chuỗi thứ ba", () => {
+  // Một trạng thái, một cách biểu diễn. Hai control cùng gọi hàm này (nút header + ô chọn
+  // ở `/cai-dat`), nên luật phải sống ở đúng một chỗ.
+  const goi: string[] = [];
+  const kho = {
+    setItem: (k: string, v: string) => goi.push(`set ${k}=${v}`),
+    removeItem: (k: string) => goi.push(`remove ${k}`),
+  };
+
+  luuLuaChon(kho, "toi");
+  luuLuaChon(kho, "sang");
+  luuLuaChon(kho, THEME_MAC_DINH);
+
+  expect(goi).toEqual([
+    `set ${KHOA_THEME}=toi`,
+    `set ${KHOA_THEME}=sang`,
+    `remove ${KHOA_THEME}`,
+  ]);
 });

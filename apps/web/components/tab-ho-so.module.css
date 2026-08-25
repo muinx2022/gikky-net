@@ -1,0 +1,94 @@
+/* Thanh tab hồ sơ — cùng hình dạng với tab feed (`feed.module.css#.mot_tab`): pill, không
+   viền, tab đang chọn nhận biết bằng NỀN. Hai chỗ cùng một ngôn ngữ thị giác. */
+.thanh {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 18px 0 12px;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 6px 13px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+.tab:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.dang_chon,
+.dang_chon:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.danh_sach {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 11px;
+}
+
+.rong {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+
+/* --- tab "Chuyên mục" (2026-08-24) --- */
+.danh_sach_sub {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dong_sub {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 13px 15px;
+  border-radius: 8px;
+  background: var(--card);
+}
+
+/* Cùng lý do với `.dau_chu` của trang chuyên mục: thiếu `min-width: 0` thì `min-width:
+   auto` ngầm của flex item giữ cột chữ rộng bằng từ dài nhất và đẩy nút ra khỏi thẻ. */
+.sub_chu {
+  flex: 1;
+  min-width: 0;
+}
+
+.sub_ten {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--ink);
+}
+
+.sub_ten:hover {
+  color: var(--accent);
+}
+
+.sub_slug {
+  margin: 2px 0 0;
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+
+.sub_mo_ta {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink-2);
+}

@@ -17,7 +17,7 @@ function nut(p: Partial<BinhLuanOut> & { id: number }): BinhLuanOut {
     parent_id: p.parent_id ?? null,
     depth: p.depth ?? 1,
     anchor_moc_seq: p.anchor_moc_seq ?? null,
-    author: p.author ?? { username: "ai_do", display_name: "Ai Đó" },
+    author: p.author ?? { username: "ai_do", display_name: "Ai Đó", avatar_url: null },
     body: p.body ?? `bình luận ${p.id}`,
     created_at: p.created_at ?? "2026-03-04T02:20:00Z",
     edited_at: null,

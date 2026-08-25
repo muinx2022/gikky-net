@@ -4,7 +4,6 @@ import { Suspense } from "react";
 import { Chuong } from "./chuong";
 import css from "./chrome.module.css";
 import { CongTacTheme } from "./cong-tac-theme";
-import { DieuHuongSub } from "./dieu-huong-sub";
 import { NutDangMach } from "./nut-dang-mach";
 import { OTimKiem } from "./o-tim-kiem";
 import { ThanhTaiKhoan } from "./thanh-tai-khoan";
@@ -18,8 +17,14 @@ import { ThanhTaiKhoan } from "./thanh-tai-khoan";
  * lúc với thứ nó thoát khỏi; nó cũng bắt `pnpm build` phải có Django sống. `pnpm build`
  * xác nhận `/luat` đang là `○`.
  *
- * Ba thành phần đi theo luật đó: `DieuHuongSub` hỏi `GET /subs`, `ThanhTaiKhoan` +
- * `Chuong` hỏi `GET /me` và `GET /notifications` — tất cả trong `useEffect`.
+ * Hai thành phần đi theo luật đó: `ThanhTaiKhoan` + `Chuong` hỏi `GET /me` và
+ * `GET /notifications` — cả hai trong `useEffect`.
+ *
+ * **Thanh nav chuyên mục đã GỠ** *(user chốt 2026-08-24)*: header nay đúng một hàng —
+ * hiệu · ô tìm · cụm phải. Danh sách chuyên mục vẫn còn ở **sidebar** (`sidebar.tsx`,
+ * cùng đi qua `docCacSub`), và `/luat` vẫn có đường vào từ chân trang, sidebar và trang
+ * 404. Đường thoát của `error.tsx`/`global-error.tsx` **không** phụ thuộc link này: nó
+ * gọi thẳng `window.location.assign("/luat")` trên một `<button>`.
  *
  * *(2026-08-23)* Nợ `NAV-GHI-CUNG` đã trả: hai slug `chung-khoan`/`crypto` từng được gõ
  * cứng ngay tại đây, nên mở sub thứ ba qua admin là nó vắng mặt trên nav của mọi trang.
@@ -32,12 +37,6 @@ export function Chrome() {
         <Link href="/" className={css.hieu}>
           gikky
         </Link>
-        <nav className={css.dieu_huong}>
-          <DieuHuongSub />
-          {/* `/luat` là link TĨNH và phải ở lại như thế: nó là đường thoát của trang lỗi,
-              nên nó không được phụ thuộc vào một lời gọi API vừa hỏng. */}
-          <Link href="/luat">Luật</Link>
-        </nav>
         {/* `OTimKiem` đọc `useSearchParams` để giữ lại câu vừa gõ khi bấm back. Hook đó
             **bắt buộc phải nằm trong `Suspense`**, nếu không Next từ chối render tĩnh
             **mọi** trang mang layout này — và `/luat` phải giữ `○`, vì nó là đường thoát

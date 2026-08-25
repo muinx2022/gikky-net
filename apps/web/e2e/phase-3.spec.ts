@@ -114,11 +114,15 @@ test.describe("Phase 3 — mặt BÃO, vòng lặp quay lại, cache", () => {
     await expect(chu.getByTestId("spine-o-1")).toBeVisible();
     await expect(chu.getByTestId("spine-o-2")).toBeVisible();
 
-    // Wireframe 9.2: **chỉ mốc mới nhất mở sẵn**, phần còn lại sau nút "mở cả mạch ▾".
-    await expect(chu.getByTestId("moc-2")).toBeVisible();
-    await expect(chu.getByTestId("moc-1")).toBeHidden();
-    await chu.getByTestId("nut-mo-ca-mach").click();
+    // Wireframe 9.2, **đổi 2026-08-24**: mốc 1 (bài gốc) LUÔN hiện cùng mốc mới nhất.
+    // Mạch 2 mốc thì dải gập giấu được đúng 0 mốc ⇒ không hàng dải gập, không nút — một
+    // cái nút cao gần bằng thứ nó giấu là đổi nội dung lấy khung. Đây là vế `n ≤ 2` của
+    // `tinhDaiGapBao`, và nó được ghim bằng `toHaveCount(0)` chứ không `toBeHidden()`:
+    // ẩn một cái nút vẫn là đã dựng ra nó.
     await expect(chu.getByTestId("moc-1")).toBeVisible();
+    await expect(chu.getByTestId("moc-2")).toBeVisible();
+    await expect(chu.getByTestId("nut-mo-ca-mach")).toHaveCount(0);
+    await expect(chu.getByTestId("dai-gap-bao")).toHaveCount(0);
 
     // Composer + câu mồi theo trạng thái đứng TRƯỚC cây khán đài, và khán đài mở SẴN —
     // ở mặt BÃO nó là thân bài, không nằm sau một cú bấm.
@@ -138,9 +142,11 @@ test.describe("Phase 3 — mặt BÃO, vòng lặp quay lại, cache", () => {
     await expect(chu.getByTestId("the-mach")).toHaveAttribute("data-mat", "can");
     await expect(chu.getByTestId("mat-bao")).toBeHidden();
     await expect(chu.getByTestId("spine")).toBeHidden();
-    // Mặt CẶN: nhật ký là thân bài ⇒ mọi mốc hiện thẳng, khán đài gập lại.
+    // Mặt CẶN: nhật ký là thân bài ⇒ mọi mốc hiện thẳng. Khán đài **cũng mở sẵn** từ
+    // 2026-08-24 (user chốt) — chân trang gập đã bị gỡ hẳn, không còn ở mặt nào.
     await expect(chu.getByTestId("moc-1")).toBeVisible();
-    await expect(chu.getByTestId("chan-trang-khan-dai")).toBeVisible();
+    await expect(chu.getByTestId("khan-dai")).toBeVisible();
+    await expect(chu.getByTestId("chan-trang-khan-dai")).toHaveCount(0);
 
     // `mo_lai_den` do server trả (nợ `API-THIEU-MOC-THOI-GIAN`) — UI hiện hạn CHÓT chứ
     // không nói "trong 7 ngày".
@@ -220,8 +226,39 @@ test.describe("Phase 3 — mặt BÃO, vòng lặp quay lại, cache", () => {
     await khan_gia.goto(duong_dan_mach);
     await expect(khan_gia.getByTestId("spine-o-3")).toHaveAttribute("data-chua-xem", "1");
     await expect(khan_gia.getByTestId("spine-o-2")).toHaveAttribute("data-chua-xem", "0");
-    await khan_gia.getByTestId("nut-mo-ca-mach").click();
+
+    // Mạch 3 mốc — ca gập nhỏ nhất của mặt BÃO (2026-08-24). Hai đầu hiện thẳng, đúng
+    // mốc 2 nằm sau dải gập, và dải gập nằm GIỮA hai thẻ chứ không phải một cái nút ở
+    // cuối trang.
+    await expect(khan_gia.getByTestId("moc-1")).toBeVisible();
+    await expect(khan_gia.getByTestId("moc-3")).toBeVisible();
+    await expect(khan_gia.getByTestId("moc-2")).toBeHidden();
+    await expect(khan_gia.getByTestId("dai-gap-bao")).toBeVisible();
+    // Nhãn nói đúng cái nó giấu: 1 mốc, và là "Mốc 2" chứ không phải "Mốc 2–2".
+    await expect(khan_gia.getByTestId("dai-gap-bao")).toContainText("Mốc 2 · 1 mốc");
+
+    const nut = khan_gia.getByTestId("nut-mo-ca-mach");
+    await nut.click();
+    await expect(khan_gia.getByTestId("moc-2")).toBeVisible();
     await expect(khan_gia.getByTestId("vach-moi")).toBeVisible();
+
+    // **Công tắc HAI CHIỀU, và nó KHÔNG nhảy đi đâu** — bài học vá C3 của mặt CẶN, ghi
+    // thành chữ ở `components/dai-gap.tsx`. Bản đầu của lượt 2026-08-24 dựng nút thứ hai
+    // ở cuối khung rồi unmount cái đang giữ focus; bài đo cũ vẫn xanh vì hai node dùng
+    // chung `data-testid`, còn người dùng bàn phím thì mất focus về `<body>` và không
+    // nghe được trạng thái vừa đổi. Bốn khẳng định dưới đây phân biệt "một nút đổi nhãn"
+    // với "hai nút thay ca" — thứ `.click()` một mình không bao giờ phân biệt được.
+    await expect(nut).toHaveCount(1);
+    await expect(nut).toBeFocused();
+    await expect(nut).toHaveAttribute("aria-expanded", "true");
+    await expect(nut).toHaveAttribute("aria-controls", "dai-gap-bao-noi-dung");
+
+    // Bung được thì phải gập lại được, ngay tại chỗ vừa bung.
+    await nut.click();
+    await expect(khan_gia.getByTestId("moc-2")).toBeHidden();
+    await expect(nut).toHaveAttribute("aria-expanded", "false");
+    await nut.click();
+    await expect(khan_gia.getByTestId("moc-2")).toBeVisible();
     await da_ghi_vi_tri;
 
     // Lượt sau: đã xem tới mốc mới nhất ⇒ không vạch, không ô hoàng thổ nào.
@@ -311,15 +348,23 @@ test.describe("Phase 3 — mặt BÃO, vòng lặp quay lại, cache", () => {
   test("P8 — quyền sửa mốc hỏi tác giả của MỐC, không suy từ chủ mạch", async () => {
     // Nợ `MOC-THIEU-AUTHOR`. Hôm nay hai cột trùng nhau nên bài đo chỉ khẳng định được
     // hành vi đúng ở cả hai phía; cái nó giữ là **cửa** ấy tồn tại.
+    //
+    // ⚠ Khoanh vùng theo **mốc 3**, không `.first()` *(sửa 2026-08-24)*. Tới hôm ấy mặt
+    // BÃO gập chỉ để đúng MỘT thẻ trong DOM nên `.first()` là mốc mới nhất; nay mốc 1
+    // render trước nó, và `.first()` lặng lẽ đổi sang đo menu của mốc 1. Bài vẫn xanh —
+    // chủ mạch là tác giả cả hai mốc — nhưng nó không còn đo cái nó nói là đang đo, mà
+    // ngày `MOC-THIEU-AUTHOR` được trả chính là ngày hai thứ ấy tách nhau ra.
     await chu.goto(duong_dan_mach);
-    await chu.getByTestId("menu-moc").first().click();
-    await expect(chu.getByTestId("nut-sua-moc").first()).toBeVisible();
+    const moc_3_chu = chu.getByTestId("moc-3");
+    await moc_3_chu.getByTestId("menu-moc").click();
+    await expect(moc_3_chu.getByTestId("nut-sua-moc")).toBeVisible();
     // Người khác vẫn có menu `⋯` (từ L03 nó mang nút "Báo cáo"), nhưng **không** có
     // "Sửa mốc" — đó mới là thứ bài đo này nói về.
     await khan_gia.goto(duong_dan_mach);
-    await khan_gia.getByTestId("menu-moc").first().click();
-    await expect(khan_gia.getByTestId("nut-sua-moc")).toHaveCount(0);
-    await expect(khan_gia.getByTestId("nut-xoa-moc")).toHaveCount(0);
+    const moc_3_khan_gia = khan_gia.getByTestId("moc-3");
+    await moc_3_khan_gia.getByTestId("menu-moc").click();
+    await expect(moc_3_khan_gia.getByTestId("nut-sua-moc")).toHaveCount(0);
+    await expect(moc_3_khan_gia.getByTestId("nut-xoa-moc")).toHaveCount(0);
   });
 
   test("P9 — ISR: bình luận KHÔNG có signal ⇒ khách còn thấy bản cache (PLAN 8.4)", async ({

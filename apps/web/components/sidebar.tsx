@@ -2,6 +2,7 @@ import type { SubChiTietOut } from "@gikky/api-client";
 import Link from "next/link";
 
 import { dongSoMachSub } from "@/lib/dinh-dang";
+import { DIEU_CAM } from "@/lib/phap-ly";
 import { duongDanSub } from "@/lib/url";
 
 import css from "./sidebar.module.css";
@@ -57,10 +58,21 @@ export function Sidebar({
 
       <section className={css.khoi} data-testid="sidebar-luat">
         <h2 className={css.tieu_de}>Luật rút gọn</h2>
+        {/* Bốn dòng này **SUY TỪ `DIEU_CAM`**, không gõ tay *(viết lại 2026-08-24)*.
+
+            Bản cũ là ba dòng viết tay, và cả ba đều sai một kiểu riêng: hai dòng đầu gộp
+            bốn điều cấm thành ba nên **rơi mất "cấm link nhóm kín"** — một điều có thật ở
+            `/luat`, có chế tài, mà người đọc sidebar không bao giờ thấy. Dòng thứ ba
+            ("Ghi lý do trước khi biết kết quả — đó là cả sản phẩm") **không phải một
+            luật**: nó là câu quảng cáo nằm nhầm trong hộp luật, và nó chiếm đúng chỗ của
+            điều cấm bị rơi.
+
+            Suy từ nguồn thì hai lỗi ấy không tái diễn được: thêm/bớt/sửa điều cấm ở
+            `lib/phap-ly.ts` là sidebar đổi theo, không có bản thứ hai để trôi. */}
         <ul className={css.gach_dau_dong}>
-          <li>Không phím hàng, không cam kết lợi nhuận.</li>
-          <li>Không mời chào uỷ thác hay room VIP trả phí.</li>
-          <li>Ghi lý do trước khi biết kết quả — đó là cả sản phẩm.</li>
+          {DIEU_CAM.map((d) => (
+            <li key={d.tieu_de}>{d.tieu_de}</li>
+          ))}
         </ul>
         <Link className={css.dan} href="/luat" data-testid="sidebar-dan-luat">
           Đọc luật cộng đồng →

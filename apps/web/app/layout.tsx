@@ -4,6 +4,7 @@ import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import { ChanTrang } from "@/components/chan-trang";
 import { Chrome } from "@/components/chrome";
 import { PhienProvider } from "@/components/phien";
+import { ToastProvider } from "@/components/toast";
 import { SITE_ORIGIN } from "@/lib/site";
 import { nguonScriptKieuXem } from "@/lib/kieu-xem";
 import { nguonScriptTheme } from "@/lib/theme";
@@ -78,6 +79,18 @@ export default function RootLayout({
     <html
       lang="vi"
       className={`${ibmPlexSans.variable} ${ibmPlexMono.variable}`}
+      // Script theme dưới đây đặt `data-theme` + `style="color-scheme"` lên CHÍNH thẻ này
+      // trước khi React hydrate, còn server thì **cố ý** không render hai thứ đó (trang
+      // mạch chạy ISR — một bản HTML dùng chung; nướng theme của người này vào đó là phục
+      // vụ nhầm người). Nên lệch ở đây là ĐÚNG THIẾT KẾ, không phải lỗi cần vá.
+      //
+      // Không có dòng này thì mọi trang, với mọi người dùng, ném một hydration error đỏ
+      // trong dev (`style="color-scheme: light dark"` là nhánh mặc định, ai cũng đi qua).
+      // Cái giá của một cảnh báo luôn-đỏ là không ai còn đọc cảnh báo nữa.
+      //
+      // ⚠ Nó chỉ tắt cảnh báo cho thuộc tính của **đúng thẻ `<html>`**, không lan xuống
+      // con — một mismatch thật ở bất kỳ chỗ nào khác vẫn kêu. Đừng bê nó xuống sâu hơn.
+      suppressHydrationWarning
     >
       <head>
         {/* **Phải nằm trong `<head>`, và phải là script THƯỜNG.**
@@ -105,10 +118,16 @@ export default function RootLayout({
             dynamic: nó hỏi `GET /me` trong `useEffect`, tức ở trình duyệt. Nhờ vậy
             `/luat` giữ nguyên `○` (tĩnh) — đường thoát của `error.tsx`. Một `cookies()`
             ở phía server tại đây thì ngược lại: cả cây route thành dynamic. */}
+        {/* `ToastProvider` bọc TRONG `PhienProvider` chứ không ngoài: nó phải render vùng
+            `aria-live` của mình sau nội dung trang, và mọi form gọi `useToast()` đều đã
+            nằm trong `PhienProvider` rồi. Nó là client component nhưng `children` truyền
+            qua nó vẫn render ở server — nên `/luat` giữ nguyên `○` (tĩnh). */}
         <PhienProvider>
-          <Chrome />
-          {children}
-          <ChanTrang />
+          <ToastProvider>
+            <Chrome />
+            {children}
+            <ChanTrang />
+          </ToastProvider>
         </PhienProvider>
       </body>
     </html>

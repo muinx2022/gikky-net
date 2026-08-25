@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -7,6 +8,7 @@ import {
   baoDamCsrf,
   dangKy,
   dangNhap,
+  dangXuat,
   datLaiMatKhau,
   doiMatKhau,
   xacThucEmail,
@@ -27,10 +29,113 @@ import css from "./form-tai-khoan.module.css";
  * đi) sẽ đẩy năm trang đăng nhập/đặt lại mật khẩu vào chỉ mục Google.
  */
 
+/** Thay chỗ form khi người mở trang **đã đăng nhập rồi** — user báo 2026-08-25.
+ *
+ * ## Lỗi nó vá, và vì sao nó không hiếm như tưởng
+ *
+ * `/dang-nhap` và `/dang-ky` trước đây vẽ form cho **mọi** người, kể cả người đang có
+ * phiên. Người dùng điền vào, bấm Vào, và allauth trả **409** ("đã đăng nhập rồi") — đo
+ * được. Form báo lỗi, `taiLai()` không chạy vì `onGui` đã ném, nên header đứng nguyên và
+ * người ta phải F5 mới thấy sự thật.
+ *
+ * Ca này gặp thường xuyên hơn vẻ ngoài của nó, vì **khu quản trị (3001) và front (3000)
+ * dùng CHUNG một phiên Django**: cùng một cookie trên `localhost`, và trên prod cũng vậy
+ * nếu `SESSION_COOKIE_DOMAIN=.gikky.net` (xem `api/.env.example`). Đăng nhập ở admin xong
+ * mở front là đã đăng nhập sẵn — người dùng không làm gì sai cả, họ chỉ không nhìn lên
+ * góc phải.
+ *
+ * ## Vì sao KHÔNG tự chuyển hướng về `/`
+ *
+ * Người mở `/dang-nhap` khi đang có phiên thường muốn **đổi tài khoản** — đúng ca user
+ * gặp: đang là `u/admin`, định vào bằng một tài khoản khác. Đá họ về trang chủ là nuốt
+ * mất ý định ấy và không nói gì. Nên: nói rõ đang là ai, rồi đưa đúng hai lối đi.
+ *
+ * ## Nhấp nháy: chấp nhận, có chủ đích
+ *
+ * Trong nhịp `GET /me` chưa về (`dangTai`) ta vẫn vẽ form. Người mở trang đăng nhập gần
+ * như luôn là khách, nên giấu form của mọi người để chờ một lượt gọi mạng là bắt số đông
+ * trả giá cho thiểu số. Cái nháy chỉ xảy ra với người đã đăng nhập, và nó kết thúc ở
+ * trạng thái ĐÚNG.
+ */
+const GIAY_CHO_VE_TRANG_CHU = 3;
+
+function DaDangNhap({ username }: { username: string }) {
+  const { taiLai } = usePhien();
+  const router = useRouter();
+  const [dangThoat, datDangThoat] = useState(false);
+  const [conLai, datConLai] = useState(GIAY_CHO_VE_TRANG_CHU);
+  /** Bấm "Đăng xuất" là **huỷ** đồng hồ. Thiếu cờ này thì người bấm ở giây thứ 2 vừa bị
+   * đăng xuất vừa bị ném về trang chủ — mất đúng cái họ vừa chọn, và mất im lặng. */
+  const [huy, datHuy] = useState(false);
+
+  useEffect(() => {
+    if (huy) return;
+    if (conLai <= 0) {
+      // `replace` chứ không `push`: trang này chỉ tồn tại để nói "bạn đã đăng nhập rồi".
+      // Để nó lại trong history nghĩa là bấm Back sẽ quay về đây rồi lại bị đẩy đi —
+      // một vòng lặp người dùng không thoát được bằng nút Back.
+      router.replace("/");
+      return;
+    }
+    const hen = setTimeout(() => datConLai((n) => n - 1), 1000);
+    return () => clearTimeout(hen);
+  }, [conLai, huy, router]);
+
+  const thoat = async () => {
+    datHuy(true);
+    datDangThoat(true);
+    try {
+      await dangXuat();
+      await taiLai();
+    } finally {
+      datDangThoat(false);
+    }
+  };
+
+  return (
+    <div className={css.khung}>
+      <div className={css.the} data-testid="da-dang-nhap">
+        <h1 className={css.tieu_de}>Bạn đang đăng nhập</h1>
+        {/* Chỉ nói phiên hiện tại là AI. Bản đầu còn một câu giải thích khu quản trị và
+            trang công khai dùng chung phiên — **bỏ** (user chốt 2026-08-25): đó là chi
+            tiết kiến trúc, người dùng không cần biết và cũng không làm gì được với nó. */}
+        <p className={css.mo_ta}>
+          Phiên hiện tại là <span className="mono">u/{username}</span>.
+        </p>
+        <Link className={css.gui} href="/" data-testid="da-dang-nhap-ve-trang-chu">
+          Về trang chủ
+        </Link>
+        {/* Đếm ngược HIỆN RA, không chuyển lén. Một trang tự nhảy đi sau 3 giây mà không
+            báo trước là giật mình; và người muốn đổi tài khoản cần thấy rằng họ còn kịp
+            bấm "Đăng xuất". `role="status"` để trình đọc màn hình cũng biết. */}
+        {!huy && (
+          <p className={css.duoi} role="status" data-testid="da-dang-nhap-dem-nguoc">
+            Tự về trang chủ sau {conLai} giây.
+          </p>
+        )}
+        <p className={css.duoi}>
+          Muốn vào bằng tài khoản khác?{" "}
+          <button
+            type="button"
+            className={css.lien_ket_nut}
+            onClick={() => void thoat()}
+            disabled={dangThoat}
+            data-testid="da-dang-nhap-thoat"
+          >
+            {dangThoat ? "Đang thoát…" : "Đăng xuất"}
+          </button>
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // --- đăng ký -----------------------------------------------------------------
 
 export function FormDangKy() {
   const { toi } = usePhien();
+  // Cùng bẫy với `/dang-nhap`: mở trang đăng ký khi đang có phiên thì allauth trả 409.
+  if (toi?.dang_nhap === true) return <DaDangNhap username={toi.username ?? ""} />;
   return (
     <FormTaiKhoan
       tieuDe="Mở tài khoản gikky"
@@ -81,6 +186,7 @@ export function FormDangKy() {
 
 export function FormDangNhap() {
   const { toi } = usePhien();
+  if (toi?.dang_nhap === true) return <DaDangNhap username={toi.username ?? ""} />;
   return (
     <FormTaiKhoan
       tieuDe="Đăng nhập"

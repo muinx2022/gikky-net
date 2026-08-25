@@ -1,4 +1,5 @@
 import { getHealth } from "@gikky/api-client";
+import { KhungHaiCot } from "@/components/khung-hai-cot";
 import type { Metadata } from "next";
 
 import { HealthSameOrigin } from "./health-same-origin";
@@ -46,7 +47,7 @@ async function docHealth(): Promise<string> {
 export default async function Home() {
   const health = await docHealth();
   return (
-    <main>
+    <KhungHaiCot>
       <h1>gikky.net — chẩn đoán kết nối</h1>
       <p>
         server component → Django <code>{API_ORIGIN}</code>:{" "}
@@ -55,6 +56,6 @@ export default async function Home() {
       <p>
         trình duyệt → same-origin <code>/api/v1/health</code>: <HealthSameOrigin />
       </p>
-    </main>
+    </KhungHaiCot>
   );
 }

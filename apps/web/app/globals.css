@@ -47,6 +47,12 @@
   --surface: #ffffff;
   --surface-2: #e7e9ee;
   --inset: #f7f8fa;
+  /* Nền THẺ — chỉ chênh nhẹ so với nền trang (user 2026-08-24: "card chỉ chênh 1 chút so
+     với bg"). Bảng token không có màu nào nằm giữa `--bg` và `--surface-2`, nên trộn hai
+     cái đã có thay vì thêm một mã hex mới (giữ nguyên 8 màu của PLAN 9.1). Định nghĩa MỘT
+     lần: nó tham chiếu `--bg`/`--surface-2`, mà `color-mix` giải ở lúc DÙNG, nên tự đổi
+     theo theme tối — không cần khai lại trong khối dark. */
+  --card: color-mix(in srgb, var(--bg) 62%, var(--surface-2));
   --ink: #14161b;
   --ink-2: #535a67;
   --ink-3: #686f7d;
@@ -129,6 +135,9 @@
 }
 
 html {
+  /* Thanh cuộn hiện/biến mất giữa các trang là một cú NHẢY NGANG của toàn bộ nội
+     dung. Chừa sẵn máng cuộn để trang ngắn và trang dài có cùng bề rộng khả dụng. */
+  scrollbar-gutter: stable;
   color-scheme: light dark;
 }
 

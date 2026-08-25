@@ -3,8 +3,12 @@ import type { MachCuaToiOut } from "@gikky/api-client";
 /** Vạch mới của mặt BÃO — PLAN 5.5.
  *
  * > spine 1 dòng (… **số của các mốc chưa xem đổi màu hoàng thổ** theo
- * > `last_seen_entry_seq`) → thẻ mốc mới nhất mở sẵn (… bung timeline đầy đủ, trong đó
- * > **vạch mới** kẻ trước mốc đầu tiên chưa xem)
+ * > `last_seen_entry_seq`) → thẻ **mốc 1** + thẻ mốc mới nhất mở sẵn, dải gập nằm giữa
+ * > (… bung timeline đầy đủ, trong đó **vạch mới** kẻ trước mốc đầu tiên chưa xem)
+ *
+ * *(Trích cập nhật 2026-08-24 theo lượt sửa "mốc 1 luôn hiện" — bản cũ chép câu "thẻ mốc
+ * mới nhất mở sẵn" và nay PLAN 5.5 không còn câu đó. Một trích dẫn lệch với nguồn thì
+ * người sau tin bản chép, không đi mở nguồn.)*
  *
  * Hàm THUẦN, tách khỏi component để đo được mà không cần trình duyệt — và vì đây là chỗ
  * duy nhất biết luật "khi nào KHÔNG vẽ vạch", thứ khó hơn hẳn luật "vẽ ở đâu".

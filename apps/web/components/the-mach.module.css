@@ -5,13 +5,29 @@
  * đây đã nén so với bản 1c; tiêu đề vẫn giữ mặt chữ Newsreader vì nó là chỗ duy nhất của
  * thẻ được phép nghiêm.
  */
+/* **Thẻ RỜI, có khoảng cách, KHÔNG viền, nền đậm hơn trang một bậc** *(user chốt
+ * 2026-08-24 — đảo lại lối "một khung + kẻ tóc" của buổi sáng cùng ngày, vì các thẻ
+ * "dính sát nhau quá").*
+ *
+ * Nền là `--surface-2`, **không** phải `--surface` (trắng): user muốn thẻ đậm hơn nền
+ * trang (`--bg`) một chút chứ không nổi trắng lên. `--surface-2` cho đúng một bậc lệch ở
+ * cả hai theme — tối hơn nền ở sáng, sáng hơn nền ở tối (độ nổi quen thuộc của "tấm thẻ").
+ * Cả hai token đều đã trong 8 màu của PLAN 9.1, không thêm mã mới.
+ *
+ * Khoảng cách giữa thẻ do `gap` của hộp danh sách lo (xem `feed.module.css#.danh_sach`),
+ * không phải `margin` ở đây — để `.the` ghép được vào bất kỳ danh sách nào (feed, hồ sơ)
+ * mà không mang sẵn lề. */
 .the {
   display: flex;
   gap: 10px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 9px 12px 9px 8px;
+  padding: 11px 14px 11px 10px;
+  background: var(--card);
+  border-radius: 10px;
+}
+
+.the:hover {
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--line-2);
 }
 
 .than {

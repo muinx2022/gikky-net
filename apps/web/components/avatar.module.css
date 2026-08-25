@@ -1,0 +1,25 @@
+/* Avatar — ĐƠN SẮC. PLAN 9.1 khoá bảng màu và cấm màu ứng biến, nên không có chuyện mỗi
+   người một màu sinh từ hash. Nền `--inset`, chữ `--ink-2`, một vòng viền mảnh để tách
+   khỏi nền thẻ (`--surface-2`) vốn chỉ đậm hơn một bậc. */
+.chu {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  border-radius: 50%;
+  background: var(--inset);
+  color: var(--ink-2);
+  box-shadow: inset 0 0 0 1px var(--line);
+  font-family: var(--f-ui);
+  font-weight: 600;
+  line-height: 1;
+  user-select: none;
+}
+
+.anh {
+  flex: none;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--inset);
+  box-shadow: inset 0 0 0 1px var(--line);
+}

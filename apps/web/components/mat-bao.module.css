@@ -64,12 +64,30 @@
   padding: 0 26px 4px;
 }
 
-.hang_bung {
+/* Dải gập của mặt BÃO — nằm GIỮA thẻ mốc 1 và thẻ mốc mới nhất, đúng chỗ nó đang giấu.
+   Chỉ token TRUNG TÍNH: PLAN 9.1 giao hoàng thổ cho "thứ mang tính đóng dấu", mà một
+   dòng điều hướng thì không phải, nên `--stamp` ở file này vẫn chỉ thuộc `.chua_xem`
+   và `.vach_moi`. */
+.hang_dai_gap {
   list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 0 18px;
 }
 
-/* "Vạch mới" — PLAN 9.1 giao hoàng thổ cho nó đích danh. */
+.hang_dai_gap::before,
+.hang_dai_gap::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+/* "Vạch mới" — PLAN 9.1 giao hoàng thổ cho nó đích danh. Là một `<li>` (con trực tiếp của
+   `<ol>`), nên phải tự tắt dấu đầu dòng. */
 .vach_moi {
+  list-style: none;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -93,8 +111,12 @@
   white-space: nowrap;
 }
 
-.hang_nut {
-  padding: 4px 26px 18px;
+/* Khối mốc giữa: nằm sẵn trong HTML, chỉ ẩn bằng `hidden` — cùng lối `.trong_gap` của
+   mặt CẶN. */
+.trong_gap {
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
 .mo_ca_mach {
@@ -120,9 +142,5 @@
 
   .nhat_ky {
     padding: 0 16px 4px;
-  }
-
-  .hang_nut {
-    padding: 4px 16px 16px;
   }
 }

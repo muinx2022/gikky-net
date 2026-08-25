@@ -341,9 +341,9 @@ export const TAB_FEED = ["moi", "dang-dien-ra", "nhieu-diem"] as const;
 export type TabFeed = (typeof TAB_FEED)[number];
 export const TAB_MAC_DINH: TabFeed = "moi";
 export const NHAN_TAB: Readonly<Record<TabFeed, string>> = {
-  moi: "Mới",
+  moi: "Mới nhất",
   "dang-dien-ra": "Đang diễn ra",
-  "nhieu-diem": "Nhiều điểm nhất",
+  "nhieu-diem": "Nổi bật",
 };
 
 /** Tham số query của hai feed, **SUY từ TS client** — không gõ lại (W9, PLAN 8.3).

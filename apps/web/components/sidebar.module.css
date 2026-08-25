@@ -4,10 +4,11 @@
   align-content: start;
 }
 
+/* Cùng chất liệu với thẻ feed ("bên trái cũng vậy", user 2026-08-24): nền `--surface-2`
+   đậm hơn trang một bậc, KHÔNG viền, bo góc rộng hơn. */
 .khoi {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 6px;
+  background: var(--card);
+  border-radius: 10px;
   padding: 12px 14px;
 }
 

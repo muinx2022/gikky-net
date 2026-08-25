@@ -1,4 +1,5 @@
 import type { FeedOut } from "@gikky/api-client";
+import { Clock, Flame, Radio, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 
 import {
@@ -62,6 +63,17 @@ type DauTrang =
   | { header: React.ReactNode; tieuDe?: never; lede?: never }
   | { header?: undefined; tieuDe: string; lede: string };
 
+/** Icon cho từng tab. Đọc từ NGHĨA của tab, không phải trang trí:
+ * - `moi` = đồng hồ (mới theo thời gian);
+ * - `dang-dien-ra` = sóng radio (đang phát — hợp "đang diễn ra", và cố ý KHÔNG phải ngọn
+ *   lửa "hot": tab này sort theo lúc nối mốc, không theo tương tác, xem docstring trên);
+ * - `nhieu-diem` = ngọn lửa (điểm cao). */
+const ICON_TAB: Readonly<Record<TabFeed, LucideIcon>> = {
+  moi: Clock,
+  "dang-dien-ra": Radio,
+  "nhieu-diem": Flame,
+};
+
 export function Feed({
   feed,
   tab,
@@ -110,17 +122,23 @@ export function Feed({
             sang phải bằng `margin-left: auto`. */}
         <div className={css.hang_dieu_khien}>
           <nav className={css.tab} data-testid="tab-feed" aria-label="Sắp xếp feed">
-            {TAB_FEED.map((t) => (
-              <Link
-                key={t}
-                href={hrefTab(t)}
-                className={t === tab ? `${css.mot_tab} ${css.tab_dang_chon}` : css.mot_tab}
-                aria-current={t === tab ? "page" : undefined}
-                data-testid={`tab-${t}`}
-              >
-                {NHAN_TAB[t]}
-              </Link>
-            ))}
+            {TAB_FEED.map((t) => {
+              const Hinh = ICON_TAB[t];
+              return (
+                <Link
+                  key={t}
+                  href={hrefTab(t)}
+                  className={
+                    t === tab ? `${css.mot_tab} ${css.tab_dang_chon}` : css.mot_tab
+                  }
+                  aria-current={t === tab ? "page" : undefined}
+                  data-testid={`tab-${t}`}
+                >
+                  <Hinh size={15} strokeWidth={2} aria-hidden />
+                  {NHAN_TAB[t]}
+                </Link>
+              );
+            })}
           </nav>
           <ChonKieuXem />
         </div>
@@ -171,11 +189,13 @@ export function Feed({
       {/* Rail phải DÍNH khi cuộn — plan giao diện §2.2.
           Bọc thêm một lớp thay vì đặt `position: sticky` lên chính `<Sidebar>`: hai trang
           feed truyền hai component khác nhau vào đây, và một luật bố cục thuộc về chỗ
-          BỐ TRÍ chứ không thuộc về thứ được bố trí. `<aside>` cũng là landmark đúng cho
-          nội dung phụ trợ — thứ `<Sidebar>` (một `<div>`) không có. */}
-      <aside className={css.rail} aria-label="Thông tin bên lề">
-        {sidebar}
-      </aside>
+          BỐ TRÍ chứ không thuộc về thứ được bố trí.
+
+          ⚠ `<div>` chứ không `<aside>` *(sửa 2026-08-24)*: chú thích cũ ở đây nói
+          `<Sidebar>` là "một `<div>`" — nay nó **đã là `<aside>`** (`sidebar.tsx`), nên
+          bọc thêm một `<aside>` là hai landmark lồng nhau cho cùng một khối. Lớp bọc này
+          chỉ còn làm đúng việc của nó: `position: sticky`. */}
+      <div className={css.rail}>{sidebar}</div>
     </div>
   );
 }

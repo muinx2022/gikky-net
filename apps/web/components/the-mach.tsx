@@ -6,8 +6,10 @@ import { nenHienSoDem } from "@/lib/dem";
 import { ngayCuaThoiDiem } from "@/lib/dinh-dang";
 import { duongDanHoSo, duongDanKhanDai, duongDanMach, duongDanSub } from "@/lib/url";
 
+import { Avatar } from "./avatar";
 import { ChepLink } from "./chep-link";
 import { CotVote } from "./cot-vote";
+import { HanhDongMod } from "./hanh-dong-mod";
 import { NoiDungThe } from "./noi-dung-the";
 import css from "./the-mach.module.css";
 
@@ -47,6 +49,12 @@ export function TheMach({ mach }: { mach: MachTomTatOut }) {
           {/* Bốn nút mang dấu `CHU_NGUOI_DUNG` trong thẻ này (Y3): slug sub, tên tác giả,
               tiêu đề, kết quả — bốn chuỗi do người dùng gõ. Phần còn lại ("mốc", "bình
               luận", "đã đóng sổ") là chữ của ứng dụng và ở lại trong phép quét. */}
+          <Avatar
+            ten={mach.author.username}
+            hienThi={mach.author.display_name}
+            url={mach.author.avatar_url}
+            co={18}
+          />
           <Link className={css.sub} href={duongDanSub(mach.sub.slug)} {...CHU_NGUOI_DUNG}>
             s/{mach.sub.slug}
           </Link>
@@ -115,6 +123,20 @@ export function TheMach({ mach }: { mach: MachTomTatOut }) {
               nên nó không phạm luật "không nút chết" của lượt giao diện. Đặt CUỐI hàng:
               lối vào khán đài mới là thao tác chính. */}
           <ChepLink duongDan={duongDanMach(mach.slug, mach.id)} nhan={mach.title} />
+          {/* Công cụ mod ngay trên thẻ — user chốt 2026-08-24 ("vào chuyên mục thì ra
+              phần chuyên mục với các action của mod"). Client component, trả `null` cho
+              mọi người không phải staff, nên thẻ của người đọc thường **không đổi một
+              pixel nào**.
+
+              Chỉ có "Ẩn", không có "Khoá": thẻ feed không biết mạch đang khoá hay không
+              (`MachTomTatOut` không mang `locked`) — xem chú thích trong `HanhDongMod`.
+              `dangAn` luôn `false` vì mạch bị ẩn không lọt vào feed. */}
+          <HanhDongMod
+            loai="mach"
+            id={mach.id}
+            dangAn={false}
+            nhan={`mạch “${mach.title}”`}
+          />
         </div>
       </div>
     </li>

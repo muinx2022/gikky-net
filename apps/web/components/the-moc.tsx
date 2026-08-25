@@ -11,10 +11,11 @@ import { CotVote } from "./cot-vote";
 import { GalleryMoc } from "./gallery-moc";
 import { HangReaction } from "./hang-reaction";
 import { HanhDongMoc } from "./hanh-dong-moc";
+import { HanhDongMod } from "./hanh-dong-mod";
 import { KhoiTrich } from "./khoi-trich";
 import { KhungNganKeo, NutNganKeo } from "./ngan-keo";
 import css from "./the-moc.module.css";
-import { ThanVan } from "./than-van";
+import { ThanHtml } from "./than-html";
 
 type Props = {
   moc: MocOut;
@@ -111,7 +112,11 @@ export function TheMoc({
 
         {hien ? (
           <>
-            <ThanVan body={moc.body ?? ""} className={css.than} />
+            <ThanHtml
+              body={moc.body ?? ""}
+              dinhDang={moc.body_dinh_dang}
+              className={css.than}
+            />
 
             {moc.figures !== null && moc.figures.length > 0 && (
               <dl className={css.figures} data-testid="figures">
@@ -176,6 +181,14 @@ export function TheMoc({
               một phép kiểm quyền chép ra hai chỗ là chỗ thứ hai sẽ quên `khoa`.
               Hiện cả trên bài thường (`laMach === false`) — bài một mốc vẫn sửa được. */}
           <HanhDongMoc moc={moc} />
+          {/* Công cụ mod — chỉ mod thấy (`HanhDongMod`). Mốc bị ẩn vẫn ở lại trang dưới
+              dạng bia mộ, nên đây là công tắc HAI CHIỀU. */}
+          <HanhDongMod
+            loai="moc"
+            id={moc.id}
+            dangAn={moc.trang_thai === "da_an"}
+            nhan={`mốc ${moc.seq}`}
+          />
         </div>
 
         {laMach && (

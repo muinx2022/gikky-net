@@ -1,0 +1,46 @@
+/* Cụm nút mod — nhạt và nhỏ, nằm lẫn trong hàng chân của thẻ/bình luận. Nó là công cụ
+   của một nhóm nhỏ, không phải hành động chính của trang; to lên là nó tranh chỗ với
+   những nút mà MỌI người dùng. */
+.khung {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px 2px 5px;
+  border-radius: 999px;
+  background: var(--inset);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.dau {
+  color: var(--ink-3);
+  flex: none;
+}
+
+.nut {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: inherit;
+  font-size: 11.5px;
+  padding: 2px 6px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.nut:hover:not(:disabled) {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.nut:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.loi {
+  font-size: 11.5px;
+  color: var(--ink-2);
+}

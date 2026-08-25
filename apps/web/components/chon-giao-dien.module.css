@@ -1,0 +1,32 @@
+/* Ô chọn giao diện ở chân trang — nhỏ, đứng cạnh hàng link, không tranh chú ý với
+   disclaimer. Nhãn HIỆN ra (không ẩn như bản cũ trên header): ở chân trang có chỗ, và một
+   ô chọn không nhãn giữa mấy dòng chữ pháp lý thì không ai đoán ra nó làm gì. */
+.khung {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nhan {
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+/* Giữ mũi tên gốc của trình duyệt: `appearance: none` là tự nhận việc vẽ lại một control
+   mà hệ điều hành đã vẽ đúng trên mọi nền tảng — và mũi tên ấy chính là thứ nói "bấm
+   được", đúng cái mà bản header cũ thiếu. */
+.chon {
+  padding: 5px 9px;
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.chon:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}

@@ -266,7 +266,7 @@ export function KhoiChuMach({
               value={ketQua}
               maxLength={40}
               onChange={(e) => datKetQua(e.target.value)}
-              placeholder="+18.2% · 163 ngày"
+              placeholder="Tóm tắt kết quả trong một dòng"
               data-testid="dong-so-ket-qua"
             />
             <span className={css.goi_y}>

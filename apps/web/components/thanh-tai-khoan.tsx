@@ -1,5 +1,6 @@
 "use client";
 
+import { ImageUp, KeyRound, LogOut, Settings, ShieldCheck, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -8,6 +9,7 @@ import { CHU_NGUOI_DUNG } from "@/lib/chu-nguoi-dung";
 import { dangXuat } from "@/lib/tai-khoan";
 import { duongDanHoSo } from "@/lib/url";
 
+import { Avatar } from "./avatar";
 import { usePhien } from "./phien";
 import css from "./thanh-tai-khoan.module.css";
 
@@ -65,19 +67,42 @@ export function ThanhTaiKhoan() {
         aria-haspopup="menu"
         onClick={() => datMo((x) => !x)}
         data-testid="nut-tai-khoan"
-        {...CHU_NGUOI_DUNG}
       >
-        u/{toi.username}
+        <Avatar ten={toi.username ?? ""} hienThi={toi.display_name} url={toi.avatar_url} co={24} />
+        <span {...CHU_NGUOI_DUNG}>u/{toi.username}</span>
       </button>
       {mo && (
         <div className={css.menu} role="menu" data-testid="menu-tai-khoan">
           <Link href={duongDanHoSo(toi.username ?? "")} role="menuitem" onClick={() => datMo(false)}>
+            <UserRound size={15} strokeWidth={2} aria-hidden />
             Hồ sơ của tôi
           </Link>
+          {/* Lối vào SỬA hồ sơ (ảnh đại diện + giới thiệu) — **trang riêng**, user chốt
+              2026-08-24. Trước đó nó trỏ `/cai-dat#ho-so`: hai mục menu khác tên mà ra
+              đúng một trang mang tiêu đề "Cài đặt" là một cái menu nói dối, và cái neo
+              chỉ cuộn chứ không đổi được tiêu đề ấy. "Hồ sơ của tôi" ngay trên chỉ để
+              XEM. */}
+          <Link href="/sua-ho-so" role="menuitem" onClick={() => datMo(false)}>
+            <ImageUp size={15} strokeWidth={2} aria-hidden />
+            Sửa hồ sơ
+          </Link>
           <Link href="/cai-dat" role="menuitem" onClick={() => datMo(false)}>
+            <Settings size={15} strokeWidth={2} aria-hidden />
             Cài đặt
           </Link>
+          {/* "Khu mod" — chỉ hiện với staff. `ModSub` chưa cho thêm quyền gì (xem
+              `core/models/dien_dan.py::ModSub`), nên với người KHÔNG staff cái mục này
+              dẫn tới một trang không có công cụ nào — đúng thứ PLAN mục 4 cấm bày ra.
+              Ngày quyền theo-sub được nối, điều kiện ở đây phải đổi theo, và trang
+              `/khu-mod` đã tự nói ra giới hạn ấy cho ai lỡ tới. */}
+          {toi.la_staff === true && (
+            <Link href="/khu-mod" role="menuitem" onClick={() => datMo(false)}>
+              <ShieldCheck size={15} strokeWidth={2} aria-hidden />
+              Khu mod
+            </Link>
+          )}
           <Link href="/doi-mat-khau" role="menuitem" onClick={() => datMo(false)}>
+            <KeyRound size={15} strokeWidth={2} aria-hidden />
             Đổi mật khẩu
           </Link>
           <button
@@ -87,6 +112,7 @@ export function ThanhTaiKhoan() {
             disabled={dangThoat}
             data-testid="nut-dang-xuat"
           >
+            <LogOut size={15} strokeWidth={2} aria-hidden />
             {dangThoat ? "Đang thoát…" : "Đăng xuất"}
           </button>
         </div>

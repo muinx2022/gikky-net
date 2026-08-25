@@ -3,9 +3,11 @@ import { expect, test } from "@playwright/test";
 
 import {
   NGUONG_KHONG_GAP,
+  NGUONG_KHONG_GAP_BAO,
   nhanDaiGap,
   nhanKhoangMoc,
   tinhDaiGap,
+  tinhDaiGapBao,
   tongBinhLuanTrongDai,
   trongDaiGap,
 } from "../../lib/dai-gap";
@@ -115,6 +117,76 @@ test("A11 — mọi dải gập sinh ra đều giấu ÍT NHẤT 2 mốc", () =>
     const d = tinhDaiGap(n);
     if (d.gap) expect(d.soMoc, `n=${n}`).toBeGreaterThanOrEqual(2);
   }
+});
+
+/* ---- Mặt BÃO: mốc 1 LUÔN hiện (user chốt 2026-08-24) ----------------------- */
+
+/** Công thức thứ HAI, của mặt BÃO: `n` mốc ⇒ gập seq 2 … **n−1**, hiện đúng 1 và n;
+ * `n ≤ 2` thì không gập.
+ *
+ * Số ở nhóm này **gõ tay từ plan** `plans/2026-08-24-mat-bao-moc-1-luon-hien.md`, cùng
+ * luật với nhóm trên: dựng kỳ vọng từ chính `tinhDaiGapBao` thì hai vế sai bằng nhau và
+ * bài đo vẫn xanh.
+ *
+ * Vì sao ngưỡng của BÃO là **2** chứ không phải 5 như CẶN: BÃO hiện đúng 2 thẻ ở mọi `n`,
+ * nên `n = 3` giấu 1 mốc mà vẫn đáng gập ("luôn đúng hai thẻ" là luật đọc ra được); CẶN
+ * hiện 4 thẻ nên `n = 5` gập 1 mốc là lỗ. Hai hình dạng khác nhau, hai ngưỡng khác nhau.
+ */
+
+test("BÃO — n = 1 và n = 2 KHÔNG gập (n = 2 giấu được đúng 0 mốc)", () => {
+  const d1 = tinhDaiGapBao(1);
+  expect(d1.gap).toBe(false);
+  expect([...d1.seqHien]).toEqual([1]);
+
+  const d2 = tinhDaiGapBao(2);
+  expect(d2.gap).toBe(false);
+  expect([...d2.seqHien]).toEqual([1, 2]);
+});
+
+test("BÃO — ngưỡng đúng bằng 2 (user chốt 2026-08-24)", () => {
+  // Gõ tay, không đọc từ hằng: bài đo phải đỏ khi ai đó hạ nó về 1 hay nâng lên 3.
+  expect(NGUONG_KHONG_GAP_BAO).toBe(2);
+});
+
+test("BÃO — n = 3 là mốc bắt đầu gập, gập ĐÚNG 1 mốc, nhãn 'Mốc 2'", () => {
+  // Ca làm nhánh `seqDau === seqCuoi` của `nhanKhoangMoc` sống thật — trước 2026-08-24
+  // docstring của hàm đó còn ghi "không công thức nào sinh ra nó nữa".
+  const d = tinhDaiGapBao(3);
+  expect(d.gap).toBe(true);
+  if (!d.gap) return;
+  expect([d.seqDau, d.seqCuoi]).toEqual([2, 2]);
+  expect(d.soMoc).toBe(1);
+  expect([...d.seqHien]).toEqual([1, 3]);
+  expect(nhanKhoangMoc(d)).toBe("Mốc 2");
+});
+
+test("BÃO — n = 6 gập 2–5 (4 mốc), hiện đúng hai đầu 1 và 6", () => {
+  const d = tinhDaiGapBao(6);
+  expect(d.gap).toBe(true);
+  if (!d.gap) return;
+  expect([d.seqDau, d.seqCuoi]).toEqual([2, 5]);
+  expect(d.soMoc).toBe(4);
+  expect([...d.seqHien]).toEqual([1, 6]);
+  expect(nhanKhoangMoc(d)).toBe("Mốc 2–5");
+  // Mốc 1 KHÔNG bao giờ nằm trong dải gập — đó là cả lý do đợt vá này tồn tại.
+  expect(trongDaiGap(d, 1)).toBe(false);
+});
+
+test("BÃO ≠ CẶN — hai công thức khác nhau, đừng ai gộp chúng lại", () => {
+  // Cùng `n = 9`, hai mặt cho hai dải khác hẳn. Vế kỳ vọng của cả hai gõ tay từ PLAN 5.5
+  // (CẶN: gập 2–6, hiện 1/7/8/9) và plan 2026-08-24 (BÃO: gập 2–8, hiện 1/9).
+  const can = tinhDaiGap(9);
+  const bao = tinhDaiGapBao(9);
+  expect(can.gap).toBe(true);
+  expect(bao.gap).toBe(true);
+  if (!can.gap || !bao.gap) return;
+  expect([can.seqDau, can.seqCuoi, can.soMoc]).toEqual([2, 6, 5]);
+  expect([bao.seqDau, bao.seqCuoi, bao.soMoc]).toEqual([2, 8, 7]);
+  expect([...can.seqHien]).toEqual([1, 7, 8, 9]);
+  expect([...bao.seqHien]).toEqual([1, 9]);
+  // Và mốc 7 — mốc mang khối "trích vào sổ" của seed — nằm ở hai phía khác nhau.
+  expect(trongDaiGap(can, 7)).toBe(false);
+  expect(trongDaiGap(bao, 7)).toBe(true);
 });
 
 /** Mốc tối giản cho `tongBinhLuanTrongDai` — chỉ hai trường mà hàm đó đọc.

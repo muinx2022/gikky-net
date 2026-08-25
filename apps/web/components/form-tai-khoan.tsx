@@ -70,7 +70,10 @@ export function FormTaiKhoan({
   };
 
   return (
-    <main className={css.khung}>
+    // `<div>` chứ không `<main>`: từ 2026-08-24 các trang auth được bọc bằng
+    // `KhungHaiCot`, và khung đó đã render `<main>`. Hai `<main>` lồng nhau là HTML sai và
+    // trình đọc màn hình mất mốc điều hướng.
+    <div className={css.khung}>
       <section className={css.the}>
         <h1 className={css.tieu_de}>{tieuDe}</h1>
         {moTa && <p className={css.mo_ta}>{moTa}</p>}
@@ -100,7 +103,7 @@ export function FormTaiKhoan({
 
         {duoi && <p className={css.duoi}>{duoi}</p>}
       </section>
-    </main>
+    </div>
   );
 }
 

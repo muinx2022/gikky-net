@@ -43,13 +43,16 @@
 }
 
 .ten {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   font-family: var(--f-mono);
   font-size: 13px;
   color: var(--ink-2);
   background: none;
   border: 1px solid var(--line);
   border-radius: 999px;
-  padding: 4px 11px;
+  padding: 3px 11px 3px 4px;
   cursor: pointer;
 }
 
@@ -103,4 +106,13 @@
   .chua_xac_thuc {
     display: none;
   }
+}
+
+/* Mỗi mục menu là icon + chữ trên một trục — `inline-flex` chứ không để icon rơi xuống
+   baseline chữ. */
+.menu a,
+.menu button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
 }

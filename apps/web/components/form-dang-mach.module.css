@@ -34,8 +34,14 @@
 
 .dong:focus-visible,
 .chon:focus-visible {
-  outline: 2px solid var(--focus);
+  /* Vòng focus của Ô NHẬP nhẹ hơn của nút/link (user 2026-08-24: "border đậm quá").
+     `2px` vẽ với `offset: -1px` nằm đè lên viền sẵn có ⇒ trông thành một viền 2px đậm.
+     Nay: outline 1px + quầng mềm `--accent-soft`. Vẫn thấy rõ, và **vẫn là `outline`** —
+     `e2e/giao-dien.spec.ts` T6 đòi `outlineStyle !== "none"` sau khi Tab. */
+  outline: 1px solid var(--focus);
   outline-offset: -1px;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
 .chan {

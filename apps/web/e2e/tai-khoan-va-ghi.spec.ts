@@ -131,10 +131,9 @@ test.describe("Đường ghi — đăng bài, nối mốc, bình luận, vote", 
     expect(noi.status(), await noi.text()).toBe(201);
 
     await page.goto(`/m/${mach.slug}-${mach.id}`);
-    // Mạch đang sống ⇒ mặt BÃO (Phase 3): mốc mới nhất mở sẵn, phần còn lại sau
-    // "mở cả mạch ▾" (PLAN 5.5).
+    // Mạch đang sống ⇒ mặt BÃO (Phase 3). Mạch 2 mốc không gập gì (`tinhDaiGapBao`,
+    // 2026-08-24): cả hai thẻ hiện thẳng, mốc 1 đổi kiểu từ "don" sang "mach" ngay.
     await expect(page.getByTestId("moc-2")).toBeVisible();
-    await page.getByTestId("nut-mo-ca-mach").click();
     await expect(page.getByTestId("moc-1")).toHaveAttribute("data-kieu", "mach");
   });
 

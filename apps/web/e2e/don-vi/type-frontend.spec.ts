@@ -354,14 +354,36 @@ test("luật trên có quét trúng lời gọi THẬT ở MỌI cửa (không q
     "components/chuong.tsx", // B2 — chuông thông báo, poll 60s
     "components/composer.tsx", // Phase 2
     "components/cot-vote.tsx", // Phase 2
+    // `/khu-mod` — `GET /me/subs-mod`, danh sách chuyên mục TÔI được phân công. ⚠ Đây là
+    // danh sách PHÂN CÔNG, không phải danh sách QUYỀN: `ModSub` chưa cho thêm quyền gì.
+    "components/danh-sach-sub-mod.tsx",
     "components/form-cai-dat.tsx", // giao diện — trang /cai-dat
     "components/form-dang-mach.tsx", // form ghi
+    // Lượt HỒ SƠ + MOD + EDITOR (2026-08-24) — ba cửa mới, cả ba là client component,
+    // cả ba `baseUrl` RỖNG (same-origin qua `rewrites`):
+    //   `form-ho-so`    trang `/sua-ho-so` — `PATCH /me` + `POST/DELETE /me/avatar`.
+    //                   Lời gọi avatar là **multipart** ⇒ `headerGhiFile()`, không
+    //                   `headerGhi()` (xem chú thích `lib/anh.ts` cuối danh sách này);
+    //   `hanh-dong-mod` công cụ mod trên front — ẩn mạch/mốc/bình luận, khoá mạch;
+    //   `soan-thao`     Tiptap — `POST /me/anh` khi chèn ảnh vào thân bài, cũng
+    //                   multipart.
+    "components/form-ho-so.tsx",
     "components/hang-reaction.tsx", // giao diện — hàng 📈📉🔥🧊🎯 của wireframe 9.2
     "components/hanh-dong-binh-luan.tsx", // form ghi
     "components/hanh-dong-moc.tsx", // form ghi
+    "components/hanh-dong-mod.tsx",
     "components/khoi-chu-mach.tsx", // form ghi
     "components/nut-theo-mach.tsx", // B2 — theo / bỏ theo mạch
+    // Theo dõi CHUYÊN MỤC (2026-08-24) — ba cửa mới, cả ba client:
+    //   `nut-theo-sub`  `GET /subs/{slug}/me` + `POST`/`DELETE /subs/{slug}/theo`. Lượt
+    //                   GET là nửa PER-USER của trang chuyên mục — trang ấy cache được
+    //                   (PLAN 8.4), nên trạng thái "tôi có theo không" BẮT BUỘC hỏi ở
+    //                   trình duyệt, không nạp ở server;
+    //   `tab-ho-so`     `GET /me/da-vote`, `/me/dang-theo`, `/me/subs` — ba tab riêng.
+    "components/nut-theo-sub.tsx",
     "components/phien.tsx", // Phase 2
+    "components/soan-thao.tsx",
+    "components/tab-ho-so.tsx",
     // B2 — cửa PER-USER duy nhất của trang mạch (`/machs/{id}/me` + `/seen`). Nó nằm
     // trong danh sách này để mọi lượt thêm một chỗ đọc dữ liệu per-user đều phải qua diff.
     "components/trang-thai-toi.tsx",

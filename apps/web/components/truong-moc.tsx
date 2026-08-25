@@ -2,6 +2,7 @@
 
 import { homNayVN } from "@/lib/vong-doi";
 
+import { SoanThao } from "./soan-thao";
 import css from "./truong-moc.module.css";
 
 /** Bốn trường nội dung của một mốc — dùng chung cho **đăng bài**, **nối mốc** và **sửa mốc**.
@@ -75,22 +76,23 @@ export function TruongMoc({
 
   return (
     <>
-      <label className={css.o}>
-        <span className={css.nhan}>{nhanThan}</span>
-        <textarea
-          className={css.than}
-          value={gia_tri.body}
-          onChange={(e) => dat("body", e.target.value)}
-          rows={8}
-          maxLength={10000}
-          required
-          placeholder={goiYThan ?? "Vì sao vào lệnh? Ghi trước khi biết kết quả."}
-          data-testid={`${tienTo}-body`}
+      {/* `<div>` chứ không `<label>`: vùng soạn của Tiptap là `contenteditable`, và một
+          `<label>` bọc nó sẽ nuốt cú bấm vào thanh công cụ rồi ném focus lung tung. Nhãn
+          nối bằng `id`/`aria-labelledby` thay cho việc bọc. */}
+      <div className={css.o}>
+        <span className={css.nhan} id={`${tienTo}-nhan-than`}>
+          {nhanThan}
+        </span>
+        <SoanThao
+          giaTri={gia_tri.body}
+          datGiaTri={(html) => dat("body", html)}
+          moi={goiYThan ?? "Vì sao vào lệnh? Ghi trước khi biết kết quả."}
+          testId={`${tienTo}-body`}
         />
         <span className={css.goi_y}>
-          Markdown dùng được: <code>**đậm**</code>, <code>`mã`</code>, danh sách, trích dẫn.
+          Bôi đen chữ để định dạng, hoặc dùng thanh công cụ ở trên.
         </span>
-      </label>
+      </div>
 
       <div className={css.hang}>
         <label className={css.o}>
@@ -122,7 +124,7 @@ export function TruongMoc({
             value={gia_tri.loai}
             maxLength={20}
             onChange={(e) => dat("loai", e.target.value)}
-            placeholder="vào lệnh · nâng dừng lỗ · chốt 1/3"
+            placeholder="Tên ngắn cho loại mốc này"
             data-testid={`${tienTo}-loai`}
           />
         </label>
@@ -140,9 +142,16 @@ export function TruongMoc({
           value={gia_tri.question_for_crowd}
           maxLength={200}
           onChange={(e) => dat("question_for_crowd", e.target.value)}
-          placeholder="Hiện khi chưa ai bình luận vào mốc này."
+          placeholder="Câu bạn muốn hỏi người đọc"
           data-testid={`${tienTo}-cau-moi`}
         />
+        {/* Câu này TRƯỚC ĐÂY là `placeholder` *(đổi 2026-08-24)*. Placeholder phải gợi ý
+            **gõ gì vào ô**; nó thì mô tả **hành vi của hệ thống** — và nó biến mất ngay
+            khi người ta gõ chữ đầu tiên, tức đúng lúc còn cần nhớ. Chuyển xuống `goi_y`
+            giữ được thông tin mà không chiếm chỗ của lời hướng dẫn. */}
+        <span className={css.goi_y}>
+          Hiện dưới mốc khi chưa ai bình luận vào mốc này.
+        </span>
       </label>
     </>
   );
@@ -215,7 +224,7 @@ function TruongFigures({
             value={f.label}
             maxLength={DAI_FIGURE_LABEL}
             onChange={(e) => sua(i, "label", e.target.value)}
-            placeholder="GIÁ VÀO"
+            placeholder="Tên chỉ số"
             aria-label={`Nhãn của cặp số thứ ${i + 1}`}
             data-testid={`${tienTo}-fig-label-${i}`}
           />
@@ -225,7 +234,7 @@ function TruongFigures({
             value={f.value}
             maxLength={DAI_FIGURE_VALUE}
             onChange={(e) => sua(i, "value", e.target.value)}
-            placeholder="27.80"
+            placeholder="Giá trị"
             aria-label={`Giá trị của cặp số thứ ${i + 1}`}
             data-testid={`${tienTo}-fig-value-${i}`}
           />

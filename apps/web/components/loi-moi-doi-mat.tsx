@@ -49,13 +49,16 @@ export function LoiMoiDoiMat({
 
   const vi_sao = trangThai.following
     ? "Bạn đang theo mạch này"
-    : "Bạn đã từng nói gì đó trong mạch này";
+    : "Bạn đã từng bình luận trong mạch này";
 
+  // Chữ hiển thị dùng ĐÚNG hai tên của chiều kia — "bản đầy đủ" / "nhật ký của tác giả"
+  // (xem `trang-mach.tsx`). Không nói "mặt BÃO": đó là từ vựng của PLAN 5.5, không phải
+  // từ người dùng đọc được.
   return (
     <p className={css.dong} data-testid="loi-moi-doi-mat">
-      {vi_sao} — mạch còn sống với bạn.{" "}
+      {vi_sao} — bản đầy đủ có thêm bình luận xen giữa các mốc.{" "}
       <Link href={href} data-testid="doi-sang-mat-bao">
-        xem mặt BÃO
+        Xem bản đầy đủ
       </Link>
     </p>
   );

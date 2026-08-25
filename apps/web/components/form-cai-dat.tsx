@@ -8,6 +8,7 @@ import { GOC_TRINH_DUYET, headerGhi } from "@/lib/tai-khoan";
 
 import css from "./form-tai-khoan.module.css";
 import { usePhien } from "./phien";
+import { useToast } from "./toast";
 
 /** Trang `/cai-dat` — nợ có tên `TRANG-CAI-DAT`, trả 2026-08-23.
  *
@@ -34,9 +35,9 @@ import { usePhien } from "./phien";
 export function FormCaiDat() {
   const { toi, dangTai, taiLai } = usePhien();
   const router = useRouter();
+  const bao = useToast();
   const [dangGui, datDangGui] = useState(false);
   const [loi, datLoi] = useState<string | null>(null);
-  const [xong, datXong] = useState<string | null>(null);
 
   // Cùng hàng rào với `/doi-mat-khau`: trang này chỉ có nghĩa khi đã đăng nhập, và một ô
   // công tắc hiện ra cho khách là một ô bấm vào sẽ ăn 401.
@@ -54,7 +55,6 @@ export function FormCaiDat() {
   const doi = async (bat: boolean) => {
     datDangGui(true);
     datLoi(null);
-    datXong(null);
     try {
       const kq = await suaToi({
         baseUrl: GOC_TRINH_DUYET,
@@ -63,7 +63,7 @@ export function FormCaiDat() {
       });
       if (kq.data === undefined) throw new Error("phản hồi rỗng");
       await taiLai();
-      datXong(bat ? "Đã bật digest tuần." : "Đã tắt digest tuần.");
+      bao(bat ? "Đã bật digest tuần." : "Đã tắt digest tuần.");
     } catch {
       datLoi("Không lưu được. Thử lại sau ít giây.");
     } finally {
@@ -72,9 +72,10 @@ export function FormCaiDat() {
   };
 
   return (
-    <div className={css.khung}>
+      // `<h2>` bỏ đi cùng lý do với `FormHoSo`: `/cai-dat` nay chỉ còn MỘT thẻ và `<h1>`
+      // của trang đã đặt tên cho nó. Dòng `mo_ta` thì ở lại — nó không lặp tiêu đề, nó
+      // nói tuỳ chọn dưới đây thuộc tài khoản nào và thư sẽ đi tới hộp thư nào.
       <div className={css.the}>
-        <h1 className={css.tieu_de}>Cài đặt</h1>
         <p className={css.mo_ta}>
           Tài khoản <span className="mono">u/{toi.username}</span>
           {toi.email === null ? null : (
@@ -108,14 +109,6 @@ export function FormCaiDat() {
           </span>
         </label>
 
-        {/* `role="status"` chứ không `role="alert"`: đây là xác nhận một việc người dùng
-            vừa chủ động làm, không phải một tin cần cắt ngang. */}
-        {xong !== null && (
-          <p className={css.xong} role="status" data-testid="cai-dat-xong">
-            {xong}
-          </p>
-        )}
-
         {!toi.email_da_xac_thuc && (
           <p className={css.duoi} data-testid="cai-dat-chua-xac-thuc">
             Email của bạn chưa xác thực — thư digest sẽ không gửi tới cho tới khi xác thực
@@ -123,6 +116,5 @@ export function FormCaiDat() {
           </p>
         )}
       </div>
-    </div>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { Search } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -44,9 +45,9 @@ export function OTimKiem() {
         router.push(`/tim-kiem?q=${encodeURIComponent(sach)}`);
       }}
     >
-      <span className={css.kinh} aria-hidden>
-        ⌕
-      </span>
+      {/* `⌕` (U+2315) trước đây: nửa số font Windows không có glyph này nên nó ra ô
+          vuông rỗng. Icon vẽ bằng SVG thì mọi máy thấy như nhau. */}
+      <Search className={css.kinh} size={15} strokeWidth={2} aria-hidden />
       <input
         type="search"
         name="q"

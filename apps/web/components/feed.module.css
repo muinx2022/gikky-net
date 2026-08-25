@@ -46,18 +46,28 @@
   gap: 8px;
 }
 
+/* `inline-flex` + `align-items: center` để icon và chữ nằm cùng một trục — bản cũ không
+   flex nên SVG rơi xuống baseline chữ, lệch lên trên. Không viền (user 2026-08-24): tab
+   đang chọn nhận biết bằng NỀN, không bằng khung. */
 .mot_tab {
-  border: 1px solid var(--line-2);
-  border-radius: 4px;
-  padding: 5px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 6px 13px;
   font-size: 13px;
   font-weight: 500;
   color: var(--ink-2);
 }
 
-.tab_dang_chon {
+.mot_tab:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.tab_dang_chon,
+.tab_dang_chon:hover {
   background: var(--accent-soft);
-  border-color: var(--accent);
   color: var(--accent);
 }
 
@@ -82,12 +92,14 @@
   font-weight: 500;
 }
 
+/* Danh sách thẻ RỜI, cách nhau bằng `gap` — không còn khung bọc chung (user thấy các
+   thẻ dính sát nhau quá, 2026-08-24). Mỗi `.the` tự mang nền + bo góc. */
 .danh_sach {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 8px;
+  gap: 11px;
 }
 
 .rong {

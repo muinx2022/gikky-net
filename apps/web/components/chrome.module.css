@@ -7,26 +7,46 @@
   border-bottom: 1px solid var(--line);
 }
 
-/* `flex-wrap: wrap` là bắt buộc, không phải phòng xa — **đo được ở 360px**.
+/* Thanh trên cùng chạy **HẾT BỀ NGANG màn hình** — user chốt 2026-08-24: hiệu sát mép
+ * trái, cụm phải sát mép phải, ô tìm kiếm **đúng giữa khung nhìn**.
  *
- * Cụm phải (Đăng bài · chuông · công tắc theme · thanh tài khoản) rộng 254px; cộng logo và
- * hàng sub thì `.trong` tràn ra 397px trên khung nhìn 360px, tức **cả trang cuộn ngang**
- * (tiêu chí T7 cấm đúng chuyện đó). Công tắc theme của lượt này là giọt nước cuối; cụm ấy
- * vốn đã sát mép.
+ * ## Vì sao là `grid` chứ không `flex` + `margin: auto`
  *
- * Cho nó xuống dòng thay vì nén chữ: nén là chữ 10px và vùng bấm dưới 44px, tức đổi một
- * lỗi bố cục lấy hai lỗi trợ năng. */
+ * Cụm trái (hiệu ≈ 80px) và cụm phải (Đăng bài · chuông · theme · tài khoản ≈ 254px)
+ * **không bằng nhau**. Với flex, ô tìm kiếm rơi vào giữa *khoảng trống còn lại*, tức lệch
+ * sang trái đúng bằng nửa hiệu số — 87px trên mọi màn hình, và nó lại đổi theo độ dài tên
+ * người dùng. Lưới `1fr <ô tìm> 1fr` thì hai rãnh biên **bằng nhau theo định nghĩa**, nên
+ * cột giữa nằm đúng tâm bất kể hai bên rộng bao nhiêu.
+ *
+ * ⚠ Ba con số của `--khung` (860px) **không còn áp cho thanh này**. Nó vẫn áp cho thân
+ * trang (`chan-trang`, `trang-mach`, `/luat`, hồ sơ). Header full-bleed mà thân trang
+ * có khung là **cố ý**, không phải bỏ sót.
+ *
+ * ## Ba mốc responsive, mỗi mốc chữa một thứ đo được
+ *
+ * - **≤860px** — `o-tim-kiem.module.css` ẩn ô tìm. Cột giữa phải rút về `auto` ở đây, nếu
+ *   không lưới vẫn **giữ chỗ** cho một cột 220px+ trống hoác giữa thanh (rãnh lưới do
+ *   template quyết định, không do có phần tử hay không).
+ * - **≤640px** — thu padding + gap, như cũ.
+ * - **≤420px** — quay về `flex` + `wrap`. Đây là chỗ chú thích cũ đo được: cụm phải 254px
+ *   cộng hiệu và lề thì `.trong` tràn khỏi khung nhìn 360px, tức **cả trang cuộn ngang**
+ *   (tiêu chí T7 cấm đúng chuyện đó). Lưới không tự xuống dòng; chỉ `flex-wrap` làm được.
+ *   Cho nó xuống dòng thay vì nén chữ: nén là chữ 10px và vùng bấm dưới 44px, tức đổi một
+ *   lỗi bố cục lấy hai lỗi trợ năng. */
 .trong {
-  max-width: var(--khung);
-  margin: 0 auto;
   padding: 11px 22px;
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr clamp(220px, 34vw, 560px) 1fr;
   align-items: center;
   gap: 14px;
 }
 
+/* `justify-self: start` — không có nó, ô lưới kéo thẻ `<a>` rộng hết rãnh 1fr, tức một
+   vùng bấm vô hình dài mấy trăm pixel chạy ngang nửa thanh header. Chữ vẫn trông đúng chỗ
+   nên lỗi này không tự lộ ra; chỉ có con trỏ đổi thành bàn tay ở giữa khoảng trống mới
+   nói. */
 .hieu {
+  justify-self: start;
   font-family: var(--f-display);
   font-size: 23px;
   font-weight: 600;
@@ -43,19 +63,6 @@
   background: var(--accent);
   margin-left: 5px;
   vertical-align: middle;
-}
-
-.dieu_huong {
-  display: flex;
-  flex-wrap: wrap;
-  min-width: 0;
-  gap: 13px;
-  font-size: 13px;
-  color: var(--ink-3);
-}
-
-.dieu_huong a:hover {
-  color: var(--accent);
 }
 
 /* Chỗ giữ của ô tìm kiếm trong lúc `Suspense` chưa xong — cùng kích thước với `.o` của
@@ -77,10 +84,20 @@
 /* Góc phải: nút "Đăng bài" + thanh tài khoản. Xem chú thích trong `chrome.tsx` để biết vì
    sao hai thứ này phải nằm chung một hộp thay vì đứng rời trên `.trong`. */
 .phai {
+  /* `justify-self: end` cho lưới; `margin-left: auto` cho nhánh `flex` ở ≤420px. Giữ cả
+     hai là cố ý — bỏ cái nào thì cụm phải trôi về trái ở đúng một mốc màn hình. */
+  justify-self: end;
   margin-left: auto;
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+@media (max-width: 860px) {
+  /* Ô tìm đã bị ẩn (`o-tim-kiem.module.css`) ⇒ bỏ luôn rãnh của nó, xem chú thích `.trong`. */
+  .trong {
+    grid-template-columns: 1fr auto;
+  }
 }
 
 @media (max-width: 640px) {
@@ -91,5 +108,13 @@
 
   .phai {
     gap: 8px;
+  }
+}
+
+@media (max-width: 420px) {
+  /* Lưới không xuống dòng được. Xem mốc thứ ba trong chú thích `.trong`. */
+  .trong {
+    display: flex;
+    flex-wrap: wrap;
   }
 }

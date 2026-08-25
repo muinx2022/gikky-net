@@ -1,46 +1,42 @@
+/* Nút hai trạng thái Sáng ⇄ Tối. Trước 2026-08-24 đây là một `<select>` trong suốt phủ
+   lên một icon; xem docstring `cong-tac-theme.tsx` cho lý do đổi.
+
+   Vì nay nó là `<button>` thật nên `:focus-visible` của chính nó vẽ được vòng focus —
+   không cần `:focus-within` trên hộp bọc như bản cũ. */
 .khung {
   display: inline-flex;
-  align-items: center;
-}
-
-/* Ẩn THỊ GIÁC, không ẩn khỏi cây trợ năng.
- *
- * `display: none` và `visibility: hidden` gỡ phần tử khỏi cây trợ năng luôn, tức cái
- * `<label>` này thôi làm nhãn cho ai cả và `<select>` trở thành một ô không tên. Công
- * thức clip 1px dưới đây là cách duy nhất giữ được cả hai. */
-.nhan {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
   border: 0;
-}
-
-.chon {
+  padding: 0;
+  background: none;
   font: inherit;
-  font-size: 12.5px;
-  color: var(--ink-2);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 5px 9px;
   cursor: pointer;
-  /* Không `appearance: none`: mũi tên gốc của trình duyệt là thứ nói cho người ta biết
-     đây là một ô CHỌN chứ không phải một cái nhãn. Vẽ lại nó bằng tay là thêm một hình
-     ảnh phải tự lo tương phản ở cả hai theme. */
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: var(--ink-3);
 }
 
-.chon:hover {
-  border-color: var(--accent);
+.khung:hover {
+  background: var(--surface-2);
   color: var(--ink);
 }
 
+.khung:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.hinh {
+  pointer-events: none;
+}
+
+/* Vùng bấm 44px trên màn hình cảm ứng. Nới cái NÚT, không nới riêng icon — icon vẫn
+   nằm giữa và vùng bấm thật lớn bằng thứ mắt thấy. */
 @media (pointer: coarse) {
-  .chon {
-    min-height: 44px;
+  .khung {
+    width: 44px;
+    height: 44px;
   }
 }

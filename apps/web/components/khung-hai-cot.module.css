@@ -1,0 +1,50 @@
+/* ⚠ Ba con số dưới đây phải KHỚP `feed.module.css#.khung` (trang chủ + trang sub dùng lưới
+   riêng vì `Feed` nhận `sidebar` làm prop). Lệch một con số là cột nội dung nhảy ngang
+   đúng cái lỗi mà khung này sinh ra để diệt — xem docstring `khung-hai-cot.tsx`. */
+.khung {
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 22px 22px 40px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 288px;
+  gap: 22px;
+  align-items: start;
+}
+
+.chinh {
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  /* Dưới 900px rail xuống dưới nội dung — cùng mốc với `feed.module.css`. */
+  .khung {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .khung {
+    padding: 16px 15px 32px;
+  }
+}
+
+/* ⚠ Ba thuộc tính dưới đây phải KHỚP `feed.module.css#.rail` — cùng lý do với `.khung`.
+   `max-height` + `overflow-y` là vế bắt buộc: rail dài hơn màn hình mà thiếu chúng thì
+   phần cuối KHÔNG BAO GIỜ cuộn tới được (nó dính nên không trôi lên). */
+.rail {
+  position: sticky;
+  top: calc(var(--cao-chrome) + 14px);
+  max-height: calc(100vh - var(--cao-chrome) - 28px);
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+@media (max-width: 900px) {
+  /* Dưới 900px rail xuống dưới nội dung — dính ở đó là vô nghĩa và `max-height` sẽ cắt
+     cụt chính nó. Tắt cả bốn, không chỉ `position`. */
+  .rail {
+    position: static;
+    max-height: none;
+    overflow-y: visible;
+  }
+}

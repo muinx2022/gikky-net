@@ -101,7 +101,15 @@ export function BanCuMoc({ mocId, soLan }: { mocId: number; soLan: number }) {
               {items.map((b) => (
                 <li key={b.id} className={css.mot_ban}>
                   <p className={css.khi}>sửa lúc {dauThoiGianServer(b.revised_at)}</p>
-                  {/* `<pre>` chứ không `ThanVan`: đây là bản GỐC người ta đã gõ, và render
+                  {/* ⚠ **`<pre>` LÀ MỘT HÀNG RÀO BẢO MẬT từ 2026-08-24, đừng đổi.**
+                      `Moc.body` nay là HTML đã qua `core/lam_sach_html.py`, nhưng
+                      `MocRevision.body` thì **chưa bao giờ** đi qua đó — bản cũ được chụp
+                      lại nguyên văn từ trước lượt đổi, và bảng ấy không có cột định dạng.
+                      Đổi chỗ này sang `dangerouslySetInnerHTML` (hay bất kỳ đường nhúng
+                      HTML nào) là biến một bản cũ chứa `<img onerror=…>` thành XSS thật.
+                      `<pre>{chuỗi}` thì React escape, nên nó an toàn *và* đúng ý nghĩa.
+
+                      `<pre>` chứ không `ThanVan`: đây là bản GỐC người ta đã gõ, và render
                       nó qua markdown là hiện một thứ khác với thứ đang đối chiếu. */}
                   <pre className={css.than}>{b.body}</pre>
                   {b.figures !== null && b.figures.length > 0 && (

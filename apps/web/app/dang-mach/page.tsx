@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { KhungHaiCot } from "@/components/khung-hai-cot";
 
 import { FormDangMach } from "@/components/form-dang-mach";
 import { docCacSub } from "@/lib/api";
@@ -28,13 +29,13 @@ export default async function TrangDangMach({
   const cac_sub = await docCacSub();
 
   return (
-    <main className={css.khung}>
+    <KhungHaiCot>
       <h1 className={css.tieu_de}>Đăng bài</h1>
       <p className={css.lede}>
         Ghi lý do <em>trước</em> khi biết kết quả — máy chủ đóng dấu thời gian, và dấu đó
         không sửa được. Đó là toàn bộ giá trị của một cuốn sổ ở đây.
       </p>
       <FormDangMach cacSub={cac_sub} subMacDinh={sub} />
-    </main>
+    </KhungHaiCot>
   );
 }

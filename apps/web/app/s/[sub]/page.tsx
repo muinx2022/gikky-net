@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { Feed } from "@/components/feed";
+import { NutTheoSub } from "@/components/nut-theo-sub";
 import { Sidebar } from "@/components/sidebar";
 import { docCacSub, docFeedSub, docKhoang, docSub, docTab } from "@/lib/api";
 import { dongSoMachSub } from "@/lib/dinh-dang";
@@ -90,12 +91,18 @@ export default async function TrangSub({
       // đọc. Nay kiểu `DauTrang` của `Feed` cấm hẳn — truyền cả hai là `tsc` đỏ.
       header={
         <header className={css.dau} data-testid="sub-header">
-          <p className={`${css.slug} mono`}>s/{chi_tiet.slug}</p>
-          <h1 className={css.ten}>{chi_tiet.ten}</h1>
-          <p className={css.mo_ta}>{chi_tiet.mo_ta}</p>
-          <p className={`${css.so} mono`} data-testid="sub-header-so">
-            {dongSoMachSub(chi_tiet.so_mach, chi_tiet.created_at)}
-          </p>
+          <div className={css.dau_chu}>
+            <p className={`${css.slug} mono`}>s/{chi_tiet.slug}</p>
+            <h1 className={css.ten}>{chi_tiet.ten}</h1>
+            <p className={css.mo_ta}>{chi_tiet.mo_ta}</p>
+            <p className={`${css.so} mono`} data-testid="sub-header-so">
+              {dongSoMachSub(chi_tiet.so_mach, chi_tiet.created_at)}
+            </p>
+          </div>
+          {/* Client component: trang này render ở SERVER và cache được (PLAN 8.4), nên
+              "tôi có theo chuyên mục này không" phải hỏi riêng ở trình duyệt. Xem
+              docstring `components/nut-theo-sub.tsx`. */}
+          <NutTheoSub slug={chi_tiet.slug} />
         </header>
       }
     />

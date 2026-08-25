@@ -1,0 +1,151 @@
+.khung {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  overflow: hidden;
+  min-height: 168px;
+}
+
+.thanh {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  padding: 5px 6px;
+  border-bottom: 1px solid var(--line);
+  background: var(--inset);
+}
+
+.nut {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.nut:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+/* Nút đang bật dùng nền nhấn — cùng ngôn ngữ với tab feed đang chọn. */
+.dang_bat,
+.dang_bat:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.ngan {
+  width: 1px;
+  height: 18px;
+  margin: 0 4px;
+  background: var(--line);
+}
+
+/* Vùng soạn: `outline: none` vì viền focus vẽ ở `.khung` qua `:focus-within` — vòng focus
+   quanh đúng ô nhập chứ không quanh cả khung có thanh công cụ. */
+.vung {
+  padding: 11px 13px;
+  min-height: 132px;
+  outline: none;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.khung:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.vung p {
+  margin: 0 0 0.7em;
+}
+
+.vung > :last-child {
+  margin-bottom: 0;
+}
+
+/* Placeholder tự vẽ: Tiptap không có sẵn, và thêm `@tiptap/extension-placeholder` chỉ để
+   hiện một dòng chữ là thêm một phụ thuộc vào bundle của app công khai. */
+.vung p.is-editor-empty:first-child::before,
+.vung:empty::before {
+  content: attr(data-placeholder);
+  color: var(--ink-3);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+.vung h2,
+.vung h3 {
+  font-family: var(--f-display);
+  font-weight: 600;
+  margin: 0.9em 0 0.35em;
+}
+
+.vung h2 { font-size: 1.22em; }
+.vung h3 { font-size: 1.08em; }
+
+.vung code {
+  font-family: var(--f-mono);
+  font-size: 0.92em;
+  background: var(--inset);
+  padding: 0.1em 0.34em;
+  border-radius: 4px;
+}
+
+.vung blockquote {
+  margin: 0 0 0.7em;
+  padding-left: 12px;
+  border-left: 3px solid var(--line-2);
+  color: var(--ink-2);
+}
+
+.vung ul,
+.vung ol {
+  margin: 0 0 0.7em;
+  padding-left: 1.4em;
+}
+
+.vung a {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+/* Chữ cho trình đọc màn hình trên nút chỉ có icon (nút ảnh là `<label>`, không nhận
+   `aria-label` tự nhiên như `<button>`). Ẩn thị giác, KHÔNG ẩn khỏi cây trợ năng. */
+.an {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.dang_tai {
+  margin-left: 6px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.loi_anh {
+  margin: 0;
+  padding: 7px 13px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  background: var(--inset);
+  border-top: 1px solid var(--line);
+}
+
+/* Ảnh trong vùng soạn không được tràn ra ngoài khung. */
+.vung img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}

@@ -7,6 +7,7 @@ import {
   CAC_REACTION,
   CHU_REACTION,
   GLYPH_REACTION,
+  MO_TA_REACTION,
   type KhoaReaction,
 } from "@/lib/reaction";
 import { GOC_TRINH_DUYET, headerGhi } from "@/lib/tai-khoan";
@@ -17,7 +18,16 @@ import { useMach } from "./mach-ngu-canh";
 import { usePhien } from "./phien";
 import { useTrangThaiToi } from "./trang-thai-toi";
 
-/** Hàng reaction dưới thẻ mốc — `📈 12 · 🔥 9` của wireframe 9.2.
+/** Hàng reaction dưới thẻ mốc — **phản hồi về bài viết**, không phải về giá.
+ *
+ * Bộ icon đổi 2026-08-25 (lý do đầy đủ ở `core/models/tuong_tac.py::Reaction`). Hai thứ
+ * lượt ấy đổi ở ĐÂY:
+ *
+ * 1. **Nhãn hiện thành CHỮ trên nút**, không nằm trong `title` nữa. Khiếu nại gốc của
+ *    user là "phần action này cần được định nghĩa rõ lại" — và đúng: một hàng emoji trần
+ *    thì mỗi người đọc ra một nghĩa, còn `title` thì điện thoại không bao giờ thấy.
+ * 2. Bốn nút thay vì năm, và cả bốn nói được trên **bài nhận định** — loại bài không có
+ *    vị thế, không có hướng giá, tức loại mà bộ cũ không nói được gì.
  *
  * Nợ `REACTION-CHUA-CO-UI`, trả 2026-08-23. API (`POST /mocs/{id}/reactions`) và
  * `my_reactions` đã sống từ Phase 2; thứ chưa có là chỗ bấm. PLAN 5.7 gọi nó là *"bậc
@@ -34,7 +44,7 @@ import { useTrangThaiToi } from "./trang-thai-toi";
  *
  * Cùng luật với `CotVote`, và cùng lý do đã viết ở đó: một con số client tự cộng mà server
  * không đồng ý là loài hỏng im lặng tệ nhất. Khác một điểm: server trả về **cả bảng đếm**
- * (`kq.data.dem`, đủ 5 khoá), nên sau mỗi lượt bấm ta thay bằng con số của server chứ
+ * (`kq.data.dem`, đủ 4 khoá), nên sau mỗi lượt bấm ta thay bằng con số của server chứ
  * không giữ phép cộng của mình.
  *
  * ## Nút TẮT vẫn phải nói lý do, và nói ĐÚNG lý do
@@ -47,7 +57,7 @@ export function HangReaction({
   dem,
 }: {
   mocId: number;
-  /** `MocOut.reactions` — đủ 5 khoá, kể cả khoá bằng 0. */
+  /** `MocOut.reactions` — đủ 4 khoá, kể cả khoá bằng 0. */
   dem: Record<string, number>;
 }) {
   const { toi, dangTai } = usePhien();
@@ -113,7 +123,11 @@ export function HangReaction({
       {CAC_REACTION.map((k) => {
         const n = so[k] ?? 0;
         const chon = dang_chon === k;
-        const viec = chon ? `Rút reaction ${CHU_REACTION[k]}` : `React ${CHU_REACTION[k]}`;
+        // Câu ĐẦY ĐỦ trong nhãn trợ năng, không phải nhãn ngắn: "React Rõ" không nói
+        // được gì, "Đánh dấu: Luận điểm rõ ràng, theo được mạch lập luận" thì có.
+        const viec = chon
+          ? `Bỏ đánh dấu: ${MO_TA_REACTION[k]}`
+          : `Đánh dấu: ${MO_TA_REACTION[k]}`;
         return (
           <button
             key={k}
@@ -128,8 +142,14 @@ export function HangReaction({
             data-testid={`reaction-${k}`}
           >
             <span aria-hidden>{GLYPH_REACTION[k]}</span>
-            {/* Nguyên tắc 9 áp ở mức nút: khoá bằng 0 hiện **glyph không có số**, không
-                hiện "📈 0". Cả năm nút vẫn có mặt — bộ này là CỐ ĐỊNH, và một nút xuất
+            {/* Nhãn chữ — thứ biến hàng emoji thành một hàng nút đọc được. `aria-hidden`
+                vì `aria-label` của nút đã mang câu đầy đủ; để cả hai thì trình đọc màn
+                hình phát ra nhãn ngắn rồi phát lại nguyên câu. */}
+            <span className={css.chu} aria-hidden>
+              {CHU_REACTION[k]}
+            </span>
+            {/* Nguyên tắc 9 áp ở mức nút: khoá bằng 0 hiện **nhãn không có số**, không
+                hiện "Rõ 0". Cả bốn nút vẫn có mặt — bộ này là CỐ ĐỊNH, và một nút xuất
                 hiện/biến mất theo lượt bấm là hàng nút nhảy dưới tay người ta. */}
             {n > 0 && (
               <span className={css.so} data-testid={`reaction-so-${k}`}>

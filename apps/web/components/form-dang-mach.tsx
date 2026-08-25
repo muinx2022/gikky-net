@@ -150,6 +150,17 @@ export function FormDangMach({
         </select>
       </label>
 
+      {/* **Placeholder là HƯỚNG DẪN, không phải bài mẫu** — user chốt 2026-08-24, và luật
+          này áp cho mọi form trong `apps/web`.
+
+          Chuỗi cũ ở đây là một tiêu đề thật, đủ mã lẫn giá ("Nhật ký lệnh HPG — vào
+          27.80…"). Hai cái giá của lối ấy: người viết bài đầu tiên tưởng phải theo đúng
+          khuôn đó, và nó ghim sản phẩm vào MỘT loại nội dung (nhật ký lệnh cổ phiếu)
+          trong khi chuyên mục thì mở. Cùng lượt: `truong-moc` (loại mốc, dải số) và
+          `khoi-chu-mach` (kết quả đóng sổ) đều bỏ giá trị mẫu.
+
+          Ví dụ cụ thể vẫn có chỗ — nhưng là trong tài liệu hoặc một khối gợi ý đọc được
+          cả sau khi người ta bắt đầu gõ, không phải trong chuỗi biến mất ở ký tự đầu. */}
       <label className={css.o}>
         <span className={css.nhan}>Tiêu đề</span>
         <input
@@ -159,7 +170,7 @@ export function FormDangMach({
           maxLength={160}
           onChange={(e) => datTitle(e.target.value)}
           required
-          placeholder="Nhật ký lệnh HPG — vào 27.80, không bán trước tháng 8"
+          placeholder="Tiêu đề ngắn gọn, nói rõ bài này theo dõi điều gì"
           data-testid="dang-mach-title"
         />
       </label>

@@ -37,17 +37,24 @@ import type { MocOut } from "@gikky/api-client";
  */
 export const NGUONG_KHONG_GAP = 5;
 
+/** Kết quả của **cả hai** công thức gập — `tinhDaiGap` (CẶN) và `tinhDaiGapBao` (BÃO).
+ *
+ * Type dùng chung một cách có chủ đích: `trongDaiGap`, `nhanKhoangMoc` và
+ * `tongBinhLuanTrongDai` không quan tâm dải gập đến từ mặt nào, chúng chỉ đọc
+ * `seqDau`/`seqCuoi`. Vì thế các trường dưới đây tả **hình dạng**, không tả công thức —
+ * con số cụ thể (`n−3` hay `n−1`) là việc của từng hàm sinh ra chúng.
+ */
 export type DaiGap =
   | { readonly gap: false; readonly seqHien: readonly number[] }
   | {
       readonly gap: true;
-      /** seq đầu của dải bị gập (luôn là 2). */
+      /** seq đầu của dải bị gập — cả hai mặt đều là 2 (mốc 1 không bao giờ bị gập). */
       readonly seqDau: number;
-      /** seq cuối của dải bị gập (`n − 3`). */
+      /** seq cuối của dải bị gập: `n−3` ở mặt CẶN, `n−1` ở mặt BÃO. */
       readonly seqCuoi: number;
       /** Số mốc nằm trong dải gập. */
       readonly soMoc: number;
-      /** seq của các mốc hiện thẳng: `1`, `n−2`, `n−1`, `n`. */
+      /** seq của các mốc hiện thẳng: `1, n−2, n−1, n` ở CẶN; `1, n` ở BÃO. */
       readonly seqHien: readonly number[];
     };
 
@@ -74,6 +81,60 @@ export function tinhDaiGap(entryCount: number): DaiGap {
   };
 }
 
+/** Dưới-hoặc-bằng ngưỡng này thì mặt BÃO không gập gì cả — hiện thẳng cả hai mốc.
+ *
+ * **2, không phải 5 như `NGUONG_KHONG_GAP`** *(USER DUYỆT 2026-08-24)*: hai mặt có hình
+ * dạng khác nhau nên ngưỡng cũng khác. CẶN hiện 4 mốc, nên ở `n = 5` cái nút chen vào
+ * giữa một danh sách gần như đã đầy đủ — lỗ. BÃO hiện đúng **2 mốc ở mọi `n`**, nên luật
+ * "luôn đúng hai thẻ, phần giữa nằm sau một dòng" là thứ đọc ra được và đoán trước được;
+ * hạ xuống 1 thẻ hay nhảy lên 3 thẻ tuỳ `n` mới là cái khó đọc. Vì thế `n = 3` giấu đúng
+ * 1 mốc mà **vẫn gập**, còn `n = 2` thì không — ở đó dải gập rỗng, không giấu được gì.
+ */
+export const NGUONG_KHONG_GAP_BAO = 2;
+
+/** Tính dải gập của **mặt BÃO** — PLAN 5.5, chốt 2026-08-24.
+ *
+ *     entry_count = n  ⇒  gập seq 2 … n−1, hiện seq 1 và n
+ *     n ≤ 2            ⇒  KHÔNG gập
+ *
+ * ### Đây KHÔNG phải `tinhDaiGap`, và đừng gộp hai hàm lại
+ *
+ * Cùng một type trả về, cùng một cái nhãn `▤`, nhưng hai công thức trả lời hai câu hỏi
+ * khác nhau vì **hai mặt coi nhật ký là hai thứ khác nhau** (PLAN 5.5):
+ *
+ * - **CẶN — nhật ký LÀ thân bài.** Mạch đã nguội, người đọc tới để đọc hết cuốn sổ, và
+ *   đây là mặt Google index. Nên nó hiện `1, n−2, n−1, n`: mở bài cộng cả đoạn kết.
+ * - **BÃO — nhật ký là NGỮ CẢNH.** Thân bài là khán đài ở dưới; nhật ký chỉ cần trả lời
+ *   "mạch này nói về cái gì" và "chuyện mới nhất là gì". Đúng hai mốc: `1` và `n`.
+ *
+ * ### Vì sao mốc 1 phải nằm trong hai mốc ấy *(user chốt 2026-08-24)*
+ *
+ * Bản đầu của mặt BÃO chỉ mở sẵn mốc **mới nhất**, mốc 1 nằm sau nút. Mốc 1 là bài gốc —
+ * chính `body` của nó được `trang-mach.tsx::tomTat` dùng làm `meta description` của
+ * trang. Giấu nó đi thì thứ duy nhất người đọc thấy là một câu nối tiếp không tự đứng
+ * được ("Ngày hnay mới vào lệnh xong, lại bị atc dụ dỗ…"), tức mặt BÃO không nói được
+ * mạch của nó nói về cái gì.
+ *
+ * Hệ quả về vị trí: dải gập nằm **GIỮA** hai thẻ, đúng chỗ nó đang giấu — không phải một
+ * cái nút ở cuối trang như bản cũ.
+ */
+export function tinhDaiGapBao(entryCount: number): DaiGap {
+  if (entryCount <= NGUONG_KHONG_GAP_BAO) {
+    return {
+      gap: false,
+      seqHien: Array.from({ length: Math.max(entryCount, 0) }, (_, i) => i + 1),
+    };
+  }
+  const seqCuoi = entryCount - 1;
+  return {
+    gap: true,
+    seqDau: 2,
+    seqCuoi,
+    soMoc: seqCuoi - 1,
+    seqHien: [1, entryCount],
+  };
+}
+
 /** `seq` này có nằm trong dải gập không? */
 export function trongDaiGap(dai: DaiGap, seq: number): boolean {
   return dai.gap && seq >= dai.seqDau && seq <= dai.seqCuoi;
@@ -81,10 +142,17 @@ export function trongDaiGap(dai: DaiGap, seq: number): boolean {
 
 /** Phần "Mốc 2–6" của nhãn dải gập.
  *
- * Nhánh `seqDau === seqCuoi` giữ lại **dù `tinhDaiGap` không còn sinh ra nó**: từ
- * 2026-08-22 `NGUONG_KHONG_GAP = 5` nên dải gập luôn có ≥ 2 mốc. Nó ở lại vì "Mốc 2–2" là
- * chuỗi không ai đọc ra nghĩa, và ngày nào ai đó hạ ngưỡng xuống 4 thì thứ hiện ra phải
- * là "Mốc 2" chứ không phải một lỗi hiển thị mới. Một chỗ sinh chuỗi, một chỗ đọc.
+ * Nhánh `seqDau === seqCuoi` → `"Mốc 2"` là **đường đi thật, không phải phòng xa**: từ
+ * 2026-08-24 `tinhDaiGapBao(3)` sinh đúng dải một mốc (`2…2`), vì mặt BÃO gập ngay từ
+ * `n = 3` (xem `NGUONG_KHONG_GAP_BAO`). Mặt CẶN thì không — `NGUONG_KHONG_GAP = 5` nên
+ * dải của nó luôn có ≥ 2 mốc.
+ *
+ * *(Tới 2026-08-24 dòng này còn ghi "dù `tinhDaiGap` không còn sinh ra nó". Câu ấy đúng
+ * lúc viết và sai từ lúc mặt BÃO có công thức riêng; sửa lại vì một chú thích sai nằm
+ * lại là thứ người sau tin.)*
+ *
+ * Lý do nhánh ấy tồn tại thì không đổi: "Mốc 2–2" là chuỗi không ai đọc ra nghĩa. Một
+ * chỗ sinh chuỗi, một chỗ đọc.
  */
 export function nhanKhoangMoc(dai: DaiGap): string {
   if (!dai.gap) return "";

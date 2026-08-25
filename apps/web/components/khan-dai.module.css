@@ -26,20 +26,6 @@
   color: var(--ink-3);
 }
 
-.moi_bung_khan_dai {
-  display: inline-block;
-  margin-top: 4px;
-  font-size: 13.5px;
-  font-weight: 500;
-  color: var(--accent);
-  border: 1px solid var(--accent);
-  border-radius: 4px;
-  padding: 7px 13px;
-}
-
-.moi_bung_khan_dai:hover {
-  background: var(--accent-soft);
-}
 
 /* Khối "Câu đáng đọc" — nền `--inset` + viền để tách khỏi cây đầy đủ ngay dưới nó.
  *

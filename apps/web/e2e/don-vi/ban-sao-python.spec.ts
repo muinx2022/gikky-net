@@ -7,7 +7,12 @@ import {
   DAI_FIGURE_VALUE,
   SO_FIGURES_TOI_DA,
 } from "../../components/truong-moc";
-import { CAC_REACTION, CHU_REACTION, GLYPH_REACTION } from "../../lib/reaction";
+import {
+  CAC_REACTION,
+  CHU_REACTION,
+  GLYPH_REACTION,
+  MO_TA_REACTION,
+} from "../../lib/reaction";
 
 const GOC = resolve(__dirname, "..", "..", "..", "..");
 
@@ -46,12 +51,17 @@ export function docKhoaReaction(nguon: string): string[] {
   return khoa;
 }
 
-/** Glyph emoji đi kèm từng khoá, đọc từ nhãn `"📈 lên"`. */
+/** Glyph emoji đi kèm từng khoá, đọc từ nhãn `"🧠 luận điểm rõ"`.
+ *
+ * Nhóm thứ hai nới từ `(\S+)` sang `(.+)` *(2026-08-25)*: nhãn của bộ mới là một cụm
+ * nhiều chữ ("luận điểm rõ"), không còn là một từ. Nhóm GLYPH vẫn `(\S+)` — nới đúng
+ * phần cần nới, giữ chặt phần đang canh.
+ */
 export function docGlyphReaction(nguon: string): Record<string, string> {
   const lop = /class Emoji\(models\.TextChoices\):([\s\S]*?)\n\n/.exec(nguon);
   if (lop === null) throw new Error("Không cắt được `class Emoji(models.TextChoices)`.");
   const ra: Record<string, string> = {};
-  for (const m of lop[1].matchAll(/^\s{8}[A-Z_]+ = "([a-z_]+)", "(\S+) (\S+)"/gm)) {
+  for (const m of lop[1].matchAll(/^\s{8}[A-Z_]+ = "([a-z_]+)", "(\S+) (.+)"/gm)) {
     ra[m[1]] = m[2];
   }
   if (Object.keys(ra).length === 0) throw new Error("Không đọc được glyph nào.");
@@ -77,12 +87,13 @@ test("mỗi khoá reaction có glyph + chữ, và glyph khớp nhãn trong Pytho
   for (const k of CAC_REACTION) {
     expect(GLYPH_REACTION[k], `glyph của ${k}`).toBe(glyph[k]);
     expect(CHU_REACTION[k], `chữ của ${k}`).toBeTruthy();
+    expect(MO_TA_REACTION[k], `mô tả đầy đủ của ${k}`).toBeTruthy();
   }
 });
 
 test("phép đọc Python KHÔNG rỗng và fail-CLOSED (nếu không, ba bài trên rỗng tuếch)", () => {
   const nguon = docPython("api/core/models/tuong_tac.py");
-  expect(docKhoaReaction(nguon).length).toBeGreaterThanOrEqual(5);
+  expect(docKhoaReaction(nguon).length).toBeGreaterThanOrEqual(4);
   expect(() => docKhoaReaction("khong co gi")).toThrow();
   expect(() => docGlyphReaction("khong co gi")).toThrow();
   expect(() => docHang("khong co gi", "SO_FIGURES_TOI_DA")).toThrow();
