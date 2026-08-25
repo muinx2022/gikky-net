@@ -90,17 +90,19 @@ function KhoiGoogle() {
 
   if (tt === null) {
     return (
-      <The>
+      <The tieu_de="Đăng nhập" pham_vi="Google OAuth" className="p-4">
         <Skeleton dong={4} />
       </The>
     );
   }
 
   return (
-    <The>
-      <div className="space-y-4">
+    // `tieu_de`/`pham_vi` + `p-4` là quy ước của `The` (xem `app/page.tsx`): mọi thẻ
+    // KHÔNG chứa bảng đều đi lối này. Bản đầu của trang này tự chế một `<h2>` và không
+    // đặt padding, nên nội dung dính sát viền thẻ — lệch hẳn với các trang còn lại.
+    <The tieu_de="Đăng nhập" pham_vi="Google OAuth" className="p-4">
+      <div className="mt-3 space-y-4">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-lg font-semibold">Đăng nhập bằng Google</h2>
           {tt.bat ? (
             <NhanTrangThai tone="tot">Đang bật</NhanTrangThai>
           ) : (
