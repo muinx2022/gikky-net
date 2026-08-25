@@ -29,6 +29,7 @@ do không dùng:
 """
 
 from allauth.account.adapter import DefaultAccountAdapter
+from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 
 from core.han_muc import dem_dang_ky_trong_ngay_vn, dia_chi_ip, tran_dang_ky_moi_ngay
 
@@ -62,3 +63,62 @@ class AdapterTaiKhoan(DefaultAccountAdapter):
         """
         user.dang_ky_ip = dia_chi_ip(request) or None
         return super().save_user(request, user, form, commit=commit)
+
+
+class AdapterMangXaHoi(DefaultSocialAccountAdapter):
+    """Khai ở `settings.SOCIALACCOUNT_ADAPTER`. Một việc: **Google thắng mật khẩu**.
+
+    User chốt 2026-08-24: *"khi login gg và login qua email, nếu trùng email, cần phải ưu
+    tiên gg, xoá pass luôn, cần thì update lại"*.
+
+    ## allauth đã làm MỘT NỬA việc này, và nửa còn lại mới là nửa hay gặp
+
+    `socialaccount/internal/flows/email_authentication.py::wipe_password` xoá mật khẩu khi
+    một lượt đăng nhập Google khớp email với tài khoản có sẵn — **nhưng chỉ khi email của
+    tài khoản ấy CHƯA xác thực**:
+
+        if address and address.verified:
+            return   # "Verified email address, no reason to worry."
+
+    Nó đóng đúng ca tấn công: kẻ lạ đăng ký bằng email của người khác, biết mật khẩu, rồi
+    chờ chủ thật đăng nhập bằng Google — lúc đó cả hai cùng vào được.
+
+    Nhưng gikky đặt `ACCOUNT_EMAIL_VERIFICATION = "mandatory"`, nên **gần như mọi** tài
+    khoản nội bộ đều đã xác thực ⇒ nhánh trên `return` ⇒ mật khẩu **được giữ lại**. Tức
+    hành vi mặc định của allauth, ở đúng cấu hình của gikky, gần như không bao giờ chạy.
+
+    Lớp này bỏ điều kiện ấy: **khớp email là xoá**, xác thực hay chưa. Lý lẽ khác với lý lẽ
+    của allauth — không phải chống kẻ đăng ký trước, mà là **không để một tài khoản có hai
+    cửa vào**. Còn mật khẩu nghĩa là còn một cửa mà Google không canh, và một mật khẩu bị
+    lộ ở nơi khác vẫn mở được cửa ấy.
+
+    ## Không phải khoá ngoài
+
+    Xoá mật khẩu **không** làm ai mất tài khoản: vào bằng Google, hoặc đặt lại mật khẩu qua
+    `/quen-mat-khau` (đường ấy chỉ cần hòm thư, đúng thứ vừa được Google chứng minh là của
+    họ). Đó là vế *"cần thì update lại"* của đơn hàng.
+
+    ⚠ **Hệ quả cho giao diện, chưa xử ở lượt này:** tài khoản sau khi bị xoá mật khẩu có
+    `has_usable_password() == False`, nên trang `/doi-mat-khau` (đòi mật khẩu **hiện tại**)
+    không dùng được cho họ — đường đúng là `/quen-mat-khau`. Muốn UI nói ra điều đó thì
+    `GET /api/v1/me` phải trả thêm một cờ `co_mat_khau`. Ghi ở đây để người mở file này
+    thấy, thay vì để nó thành một bug báo về sau.
+    """
+
+    def pre_social_login(self, request, sociallogin):
+        """Xoá mật khẩu khi lượt đăng nhập Google rơi vào một tài khoản ĐÃ CÓ.
+
+        Gọi ở `socialaccount/internal/flows/login.py`, **sau** `sociallogin.lookup()` nên
+        `sociallogin.user` đã được giải xong — có `pk` nghĩa là khớp vào hàng có sẵn; đăng
+        ký mới thì `user` chưa lưu và `pk` là `None` (và cũng chưa có mật khẩu nào để xoá,
+        nên nhánh dưới là no-op).
+        """
+        super().pre_social_login(request, sociallogin)
+
+        user = getattr(sociallogin, "user", None)
+        if user is None or user.pk is None:
+            return
+        if not user.has_usable_password():
+            return
+        user.set_unusable_password()
+        user.save(update_fields=["password"])

@@ -77,7 +77,10 @@ export const NHOM_MENU: NhomMenu[] = [
   },
   {
     ten: "Hệ thống",
-    muc: [{ duong_dan: "/chan-doan", nhan: "Chẩn đoán", icon: "cai-dat" }],
+    muc: [
+      { duong_dan: "/cai-dat", nhan: "Cài đặt", icon: "cai-dat" },
+      { duong_dan: "/chan-doan", nhan: "Chẩn đoán", icon: "cai-dat" },
+    ],
   },
 ];
 

@@ -189,6 +189,77 @@
         "title": "BinhLuanDongOut",
         "type": "object"
       },
+      "CaiDatGoogleIn": {
+        "description": "Body của `PUT /admin/cai-dat/google`.\n\n`secret` **vắng hoặc rỗng ⇒ GIỮ NGUYÊN secret cũ**, không phải xoá. Người ta sửa\n`client_id` mà không dán lại secret là chuyện thường; coi \"trống\" là \"xoá\" thì mỗi\nlần sửa `client_id` là một lần vô tình gỡ Google khỏi site. Muốn gỡ hẳn thì dùng\n`DELETE` — một hành động có tên.",
+        "properties": {
+          "client_id": {
+            "title": "Client Id",
+            "type": "string"
+          },
+          "secret": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Secret"
+          }
+        },
+        "required": [
+          "client_id"
+        ],
+        "title": "CaiDatGoogleIn",
+        "type": "object"
+      },
+      "CaiDatGoogleOut": {
+        "description": "Trạng thái Google OAuth cho trang Cài đặt.\n\n⚠ **KHÔNG có trường secret, và đó là hợp đồng chứ không phải sơ suất.** Chỉ\n`secret_duoi` — 4 ký tự cuối, đủ để người ta nhận ra mình đã dán đúng chuỗi nào,\nkhông đủ để dùng lại. `tests/test_api_quan_tri_cai_dat.py` quét toàn bộ body tìm\nchuỗi secret và ĐỎ nếu thấy.",
+        "properties": {
+          "bat": {
+            "title": "Bat",
+            "type": "boolean"
+          },
+          "client_id": {
+            "title": "Client Id",
+            "type": "string"
+          },
+          "nguon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nguon"
+          },
+          "secret_da_dat": {
+            "title": "Secret Da Dat",
+            "type": "boolean"
+          },
+          "secret_duoi": {
+            "title": "Secret Duoi",
+            "type": "string"
+          },
+          "sua_duoc": {
+            "title": "Sua Duoc",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "bat",
+          "nguon",
+          "client_id",
+          "secret_da_dat",
+          "secret_duoi",
+          "sua_duoc"
+        ],
+        "title": "CaiDatGoogleOut",
+        "type": "object"
+      },
       "DatAnIn": {
         "description": "Body của mọi endpoint ẩn/gỡ ẩn.\n\n**Một endpoint đặt-trạng-thái thay vì hai endpoint `hide`/`unhide`** — hai chiều nhận\ncùng bộ đầu vào, nên tách ra chỉ nhân đôi số chỗ phải kiểm quyền. Và nó **idempotent**:\ngửi `an=true` hai lần cho ra cùng một trạng thái.",
         "properties": {
@@ -674,6 +745,17 @@
       "NguoiDungTomTatOut": {
         "description": "Tác giả, ở mức đủ để render một dòng chữ ký.",
         "properties": {
+          "avatar_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Url"
+          },
           "display_name": {
             "title": "Display Name",
             "type": "string"
@@ -685,7 +767,8 @@
         },
         "required": [
           "username",
-          "display_name"
+          "display_name",
+          "avatar_url"
         ],
         "title": "NguoiDungTomTatOut",
         "type": "object"
@@ -1252,6 +1335,186 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/admin/cai-dat/google": {
+      "delete": {
+        "description": "Gỡ credential khỏi DB.\n\n⚠ **Không chắc là \"tắt Google\"**: nếu env vẫn có credential thì env đỡ lại và Google\n**vẫn bật**. Response trả về nói ra điều đó (`bat`, `nguon`) thay vì để giao diện đoán\n— đoán sai ở đây làm người ta tưởng đã tắt một thứ vẫn đang chạy.",
+        "operationId": "quan_tri_xoa_cai_dat_google",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaiDatGoogleOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Xoa Cai Dat Google",
+        "tags": [
+          "quan-tri-cai-dat"
+        ]
+      },
+      "get": {
+        "description": "Trạng thái Google OAuth. **Không có secret** — xem luật 1 ở docstring module.\n\nMọi `is_staff` đọc được: \"Google có đang bật không\" là câu mod cần trả lời khi có người\nbáo không đăng nhập được, và bắt họ đi hỏi superuser cho một câu chỉ-đọc là dựng một\nnút thắt không đổi lại được gì.",
+        "operationId": "quan_tri_xem_cai_dat_google",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaiDatGoogleOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Xem Cai Dat Google",
+        "tags": [
+          "quan-tri-cai-dat"
+        ]
+      },
+      "put": {
+        "description": "Lưu credential. Có hiệu lực **ngay**, không cần khởi động lại Django.\n\n`secret` rỗng/vắng ⇒ giữ nguyên secret cũ (luật 2). Nhưng nếu **chưa từng** có secret\nthì phải có: lưu một `client_id` không kèm secret là dựng một cấu hình chắc chắn hỏng\nlúc ai đó bấm nút, đúng thứ PLAN mục 4 cấm.",
+        "operationId": "quan_tri_luu_cai_dat_google",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaiDatGoogleIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaiDatGoogleOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Luu Cai Dat Google",
+        "tags": [
+          "quan-tri-cai-dat"
+        ]
+      }
+    },
     "/api/admin/comments": {
       "get": {
         "description": "Bảng bình luận cho mod, mới nhất trước, cursor keyset `(created_at, id)`.\n\nGồm **cả bia mộ và bình luận đã bị ẩn**. Bia mộ có mặt vì `deleted_at` không xoá\n`body` khỏi DB (PLAN 5.3 giữ chỗ), và mod đôi khi cần đọc đúng cái đã bị tác giả rút\nlại sau khi bị tố.\n\n`trang_thai=hien` = còn sống **và** chưa bị ẩn — hai cột, không phải một.",

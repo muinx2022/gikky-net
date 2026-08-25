@@ -897,6 +897,32 @@ biên mà hàng rào ấy tồn tại để bắt).
 Dựng lại: `pnpm test` nhiều lượt liên tiếp; chưa có lệnh nào ép nó đỏ theo ý muốn — và **đó là phần
 tệ nhất của mục này**.
 
+### L46 · VỪA (đánh đổi có chủ đích) · `GOOGLE_CLIENT_SECRET` nay nằm trong DB ⇒ có trong MỌI bản dump
+**MỞ, chấp nhận.** Từ 2026-08-24 credential Google nhập qua khu quản trị và lưu ở hàng
+`SocialApp`. Trước đó nó ở `api/.env` (gitignored, không bao giờ rời máy).
+
+Hệ quả: `pnpm db:sao-luu` sinh file dump **chứa secret**. `backup/` có trong `.gitignore`
+nên nó không vào git — nhưng file trên đĩa, và mọi bản sao lưu mang đi nơi khác, thì có.
+
+Đây là **giá của đơn hàng**, không phải sơ suất: user cần nhập xong thấy hiệu lực ngay,
+mà env đọc một lần lúc boot nên không làm được (xem `plans/2026-08-24-cai-dat-google-oauth.md`
+§0). Đã giảm thiểu ở mọi chỗ khác: secret **không bao giờ** ra khỏi server qua API (chỉ 4
+ký tự cuối), **không** vào `AuditLog`, và chỉ **superuser** đọc/ghi được cấu hình.
+
+Việc phải làm khi lên prod: coi file dump ngang hàng với file `.env` — không đẩy lên kho
+lưu trữ dùng chung, không gửi qua chat. Nếu ngày nào cần mạnh hơn thì đường đúng là mã hoá
+trường `secret` ở tầng ứng dụng, và lúc đó khoá mã hoá lại quay về env.
+
+### L47 · NHỎ (UX) · Tài khoản bị Google xoá mật khẩu thì `/doi-mat-khau` không dùng được
+**MỞ.** Từ 2026-08-24, đăng nhập Google trùng email ⇒ xoá mật khẩu tài khoản đó
+(`core/allauth_adapter.py::AdapterMangXaHoi`, đơn hàng của user). Sau đó
+`has_usable_password()` là `False`, nên trang `/doi-mat-khau` — vốn đòi **mật khẩu hiện
+tại** — không còn đường đi cho họ. Đường đúng là `/quen-mat-khau` (đặt lại qua email).
+
+Chưa hỏng gì: không ai bị khoá ngoài, chỉ là trang kia sẽ báo lỗi khó hiểu thay vì chỉ
+đường. Cách trả nợ: `GET /api/v1/me` trả thêm cờ `co_mat_khau`, và giao diện đổi nhãn
+thành "Đặt mật khẩu" + trỏ sang luồng đặt lại khi cờ ấy `false`.
+
 # C · CHƯA BAO GIỜ CHẠY THẬT
 
 | Thứ | Trạng thái |

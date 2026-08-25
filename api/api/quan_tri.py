@@ -206,6 +206,7 @@ def toi(request):
 # và `api.loi`, còn `api_admin` phải tồn tại trước khi `config/api_registry.py` đọc tới.
 from api.quan_tri_bang import router as router_bang  # noqa: E402
 from api.quan_tri_bao_cao import router as router_bao_cao  # noqa: E402
+from api.quan_tri_cai_dat import router as router_cai_dat  # noqa: E402
 from api.quan_tri_kiem_duyet import router as router_kiem_duyet  # noqa: E402
 from api.quan_tri_nguoi_dung import router as router_nguoi_dung  # noqa: E402
 from api.quan_tri_nhat_ky import router as router_nhat_ky  # noqa: E402
@@ -214,6 +215,7 @@ from api.quan_tri_thong_ke import router as router_thong_ke  # noqa: E402
 
 api_admin.add_router("", router_bao_cao)
 api_admin.add_router("", router_bang)
+api_admin.add_router("", router_cai_dat)
 api_admin.add_router("", router_kiem_duyet)
 api_admin.add_router("", router_nguoi_dung)
 api_admin.add_router("", router_nhat_ky)

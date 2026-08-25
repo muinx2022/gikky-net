@@ -96,15 +96,72 @@ def test_user_thuong_KHONG_vao_duoc_endpoint_nao(du_lieu):
     assert hong == [], hong
 
 
+#: Endpoint đòi **superuser**, không chỉ `is_staff`. Danh sách này là một **ngoại lệ có
+#: tên**, và nó được ép ở CẢ HAI CHIỀU bên dưới: mod phải bị chặn ở đúng những cái này, và
+#: phải qua được mọi cái còn lại. Nới điều kiện "mod qua được mọi endpoint" thành "trừ vài
+#: cái" mà không ghim lại chiều ngược là mở một cửa cho mọi endpoint tương lai lặng lẽ
+#: thành superuser-only.
+#:
+#: Lý do của mục hiện có: ai đổi được OAuth client là đổi được cửa đăng nhập của cả site —
+#: trỏ `client_id` sang một project Google mình kiểm soát là một đường nhận phiên của
+#: người khác. Cùng lý lẽ PLAN mục 7 dùng để giữ cấp/thu `is_staff` ngoài khu quản trị.
+CHI_SUPERUSER = {
+    "quan_tri_luu_cai_dat_google",
+    "quan_tri_xoa_cai_dat_google",
+}
+
+
 def test_mod_QUA_duoc_moi_endpoint(du_lieu):
     """Chiều ngược: hàng rào từ chối tất cả thì hai bài trên vẫn xanh — và khu này chết.
 
     Không đòi 2xx: vài endpoint trả 409 hợp lệ trên bộ dữ liệu này (xoá sub còn mạch).
-    Thứ phải giữ là **không endpoint nào trả 401/403 cho mod**.
+    Thứ phải giữ là **không endpoint nào trả 401/403 cho mod** — trừ `CHI_SUPERUSER`.
     """
     client = dang_nhap(dung_mod())
     hong = []
     for ten, method, url, body in bang_endpoint(du_lieu):
+        if ten in CHI_SUPERUSER:
+            continue
+        r = goi(client, method, url, body)
+        if r.status_code in (401, 403):
+            hong.append(f"{ten}: {method.upper()} {url} → {r.status_code} {ma_loi(r)}")
+    assert hong == [], hong
+
+
+def test_CHI_SUPERUSER_that_su_chan_mod(du_lieu):
+    """Chiều còn lại của ngoại lệ: mod **phải** ăn 403 ở đúng những endpoint ấy.
+
+    Thiếu bài này thì `CHI_SUPERUSER` chỉ là một danh sách miễn trừ — thêm tên vào đó là
+    cách rẻ nhất để làm xanh một endpoint đang hỏng phân quyền, và không có gì cãi lại.
+    """
+    client = dang_nhap(dung_mod())
+    theo_ten = {ten: (m, u, b) for ten, m, u, b in bang_endpoint(du_lieu)}
+
+    assert CHI_SUPERUSER <= set(theo_ten), (
+        f"CHI_SUPERUSER trỏ vào endpoint không có trong bảng: "
+        f"{sorted(CHI_SUPERUSER - set(theo_ten))}"
+    )
+
+    hong = []
+    for ten in sorted(CHI_SUPERUSER):
+        method, url, body = theo_ten[ten]
+        r = goi(client, method, url, body)
+        if r.status_code != 403 or ma_loi(r) != KHONG_DU_QUYEN:
+            hong.append(f"{ten}: {method.upper()} {url} → {r.status_code} {ma_loi(r)}")
+    assert hong == [], hong
+
+
+def test_superuser_QUA_duoc_nhung_endpoint_CHI_SUPERUSER(du_lieu):
+    """Và superuser thì qua được — nếu không, "chỉ superuser" là "không ai"."""
+    sieu = dung_mod("sieu_quan_tri")
+    sieu.is_superuser = True
+    sieu.save(update_fields=["is_superuser"])
+    client = dang_nhap(sieu)
+    theo_ten = {ten: (m, u, b) for ten, m, u, b in bang_endpoint(du_lieu)}
+
+    hong = []
+    for ten in sorted(CHI_SUPERUSER):
+        method, url, body = theo_ten[ten]
         r = goi(client, method, url, body)
         if r.status_code in (401, 403):
             hong.append(f"{ten}: {method.upper()} {url} → {r.status_code} {ma_loi(r)}")

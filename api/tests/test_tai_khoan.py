@@ -215,25 +215,39 @@ def test_doi_mat_khau_khi_da_dang_nhap(client):
     assert u.check_password(moi)
 
 
-# --- Google gác sau biến môi trường ------------------------------------------
+# --- Google: nguồn là DB, env chỉ dự phòng ------------------------------------
+#
+# ⚠ **Ba khẳng định cũ ở đây đã SAI từ 2026-08-24** và được thay bằng ba cái dưới:
+#
+#   settings.GOOGLE_BAT is False          -> hằng ấy không còn tồn tại
+#   provider not in INSTALLED_APPS        -> nay nạp LUÔN LUÔN
+#   SOCIALACCOUNT_PROVIDERS == {}         -> nay luôn có khoá "google"
+#
+# Provider được nạp không có nghĩa Google bật: không nguồn credential nào thì `get_app`
+# ném `DoesNotExist`. Chi tiết: `plans/2026-08-24-cai-dat-google-oauth.md` §0.
+# Bảng "DB ưu tiên / env dự phòng" đo ở `test_cai_dat_google.py`.
 
 
-def test_google_TAT_khi_khong_co_credential():
+@pytest.mark.django_db
+def test_google_TAT_khi_khong_co_credential(db):
     """PLAN mục 4: **không nút vĩnh viễn không bấm được**.
 
-    Không có `GOOGLE_CLIENT_ID`/`SECRET` ⇒ provider không nằm trong `INSTALLED_APPS` và
-    `GOOGLE_BAT` là `False`, nên `GET /me` bảo frontend **đừng render** nút — không phải
-    render một nút `disabled`. Máy dev không có credential nên đây là trạng thái thật của
-    môi trường đang chạy bài đo.
+    Máy dev không có credential ở env lẫn DB ⇒ `google_dang_bat()` `False` ⇒ `GET /me`
+    bảo frontend **đừng render** nút, chứ không render một nút `disabled`.
     """
-    assert settings.GOOGLE_BAT is False
-    assert "allauth.socialaccount.providers.google" not in settings.INSTALLED_APPS
-    assert settings.SOCIALACCOUNT_PROVIDERS == {}
+    from core.cau_hinh_oauth import google_dang_bat
+
+    assert settings.GOOGLE_ENV_CO is False
+    assert google_dang_bat() is False
+    # Nạp provider mà vẫn tắt — đúng cái tách "có provider" khỏi "có credential".
+    assert "allauth.socialaccount.providers.google" in settings.INSTALLED_APPS
 
 
 @pytest.mark.django_db
 def test_me_noi_ra_google_bat_hay_tat(client):
-    assert toi(client)["google_bat"] is settings.GOOGLE_BAT
+    from core.cau_hinh_oauth import google_dang_bat
+
+    assert toi(client)["google_bat"] is google_dang_bat()
 
 
 @pytest.mark.django_db

@@ -15,6 +15,9 @@ from api.loi import LoiOut
 from api.quyen import dang_nhap
 from core.ghi import SO_ANH_TOI_DA_MOI_MOC
 
+from core.cau_hinh_oauth import google_dang_bat
+from core.models.dien_dan import ModSub
+from core.anh_luu import url_thumb
 from api.schemas import ToiOut
 from api.schemas_ghi import ToiSuaIn
 
@@ -40,7 +43,7 @@ def xem_toi(request):
     """
     user = request.user
     if not user.is_authenticated:
-        return _khach()
+        return _khach(request)
 
     from allauth.account.models import EmailAddress
 
@@ -53,7 +56,7 @@ def xem_toi(request):
             user=user, verified=True
         ).exists(),
         la_staff=bool(user.is_staff),
-        google_bat=settings.GOOGLE_BAT,
+        google_bat=google_dang_bat(request),
         nhan_digest=bool(user.nhan_digest),
         tran_anh_moi_moc=SO_ANH_TOI_DA_MOI_MOC,
     )
@@ -111,8 +114,12 @@ def sua_toi(request, du_lieu: ToiSuaIn):
     return xem_toi(request)
 
 
-def _khach() -> ToiOut:
-    """Hình dạng cho khách. Tách hàm để không có hai bản `null` lệch nhau."""
+def _khach(request) -> ToiOut:
+    """Hình dạng cho khách. Tách hàm để không có hai bản `null` lệch nhau.
+
+    Nhận `request` chỉ để chuyển tiếp cho `google_dang_bat` — khách cũng cần biết có nút
+    Google hay không, và câu trả lời ấy phụ thuộc site của request.
+    """
     return ToiOut(
         dang_nhap=False,
         username=None,
@@ -120,7 +127,7 @@ def _khach() -> ToiOut:
         email=None,
         email_da_xac_thuc=False,
         la_staff=False,
-        google_bat=settings.GOOGLE_BAT,
+        google_bat=google_dang_bat(request),
         nhan_digest=False,
         tran_anh_moi_moc=SO_ANH_TOI_DA_MOI_MOC,
     )

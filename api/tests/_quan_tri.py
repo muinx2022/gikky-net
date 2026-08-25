@@ -145,6 +145,14 @@ def bang_endpoint(dl: dict) -> list[tuple[str, str, str, dict | None]]:
             {},
         ),
         ("quan_tri_liet_ke_sub", "get", "/api/admin/subs", None),
+        ("quan_tri_xem_cai_dat_google", "get", "/api/admin/cai-dat/google", None),
+        (
+            "quan_tri_luu_cai_dat_google",
+            "put",
+            "/api/admin/cai-dat/google",
+            {"client_id": "x.apps.googleusercontent.com", "secret": "y"},
+        ),
+        ("quan_tri_xoa_cai_dat_google", "delete", "/api/admin/cai-dat/google", None),
         (
             "quan_tri_tao_sub",
             "post",

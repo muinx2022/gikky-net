@@ -1344,6 +1344,10 @@ def dat_an_moc(*, moc: Moc, boi, an: bool, ly_do: str = "") -> bool:
         # `dong_bo_mach` chứ không tự quyết: nó đọc lại trạng thái hiện thời nên cả hai
         # chiều dùng chung một lời gọi (xem docstring `core/tim_kiem.py`).
         dong_bo_mach(Mach.objects.get(pk=hang.mach_id))
+#: Cài đặt hệ thống. `target_id` là `None` — cài đặt không phải một hàng có khoá chính,
+#: và nhét một id giả vào đó là mời người đọc nhật ký đi tra một bảng không tồn tại.
+AUDIT_SUA_CAI_DAT_GOOGLE = "sua_cai_dat_google"
+AUDIT_XOA_CAI_DAT_GOOGLE = "xoa_cai_dat_google"
         ghi_audit(
             actor=boi,
             action=AUDIT_AN_MOC if an else AUDIT_GO_AN_MOC,
@@ -1353,6 +1357,7 @@ def dat_an_moc(*, moc: Moc, boi, an: bool, ly_do: str = "") -> bool:
             seq=hang.seq,
             ly_do=ly_do,
         )
+DICH_CAI_DAT = "cai_dat"
     moc.refresh_from_db()
     return True
 

@@ -52,14 +52,22 @@ except ImproperlyConfigured as loi:
 DEBUG = env("DEBUG")
 ALLOWED_HOSTS = env("ALLOWED_HOSTS")
 
-#: Google OAuth **chỉ được đăng ký khi có credential thật** (chốt của plan mảng A).
-#: Không có `GOOGLE_CLIENT_ID` ⇒ provider không nằm trong `INSTALLED_APPS`, endpoint
-#: `/api/_allauth/browser/v1/auth/provider/redirect` không có provider nào để chọn, và
-#: `GET /api/v1/me` trả `google_bat = false` để frontend **không render nút** — PLAN mục 4
-#: cấm nút vĩnh viễn không bấm được, và một nút OAuth không có credential thì đúng là thế.
+#: Google OAuth — env là **NGUỒN DỰ PHÒNG**, nguồn chính là hàng `SocialApp` trong DB
+#: nhập qua khu quản trị (`/cai-dat`). Đổi 2026-08-24, xem
+#: `plans/2026-08-24-cai-dat-google-oauth.md`.
+#:
+#: ⚠ **Câu ở đây trước lượt đổi nói credential đọc từ env CHỨ KHÔNG từ DB, và lý lẽ ấy nay
+#: chỉ còn đúng một nửa.** Lo ngại cũ là "một hàng DB nghĩa là mỗi môi trường phải nhớ tạo
+#: tay, và quên thì lỗi chỉ lộ lúc ai đó bấm nút" — nhưng vế sau **đã được chữa sẵn** bởi
+#: chính `google_bat`: không có nguồn nào thì nút **vắng mặt**, không phải nút hỏng. Cái
+#: env không làm được là thứ user cần: nhập xong thấy hiệu lực ngay, không phải sửa file
+#: rồi khởi động lại tiến trình.
 GOOGLE_CLIENT_ID = env("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = env("GOOGLE_CLIENT_SECRET")
-GOOGLE_BAT = bool(GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET)
+#: Env có đủ cặp credential hay không. **KHÔNG phải câu trả lời cho "Google có bật không"**
+#: — câu đó nay là `core.cau_hinh_oauth.google_dang_bat()`, hỏi lúc chạy vì hàng DB đổi
+#: được giữa hai request. Hằng này chỉ nói về env.
+GOOGLE_ENV_CO = bool(GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET)
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -75,11 +83,16 @@ INSTALLED_APPS = [
     "allauth.account",
     "allauth.socialaccount",
     "allauth.headless",
+    # Nạp **LUÔN LUÔN**, không gác theo env nữa (2026-08-24). `INSTALLED_APPS` đọc một lần
+    # lúc boot, nên gác theo env là credential nhập trong khu quản trị KHÔNG BAO GIỜ có
+    # hiệu lực ở tiến trình đang chạy — provider không tồn tại để mà chọn.
+    #
+    # Nạp provider **không** đồng nghĩa với "Google đang bật": không có nguồn credential
+    # nào thì `get_app` ném `DoesNotExist`, `google_dang_bat()` trả `False`, và frontend
+    # không render nút. PLAN mục 4 vẫn được giữ nguyên bằng đường đó.
+    "allauth.socialaccount.providers.google",
     "core",
 ]
-
-if GOOGLE_BAT:
-    INSTALLED_APPS.append("allauth.socialaccount.providers.google")
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -265,6 +278,10 @@ ACCOUNT_PREVENT_ENUMERATION = True
 #: Adapter riêng — chỗ DUY NHẤT gắn hạn mức đăng ký theo IP và ghi lại `dang_ky_ip`.
 #: Xem `core/allauth_adapter.py`.
 ACCOUNT_ADAPTER = "core.allauth_adapter.AdapterTaiKhoan"
+#: Google thắng mật khẩu: khớp email ⇒ xoá mật khẩu tài khoản đó. allauth có sẵn một
+#: bản hẹp hơn (chỉ xoá khi email CHƯA xác thực), mà gikky bắt buộc xác thực nên bản ấy
+#: gần như không bao giờ chạy — xem docstring `AdapterMangXaHoi`.
+SOCIALACCOUNT_ADAPTER = "core.allauth_adapter.AdapterMangXaHoi"
 
 # --- Hạn mức chống lạm dụng (PLAN mục 10 Phase 6 + PLAN 5.10) ----------------
 # **Mặc định ở đây là con số của PLAN**, tức con số chạy trên prod (nơi không ai khai
@@ -286,23 +303,39 @@ NGAY_TAI_KHOAN_CON_MOI = env.int("NGAY_TAI_KHOAN_CON_MOI", default=3)
 #: Caddy). Bật nhầm khi không có proxy là để ai cũng tự khai IP bằng một dòng header.
 TIN_X_FORWARDED_FOR = env.bool("TIN_X_FORWARDED_FOR", default=False)
 
-#: Credential đọc từ env chứ không từ hàng `SocialApp` trong DB: một hàng DB nghĩa là
-#: mỗi môi trường phải nhớ tạo tay, và quên thì lỗi chỉ lộ lúc ai đó bấm nút. Khối này
-#: chỉ tồn tại khi `GOOGLE_BAT` — không có credential thì không có provider (PLAN mục 4).
-SOCIALACCOUNT_PROVIDERS = (
-    {
-        "google": {
-            "APPS": [
-                {
-                    "client_id": GOOGLE_CLIENT_ID,
-                    "secret": GOOGLE_CLIENT_SECRET,
-                    "key": "",
-                }
-            ],
-            "SCOPE": ["profile", "email"],
-            #: Google đã xác minh email hộ ⇒ không bắt xác thực lại.
-            "EMAIL_AUTHENTICATION": True,
-        }
+#: Credential từ env đăng ký ở đây như **app DỰ PHÒNG**, và nó mang `{"hidden": True}` —
+#: đó là cách "DB ưu tiên, env dự phòng" được cài, bằng đúng cơ chế allauth có sẵn.
+#:
+#: `SocialAppAdapter.list_apps` **hoà trộn** app từ DB và app từ settings; `get_app` thấy
+#: 2 app thì lọc lấy những cái **không** `hidden` và đòi còn đúng 1:
+#:
+#:     DB trống + env có  ⇒ 1 app (env)         ⇒ env dùng được      (dự phòng)
+#:     DB có   + env có   ⇒ 2 app ⇒ lọc `hidden` ⇒ còn app DB         (DB ưu tiên)
+#:     DB có   + env trống⇒ 1 app (DB)          ⇒ DB dùng được
+#:     cả hai trống       ⇒ `DoesNotExist`      ⇒ nút vắng mặt
+#:
+#: ⚠ **Bỏ `hidden` là hỏng ngay ca thứ hai**: 2 app đều "visible" ⇒
+#: `MultipleObjectsReturned` ⇒ 500 giữa luồng đăng nhập. Có bài đo ghim cả bốn dòng trên
+#: (`tests/test_cai_dat_google.py`).
+SOCIALACCOUNT_PROVIDERS = {
+    "google": {
+        **(
+            {
+                "APPS": [
+                    {
+                        "client_id": GOOGLE_CLIENT_ID,
+                        "secret": GOOGLE_CLIENT_SECRET,
+                        "key": "",
+                        "settings": {"hidden": True},
+                    }
+                ]
+            }
+            if GOOGLE_ENV_CO
+            else {}
+        ),
+        "SCOPE": ["profile", "email"],
+        #: Google đã xác minh email hộ ⇒ không bắt xác thực lại.
+        "EMAIL_AUTHENTICATION": True,
     }
     if GOOGLE_BAT
     else {}

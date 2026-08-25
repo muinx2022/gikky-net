@@ -121,6 +121,64 @@ export type BinhLuanDongOut = {
 };
 
 /**
+ * CaiDatGoogleIn
+ *
+ * Body của `PUT /admin/cai-dat/google`.
+ *
+ * `secret` **vắng hoặc rỗng ⇒ GIỮ NGUYÊN secret cũ**, không phải xoá. Người ta sửa
+ * `client_id` mà không dán lại secret là chuyện thường; coi "trống" là "xoá" thì mỗi
+ * lần sửa `client_id` là một lần vô tình gỡ Google khỏi site. Muốn gỡ hẳn thì dùng
+ * `DELETE` — một hành động có tên.
+ */
+export type CaiDatGoogleIn = {
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Secret
+     */
+    secret?: string | null;
+};
+
+/**
+ * CaiDatGoogleOut
+ *
+ * Trạng thái Google OAuth cho trang Cài đặt.
+ *
+ * ⚠ **KHÔNG có trường secret, và đó là hợp đồng chứ không phải sơ suất.** Chỉ
+ * `secret_duoi` — 4 ký tự cuối, đủ để người ta nhận ra mình đã dán đúng chuỗi nào,
+ * không đủ để dùng lại. `tests/test_api_quan_tri_cai_dat.py` quét toàn bộ body tìm
+ * chuỗi secret và ĐỎ nếu thấy.
+ */
+export type CaiDatGoogleOut = {
+    /**
+     * Bat
+     */
+    bat: boolean;
+    /**
+     * Client Id
+     */
+    client_id: string;
+    /**
+     * Nguon
+     */
+    nguon: string | null;
+    /**
+     * Secret Da Dat
+     */
+    secret_da_dat: boolean;
+    /**
+     * Secret Duoi
+     */
+    secret_duoi: string;
+    /**
+     * Sua Duoc
+     */
+    sua_duoc: boolean;
+};
+
+/**
  * DatAnIn
  *
  * Body của mọi endpoint ẩn/gỡ ẩn.
@@ -516,6 +574,10 @@ export type NguoiDungQuanTriOut = {
  */
 export type NguoiDungTomTatOut = {
     /**
+     * Avatar Url
+     */
+    avatar_url: string | null;
+    /**
      * Display Name
      */
     display_name: string;
@@ -889,6 +951,105 @@ export type TrangThaiMachOut = {
      */
     mo: number;
 };
+
+export type QuanTriXoaCaiDatGoogleData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/admin/cai-dat/google';
+};
+
+export type QuanTriXoaCaiDatGoogleErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+};
+
+export type QuanTriXoaCaiDatGoogleError = QuanTriXoaCaiDatGoogleErrors[keyof QuanTriXoaCaiDatGoogleErrors];
+
+export type QuanTriXoaCaiDatGoogleResponses = {
+    /**
+     * OK
+     */
+    200: CaiDatGoogleOut;
+};
+
+export type QuanTriXoaCaiDatGoogleResponse = QuanTriXoaCaiDatGoogleResponses[keyof QuanTriXoaCaiDatGoogleResponses];
+
+export type QuanTriXemCaiDatGoogleData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/admin/cai-dat/google';
+};
+
+export type QuanTriXemCaiDatGoogleErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+};
+
+export type QuanTriXemCaiDatGoogleError = QuanTriXemCaiDatGoogleErrors[keyof QuanTriXemCaiDatGoogleErrors];
+
+export type QuanTriXemCaiDatGoogleResponses = {
+    /**
+     * OK
+     */
+    200: CaiDatGoogleOut;
+};
+
+export type QuanTriXemCaiDatGoogleResponse = QuanTriXemCaiDatGoogleResponses[keyof QuanTriXemCaiDatGoogleResponses];
+
+export type QuanTriLuuCaiDatGoogleData = {
+    body: CaiDatGoogleIn;
+    path?: never;
+    query?: never;
+    url: '/api/admin/cai-dat/google';
+};
+
+export type QuanTriLuuCaiDatGoogleErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+};
+
+export type QuanTriLuuCaiDatGoogleError = QuanTriLuuCaiDatGoogleErrors[keyof QuanTriLuuCaiDatGoogleErrors];
+
+export type QuanTriLuuCaiDatGoogleResponses = {
+    /**
+     * OK
+     */
+    200: CaiDatGoogleOut;
+};
+
+export type QuanTriLuuCaiDatGoogleResponse = QuanTriLuuCaiDatGoogleResponses[keyof QuanTriLuuCaiDatGoogleResponses];
 
 export type QuanTriLietKeBinhLuanData = {
     body?: never;

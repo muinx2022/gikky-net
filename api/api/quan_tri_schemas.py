@@ -255,6 +255,42 @@ class TaoSubIn(Schema):
     mo_ta: str = ""
 
 
+class CaiDatGoogleOut(Schema):
+    """Trạng thái Google OAuth cho trang Cài đặt.
+
+    ⚠ **KHÔNG có trường secret, và đó là hợp đồng chứ không phải sơ suất.** Chỉ
+    `secret_duoi` — 4 ký tự cuối, đủ để người ta nhận ra mình đã dán đúng chuỗi nào,
+    không đủ để dùng lại. `tests/test_api_quan_tri_cai_dat.py` quét toàn bộ body tìm
+    chuỗi secret và ĐỎ nếu thấy.
+    """
+
+    #: Google có dùng được **ngay lúc này** không (hỏi đúng đường allauth đi).
+    bat: bool
+    #: `"db"` · `"env"` · `null`. Trang cài đặt hai nguồn bắt buộc phải nói ra cái nào
+    #: đang chạy — thiếu nó, người sửa DB mà thấy không đổi gì sẽ đi tìm lỗi ở chỗ không
+    #: có lỗi.
+    nguon: str | None
+    client_id: str
+    secret_da_dat: bool
+    secret_duoi: str
+    #: Người đang xem có được GHI không. Giao diện dùng nó để khoá form thay vì bày ra một
+    #: nút bấm vào thì 403 (PLAN mục 4).
+    sua_duoc: bool
+
+
+class CaiDatGoogleIn(Schema):
+    """Body của `PUT /admin/cai-dat/google`.
+
+    `secret` **vắng hoặc rỗng ⇒ GIỮ NGUYÊN secret cũ**, không phải xoá. Người ta sửa
+    `client_id` mà không dán lại secret là chuyện thường; coi "trống" là "xoá" thì mỗi
+    lần sửa `client_id` là một lần vô tình gỡ Google khỏi site. Muốn gỡ hẳn thì dùng
+    `DELETE` — một hành động có tên.
+    """
+
+    client_id: str
+    secret: str | None = None
+
+
 class GanModSubIn(Schema):
     """Body của `POST /admin/subs/{slug}/mods`.
 
