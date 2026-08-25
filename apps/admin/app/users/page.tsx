@@ -11,6 +11,7 @@ import { Fragment, useCallback, useState } from "react";
 
 import { FormBan } from "../../components/form-ban";
 import { FormSuaUser } from "../../components/form-sua-user";
+import { FormTaoUser } from "../../components/form-tao-user";
 import { NganKeo } from "../../components/ngan-keo";
 import { useQuanTri } from "../../components/khung/ngu-canh";
 import {
@@ -70,6 +71,7 @@ export default function TrangNguoiDung() {
   /** username đang mở ngăn kéo SỬA. Tách khỏi `mo_ban`: gộp là dựng sẵn tổ hợp "vừa
    * ban vừa sửa", và tổ hợp ấy sẽ xảy ra đúng lúc ai đó thêm đường mở thứ ba. */
   const [mo_sua, datMoSua] = useState<string | null>(null);
+  const [mo_tao, datMoTao] = useState(false);
 
   const nap = useCallback(
     (cursor: string | null) =>
@@ -106,7 +108,21 @@ export default function TrangNguoiDung() {
 
   return (
     <>
-      <TieuDeTrang mo_ta="Cấp / thu quyền quản trị làm ở Django admin, không làm ở đây." />
+      <TieuDeTrang
+        hanh_dong={
+          mod.is_superuser ? (
+            <button
+              type="button"
+              className="nut nut-chinh"
+              onClick={() => datMoTao(true)}
+              data-testid="nut-mo-tao-user"
+            >
+              Thêm tài khoản
+            </button>
+          ) : undefined
+        }
+        mo_ta="Cấp / thu quyền quản trị làm ở Django admin, không làm ở đây."
+      />
       <HienLoi loi={loi_hanh_dong ?? ds.loi} />
 
       <The>
@@ -336,6 +352,24 @@ export default function TrangNguoiDung() {
             chay={async (viec) => {
               await chay(viec);
               datMoBan(null);
+            }}
+          />
+        )}
+      </NganKeo>
+
+      <NganKeo
+        mo={mo_tao}
+        dong={() => datMoTao(false)}
+        tieu_de="Thêm tài khoản"
+        mo_ta="Chỉ superuser. Email sẽ được đánh dấu đã xác thực."
+      >
+        {mo_tao && (
+          <FormTaoUser
+            dangChay={dang_chay}
+            dong={() => datMoTao(false)}
+            chay={async (viec) => {
+              await chay(viec);
+              datMoTao(false);
             }}
           />
         )}
