@@ -298,6 +298,24 @@
         "title": "DatKhoaMachIn",
         "type": "object"
       },
+      "DatMatKhauIn": {
+        "description": "Body của `POST /admin/users/{username}/mat-khau`.\n\n`mat_khau: null` ⇒ **xoá mật khẩu** (`set_unusable_password`) — vế \"set pass rỗng\"\ncủa đơn hàng. Khác hẳn `SuaNguoiDungIn`, nơi `None` nghĩa là \"không đổi\": ở đây body\nchỉ có một trường và mục đích của lời gọi luôn là *đổi mật khẩu*, nên `null` không thể\nmang nghĩa \"không làm gì\".",
+        "properties": {
+          "mat_khau": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mat Khau"
+          }
+        },
+        "title": "DatMatKhauIn",
+        "type": "object"
+      },
       "DemTheoNgayOut": {
         "description": "Một ô của biểu đồ 30 ngày. `ngay` là **ngày lịch Việt Nam**, không phải UTC.",
         "properties": {
@@ -692,6 +710,10 @@
             ],
             "title": "Banned Until"
           },
+          "co_mat_khau": {
+            "title": "Co Mat Khau",
+            "type": "boolean"
+          },
           "dang_bi_ban": {
             "title": "Dang Bi Ban",
             "type": "boolean"
@@ -705,12 +727,20 @@
             "title": "Display Name",
             "type": "string"
           },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
           "is_active": {
             "title": "Is Active",
             "type": "boolean"
           },
           "is_staff": {
             "title": "Is Staff",
+            "type": "boolean"
+          },
+          "is_superuser": {
+            "title": "Is Superuser",
             "type": "boolean"
           },
           "so_binh_luan": {
@@ -721,8 +751,19 @@
             "title": "So Mach",
             "type": "integer"
           },
+          "subs_mod": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Subs Mod",
+            "type": "array"
+          },
           "username": {
             "title": "Username",
+            "type": "string"
+          },
+          "vai_tro": {
+            "title": "Vai Tro",
             "type": "string"
           }
         },
@@ -737,7 +778,12 @@
           "banned_until",
           "ban_reason",
           "so_mach",
-          "so_binh_luan"
+          "so_binh_luan",
+          "is_superuser",
+          "email",
+          "co_mat_khau",
+          "vai_tro",
+          "subs_mod"
         ],
         "title": "NguoiDungQuanTriOut",
         "type": "object"
@@ -921,6 +967,46 @@
         "title": "NoiDungBiBaoCaoOut",
         "type": "object"
       },
+      "SuaNguoiDungIn": {
+        "description": "Body của `PATCH /admin/users/{username}`. Trường `None` = **không đổi**.\n\n`username` **không có mặt** — nó nằm trong URL công khai `/u/<username>` và trong mọi\ntrích dẫn `u/…`; đổi nó là làm chết liên kết đã phát ra ngoài, cùng lý lẽ `Sub.slug`.\n\n`is_staff`/`is_superuser` cũng **không có mặt** — xem `TaoNguoiDungIn`.",
+        "properties": {
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Active"
+          }
+        },
+        "title": "SuaNguoiDungIn",
+        "type": "object"
+      },
       "SuaSubIn": {
         "description": "PATCH: trường nào `None` là **không đổi**, không phải \"đặt về rỗng\".\n\n`slug` cố ý KHÔNG sửa được: nó nằm trong URL công khai `/s/<slug>` và trong\n`sitemap.ts`. Đổi nó là làm chết mọi liên kết đã phát ra ngoài, và đó phải là một việc\ncó kế hoạch (kèm redirect 301) chứ không phải một trường trong form.",
         "properties": {
@@ -1019,6 +1105,41 @@
           "so_mach_30_ngay"
         ],
         "title": "SubTomTatOut",
+        "type": "object"
+      },
+      "TaoNguoiDungIn": {
+        "description": "Body của `POST /admin/users` — superuser tạo tài khoản hộ.\n\n**Không có `is_staff`/`is_superuser`**, và đó là hợp đồng: cấp quyền mod vẫn nằm\nngoài khu quản trị (PLAN mục 7). Xem `plans/2026-08-25-crud-nguoi-dung.md` §0.",
+        "properties": {
+          "display_name": {
+            "default": "",
+            "title": "Display Name",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "mat_khau": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mat Khau"
+          },
+          "username": {
+            "title": "Username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "username",
+          "email"
+        ],
+        "title": "TaoNguoiDungIn",
         "type": "object"
       },
       "TaoSubIn": {
@@ -2231,6 +2352,84 @@
         ]
       }
     },
+    "/api/admin/nguoi-dung": {
+      "post": {
+        "description": "Superuser tạo tài khoản hộ. Email được đánh dấu **đã xác thực**.\n\nKhông đánh dấu thì tài khoản mới kẹt ở trạng thái chưa xác thực và gần như không dùng\nđược — cửa \"tạo\" khi đó là trang trí. Người tạo là superuser, tức đã có người chịu\ntrách nhiệm cho địa chỉ ấy.\n\n⚠ Đây là đường **duy nhất** dựng được một `EmailAddress(verified=True)` mà không qua\nhòm thư. Nó nằm sau `is_superuser` và nó ghi `AuditLog`.\n\nCố ý **không** đi qua hạn mức đăng ký theo IP (`AdapterTaiKhoan.is_open_for_signup`):\nhạn mức ấy chặn bot đăng ký hàng loạt, không phải chặn superuser.",
+        "operationId": "quan_tri_tao_nguoi_dung",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaoNguoiDungIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NguoiDungQuanTriOut"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Tao Nguoi Dung",
+        "tags": [
+          "quan-tri-nguoi-dung"
+        ]
+      }
+    },
     "/api/admin/nhat-ky": {
       "get": {
         "description": "Nhật ký mod, mới nhất trước, cursor keyset `(created_at, id)`.\n\n`?action=` lọc theo một hằng hành động (`an_moc`, `ban_user`, …) — so **bằng đúng**\nchứ không `icontains`: `an_moc` và `go_an_moc` chỉ khác nhau một tiền tố, nên phép so\nkhớp một phần sẽ trả cả hai và mod đọc lịch sử ẩn thành lịch sử gỡ ẩn.\n\nCố ý **không** khai `action` bằng `Literal`: danh sách hằng nằm ở `core/ghi.py` và nó\ndài thêm mỗi lần có hành động mới, trong khi các dòng log CŨ mang những chuỗi có thể\nđã bị gỡ khỏi danh sách. Một `enum` ở đây sẽ từ chối lọc đúng những dòng lịch sử mà\ntrang này tồn tại để tra. Giá trị lạ ⇒ trang rỗng, không phải 400.",
@@ -3222,6 +3421,102 @@
         "tags": [
           "quan-tri-nguoi-dung"
         ]
+      },
+      "patch": {
+        "description": "Sửa `display_name` / `email` / `is_active`. Trường `None` = **không đổi**.\n\n\"Xoá tài khoản\" ở gikky là `is_active=False` (GDPR-lite, PLAN mục 6): nội dung được\ngiữ, tác giả ẩn danh, đăng nhập bị chặn. Không xoá hàng — xoá hàng kéo theo nội dung\nmà người khác đang trích dẫn.\n\nHai phép từ chối chống **tự khoá ra ngoài**, và chúng là hai đường khác nhau tới cùng\nmột hậu quả:\n\n- tự vô hiệu hoá chính mình ⇒ 409;\n- vô hiệu hoá superuser **cuối cùng** ⇒ 409.\n\nThiếu cái thứ hai thì hai superuser tắt lẫn nhau vẫn ra kết quả không ai vào được.",
+        "operationId": "quan_tri_sua_nguoi_dung",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "required": true,
+            "schema": {
+              "title": "Username",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuaNguoiDungIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NguoiDungQuanTriOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Sua Nguoi Dung",
+        "tags": [
+          "quan-tri-nguoi-dung"
+        ]
       }
     },
     "/api/admin/users/{username}/ban": {
@@ -3385,6 +3680,104 @@
           }
         ],
         "summary": "Go Ban Nguoi Dung",
+        "tags": [
+          "quan-tri-nguoi-dung"
+        ]
+      }
+    },
+    "/api/admin/users/{username}/mat-khau": {
+      "post": {
+        "description": "Đặt mật khẩu mới, hoặc **xoá** mật khẩu khi `mat_khau` là `null`.\n\nXoá mật khẩu **không phải khoá ngoài**: tài khoản vào bằng Google, hoặc đặt lại qua\n`/quen-mat-khau` (chỉ cần hòm thư). Đó là cùng trạng thái mà một lượt đăng nhập Google\ntrùng email tạo ra — xem `core/allauth_adapter.py::AdapterMangXaHoi`.\n\nMật khẩu mới đi qua `validate_password` (bộ `AUTH_PASSWORD_VALIDATORS`). Bỏ qua nó là\nmở một cửa đặt mật khẩu yếu mà cửa đăng ký thường không cho — và cửa này còn đặt được\ncho **người khác**.\n\nNhật ký ghi **cờ** `xoa`, không ghi chuỗi mật khẩu.",
+        "operationId": "quan_tri_dat_mat_khau",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "required": true,
+            "schema": {
+              "title": "Username",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatMatKhauIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NguoiDungQuanTriOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Dat Mat Khau",
         "tags": [
           "quan-tri-nguoi-dung"
         ]

@@ -218,6 +218,23 @@ export type DatKhoaMachIn = {
 };
 
 /**
+ * DatMatKhauIn
+ *
+ * Body của `POST /admin/users/{username}/mat-khau`.
+ *
+ * `mat_khau: null` ⇒ **xoá mật khẩu** (`set_unusable_password`) — vế "set pass rỗng"
+ * của đơn hàng. Khác hẳn `SuaNguoiDungIn`, nơi `None` nghĩa là "không đổi": ở đây body
+ * chỉ có một trường và mục đích của lời gọi luôn là *đổi mật khẩu*, nên `null` không thể
+ * mang nghĩa "không làm gì".
+ */
+export type DatMatKhauIn = {
+    /**
+     * Mat Khau
+     */
+    mat_khau?: string | null;
+};
+
+/**
  * DemTheoNgayOut
  *
  * Một ô của biểu đồ 30 ngày. `ngay` là **ngày lịch Việt Nam**, không phải UTC.
@@ -534,6 +551,10 @@ export type NguoiDungQuanTriOut = {
      */
     banned_until: string | null;
     /**
+     * Co Mat Khau
+     */
+    co_mat_khau: boolean;
+    /**
      * Dang Bi Ban
      */
     dang_bi_ban: boolean;
@@ -546,6 +567,10 @@ export type NguoiDungQuanTriOut = {
      */
     display_name: string;
     /**
+     * Email
+     */
+    email: string;
+    /**
      * Is Active
      */
     is_active: boolean;
@@ -553,6 +578,10 @@ export type NguoiDungQuanTriOut = {
      * Is Staff
      */
     is_staff: boolean;
+    /**
+     * Is Superuser
+     */
+    is_superuser: boolean;
     /**
      * So Binh Luan
      */
@@ -562,9 +591,17 @@ export type NguoiDungQuanTriOut = {
      */
     so_mach: number;
     /**
+     * Subs Mod
+     */
+    subs_mod: Array<string>;
+    /**
      * Username
      */
     username: string;
+    /**
+     * Vai Tro
+     */
+    vai_tro: string;
 };
 
 /**
@@ -679,6 +716,31 @@ export type NoiDungBiBaoCaoOut = {
 };
 
 /**
+ * SuaNguoiDungIn
+ *
+ * Body của `PATCH /admin/users/{username}`. Trường `None` = **không đổi**.
+ *
+ * `username` **không có mặt** — nó nằm trong URL công khai `/u/<username>` và trong mọi
+ * trích dẫn `u/…`; đổi nó là làm chết liên kết đã phát ra ngoài, cùng lý lẽ `Sub.slug`.
+ *
+ * `is_staff`/`is_superuser` cũng **không có mặt** — xem `TaoNguoiDungIn`.
+ */
+export type SuaNguoiDungIn = {
+    /**
+     * Display Name
+     */
+    display_name?: string | null;
+    /**
+     * Email
+     */
+    email?: string | null;
+    /**
+     * Is Active
+     */
+    is_active?: boolean | null;
+};
+
+/**
  * SuaSubIn
  *
  * PATCH: trường nào `None` là **không đổi**, không phải "đặt về rỗng".
@@ -757,6 +819,33 @@ export type SubTomTatOut = {
      * Ten
      */
     ten: string;
+};
+
+/**
+ * TaoNguoiDungIn
+ *
+ * Body của `POST /admin/users` — superuser tạo tài khoản hộ.
+ *
+ * **Không có `is_staff`/`is_superuser`**, và đó là hợp đồng: cấp quyền mod vẫn nằm
+ * ngoài khu quản trị (PLAN mục 7). Xem `plans/2026-08-25-crud-nguoi-dung.md` §0.
+ */
+export type TaoNguoiDungIn = {
+    /**
+     * Display Name
+     */
+    display_name?: string;
+    /**
+     * Email
+     */
+    email: string;
+    /**
+     * Mat Khau
+     */
+    mat_khau?: string | null;
+    /**
+     * Username
+     */
+    username: string;
 };
 
 /**
@@ -1386,6 +1475,43 @@ export type QuanTriDatAnMocResponses = {
 
 export type QuanTriDatAnMocResponse = QuanTriDatAnMocResponses[keyof QuanTriDatAnMocResponses];
 
+export type QuanTriTaoNguoiDungData = {
+    body: TaoNguoiDungIn;
+    path?: never;
+    query?: never;
+    url: '/api/admin/nguoi-dung';
+};
+
+export type QuanTriTaoNguoiDungErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Conflict
+     */
+    409: LoiOut;
+};
+
+export type QuanTriTaoNguoiDungError = QuanTriTaoNguoiDungErrors[keyof QuanTriTaoNguoiDungErrors];
+
+export type QuanTriTaoNguoiDungResponses = {
+    /**
+     * Created
+     */
+    201: NguoiDungQuanTriOut;
+};
+
+export type QuanTriTaoNguoiDungResponse = QuanTriTaoNguoiDungResponses[keyof QuanTriTaoNguoiDungResponses];
+
 export type QuanTriLietKeNhatKyData = {
     body?: never;
     path?: never;
@@ -1881,6 +2007,52 @@ export type QuanTriXemNguoiDungResponses = {
 
 export type QuanTriXemNguoiDungResponse = QuanTriXemNguoiDungResponses[keyof QuanTriXemNguoiDungResponses];
 
+export type QuanTriSuaNguoiDungData = {
+    body: SuaNguoiDungIn;
+    path: {
+        /**
+         * Username
+         */
+        username: string;
+    };
+    query?: never;
+    url: '/api/admin/users/{username}';
+};
+
+export type QuanTriSuaNguoiDungErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+    /**
+     * Conflict
+     */
+    409: LoiOut;
+};
+
+export type QuanTriSuaNguoiDungError = QuanTriSuaNguoiDungErrors[keyof QuanTriSuaNguoiDungErrors];
+
+export type QuanTriSuaNguoiDungResponses = {
+    /**
+     * OK
+     */
+    200: NguoiDungQuanTriOut;
+};
+
+export type QuanTriSuaNguoiDungResponse = QuanTriSuaNguoiDungResponses[keyof QuanTriSuaNguoiDungResponses];
+
 export type QuanTriBanNguoiDungData = {
     body: BanIn;
     path: {
@@ -1964,3 +2136,49 @@ export type QuanTriGoBanNguoiDungResponses = {
 };
 
 export type QuanTriGoBanNguoiDungResponse = QuanTriGoBanNguoiDungResponses[keyof QuanTriGoBanNguoiDungResponses];
+
+export type QuanTriDatMatKhauData = {
+    body: DatMatKhauIn;
+    path: {
+        /**
+         * Username
+         */
+        username: string;
+    };
+    query?: never;
+    url: '/api/admin/users/{username}/mat-khau';
+};
+
+export type QuanTriDatMatKhauErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+    /**
+     * Conflict
+     */
+    409: LoiOut;
+};
+
+export type QuanTriDatMatKhauError = QuanTriDatMatKhauErrors[keyof QuanTriDatMatKhauErrors];
+
+export type QuanTriDatMatKhauResponses = {
+    /**
+     * OK
+     */
+    200: NguoiDungQuanTriOut;
+};
+
+export type QuanTriDatMatKhauResponse = QuanTriDatMatKhauResponses[keyof QuanTriDatMatKhauResponses];

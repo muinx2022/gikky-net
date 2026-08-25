@@ -260,7 +260,9 @@ def liet_ke_nguoi_dung(
     if (l := kiem_gioi_han(limit)) is not None:
         return l
 
-    qs = User.objects.annotate(
+    # `sub_dang_mod` cho `subs_mod` của `nguoi_dung_quan_tri_ra` (2026-08-25). Thiếu
+    # prefetch là một truy vấn MỖI HÀNG — không nổ ở đâu, chỉ chậm dần theo số dòng.
+    qs = User.objects.prefetch_related("sub_dang_mod__sub").annotate(
         # `distinct=True` trên cả hai: hai LEFT JOIN trong cùng một câu nhân chéo nhau,
         # nên một user 3 mạch + 4 bình luận sẽ ra `so_mach = 12`. Con số sai kiểu này
         # không nổ ở đâu cả — nó chỉ làm mod tin mình đang nhìn một tài khoản spam.

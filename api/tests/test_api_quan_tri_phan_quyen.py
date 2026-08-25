@@ -108,6 +108,12 @@ def test_user_thuong_KHONG_vao_duoc_endpoint_nao(du_lieu):
 CHI_SUPERUSER = {
     "quan_tri_luu_cai_dat_google",
     "quan_tri_xoa_cai_dat_google",
+    # CRUD tài khoản (2026-08-25). User chốt "chỉ superadmin mới có quyền thay đổi các
+    # thông tin của user". Đặt mật khẩu cho người khác = đăng nhập được bằng tài khoản
+    # đó, tức chiếm tài khoản kể cả khi có thiện ý.
+    "quan_tri_tao_nguoi_dung",
+    "quan_tri_sua_nguoi_dung",
+    "quan_tri_dat_mat_khau",
 }
 
 

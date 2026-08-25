@@ -147,6 +147,24 @@ def bang_endpoint(dl: dict) -> list[tuple[str, str, str, dict | None]]:
         ("quan_tri_liet_ke_sub", "get", "/api/admin/subs", None),
         ("quan_tri_xem_cai_dat_google", "get", "/api/admin/cai-dat/google", None),
         (
+            "quan_tri_tao_nguoi_dung",
+            "post",
+            "/api/admin/nguoi-dung",
+            {"username": "nguoi_moi_toanh", "email": "moi-toanh@vi-du.gikky.net"},
+        ),
+        (
+            "quan_tri_sua_nguoi_dung",
+            "patch",
+            f"/api/admin/users/{dl['tac_gia'].username}",
+            {"display_name": "Tên khác"},
+        ),
+        (
+            "quan_tri_dat_mat_khau",
+            "post",
+            f"/api/admin/users/{dl['tac_gia'].username}/mat-khau",
+            {"mat_khau": None},
+        ),
+        (
             "quan_tri_luu_cai_dat_google",
             "put",
             "/api/admin/cai-dat/google",

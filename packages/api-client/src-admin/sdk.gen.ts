@@ -4,7 +4,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { QuanTriBanNguoiDungData, QuanTriBanNguoiDungErrors, QuanTriBanNguoiDungResponses, QuanTriDatAnBinhLuanData, QuanTriDatAnBinhLuanErrors, QuanTriDatAnBinhLuanResponses, QuanTriDatAnMachData, QuanTriDatAnMachErrors, QuanTriDatAnMachResponses, QuanTriDatAnMocData, QuanTriDatAnMocErrors, QuanTriDatAnMocResponses, QuanTriDatKhoaMachData, QuanTriDatKhoaMachErrors, QuanTriDatKhoaMachResponses, QuanTriDongBaoCaoData, QuanTriDongBaoCaoErrors, QuanTriDongBaoCaoResponses, QuanTriGanModSubData, QuanTriGanModSubErrors, QuanTriGanModSubResponses, QuanTriGoBanNguoiDungData, QuanTriGoBanNguoiDungErrors, QuanTriGoBanNguoiDungResponses, QuanTriGoModSubData, QuanTriGoModSubErrors, QuanTriGoModSubResponses, QuanTriLietKeBaoCaoData, QuanTriLietKeBaoCaoErrors, QuanTriLietKeBaoCaoResponses, QuanTriLietKeBinhLuanData, QuanTriLietKeBinhLuanErrors, QuanTriLietKeBinhLuanResponses, QuanTriLietKeMachData, QuanTriLietKeMachErrors, QuanTriLietKeMachResponses, QuanTriLietKeNguoiDungData, QuanTriLietKeNguoiDungErrors, QuanTriLietKeNguoiDungResponses, QuanTriLietKeNhatKyData, QuanTriLietKeNhatKyErrors, QuanTriLietKeNhatKyResponses, QuanTriLietKeSubData, QuanTriLietKeSubErrors, QuanTriLietKeSubResponses, QuanTriLuuCaiDatGoogleData, QuanTriLuuCaiDatGoogleErrors, QuanTriLuuCaiDatGoogleResponses, QuanTriSuaSubData, QuanTriSuaSubErrors, QuanTriSuaSubResponses, QuanTriTaoSubData, QuanTriTaoSubErrors, QuanTriTaoSubResponses, QuanTriThongKeData, QuanTriThongKeErrors, QuanTriThongKeResponses, QuanTriToiData, QuanTriToiErrors, QuanTriToiResponses, QuanTriXemCaiDatGoogleData, QuanTriXemCaiDatGoogleErrors, QuanTriXemCaiDatGoogleResponses, QuanTriXemMachData, QuanTriXemMachErrors, QuanTriXemMachResponses, QuanTriXemNguoiDungData, QuanTriXemNguoiDungErrors, QuanTriXemNguoiDungResponses, QuanTriXoaCaiDatGoogleData, QuanTriXoaCaiDatGoogleErrors, QuanTriXoaCaiDatGoogleResponses, QuanTriXoaSubData, QuanTriXoaSubErrors, QuanTriXoaSubResponses } from './types.gen';
+import type { QuanTriBanNguoiDungData, QuanTriBanNguoiDungErrors, QuanTriBanNguoiDungResponses, QuanTriDatAnBinhLuanData, QuanTriDatAnBinhLuanErrors, QuanTriDatAnBinhLuanResponses, QuanTriDatAnMachData, QuanTriDatAnMachErrors, QuanTriDatAnMachResponses, QuanTriDatAnMocData, QuanTriDatAnMocErrors, QuanTriDatAnMocResponses, QuanTriDatKhoaMachData, QuanTriDatKhoaMachErrors, QuanTriDatKhoaMachResponses, QuanTriDatMatKhauData, QuanTriDatMatKhauErrors, QuanTriDatMatKhauResponses, QuanTriDongBaoCaoData, QuanTriDongBaoCaoErrors, QuanTriDongBaoCaoResponses, QuanTriGanModSubData, QuanTriGanModSubErrors, QuanTriGanModSubResponses, QuanTriGoBanNguoiDungData, QuanTriGoBanNguoiDungErrors, QuanTriGoBanNguoiDungResponses, QuanTriGoModSubData, QuanTriGoModSubErrors, QuanTriGoModSubResponses, QuanTriLietKeBaoCaoData, QuanTriLietKeBaoCaoErrors, QuanTriLietKeBaoCaoResponses, QuanTriLietKeBinhLuanData, QuanTriLietKeBinhLuanErrors, QuanTriLietKeBinhLuanResponses, QuanTriLietKeMachData, QuanTriLietKeMachErrors, QuanTriLietKeMachResponses, QuanTriLietKeNguoiDungData, QuanTriLietKeNguoiDungErrors, QuanTriLietKeNguoiDungResponses, QuanTriLietKeNhatKyData, QuanTriLietKeNhatKyErrors, QuanTriLietKeNhatKyResponses, QuanTriLietKeSubData, QuanTriLietKeSubErrors, QuanTriLietKeSubResponses, QuanTriLuuCaiDatGoogleData, QuanTriLuuCaiDatGoogleErrors, QuanTriLuuCaiDatGoogleResponses, QuanTriSuaNguoiDungData, QuanTriSuaNguoiDungErrors, QuanTriSuaNguoiDungResponses, QuanTriSuaSubData, QuanTriSuaSubErrors, QuanTriSuaSubResponses, QuanTriTaoNguoiDungData, QuanTriTaoNguoiDungErrors, QuanTriTaoNguoiDungResponses, QuanTriTaoSubData, QuanTriTaoSubErrors, QuanTriTaoSubResponses, QuanTriThongKeData, QuanTriThongKeErrors, QuanTriThongKeResponses, QuanTriToiData, QuanTriToiErrors, QuanTriToiResponses, QuanTriXemCaiDatGoogleData, QuanTriXemCaiDatGoogleErrors, QuanTriXemCaiDatGoogleResponses, QuanTriXemMachData, QuanTriXemMachErrors, QuanTriXemMachResponses, QuanTriXemNguoiDungData, QuanTriXemNguoiDungErrors, QuanTriXemNguoiDungResponses, QuanTriXoaCaiDatGoogleData, QuanTriXoaCaiDatGoogleErrors, QuanTriXoaCaiDatGoogleResponses, QuanTriXoaSubData, QuanTriXoaSubErrors, QuanTriXoaSubResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -249,6 +249,35 @@ export const quanTriDatAnMoc = <ThrowOnError extends boolean = false>(options: O
             type: 'apiKey'
         }],
     url: '/api/admin/mocs/{moc_id}/an',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Tao Nguoi Dung
+ *
+ * Superuser tạo tài khoản hộ. Email được đánh dấu **đã xác thực**.
+ *
+ * Không đánh dấu thì tài khoản mới kẹt ở trạng thái chưa xác thực và gần như không dùng
+ * được — cửa "tạo" khi đó là trang trí. Người tạo là superuser, tức đã có người chịu
+ * trách nhiệm cho địa chỉ ấy.
+ *
+ * ⚠ Đây là đường **duy nhất** dựng được một `EmailAddress(verified=True)` mà không qua
+ * hòm thư. Nó nằm sau `is_superuser` và nó ghi `AuditLog`.
+ *
+ * Cố ý **không** đi qua hạn mức đăng ký theo IP (`AdapterTaiKhoan.is_open_for_signup`):
+ * hạn mức ấy chặn bot đăng ký hàng loạt, không phải chặn superuser.
+ */
+export const quanTriTaoNguoiDung = <ThrowOnError extends boolean = false>(options: Options<QuanTriTaoNguoiDungData, ThrowOnError>): RequestResult<QuanTriTaoNguoiDungResponses, QuanTriTaoNguoiDungErrors, ThrowOnError> => (options.client ?? client).post<QuanTriTaoNguoiDungResponses, QuanTriTaoNguoiDungErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/admin/nguoi-dung',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -528,6 +557,37 @@ export const quanTriXemNguoiDung = <ThrowOnError extends boolean = false>(option
 });
 
 /**
+ * Sua Nguoi Dung
+ *
+ * Sửa `display_name` / `email` / `is_active`. Trường `None` = **không đổi**.
+ *
+ * "Xoá tài khoản" ở gikky là `is_active=False` (GDPR-lite, PLAN mục 6): nội dung được
+ * giữ, tác giả ẩn danh, đăng nhập bị chặn. Không xoá hàng — xoá hàng kéo theo nội dung
+ * mà người khác đang trích dẫn.
+ *
+ * Hai phép từ chối chống **tự khoá ra ngoài**, và chúng là hai đường khác nhau tới cùng
+ * một hậu quả:
+ *
+ * - tự vô hiệu hoá chính mình ⇒ 409;
+ * - vô hiệu hoá superuser **cuối cùng** ⇒ 409.
+ *
+ * Thiếu cái thứ hai thì hai superuser tắt lẫn nhau vẫn ra kết quả không ai vào được.
+ */
+export const quanTriSuaNguoiDung = <ThrowOnError extends boolean = false>(options: Options<QuanTriSuaNguoiDungData, ThrowOnError>): RequestResult<QuanTriSuaNguoiDungResponses, QuanTriSuaNguoiDungErrors, ThrowOnError> => (options.client ?? client).patch<QuanTriSuaNguoiDungResponses, QuanTriSuaNguoiDungErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/admin/users/{username}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * Ban Nguoi Dung
  *
  * Ban một tài khoản: vĩnh viễn, hoặc tạm tới `den_khi`. **Đúng một trong hai.**
@@ -571,4 +631,33 @@ export const quanTriGoBanNguoiDung = <ThrowOnError extends boolean = false>(opti
         }],
     url: '/api/admin/users/{username}/go-ban',
     ...options
+});
+
+/**
+ * Dat Mat Khau
+ *
+ * Đặt mật khẩu mới, hoặc **xoá** mật khẩu khi `mat_khau` là `null`.
+ *
+ * Xoá mật khẩu **không phải khoá ngoài**: tài khoản vào bằng Google, hoặc đặt lại qua
+ * `/quen-mat-khau` (chỉ cần hòm thư). Đó là cùng trạng thái mà một lượt đăng nhập Google
+ * trùng email tạo ra — xem `core/allauth_adapter.py::AdapterMangXaHoi`.
+ *
+ * Mật khẩu mới đi qua `validate_password` (bộ `AUTH_PASSWORD_VALIDATORS`). Bỏ qua nó là
+ * mở một cửa đặt mật khẩu yếu mà cửa đăng ký thường không cho — và cửa này còn đặt được
+ * cho **người khác**.
+ *
+ * Nhật ký ghi **cờ** `xoa`, không ghi chuỗi mật khẩu.
+ */
+export const quanTriDatMatKhau = <ThrowOnError extends boolean = false>(options: Options<QuanTriDatMatKhauData, ThrowOnError>): RequestResult<QuanTriDatMatKhauResponses, QuanTriDatMatKhauErrors, ThrowOnError> => (options.client ?? client).post<QuanTriDatMatKhauResponses, QuanTriDatMatKhauErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/admin/users/{username}/mat-khau',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });

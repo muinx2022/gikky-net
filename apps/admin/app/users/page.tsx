@@ -10,6 +10,7 @@ import Link from "next/link";
 import { Fragment, useCallback, useState } from "react";
 
 import { FormBan } from "../../components/form-ban";
+import { FormSuaUser } from "../../components/form-sua-user";
 import { NganKeo } from "../../components/ngan-keo";
 import { useQuanTri } from "../../components/khung/ngu-canh";
 import {
@@ -59,13 +60,16 @@ const CHU_LOC: Record<LocTrangThai, string> = {
 };
 
 export default function TrangNguoiDung() {
-  const { lamMoi } = useQuanTri();
+  const { lamMoi, mod } = useQuanTri();
   const [q, datQ] = useState("");
   const [o_tim, datOTim] = useState("");
   const [trang_thai, datTrangThai] = useState<LocTrangThai>("tat_ca");
   const [dang_chay, datDangChay] = useState(false);
   const [loi_hanh_dong, datLoiHanhDong] = useState<string | null>(null);
   const [mo_ban, datMoBan] = useState<string | null>(null);
+  /** username đang mở ngăn kéo SỬA. Tách khỏi `mo_ban`: gộp là dựng sẵn tổ hợp "vừa
+   * ban vừa sửa", và tổ hợp ấy sẽ xảy ra đúng lúc ai đó thêm đường mở thứ ba. */
+  const [mo_sua, datMoSua] = useState<string | null>(null);
 
   const nap = useCallback(
     (cursor: string | null) =>
@@ -172,7 +176,15 @@ export default function TrangNguoiDung() {
         ) : (
           <KhungBang>
             <HangTieuDe
-              cot={["Tài khoản", "Bài viết", "Bình luận", "Tham gia", "Trạng thái", ""]}
+              cot={[
+                "Tài khoản",
+                "Nhóm",
+                "Bài viết",
+                "Bình luận",
+                "Tham gia",
+                "Trạng thái",
+                "",
+              ]}
             />
             <tbody>
               {ds.items.map((u) => (
@@ -191,6 +203,23 @@ export default function TrangNguoiDung() {
                       <span className="mono block text-xs text-muc-mo">
                         u/{u.username}
                       </span>
+                    </td>
+                    {/* Nhãn "thuộc nhóm nào" — `vai_tro` do SERVER tính, không suy từ
+                        hai cờ ở đây (PLAN nguyên tắc 10). gikky KHÔNG dùng `auth.Group`;
+                        "nhóm" là vai trò thật + chuyên mục được phân công. */}
+                    <td className="px-3 py-2.5" data-testid={`o-nhom-${u.username}`}>
+                      <NhanTrangThai
+                        tone={
+                          u.is_superuser ? "chu-y" : u.is_staff ? "nhan" : "trung-tinh"
+                        }
+                      >
+                        {u.vai_tro}
+                      </NhanTrangThai>
+                      {u.subs_mod.length > 0 && (
+                        <span className="mono mt-1 block text-xs text-muc-mo">
+                          {u.subs_mod.map((x) => `s/${x}`).join(" · ")}
+                        </span>
+                      )}
                     </td>
                     <td className="mono px-3 py-2.5">{u.so_mach}</td>
                     <td className="mono px-3 py-2.5">{u.so_binh_luan}</td>
@@ -218,6 +247,21 @@ export default function TrangNguoiDung() {
                     </td>
                     <td className="px-3 py-2.5">
                       <span className="flex justify-end gap-1.5">
+                        {/* Chỉ superuser: user chốt "chỉ superadmin mới có quyền thay
+                            đổi các thông tin của user". Không render nút rồi để nó ăn
+                            403 — PLAN mục 4. */}
+                        {mod.is_superuser && (
+                          <button
+                            type="button"
+                            className="nut nut-nho"
+                            disabled={dang_chay}
+                            aria-expanded={mo_sua === u.username}
+                            onClick={() => datMoSua(u.username)}
+                            data-testid={`nut-sua-user-${u.username}`}
+                          >
+                            Sửa
+                          </button>
+                        )}
                         {u.dang_bi_ban ? (
                           <button
                             type="button"
@@ -295,6 +339,26 @@ export default function TrangNguoiDung() {
             }}
           />
         )}
+      </NganKeo>
+
+      <NganKeo
+        mo={mo_sua !== null}
+        dong={() => datMoSua(null)}
+        tieu_de={`Sửa u/${mo_sua ?? ""}`}
+        mo_ta="Chỉ superuser. Đổi tên, email, mật khẩu, hoặc vô hiệu hoá tài khoản."
+      >
+        {(() => {
+          const u = ds.items?.find((x) => x.username === mo_sua);
+          if (u === undefined) return null;
+          return (
+            <FormSuaUser
+              u={u}
+              dangChay={dang_chay}
+              dong={() => datMoSua(null)}
+              chay={chay}
+            />
+          );
+        })()}
       </NganKeo>
     </>
   );

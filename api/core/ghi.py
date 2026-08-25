@@ -1348,16 +1348,21 @@ def dat_an_moc(*, moc: Moc, boi, an: bool, ly_do: str = "") -> bool:
 #: và nhét một id giả vào đó là mời người đọc nhật ký đi tra một bảng không tồn tại.
 AUDIT_SUA_CAI_DAT_GOOGLE = "sua_cai_dat_google"
 AUDIT_XOA_CAI_DAT_GOOGLE = "xoa_cai_dat_google"
+#: CRUD tài khoản (2026-08-25). `AUDIT_DAT_MAT_KHAU_USER` mang cờ `xoa`, **không**
+#: mang chuỗi mật khẩu — một nhật ký chứa mật khẩu là bản sao thứ hai phải đi bảo vệ.
+AUDIT_TAO_USER = "tao_user"
+AUDIT_SUA_USER = "sua_user"
+AUDIT_DAT_MAT_KHAU_USER = "dat_mat_khau_user"
         ghi_audit(
             actor=boi,
             action=AUDIT_AN_MOC if an else AUDIT_GO_AN_MOC,
             target_type=DICH_MOC,
             target_id=hang.pk,
+DICH_CAI_DAT = "cai_dat"
             mach_id=hang.mach_id,
             seq=hang.seq,
             ly_do=ly_do,
         )
-DICH_CAI_DAT = "cai_dat"
     moc.refresh_from_db()
     return True
 

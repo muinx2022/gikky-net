@@ -17,19 +17,40 @@ trong đường ghi. Cùng lý lẽ với rate limit ở `core/ghi.py::them_moc`
 
 from datetime import timedelta
 
+from allauth.account.models import EmailAddress
+from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.db.models import Count
 from django.utils import timezone
-from ninja import Router
+from ninja import Router, Status
 
-from core.ghi import ban_user, go_ban_user
+from core.ghi import (
+    AUDIT_DAT_MAT_KHAU_USER,
+    AUDIT_SUA_USER,
+    AUDIT_TAO_USER,
+    DICH_USER,
+    ban_user,
+    ghi_audit,
+    go_ban_user,
+)
 from core.models.nguoi_dung import User
 
-from api.loi import THAM_SO_KHONG_HOP_LE, XUNG_DOT, LoiOut, khong_tim_thay, loi
+from api.loi import (
+    KHONG_DU_QUYEN,
+    THAM_SO_KHONG_HOP_LE,
+    XUNG_DOT,
+    LoiOut,
+    khong_tim_thay,
+    loi,
+)
 from api.quan_tri_schemas import (
     BanIn,
+    DatMatKhauIn,
     KetQuaDoiTrangThaiOut,
     NguoiDungQuanTriOut,
+    SuaNguoiDungIn,
+    TaoNguoiDungIn,
 )
 
 router = Router()
@@ -57,8 +78,25 @@ def _tim(username: str) -> User | None:
             _so_mach=Count("machs", distinct=True),
             _so_binh_luan=Count("comments", distinct=True),
         )
+        .prefetch_related("sub_dang_mod__sub")
         .first()
     )
+
+
+def vai_tro_cua(u: User) -> str:
+    """Nhãn "thuộc nhóm nào" — tính ở SERVER, không để frontend suy từ hai cờ.
+
+    gikky **không dùng `auth.Group`**: bảng có (thừa kế `AbstractUser`) nhưng không chỗ
+    nào đọc tới, `ChiMod` chỉ nhìn `is_staff`. Nên "nhóm" ở đây là vai trò thật đang có.
+
+    Thứ tự xét quan trọng: superuser **cũng** `is_staff`, nên hỏi `is_superuser` trước.
+    Đảo lại là mọi superuser hiện ra thành "Mod".
+    """
+    if u.is_superuser:
+        return "Superuser"
+    if u.is_staff:
+        return "Mod"
+    return "Thành viên"
 
 
 def nguoi_dung_quan_tri_ra(u: User) -> NguoiDungQuanTriOut:
@@ -74,6 +112,13 @@ def nguoi_dung_quan_tri_ra(u: User) -> NguoiDungQuanTriOut:
         ban_reason=u.ban_reason,
         so_mach=u._so_mach,
         so_binh_luan=u._so_binh_luan,
+        is_superuser=u.is_superuser,
+        email=u.email or "",
+        co_mat_khau=u.has_usable_password(),
+        vai_tro=vai_tro_cua(u),
+        # `sorted` trong Python: `prefetch_related` đã nạp sẵn, thêm `order_by` ở đây là
+        # ném bộ nhớ đệm đi và bắn lại một truy vấn cho mỗi hàng.
+        subs_mod=sorted(m.sub.slug for m in u.sub_dang_mod.all()),
     )
 
 
@@ -190,3 +235,271 @@ def go_ban_nguoi_dung(request, username: str):
         return khong_tim_thay("tài khoản")
     da_doi = go_ban_user(user=u, boi=request.user)
     return KetQuaDoiTrangThaiOut(da_doi=da_doi, dang_bat=u.dang_bi_ban())
+
+
+# --- CRUD tài khoản (2026-08-25) -----------------------------------------------------
+#
+# `plans/2026-08-25-crud-nguoi-dung.md`. User chốt: *"chỉ superadmin mới có quyền thay đổi
+# các thông tin của user"*.
+#
+# ⚠ **KHÔNG cửa nào dưới đây ghi vào `is_staff` / `is_superuser`.** User chốt "không cần
+# group nữa… chỉ cần show label ra thuộc nhóm nào", nên PLAN mục 7 giữ nguyên: cấp/thu
+# quyền mod vẫn nằm ngoài khu quản trị (Django admin, chỉ superuser). Lý lẽ cũ còn nguyên
+# giá trị — một mod cấp quyền mod cho tài khoản khác là bỏ qua mọi phép duyệt, và ai tự
+# cấp `is_staff` là tự miễn nhiễm ban.
+#
+# Hai schema `TaoNguoiDungIn`/`SuaNguoiDungIn` **không khai** hai cờ ấy, nên Ninja loại
+# chúng khỏi body trước khi handler nhìn thấy. Có bài đo gửi chúng lên và đòi KHÔNG đổi.
+
+TRA_LOI_CRUD = {
+    200: NguoiDungQuanTriOut,
+    400: LoiOut,
+    401: LoiOut,
+    403: LoiOut,
+    404: LoiOut,
+    409: LoiOut,
+}
+
+
+def _kiem_mat_khau(mat_khau: str, *, user: User | None = None):
+    """`None` nếu hợp lệ, ngược lại là response 400 kèm **lý do của Django**.
+
+    Trả nguyên văn thông điệp validator thay vì một câu chung chung: "mật khẩu không hợp
+    lệ" không nói được là quá ngắn, quá phổ biến, hay quá giống username — và người đặt sẽ
+    thử lại một chuỗi hỏng theo đúng cách cũ.
+    """
+    try:
+        validate_password(mat_khau, user=user)
+    except ValidationError as e:
+        return loi(400, THAM_SO_KHONG_HOP_LE, " ".join(e.messages))
+    return None
+
+
+def _chan_neu_khong_phai_superuser(request):
+    """`None` nếu được phép, ngược lại là response 403.
+
+    Tách khỏi `ChiMod` (cổng `is_staff` của cả khu) vì đây là phép kiểm THỨ HAI, hẹp hơn,
+    chỉ cho vài cửa. Nhét nó vào `ChiMod` là khoá cả khu quản trị khỏi mod thường.
+    """
+    if request.user.is_superuser:
+        return None
+    return loi(403, KHONG_DU_QUYEN, "Chỉ superuser được đổi thông tin tài khoản.")
+
+
+def _con_superuser_khac(u: User) -> bool:
+    """Còn superuser nào KHÁC `u` đang hoạt động không?"""
+    return (
+        User.objects.filter(is_superuser=True, is_active=True).exclude(pk=u.pk).exists()
+    )
+
+
+# ⚠ **Đường là `/nguoi-dung`, KHÔNG phải `POST /users`** — và đừng "sửa lại cho RESTful",
+# hai lối tự nhiên hơn đều trả **405** chứ không chạy handler này:
+#
+#   `POST /users`          → `GET /users` (bảng danh sách) nằm ở router KHÁC
+#                             (`quan_tri_bang.py`). django-ninja sinh urlpattern theo TỪNG
+#                             router, Django resolver lấy pattern khớp đầu tiên ⇒ rơi vào
+#                             router kia, nơi chỉ có GET.
+#   `POST /users/tao-moi`   → bị `users/<str:username>` (của `GET /users/{username}`, khai
+#                             sớm hơn trong file này) nuốt mất: "tao-moi" khớp `{username}`.
+#
+# Cả hai đã thử và đều 405. Lối chữa "đúng" nhất là gom cả `/users` về một router, nhưng
+# nó kéo theo ~15 import của đường phân trang — đắt hơn giá trị lúc này. Một đường có tên
+# riêng thì rẻ, không mơ hồ, và không phụ thuộc thứ tự khai.
+@router.post(
+    "/nguoi-dung",
+    response={
+        201: NguoiDungQuanTriOut,
+        400: LoiOut,
+        401: LoiOut,
+        403: LoiOut,
+        409: LoiOut,
+    },
+    operation_id="quan_tri_tao_nguoi_dung",
+    tags=["quan-tri-nguoi-dung"],
+)
+def tao_nguoi_dung(request, du_lieu: TaoNguoiDungIn):
+    """Superuser tạo tài khoản hộ. Email được đánh dấu **đã xác thực**.
+
+    Không đánh dấu thì tài khoản mới kẹt ở trạng thái chưa xác thực và gần như không dùng
+    được — cửa "tạo" khi đó là trang trí. Người tạo là superuser, tức đã có người chịu
+    trách nhiệm cho địa chỉ ấy.
+
+    ⚠ Đây là đường **duy nhất** dựng được một `EmailAddress(verified=True)` mà không qua
+    hòm thư. Nó nằm sau `is_superuser` và nó ghi `AuditLog`.
+
+    Cố ý **không** đi qua hạn mức đăng ký theo IP (`AdapterTaiKhoan.is_open_for_signup`):
+    hạn mức ấy chặn bot đăng ký hàng loạt, không phải chặn superuser.
+    """
+    if (chan := _chan_neu_khong_phai_superuser(request)) is not None:
+        return chan
+
+    username = du_lieu.username.strip()
+    email = du_lieu.email.strip().lower()
+    if not username:
+        return loi(400, THAM_SO_KHONG_HOP_LE, "username không được rỗng.")
+    if not email:
+        return loi(400, THAM_SO_KHONG_HOP_LE, "email không được rỗng.")
+    if User.objects.filter(username__iexact=username).exists():
+        return loi(409, XUNG_DOT, f"username {username!r} đã có người dùng.")
+    if User.objects.filter(email__iexact=email).exists():
+        return loi(409, XUNG_DOT, f"email {email!r} đã có tài khoản.")
+
+    if du_lieu.mat_khau is not None:
+        if (l := _kiem_mat_khau(du_lieu.mat_khau)) is not None:
+            return l
+
+    with transaction.atomic():
+        u = User(
+            username=username,
+            email=email,
+            display_name=du_lieu.display_name.strip() or username,
+        )
+        if du_lieu.mat_khau is None:
+            u.set_unusable_password()
+        else:
+            u.set_password(du_lieu.mat_khau)
+        u.save()
+        EmailAddress.objects.create(user=u, email=email, verified=True, primary=True)
+        ghi_audit(
+            actor=request.user,
+            action=AUDIT_TAO_USER,
+            target_type=DICH_USER,
+            target_id=u.pk,
+            username=username,
+            co_mat_khau=du_lieu.mat_khau is not None,
+        )
+
+    return Status(201, nguoi_dung_quan_tri_ra(_tim(username)))
+
+
+@router.patch(
+    "/users/{username}",
+    response=TRA_LOI_CRUD,
+    operation_id="quan_tri_sua_nguoi_dung",
+    tags=["quan-tri-nguoi-dung"],
+)
+def sua_nguoi_dung(request, username: str, du_lieu: SuaNguoiDungIn):
+    """Sửa `display_name` / `email` / `is_active`. Trường `None` = **không đổi**.
+
+    "Xoá tài khoản" ở gikky là `is_active=False` (GDPR-lite, PLAN mục 6): nội dung được
+    giữ, tác giả ẩn danh, đăng nhập bị chặn. Không xoá hàng — xoá hàng kéo theo nội dung
+    mà người khác đang trích dẫn.
+
+    Hai phép từ chối chống **tự khoá ra ngoài**, và chúng là hai đường khác nhau tới cùng
+    một hậu quả:
+
+    - tự vô hiệu hoá chính mình ⇒ 409;
+    - vô hiệu hoá superuser **cuối cùng** ⇒ 409.
+
+    Thiếu cái thứ hai thì hai superuser tắt lẫn nhau vẫn ra kết quả không ai vào được.
+    """
+    if (chan := _chan_neu_khong_phai_superuser(request)) is not None:
+        return chan
+
+    u = _tim(username)
+    if u is None:
+        return khong_tim_thay("tài khoản")
+
+    if du_lieu.is_active is False:
+        if u.pk == request.user.pk:
+            return loi(409, XUNG_DOT, "Không tự vô hiệu hoá tài khoản của chính mình.")
+        # ⚠ **Nhánh này KHÔNG với tới được hôm nay** — ghi ra thay vì để người sau
+        # tưởng nó đang canh gì đó. Muốn tới đây thì `u != request.user`; mà người gọi
+        # đã qua `_chan_neu_khong_phai_superuser` (⇒ superuser) và qua `ChiMod`
+        # (⇒ `is_active`), nên `_con_superuser_khac(u)` luôn tìm thấy CHÍNH họ và trả
+        # `True`. Đường duy nhất về 0 superuser là tự tắt mình, và phép kiểm ngay trên
+        # đã chặn.
+        #
+        # Giữ lại vì nó rẻ và vì cửa vô hiệu hoá thứ hai (thao tác hàng loạt, hay một
+        # endpoint khác) sẽ không có phép kiểm "tự mình" ở trên — lúc đó đây là thứ duy
+        # nhất còn đứng. Bài đo tương ứng đo **bất biến** ("luôn còn ít nhất một
+        # superuser hoạt động"), không giả vờ đo nhánh này.
+        if u.is_superuser and not _con_superuser_khac(u):
+            return loi(
+                409,
+                XUNG_DOT,
+                "Đây là superuser đang hoạt động cuối cùng — vô hiệu hoá là không còn ai "
+                "vào được khu cài đặt.",
+            )
+
+    email = None
+    if du_lieu.email is not None:
+        email = du_lieu.email.strip().lower()
+        if not email:
+            return loi(400, THAM_SO_KHONG_HOP_LE, "email không được rỗng.")
+        if User.objects.filter(email__iexact=email).exclude(pk=u.pk).exists():
+            return loi(409, XUNG_DOT, f"email {email!r} đã có tài khoản.")
+
+    doi = {}
+    with transaction.atomic():
+        if du_lieu.display_name is not None:
+            u.display_name = du_lieu.display_name.strip()
+            doi["display_name"] = u.display_name
+        if email is not None:
+            u.email = email
+            doi["email"] = email
+        if du_lieu.is_active is not None:
+            u.is_active = du_lieu.is_active
+            doi["is_active"] = u.is_active
+        if doi:
+            u.save(update_fields=list(doi))
+            ghi_audit(
+                actor=request.user,
+                action=AUDIT_SUA_USER,
+                target_type=DICH_USER,
+                target_id=u.pk,
+                username=u.username,
+                **doi,
+            )
+
+    return nguoi_dung_quan_tri_ra(_tim(username))
+
+
+@router.post(
+    "/users/{username}/mat-khau",
+    response=TRA_LOI_CRUD,
+    operation_id="quan_tri_dat_mat_khau",
+    tags=["quan-tri-nguoi-dung"],
+)
+def dat_mat_khau(request, username: str, du_lieu: DatMatKhauIn):
+    """Đặt mật khẩu mới, hoặc **xoá** mật khẩu khi `mat_khau` là `null`.
+
+    Xoá mật khẩu **không phải khoá ngoài**: tài khoản vào bằng Google, hoặc đặt lại qua
+    `/quen-mat-khau` (chỉ cần hòm thư). Đó là cùng trạng thái mà một lượt đăng nhập Google
+    trùng email tạo ra — xem `core/allauth_adapter.py::AdapterMangXaHoi`.
+
+    Mật khẩu mới đi qua `validate_password` (bộ `AUTH_PASSWORD_VALIDATORS`). Bỏ qua nó là
+    mở một cửa đặt mật khẩu yếu mà cửa đăng ký thường không cho — và cửa này còn đặt được
+    cho **người khác**.
+
+    Nhật ký ghi **cờ** `xoa`, không ghi chuỗi mật khẩu.
+    """
+    if (chan := _chan_neu_khong_phai_superuser(request)) is not None:
+        return chan
+
+    u = _tim(username)
+    if u is None:
+        return khong_tim_thay("tài khoản")
+
+    if du_lieu.mat_khau is not None:
+        if (l := _kiem_mat_khau(du_lieu.mat_khau, user=u)) is not None:
+            return l
+
+    with transaction.atomic():
+        if du_lieu.mat_khau is None:
+            u.set_unusable_password()
+        else:
+            u.set_password(du_lieu.mat_khau)
+        u.save(update_fields=["password"])
+        ghi_audit(
+            actor=request.user,
+            action=AUDIT_DAT_MAT_KHAU_USER,
+            target_type=DICH_USER,
+            target_id=u.pk,
+            username=u.username,
+            # Cờ, KHÔNG phải giá trị.
+            xoa=du_lieu.mat_khau is None,
+        )
+
+    return nguoi_dung_quan_tri_ra(_tim(username))

@@ -205,6 +205,20 @@ class NguoiDungQuanTriOut(Schema):
     ban_reason: str | None
     so_mach: int
     so_binh_luan: int
+    #: Thêm 2026-08-25 (`plans/2026-08-25-crud-nguoi-dung.md`).
+    is_superuser: bool
+    email: str
+    #: `has_usable_password()`. Tài khoản `False` chỉ vào được bằng Google hoặc
+    #: `/quen-mat-khau` — **không phải khoá ngoài**, nhưng giao diện phải nói ra chứ đừng
+    #: bày ra ô "đổi mật khẩu hiện tại" cho họ.
+    co_mat_khau: bool
+    #: Nhãn "thuộc nhóm nào" — tính ở SERVER. gikky **không dùng `auth.Group`**; nhóm ở
+    #: đây là vai trò thật: Superuser · Mod · Thành viên. Để frontend tự suy từ hai cờ là
+    #: dựng bản thứ hai của cùng một luật (PLAN nguyên tắc 10), và bản thứ hai sẽ lệch.
+    vai_tro: str
+    #: Chuyên mục được phân công (`ModSub`) — "nhóm" theo nghĩa gikky có thật.
+    #: ⚠ Danh sách PHÂN CÔNG, không phải danh sách QUYỀN.
+    subs_mod: list[str]
 
 
 class BanIn(Schema):
@@ -253,6 +267,46 @@ class TaoSubIn(Schema):
     slug: str
     ten: str
     mo_ta: str = ""
+
+
+class TaoNguoiDungIn(Schema):
+    """Body của `POST /admin/users` — superuser tạo tài khoản hộ.
+
+    **Không có `is_staff`/`is_superuser`**, và đó là hợp đồng: cấp quyền mod vẫn nằm
+    ngoài khu quản trị (PLAN mục 7). Xem `plans/2026-08-25-crud-nguoi-dung.md` §0.
+    """
+
+    username: str
+    email: str
+    display_name: str = ""
+    #: `None` ⇒ tài khoản không có mật khẩu, vào bằng Google hoặc `/quen-mat-khau`.
+    mat_khau: str | None = None
+
+
+class SuaNguoiDungIn(Schema):
+    """Body của `PATCH /admin/users/{username}`. Trường `None` = **không đổi**.
+
+    `username` **không có mặt** — nó nằm trong URL công khai `/u/<username>` và trong mọi
+    trích dẫn `u/…`; đổi nó là làm chết liên kết đã phát ra ngoài, cùng lý lẽ `Sub.slug`.
+
+    `is_staff`/`is_superuser` cũng **không có mặt** — xem `TaoNguoiDungIn`.
+    """
+
+    display_name: str | None = None
+    email: str | None = None
+    is_active: bool | None = None
+
+
+class DatMatKhauIn(Schema):
+    """Body của `POST /admin/users/{username}/mat-khau`.
+
+    `mat_khau: null` ⇒ **xoá mật khẩu** (`set_unusable_password`) — vế "set pass rỗng"
+    của đơn hàng. Khác hẳn `SuaNguoiDungIn`, nơi `None` nghĩa là "không đổi": ở đây body
+    chỉ có một trường và mục đích của lời gọi luôn là *đổi mật khẩu*, nên `null` không thể
+    mang nghĩa "không làm gì".
+    """
+
+    mat_khau: str | None = None
 
 
 class CaiDatGoogleOut(Schema):
