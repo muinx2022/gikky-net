@@ -58,7 +58,9 @@ def test_seed_dev_reset_van_chay_duoc_sau_khi_seed_e2e_da_chay():
 
     # `--reset` dựng lại đủ dữ liệu nghiệm thu…
     assert Mach.objects.filter(title=seed_dev.TITLE_HPG).count() == 1
-    assert Sub.objects.filter(slug__in=[s["slug"] for s in seed_dev.SUBS]).count() == 2
+    assert Sub.objects.filter(slug__in=[s["slug"] for s in seed_dev.SUBS]).count() == len(
+        seed_dev.SUBS
+    )
     # …và **không đụng** vào dữ liệu phụ của bộ e2e. Hai bộ, hai cổng vào.
     assert User.objects.filter(username=seed_e2e.USERNAME).exists()
     assert Mach.objects.filter(author__username=seed_e2e.USERNAME).count() == (

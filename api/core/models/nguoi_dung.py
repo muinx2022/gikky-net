@@ -27,6 +27,22 @@ class User(AbstractUser):
     display_name = models.CharField(max_length=60, blank=True)
     bio = models.TextField(blank=True, validators=[MaxLengthValidator(500)])
 
+    #: KHOÁ kho ảnh của avatar — **không** phải URL (giống `MocAnh.khoa_luu_tru`). Rỗng =
+    #: chưa có avatar, UI rơi về ảnh mặc định. URL phục vụ suy ra bằng
+    #: `core.anh_luu.url_thumb(avatar_khoa)`; ảnh chính lẫn thumbnail dùng CHUNG một khoá
+    #: (xem `core/anh_luu.py`), avatar phục vụ bằng thumbnail (480px, CSS bo vuông).
+    #:
+    #: Avatar đi qua đúng bảy phép kiểm ảnh của Phase 5 (`core/anh.py`) và ghi vào CÙNG
+    #: thư mục đĩa với ảnh mốc (`ghi_anh`), nên `don_anh_mo_coi` coi cột này là khoá hợp
+    #: lệ — nếu không nó xoá mọi avatar sau 24 giờ vì không hàng `MocAnh` nào trỏ tới.
+    #:
+    #: **Là dữ liệu cá nhân nhẹ**, cùng loài `dang_ky_ip`: ẩn danh hoá tài khoản
+    #: (`is_active=False`, PLAN mục 6) phải xoá cột này VÀ file kèm theo. Hôm nay CHƯA có
+    #: đường code nào thực thi ẩn danh hoá (chỉ là quyết định thiết kế ở docstring trên),
+    #: nên chưa có chỗ nào gọi việc dọn ấy — khi dựng đường xoá tài khoản, gọi
+    #: `core.avatar.xoa_avatar(user=...)` là đủ cả hai vế.
+    avatar_khoa = models.CharField(max_length=64, blank=True, default="")
+
     # --- Thông báo (PLAN 5.8 · Phase 3) --------------------------------------
     #: Nhận email digest tuần hay không. **`default=False` là bắt buộc, không phải một
     #: lựa chọn thẩm mỹ:** PLAN 5.8 chốt digest là *"tuỳ chọn **opt-in**"*, và `True` mặc

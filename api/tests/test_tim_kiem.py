@@ -277,3 +277,37 @@ def test_doan_trich_khong_khop_thi_van_tra_doan_dau():
     vẫn phải có chữ để đọc, không được trả rỗng."""
     ra = _to_dam("Một bài viết bình thường.", ["zzz"], dai=200)
     assert ra == "Một bài viết bình thường."
+
+
+# --- nội dung đẩy vào index là VĂN BẢN THUẦN (2026-08-24) ---------------------
+
+
+@pytest.mark.django_db
+def test_tai_lieu_day_van_ban_thuan_khong_day_the_html(mach_cua_a, nguoi_a):
+    """`body` nay là HTML — đẩy nguyên xi vào Meilisearch là hỏng KẾT QUẢ TÌM, không phải
+    hỏng an toàn.
+
+    Ba hệ quả nếu đẩy thô: `strong` thành một *từ* khớp mọi bài có chữ đậm;
+    `xu<strong>ất</strong>` tan mất một từ tiếng Việt khỏi index; và lệnh đối soát in ra
+    nguyên thẻ. `tim()` chỉ lấy id nên không có đường rò nội dung (S6) — đây thuần tuý là
+    chuyện tìm đúng hay sai.
+    """
+    from core.ghi import them_moc
+    from core.tim_kiem import tai_lieu
+
+    Moc.objects.filter(mach=mach_cua_a, seq=1).update(
+        body="<p>Chốt lời <strong>HPG</strong></p><p>ở vùng 28.</p>"
+    )
+    them_moc(
+        mach=mach_cua_a,
+        author=nguoi_a,
+        body="<script>alert(1)</script><p>Mốc <em>nối thêm</em>.</p>",
+    )
+    mach_cua_a.refresh_from_db()
+
+    d = tai_lieu(mach_cua_a)
+    assert "<" not in d["than"], d["than"]
+    assert "<" not in d["than_them"], d["than_them"]
+    assert d["than"] == "Chốt lời HPG ở vùng 28."
+    assert "alert(1)" not in d["than_them"]
+    assert "Mốc nối thêm." in d["than_them"]

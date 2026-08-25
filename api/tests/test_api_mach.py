@@ -155,9 +155,17 @@ KHOA_CHO_PHEP = {
     # Một con số ở hai response là hai nguồn cho cùng một luật.
     "tran_moc_moi_ngay",
     # sub + tác giả
-    "ten", "username", "display_name",
+    #
+    # `avatar_url` (2026-08-24) cache được: `url_thumb(user.avatar_khoa)` là phép format
+    # chuỗi thuần, ai xem cũng nhận đúng URL ấy — không nhánh nào hỏi người xem là ai. Nó
+    # là dữ liệu công khai (ai cũng thấy avatar tác giả), khác hẳn `my_reactions`.
+    "ten", "username", "display_name", "avatar_url",
     # mốc
-    "seq", "occurred_at", "loai", "body", "question_for_crowd", "figures",
+    #
+    # `body_dinh_dang` (2026-08-24, đợt Tiptap) cache được: nó là thuộc tính của HÀNG —
+    # `body` này viết bằng HTML hay markdown — không phải của người xem. Frontend chọn
+    # renderer theo nó (`plans/2026-08-24-tiptap-html.md`).
+    "seq", "occurred_at", "loai", "body", "body_dinh_dang", "question_for_crowd", "figures",
     "edited_at", "edit_count", "score", "trang_thai", "so_binh_luan", "trich",
     # hạn sửa im lặng (`created_at + 15 phút`) — cùng lý lẽ `mo_lai_den`.
     "sua_im_lang_den",
@@ -173,11 +181,12 @@ KHOA_CHO_PHEP = {
     # đây. Nhét nó vào đây "cho tiện client" là đúng cái PLAN 8.4 điểm 4 gọi là điểm dễ
     # làm sai nhất.
     #
-    # Năm khoá con là bộ emoji CỐ ĐỊNH của PLAN 5.7 (`Reaction.Emoji`). Chúng phải có tên
-    # ở đây vì `khoa_json` đi xuống mọi tầng — và đó là một cái chuông nữa: thêm emoji thứ
-    # sáu ở Django mà quên chỗ này thì bài R3 ĐỎ, cùng lúc với
+    # Bốn khoá con là bộ reaction của `Reaction.Emoji` — **phản hồi về bài viết**, đổi
+    # 2026-08-25 (bộ cũ `len/xuong/lua/bang/trung` xem migration 0017). Chúng phải có tên
+    # ở đây vì `khoa_json` đi xuống mọi tầng — và đó là một cái chuông nữa: thêm khoá thứ
+    # năm ở Django mà quên chỗ này thì bài R3 ĐỎ, cùng lúc với
     # `apps/web/e2e/don-vi/ban-sao-python.spec.ts`.
-    "reactions", "len", "xuong", "lua", "bang", "trung",
+    "reactions", "ro_rang", "co_nguon", "can_them", "lieu",
     # figures
     "label", "value",
     # trích

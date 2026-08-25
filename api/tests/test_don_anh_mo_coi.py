@@ -160,3 +160,74 @@ def test_chay_tren_kho_rong_khong_no(kho_anh):
     """Thư mục chưa tồn tại (chưa ai upload lần nào) — `listdir` ném, lệnh phải nuốt."""
     ra = don(tuoi_toi_thieu=0)
     assert "0 file đã xoá" in ra
+
+
+@pytest.mark.django_db
+def test_avatar_KHONG_bi_coi_la_mo_coi(kho_anh):
+    """Avatar (2026-08-24) dùng CHUNG `anh/` + `anh-thumb/` với ảnh mốc nhưng khoá của nó
+    nằm ở `User.avatar_khoa`, KHÔNG có hàng `MocAnh`.
+
+    Thiếu whitelist thì lệnh coi mọi avatar cũ hơn 24 giờ là mồ côi và XOÁ THẬT — mất
+    ảnh đại diện của cả cộng đồng trong một lượt cron. Bài đo này là cái chuông cho đúng
+    dòng `hop_le_hien.update(User…avatar_khoa)` trong lệnh.
+    """
+    from core.avatar import dat_avatar
+
+    phuc_vu, _ = kho_anh
+    u = dung_user("co_avatar")
+    dat_avatar(user=u, anh=xu_ly_anh_tai_len(anh_byte()))
+    khoa = u.avatar_khoa
+    assert file_trong(phuc_vu) == {khoa}
+
+    ra = don(tuoi_toi_thieu=0)
+
+    assert file_trong(phuc_vu) == {khoa}, "avatar bị xoá nhầm như mồ côi"
+    assert "0 file đã xoá" in ra
+    # Avatar không có `MocAnh` nên chiều "hàng còn/file mất" (chỉ lặp `MocAnh`) không đụng
+    # tới nó — không báo động giả.
+    assert "hàng thiếu file: 0" in ra
+
+
+@pytest.mark.django_db
+def test_anh_NOI_DUNG_KHONG_bi_coi_la_mo_coi(kho_anh):
+    """Ảnh nhúng trong `Moc.body` (2026-08-24) — loài thứ BA dùng chung `anh/`.
+
+    Nó không có hàng `MocAnh` (không thuộc mốc nào lúc tải lên) và không nằm ở
+    `User.avatar_khoa`; khoá của nó ở bảng `AnhNoiDung`. Thiếu whitelist thì mọi ảnh giữa
+    bài cũ hơn 24 giờ bị XOÁ THẬT và bài viết thủng lỗ — người đọc thấy `<img>` gãy, còn
+    lệnh dọn thì báo "đã xoá n file mồ côi", nghe như đúng việc của nó.
+
+    Bài đo này là cái chuông cho đúng dòng `hop_le_hien.update(AnhNoiDung…)`.
+    """
+    from core.anh_noi_dung import luu_anh_noi_dung
+
+    phuc_vu, _ = kho_anh
+    u = dung_user("nguoi_nhung_anh")
+    hang = luu_anh_noi_dung(user=u, anh=xu_ly_anh_tai_len(anh_byte()))
+    assert file_trong(phuc_vu) == {hang.khoa_luu_tru}
+
+    ra = don(tuoi_toi_thieu=0)
+
+    assert file_trong(phuc_vu) == {hang.khoa_luu_tru}, "ảnh nội dung bị xoá nhầm như mồ côi"
+    assert "0 file đã xoá" in ra
+    assert "hàng thiếu file: 0" in ra
+
+
+@pytest.mark.django_db
+def test_anh_noi_dung_mat_hang_thi_LAI_la_mo_coi(kho_anh):
+    """Đối chứng — nếu không có bài này thì whitelist trên có thể là "giữ hết".
+
+    Xoá hàng `AnhNoiDung` mà để file lại (ca thật: ai đó dọn hàng bằng `shell`) ⇒ file
+    quay về đúng định nghĩa mồ côi và phải bị xoá.
+    """
+    from core.anh_noi_dung import luu_anh_noi_dung
+    from core.models.moc import AnhNoiDung
+
+    phuc_vu, _ = kho_anh
+    u = dung_user("nguoi_nhung_anh_2")
+    hang = luu_anh_noi_dung(user=u, anh=xu_ly_anh_tai_len(anh_byte()))
+    AnhNoiDung.objects.filter(pk=hang.pk).delete()
+
+    don(tuoi_toi_thieu=0)
+
+    assert file_trong(phuc_vu) == set()

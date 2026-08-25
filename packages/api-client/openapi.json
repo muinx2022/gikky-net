@@ -1,6 +1,44 @@
 {
   "components": {
     "schemas": {
+      "AnhNoiDungOut": {
+        "description": "Ảnh vừa tải lên để **nhúng thẳng vào thân bài** — `POST /me/anh` (2026-08-24).\n\nHình dạng cố tình KHÁC `AnhOut`, và khác đúng ở chỗ nói lên bản chất: không `id`\n(không có gì để gọi lại — không có cửa `DELETE`, xem docstring endpoint), không\n`position` (không có gallery để xếp), không `url_thumb` (ảnh giữa bài đọc bằng bản\nchính), không `exif_taken_at` (nó là gợi ý cho `occurred_at` của MỐC, mà cửa này chạy\ntrước khi mốc tồn tại). Còn lại đúng ba trường editor cần.\n\n`width`/`height` chứ không `w`/`h` như `AnhOut`: chúng đi thẳng vào thuộc tính cùng\ntên của node ảnh trong Tiptap, và một lượt đổi tên ở tầng frontend là đúng loại lệch\nkhông ai nhớ. Kích thước là của ảnh **đã tái mã hoá** (`core/anh.py` thu về cạnh\n`CANH_TOI_DA`), tức của đúng file đang được phục vụ.",
+        "properties": {
+          "height": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          },
+          "width": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Width"
+          }
+        },
+        "required": [
+          "url",
+          "width",
+          "height"
+        ],
+        "title": "AnhNoiDungOut",
+        "type": "object"
+      },
       "AnhOut": {
         "description": "Một ảnh trong gallery của mốc — Phase 5.\n\n**Không trả `khoa_luu_tru` ra ngoài.** Client cần URL, và URL là thứ `STORAGES` sinh\nra; trả thêm khoá thô là mời frontend tự ghép đường dẫn, rồi ngày đổi sang R2 (nơi\nURL có chữ ký và hạn dùng) thì bản ghép tay ấy vẫn \"chạy\" ở dev và chết trên prod.\n\n`w`/`h` là kích thước ảnh **đã lưu**, không phải file gốc — chúng dùng để đặt\n`width`/`height` trên thẻ `<img>` chống layout shift, nên phải khớp đúng file đang\nđược phục vụ. `null` chỉ xảy ra với hàng cũ ghi trước Phase 5 (không có hàng nào).\n\n`exif_taken_at` là ngày chụp **server** đọc từ file gốc trước khi tái mã hoá xoá sạch\nEXIF. Nó là *gợi ý* cho `occurred_at`, không phải nguồn của nó: PLAN nguyên tắc 3 nói\n`occurred_at` do người dùng đặt, và một tấm ảnh chụp lại màn hình cũ có ngày chụp\nchẳng liên quan gì tới ngày sự việc.",
         "properties": {
@@ -451,6 +489,44 @@
         "title": "DanhDauDaDocIn",
         "type": "object"
       },
+      "DatAnIn": {
+        "description": "Body của mọi endpoint ẩn/gỡ ẩn.\n\n**Một endpoint đặt-trạng-thái thay vì hai endpoint `hide`/`unhide`** — hai chiều nhận\ncùng bộ đầu vào, nên tách ra chỉ nhân đôi số chỗ phải kiểm quyền. Và nó **idempotent**:\ngửi `an=true` hai lần cho ra cùng một trạng thái.",
+        "properties": {
+          "an": {
+            "title": "An",
+            "type": "boolean"
+          },
+          "ly_do": {
+            "default": "",
+            "title": "Ly Do",
+            "type": "string"
+          }
+        },
+        "required": [
+          "an"
+        ],
+        "title": "DatAnIn",
+        "type": "object"
+      },
+      "DatKhoaMachIn": {
+        "description": "Body của `POST /machs/{id}/khoa`.\n\n`khoa` là **trục riêng, không phải `status`** (PLAN 5.10, docstring `Mach`): mạch bị\nkhoá vẫn đọc được nhưng cấm mọi tương tác, còn `closed` là tác giả tự đóng sổ.",
+        "properties": {
+          "khoa": {
+            "title": "Khoa",
+            "type": "boolean"
+          },
+          "ly_do": {
+            "default": "",
+            "title": "Ly Do",
+            "type": "string"
+          }
+        },
+        "required": [
+          "khoa"
+        ],
+        "title": "DatKhoaMachIn",
+        "type": "object"
+      },
       "DongSoIn": {
         "description": "Đóng sổ — `POST /machs/{id}/close`. `ket_qua` tuỳ chọn, ≤40 ký tự (PLAN 5.1).\n\nThuần hiển thị, không validate ngữ nghĩa — cùng triết lý với `figures`.",
         "properties": {
@@ -563,6 +639,17 @@
       "HoSoOut": {
         "description": "Hồ sơ công khai `/u/<username>` — PLAN 5.9.\n\n**`machs` bị CẮT ở `?limit=` (mặc định 20, tối đa 50) và hồ sơ KHÔNG có cursor.**\nNgười có nhiều mạch hơn thế thì phần dôi ra không lấy tiếp được bằng đường nào — đừng\nđọc `machs` như \"toàn bộ mạch của người này\", và đừng suy `so_mach` từ `len(machs)`:\n`so_mach` đếm cả phần bị cắt.\n\nCảnh báo đó nằm ở docstring CLASS chứ không ở comment `#:` của trường là có lý do:\n`tests/test_hop_dong_openapi.py` chứng minh comment `#:` **không ra tới**\n`openapi.json`, nên chỉ docstring class mới tới được tay người dùng API.\n\n`so_mach`, `so_moc`, `so_binh_luan` đếm **nội dung đọc được**: nội dung đã xoá, bị mod\nẩn, hoặc nằm trong một mạch đã bị mod ẩn đều không tính.\n\n**`duoc_trich` KHÔNG cùng luật đó**, và khác biệt là chủ đích: nó soi gương đúng khối\ntrích trên thẻ mốc. Mạch bị mod ẩn, mốc nhận trích bị ẩn hoặc xoá, hay bình luận bị\n**mod ẩn** đều làm khối trích biến mất ⇒ không đếm. Nhưng tác giả **tự xoá** bình luận\nthì blockquote giữ nguyên body (PLAN 5.6, \"sổ không-xoá-được\" chống tác giả rút chữ)\n⇒ `duoc_trich` **không đổi**.",
         "properties": {
+          "avatar_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Url"
+          },
           "bio": {
             "title": "Bio",
             "type": "string"
@@ -608,6 +695,7 @@
           "username",
           "display_name",
           "bio",
+          "avatar_url",
           "date_joined",
           "so_mach",
           "so_moc",
@@ -616,6 +704,25 @@
           "machs"
         ],
         "title": "HoSoOut",
+        "type": "object"
+      },
+      "KetQuaDoiTrangThaiOut": {
+        "description": "Kết quả CHUNG của mọi hành động moderation bật/tắt một trạng thái.\n\nHai trường, và cả hai đều cần:\n\n- `da_doi` — hành động này có đổi gì không. Bấm \"ẩn\" lần thứ hai trả `false`, và đó\n  **không** phải lỗi: `core/ghi.py` cố ý không reset `hidden_at` (mất mốc thời gian\n  moderation thật) và không đẻ dòng `AuditLog` thứ hai. UI đọc trường này để không\n  báo \"đã ẩn xong\" cho một cú bấm chẳng làm gì;\n- `dang_bat` — trạng thái SAU khi gọi. Đây là thứ UI vẽ, và nó đúng ở cả hai nhánh\n  của `da_doi` — nên hai mod bấm cùng lúc vẫn thấy cùng một màn hình.",
+        "properties": {
+          "da_doi": {
+            "title": "Da Doi",
+            "type": "boolean"
+          },
+          "dang_bat": {
+            "title": "Dang Bat",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "da_doi",
+          "dang_bat"
+        ],
+        "title": "KetQuaDoiTrangThaiOut",
         "type": "object"
       },
       "KetQuaTimKiemOut": {
@@ -1255,6 +1362,10 @@
             ],
             "title": "Body"
           },
+          "body_dinh_dang": {
+            "title": "Body Dinh Dang",
+            "type": "string"
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
@@ -1374,6 +1485,7 @@
           "sua_im_lang_den",
           "loai",
           "body",
+          "body_dinh_dang",
           "question_for_crowd",
           "figures",
           "edited_at",
@@ -1601,6 +1713,17 @@
       "NguoiDungTomTatOut": {
         "description": "Tác giả, ở mức đủ để render một dòng chữ ký.",
         "properties": {
+          "avatar_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Url"
+          },
           "display_name": {
             "title": "Display Name",
             "type": "string"
@@ -1612,7 +1735,8 @@
         },
         "required": [
           "username",
-          "display_name"
+          "display_name",
+          "avatar_url"
         ],
         "title": "NguoiDungTomTatOut",
         "type": "object"
@@ -1687,7 +1811,7 @@
         "type": "object"
       },
       "ReactionIn": {
-        "description": "React / đổi / rút — `POST /mocs/{id}/reactions` (PLAN 5.7).\n\nBộ CỐ ĐỊNH `len · xuong · lua · bang · trung` (📈📉🔥🧊🎯). `emoji = null` là **rút**.",
+        "description": "React / đổi / rút — `POST /mocs/{id}/reactions` (PLAN 5.7).\n\nBộ CỐ ĐỊNH `ro_rang · co_nguon · can_them · lieu` (🧠📎❓🔥) — **phản hồi về BÀI\nVIẾT**, không về giá; xem `core/models/tuong_tac.py::Reaction`. `emoji = null` là **rút**.",
         "properties": {
           "emoji": {
             "anyOf": [
@@ -1808,6 +1932,25 @@
         "title": "SubChiTietOut",
         "type": "object"
       },
+      "SubCuaToiOut": {
+        "description": "`GET /subs/{slug}/me` — nửa per-user của trang chuyên mục.\n\nCùng khuôn và cùng lý do với `MachCuaToiOut`: trang `/s/<slug>` render ở server và\n**cache được** (PLAN 8.4), nên \"tôi có theo chuyên mục này không\" **bắt buộc** hỏi\nriêng ở trình duyệt. Nhét `following` vào `SubChiTietOut` là người thứ hai mở cùng URL\nnhận trạng thái của người thứ nhất — HTTP 200, không có gì đỏ.\n\n**Khách nhận 200** với `dang_nhap=false, following=false`, không phải 401.",
+        "properties": {
+          "dang_nhap": {
+            "title": "Dang Nhap",
+            "type": "boolean"
+          },
+          "following": {
+            "title": "Following",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "dang_nhap",
+          "following"
+        ],
+        "title": "SubCuaToiOut",
+        "type": "object"
+      },
       "SubTomTatOut": {
         "properties": {
           "slug": {
@@ -1848,6 +1991,25 @@
           "last_seen_entry_seq"
         ],
         "title": "TheoMachOut",
+        "type": "object"
+      },
+      "TheoSubOut": {
+        "description": "Kết quả `POST`/`DELETE /subs/{slug}/theo` — user chốt 2026-08-24.\n\nTrả **trạng thái sau khi ghi**, không trả \"đã đổi hay chưa\": hai endpoint đều\nidempotent, nên \"đã đổi\" là một câu client không dùng được vào việc gì, còn `following`\nthì client vẽ thẳng lên nút.",
+        "properties": {
+          "following": {
+            "title": "Following",
+            "type": "boolean"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "slug",
+          "following"
+        ],
+        "title": "TheoSubOut",
         "type": "object"
       },
       "ThongBaoOut": {
@@ -1929,6 +2091,17 @@
       "ToiOut": {
         "description": "`GET /me` — người đang đăng nhập là ai (thêm ở Phase 2, PLAN mục 7).\n\n**Không cache được, và không được nướng vào page cache** (PLAN 8.4 điểm 4): đây là\nresponse per-user thuần tuý. Khác `GET /machs/{id}/me` ở chỗ nó không phụ thuộc mạch\nnào — header cần biết \"ai đang đăng nhập\" trên MỌI trang.\n\nKhách chưa đăng nhập nhận **200** kèm `dang_nhap = false`, không phải 401: header là\nthứ render trên mọi trang, và một endpoint trả lỗi cho trạng thái bình thường nhất của\nhệ thống sẽ đẩy frontend vào chỗ phải coi lỗi là chuyện thường.\n\n`google_bat` là **cấu hình server**, không phải trạng thái người dùng, và nó nằm ở đây\nvì đúng một lý do: PLAN mục 4 cấm nút vĩnh viễn không bấm được, nên trang đăng nhập\nphải biết có nên **render** nút Google hay không — `false` ⇒ nút **vắng mặt**, không\nphải `disabled`.",
         "properties": {
+          "avatar_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Url"
+          },
           "dang_nhap": {
             "title": "Dang Nhap",
             "type": "boolean"
@@ -1991,6 +2164,7 @@
           "dang_nhap",
           "username",
           "display_name",
+          "avatar_url",
           "email",
           "email_da_xac_thuc",
           "la_staff",
@@ -2002,8 +2176,32 @@
         "type": "object"
       },
       "ToiSuaIn": {
-        "description": "`PATCH /me` — tuỳ chọn của chính người đang đăng nhập (PLAN 5.8).\n\n**PATCH thật**: trường vắng mặt nghĩa là không đổi, nên `{}` là một request hợp lệ\nkhông ghi gì. Tách khỏi `ToiOut` chứ không dùng chung một schema hai chiều: `ToiOut`\nmang `username`, `email`, `la_staff`, `google_bat` — không cái nào người dùng đặt\nđược ở đây, và một schema hai chiều là lời mời nhận đại cả bốn.\n\nHôm nay đúng **một** trường. Danh tính (`display_name`, `bio`) chưa mở ở cửa này: nó\nlà nội dung công khai, cần luật độ dài + sanitize riêng, và trộn nó vào cùng lượt vá\nvới một cái công tắc boolean là cách phần khó bị làm vội.",
+        "description": "`PATCH /me` — tuỳ chọn + hồ sơ của chính người đang đăng nhập (PLAN 5.8, 5.9).\n\n**PATCH thật**: trường vắng mặt nghĩa là không đổi, nên `{}` là một request hợp lệ\nkhông ghi gì. Tách khỏi `ToiOut` chứ không dùng chung một schema hai chiều: `ToiOut`\nmang `username`, `email`, `la_staff`, `google_bat`, `avatar_url` — không cái nào người\ndùng đặt được ở cửa NÀY (avatar đi qua `POST /me/avatar`), và một schema hai chiều là\nlời mời nhận đại cả bốn.\n\n⚠ **`display_name`/`bio`: chuỗi RỖNG `\"\"` là giá trị hợp lệ — nó XOÁ trường**, và nó\nKHÁC `null`. Handler lọc `v is not None` (xem `api/toi.py::sua_toi`), nên `{\"bio\": \"\"}`\nvẫn ghi (xoá bio), trường VẮNG MẶT thì không đụng, còn `null` gửi tường minh bị bỏ qua.\nCửa này KHÔNG là chỗ đặt avatar — avatar là file, đi qua `POST`/`DELETE /me/avatar`.",
         "properties": {
+          "bio": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bio"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
           "nhan_digest": {
             "anyOf": [
               {
@@ -2239,6 +2437,11 @@
       }
     },
     "securitySchemes": {
+      "ChiModTrenV1": {
+        "in": "cookie",
+        "name": "sessionid",
+        "type": "apiKey"
+      },
       "DangNhap": {
         "in": "cookie",
         "name": "sessionid",
@@ -3664,7 +3867,7 @@
         ]
       },
       "patch": {
-        "description": "Đổi tuỳ chọn của **chính phiên đang gọi**. Hôm nay đúng một trường: `nhan_digest`.\n\n**Quyền: bất kỳ ai đã đăng nhập, và chỉ ghi vào hàng của chính họ.** Không có tham số\nnào chỉ ra người khác, nên không có đường nào đặt tuỳ chọn hộ ai.\n\n### Vì sao cửa này phải tồn tại (L14)\n\nPLAN 5.8 chốt digest tuần là **opt-in**, và `User.nhan_digest` mặc định `False` đúng\ntheo đó. Nhưng cho tới lượt vá V1, `grep \"nhan_digest\"` trong `api/` và `apps/` ra\n**0 kết quả**: không endpoint, không form, không trang cài đặt. Nghĩa là toàn bộ\n`core/digest.py`, lệnh `gui_digest` và lịch 8:00 thứ Bảy chạy trên một tập người nhận\n**luôn rỗng về cấu trúc** — commit `64b1a94` gọi đó là \"cắm nguồn người nhận cho\ndigest\", trong khi cái nguồn ấy không ai bật được.\n\n**PATCH thật**: trường vắng mặt là không đổi. Gọi với thân rỗng `{}` là hợp lệ và\nkhông ghi gì — nó chính là cách client hỏi \"trạng thái hiện tại\" mà không cần một\nendpoint thứ hai.\n\n⚠ Trang `/cai-dat` của `apps/web` **chưa có** (nợ có tên `TRANG-CAI-DAT`), nên hôm nay\ncửa này chưa có nút nào bấm vào nó. Đó là chủ đích của lượt vá V1 — mở cửa trước, UI\nthuộc lượt sau — chứ không phải một endpoint bỏ quên.",
+        "description": "Đổi tuỳ chọn + hồ sơ của **chính phiên đang gọi**: `nhan_digest`, `display_name`,\n`bio`. Avatar KHÔNG ở đây — nó là file, đi qua `POST`/`DELETE /me/avatar`.\n\n**Quyền: bất kỳ ai đã đăng nhập, và chỉ ghi vào hàng của chính họ.** Không có tham số\nnào chỉ ra người khác, nên không có đường nào đặt tuỳ chọn hộ ai.\n\n### Vì sao cửa này phải tồn tại (L14)\n\nPLAN 5.8 chốt digest tuần là **opt-in**, và `User.nhan_digest` mặc định `False` đúng\ntheo đó. Nhưng cho tới lượt vá V1, `grep \"nhan_digest\"` trong `api/` và `apps/` ra\n**0 kết quả**: không endpoint, không form, không trang cài đặt. Nghĩa là toàn bộ\n`core/digest.py`, lệnh `gui_digest` và lịch 8:00 thứ Bảy chạy trên một tập người nhận\n**luôn rỗng về cấu trúc** — commit `64b1a94` gọi đó là \"cắm nguồn người nhận cho\ndigest\", trong khi cái nguồn ấy không ai bật được.\n\n**PATCH thật**: trường vắng mặt là không đổi. Gọi với thân rỗng `{}` là hợp lệ và\nkhông ghi gì — nó chính là cách client hỏi \"trạng thái hiện tại\" mà không cần một\nendpoint thứ hai.\n\n⚠ Trang `/cai-dat` của `apps/web` **chưa có** (nợ có tên `TRANG-CAI-DAT`), nên hôm nay\ncửa này chưa có nút nào bấm vào nó. Đó là chủ đích của lượt vá V1 — mở cửa trước, UI\nthuộc lượt sau — chứ không phải một endpoint bỏ quên.",
         "operationId": "sua_toi",
         "parameters": [],
         "requestBody": {
@@ -3725,6 +3928,444 @@
           }
         ],
         "summary": "Sua Toi",
+        "tags": [
+          "tai-khoan"
+        ]
+      }
+    },
+    "/api/v1/me/anh": {
+      "post": {
+        "description": "Tải MỘT ảnh để nhúng thẳng vào thân bài (multipart). Trả `{url, width, height}`.\n\n**Không gắn mốc nào**, và đó là cả lý do cửa này tồn tại: người ta bấm nút ảnh trong\nlúc còn đang soạn, tức trước khi `Moc` có id — mà `POST /mocs/{id}/anh` đòi `moc_id`\nđã tồn tại. `auth=dang_nhap` là toàn bộ phân quyền; không có chủ nào để đối chiếu.\n\n`url` là đường dẫn `/media/...` mà editor nhét thẳng vào `<img src>`. Nó phải giữ\nnguyên tiền tố ấy tới lúc đăng bài: `core/lam_sach_html.py` **gỡ cả thẻ** `img` nào có\n`src` không trỏ vào kho của site (ảnh ngoài site là pixel theo dõi + mixed content).\n\n**Hạn mức 30 ảnh / người / ngày lịch VN** (`settings.HAN_MUC_ANH_NOI_DUNG_MOI_USER_NGAY`)\n⇒ 429 `qua_han_muc_anh_noi_dung` kèm `thu_lai_tu` = nửa đêm giờ VN kế tiếp. Không có\nnó thì đây là một dịch vụ lưu trữ file miễn phí: cửa duy nhất của cả API nhận file mà\nkhông gắn với một hàng có sẵn nào để mà đếm.\n\nẢnh đi qua đúng bảy phép kiểm của `POST /mocs/{id}/anh` (`core/anh.py`): nhận dạng\nbằng NỘI DUNG, tái mã hoá xoá polyglot + EXIF, allowlist JPEG/PNG/WebP. **Chỉ ảnh** —\nkhông video (chốt của plan): một cửa nhận video là bài toán khác hẳn (dung lượng,\ntranscode, streaming), và mở nó bằng một dòng `accept` là mở nhầm.\n\n**Không có cửa gỡ.** Ảnh nội dung gỡ khỏi bài bằng cách sửa `body`, và file ở lại —\ncùng ảnh ấy có thể còn nằm trong một bản `MocRevision` cũ hoặc trong bài khác, nên\nmột `DELETE /me/anh/{id}` sẽ là cái nút phá nội dung đã đăng. Đổi lại là một khoản nợ\nghi rõ ở `core/models/moc.py::AnhNoiDung`: ảnh tải lên rồi bỏ bài không được thu hồi.\n\n`Cache-Control: no-store` vì cùng lý do `POST /me/avatar`: response nói về hạn mức và\ntài sản của **một phiên**, một proxy giữ lại là trả URL của người này cho người kia.",
+        "operationId": "tai_anh_noi_dung",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "file": {
+                    "format": "binary",
+                    "title": "File",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "file"
+                ],
+                "title": "FileParams",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnhNoiDungOut"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiThoiGianOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Tai Anh Noi Dung",
+        "tags": [
+          "anh"
+        ]
+      }
+    },
+    "/api/v1/me/avatar": {
+      "delete": {
+        "description": "Gỡ ảnh đại diện — rỗng cột + xoá file thật. Trả `GET /me` mới, `no-store`.\n\n**Idempotent**: gỡ khi vốn không có avatar vẫn trả 200 với `avatar_url = null` — client\nkhông phải biết trước mình có avatar hay không mới dám bấm gỡ. `no-store` vì cùng lý do\n`POST`: nó đổi `GET /me`.",
+        "operationId": "xoa_avatar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToiOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Xoa Avatar Api",
+        "tags": [
+          "tai-khoan"
+        ]
+      },
+      "post": {
+        "description": "Đặt/đổi ảnh đại diện (multipart). Trả `GET /me` mới, `Cache-Control: no-store`.\n\nẢnh đi qua đúng bảy phép kiểm của `POST /mocs/{id}/anh`: nhận dạng bằng NỘI DUNG (tên\nfile + `Content-Type` bị bỏ qua), tái mã hoá xoá polyglot + EXIF, allowlist JPEG/PNG/\nWebP. Ảnh hỏng / định dạng lạ → 400, quá nặng → 413 — cùng bộ mã với `tai_anh_moc`,\nnên UI dùng lại đúng một bộ câu lỗi.",
+        "operationId": "dat_avatar",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "file": {
+                    "format": "binary",
+                    "title": "File",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "file"
+                ],
+                "title": "FileParams",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToiOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Dat Avatar Api",
+        "tags": [
+          "tai-khoan"
+        ]
+      }
+    },
+    "/api/v1/me/da-vote": {
+      "get": {
+        "description": "Mạch **tôi đã vote bài gốc**, mới vote trước — tab **Đã vote**.\n\n    \"Vote một mạch\" ở gikky là vote **mốc 1** (bài gốc — `Mach.diem_bai_goc`), đúng đích\n    mà mũi tên trên thẻ feed trỏ tới. Phiếu bỏ cho mốc 2 trở đi hay cho một bình luận\n    **không** đưa mạch vào danh sách này: chúng là phiếu cho một câu nói bên trong mạch,\n    không phải cho bài.\n\n    Cả phiếu lên và phiếu xuống đều tính — đây là \"đã vote\", không phải \"đã thích\". Rút\n    phiếu (`POST /votes` với `value = 0`) xoá hàng vote, nên mạch rời khỏi danh sách ngay.\n\n    Sắp theo **thời điểm tôi vote**, không theo lúc mạch ra đời.\n\n    **Per-user tuyệt đối — `Cache-Control: no-store`** (PLAN 8.4 điểm 4). Khách nhận 401\n    `chua_dang_nhap`.\n\n    `?cursor=` là cursor keyset lấy từ `cursor_ke_tiep` của trang trước; `null` là hết.\n    `?limit=` tối đa 50. Mạch bị mod ẩn không xuất hiện.\n",
+        "operationId": "liet_ke_da_vote",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Liet Ke Da Vote",
+        "tags": [
+          "tai-khoan"
+        ]
+      }
+    },
+    "/api/v1/me/dang-theo": {
+      "get": {
+        "description": "Mạch **tôi đang theo**, mới theo trước — tab **Đang theo**.\n\n    Sắp theo **thời điểm tôi bấm theo**, không theo lúc mạch ra đời và cũng không theo\n    mốc mới nhất: danh sách này là cái kệ sách của người dùng, không phải một feed.\n\n    Bỏ theo (`DELETE /machs/{id}/follow`) xoá hàng, nên mạch rời khỏi danh sách ngay.\n\n    **Per-user tuyệt đối — `Cache-Control: no-store`** (PLAN 8.4 điểm 4). Khách nhận 401\n    `chua_dang_nhap`.\n\n    `?cursor=` là cursor keyset lấy từ `cursor_ke_tiep` của trang trước; `null` là hết.\n    `?limit=` tối đa 50. Mạch bị mod ẩn không xuất hiện.\n",
+        "operationId": "liet_ke_dang_theo",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Liet Ke Dang Theo",
+        "tags": [
+          "tai-khoan"
+        ]
+      }
+    },
+    "/api/v1/me/subs": {
+      "get": {
+        "description": "Chuyên mục **tôi** đang theo — nguồn của tab \"Chuyên mục\" trong hồ sơ.\n\n**Mới theo trước** (`-created_at` trên `TheoSub`), không sắp theo `slug`: đây là danh\nsách để quản lý, và thứ vừa thêm là thứ người ta hay muốn sửa lại nhất. Khác\n`GET /subs` — cái đó là **bản đồ** nên sắp theo `slug` cho ổn định.\n\n**Không phân trang, có chủ đích.** Một người theo hàng chục chuyên mục là nhiều, và\n`GET /subs` (toàn bộ chuyên mục của site) cũng đã không phân trang vì cùng lý do — v1\ntạo sub bằng tay qua admin. Ngày tập này dài ra thì cả hai cùng phải đổi.\n\nTrả `SubChiTietOut` y hệt `GET /subs` để tab hồ sơ vẽ được cùng một loại thẻ: dùng\nkiểu riêng ở đây là hai schema gần giống nhau, và cái thứ hai sẽ lệch ở lần sửa sau.",
+        "operationId": "liet_ke_sub_dang_theo",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SubChiTietOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Liet Ke Sub Dang Theo",
+        "tags": [
+          "tai-khoan"
+        ]
+      }
+    },
+    "/api/v1/me/subs-mod": {
+      "get": {
+        "description": "Chuyên mục **tôi được phân công làm mod** — nguồn của trang `/khu-mod`.\n\n## ⚠ Danh sách này KHÔNG phải danh sách quyền\n\n`ModSub` ở lượt 2026-08-24 **chưa cho thêm quyền gì** — docstring của model nói thẳng,\nvà bốn cửa `/api/v1/mod/*` vẫn kiểm `is_staff` chứ không kiểm phân công theo sub. Nên\nmột người có tên ở đây mà **không** `is_staff` sẽ mở được trang `/khu-mod`, đi tới\nchuyên mục của mình, và **không thấy công cụ mod nào**.\n\nĐó là sự thật của hệ thống hôm nay, không phải một lỗi của endpoint này. Nối quyền\ntheo-sub là thay đổi bảo mật, có plan riêng\n(`plans/2026-08-24-mod-chuyen-muc.md` §0) — đừng \"tiện tay\" nới `ChiModTrenV1` ở một\nlượt giao diện.\n\n## Vì sao ở `api/toi.py` chứ không `api/mod.py`\n\n`api/mod.py` tự khai phạm vi **đúng bốn cửa GHI**, và có một bài đo ghim con số bốn\n(`test_be_mat_mod_tren_v1_dung_BON_cua`). Thêm một cửa đọc vào đó là làm mờ đúng cái\nranh giới bài đo ấy sinh ra để giữ. Đây là một lượt đọc `/me/*`, và `/me/*` ở file này.\n\nSắp theo `slug` (không theo lúc phân công): đây là một **bản đồ công việc**, cùng lý lẽ\n`GET /subs` — thứ tự đổi mỗi lần có phân công mới thì không ai nhớ được chỗ nào ở đâu.",
+        "operationId": "liet_ke_sub_toi_lam_mod",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SubChiTietOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Liet Ke Sub Toi Lam Mod",
         "tags": [
           "tai-khoan"
         ]
@@ -4068,7 +4709,7 @@
     },
     "/api/v1/mocs/{moc_id}/reactions": {
       "post": {
-        "description": "Reaction 1 chạm trên mốc — bộ **CỐ ĐỊNH** 📈📉🔥🧊🎯 (PLAN 5.7).\n\n**Quyền: bất kỳ ai đã đăng nhập**, kể cả trên mốc của chính mình. Mạch bị mod khoá ⇒\n403; mốc đã bị gỡ ⇒ 409.\n\nMột user **một** reaction mỗi mốc (`UNIQUE (user, moc)`) — đổi là `UPDATE`, không phải\nthêm hàng: đây là \"bậc thang tham gia rẻ hơn viết\", không phải phiếu bầu nhiều lựa\nchọn. `emoji = null` nghĩa là **rút**.\n\nTrả về **đủ 5 khoá kể cả khoá đang bằng 0**: UI vẽ nguyên bộ, và một khoá vắng mặt\ntrong response sẽ thành một icon nhấp nháy xuất hiện/biến mất theo lượt bấm.\nLưu khoá không dấu (`len`/`xuong`/…) chứ không lưu emoji — đổi bộ icon sau này không\nphải migrate dữ liệu.",
+        "description": "Reaction 1 chạm trên mốc — bộ **CỐ ĐỊNH** 🧠📎❓🔥 (PLAN 5.7, đổi 2026-08-25).\n\n**Quyền: bất kỳ ai đã đăng nhập**, kể cả trên mốc của chính mình. Mạch bị mod khoá ⇒\n403; mốc đã bị gỡ ⇒ 409.\n\nMột user **một** reaction mỗi mốc (`UNIQUE (user, moc)`) — đổi là `UPDATE`, không phải\nthêm hàng: đây là \"bậc thang tham gia rẻ hơn viết\", không phải phiếu bầu nhiều lựa\nchọn. `emoji = null` nghĩa là **rút**.\n\nTrả về **đủ 4 khoá kể cả khoá đang bằng 0**: UI vẽ nguyên bộ, và một khoá vắng mặt\ntrong response sẽ thành một icon nhấp nháy xuất hiện/biến mất theo lượt bấm.\nLưu khoá không dấu (`len`/`xuong`/…) chứ không lưu emoji — đổi bộ icon sau này không\nphải migrate dữ liệu.",
         "operationId": "dat_reaction",
         "parameters": [
           {
@@ -4381,6 +5022,318 @@
         ]
       }
     },
+    "/api/v1/mod/comments/{comment_id}/an": {
+      "post": {
+        "description": "Mod ẩn / gỡ ẩn một bình luận. Idempotent.\n\nGỡ ẩn **không** hồi sinh bình luận mà tác giả đã tự xoá — `deleted_at` là trục khác.\n`Cache-Control: no-store`.",
+        "operationId": "mod_dat_an_binh_luan",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "comment_id",
+            "required": true,
+            "schema": {
+              "title": "Comment Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatAnIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KetQuaDoiTrangThaiOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "ChiModTrenV1": []
+          }
+        ],
+        "summary": "Mod Dat An Binh Luan",
+        "tags": [
+          "mod"
+        ]
+      }
+    },
+    "/api/v1/mod/machs/{mach_id}/an": {
+      "post": {
+        "description": "Mod ẩn / gỡ ẩn cả mạch, ngay trên trang công khai. Idempotent.\n\nCùng hành động và cùng kết quả với `POST /api/admin/machs/{id}/an`; cửa này tồn tại vì\nhost công khai không với tới được `/api/admin/*` (PLAN 8.2). `Cache-Control: no-store`.",
+        "operationId": "mod_dat_an_mach",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mach_id",
+            "required": true,
+            "schema": {
+              "title": "Mach Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatAnIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KetQuaDoiTrangThaiOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "ChiModTrenV1": []
+          }
+        ],
+        "summary": "Mod Dat An Mach",
+        "tags": [
+          "mod"
+        ]
+      }
+    },
+    "/api/v1/mod/machs/{mach_id}/khoa": {
+      "post": {
+        "description": "Mod khoá / mở khoá một mạch: đọc được, cấm mọi tương tác (PLAN 5.10). Idempotent.\n\n**Trục riêng, khác \"đóng sổ\" của tác giả** — endpoint này không đụng `status`.\n`Cache-Control: no-store`.",
+        "operationId": "mod_dat_khoa_mach",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mach_id",
+            "required": true,
+            "schema": {
+              "title": "Mach Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatKhoaMachIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KetQuaDoiTrangThaiOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "ChiModTrenV1": []
+          }
+        ],
+        "summary": "Mod Dat Khoa Mach",
+        "tags": [
+          "mod"
+        ]
+      }
+    },
+    "/api/v1/mod/mocs/{moc_id}/an": {
+      "post": {
+        "description": "Mod ẩn / gỡ ẩn một mốc. Idempotent.\n\nMốc bị ẩn **vẫn giữ ô trên spine** kèm nhãn \"mốc đã bị ẩn\" (PLAN 5.2): `seq` bất biến\nnên `entry_count` không lùi. `Cache-Control: no-store`.",
+        "operationId": "mod_dat_an_moc",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "moc_id",
+            "required": true,
+            "schema": {
+              "title": "Moc Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatAnIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KetQuaDoiTrangThaiOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "ChiModTrenV1": []
+          }
+        ],
+        "summary": "Mod Dat An Moc",
+        "tags": [
+          "mod"
+        ]
+      }
+    },
     "/api/v1/notifications": {
       "get": {
         "description": "Chuông poll 60 giây — PLAN 5.8. **Per-user tuyệt đối, KHÔNG BAO GIỜ cache.**\n\n**Quyền: chỉ thông báo của chính người gọi.** Không có tham số nào chỉ ra người khác;\n`user = request.user` nằm ngay trong queryset gốc.\n\nSắp **mới nhất trước**, cursor keyset trên `(created_at, id)`.\n\n⚠ **Khoá này KHÔNG bất biến** *(sửa câu ở lượt vá V1 — L34)*: dedupe `moc_moi` cố ý\nbump `created_at` khi mốc thứ hai trong ngày về (`core/thong_bao.py::bao_moc_moi`),\nnên một hàng đang ở trang 3 có thể nhảy lên trang 1 giữa hai lượt cuộn. Câu cũ ở đây\nkhẳng định *\"khoá BẤT BIẾN\"* rồi hai dòng sau tự mô tả cú bump — và câu đầu là câu\nngười sau sẽ tin.\nHệ quả thật, đọc đúng mức: hàng bị bump **nhảy lên trước** con trỏ, tức đúng ca \"hàng\nmới chèn vào đầu\" mà keyset xử được (không trùng). Cái mất là **có thể sót** — nếu nó\nbị bump sau khi người đọc đã đi qua vị trí cũ, họ không gặp lại nó ở trang sau. Vô hại\nở chuông (dòng ấy đang nằm ở trang 1, chỗ dễ thấy nhất) nhưng đó là một bảo đảm yếu\nhơn `KEYSET-BIEN-DOI` của feed, không phải bảo đảm đầy đủ.\n\n`so_chua_doc` đếm **toàn bộ hộp thư**, không phải trang đang xem: con số trên chấm đỏ\nnói \"bạn có 23 thứ chưa đọc\", tính nó trên một trang 20 dòng thì nó kẹt ở `20` mãi mãi\n— một con số trông hợp lý và luôn sai.\n\n**Không có bộ lọc `?chua_doc=`** ở bản này. Chuông hiện cả đã đọc lẫn chưa đọc trong\nmột dòng thời gian; thêm một chế độ lọc là thêm một trạng thái UI phải nhớ, mà PLAN\n5.8 không đòi.",
@@ -4662,6 +5615,163 @@
         ]
       }
     },
+    "/api/v1/subs/{slug}/me": {
+      "get": {
+        "description": "Tôi có đang theo chuyên mục này không — **không bao giờ cache được**.\n\n**Khách nhận 200**, không phải 401: `dang_nhap=false, following=false`. Cùng lý lẽ\n`GET /machs/{id}/me` và `GET /me` — client gọi nó ở mọi lượt tải trang, và bắt nó phải\nphân biệt \"401 nghĩa là khách\" với \"401 nghĩa là phiên hết hạn\" là đẩy một nhánh lỗi\nvào chỗ vốn không có lỗi nào.\n\nSlug lạ vẫn 404 kể cả với khách: một chuyên mục không tồn tại thì câu trả lời \"bạn\nkhông theo nó\" là câu trả lời sai.",
+        "operationId": "xem_sub_cua_toi",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubCuaToiOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "Xem Sub Cua Toi",
+        "tags": [
+          "sub"
+        ]
+      }
+    },
+    "/api/v1/subs/{slug}/theo": {
+      "delete": {
+        "description": "Bỏ theo chuyên mục. **Idempotent**: bỏ thứ vốn không theo vẫn là 200.\n\nNút \"Hủy\" có ở **hai** chỗ (header chuyên mục và tab \"Chuyên mục\" của hồ sơ). Hai tab\ntrình duyệt cùng mở là chuyện thường, và bắt cái bấm sau ăn 404 là báo lỗi cho đúng\ntrạng thái người dùng vốn đã muốn có.",
+        "operationId": "bo_theo_sub",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TheoSubOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Bo Theo Sub Endpoint",
+        "tags": [
+          "sub"
+        ]
+      },
+      "post": {
+        "description": "Theo chuyên mục. **Idempotent** — bấm lần thứ hai vẫn 200, không dựng hàng thứ hai.\n\n**Quyền: bất kỳ ai đã đăng nhập.** Không có khái niệm \"chuyên mục riêng tư\" ở v1, và\ntheo dõi không sinh chữ, không đổi con số nào của chuyên mục, không ai khác nhìn thấy\n— nên không có gì để chặn. Chỉ ghi vào hàng của chính người gọi.\n\n⚠ `auth=dang_nhap` cũng chính là lớp kiểm **CSRF** (xem chú thích `NinjaAPI` ở\n`api/v1.py`): khai `auth=None` cho một endpoint ghi là mở cửa cho bất kỳ trang web nào\nPOST sang đây bằng cookie phiên của người đang đăng nhập.",
+        "operationId": "theo_sub",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TheoSubOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Theo Sub",
+        "tags": [
+          "sub"
+        ]
+      }
+    },
     "/api/v1/tim-kiem": {
       "get": {
         "description": "Tìm mạch theo tiêu đề, thân bài gốc, các mốc nối sau, kết quả và tên tác giả.\n\nGõ **không dấu vẫn ra kết quả có dấu** (`nhat ky lenh hpg` → *Nhật ký lệnh HPG*), và\nsai một ký tự ở từ dài vẫn ra. Mã chứng khoán ngắn (`HPG`) khớp **chính xác**.\n\n`?sub=<slug>` lọc theo chuyên mục; sub không tồn tại trả 404 `sub_khong_ton_tai`.\n`?sort=lien_quan` (mặc định) xếp theo độ liên quan; `?sort=moi` xếp mới trước.\n`?offset=` + `?limit=` phân trang; `limit` tối đa 50, `offset` tối đa 1000.\n\nMạch bị mod ẩn không xuất hiện. Nội dung của mốc đã xoá hoặc bị mod ẩn không tìm được.\n\nTìm kiếm tạm ngừng (service phụ đang hỏng hoặc chưa cấu hình) ⇒ vẫn **200**, với\n`co_the_tim = false` và danh sách rỗng, để trang gọi có thể nói ra bằng tiếng người.",
@@ -4824,6 +5934,85 @@
           }
         },
         "summary": "Xem Ho So",
+        "tags": [
+          "nguoi-dung"
+        ]
+      }
+    },
+    "/api/v1/users/{username}/machs": {
+      "get": {
+        "description": "Mạch của một người, mới đăng trước — tab **Bài viết** của\n    `/u/<username>`.\n\n    Cùng tập mạch mà `GET /users/{username}` trả kèm hồ sơ, nhưng **lật trang được**:\n    cửa kia cắt ở `limit` mạch và không có đường lấy tiếp.\n\n    Username không tồn tại trả 404 `khong_tim_thay`. Người dùng chưa viết gì trả danh\n    sách rỗng — đó là một câu trả lời, không phải lỗi.\n\n    `?cursor=` là cursor keyset lấy từ `cursor_ke_tiep` của trang trước; `null` là hết.\n    `?limit=` tối đa 50. Mạch bị mod ẩn không xuất hiện.\n",
+        "operationId": "liet_ke_mach_cua_user",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "required": true,
+            "schema": {
+              "title": "Username",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "Liet Ke Mach Cua User",
         "tags": [
           "nguoi-dung"
         ]

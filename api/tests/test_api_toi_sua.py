@@ -5,6 +5,8 @@ Trước lượt vá, `grep "nhan_digest"` trong `api/` và `apps/` ra **0 kết
 lệnh `gui_digest` và lịch 8:00 thứ Bảy chạy trên một tập người nhận luôn rỗng về cấu trúc.
 """
 
+import json
+
 import pytest
 
 from core.models import User
@@ -82,3 +84,81 @@ def test_bat_xong_thi_digest_THAT_SU_co_nguoi_nhan(client, nguoi_b, mach_cua_a):
     client.force_login(nguoi_b)
     dat(client, "/api/v1/me", {"nhan_digest": True}, status=200, method="patch")
     assert [n.user.pk for n in nguoi_nhan_digest()] == [nguoi_b.pk]
+
+
+# --- hồ sơ: display_name + bio (2026-08-24) ----------------------------------
+
+
+@pytest.mark.django_db
+def test_sua_duoc_display_name_va_bio(client, nguoi_a):
+    client.force_login(nguoi_a)
+    ra = dat(
+        client,
+        "/api/v1/me",
+        {"display_name": "Cô Ba Sài Gòn", "bio": "Đọc bảng lâu năm."},
+        status=200,
+        method="patch",
+    )
+    assert ra["display_name"] == "Cô Ba Sài Gòn"
+    u = User.objects.get(pk=nguoi_a.pk)
+    assert u.display_name == "Cô Ba Sài Gòn" and u.bio == "Đọc bảng lâu năm."
+    # Đọc lại qua hồ sơ công khai — cùng nguồn.
+    ho_so = lay(client, f"/api/v1/users/{nguoi_a.username}")
+    assert ho_so["display_name"] == "Cô Ba Sài Gòn" and ho_so["bio"] == "Đọc bảng lâu năm."
+
+
+@pytest.mark.django_db
+def test_gui_bio_rong_thi_XOA_bio(client, nguoi_a):
+    """Chuỗi `""` KHÁC `null`: nó là cách xoá bio. `null`/vắng mặt thì không đụng."""
+    User.objects.filter(pk=nguoi_a.pk).update(bio="Bio cũ cần xoá.")
+    client.force_login(nguoi_a)
+
+    dat(client, "/api/v1/me", {"bio": ""}, status=200, method="patch")
+
+    assert User.objects.get(pk=nguoi_a.pk).bio == ""
+
+
+@pytest.mark.django_db
+def test_truong_vang_mat_khong_dung_toi_bio(client, nguoi_a):
+    """PATCH thật: sửa `display_name` không được đụng `bio` đang có."""
+    User.objects.filter(pk=nguoi_a.pk).update(bio="Giữ nguyên bio này.")
+    client.force_login(nguoi_a)
+
+    dat(client, "/api/v1/me", {"display_name": "Tên Mới"}, status=200, method="patch")
+
+    u = User.objects.get(pk=nguoi_a.pk)
+    assert u.display_name == "Tên Mới" and u.bio == "Giữ nguyên bio này."
+
+
+@pytest.mark.django_db
+def test_bio_null_tuong_minh_khong_doi_gi(client, nguoi_a):
+    """`null` ở đây là "không đụng" (đối xứng `nhan_digest`), không phải "xoá"."""
+    User.objects.filter(pk=nguoi_a.pk).update(bio="Bio còn đây.")
+    client.force_login(nguoi_a)
+
+    dat(client, "/api/v1/me", {"bio": None}, status=200, method="patch")
+
+    assert User.objects.get(pk=nguoi_a.pk).bio == "Bio còn đây."
+
+
+@pytest.mark.django_db
+def test_bio_qua_500_ky_tu_la_4xx(client, nguoi_a):
+    client.force_login(nguoi_a)
+    r = client.patch(
+        "/api/v1/me",
+        data=json.dumps({"bio": "x" * 501}),
+        content_type="application/json",
+    )
+    assert 400 <= r.status_code < 500, f"quá 500 ký tự phải là 4xx, được {r.status_code}"
+    assert User.objects.get(pk=nguoi_a.pk).bio == ""
+
+
+@pytest.mark.django_db
+def test_display_name_qua_60_ky_tu_la_4xx(client, nguoi_a):
+    client.force_login(nguoi_a)
+    r = client.patch(
+        "/api/v1/me",
+        data=json.dumps({"display_name": "y" * 61}),
+        content_type="application/json",
+    )
+    assert 400 <= r.status_code < 500, f"quá 60 ký tự phải là 4xx, được {r.status_code}"

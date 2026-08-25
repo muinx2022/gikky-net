@@ -17,6 +17,11 @@ dependencies = [
     # hai phép kiểm mà tên file và `Content-Type` do client gửi không thay được.
     # Xem `core/anh.py`.
     "Pillow>=11.0",
+    # Sanitize HTML của `body` mốc (Tiptap, 2026-08-24). `nh3` là binding của **ammonia**
+    # (Rust) — allowlist thẻ/thuộc tính/giao thức, dựng trên cùng parser html5ever mà
+    # Firefox dùng. Không phải `bleach`: `bleach` đã ngừng phát triển, mà `pytest` ở repo
+    # này chạy `filterwarnings = ["error"]`. Xem `core/lam_sach_html.py`.
+    "nh3>=0.2.18",
 ]
 
 [project.optional-dependencies]

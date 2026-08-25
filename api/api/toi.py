@@ -9,16 +9,18 @@ nó quan trọng hơn nội dung:
 """
 
 from django.conf import settings
+from django.http import HttpResponse
 from ninja import Router
 
+from api.feeds import subs_kem_so_mach
 from api.loi import LoiOut
 from api.quyen import dang_nhap
-from core.ghi import SO_ANH_TOI_DA_MOI_MOC
-
 from core.cau_hinh_oauth import google_dang_bat
 from core.models.dien_dan import ModSub
 from core.anh_luu import url_thumb
-from api.schemas import ToiOut
+from core.ghi import SO_ANH_TOI_DA_MOI_MOC
+
+from api.schemas import SubChiTietOut, ToiOut
 from api.schemas_ghi import ToiSuaIn
 
 router = Router()
@@ -51,6 +53,7 @@ def xem_toi(request):
         dang_nhap=True,
         username=user.username,
         display_name=user.display_name or user.username,
+        avatar_url=url_thumb(user.avatar_khoa) if user.avatar_khoa else None,
         email=user.email or None,
         email_da_xac_thuc=EmailAddress.objects.filter(
             user=user, verified=True
@@ -70,7 +73,8 @@ def xem_toi(request):
     auth=dang_nhap,
 )
 def sua_toi(request, du_lieu: ToiSuaIn):
-    """Đổi tuỳ chọn của **chính phiên đang gọi**. Hôm nay đúng một trường: `nhan_digest`.
+    """Đổi tuỳ chọn + hồ sơ của **chính phiên đang gọi**: `nhan_digest`, `display_name`,
+    `bio`. Avatar KHÔNG ở đây — nó là file, đi qua `POST`/`DELETE /me/avatar`.
 
     **Quyền: bất kỳ ai đã đăng nhập, và chỉ ghi vào hàng của chính họ.** Không có tham số
     nào chỉ ra người khác, nên không có đường nào đặt tuỳ chọn hộ ai.
@@ -96,6 +100,11 @@ def sua_toi(request, du_lieu: ToiSuaIn):
     # tường minh sẽ thành `UPDATE … SET nhan_digest = NULL` trên một cột `NOT NULL` — tức
     # HTTP 500 cho một thân request mà schema chấp nhận. Không có trường nào ở đây coi
     # `null` là "xoá giá trị" (khác `MocSuaIn`), nên bỏ qua là đúng nghĩa nhất.
+    #
+    # ⚠ Chuỗi RỖNG `""` KHÔNG bị lọc (nó `is not None`): `{"display_name": ""}` /
+    # `{"bio": ""}` VẪN ghi — đó là cách XOÁ hai trường ấy (cột `blank=True`, không `null`).
+    # "Xoá bio" là `""`, không phải `null`; `null` ở đây là "không đụng", đối xứng với
+    # `nhan_digest`. Phân biệt "gửi `""`" với "không gửi" nhờ `exclude_unset`.
     thay_doi = {
         k: v for k, v in du_lieu.model_dump(exclude_unset=True).items() if v is not None
     }
@@ -124,6 +133,7 @@ def _khach(request) -> ToiOut:
         dang_nhap=False,
         username=None,
         display_name=None,
+        avatar_url=None,
         email=None,
         email_da_xac_thuc=False,
         la_staff=False,
@@ -136,3 +146,52 @@ def _khach(request) -> ToiOut:
 #: `GET /me` **không** khai `auth=`, và đó không phải là quên: nó là endpoint ĐỌC (GET),
 #: nên không có gì để CSRF bảo vệ, và nó phải trả lời được cho cả khách. Luật "mọi
 #: operation không-GET phải có auth" ở `tests/test_quyen_ghi.py` vì thế không đụng tới nó.
+
+
+@router.get(
+    "/me/subs-mod",
+    response={200: list[SubChiTietOut], 401: LoiOut},
+    operation_id="liet_ke_sub_toi_lam_mod",
+    tags=["tai-khoan"],
+    auth=dang_nhap,
+)
+def liet_ke_sub_toi_lam_mod(request, response: HttpResponse):
+    """Chuyên mục **tôi được phân công làm mod** — nguồn của trang `/khu-mod`.
+
+    ## ⚠ Danh sách này KHÔNG phải danh sách quyền
+
+    `ModSub` ở lượt 2026-08-24 **chưa cho thêm quyền gì** — docstring của model nói thẳng,
+    và bốn cửa `/api/v1/mod/*` vẫn kiểm `is_staff` chứ không kiểm phân công theo sub. Nên
+    một người có tên ở đây mà **không** `is_staff` sẽ mở được trang `/khu-mod`, đi tới
+    chuyên mục của mình, và **không thấy công cụ mod nào**.
+    
+    Đó là sự thật của hệ thống hôm nay, không phải một lỗi của endpoint này. Nối quyền
+    theo-sub là thay đổi bảo mật, có plan riêng
+    (`plans/2026-08-24-mod-chuyen-muc.md` §0) — đừng "tiện tay" nới `ChiModTrenV1` ở một
+    lượt giao diện.
+
+    ## Vì sao ở `api/toi.py` chứ không `api/mod.py`
+
+    `api/mod.py` tự khai phạm vi **đúng bốn cửa GHI**, và có một bài đo ghim con số bốn
+    (`test_be_mat_mod_tren_v1_dung_BON_cua`). Thêm một cửa đọc vào đó là làm mờ đúng cái
+    ranh giới bài đo ấy sinh ra để giữ. Đây là một lượt đọc `/me/*`, và `/me/*` ở file này.
+
+    Sắp theo `slug` (không theo lúc phân công): đây là một **bản đồ công việc**, cùng lý lẽ
+    `GET /subs` — thứ tự đổi mỗi lần có phân công mới thì không ai nhớ được chỗ nào ở đâu.
+    """
+    response["Cache-Control"] = "no-store"
+    slug_cua_toi = list(
+        ModSub.objects.filter(user=request.user).values_list("sub__slug", flat=True)
+    )
+    if not slug_cua_toi:
+        return []
+    return [
+        SubChiTietOut(
+            slug=s.slug,
+            ten=s.ten,
+            mo_ta=s.mo_ta,
+            so_mach=s.so_mach_hien,
+            created_at=s.created_at,
+        )
+        for s in subs_kem_so_mach().filter(slug__in=slug_cua_toi).order_by("slug")
+    ]

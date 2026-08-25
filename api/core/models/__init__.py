@@ -7,7 +7,7 @@ theo kiểu ("tất cả FK", "tất cả enum"):
 
 - `nguoi_dung`  — `User`
 - `dien_dan`    — `Sub`, `ModSub`, `Mach`
-- `moc`         — `Moc`, `MocRevision`, `MocAnh`
+- `moc`         — `Moc`, `MocRevision`, `MocAnh`, `AnhNoiDung`
 - `binh_luan`   — `Comment`
 - `tuong_tac`   — `Vote`, `Reaction`, `Trich`, `Follow`
 - `he_thong`    — `Notification`, `Report`, `AuditLog`
@@ -23,11 +23,12 @@ registry mới là thứ `makemigrations` dùng.
 from core.models.binh_luan import Comment
 from core.models.dien_dan import Mach, ModSub, Sub
 from core.models.he_thong import AuditLog, Notification, Report
-from core.models.moc import Moc, MocAnh, MocRevision
+from core.models.moc import AnhNoiDung, Moc, MocAnh, MocRevision
 from core.models.nguoi_dung import User
-from core.models.tuong_tac import Follow, Reaction, Trich, Vote
+from core.models.tuong_tac import Follow, Reaction, TheoSub, Trich, Vote
 
 __all__ = [
+    "AnhNoiDung",
     "AuditLog",
     "Comment",
     "Follow",
@@ -40,6 +41,7 @@ __all__ = [
     "Report",
     "ModSub",
     "Sub",
+    "TheoSub",
     "Trich",
     "User",
     "Vote",

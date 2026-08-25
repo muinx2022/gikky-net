@@ -1,6 +1,7 @@
 """Dọn file ảnh mồ côi — Phase 5, tiêu chí A8.
 
-**Mồ côi** = file nằm trên đĩa mà không hàng `MocAnh` nào trỏ tới. Nó sinh ra từ những
+**Mồ côi** = file nằm trên đĩa mà **không hàng nào** trỏ tới — `MocAnh`, `User.avatar_khoa`
+hay `AnhNoiDung`; cả ba dùng chung hai thư mục `anh/` + `anh-thumb/`. Nó sinh ra từ những
 ca mà đường ghi không tự dọn được:
 
 - tiến trình chết giữa `ghi_anh` và `COMMIT` (lưới `try/except` của `them_anh_moc` không
@@ -25,7 +26,8 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 
 from core.anh_luu import THU_MUC_ANH, THU_MUC_THUMB, kho_an, kho_hien
-from core.models.moc import MocAnh
+from core.models.moc import AnhNoiDung, MocAnh
+from core.models.nguoi_dung import User
 
 #: Số giờ tối thiểu một file phải "già" trước khi được coi là mồ côi. Xem docstring module.
 TUOI_TOI_THIEU_GIO = 24
@@ -62,6 +64,25 @@ class Command(BaseCommand):
         hop_le_an: set[str] = set()
         for khoa, cach_ly in MocAnh.objects.values_list("khoa_luu_tru", "da_cach_ly"):
             (hop_le_an if cach_ly else hop_le_hien).add(khoa)
+
+        # Avatar (2026-08-24) dùng CHUNG thư mục `anh/` + `anh-thumb/` với ảnh mốc nhưng
+        # KHÔNG có hàng `MocAnh` trỏ tới — khoá của nó nằm ở `User.avatar_khoa`. Thiếu
+        # dòng này thì mọi avatar cũ hơn 24 giờ bị coi là mồ côi và XOÁ THẬT. Avatar không
+        # bao giờ vào kho cách ly (không kiểm duyệt ảnh đại diện) nên chỉ góp vào kho phục
+        # vụ. Chiều ngược lại ("hàng còn / file mất") chỉ lặp `MocAnh` nên avatar không lọt
+        # vào đó — không có báo động giả.
+        hop_le_hien.update(
+            User.objects.exclude(avatar_khoa="").values_list("avatar_khoa", flat=True)
+        )
+
+        # Ảnh NỘI DUNG (2026-08-24) — cùng câu chuyện, nguồn khoá khác: chúng nằm trong
+        # `Moc.body` dưới dạng `<img src>`, không có hàng `MocAnh`, nên bảng `AnhNoiDung`
+        # là chỗ DUY NHẤT biết chúng hợp lệ. Thiếu dòng này thì mọi ảnh giữa bài cũ hơn 24
+        # giờ bị xoá thật và bài viết thủng lỗ — thấy được ngay, nhưng chỉ sau khi mất file.
+        # Cũng không vào kho cách ly (xem `core/models/moc.py::AnhNoiDung`) nên chỉ góp
+        # vào kho phục vụ, và chiều "hàng còn / file mất" chỉ lặp `MocAnh` nên không có
+        # báo động giả.
+        hop_le_hien.update(AnhNoiDung.objects.values_list("khoa_luu_tru", flat=True))
 
         tong_xoa = tong_giu = 0
         for ten_kho, kho, hop_le in (

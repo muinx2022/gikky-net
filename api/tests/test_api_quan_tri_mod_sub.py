@@ -56,7 +56,13 @@ def test_gan_roi_go_di_tron_mot_vong(canh):
     r = gan(canh["mod"], "chung-khoan", "nguoi_se_lam_mod")
     assert r.status_code == 200, r.content
     assert r.json()["mods"] == [
-        {"username": "nguoi_se_lam_mod", "display_name": "Người Thường"}
+        # `avatar_url` (2026-08-24): `mods` dùng `NguoiDungTomTatOut` (schema tác giả dùng
+        # chung), nên nó mang thêm trường này — `None` khi mod chưa có avatar.
+        {
+            "username": "nguoi_se_lam_mod",
+            "display_name": "Người Thường",
+            "avatar_url": None,
+        }
     ]
 
     # Cột phải thấy được từ đường LIỆT KÊ, không chỉ từ response của lệnh ghi: hai đường

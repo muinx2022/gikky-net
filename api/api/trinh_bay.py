@@ -25,6 +25,7 @@ from datetime import timedelta
 
 from core.doc_noi_dung import DA_AN, Nut, doc_duoc, trang_thai_noi_dung
 from core.ghi import NGAY_MO_LAI, PHUT_SUA_IM_LANG
+from core.lam_sach_html import van_ban_thuan
 from core.models.binh_luan import Comment
 from core.models.dien_dan import Mach
 from core.anh_luu import url_anh, url_thumb
@@ -50,8 +51,14 @@ logger = logging.getLogger(__name__)
 
 
 def nguoi_dung_ra(user) -> NguoiDungTomTatOut:
+    # `url_thumb` là phép format chuỗi THUẦN (`storage.url(...)`), không truy vấn — và đó
+    # là điều kiện để `avatar_url` không thành N+1: hàm này chạy một lần cho MỖI tác giả
+    # trên feed/trang mạch, `user.avatar_khoa` là cột đã `select_related` nạp sẵn. Một
+    # truy vấn ở đây là N+1 im lặng, chỉ đỏ ở `tests/test_api_so_query.py`.
     return NguoiDungTomTatOut(
-        username=user.username, display_name=user.display_name
+        username=user.username,
+        display_name=user.display_name,
+        avatar_url=url_thumb(user.avatar_khoa) if user.avatar_khoa else None,
     )
 
 
@@ -184,18 +191,22 @@ def du_lieu_the(machs) -> dict[int, tuple[int | None, XemTruocOut | None]]:
 
 
 def trich_van_ban(body: str) -> str:
-    """`body` markdown → một dòng VĂN BẢN THUẦN, cắt ở `DAI_TRICH_FEED`.
+    """`body` → một dòng VĂN BẢN THUẦN, cắt ở `DAI_TRICH_FEED`.
 
-    Gỡ dấu markdown chứ không render: thẻ feed in ra bằng `<p>` thường, nên để nguyên
-    `**đậm**` là người đọc thấy đúng bốn dấu sao. Đây là phép cắt để HIỂN THỊ — nó **không
-    phải** sanitize, và không cần phải thế: chuỗi này đi vào JSON rồi được React render
-    như văn bản, nên `<script>` in ra thành đúng tám ký tự đó.
+    **Gỡ THẺ HTML trước, gỡ dấu markdown sau** (đổi 2026-08-24 — `body` của mốc nay là
+    HTML, xem `core/lam_sach_html.py`). Hai lượt chứ không một, và lượt markdown ở lại có
+    lý do: `Moc.body_dinh_dang` cho phép hai định dạng cùng tồn tại và plan giữ `markdown`
+    làm đường lùi. Thẻ feed in ra `<p>` hay in ra bốn dấu sao đều là hỏng thấy được ngay.
+
+    Đây là phép cắt để HIỂN THỊ — nó **không phải** sanitize (`lam_sach` ở đường ghi mới
+    là hàng rào). Nhưng nó vẫn phải không rò thẻ: chuỗi này còn đi tiếp vào
+    `meta description` của trang mạch, chỗ mà React không escape hộ.
 
     Gộp khoảng trắng vì `body` nhiều dòng: một thẻ feed mang cả `
 ` là một thẻ có ba
     dòng trắng ở giữa.
     """
-    gon = " ".join(body.split())
+    gon = van_ban_thuan(body)
     # Bốn phép gỡ, theo đúng tập con markdown mà `apps/web/lib/markdown.ts` hỗ trợ:
     # link `[chữ](url)` → chữ · đậm · nghiêng · mã. Không có ảnh trong tập con đó.
     gon = re.sub(r"^\s*[>\-]\s+", "", gon)
@@ -259,11 +270,11 @@ def anh_ra(anh: MocAnh) -> AnhOut:
 
 
 def dem_reaction_rong() -> dict[str, int]:
-    """Đủ 5 khoá reaction, tất cả bằng 0. Không chạm DB.
+    """Đủ 4 khoá reaction, tất cả bằng 0. Không chạm DB.
 
     Dùng ở ba chỗ: mốc vừa tạo (chưa ai react), bia mộ (che), và làm nền cho
     `api/tuong_tac.py::dem_reaction_theo_mach`. Hàm chứ không phải một dict literal chép
-    ba lần: *"đủ 5 khoá"* là bất biến của hợp đồng `MocOut.reactions` /`ReactionOut.dem`,
+    ba lần: *"đủ 4 khoá"* là bất biến của hợp đồng `MocOut.reactions` /`ReactionOut.dem`,
     và ba bản chép tay sẽ có một bản thiếu khoá vào ngày bộ emoji mọc thêm cái thứ sáu.
     """
     return {khoa: 0 for khoa in Reaction.Emoji.values}
@@ -299,6 +310,10 @@ def moc_ra(
         sua_im_lang_den=moc.created_at + timedelta(minutes=PHUT_SUA_IM_LANG),
         loai=moc.loai if hien else None,
         body=moc.body if hien else None,
+        # KHÔNG che ở bia mộ: đây là nhãn định dạng, không phải nội dung. Trả `null` thì
+        # frontend phải có một nhánh "không biết render kiểu gì" cho một `body` vốn đã
+        # `null` — thêm một trạng thái không mang thông tin nào.
+        body_dinh_dang=moc.body_dinh_dang,
         question_for_crowd=moc.question_for_crowd if hien else None,
         figures=figures_ra(moc.figures) if hien else None,
         edited_at=moc.edited_at if hien else None,
@@ -313,7 +328,7 @@ def moc_ra(
         # `core/ghi.py::dong_bo_kho_anh` — nó chuyển file sang kho không server nào phục
         # vụ, vì Caddy đọc thẳng đĩa và không bao giờ hỏi dòng code này.
         anhs=[anh_ra(a) for a in anhs] if hien else [],
-        # Bia mộ: đủ 5 khoá nhưng tất cả 0 — cùng chuẩn với `score`. Người gọi truyền vào
+        # Bia mộ: đủ 4 khoá nhưng tất cả 0 — cùng chuẩn với `score`. Người gọi truyền vào
         # con số thật; phép che nằm ở đây, một chỗ, để ba chỗ gọi không phải nhớ nó.
         reactions=reactions if hien else dem_reaction_rong(),
     )

@@ -1,6 +1,10 @@
-"""`Moc`, `MocRevision`, `MocAnh` — PLAN mục 6 và 5.2.
+"""`Moc`, `MocRevision`, `MocAnh`, `AnhNoiDung` — PLAN mục 6 và 5.2.
 
 Mốc là "kết tủa" của mạch: append-only, hai dấu thời gian, sửa thì để lại bản cũ.
+
+`AnhNoiDung` (2026-08-24) ở cùng file dù nó **không** có FK sang `Moc`: nó là ảnh nhúng
+trong `Moc.body`, nên đọc nó cạnh `MocAnh` là cách duy nhất thấy ngay hai loại ảnh khác
+nhau ở chỗ nào. Xem docstring của chính lớp đó.
 """
 
 from django.conf import settings
@@ -8,6 +12,8 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxLengthValidator
 from django.db import models
 from django.utils import timezone
+
+from core.lam_sach_html import DINH_DANG_BODY, DINH_DANG_MARKDOWN
 
 #: PLAN 5.2 — body markdown ≤10.000 ký tự.
 DAI_BODY_MOC = 10_000
@@ -85,6 +91,25 @@ class Moc(models.Model):
     #: Chip ngắn tự do: "vào lệnh", "nâng dừng lỗ"... Có gợi ý theo sub nhưng không ép.
     loai = models.CharField(max_length=20, null=True, blank=True)
     body = models.TextField(validators=[MaxLengthValidator(DAI_BODY_MOC)])
+    #: `body` đang ở định dạng nào — renderer chọn đường theo cột này (chốt 2026-08-24,
+    #: `plans/2026-08-24-tiptap-html.md`).
+    #:
+    #: **Cột chứ không đoán bằng regex**: đoán sai đúng ở nội dung người dùng gõ dấu `<`,
+    #: mà đây là site tài chính nói về "giá < 27.80" mỗi ngày.
+    #:
+    #: **Mặc định `markdown` dù mọi hàng sau migration 0014 đều là `html`** — và đó là chủ
+    #: đích, không phải quên đổi: `markdown` là đường render AN TOÀN (frontend dựng cây
+    #: node có kiểu, React escape mọi chuỗi), `html` là đường nhúng thẳng. Một hàng lọt vào
+    #: bảng bằng đường không đi qua `core/ghi.py` (shell, migration tay, script cũ) vì thế
+    #: rơi về đường không nhúng được gì. Đường ghi thật đặt `html` TƯỜNG MINH sau khi
+    #: `core/lam_sach_html.py::lam_sach` chạy — hai việc đó ở cạnh nhau, một chỗ.
+    #:
+    #: **Bình luận KHÔNG có cột này**: `Comment.body` giữ markdown (composer khán đài là ô
+    #: gõ nhanh). Hai định dạng cùng tồn tại trong hệ là chuyện đã biết trước, không phải
+    #: nợ.
+    body_dinh_dang = models.CharField(
+        max_length=16, choices=DINH_DANG_BODY, default=DINH_DANG_MARKDOWN
+    )
     #: Câu mồi hiện trong ngăn kéo khi mốc chưa có bình luận (PLAN 5.4 luật 4).
     question_for_crowd = models.CharField(max_length=200, null=True, blank=True)
     figures = models.JSONField(null=True, blank=True, validators=[kiem_figures])
@@ -227,3 +252,70 @@ class MocAnh(models.Model):
 
     def __str__(self) -> str:
         return f"ảnh {self.khoa_luu_tru} (mốc {self.moc_id})"
+
+
+class AnhNoiDung(models.Model):
+    """Ảnh **nhúng thẳng trong `Moc.body`** — khối "BỔ SUNG" của
+    `plans/2026-08-24-tiptap-html.md`.
+
+    Khác `MocAnh` ở đúng một chỗ, và chỗ đó quyết định cả bảng: **nó không thuộc mốc
+    nào**. Người ta upload trong lúc còn đang soạn, tức trước khi `Moc` tồn tại — đó
+    chính là thứ chặn `POST /mocs/{id}/anh` không dùng lại được (nó đòi `moc_id` đã có).
+    Sau khi đăng, mối liên hệ duy nhất giữa ảnh và mốc là chuỗi `<img src>` nằm trong
+    `body`; không có FK nào, và **cố ý không có**: `body` sửa được, một tấm ảnh gỡ khỏi
+    bài rồi dán lại vào bài khác vẫn là cùng một file.
+
+    Hai việc bảng này làm, và cả hai đều không làm được nếu không có nó:
+
+    1. **Đếm hạn mức** — `core/han_muc.py::dem_anh_noi_dung_trong_ngay_vn` đếm hàng ở
+       đây, cùng cơ chế với 10 mạch/ngày. Không có bảng thì hạn mức phải dựng một bộ
+       đếm thứ hai (cache), và docstring `core/han_muc.py` đã nói vì sao cache sai:
+       `LocMemCache` riêng cho từng worker.
+    2. **Whitelist khi dọn mồ côi** — ảnh nội dung dùng CHUNG thư mục `anh/` +
+       `anh-thumb/` với ảnh mốc và avatar nhưng không có hàng `MocAnh` nào trỏ tới, nên
+       `don_anh_mo_coi` sẽ xoá sạch chúng sau 24 giờ và mọi bài viết thủng lỗ. Whitelist
+       nằm ở chính lệnh dọn, y như lượt avatar.
+
+    ⚠ **Nợ có tên: ảnh tải lên rồi BỎ bài không bao giờ được thu hồi.** Hàng ở đây làm
+    file thành "hợp lệ" vĩnh viễn, kể cả khi khoá của nó chưa từng xuất hiện trong `body`
+    nào. Thu hồi đúng cách là quét mọi `Moc.body` tìm khoá — một lượt quét toàn bảng mà
+    lệnh dọn hôm nay không làm, và làm nửa vời thì nó xoá nhầm ảnh của bài đang soạn dở.
+    Hạn mức ngày là thứ giữ cho khoản nợ này không phình: nó chặn trần số file mỗi người
+    tạo ra được mỗi ngày.
+
+    **Không có kho cách ly** (`da_cach_ly` như `MocAnh`): ảnh nội dung đi theo `body`, mà
+    mốc bị mod ẩn thì cả `body` không hiện — không có URL nào rò ra từ một bài đã ẩn trừ
+    khi ai đó đã sao chép sẵn URL ảnh. Cách ly được vế đó đòi một đường đi ngược từ ảnh
+    về mốc, tức đúng cái FK mà bảng này cố ý không có. Ghi ra để lượt sau biết đây là một
+    lựa chọn, không phải một chỗ quên.
+    """
+
+    nguoi_tai = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="anh_noi_dung",
+    )
+    #: Tên file ngẫu nhiên + đuôi suy từ định dạng đã nhận dạng — `core/anh_luu.py::khoa_moi`.
+    #: `unique` vì nó là khoá whitelist của `don_anh_mo_coi`: hai hàng cùng khoá nghĩa là
+    #: xoá một hàng mà file vẫn "hợp lệ" nhờ hàng kia — một trạng thái không ai đọc ra được.
+    khoa_luu_tru = models.CharField(max_length=255, unique=True)
+    #: Kích thước ảnh **đã tái mã hoá**, trả về cho editor đặt tỉ lệ khung chống layout
+    #: shift. Không ghi vào `<img>` (allowlist không có `width`/`height` — CSS lo).
+    w = models.PositiveIntegerField(null=True, blank=True)
+    h = models.PositiveIntegerField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    class Meta:
+        verbose_name = "ảnh nội dung"
+        verbose_name_plural = "ảnh nội dung"
+        ordering = ["-created_at", "-id"]
+        indexes = [
+            # Đúng hình dạng câu hỏi của hạn mức: "user X đã tải mấy tấm trong khoảng
+            # thời gian này". Không có index thì mỗi lượt upload quét cả bảng.
+            models.Index(
+                fields=["nguoi_tai", "created_at"], name="anhnd_nguoi_ngay_idx"
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"ảnh nội dung {self.khoa_luu_tru} (của {self.nguoi_tai_id})"

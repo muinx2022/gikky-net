@@ -7,6 +7,37 @@ export type ClientOptions = {
 };
 
 /**
+ * AnhNoiDungOut
+ *
+ * Ảnh vừa tải lên để **nhúng thẳng vào thân bài** — `POST /me/anh` (2026-08-24).
+ *
+ * Hình dạng cố tình KHÁC `AnhOut`, và khác đúng ở chỗ nói lên bản chất: không `id`
+ * (không có gì để gọi lại — không có cửa `DELETE`, xem docstring endpoint), không
+ * `position` (không có gallery để xếp), không `url_thumb` (ảnh giữa bài đọc bằng bản
+ * chính), không `exif_taken_at` (nó là gợi ý cho `occurred_at` của MỐC, mà cửa này chạy
+ * trước khi mốc tồn tại). Còn lại đúng ba trường editor cần.
+ *
+ * `width`/`height` chứ không `w`/`h` như `AnhOut`: chúng đi thẳng vào thuộc tính cùng
+ * tên của node ảnh trong Tiptap, và một lượt đổi tên ở tầng frontend là đúng loại lệch
+ * không ai nhớ. Kích thước là của ảnh **đã tái mã hoá** (`core/anh.py` thu về cạnh
+ * `CANH_TOI_DA`), tức của đúng file đang được phục vụ.
+ */
+export type AnhNoiDungOut = {
+    /**
+     * Height
+     */
+    height: number | null;
+    /**
+     * Url
+     */
+    url: string;
+    /**
+     * Width
+     */
+    width: number | null;
+};
+
+/**
  * AnhOut
  *
  * Một ảnh trong gallery của mốc — Phase 5.
@@ -370,6 +401,45 @@ export type DanhDauDaDocIn = {
 };
 
 /**
+ * DatAnIn
+ *
+ * Body của mọi endpoint ẩn/gỡ ẩn.
+ *
+ * **Một endpoint đặt-trạng-thái thay vì hai endpoint `hide`/`unhide`** — hai chiều nhận
+ * cùng bộ đầu vào, nên tách ra chỉ nhân đôi số chỗ phải kiểm quyền. Và nó **idempotent**:
+ * gửi `an=true` hai lần cho ra cùng một trạng thái.
+ */
+export type DatAnIn = {
+    /**
+     * An
+     */
+    an: boolean;
+    /**
+     * Ly Do
+     */
+    ly_do?: string;
+};
+
+/**
+ * DatKhoaMachIn
+ *
+ * Body của `POST /machs/{id}/khoa`.
+ *
+ * `khoa` là **trục riêng, không phải `status`** (PLAN 5.10, docstring `Mach`): mạch bị
+ * khoá vẫn đọc được nhưng cấm mọi tương tác, còn `closed` là tác giả tự đóng sổ.
+ */
+export type DatKhoaMachIn = {
+    /**
+     * Khoa
+     */
+    khoa: boolean;
+    /**
+     * Ly Do
+     */
+    ly_do?: string;
+};
+
+/**
  * DongSoIn
  *
  * Đóng sổ — `POST /machs/{id}/close`. `ket_qua` tuỳ chọn, ≤40 ký tự (PLAN 5.1).
@@ -478,6 +548,10 @@ export type HealthOut = {
  */
 export type HoSoOut = {
     /**
+     * Avatar Url
+     */
+    avatar_url: string | null;
+    /**
      * Bio
      */
     bio: string;
@@ -513,6 +587,31 @@ export type HoSoOut = {
      * Username
      */
     username: string;
+};
+
+/**
+ * KetQuaDoiTrangThaiOut
+ *
+ * Kết quả CHUNG của mọi hành động moderation bật/tắt một trạng thái.
+ *
+ * Hai trường, và cả hai đều cần:
+ *
+ * - `da_doi` — hành động này có đổi gì không. Bấm "ẩn" lần thứ hai trả `false`, và đó
+ * **không** phải lỗi: `core/ghi.py` cố ý không reset `hidden_at` (mất mốc thời gian
+ * moderation thật) và không đẻ dòng `AuditLog` thứ hai. UI đọc trường này để không
+ * báo "đã ẩn xong" cho một cú bấm chẳng làm gì;
+ * - `dang_bat` — trạng thái SAU khi gọi. Đây là thứ UI vẽ, và nó đúng ở cả hai nhánh
+ * của `da_doi` — nên hai mod bấm cùng lúc vẫn thấy cùng một màn hình.
+ */
+export type KetQuaDoiTrangThaiOut = {
+    /**
+     * Da Doi
+     */
+    da_doi: boolean;
+    /**
+     * Dang Bat
+     */
+    dang_bat: boolean;
 };
 
 /**
@@ -972,6 +1071,10 @@ export type MocOut = {
      */
     body: string | null;
     /**
+     * Body Dinh Dang
+     */
+    body_dinh_dang: string;
+    /**
      * Created At
      */
     created_at: string;
@@ -1163,6 +1266,10 @@ export type NganKeoOut = {
  */
 export type NguoiDungTomTatOut = {
     /**
+     * Avatar Url
+     */
+    avatar_url: string | null;
+    /**
      * Display Name
      */
     display_name: string;
@@ -1236,7 +1343,8 @@ export type ReactionCuaToiOut = {
  *
  * React / đổi / rút — `POST /mocs/{id}/reactions` (PLAN 5.7).
  *
- * Bộ CỐ ĐỊNH `len · xuong · lua · bang · trung` (📈📉🔥🧊🎯). `emoji = null` là **rút**.
+ * Bộ CỐ ĐỊNH `ro_rang · co_nguon · can_them · lieu` (🧠📎❓🔥) — **phản hồi về BÀI
+ * VIẾT**, không về giá; xem `core/models/tuong_tac.py::Reaction`. `emoji = null` là **rút**.
  */
 export type ReactionIn = {
     /**
@@ -1338,6 +1446,29 @@ export type SubChiTietOut = {
 };
 
 /**
+ * SubCuaToiOut
+ *
+ * `GET /subs/{slug}/me` — nửa per-user của trang chuyên mục.
+ *
+ * Cùng khuôn và cùng lý do với `MachCuaToiOut`: trang `/s/<slug>` render ở server và
+ * **cache được** (PLAN 8.4), nên "tôi có theo chuyên mục này không" **bắt buộc** hỏi
+ * riêng ở trình duyệt. Nhét `following` vào `SubChiTietOut` là người thứ hai mở cùng URL
+ * nhận trạng thái của người thứ nhất — HTTP 200, không có gì đỏ.
+ *
+ * **Khách nhận 200** với `dang_nhap=false, following=false`, không phải 401.
+ */
+export type SubCuaToiOut = {
+    /**
+     * Dang Nhap
+     */
+    dang_nhap: boolean;
+    /**
+     * Following
+     */
+    following: boolean;
+};
+
+/**
  * SubTomTatOut
  */
 export type SubTomTatOut = {
@@ -1373,6 +1504,26 @@ export type TheoMachOut = {
      * Mach Id
      */
     mach_id: number;
+};
+
+/**
+ * TheoSubOut
+ *
+ * Kết quả `POST`/`DELETE /subs/{slug}/theo` — user chốt 2026-08-24.
+ *
+ * Trả **trạng thái sau khi ghi**, không trả "đã đổi hay chưa": hai endpoint đều
+ * idempotent, nên "đã đổi" là một câu client không dùng được vào việc gì, còn `following`
+ * thì client vẽ thẳng lên nút.
+ */
+export type TheoSubOut = {
+    /**
+     * Following
+     */
+    following: boolean;
+    /**
+     * Slug
+     */
+    slug: string;
 };
 
 /**
@@ -1469,6 +1620,10 @@ export type TimKiemOut = {
  */
 export type ToiOut = {
     /**
+     * Avatar Url
+     */
+    avatar_url: string | null;
+    /**
      * Dang Nhap
      */
     dang_nhap: boolean;
@@ -1509,18 +1664,28 @@ export type ToiOut = {
 /**
  * ToiSuaIn
  *
- * `PATCH /me` — tuỳ chọn của chính người đang đăng nhập (PLAN 5.8).
+ * `PATCH /me` — tuỳ chọn + hồ sơ của chính người đang đăng nhập (PLAN 5.8, 5.9).
  *
  * **PATCH thật**: trường vắng mặt nghĩa là không đổi, nên `{}` là một request hợp lệ
  * không ghi gì. Tách khỏi `ToiOut` chứ không dùng chung một schema hai chiều: `ToiOut`
- * mang `username`, `email`, `la_staff`, `google_bat` — không cái nào người dùng đặt
- * được ở đây, và một schema hai chiều là lời mời nhận đại cả bốn.
+ * mang `username`, `email`, `la_staff`, `google_bat`, `avatar_url` — không cái nào người
+ * dùng đặt được ở cửa NÀY (avatar đi qua `POST /me/avatar`), và một schema hai chiều là
+ * lời mời nhận đại cả bốn.
  *
- * Hôm nay đúng **một** trường. Danh tính (`display_name`, `bio`) chưa mở ở cửa này: nó
- * là nội dung công khai, cần luật độ dài + sanitize riêng, và trộn nó vào cùng lượt vá
- * với một cái công tắc boolean là cách phần khó bị làm vội.
+ * ⚠ **`display_name`/`bio`: chuỗi RỖNG `""` là giá trị hợp lệ — nó XOÁ trường**, và nó
+ * KHÁC `null`. Handler lọc `v is not None` (xem `api/toi.py::sua_toi`), nên `{"bio": ""}`
+ * vẫn ghi (xoá bio), trường VẮNG MẶT thì không đụng, còn `null` gửi tường minh bị bỏ qua.
+ * Cửa này KHÔNG là chỗ đặt avatar — avatar là file, đi qua `POST`/`DELETE /me/avatar`.
  */
 export type ToiSuaIn = {
+    /**
+     * Bio
+     */
+    bio?: string | null;
+    /**
+     * Display Name
+     */
+    display_name?: string | null;
     /**
      * Nhan Digest
      */
@@ -2474,6 +2639,247 @@ export type SuaToiResponses = {
 
 export type SuaToiResponse = SuaToiResponses[keyof SuaToiResponses];
 
+export type TaiAnhNoiDungData = {
+    /**
+     * FileParams
+     */
+    body: {
+        /**
+         * File
+         */
+        file: Blob | File;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/me/anh';
+};
+
+export type TaiAnhNoiDungErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Request Entity Too Large
+     */
+    413: LoiOut;
+    /**
+     * Too Many Requests
+     */
+    429: LoiThoiGianOut;
+};
+
+export type TaiAnhNoiDungError = TaiAnhNoiDungErrors[keyof TaiAnhNoiDungErrors];
+
+export type TaiAnhNoiDungResponses = {
+    /**
+     * Created
+     */
+    201: AnhNoiDungOut;
+};
+
+export type TaiAnhNoiDungResponse = TaiAnhNoiDungResponses[keyof TaiAnhNoiDungResponses];
+
+export type XoaAvatarData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/me/avatar';
+};
+
+export type XoaAvatarErrors = {
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+};
+
+export type XoaAvatarError = XoaAvatarErrors[keyof XoaAvatarErrors];
+
+export type XoaAvatarResponses = {
+    /**
+     * OK
+     */
+    200: ToiOut;
+};
+
+export type XoaAvatarResponse = XoaAvatarResponses[keyof XoaAvatarResponses];
+
+export type DatAvatarData = {
+    /**
+     * FileParams
+     */
+    body: {
+        /**
+         * File
+         */
+        file: Blob | File;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/v1/me/avatar';
+};
+
+export type DatAvatarErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Request Entity Too Large
+     */
+    413: LoiOut;
+};
+
+export type DatAvatarError = DatAvatarErrors[keyof DatAvatarErrors];
+
+export type DatAvatarResponses = {
+    /**
+     * OK
+     */
+    200: ToiOut;
+};
+
+export type DatAvatarResponse = DatAvatarResponses[keyof DatAvatarResponses];
+
+export type LietKeDaVoteData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/me/da-vote';
+};
+
+export type LietKeDaVoteErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+};
+
+export type LietKeDaVoteError = LietKeDaVoteErrors[keyof LietKeDaVoteErrors];
+
+export type LietKeDaVoteResponses = {
+    /**
+     * OK
+     */
+    200: FeedOut;
+};
+
+export type LietKeDaVoteResponse = LietKeDaVoteResponses[keyof LietKeDaVoteResponses];
+
+export type LietKeDangTheoData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/me/dang-theo';
+};
+
+export type LietKeDangTheoErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+};
+
+export type LietKeDangTheoError = LietKeDangTheoErrors[keyof LietKeDangTheoErrors];
+
+export type LietKeDangTheoResponses = {
+    /**
+     * OK
+     */
+    200: FeedOut;
+};
+
+export type LietKeDangTheoResponse = LietKeDangTheoResponses[keyof LietKeDangTheoResponses];
+
+export type LietKeSubDangTheoData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/me/subs';
+};
+
+export type LietKeSubDangTheoErrors = {
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+};
+
+export type LietKeSubDangTheoError = LietKeSubDangTheoErrors[keyof LietKeSubDangTheoErrors];
+
+export type LietKeSubDangTheoResponses = {
+    /**
+     * Response
+     *
+     * OK
+     */
+    200: Array<SubChiTietOut>;
+};
+
+export type LietKeSubDangTheoResponse = LietKeSubDangTheoResponses[keyof LietKeSubDangTheoResponses];
+
+export type LietKeSubToiLamModData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/me/subs-mod';
+};
+
+export type LietKeSubToiLamModErrors = {
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+};
+
+export type LietKeSubToiLamModError = LietKeSubToiLamModErrors[keyof LietKeSubToiLamModErrors];
+
+export type LietKeSubToiLamModResponses = {
+    /**
+     * Response
+     *
+     * OK
+     */
+    200: Array<SubChiTietOut>;
+};
+
+export type LietKeSubToiLamModResponse = LietKeSubToiLamModResponses[keyof LietKeSubToiLamModResponses];
+
 export type XoaMocData = {
     body?: never;
     path: {
@@ -2814,6 +3220,158 @@ export type TrichVaoSoResponses = {
 
 export type TrichVaoSoResponse = TrichVaoSoResponses[keyof TrichVaoSoResponses];
 
+export type ModDatAnBinhLuanData = {
+    body: DatAnIn;
+    path: {
+        /**
+         * Comment Id
+         */
+        comment_id: number;
+    };
+    query?: never;
+    url: '/api/v1/mod/comments/{comment_id}/an';
+};
+
+export type ModDatAnBinhLuanErrors = {
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type ModDatAnBinhLuanError = ModDatAnBinhLuanErrors[keyof ModDatAnBinhLuanErrors];
+
+export type ModDatAnBinhLuanResponses = {
+    /**
+     * OK
+     */
+    200: KetQuaDoiTrangThaiOut;
+};
+
+export type ModDatAnBinhLuanResponse = ModDatAnBinhLuanResponses[keyof ModDatAnBinhLuanResponses];
+
+export type ModDatAnMachData = {
+    body: DatAnIn;
+    path: {
+        /**
+         * Mach Id
+         */
+        mach_id: number;
+    };
+    query?: never;
+    url: '/api/v1/mod/machs/{mach_id}/an';
+};
+
+export type ModDatAnMachErrors = {
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type ModDatAnMachError = ModDatAnMachErrors[keyof ModDatAnMachErrors];
+
+export type ModDatAnMachResponses = {
+    /**
+     * OK
+     */
+    200: KetQuaDoiTrangThaiOut;
+};
+
+export type ModDatAnMachResponse = ModDatAnMachResponses[keyof ModDatAnMachResponses];
+
+export type ModDatKhoaMachData = {
+    body: DatKhoaMachIn;
+    path: {
+        /**
+         * Mach Id
+         */
+        mach_id: number;
+    };
+    query?: never;
+    url: '/api/v1/mod/machs/{mach_id}/khoa';
+};
+
+export type ModDatKhoaMachErrors = {
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type ModDatKhoaMachError = ModDatKhoaMachErrors[keyof ModDatKhoaMachErrors];
+
+export type ModDatKhoaMachResponses = {
+    /**
+     * OK
+     */
+    200: KetQuaDoiTrangThaiOut;
+};
+
+export type ModDatKhoaMachResponse = ModDatKhoaMachResponses[keyof ModDatKhoaMachResponses];
+
+export type ModDatAnMocData = {
+    body: DatAnIn;
+    path: {
+        /**
+         * Moc Id
+         */
+        moc_id: number;
+    };
+    query?: never;
+    url: '/api/v1/mod/mocs/{moc_id}/an';
+};
+
+export type ModDatAnMocErrors = {
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type ModDatAnMocError = ModDatAnMocErrors[keyof ModDatAnMocErrors];
+
+export type ModDatAnMocResponses = {
+    /**
+     * OK
+     */
+    200: KetQuaDoiTrangThaiOut;
+};
+
+export type ModDatAnMocResponse = ModDatAnMocResponses[keyof ModDatAnMocResponses];
+
 export type LietKeThongBaoData = {
     body?: never;
     path?: never;
@@ -2966,6 +3524,104 @@ export type XemSubResponses = {
 
 export type XemSubResponse = XemSubResponses[keyof XemSubResponses];
 
+export type XemSubCuaToiData = {
+    body?: never;
+    path: {
+        /**
+         * Slug
+         */
+        slug: string;
+    };
+    query?: never;
+    url: '/api/v1/subs/{slug}/me';
+};
+
+export type XemSubCuaToiErrors = {
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type XemSubCuaToiError = XemSubCuaToiErrors[keyof XemSubCuaToiErrors];
+
+export type XemSubCuaToiResponses = {
+    /**
+     * OK
+     */
+    200: SubCuaToiOut;
+};
+
+export type XemSubCuaToiResponse = XemSubCuaToiResponses[keyof XemSubCuaToiResponses];
+
+export type BoTheoSubData = {
+    body?: never;
+    path: {
+        /**
+         * Slug
+         */
+        slug: string;
+    };
+    query?: never;
+    url: '/api/v1/subs/{slug}/theo';
+};
+
+export type BoTheoSubErrors = {
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type BoTheoSubError = BoTheoSubErrors[keyof BoTheoSubErrors];
+
+export type BoTheoSubResponses = {
+    /**
+     * OK
+     */
+    200: TheoSubOut;
+};
+
+export type BoTheoSubResponse = BoTheoSubResponses[keyof BoTheoSubResponses];
+
+export type TheoSubData = {
+    body?: never;
+    path: {
+        /**
+         * Slug
+         */
+        slug: string;
+    };
+    query?: never;
+    url: '/api/v1/subs/{slug}/theo';
+};
+
+export type TheoSubErrors = {
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type TheoSubError = TheoSubErrors[keyof TheoSubErrors];
+
+export type TheoSubResponses = {
+    /**
+     * OK
+     */
+    200: TheoSubOut;
+};
+
+export type TheoSubResponse = TheoSubResponses[keyof TheoSubResponses];
+
 export type TimKiemData = {
     body?: never;
     path?: never;
@@ -3054,6 +3710,49 @@ export type XemHoSoResponses = {
 };
 
 export type XemHoSoResponse = XemHoSoResponses[keyof XemHoSoResponses];
+
+export type LietKeMachCuaUserData = {
+    body?: never;
+    path: {
+        /**
+         * Username
+         */
+        username: string;
+    };
+    query?: {
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/users/{username}/machs';
+};
+
+export type LietKeMachCuaUserErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type LietKeMachCuaUserError = LietKeMachCuaUserErrors[keyof LietKeMachCuaUserErrors];
+
+export type LietKeMachCuaUserResponses = {
+    /**
+     * OK
+     */
+    200: FeedOut;
+};
+
+export type LietKeMachCuaUserResponse = LietKeMachCuaUserResponses[keyof LietKeMachCuaUserResponses];
 
 export type DatVoteData = {
     body: VoteIn;

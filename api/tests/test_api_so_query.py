@@ -13,8 +13,8 @@ Vì thế mọi bài dưới đây chạy trên seed (9 mốc · 24 bình luận
 
 import pytest
 
-from core.ghi import tao_mach
-from core.models import Comment, Mach, Moc, Trich
+from core.ghi import dat_vote, tao_mach
+from core.models import Comment, Follow, Mach, Moc, Trich
 from tests.conftest import lay, phang, viet
 
 pytestmark = pytest.mark.django_db
@@ -59,7 +59,28 @@ SO_QUERY = {
     "feed": 3,
     "feed_co_sub": 4,
     "ho_so": 8,
+    "mach_cua_user": 4,
+    "da_vote": 6,
+    "dang_theo": 5,
 }
+
+#: Ba cửa danh sách của trang hồ sơ — `api/ho_so.py` (2026-08-24). Ba con số khác nhau,
+#: và chỗ chúng khác nhau chính là chỗ đáng ghim:
+#:
+#: `mach_cua_user` = 4: tra user (để 404 thay vì danh sách rỗng) · trang mạch · **2 cho thẻ**.
+#: `dang_theo` = 5: **2 cho phiên** · trang follow kèm mạch+sub+author trong MỘT truy vấn
+#: (`select_related("mach__sub", "mach__author")`) · **2 cho thẻ**.
+#: `da_vote` = 6: **2 cho phiên** · trang phiếu · **mốc 1 kèm mạch** · **2 cho thẻ**.
+#:
+#: "2 cho phiên" là `dang_nhap` (`SessionAuth`): đọc bảng session rồi đọc hàng user. Hai
+#: cửa `/me/*` phải trả tiền cho nó, cửa công khai thì không — đó là lý do ba con số này
+#: không bằng nhau chứ không phải một cửa nào đang N+1.
+#:
+#: `da_vote` tốn hơn `dang_theo` đúng MỘT truy vấn, và truy vấn ấy không bỏ được: `Vote`
+#: **không có FK** (`target_type` + `target_id` — xem docstring `Vote`), nên không
+#: `select_related` nào bắc được từ hàng phiếu sang hàng mạch. Nó là MỘT truy vấn cho cả
+#: trang, không phải một truy vấn mỗi phiếu — `test_them_mach_KHONG_lam_tang_so_query_cua_ba_cua`
+#: ở cuối file là thứ chứng minh chỗ đó.
 
 
 def test_xem_mach(client, seed, django_assert_num_queries):
@@ -163,3 +184,122 @@ def test_them_mach_KHONG_lam_tang_so_query_cua_feed(
     with django_assert_num_queries(SO_QUERY["feed"]):
         d = lay(client, "/api/v1/feeds/moi?limit=50")
     assert len(d["items"]) >= 22
+
+
+# --- ba cửa danh sách của trang hồ sơ (2026-08-24) ---------------------------
+
+
+def _machs_cua(sub, author, so_luong: int, *, tu: int = 0) -> list[Mach]:
+    return [
+        tao_mach(sub=sub, author=author, title=f"Mạch {i}", body="Mốc 1.")[0]
+        for i in range(tu, tu + so_luong)
+    ]
+
+
+def _vote_moc_1(machs, nguoi) -> None:
+    for m in machs:
+        dat_vote(user=nguoi, target=Moc.objects.get(mach=m, seq=1), value=1)
+
+
+def _the_du_sub_va_author(d) -> bool:
+    """`sub` và `author` của MỖI thẻ đều được đọc ra — thiếu `select_related` là 2 truy
+    vấn cho mỗi hàng, và con số ghim ở đầu file đỏ ngay."""
+    return bool(d["items"]) and all(
+        m["sub"]["ten"] and m["author"]["username"] for m in d["items"]
+    )
+
+
+def test_mach_cua_user(client, sub, tac_gia, django_assert_num_queries):
+    _machs_cua(sub, tac_gia, 3)
+
+    with django_assert_num_queries(SO_QUERY["mach_cua_user"]):
+        d = lay(client, f"/api/v1/users/{tac_gia.username}/machs?limit=50")
+
+    assert len(d["items"]) == 3 and _the_du_sub_va_author(d)
+
+
+def test_da_vote(client, sub, tac_gia, nguoi_khac, django_assert_num_queries):
+    _vote_moc_1(_machs_cua(sub, tac_gia, 3), nguoi_khac)
+    client.force_login(nguoi_khac)
+
+    with django_assert_num_queries(SO_QUERY["da_vote"]):
+        d = lay(client, "/api/v1/me/da-vote?limit=50")
+
+    assert len(d["items"]) == 3 and _the_du_sub_va_author(d)
+
+
+def test_dang_theo(client, sub, tac_gia, nguoi_khac, django_assert_num_queries):
+    for m in _machs_cua(sub, tac_gia, 3):
+        Follow.objects.create(user=nguoi_khac, mach=m)
+    client.force_login(nguoi_khac)
+
+    with django_assert_num_queries(SO_QUERY["dang_theo"]):
+        d = lay(client, "/api/v1/me/dang-theo?limit=50")
+
+    assert len(d["items"]) == 3 and _the_du_sub_va_author(d)
+
+
+def test_them_mach_KHONG_lam_tang_so_query_cua_ba_cua(
+    client, sub, tac_gia, nguoi_khac, django_assert_num_queries
+):
+    """Bài đo chống-rỗng của ba cửa hồ sơ: số truy vấn phải ĐỘC LẬP với số hàng.
+
+    Ba con số ở đầu file được ghim trên 3 mạch. Ghim một hằng số trên 3 hàng vẫn xanh nếu
+    cài đặt là N+1 và N tình cờ khớp — nhất là ở `da_vote`, nơi đường ghép phiếu → mạch
+    **không** `select_related` được và vì thế là chỗ tự nhiên nhất để một vòng lặp truy
+    vấn chui vào. Ở đây số hàng tăng 3 → 23 mà cả ba con số không được nhúc nhích.
+    """
+    machs = _machs_cua(sub, tac_gia, 23)
+    _vote_moc_1(machs, nguoi_khac)
+    for m in machs:
+        Follow.objects.create(user=nguoi_khac, mach=m)
+    assert Mach.objects.filter(author=tac_gia).count() == 23
+
+    with django_assert_num_queries(SO_QUERY["mach_cua_user"]):
+        d = lay(client, f"/api/v1/users/{tac_gia.username}/machs?limit=50")
+    assert len(d["items"]) == 23
+
+    client.force_login(nguoi_khac)
+    with django_assert_num_queries(SO_QUERY["da_vote"]):
+        d = lay(client, "/api/v1/me/da-vote?limit=50")
+    assert len(d["items"]) == 23
+    with django_assert_num_queries(SO_QUERY["dang_theo"]):
+        d = lay(client, "/api/v1/me/dang-theo?limit=50")
+    assert len(d["items"]) == 23
+
+
+# --- avatar_url của author KHÔNG được thêm truy vấn (2026-08-24) --------------
+
+
+def test_avatar_cua_author_KHONG_lam_tang_so_query(
+    client, seed, seed_post_thuong, django_assert_num_queries
+):
+    """`avatar_url` là `url_thumb(user.avatar_khoa)` THUẦN — không truy vấn.
+
+    Bài đo này **chỉ đo được khi author CÓ avatar**: cột rỗng thì resolver trả `None` mà
+    không chạm `url_thumb`, nên một cài đặt "hỏi DB cho mỗi avatar" vẫn ẩn. Vì thế phải
+    đặt `avatar_khoa` cho MỌI user TRƯỚC khi đo. `avatar_khoa` là cột đã
+    `select_related("author")`/`select_related("sub", "author")` nạp sẵn, nên số truy vấn
+    của feed / trang mạch / hồ sơ phải Y NGUYÊN con số ghim ở đầu file.
+
+    Đổi resolver `nguoi_dung_ra` cho nó đi hỏi DB mỗi author là ĐỎ ngay ở đây — thử phá đã
+    xác nhận (feed 3 → 25, xem_mach 6 → 15).
+    """
+    from core.models import User
+
+    User.objects.update(avatar_khoa="a" * 32 + ".webp")
+
+    with django_assert_num_queries(SO_QUERY["xem_mach"]):
+        d = lay(client, f"/api/v1/machs/{seed.pk}")
+    tac_gia_hien = [m["author"] for m in d["mocs"] if m["author"]]
+    assert tac_gia_hien and all(a["avatar_url"] for a in tac_gia_hien)
+
+    with django_assert_num_queries(SO_QUERY["feed"]):
+        d = lay(client, "/api/v1/feeds/moi?limit=50")
+    assert d["items"] and all(m["author"]["avatar_url"] for m in d["items"])
+
+    with django_assert_num_queries(SO_QUERY["ho_so"]):
+        d = lay(client, "/api/v1/users/ba_muoi_phien")
+    # `HoSoOut.avatar_url` là avatar của chính chủ hồ sơ (không lồng trong `author`), và
+    # mỗi thẻ mạch kèm theo cũng mang `author.avatar_url`.
+    assert d["avatar_url"] and all(m["author"]["avatar_url"] for m in d["machs"])

@@ -4,6 +4,7 @@ import pytest
 from django.utils import timezone
 
 from core.ghi import tao_mach
+from core.management.commands.seed_dev import SUBS
 from core.models import Mach, Sub
 from tests.conftest import lay
 
@@ -11,10 +12,15 @@ pytestmark = pytest.mark.django_db
 
 
 def test_tra_du_truong_cua_header(client, seed):
+    # `ten`/`mo_ta` đọc từ `SUBS`, **không gõ tay** *(sửa 2026-08-24)*. Bài này đo HÌNH
+    # DẠNG của response và đường đi từ DB ra API; nó không có ý kiến gì về việc chuyên mục
+    # tên là gì. Ghim chuỗi thật thì mỗi lần đổi tên một chuyên mục là một bài đo đỏ vì lý
+    # do không liên quan — đúng chuyện vừa xảy ra khi bộ chuyên mục nở từ 2 lên 10.
+    mau = next(s for s in SUBS if s["slug"] == "chung-khoan")
     d = lay(client, "/api/v1/subs/chung-khoan")
     assert set(d) == {"slug", "ten", "mo_ta", "so_mach", "created_at"}
-    assert d["ten"] == "Chứng khoán"
-    assert d["mo_ta"].startswith("Cổ phiếu Việt Nam")
+    assert d["ten"] == mau["ten"]
+    assert d["mo_ta"] == mau["mo_ta"]
     assert d["so_mach"] == Mach.objects.filter(sub__slug="chung-khoan").count()
 
 

@@ -324,10 +324,10 @@ def test_reaction_mot_nguoi_mot_moc(mach, nguoi_khac):
     from core.models import Reaction
 
     moc = Moc.objects.get(mach=mach, seq=1)
-    Reaction.objects.create(user=nguoi_khac, moc=moc, emoji=Reaction.Emoji.LUA)
+    Reaction.objects.create(user=nguoi_khac, moc=moc, emoji=Reaction.Emoji.LIEU)
     with pytest.raises(IntegrityError):
         with transaction.atomic():
-            Reaction.objects.create(user=nguoi_khac, moc=moc, emoji=Reaction.Emoji.BANG)
+            Reaction.objects.create(user=nguoi_khac, moc=moc, emoji=Reaction.Emoji.CAN_THEM)
 
 
 def test_follow_mot_nguoi_mot_mach(mach, nguoi_khac):

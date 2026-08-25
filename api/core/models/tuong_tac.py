@@ -74,18 +74,46 @@ class Vote(models.Model):
 
 
 class Reaction(models.Model):
-    """Reaction 1 chạm trên mốc — bộ CỐ ĐỊNH 📈📉🔥🧊🎯 (PLAN 5.7).
+    """Reaction 1 chạm trên mốc — **phản hồi về BÀI VIẾT** (user chốt 2026-08-25).
 
-    Lưu khoá không dấu chứ không lưu emoji: đổi bộ icon sau này không phải migrate dữ
-    liệu, và so sánh chuỗi không dính chuyện biến thể unicode của emoji.
+    ## Bộ cũ 📈📉🔥🧊🎯 đã bị thay, và lý do không phải thẩm mỹ
+
+    Ba vấn đề, hai trong đó đâm thẳng vào PLAN:
+
+    1. **Nó trùng việc của `Vote`.** PLAN 5.7 cho reaction đúng một lý do tồn tại — *"bậc
+       thang tham gia rẻ hơn viết"* — nhưng dòng ngay trên cùng mục đã cho vote ±1 **trên
+       chính mốc ấy**, cũng một chạm. "Rẻ hơn viết" không phân biệt được hai thứ.
+    2. **📈/📉 là bảng đếm HƯỚNG GIÁ công khai dưới một vị thế tiền thật đang mở**, và
+       🎯 là đám đông chấm một lệnh đúng hay sai. PLAN mục "đã bị bác" gọi đúng cơ chế ấy
+       là **cấm tuyệt đối** (*"47 người đặt Chốt hết" … áp lực đám đông lên lệnh thật*;
+       *"không chấm được sạch … farm bằng nick phụ"*).
+    3. **Nó vô nghĩa trên bài NHẬN ĐỊNH** (user chỉ ra, 2026-08-25). gikky chứa cả nhật ký
+       lệnh lẫn bài phân tích; bài phân tích không có vị thế, không có hướng, nên bốn
+       trong năm icon cũ không nói được gì cả.
+
+    ⇒ Bộ mới nói về **bài viết**, không nói về giá và không chấm thắng-thua. Cả bốn dùng
+    được cho cả hai loại bài.
+
+    ## Khoá đặt theo KHÁI NIỆM, không theo icon
+
+    `ro_rang` chứ không `nao`; `co_nguon` chứ không `ghim`. Đổi emoji hay đổi chữ hiển thị
+    sau này chỉ là một dòng ở `apps/web/lib/reaction.ts` — **không** phải một migration
+    thứ hai. Bộ cũ đặt tên theo hình (`lua`, `bang`) nên chính nó là ví dụ cho chuyện đó:
+    không ai đọc `lua` mà đoán ra nó nghĩa là gì.
+
+    ## Hàng cũ bị XOÁ, không map sang khoá mới
+
+    Migration `0017` xoá sạch hàng `Reaction`. Không map được: `len` ("tôi nghĩ lên") không
+    có nghĩa tương ứng nào trong bộ mới, và gán bừa nó thành `ro_rang` là **bịa ra lời
+    người dùng chưa từng nói**. Reaction là tín hiệu tương tác nhất thời; mất nó rẻ hơn
+    nhiều so với một bảng đếm nói sai điều người ta đã bấm.
     """
 
     class Emoji(models.TextChoices):
-        LEN = "len", "📈 lên"
-        XUONG = "xuong", "📉 xuống"
-        LUA = "lua", "🔥 lửa"
-        BANG = "bang", "🧊 băng"
-        TRUNG = "trung", "🎯 trúng"
+        RO_RANG = "ro_rang", "🧠 luận điểm rõ"
+        CO_NGUON = "co_nguon", "📎 có dẫn nguồn"
+        CAN_THEM = "can_them", "❓ cần thêm dữ kiện"
+        LIEU = "lieu", "🔥 liều"
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="reactions"
@@ -236,3 +264,42 @@ class Follow(models.Model):
 
     def __str__(self) -> str:
         return f"{self.user_id} theo mạch {self.mach_id}"
+
+
+class TheoSub(models.Model):
+    """Theo **chuyên mục** (user chốt 2026-08-24) — sổ tay riêng của người đọc.
+
+    ## Vì sao là bảng RIÊNG, không phải một cột thêm vào `Follow`
+
+    `Follow` khoá ngoài `Mach` và mang `last_seen_entry_seq` — vị trí đọc dở trong một
+    dòng thời gian có thứ tự (PLAN 5.5 "vạch mới"). Chuyên mục **không có** dòng thời gian
+    ấy: nó là một cái rổ, không phải một mạch. Nhét cả hai vào một bảng là hai khoá ngoài
+    nullable cộng một cột chỉ có nghĩa với một nửa số hàng — và mọi truy vấn từ đó về sau
+    phải nhớ lọc `mach__isnull`.
+
+    ## Nó **chưa** sinh thông báo
+
+    Theo mạch thì nối vào `core/thong_bao.py` (PLAN 5.8). Theo chuyên mục ở lượt này
+    **chỉ** là danh sách để người dùng tự quản lý — chưa có đường nào bắn thông báo khi
+    chuyên mục có mạch mới. Ghi ra ở đây vì cái nút trên màn hình dễ khiến người đọc code
+    giả định ngược lại; xem `plans/2026-08-24-theo-doi-chuyen-muc.md` mục 4.
+    """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="theo_subs"
+    )
+    sub = models.ForeignKey("core.Sub", on_delete=models.CASCADE, related_name="nguoi_theo")
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    class Meta:
+        verbose_name = "theo chuyên mục"
+        verbose_name_plural = "theo chuyên mục"
+        constraints = [
+            models.UniqueConstraint(fields=["user", "sub"], name="theo_sub_duy_nhat"),
+        ]
+        #: Tab "Chuyên mục" của hồ sơ liệt kê **mới theo trước**, và đó là truy vấn duy
+        #: nhất chạm bảng này theo nhiều hàng.
+        indexes = [models.Index(fields=["user", "-created_at"], name="theo_sub_cua_user")]
+
+    def __str__(self) -> str:
+        return f"{self.user_id} theo chuyên mục {self.sub_id}"

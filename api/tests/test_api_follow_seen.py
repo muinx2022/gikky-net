@@ -157,7 +157,7 @@ def test_GET_machs_id_van_KHONG_co_gi_per_user_sau_khi_da_follow(
     client.force_login(nguoi_a)
     dat(client, f"/api/v1/machs/{mach_cua_a.pk}/follow")
     dat(client, "/api/v1/votes", {"target_type": "moc", "target_id": moc.pk, "value": 1})
-    dat(client, f"/api/v1/mocs/{moc.pk}/reactions", {"emoji": "lua"})
+    dat(client, f"/api/v1/mocs/{moc.pk}/reactions", {"emoji": "lieu"})
 
     khoa = khoa_json(lay(client, f"/api/v1/machs/{mach_cua_a.pk}"))
     ro_ri = [k for k in khoa if any(m in k for m in ("my_", "following", "last_seen"))]
@@ -374,9 +374,9 @@ def test_reaction_cua_toi_hien_trong_me(client, mach_cua_a, nguoi_b):
     """Đối chứng dương cho `my_reactions` — nếu không, `[]` cứng cũng xanh ở mọi bài trên."""
     moc = Moc.objects.get(mach=mach_cua_a, seq=1)
     client.force_login(nguoi_b)
-    dat(client, f"/api/v1/mocs/{moc.pk}/reactions", {"emoji": "trung"})
+    dat(client, f"/api/v1/mocs/{moc.pk}/reactions", {"emoji": "co_nguon"})
     assert _me(client, mach_cua_a.pk)["my_reactions"] == [
-        {"moc_id": moc.pk, "emoji": "trung"}
+        {"moc_id": moc.pk, "emoji": "co_nguon"}
     ]
     dat(client, f"/api/v1/mocs/{moc.pk}/reactions", {"emoji": None})
     assert _me(client, mach_cua_a.pk)["my_reactions"] == []

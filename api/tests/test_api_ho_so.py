@@ -206,6 +206,7 @@ def test_ho_so_khong_lo_email_hay_trang_thai_ban(client, seed):
         "username",
         "display_name",
         "bio",
+        "avatar_url",
         "date_joined",
         "so_mach",
         "so_moc",

@@ -34,6 +34,14 @@ DAI_KET_QUA = 40
 DAI_LOAI = 20
 DAI_CAU_MOI = 200
 
+#: Hồ sơ sửa được qua `PATCH /me` (2026-08-24). Khai lại con số ở đây thay vì import từ
+#: model cùng lý do `DAI_KET_QUA`: chúng đi vào `openapi.json` thành `maxLength` — một
+#: phần hợp đồng công khai — mà `User.display_name` (`max_length=60` ở tầng cột) và
+#: `User.bio` (`MaxLengthValidator(500)`) không có hằng nào để import. Phải KHỚP model,
+#: nếu không API nhận chuỗi mà `update()` ghi cụt hoặc DB từ chối.
+DAI_DISPLAY_NAME = 60
+DAI_BIO = 500
+
 #: `Report.ghi_chu` là `TextField` (không giới hạn ở tầng cột) — trần chỉ tồn tại ở hợp
 #: đồng API, và nó phải tồn tại: thiếu nó thì một request đơn lẻ nhét được vài megabyte
 #: chữ vào hàng đợi kiểm duyệt, trên một endpoint chỉ cần đăng nhập. 1000 ký tự đủ cho một
@@ -137,7 +145,8 @@ class VoteIn(Schema):
 class ReactionIn(Schema):
     """React / đổi / rút — `POST /mocs/{id}/reactions` (PLAN 5.7).
 
-    Bộ CỐ ĐỊNH `len · xuong · lua · bang · trung` (📈📉🔥🧊🎯). `emoji = null` là **rút**.
+    Bộ CỐ ĐỊNH `ro_rang · co_nguon · can_them · lieu` (🧠📎❓🔥) — **phản hồi về BÀI
+    VIẾT**, không về giá; xem `core/models/tuong_tac.py::Reaction`. `emoji = null` là **rút**.
     """
 
     emoji: str | None = None
@@ -201,16 +210,18 @@ class DanhDauDaDocIn(Schema):
 
 
 class ToiSuaIn(Schema):
-    """`PATCH /me` — tuỳ chọn của chính người đang đăng nhập (PLAN 5.8).
+    """`PATCH /me` — tuỳ chọn + hồ sơ của chính người đang đăng nhập (PLAN 5.8, 5.9).
 
     **PATCH thật**: trường vắng mặt nghĩa là không đổi, nên `{}` là một request hợp lệ
     không ghi gì. Tách khỏi `ToiOut` chứ không dùng chung một schema hai chiều: `ToiOut`
-    mang `username`, `email`, `la_staff`, `google_bat` — không cái nào người dùng đặt
-    được ở đây, và một schema hai chiều là lời mời nhận đại cả bốn.
+    mang `username`, `email`, `la_staff`, `google_bat`, `avatar_url` — không cái nào người
+    dùng đặt được ở cửa NÀY (avatar đi qua `POST /me/avatar`), và một schema hai chiều là
+    lời mời nhận đại cả bốn.
 
-    Hôm nay đúng **một** trường. Danh tính (`display_name`, `bio`) chưa mở ở cửa này: nó
-    là nội dung công khai, cần luật độ dài + sanitize riêng, và trộn nó vào cùng lượt vá
-    với một cái công tắc boolean là cách phần khó bị làm vội.
+    ⚠ **`display_name`/`bio`: chuỗi RỖNG `""` là giá trị hợp lệ — nó XOÁ trường**, và nó
+    KHÁC `null`. Handler lọc `v is not None` (xem `api/toi.py::sua_toi`), nên `{"bio": ""}`
+    vẫn ghi (xoá bio), trường VẮNG MẶT thì không đụng, còn `null` gửi tường minh bị bỏ qua.
+    Cửa này KHÔNG là chỗ đặt avatar — avatar là file, đi qua `POST`/`DELETE /me/avatar`.
     """
 
     #: `true` ⇒ nhận email digest tuần 8:00 thứ Bảy VN. PLAN 5.8 chốt **opt-in**, nên mặc
@@ -219,6 +230,13 @@ class ToiSuaIn(Schema):
     #: `false`" — cùng cơ chế `model_fields_set` mà `MocSuaIn` dùng; handler đọc bằng
     #: `model_dump(exclude_unset=True)` nên một `null` gửi tường minh **không** ghi gì.
     nhan_digest: bool | None = None
+    #: Tên hiển thị (PLAN 5.9). `max_length` KHỚP `User.display_name` (60) và đi vào
+    #: `openapi.json`. Gửi `""` là quay về dùng `username` để hiển thị; không gửi là giữ
+    #: nguyên.
+    display_name: str | None = Field(default=None, max_length=DAI_DISPLAY_NAME)
+    #: Giới thiệu bản thân trên hồ sơ (PLAN 5.9). `max_length` KHỚP validator
+    #: `User.bio` (500). Gửi `""` là xoá bio; không gửi là giữ nguyên.
+    bio: str | None = Field(default=None, max_length=DAI_BIO)
 
 
 class BaoCaoMoiIn(Schema):

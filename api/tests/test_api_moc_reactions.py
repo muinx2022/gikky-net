@@ -41,16 +41,16 @@ def test_du_5_khoa_ke_ca_khoa_bang_0(client, mach):
 
 def test_dem_dung_sau_khi_co_nguoi_react(client, mach, tac_gia, nguoi_khac):
     moc1 = mach.mocs.get(seq=1)
-    dat_reaction(user=tac_gia, moc=moc1, emoji="lua")
-    dat_reaction(user=nguoi_khac, moc=moc1, emoji="lua")
+    dat_reaction(user=tac_gia, moc=moc1, emoji="lieu")
+    dat_reaction(user=nguoi_khac, moc=moc1, emoji="lieu")
 
     dem = _mocs(client, mach.pk)[1]["reactions"]
-    assert dem["lua"] == 2
-    assert dem["len"] == 0
+    assert dem["lieu"] == 2
+    assert dem["ro_rang"] == 0
     # Đổi reaction là UPDATE, không phải thêm hàng (`UNIQUE (user, moc)`).
-    dat_reaction(user=nguoi_khac, moc=moc1, emoji="bang")
+    dat_reaction(user=nguoi_khac, moc=moc1, emoji="can_them")
     dem = _mocs(client, mach.pk)[1]["reactions"]
-    assert dem["lua"] == 1 and dem["bang"] == 1
+    assert dem["lieu"] == 1 and dem["can_them"] == 1
 
 
 def test_dem_KHONG_lan_giua_hai_moc(client, mach, tac_gia, nguoi_khac):
@@ -59,12 +59,12 @@ def test_dem_KHONG_lan_giua_hai_moc(client, mach, tac_gia, nguoi_khac):
     from core.ghi import them_moc
 
     moc2 = them_moc(mach=mach, author=tac_gia, body="mốc hai", occurred_at=None)
-    dat_reaction(user=tac_gia, moc=mach.mocs.get(seq=1), emoji="len")
-    dat_reaction(user=nguoi_khac, moc=moc2, emoji="trung")
+    dat_reaction(user=tac_gia, moc=mach.mocs.get(seq=1), emoji="ro_rang")
+    dat_reaction(user=nguoi_khac, moc=moc2, emoji="co_nguon")
 
     m = _mocs(client, mach.pk)
-    assert m[1]["reactions"]["len"] == 1 and m[1]["reactions"]["trung"] == 0
-    assert m[2]["reactions"]["trung"] == 1 and m[2]["reactions"]["len"] == 0
+    assert m[1]["reactions"]["ro_rang"] == 1 and m[1]["reactions"]["co_nguon"] == 0
+    assert m[2]["reactions"]["co_nguon"] == 1 and m[2]["reactions"]["ro_rang"] == 0
 
 
 def test_bia_mo_KHONG_pho_so_reaction(client, mach, tac_gia, nguoi_khac):
@@ -73,12 +73,12 @@ def test_bia_mo_KHONG_pho_so_reaction(client, mach, tac_gia, nguoi_khac):
     from core.ghi import them_moc
 
     moc2 = them_moc(mach=mach, author=tac_gia, body="mốc hai", occurred_at=None)
-    dat_reaction(user=nguoi_khac, moc=moc2, emoji="lua")
-    assert _mocs(client, mach.pk)[2]["reactions"]["lua"] == 1
+    dat_reaction(user=nguoi_khac, moc=moc2, emoji="lieu")
+    assert _mocs(client, mach.pk)[2]["reactions"]["lieu"] == 1
 
     dat_an_moc(moc=moc2, boi=dung_mod("mod_reaction"), an=True, ly_do="thử")
     dem = _mocs(client, mach.pk)[2]["reactions"]
-    assert set(dem) == BO_KHOA, "bia mộ vẫn phải có ĐỦ 5 khoá — UI vẽ nguyên bộ"
+    assert set(dem) == BO_KHOA, "bia mộ vẫn phải có ĐỦ 4 khoá — UI vẽ nguyên bộ"
     assert set(dem.values()) == {0}
     # Hàng trong DB thì KHÔNG bị xoá — phép che nằm ở tầng trình bày, không ở đường ghi.
     assert Reaction.objects.filter(moc=moc2).count() == 1
@@ -110,9 +110,9 @@ def test_nguoi_la_KHONG_thay_reaction_cua_rieng_ai(client, mach, tac_gia):
     from core.models import User
 
     u = User.objects.get(username="nguoi_react_bi_mat")
-    dat_reaction(user=u, moc=mach.mocs.get(seq=1), emoji="lua")
+    dat_reaction(user=u, moc=mach.mocs.get(seq=1), emoji="lieu")
 
     r = client.get(f"/api/v1/machs/{mach.pk}")
     assert r.status_code == 200
     assert "nguoi_react_bi_mat" not in r.content.decode("utf8")
-    assert _mocs(client, mach.pk)[1]["reactions"]["lua"] == 1
+    assert _mocs(client, mach.pk)[1]["reactions"]["lieu"] == 1

@@ -25,6 +25,7 @@ from core.management.commands.seed_dev import (
     Command,
 )
 from core.doc_noi_dung import khoa_sap_wilson
+from core.management.commands import seed_dev
 from core.models import Comment, Mach, Moc, Sub, Trich, User, Vote
 
 from .conftest import chay_seed
@@ -69,8 +70,14 @@ def seq_dai_gap(mach: Mach) -> set[int]:
 
 def test_dung_don_hang_PLAN_muc_10(da_seed):
     hpg = da_seed
-    assert Sub.objects.count() == 2
-    assert set(Sub.objects.values_list("slug", flat=True)) == {"chung-khoan", "crypto"}
+    assert Sub.objects.count() == len(seed_dev.SUBS)
+    # Tập slug đọc từ `SUBS`, không gõ tay: bộ chuyên mục nở từ 2 lên 10 ở lượt
+    # 2026-08-24, và một bài đo ghim tập cứng sẽ đỏ ở MỌI lần thêm chuyên mục — tức nó đo
+    # "danh sách có đổi không", trong khi thứ nó cần đo là "seed dựng ĐÚNG danh sách nó
+    # khai". Vẫn không rỗng: `_dung_subs` mà bỏ sót hay dựng thừa một hàng là đỏ ngay.
+    assert set(Sub.objects.values_list("slug", flat=True)) == {
+        s["slug"] for s in seed_dev.SUBS
+    }
 
     assert hpg.status == Mach.TrangThai.DONG
     assert hpg.ket_qua == "+18.2% · 163 ngày"
@@ -408,7 +415,7 @@ def test_chay_lan_hai_khong_nhan_doi(da_seed):
 def test_reset_dung_lai_tu_dau_khong_de_lai_rac(da_seed):
     chay_seed("seed_dev", "--reset")
     assert Mach.objects.filter(title=TITLE_HPG).count() == 1
-    assert Sub.objects.count() == 2
+    assert Sub.objects.count() == len(seed_dev.SUBS)
     # `len(NGUOI_CO_TEN)` chứ không phải `11` viết cứng, và `+ 1` là **mod seed**
     # (`MOD_SEED`, thêm 2026-08-23 — cửa duy nhất vào khu quản trị từ một clone sạch).
     # Con số phải suy ra từ chính hằng của seed: một `11` viết tay sẽ đỏ mỗi lần ai đó

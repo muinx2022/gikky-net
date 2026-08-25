@@ -51,6 +51,8 @@ import urllib.request
 from django.conf import settings
 from django.db import transaction
 
+from core.lam_sach_html import van_ban_thuan
+
 logger = logging.getLogger(__name__)
 
 #: Tên index duy nhất của v1. **Chỉ MẠCH, không bình luận** — plan con Phase 7 §4: khối
@@ -195,6 +197,13 @@ def _than_theo_moc(mach) -> tuple[str, str]:
     Mốc 1 bị ẩn/xoá ⇒ `than` rỗng nhưng mạch **vẫn ở trong index**: mạch chưa bị ẩn thì
     nó vẫn nằm trên feed, chỉ nội dung mốc là mất. Đây là vế "cập nhật" của plan con §2 —
     vế dễ quên hơn vế "gỡ".
+
+    ⚠ **Đẩy VĂN BẢN THUẦN, không đẩy `body` thô** (đổi 2026-08-24 — `body` nay là HTML,
+    xem `core/lam_sach_html.py`). Ba lý do, không phải khẩu vị: `<strong>` trong index là
+    một *từ* mà người ta gõ vào ô tìm kiếm sẽ khớp mọi bài có chữ đậm; `xu<strong>ất</strong>`
+    làm tan mất một từ tiếng Việt khỏi index; và Meilisearch trả lại nguyên văn cho lệnh
+    đối soát. Meilisearch KHÔNG render gì nên đây không phải chuyện an toàn — `tim()` chỉ
+    lấy id (S6) — mà là chuyện kết quả tìm đúng hay sai.
     """
     from core.models.moc import Moc
 
@@ -205,8 +214,8 @@ def _than_theo_moc(mach) -> tuple[str, str]:
         .order_by("seq")
         .values_list("seq", "body")
     )
-    dau = next((b for s, b in hang if s == 1), "")
-    con_lai = "\n\n".join(b for s, b in hang if s != 1)
+    dau = next((van_ban_thuan(b) for s, b in hang if s == 1), "")
+    con_lai = "\n\n".join(van_ban_thuan(b) for s, b in hang if s != 1)
     return dau, con_lai
 
 

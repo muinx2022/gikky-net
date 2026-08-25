@@ -91,16 +91,82 @@ LUI_NGAY_DONG_SO = 45
 #: Đúng con số trong `ket_qua`: mốc 1 → mốc 9 cách nhau 163 ngày.
 DAI_MACH_NGAY = 163
 
+#: Bộ chuyên mục của site — user chốt 2026-08-24 ("đủ để website hoạt động trong lĩnh
+#: vực trading"). Trước đó chỉ có 2 (`chung-khoan`, `crypto`).
+#:
+#: ## Chia theo LỚP TÀI SẢN trước, rồi mới tới CHỦ ĐỀ
+#:
+#: Sáu mục đầu là nơi người ta giao dịch (cổ phiếu VN · phái sinh · tiền số · hàng hoá ·
+#: ngoại hối · cổ phiếu quốc tế); bốn mục sau là thứ cắt ngang mọi lớp tài sản (vĩ mô,
+#: phương pháp, quản trị vốn, hỏi đáp). Người mới hỏi "tôi đăng bài ở đâu" thì câu trả lời
+#: đầu tiên luôn là "anh đang giao dịch cái gì" — nên trục ấy phải là trục chính.
+#:
+#: **Cố ý DỪNG ở 10.** Chia nhỏ hơn (tách "vàng" khỏi "hàng hoá", tách "PTKT" khỏi "PTCB")
+#: là chuyện dễ và luôn hấp dẫn, nhưng một site mới mà có 25 chuyên mục thì 20 cái rỗng —
+#: và một chuyên mục rỗng vừa làm người đọc cụt hứng vừa làm người viết ngại đăng. Tách
+#: tiếp khi một mục thật sự đông, đó là việc của admin chứ không phải của seed.
+#:
+#: ## Seed này chỉ dựng DỮ LIỆU DEV
+#:
+#: PLAN mục 1 chốt v1 tạo sub **bằng tay qua khu quản trị**. Danh sách ở đây làm máy dev
+#: và CI có đủ chuyên mục để đo; prod thì tạo trong `apps/admin`. Đừng đổi nó thành data
+#: migration — migration sẽ ghi đè lên chỉnh sửa của admin ở mọi lần deploy.
+#:
+#: `_dung_subs` dùng `get_or_create(slug=…, defaults=…)`, nên **sửa `ten`/`mo_ta` ở đây
+#: KHÔNG cập nhật hàng đã có**. Đó là chủ đích: tên do admin sửa trên prod không được một
+#: lượt seed nào giẫm lên.
 SUBS = [
+    # --- lớp tài sản ---
     {
         "slug": "chung-khoan",
-        "ten": "Chứng khoán",
-        "mo_ta": "Cổ phiếu Việt Nam: nhật ký lệnh, luận điểm, hậu kiểm.",
+        "ten": "Chứng khoán Việt Nam",
+        "mo_ta": "Cổ phiếu HOSE, HNX, UPCoM: nhật ký lệnh, luận điểm và hậu kiểm.",
+    },
+    {
+        "slug": "phai-sinh",
+        "ten": "Phái sinh & chứng quyền",
+        "mo_ta": "VN30F và chứng quyền có bảo đảm: vào vị thế, đòn bẩy, điểm cắt lỗ.",
     },
     {
         "slug": "crypto",
-        "ten": "Crypto",
-        "mo_ta": "Coin, sàn, on-chain. Nhật ký vị thế và bài học.",
+        "ten": "Tiền số",
+        "mo_ta": "Bitcoin, altcoin, on-chain và sàn: nhật ký vị thế qua từng chu kỳ.",
+    },
+    {
+        "slug": "hang-hoa",
+        "ten": "Hàng hoá",
+        "mo_ta": "Vàng, dầu, kim loại và nông sản — giao dịch qua sở giao dịch hàng hoá.",
+    },
+    {
+        "slug": "ngoai-hoi",
+        "ten": "Ngoại hối",
+        "mo_ta": "Cặp tiền lớn, chỉ số DXY, tỷ giá USD/VND và tác động lên danh mục.",
+    },
+    {
+        "slug": "co-phieu-quoc-te",
+        "ten": "Cổ phiếu quốc tế",
+        "mo_ta": "Thị trường Mỹ và các sàn ngoài Việt Nam, kèm ETF toàn cầu.",
+    },
+    # --- cắt ngang mọi lớp tài sản ---
+    {
+        "slug": "vi-mo",
+        "ten": "Vĩ mô & lãi suất",
+        "mo_ta": "Lãi suất, tỷ giá, dòng vốn và số liệu vĩ mô đặt nền cho mọi vị thế.",
+    },
+    {
+        "slug": "phan-tich",
+        "ten": "Phân tích & phương pháp",
+        "mo_ta": "Kỹ thuật, cơ bản, định lượng: cách ra quyết định và cách kiểm lại nó.",
+    },
+    {
+        "slug": "quan-tri-von",
+        "ten": "Quản trị vốn & tâm lý",
+        "mo_ta": "Cỡ lệnh, dừng lỗ, chuỗi thua, kỷ luật — phần quyết định kết quả dài hạn.",
+    },
+    {
+        "slug": "hoi-dap",
+        "ten": "Hỏi đáp",
+        "mo_ta": "Câu hỏi của người mới: chọn sàn, phí, thuế, thao tác đặt lệnh.",
     },
 ]
 

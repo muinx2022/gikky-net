@@ -105,10 +105,10 @@ def loi_unique_reaction_that(mach, tac_gia) -> IntegrityError:
     `False`, lỗi bay ra thành 500 y như trước, và **không có gì đỏ** — trừ bài đo này.
     """
     moc = Moc.objects.get(mach=mach, seq=1)
-    Reaction.objects.create(user=tac_gia, moc=moc, emoji=Reaction.Emoji.LUA)
+    Reaction.objects.create(user=tac_gia, moc=moc, emoji=Reaction.Emoji.LIEU)
     return _bat_integrity(
         lambda: Reaction.objects.create(
-            user=tac_gia, moc=moc, emoji=Reaction.Emoji.BANG
+            user=tac_gia, moc=moc, emoji=Reaction.Emoji.CAN_THEM
         )
     )
 

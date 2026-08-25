@@ -113,11 +113,12 @@ from core.anh import AnhDaXuLy
 from core.anh_luu import an_anh, ghi_anh, hien_anh, khoa_moi, xoa_anh_that
 from core.cay_binh_luan import cap_phat_path
 from core.doc_noi_dung import doc_duoc
+from core.lam_sach_html import DINH_DANG_HTML, lam_sach
 from core.models.binh_luan import Comment
 from core.models.dien_dan import Mach, Sub
 from core.models.he_thong import AuditLog, Report
 from core.models.moc import Moc, MocAnh, MocRevision, kiem_figures
-from core.models.tuong_tac import Follow, Reaction, Trich, Vote
+from core.models.tuong_tac import Follow, Reaction, TheoSub, Trich, Vote
 from core.thoi_gian import TZ_VN, ngay_vn
 from core.tim_kiem import dong_bo_mach
 
@@ -370,6 +371,25 @@ def tao_mach(
     return mach, moc
 
 
+def _body_sach_khong_rong(body: str) -> str:
+    """`lam_sach` rồi ĐÒI kết quả còn nội dung — hàng rào của cả hai đường ghi.
+
+    **Vì sao phải có, và vì sao validator của schema không đủ:** `min_length=1` ở tầng API
+    chạy trên chuỗi NGƯỜI DÙNG GỬI, còn `lam_sach` chạy sau đó. Một thân bài chỉ gồm
+    `<script>alert(1)</script>` qua được `min_length` rồi bị sanitize thành chuỗi **rỗng**
+    ⇒ trước lượt vá này, `POST /machs` trả **201 với `body=""`**: một bài viết trống nằm
+    trong feed, không ai gỡ được bằng đường sửa vì sửa cũng đòi body.
+
+    Ném `ValidationError` — cùng quy ước với `kiem_figures` và phần còn lại của tầng này.
+    """
+    sach = lam_sach(body)
+    if sach.strip() == "":
+        raise ValidationError(
+            "Thân bài không còn nội dung nào sau khi lọc — nó chỉ gồm thẻ HTML bị chặn."
+        )
+    return sach
+
+
 def them_moc(
     *,
     mach: Mach,
@@ -391,9 +411,16 @@ def them_moc(
     tầng API (Phase 2) — chúng phụ thuộc người gọi, không phải bất biến của dữ liệu.
     Seed cần dựng mạch 9 mốc trong một lần chạy nên không thể chôn giới hạn đó ở đây.
 
+    **`body` được SANITIZE ở đây, và đây là chỗ duy nhất** (chốt 2026-08-24). `tao_mach`
+    gọi xuống hàm này nên "đăng bài" và "nối mốc" dùng chung một cửa; đường sửa là
+    `sua_moc` và nó gọi lại `lam_sach` một lần nữa. Ba đường ghi, hai lời gọi, không có
+    đường thứ tư — thêm một đường mà quên sanitize là một `<script>` nằm trong DB, và từ
+    đó nó đi ra mọi trang render `body` như HTML.
+
     `_created_at_seed`: chỉ `seed_dev` truyền — xem `_dong_dau_server`.
     """
     kiem_figures(figures)
+    body = _body_sach_khong_rong(body)
     khi = _dong_dau_server(_created_at_seed)
     if occurred_at is None:
         occurred_at = ngay_vn(khi)
@@ -413,6 +440,11 @@ def them_moc(
                     created_at=khi,
                     loai=loai,
                     body=body,
+                    # Nhãn đi CÙNG câu INSERT với chuỗi vừa `lam_sach` — mặc định của cột
+                    # là `markdown` (đường render an toàn), nên quên dòng này thì bài mới
+                    # hiện ra nguyên văn `<p>`, chứ không phải rò HTML. Sai theo chiều an
+                    # toàn, nhưng vẫn là sai.
+                    body_dinh_dang=DINH_DANG_HTML,
                     question_for_crowd=question_for_crowd,
                     figures=figures,
                 )
@@ -742,6 +774,10 @@ def sua_moc(*, moc: Moc, thay_doi: dict, khi=None) -> Moc:
             f"Không sửa được trường {sorted(la)}; chỉ "
             f"{list(TRUONG_SUA_DUOC_CUA_MOC)} sửa được (PLAN 5.2)."
         )
+    if "body" in thay_doi:
+        # Đường ghi thứ hai của `body` — xem docstring `them_moc`. Không tin vào việc
+        # tầng API đã dọn: `sua_moc` cũng được gọi từ shell và từ bài đo.
+        thay_doi = {**thay_doi, "body": _body_sach_khong_rong(thay_doi["body"])}
     if "figures" in thay_doi:
         # `MocRevision.figures` mang cùng validator, nhưng validator của Django chỉ chạy
         # khi ai đó gọi `full_clean()` — `create()`/`update()` thì không. Gọi tay ở đây là
@@ -765,9 +801,15 @@ def sua_moc(*, moc: Moc, thay_doi: dict, khi=None) -> Moc:
             moc.edit_count += 1
         for ten, gia_tri in thay_doi.items():
             setattr(moc, ten, gia_tri)
-        moc.save(
-            update_fields=[*TRUONG_SUA_DUOC_CUA_MOC, "edited_at", "edit_count"]
-        )
+        cot_ghi = [*TRUONG_SUA_DUOC_CUA_MOC, "edited_at", "edit_count"]
+        if "body" in thay_doi:
+            # `body_dinh_dang` KHÔNG nằm trong `TRUONG_SUA_DUOC_CUA_MOC`: nó không phải
+            # trường người dùng sửa được, nó là hệ quả của việc `body` vừa qua `lam_sach`.
+            # Thiếu nó ở `update_fields` thì `save()` bỏ qua cột — một hàng markdown cũ
+            # được sửa sẽ mang HTML nhưng vẫn đeo nhãn `markdown`.
+            moc.body_dinh_dang = DINH_DANG_HTML
+            cot_ghi.append("body_dinh_dang")
+        moc.save(update_fields=cot_ghi)
         dong_bo_mach(moc.mach)
     return moc
 
@@ -1033,7 +1075,7 @@ def dat_reaction(*, user, moc: Moc, emoji: str | None) -> Reaction | None:
     """React / đổi / rút reaction trên một mốc — PLAN 5.7. `emoji=None` nghĩa là **rút**.
 
     Một user một reaction mỗi mốc (`UNIQUE (user, moc)`), nên đổi reaction là `UPDATE`
-    chứ không phải thêm hàng — bộ 📈📉🔥🧊🎯 là "bậc thang tham gia rẻ hơn viết", không
+    chứ không phải thêm hàng — bộ 🧠📎❓🔥 là "bậc thang tham gia rẻ hơn viết", không
     phải một phiếu bầu nhiều lựa chọn.
 
     Không có cột denormalize nào đi theo: reaction không vào `score`, không vào
@@ -1140,6 +1182,32 @@ def bo_follow(*, user, mach: Mach) -> bool:
     Ghim ở `tests/test_api_follow_seen.py::test_mach_bi_khoa_van_follow_va_seen_duoc`.
     """
     so_xoa, _ = Follow.objects.filter(user=user, mach=mach).delete()
+    return so_xoa > 0
+
+
+def dat_theo_sub(*, user, sub: Sub) -> TheoSub:
+    """Theo chuyên mục. **Idempotent** — bấm hai lần không dựng hàng thứ hai.
+
+    Không có `defaults` nào để đặt: khác `dat_follow`, chuyên mục không mang vị trí đọc dở
+    (xem docstring `TheoSub`). `get_or_create` ở đây đúng nghĩa "có thì thôi".
+
+    Hai request đồng thời cùng bấm theo thì một trong hai ăn `IntegrityError` từ
+    `UniqueConstraint` — `get_or_create` của Django tự bắt và đọc lại hàng, nên ràng buộc
+    ấy là hàng rào THẬT chứ không phải trang trí. Bỏ nó đi là hai hàng trùng, và tab
+    "Chuyên mục" hiện một chuyên mục hai lần.
+    """
+    theo, _ = TheoSub.objects.get_or_create(user=user, sub=sub)
+    return theo
+
+
+def bo_theo_sub(*, user, sub: Sub) -> bool:
+    """Bỏ theo chuyên mục. Trả `True` nếu vừa xoá một hàng, `False` nếu vốn không theo.
+
+    Gọi khi chưa theo **không phải lỗi**: nút "Hủy" ở hai chỗ (header chuyên mục và tab
+    hồ sơ) có thể cùng mở trên hai tab trình duyệt, và bắt cái thứ hai ăn 404 là báo lỗi
+    cho một trạng thái người dùng vốn đã muốn có.
+    """
+    so_xoa, _ = TheoSub.objects.filter(user=user, sub=sub).delete()
     return so_xoa > 0
 
 
@@ -1276,6 +1344,15 @@ AUDIT_SUA_SUB = "sua_sub"
 AUDIT_XOA_SUB = "xoa_sub"
 #: Phân công quyền — PLAN 5.10 đòi ghi sổ mọi hành động mod, và đây là hành động mà
 #: câu hỏi "ai cho người này làm mod chuyên mục" chỉ trả lời được qua nhật ký.
+#: Cài đặt hệ thống. `target_id` là `None` — cài đặt không phải một hàng có khoá chính,
+#: và nhét một id giả vào đó là mời người đọc nhật ký đi tra một bảng không tồn tại.
+AUDIT_SUA_CAI_DAT_GOOGLE = "sua_cai_dat_google"
+AUDIT_XOA_CAI_DAT_GOOGLE = "xoa_cai_dat_google"
+#: CRUD tài khoản (2026-08-25). `AUDIT_DAT_MAT_KHAU_USER` mang cờ `xoa`, **không**
+#: mang chuỗi mật khẩu — một nhật ký chứa mật khẩu là bản sao thứ hai phải đi bảo vệ.
+AUDIT_TAO_USER = "tao_user"
+AUDIT_SUA_USER = "sua_user"
+AUDIT_DAT_MAT_KHAU_USER = "dat_mat_khau_user"
 AUDIT_GAN_MOD_SUB = "gan_mod_sub"
 AUDIT_GO_MOD_SUB = "go_mod_sub"
 
@@ -1285,6 +1362,7 @@ DICH_COMMENT = "comment"
 DICH_MACH = "mach"
 DICH_USER = "user"
 DICH_SUB = "sub"
+DICH_CAI_DAT = "cai_dat"
 DICH_REPORT = "report"
 
 
@@ -1344,21 +1422,11 @@ def dat_an_moc(*, moc: Moc, boi, an: bool, ly_do: str = "") -> bool:
         # `dong_bo_mach` chứ không tự quyết: nó đọc lại trạng thái hiện thời nên cả hai
         # chiều dùng chung một lời gọi (xem docstring `core/tim_kiem.py`).
         dong_bo_mach(Mach.objects.get(pk=hang.mach_id))
-#: Cài đặt hệ thống. `target_id` là `None` — cài đặt không phải một hàng có khoá chính,
-#: và nhét một id giả vào đó là mời người đọc nhật ký đi tra một bảng không tồn tại.
-AUDIT_SUA_CAI_DAT_GOOGLE = "sua_cai_dat_google"
-AUDIT_XOA_CAI_DAT_GOOGLE = "xoa_cai_dat_google"
-#: CRUD tài khoản (2026-08-25). `AUDIT_DAT_MAT_KHAU_USER` mang cờ `xoa`, **không**
-#: mang chuỗi mật khẩu — một nhật ký chứa mật khẩu là bản sao thứ hai phải đi bảo vệ.
-AUDIT_TAO_USER = "tao_user"
-AUDIT_SUA_USER = "sua_user"
-AUDIT_DAT_MAT_KHAU_USER = "dat_mat_khau_user"
         ghi_audit(
             actor=boi,
             action=AUDIT_AN_MOC if an else AUDIT_GO_AN_MOC,
             target_type=DICH_MOC,
             target_id=hang.pk,
-DICH_CAI_DAT = "cai_dat"
             mach_id=hang.mach_id,
             seq=hang.seq,
             ly_do=ly_do,

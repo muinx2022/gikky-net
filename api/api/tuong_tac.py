@@ -110,7 +110,7 @@ def dat_vote_api(request, du_lieu: VoteIn):
     auth=dang_nhap,
 )
 def dat_reaction_api(request, moc_id: int, du_lieu: ReactionIn):
-    """Reaction 1 chạm trên mốc — bộ **CỐ ĐỊNH** 📈📉🔥🧊🎯 (PLAN 5.7).
+    """Reaction 1 chạm trên mốc — bộ **CỐ ĐỊNH** 🧠📎❓🔥 (PLAN 5.7, đổi 2026-08-25).
 
     **Quyền: bất kỳ ai đã đăng nhập**, kể cả trên mốc của chính mình. Mạch bị mod khoá ⇒
     403; mốc đã bị gỡ ⇒ 409.
@@ -119,7 +119,7 @@ def dat_reaction_api(request, moc_id: int, du_lieu: ReactionIn):
     thêm hàng: đây là "bậc thang tham gia rẻ hơn viết", không phải phiếu bầu nhiều lựa
     chọn. `emoji = null` nghĩa là **rút**.
 
-    Trả về **đủ 5 khoá kể cả khoá đang bằng 0**: UI vẽ nguyên bộ, và một khoá vắng mặt
+    Trả về **đủ 4 khoá kể cả khoá đang bằng 0**: UI vẽ nguyên bộ, và một khoá vắng mặt
     trong response sẽ thành một icon nhấp nháy xuất hiện/biến mất theo lượt bấm.
     Lưu khoá không dấu (`len`/`xuong`/…) chứ không lưu emoji — đổi bộ icon sau này không
     phải migrate dữ liệu.
@@ -135,7 +135,7 @@ def dat_reaction_api(request, moc_id: int, du_lieu: ReactionIn):
 
 
 def dem_reaction(moc: Moc) -> dict[str, int]:
-    """Số reaction theo từng khoá, **đủ 5 khoá kể cả khoá 0** — xem endpoint ở trên."""
+    """Số reaction theo từng khoá, **đủ 4 khoá kể cả khoá 0** — xem endpoint ở trên."""
     thuc = dict(
         Reaction.objects.filter(moc=moc)
         .values_list("emoji")

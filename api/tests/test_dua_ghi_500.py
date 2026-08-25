@@ -87,7 +87,7 @@ def test_L09_react_dong_thoi_lan_dau_KHONG_nem_va_chi_MOT_hang():
     mach, chu, moc1 = _nen_mach_hai_moc()
     nguoi = dung_user("nguoi_react")
 
-    loi = _chay_cac_luong(lambda i: dat_reaction(user=nguoi, moc=moc1, emoji="lua"), SO_LUONG)
+    loi = _chay_cac_luong(lambda i: dat_reaction(user=nguoi, moc=moc1, emoji="lieu"), SO_LUONG)
 
     assert loi == [], f"có lỗi lọt ra ngoài (mỗi cái là một HTTP 500): {loi!r}"
     assert Reaction.objects.filter(user=nguoi, moc=moc1).count() == 1
@@ -111,7 +111,7 @@ def test_L09_qua_cua_HTTP_double_click_van_la_200():
         c.force_login(nguoi)
         r = c.post(
             f"/api/v1/mocs/{moc1.pk}/reactions",
-            data=json.dumps({"emoji": "lua"}),
+            data=json.dumps({"emoji": "lieu"}),
             content_type="application/json",
         )
         ma.append(r.status_code)

@@ -289,7 +289,14 @@ def feed_dang_dien_ra(
     return l if l is not None else ket_qua
 
 
-def _subs_kem_so_mach() -> QuerySet:
+def subs_kem_so_mach() -> QuerySet:
+    """CÔNG KHAI (bỏ gạch dưới 2026-08-24) vì `api/theo_sub.py` dùng lại nó.
+
+    Đây là **một** định nghĩa của "mạch hiện được" cho con số `so_mach`. Chép công thức
+    `Count(..., filter=hidden_at__isnull=True)` sang module kia là dựng nguồn sự thật thứ
+    hai: ngày luật che đổi (thêm `deleted_at` chẳng hạn) sẽ có đúng một chỗ được sửa, và
+    hai màn hình cùng nói "12 mạch" / "9 mạch" mà không chỗ nào đỏ.
+    """
     """`Sub` kèm `so_mach_hien` — **cùng bộ lọc với `_mach_hien`**, đếm bằng annotate.
 
     Một định nghĩa cho cả hai endpoint sub: `xem_sub` và `liet_ke_sub` nói cùng một con
@@ -303,7 +310,7 @@ def _subs_kem_so_mach() -> QuerySet:
 
 
 def _sub_ra(sub: Sub) -> SubChiTietOut:
-    """Cần `so_mach_hien` đã annotate — xem `_subs_kem_so_mach`."""
+    """Cần `so_mach_hien` đã annotate — xem `subs_kem_so_mach`."""
     return SubChiTietOut(
         slug=sub.slug,
         ten=sub.ten,
@@ -336,7 +343,7 @@ def liet_ke_sub(request):
     Sắp theo `slug` chứ không theo `so_mach`: sidebar là một **bản đồ**, và một bản đồ
     tự sắp lại theo độ đông mỗi lần có bài mới thì không ai nhớ được chỗ nào ở đâu.
     """
-    return [_sub_ra(s) for s in _subs_kem_so_mach().order_by("slug")]
+    return [_sub_ra(s) for s in subs_kem_so_mach().order_by("slug")]
 
 
 @router.get(
@@ -354,7 +361,7 @@ def xem_sub(request, slug: str):
 
     Slug không tồn tại trả 404 `khong_tim_thay`.
     """
-    sub = _subs_kem_so_mach().filter(slug=slug).first()
+    sub = subs_kem_so_mach().filter(slug=slug).first()
     if sub is None:
         return khong_tim_thay(f"sub {slug!r}")
     return _sub_ra(sub)

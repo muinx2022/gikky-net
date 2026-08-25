@@ -2,6 +2,7 @@
 
 from ninja import Router
 
+from core.anh_luu import url_thumb
 from core.doc_noi_dung import TRICH_CON_HIEN
 from core.models.binh_luan import Comment
 from core.models.dien_dan import Mach
@@ -85,6 +86,7 @@ def xem_ho_so(request, username: str, limit: int = SO_MACH_TREN_HO_SO):
         username=user.username,
         display_name=user.display_name,
         bio=user.bio,
+        avatar_url=url_thumb(user.avatar_khoa) if user.avatar_khoa else None,
         date_joined=user.date_joined,
         so_mach=mach_hien.count(),
         so_moc=Moc.objects.filter(author=user, **doc_duoc).count(),

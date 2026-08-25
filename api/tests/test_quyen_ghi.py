@@ -140,7 +140,7 @@ CUA_GHI = [
     ("patch", "/api/v1/comments/{comment}", {"body": "B"}),
     ("delete", "/api/v1/comments/{comment}", {}),
     ("post", "/api/v1/votes", {"target_type": "moc", "target_id": 0, "value": 1}),
-    ("post", "/api/v1/mocs/{moc}/reactions", {"emoji": "lua"}),
+    ("post", "/api/v1/mocs/{moc}/reactions", {"emoji": "lieu"}),
     # --- Phase 3 ---
     ("post", "/api/v1/machs/{mach}/seen", {}),
     ("post", "/api/v1/machs/{mach}/follow", {}),
@@ -165,6 +165,41 @@ CUA_GHI = [
     # có bài đo riêng gửi multipart thật — `test_api_anh.py::test_A7_*`.
     ("post", "/api/v1/mocs/{moc}/anh", {}),
     ("delete", "/api/v1/anh/{anh}", {}),
+    # --- Avatar (2026-08-24) ---
+    # Cùng loài `/anh`: `POST /me/avatar` là multipart, cả hai không nhận thân JSON. Bài
+    # đo 401 chạy được vì auth chạy TRƯỚC khi parse tham số. Chúng vắng mặt ở `CUA_CO_CHU`
+    # vì chủ suy ra từ PHIÊN, không từ tham số — cùng nhóm `PATCH /me` (đích luôn là chính
+    # người gọi); vế "B không đụng được của A" là vô nghĩa ở đây.
+    ("post", "/api/v1/me/avatar", {}),
+    ("delete", "/api/v1/me/avatar", {}),
+    # --- Ảnh nội dung (2026-08-24) ---
+    # `POST /me/anh` — multipart, cùng loài với hai dòng trên: đích là chính người gọi
+    # nên nó vắng mặt ở `CUA_CO_CHU`, và bài đo 401 chạy được vì auth chạy TRƯỚC khi
+    # Ninja parse phần `file`.
+    ("post", "/api/v1/me/anh", {}),
+    # --- bề mặt mod trên v1 (2026-08-24, PLAN phần D) ---
+    # Bốn cửa ẩn/khoá mở ra front vì Caddy chặn `gikky.net/api/admin/*` (PLAN 8.2). Chúng
+    # thuộc bảng này như mọi cửa ghi khác — **khách vẫn phải nhận 401 `chua_dang_nhap`**,
+    # không phải 403: lớp `ChiModTrenV1` cố ý trả `None` cho khách (→ handler
+    # `AuthenticationError` chung của `api_v1`) và chỉ ném 403 cho người ĐÃ đăng nhập mà
+    # không phải staff. Vế 403 ấy được đo riêng ở `test_api_mod.py`, cùng vế "mod đang bị
+    # ban cũng 403".
+    #
+    # Chúng vắng mặt ở `CUA_CO_CHU` vì đích của chúng **không có chủ theo nghĩa của
+    # `doi_chu_so_huu`**: quyền ở đây là quyền MOD, suy từ phiên, và mod ẩn nội dung của
+    # người khác là đúng việc của mod. Vế "người không có quyền không đụng được" của
+    # chúng được đo bằng đúng thứ đo được — `test_api_mod.py::test_user_thuong_bi_tu_choi`.
+    ("post", "/api/v1/mod/machs/{mach}/an", {"an": True}),
+    ("post", "/api/v1/mod/mocs/{moc}/an", {"an": True}),
+    ("post", "/api/v1/mod/comments/{comment}/an", {"an": True}),
+    ("post", "/api/v1/mod/machs/{mach}/khoa", {"khoa": True}),
+    # --- theo dõi chuyên mục (2026-08-24) ---
+    # Thân RỖNG: đích là chuyên mục trên đường dẫn, chủ suy ra từ phiên. Không có tham số
+    # nào trỏ tới người khác, nên hai cửa này không cần `doi_chu_so_huu` — chúng chỉ ghi
+    # được vào hàng của chính người gọi. Cái chúng vẫn cần là 401 + CSRF, và ở django-ninja
+    # 1.6 hai thứ đó là **cùng một** thứ (`auth=dang_nhap`); đó chính là điều bảng này đo.
+    ("post", "/api/v1/subs/{sub}/theo", {}),
+    ("delete", "/api/v1/subs/{sub}/theo", {}),
 ]
 
 
@@ -172,6 +207,8 @@ def _sao(duong: str) -> str:
     for x in (
         "{mach}", "{moc}", "{comment}", "{anh}",
         "{int:mach_id}", "{int:moc_id}", "{int:comment_id}", "{int:anh_id}",
+        # Chuyên mục đi bằng **slug**, không phải id — hai cửa `/subs/{slug}/theo`.
+        "{sub}", "{slug}",
     ):
         duong = duong.replace(x, "*")
     return duong
@@ -301,7 +338,7 @@ def test_B_van_lam_duoc_bon_viec_KHONG_co_chu(client, mach_cua_a, nguoi_b, sub):
         {"target_type": "moc", "target_id": moc.pk, "value": 1},
         status=200,
     )
-    dat(client, f"/api/v1/mocs/{moc.pk}/reactions", {"emoji": "lua"}, status=200)
+    dat(client, f"/api/v1/mocs/{moc.pk}/reactions", {"emoji": "lieu"}, status=200)
 
 
 @pytest.mark.django_db
@@ -457,7 +494,7 @@ def test_mach_bi_khoa_chan_MOI_tuong_tac_ke_ca_cua_tac_gia(client, mach_cua_a, n
             "/api/v1/votes",
             {"target_type": "moc", "target_id": moc.pk, "value": 1},
         ),
-        ("post", f"/api/v1/mocs/{moc.pk}/reactions", {"emoji": "lua"}),
+        ("post", f"/api/v1/mocs/{moc.pk}/reactions", {"emoji": "lieu"}),
     ]:
         assert ma_loi(client, url, than, status=403, method=method) == MACH_BI_KHOA, url
 

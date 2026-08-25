@@ -134,6 +134,32 @@ def test_thu_noi_ra_ten_mach_so_moc_moi_va_link(mach, tac_gia, nguoi_khac):
     assert "/cai-dat" not in thu.than
 
 
+
+@pytest.mark.django_db
+def test_than_thu_KHONG_chua_the_html(mach, tac_gia, nguoi_khac):
+    """Thân thư là **văn bản thuần** (docstring `dung_digest`) — và nay `Moc.body` là HTML.
+
+    Hôm nay mẫu thư chỉ nhúng `title`/`slug`/số đếm, không nhúng trích đoạn `body` nào, nên
+    bài đo này là một **cái chuông** chứ không phải một phép sửa: ngày ai đó thêm "hai dòng
+    đầu của mốc mới nhất" cho thư đỡ khô, nó đỏ ngay và người ấy biết phải gọi
+    `core/lam_sach_html.py::van_ban_thuan`. Thiếu chuông thì lá thư đi ra với `<p>` giữa
+    dòng, ở một kênh không ai xem lại trước khi gửi.
+    """
+    them_moc(
+        mach=mach,
+        author=tac_gia,
+        body='<p>Mốc 2 <strong>quan trọng</strong>.</p><script>alert(1)</script>',
+    )
+    mach.refresh_from_db()
+
+    den = mach.last_entry_at + timedelta(minutes=1)
+    thu = dung_digest(NguoiNhan(nguoi_khac, (mach.pk,)), *cua_so(den), GOC)
+
+    assert thu is not None
+    assert "<" not in thu.than, thu.than
+    assert "<" not in thu.tieu_de, thu.tieu_de
+
+
 def test_khong_co_display_name_thi_xung_ho_bang_username(mach, tac_gia):
     from tests.conftest import dung_user
 

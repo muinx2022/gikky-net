@@ -237,16 +237,52 @@ CẶN  còn lại.       last_activity_at: cột denormalize trên Mach (mục 6
 - Toggle thủ công theo *lượt xem* (`?view=bao|can`), **không lưu** lựa chọn (bài học phản biện:
   máy nhớ toggle → người nghiêm túc bật "thuần" một lần rồi vĩnh viễn không thấy bình luận).
 - **Mặt BÃO** (khán đài là thân bài): header → spine 1 dòng (bấm số → peek mốc; **số của các
-  mốc chưa xem đổi màu hoàng thổ** theo `last_seen_entry_seq`) → thẻ mốc mới nhất mở sẵn
-  (kèm nút "mở cả mạch ▾" — bung timeline đầy đủ, trong đó **vạch mới** kẻ trước mốc đầu tiên
-  chưa xem) → composer + câu mồi theo trạng thái → cây khán đài. Mốc mới nhất mở sẵn được
-  tính là đã xem (client gọi `POST /machs/{id}/seen` khi trang mở).
+  mốc chưa xem đổi màu hoàng thổ** theo `last_seen_entry_seq`) → **thẻ mốc 1 + thẻ mốc mới
+  nhất mở sẵn, dải gập nằm GIỮA hai cái đó** (`▤ Mốc 2–8 · 7 mốc · mở cả mạch ▾` — bung ra là
+  timeline đầy đủ, trong đó **vạch mới** kẻ trước mốc đầu tiên chưa xem) → composer + câu mồi
+  theo trạng thái → cây khán đài. Mốc mới nhất mở sẵn được tính là đã xem (client gọi
+  `POST /machs/{id}/seen` khi trang mở).
+  **Công thức gập của mặt BÃO, chốt 2026-08-24:** `entry_count = n` ⇒ gập seq `2 … n−1`,
+  hiện đúng seq `1` và `n`; **`n ≤ 2` ⇒ KHÔNG gập** (không nút, không hàng dải gập — giấu
+  được 0 mốc mà vẫn tốn một hàng khung là lỗ). Cài ở `apps/web/lib/dai-gap.ts::tinhDaiGapBao`,
+  **khác** `tinhDaiGap` của mặt CẶN và đừng gộp hai hàm.
+  Hàng `▤` **luôn hiện khi mạch gập được** và chính nó là công tắc hai chiều — MỘT `<button>`
+  đổi nhãn, không phải hai nút thay ca. Cùng luật vá C3 đã đặt cho mặt CẶN ngày 2026-08-22:
+  nút thứ hai mọc ở chỗ khác thì cú bấm **unmount cái đang giữ focus**, `aria-expanded` đổi
+  trên một node chưa bao giờ nhận focus, và đường gập lại nằm dưới đáy một mạch 20 mốc. Bản
+  đầu của 2026-08-24 mắc đúng lỗi ấy và **bài đo vẫn xanh** vì hai nút dùng chung `testid`.
+  *Vì sao mốc 1 phải luôn hiện (user chốt 2026-08-24):* mốc 1 là **bài gốc**, chính `body`
+  của nó thành `meta description` của trang. Bản đầu chỉ mở sẵn mốc mới nhất, nên thứ duy
+  nhất người đọc thấy là một câu nối tiếp không tự đứng được — mặt BÃO không nói được mạch
+  của nó nói về cái gì.
+  *Vì sao ngưỡng 2 chứ không phải 5 như mặt CẶN:* BÃO hiện đúng **2 thẻ ở mọi `n`**, nên
+  "luôn đúng hai thẻ, phần giữa nằm sau một dòng" là luật đọc ra được; `n = 3` giấu 1 mốc mà
+  vẫn gập vì thế. CẶN hiện 4 thẻ nên `n = 5` gập 1 mốc là chen nút vào một danh sách gần như
+  đã đầy đủ.
 - **Mặt CẶN** (nhật ký là thân bài): banner ("MẠCH ĐÃ ĐÓNG · {ket_qua} · N mốc" — phần
   `ket_qua` chỉ hiện khi có) → toàn bộ mốc (mốc 1 + gập giữa + 2 mốc cuối; dải gập hiện
-  "5 mốc · 43 bình luận" + MỘT trích dẫn nóng nhất làm mồi bung) → chân trang
-  "💬 N bình luận · xem các câu đáng đọc ▾". **"Câu đáng đọc" = bình luận đã được trích ∪
-  top-10 theo wilson.** Bấm chân trang → bung khán đài đầy đủ ngay tại đó (mặc định
-  `hay_nhat`, đổi được 3 sort) **kết thúc bằng composer** — mạch đóng vẫn bình luận được (5.1).
+  "5 mốc · 43 bình luận" + MỘT trích dẫn nóng nhất làm mồi bung) → **khán đài đầy đủ, MỞ
+  SẴN** (khối "Câu đáng đọc" trên cùng, rồi 3 sort đổi qua URL param, mặc định `hay_nhat`)
+  **kết thúc bằng composer** — mạch đóng vẫn bình luận được (5.1).
+  **"Câu đáng đọc" = bình luận đã được trích ∪ top-10 theo wilson.**
+
+  > **Khán đài MỞ SẴN ở cả hai mặt — user chốt 2026-08-24, THAY cho chân trang gập.**
+  > Tới hôm ấy mặt CẶN kết thúc bằng `💬 N bình luận · [xem các câu đáng đọc ▾]` và khán
+  > đài chỉ hiện sau khi bấm (`?khan_dai=1`). Hai lý do đổi: (1) người đọc một mạch **đã
+  > đóng** tới để biết cộng đồng nghĩ gì về kết quả, mà đúng phần ấy nằm sau một cú bấm;
+  > (2) mặt CẶN là **mặt Google index** — giấu nội dung sau một URL khác là tự cắt đi phần
+  > lớn thứ mình muốn được index, đúng lập luận đã dùng cho dải gập ở 5.5.
+  > `?khan_dai=1` **vẫn nhận, nay là no-op** (link đã chia sẻ + `hrefSort` không gãy);
+  > component `LoiMoiBungKhanDai` và các testid `chan-trang-khan-dai` / `nut-bung-khan-dai`
+  > / `chan-so-binh-luan` / `chan-mot-dong-moi` **đã bị gỡ hẳn**.
+  > Nguyên tắc 9 không đổi chỗ: mạch dưới 4 bình luận vẫn không in con số nào — luật ấy
+  > nay chỉ còn sống ở header khán đài (`hienSoDem`), không còn bản thứ hai ở chân trang.
+
+  > **Chữ trên màn hình, chốt cùng ngày:** tiêu đề khu này hiện ra là **"Bình luận"**, con
+  > số là **"N cuộc trao đổi"** (trước: "Khán đài" + "N thread"). *Tên trong code, trong
+  > PLAN và trong mọi `data-testid` giữ nguyên `khan-dai`* — đây là đổi chữ cho người đọc,
+  > không phải đổi API. Và **không** dùng "N bình luận" ở đó: `tong_thread` đếm thread
+  > gốc, không đếm reply lồng, nên nó sẽ cãi nhau với `💬 N bình luận` ở chữ ký mạch.
 
   > **Cách cài "câu đáng đọc", chốt 2026-08-22:** cú bấm bung khán đài đầy đủ (đúng câu
   > trên), nhưng phần **TRÊN CÙNG** của khối vừa bung là tập hợp ấy, gắn nhãn "Câu đáng
@@ -300,7 +336,26 @@ Người được trích nhận notification.
   Không có nó thì `0` vừa là "chưa ai đụng tới" vừa là "đã bị dìm về không", và ngày ra
   mắt cả feed là một cột số 0 (đâm nguyên tắc 9, xem mục 3). Có nó thì `0` nghĩa là **đã
   có người vote xuống** — một câu mang thông tin.
-- Reaction 1 chạm trên mốc: bộ cố định `📈 📉 🔥 🧊 🎯` — bậc thang tham gia rẻ hơn viết.
+- Reaction 1 chạm trên mốc: bộ cố định **`🧠 rõ · 📎 có nguồn · ❓ cần thêm · 🔥 liều`** —
+  bậc thang tham gia rẻ hơn viết. *(Đổi 2026-08-25, thay bộ cũ `📈 📉 🔥 🧊 🎯`.)*
+
+  **Reaction nói về BÀI VIẾT; vote nói về việc bài có đáng đọc không.** Ranh giới ấy là cả
+  nội dung của lượt đổi, và nó phải giữ — nó là thứ duy nhất làm reaction không trùng việc
+  với vote ±1 vốn đã có trên chính mốc đó.
+
+  Ba lý do bộ cũ bị thay, hai trong đó đâm vào chính mục "đã bị bác" ở trên:
+  1. **`📈`/`📉` là bảng đếm hướng giá công khai dưới một vị thế tiền thật đang mở** — đúng
+     cơ chế *"47 người đặt Chốt hết"* mà mục ấy gọi là **cấm tuyệt đối**, chỉ khác cách gọi.
+  2. **`🎯` là đám đông chấm một lệnh đúng hay sai** — cùng mục, cùng lý do (*"không chấm
+     được sạch"*, farm bằng nick phụ).
+  3. **Bốn trong năm icon cũ vô nghĩa trên bài NHẬN ĐỊNH** (user chỉ ra 2026-08-25). gikky
+     chứa cả nhật ký lệnh lẫn bài phân tích; bài phân tích không có vị thế, không có hướng.
+     Bộ mới phải đúng cho **cả hai** loại bài — đó là tiêu chí nhận bất kỳ khoá thứ năm nào.
+
+  **Khoá DB đặt theo khái niệm** (`ro_rang`, `co_nguon`, `can_them`, `lieu`), không theo
+  hình. Đổi emoji hay đổi chữ hiển thị chỉ sửa `apps/web/lib/reaction.ts`, không migration.
+  **Nhãn phải HIỆN thành chữ trên nút** — emoji trần thì mỗi người đọc ra một nghĩa, và
+  trên điện thoại không có hover nên `title` không tồn tại.
 - Follow mạch: nút "Theo mạch". Follower nhận notification mốc mới.
 
 ### 5.8 Notification
@@ -411,7 +466,7 @@ Vote            user FK, target_type ENUM(moc, comment), target_id, value SMALLI
                 UNIQUE (user, target_type, target_id)
                 # cập nhật up_count/down_count/score đích trong CÙNG transaction
 
-Reaction        user FK, moc FK, emoji ENUM(len, xuong, lua, bang, trung)   # 📈📉🔥🧊🎯
+Reaction        user FK, moc FK, emoji ENUM(ro_rang, co_nguon, can_them, lieu)  # 🧠📎❓🔥
                 UNIQUE (user, moc)
 
 Trich           id, moc FK, comment FK, created_at, removed_at NULL
@@ -505,7 +560,7 @@ Ai chỉ đọc `detail`/`code` không phải biết lớp ấy tồn tại; hà
 | `POST /machs/{id}/comments` | viết bình luận | parent?, anchor_moc_seq? (nullable), body. *(Phase 2)* ai đăng nhập cũng được, **mạch đóng sổ vẫn viết được**; `anchor` kèm `parent` ⇒ 400; người viết nhận sẵn +1 của mình |
 | `PATCH /comments/{id}` · `DELETE` | sửa (dấu *đã sửa*) · xoá theo luật 5.3 | *(Phase 2)* **chỉ `Comment.author`**, kể cả chủ mạch cũng không sửa được lời người khác. `DELETE` trả `{id, xoa_that}`: `false` = ở lại làm bia mộ; xoá thật thì **dọn `Vote` mồ côi** cùng transaction |
 | `POST /votes` | vote/đổi/rút | value ∈ {−1,0,1}; transaction cập nhật counts. *(Phase 2)* trả về con số MỚI của đích cho UI lạc quan; `up_count`/`down_count` là `null` với đích là mốc (mốc chỉ có `score`) |
-| `POST /mocs/{id}/reactions` | react/đổi/rút | *(Phase 2)* `emoji=null` là rút; trả `dem` **đủ 5 khoá kể cả khoá 0** |
+| `POST /mocs/{id}/reactions` | react/đổi/rút | *(Phase 2)* `emoji=null` là rút; trả `dem` **đủ 4 khoá kể cả khoá 0** *(bộ đổi 2026-08-25, xem 5.7)* |
 | `POST /mocs/{id}/trich` · `DELETE` | trích/gỡ | 4 rào 5.6. *(Phase 3, 2026-08-23)* **chỉ chủ mạch** (`Mach.author` — rào 4 ghi "bởi chủ mạch"); thân `{comment_id}`, mốc nằm ở URL. Mã riêng từng ca: `da_co_trich` 409 (rào 1) · `het_han_go_trich` 409 (>24h) · `chua_co_trich` 404 · trích chéo mạch / bình luận đã gỡ ⇒ 400. Trả về **cả thẻ mốc** vì rào 4 bắt render tách bạch. **Có áp `mach_bi_khoa`** — khác `follow`/`seen` dưới đây |
 | `POST /machs/{id}/follow` · `DELETE` | theo/bỏ | *(Phase 3, 2026-08-23)* cả hai **idempotent**; lượt theo đầu đặt `last_seen_entry_seq = entry_count` chứ không `0`. **KHÔNG áp `mach_bi_khoa`**: follow là sổ tay riêng của người đọc, và chặn `DELETE` trên mạch bị khoá thì người ta không tắt được thông báo của đúng cái mạch đó |
 | `POST /machs/{id}/seen` | cập nhật last_seen_entry_seq | gọi khi mở trang. *(Phase 3, 2026-08-23)* thân `{entry_seq?}`, vắng ⇒ "đã xem tới mốc mới nhất". Con số **chỉ tiến không lùi** + kẹp trần `entry_count` (peek mốc cũ không kéo vạch mới về sau). Chưa follow ⇒ **200 kèm `following:false` và không ghi gì** — cột này sống trên hàng `Follow` (mục 6), và tạo `Follow` hộ là âm thầm bắt người ta theo mạch vì họ mở một trang |
@@ -516,6 +571,55 @@ Ai chỉ đọc `detail`/`code` không phải biết lớp ấy tồn tại; hà
 | `POST /mocs/{id}/anh` | tải MỘT ảnh lên mốc (**multipart**) | *(Phase 5, 2026-08-23)* **thay thế** `POST /media/presign` + `/media/confirm` của bản trước — ảnh lưu xuống ĐĨA nên upload một nhịp, xem 8.5. Chỉ `Moc.author`; mạch khoá ⇒ 403 `mach_bi_khoa`, mốc bia mộ/bị ẩn ⇒ 409 `noi_dung_da_go`, đủ 10 ảnh ⇒ 409 `qua_nhieu_anh`, ảnh >8MB ⇒ **413** `anh_qua_nang`, không nhận dạng được ⇒ 400 `anh_hong` / `dinh_dang_khong_nhan` / `anh_qua_lon`. **Mạch đã đóng sổ VẪN tải lên được** (5.1 chặn nối mốc mới, không chặn sửa mốc cũ). Một ảnh mỗi request — nhiều ảnh thì UI gửi tuần tự |
 | `DELETE /anh/{id}` | gỡ một ảnh | *(Phase 5, 2026-08-23)* chỉ `Moc.author`. **Không có bia mộ cho ảnh**: hàng đi, **file cũng biến khỏi đĩa**. Trả về chính thẻ ảnh vừa xoá (không 204) để UI gỡ đúng ô khỏi gallery |
 | `GET /users/{username}` | hồ sơ công khai | |
+| `GET /users/{username}/machs` | mạch của một người, cursor keyset | *(2026-08-24)* tab "Bài viết" của hồ sơ. Công khai. Khoá `(Mach.created_at, id)` — **bất biến**, đúng điều kiện keyset; **cấm** sort theo `diem_bai_goc`. Lọc `hidden_at` **dùng lại** luật của `xem_ho_so`, không chế bản thứ hai |
+| `GET /me/da-vote` | mạch tôi đã bỏ phiếu, cursor keyset | *(2026-08-24)* **`no-store`**, `auth` bắt buộc. "Đã vote" = phiếu cho **mốc 1** (bài gốc) — cùng đích với mũi tên trên thẻ feed và với `diem_bai_goc`; phiếu **xuống cũng tính**. Khoá là `Vote.created_at` (lúc TÔI vote), không phải `Mach.created_at` |
+| `GET /me/dang-theo` | mạch tôi đang theo, cursor keyset | *(2026-08-24)* **`no-store`**, `auth` bắt buộc. Khoá `Follow.created_at` |
+| `POST /me/avatar` · `DELETE /me/avatar` | đặt / gỡ ảnh đại diện | *(2026-08-24)* multipart, `auth`, **`no-store`**. Dùng lại `core/anh.py` (chặn theo byte · nhận dạng bằng NỘI DUNG · chống decompression bomb · tái mã hoá). Lưu **khoá** ở `User.avatar_khoa`, không lưu URL. ⚠ `don_anh_mo_coi` phải whitelist khoá này, nếu không avatar bị xoá như mồ côi sau 24h |
+| `PATCH /me` (mở rộng) | thêm `display_name` (≤60) + `bio` (≤500) | *(2026-08-24)* chuỗi **rỗng là hợp lệ** = xoá; trường VẮNG MẶT thì không đụng (đúng tinh thần PATCH) |
+| `POST /me/anh` | tải ảnh vào **nội dung bài** | *(2026-08-24)* `operation_id=tai_anh_noi_dung`, multipart, `auth`, **`no-store`**. 201 → `{url, width, height}`; `url` trỏ `/media/…` và **đúng chuỗi mà `lam_sach` chấp nhận** (có bài đo ghim hai cửa khớp nhau). Hạn mức **30 ảnh/user/ngày VN** → 429 `qua_han_muc_anh_noi_dung`. Ghi hàng `AnhNoiDung` — bảng ấy vừa để đếm hạn mức vừa để `don_anh_mo_coi` biết đường tha |
+
+> **Ảnh trong `body` chỉ được trỏ vào kho của CHÍNH SITE.** `lam_sach` giữ `img` khi và chỉ
+> khi `src` bắt đầu bằng `MEDIA_URL` và không chứa `..`; không khớp thì **gỡ cả thẻ** (một
+> `<img>` cụt `src` là một ô vỡ). Ảnh từ tên miền ngoài là **pixel theo dõi** — mỗi người
+> đọc bài là một lượt lộ IP + user-agent cho bên thứ ba — cộng mixed content và link chết.
+>
+> ⚠ **Nợ đã biết:** ảnh nội dung **không bị cách ly khi mod ẩn mốc** (`MocAnh` có
+> `da_cach_ly`, `AnhNoiDung` thì không — không có FK ngược từ ảnh về mốc). Ai đã cầm sẵn
+> URL vẫn tải được ảnh của một mốc đã bị ẩn. Và ảnh tải lên rồi **bỏ bài** không được thu
+> hồi; hạn mức 30/ngày là thứ duy nhất chặn nó phình.
+
+| `POST /mod/machs/{id}/an` · `POST /mod/mocs/{id}/an` · `POST /mod/comments/{id}/an` | mod ẩn / bỏ ẩn ngay trên trang | *(2026-08-24)* **Bề mặt mod HẸP trên v1** — xem khối dưới bảng |
+| `POST /mod/machs/{id}/khoa` | mod khoá / mở khoá mạch | *(2026-08-24)* trục riêng, khác "đóng sổ" (5.10) |
+| `GET /subs/{slug}/me` | tôi có theo chuyên mục này không | *(2026-08-24)* **nửa per-user** của trang chuyên mục, **`no-store`**. Khách nhận 200 rỗng, không 401. `GET /subs/{slug}` (cache được) **cấm** mọc thêm trường theo người xem — PLAN 8.4 |
+| `POST /subs/{slug}/theo` · `DELETE /subs/{slug}/theo` | theo / bỏ theo chuyên mục | *(2026-08-24)* `auth`, **idempotent cả hai chiều**. Bảng `TheoSub` riêng, không dùng lại `Follow` (thứ đó khoá ngoài `Mach` + mang vị trí đọc dở) |
+| `GET /me/subs` | chuyên mục **tôi** đang theo | *(2026-08-24)* `auth`, **`no-store`**, không phân trang, **mới theo trước**. Nguồn của tab "Chuyên mục" trong hồ sơ |
+| `GET /me/subs-mod` | chuyên mục **tôi được phân công làm mod** | *(2026-08-24)* `auth`, **`no-store`**, sắp theo `slug`. Nguồn của `/khu-mod`. ⚠ **Danh sách PHÂN CÔNG, không phải danh sách QUYỀN** — `ModSub` chưa cho thêm quyền gì, bốn cửa `/mod/*` vẫn kiểm `is_staff` |
+
+> **Vì sao mod có bề mặt RIÊNG trên `/api/v1`, không dùng `/api/admin/*`** *(user chốt
+> 2026-08-24)*: PLAN 8.2 chặn `gikky.net/api/admin/*` **tại Caddy**, nên front công khai
+> không gọi được endpoint admin ở prod — dù ở **dev** nó có vẻ chạy (Next proxy đặt lại
+> `Host`). Làm theo lối ấy là code chạy ngon ở dev rồi chết ở prod.
+>
+> Bề mặt này **đúng bốn việc** mod làm *trong lúc đang đọc trang*. **Ở LẠI phía admin sau
+> allowlist IP:** ban user, quản lý sub, đọc `AuditLog`, bảng danh sách, thống kê. Mở thêm
+> là phải hỏi user — ranh giới ấy chính là nội dung của quyết định.
+>
+> Đánh đổi đã nêu rõ và user chấp nhận: phiên mod bị chiếm trên site công khai thì kẻ tấn
+> công **ẩn được nội dung** (khôi phục được, có `AuditLog`), nhưng **không ban được ai**.
+>
+> Quyền = đúng ba vế của `ChiMod`, chỉ bỏ vế Host: `is_staff` + `is_active` + chưa bị ban.
+> `api/api/mod.py::ChiModTrenV1` kế thừa `DangNhap` (không phải `ChiMod`) vì `api.quan_tri`
+> import `api.v1` ⇒ kế thừa thẳng sinh vòng import lúc khởi động. Chuông chống trôi:
+> `test_api_mod.py::test_quyen_khop_TUNG_VE_voi_ChiMod_cua_khu_quan_tri` chạy ma trận 6
+> trạng thái tài khoản qua **cả hai** lớp và đòi kết quả trùng khớp.
+
+> **Ba cửa trên đọc mạch qua ĐƯỜNG VÒNG** (qua `Vote`, qua `Follow`, qua `author`) nên
+> chúng là ba cửa hậu tiềm tàng vào nội dung mod vừa gỡ — hỏng ở dạng HTTP 200 im lặng.
+> Cả ba lọc `hidden_at IS NULL`, và `da-vote` còn phải lọc **phiếu MỒ CÔI**: `Vote` không
+> có FK tới `Moc`, nên xoá mạch thật (`DELETE`) để lại phiếu trỏ vào mốc không còn tồn
+> tại. `Mach` **không có** cột `deleted_at` — đừng đi tìm. Hàng rào:
+> `api/tests/test_api_ho_so_danh_sach.py`, và số truy vấn ghim ở `test_api_so_query.py`
+> (4 · 6 · 5, thêm mạch không làm nhúc nhích).
 | **Admin (`/api/admin`, staff-only)** | reports queue, hide/lock/ban/unban, subs CRUD, audit log | router riêng; **chỉ truy cập được qua host admin — xem 8.2** |
 
 **Bảng khu quản trị — `NinjaAPI` khoá `admin`, prefix `/api/admin`** *(Phase 4, 2026-08-22)*.
@@ -848,9 +952,13 @@ chỉ dùng làm chuẩn **màu / chữ / chất liệu**, KHÔNG dùng làm chu
 │ ①──②──③──④──⑤──⑥──⑦──⑧──◉⑨   ← spine ghim │
 │   (số mốc chưa xem: màu hoàng thổ)           │
 │ ┌──────────────────────────────────────────┐ │
-│ │ ⑨ 21/08 · tổng kết          ▲ 412       │ │ ← chỉ mốc mới nhất
-│ │   …  [mở cả mạch ▾]        💬 7          │ │    mở sẵn; bung ra
-│ └──────────────────────────────────────────┘ │    thì có vạch mới
+│ │ ① 04/03 vào lệnh …          ▲ 89        │ │ ← bài gốc: LUÔN hiện
+│ └──────────────────────────────────────────┘ │
+│ ── ▤ Mốc 2–8 · 7 mốc · mở cả mạch ▾ ──       │ ← dải gập nằm ĐÚNG
+│ ┌──────────────────────────────────────────┐ │    chỗ nó đang giấu;
+│ │ ⑨ 21/08 · tổng kết          ▲ 412       │ │    bung ra thì có
+│ │   …                        💬 7          │ │    vạch mới
+│ └──────────────────────────────────────────┘ │
 │ ✎ [ Mốc 9 vừa đóng sổ — bạn rút ra gì? ]     │ ← mồi theo trạng thái
 │ 📈 12 · 🔥 9                (react 1 chạm)   │
 │ Sắp xếp: [Hay nhất ▾]                        │
@@ -858,6 +966,9 @@ chỉ dùng làm chuẩn **màu / chữ / chất liệu**, KHÔNG dùng làm chu
 │ │  reply lồng ≤6 tầng, badge [CHỦ MẠCH] …    │
 └──────────────────────────────────────────────┘
 ```
+Mạch **2 mốc** không có hàng `▤` và không có nút: dải gập `2 … n−1` rỗng, mà một cái nút
+cao gần bằng thứ nó giấu là đổi nội dung lấy khung (công thức + lý do ở 5.5, chốt
+2026-08-24).
 
 **Mặt CẶN:**
 ```

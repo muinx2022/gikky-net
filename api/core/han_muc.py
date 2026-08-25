@@ -1,4 +1,4 @@
-"""Bốn hạn mức chống lạm dụng — PLAN mục 10 (Phase 6) và PLAN 5.10.
+"""Năm hạn mức chống lạm dụng — PLAN mục 10 (Phase 6), PLAN 5.10, và ảnh nội dung.
 
 | hạn mức | nguồn | ranh giới | cửa áp |
 |---|---|---|---|
@@ -6,12 +6,13 @@
 | 10 mạch / user / ngày | PLAN mục 10 Phase 6 | nửa đêm giờ VN | `POST /machs` |
 | 5 đăng ký / IP / ngày | PLAN mục 10 Phase 6 | nửa đêm giờ VN | adapter allauth |
 | 5 bình luận / giờ, tài khoản < 3 ngày tuổi | PLAN 5.10 | **giờ trượt** | `POST /machs/{id}/comments` |
+| 30 ảnh nội dung / user / ngày | plan 2026-08-24 | nửa đêm giờ VN | `POST /me/anh` |
 
-Ba cái đầu đếm theo **ngày lịch VN** vì PLAN mục 1 chốt mọi chữ "ngày" của sản phẩm theo
+Bốn cái đếm theo **ngày lịch VN** vì PLAN mục 1 chốt mọi chữ "ngày" của sản phẩm theo
 `Asia/Ho_Chi_Minh`; cửa sổ trượt 24 giờ cho ra một tập khác và không gọi tên được bằng
-tiếng Việt. Cái thứ tư đếm theo **giờ trượt** vì PLAN 5.10 viết "5 bình luận/giờ" — "giờ"
-không có ranh giới lịch nào để bám, và một cửa sổ theo giờ tròn thì cho phép 10 bình luận
-trong hai phút quanh 09:00.
+tiếng Việt. Riêng bình luận đếm theo **giờ trượt** vì PLAN 5.10 viết "5 bình luận/giờ" —
+"giờ" không có ranh giới lịch nào để bám, và một cửa sổ theo giờ tròn thì cho phép 10 bình
+luận trong hai phút quanh 09:00.
 
 ## Vì sao các con số nằm ở `settings`, và cái giá của việc đó
 
@@ -179,3 +180,31 @@ def luc_binh_luan_duoc_lai(user, khi=None) -> datetime:
         .first()
     )
     return khi if cu_nhat is None else cu_nhat + timedelta(hours=1)
+
+
+# --- 30 ảnh nội dung / user / ngày lịch VN (plan 2026-08-24) -----------------
+
+
+def tran_anh_noi_dung_moi_ngay() -> int:
+    return settings.HAN_MUC_ANH_NOI_DUNG_MOI_USER_NGAY
+
+
+def dem_anh_noi_dung_trong_ngay_vn(user, khi=None) -> int:
+    """Số ảnh `user` đã nhúng-tải trong ngày lịch VN của `khi` — cửa `POST /me/anh`.
+
+    Đếm hàng `AnhNoiDung`, tức đếm **file đã nằm trên đĩa**, không đếm ảnh còn hiện trong
+    một bài viết nào. Đó là phép đếm đúng cho thứ hạn mức này bảo vệ: chi phí là dung
+    lượng đĩa, và xoá ảnh khỏi thân bài không trả lại byte nào (không có FK từ ảnh về mốc
+    — xem `core/models/moc.py::AnhNoiDung`). Đếm theo "ảnh còn dùng" là thưởng cho đúng
+    hành vi tải-rồi-xoá-rồi-tải, cùng lý lẽ với `dem_binh_luan_trong_gio`.
+
+    **Không dưới khoá**, y hệt `dem_mach_trong_ngay_vn` và vì đúng lý do đó (khối "Hai chỗ
+    KHÔNG khoá" ở đầu file): hai request song song có thể cùng đọc `29 < 30` và lọt ra tấm
+    thứ 31. Đổi một tấm ảnh thừa lấy nguy cơ chu trình khoá quanh hàng `User` là lỗ vốn.
+    """
+    from core.models.moc import AnhNoiDung
+
+    dau, het = _mot_ngay_vn(khi)
+    return AnhNoiDung.objects.filter(
+        nguoi_tai=user, created_at__gte=dau, created_at__lt=het
+    ).count()

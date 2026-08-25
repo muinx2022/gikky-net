@@ -38,11 +38,45 @@ class NguoiDungTomTatOut(Schema):
 
     username: str
     display_name: str
+    #: URL thumbnail avatar (`core.anh_luu.url_thumb(user.avatar_khoa)`), hoặc `null` khi
+    #: chưa có avatar. **Dữ liệu công khai** — ai cũng thấy avatar tác giả — nên nằm được
+    #: ở schema này dù nó public và có mặt trong feed cache được (PLAN 8.4). Resolver là
+    #: một phép format chuỗi THUẦN, không truy vấn, nên nó **không** kéo theo N+1:
+    #: `avatar_khoa` là cột đã `select_related("author")` nạp sẵn. Xem
+    #: `api/trinh_bay.py::nguoi_dung_ra`.
+    avatar_url: str | None
 
 
 class SubTomTatOut(Schema):
     slug: str
     ten: str
+
+
+class TheoSubOut(Schema):
+    """Kết quả `POST`/`DELETE /subs/{slug}/theo` — user chốt 2026-08-24.
+
+    Trả **trạng thái sau khi ghi**, không trả "đã đổi hay chưa": hai endpoint đều
+    idempotent, nên "đã đổi" là một câu client không dùng được vào việc gì, còn `following`
+    thì client vẽ thẳng lên nút.
+    """
+
+    slug: str
+    following: bool
+
+
+class SubCuaToiOut(Schema):
+    """`GET /subs/{slug}/me` — nửa per-user của trang chuyên mục.
+
+    Cùng khuôn và cùng lý do với `MachCuaToiOut`: trang `/s/<slug>` render ở server và
+    **cache được** (PLAN 8.4), nên "tôi có theo chuyên mục này không" **bắt buộc** hỏi
+    riêng ở trình duyệt. Nhét `following` vào `SubChiTietOut` là người thứ hai mở cùng URL
+    nhận trạng thái của người thứ nhất — HTTP 200, không có gì đỏ.
+
+    **Khách nhận 200** với `dang_nhap=false, following=false`, không phải 401.
+    """
+
+    dang_nhap: bool
+    following: bool
 
 
 class FigureOut(Schema):
@@ -79,6 +113,29 @@ class AnhOut(Schema):
     h: int | None
     position: int
     exif_taken_at: datetime | None
+
+
+class AnhNoiDungOut(Schema):
+    """Ảnh vừa tải lên để **nhúng thẳng vào thân bài** — `POST /me/anh` (2026-08-24).
+
+    Hình dạng cố tình KHÁC `AnhOut`, và khác đúng ở chỗ nói lên bản chất: không `id`
+    (không có gì để gọi lại — không có cửa `DELETE`, xem docstring endpoint), không
+    `position` (không có gallery để xếp), không `url_thumb` (ảnh giữa bài đọc bằng bản
+    chính), không `exif_taken_at` (nó là gợi ý cho `occurred_at` của MỐC, mà cửa này chạy
+    trước khi mốc tồn tại). Còn lại đúng ba trường editor cần.
+
+    `width`/`height` chứ không `w`/`h` như `AnhOut`: chúng đi thẳng vào thuộc tính cùng
+    tên của node ảnh trong Tiptap, và một lượt đổi tên ở tầng frontend là đúng loại lệch
+    không ai nhớ. Kích thước là của ảnh **đã tái mã hoá** (`core/anh.py` thu về cạnh
+    `CANH_TOI_DA`), tức của đúng file đang được phục vụ.
+    """
+
+    #: Đường dẫn `/media/...` — nhét thẳng vào `<img src>`. Đây là giá trị DUY NHẤT mà
+    #: `core/lam_sach_html.py::_src_cua_site` chấp nhận; một URL tự ghép ở frontend mà
+    #: lệch tiền tố `MEDIA_URL` sẽ bị lượt sanitize gỡ cả thẻ lúc đăng bài.
+    url: str
+    width: int | None
+    height: int | None
 
 
 #: Độ dài trích đoạn trên thẻ feed. Đủ ba dòng ở bề rộng cột chính, không hơn: thẻ feed
@@ -304,6 +361,13 @@ class MocOut(Schema):
     sua_im_lang_den: datetime
     loai: str | None
     body: str | None
+    #: `body` ở định dạng nào — `"html"` (Tiptap, đã `lam_sach` ở server lúc ghi) hay
+    #: `"markdown"` (định dạng cũ). **Frontend chọn renderer theo trường này**, không đoán
+    #: bằng regex: đoán sai đúng ở bài viết "giá < 27.80" (chốt 2026-08-24).
+    #:
+    #: Vẫn trả về ở **bia mộ**, nơi `body` là `null`: nó suy từ cột `body_dinh_dang` chứ
+    #: không từ nội dung, nên không có gì để che — cùng chuẩn với `sua_im_lang_den`.
+    body_dinh_dang: str
     #: Câu mồi hiện trong ngăn kéo khi mốc chưa có bình luận (PLAN 5.4 luật 4).
     question_for_crowd: str | None
     figures: list[FigureOut] | None
@@ -314,14 +378,14 @@ class MocOut(Schema):
     #: Số bình luận đọc được trong ngăn kéo của mốc này — tính **cả thread**, gồm reply
     #: viết ở thời điểm mốc khác (PLAN nguyên tắc 6).
     so_binh_luan: int
-    #: Đếm reaction theo khoá, **đủ 5 khoá kể cả khoá bằng 0** — cùng hình dạng với
-    #: `ReactionOut.dem`, và cùng lý do: UI vẽ nguyên bộ 📈📉🔥🧊🎯, một khoá vắng mặt
+    #: Đếm reaction theo khoá, **đủ 4 khoá kể cả khoá bằng 0** — cùng hình dạng với
+    #: `ReactionOut.dem`, và cùng lý do: UI vẽ nguyên bộ 🧠📎❓🔥, một khoá vắng mặt
     #: là một icon nhấp nháy xuất hiện/biến mất theo lượt bấm.
     #:
     #: **Không phải dữ liệu per-user** ⇒ nằm được trên cửa ISR (PLAN 8.4). Phiếu của
     #: chính người xem đến từ `GET /machs/{id}/me::my_reactions`, ở trình duyệt, sau.
     #:
-    #: Bia mộ trả **rỗng hết 5 khoá**: hàng `Reaction` vẫn còn trong DB (nó không bị xoá
+    #: Bia mộ trả **rỗng hết 4 khoá**: hàng `Reaction` vẫn còn trong DB (nó không bị xoá
     #: cùng nội dung), nhưng phô "🔥 9" trên một thẻ không còn chữ nào là đúng ca mà
     #: `score` đã bị zero hoá để tránh — xem docstring `trinh_bay.py::moc_ra`.
     reactions: dict[str, int]
@@ -576,6 +640,9 @@ class HoSoOut(Schema):
     username: str
     display_name: str
     bio: str
+    #: URL thumbnail avatar, hoặc `null` khi chưa có — cùng nguồn với
+    #: `NguoiDungTomTatOut.avatar_url`, phục vụ bằng thumbnail (480px, CSS bo vuông).
+    avatar_url: str | None
     date_joined: datetime
     so_mach: int
     #: Tổng mốc **đọc được** của người này.
@@ -621,7 +688,7 @@ class ReactionOut(Schema):
 
     moc_id: int
     emoji: str | None
-    #: Số reaction theo từng khoá, kể cả khoá đang bằng 0 — UI vẽ đủ bộ 📈📉🔥🧊🎯.
+    #: Số reaction theo từng khoá, kể cả khoá đang bằng 0 — UI vẽ đủ bộ 🧠📎❓🔥.
     dem: dict[str, int]
 
 
@@ -645,6 +712,10 @@ class ToiOut(Schema):
     dang_nhap: bool
     username: str | None
     display_name: str | None
+    #: URL thumbnail avatar của CHÍNH người đang đăng nhập, hoặc `null` khi chưa có. Đặt
+    #: bằng `POST /me/avatar`, gỡ bằng `DELETE /me/avatar`. Khách nhận `null`. Cùng nguồn
+    #: và cùng phép format thuần với `NguoiDungTomTatOut.avatar_url`.
+    avatar_url: str | None
     #: Chỉ chủ tài khoản thấy — endpoint này không bao giờ trả email của người khác.
     email: str | None
     email_da_xac_thuc: bool

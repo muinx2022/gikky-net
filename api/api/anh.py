@@ -1,4 +1,12 @@
-"""Tải ảnh lên mốc và gỡ ảnh xuống — PLAN 8.5 (đã lệch), Phase 5.
+"""Ba cửa ảnh: gallery của mốc (lên/xuống) và ảnh nhúng thẳng vào thân bài.
+
+Hai loài ảnh, **một** đường xử lý file. `POST /mocs/{id}/anh` + `DELETE /anh/{id}` là
+gallery `MocAnh` của Phase 5; `POST /me/anh` (2026-08-24) là ảnh nhúng giữa bài, không
+gắn mốc nào. Chúng ở chung file vì cả ba đi qua đúng bảy phép kiểm của `core/anh.py` và
+cùng bộ mã lỗi — tách ra là mời một bản thứ hai của `if file.size > BYTE_TOI_DA` mọc lên
+ở nơi khác rồi lệch đi. Khác biệt của cửa thứ ba nằm ở docstring của chính nó.
+
+Phần dưới đây nói về hai cửa gallery — PLAN 8.5 (đã lệch), Phase 5.
 
 **Một nhịp, multipart thẳng vào Django.** PLAN 8.5 thiết kế hai nhịp (`POST /media/presign`
 → client PUT thẳng lên R2 → `POST /media/confirm`), và hai nhịp tồn tại *chỉ vì* server
@@ -14,6 +22,7 @@ bản mà đường ghi tương lai (import ảnh hàng loạt, seed) đi vòng 
 """
 
 from django.db import transaction
+from django.http import HttpResponse
 from ninja import File, Router, Status
 from ninja.files import UploadedFile
 
@@ -23,20 +32,57 @@ from core.anh import (
     LoiAnh,
     xu_ly_anh_tai_len,
 )
+from core.anh_luu import url_anh
+from core.anh_noi_dung import luu_anh_noi_dung
 from core.ghi import SO_ANH_TOI_DA_MOI_MOC, QuaNhieuAnh, them_anh_moc, xoa_anh_moc
+from core.han_muc import dem_anh_noi_dung_trong_ngay_vn, tran_anh_noi_dung_moi_ngay
 from core.models.moc import MocAnh
 from core.revalidate import lam_moi_mach
+from core.thoi_gian import nua_dem_vn_ke_tiep
 
 from api.ghi_chung import doi_con_song, nap_moc
-from api.loi import KHONG_TIM_THAY, LoiOut
-from api.quyen import LoiGhi, dang_nhap, doi_chu_so_huu, doi_mach_tuong_tac_duoc
-from api.schemas import AnhOut
+from api.loi import KHONG_TIM_THAY, LoiOut, LoiThoiGianOut, loi_thoi_gian
+from api.quyen import (
+    QUA_HAN_MUC_ANH_NOI_DUNG,
+    LoiGhi,
+    dang_nhap,
+    doi_chu_so_huu,
+    doi_mach_tuong_tac_duoc,
+)
+from api.schemas import AnhNoiDungOut, AnhOut
 from api.trinh_bay import anh_ra
 
 router = Router()
 
 #: Mốc đã đủ `SO_ANH_TOI_DA_MOI_MOC` ảnh. 409.
 QUA_NHIEU_ANH = "qua_nhieu_anh"
+
+
+def _doi_khong_qua_nang(file: UploadedFile) -> None:
+    """Phép kiểm 1 **trước khi `read()`** — dùng chung cho mọi cửa nhận file ở đây.
+
+    `xu_ly_anh_tai_len` cũng kiểm byte, nhưng nó chỉ chạy được sau khi ai đó đã đọc cả
+    thân request vào RAM/đĩa tạm — tức sau khi thiệt hại đã xảy ra. `file.size` đến từ
+    `Content-Length` của phần multipart nên hỏi được ngay, đúng thứ tự mà `core/anh.py`
+    đòi. `api/avatar.py` giữ một bản chép tay của cùng phép kiểm — nó là cửa per-user
+    tuyệt đối, không dùng gì khác trong file này; hai cửa ở ĐÂY thì dùng chung hàm này,
+    vì chúng còn dùng chung cả `_xu_ly_hoac_loi_http` ngay dưới.
+    """
+    if file.size is not None and file.size > BYTE_TOI_DA:
+        raise LoiGhi(
+            413,
+            ANH_QUA_NANG,
+            f"Ảnh nặng {file.size / 1024 / 1024:.1f}MB, "
+            f"tối đa {BYTE_TOI_DA // 1024 // 1024}MB.",
+        )
+
+
+def _xu_ly_hoac_loi_http(du_lieu: bytes):
+    """Bảy phép kiểm → `AnhDaXuLy`, `LoiAnh` dịch sang mã HTTP. 413 cho nặng, 400 còn lại."""
+    try:
+        return xu_ly_anh_tai_len(du_lieu)
+    except LoiAnh as e:
+        raise LoiGhi(413 if e.ma == ANH_QUA_NANG else 400, e.ma, e.detail) from e
 
 
 @router.post(
@@ -82,25 +128,11 @@ def tai_anh_moc(request, moc_id: int, file: UploadedFile = File(...)):
     doi_mach_tuong_tac_duoc(moc.mach)
     doi_con_song(moc, "Mốc")
 
-    # Phép kiểm 1 chạy ở `xu_ly_anh_tai_len`, nhưng đọc `file.read()` trước nó thì trần
-    # byte đã bị vượt mất rồi — Django đã nuốt cả thân request vào RAM/đĩa tạm. Hỏi
-    # `file.size` (đến từ `Content-Length` của phần multipart) là chặn được TRƯỚC khi
-    # đọc, đúng thứ tự mà phép kiểm 1 đòi.
-    if file.size is not None and file.size > BYTE_TOI_DA:
-        raise LoiGhi(
-            413,
-            ANH_QUA_NANG,
-            f"Ảnh nặng {file.size / 1024 / 1024:.1f}MB, "
-            f"tối đa {BYTE_TOI_DA // 1024 // 1024}MB.",
-        )
-
-    try:
-        # Tái mã hoá chạy NGOÀI transaction và ngoài mọi khoá: nó tốn khoảng một giây với
-        # ảnh 8MB, và giữ khoá hàng `Moc` suốt thời gian đó là bắt mọi lượt upload của
-        # cùng mốc xếp hàng sau nó.
-        anh = xu_ly_anh_tai_len(file.read())
-    except LoiAnh as e:
-        raise LoiGhi(413 if e.ma == ANH_QUA_NANG else 400, e.ma, e.detail) from e
+    _doi_khong_qua_nang(file)
+    # Tái mã hoá chạy NGOÀI transaction và ngoài mọi khoá: nó tốn khoảng một giây với ảnh
+    # 8MB, và giữ khoá hàng `Moc` suốt thời gian đó là bắt mọi lượt upload của cùng mốc
+    # xếp hàng sau nó.
+    anh = _xu_ly_hoac_loi_http(file.read())
 
     try:
         hang = them_anh_moc(moc=moc, anh=anh)
@@ -151,3 +183,69 @@ def xoa_anh_moc_api(request, anh_id: int):
         xoa_anh_moc(anh=anh)
         lam_moi_mach(anh.moc.mach)
     return ra
+
+
+@router.post(
+    "/me/anh",
+    response={
+        201: AnhNoiDungOut,
+        400: LoiOut,
+        401: LoiOut,
+        413: LoiOut,
+        429: LoiThoiGianOut,
+    },
+    operation_id="tai_anh_noi_dung",
+    tags=["anh"],
+    auth=dang_nhap,
+)
+def tai_anh_noi_dung(request, response: HttpResponse, file: UploadedFile = File(...)):
+    """Tải MỘT ảnh để nhúng thẳng vào thân bài (multipart). Trả `{url, width, height}`.
+
+    **Không gắn mốc nào**, và đó là cả lý do cửa này tồn tại: người ta bấm nút ảnh trong
+    lúc còn đang soạn, tức trước khi `Moc` có id — mà `POST /mocs/{id}/anh` đòi `moc_id`
+    đã tồn tại. `auth=dang_nhap` là toàn bộ phân quyền; không có chủ nào để đối chiếu.
+
+    `url` là đường dẫn `/media/...` mà editor nhét thẳng vào `<img src>`. Nó phải giữ
+    nguyên tiền tố ấy tới lúc đăng bài: `core/lam_sach_html.py` **gỡ cả thẻ** `img` nào có
+    `src` không trỏ vào kho của site (ảnh ngoài site là pixel theo dõi + mixed content).
+
+    **Hạn mức 30 ảnh / người / ngày lịch VN** (`settings.HAN_MUC_ANH_NOI_DUNG_MOI_USER_NGAY`)
+    ⇒ 429 `qua_han_muc_anh_noi_dung` kèm `thu_lai_tu` = nửa đêm giờ VN kế tiếp. Không có
+    nó thì đây là một dịch vụ lưu trữ file miễn phí: cửa duy nhất của cả API nhận file mà
+    không gắn với một hàng có sẵn nào để mà đếm.
+
+    Ảnh đi qua đúng bảy phép kiểm của `POST /mocs/{id}/anh` (`core/anh.py`): nhận dạng
+    bằng NỘI DUNG, tái mã hoá xoá polyglot + EXIF, allowlist JPEG/PNG/WebP. **Chỉ ảnh** —
+    không video (chốt của plan): một cửa nhận video là bài toán khác hẳn (dung lượng,
+    transcode, streaming), và mở nó bằng một dòng `accept` là mở nhầm.
+
+    **Không có cửa gỡ.** Ảnh nội dung gỡ khỏi bài bằng cách sửa `body`, và file ở lại —
+    cùng ảnh ấy có thể còn nằm trong một bản `MocRevision` cũ hoặc trong bài khác, nên
+    một `DELETE /me/anh/{id}` sẽ là cái nút phá nội dung đã đăng. Đổi lại là một khoản nợ
+    ghi rõ ở `core/models/moc.py::AnhNoiDung`: ảnh tải lên rồi bỏ bài không được thu hồi.
+
+    `Cache-Control: no-store` vì cùng lý do `POST /me/avatar`: response nói về hạn mức và
+    tài sản của **một phiên**, một proxy giữ lại là trả URL của người này cho người kia.
+    """
+    response["Cache-Control"] = "no-store"
+
+    tran = tran_anh_noi_dung_moi_ngay()
+    if dem_anh_noi_dung_trong_ngay_vn(request.user) >= tran:
+        # `return` chứ không `raise LoiGhi`: mã 429 mang thêm `thu_lai_tu`, thứ exception
+        # handler không dựng được (xem `api/loi.py::LoiThoiGianOut`). Kiểm TRƯỚC khi đọc
+        # file — người đã chạm trần không có lý do gì phải chờ 8MB đi qua dây rồi mới
+        # nhận lời từ chối.
+        return loi_thoi_gian(
+            429,
+            QUA_HAN_MUC_ANH_NOI_DUNG,
+            f"Hôm nay bạn đã tải đủ {tran} ảnh vào bài — mai tải tiếp nhé.",
+            thu_lai_tu=nua_dem_vn_ke_tiep(),
+        )
+
+    _doi_khong_qua_nang(file)
+    anh = _xu_ly_hoac_loi_http(file.read())
+    hang = luu_anh_noi_dung(user=request.user, anh=anh)
+    return Status(
+        201,
+        AnhNoiDungOut(url=url_anh(hang.khoa_luu_tru), width=hang.w, height=hang.h),
+    )

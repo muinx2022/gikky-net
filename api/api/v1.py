@@ -101,13 +101,17 @@ def health(request):
 # import mà không cần một module "app" thứ ba chỉ để nối dây.
 from api.bao_cao import router as router_bao_cao  # noqa: E402
 from api.anh import router as router_anh  # noqa: E402
+from api.avatar import router as router_avatar  # noqa: E402
 from api.binh_luan import router as router_binh_luan  # noqa: E402
 from api.feeds import router as router_feeds  # noqa: E402
+from api.ho_so import router as router_ho_so  # noqa: E402
 from api.loi import dang_ky_xu_ly_loi  # noqa: E402
 from api.machs import router as router_machs  # noqa: E402
+from api.mod import router as router_mod  # noqa: E402
 from api.mocs import router as router_mocs  # noqa: E402
 from api.quyen import dang_ky_xu_ly_loi_ghi  # noqa: E402
 from api.theo_doi import router as router_theo_doi  # noqa: E402
+from api.theo_sub import router as router_theo_sub  # noqa: E402
 from api.tim_kiem import router as router_tim_kiem  # noqa: E402
 from api.thong_bao import router as router_thong_bao  # noqa: E402
 from api.toi import router as router_toi  # noqa: E402
@@ -126,17 +130,36 @@ api_v1.add_router("", router_bao_cao)
 api_v1.add_router("", router_tuong_tac)
 api_v1.add_router("", router_toi)
 api_v1.add_router("", router_users)
+# Ba cửa danh sách của trang hồ sơ (2026-08-24). Router riêng vì hai trong ba là per-user
+# tuyệt đối (`/me/da-vote`, `/me/dang-theo` — `no-store`), còn `users.py` là cửa công
+# khai cache được; trộn hai loại vào một module là mời lượt sau nhét một trường per-user
+# vào đúng response đang được cache theo URL. Xem docstring `api/ho_so.py`.
+api_v1.add_router("", router_ho_so)
 # Phase 3 — hai router per-user. `theo_doi` mang `/machs/{id}/me`, `/seen`, `/follow`;
 # `thong_bao` mang chuông. Cả hai tách khỏi `machs.py` vì một ranh giới có thật, không vì
 # độ dài file: chúng là chỗ **được phép** đọc `request.user`, còn `machs.py` thì không —
 # response của nó phải cache được (PLAN 8.4). Xem docstring `api/theo_doi.py`.
 api_v1.add_router("", router_theo_doi)
+# Theo dõi CHUYÊN MỤC (2026-08-24) — `/subs/{slug}/theo`, `/subs/{slug}/me`, `/me/subs`.
+# Router riêng vì cùng ranh giới với `theo_doi`: `api/feeds.py` giữ hai endpoint chuyên mục
+# KHÔNG per-user (cache được), file kia đọc `request.user`. Xem docstring `api/theo_sub.py`.
+api_v1.add_router("", router_theo_sub)
 api_v1.add_router("", router_thong_bao)
 # Phase 5 — `POST /mocs/{id}/anh` (multipart) + `DELETE /anh/{id}`. Tách khỏi `mocs.py`
 # vì nó là cửa duy nhất nhận **file** từ internet, và bảy phép kiểm của nó đáng được đọc
 # mà không phải cuộn qua ngăn kéo bình luận. Xem `api/anh.py`.
 api_v1.add_router("", router_anh)
+# Avatar (2026-08-24) — `POST`/`DELETE /me/avatar`. Cùng hạ tầng ảnh của `router_anh`
+# nhưng là cửa per-user tuyệt đối (`no-store`), đích luôn là chính người gọi; tách riêng
+# vì nó không thuộc `Moc` nào và không có gallery. Xem `api/avatar.py`.
+api_v1.add_router("", router_avatar)
 # Phase 7 — `GET /tim-kiem`. Router riêng vì nó là **đường đọc thứ hai** của toàn bộ nội
 # dung: luật che của sản phẩm phải được áp lại ở đó bằng một lớp lọc Postgres, và lý lẽ
 # ấy đáng đọc một mình. Xem `api/tim_kiem.py`.
 api_v1.add_router("", router_tim_kiem)
+# Bề mặt mod HẸP trên `/mod/*` (2026-08-24, PLAN phần D) — đúng 4 cửa ẩn/khoá. Nó nằm ở
+# `api_v1` chứ không ở `api_admin` vì Caddy chặn `gikky.net/api/admin/*` (PLAN 8.2): front
+# công khai không gọi được cửa admin nào ở prod, dù ở dev nó có vẻ chạy. Bốn handler chỉ
+# gọi lại handler của `api/quan_tri_kiem_duyet.py` — ban user, quản lý sub, nhật ký và mọi
+# bảng danh sách **ở lại** phía admin. Xem docstring `api/mod.py`.
+api_v1.add_router("", router_mod)

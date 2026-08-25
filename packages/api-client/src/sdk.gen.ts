@@ -4,7 +4,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { BoTheoMachData, BoTheoMachErrors, BoTheoMachResponses, DanhDauDaDocData, DanhDauDaDocErrors, DanhDauDaDocResponses, DanhDauDaXemData, DanhDauDaXemErrors, DanhDauDaXemResponses, DatReactionData, DatReactionErrors, DatReactionResponses, DatVoteData, DatVoteErrors, DatVoteResponses, DongSoMachData, DongSoMachErrors, DongSoMachResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GoTrichData, GoTrichErrors, GoTrichResponses, GuiBaoCaoData, GuiBaoCaoErrors, GuiBaoCaoResponses, LietKeBanCuMocData, LietKeBanCuMocErrors, LietKeBanCuMocResponses, LietKeBinhLuanMachData, LietKeBinhLuanMachErrors, LietKeBinhLuanMachResponses, LietKeBinhLuanMocData, LietKeBinhLuanMocErrors, LietKeBinhLuanMocResponses, LietKeFeedDangDienRaData, LietKeFeedDangDienRaErrors, LietKeFeedDangDienRaResponses, LietKeFeedMoiData, LietKeFeedMoiErrors, LietKeFeedMoiResponses, LietKeSubData, LietKeSubResponses, LietKeThongBaoData, LietKeThongBaoErrors, LietKeThongBaoResponses, MoLaiMachData, MoLaiMachErrors, MoLaiMachResponses, NoiMocData, NoiMocErrors, NoiMocResponses, SuaBinhLuanData, SuaBinhLuanErrors, SuaBinhLuanResponses, SuaMocData, SuaMocErrors, SuaMocResponses, SuaToiData, SuaToiErrors, SuaToiResponses, TaiAnhMocData, TaiAnhMocErrors, TaiAnhMocResponses, TaoMachData, TaoMachErrors, TaoMachResponses, TheoMachData, TheoMachErrors, TheoMachResponses, TimKiemData, TimKiemErrors, TimKiemResponses, TrichVaoSoData, TrichVaoSoErrors, TrichVaoSoResponses, VietBinhLuanData, VietBinhLuanErrors, VietBinhLuanResponses, XemHoSoData, XemHoSoErrors, XemHoSoResponses, XemMachCuaToiData, XemMachCuaToiErrors, XemMachCuaToiResponses, XemMachData, XemMachErrors, XemMachResponses, XemSubData, XemSubErrors, XemSubResponses, XemToiData, XemToiResponses, XoaAnhMocData, XoaAnhMocErrors, XoaAnhMocResponses, XoaBinhLuanData, XoaBinhLuanErrors, XoaBinhLuanResponses, XoaMocData, XoaMocErrors, XoaMocResponses } from './types.gen';
+import type { BoTheoMachData, BoTheoMachErrors, BoTheoMachResponses, BoTheoSubData, BoTheoSubErrors, BoTheoSubResponses, DanhDauDaDocData, DanhDauDaDocErrors, DanhDauDaDocResponses, DanhDauDaXemData, DanhDauDaXemErrors, DanhDauDaXemResponses, DatAvatarData, DatAvatarErrors, DatAvatarResponses, DatReactionData, DatReactionErrors, DatReactionResponses, DatVoteData, DatVoteErrors, DatVoteResponses, DongSoMachData, DongSoMachErrors, DongSoMachResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GoTrichData, GoTrichErrors, GoTrichResponses, GuiBaoCaoData, GuiBaoCaoErrors, GuiBaoCaoResponses, LietKeBanCuMocData, LietKeBanCuMocErrors, LietKeBanCuMocResponses, LietKeBinhLuanMachData, LietKeBinhLuanMachErrors, LietKeBinhLuanMachResponses, LietKeBinhLuanMocData, LietKeBinhLuanMocErrors, LietKeBinhLuanMocResponses, LietKeDangTheoData, LietKeDangTheoErrors, LietKeDangTheoResponses, LietKeDaVoteData, LietKeDaVoteErrors, LietKeDaVoteResponses, LietKeFeedDangDienRaData, LietKeFeedDangDienRaErrors, LietKeFeedDangDienRaResponses, LietKeFeedMoiData, LietKeFeedMoiErrors, LietKeFeedMoiResponses, LietKeMachCuaUserData, LietKeMachCuaUserErrors, LietKeMachCuaUserResponses, LietKeSubDangTheoData, LietKeSubDangTheoErrors, LietKeSubDangTheoResponses, LietKeSubData, LietKeSubResponses, LietKeSubToiLamModData, LietKeSubToiLamModErrors, LietKeSubToiLamModResponses, LietKeThongBaoData, LietKeThongBaoErrors, LietKeThongBaoResponses, ModDatAnBinhLuanData, ModDatAnBinhLuanErrors, ModDatAnBinhLuanResponses, ModDatAnMachData, ModDatAnMachErrors, ModDatAnMachResponses, ModDatAnMocData, ModDatAnMocErrors, ModDatAnMocResponses, ModDatKhoaMachData, ModDatKhoaMachErrors, ModDatKhoaMachResponses, MoLaiMachData, MoLaiMachErrors, MoLaiMachResponses, NoiMocData, NoiMocErrors, NoiMocResponses, SuaBinhLuanData, SuaBinhLuanErrors, SuaBinhLuanResponses, SuaMocData, SuaMocErrors, SuaMocResponses, SuaToiData, SuaToiErrors, SuaToiResponses, TaiAnhMocData, TaiAnhMocErrors, TaiAnhMocResponses, TaiAnhNoiDungData, TaiAnhNoiDungErrors, TaiAnhNoiDungResponses, TaoMachData, TaoMachErrors, TaoMachResponses, TheoMachData, TheoMachErrors, TheoMachResponses, TheoSubData, TheoSubErrors, TheoSubResponses, TimKiemData, TimKiemErrors, TimKiemResponses, TrichVaoSoData, TrichVaoSoErrors, TrichVaoSoResponses, VietBinhLuanData, VietBinhLuanErrors, VietBinhLuanResponses, XemHoSoData, XemHoSoErrors, XemHoSoResponses, XemMachCuaToiData, XemMachCuaToiErrors, XemMachCuaToiResponses, XemMachData, XemMachErrors, XemMachResponses, XemSubCuaToiData, XemSubCuaToiErrors, XemSubCuaToiResponses, XemSubData, XemSubErrors, XemSubResponses, XemToiData, XemToiResponses, XoaAnhMocData, XoaAnhMocErrors, XoaAnhMocResponses, XoaAvatarData, XoaAvatarErrors, XoaAvatarResponses, XoaBinhLuanData, XoaBinhLuanErrors, XoaBinhLuanResponses, XoaMocData, XoaMocErrors, XoaMocResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -38,6 +38,7 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
  */
 export const xoaAnhMoc = <ThrowOnError extends boolean = false>(options: Options<XoaAnhMocData, ThrowOnError>): RequestResult<XoaAnhMocResponses, XoaAnhMocErrors, ThrowOnError> => (options.client ?? client).delete<XoaAnhMocResponses, XoaAnhMocErrors, ThrowOnError>({
     security: [{
+            key: 'DangNhap',
             in: 'cookie',
             name: 'sessionid',
             type: 'apiKey'
@@ -84,6 +85,7 @@ export const xoaAnhMoc = <ThrowOnError extends boolean = false>(options: Options
  */
 export const xoaBinhLuan = <ThrowOnError extends boolean = false>(options: Options<XoaBinhLuanData, ThrowOnError>): RequestResult<XoaBinhLuanResponses, XoaBinhLuanErrors, ThrowOnError> => (options.client ?? client).delete<XoaBinhLuanResponses, XoaBinhLuanErrors, ThrowOnError>({
     security: [{
+            key: 'DangNhap',
             in: 'cookie',
             name: 'sessionid',
             type: 'apiKey'
@@ -113,6 +115,7 @@ export const xoaBinhLuan = <ThrowOnError extends boolean = false>(options: Optio
  */
 export const suaBinhLuan = <ThrowOnError extends boolean = false>(options: Options<SuaBinhLuanData, ThrowOnError>): RequestResult<SuaBinhLuanResponses, SuaBinhLuanErrors, ThrowOnError> => (options.client ?? client).patch<SuaBinhLuanResponses, SuaBinhLuanErrors, ThrowOnError>({
     security: [{
+            key: 'DangNhap',
             in: 'cookie',
             name: 'sessionid',
             type: 'apiKey'
@@ -215,6 +218,7 @@ export const getHealth = <ThrowOnError extends boolean = false>(options?: Option
  */
 export const taoMach = <ThrowOnError extends boolean = false>(options: Options<TaoMachData, ThrowOnError>): RequestResult<TaoMachResponses, TaoMachErrors, ThrowOnError> => (options.client ?? client).post<TaoMachResponses, TaoMachErrors, ThrowOnError>({
     security: [{
+            key: 'DangNhap',
             in: 'cookie',
             name: 'sessionid',
             type: 'apiKey'
@@ -260,6 +264,7 @@ export const xemMach = <ThrowOnError extends boolean = false>(options: Options<X
  */
 export const dongSoMach = <ThrowOnError extends boolean = false>(options: Options<DongSoMachData, ThrowOnError>): RequestResult<DongSoMachResponses, DongSoMachErrors, ThrowOnError> => (options.client ?? client).post<DongSoMachResponses, DongSoMachErrors, ThrowOnError>({
     security: [{
+            key: 'DangNhap',
             in: 'cookie',
             name: 'sessionid',
             type: 'apiKey'
@@ -371,6 +376,7 @@ export const lietKeBinhLuanMach = <ThrowOnError extends boolean = false>(options
  */
 export const vietBinhLuan = <ThrowOnError extends boolean = false>(options: Options<VietBinhLuanData, ThrowOnError>): RequestResult<VietBinhLuanResponses, VietBinhLuanErrors, ThrowOnError> => (options.client ?? client).post<VietBinhLuanResponses, VietBinhLuanErrors, ThrowOnError>({
     security: [{
+            key: 'DangNhap',
             in: 'cookie',
             name: 'sessionid',
             type: 'apiKey'
@@ -399,6 +405,7 @@ export const vietBinhLuan = <ThrowOnError extends boolean = false>(options: Opti
  */
 export const boTheoMach = <ThrowOnError extends boolean = false>(options: Options<BoTheoMachData, ThrowOnError>): RequestResult<BoTheoMachResponses, BoTheoMachErrors, ThrowOnError> => (options.client ?? client).delete<BoTheoMachResponses, BoTheoMachErrors, ThrowOnError>({
     security: [{
+            key: 'DangNhap',
             in: 'cookie',
             name: 'sessionid',
             type: 'apiKey'
@@ -427,6 +434,7 @@ export const boTheoMach = <ThrowOnError extends boolean = false>(options: Option
  */
 export const theoMach = <ThrowOnError extends boolean = false>(options: Options<TheoMachData, ThrowOnError>): RequestResult<TheoMachResponses, TheoMachErrors, ThrowOnError> => (options.client ?? client).post<TheoMachResponses, TheoMachErrors, ThrowOnError>({
     security: [{
+            key: 'DangNhap',
             in: 'cookie',
             name: 'sessionid',
             type: 'apiKey'
@@ -489,6 +497,7 @@ export const xemMachCuaToi = <ThrowOnError extends boolean = false>(options: Opt
  */
 export const noiMoc = <ThrowOnError extends boolean = false>(options: Options<NoiMocData, ThrowOnError>): RequestResult<NoiMocResponses, NoiMocErrors, ThrowOnError> => (options.client ?? client).post<NoiMocResponses, NoiMocErrors, ThrowOnError>({
     security: [{
+            key: 'DangNhap',
             in: 'cookie',
             name: 'sessionid',
             type: 'apiKey'
@@ -517,6 +526,7 @@ export const noiMoc = <ThrowOnError extends boolean = false>(options: Options<No
  */
 export const moLaiMach = <ThrowOnError extends boolean = false>(options: Options<MoLaiMachData, ThrowOnError>): RequestResult<MoLaiMachResponses, MoLaiMachErrors, ThrowOnError> => (options.client ?? client).post<MoLaiMachResponses, MoLaiMachErrors, ThrowOnError>({
     security: [{
+            key: 'DangNhap',
             in: 'cookie',
             name: 'sessionid',
             type: 'apiKey'
@@ -547,6 +557,7 @@ export const moLaiMach = <ThrowOnError extends boolean = false>(options: Options
  */
 export const danhDauDaXem = <ThrowOnError extends boolean = false>(options: Options<DanhDauDaXemData, ThrowOnError>): RequestResult<DanhDauDaXemResponses, DanhDauDaXemErrors, ThrowOnError> => (options.client ?? client).post<DanhDauDaXemResponses, DanhDauDaXemErrors, ThrowOnError>({
     security: [{
+            key: 'DangNhap',
             in: 'cookie',
             name: 'sessionid',
             type: 'apiKey'
@@ -582,7 +593,8 @@ export const xemToi = <ThrowOnError extends boolean = false>(options?: Options<X
 /**
  * Sua Toi
  *
- * Đổi tuỳ chọn của **chính phiên đang gọi**. Hôm nay đúng một trường: `nhan_digest`.
+ * Đổi tuỳ chọn + hồ sơ của **chính phiên đang gọi**: `nhan_digest`, `display_name`,
+ * `bio`. Avatar KHÔNG ở đây — nó là file, đi qua `POST`/`DELETE /me/avatar`.
  *
  * **Quyền: bất kỳ ai đã đăng nhập, và chỉ ghi vào hàng của chính họ.** Không có tham số
  * nào chỉ ra người khác, nên không có đường nào đặt tuỳ chọn hộ ai.
@@ -606,6 +618,7 @@ export const xemToi = <ThrowOnError extends boolean = false>(options?: Options<X
  */
 export const suaToi = <ThrowOnError extends boolean = false>(options: Options<SuaToiData, ThrowOnError>): RequestResult<SuaToiResponses, SuaToiErrors, ThrowOnError> => (options.client ?? client).patch<SuaToiResponses, SuaToiErrors, ThrowOnError>({
     security: [{
+            key: 'DangNhap',
             in: 'cookie',
             name: 'sessionid',
             type: 'apiKey'
@@ -616,6 +629,224 @@ export const suaToi = <ThrowOnError extends boolean = false>(options: Options<Su
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * Tai Anh Noi Dung
+ *
+ * Tải MỘT ảnh để nhúng thẳng vào thân bài (multipart). Trả `{url, width, height}`.
+ *
+ * **Không gắn mốc nào**, và đó là cả lý do cửa này tồn tại: người ta bấm nút ảnh trong
+ * lúc còn đang soạn, tức trước khi `Moc` có id — mà `POST /mocs/{id}/anh` đòi `moc_id`
+ * đã tồn tại. `auth=dang_nhap` là toàn bộ phân quyền; không có chủ nào để đối chiếu.
+ *
+ * `url` là đường dẫn `/media/...` mà editor nhét thẳng vào `<img src>`. Nó phải giữ
+ * nguyên tiền tố ấy tới lúc đăng bài: `core/lam_sach_html.py` **gỡ cả thẻ** `img` nào có
+ * `src` không trỏ vào kho của site (ảnh ngoài site là pixel theo dõi + mixed content).
+ *
+ * **Hạn mức 30 ảnh / người / ngày lịch VN** (`settings.HAN_MUC_ANH_NOI_DUNG_MOI_USER_NGAY`)
+ * ⇒ 429 `qua_han_muc_anh_noi_dung` kèm `thu_lai_tu` = nửa đêm giờ VN kế tiếp. Không có
+ * nó thì đây là một dịch vụ lưu trữ file miễn phí: cửa duy nhất của cả API nhận file mà
+ * không gắn với một hàng có sẵn nào để mà đếm.
+ *
+ * Ảnh đi qua đúng bảy phép kiểm của `POST /mocs/{id}/anh` (`core/anh.py`): nhận dạng
+ * bằng NỘI DUNG, tái mã hoá xoá polyglot + EXIF, allowlist JPEG/PNG/WebP. **Chỉ ảnh** —
+ * không video (chốt của plan): một cửa nhận video là bài toán khác hẳn (dung lượng,
+ * transcode, streaming), và mở nó bằng một dòng `accept` là mở nhầm.
+ *
+ * **Không có cửa gỡ.** Ảnh nội dung gỡ khỏi bài bằng cách sửa `body`, và file ở lại —
+ * cùng ảnh ấy có thể còn nằm trong một bản `MocRevision` cũ hoặc trong bài khác, nên
+ * một `DELETE /me/anh/{id}` sẽ là cái nút phá nội dung đã đăng. Đổi lại là một khoản nợ
+ * ghi rõ ở `core/models/moc.py::AnhNoiDung`: ảnh tải lên rồi bỏ bài không được thu hồi.
+ *
+ * `Cache-Control: no-store` vì cùng lý do `POST /me/avatar`: response nói về hạn mức và
+ * tài sản của **một phiên**, một proxy giữ lại là trả URL của người này cho người kia.
+ */
+export const taiAnhNoiDung = <ThrowOnError extends boolean = false>(options: Options<TaiAnhNoiDungData, ThrowOnError>): RequestResult<TaiAnhNoiDungResponses, TaiAnhNoiDungErrors, ThrowOnError> => (options.client ?? client).post<TaiAnhNoiDungResponses, TaiAnhNoiDungErrors, ThrowOnError>({
+    ...formDataBodySerializer,
+    security: [{
+            key: 'DangNhap',
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/me/anh',
+    ...options,
+    headers: {
+        'Content-Type': null,
+        ...options.headers
+    }
+});
+
+/**
+ * Xoa Avatar Api
+ *
+ * Gỡ ảnh đại diện — rỗng cột + xoá file thật. Trả `GET /me` mới, `no-store`.
+ *
+ * **Idempotent**: gỡ khi vốn không có avatar vẫn trả 200 với `avatar_url = null` — client
+ * không phải biết trước mình có avatar hay không mới dám bấm gỡ. `no-store` vì cùng lý do
+ * `POST`: nó đổi `GET /me`.
+ */
+export const xoaAvatar = <ThrowOnError extends boolean = false>(options?: Options<XoaAvatarData, ThrowOnError>): RequestResult<XoaAvatarResponses, XoaAvatarErrors, ThrowOnError> => (options?.client ?? client).delete<XoaAvatarResponses, XoaAvatarErrors, ThrowOnError>({
+    security: [{
+            key: 'DangNhap',
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/me/avatar',
+    ...options
+});
+
+/**
+ * Dat Avatar Api
+ *
+ * Đặt/đổi ảnh đại diện (multipart). Trả `GET /me` mới, `Cache-Control: no-store`.
+ *
+ * Ảnh đi qua đúng bảy phép kiểm của `POST /mocs/{id}/anh`: nhận dạng bằng NỘI DUNG (tên
+ * file + `Content-Type` bị bỏ qua), tái mã hoá xoá polyglot + EXIF, allowlist JPEG/PNG/
+ * WebP. Ảnh hỏng / định dạng lạ → 400, quá nặng → 413 — cùng bộ mã với `tai_anh_moc`,
+ * nên UI dùng lại đúng một bộ câu lỗi.
+ */
+export const datAvatar = <ThrowOnError extends boolean = false>(options: Options<DatAvatarData, ThrowOnError>): RequestResult<DatAvatarResponses, DatAvatarErrors, ThrowOnError> => (options.client ?? client).post<DatAvatarResponses, DatAvatarErrors, ThrowOnError>({
+    ...formDataBodySerializer,
+    security: [{
+            key: 'DangNhap',
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/me/avatar',
+    ...options,
+    headers: {
+        'Content-Type': null,
+        ...options.headers
+    }
+});
+
+/**
+ * Liet Ke Da Vote
+ *
+ * Mạch **tôi đã vote bài gốc**, mới vote trước — tab **Đã vote**.
+ *
+ * "Vote một mạch" ở gikky là vote **mốc 1** (bài gốc — `Mach.diem_bai_goc`), đúng đích
+ * mà mũi tên trên thẻ feed trỏ tới. Phiếu bỏ cho mốc 2 trở đi hay cho một bình luận
+ * **không** đưa mạch vào danh sách này: chúng là phiếu cho một câu nói bên trong mạch,
+ * không phải cho bài.
+ *
+ * Cả phiếu lên và phiếu xuống đều tính — đây là "đã vote", không phải "đã thích". Rút
+ * phiếu (`POST /votes` với `value = 0`) xoá hàng vote, nên mạch rời khỏi danh sách ngay.
+ *
+ * Sắp theo **thời điểm tôi vote**, không theo lúc mạch ra đời.
+ *
+ * **Per-user tuyệt đối — `Cache-Control: no-store`** (PLAN 8.4 điểm 4). Khách nhận 401
+ * `chua_dang_nhap`.
+ *
+ * `?cursor=` là cursor keyset lấy từ `cursor_ke_tiep` của trang trước; `null` là hết.
+ * `?limit=` tối đa 50. Mạch bị mod ẩn không xuất hiện.
+ *
+ */
+export const lietKeDaVote = <ThrowOnError extends boolean = false>(options?: Options<LietKeDaVoteData, ThrowOnError>): RequestResult<LietKeDaVoteResponses, LietKeDaVoteErrors, ThrowOnError> => (options?.client ?? client).get<LietKeDaVoteResponses, LietKeDaVoteErrors, ThrowOnError>({
+    security: [{
+            key: 'DangNhap',
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/me/da-vote',
+    ...options
+});
+
+/**
+ * Liet Ke Dang Theo
+ *
+ * Mạch **tôi đang theo**, mới theo trước — tab **Đang theo**.
+ *
+ * Sắp theo **thời điểm tôi bấm theo**, không theo lúc mạch ra đời và cũng không theo
+ * mốc mới nhất: danh sách này là cái kệ sách của người dùng, không phải một feed.
+ *
+ * Bỏ theo (`DELETE /machs/{id}/follow`) xoá hàng, nên mạch rời khỏi danh sách ngay.
+ *
+ * **Per-user tuyệt đối — `Cache-Control: no-store`** (PLAN 8.4 điểm 4). Khách nhận 401
+ * `chua_dang_nhap`.
+ *
+ * `?cursor=` là cursor keyset lấy từ `cursor_ke_tiep` của trang trước; `null` là hết.
+ * `?limit=` tối đa 50. Mạch bị mod ẩn không xuất hiện.
+ *
+ */
+export const lietKeDangTheo = <ThrowOnError extends boolean = false>(options?: Options<LietKeDangTheoData, ThrowOnError>): RequestResult<LietKeDangTheoResponses, LietKeDangTheoErrors, ThrowOnError> => (options?.client ?? client).get<LietKeDangTheoResponses, LietKeDangTheoErrors, ThrowOnError>({
+    security: [{
+            key: 'DangNhap',
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/me/dang-theo',
+    ...options
+});
+
+/**
+ * Liet Ke Sub Dang Theo
+ *
+ * Chuyên mục **tôi** đang theo — nguồn của tab "Chuyên mục" trong hồ sơ.
+ *
+ * **Mới theo trước** (`-created_at` trên `TheoSub`), không sắp theo `slug`: đây là danh
+ * sách để quản lý, và thứ vừa thêm là thứ người ta hay muốn sửa lại nhất. Khác
+ * `GET /subs` — cái đó là **bản đồ** nên sắp theo `slug` cho ổn định.
+ *
+ * **Không phân trang, có chủ đích.** Một người theo hàng chục chuyên mục là nhiều, và
+ * `GET /subs` (toàn bộ chuyên mục của site) cũng đã không phân trang vì cùng lý do — v1
+ * tạo sub bằng tay qua admin. Ngày tập này dài ra thì cả hai cùng phải đổi.
+ *
+ * Trả `SubChiTietOut` y hệt `GET /subs` để tab hồ sơ vẽ được cùng một loại thẻ: dùng
+ * kiểu riêng ở đây là hai schema gần giống nhau, và cái thứ hai sẽ lệch ở lần sửa sau.
+ */
+export const lietKeSubDangTheo = <ThrowOnError extends boolean = false>(options?: Options<LietKeSubDangTheoData, ThrowOnError>): RequestResult<LietKeSubDangTheoResponses, LietKeSubDangTheoErrors, ThrowOnError> => (options?.client ?? client).get<LietKeSubDangTheoResponses, LietKeSubDangTheoErrors, ThrowOnError>({
+    security: [{
+            key: 'DangNhap',
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/me/subs',
+    ...options
+});
+
+/**
+ * Liet Ke Sub Toi Lam Mod
+ *
+ * Chuyên mục **tôi được phân công làm mod** — nguồn của trang `/khu-mod`.
+ *
+ * ## ⚠ Danh sách này KHÔNG phải danh sách quyền
+ *
+ * `ModSub` ở lượt 2026-08-24 **chưa cho thêm quyền gì** — docstring của model nói thẳng,
+ * và bốn cửa `/api/v1/mod*` vẫn kiểm `is_staff` chứ không kiểm phân công theo sub. Nên
+ * một người có tên ở đây mà **không** `is_staff` sẽ mở được trang `/khu-mod`, đi tới
+ * chuyên mục của mình, và **không thấy công cụ mod nào**.
+ *
+ * Đó là sự thật của hệ thống hôm nay, không phải một lỗi của endpoint này. Nối quyền
+ * theo-sub là thay đổi bảo mật, có plan riêng
+ * (`plans/2026-08-24-mod-chuyen-muc.md` §0) — đừng "tiện tay" nới `ChiModTrenV1` ở một
+ * lượt giao diện.
+ *
+ * ## Vì sao ở `api/toi.py` chứ không `api/mod.py`
+ *
+ * `api/mod.py` tự khai phạm vi **đúng bốn cửa GHI**, và có một bài đo ghim con số bốn
+ * (`test_be_mat_mod_tren_v1_dung_BON_cua`). Thêm một cửa đọc vào đó là làm mờ đúng cái
+ * ranh giới bài đo ấy sinh ra để giữ. Đây là một lượt đọc `/me*`, và `/me*` ở file này.
+ *
+ * Sắp theo `slug` (không theo lúc phân công): đây là một **bản đồ công việc**, cùng lý lẽ
+ * `GET /subs` — thứ tự đổi mỗi lần có phân công mới thì không ai nhớ được chỗ nào ở đâu.
+ */
+export const lietKeSubToiLamMod = <ThrowOnError extends boolean = false>(options?: Options<LietKeSubToiLamModData, ThrowOnError>): RequestResult<LietKeSubToiLamModResponses, LietKeSubToiLamModErrors, ThrowOnError> => (options?.client ?? client).get<LietKeSubToiLamModResponses, LietKeSubToiLamModErrors, ThrowOnError>({
+    security: [{
+            key: 'DangNhap',
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/me/subs-mod',
+    ...options
 });
 
 /**
@@ -635,6 +866,7 @@ export const suaToi = <ThrowOnError extends boolean = false>(options: Options<Su
  */
 export const xoaMoc = <ThrowOnError extends boolean = false>(options: Options<XoaMocData, ThrowOnError>): RequestResult<XoaMocResponses, XoaMocErrors, ThrowOnError> => (options.client ?? client).delete<XoaMocResponses, XoaMocErrors, ThrowOnError>({
     security: [{
+            key: 'DangNhap',
             in: 'cookie',
             name: 'sessionid',
             type: 'apiKey'
@@ -665,6 +897,7 @@ export const xoaMoc = <ThrowOnError extends boolean = false>(options: Options<Xo
  */
 export const suaMoc = <ThrowOnError extends boolean = false>(options: Options<SuaMocData, ThrowOnError>): RequestResult<SuaMocResponses, SuaMocErrors, ThrowOnError> => (options.client ?? client).patch<SuaMocResponses, SuaMocErrors, ThrowOnError>({
     security: [{
+            key: 'DangNhap',
             in: 'cookie',
             name: 'sessionid',
             type: 'apiKey'
@@ -705,6 +938,7 @@ export const suaMoc = <ThrowOnError extends boolean = false>(options: Options<Su
 export const taiAnhMoc = <ThrowOnError extends boolean = false>(options: Options<TaiAnhMocData, ThrowOnError>): RequestResult<TaiAnhMocResponses, TaiAnhMocErrors, ThrowOnError> => (options.client ?? client).post<TaiAnhMocResponses, TaiAnhMocErrors, ThrowOnError>({
     ...formDataBodySerializer,
     security: [{
+            key: 'DangNhap',
             in: 'cookie',
             name: 'sessionid',
             type: 'apiKey'
@@ -743,7 +977,7 @@ export const lietKeBinhLuanMoc = <ThrowOnError extends boolean = false>(options:
 /**
  * Dat Reaction Api
  *
- * Reaction 1 chạm trên mốc — bộ **CỐ ĐỊNH** 📈📉🔥🧊🎯 (PLAN 5.7).
+ * Reaction 1 chạm trên mốc — bộ **CỐ ĐỊNH** 🧠📎❓🔥 (PLAN 5.7, đổi 2026-08-25).
  *
  * **Quyền: bất kỳ ai đã đăng nhập**, kể cả trên mốc của chính mình. Mạch bị mod khoá ⇒
  * 403; mốc đã bị gỡ ⇒ 409.
@@ -752,13 +986,14 @@ export const lietKeBinhLuanMoc = <ThrowOnError extends boolean = false>(options:
  * thêm hàng: đây là "bậc thang tham gia rẻ hơn viết", không phải phiếu bầu nhiều lựa
  * chọn. `emoji = null` nghĩa là **rút**.
  *
- * Trả về **đủ 5 khoá kể cả khoá đang bằng 0**: UI vẽ nguyên bộ, và một khoá vắng mặt
+ * Trả về **đủ 4 khoá kể cả khoá đang bằng 0**: UI vẽ nguyên bộ, và một khoá vắng mặt
  * trong response sẽ thành một icon nhấp nháy xuất hiện/biến mất theo lượt bấm.
  * Lưu khoá không dấu (`len`/`xuong`/…) chứ không lưu emoji — đổi bộ icon sau này không
  * phải migrate dữ liệu.
  */
 export const datReaction = <ThrowOnError extends boolean = false>(options: Options<DatReactionData, ThrowOnError>): RequestResult<DatReactionResponses, DatReactionErrors, ThrowOnError> => (options.client ?? client).post<DatReactionResponses, DatReactionErrors, ThrowOnError>({
     security: [{
+            key: 'DangNhap',
             in: 'cookie',
             name: 'sessionid',
             type: 'apiKey'
@@ -810,6 +1045,7 @@ export const lietKeBanCuMoc = <ThrowOnError extends boolean = false>(options: Op
  */
 export const goTrich = <ThrowOnError extends boolean = false>(options: Options<GoTrichData, ThrowOnError>): RequestResult<GoTrichResponses, GoTrichErrors, ThrowOnError> => (options.client ?? client).delete<GoTrichResponses, GoTrichErrors, ThrowOnError>({
     security: [{
+            key: 'DangNhap',
             in: 'cookie',
             name: 'sessionid',
             type: 'apiKey'
@@ -848,11 +1084,104 @@ export const goTrich = <ThrowOnError extends boolean = false>(options: Options<G
  */
 export const trichVaoSo = <ThrowOnError extends boolean = false>(options: Options<TrichVaoSoData, ThrowOnError>): RequestResult<TrichVaoSoResponses, TrichVaoSoErrors, ThrowOnError> => (options.client ?? client).post<TrichVaoSoResponses, TrichVaoSoErrors, ThrowOnError>({
     security: [{
+            key: 'DangNhap',
             in: 'cookie',
             name: 'sessionid',
             type: 'apiKey'
         }],
     url: '/api/v1/mocs/{moc_id}/trich',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Mod Dat An Binh Luan
+ *
+ * Mod ẩn / gỡ ẩn một bình luận. Idempotent.
+ *
+ * Gỡ ẩn **không** hồi sinh bình luận mà tác giả đã tự xoá — `deleted_at` là trục khác.
+ * `Cache-Control: no-store`.
+ */
+export const modDatAnBinhLuan = <ThrowOnError extends boolean = false>(options: Options<ModDatAnBinhLuanData, ThrowOnError>): RequestResult<ModDatAnBinhLuanResponses, ModDatAnBinhLuanErrors, ThrowOnError> => (options.client ?? client).post<ModDatAnBinhLuanResponses, ModDatAnBinhLuanErrors, ThrowOnError>({
+    security: [{
+            key: 'ChiModTrenV1',
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/mod/comments/{comment_id}/an',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Mod Dat An Mach
+ *
+ * Mod ẩn / gỡ ẩn cả mạch, ngay trên trang công khai. Idempotent.
+ *
+ * Cùng hành động và cùng kết quả với `POST /api/admin/machs/{id}/an`; cửa này tồn tại vì
+ * host công khai không với tới được `/api/admin*` (PLAN 8.2). `Cache-Control: no-store`.
+ */
+export const modDatAnMach = <ThrowOnError extends boolean = false>(options: Options<ModDatAnMachData, ThrowOnError>): RequestResult<ModDatAnMachResponses, ModDatAnMachErrors, ThrowOnError> => (options.client ?? client).post<ModDatAnMachResponses, ModDatAnMachErrors, ThrowOnError>({
+    security: [{
+            key: 'ChiModTrenV1',
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/mod/machs/{mach_id}/an',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Mod Dat Khoa Mach
+ *
+ * Mod khoá / mở khoá một mạch: đọc được, cấm mọi tương tác (PLAN 5.10). Idempotent.
+ *
+ * **Trục riêng, khác "đóng sổ" của tác giả** — endpoint này không đụng `status`.
+ * `Cache-Control: no-store`.
+ */
+export const modDatKhoaMach = <ThrowOnError extends boolean = false>(options: Options<ModDatKhoaMachData, ThrowOnError>): RequestResult<ModDatKhoaMachResponses, ModDatKhoaMachErrors, ThrowOnError> => (options.client ?? client).post<ModDatKhoaMachResponses, ModDatKhoaMachErrors, ThrowOnError>({
+    security: [{
+            key: 'ChiModTrenV1',
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/mod/machs/{mach_id}/khoa',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Mod Dat An Moc
+ *
+ * Mod ẩn / gỡ ẩn một mốc. Idempotent.
+ *
+ * Mốc bị ẩn **vẫn giữ ô trên spine** kèm nhãn "mốc đã bị ẩn" (PLAN 5.2): `seq` bất biến
+ * nên `entry_count` không lùi. `Cache-Control: no-store`.
+ */
+export const modDatAnMoc = <ThrowOnError extends boolean = false>(options: Options<ModDatAnMocData, ThrowOnError>): RequestResult<ModDatAnMocResponses, ModDatAnMocErrors, ThrowOnError> => (options.client ?? client).post<ModDatAnMocResponses, ModDatAnMocErrors, ThrowOnError>({
+    security: [{
+            key: 'ChiModTrenV1',
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/mod/mocs/{moc_id}/an',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -891,6 +1220,7 @@ export const trichVaoSo = <ThrowOnError extends boolean = false>(options: Option
  */
 export const lietKeThongBao = <ThrowOnError extends boolean = false>(options?: Options<LietKeThongBaoData, ThrowOnError>): RequestResult<LietKeThongBaoResponses, LietKeThongBaoErrors, ThrowOnError> => (options?.client ?? client).get<LietKeThongBaoResponses, LietKeThongBaoErrors, ThrowOnError>({
     security: [{
+            key: 'DangNhap',
             in: 'cookie',
             name: 'sessionid',
             type: 'apiKey'
@@ -920,6 +1250,7 @@ export const lietKeThongBao = <ThrowOnError extends boolean = false>(options?: O
  */
 export const danhDauDaDoc = <ThrowOnError extends boolean = false>(options: Options<DanhDauDaDocData, ThrowOnError>): RequestResult<DanhDauDaDocResponses, DanhDauDaDocErrors, ThrowOnError> => (options.client ?? client).post<DanhDauDaDocResponses, DanhDauDaDocErrors, ThrowOnError>({
     security: [{
+            key: 'DangNhap',
             in: 'cookie',
             name: 'sessionid',
             type: 'apiKey'
@@ -969,6 +1300,7 @@ export const danhDauDaDoc = <ThrowOnError extends boolean = false>(options: Opti
  */
 export const guiBaoCao = <ThrowOnError extends boolean = false>(options: Options<GuiBaoCaoData, ThrowOnError>): RequestResult<GuiBaoCaoResponses, GuiBaoCaoErrors, ThrowOnError> => (options.client ?? client).post<GuiBaoCaoResponses, GuiBaoCaoErrors, ThrowOnError>({
     security: [{
+            key: 'DangNhap',
             in: 'cookie',
             name: 'sessionid',
             type: 'apiKey'
@@ -1014,6 +1346,65 @@ export const lietKeSub = <ThrowOnError extends boolean = false>(options?: Option
  * Slug không tồn tại trả 404 `khong_tim_thay`.
  */
 export const xemSub = <ThrowOnError extends boolean = false>(options: Options<XemSubData, ThrowOnError>): RequestResult<XemSubResponses, XemSubErrors, ThrowOnError> => (options.client ?? client).get<XemSubResponses, XemSubErrors, ThrowOnError>({ url: '/api/v1/subs/{slug}', ...options });
+
+/**
+ * Xem Sub Cua Toi
+ *
+ * Tôi có đang theo chuyên mục này không — **không bao giờ cache được**.
+ *
+ * **Khách nhận 200**, không phải 401: `dang_nhap=false, following=false`. Cùng lý lẽ
+ * `GET /machs/{id}/me` và `GET /me` — client gọi nó ở mọi lượt tải trang, và bắt nó phải
+ * phân biệt "401 nghĩa là khách" với "401 nghĩa là phiên hết hạn" là đẩy một nhánh lỗi
+ * vào chỗ vốn không có lỗi nào.
+ *
+ * Slug lạ vẫn 404 kể cả với khách: một chuyên mục không tồn tại thì câu trả lời "bạn
+ * không theo nó" là câu trả lời sai.
+ */
+export const xemSubCuaToi = <ThrowOnError extends boolean = false>(options: Options<XemSubCuaToiData, ThrowOnError>): RequestResult<XemSubCuaToiResponses, XemSubCuaToiErrors, ThrowOnError> => (options.client ?? client).get<XemSubCuaToiResponses, XemSubCuaToiErrors, ThrowOnError>({ url: '/api/v1/subs/{slug}/me', ...options });
+
+/**
+ * Bo Theo Sub Endpoint
+ *
+ * Bỏ theo chuyên mục. **Idempotent**: bỏ thứ vốn không theo vẫn là 200.
+ *
+ * Nút "Hủy" có ở **hai** chỗ (header chuyên mục và tab "Chuyên mục" của hồ sơ). Hai tab
+ * trình duyệt cùng mở là chuyện thường, và bắt cái bấm sau ăn 404 là báo lỗi cho đúng
+ * trạng thái người dùng vốn đã muốn có.
+ */
+export const boTheoSub = <ThrowOnError extends boolean = false>(options: Options<BoTheoSubData, ThrowOnError>): RequestResult<BoTheoSubResponses, BoTheoSubErrors, ThrowOnError> => (options.client ?? client).delete<BoTheoSubResponses, BoTheoSubErrors, ThrowOnError>({
+    security: [{
+            key: 'DangNhap',
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/subs/{slug}/theo',
+    ...options
+});
+
+/**
+ * Theo Sub
+ *
+ * Theo chuyên mục. **Idempotent** — bấm lần thứ hai vẫn 200, không dựng hàng thứ hai.
+ *
+ * **Quyền: bất kỳ ai đã đăng nhập.** Không có khái niệm "chuyên mục riêng tư" ở v1, và
+ * theo dõi không sinh chữ, không đổi con số nào của chuyên mục, không ai khác nhìn thấy
+ * — nên không có gì để chặn. Chỉ ghi vào hàng của chính người gọi.
+ *
+ * ⚠ `auth=dang_nhap` cũng chính là lớp kiểm **CSRF** (xem chú thích `NinjaAPI` ở
+ * `api/v1.py`): khai `auth=None` cho một endpoint ghi là mở cửa cho bất kỳ trang web nào
+ * POST sang đây bằng cookie phiên của người đang đăng nhập.
+ */
+export const theoSub = <ThrowOnError extends boolean = false>(options: Options<TheoSubData, ThrowOnError>): RequestResult<TheoSubResponses, TheoSubErrors, ThrowOnError> => (options.client ?? client).post<TheoSubResponses, TheoSubErrors, ThrowOnError>({
+    security: [{
+            key: 'DangNhap',
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/subs/{slug}/theo',
+    ...options
+});
 
 /**
  * Tim Kiem
@@ -1074,6 +1465,24 @@ export const timKiem = <ThrowOnError extends boolean = false>(options?: Options<
 export const xemHoSo = <ThrowOnError extends boolean = false>(options: Options<XemHoSoData, ThrowOnError>): RequestResult<XemHoSoResponses, XemHoSoErrors, ThrowOnError> => (options.client ?? client).get<XemHoSoResponses, XemHoSoErrors, ThrowOnError>({ url: '/api/v1/users/{username}', ...options });
 
 /**
+ * Liet Ke Mach Cua User
+ *
+ * Mạch của một người, mới đăng trước — tab **Bài viết** của
+ * `/u/<username>`.
+ *
+ * Cùng tập mạch mà `GET /users/{username}` trả kèm hồ sơ, nhưng **lật trang được**:
+ * cửa kia cắt ở `limit` mạch và không có đường lấy tiếp.
+ *
+ * Username không tồn tại trả 404 `khong_tim_thay`. Người dùng chưa viết gì trả danh
+ * sách rỗng — đó là một câu trả lời, không phải lỗi.
+ *
+ * `?cursor=` là cursor keyset lấy từ `cursor_ke_tiep` của trang trước; `null` là hết.
+ * `?limit=` tối đa 50. Mạch bị mod ẩn không xuất hiện.
+ *
+ */
+export const lietKeMachCuaUser = <ThrowOnError extends boolean = false>(options: Options<LietKeMachCuaUserData, ThrowOnError>): RequestResult<LietKeMachCuaUserResponses, LietKeMachCuaUserErrors, ThrowOnError> => (options.client ?? client).get<LietKeMachCuaUserResponses, LietKeMachCuaUserErrors, ThrowOnError>({ url: '/api/v1/users/{username}/machs', ...options });
+
+/**
  * Dat Vote Api
  *
  * Vote ±1 trên **mốc hoặc bình luận**, hai trục riêng rẽ (PLAN 5.7).
@@ -1094,6 +1503,7 @@ export const xemHoSo = <ThrowOnError extends boolean = false>(options: Options<X
  */
 export const datVote = <ThrowOnError extends boolean = false>(options: Options<DatVoteData, ThrowOnError>): RequestResult<DatVoteResponses, DatVoteErrors, ThrowOnError> => (options.client ?? client).post<DatVoteResponses, DatVoteErrors, ThrowOnError>({
     security: [{
+            key: 'DangNhap',
             in: 'cookie',
             name: 'sessionid',
             type: 'apiKey'

@@ -149,12 +149,58 @@ def test_du_endpoint_cua_plan_muc_7():
         # `plans/2026-08-23-phase-5-anh-local.md` §0.
         (("POST",), "/mocs/{int:moc_id}/anh"),
         (("DELETE",), "/anh/{int:anh_id}"),
+        # --- avatar (2026-08-24) ---
+        # `POST`/`DELETE /me/avatar` — ảnh đại diện, cùng hạ tầng ảnh nhưng per-user tuyệt
+        # đối (đích luôn là chính người gọi, `no-store`). Xem `api/avatar.py`.
+        (("POST",), "/me/avatar"),
+        (("DELETE",), "/me/avatar"),
+        # --- ảnh nhúng trong thân bài (2026-08-24) ---
+        # `POST /me/anh` — cửa upload KHÔNG gắn mốc, cho editor Tiptap chèn `<img>` giữa
+        # bài (`plans/2026-08-24-tiptap-html.md`, khối "BỔ SUNG"). Không có cửa gỡ: ảnh
+        # rời bài bằng đường sửa `body`, xem docstring endpoint ở `api/anh.py`.
+        (("POST",), "/me/anh"),
         # --- tìm kiếm (Phase 7) ---
         # Dòng MỚI của bảng PLAN mục 7, và nó là một lần **lật quyết định**: mục 4 xếp
         # search full-text vào danh sách đã bác ("Cắt hẳn khỏi v1… V2"), user lật
         # 2026-08-23. Dòng bác cũ vẫn nằm nguyên ở mục 4 kèm ngày lật — lịch sử quyết
         # định là thứ mục 4 tồn tại để giữ.
         (("GET",), "/tim-kiem"),
+        # --- ba tab của trang hồ sơ (2026-08-24) ---
+        # `GET /users/{username}` đã có từ Phase 1b trả 20 mạch đầu **không cursor**; ba
+        # dòng này là ba danh sách lật được, mỗi dòng nuôi một tab của `/u/<username>`.
+        # Hai cửa `/me/*` đọc mạch qua `Vote`/`Follow` — đường vòng, nên luật che phải
+        # được áp lại bằng tay; xem docstring `api/ho_so.py`.
+        (("GET",), "/users/{username}/machs"),
+        (("GET",), "/me/da-vote"),
+        (("GET",), "/me/dang-theo"),
+        # --- bề mặt mod trên v1 (2026-08-24, PLAN phần D) ---
+        # BỐN cửa, và con số bốn là **cả nội dung** của quyết định: Caddy chặn
+        # `gikky.net/api/admin/*` (PLAN 8.2) nên front công khai cần cửa riêng cho những
+        # việc mod làm *trong lúc đang đọc trang* — ẩn/gỡ ẩn ba loại nội dung, khoá/mở
+        # mạch. Ban user, quản lý sub, nhật ký `AuditLog`, bảng danh sách và thống kê **ở
+        # lại** `/api/admin/*` sau allowlist IP. Dòng thứ năm xuất hiện ở đây mà không có
+        # một lượt hỏi user là ranh giới ấy đã bị mở rộng trong im lặng.
+        (("POST",), "/mod/machs/{int:mach_id}/an"),
+        (("POST",), "/mod/mocs/{int:moc_id}/an"),
+        (("POST",), "/mod/comments/{int:comment_id}/an"),
+        (("POST",), "/mod/machs/{int:mach_id}/khoa"),
+        # --- theo dõi CHUYÊN MỤC (2026-08-24) ---
+        # Ba cửa cùng một chủ đề, tách theo đúng ranh giới cache của PLAN 8.4:
+        # `/subs/{slug}/me` là nửa PER-USER của trang chuyên mục (không bao giờ cache
+        # được), còn `GET /subs/{slug}` bên `api/feeds.py` là nửa cache được và **không
+        # được mọc thêm trường nào** theo người xem.
+        (("GET",), "/subs/{slug}/me"),
+        (("POST",), "/subs/{slug}/theo"),
+        (("DELETE",), "/subs/{slug}/theo"),
+        # Nguồn của tab "Chuyên mục" trong hồ sơ. Nằm dưới `/me/` chứ không dưới
+        # `/users/{username}/`: "tôi theo chuyên mục nào" là dữ liệu riêng tư, khác
+        # `/users/{username}/machs` vốn công khai.
+        (("GET",), "/me/subs"),
+        # `GET /me/subs-mod` — chuyên mục TÔI được phân công làm mod, nguồn của `/khu-mod`.
+        # ⚠ Nó là danh sách PHÂN CÔNG, không phải danh sách QUYỀN: `ModSub` chưa cho thêm
+        # quyền gì, bốn cửa `/mod/*` vẫn kiểm `is_staff`. Ghim ở
+        # `test_api_theo_sub.py::test_danh_sach_mod_KHONG_phai_danh_sach_quyen`.
+        (("GET",), "/me/subs-mod"),
     }
 
 

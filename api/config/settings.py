@@ -312,6 +312,14 @@ HAN_MUC_BINH_LUAN_MOI_GIO_TAI_KHOAN_MOI = env.int(
     "HAN_MUC_BINH_LUAN_MOI_GIO_TAI_KHOAN_MOI", default=5
 )
 NGAY_TAI_KHOAN_CON_MOI = env.int("NGAY_TAI_KHOAN_CON_MOI", default=3)
+#: Ảnh nhúng thẳng vào thân bài, mỗi người mỗi ngày lịch VN (2026-08-24,
+#: `plans/2026-08-24-tiptap-html.md`). **Không có trong PLAN** — cửa `POST /me/anh` là
+#: cửa duy nhất nhận file mà không gắn với một hàng nào có sẵn, nên không hạn mức thì nó
+#: là dịch vụ lưu trữ file miễn phí. 30 là "một bài rất nhiều ảnh, mỗi ngày một bài": rộng
+#: hơn hẳn nhu cầu thật (10 mạch/ngày × vài ảnh) mà vẫn chặn trần đĩa mỗi tài khoản.
+HAN_MUC_ANH_NOI_DUNG_MOI_USER_NGAY = env.int(
+    "HAN_MUC_ANH_NOI_DUNG_MOI_USER_NGAY", default=30
+)
 
 #: Có được tin header `X-Forwarded-For` không — xem `core/han_muc.py::dia_chi_ip`.
 #: **Mặc định `False`.** Bật đúng khi CÓ reverse proxy tin cậy ngay trước Django (prod:
