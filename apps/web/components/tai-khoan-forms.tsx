@@ -13,6 +13,7 @@ import {
   xinDatLaiMatKhau,
   LoiTaiKhoan,
 } from "@/lib/tai-khoan";
+import { taoThongTinDangNhap } from "@/lib/dang-nhap";
 
 import { FormTaiKhoan, LienKet, O } from "./form-tai-khoan";
 import { usePhien } from "./phien";
@@ -85,10 +86,12 @@ export function FormDangNhap() {
       tieuDe="Đăng nhập"
       nutGui="Vào"
       onGui={async (f) => {
-        await dangNhap({
-          email: String(f.get("email") ?? ""),
-          password: String(f.get("password") ?? ""),
-        });
+        await dangNhap(
+          taoThongTinDangNhap(
+            String(f.get("dinh_danh") ?? ""),
+            String(f.get("password") ?? ""),
+          ),
+        );
         return { di: "/" };
       }}
       duoi={
@@ -99,7 +102,15 @@ export function FormDangNhap() {
         </>
       }
     >
-      <O ten="email" nhan="Email" kieu="email" tuDien="email" />
+      {/* `kieu="text"`, KHÔNG phải `"email"`: trình duyệt chặn tại chỗ mọi chuỗi không
+          có `@`, tức chặn luôn đường đăng nhập bằng username — và nó chặn im lặng, người
+          dùng chỉ thấy form không gửi đi. */}
+      <O
+        ten="dinh_danh"
+        nhan="Email hoặc tên đăng nhập"
+        kieu="text"
+        tuDien="username"
+      />
       <O ten="password" nhan="Mật khẩu" kieu="password" tuDien="current-password" />
       <ChoGoogle bat={toi?.google_bat === true} />
     </FormTaiKhoan>
@@ -236,7 +247,10 @@ export function XacThucEmail({ khoa }: { khoa: string }) {
   }, [khoa]);
 
   return (
-    <main className={css.khung}>
+    // `<div>` chứ không `<main>`: từ 2026-08-24 trang bọc component này bằng
+    // `KhungHaiCot`, và khung đó đã render `<main>`. Hai `<main>` lồng nhau là HTML sai và
+    // trình đọc màn hình mất mốc điều hướng.
+    <div className={css.khung}>
       <section className={css.the}>
         <h1 className={css.tieu_de}>Xác thực email</h1>
         {trangThai === "cho" && (
@@ -268,7 +282,7 @@ export function XacThucEmail({ khoa }: { khoa: string }) {
           </>
         )}
       </section>
-    </main>
+    </div>
   );
 }
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { baoDamCsrf, GOC_ALLAUTH } from "../../lib/api";
+import { taoThongTinDangNhap } from "../../lib/dang-nhap";
 
 /**
  * Đăng nhập mod.
@@ -42,8 +43,8 @@ const DUONG_DANG_NHAP_ALLAUTH = `${GOC_ALLAUTH}/auth/login`;
  * là kiểu hỏng người ta bấm lại ba lần rồi bỏ đi.
  */
 const MAC_DINH: Record<number, string> = {
-  400: "Dữ liệu chưa hợp lệ — xem lại email và mật khẩu.",
-  401: "Email hoặc mật khẩu không đúng, hoặc tài khoản chưa xác thực email.",
+  400: "Dữ liệu chưa hợp lệ — xem lại tài khoản và mật khẩu.",
+  401: "Tài khoản hoặc mật khẩu không đúng, hoặc tài khoản chưa xác thực email.",
   403: "Yêu cầu bị từ chối (CSRF). Tải lại trang rồi thử lại.",
   409: "Bạn đang đăng nhập rồi.",
   429: "Bạn thử hơi nhiều lần. Đợi một lát rồi thử lại.",
@@ -57,7 +58,9 @@ function thongDiepAllauth(du_lieu: unknown): string | null {
 }
 
 export default function TrangDangNhap() {
-  const [email, setEmail] = useState("");
+  // "định danh": email HOẶC username. Xem `lib/dang-nhap.ts` — allauth đòi client
+  // chọn đúng một khoá, nên biến này cố ý không tên là `email`.
+  const [dinh_danh, setDinhDanh] = useState("");
   const [matKhau, setMatKhau] = useState("");
   const [ketQua, setKetQua] = useState<string | null>(null);
   const [dangGui, setDangGui] = useState(false);
@@ -74,7 +77,7 @@ export default function TrangDangNhap() {
           "Content-Type": "application/json",
           "X-CSRFToken": await baoDamCsrf(),
         },
-        body: JSON.stringify({ email, password: matKhau }),
+        body: JSON.stringify(taoThongTinDangNhap(dinh_danh, matKhau)),
       });
       if (r.ok) {
         // `window.location` chứ không phải `router.push`: cả khu quản trị treo trên
@@ -121,12 +124,14 @@ export default function TrangDangNhap() {
 
         <form className="the space-y-3 p-5" onSubmit={gui}>
           <label className="block text-sm">
-            <span className="mb-1 block text-muc-mo">Email</span>
+            <span className="mb-1 block text-muc-mo">Email hoặc tên đăng nhập</span>
             <input
               className="o-nhap"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              // `text`, KHÔNG phải `email`: trình duyệt chặn tại chỗ mọi chuỗi không
+              // có `@` ⇒ chặn luôn đường đăng nhập bằng username, và chặn IM LẶNG.
+              type="text"
+              value={dinh_danh}
+              onChange={(e) => setDinhDanh(e.target.value)}
               required
               autoComplete="username"
             />

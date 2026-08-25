@@ -160,10 +160,17 @@ export async function dangKy(du_lieu: {
   return trangThai === 200;
 }
 
-export async function dangNhap(du_lieu: {
-  email: string;
-  password: string;
-}): Promise<void> {
+/** Đăng nhập bằng **email hoặc username**.
+ *
+ * Nhận credential **đã chọn khoá** (`{email,…}` hoặc `{username,…}`) chứ không nhận một
+ * chuỗi rồi tự đoán: allauth đếm credential theo khoá có mặt trong body và đòi đúng một,
+ * nên chỗ quyết định phải là MỘT chỗ — `lib/dang-nhap.ts::taoThongTinDangNhap`.
+ */
+export async function dangNhap(
+  du_lieu:
+    | { email: string; password: string }
+    | { username: string; password: string },
+): Promise<void> {
   await goi("/auth/login", { than: du_lieu });
 }
 

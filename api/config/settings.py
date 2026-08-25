@@ -267,7 +267,22 @@ HEADLESS_FRONTEND_URLS = {
 
 #: Đăng nhập **bằng email** (username là danh tính công khai `/u/<username>`, không phải
 #: khoá đăng nhập — PLAN 5.9), nhưng username vẫn bắt buộc và **chọn lúc đăng ký**.
-ACCOUNT_LOGIN_METHODS = {"email"}
+#: Đăng nhập bằng **email HOẶC username** (user chốt 2026-08-25).
+#:
+#: allauth dựng `LoginInput` với một field cho mỗi phương thức, và `clean()` đếm
+#: credential theo **khoá CÓ MẶT trong body** rồi đòi **đúng một**:
+#:
+#:     if len(credentials) != 1: raise validation_error("invalid_login")
+#:
+#: ⇒ Client phải gửi `{email, password}` HOẶC `{username, password}`, **không bao giờ cả
+#: hai** — gửi cả hai là 400 kể cả khi cả hai đều đúng. Hai form đăng nhập chọn khoá bằng
+#: `taoThongTinDangNhap` (`apps/*/lib/dang-nhap.ts`).
+#:
+#: Đánh đổi đã biết: username là định danh **đoán được** (nó hiện công khai ở `u/…` khắp
+#: nơi), còn email thì không. Nên bật username là mở rộng bề mặt đoán tài khoản. Chấp
+#: nhận vì hạn mức đăng nhập của allauth vẫn chặn dò mật khẩu, và tiện dụng cho mod thắng
+#: ở đây.
+ACCOUNT_LOGIN_METHODS = {"email", "username"}
 ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*"]
 ACCOUNT_UNIQUE_EMAIL = True
 #: **Bắt buộc xác thực email** (chốt của plan mảng A). Dev đọc link từ file mail, nên đây
