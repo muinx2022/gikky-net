@@ -4,7 +4,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { QuanTriBanNguoiDungData, QuanTriBanNguoiDungErrors, QuanTriBanNguoiDungResponses, QuanTriDatAnBinhLuanData, QuanTriDatAnBinhLuanErrors, QuanTriDatAnBinhLuanResponses, QuanTriDatAnMachData, QuanTriDatAnMachErrors, QuanTriDatAnMachResponses, QuanTriDatAnMocData, QuanTriDatAnMocErrors, QuanTriDatAnMocResponses, QuanTriDatKhoaMachData, QuanTriDatKhoaMachErrors, QuanTriDatKhoaMachResponses, QuanTriDatMatKhauData, QuanTriDatMatKhauErrors, QuanTriDatMatKhauResponses, QuanTriDongBaoCaoData, QuanTriDongBaoCaoErrors, QuanTriDongBaoCaoResponses, QuanTriGanModSubData, QuanTriGanModSubErrors, QuanTriGanModSubResponses, QuanTriGoBanNguoiDungData, QuanTriGoBanNguoiDungErrors, QuanTriGoBanNguoiDungResponses, QuanTriGoModSubData, QuanTriGoModSubErrors, QuanTriGoModSubResponses, QuanTriLietKeBaoCaoData, QuanTriLietKeBaoCaoErrors, QuanTriLietKeBaoCaoResponses, QuanTriLietKeBinhLuanData, QuanTriLietKeBinhLuanErrors, QuanTriLietKeBinhLuanResponses, QuanTriLietKeMachData, QuanTriLietKeMachErrors, QuanTriLietKeMachResponses, QuanTriLietKeNguoiDungData, QuanTriLietKeNguoiDungErrors, QuanTriLietKeNguoiDungResponses, QuanTriLietKeNhatKyData, QuanTriLietKeNhatKyErrors, QuanTriLietKeNhatKyResponses, QuanTriLietKeSubData, QuanTriLietKeSubErrors, QuanTriLietKeSubResponses, QuanTriLuuCaiDatGoogleData, QuanTriLuuCaiDatGoogleErrors, QuanTriLuuCaiDatGoogleResponses, QuanTriSuaNguoiDungData, QuanTriSuaNguoiDungErrors, QuanTriSuaNguoiDungResponses, QuanTriSuaSubData, QuanTriSuaSubErrors, QuanTriSuaSubResponses, QuanTriTaoNguoiDungData, QuanTriTaoNguoiDungErrors, QuanTriTaoNguoiDungResponses, QuanTriTaoSubData, QuanTriTaoSubErrors, QuanTriTaoSubResponses, QuanTriThongKeData, QuanTriThongKeErrors, QuanTriThongKeResponses, QuanTriToiData, QuanTriToiErrors, QuanTriToiResponses, QuanTriXemCaiDatGoogleData, QuanTriXemCaiDatGoogleErrors, QuanTriXemCaiDatGoogleResponses, QuanTriXemMachData, QuanTriXemMachErrors, QuanTriXemMachResponses, QuanTriXemNguoiDungData, QuanTriXemNguoiDungErrors, QuanTriXemNguoiDungResponses, QuanTriXoaCaiDatGoogleData, QuanTriXoaCaiDatGoogleErrors, QuanTriXoaCaiDatGoogleResponses, QuanTriXoaSubData, QuanTriXoaSubErrors, QuanTriXoaSubResponses } from './types.gen';
+import type { QuanTriBanNguoiDungData, QuanTriBanNguoiDungErrors, QuanTriBanNguoiDungResponses, QuanTriDatAnBinhLuanData, QuanTriDatAnBinhLuanErrors, QuanTriDatAnBinhLuanResponses, QuanTriDatAnMachData, QuanTriDatAnMachErrors, QuanTriDatAnMachResponses, QuanTriDatAnMocData, QuanTriDatAnMocErrors, QuanTriDatAnMocResponses, QuanTriDatKhoaMachData, QuanTriDatKhoaMachErrors, QuanTriDatKhoaMachResponses, QuanTriDatMatKhauData, QuanTriDatMatKhauErrors, QuanTriDatMatKhauResponses, QuanTriDoiQuyenModData, QuanTriDoiQuyenModErrors, QuanTriDoiQuyenModResponses, QuanTriDongBaoCaoData, QuanTriDongBaoCaoErrors, QuanTriDongBaoCaoResponses, QuanTriGanModSubData, QuanTriGanModSubErrors, QuanTriGanModSubResponses, QuanTriGoBanNguoiDungData, QuanTriGoBanNguoiDungErrors, QuanTriGoBanNguoiDungResponses, QuanTriGoModSubData, QuanTriGoModSubErrors, QuanTriGoModSubResponses, QuanTriLietKeBaoCaoData, QuanTriLietKeBaoCaoErrors, QuanTriLietKeBaoCaoResponses, QuanTriLietKeBinhLuanData, QuanTriLietKeBinhLuanErrors, QuanTriLietKeBinhLuanResponses, QuanTriLietKeMachData, QuanTriLietKeMachErrors, QuanTriLietKeMachResponses, QuanTriLietKeNguoiDungData, QuanTriLietKeNguoiDungErrors, QuanTriLietKeNguoiDungResponses, QuanTriLietKeNhatKyData, QuanTriLietKeNhatKyErrors, QuanTriLietKeNhatKyResponses, QuanTriLietKeSubData, QuanTriLietKeSubErrors, QuanTriLietKeSubResponses, QuanTriLuuCaiDatGoogleData, QuanTriLuuCaiDatGoogleErrors, QuanTriLuuCaiDatGoogleResponses, QuanTriSuaNguoiDungData, QuanTriSuaNguoiDungErrors, QuanTriSuaNguoiDungResponses, QuanTriSuaSubData, QuanTriSuaSubErrors, QuanTriSuaSubResponses, QuanTriTaoNguoiDungData, QuanTriTaoNguoiDungErrors, QuanTriTaoNguoiDungResponses, QuanTriTaoSubData, QuanTriTaoSubErrors, QuanTriTaoSubResponses, QuanTriThongKeData, QuanTriThongKeErrors, QuanTriThongKeResponses, QuanTriToiData, QuanTriToiErrors, QuanTriToiResponses, QuanTriXemCaiDatGoogleData, QuanTriXemCaiDatGoogleErrors, QuanTriXemCaiDatGoogleResponses, QuanTriXemMachData, QuanTriXemMachErrors, QuanTriXemMachResponses, QuanTriXemNguoiDungData, QuanTriXemNguoiDungErrors, QuanTriXemNguoiDungResponses, QuanTriXoaCaiDatGoogleData, QuanTriXoaCaiDatGoogleErrors, QuanTriXoaCaiDatGoogleResponses, QuanTriXoaSubData, QuanTriXoaSubErrors, QuanTriXoaSubResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -526,6 +526,21 @@ export const quanTriThongKe = <ThrowOnError extends boolean = false>(options?: O
  * hạn tạm chưa qua. Viết lại điều kiện ấy ở đây là bản sao thứ hai, nên nó được đặt cạnh
  * một bài đo ghim rằng hai bên không lệch nhau
  * (`tests/test_api_quan_tri_bang.py::test_loc_bi_ban_trung_voi_dang_bi_ban`).
+ *
+ * ## Staff biến khỏi ba bộ lọc kia — 2026-08-26
+ *
+ * `tat_ca` / `bi_ban` / `moi` đều **loại `is_staff=True`**; chỉ `staff` còn thấy họ.
+ * User chốt *"2 mục này nên có phần quản lý riêng, đặt vào đây hơi khó hiểu và khó mà
+ * tìm được"* — hai hàng quản trị nằm lẫn giữa vài nghìn tài khoản thường là nhiễu ở cả
+ * hai chiều. Khu riêng là `/quan-tri-vien` ở `apps/admin`, nó gọi lại chính endpoint này
+ * với `trang_thai=staff`.
+ *
+ * ⚠ Đây là **đổi hành vi của một endpoint đang chạy**, không phải thêm tính năng.
+ *
+ * `so_staff_an` là cái giá phải trả cho phép loại ấy: sau lượt này, gõ `mod_gikky` vào ô
+ * lọc ra bảng rỗng, mà một bảng rỗng không phân biệt được "không có ai tên vậy" với
+ * "có, nhưng ở trang khác". Đếm **cùng `q`, cùng `trang_thai`**, chỉ khác điều kiện
+ * staff.
  */
 export const quanTriLietKeNguoiDung = <ThrowOnError extends boolean = false>(options?: Options<QuanTriLietKeNguoiDungData, ThrowOnError>): RequestResult<QuanTriLietKeNguoiDungResponses, QuanTriLietKeNguoiDungErrors, ThrowOnError> => (options?.client ?? client).get<QuanTriLietKeNguoiDungResponses, QuanTriLietKeNguoiDungErrors, ThrowOnError>({
     security: [{
@@ -655,6 +670,65 @@ export const quanTriDatMatKhau = <ThrowOnError extends boolean = false>(options:
             type: 'apiKey'
         }],
     url: '/api/admin/users/{username}/mat-khau',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Doi Quyen Mod
+ *
+ * Công tắc `is_staff` của một tài khoản. Trả về **cả hàng** đã cập nhật.
+ *
+ * Trả cả hàng thay vì `204`: nhãn `vai_tro` do SERVER tính (`vai_tro_cua`), nên frontend
+ * phải nhận lại hàng mới chứ không tự suy từ `bat` — suy tay là dựng bản thứ hai của một
+ * luật server đang giữ (PLAN nguyên tắc 10), và bản thứ hai sẽ lệch đúng lúc `vai_tro_cua`
+ * mọc thêm một nhánh. Cùng lý lẽ `gan_mod_sub` trả cả hàng sub.
+ *
+ * **Idempotent** — đặt trùng giá trị đang có trả 200, không 409. Đây là một *công tắc
+ * hai trạng thái*, và một công tắc báo lỗi khi bị gạt về đúng vị trí nó đang đứng là một
+ * công tắc hỏng. (Khác `gan_mod_sub`, nơi "đã là mod ⇒ 409" là đúng vì đó là *thêm vào
+ * một danh sách*: người bấm cần biết mình KHÔNG phải người vừa thêm.)
+ *
+ * Năm lời từ chối, mỗi lời một thông điệp riêng:
+ *
+ * - **người gọi không superuser ⇒ 403.** Vế "khoá sau `is_superuser`" của đơn hàng.
+ * - **đích là chính mình ⇒ 409.** Thu quyền của chính mình là tự khoá mình khỏi khu
+ * quản trị, và người duy nhất gỡ được lại chính là mình. Cùng hình dạng với luật
+ * "không tự ban mình" ở đầu file.
+ * - **đích là superuser ⇒ 409.** `ChiMod` đòi `is_staff`, nên thu `is_staff` của một
+ * superuser là làm hỏng một nửa họ: còn `is_superuser` nhưng hết đường vào. Quyền
+ * superuser thuộc Django admin, và cửa này cố ý không với tới đó.
+ * - **cấp cho tài khoản đang bị ban / đã vô hiệu hoá ⇒ 409.** `ChiMod` từ chối cả hai ở
+ * cổng, nên hàng cấp ra vô nghĩa ngay khi tạo; và một cái tên bị ban nằm trong bảng
+ * "Quản trị viên" là thông tin sai trên màn hình. Đúng tiền lệ `gan_mod_sub`.
+ * - **thu quyền khi còn `ModSub` ⇒ 409, kèm tên sub.** Xem dưới.
+ *
+ * ## Vì sao thu quyền lại vướng `ModSub`
+ *
+ * Thu `is_staff` mà bỏ lại hàng `ModSub` là để một cái tên **không moderate được** nằm
+ * trong cột "Mod" của bảng chuyên mục — chính điều mà docstring `ModSub` gọi là *"hiểu
+ * sai theo hướng nguy hiểm"*. Hai lối chữa, và lối bị loại đáng ghi ra: *cascade xoá
+ * `ModSub`* làm mất dữ liệu ngầm mà người bấm không yêu cầu, và mất luôn câu trả lời
+ * "ai từng phụ trách sub này". Nên: **từ chối, bảo gỡ phân công trước** — và 409 phải
+ * **liệt kê tên sub**, nếu không superuser phải đi dò từng chuyên mục.
+ *
+ * ## Thứ tự: từ chối TRƯỚC, no-op SAU
+ *
+ * Phép "trùng giá trị ⇒ trả luôn" đặt sau cả năm lời từ chối, không phải trước. Đảo lại
+ * thì `bat=false` trên một tài khoản **đã** không phải staff nhưng còn `ModSub` sẽ trả
+ * 200 im lặng — và người bấm tin rằng mình vừa dọn xong một thứ vẫn còn nguyên. Câu trả
+ * lời phải phụ thuộc **trạng thái**, không phụ thuộc việc lần bấm này có đổi được gì.
+ */
+export const quanTriDoiQuyenMod = <ThrowOnError extends boolean = false>(options: Options<QuanTriDoiQuyenModData, ThrowOnError>): RequestResult<QuanTriDoiQuyenModResponses, QuanTriDoiQuyenModErrors, ThrowOnError> => (options.client ?? client).post<QuanTriDoiQuyenModResponses, QuanTriDoiQuyenModErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/admin/users/{username}/quyen-mod',
     ...options,
     headers: {
         'Content-Type': 'application/json',

@@ -255,6 +255,21 @@ def liet_ke_nguoi_dung(
     hạn tạm chưa qua. Viết lại điều kiện ấy ở đây là bản sao thứ hai, nên nó được đặt cạnh
     một bài đo ghim rằng hai bên không lệch nhau
     (`tests/test_api_quan_tri_bang.py::test_loc_bi_ban_trung_voi_dang_bi_ban`).
+
+    ## Staff biến khỏi ba bộ lọc kia — 2026-08-26
+
+    `tat_ca` / `bi_ban` / `moi` đều **loại `is_staff=True`**; chỉ `staff` còn thấy họ.
+    User chốt *"2 mục này nên có phần quản lý riêng, đặt vào đây hơi khó hiểu và khó mà
+    tìm được"* — hai hàng quản trị nằm lẫn giữa vài nghìn tài khoản thường là nhiễu ở cả
+    hai chiều. Khu riêng là `/quan-tri-vien` ở `apps/admin`, nó gọi lại chính endpoint này
+    với `trang_thai=staff`.
+
+    ⚠ Đây là **đổi hành vi của một endpoint đang chạy**, không phải thêm tính năng.
+
+    `so_staff_an` là cái giá phải trả cho phép loại ấy: sau lượt này, gõ `mod_gikky` vào ô
+    lọc ra bảng rỗng, mà một bảng rỗng không phân biệt được "không có ai tên vậy" với
+    "có, nhưng ở trang khác". Đếm **cùng `q`, cùng `trang_thai`**, chỉ khác điều kiện
+    staff.
     """
     response["Cache-Control"] = "no-store"
     if (l := kiem_gioi_han(limit)) is not None:
@@ -282,6 +297,22 @@ def liet_ke_nguoi_dung(
             date_joined__gte=timezone.now() - timedelta(days=NGAY_LA_MOI)
         )
 
+    # ⚠ Phép loại staff phải đứng **TRƯỚC `dem_tong`**. Đếm trước rồi mới loại là `tong`
+    # kể cả staff còn bảng thì không — đúng cái bẫy `phan_trang.py::dem_tong` cảnh báo,
+    # và nó im lặng: chỉ là một con số lớn hơn số hàng đếm được, thứ không ai kiểm.
+    #
+    # `so_staff_an` đếm trên CÙNG `qs` (tức cùng `q`, cùng `trang_thai`), chỉ khác điều
+    # kiện staff — nên nó luôn là "số hàng phép loại ngay dưới vừa lấy đi", không phải
+    # "tổng số staff trên hệ thống". Hai con số ấy khác nhau ngay khi có `q`.
+    #
+    # `moi_nguoi` là lối thoát cho người gọi thật sự cần cả staff (ô gợi ý ở `/subs`) —
+    # nó KHÔNG loại gì, nên `so_staff_an` cũng phải là 0: không có ai bị giấu thì không
+    # có gì để báo là đã giấu.
+    so_staff_an = 0
+    if trang_thai not in ("staff", "moi_nguoi"):
+        so_staff_an = dem_tong(qs.filter(is_staff=True))
+        qs = qs.filter(is_staff=False)
+
     tong = dem_tong(qs)
 
     try:
@@ -301,4 +332,5 @@ def liet_ke_nguoi_dung(
         items=[nguoi_dung_quan_tri_ra(u) for u in trang],
         cursor_ke_tiep=ke_tiep,
         tong=tong,
+        so_staff_an=so_staff_an,
     )

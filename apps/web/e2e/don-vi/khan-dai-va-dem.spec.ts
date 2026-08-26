@@ -1,30 +1,87 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
 import type { BinhLuanOut, KhanDaiOut } from "@gikky/api-client";
 import { expect, test } from "@playwright/test";
+
+import { boChuThich } from "./quet";
 
 import { thamSoPhanTrangBiBo } from "../../lib/api";
 import { NGUONG_HIEN_SO_DEM, nenHienSoDem } from "../../lib/dem";
 import {
+  HIEN_KHOI_DANG_CHU_Y,
   SAU_KHAN_DAI,
   SORT_KHAN_DAI,
+  SORT_MAC_DINH,
   docSort,
   idTrongTrang,
   nenRenderCauDangDoc,
   neoBinhLuan,
   trangThaiDeepLink,
 } from "../../lib/khan-dai";
-import { tachSlugId, duongDanMach } from "../../lib/url";
+import { tachSlugId, duongDanKhanDai, duongDanMach } from "../../lib/url";
 
 test(`nguyên tắc 9: dưới ${NGUONG_HIEN_SO_DEM} bình luận thì ẩn số đếm`, () => {
   expect([0, 1, 2, 3].map(nenHienSoDem)).toEqual([false, false, false, false]);
   expect([4, 5, 24, 247].map(nenHienSoDem)).toEqual([true, true, true, true]);
 });
 
-test("docSort: ba giá trị hợp lệ giữ nguyên, rác quy về hay_nhat", () => {
+test("docSort: ba giá trị hợp lệ giữ nguyên, rác quy về sort mặc định", () => {
   for (const s of SORT_KHAN_DAI) expect(docSort(s)).toBe(s);
-  expect(docSort("hay_nhaat")).toBe("hay_nhat");
-  expect(docSort(undefined)).toBe("hay_nhat");
-  expect(docSort("")).toBe("hay_nhat");
+  expect(docSort("hay_nhaat")).toBe(SORT_MAC_DINH);
+  expect(docSort(undefined)).toBe(SORT_MAC_DINH);
+  expect(docSort("")).toBe(SORT_MAC_DINH);
+  // `hay_nhat` vẫn là một sort HỢP LỆ dù không còn là mặc định — vế trên đã phủ qua
+  // `SORT_KHAN_DAI`, ghim lại ở đây để một lượt sau đổi mặc định không kéo theo việc
+  // im lặng gỡ mất một sort.
+  expect(docSort("hay_nhat")).toBe("hay_nhat");
   expect(docSort(["cu_nhat", "moi_nhat"])).toBe("cu_nhat");
+});
+
+test("user chốt 2026-08-26: mặc định là moi_nhat, tức ORDER BY created DESC", () => {
+  // Ghim bằng **giá trị**, không bằng `SORT_MAC_DINH` — một bài đo so hằng với chính nó
+  // xanh bất kể hằng ấy bằng gì, và đó đúng loài proof RỖNG mà repo này đã bắt vài lần.
+  expect(SORT_MAC_DINH).toBe("moi_nhat");
+  // Và link `💬 N` trên thẻ feed phải đi CÙNG một sort với lối vào thẳng `/m/…`.
+  expect(duongDanKhanDai("abc", 7)).toContain(`sort=${SORT_MAC_DINH}`);
+});
+
+/* ---- Khối "Đáng chú ý" TẮT (user chốt 2026-08-26) ------------------------- */
+
+test("khối 'Đáng chú ý' đang TẮT — nó xếp hạng bằng ĐIỂM", () => {
+  // Ghim bằng giá trị, không so hằng với chính nó. User: "trước mắt ta chưa tính đến
+  // điểm, mà chỉ tính đến việc cái nào cmt mới nhất thì lên trước".
+  expect(HIEN_KHOI_DANG_CHU_Y).toBe(false);
+});
+
+test("…và cái cờ ấy cắt luôn LỜI GỌI `?dang_doc=1`, không chỉ cắt phần render", () => {
+  // Vì sao phải là phép đọc mã nguồn: `docCauDangDoc` chạy trong server component, nên
+  // không có `page.on("request")` nào ở phía trình duyệt nhìn thấy nó. Một bài đo e2e
+  // "không có request dang_doc" sẽ XANH kể cả khi lời gọi vẫn chạy mỗi lượt xem trang —
+  // đúng loài proof đo RỖNG.
+  //
+  // Giới hạn thành thật: nó chứng minh lời gọi **bị canh bởi cờ**, không chứng minh cờ
+  // đang tắt. Bài ngay trên lo vế đó; hai bài cùng nhau mới thành một câu.
+  // ⚠ `boChuThich` là vế BẮT BUỘC, không phải dọn dẹp cho sạch. Bản đầu của bài này đọc
+  // mã nguồn còn nguyên chú thích, và ngay trên lời gọi có một dòng `// … công tắc +
+  // lý do ở lib/khan-dai.ts::HIEN_KHOI_DANG_CHU_Y`. Cắt câu lệnh theo dấu `;` thì đoạn
+  // cắt ra ôm trọn dòng chú thích ấy ⇒ `toContain` xanh **kể cả khi cờ đã bị gỡ khỏi
+  // code**. Lượt thử phá bắt được: gỡ cờ ⇒ bài vẫn xanh. Đúng một proof đo RỖNG.
+  const src = boChuThich(
+    readFileSync(
+      resolve(__dirname, "..", "..", "components/trang-mach.tsx"),
+      "utf8",
+    ),
+  );
+  const goi = [...src.matchAll(/docCauDangDoc\s*\(/g)];
+  expect(goi.length, "chỉ nên có ĐÚNG MỘT lời gọi").toBe(1);
+
+  // Câu lệnh chứa lời gọi ấy phải nhắc tên cờ. Cắt từ dấu `;` trước đó tới dấu `;` sau.
+  const at = goi[0].index!;
+  const dau = src.lastIndexOf(";", at);
+  const cuoi = src.indexOf(";", at);
+  const cau = src.slice(dau + 1, cuoi);
+  expect(cau).toContain("HIEN_KHOI_DANG_CHU_Y");
 });
 
 test("deep-link: có trong trang thì cuộn được, không có thì phải NÓI RA", () => {
@@ -45,6 +102,7 @@ function chuoiSau(sau: number): BinhLuanOut[] {
     anchor_moc_seq: depth === 1 ? 1 : null,
     author: { username: "ai_do", display_name: "Ai Đó", avatar_url: null },
     body: `tầng ${depth}`,
+    body_dinh_dang: "markdown",
     created_at: "2026-03-04T02:20:00Z",
     edited_at: null,
     up_count: 0,

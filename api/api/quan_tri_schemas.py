@@ -318,6 +318,27 @@ class DatMatKhauIn(Schema):
     mat_khau: str | None = None
 
 
+class DoiQuyenModIn(Schema):
+    """Body của `POST /admin/users/{username}/quyen-mod` — công tắc `is_staff`.
+
+    ⚠ **Chỉ có `bat`.** Không khai `is_staff` cũng không khai `is_superuser`.
+    `is_superuser` **không** cấp được từ khu quản trị ở bất kỳ cửa nào — Django admin vẫn
+    là nơi duy nhất phong superuser.
+
+    Hàng rào cho luật ấy là một dòng chấm **thẳng lên hình dạng schema**:
+    `test_api_quyen_mod.py::test_B9_…` khẳng định `set(model_fields) == {"bat"}`.
+    Đừng thay nó bằng bài "gửi kèm khoá lạ rồi đòi cờ không đổi" — bài ấy XANH kể cả khi
+    schema mọc thêm trường, vì handler chỉ đọc `du_lieu.bat`. Bản đầu của lượt này mắc
+    đúng lỗi đó và lượt phản biện bắt được.
+    """
+
+    #: `True` = cấp quyền mod · `False` = thu. **Idempotent**: đặt trùng giá trị đang có
+    #: trả 200, không 409 — một công tắc báo lỗi khi bị gạt về đúng vị trí nó đang đứng
+    #: là một công tắc hỏng. (Khác `gan_mod_sub`, nơi "đã là mod ⇒ 409" đúng vì đó là
+    #: *thêm vào một danh sách*, không phải gạt một công tắc hai trạng thái.)
+    bat: bool
+
+
 class CaiDatGoogleOut(Schema):
     """Trạng thái Google OAuth cho trang Cài đặt.
 
@@ -493,7 +514,18 @@ LocMach = Literal["tat_ca", "chua_go", "mo", "dong", "bi_khoa", "bi_an"]
 #: Bộ lọc của bảng bình luận. `hien` = còn sống và chưa bị ẩn.
 LocBinhLuan = Literal["tat_ca", "hien", "bi_an", "bia_mo"]
 #: Bộ lọc của bảng người dùng. `moi` = 7 ngày gần nhất.
-LocNguoiDung = Literal["tat_ca", "bi_ban", "staff", "moi"]
+#:
+#: ⚠ **`tat_ca` KHÔNG còn nghĩa "tất cả"** kể từ 2026-08-26: nó — cùng `bi_ban` và `moi` —
+#: **loại `is_staff`**, vì quản trị viên có màn hình riêng (`/quan-tri-vien`). Cái tên giữ
+#: nguyên để không phải sửa mọi chỗ gọi, nên nó là một cái tên nói dối một nửa; dòng này
+#: là chỗ duy nhất nói ra sự thật, đừng xoá.
+#:
+#: `moi_nguoi` = **thật sự mọi tài khoản**, không lọc gì. Nó tồn tại vì ô gợi ý user
+#: (`apps/admin/components/o-goi-y-user.tsx`) phải tìm được **cả staff**: đường "gán mod
+#: chuyên mục" ở `/subs` cần chọn đúng những người moderate được, mà `ChiMod` đòi
+#: `is_staff` ⇒ tập cần nhất chính là tập `tat_ca` vừa lấy đi. Thiếu giá trị này thì ô gợi
+#: ý trả rỗng và màn hình nói "Không có tài khoản nào khớp." cho một tài khoản có thật.
+LocNguoiDung = Literal["tat_ca", "moi_nguoi", "bi_ban", "staff", "moi"]
 
 
 class MachDongOut(Schema):
@@ -549,3 +581,13 @@ class TrangNguoiDungOut(Schema):
     items: list[NguoiDungQuanTriOut]
     cursor_ke_tiep: str | None
     tong: int
+    #: Số tài khoản quản trị BỊ LOẠI bởi chính bộ lọc đang áp (kể cả `q`) — 2026-08-26.
+    #:
+    #: Từ lượt tách khu "Quản trị viên", ba bộ lọc `tat_ca`/`bi_ban`/`moi` loại hẳn
+    #: `is_staff=True`. Hệ quả: gõ `mod_gikky` vào ô lọc ra **bảng rỗng**, và một bảng
+    #: rỗng không nói được là "không có ai tên vậy" hay "có, nhưng ở trang khác" — người
+    #: đọc sẽ kết luận cái thứ nhất. Trường này cho frontend nói ra sự thật.
+    #:
+    #: Đếm **cùng `q`, cùng `trang_thai`**, chỉ khác điều kiện staff. Luôn `0` khi
+    #: `trang_thai == "staff"` (bộ lọc ấy không loại gì cả).
+    so_staff_an: int

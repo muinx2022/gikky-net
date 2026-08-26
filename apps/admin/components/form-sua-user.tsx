@@ -26,9 +26,14 @@ import { NhanTrangThai } from "./ui";
  *
  * ## `is_staff` / `is_superuser` KHÔNG có ở đây
  *
- * User chốt: chỉ **hiện nhãn** nhóm, không cấp quyền qua màn hình này. PLAN mục 7 giữ
- * nguyên — cấp/thu quyền mod vẫn ở Django admin. Thêm một toggle vào đây trông như hoàn
- * thiện tính năng và thực ra là mở lại cửa mà PLAN cố ý đóng.
+ * User chốt: chỉ **hiện nhãn** nhóm, không cấp quyền qua màn hình này.
+ *
+ * Từ 2026-08-26 cấp/thu quyền mod **có** cửa riêng — `/quan-tri-vien`, khoá sau
+ * `is_superuser` — nhưng nó vẫn cố ý **không** nằm ở form này: gộp "sửa hồ sơ" với "đổi
+ * quyền" là để một lượt sửa tên hiển thị đi chung đường với một lượt đổi quyền quản trị,
+ * hai việc cần hai mức chú ý khác nhau và hai dòng nhật ký khác nhau.
+ *
+ * `is_superuser` thì không cửa nào trong khu quản trị chạm tới — vẫn chỉ Django admin.
  */
 export function FormSuaUser({
   u,

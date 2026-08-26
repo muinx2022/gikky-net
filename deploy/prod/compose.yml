@@ -1,0 +1,192 @@
+# Stack production của gikky.net trên `vps-muinx`. Chạy từ gốc repo đã checkout:
+#
+#   cd ~/gikky-net/src
+#   docker compose -f deploy/prod/compose.yml --env-file ~/gikky-net/app/.env up -d --build
+#
+# TLS + tên miền do **Cloudflare Tunnel** lo (container `cloudflared`, cấu hình ingress
+# nằm trên dashboard Cloudflare chứ không trên máy này). Stack này chỉ mở MỘT cổng HTTP
+# và chỉ mở trên loopback.
+#
+# ⚠ **Tên project là `gikkynet`, KHÔNG phải `gikky`** — và đó không phải chuyện thẩm mỹ.
+# Trên chính máy này đã có project `gikky` (một bản Trekky gắn thương hiệu gikky) sở hữu
+# volume `gikky_data` và network `gikky_default`. Trùng tên project là compose coi hai
+# stack khác nhau là một: nó sẽ "dọn" container của bên kia và tranh cùng volume dữ liệu.
+name: gikkynet
+
+services:
+  postgres:
+    # 17 để khớp ĐÚNG bản PostgreSQL 17 chạy trên máy dev — một con số duy nhất từ dev
+    # tới prod. Lệch major version giữa hai môi trường là loại lỗi chỉ lộ lúc deploy.
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: gikky
+      POSTGRES_USER: gikky
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?thiếu POSTGRES_PASSWORD trong file env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # KHÔNG `ports:` — cổng 5432 và 15432 của host đã bị hai container postgres khác giữ,
+    # và một CSDL sản phẩm không có lý do nào để nghe ngoài mạng docker nội bộ.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gikky -d gikky"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  meili:
+    # Ghim tag, KHÔNG `:latest`. v1.51.0 là bản đang chạy thật cho trekky trên cùng máy
+    # nên đã biết chắc nó khởi động được ở đây.
+    image: getmeili/meilisearch:v1.51.0
+    restart: unless-stopped
+    environment:
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:?thiếu MEILI_MASTER_KEY trong file env}
+      MEILI_ENV: production
+      MEILI_NO_ANALYTICS: "true"
+    volumes:
+      - meilidata:/meili_data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:7700/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  api:
+    build:
+      # Context là GỐC REPO: Dockerfile cần cả `api/` lẫn `deploy/prod/`.
+      context: ../..
+      dockerfile: deploy/prod/api.Dockerfile
+    restart: unless-stopped
+    environment:
+      SECRET_KEY: ${SECRET_KEY:?thiếu SECRET_KEY trong file env}
+      # `DEBUG=True` trên prod in traceback kèm cấu hình ra trang lỗi, VÀ mở
+      # `/api/v1/docs` + `/api/v1/openapi.json`. Viết cứng `False` ở đây thay vì đọc từ
+      # env: không có lý do chính đáng nào để bật nó trên máy này, và một biến đọc được
+      # là một biến đặt nhầm được.
+      DEBUG: "False"
+      # `api` có mặt vì hai container Next gọi `http://api:8000` (Host: `api:8000` —
+      # Django khớp ALLOWED_HOSTS không tính cổng). `localhost` cho healthcheck.
+      ALLOWED_HOSTS: gikky.net,www.gikky.net,admin.gikky.net,api,localhost,127.0.0.1
+      # Hàng rào Host của PLAN 8.2: chỉ host này chạm được `/api/admin/*`.
+      ADMIN_HOSTS: admin.gikky.net
+      DATABASE_URL: postgres://gikky:${POSTGRES_PASSWORD}@postgres:5432/gikky
+      FRONTEND_ORIGIN: ${SITE_ORIGIN:-https://gikky.net}
+      CSRF_TRUSTED_ORIGINS: https://gikky.net,https://www.gikky.net,https://admin.gikky.net
+      # `.gikky.net` (có dấu chấm đầu) là thứ cho cookie phiên đi được từ `gikky.net`
+      # sang `admin.gikky.net`.
+      SESSION_COOKIE_DOMAIN: .gikky.net
+      CSRF_COOKIE_DOMAIN: .gikky.net
+      # ⚠ Trống ⇒ mail xác thực ghi ra FILE trong container, tức KHÔNG AI ĐĂNG KÝ ĐƯỢC
+      # (`ACCOUNT_EMAIL_VERIFICATION = "mandatory"`). Xem README.md mục "Nợ".
+      EMAIL_URL: ${EMAIL_URL:-}
+      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-gikky <khong-tra-loi@gikky.net>}
+      # Trống ⇒ provider không được đăng ký và frontend KHÔNG render nút (PLAN mục 4).
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      # Cửa on-demand revalidate nằm trong mạng docker, KHÔNG đi vòng ra internet.
+      REVALIDATE_URL: http://web:3000/lam-moi-cache
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET:?thiếu REVALIDATE_SECRET trong file env}
+      MEILI_URL: http://meili:7700
+      # Phải là khoá PHẠM VI HẸP (chỉ index `mach`), KHÔNG phải master key — master key
+      # tạo được khoá khác, tức quyền quản trị toàn cụm cho một tiến trình chỉ cần một
+      # index. Sinh bằng `deploy/prod/tao-khoa-meili.sh`.
+      MEILI_KEY: ${MEILI_KEY:-}
+      MEDIA_ROOT: /var/lib/gikky/media
+      MEDIA_AN_ROOT: /var/lib/gikky/media-an
+      # **BẮT BUỘC True ở đây**: Django ngồi sau Caddy nên `REMOTE_ADDR` của mọi request
+      # là IP nội bộ. Caddy ghi đè `X-Forwarded-For` bằng `CF-Connecting-IP` (xem
+      # Caddyfile ghi chú 2) nên header này đáng tin và mang đúng một phần tử.
+      TIN_X_FORWARDED_FOR: "True"
+      # Ba hạn mức của PLAN dùng MẶC ĐỊNH trong settings.py — cố ý không khai ở đây.
+      # `api/.env.example` nới chúng cho máy dev và nói rõ "trên prod: xoá hoặc để trống".
+      GIKKY_ADMIN_PASSWORD: ${GIKKY_ADMIN_PASSWORD:-}
+      GIKKY_TEAM_NEWS_PASSWORD: ${GIKKY_TEAM_NEWS_PASSWORD:-}
+      GIKKY_TEAM_MEMBER_PASSWORD: ${GIKKY_TEAM_MEMBER_PASSWORD:-}
+      # Mặc định của lệnh là `vi-du.gikky.net` (tên miền dữ liệu dựng sẵn). Prod dùng tên
+      # miền THẬT — user chốt 2026-08-25 — nên ba tài khoản đăng nhập bằng
+      # `admin@gikky.net` v.v. Giá trị đặt trong `~/gikky-net/app/.env`.
+      GIKKY_TEAM_EMAIL_DOMAIN: ${GIKKY_TEAM_EMAIL_DOMAIN:-}
+    volumes:
+      - media:/var/lib/gikky/media
+      # `media-an` là kho CÁCH LY (ảnh của mốc đã thành bia mộ / bị mod ẩn). Nó được
+      # mount ở ĐÂY và **không** ở caddy — đó là cả cơ chế A9: Caddy phục vụ mọi thứ dưới
+      # `media/` thẳng từ đĩa, nên thứ nào Caddy không nhìn thấy mới thật sự biến mất.
+      - mediaan:/var/lib/gikky/media-an
+      - static:/app/staticfiles
+    depends_on:
+      postgres:
+        condition: service_healthy
+      meili:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/api/v1/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  web:
+    build:
+      context: ../..
+      dockerfile: deploy/prod/node.Dockerfile
+      target: web
+      args:
+        API_ORIGIN: http://api:8000
+        SITE_ORIGIN: ${SITE_ORIGIN:-https://gikky.net}
+    restart: unless-stopped
+    environment:
+      API_ORIGIN: http://api:8000
+      SITE_ORIGIN: ${SITE_ORIGIN:-https://gikky.net}
+      # Phải TRÙNG chuỗi của service `api`. Lệch nhau thì cửa trả 401 và cả cơ chế cache
+      # 8.4 chết im lặng: trang mạch đứng nguyên tới một tiếng sau mỗi lần có mốc mới.
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET:?thiếu REVALIDATE_SECRET trong file env}
+      NODE_ENV: production
+    depends_on:
+      api:
+        condition: service_started
+
+  admin:
+    build:
+      context: ../..
+      dockerfile: deploy/prod/node.Dockerfile
+      target: admin
+      args:
+        API_ORIGIN: http://api:8000
+        SITE_ORIGIN: ${SITE_ORIGIN:-https://gikky.net}
+    restart: unless-stopped
+    environment:
+      API_ORIGIN: http://api:8000
+      NODE_ENV: production
+    depends_on:
+      api:
+        condition: service_started
+
+  caddy:
+    build:
+      context: ../..
+      dockerfile: deploy/prod/caddy.Dockerfile
+    restart: unless-stopped
+    ports:
+      # **127.0.0.1**, không phải `0.0.0.0`. `cloudflared` chạy `network_mode: host` nên
+      # nó vẫn tới được `localhost:8091`; ràng buộc thêm chỉ chặn đường vào từ LAN.
+      # 8091 là đúng cổng mà ingress `gikky.net` / `admin.gikky.net` đang trỏ tới.
+      - "127.0.0.1:8091:80"
+    volumes:
+      # `:ro` — Caddy chỉ phục vụ, không có đường nào để ghi vào kho ảnh.
+      - media:/var/lib/gikky/media:ro
+      - static:/srv/static:ro
+      - caddydata:/data
+      - caddyconfig:/config
+    depends_on:
+      - web
+      - admin
+      - api
+
+volumes:
+  pgdata:
+  meilidata:
+  media:
+  mediaan:
+  static:
+  caddydata:
+  caddyconfig:

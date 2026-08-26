@@ -25,7 +25,9 @@ import { HangNutForm } from "./ngan-keo";
  *
  * ## Không có `is_staff` / `is_superuser`
  *
- * Cấp quyền mod vẫn ở Django admin (PLAN mục 7). Xem `FormSuaUser` cho cùng lý lẽ.
+ * Tài khoản mới luôn là thành viên thường. Cấp quyền mod là một thao tác riêng ở
+ * `/quan-tri-vien` (từ 2026-08-26); `is_superuser` thì vẫn chỉ Django admin. Xem
+ * `FormSuaUser` cho cùng lý lẽ.
  */
 export function FormTaoUser({
   dangChay,

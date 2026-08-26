@@ -8,6 +8,7 @@ Luật quyền của từng cái nằm ngay trong docstring của nó — đó l
 
 from datetime import timedelta
 
+from django.core.exceptions import ValidationError as LoiModel
 from django.db import transaction
 from django.utils import timezone
 from ninja import Router, Status
@@ -684,13 +685,22 @@ def viet_binh_luan(request, mach_id: int, du_lieu: BinhLuanMoiIn):
             )
 
     with transaction.atomic():
-        c = tao_binh_luan(
-            mach=mach,
-            author=request.user,
-            body=du_lieu.body,
-            parent=parent,
-            anchor_moc_seq=du_lieu.anchor_moc_seq,
-        )
+        try:
+            c = tao_binh_luan(
+                mach=mach,
+                author=request.user,
+                body=du_lieu.body,
+                parent=parent,
+                anchor_moc_seq=du_lieu.anchor_moc_seq,
+                dinh_dang=du_lieu.body_dinh_dang,
+            )
+        except LoiModel as e:
+            # `tao_binh_luan` ném `ValidationError` khi thân HTML bị `lam_sach` lọc sạch
+            # thành chuỗi rỗng (`body_dinh_dang="html"`, thân chỉ gồm thẻ bị chặn). Không
+            # có nhánh này thì ca đó trả **500 kèm traceback** — bài đo
+            # `test_binh_luan_html.py::test_body_chi_gom_the_bi_chan_thi_TU_CHOI` bắt
+            # được đúng lúc lượt Tiptap-cho-bình-luận mở cửa HTML vào bảng này.
+            raise LoiGhi(400, DU_LIEU_KHONG_HOP_LE, "; ".join(e.messages)) from e
         tu_upvote(target=c)
         # Báo cho tác giả bình luận CHA, trong cùng transaction (PLAN 5.8). Hàm tự bỏ qua
         # ba ca: không có cha · tự trả lời mình · cha đã bị gỡ.

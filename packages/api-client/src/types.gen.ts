@@ -176,6 +176,10 @@ export type BinhLuanMoiIn = {
      */
     body: string;
     /**
+     * Body Dinh Dang
+     */
+    body_dinh_dang?: 'markdown' | 'html';
+    /**
      * Parent Id
      */
     parent_id?: number | null;
@@ -218,6 +222,10 @@ export type BinhLuanOut = {
      * Body
      */
     body: string | null;
+    /**
+     * Body Dinh Dang
+     */
+    body_dinh_dang: string;
     /**
      * Created At
      */
@@ -271,13 +279,20 @@ export type BinhLuanOut = {
 /**
  * BinhLuanSuaIn
  *
- * Sửa bình luận — `PATCH /comments/{id}`. Chỉ `body` (PLAN 5.3).
+ * Sửa bình luận — `PATCH /comments/{id}`. `body` + nhãn định dạng (PLAN 5.3).
+ *
+ * Nhãn đổi được **cả hai chiều**: người viết bằng textarea rồi mở Tiptap sửa lại, hoặc
+ * ngược lại. `core/ghi.py::sua_binh_luan` ghi cả hai cột trong CÙNG một câu `UPDATE`.
  */
 export type BinhLuanSuaIn = {
     /**
      * Body
      */
     body: string;
+    /**
+     * Body Dinh Dang
+     */
+    body_dinh_dang?: 'markdown' | 'html';
 };
 
 /**
@@ -1230,8 +1245,8 @@ export type MocSuaIn = {
  * Lát cắt bình luận neo vào một mốc — PLAN 5.4.
  *
  * Chứa các thread có bình luận **gốc** neo mốc này, **cả thread**, gồm reply viết ở bất
- * kỳ thời điểm nào. Sắp cũ → mới và **không cho chỉnh** — ngăn kéo là cửa sổ, không
- * phải phòng (luật 2).
+ * kỳ thời điểm nào. Sắp **mới → cũ** (chiều đổi 2026-08-26, theo khán đài) và **không
+ * cho chỉnh** — ngăn kéo là cửa sổ, không phải phòng (luật 2).
  *
  * Mốc chưa có bình luận nào trả `threads: []` và `so_binh_luan: 0`; UI **không** hiện
  * "💬 0" mà hiện lời mời cùng `question_for_crowd` nếu có (luật 4).
@@ -1770,6 +1785,10 @@ export type TrichOut = {
      * Body
      */
     body: string;
+    /**
+     * Body Dinh Dang
+     */
+    body_dinh_dang: string;
     /**
      * Comment Created At
      */

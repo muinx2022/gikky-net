@@ -9,7 +9,14 @@ chuyện phòng thủ thừa:
    `manage.py shell`.
 2. **Không ban mod khác.** Mọi mod ngang quyền nhau (v1 chỉ có cột `is_staff`, không có
    bảng vai trò), nên "mod A ban mod B" là một cuộc chiến hai bên đều thắng được. Việc gỡ
-   quyền một mod là việc của chủ site qua Django admin — có `is_superuser` phân xử ở đó.
+   quyền một mod là việc của **superuser** — từ 2026-08-26 làm được ở
+   `doi_quyen_mod` ngay trong file này, trước đó chỉ Django admin.
+
+⚠ **Hệ quả của cửa `doi_quyen_mod`, ghi ra để không ai gỡ nhầm:** vì luật 2 ở trên trả
+409 khi đích là `is_staff`, **cấp quyền mod cho ai = làm người đó miễn nhiễm ban**. Đó là
+cái giá user đã chấp nhận khi chốt "có cấp/thu quyền mod tại khu quản trị, nhưng khoá sau
+`is_superuser`" (`plans/2026-08-26-khu-quan-tri-vien.md` §1). Nó có bài đo ghim lại —
+`tests/test_api_quyen_mod.py::test_B10_cap_quyen_mod_lam_tai_khoan_mien_nhiem_ban`.
 
 Cả hai phụ thuộc **người gọi**, nên chúng không phải bất biến của dữ liệu và không có chỗ
 trong đường ghi. Cùng lý lẽ với rate limit ở `core/ghi.py::them_moc`.
@@ -27,6 +34,7 @@ from ninja import Router, Status
 
 from core.ghi import (
     AUDIT_DAT_MAT_KHAU_USER,
+    AUDIT_DOI_QUYEN_MOD,
     AUDIT_SUA_USER,
     AUDIT_TAO_USER,
     DICH_USER,
@@ -47,6 +55,7 @@ from api.loi import (
 from api.quan_tri_schemas import (
     BanIn,
     DatMatKhauIn,
+    DoiQuyenModIn,
     KetQuaDoiTrangThaiOut,
     NguoiDungQuanTriOut,
     SuaNguoiDungIn,
@@ -179,7 +188,8 @@ def ban_nguoi_dung(request, username: str, du_lieu: BanIn):
         return loi(
             409,
             XUNG_DOT,
-            "Không ban được một tài khoản quản trị khác; gỡ quyền staff ở Django admin trước.",
+            "Không ban được một tài khoản quản trị khác; thu quyền mod ở trang "
+            "Quản trị viên trước.",
         )
 
     # Quy đổi `so_ngay` TRƯỚC khi xuống đường ghi. Phép kiểm "đúng một cách" phải đếm cả
@@ -242,14 +252,18 @@ def go_ban_nguoi_dung(request, username: str):
 # `plans/2026-08-25-crud-nguoi-dung.md`. User chốt: *"chỉ superadmin mới có quyền thay đổi
 # các thông tin của user"*.
 #
-# ⚠ **KHÔNG cửa nào dưới đây ghi vào `is_staff` / `is_superuser`.** User chốt "không cần
-# group nữa… chỉ cần show label ra thuộc nhóm nào", nên PLAN mục 7 giữ nguyên: cấp/thu
-# quyền mod vẫn nằm ngoài khu quản trị (Django admin, chỉ superuser). Lý lẽ cũ còn nguyên
-# giá trị — một mod cấp quyền mod cho tài khoản khác là bỏ qua mọi phép duyệt, và ai tự
-# cấp `is_staff` là tự miễn nhiễm ban.
+# ⚠ **KHÔNG cửa nào dưới đây ghi vào `is_staff` / `is_superuser`.** Hai schema
+# `TaoNguoiDungIn`/`SuaNguoiDungIn` **không khai** hai cờ ấy, nên Ninja loại chúng khỏi
+# body trước khi handler nhìn thấy. Có bài đo gửi chúng lên và đòi KHÔNG đổi.
 #
-# Hai schema `TaoNguoiDungIn`/`SuaNguoiDungIn` **không khai** hai cờ ấy, nên Ninja loại
-# chúng khỏi body trước khi handler nhìn thấy. Có bài đo gửi chúng lên và đòi KHÔNG đổi.
+# Cập nhật 2026-08-26 (`plans/2026-08-26-khu-quan-tri-vien.md`): `is_staff` nay **có** một
+# cửa riêng — `doi_quyen_mod` ở cuối file, cũng khoá sau `is_superuser`. Nó là cửa riêng
+# chứ không phải một trường thêm vào `SuaNguoiDungIn`, và đó là chủ đích: cấp quyền mod
+# kéo theo *miễn nhiễm ban* (xem docstring module), nên nó cần đường đi, lời từ chối và
+# dòng nhật ký của riêng nó — không phải đi ké một body sửa tên hiển thị.
+#
+# `is_superuser` thì **không đổi gì**: vẫn không cửa nào trong khu quản trị ghi vào nó,
+# Django admin vẫn là nơi duy nhất phong superuser.
 
 TRA_LOI_CRUD = {
     200: NguoiDungQuanTriOut,
@@ -500,6 +514,136 @@ def dat_mat_khau(request, username: str, du_lieu: DatMatKhauIn):
             username=u.username,
             # Cờ, KHÔNG phải giá trị.
             xoa=du_lieu.mat_khau is None,
+        )
+
+    return nguoi_dung_quan_tri_ra(_tim(username))
+
+
+# --- Cấp / thu quyền mod (2026-08-26) ------------------------------------------------
+#
+# `plans/2026-08-26-khu-quan-tri-vien.md`. User chốt: *"có cấp / thu quyền mod ngay tại
+# trang mới, khoá sau `is_superuser`"*.
+#
+# ⚠ Đường phải là `/users/{username}/quyen-mod` **trong file này**, không phải một router
+# mới: `GET /users` (bảng danh sách) sống ở `quan_tri_bang.py`, và django-ninja sinh
+# urlpattern theo TỪNG router. Một đường `users/…` khai ở router khác sẽ bị router kia
+# nuốt trước và trả 405 — xem khối chú thích 405 ở giữa file.
+
+
+@router.post(
+    "/users/{username}/quyen-mod",
+    response=TRA_LOI_CRUD,
+    operation_id="quan_tri_doi_quyen_mod",
+    tags=["quan-tri-nguoi-dung"],
+)
+def doi_quyen_mod(request, username: str, du_lieu: DoiQuyenModIn):
+    """Công tắc `is_staff` của một tài khoản. Trả về **cả hàng** đã cập nhật.
+
+    Trả cả hàng thay vì `204`: nhãn `vai_tro` do SERVER tính (`vai_tro_cua`), nên frontend
+    phải nhận lại hàng mới chứ không tự suy từ `bat` — suy tay là dựng bản thứ hai của một
+    luật server đang giữ (PLAN nguyên tắc 10), và bản thứ hai sẽ lệch đúng lúc `vai_tro_cua`
+    mọc thêm một nhánh. Cùng lý lẽ `gan_mod_sub` trả cả hàng sub.
+
+    **Idempotent** — đặt trùng giá trị đang có trả 200, không 409. Đây là một *công tắc
+    hai trạng thái*, và một công tắc báo lỗi khi bị gạt về đúng vị trí nó đang đứng là một
+    công tắc hỏng. (Khác `gan_mod_sub`, nơi "đã là mod ⇒ 409" là đúng vì đó là *thêm vào
+    một danh sách*: người bấm cần biết mình KHÔNG phải người vừa thêm.)
+
+    Năm lời từ chối, mỗi lời một thông điệp riêng:
+
+    - **người gọi không superuser ⇒ 403.** Vế "khoá sau `is_superuser`" của đơn hàng.
+    - **đích là chính mình ⇒ 409.** Thu quyền của chính mình là tự khoá mình khỏi khu
+      quản trị, và người duy nhất gỡ được lại chính là mình. Cùng hình dạng với luật
+      "không tự ban mình" ở đầu file.
+    - **đích là superuser ⇒ 409.** `ChiMod` đòi `is_staff`, nên thu `is_staff` của một
+      superuser là làm hỏng một nửa họ: còn `is_superuser` nhưng hết đường vào. Quyền
+      superuser thuộc Django admin, và cửa này cố ý không với tới đó.
+    - **cấp cho tài khoản đang bị ban / đã vô hiệu hoá ⇒ 409.** `ChiMod` từ chối cả hai ở
+      cổng, nên hàng cấp ra vô nghĩa ngay khi tạo; và một cái tên bị ban nằm trong bảng
+      "Quản trị viên" là thông tin sai trên màn hình. Đúng tiền lệ `gan_mod_sub`.
+    - **thu quyền khi còn `ModSub` ⇒ 409, kèm tên sub.** Xem dưới.
+
+    ## Vì sao thu quyền lại vướng `ModSub`
+
+    Thu `is_staff` mà bỏ lại hàng `ModSub` là để một cái tên **không moderate được** nằm
+    trong cột "Mod" của bảng chuyên mục — chính điều mà docstring `ModSub` gọi là *"hiểu
+    sai theo hướng nguy hiểm"*. Hai lối chữa, và lối bị loại đáng ghi ra: *cascade xoá
+    `ModSub`* làm mất dữ liệu ngầm mà người bấm không yêu cầu, và mất luôn câu trả lời
+    "ai từng phụ trách sub này". Nên: **từ chối, bảo gỡ phân công trước** — và 409 phải
+    **liệt kê tên sub**, nếu không superuser phải đi dò từng chuyên mục.
+
+    ## Thứ tự: từ chối TRƯỚC, no-op SAU
+
+    Phép "trùng giá trị ⇒ trả luôn" đặt sau cả năm lời từ chối, không phải trước. Đảo lại
+    thì `bat=false` trên một tài khoản **đã** không phải staff nhưng còn `ModSub` sẽ trả
+    200 im lặng — và người bấm tin rằng mình vừa dọn xong một thứ vẫn còn nguyên. Câu trả
+    lời phải phụ thuộc **trạng thái**, không phụ thuộc việc lần bấm này có đổi được gì.
+    """
+    if (chan := _chan_neu_khong_phai_superuser(request)) is not None:
+        return chan
+
+    u = _tim(username)
+    if u is None:
+        return khong_tim_thay("tài khoản")
+
+    # ⚠ Nhánh này bị nhánh `is_superuser` ngay dưới BAO TRỌN — người gọi đã qua
+    # `_chan_neu_khong_phai_superuser`, nên "đích là chính mình" kéo theo "đích là
+    # superuser". Nó ở lại vì **thông điệp**, đúng hình dạng và đúng lý lẽ với cặp
+    # tự-ban / ban-mod-khác ở `ban_nguoi_dung` phía trên: câu "sep_lon là superuser;
+    # quyền superuser chỉ đổi được ở Django admin" đọc trên chính hàng của mình là một
+    # câu vô nghĩa, và người bấm sẽ đi tìm xem mình đang bị chặn vì ai.
+    #
+    # ⇒ **Đừng đảo hai khối này, và đừng gộp.** Thứ tự quyết định câu nào ra, và thứ duy
+    # nhất phân biệt được hai nhánh là câu chữ — nên bài đo phải chấm câu chữ chứ không
+    # chấm mã 409 (`test_B4_khong_tu_doi_quyen_cua_minh`; bản đầu chỉ chấm 409 và nó
+    # KHÔNG đỏ khi nhánh này bị gỡ).
+    if u.pk == request.user.pk:
+        return loi(
+            409,
+            XUNG_DOT,
+            "Không tự đổi quyền quản trị của chính mình — thu xong thì không còn ai gỡ "
+            "được cho bạn.",
+        )
+    if u.is_superuser:
+        return loi(
+            409,
+            XUNG_DOT,
+            f"{username!r} là superuser; quyền superuser chỉ đổi được ở Django admin.",
+        )
+
+    if du_lieu.bat:
+        if not u.is_active:
+            return loi(409, XUNG_DOT, f"Tài khoản {username!r} đã bị vô hiệu hoá.")
+        if u.dang_bi_ban():
+            return loi(409, XUNG_DOT, f"Tài khoản {username!r} đang bị ban.")
+    else:
+        # `prefetch_related("sub_dang_mod__sub")` của `_tim` đã nạp sẵn — `sorted` trong
+        # Python thay vì `order_by` để không ném bộ nhớ đệm ấy đi.
+        slugs = sorted(m.sub.slug for m in u.sub_dang_mod.all())
+        if slugs:
+            ds = " · ".join(f"s/{s}" for s in slugs)
+            return loi(
+                409,
+                XUNG_DOT,
+                f"{username!r} còn phụ trách {ds} — gỡ phân công ở trang Chuyên mục "
+                "trước, rồi mới thu quyền.",
+            )
+
+    if u.is_staff == du_lieu.bat:
+        # Không đổi gì ⇒ **không ghi nhật ký**. Sổ này trả lời câu "ai cho người này làm
+        # mod"; một dòng cho lượt bấm không đổi gì chỉ làm loãng đúng câu trả lời đó.
+        return nguoi_dung_quan_tri_ra(u)
+
+    with transaction.atomic():
+        u.is_staff = du_lieu.bat
+        u.save(update_fields=["is_staff"])
+        ghi_audit(
+            actor=request.user,
+            action=AUDIT_DOI_QUYEN_MOD,
+            target_type=DICH_USER,
+            target_id=u.pk,
+            username=u.username,
+            bat=du_lieu.bat,
         )
 
     return nguoi_dung_quan_tri_ra(_tim(username))

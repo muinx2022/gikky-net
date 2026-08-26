@@ -21,7 +21,15 @@
   height: 26px;
 }
 
+/* Từ 2026-08-26 đây là một `<button>` (mở modal đăng nhập), không còn là `<a>`. Bốn
+   dòng reset dưới đây là chỗ khác biệt duy nhất — thiếu chúng thì nút mang nền xám,
+   viền và font mặc định của user-agent, đứng cạnh nút "Đăng ký" trông như hai nút. */
 .lien_ket {
+  border: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
   color: var(--ink-3);
 }
 

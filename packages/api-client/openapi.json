@@ -216,6 +216,15 @@
             "title": "Body",
             "type": "string"
           },
+          "body_dinh_dang": {
+            "default": "markdown",
+            "enum": [
+              "markdown",
+              "html"
+            ],
+            "title": "Body Dinh Dang",
+            "type": "string"
+          },
           "parent_id": {
             "anyOf": [
               {
@@ -268,6 +277,10 @@
               }
             ],
             "title": "Body"
+          },
+          "body_dinh_dang": {
+            "title": "Body Dinh Dang",
+            "type": "string"
           },
           "created_at": {
             "format": "date-time",
@@ -349,6 +362,7 @@
           "anchor_moc_seq",
           "author",
           "body",
+          "body_dinh_dang",
           "created_at",
           "edited_at",
           "up_count",
@@ -363,12 +377,21 @@
         "type": "object"
       },
       "BinhLuanSuaIn": {
-        "description": "Sửa bình luận — `PATCH /comments/{id}`. Chỉ `body` (PLAN 5.3).",
+        "description": "Sửa bình luận — `PATCH /comments/{id}`. `body` + nhãn định dạng (PLAN 5.3).\n\nNhãn đổi được **cả hai chiều**: người viết bằng textarea rồi mở Tiptap sửa lại, hoặc\nngược lại. `core/ghi.py::sua_binh_luan` ghi cả hai cột trong CÙNG một câu `UPDATE`.",
         "properties": {
           "body": {
             "maxLength": 10000,
             "minLength": 1,
             "title": "Body",
+            "type": "string"
+          },
+          "body_dinh_dang": {
+            "default": "markdown",
+            "enum": [
+              "markdown",
+              "html"
+            ],
+            "title": "Body Dinh Dang",
             "type": "string"
           }
         },
@@ -1669,7 +1692,7 @@
         "type": "object"
       },
       "NganKeoOut": {
-        "description": "Lát cắt bình luận neo vào một mốc — PLAN 5.4.\n\nChứa các thread có bình luận **gốc** neo mốc này, **cả thread**, gồm reply viết ở bất\nkỳ thời điểm nào. Sắp cũ → mới và **không cho chỉnh** — ngăn kéo là cửa sổ, không\nphải phòng (luật 2).\n\nMốc chưa có bình luận nào trả `threads: []` và `so_binh_luan: 0`; UI **không** hiện\n\"💬 0\" mà hiện lời mời cùng `question_for_crowd` nếu có (luật 4).",
+        "description": "Lát cắt bình luận neo vào một mốc — PLAN 5.4.\n\nChứa các thread có bình luận **gốc** neo mốc này, **cả thread**, gồm reply viết ở bất\nkỳ thời điểm nào. Sắp **mới → cũ** (chiều đổi 2026-08-26, theo khán đài) và **không\ncho chỉnh** — ngăn kéo là cửa sổ, không phải phòng (luật 2).\n\nMốc chưa có bình luận nào trả `threads: []` và `so_binh_luan: 0`; UI **không** hiện\n\"💬 0\" mà hiện lời mời cùng `question_for_crowd` nếu có (luật 4).",
         "properties": {
           "moc_id": {
             "title": "Moc Id",
@@ -2286,6 +2309,10 @@
             "title": "Body",
             "type": "string"
           },
+          "body_dinh_dang": {
+            "title": "Body Dinh Dang",
+            "type": "string"
+          },
           "comment_created_at": {
             "format": "date-time",
             "title": "Comment Created At",
@@ -2314,6 +2341,7 @@
           "comment_id",
           "author",
           "body",
+          "body_dinh_dang",
           "trang_thai",
           "comment_created_at",
           "trich_created_at",
@@ -4753,7 +4781,7 @@
     },
     "/api/v1/mocs/{moc_id}/comments": {
       "get": {
-        "description": "Ngăn kéo của một mốc: lát cắt bình luận neo vào mốc đó, **cũ → mới**.\n\nLấy các thread có bình luận **gốc** mang `anchor_moc_seq` bằng `seq` của mốc này, và\nlấy **cả thread** — reply viết ở thời điểm mốc nào cũng thuộc về thread của gốc\n(PLAN nguyên tắc 6). Nhờ vậy ngăn kéo của mốc 2 kể được cả lời tiên tri lẫn cái kết.\n\nKhông có tham số sắp xếp: ngăn kéo là cửa sổ chiếu vào khán đài, không phải một\nphòng riêng (PLAN 5.4 luật 2). Anchor dùng để CHIẾU, không bao giờ để chia khán đài\nthành nhiều phòng (PLAN nguyên tắc 4).\n\nMốc chưa có bình luận nào trả `threads: []`, `so_binh_luan: 0` cùng\n`question_for_crowd` nếu mốc có câu mồi — UI hiện lời mời chứ **không** hiện \"💬 0\"\n(PLAN 5.4 luật 4, nguyên tắc 9).\n\nNgăn kéo của một mốc đã thành **bia mộ vẫn mở được** (bình luận không biến mất theo\nmốc), nhưng `question_for_crowd` khi đó là `null`: đó là nội dung của mốc, mà nội\ndung của bia mộ thì không trả ra.",
+        "description": "Ngăn kéo của một mốc: lát cắt bình luận neo vào mốc đó, **mới → cũ**.\n\nLấy các thread có bình luận **gốc** mang `anchor_moc_seq` bằng `seq` của mốc này, và\nlấy **cả thread** — reply viết ở thời điểm mốc nào cũng thuộc về thread của gốc\n(PLAN nguyên tắc 6). Nhờ vậy ngăn kéo của mốc 2 kể được cả lời tiên tri lẫn cái kết.\n\nKhông có tham số sắp xếp: ngăn kéo là cửa sổ chiếu vào khán đài, không phải một\nphòng riêng (PLAN 5.4 luật 2). Anchor dùng để CHIẾU, không bao giờ để chia khán đài\nthành nhiều phòng (PLAN nguyên tắc 4).\n\nChiều **mới → cũ** là chiều đổi ngày 2026-08-26 (user), cùng lượt khán đài chuyển\nmặc định sang `moi_nhat` — hai cửa sổ nhìn cùng một tập bình luận thì không được chạy\nngược chiều nhau. Vế \"không cho chỉnh\" của luật 2 giữ nguyên: chiều gõ cứng ở\n`core/doc_noi_dung.py::lat_cat_ngan_keo`, không đọc từ `?sort=`.\n\nMốc chưa có bình luận nào trả `threads: []`, `so_binh_luan: 0` cùng\n`question_for_crowd` nếu mốc có câu mồi — UI hiện lời mời chứ **không** hiện \"💬 0\"\n(PLAN 5.4 luật 4, nguyên tắc 9).\n\nNgăn kéo của một mốc đã thành **bia mộ vẫn mở được** (bình luận không biến mất theo\nmốc), nhưng `question_for_crowd` khi đó là `null`: đó là nội dung của mốc, mà nội\ndung của bia mộ thì không trả ra.",
         "operationId": "liet_ke_binh_luan_moc",
         "parameters": [
           {

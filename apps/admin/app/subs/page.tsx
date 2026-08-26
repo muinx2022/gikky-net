@@ -307,8 +307,13 @@ function KhoiMod({
         )}
       </div>
 
+      {/* `trang_thai="moi_nguoi"`, KHÔNG phải mặc định `tat_ca`: `tat_ca` loại
+          `is_staff` từ 2026-08-26, mà `ChiMod` đòi `is_staff` ⇒ người thật sự moderate
+          được một sub gần như luôn là staff. Dùng `tat_ca` ở đây là ô gợi ý trả rỗng cho
+          một tài khoản có thật. Xem docstring `OGoiYUser`. */}
       <OGoiYUser
         dang_chay={dang_chay}
+        trang_thai="moi_nguoi"
         bo_qua={sub.mods.map((m) => m.username)}
         onChon={(username) =>
           void chay(() =>

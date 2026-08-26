@@ -175,3 +175,43 @@
     min-height: 44px;
   }
 }
+
+/* Công tắc trình soạn thảo đang BẬT. Dùng viền + màu chữ, không dùng nền đậm: nó nằm
+   cạnh nút "Gửi" (nút chính), và hai khối đặc cạnh nhau thì mắt không biết đâu là hành
+   động chính. */
+.nhe_bat {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* "Cửa" — trạng thái đóng của composer (user chốt 2026-08-26).
+   Trông NHƯ ô nhập, cố ý: nó đứng đúng chỗ ô nhập sẽ hiện ra, nên mắt không phải học
+   thêm hình dạng nào. Khác ô thật đúng hai điểm — con trỏ `pointer` và chữ màu `--ink-3`
+   (chữ mời, không phải chữ đã gõ). */
+.cua {
+  display: block;
+  width: 100%;
+  margin: 12px 0 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--inset);
+  color: var(--ink-3);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.55;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cua:hover {
+  border-color: var(--line-2);
+  color: var(--ink-2);
+}
+
+.cua:focus-visible {
+  outline: 1px solid var(--focus);
+  outline-offset: -1px;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}

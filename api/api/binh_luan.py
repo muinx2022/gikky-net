@@ -49,7 +49,7 @@ def sua_binh_luan_api(request, comment_id: int, du_lieu: BinhLuanSuaIn):
     doi_chu_so_huu(request.user, c.author_id, "bình luận")
     doi_mach_tuong_tac_duoc(c.mach)
     doi_con_song(c, "Bình luận")
-    c = sua_binh_luan(comment=c, body=du_lieu.body)
+    c = sua_binh_luan(comment=c, body=du_lieu.body, dinh_dang=du_lieu.body_dinh_dang)
     lam_moi_mach(c.mach)
     nut = Nut(
         binh_luan=c, do_sau=c.do_sau, trang_thai=trang_thai_noi_dung(c), con=[]

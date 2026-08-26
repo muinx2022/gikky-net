@@ -3,6 +3,7 @@ import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 
 import { ChanTrang } from "@/components/chan-trang";
 import { Chrome } from "@/components/chrome";
+import { ModalDangNhapProvider } from "@/components/modal-dang-nhap";
 import { PhienProvider } from "@/components/phien";
 import { ToastProvider } from "@/components/toast";
 import { SITE_ORIGIN } from "@/lib/site";
@@ -122,11 +123,17 @@ export default function RootLayout({
             `aria-live` của mình sau nội dung trang, và mọi form gọi `useToast()` đều đã
             nằm trong `PhienProvider` rồi. Nó là client component nhưng `children` truyền
             qua nó vẫn render ở server — nên `/luat` giữ nguyên `○` (tĩnh). */}
+        {/* `ModalDangNhapProvider` nằm TRONG `PhienProvider` vì form đăng nhập gọi
+            `usePhien()`, và TRONG `ToastProvider` để một ngày nào đó nó báo được bằng
+            toast. Nó chỉ render `<dialog>` khi có người mở — trang chưa ai bấm gì thì
+            trong DOM không có gì thêm, nên `/luat` giữ nguyên `○` (tĩnh). */}
         <PhienProvider>
           <ToastProvider>
-            <Chrome />
-            {children}
-            <ChanTrang />
+            <ModalDangNhapProvider>
+              <Chrome />
+              {children}
+              <ChanTrang />
+            </ModalDangNhapProvider>
           </ToastProvider>
         </PhienProvider>
       </body>

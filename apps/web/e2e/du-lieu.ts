@@ -7,6 +7,8 @@ import type {
   NganKeoOut,
 } from "@gikky/api-client";
 
+import { expect, type Locator, type Page } from "@playwright/test";
+
 import { secretLamMoiCache } from "../playwright.config";
 
 /** Nguồn sự thật cho bài đo: gọi thẳng Django, KHÔNG đọc lại từ HTML mình vừa render.
@@ -151,4 +153,43 @@ export function ngayNganVN(iso: string): string {
   }).formatToParts(d);
   const lay = (t: string) => p.find((x) => x.type === t)?.value ?? "";
   return `${lay("day")}/${lay("month")}`;
+}
+
+/** Mở "cửa" bình luận rồi trả về `<form data-testid="composer">` bên trong.
+ *
+ * **Vì sao mọi bài đo phải đi qua đây từ 2026-08-26.** User chốt composer không hiện sẵn
+ * nữa: chỗ nó đứng là một nút (`composer-cua`), bấm mới ra form. Nghĩa là
+ * `getByTestId("composer")` — thứ ~15 chỗ trong bộ e2e đang khẳng định thẳng vào — nay
+ * **không tồn tại cho tới khi có người bấm**.
+ *
+ * Gom vào một hàm chứ không sửa rải rác 15 chỗ: ngày cửa đổi hình lần nữa (mà nó sẽ đổi
+ * — nó vừa ra đời hôm nay), 15 chỗ ấy hỏng cùng lúc và mỗi chỗ hỏng theo một kiểu.
+ *
+ * ⚠ `pham_vi` phải là VÙNG, không phải cả trang: một trang mạch 9 mốc có **10** cửa
+ * (khán đài + mỗi ngăn kéo một cái). `page.getByTestId("composer-cua")` không lọc gì thì
+ * `.click()` ăn lỗi "strict mode violation", còn `.first()` thì bấm nhầm cửa — im lặng.
+ */
+export async function moComposer(pham_vi: Locator): Promise<Locator> {
+  const cua = pham_vi.getByTestId("composer-cua");
+  await expect(cua).toBeVisible();
+  await cua.click();
+  const form = pham_vi.getByTestId("composer");
+  await expect(form).toBeVisible();
+  return form;
+}
+
+/** Cửa bình luận của **khách** — bấm vào ra modal đăng nhập, không ra ô gõ.
+ *
+ * Trả về `<dialog>` đã mở. Vế `toHaveCount(0)` trên `composer` là phần không được bỏ:
+ * thiếu nó thì một bản vá "mở cả modal LẪN ô gõ cho khách" vẫn xanh.
+ */
+export async function moModalDangNhapTuCua(
+  page: Page,
+  pham_vi: Locator,
+): Promise<Locator> {
+  await pham_vi.getByTestId("composer-cua").click();
+  const modal = page.getByTestId("modal-dang-nhap");
+  await expect(modal).toBeVisible();
+  await expect(pham_vi.getByTestId("composer")).toHaveCount(0);
+  return modal;
 }

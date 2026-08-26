@@ -12,7 +12,7 @@ import { CotVote } from "./cot-vote";
 import { GapNhanh } from "./gap-nhanh";
 import { HanhDongBinhLuan } from "./hanh-dong-binh-luan";
 import { HanhDongMod } from "./hanh-dong-mod";
-import { ThanVan } from "./than-van";
+import { ThanHtml } from "./than-html";
 
 // `SAU_KHAN_DAI` / `SAU_NGAN_KEO` đã dời sang `lib/khan-dai.ts`: `idTrongTrang` phải
 // dừng ở CÙNG con số với chỗ render (nợ B4), và hằng sống ở `components/` thì `lib/`
@@ -155,7 +155,14 @@ function NoiDung({ nut }: { nut: BinhLuanOut }) {
         <span className={css.khi}>{dauThoiGianServer(nut.created_at)}</span>
         {nut.edited_at !== null && <span className={css.khi}>· đã sửa</span>}
       </div>
-      <ThanVan body={nut.body ?? ""} className={css.than} />
+      {/* `ThanHtml` chứ không `ThanVan` từ 2026-08-26: bình luận nay có HAI định dạng.
+          Nó tự rẽ theo `body_dinh_dang` — `markdown` đi thẳng về `ThanVan`, tức mọi bình
+          luận cũ giữ nguyên đường render cũ, không migrate gì. */}
+      <ThanHtml
+        body={nut.body ?? ""}
+        dinhDang={nut.body_dinh_dang}
+        className={css.than}
+      />
       <div className={css.chan}>
         {/* Cột vote của bình luận nằm NGANG (thẻ mốc thì dọc): khán đài dày, một cột dọc
             cho mỗi dòng sẽ ăn hết bề ngang trên mobile. Vẫn CÙNG component, nên luật

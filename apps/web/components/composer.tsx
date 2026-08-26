@@ -1,6 +1,7 @@
 "use client";
 
 import { vietBinhLuan } from "@gikky/api-client";
+import { PenLine } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useId, useState } from "react";
 
@@ -8,6 +9,8 @@ import { GOC_TRINH_DUYET, headerGhi } from "@/lib/tai-khoan";
 
 import css from "./composer.module.css";
 import { useMach } from "./mach-ngu-canh";
+import { useModalDangNhap } from "./modal-dang-nhap";
+import { SoanThao } from "./soan-thao";
 import { usePhien } from "./phien";
 
 /** Ô viết bình luận — khán đài, ngăn kéo, và "Trả lời" inline dùng CHUNG nó (PLAN 5.4).
@@ -38,6 +41,7 @@ export function Composer({
   onXong,
   onHuy,
   tuDongLayNet = false,
+  moSan = false,
 }: {
   parentId?: number | null;
   anchorMocSeq?: number | null;
@@ -52,9 +56,16 @@ export function Composer({
   onXong?: () => void;
   onHuy?: () => void;
   tuDongLayNet?: boolean;
+  /** Bỏ qua "cửa" và vẽ thẳng ô gõ — **chỉ đường REPLY** (2026-08-26).
+   *
+   * Reply chỉ tồn tại sau khi người ta đã bấm "Trả lời", tức cú bấm mở cửa đã xảy ra
+   * rồi. Bắt bấm lần thứ hai cho cùng một ý định là thêm ma sát mà không thêm thông tin
+   * nào — và nó phá luôn `tuDongLayNet`, thứ khiến con trỏ nhảy thẳng vào ô. */
+  moSan?: boolean;
 }) {
   const { machId, khoa, cacMoc } = useMach();
   const { toi, dangTai } = usePhien();
+  const { moModal } = useModalDangNhap();
   const router = useRouter();
   const [than, datThan] = useState("");
   const [dangGui, datDangGui] = useState(false);
@@ -66,18 +77,41 @@ export function Composer({
    * chip. `undefined` phân biệt được "chưa chọn" với "đã chọn là không neo" (`null`) —
    * hai thứ mà một `number | null` gộp làm một. */
   const [neoTay, datNeoTay] = useState<number | null | undefined>(undefined);
+  /** Công tắc trình soạn thảo — **mặc định TẮT** (user chốt 2026-08-26: *"bấm tùy chọn
+   * thì mới hiện tiptap, còn không thì cứ để textarea như hiện tại"*).
+   *
+   * Mặc định tắt không phải để tiết kiệm: bình luận phần lớn là một hai câu, và một
+   * thanh công cụ đậm phía trên ô gõ làm việc gõ một câu trông nặng hơn nó vốn có. Ai cần
+   * đậm/nghiêng/link/ảnh thì bấm một cái.
+   *
+   * **Không nhớ lựa chọn qua các lần bình luận** (không `localStorage`). Cố ý: một ô soạn
+   * tự mở ra ở dạng khác với lần trước, ở một trang khác, là một cú nhảy không ai xin.
+   * Ngày nào muốn nhớ thì đó là một quyết định riêng — và chỗ nhớ phải là `/cai-dat`, nơi
+   * người dùng thấy được mình đã bật cái gì.
+   *
+   * ⚠ Đổi công tắc **giữ nguyên `than`**: chuỗi markdown đang gõ dở sẽ hiện trong Tiptap
+   * dưới dạng văn bản thuần (Tiptap parse HTML, và markdown không phải HTML nên nó vào
+   * như một đoạn chữ). Không mất chữ — đó là điều kiện duy nhất bắt buộc ở đây. Dịch
+   * markdown → HTML khi bật công tắc là dựng một bộ chuyển đổi thứ hai ở client, trong
+   * khi `core/markdown_sang_html.py` đã có một bản ở server. */
+  const [dungSoanThao, datDungSoanThao] = useState(false);
+  /** Cửa đã mở chưa — user chốt 2026-08-26: *"không nên show form luôn, show 1 div báo
+   * click vào đây để bình luận"*.
+   *
+   * Trang mạch có tới **10+ composer** cùng lúc (khán đài + mỗi ngăn kéo một cái), và
+   * mỗi cái là một `<textarea>` cao 3 dòng cộng một hàng nút. Chúng chiếm chỗ, và không
+   * cái nào trong số đó là thứ người đọc tới để đọc.
+   *
+   * State cục bộ, **không** nâng lên ngữ cảnh: hai cửa mở cùng lúc là chuyện bình thường
+   * (viết vào khán đài, rồi mở ngăn kéo mốc 5). Một "chỉ-một-cửa-mở" ở đây sẽ xoá chữ
+   * người ta đang gõ dở ở cửa kia. */
+  const [moCua, datMoCua] = useState(false);
 
   // Chưa biết mình là ai thì chưa vẽ gì — cùng lý lẽ với `ThanhTaiKhoan`: chớp một lời
   // mời đăng nhập vào mặt người đang đăng nhập là một cú nhảy vô cớ.
   if (dangTai || machId === null) return null;
 
-  if (!(toi?.dang_nhap ?? false)) {
-    return (
-      <p className={css.moi_dang_nhap} data-testid="composer-khach">
-        <a href="/dang-nhap">Đăng nhập</a> để tham gia bàn luận.
-      </p>
-    );
-  }
+  const dangNhapRoi = toi?.dang_nhap ?? false;
 
   if (khoa) {
     // PLAN 5.10: mạch bị khoá thì đọc được, không tương tác. Nói ra thay vì hiện một ô
@@ -109,6 +143,9 @@ export function Composer({
         path: { mach_id: machId },
         body: {
           body: chu,
+          // Nhãn đi CÙNG thân. Server không đoán bằng regex (người ta gõ `giá < 27.80`
+          // suốt), và nó cũng không tin nhãn: nhánh `html` vẫn qua `lam_sach`.
+          body_dinh_dang: dungSoanThao ? "html" : "markdown",
           parent_id: parentId,
           // Reply KHÔNG mang neo — gửi kèm là 400 (PLAN nguyên tắc 6). Phép ép ấy nằm
           // trong `neo`, một chỗ duy nhất, dùng chung với cái chip hiện trên màn hình.
@@ -117,6 +154,11 @@ export function Composer({
       });
       if (kq.data === undefined) throw new Error("phản hồi rỗng");
       datThan("");
+      // Đóng cửa lại sau khi gửi. Không giữ ô mở: câu vừa viết xuất hiện ngay trong cây
+      // ở dưới, nên một ô trống nằm nguyên đó chỉ mời viết tiếp — mà "viết tiếp" gần như
+      // luôn là reply vào chính câu ấy, không phải một thread gốc thứ hai.
+      // `moSan` (reply) không đụng tới: chỗ đó `onXong` đã gỡ cả component.
+      datMoCua(false);
       onXong?.();
       router.refresh();
     } catch {
@@ -126,23 +168,78 @@ export function Composer({
     }
   };
 
+  // CỬA — trạng thái mặc định của mọi composer trừ reply. Một `<button>` trông như ô
+  // nhập, chứ **không** phải một `<div onClick>`: nó nhận focus bằng Tab, kích hoạt bằng
+  // Enter/Space, và trình đọc màn hình gọi đúng tên nó là một nút. Câu user viết là "1
+  // div", nhưng thứ user mô tả là một cái bấm được — và cái bấm được thì có sẵn một thẻ.
+  if (!moSan && !moCua) {
+    return (
+      <button
+        type="button"
+        className={css.cua}
+        onClick={() => {
+          // Đây là nhánh "nếu chưa đăng nhập thì show form đăng nhập" của user — và nó
+          // là CÙNG cái modal mà nút ở header mở. Hai đường vào, một form.
+          if (!dangNhapRoi) {
+            moModal();
+            return;
+          }
+          datMoCua(true);
+        }}
+        data-testid="composer-cua"
+        data-khach={dangNhapRoi ? undefined : "1"}
+      >
+        {dangNhapRoi
+          ? (moi ?? "Bấm vào đây để bình luận…")
+          : "Bấm vào đây để bình luận — cần đăng nhập"}
+      </button>
+    );
+  }
+
   return (
     <form className={css.khung} onSubmit={gui} data-testid="composer">
-      <textarea
-        className={css.o}
-        value={than}
-        onChange={(e) => datThan(e.target.value)}
-        placeholder={moi ?? "Chém gió với chủ mạch…"}
-        rows={3}
-        autoFocus={tuDongLayNet}
-        data-testid="composer-o"
-      />
+      {dungSoanThao ? (
+        <SoanThao
+          giaTri={than}
+          datGiaTri={datThan}
+          moi={moi ?? "Chém gió với chủ mạch…"}
+          testId="composer-soan-thao"
+        />
+      ) : (
+        <textarea
+          className={css.o}
+          value={than}
+          onChange={(e) => datThan(e.target.value)}
+          placeholder={moi ?? "Chém gió với chủ mạch…"}
+          rows={3}
+          autoFocus={tuDongLayNet || moCua}
+          data-testid="composer-o"
+        />
+      )}
       {loi !== null && (
         <p className={css.loi} role="alert" data-testid="composer-loi">
           {loi}
         </p>
       )}
       <div className={css.chan}>
+        {/* Công tắc đứng ĐẦU hàng chân, trước chip neo và nút gửi: nó đổi hình dạng của ô
+            phía trên, nên nó thuộc về ô đó chứ không thuộc nhóm hành động. `aria-pressed`
+            chứ không phải hai nút — đây là một công tắc hai trạng thái. */}
+        <button
+          type="button"
+          className={dungSoanThao ? `${css.nhe} ${css.nhe_bat}` : css.nhe}
+          onClick={() => datDungSoanThao((x) => !x)}
+          aria-pressed={dungSoanThao}
+          title={
+            dungSoanThao
+              ? "Tắt trình soạn thảo — quay về ô gõ thường"
+              : "Bật trình soạn thảo — in đậm, nghiêng, link, ảnh"
+          }
+          data-testid="composer-cong-tac-soan-thao"
+        >
+          <PenLine size={13} strokeWidth={2} aria-hidden />
+          {dungSoanThao ? "Ô gõ thường" : "Trình soạn thảo"}
+        </button>
         {parentId === null &&
           (neoDoiDuoc ? (
             <NeoDoiDuoc

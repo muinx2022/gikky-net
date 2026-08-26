@@ -1,0 +1,50 @@
+/* Modal đăng nhập — user chốt 2026-08-26. Thẻ bên trong là `.the` của
+   `form-tai-khoan.module.css`; file này chỉ lo cái hộp và tấm nền. */
+
+.hop {
+  /* `<dialog>` mặc định có viền, nền và padding của user-agent — bỏ hết, vì cái thẻ bên
+     trong ĐÃ là một cái thẻ có viền. Hai lớp viền lồng nhau trông như lỗi render. */
+  border: none;
+  background: none;
+  padding: 0;
+  max-width: min(440px, calc(100vw - 32px));
+  width: 100%;
+  /* `<dialog>` mở bằng `showModal()` tự nằm trong top-layer, nên không cần `z-index` —
+     và một `z-index` ở đây sẽ KHÔNG có tác dụng gì cả, đừng thêm khi thấy nó bị che. */
+  color: var(--ink);
+}
+
+.hop::backdrop {
+  /* Nền tối cố ý dùng màu tuyệt đối chứ không phải token: `::backdrop` nằm ngoài cây tài
+     liệu nên nó KHÔNG kế thừa biến CSS khai trên `:root` ở mọi trình duyệt — Safari đọc
+     `var(--…)` ở đây ra rỗng. Đây là ngoại lệ có lý do, không phải màu ứng biến. */
+  background: rgb(0 0 0 / 55%);
+}
+
+.dong {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.dong:hover {
+  color: var(--ink);
+  border-color: var(--line-2);
+}
+
+.trong {
+  position: relative;
+}

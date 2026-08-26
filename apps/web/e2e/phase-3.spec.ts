@@ -77,6 +77,11 @@ async function noiMocQuaForm(page: Page, than: string): Promise<void> {
  * Phép khẳng định phía sau (**chữ phải hiện trong `cay-khan-dai`**) giữ nguyên từng chữ.
  */
 async function binhLuan(page: Page, than: string): Promise<void> {
+  // Từ 2026-08-26 composer đứng sau một "cửa" — `.filter({visible:true})` giữ nguyên vai
+  // trò cũ (mặt BÃO đặt ô ở trên, mặt CẶN đặt ở dưới, và mọi ngăn kéo cũng có một cái
+  // đang `hidden`), chỉ khác là nay nó lọc trên CỬA rồi mới bấm.
+  const cua = page.getByTestId("composer-cua").filter({ visible: true });
+  await cua.click();
   const composer = page.getByTestId("composer").filter({ visible: true });
   await composer.getByTestId("composer-o").fill(than);
   await composer.getByTestId("composer-gui").click();

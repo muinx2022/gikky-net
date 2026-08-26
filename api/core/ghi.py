@@ -113,7 +113,7 @@ from core.anh import AnhDaXuLy
 from core.anh_luu import an_anh, ghi_anh, hien_anh, khoa_moi, xoa_anh_that
 from core.cay_binh_luan import cap_phat_path
 from core.doc_noi_dung import doc_duoc
-from core.lam_sach_html import DINH_DANG_HTML, lam_sach
+from core.lam_sach_html import DINH_DANG_HTML, DINH_DANG_MARKDOWN, lam_sach
 from core.models.binh_luan import Comment
 from core.models.dien_dan import Mach, Sub
 from core.models.he_thong import AuditLog, Report
@@ -481,9 +481,16 @@ def tao_binh_luan(
     body: str,
     parent: Comment | None = None,
     anchor_moc_seq: int | None = None,
+    dinh_dang: str = DINH_DANG_MARKDOWN,
     _created_at_seed=None,
 ) -> Comment:
     """Viết một bình luận: cấp `path` dưới khoá, tạo hàng, cập nhật `comment_count`.
+
+    **`dinh_dang="html"` ⇒ `body` PHẢI qua `lam_sach`** *(2026-08-26)*. Đây là cửa duy
+    nhất HTML vào được bảng `Comment`, và nó là cửa hẹp có chủ đích: cùng một hàm
+    `_body_sach_khong_rong` mà `tao_mach`/`them_moc`/`sua_moc` đang dùng, nên allowlist
+    thẻ chỉ có một bản. Nhãn `markdown` thì không đụng gì tới `body` — chuỗi ấy đi đường
+    `ThanVan` ở frontend, nơi React escape mọi ký tự.
 
     **`anchor_moc_seq` chỉ có nghĩa ở bình luận GỐC** (PLAN nguyên tắc 6). Truyền neo
     kèm `parent` là mâu thuẫn khái niệm — reply luôn thuộc thread của gốc — nên ở đây
@@ -499,6 +506,12 @@ def tao_binh_luan(
         raise ValidationError(
             "anchor_moc_seq chỉ đặt được trên bình luận gốc; reply kế thừa neo của gốc."
         )
+    # Sanitize **TRƯỚC vòng retry**: `lam_sach` là phép thuần và không rẻ, chạy lại nó ở
+    # lần thử thứ hai là làm cùng một việc hai lần bên trong một transaction đang tranh
+    # khoá `path`. Và nó phải ở TRƯỚC `Comment.objects.create` — sau đó thì HTML thô đã
+    # nằm trong DB rồi.
+    if dinh_dang == DINH_DANG_HTML:
+        body = _body_sach_khong_rong(body)
     khi = _dong_dau_server(_created_at_seed)
 
     for lan in range(SO_LAN_THU_LAI):
@@ -511,6 +524,10 @@ def tao_binh_luan(
                     author=author,
                     anchor_moc_seq=anchor_moc_seq,
                     body=body,
+                    # Nhãn đi CÙNG câu INSERT với chuỗi vừa `lam_sach` — mặc định của cột
+                    # là `markdown`, nên quên dòng này thì bình luận hiện ra nguyên văn
+                    # `<p>`: sai theo chiều AN TOÀN, nhưng vẫn là sai.
+                    body_dinh_dang=dinh_dang,
                     created_at=khi,
                     path=path,
                 )
@@ -978,15 +995,29 @@ def dong_bo_kho_anh(moc: Moc) -> int:
     return da_doi
 
 
-def sua_binh_luan(*, comment: Comment, body: str, khi=None) -> Comment:
+def sua_binh_luan(
+    *, comment: Comment, body: str, dinh_dang: str = DINH_DANG_MARKDOWN, khi=None
+) -> Comment:
     """Sửa bình luận: đổi `body`, đóng dấu `edited_at` (PLAN 5.3 — hiện `*đã sửa*`).
 
     Không có cửa sổ im lặng như mốc: PLAN 5.3 nói thẳng "sửa bình luận: hiện dấu đã sửa",
     không kèm ngoại lệ 15 phút. Hai thứ khác nhau vì mốc là *bằng chứng* còn bình luận là
     *tán gẫu* — cái thứ nhất cần lịch sử bản cũ, cái thứ hai chỉ cần nói ra rằng đã sửa.
+
+    ## `body_dinh_dang` ghi CÙNG câu `UPDATE`, và đổi được cả hai chiều
+
+    Người viết bằng textarea rồi mở Tiptap sửa lại (markdown → html), hoặc ngược lại. Nhãn
+    phải đi theo `body` trong **cùng một** câu `UPDATE`: ghi hai câu là có một khoảnh khắc
+    hàng mang HTML thô mà vẫn đeo nhãn `markdown` — vô hại (đường `ThanVan` escape), nhưng
+    khoảnh khắc ngược lại (nhãn `html` trước, thân chưa sanitize) thì là lỗ XSS. Một câu
+    thì không có khoảnh khắc nào cả.
     """
+    if dinh_dang == DINH_DANG_HTML:
+        body = _body_sach_khong_rong(body)
     khi = khi or timezone.now()
-    Comment.objects.filter(pk=comment.pk).update(body=body, edited_at=khi)
+    Comment.objects.filter(pk=comment.pk).update(
+        body=body, body_dinh_dang=dinh_dang, edited_at=khi
+    )
     comment.refresh_from_db()
     return comment
 
@@ -1385,6 +1416,11 @@ AUDIT_SUA_USER = "sua_user"
 AUDIT_DAT_MAT_KHAU_USER = "dat_mat_khau_user"
 AUDIT_GAN_MOD_SUB = "gan_mod_sub"
 AUDIT_GO_MOD_SUB = "go_mod_sub"
+#: Cấp / thu `is_staff` từ khu quản trị (2026-08-26,
+#: `plans/2026-08-26-khu-quan-tri-vien.md`). Đây là thao tác ĐỔI QUYỀN, và nó còn làm
+#: đích **miễn nhiễm ban** (`ban_nguoi_dung` trả 409 khi đích là staff) — nên câu hỏi
+#: "ai cho người này làm mod" chỉ trả lời được qua nhật ký này.
+AUDIT_DOI_QUYEN_MOD = "doi_quyen_mod"
 
 #: `AuditLog.target_type` — cột `varchar(16)`, giữ chuỗi ngắn.
 DICH_MOC = "moc"

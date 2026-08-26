@@ -60,18 +60,33 @@ def test_ngan_keo_lay_ca_reply_viet_o_thoi_diem_MOC_KHAC(client, seed):
     assert all(t["depth"] > 1 for t in muon)
 
 
-def test_ngan_keo_sap_cu_truoc_moi_o_ca_hai_tang(client, seed):
-    """PLAN 5.4 luật 2 — cũ → mới, và không có tham số nào đổi được."""
+def test_ngan_keo_sap_moi_truoc_cu_o_ca_hai_tang(client, seed):
+    """PLAN 5.4 luật 2 — **mới → cũ** (chiều đổi 2026-08-26), không tham số nào chỉnh được.
+
+    Đo ở **cả hai tầng** là cả nội dung bài, không phải cẩn thận thừa: `lat_cat_ngan_keo`
+    truyền cùng một hàm sắp cho `sap_goc` và `sap_con`, nên một bản vá chỉ lật gốc mà
+    quên con sẽ cho ngăn kéo mới→cũ ở tầng ngoài và cũ→mới bên trong từng thread — sai
+    lệch chỉ lộ ra ở thread có ≥2 reply.
+    """
     d = ngan_keo(client, seed, 2)
 
-    def kiem(nuts):
+    def kiem(nuts, o_dau="gốc"):
         khi = [t["created_at"] for t in nuts]
-        assert khi == sorted(khi)
+        assert khi == sorted(khi, reverse=True), f"tầng {o_dau} chưa mới→cũ: {khi}"
         for t in nuts:
-            kiem(t["replies"])
+            kiem(t["replies"], f"reply của #{t['id']}")
 
     kiem(d["threads"])
     assert len(d["threads"]) >= 2, "mốc 2 phải có ≥2 thread mới đo được thứ tự"
+    # Vế chống rỗng của tầng CON: không có thread nào ≥2 reply thì `kiem` đệ quy vào
+    # những danh sách 0–1 phần tử, và "danh sách 1 phần tử đã sắp giảm dần" là câu đúng
+    # với mọi cách sắp — tức nửa sau của bài đo này biến mất mà không ai hay.
+    def sau_nhat(n):
+        return max([len(n["replies"])] + [sau_nhat(r) for r in n["replies"]])
+
+    assert max(sau_nhat(t) for t in d["threads"]) >= 2, (
+        "mốc 2 phải có ít nhất một nút mang ≥2 reply, nếu không tầng CON không được đo"
+    )
 
 
 def test_binh_luan_go_chip_khong_thuoc_ngan_keo_nao(client, seed):

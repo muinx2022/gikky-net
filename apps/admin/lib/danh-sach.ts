@@ -58,6 +58,12 @@ export type TrangDuLieu<T> = {
   items: T[];
   cursor_ke_tiep: string | null;
   tong: number;
+  /** Chỉ bảng Người dùng có — số tài khoản quản trị bị chính bộ lọc đang áp loại đi.
+   *
+   * `?` vì bốn bảng còn lại (`machs`, `binh-luan`, `nhat-ky`, `bao-cao`) không trả trường
+   * này, và hook thì dùng chung cho cả năm. Trang nào cần thì đọc `ds.so_staff_an`; trang
+   * nào không thì nó là `undefined` và không có gì phải xử. */
+  so_staff_an?: number;
 };
 
 type KetQua<T> = { data?: TrangDuLieu<T>; error?: unknown };
@@ -68,6 +74,7 @@ export function useDanhSach<T>(
 ) {
   const [items, datItems] = useState<T[] | null>(null);
   const [tong, datTong] = useState(0);
+  const [so_staff_an, datSoStaffAn] = useState(0);
   const [loi, datLoi] = useState<string | null>(null);
   const [dang_tai, datDangTai] = useState(false);
   /** `lich_su[i]` = cursor đã dùng để nạp trang thứ `i + 1`. Phần tử đầu luôn `null`. */
@@ -94,6 +101,7 @@ export function useDanhSach<T>(
       }
       datItems(data.items);
       datTong(data.tong);
+      datSoStaffAn(data.so_staff_an ?? 0);
       datCursorSau(data.cursor_ke_tiep);
       datChiSo(toi_chi_so);
       datLichSu((cu) => {
@@ -119,6 +127,7 @@ export function useDanhSach<T>(
   return {
     items,
     tong,
+    so_staff_an,
     loi,
     dang_tai,
     trang: chi_so + 1,

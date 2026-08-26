@@ -245,6 +245,7 @@ def trich_ra(trich: Trich | None) -> TrichOut | None:
         comment_id=c.pk,
         author=nguoi_dung_ra(c.author),
         body=c.body,
+        body_dinh_dang=c.body_dinh_dang,
         trang_thai=trang_thai,
         comment_created_at=c.created_at,
         trich_created_at=trich.created_at,
@@ -396,6 +397,11 @@ def nut_ra(nut: Nut, *, chu_mach_id: int) -> BinhLuanOut:
         anchor_moc_seq=c.anchor_moc_seq,
         author=nguoi_dung_ra(c.author) if hien else None,
         body=c.body if hien else None,
+        # Bia mộ ⇒ `"markdown"`: không có gì để render, và nhãn AN TOÀN là nhãn đúng cho
+        # ca không có nội dung. Trả `c.body_dinh_dang` ở đây thì một bia mộ của bình luận
+        # HTML sẽ mang nhãn `html` kèm `body = null` — frontend không vỡ, nhưng đó là một
+        # cặp giá trị không có nghĩa, và nó sẽ được ai đó tin ở lượt sửa sau.
+        body_dinh_dang=c.body_dinh_dang if hien else "markdown",
         created_at=c.created_at,
         edited_at=c.edited_at if hien else None,
         up_count=nut.up,

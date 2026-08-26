@@ -1,0 +1,18 @@
+# Sổ cái chống đăng trùng — DỮ LIỆU RUNTIME của máy đang chạy lịch, không phải mã nguồn.
+#
+# Nó khoá theo NGÀY VN và giữ `mach_id` của mạch trong ngày:
+#     { "2026-08-26": { "mach_id": 1004, "url": "…", "slot": { "dem-qua": "<ISO>" } } }
+#
+# Commit nó vào repo là mang trạng thái của MỘT máy sang mọi máy khác, và nay hỏng theo
+# HAI đường chứ không một: máy thứ hai kéo về sẽ tưởng mình đã đăng rồi mà im lặng bỏ bản
+# tin (exit 3 — mã tài liệu dạy là "hành vi đúng"), **và** sẽ nối mốc vào một `mach_id`
+# của máy khác.
+#
+# `.gitignore` ở gốc repo đã che `.env` (mẫu không có `/` nên khớp mọi tầng) nhưng không
+# che file này. Đặt luật ngay cạnh file mà nó bảo vệ, thay vì thêm một dòng vào file gốc
+# mà một phiên khác đang sửa.
+da-dang.json
+
+# Thư mục file JSON tạm mà ba prompt `lich/*.md` bảo LLM ghi bản tin vào trước khi đăng.
+# Nội dung bản tin trong ngày — dữ liệu, không phải mã nguồn.
+.tam/

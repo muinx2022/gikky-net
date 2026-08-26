@@ -504,65 +504,28 @@ test.describe("A10 — `[−]` gập/mở nhánh ở cả khán đài lẫn ngă
 
 /* ---- Khối "Câu đáng đọc" (PLAN 5.5) --------------------------------------- */
 
-test.describe("A5 (render) — khối 'Câu đáng đọc' nằm TRÊN CÙNG khối vừa bung", () => {
-  test("mở trang ⇒ khối hiện ra, đứng trước cây đầy đủ", async ({ page }) => {
-    // Từ 2026-08-24 khán đài mở sẵn, nên khối này có mặt ngay — không còn "bấm chân
-    // trang" nào. Vị trí thì không đổi: nó vẫn phải đứng TRÊN CÙNG (PLAN 5.5).
-    await page.goto(duongDan(hpg));
-    const khoi = page.getByTestId("cau-dang-doc");
-    await expect(khoi).toBeVisible();
-
-    // Thứ tự DOM: khối đứng trước cả thanh sort lẫn cây đầy đủ.
-    const thu_tu = await page.evaluate(() => {
-      const q = (t: string) => document.querySelector(`[data-testid="${t}"]`);
-      const a = q("cau-dang-doc");
-      const b = q("thanh-sort");
-      const c = q("cay-khan-dai");
-      if (!a || !b || !c) return null;
-      return [
-        a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING,
-        a.compareDocumentPosition(c) & Node.DOCUMENT_POSITION_FOLLOWING,
-      ];
-    });
-    expect(thu_tu).not.toBeNull();
-    expect(thu_tu![0]).toBeGreaterThan(0);
-    expect(thu_tu![1]).toBeGreaterThan(0);
-  });
-
-  test("khối chứa ĐÚNG tập server tính, và có cả bình luận được trích", async ({
-    page,
-  }) => {
+test.describe("A5 — khối 'Câu đáng đọc' TẮT từ 2026-08-26 (user chốt)", () => {
+  test("không render, dù đây đúng là mạch mà luật cũ SẼ render", async ({ page }) => {
+    // Ba vế chống rỗng, chạy TRƯỚC khi mở trang. Không có chúng thì `toHaveCount(0)`
+    // dưới đây xanh vì bất cứ lý do gì — API 500, seed đổi, `data-testid` gõ sai — và
+    // một bài đo "khối không hiện" là bài đo dễ xanh rỗng nhất trong cả repo.
     const tap = await json<KhanDaiOut>(
       `/api/v1/machs/${hpg.id}/comments?dang_doc=1`,
     );
-    const moc_trich = hpg.mocs.find((m) => m.trich !== null)!;
-    expect(tap.threads.map((t) => t.id)).toContain(moc_trich.trich!.comment_id);
+    expect(tap.threads.length, "server vẫn tính ra một tập THẬT").toBeGreaterThan(0);
+    expect(
+      tap.so_ung_vien_bo_lai ?? 0,
+      "và luật cũ (`nenRenderCauDangDoc`) sẽ nói RENDER trên chính mạch này",
+    ).toBeGreaterThan(0);
+    const day_du = await khanDai(hpg.id, "moi_nhat");
+    expect(day_du.threads.length).toBeGreaterThan(0);
 
-    await page.goto(`${duongDan(hpg)}?khan_dai=1&sort=hay_nhat`);
-    // Khối này là TRÍCH ĐOẠN, không phải chỗ ở của bình luận: nó mang
-    // `data-ban-phu-binh-luan-id`, còn `data-binh-luan-id` thuộc về cây đầy đủ (W11).
-    const ids = await page
-      .getByTestId("cay-cau-dang-doc")
-      .locator("> [data-ban-phu-binh-luan-id]")
-      .evaluateAll((els) =>
-        els.map((e) => Number((e as HTMLElement).dataset.banPhuBinhLuanId)),
-      );
-    expect(ids).toEqual(tap.threads.map((t) => t.id));
-  });
-
-  test("khối là tập CON thật — nhỏ hơn cây đầy đủ", async ({ page }) => {
-    const day_du = await khanDai(hpg.id, "hay_nhat");
-    await page.goto(`${duongDan(hpg)}?khan_dai=1&sort=hay_nhat`);
-    const so_khoi = await page
-      .getByTestId("cay-cau-dang-doc")
-      .locator("> [data-ban-phu-binh-luan-id]")
-      .count();
-    const so_day_du = await page
-      .getByTestId("cay-khan-dai")
-      .locator("> [data-binh-luan-id]")
-      .count();
-    expect(so_day_du).toBe(day_du.threads.length);
-    expect(so_khoi).toBeLessThan(so_day_du);
+    await page.goto(duongDan(hpg));
+    await expect(page.getByTestId("khan-dai")).toBeVisible();
+    // Cây đầy đủ vẫn còn nguyên — tắt khối phụ, không tắt nội dung.
+    await expect(page.getByTestId("cay-khan-dai")).toBeVisible();
+    await expect(page.getByTestId("cau-dang-doc")).toHaveCount(0);
+    await expect(page.getByTestId("cay-cau-dang-doc")).toHaveCount(0);
   });
 
   test("khối KHÔNG đặt `id=bl-N` (hai chỗ cùng id là deep-link hên xui)", async ({
@@ -584,12 +547,12 @@ test.describe("A5 (render) — khối 'Câu đáng đọc' nằm TRÊN CÙNG kh�
     // `hidden`), nên một bình luận có tới BA nút cùng thuộc tính. Bài đo cũ sống sót vì
     // mọi locator đều scope; cái bẫy dành cho bài đo viết sau.
     //
-    // Mở CẢ ngăn kéo lẫn khán đài để ba nguồn trùng cùng có mặt một lúc — đo ở trạng
-    // thái dễ nhất thì hàng rào này chỉ chứng minh trang có render được.
+    // **Từ 2026-08-26 chỉ còn HAI nguồn** — khối "Đáng chú ý" đã tắt. Bài đo giữ nguyên
+    // và vẫn có nghĩa: nguồn trùng còn lại (ngăn kéo) tự nó đủ dựng lại bất biến này,
+    // và vế chống rỗng dưới cùng đo đúng chuyện đó.
     await page.goto(`${duongDan(hpg)}?khan_dai=1&sort=hay_nhat`);
     await page.getByTestId("nut-ngan-keo-1").click();
     await expect(page.getByTestId("lat-cat-1")).toBeVisible();
-    await expect(page.getByTestId("cau-dang-doc")).toBeVisible();
 
     const dem = await page.evaluate(() => {
       const chinh = [...document.querySelectorAll("[data-binh-luan-id]")].map(
@@ -601,8 +564,8 @@ test.describe("A5 (render) — khối 'Câu đáng đọc' nằm TRÊN CÙNG kh�
       return {
         trung: chinh.filter((x, i) => chinh.indexOf(x) !== i),
         so_chinh: chinh.length,
-        // Vế chống rỗng: nếu hai khối phụ ngừng render thì `trung` rỗng một cách
-        // rỗng tuếch, và bài đo này lại đo vào chỗ trống.
+        // Vế chống rỗng: nếu khối phụ ngừng render thì `trung` rỗng một cách rỗng
+        // tuếch, và bài đo này lại đo vào chỗ trống.
         so_ban_phu_trung_voi_chinh: ban_phu.filter((x) => chinh.includes(x)).length,
       };
     });
@@ -611,49 +574,10 @@ test.describe("A5 (render) — khối 'Câu đáng đọc' nằm TRÊN CÙNG kh�
     expect(dem.so_chinh).toBeGreaterThan(5);
     expect(
       dem.so_ban_phu_trung_voi_chinh,
-      "không còn khối phụ nào render lại bình luận của cây đầy đủ ⇒ bài đo trên rỗng",
+      "ngăn kéo không còn render lại bình luận của cây đầy đủ ⇒ bài đo trên rỗng",
     ).toBeGreaterThan(0);
   });
 
-  test("mạch nhỏ (post thường) KHÔNG render khối — nó sẽ là bản sao của cả cây", async ({
-    page,
-  }) => {
-    await page.goto(`${duongDan(post)}?khan_dai=1&sort=hay_nhat`);
-    await expect(page.getByTestId("khan-dai")).toBeVisible();
-    await expect(page.getByTestId("cau-dang-doc")).toHaveCount(0);
-  });
-
-  test("Y1 — mạch VNM (có bia mộ) cũng KHÔNG render khối, dù tập NHỎ HƠN cây", async ({
-    page,
-  }) => {
-    // Hồi quy do chính X4 đẻ ra, tái hiện trên seed dev mặc định. Ba bài đo cũ của khối
-    // này chạy trên HPG (14 gốc, 0 bia mộ) và `post` (2 gốc, 0 bia mộ); bài duy nhất mở
-    // khán đài của mạch bia mộ thì scope locator vào TRONG cây, nên một khối mọc thêm ở
-    // ngoài không đụng tới. Đây là bài đo chạy trên mạch CÓ bia mộ.
-    const tap = await json<KhanDaiOut>(
-      `/api/v1/machs/${vnm.id}/comments?dang_doc=1`,
-    );
-    const day_du = await khanDai(vnm.id, "hay_nhat");
-
-    // Vế chống rỗng thứ nhất: cảnh này phải là cảnh mà LUẬT CŨ ("tập nhỏ hơn tổng thread
-    // của cây ⇒ render") quyết định render. Không có nó thì `toHaveCount(0)` bên dưới
-    // xanh vì mạch VNM tình cờ không có khối, chứ không vì luật mới đúng.
-    expect(tap.tong_thread).toBeLessThan(day_du.tong_thread);
-    // Vế chống rỗng thứ hai: và khối vẫn phải là thứ CÓ THẬT để mà render — tập không
-    // rỗng, thread cuối của nó là bia mộ (đúng dòng `[bình luận đã xoá]` từng in dưới
-    // nhãn "Câu đáng đọc").
-    expect(tap.threads.length).toBeGreaterThan(0);
-    expect(tap.threads.some((t) => t.trang_thai !== "binh_thuong")).toBe(true);
-
-    await page.goto(`${duongDan(vnm)}?khan_dai=1&sort=hay_nhat`);
-    await expect(page.getByTestId("khan-dai")).toBeVisible();
-    await expect(page.getByTestId("cay-khan-dai")).toBeVisible();
-    await expect(page.getByTestId("cau-dang-doc")).toHaveCount(0);
-
-    // …và lý do THẬT để không render, đọc từ chính API: tập đã chứa trọn phần **thread
-    // GỐC** đọc được của cây, nên phép "lọc" không bỏ lại ứng viên nào.
-    expect(tap.so_ung_vien_bo_lai).toBe(0);
-  });
 });
 
 /* ---- A11 (render): ngưỡng gập trên trang thật ----------------------------- */

@@ -2,7 +2,13 @@ import { expect, test } from "@playwright/test";
 
 import { LY_DO_CHUA_DANG_NHAP } from "../lib/vote";
 import { MAT_KHAU, danhTinhMoi, dungTaiKhoan } from "./danh-tinh";
-import { TITLE_HPG, duongDan, timMachTheoTitle } from "./du-lieu";
+import {
+  TITLE_HPG,
+  duongDan,
+  moComposer,
+  moModalDangNhapTuCua,
+  timMachTheoTitle,
+} from "./du-lieu";
 
 /** **M1 + M3 ở tầng trình duyệt** — luồng tài khoản và đường ghi, chạy thật.
  *
@@ -143,7 +149,7 @@ test.describe("Đường ghi — đăng bài, nối mốc, bình luận, vote", 
     await page.goto(`${duongDan(hpg)}?khan_dai=1&sort=moi_nhat`);
 
     const chu = `Bình luận của ${ai.username} lúc ${Date.now()}`;
-    const composer = page.getByTestId("khan-dai").getByTestId("composer");
+    const composer = await moComposer(page.getByTestId("khan-dai"));
     await composer.getByTestId("composer-o").fill(chu);
     await composer.getByTestId("composer-gui").click();
 
@@ -265,11 +271,14 @@ test.describe("Đường ghi — đăng bài, nối mốc, bình luận, vote", 
       .getByTestId("mui-ten-len");
     await expect(len).toBeDisabled();
     await expect(len).toHaveAttribute("title", LY_DO_CHUA_DANG_NHAP);
-    // Scope tới khán đài: composer của các NGĂN KÉO đứng trước trong DOM và chúng nằm
-    // trong `<details>` đang gập, tức `hidden` — `.first()` sẽ trúng một cái vô hình.
-    await expect(
-      page.getByTestId("khan-dai").getByTestId("composer-khach"),
-    ).toBeVisible();
+    // Scope tới khán đài: cửa bình luận của các NGĂN KÉO đứng trước trong DOM và chúng
+    // nằm trong `<details>` đang gập, tức `hidden` — `.first()` sẽ trúng một cái vô hình.
+    //
+    // Từ 2026-08-26 khách không còn thấy câu mời "Đăng nhập để tham gia bàn luận": nó là
+    // **cùng một cái cửa** người đã đăng nhập thấy, chỉ khác chữ và khác cái mở ra.
+    const khu = page.getByTestId("khan-dai");
+    await expect(khu.getByTestId("composer-cua")).toHaveAttribute("data-khach", "1");
+    await moModalDangNhapTuCua(page, khu);
     await expect(page.getByTestId("nut-tra-loi")).toHaveCount(0);
   });
 
@@ -282,7 +291,7 @@ test.describe("Đường ghi — đăng bài, nối mốc, bình luận, vote", 
 
     const dau = `md-${ai.username}`;
     const chu = `${dau} **đậm** \`ma\` [link](https://gikky.net) <script>alert(1)</script>`;
-    const composer = page.getByTestId("khan-dai").getByTestId("composer");
+    const composer = await moComposer(page.getByTestId("khan-dai"));
     await composer.getByTestId("composer-o").fill(chu);
     await composer.getByTestId("composer-gui").click();
 

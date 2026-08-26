@@ -1,3 +1,5 @@
+import { SORT_MAC_DINH } from "@/lib/khan-dai";
+
 /** URL của sản phẩm — PLAN 5.9. Một chỗ dựng, một chỗ đọc.
  *
  * `/m/<slug>-<id>` · `/s/<sub>` · `/u/<username>` · `/luat` · `/` (2 tab qua `?tab=`)
@@ -36,12 +38,17 @@ export function duongDanMach(slug: string, id: number): string {
  * string là hai chỗ sẽ lệch nhau ở lần thêm tham số tiếp theo, và cái lệch đó không kêu ở
  * đâu — chỉ có một trong hai cú bấm mở đúng khán đài.
  *
- * `sort=hay_nhat` viết tường minh chứ không để trống: `?khan_dai=1` một mình cũng ra
- * `hay_nhat` (mặc định của `docSort`), nhưng khi đó thanh sort trên trang và URL nói hai
- * chuyện khác nhau, và bấm Back sau khi đổi sort sẽ về một URL không mang sort.
+ * Sort viết tường minh chứ không để trống: `?khan_dai=1` một mình cũng ra đúng sort ấy
+ * (mặc định của `docSort`), nhưng khi đó thanh sort trên trang và URL nói hai chuyện khác
+ * nhau, và bấm Back sau khi đổi sort sẽ về một URL không mang sort.
+ *
+ * ⚠ Lấy từ `SORT_MAC_DINH` chứ **không gõ cứng** — nó từng gõ cứng `hay_nhat`, và ngày
+ * user đổi mặc định sang `moi_nhat` (2026-08-26) thì bấm `💬 N` từ feed ra một sort còn
+ * gõ thẳng `/m/…` ra sort khác. Hai đường vào cùng một trang, hai kết quả, không chỗ nào
+ * kêu.
  */
 export function duongDanKhanDai(slug: string, id: number): string {
-  return `${duongDanMach(slug, id)}?khan_dai=1&sort=hay_nhat#khan-dai`;
+  return `${duongDanMach(slug, id)}?khan_dai=1&sort=${SORT_MAC_DINH}#khan-dai`;
 }
 
 export function duongDanSub(slug: string): string {

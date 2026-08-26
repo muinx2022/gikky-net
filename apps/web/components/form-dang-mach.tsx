@@ -11,6 +11,7 @@ import { duongDanMach } from "@/lib/url";
 
 import { ChonAnh } from "./chon-anh";
 import css from "./form-dang-mach.module.css";
+import { useModalDangNhap } from "./modal-dang-nhap";
 import { usePhien } from "./phien";
 import { TruongMoc, mocRong, thanMoc, type NoiDungMoc } from "./truong-moc";
 
@@ -35,6 +36,7 @@ export function FormDangMach({
   subMacDinh?: string;
 }) {
   const { toi, dangTai } = usePhien();
+  const { moModal } = useModalDangNhap();
   const dau = cacSub.find((s) => s.slug === subMacDinh)?.slug ?? cacSub[0]?.slug ?? "";
   const [sub, datSub] = useState(dau);
   const [title, datTitle] = useState("");
@@ -62,8 +64,18 @@ export function FormDangMach({
   if (toi === null || !toi.dang_nhap) {
     return (
       <p className={css.moi} data-testid="dang-mach-khach">
-        <Link href="/dang-nhap">Đăng nhập</Link> để đăng bài. Chưa có tài khoản?{" "}
-        <Link href="/dang-ky">Đăng ký</Link> — mất chừng một phút.
+        {/* Nút, không phải link — xem `thanh-tai-khoan.tsx`. "Đăng ký" thì VẪN là link:
+            nó là một trang thật và chưa có modal, nên giữ nguyên. */}
+        <button
+          type="button"
+          className={css.nhu_lien_ket}
+          onClick={moModal}
+          data-testid="dang-mach-mo-dang-nhap"
+        >
+          Đăng nhập
+        </button>{" "}
+        để đăng bài. Chưa có tài khoản? <Link href="/dang-ky">Đăng ký</Link> — mất chừng
+        một phút.
       </p>
     );
   }

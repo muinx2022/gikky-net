@@ -266,9 +266,19 @@ def xoa_sub(request, slug: str):
 # (`plans/2026-08-24-mod-chuyen-muc.md` §0) vì nó đòi nới `ChiMod` — cổng đang chặn toàn
 # khu quản trị — rồi thêm phép kiểm theo-sub vào mọi endpoint.
 #
-# Chính hai endpoint này thì **vẫn chỉ `is_staff` gọi được**, như mọi thứ trong router.
-# Đó là chủ đích, cùng lý lẽ PLAN mục 7 dùng để giữ cấp/thu `is_staff` ngoài khu quản trị:
-# ai tự phong quyền cho người khác là bỏ qua mọi phép duyệt.
+# Chính hai endpoint này thì **vẫn chỉ `is_staff` gọi được**, như mọi thứ trong router —
+# tức một mod thường phân công được người khác phụ trách một chuyên mục.
+#
+# ⚠ Cập nhật 2026-08-26 (`plans/2026-08-26-khu-quan-tri-vien.md`): cấp/thu `is_staff` nay
+# làm được **trong** khu quản trị, nhưng ở một cửa khoá chặt hơn hẳn —
+# `quan_tri_nguoi_dung.py::doi_quyen_mod`, sau `is_superuser`. Hai mức khoá khác nhau là
+# chủ đích chứ không phải bỏ sót: *phân công* không cấp thêm quyền gì nên mod thường làm
+# được; *cấp quyền* thì cấp, và nó còn làm đích **miễn nhiễm ban**, nên chỉ superuser.
+#
+# Chiều ngược lại có ràng buộc thật, đừng gỡ: `doi_quyen_mod` **từ chối thu `is_staff` khi
+# tài khoản còn hàng `ModSub`** (409, kèm tên sub). Thiếu phép ấy thì một cái tên không
+# moderate được vẫn nằm trong cột "Mod" của bảng dưới đây — đúng thứ docstring `ModSub`
+# gọi là "hiểu sai theo hướng nguy hiểm".
 #
 # **KHÔNG có `PUT` thay cả danh sách.** Nghe gọn hơn hai cửa gán/gỡ, nhưng nó là cửa **ghi
 # đè mù**: hai mod cùng mở bảng, người bấm sau xoá mất người bấm trước vừa thêm, và không

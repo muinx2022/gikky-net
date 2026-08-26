@@ -29,6 +29,8 @@ export function FormTaiKhoan({
   onGui,
   children,
   duoi,
+  onThanhCong,
+  trongModal = false,
 }: {
   tieuDe: string;
   moTa?: React.ReactNode;
@@ -37,6 +39,16 @@ export function FormTaiKhoan({
   onGui: (du_lieu: FormData) => Promise<KetQua>;
   children: React.ReactNode;
   duoi?: React.ReactNode;
+  /** Chạy SAU khi `onGui` xong **và** `taiLai()` đã cập nhật phiên — modal đăng nhập
+   * dùng nó để tự đóng (2026-08-26).
+   *
+   * Thứ tự ấy là cả nội dung của prop này. Đóng modal ngay trong `onGui` thì component
+   * này bị gỡ khỏi cây **trước** `await taiLai()`, và lượt hỏi `GET /me` ấy chạy mồ côi:
+   * header giữ nguyên trạng thái khách cho tới lần điều hướng sau. */
+  onThanhCong?: () => void;
+  /** Bỏ lớp bọc canh giữa — trong modal, cái hộp `<dialog>` đã canh giữa rồi, và
+   * `padding-top` của `.khung` đẩy thẻ lệch xuống. */
+  trongModal?: boolean;
 }) {
   const { taiLai } = usePhien();
   const [dangGui, datDangGui] = useState(false);
@@ -57,6 +69,8 @@ export function FormTaiKhoan({
       await taiLai();
       if (kq && "xong" in kq) datXong(kq.xong);
       if (kq && "di" in kq) window.location.assign(kq.di);
+      // Đứng SAU `taiLai()` — xem docstring của prop.
+      onThanhCong?.();
     } catch (e2) {
       if (e2 instanceof LoiTaiKhoan) {
         datLoi(e2.message);
@@ -69,42 +83,42 @@ export function FormTaiKhoan({
     }
   };
 
-  return (
-    // `<div>` chứ không `<main>`: từ 2026-08-24 các trang auth được bọc bằng
-    // `KhungHaiCot`, và khung đó đã render `<main>`. Hai `<main>` lồng nhau là HTML sai và
-    // trình đọc màn hình mất mốc điều hướng.
-    <div className={css.khung}>
-      <section className={css.the}>
-        <h1 className={css.tieu_de}>{tieuDe}</h1>
-        {moTa && <p className={css.mo_ta}>{moTa}</p>}
+  // `<div>` chứ không `<main>`: từ 2026-08-24 các trang auth được bọc bằng `KhungHaiCot`,
+  // và khung đó đã render `<main>`. Hai `<main>` lồng nhau là HTML sai và trình đọc màn
+  // hình mất mốc điều hướng.
+  const than = (
+    <section className={css.the}>
+      <h1 className={css.tieu_de}>{tieuDe}</h1>
+      {moTa && <p className={css.mo_ta}>{moTa}</p>}
 
-        {xong !== null ? (
-          <p className={css.xong} role="status" data-testid="form-xong">
-            {xong}
-          </p>
-        ) : (
-          <form onSubmit={gui} noValidate data-testid="form-tai-khoan">
-            {loi !== null && (
-              <p className={css.loi} role="alert" data-testid="form-loi">
-                {loi}
-              </p>
-            )}
-            <LoiTruong.Provider value={theoTruong}>{children}</LoiTruong.Provider>
-            <button
-              type="submit"
-              className={css.gui}
-              disabled={dangGui}
-              data-testid="form-gui"
-            >
-              {dangGui ? "Đang gửi…" : nutGui}
-            </button>
-          </form>
-        )}
+      {xong !== null ? (
+        <p className={css.xong} role="status" data-testid="form-xong">
+          {xong}
+        </p>
+      ) : (
+        <form onSubmit={gui} noValidate data-testid="form-tai-khoan">
+          {loi !== null && (
+            <p className={css.loi} role="alert" data-testid="form-loi">
+              {loi}
+            </p>
+          )}
+          <LoiTruong.Provider value={theoTruong}>{children}</LoiTruong.Provider>
+          <button
+            type="submit"
+            className={css.gui}
+            disabled={dangGui}
+            data-testid="form-gui"
+          >
+            {dangGui ? "Đang gửi…" : nutGui}
+          </button>
+        </form>
+      )}
 
-        {duoi && <p className={css.duoi}>{duoi}</p>}
-      </section>
-    </div>
+      {duoi && <p className={css.duoi}>{duoi}</p>}
+    </section>
   );
+
+  return trongModal ? than : <div className={css.khung}>{than}</div>;
 }
 
 /** Lỗi theo `param` mà allauth trả về, bơm xuống đúng ô.
@@ -154,7 +168,13 @@ export function O({
   );
 }
 
-export function LienKet({ href, children }: { href: string; children: React.ReactNode }) {
+export function LienKet({
+  href,
+  children,
+}: {
+  href: string;
+  children: React.ReactNode;
+}) {
   return (
     <Link href={href} className={css.lien_ket}>
       {children}

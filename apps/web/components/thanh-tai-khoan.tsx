@@ -10,6 +10,7 @@ import { dangXuat } from "@/lib/tai-khoan";
 import { duongDanHoSo } from "@/lib/url";
 
 import { Avatar } from "./avatar";
+import { useModalDangNhap } from "./modal-dang-nhap";
 import { usePhien } from "./phien";
 import css from "./thanh-tai-khoan.module.css";
 
@@ -25,6 +26,7 @@ import css from "./thanh-tai-khoan.module.css";
  */
 export function ThanhTaiKhoan() {
   const { toi, dangTai, taiLai } = usePhien();
+  const { moModal } = useModalDangNhap();
   const router = useRouter();
   const [mo, datMo] = useState(false);
   const [dangThoat, datDangThoat] = useState(false);
@@ -36,9 +38,19 @@ export function ThanhTaiKhoan() {
   if (toi === null || !toi.dang_nhap) {
     return (
       <div className={css.khach} data-testid="thanh-tai-khoan-khach">
-        <Link href="/dang-nhap" className={css.lien_ket}>
+        {/* `<button>` chứ không `<Link>` từ 2026-08-26 (user): đăng nhập nay là một
+            MODAL, không phải một trang. Một `<Link>` mở modal là nói dối cả trình duyệt
+            lẫn người dùng — chuột phải "mở tab mới" sẽ ra một trang, giữ Ctrl cũng vậy,
+            và không cái nào là thứ vừa được bấm. `/dang-nhap` vẫn còn (ba trang cần đăng
+            nhập `router.replace` vào đó), chỉ không còn ai LINK tới nó từ nội dung. */}
+        <button
+          type="button"
+          className={css.lien_ket}
+          onClick={moModal}
+          data-testid="thanh-tai-khoan-mo-dang-nhap"
+        >
           Đăng nhập
-        </Link>
+        </button>
         <Link href="/dang-ky" className={css.nut_chinh}>
           Đăng ký
         </Link>

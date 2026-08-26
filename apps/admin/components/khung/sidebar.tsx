@@ -175,10 +175,13 @@ export function Sidebar({
           ))}
         </nav>
 
-        {/* Django admin là cửa hậu chính thức (PLAN 9.3), và nó là chỗ DUY NHẤT cấp/thu
-            quyền `is_staff`. Cố ý không có endpoint nào cho việc đó trong khu này: một
-            mod cấp quyền mod cho tài khoản khác là bỏ qua mọi phép duyệt, và `ban_user`
-            từ chối ban một mod khác — nên ai tự cấp `is_staff` là tự miễn nhiễm ban. */}
+        {/* Django admin là cửa hậu chính thức (PLAN 9.3).
+            ⚠ Nhãn KHÔNG còn nói "(cấp quyền mod)" kể từ 2026-08-26: cấp/thu quyền mod
+            nay làm ở `/quan-tri-vien`, khoá sau `is_superuser`. Hai link cùng tự nhận là
+            nơi cấp quyền mod, nằm cách nhau vài chục pixel trong cùng sidebar, đúng là
+            thứ "khó hiểu" mà lượt ấy sinh ra để dẹp.
+            Việc còn lại thật sự chỉ Django admin làm được là **phong superuser** —
+            `doi_quyen_mod` cố ý không với tới `is_superuser`. */}
         <div className={`border-t border-vien p-3 ${gap ? "lg:hidden" : ""}`}>
           <a
             href="/api/admin/django/"
@@ -186,7 +189,7 @@ export function Sidebar({
               hover:bg-nen-mo"
           >
             <Icon ten="mo-ngoai" className="size-4" />
-            Django admin (cấp quyền mod)
+            Django admin (phong superuser)
           </a>
         </div>
       </aside>

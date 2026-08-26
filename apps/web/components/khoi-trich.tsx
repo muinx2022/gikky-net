@@ -6,7 +6,7 @@ import { neoBinhLuan, trangThaiDeepLink } from "@/lib/khan-dai";
 import { duongDanHoSo } from "@/lib/url";
 
 import css from "./khoi-trich.module.css";
-import { ThanVan } from "./than-van";
+import { ThanHtml } from "./than-html";
 import { NutGoTrich } from "./trich";
 
 /** Khối "trích vào sổ" gắn trên thẻ mốc — PLAN 5.6, rào 2 và rào 4.
@@ -47,7 +47,10 @@ export function KhoiTrich({
         Trích từ khán đài, bởi chủ mạch
       </figcaption>
       <blockquote className={css.loi} data-testid="trich-loi">
-        <ThanVan body={trich.body} />
+        {/* Cùng đường render với chính bình luận ấy ở khán đài. Thiếu nhãn ở đây thì
+            một câu HTML trích vào sổ hiện nguyên văn `<p>` trong blockquote trong khi
+            vẫn hiện đúng ở dưới — cùng một câu, hai mặt khác nhau. */}
+        <ThanHtml body={trich.body} dinhDang={trich.body_dinh_dang} />
       </blockquote>
       <div className={css.ky}>
         <Link href={duongDanHoSo(trich.author.username)}>u/{trich.author.username}</Link>

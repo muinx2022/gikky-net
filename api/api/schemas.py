@@ -347,6 +347,10 @@ class TrichOut(Schema):
     comment_id: int
     author: NguoiDungTomTatOut
     body: str
+    #: Nhãn của CHÍNH bình luận được trích — khối trích render cùng đường với bình
+    #: luận gốc. Thiếu nó thì một câu HTML trích vào sổ sẽ hiện nguyên văn `<p>` ở
+    #: blockquote trong khi vẫn hiện đúng ở khán đài: cùng một câu, hai mặt khác nhau.
+    body_dinh_dang: str
     trang_thai: TrangThaiNoiDung
     #: Lúc bình luận được VIẾT.
     comment_created_at: datetime
@@ -545,6 +549,11 @@ class BinhLuanOut(Schema):
     anchor_moc_seq: int | None
     author: NguoiDungTomTatOut | None
     body: str | None
+    #: `"markdown"` | `"html"` — QUYẾT ĐỊNH ĐƯỜNG RENDER ở frontend, không phải trang
+    #: trí. `html` đã qua `lam_sach` phía server nên `ThanHtml` in lại được; `markdown`
+    #: thì chưa, và nó phải đi `ThanVan`. Bia mộ trả `"markdown"` cùng `body = null` —
+    #: không có gì để render, và nhãn an toàn là nhãn đúng cho ca không có nội dung.
+    body_dinh_dang: str
     created_at: datetime
     edited_at: datetime | None
     up_count: int
@@ -605,8 +614,8 @@ class NganKeoOut(Schema):
     """Lát cắt bình luận neo vào một mốc — PLAN 5.4.
 
     Chứa các thread có bình luận **gốc** neo mốc này, **cả thread**, gồm reply viết ở bất
-    kỳ thời điểm nào. Sắp cũ → mới và **không cho chỉnh** — ngăn kéo là cửa sổ, không
-    phải phòng (luật 2).
+    kỳ thời điểm nào. Sắp **mới → cũ** (chiều đổi 2026-08-26, theo khán đài) và **không
+    cho chỉnh** — ngăn kéo là cửa sổ, không phải phòng (luật 2).
 
     Mốc chưa có bình luận nào trả `threads: []` và `so_binh_luan: 0`; UI **không** hiện
     "💬 0" mà hiện lời mời cùng `question_for_crowd` nếu có (luật 4).

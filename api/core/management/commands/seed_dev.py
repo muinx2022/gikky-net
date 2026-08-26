@@ -168,6 +168,19 @@ SUBS = [
         "ten": "Hỏi đáp",
         "mo_ta": "Câu hỏi của người mới: chọn sàn, phí, thuế, thao tác đặt lệnh.",
     },
+    # --- chuyên mục của bot bản tin ---
+    #
+    # Không phải một lớp tài sản, cũng không cắt ngang lớp nào: đây là chỗ đổ của bot
+    # `scripts/dang-tin.mjs` (`plans/2026-08-26-bot-mot-mach-mot-ngay.md`), một mạch mỗi
+    # ngày. Nó nằm ở đây vì bot **không tự tạo được sub**: `POST /machs` trả 404
+    # `sub_khong_ton_tai`, và trên một clone sạch thì mọi bài đo hay lượt chạy tay của
+    # bot đều chết ở đúng dòng đó với một câu lỗi không nói gì về seed. Prod dựng sub
+    # này bằng `manage.py tao_sub` hoặc khu quản trị, không bằng seed.
+    {
+        "slug": "tin-tuc",
+        "ten": "Tin tức",
+        "mo_ta": "Bản tin tổng hợp tự động: mỗi ngày một mạch, ba mốc theo ba khung giờ.",
+    },
 ]
 
 #: (username, display_name)

@@ -123,12 +123,42 @@ class BinhLuanMoiIn(Schema):
     body: str = Field(min_length=1, max_length=DAI_BODY_COMMENT)
     parent_id: int | None = None
     anchor_moc_seq: int | None = Field(default=None, ge=1)
+    #: `"markdown"` (mặc định) hoặc `"html"` — user chốt 2026-08-26: ô soạn bình luận có
+    #: công tắc bật Tiptap, tắt thì vẫn là textarea.
+    #:
+    #: **Mặc định `markdown` là mặc định AN TOÀN.** Client cũ / lời gọi tay không gửi
+    #: trường này thì chuỗi đi đường `ThanVan` (React escape) — không có ca nào "quên gửi
+    #: nhãn ⇒ HTML thô chạy".
+    #:
+    #: Khai `Literal` chứ không `str`: giá trị lạ bị pydantic chặn **trước khi** thân hàm
+    #: chạy, và OpenAPI ra `enum` nên TS client chỉ gõ được hai chuỗi ấy.
+    #:
+    #: ⚠ Nhãn này **không phải lời hứa của client**. Gửi `html` kèm `<script>` thì
+    #: `core/ghi.py` vẫn chạy `lam_sach` — nhãn chỉ chọn ĐƯỜNG XỬ LÝ, không cấp phép.
+    body_dinh_dang: Literal["markdown", "html"] = "markdown"
 
 
 class BinhLuanSuaIn(Schema):
-    """Sửa bình luận — `PATCH /comments/{id}`. Chỉ `body` (PLAN 5.3)."""
+    """Sửa bình luận — `PATCH /comments/{id}`. `body` + nhãn định dạng (PLAN 5.3).
+
+    Nhãn đổi được **cả hai chiều**: người viết bằng textarea rồi mở Tiptap sửa lại, hoặc
+    ngược lại. `core/ghi.py::sua_binh_luan` ghi cả hai cột trong CÙNG một câu `UPDATE`.
+    """
 
     body: str = Field(min_length=1, max_length=DAI_BODY_COMMENT)
+    #: `"markdown"` (mặc định) hoặc `"html"` — user chốt 2026-08-26: ô soạn bình luận có
+    #: công tắc bật Tiptap, tắt thì vẫn là textarea.
+    #:
+    #: **Mặc định `markdown` là mặc định AN TOÀN.** Client cũ / lời gọi tay không gửi
+    #: trường này thì chuỗi đi đường `ThanVan` (React escape) — không có ca nào "quên gửi
+    #: nhãn ⇒ HTML thô chạy".
+    #:
+    #: Khai `Literal` chứ không `str`: giá trị lạ bị pydantic chặn **trước khi** thân hàm
+    #: chạy, và OpenAPI ra `enum` nên TS client chỉ gõ được hai chuỗi ấy.
+    #:
+    #: ⚠ Nhãn này **không phải lời hứa của client**. Gửi `html` kèm `<script>` thì
+    #: `core/ghi.py` vẫn chạy `lam_sach` — nhãn chỉ chọn ĐƯỜNG XỬ LÝ, không cấp phép.
+    body_dinh_dang: Literal["markdown", "html"] = "markdown"
 
 
 class VoteIn(Schema):

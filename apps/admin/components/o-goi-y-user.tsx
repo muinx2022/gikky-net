@@ -3,6 +3,7 @@
 import {
   quanTriLietKeNguoiDung,
   type NguoiDungQuanTriOut,
+  type QuanTriLietKeNguoiDungData,
 } from "@gikky/api-client/admin";
 import { useEffect, useRef, useState } from "react";
 
@@ -36,20 +37,43 @@ import { GOC_API } from "../lib/api";
  * Gợi ý một người đã là mod là mời người dùng bấm vào một lượt chắc chắn ăn 409. Lọc ở
  * client là *tiện*, không phải *đúng*: server vẫn là chỗ chặn thật (`UniqueConstraint`),
  * vì hai mod mở cùng bảng thì danh sách ở client nào cũng có thể đã cũ.
+ *
+ * ## ⚠ `trang_thai` BẮT BUỘC khai, và mặc định của server là cái BẪY
+ *
+ * Không truyền gì thì server dùng `tat_ca`, mà `tat_ca` **loại `is_staff`** kể từ
+ * 2026-08-26 (quản trị viên có màn hình riêng). Ô này dùng ở hai chỗ cần hai tập khác
+ * hẳn nhau:
+ *
+ * - `/quan-tri-vien` → **`tat_ca`**. Cấp quyền mod cho người *đã* là mod là vô nghĩa, nên
+ *   loại staff ở đây đúng.
+ * - `/subs` (gán mod chuyên mục) → **`moi_nguoi`**. Phải tìm được **cả staff**, vì
+ *   `ChiMod` đòi `is_staff` ⇒ người thật sự moderate được một sub gần như luôn là staff.
+ *
+ * Bỏ prop này để "dùng mặc định cho gọn" là dựng lại đúng lỗi lượt 2026-08-26 đã gây ra
+ * rồi phải vá: ô gợi ý ở `/subs` trả rỗng và màn hình nói *"Không có tài khoản nào khớp."*
+ * cho một tài khoản có thật — một câu nói dối, và là câu không ai đi kiểm.
+ * Ghim bởi `api/tests/test_api_quyen_mod.py::test_moi_nguoi_tim_duoc_ca_staff`.
  */
 
 const DO_TRE_MS = 250;
 const SO_GOI_Y = 8;
 
+type LocNguoiDung = NonNullable<
+  NonNullable<QuanTriLietKeNguoiDungData["query"]>["trang_thai"]
+>;
+
 export function OGoiYUser({
   onChon,
   bo_qua,
   dang_chay,
+  trang_thai,
 }: {
   onChon: (username: string) => void;
   /** username đã có trong danh sách — không gợi ý lại. */
   bo_qua: string[];
   dang_chay: boolean;
+  /** Tập tài khoản được gợi ý. **Không có mặc định** — xem docstring. */
+  trang_thai: LocNguoiDung;
 }) {
   const [tu, datTu] = useState("");
   const [goi_y, datGoiY] = useState<NguoiDungQuanTriOut[] | null>(null);
@@ -68,14 +92,14 @@ export function OGoiYUser({
       const { data } = await quanTriLietKeNguoiDung({
         baseUrl: GOC_API,
         cache: "no-store",
-        query: { q, limit: SO_GOI_Y },
+        query: { q, trang_thai, limit: SO_GOI_Y },
       });
       if (cua_toi !== lan.current) return;
       datDangTim(false);
       datGoiY(data?.items ?? []);
     }, DO_TRE_MS);
     return () => clearTimeout(hen);
-  }, [tu]);
+  }, [tu, trang_thai]);
 
   const hien = (goi_y ?? []).filter((u) => !bo_qua.includes(u.username));
 

@@ -106,7 +106,7 @@ export function FormBan({
 
       {laStaff && (
         <p className="mono text-xs text-chu-y">
-          Không ban được một tài khoản quản trị — gỡ quyền staff ở Django admin trước.
+          Không ban được một tài khoản quản trị — thu quyền mod ở trang Quản trị viên trước.
         </p>
       )}
 

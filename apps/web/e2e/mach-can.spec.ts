@@ -1,6 +1,7 @@
 import type { BinhLuanOut, MachChiTietOut } from "@gikky/api-client";
 import { expect, test } from "@playwright/test";
 
+import { SORT_MAC_DINH } from "../lib/khan-dai";
 import {
   TITLE_BIA_MO,
   TITLE_HPG,
@@ -12,6 +13,7 @@ import {
   khanDai,
   lamMoiCacheTrang,
   machTheoId,
+  moModalDangNhapTuCua,
   nganKeo,
   ngayNganVN,
   timMachTheoTitle,
@@ -400,7 +402,7 @@ test.describe("W6 — ba nhánh bia mộ", () => {
 });
 
 test.describe("V5 — ngăn kéo", () => {
-  test("mở đúng lát cắt, thứ tự cũ→mới khớp API", async ({ page }) => {
+  test("mở đúng lát cắt, thứ tự khớp API (mới→cũ từ 2026-08-26)", async ({ page }) => {
     const moc1 = hpg.mocs.find((m) => m.seq === 1)!;
     const nk = await nganKeo(moc1.id);
     expect(nk.threads.length).toBeGreaterThan(0);
@@ -477,7 +479,11 @@ test.describe("V6 — chân trang bung khán đài", () => {
     await expect(page.getByTestId("khan-dai")).toBeVisible();
     await expect(page.getByTestId("chan-trang-khan-dai")).toHaveCount(0);
     await expect(page.getByTestId("nut-bung-khan-dai")).toHaveCount(0);
-    await expect(page.getByTestId("sort-hay_nhat")).toHaveAttribute(
+    // Không `?sort=` ⇒ sort MẶC ĐỊNH, và từ 2026-08-26 mặc định là `moi_nhat`
+    // (user: "order by created desc"). Đọc từ hằng chứ không gõ chuỗi: bài này khẳng
+    // định "vào trang trống query thì nút mặc định sáng", không khẳng định mặc định
+    // bằng gì — chuyện ấy `khan-dai-va-dem.spec.ts` ghim bằng giá trị.
+    await expect(page.getByTestId(`sort-${SORT_MAC_DINH}`)).toHaveAttribute(
       "aria-current",
       "true",
     );
@@ -501,15 +507,52 @@ test.describe("V6 — chân trang bung khán đài", () => {
     }
 
     // **Đổi ở Phase 2**: 1c render một ô nhập `disabled` giữ chỗ (`composer-o-nhap`);
-    // nay composer là thật, nên với một trình duyệt CHƯA đăng nhập nó hiện lời mời chứ
-    // không hiện một cái ô gõ được rồi trả 401. Vế "khán đài phải kết thúc bằng chỗ để
-    // viết" (PLAN 5.5) vẫn được ghim — chỉ đổi hình dạng của cái chỗ ấy.
-    // Scope tới `khan-dai`: mỗi NGĂN KÉO cũng có composer riêng (PLAN 5.4 luật 3), nên
-    // trên một mạch 9 mốc có 10 cái — cái ta đang nói tới là cái ở chân khán đài.
+    // nay composer là thật. **Đổi tiếp 2026-08-26**: nó không hiện sẵn nữa mà đứng sau
+    // một CỬA, và khách bấm cửa thì ra modal đăng nhập chứ không ra ô gõ. Vế "khu bình
+    // luận phải có chỗ để viết" (PLAN 5.5) vẫn được ghim — chỉ đổi hình dạng lần nữa.
+    // Scope tới `khan-dai`: mỗi NGĂN KÉO cũng có cửa riêng (PLAN 5.4 luật 3), nên trên
+    // một mạch 9 mốc có 10 cái — cái ta đang nói tới là cái của khu bình luận.
     await expect(page.getByTestId("composer-o-nhap")).toHaveCount(0);
-    await expect(
-      page.getByTestId("khan-dai").getByTestId("composer-khach"),
-    ).toContainText("để tham gia bàn luận");
+    const khu_v6 = page.getByTestId("khan-dai");
+    await expect(khu_v6.getByTestId("composer-cua")).toHaveAttribute("data-khach", "1");
+    await moModalDangNhapTuCua(page, khu_v6);
+  });
+
+  test("user chốt 2026-08-26: ô nhập nằm GIỮA tiêu đề và thanh sort, không ở cuối", async ({
+    page,
+  }) => {
+    await page.goto(duongDan(hpg));
+
+    // Đo bằng **thứ tự tài liệu thật**, không bằng toạ độ pixel: `boundingBox().y` đọc
+    // đúng ở desktop rồi đọc sai ở bất kỳ bố cục nào đổi `order` hoặc `grid-row`, và
+    // câu hỏi ở đây là câu hỏi về THỨ TỰ chứ không phải về chỗ ngồi.
+    //
+    // `Node.DOCUMENT_POSITION_FOLLOWING` = 4 ⇒ "đối số đứng SAU tôi trong tài liệu".
+    const vi_tri = await page.evaluate(() => {
+      const khu = document.querySelector('[data-testid="khan-dai"]')!;
+      const h2 = khu.querySelector("h2")!;
+      const o = khu.querySelector('[data-testid="composer-cua"]')!;
+      const sort = khu.querySelector('[data-testid="thanh-sort"]')!;
+      const cay = khu.querySelector('[data-testid="cay-khan-dai"]')!;
+      const sau = (a: Element, b: Element) =>
+        (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+      return {
+        o_sau_tieu_de: sau(h2, o),
+        sort_sau_o: sau(o, sort),
+        cay_sau_sort: sau(sort, cay),
+      };
+    });
+    expect(vi_tri, "tiêu đề → ô nhập → thanh sort → cây").toEqual({
+      o_sau_tieu_de: true,
+      sort_sau_o: true,
+      cay_sau_sort: true,
+    });
+
+    // Và vẫn ĐÚNG MỘT ô trong khu — luật L05. Không có vế này thì một lượt "thêm ô ở
+    // đầu" mà quên gỡ ô ở cuối vẫn làm ba khẳng định trên xanh.
+    expect(
+      await page.getByTestId("khan-dai").getByTestId("composer-cua").count(),
+    ).toBe(1);
   });
 });
 
@@ -729,10 +772,10 @@ test.describe("W2 — khán đài rỗng không được phô số 0", () => {
     // `<ul>` rỗng và thanh sort của một danh sách trống đều là cách phô sự im lặng.
     await expect(page.getByTestId("cay-khan-dai")).toHaveCount(0);
     await expect(page.getByTestId("thanh-sort")).toHaveCount(0);
-    // Nhưng vẫn phải có chỗ để viết — PLAN 5.5 đòi khán đài kết thúc bằng composer.
-    // Phase 2: composer là thật, và với trình duyệt chưa đăng nhập thì "chỗ để viết" ấy
-    // là lời mời đăng nhập, không phải một ô `disabled` (xem V6 ở trên).
-    await expect(page.getByTestId("composer-khach")).toBeVisible();
+    // Nhưng vẫn phải có chỗ để viết — PLAN 5.5 đòi khu bình luận có composer. Phase 2:
+    // composer là thật; 2026-08-26: nó đứng sau một cửa, và với trình duyệt chưa đăng
+    // nhập cái cửa ấy dẫn vào modal đăng nhập (xem V6 ở trên).
+    await expect(page.getByTestId("composer-cua")).toBeVisible();
 
     const than = (await page.locator("main").innerText()).replace(/\s+/g, " ");
     expect(than).not.toMatch(/\d+\s*thread/);

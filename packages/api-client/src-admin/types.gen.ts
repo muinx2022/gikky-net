@@ -267,6 +267,28 @@ export type DemTheoNgayOut = {
 };
 
 /**
+ * DoiQuyenModIn
+ *
+ * Body của `POST /admin/users/{username}/quyen-mod` — công tắc `is_staff`.
+ *
+ * ⚠ **Chỉ có `bat`.** Không khai `is_staff` cũng không khai `is_superuser`.
+ * `is_superuser` **không** cấp được từ khu quản trị ở bất kỳ cửa nào — Django admin vẫn
+ * là nơi duy nhất phong superuser.
+ *
+ * Hàng rào cho luật ấy là một dòng chấm **thẳng lên hình dạng schema**:
+ * `test_api_quyen_mod.py::test_B9_…` khẳng định `set(model_fields) == {"bat"}`.
+ * Đừng thay nó bằng bài "gửi kèm khoá lạ rồi đòi cờ không đổi" — bài ấy XANH kể cả khi
+ * schema mọc thêm trường, vì handler chỉ đọc `du_lieu.bat`. Bản đầu của lượt này mắc
+ * đúng lỗi đó và lượt phản biện bắt được.
+ */
+export type DoiQuyenModIn = {
+    /**
+     * Bat
+     */
+    bat: boolean;
+};
+
+/**
  * DongBaoCaoIn
  *
  * Body của `POST /reports/{id}/dong`.
@@ -990,6 +1012,10 @@ export type TrangNguoiDungOut = {
      * Items
      */
     items: Array<NguoiDungQuanTriOut>;
+    /**
+     * So Staff An
+     */
+    so_staff_an: number;
     /**
      * Tong
      */
@@ -1934,7 +1960,7 @@ export type QuanTriLietKeNguoiDungData = {
         /**
          * Trang Thai
          */
-        trang_thai?: 'tat_ca' | 'bi_ban' | 'staff' | 'moi';
+        trang_thai?: 'tat_ca' | 'moi_nguoi' | 'bi_ban' | 'staff' | 'moi';
         /**
          * Limit
          */
@@ -2186,3 +2212,49 @@ export type QuanTriDatMatKhauResponses = {
 };
 
 export type QuanTriDatMatKhauResponse = QuanTriDatMatKhauResponses[keyof QuanTriDatMatKhauResponses];
+
+export type QuanTriDoiQuyenModData = {
+    body: DoiQuyenModIn;
+    path: {
+        /**
+         * Username
+         */
+        username: string;
+    };
+    query?: never;
+    url: '/api/admin/users/{username}/quyen-mod';
+};
+
+export type QuanTriDoiQuyenModErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+    /**
+     * Conflict
+     */
+    409: LoiOut;
+};
+
+export type QuanTriDoiQuyenModError = QuanTriDoiQuyenModErrors[keyof QuanTriDoiQuyenModErrors];
+
+export type QuanTriDoiQuyenModResponses = {
+    /**
+     * OK
+     */
+    200: NguoiDungQuanTriOut;
+};
+
+export type QuanTriDoiQuyenModResponse = QuanTriDoiQuyenModResponses[keyof QuanTriDoiQuyenModResponses];

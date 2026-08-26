@@ -184,13 +184,33 @@ export function FormDangKy() {
 
 // --- đăng nhập ---------------------------------------------------------------
 
-export function FormDangNhap() {
+/** Form đăng nhập — dùng ở CẢ `/dang-nhap` lẫn modal (2026-08-26).
+ *
+ * `onThanhCong` là thứ phân biệt hai chỗ, và nó phân biệt đúng một điều: **có rời trang
+ * hay không**.
+ *
+ * - **trang `/dang-nhap`**: không có `onThanhCong` ⇒ `onGui` trả `{di: "/"}` ⇒ về trang
+ *   chủ. Người đã chủ động mở một trang đăng nhập thì không còn "trang đang đọc" nào để
+ *   ở lại;
+ * - **modal**: có `onThanhCong` ⇒ `onGui` trả `void` ⇒ **không điều hướng**, modal tự
+ *   đóng và `router.refresh()` chạy. Người dùng đứng nguyên chỗ cũ.
+ *
+ * Nhánh nào cũng đi qua `await taiLai()` của `FormTaiKhoan`, nên header đúng ở cả hai.
+ */
+export function FormDangNhap({
+  onThanhCong,
+}: {
+  onThanhCong?: () => void;
+} = {}) {
   const { toi } = usePhien();
   if (toi?.dang_nhap === true) return <DaDangNhap username={toi.username ?? ""} />;
+  const trongModal = onThanhCong !== undefined;
   return (
     <FormTaiKhoan
       tieuDe="Đăng nhập"
       nutGui="Vào"
+      trongModal={trongModal}
+      onThanhCong={onThanhCong}
       onGui={async (f) => {
         await dangNhap(
           taoThongTinDangNhap(
@@ -198,7 +218,9 @@ export function FormDangNhap() {
             String(f.get("password") ?? ""),
           ),
         );
-        return { di: "/" };
+        // Trong modal thì KHÔNG trả `{di}`: một lượt `location.assign` ở đây xoá sạch
+        // trang người ta đang đọc — đúng thứ modal sinh ra để tránh.
+        return trongModal ? undefined : { di: "/" };
       }}
       duoi={
         <>

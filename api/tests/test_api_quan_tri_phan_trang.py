@@ -113,9 +113,16 @@ def test_tong_cua_bang_binh_luan_va_nguoi_dung(canh):
     assert [t["tong"] for t in trang] == [12] * len(trang)
     assert sum(len(t["items"]) for t in trang) == 12
 
-    # 2 tài khoản: `chu_mach` + `mod_chinh`.
+    # 2 tài khoản tồn tại (`chu_mach` + `mod_chinh`), nhưng bảng chỉ đếm **1**: từ
+    # 2026-08-26 bộ lọc `tat_ca` loại hẳn `is_staff=True`, và `mod_chinh` là staff. Con
+    # số đổi vì HÀNH VI đổi, không phải vì assert được nới — nên `so_staff_an` bị ghim
+    # ngay bên cạnh, và nó là thứ giữ cho phép loại phải xảy ra TRƯỚC `dem_tong`: đếm
+    # trước rồi mới loại thì `tong` ra lại 2 và dòng này đỏ.
     r = canh["mod"].get(f"/api/admin/users?limit={LIMIT}")
-    assert r.json()["tong"] == 2
+    assert r.json()["tong"] == 1
+    assert r.json()["so_staff_an"] == 1
+    assert len(r.json()["items"]) == 1
+    assert User.objects.count() == 2
 
 
 def test_tong_cua_hang_doi_va_nhat_ky(canh):

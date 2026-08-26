@@ -358,6 +358,20 @@
         "title": "DemTheoNgayOut",
         "type": "object"
       },
+      "DoiQuyenModIn": {
+        "description": "Body của `POST /admin/users/{username}/quyen-mod` — công tắc `is_staff`.\n\n⚠ **Chỉ có `bat`.** Không khai `is_staff` cũng không khai `is_superuser`.\n`is_superuser` **không** cấp được từ khu quản trị ở bất kỳ cửa nào — Django admin vẫn\nlà nơi duy nhất phong superuser.\n\nHàng rào cho luật ấy là một dòng chấm **thẳng lên hình dạng schema**:\n`test_api_quyen_mod.py::test_B9_…` khẳng định `set(model_fields) == {\"bat\"}`.\nĐừng thay nó bằng bài \"gửi kèm khoá lạ rồi đòi cờ không đổi\" — bài ấy XANH kể cả khi\nschema mọc thêm trường, vì handler chỉ đọc `du_lieu.bat`. Bản đầu của lượt này mắc\nđúng lỗi đó và lượt phản biện bắt được.",
+        "properties": {
+          "bat": {
+            "title": "Bat",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "bat"
+        ],
+        "title": "DoiQuyenModIn",
+        "type": "object"
+      },
       "DongBaoCaoIn": {
         "description": "Body của `POST /reports/{id}/dong`.",
         "properties": {
@@ -1372,6 +1386,10 @@
             "title": "Items",
             "type": "array"
           },
+          "so_staff_an": {
+            "title": "So Staff An",
+            "type": "integer"
+          },
           "tong": {
             "title": "Tong",
             "type": "integer"
@@ -1380,7 +1398,8 @@
         "required": [
           "items",
           "cursor_ke_tiep",
-          "tong"
+          "tong",
+          "so_staff_an"
         ],
         "title": "TrangNguoiDungOut",
         "type": "object"
@@ -3253,7 +3272,7 @@
     },
     "/api/admin/users": {
       "get": {
-        "description": "Bảng tài khoản, mới đăng ký trước, cursor keyset `(date_joined, id)`.\n\n`?q=` khớp một phần trên `username` **hoặc** `display_name`. Cố ý **không** tìm theo\nemail: khu quản trị không cần nó để phán xử nội dung, và một ô tìm-theo-email là cách\nrẻ nhất để một mod tra ngược địa chỉ của một người từ một mẩu địa chỉ đoán được.\n\n`trang_thai=bi_ban` dùng đúng điều kiện của `User.dang_bi_ban()` — vĩnh viễn **hoặc**\nhạn tạm chưa qua. Viết lại điều kiện ấy ở đây là bản sao thứ hai, nên nó được đặt cạnh\nmột bài đo ghim rằng hai bên không lệch nhau\n(`tests/test_api_quan_tri_bang.py::test_loc_bi_ban_trung_voi_dang_bi_ban`).",
+        "description": "Bảng tài khoản, mới đăng ký trước, cursor keyset `(date_joined, id)`.\n\n`?q=` khớp một phần trên `username` **hoặc** `display_name`. Cố ý **không** tìm theo\nemail: khu quản trị không cần nó để phán xử nội dung, và một ô tìm-theo-email là cách\nrẻ nhất để một mod tra ngược địa chỉ của một người từ một mẩu địa chỉ đoán được.\n\n`trang_thai=bi_ban` dùng đúng điều kiện của `User.dang_bi_ban()` — vĩnh viễn **hoặc**\nhạn tạm chưa qua. Viết lại điều kiện ấy ở đây là bản sao thứ hai, nên nó được đặt cạnh\nmột bài đo ghim rằng hai bên không lệch nhau\n(`tests/test_api_quan_tri_bang.py::test_loc_bi_ban_trung_voi_dang_bi_ban`).\n\n## Staff biến khỏi ba bộ lọc kia — 2026-08-26\n\n`tat_ca` / `bi_ban` / `moi` đều **loại `is_staff=True`**; chỉ `staff` còn thấy họ.\nUser chốt *\"2 mục này nên có phần quản lý riêng, đặt vào đây hơi khó hiểu và khó mà\ntìm được\"* — hai hàng quản trị nằm lẫn giữa vài nghìn tài khoản thường là nhiễu ở cả\nhai chiều. Khu riêng là `/quan-tri-vien` ở `apps/admin`, nó gọi lại chính endpoint này\nvới `trang_thai=staff`.\n\n⚠ Đây là **đổi hành vi của một endpoint đang chạy**, không phải thêm tính năng.\n\n`so_staff_an` là cái giá phải trả cho phép loại ấy: sau lượt này, gõ `mod_gikky` vào ô\nlọc ra bảng rỗng, mà một bảng rỗng không phân biệt được \"không có ai tên vậy\" với\n\"có, nhưng ở trang khác\". Đếm **cùng `q`, cùng `trang_thai`**, chỉ khác điều kiện\nstaff.",
         "operationId": "quan_tri_liet_ke_nguoi_dung",
         "parameters": [
           {
@@ -3274,6 +3293,7 @@
               "default": "tat_ca",
               "enum": [
                 "tat_ca",
+                "moi_nguoi",
                 "bi_ban",
                 "staff",
                 "moi"
@@ -3785,6 +3805,104 @@
           }
         ],
         "summary": "Dat Mat Khau",
+        "tags": [
+          "quan-tri-nguoi-dung"
+        ]
+      }
+    },
+    "/api/admin/users/{username}/quyen-mod": {
+      "post": {
+        "description": "Công tắc `is_staff` của một tài khoản. Trả về **cả hàng** đã cập nhật.\n\nTrả cả hàng thay vì `204`: nhãn `vai_tro` do SERVER tính (`vai_tro_cua`), nên frontend\nphải nhận lại hàng mới chứ không tự suy từ `bat` — suy tay là dựng bản thứ hai của một\nluật server đang giữ (PLAN nguyên tắc 10), và bản thứ hai sẽ lệch đúng lúc `vai_tro_cua`\nmọc thêm một nhánh. Cùng lý lẽ `gan_mod_sub` trả cả hàng sub.\n\n**Idempotent** — đặt trùng giá trị đang có trả 200, không 409. Đây là một *công tắc\nhai trạng thái*, và một công tắc báo lỗi khi bị gạt về đúng vị trí nó đang đứng là một\ncông tắc hỏng. (Khác `gan_mod_sub`, nơi \"đã là mod ⇒ 409\" là đúng vì đó là *thêm vào\nmột danh sách*: người bấm cần biết mình KHÔNG phải người vừa thêm.)\n\nNăm lời từ chối, mỗi lời một thông điệp riêng:\n\n- **người gọi không superuser ⇒ 403.** Vế \"khoá sau `is_superuser`\" của đơn hàng.\n- **đích là chính mình ⇒ 409.** Thu quyền của chính mình là tự khoá mình khỏi khu\n  quản trị, và người duy nhất gỡ được lại chính là mình. Cùng hình dạng với luật\n  \"không tự ban mình\" ở đầu file.\n- **đích là superuser ⇒ 409.** `ChiMod` đòi `is_staff`, nên thu `is_staff` của một\n  superuser là làm hỏng một nửa họ: còn `is_superuser` nhưng hết đường vào. Quyền\n  superuser thuộc Django admin, và cửa này cố ý không với tới đó.\n- **cấp cho tài khoản đang bị ban / đã vô hiệu hoá ⇒ 409.** `ChiMod` từ chối cả hai ở\n  cổng, nên hàng cấp ra vô nghĩa ngay khi tạo; và một cái tên bị ban nằm trong bảng\n  \"Quản trị viên\" là thông tin sai trên màn hình. Đúng tiền lệ `gan_mod_sub`.\n- **thu quyền khi còn `ModSub` ⇒ 409, kèm tên sub.** Xem dưới.\n\n## Vì sao thu quyền lại vướng `ModSub`\n\nThu `is_staff` mà bỏ lại hàng `ModSub` là để một cái tên **không moderate được** nằm\ntrong cột \"Mod\" của bảng chuyên mục — chính điều mà docstring `ModSub` gọi là *\"hiểu\nsai theo hướng nguy hiểm\"*. Hai lối chữa, và lối bị loại đáng ghi ra: *cascade xoá\n`ModSub`* làm mất dữ liệu ngầm mà người bấm không yêu cầu, và mất luôn câu trả lời\n\"ai từng phụ trách sub này\". Nên: **từ chối, bảo gỡ phân công trước** — và 409 phải\n**liệt kê tên sub**, nếu không superuser phải đi dò từng chuyên mục.\n\n## Thứ tự: từ chối TRƯỚC, no-op SAU\n\nPhép \"trùng giá trị ⇒ trả luôn\" đặt sau cả năm lời từ chối, không phải trước. Đảo lại\nthì `bat=false` trên một tài khoản **đã** không phải staff nhưng còn `ModSub` sẽ trả\n200 im lặng — và người bấm tin rằng mình vừa dọn xong một thứ vẫn còn nguyên. Câu trả\nlời phải phụ thuộc **trạng thái**, không phụ thuộc việc lần bấm này có đổi được gì.",
+        "operationId": "quan_tri_doi_quyen_mod",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "required": true,
+            "schema": {
+              "title": "Username",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DoiQuyenModIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NguoiDungQuanTriOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Doi Quyen Mod",
         "tags": [
           "quan-tri-nguoi-dung"
         ]

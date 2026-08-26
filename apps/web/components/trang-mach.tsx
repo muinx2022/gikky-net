@@ -41,7 +41,12 @@ import {
 } from "@/lib/dai-gap";
 import { diemCoDau, ngayCuaThoiDiem } from "@/lib/dinh-dang";
 import { jsonLdMach } from "@/lib/json-ld";
-import { docSort, idTrongTrang, type SortKhanDai } from "@/lib/khan-dai";
+import {
+  HIEN_KHOI_DANG_CHU_Y,
+  docSort,
+  idTrongTrang,
+  type SortKhanDai,
+} from "@/lib/khan-dai";
 import { cauMoiComposer, docView, matDeRender } from "@/lib/mat";
 import { chonMoiBung, idDaTrich } from "@/lib/moi-bung";
 import { urlTuyetDoi } from "@/lib/site";
@@ -208,7 +213,12 @@ export async function TrangMach({
   // "Câu đáng đọc" (PLAN 5.5) — khối của mặt CẶN, và chỉ của mặt CẶN. Ở mặt BÃO khán đài
   // đã là thân bài và mở sẵn, nên một khối "lọc sẵn 10 câu" ngay trên cây đầy đủ là đúng
   // cái bản-sao-của-chính-nó mà ngoại lệ 2026-08-22 loại bỏ.
-  const cau_dang_doc = !la_bao ? await docCauDangDoc(mach.id, doc) : null;
+  //
+  // **TẮT từ 2026-08-26** — công tắc + lý do ở `lib/khan-dai.ts::HIEN_KHOI_DANG_CHU_Y`.
+  // Cờ đứng TRƯỚC `!la_bao` để nó cũng cắt luôn LỜI GỌI: khối không render thì một lượt
+  // `?dang_doc=1` mỗi lần xem mặt CẶN là tiền trả cho JSON không ai đọc.
+  const cau_dang_doc =
+    HIEN_KHOI_DANG_CHU_Y && !la_bao ? await docCauDangDoc(mach.id, doc) : null;
 
   // Ngăn kéo nạp sẵn cho MỌI mốc của mạch — kể cả mốc `so_binh_luan === 0` (vá B1: mốc
   // chỉ còn bia mộ vẫn có lát cắt), và kể cả mốc nằm trong dải gập, vì dải gập bung ra

@@ -218,7 +218,11 @@ hiệu lực.
 
 1. Accordion: mở ngăn kéo mốc khác thì cái đang mở gập lại. Mở = các thread có bình luận gốc
    `anchor_moc_seq == seq` (cả thread, gồm reply mọi thời điểm).
-2. Sort trong ngăn kéo: **cũ → mới**, không cho chỉnh (nó là cửa sổ, không phải phòng).
+2. Sort trong ngăn kéo: **mới → cũ** *(đổi chiều 2026-08-26; bản gốc ghi "cũ → mới")*,
+   không cho chỉnh (nó là cửa sổ, không phải phòng). Vế "không cho chỉnh" là vế mang lý lẽ
+   và **không đổi**; chiều thì phải đi theo khán đài, vốn cũng đổi mặc định sang `moi_nhat`
+   cùng ngày — hai cửa sổ nhìn cùng một tập bình luận mà ngược chiều nhau thì không giải
+   thích được bằng bất cứ thứ gì người đọc nhìn thấy.
    Render tối đa 2 tầng reply; thread sâu → "xem cả nhánh ở khán đài ↓" (scroll + highlight).
 3. Composer trong ngăn kéo tự neo mốc đó. Composer khán đài neo mốc mới nhất, chip đổi/gỡ được
    (gỡ = anchor NULL — xem nguyên tắc 4).
@@ -581,6 +585,7 @@ Ai chỉ đọc `detail`/`code` không phải biết lớp ấy tồn tại; hà
 | `PATCH /comments/{id}` · `DELETE` | sửa (dấu *đã sửa*) · xoá theo luật 5.3 | *(Phase 2)* **chỉ `Comment.author`**, kể cả chủ mạch cũng không sửa được lời người khác. `DELETE` trả `{id, xoa_that}`: `false` = ở lại làm bia mộ; xoá thật thì **dọn `Vote` mồ côi** cùng transaction |
 | `POST /votes` | vote/đổi/rút | value ∈ {−1,0,1}; transaction cập nhật counts. *(Phase 2)* trả về con số MỚI của đích cho UI lạc quan; `up_count`/`down_count` là `null` với đích là mốc (mốc chỉ có `score`) |
 | `POST /mocs/{id}/reactions` | react/đổi/rút | *(Phase 2)* `emoji=null` là rút; trả `dem` **đủ 4 khoá kể cả khoá 0** *(bộ đổi 2026-08-25, xem 5.7)* |
+| `POST /machs/{id}/comments` · `PATCH /comments/{id}` | **`body_dinh_dang`** kèm thân | *(2026-08-26)* `"markdown"` (mặc định) hoặc `"html"`. Nhánh `html` đi qua `lam_sach` ở CẢ hai cửa — nhãn chọn ĐƯỜNG XỬ LÝ, **không cấp phép**. Mặc định `markdown` là mặc định AN TOÀN: client cũ không gửi nhãn thì chuỗi đi đường escape |
 | `POST /mocs/{id}/trich` · `DELETE` | trích/gỡ | 4 rào 5.6. *(Phase 3, 2026-08-23)* **chỉ chủ mạch** (`Mach.author` — rào 4 ghi "bởi chủ mạch"); thân `{comment_id}`, mốc nằm ở URL. Mã riêng từng ca: `da_co_trich` 409 (rào 1) · `het_han_go_trich` 409 (>24h) · `chua_co_trich` 404 · trích chéo mạch / bình luận đã gỡ ⇒ 400. Trả về **cả thẻ mốc** vì rào 4 bắt render tách bạch. **Có áp `mach_bi_khoa`** — khác `follow`/`seen` dưới đây |
 | `POST /machs/{id}/follow` · `DELETE` | theo/bỏ | *(Phase 3, 2026-08-23)* cả hai **idempotent**; lượt theo đầu đặt `last_seen_entry_seq = entry_count` chứ không `0`. **KHÔNG áp `mach_bi_khoa`**: follow là sổ tay riêng của người đọc, và chặn `DELETE` trên mạch bị khoá thì người ta không tắt được thông báo của đúng cái mạch đó |
 | `POST /machs/{id}/seen` | cập nhật last_seen_entry_seq | gọi khi mở trang. *(Phase 3, 2026-08-23)* thân `{entry_seq?}`, vắng ⇒ "đã xem tới mốc mới nhất". Con số **chỉ tiến không lùi** + kẹp trần `entry_count` (peek mốc cũ không kéo vạch mới về sau). Chưa follow ⇒ **200 kèm `following:false` và không ghi gì** — cột này sống trên hàng `Follow` (mục 6), và tạo `Follow` hộ là âm thầm bắt người ta theo mạch vì họ mở một trang |

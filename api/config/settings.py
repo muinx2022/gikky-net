@@ -360,9 +360,7 @@ SOCIALACCOUNT_PROVIDERS = {
         #: Google đã xác minh email hộ ⇒ không bắt xác thực lại.
         "EMAIL_AUTHENTICATION": True,
     }
-    if GOOGLE_BAT
-    else {}
-)
+}
 
 #: Email. Dev không có SMTP ⇒ ghi ra file, e2e đọc file lấy link xác thực.
 #: `EMAIL_URL` (django-environ) đè được ở prod, vd `smtp://user:pass@host:587/?tls=True`.

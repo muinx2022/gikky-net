@@ -1,0 +1,186 @@
+# Caddyfile PROD của gikky.net — chạy TRONG container, sau Cloudflare Tunnel.
+#
+# Là bản đã-chạy-thật của `deploy/Caddyfile` (bản mẫu chưa bao giờ chạy). Ba chỗ khác
+# nhau, và cả ba đều do có tunnel đứng trước — chép nguyên si bản mẫu vào đây là hỏng im lặng:
+#
+# 1. **`auto_https off`, nghe `:80`.** Cloudflare cắt TLS ở edge rồi đẩy HTTP thuần
+#    xuống cloudflared. Để ACME bật là Caddy đi xin chứng chỉ cho một tên miền mà nó
+#    không hề nhận request cổng 443 — thất bại lặp vô hạn trong log.
+#
+# 2. **Khoá rate-limit và `X-Forwarded-For` lấy từ `CF-Connecting-IP`, KHÔNG từ
+#    `{remote_host}`.** Sau tunnel, `remote_host` là địa chỉ cloudflared với **mọi**
+#    request. Dùng nó thì cả thế giới chung một khoá đếm: người thứ 21 chạm cửa đăng ký
+#    trong giờ đó bị chặn, dù là người đầu tiên của họ. Và `core/han_muc.py::dia_chi_ip`
+#    lấy phần tử **CUỐI** của `X-Forwarded-For` — đúng khi có ĐÚNG MỘT proxy; ở đây có
+#    hai (cloudflared, rồi Caddy), nên phần tử cuối là IP nội bộ. Ghi đè tường minh làm
+#    danh sách chỉ còn một phần tử = IP thật của người dùng.
+#
+# 3. **KHÔNG có allowlist IP cho `admin.gikky.net`.** Vì lý do (2), `remote_ip` ở đây vô
+#    nghĩa: allowlist theo nó hoặc chặn tất (kể cả user), hoặc cho qua tất. Lớp che đúng
+#    của kiến trúc này là **Cloudflare Access** đặt trên hostname đó, cộng hai lớp đã có
+#    trong mã: `ADMIN_HOSTS=admin.gikky.net` (`config/host_admin.py`) và permission
+#    `is_staff` của Ninja. Xem `deploy/prod/README.md`.
+#
+# Cú pháp được kiểm lúc BUILD: `caddy validate` chạy trong `caddy.Dockerfile`.
+{
+	admin off
+	auto_https off
+	# `rate_limit` là module ngoài; nó phải được xếp chỗ tường minh trong directiveOrder.
+	order rate_limit before basicauth
+	log {
+		output stdout
+		format console
+	}
+}
+
+# ---------------------------------------------------------------------------
+# Snippet dùng chung: proxy sang Django kèm đúng bộ header chuyển tiếp.
+# Khai MỘT chỗ — bốn khối `handle` bên dưới đều cần y hệt, và một bản chép tay bị sót
+# `header_up` sẽ làm hạn mức theo IP sai **chỉ trên vài đường ghi**, tức gần như không
+# ai phát hiện.
+# ---------------------------------------------------------------------------
+(len_django) {
+	reverse_proxy api:8000 {
+		header_up X-Forwarded-For {http.request.header.CF-Connecting-IP}
+		# Django hiện KHÔNG đặt `SECURE_PROXY_SSL_HEADER` nên nó bỏ qua dòng này. Giữ ở
+		# đây để ngày bật lên thì không phải nhớ ra là còn thiếu một mảnh ở tầng Caddy.
+		header_up X-Forwarded-Proto https
+	}
+}
+
+# Header đặt trên ẢNH người dùng tải lên. Ba dòng đầu là khuôn mẫu chuẩn cho nội dung
+# do người lạ tải lên; `immutable` đúng vì tên file là uuid do server đặt, nội dung sau
+# một URL không bao giờ đổi.
+(header_anh) {
+	header {
+		X-Content-Type-Options nosniff
+		Content-Security-Policy "default-src 'none'; sandbox"
+		Cache-Control "public, max-age=31536000, immutable"
+		-Server
+	}
+}
+
+# ===========================================================================
+# HOST CÔNG KHAI
+# ===========================================================================
+http://gikky.net, http://www.gikky.net {
+	encode zstd gzip
+
+	# ⚠ PHẢI ĐỨNG TRƯỚC MỌI RULE `/api/*` — PLAN 8.2 gạch đầu dòng 1. Các khối `handle`
+	# cùng cấp loại trừ nhau và xét theo THỨ TỰ KHAI, nên đây là chỗ duy nhất trong file
+	# mà "viết trước" thật sự nghĩa là "chạy trước".
+	# Nó phủ luôn `/api/admin/django/*` vì cùng prefix ⇒ không cần luật thứ hai.
+	handle /api/admin/* {
+		respond "Not found" 403 {
+			close
+		}
+	}
+
+	# Đăng ký / đăng nhập / quên mật khẩu — bề mặt bị dò mật khẩu và đăng ký hàng loạt.
+	# 20/1h theo IP là trần THÔ: hạn mức thật (5 đăng ký/IP/NGÀY lịch VN) sống ở Django,
+	# nơi biết ai đang gọi và biết nửa đêm giờ VN là lúc nào.
+	handle /api/_allauth/* {
+		rate_limit {
+			zone dang_ky {
+				key {http.request.header.CF-Connecting-IP}
+				events 20
+				window 1h
+			}
+		}
+		import len_django
+	}
+
+	# Mọi đường GHI khác (tạo mạch, nối mốc, bình luận, vote, upload ảnh).
+	@ghi {
+		path /api/*
+		method POST PUT PATCH DELETE
+	}
+	handle @ghi {
+		rate_limit {
+			zone ghi {
+				key {http.request.header.CF-Connecting-IP}
+				events 120
+				window 1h
+			}
+		}
+		import len_django
+	}
+
+	# API đọc.
+	handle /api/* {
+		import len_django
+	}
+
+	# ẢNH — Caddy đọc THẲNG TỪ ĐĨA, không qua Django.
+	#
+	# `handle_path` (KHÔNG phải `handle`): nó cắt bỏ tiền tố `/media` trước khi
+	# `file_server` tra đường dẫn, nên `root` trỏ thẳng vào `MEDIA_ROOT`. Dùng `handle`
+	# thì Caddy đi tìm `<MEDIA_ROOT>/media/anh/<file>` và MỌI ảnh ra 404 — với `root`
+	# đúng, đường dẫn đúng, và không có gì trong log nói vì sao.
+	#
+	# ⚠ `root` phải bằng ĐÚNG `MEDIA_ROOT` của api (`/var/lib/gikky/media`, đặt trong
+	# `compose.yml`). Hai giá trị ở hai file và không có gì kiểm chúng khớp nhau.
+	# ⚠ KHÔNG BAO GIỜ trỏ `root` lên thư mục cha: `media-an/` (kho cách ly ảnh đã bị
+	# gỡ/ẩn) nằm cạnh nó, và trỏ lên một cấp là phục vụ lại đúng những tấm vừa bị gỡ.
+	# Đó là lý do compose mount `media-an` vào api mà **không** mount vào caddy.
+	handle_path /media/* {
+		root * /var/lib/gikky/media
+		# Không `browse`: liệt kê thư mục là phát cho cả internet danh sách mọi ảnh từng
+		# được tải lên, kể cả ảnh của mạch chưa ai biết đường dẫn.
+		file_server
+		import header_anh
+	}
+
+	# Next public. `/feed.xml`, `/sitemap.xml`, `/opengraph-image` đều là route của Next.
+	handle {
+		reverse_proxy web:3000
+	}
+
+	header {
+		# HSTS để TẮT có chủ đích: bật rồi mà HTTPS trục trặc là trình duyệt của người đã
+		# ghé qua TỪ CHỐI vào site trong 1 năm, không gỡ được từ phía máy chủ. Bật ở
+		# Cloudflare (SSL/TLS → Edge Certificates → HSTS) khi đã chắc, vì ở đó tắt được.
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		# Ảnh OG phải nhúng được ở nơi khác; chỉ cấm nhúng NGƯỢC lại trang gikky.
+		X-Frame-Options SAMEORIGIN
+		-Server
+	}
+}
+
+# ===========================================================================
+# HOST ADMIN — `/api/admin/*` ĐƯỢC phép ở đây, và đó là cả lý do host này tồn tại
+# ===========================================================================
+http://admin.gikky.net {
+	encode zstd gzip
+
+	handle /api/* {
+		import len_django
+	}
+
+	# Static của Django admin (`/api/admin/django/`), do `collectstatic` ghi vào volume
+	# dùng chung. CHỈ có ở host này: trên host công khai `/api/admin/*` đã 403, nên phục
+	# vụ CSS/JS của nó ngoài đó chỉ là phát không một danh sách đường dẫn.
+	handle /static/* {
+		root * /srv
+		file_server
+	}
+
+	handle_path /media/* {
+		root * /var/lib/gikky/media
+		file_server
+		import header_anh
+	}
+
+	handle {
+		reverse_proxy admin:3001
+	}
+
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		# Khu quản trị KHÔNG có lý do nào để bị nhúng ở bất cứ đâu.
+		X-Frame-Options DENY
+		-Server
+	}
+}

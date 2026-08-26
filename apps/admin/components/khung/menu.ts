@@ -72,6 +72,12 @@ export const NHOM_MENU: NhomMenu[] = [
         icon: "nguoi-dung",
         khop_tien_to: true,
       },
+      // Đặt ở "Cộng đồng" chứ không "Hệ thống", và ngay SAU "Người dùng": lời than của
+      // user là *khó tìm* ("2 mục này… đặt vào đây hơi khó hiểu và khó mà tìm được"), mà
+      // chỗ người ta đi tìm một con người là khu người dùng, không phải khu cài đặt. Hai
+      // mục cạnh nhau còn nói ra quan hệ giữa chúng: bảng bên trái cố ý KHÔNG chứa những
+      // người ở bảng bên phải. Đây là lựa chọn có thể bàn — đổi ý thì đổi đúng dòng này.
+      { duong_dan: "/quan-tri-vien", nhan: "Quản trị viên", icon: "nguoi-dung" },
       { duong_dan: "/subs", nhan: "Chuyên mục", icon: "chuyen-muc" },
     ],
   },

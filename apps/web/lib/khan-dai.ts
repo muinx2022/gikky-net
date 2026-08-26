@@ -25,7 +25,22 @@ export const SORT_KHAN_DAI = [
 
 export type SortKhanDai = (typeof SORT_KHAN_DAI)[number];
 
-export const SORT_MAC_DINH: SortKhanDai = "hay_nhat";
+/** Sort khi URL không nói gì — **`moi_nhat` từ 2026-08-26** (user: *"thay đổi hiển thị
+ * list cmt, order by created desc"*).
+ *
+ * `moi_nhat` là `ORDER BY (created_at, id) DESC` ở Django
+ * (`core/doc_noi_dung.py::sap_theo_thoi_gian`), nên câu hỏi của user đã có sẵn câu trả
+ * lời trong ba sort của PLAN 5.3 — lượt này **không đụng gì tới Django**, chỉ đổi cái
+ * frontend rơi về.
+ *
+ * ⚠ Đổi hằng này là chưa đủ: `lib/url.ts::duongDanKhanDai` **gõ cứng** `sort=hay_nhat`
+ * vào link `💬 N` của thẻ feed. Bỏ sót chỗ đó thì vào từ feed ra một sort, vào thẳng
+ * `/m/…` ra sort khác, mà cả hai đều "đúng" theo code của chính nó.
+ *
+ * Mặc định của `?sort=` phía **Ninja** vẫn là `hay_nhat` và **cố ý không đổi**: frontend
+ * luôn truyền tường minh, còn mặc định ấy là hợp đồng API có bài đo riêng.
+ */
+export const SORT_MAC_DINH: SortKhanDai = "moi_nhat";
 
 /** Nhãn tiếng Việt của từng sort. Khai theo union CỦA API — xem docstring trên. */
 export const NHAN_SORT: Readonly<Record<KhanDaiOut["sort"], string>> = {
@@ -47,6 +62,31 @@ export function docSort(gia_tri: string | string[] | undefined): SortKhanDai {
     ? (s as SortKhanDai)
     : SORT_MAC_DINH;
 }
+
+/** Có render khối "Đáng chú ý" (PLAN 5.5) không — **TẮT từ 2026-08-26 (user chốt)**.
+ *
+ * > *"trước mắt ta chưa tính đến điểm, mà chỉ tính đến việc cái nào cmt mới nhất thì lên
+ * > trước"*
+ *
+ * Khối ấy là `đã trích ∪ top-10 wilson`, tức nó **xếp hạng bằng điểm** và đặt kết quả lên
+ * trên cây. Cùng lượt user chốt danh sách chỉ đi theo trục thời gian, nên nó không còn
+ * chỗ đứng.
+ *
+ * **Con số làm nó chết, không phải cảm giác:** trên mạch HPG cây có 14 thread gốc, khối
+ * hiện **11** trong số đó — cùng nội dung, khác thứ tự, ngay phía trên. Chốt chặn cũ
+ * (`nenRenderCauDangDoc`) chỉ hỏi *"có ứng viên nào bị bỏ lại không"*, ở đây bỏ lại 3 nên
+ * nó render. "Lọc ra 11 trên 14" thì không còn là lọc.
+ *
+ * **Đây là một CÔNG TẮC, không phải một lượt gỡ.** User nói *"trước mắt"*, nên component
+ * `CauDangDoc`, `lib/api.ts::docCauDangDoc` và cả `?dang_doc=1` phía Django đều còn
+ * nguyên và còn bài đo riêng (`api/tests/test_api_cau_dang_doc.py`). Bật lại = đổi `false`
+ * thành `true` ở đây, không phải viết lại gì.
+ *
+ * Khai `: boolean` chứ không để TS suy ra literal `false`: literal biến mọi biểu thức
+ * dùng nó thành hằng, và `no-constant-binary-expression` sẽ bắt đúng cái nhánh mà ta cố ý
+ * giữ sống để bật lại được.
+ */
+export const HIEN_KHOI_DANG_CHU_Y: boolean = false;
 
 /** Độ sâu render tối đa của khán đài — PLAN 5.3 "UI render tối đa 6 tầng rồi
  * *tiếp tục thread →*". API trả đủ cây, cắt là việc của UI.

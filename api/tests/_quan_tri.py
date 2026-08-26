@@ -165,6 +165,12 @@ def bang_endpoint(dl: dict) -> list[tuple[str, str, str, dict | None]]:
             {"mat_khau": None},
         ),
         (
+            "quan_tri_doi_quyen_mod",
+            "post",
+            f"/api/admin/users/{dl['tac_gia'].username}/quyen-mod",
+            {"bat": True},
+        ),
+        (
             "quan_tri_luu_cai_dat_google",
             "put",
             "/api/admin/cai-dat/google",

@@ -1,0 +1,24 @@
+# Context build của `deploy/prod/compose.yml` là GỐC REPO (Dockerfile cần cả `api/`,
+# `apps/`, `packages/`, `scripts/`). Không có file này thì mỗi lần build đẩy vài GiB
+# `node_modules` + `.venv` + `.next` qua daemon — chậm, và tệ hơn: `COPY . .` sẽ ĐÈ
+# `node_modules` do `pnpm install` dựng trong image bằng bản của máy host (build cho
+# Windows/macOS ⇒ binary sai nền tảng, hỏng lúc chạy chứ không lúc build).
+node_modules
+**/node_modules
+.git
+.venv
+api/.venv
+**/.next
+**/.turbo
+**/test-results
+**/playwright-report
+api/media
+api/media-an
+api/staticfiles
+api/.mail
+api/.env
+.pytest_cache
+**/__pycache__
+*.pyc
+backup
+next-start.log

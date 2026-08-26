@@ -42,21 +42,41 @@ const MOI_TRANG = 25;
  * nhất để tra ngược địa chỉ của một người từ một mẩu đoán được. Server cũng không nhận
  * tham số ấy (`api/quan_tri_bang.py::liet_ke_nguoi_dung`) — luật nằm ở cả hai đầu.
  *
- * ## Không có cửa cấp/thu quyền `is_staff`
+ * ## Quản trị viên KHÔNG nằm trong bảng này — 2026-08-26
  *
- * Dù "admin đầy đủ tính năng" nghe như phải có. Một mod cấp quyền mod cho tài khoản khác
- * là bỏ qua mọi phép duyệt; và `ban_user` **từ chối ban một mod khác** (409), nên ai tự
- * cấp `is_staff` là tự miễn nhiễm ban. Việc đó ở Django admin, chỉ superuser vào được —
- * link nằm dưới đáy sidebar.
+ * Ba bộ lọc `tat_ca` / `bi_ban` / `moi` đều loại `is_staff=True` ở phía server
+ * (`api/quan_tri_bang.py::liet_ke_nguoi_dung`). Họ có màn hình riêng ở `/quan-tri-vien`,
+ * và cửa cấp/thu quyền mod nằm ở đó chứ không ở đây — nó khoá sau `is_superuser` và kéo
+ * theo hệ quả "được cấp quyền = không ban được nữa", nên nó cần một chỗ nói ra điều đó.
+ *
+ * ⚠ Vì thế bảng này **phải** hiện dòng `so_staff_an` khi có tài khoản bị loại. Gõ
+ * `mod_gikky` vào ô lọc mà ra bảng rỗng thì người đọc kết luận "không có ai tên vậy" —
+ * kết luận sai, và không có gì trên màn hình cải chính. Dòng ấy hiện **cả khi bảng rỗng
+ * lẫn khi không rỗng**; ca rỗng mới là ca nguy hiểm, nên nó nằm NGOÀI nhánh `KhoiRong`.
  */
 type LocTrangThai = NonNullable<
   NonNullable<QuanTriLietKeNguoiDungData["query"]>["trang_thai"]
 >;
 
-const CHU_LOC: Record<LocTrangThai, string> = {
+/** ⚠ **Không có `staff`**, dù `LocTrangThai` của server vẫn nhận giá trị ấy: bộ lọc đó
+ * nay là một TRANG riêng (`/quan-tri-vien`), không phải một mục trong ô chọn này. Để lại
+ * nó ở đây là hai đường tới cùng một danh sách, và đường thứ hai nằm đúng chỗ user vừa
+ * bảo là khó hiểu.
+ *
+ * **Không có `moi_nguoi`** vì lý do khác hẳn: nó không phải một bộ lọc người dùng chọn,
+ * mà là lối thoát cho ô gợi ý ở `/subs` (xem `LocNguoiDung` phía server). Hiện nó ra đây
+ * là mời người ta bật một chế độ "xem cả quản trị viên" ngay trên màn hình vừa được dựng
+ * để KHÔNG chứa quản trị viên.
+ *
+ * Kiểu là `Record<Exclude<…>, string>` chứ không `Partial<Record<…>>`: `Exclude` vẫn ép
+ * các khoá còn lại phải có mặt đủ, nên thêm một trạng thái mới ở server mà quên chỗ này
+ * thì `tsc` đỏ — đúng cái `Partial` sẽ nuốt mất. Lượt thêm `moi_nguoi` (2026-08-26) bị
+ * chính hàng rào này chặn lại, và đó là bằng chứng nó chạy. */
+type LocHien = Exclude<LocTrangThai, "staff" | "moi_nguoi">;
+
+const CHU_LOC: Record<LocHien, string> = {
   tat_ca: "Tất cả",
   bi_ban: "Đang bị ban",
-  staff: "Quản trị viên",
   moi: "Mới 7 ngày",
 };
 
@@ -64,7 +84,7 @@ export default function TrangNguoiDung() {
   const { lamMoi, mod } = useQuanTri();
   const [q, datQ] = useState("");
   const [o_tim, datOTim] = useState("");
-  const [trang_thai, datTrangThai] = useState<LocTrangThai>("tat_ca");
+  const [trang_thai, datTrangThai] = useState<LocHien>("tat_ca");
   const [dang_chay, datDangChay] = useState(false);
   const [loi_hanh_dong, datLoiHanhDong] = useState<string | null>(null);
   const [mo_ban, datMoBan] = useState<string | null>(null);
@@ -121,7 +141,7 @@ export default function TrangNguoiDung() {
             </button>
           ) : undefined
         }
-        mo_ta="Cấp / thu quyền quản trị làm ở Django admin, không làm ở đây."
+        mo_ta="Không gồm quản trị viên — họ ở trang Quản trị viên."
       />
       <HienLoi loi={loi_hanh_dong ?? ds.loi} />
 
@@ -160,10 +180,12 @@ export default function TrangNguoiDung() {
             id="loc-trang-thai-user"
             className="nut cursor-pointer"
             value={trang_thai}
-            onChange={(e) => datTrangThai(e.target.value as LocTrangThai)}
+            onChange={(e) =>
+              datTrangThai(e.target.value as LocHien)
+            }
             data-testid="loc-trang-thai-user"
           >
-            {(Object.keys(CHU_LOC) as LocTrangThai[]).map((x) => (
+            {(Object.keys(CHU_LOC) as LocHien[]).map((x) => (
               <option key={x} value={x}>
                 {CHU_LOC[x]}
               </option>
@@ -184,6 +206,22 @@ export default function TrangNguoiDung() {
             </button>
           )}
         </div>
+
+        {/* ⚠ NGOÀI nhánh `KhoiRong`, cố ý. Ca nguy hiểm là ca bảng rỗng: gõ tên một mod
+            vào ô lọc ra "Không có tài khoản nào khớp" là một câu SAI, và nếu dòng này
+            nằm trong nhánh không-rỗng thì nó biến mất đúng lúc cần nhất. */}
+        {ds.so_staff_an > 0 && (
+          <p
+            className="border-b border-vien px-3 py-2 text-sm text-muc-mo"
+            data-testid="goi-y-quan-tri-vien"
+          >
+            Ẩn {ds.so_staff_an} tài khoản quản trị —{" "}
+            <Link href="/quan-tri-vien" className="text-nhan hover:underline">
+              xem ở Quản trị viên
+            </Link>
+            .
+          </p>
+        )}
 
         {ds.items === null ? (
           <Skeleton />

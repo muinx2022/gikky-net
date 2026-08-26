@@ -489,9 +489,23 @@ def lat_cat_ngan_keo(
     dựng, không đặt vào truy vấn: lọc `anchor_moc_seq = seq` ngay trong SQL sẽ cắt mất
     mọi reply (reply luôn có `anchor_moc_seq IS NULL` — nó kế thừa neo của gốc).
 
-    Luật 2: cũ → mới, không cho chỉnh. Ngăn kéo là cửa sổ, không phải phòng.
+    ## Luật 2, và chỗ nó vừa đổi *(user chốt 2026-08-26)*
+
+    PLAN 5.4 luật 2 nguyên văn: *"Sort trong ngăn kéo: **cũ → mới**, không cho chỉnh (nó
+    là cửa sổ, không phải phòng)"*. Vế **"không cho chỉnh"** còn nguyên và là vế mang lý
+    lẽ kiến trúc: ngăn kéo không có tham số sort, nó chiếu vào khán đài chứ không tự làm
+    một phòng riêng (PLAN nguyên tắc 4).
+
+    Vế **chiều** thì lật: nay là **mới → cũ**. Cùng lượt user đổi khán đài sang
+    `moi_nhat`, và hai cửa sổ nhìn vào CÙNG một tập bình luận mà chạy ngược chiều nhau là
+    thứ không giải thích được bằng bất cứ luật nào người đọc thấy — họ mở ngăn kéo mốc 2
+    rồi cuộn xuống khán đài, cùng những câu ấy, đảo đầu.
+
+    ⚠ Chiều này **không** đọc từ `?sort=` của khán đài. Ngăn kéo vẫn không nhận tham số
+    nào; nó gõ cứng `moi_truoc=True` ở đây. Nối hai thứ lại là cấp cho ngăn kéo đúng cái
+    "phòng riêng" mà luật 2 dựng ra để chặn.
     """
-    sap = sap_theo_thoi_gian(moi_truoc=False)
+    sap = sap_theo_thoi_gian(moi_truoc=True)
     cay = dung_cay(
         binh_luan, sap_goc=sap, sap_con=sap, tung_duoc_trich=tung_duoc_trich
     )

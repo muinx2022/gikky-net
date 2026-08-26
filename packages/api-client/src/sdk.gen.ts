@@ -980,7 +980,7 @@ export const taiAnhMoc = <ThrowOnError extends boolean = false>(options: Options
 /**
  * Liet Ke Binh Luan Moc
  *
- * Ngăn kéo của một mốc: lát cắt bình luận neo vào mốc đó, **cũ → mới**.
+ * Ngăn kéo của một mốc: lát cắt bình luận neo vào mốc đó, **mới → cũ**.
  *
  * Lấy các thread có bình luận **gốc** mang `anchor_moc_seq` bằng `seq` của mốc này, và
  * lấy **cả thread** — reply viết ở thời điểm mốc nào cũng thuộc về thread của gốc
@@ -989,6 +989,11 @@ export const taiAnhMoc = <ThrowOnError extends boolean = false>(options: Options
  * Không có tham số sắp xếp: ngăn kéo là cửa sổ chiếu vào khán đài, không phải một
  * phòng riêng (PLAN 5.4 luật 2). Anchor dùng để CHIẾU, không bao giờ để chia khán đài
  * thành nhiều phòng (PLAN nguyên tắc 4).
+ *
+ * Chiều **mới → cũ** là chiều đổi ngày 2026-08-26 (user), cùng lượt khán đài chuyển
+ * mặc định sang `moi_nhat` — hai cửa sổ nhìn cùng một tập bình luận thì không được chạy
+ * ngược chiều nhau. Vế "không cho chỉnh" của luật 2 giữ nguyên: chiều gõ cứng ở
+ * `core/doc_noi_dung.py::lat_cat_ngan_keo`, không đọc từ `?sort=`.
  *
  * Mốc chưa có bình luận nào trả `threads: []`, `so_binh_luan: 0` cùng
  * `question_for_crowd` nếu mốc có câu mồi — UI hiện lời mời chứ **không** hiện "💬 0"

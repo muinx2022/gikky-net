@@ -2,7 +2,13 @@ import { expect, test } from "@playwright/test";
 
 import { LY_DO_CHUA_DANG_NHAP, LY_DO_DANG_TAI } from "../lib/vote";
 import { dungTaiKhoan } from "./danh-tinh";
-import { TITLE_HPG, duongDan, machTheoId, timMachTheoTitle } from "./du-lieu";
+import {
+  TITLE_HPG,
+  duongDan,
+  machTheoId,
+  moComposer,
+  timMachTheoTitle,
+} from "./du-lieu";
 
 /** Ba mục CHẶN/NẶNG của lượt vá V2 đo trong trình duyệt: **L15** và **L05**.
  *
@@ -84,8 +90,7 @@ test.describe("L05 — composer khán đài NEO thật", () => {
     // khán đài chứ không ở cuối. Cái ô đang đo là ô của mặt CẶN.
     await page.goto(`${duong_dan}?view=can&khan_dai=1&sort=moi_nhat`);
     const khan_dai = page.getByTestId("khan-dai");
-    const composer = khan_dai.getByTestId("composer");
-    await expect(composer).toBeVisible();
+    const composer = await moComposer(khan_dai);
 
     // Chip neo phải hiện sẵn mốc mới nhất — người viết thấy TRƯỚC khi gửi mình đang neo
     // vào đâu.
@@ -130,8 +135,7 @@ test.describe("L05 — composer khán đài NEO thật", () => {
 
     // `?view=can` — xem ghi chú ở bài trên.
     await page.goto(`${duong_dan}?view=can&khan_dai=1&sort=moi_nhat`);
-    const composer = page.getByTestId("khan-dai").getByTestId("composer");
-    await expect(composer).toBeVisible();
+    const composer = await moComposer(page.getByTestId("khan-dai"));
 
     // Chip có mặt, bấm `×` là gỡ — và cái `×` phải BIẾN MẤT sau đó (không còn gì để gỡ).
     await expect(page.getByTestId("composer-go-neo")).toBeVisible();
@@ -165,32 +169,40 @@ test.describe("L05 — composer khán đài NEO thật", () => {
     // Đếm theo VÙNG, không đếm cả trang: mỗi ngăn kéo mốc cũng có một `composer` (PLAN
     // 5.4 luật 3) và chúng nằm sẵn trong DOM dưới dạng `hidden`. Một phép đếm cả trang ra
     // 10 trên mạch 9 mốc và không nói gì về thứ L05 đang hỏi.
-    // `toBeVisible` trên chính cái ô nhập, không trên cái hộp bọc nó: hộp `composer-mat-bao`
+    // `toBeVisible` trên chính cái CỬA, không trên cái hộp bọc nó: hộp `composer-mat-bao`
     // render ngay ở server, còn `Composer` **chưa vẽ gì** cho tới khi `GET /me` về
     // (`dangTai`). Khẳng định vào cái hộp là khẳng định vào một hộp rỗng.
-    await expect(
-      page.getByTestId("composer-mat-bao").getByTestId("composer"),
-    ).toBeVisible();
+    //
+    // Từ 2026-08-26 đếm CỬA chứ không đếm form: form chỉ tồn tại sau một cú bấm, nên một
+    // phép đếm form ở trạng thái vừa mở trang luôn ra 0 — xanh rỗng cho cả hai vế dưới.
+    // Câu hỏi của L05 không đổi: *một mặt có đúng MẤY chỗ để viết*.
+    const bao = page.getByTestId("composer-mat-bao");
+    await expect(bao.getByTestId("composer-cua")).toBeVisible();
     expect(
-      await page.getByTestId("composer-mat-bao").getByTestId("composer").count(),
+      await bao.getByTestId("composer-cua").count(),
       "ô nhập của mặt BÃO phải có mặt",
     ).toBe(1);
     expect(
-      await page.getByTestId("khan-dai").getByTestId("composer").count(),
+      await page.getByTestId("khan-dai").getByTestId("composer-cua").count(),
       "và khán đài KHÔNG được có ô thứ hai — hai ô cùng hình dạng, hai luật neo",
     ).toBe(0);
+    // …và cái cửa ấy mở ra ĐÚNG MỘT form. Thiếu vế này thì "một cửa" có thể là một cửa
+    // dẫn vào hai ô gõ.
+    await moComposer(bao);
+    expect(await page.getByTestId("composer").count()).toBe(1);
 
     // Đối chứng mặt CẶN: ở đó luật ngược lại — composer nằm ở CUỐI khán đài, và không có
     // `composer-mat-bao` nào. Không có vế này thì `hienComposer={false}` gán nhầm cho cả
     // hai mặt cũng làm bài trên xanh.
     await page.goto(`${duongDan(hpg)}?view=can&khan_dai=1`);
     await expect(page.getByTestId("composer-mat-bao")).toHaveCount(0);
-    await expect(
-      page.getByTestId("khan-dai").getByTestId("composer"),
-    ).toBeVisible();
+    const khu_can = page.getByTestId("khan-dai");
+    await expect(khu_can.getByTestId("composer-cua")).toBeVisible();
     expect(
-      await page.getByTestId("khan-dai").getByTestId("composer").count(),
-      "mặt CẶN phải có ô nhập ở cuối khán đài",
+      await khu_can.getByTestId("composer-cua").count(),
+      "mặt CẶN phải có ô nhập trong khu bình luận",
     ).toBe(1);
+    await moComposer(khu_can);
+    expect(await khu_can.getByTestId("composer").count()).toBe(1);
   });
 });

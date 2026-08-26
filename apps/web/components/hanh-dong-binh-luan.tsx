@@ -251,6 +251,8 @@ export function HanhDongBinhLuan({
           parentId={id}
           nutGui="Trả lời"
           tuDongLayNet
+          // Người dùng vừa bấm "Trả lời" — cú bấm mở cửa đã xảy ra rồi (2026-08-26).
+          moSan
           onXong={() => datMo("khong")}
           onHuy={() => datMo("khong")}
         />

@@ -13,7 +13,10 @@ import { BinhLuan, DanhSachBinhLuan } from "./binh-luan";
 import { Composer } from "./composer";
 import css from "./khan-dai.module.css";
 
-/** Khối "Câu đáng đọc" — PLAN 5.5, chốt 2026-08-22.
+/** Khối "Câu đáng đọc" — PLAN 5.5, chốt 2026-08-22. **KHÔNG CÒN ĐƯỢC MOUNT từ
+ * 2026-08-26**: `trang-mach.tsx` truyền `cauDangDoc={null}` vì công tắc
+ * `lib/khan-dai.ts::HIEN_KHOI_DANG_CHU_Y` đang `false` (user: *"trước mắt ta chưa tính
+ * đến điểm"*). Component giữ nguyên để bật lại bằng một chữ — lý do đầy đủ ở công tắc.
  *
  * **Vì sao nó tồn tại:** cái nút ở chân trang mặt CẶN ghi *"xem các câu đáng đọc ▾"*, và
  * ở 1c cú bấm giao ra **toàn bộ khán đài** — phép hợp `đã trích ∪ top-10 wilson` không
@@ -70,7 +73,7 @@ export function CauDangDoc({
   );
 }
 
-/** Khán đài đã bung: 3 sort đổi qua URL param + composer ở cuối (PLAN 5.5).
+/** Khán đài đã bung: ô nhập ngay dưới tiêu đề + 3 sort đổi qua URL param (PLAN 5.5).
  *
  * ### Chữ trên màn hình ≠ chữ trong code *(user chốt 2026-08-24)*
  *
@@ -88,10 +91,21 @@ export function CauDangDoc({
  * `?khan_dai=`, mọi hàng rào e2e). Đổi cả hai lớp cùng lúc là gộp một việc đổi chữ với
  * một việc đổi API — và PLAN vẫn gọi khu này là khán đài.
  *
- * Composer ở cuối là **bắt buộc có mặt**: PLAN 5.1 chốt "mạch đóng vẫn bình luận được",
- * nên chân khán đài phải kết thúc bằng chỗ để viết. **Từ Phase 2 nó SỐNG** (`Composer`,
- * thay cho ô `disabled` của 1c) — khách chưa đăng nhập thấy lời mời đăng nhập, mạch bị
- * mod khoá thấy câu giải thích, người đăng nhập thấy ô gõ thật.
+ * Composer là **bắt buộc có mặt**: PLAN 5.1 chốt "mạch đóng vẫn bình luận được", nên khu
+ * bình luận phải luôn có chỗ để viết. **Từ Phase 2 nó SỐNG** (`Composer`, thay cho ô
+ * `disabled` của 1c) — khách chưa đăng nhập thấy lời mời đăng nhập, mạch bị mod khoá thấy
+ * câu giải thích, người đăng nhập thấy ô gõ thật.
+ *
+ * ### Nó đứng NGAY DƯỚI tiêu đề, không còn ở cuối *(user chốt 2026-08-26)*
+ *
+ * Tới hôm ấy nó là phần tử **cuối cùng** của khu, sau cả `xem thêm bình luận ↓`. Trên
+ * mạch HPG (24 bình luận) muốn viết một câu phải cuộn hết cây — và cuộn tới nơi thì cái
+ * link ngay trên nó lại mời cuộn tiếp. Ô nhập nằm cạnh cái nhan đề nói ra việc cần làm là
+ * chỗ người ta đi tìm nó.
+ *
+ * Nó vào **trước** khối "Đáng chú ý" và thanh sort, chứ không chen giữa hai cái đó: sort
+ * là thuộc tính của DANH SÁCH ngay dưới nó, tách hai thứ ấy ra là bắt mắt nhảy qua một ô
+ * nhập để nối lại "Sắp xếp:" với thứ nó sắp xếp.
  *
  * **Hai điều kiện mới của L05 (2026-08-23):**
  *
@@ -100,10 +114,12 @@ export function CauDangDoc({
  *    không rơi vào ngăn kéo nào; mọi ngăn kéo cứ nói "Chưa ai neo bình luận vào mốc này"
  *    trong khi khán đài đầy chữ.
  * 2. `hienComposer` — mặt BÃO **tắt** nó. Ở đó `trang-mach.tsx` đã đặt một composer
- *    ngay trên cây khán đài (wireframe 9.2), nên giữ thêm cái ở cuối là dựng lại đúng ca
- *    "hai ô nhập trông y hệt nhau, hai luật neo khác nhau, cùng một trang" của L05. Cờ
- *    chứ không phải `anchorMocSeq === null`: "không neo" là một lựa chọn hợp lệ của
- *    người dùng, nó không được kiêm nghĩa "đừng vẽ ô nhập".
+ *    ngay trên cả khu bình luận (wireframe 9.2) với câu mồi riêng theo mốc mới nhất, nên
+ *    giữ thêm một cái nữa ở đây là dựng lại đúng ca "hai ô nhập trông y hệt nhau, hai
+ *    luật neo khác nhau, cùng một trang" của L05 — và lượt 2026-08-26 (đưa ô nhập lên
+ *    đầu khu) làm hai cái ấy đứng **sát nhau**, tức ca đó còn khó chối hơn trước. Cờ chứ
+ *    không phải `anchorMocSeq === null`: "không neo" là một lựa chọn hợp lệ của người
+ *    dùng, nó không được kiêm nghĩa "đừng vẽ ô nhập".
  *
  * **Nguyên tắc 9 áp ở ĐÂY nữa, không chỉ ở chân trang** (vá A2, 2026-08-22). Bản đầu của
  * 1c render `{tong_thread} thread` vô điều kiện, nên:
@@ -147,7 +163,7 @@ export function KhanDai({
   cauDangDoc?: KhanDaiOut | null;
   /** Mốc composer khán đài neo mặc định — mốc MỚI NHẤT (PLAN 5.4 luật 3). */
   anchorMocSeq?: number | null;
-  /** Mặt BÃO tắt cờ này: composer của nó nằm TRÊN cây, không ở cuối. */
+  /** Mặt BÃO tắt cờ này: composer của nó nằm ngoài khu, TRÊN cả tiêu đề. */
   hienComposer?: boolean;
 }) {
   if (khanDai.tong_thread === 0) {
@@ -189,7 +205,11 @@ export function KhanDai({
         )}
       </div>
 
-      {/* TRÊN CÙNG của khối vừa bung, trước cả thanh sort — PLAN 5.5 chốt đúng vị trí
+      {/* Ô nhập NGAY DƯỚI tiêu đề (user chốt 2026-08-26) — xem docstring. Trước cả khối
+          "Đáng chú ý": khối ấy là một phép LỌC của danh sách, nó thuộc về danh sách. */}
+      {hienComposer && <Composer anchorMocSeq={anchorMocSeq} neoDoiDuoc />}
+
+      {/* TRÊN CÙNG của DANH SÁCH, trước cả thanh sort — PLAN 5.5 chốt đúng vị trí
           này. Đặt nó dưới cây là để cái nhãn trên nút vẫn hứa suông. */}
       <CauDangDoc tap={cauDangDoc} duongDanKhanDai={duongDanKhanDai} />
 
@@ -240,8 +260,6 @@ export function KhanDai({
           xem thêm bình luận ↓
         </Link>
       )}
-
-      {hienComposer && <Composer anchorMocSeq={anchorMocSeq} neoDoiDuoc />}
     </section>
   );
 }

@@ -47,6 +47,21 @@ class Comment(models.Model):
     anchor_moc_seq = models.PositiveIntegerField(null=True, blank=True)
 
     body = models.TextField(validators=[MaxLengthValidator(DAI_BODY_COMMENT)])
+    #: `"markdown"` (mặc định) hoặc `"html"` — user chốt 2026-08-26: ô soạn bình luận có
+    #: **công tắc** bật Tiptap, tắt thì vẫn là textarea như cũ.
+    #:
+    #: ⚠ **Cột này quyết định ĐƯỜNG RENDER, và đường render quyết định an toàn.** Hàng
+    #: `html` đã qua `core/lam_sach_html.py::lam_sach` ở phía server trước khi vào DB nên
+    #: frontend in lại bằng `dangerouslySetInnerHTML`; hàng `markdown` thì chưa, và nó đi
+    #: đường `ThanVan` (JSX, React escape mọi ký tự). Đổi nhãn của một hàng mà không chạy
+    #: `lam_sach` là mở đúng lỗ XSS mà cả cơ chế này dựng ra để bịt.
+    #:
+    #: Mặc định `markdown` là **mặc định AN TOÀN**: quên gán nhãn ở một đường ghi mới thì
+    #: HTML hiện ra nguyên văn `<p>` — xấu, nhưng không thực thi. Sai theo chiều an toàn.
+    #:
+    #: **Không đoán bằng regex.** Người dùng gõ `giá < 27.80` là chuỗi trông như HTML mà
+    #: không phải, và đây là site tài chính đầy câu như thế. Cùng lý lẽ `Moc.body_dinh_dang`.
+    body_dinh_dang = models.CharField(max_length=8, default="markdown")
     created_at = models.DateTimeField(default=timezone.now, editable=False)
     edited_at = models.DateTimeField(null=True, blank=True)
     #: Xoá mềm. **PLAN 5.3 có HAI điều kiện giữ chỗ "[đã xoá]", không phải một**: có

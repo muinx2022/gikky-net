@@ -7,6 +7,7 @@
     "codegen": "node scripts/codegen.mjs",
     "codegen:check": "node scripts/codegen-check.mjs",
     "test": "node scripts/pytest.mjs -q",
+    "test:bot": "node --test scripts/tin-tuc/*.test.mjs",
     "e2e": "pnpm --filter @gikky/web e2e",
     "e2e:don-vi": "pnpm --filter @gikky/web e2e:don-vi",
     "lighthouse": "node scripts/lighthouse-seo.mjs",

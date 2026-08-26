@@ -114,6 +114,11 @@ CHI_SUPERUSER = {
     "quan_tri_tao_nguoi_dung",
     "quan_tri_sua_nguoi_dung",
     "quan_tri_dat_mat_khau",
+    # Cấp/thu quyền mod (2026-08-26). Lý do riêng, mạnh hơn cả nhóm CRUD ở trên: vì
+    # `ban_nguoi_dung` trả 409 khi đích là `is_staff`, **cấp quyền mod = làm người đó
+    # miễn nhiễm ban**. Một mod thường cấp được quyền cho người khác là một mod thường
+    # dựng được cho mình một đồng minh không ai ban nổi.
+    "quan_tri_doi_quyen_mod",
 }
 
 
