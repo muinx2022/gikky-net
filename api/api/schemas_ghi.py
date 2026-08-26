@@ -253,5 +253,21 @@ class BaoCaoMoiIn(Schema):
 
     target_type: Literal["mach", "moc", "comment"]
     target_id: int = Field(ge=1)
-    ly_do: Literal["phim_hang", "lua_dao", "spam", "khac"]
+    #: Sáu lý do, **phủ đủ bốn điều cấm của `/luat`** (mở rộng 2026-08-25 theo yêu cầu
+    #: user "xem có những luật nào bị vi phạm thì báo cáo"). Trước đó thiếu hai điều có
+    #: thật — *cam kết lợi nhuận* và *link nhóm kín* — nên người muốn báo đúng chuyện ấy
+    #: chỉ còn ô "Khác", tức hàng đợi mod nhận một lý do nằm trong ghi chú tự do: không
+    #: lọc được, không đếm được.
+    #:
+    #: Khai bằng `Literal` chứ không đọc `Report.LyDo`: đây là **hợp đồng API**, và nó
+    #: phải đổi có chủ đích chứ không trôi theo model. Hai chiều được đối chiếu ở
+    #: `tests/test_api_quan_tri_hop_dong.py` — lệch một giá trị là ĐỎ.
+    ly_do: Literal[
+        "phim_hang",
+        "cam_ket_loi_nhuan",
+        "lua_dao",
+        "link_nhom_kin",
+        "spam",
+        "khac",
+    ]
     ghi_chu: str = Field(default="", max_length=DAI_GHI_CHU_BAO_CAO)

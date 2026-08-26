@@ -169,16 +169,89 @@ def test_tu_tra_loi_minh_KHONG_bao(client, mach_cua_a, nguoi_a):
 
 
 @pytest.mark.django_db
-def test_binh_luan_GOC_khong_bao_cho_ai(client, mach_cua_a, nguoi_b):
-    """Bình luận gốc không trả lời ai — và nó cũng KHÔNG báo cho chủ mạch.
+def test_binh_luan_GOC_bao_cho_chu_mach(client, mach_cua_a, nguoi_a, nguoi_b):
+    """Bình luận gốc **BÁO cho chủ mạch** — user chốt 2026-08-25, đổi luật cũ.
 
-    Chủ mạch nhận tin về khán đài qua trang mạch, không qua chuông: PLAN 5.8 liệt kê đúng
-    ba nguồn (mốc mới cho follower · được trích · reply), và "có người bình luận vào mạch
-    của tôi" không nằm trong đó. Chủ một mạch đông sẽ nhận vài trăm chuông một ngày.
+    ## Bài đo này trước đây khẳng định điều NGƯỢC LẠI
+
+    Bản cũ (`test_binh_luan_GOC_khong_bao_cho_ai`) viện PLAN 5.8: ba nguồn thông báo là
+    mốc mới · được trích · reply, "có người bình luận vào mạch của tôi" không nằm trong
+    đó. Lý lẽ ấy đúng với PLAN, nhưng hệ quả là **chủ mạch không có cách nào biết có người
+    vừa nói gì dưới bài mình** ngoài việc tự mở lại trang — user gọi tên đúng chỗ đó.
+
+    Nỗi lo của bản cũ ("chủ một mạch đông nhận vài trăm chuông một ngày") **không mất đi,
+    nó được xử bằng dedupe theo ngày**: N bình luận trong một ngày gộp vào MỘT hàng, và
+    `so_binh_luan_moi` đếm lại từ nguồn. Ghim ở `test_binh_luan_gop_theo_ngay`.
     """
     client.force_login(nguoi_b)
     dat(client, f"/api/v1/machs/{mach_cua_a.pk}/comments", {"body": "B nói"}, status=201)
+
+    hang = Notification.objects.get()
+    assert hang.user_id == nguoi_a.pk, "người nhận phải là CHỦ MẠCH"
+    assert hang.type == "binh_luan"
+    assert hang.payload["boi"] == nguoi_b.username
+    assert hang.payload["so_binh_luan_moi"] == 1
+
+
+@pytest.mark.django_db
+def test_tu_binh_luan_vao_mach_MINH_khong_bao(client, mach_cua_a, nguoi_a):
+    """Chuông kể lại việc mình vừa làm là tiếng ồn thuần tuý — cùng luật `bao_moc_moi`."""
+    client.force_login(nguoi_a)
+    dat(client, f"/api/v1/machs/{mach_cua_a.pk}/comments", {"body": "A tự nói"}, status=201)
     assert Notification.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_binh_luan_gop_theo_ngay(client, mach_cua_a, nguoi_a, nguoi_b):
+    """N bình luận trong một ngày ⇒ **một** hàng, `so_binh_luan_moi` đếm lại từ nguồn.
+
+    Đây là vế trả lời cho nỗi lo của bài đo cũ. Không có nó thì chủ một mạch đông thật sự
+    nhận vài trăm chuông một ngày, và người ta tắt chuông — mất luôn cả `reply` lẫn
+    `trich` đi cùng.
+    """
+    client.force_login(nguoi_b)
+    for i in range(3):
+        dat(
+            client,
+            f"/api/v1/machs/{mach_cua_a.pk}/comments",
+            {"body": f"B nói lần {i}"},
+            status=201,
+        )
+
+    hang = Notification.objects.get(user=nguoi_a, type="binh_luan")
+    assert hang.payload["so_binh_luan_moi"] == 3
+    assert Notification.objects.filter(type="binh_luan").count() == 1
+
+
+@pytest.mark.django_db
+def test_nguoi_duoc_REPLY_khong_an_them_chuong_binh_luan(
+    client, mach_cua_a, nguoi_a, nguoi_b
+):
+    """**Hai chuông cho một sự kiện là lỗi.**
+
+    Ca dựng ra nó: `nguoi_a` vừa là chủ mạch vừa là tác giả bình luận cha. Khi `nguoi_b`
+    trả lời, `bao_reply` báo cho `nguoi_a`; nếu `bao_binh_luan` không trừ tác giả cha ra
+    thì `nguoi_a` nhận thêm một dòng `binh_luan` cho đúng câu ấy.
+
+    Đây là loại lỗi **chỉ lộ ra khi một người giữ hai vai** — bài đo phải dựng đúng cảnh
+    đó, không dựng được bằng hai người khác nhau.
+    """
+    client.force_login(nguoi_a)
+    cha = dat(
+        client, f"/api/v1/machs/{mach_cua_a.pk}/comments", {"body": "A hỏi"}, status=201
+    )
+    Notification.objects.all().delete()
+
+    client.force_login(nguoi_b)
+    dat(
+        client,
+        f"/api/v1/machs/{mach_cua_a.pk}/comments",
+        {"body": "B đáp", "parent_id": cha["id"]},
+        status=201,
+    )
+
+    cua_a = list(Notification.objects.filter(user=nguoi_a).values_list("type", flat=True))
+    assert cua_a == ["reply"], f"chỉ được MỘT chuông loại reply, thực tế {cua_a}"
 
 
 @pytest.mark.django_db

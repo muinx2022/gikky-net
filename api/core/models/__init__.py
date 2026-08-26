@@ -25,7 +25,7 @@ from core.models.dien_dan import Mach, ModSub, Sub
 from core.models.he_thong import AuditLog, Notification, Report
 from core.models.moc import AnhNoiDung, Moc, MocAnh, MocRevision
 from core.models.nguoi_dung import User
-from core.models.tuong_tac import Follow, Reaction, TheoSub, Trich, Vote
+from core.models.tuong_tac import Follow, Reaction, TheoSub, TheoUser, Trich, Vote
 
 __all__ = [
     "AnhNoiDung",
@@ -42,6 +42,7 @@ __all__ = [
     "ModSub",
     "Sub",
     "TheoSub",
+    "TheoUser",
     "Trich",
     "User",
     "Vote",

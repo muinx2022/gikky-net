@@ -1,0 +1,43 @@
+/* Nút "Báo cáo" của cả bài — nằm ở hàng chữ ký, dưới tiêu đề.
+
+   **Nhẹ, không viền, màu `--ink-3`.** Nó phải với tới được mà không tranh chú ý với nội
+   dung: báo cáo là thao tác của thiểu số, ở tần suất rất thấp, và một cái nút đỏ nổi bật
+   dưới mỗi bài là lời mời bấm — đúng thứ biến hàng đợi kiểm duyệt thành rác.
+
+   ⚠ **Không dùng `--loss`.** PLAN 9.1 giao màu đỏ riêng cho con số lãi/lỗ; một nút cảnh
+   báo mượn nó là bắt đầu của việc đỏ mất nghĩa. Tín hiệu ở đây là ICON (lá cờ) + chữ. */
+.khung {
+  display: inline-flex;
+}
+
+.nut {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--ink-3);
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.nut:hover {
+  background: var(--inset);
+  color: var(--ink);
+}
+
+.nut:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+@media (pointer: coarse) {
+  /* Vùng bấm 44px trên màn hình cảm ứng — nút này nằm lẫn trong một hàng chữ nhỏ, nên nó
+     là chỗ dễ bấm trượt nhất của trang mạch. */
+  .nut {
+    min-height: 44px;
+  }
+}

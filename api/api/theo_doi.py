@@ -22,6 +22,7 @@ from ninja import Router
 
 from core.doc_noi_dung import trang_thai_noi_dung
 from core.ghi import bo_follow, dat_da_xem, dat_follow
+from core.thong_bao import bao_theo_mach
 from core.mat import tinh_mat_cho_viewer, tinh_mat_theo_thoi_gian
 from core.models.binh_luan import Comment
 from core.models.moc import Moc
@@ -279,6 +280,10 @@ def theo_mach(request, mach_id: int):
     """
     mach = nap_mach(mach_id)
     theo = dat_follow(user=request.user, mach=mach)
+    # Báo cho CHỦ MẠCH. Idempotent ở cả hai tầng: `dat_follow` không dựng hàng thứ hai,
+    # và `bao_theo_mach` gộp theo ngày mỗi mạch — nên bấm theo/bỏ/theo lại trong một ngày
+    # không làm chuông chủ mạch dài thêm.
+    bao_theo_mach(theo)
     return TheoMachOut(
         mach_id=mach.pk,
         following=True,

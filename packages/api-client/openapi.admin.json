@@ -83,7 +83,9 @@
           "ly_do": {
             "enum": [
               "phim_hang",
+              "cam_ket_loi_nhuan",
               "lua_dao",
+              "link_nhom_kin",
               "spam",
               "khac"
             ],

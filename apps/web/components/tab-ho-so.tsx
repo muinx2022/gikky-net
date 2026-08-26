@@ -4,13 +4,23 @@ import {
   lietKeDaVote,
   lietKeDangTheo,
   lietKeSubDangTheo,
+  lietKeUserDangTheo,
   type MachTomTatOut,
+  type NguoiDungTomTatOut,
   type SubChiTietOut,
 } from "@gikky/api-client";
-import { Bookmark, FileText, Layers, ThumbsUp, type LucideIcon } from "lucide-react";
+import {
+  Bookmark,
+  FileText,
+  Layers,
+  ThumbsUp,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { CHU_NGUOI_DUNG } from "@/lib/chu-nguoi-dung";
 import { GOC_TRINH_DUYET } from "@/lib/tai-khoan";
 import {
   NHAN_TAB_HO_SO,
@@ -19,7 +29,9 @@ import {
   type TabHoSo,
 } from "@/lib/tab-ho-so";
 
+import { Avatar } from "./avatar";
 import { NutBoTheoSub } from "./nut-theo-sub";
+import { NutBoTheoUser } from "./nut-theo-user-bo";
 import { usePhien } from "./phien";
 import css from "./tab-ho-so.module.css";
 import { TheMach } from "./the-mach";
@@ -29,6 +41,7 @@ const ICON_TAB: Readonly<Record<TabHoSo, LucideIcon>> = {
   "da-vote": ThumbsUp,
   "dang-theo": Bookmark,
   "chuyen-muc": Layers,
+  nguoi: Users,
 };
 
 /** Thanh tab của trang hồ sơ.
@@ -260,6 +273,94 @@ export function DanhSachSubTheo({ username }: { username: string }) {
           <NutBoTheoSub
             slug={s.slug}
             onBoXong={() => datItems((truoc) => (truoc ?? []).filter((x) => x.slug !== s.slug))}
+          />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** Tab **Người** — danh sách người đang theo, mỗi dòng một nút "Hủy".
+
+ * Cùng khuôn `DanhSachSubTheo` và cùng hai luật của nó:
+ *
+ * - **danh sách sống ở ĐÂY**, nút trong dòng chỉ gọi `onBoXong`. Cho mỗi dòng tự ẩn mình
+ *   bằng state riêng là một danh sách có hai nguồn sự thật;
+ * - **không `router.refresh()`**: danh sách này nạp ở trình duyệt từ `/me/dang-theo-user`
+ *   (`no-store`), server không hề biết tới nó.
+ */
+export function DanhSachUserTheo({ username }: { username: string }) {
+  const { toi, dangTai } = usePhien();
+  const la_chu = toi?.dang_nhap === true && toi.username === username;
+
+  const [items, datItems] = useState<NguoiDungTomTatOut[] | null>(null);
+  const [loi, datLoi] = useState(false);
+
+  useEffect(() => {
+    if (!la_chu) return;
+    let con_song = true;
+    datItems(null);
+    datLoi(false);
+    void (async () => {
+      try {
+        const kq = await lietKeUserDangTheo({
+          baseUrl: GOC_TRINH_DUYET,
+          cache: "no-store",
+        });
+        if (!con_song) return;
+        if (kq.data === undefined) throw new Error("phản hồi rỗng");
+        datItems(kq.data);
+      } catch {
+        if (con_song) datLoi(true);
+      }
+    })();
+    return () => {
+      con_song = false;
+    };
+  }, [la_chu]);
+
+  if (dangTai) return null;
+  if (!la_chu) return <ChiChuHoSo />;
+  if (loi) {
+    return (
+      <p className={css.rong} role="alert">
+        Không tải được danh sách. Thử lại sau ít giây.
+      </p>
+    );
+  }
+  if (items === null) {
+    return (
+      <p className={css.rong} data-testid="tab-rieng-dang-tai">
+        Đang tải…
+      </p>
+    );
+  }
+  if (items.length === 0) {
+    return (
+      <p className={css.rong} data-testid="tab-rieng-rong">
+        Bạn chưa theo dõi ai. Mở hồ sơ một người rồi bấm “Theo dõi” để nhận thông báo khi
+        họ đăng bài mới.
+      </p>
+    );
+  }
+  return (
+    <ul className={css.danh_sach_sub} data-testid="tab-user-danh-sach">
+      {items.map((u) => (
+        <li key={u.username} className={css.dong_sub} data-testid="dong-user">
+          <Avatar ten={u.username} hienThi={u.display_name} url={u.avatar_url} co={36} />
+          <div className={css.sub_chu}>
+            <Link href={`/u/${u.username}`} className={css.sub_ten} {...CHU_NGUOI_DUNG}>
+              {u.display_name || u.username}
+            </Link>
+            <p className={`${css.sub_slug} mono`} {...CHU_NGUOI_DUNG}>
+              u/{u.username}
+            </p>
+          </div>
+          <NutBoTheoUser
+            username={u.username}
+            onBoXong={() =>
+              datItems((truoc) => (truoc ?? []).filter((x) => x.username !== u.username))
+            }
           />
         </li>
       ))}

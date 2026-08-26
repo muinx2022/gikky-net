@@ -64,6 +64,36 @@ class TheoSubOut(Schema):
     following: bool
 
 
+class TheoUserOut(Schema):
+    """Kết quả `POST`/`DELETE /users/{username}/theo` — user chốt 2026-08-25.
+
+    Trả **trạng thái sau khi ghi**, không trả "đã đổi hay chưa": hai cửa đều idempotent
+    nên "đã đổi" là câu client không dùng được vào việc gì, còn `following` thì client vẽ
+    thẳng lên nút. Cùng khuôn `TheoSubOut`.
+    """
+
+    username: str
+    following: bool
+
+
+class UserCuaToiOut(Schema):
+    """`GET /users/{username}/me` — nửa per-user của trang hồ sơ.
+
+    Trang `/u/<username>` render ở server và **cố ý không biết người xem là ai** (PLAN
+    8.4), nên "tôi có theo người này không" bắt buộc hỏi riêng ở trình duyệt.
+
+    `la_toi` để client **không vẽ nút** trên hồ sơ của chính mình. Suy ở server thay vì để
+    client so `username` với `/me`: hai chỗ so sánh là hai chỗ có thể so sai (hoa/thường,
+    khoảng trắng), và chỗ sai sẽ bày ra một cái nút bấm vào ăn 400.
+
+    **Khách nhận 200** với cả ba trường `false`, không phải 401.
+    """
+
+    dang_nhap: bool
+    following: bool
+    la_toi: bool
+
+
 class SubCuaToiOut(Schema):
     """`GET /subs/{slug}/me` — nửa per-user của trang chuyên mục.
 

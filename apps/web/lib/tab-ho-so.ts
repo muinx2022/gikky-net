@@ -1,4 +1,4 @@
-/** Bốn tab của trang hồ sơ — PLAN khu người dùng, chốt 2026-08-24.
+/** Năm tab của trang hồ sơ — PLAN khu người dùng, chốt 2026-08-24.
  *
  * Tab sống trên **URL** (`?tab=`), không phải state client — cùng lý do `?view=` và
  * `?sort=` đang dùng: bấm Back phải đoán được, và link gửi cho nhau phải mở đúng chỗ.
@@ -7,7 +7,13 @@
  * và PLAN nguyên tắc 7 chỉ cấm đổi lựa chọn HỢP LỆ của người dùng — không cấm bỏ qua rác.
  * Cùng lối `docSort`/`docView`.
  */
-export const TAB_HO_SO = ["bai-viet", "da-vote", "dang-theo", "chuyen-muc"] as const;
+export const TAB_HO_SO = [
+  "bai-viet",
+  "da-vote",
+  "dang-theo",
+  "chuyen-muc",
+  "nguoi",
+] as const;
 export type TabHoSo = (typeof TAB_HO_SO)[number];
 
 export const TAB_HO_SO_MAC_DINH: TabHoSo = "bai-viet";
@@ -20,15 +26,23 @@ export const NHAN_TAB_HO_SO: Readonly<Record<TabHoSo, string>> = {
   // ngay bên cạnh đã mang chữ "Đang theo" — hai nhãn mở đầu giống nhau là mắt phải đọc hết
   // cả câu mới phân biệt được.
   "chuyen-muc": "Chuyên mục",
+  // "Người" chứ không "Đang theo người": tab bên cạnh đã mang chữ "Đang theo" (mạch),
+  // và năm nhãn phải còn nằm một hàng. Nghĩa đầy đủ nằm ở câu rỗng bên trong tab.
+  nguoi: "Người",
 };
 
-/** Ba tab đọc `/me/*` — **chỉ có nghĩa trên hồ sơ của CHÍNH MÌNH**.
+/** Bốn tab đọc `/me/*` — **chỉ có nghĩa trên hồ sơ của CHÍNH MÌNH**.
  *
  * Hiện chúng trên hồ sơ người khác là hứa một thứ API sẽ từ chối, và PLAN mục 4 chốt "một
  * cái nút vĩnh viễn không bấm được còn tệ hơn không có nút". Đây cũng là ranh giới riêng
  * tư: "tôi đã vote gì" không phải dữ liệu công khai.
  */
-export const TAB_RIENG: readonly TabHoSo[] = ["da-vote", "dang-theo", "chuyen-muc"];
+export const TAB_RIENG: readonly TabHoSo[] = [
+  "da-vote",
+  "dang-theo",
+  "chuyen-muc",
+  "nguoi",
+];
 
 export function laTabRieng(tab: TabHoSo): boolean {
   return TAB_RIENG.includes(tab);

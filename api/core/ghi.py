@@ -118,7 +118,7 @@ from core.models.binh_luan import Comment
 from core.models.dien_dan import Mach, Sub
 from core.models.he_thong import AuditLog, Report
 from core.models.moc import Moc, MocAnh, MocRevision, kiem_figures
-from core.models.tuong_tac import Follow, Reaction, TheoSub, Trich, Vote
+from core.models.tuong_tac import Follow, Reaction, TheoSub, TheoUser, Trich, Vote
 from core.thoi_gian import TZ_VN, ngay_vn
 from core.tim_kiem import dong_bo_mach
 
@@ -1208,6 +1208,36 @@ def bo_theo_sub(*, user, sub: Sub) -> bool:
     cho một trạng thái người dùng vốn đã muốn có.
     """
     so_xoa, _ = TheoSub.objects.filter(user=user, sub=sub).delete()
+    return so_xoa > 0
+
+
+def dat_theo_user(*, nguoi_theo, nguoi_duoc_theo) -> TheoUser:
+    """Theo dõi một người. **Idempotent** — bấm hai lần không dựng hàng thứ hai.
+
+    **Tự theo mình ném `ValidationError`**, không im lặng bỏ qua. Hai lối cùng ra "không
+    có hàng nào được tạo", nhưng chúng khác nhau ở chỗ người gọi biết được gì: im lặng thì
+    UI vẽ nút thành "Đang theo" rồi lượt tải sau nó lật về — một trạng thái nói dối. DB
+    cũng chặn (`CheckConstraint theo_user_khong_tu_theo`); phép kiểm ở đây tồn tại để lỗi
+    ra dưới dạng 400 có mã, không phải 500 từ `IntegrityError`.
+    """
+    if nguoi_theo.pk == nguoi_duoc_theo.pk:
+        raise ValidationError("Không tự theo dõi chính mình được.")
+    theo, _ = TheoUser.objects.get_or_create(
+        nguoi_theo=nguoi_theo, nguoi_duoc_theo=nguoi_duoc_theo
+    )
+    return theo
+
+
+def bo_theo_user(*, nguoi_theo, nguoi_duoc_theo) -> bool:
+    """Bỏ theo một người. Trả `True` nếu vừa xoá một hàng.
+
+    Bỏ thứ vốn không theo **không phải lỗi**: nút "Hủy" có ở hai chỗ (hồ sơ người đó và
+    tab "Đang theo người"), hai tab trình duyệt cùng mở là chuyện thường, và bắt cái bấm
+    sau ăn 404 là báo lỗi cho đúng trạng thái người dùng vốn đã muốn có.
+    """
+    so_xoa, _ = TheoUser.objects.filter(
+        nguoi_theo=nguoi_theo, nguoi_duoc_theo=nguoi_duoc_theo
+    ).delete()
     return so_xoa > 0
 
 

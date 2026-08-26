@@ -33,7 +33,16 @@ DAI_TRICH_YEU = 200
 #: `Report.LyDo` / `Report.Dich` / `Report.action` khai bằng `Literal` để `openapi` ra
 #: `enum` ⇒ TS client cho union thay vì `string` (PLAN 8.3). Giá trị phải trùng ĐÚNG
 #: `TextChoices` của model — `tests/test_api_quan_tri_hop_dong.py` ghim cả hai chiều.
-LyDoBaoCao = Literal["phim_hang", "lua_dao", "spam", "khac"]
+#: Sáu lý do — **phủ đủ bốn điều cấm của `/luat`** (mở rộng 2026-08-25). Thứ tự khớp
+#: `Report.LyDo`; `test_api_quan_tri_hop_dong.py` đối chiếu hai chiều nên lệch là ĐỎ.
+LyDoBaoCao = Literal[
+    "phim_hang",
+    "cam_ket_loi_nhuan",
+    "lua_dao",
+    "link_nhom_kin",
+    "spam",
+    "khac",
+]
 DichBaoCao = Literal["mach", "moc", "comment"]
 #: Hành động mod GHI LẠI khi đóng báo cáo. Nó **không tự thi hành** gì — xem
 #: `core/ghi.py::dong_bao_cao`.

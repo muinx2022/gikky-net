@@ -112,6 +112,7 @@ from api.mocs import router as router_mocs  # noqa: E402
 from api.quyen import dang_ky_xu_ly_loi_ghi  # noqa: E402
 from api.theo_doi import router as router_theo_doi  # noqa: E402
 from api.theo_sub import router as router_theo_sub  # noqa: E402
+from api.theo_user import router as router_theo_user  # noqa: E402
 from api.tim_kiem import router as router_tim_kiem  # noqa: E402
 from api.thong_bao import router as router_thong_bao  # noqa: E402
 from api.toi import router as router_toi  # noqa: E402
@@ -144,6 +145,10 @@ api_v1.add_router("", router_theo_doi)
 # Router riêng vì cùng ranh giới với `theo_doi`: `api/feeds.py` giữ hai endpoint chuyên mục
 # KHÔNG per-user (cache được), file kia đọc `request.user`. Xem docstring `api/theo_sub.py`.
 api_v1.add_router("", router_theo_sub)
+# Theo dõi NGƯỜI (2026-08-25) — `/users/{username}/theo`, `/users/{username}/me`,
+# `/me/dang-theo-user`. Router riêng vì cùng ranh giới: `api/users.py` giữ hồ sơ công khai
+# KHÔNG per-user (cache được), file kia đọc `request.user`.
+api_v1.add_router("", router_theo_user)
 api_v1.add_router("", router_thong_bao)
 # Phase 5 — `POST /mocs/{id}/anh` (multipart) + `DELETE /anh/{id}`. Tách khỏi `mocs.py`
 # vì nó là cửa duy nhất nhận **file** từ internet, và bảy phép kiểm của nó đáng được đọc

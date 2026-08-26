@@ -201,6 +201,13 @@ def test_du_endpoint_cua_plan_muc_7():
         # quyền gì, bốn cửa `/mod/*` vẫn kiểm `is_staff`. Ghim ở
         # `test_api_theo_sub.py::test_danh_sach_mod_KHONG_phai_danh_sach_quyen`.
         (("GET",), "/me/subs-mod"),
+        # --- theo dõi NGƯỜI (2026-08-25) ---
+        # `/users/{username}/me` là nửa PER-USER của trang hồ sơ; `GET /users/{username}`
+        # bên `api/users.py` là nửa cache được và **cấm** mọc thêm trường theo người xem.
+        (("GET",), "/users/{username}/me"),
+        (("POST",), "/users/{username}/theo"),
+        (("DELETE",), "/users/{username}/theo"),
+        (("GET",), "/me/dang-theo-user"),
     }
 
 

@@ -18,7 +18,7 @@ import css from "./bao-cao.module.css";
  * thế biến mất cùng lúc nó mở ra. Nên cha giữ state "đang mở form nào" — đúng lối mà "Sửa"
  * đã dùng — và render component này ở thân, ngoài menu.
  *
- * ### Bốn lý do là ENUM của server, không phải chữ tự do
+ * ### Sáu lý do là ENUM của server, không phải chữ tự do
  *
  * `LyDo` nhập từ `BaoCaoMoiIn` của TS client, không gõ lại (PLAN 8.3): thêm/bớt một lý do
  * ở Django là `pnpm codegen` làm chỗ này đỏ ở `tsc`, thay vì lặng lẽ gửi một giá trị server
@@ -35,12 +35,27 @@ import css from "./bao-cao.module.css";
 type LyDo = BaoCaoMoiIn["ly_do"];
 type Dich = BaoCaoMoiIn["target_type"];
 
-/** Nhãn tiếng Việt cho bốn lý do của PLAN 5.10. Khoá lấy từ kiểu sinh ra, nên thiếu một
- * dòng là `tsc` đỏ chứ không phải một `<option>` vắng mặt im lặng. */
+/** Nhãn tiếng Việt cho sáu lý do. Khoá lấy từ kiểu sinh ra, nên thiếu một dòng là `tsc`
+ * đỏ chứ không phải một `<option>` vắng mặt im lặng — chính nó vừa bắt được lượt mở rộng
+ * 2026-08-25.
+ *
+ * **Bốn dòng đầu khớp ĐÚNG bốn điều cấm của `/luat`** (`lib/phap-ly.ts::DIEU_CAM`), theo
+ * đúng thứ tự. Trước lượt này danh sách thiếu hai điều có thật — *cam kết lợi nhuận* và
+ * *link nhóm kín* — nên người muốn báo đúng chuyện ấy chỉ còn ô "Khác", tức mod nhận một
+ * hàng đợi mà lý do thật nằm trong ghi chú tự do: không lọc được, không đếm được, và
+ * không thống kê được điều nào bị vi phạm nhiều nhất.
+ *
+ * ⚠ Đây **không** phải chỗ suy từ `DIEU_CAM` bằng code. Hai danh sách trùng nghĩa nhưng
+ * khác vai: `DIEU_CAM` là văn bản luật (đọc để hiểu), còn đây là **enum của một hợp đồng
+ * API** — khoá đã ghi vào hàng `Report` và vào `AuditLog` thì không đổi theo một lần sửa
+ * câu chữ ở trang luật được. Chúng phải đổi cùng nhau, nhưng bằng một quyết định, không
+ * bằng một phép suy. */
 const NHAN_LY_DO: Record<LyDo, string> = {
   phim_hang: "Hô hào mua bán / phím hàng",
-  lua_dao: "Lừa đảo, mời uỷ thác, room VIP",
-  spam: "Spam",
+  cam_ket_loi_nhuan: "Cam kết lợi nhuận, hứa mức lãi",
+  lua_dao: "Mời uỷ thác, room VIP trả phí, lừa đảo",
+  link_nhom_kin: "Link nhóm kín (Zalo, Telegram, group riêng)",
+  spam: "Spam, lôi kéo, đăng lặp",
   khac: "Khác",
 };
 

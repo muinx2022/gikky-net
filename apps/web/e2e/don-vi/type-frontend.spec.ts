@@ -381,6 +381,11 @@ test("luật trên có quét trúng lời gọi THẬT ở MỌI cửa (không q
     //                   trình duyệt, không nạp ở server;
     //   `tab-ho-so`     `GET /me/da-vote`, `/me/dang-theo`, `/me/subs` — ba tab riêng.
     "components/nut-theo-sub.tsx",
+    // Theo dõi NGƯỜI (2026-08-25). Ba file: nút trên hồ sơ (`GET /users/{u}/me` +
+    // `POST`/`DELETE /users/{u}/theo`), nút "Hủy" trong tab Người, và `tab-ho-so` gọi
+    // thêm `GET /me/dang-theo-user`.
+    "components/nut-theo-user-bo.tsx",
+    "components/nut-theo-user.tsx",
     "components/phien.tsx", // Phase 2
     "components/soan-thao.tsx",
     "components/tab-ho-so.tsx",

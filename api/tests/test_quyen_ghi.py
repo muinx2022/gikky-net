@@ -200,6 +200,12 @@ CUA_GHI = [
     # 1.6 hai thứ đó là **cùng một** thứ (`auth=dang_nhap`); đó chính là điều bảng này đo.
     ("post", "/api/v1/subs/{sub}/theo", {}),
     ("delete", "/api/v1/subs/{sub}/theo", {}),
+    # --- theo dõi người (2026-08-25) ---
+    # Thân RỖNG, đích trên đường dẫn, chủ suy từ phiên. Không tham số nào trỏ tới người
+    # khác nên không cần `doi_chu_so_huu`; cái chúng cần là 401 + CSRF, mà ở django-ninja
+    # 1.6 hai thứ đó là CÙNG một thứ (`auth=dang_nhap`).
+    ("post", "/api/v1/users/{username}/theo", {}),
+    ("delete", "/api/v1/users/{username}/theo", {}),
 ]
 
 
@@ -207,8 +213,8 @@ def _sao(duong: str) -> str:
     for x in (
         "{mach}", "{moc}", "{comment}", "{anh}",
         "{int:mach_id}", "{int:moc_id}", "{int:comment_id}", "{int:anh_id}",
-        # Chuyên mục đi bằng **slug**, không phải id — hai cửa `/subs/{slug}/theo`.
-        "{sub}", "{slug}",
+        # Chuyên mục đi bằng **slug**, người dùng đi bằng **username** — không phải id.
+        "{sub}", "{slug}", "{username}",
     ):
         duong = duong.replace(x, "*")
     return duong

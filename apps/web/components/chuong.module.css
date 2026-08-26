@@ -107,3 +107,28 @@
   font-size: 11px;
   color: var(--ink-3);
 }
+
+/* Icon + thân, từ lượt 7 loại (2026-08-25). Trước đó mỗi dòng chỉ có chữ, và bảy loại chữ
+   na ná nhau thì mắt phải ĐỌC mới phân biệt được — icon cho phép lướt. */
+.dong {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+}
+
+.hinh {
+  flex: none;
+  margin-top: 2px;
+  color: var(--ink-3);
+}
+
+.chua_doc .hinh {
+  color: var(--accent);
+}
+
+.than {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}

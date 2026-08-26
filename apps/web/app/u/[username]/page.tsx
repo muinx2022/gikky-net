@@ -4,7 +4,13 @@ import { notFound } from "next/navigation";
 import { Avatar } from "@/components/avatar";
 import { KhungHaiCot } from "@/components/khung-hai-cot";
 import { NutSuaHoSo } from "@/components/nut-sua-ho-so";
-import { DanhSachRieng, DanhSachSubTheo, TabHoSoNav } from "@/components/tab-ho-so";
+import { NutTheoUser } from "@/components/nut-theo-user";
+import {
+  DanhSachRieng,
+  DanhSachSubTheo,
+  DanhSachUserTheo,
+  TabHoSoNav,
+} from "@/components/tab-ho-so";
 import { TheMach } from "@/components/the-mach";
 import { docHoSo } from "@/lib/api";
 import { CHU_NGUOI_DUNG } from "@/lib/chu-nguoi-dung";
@@ -85,8 +91,11 @@ export default async function TrangHoSo({
             u/{ho_so.username}
           </p>
         </div>
-        {/* Chỉ chủ hồ sơ thấy — client quyết, xem `NutSuaHoSo`. */}
+        {/* Hai nút loại trừ nhau và **cả hai đều do CLIENT quyết**: `NutSuaHoSo` chỉ
+            hiện trên hồ sơ của chính mình, `NutTheoUser` chỉ hiện trên hồ sơ người khác.
+            Server không quyết được — nó cố ý không biết người xem là ai (PLAN 8.4). */}
         <NutSuaHoSo username={ho_so.username} />
+        <NutTheoUser username={ho_so.username} />
       </div>
       {ho_so.bio !== "" && (
         <p className={css.bio} {...CHU_NGUOI_DUNG}>
@@ -140,6 +149,8 @@ export default async function TrangHoSo({
           sự thật trở lại. */}
       {tab === "chuyen-muc" ? (
         <DanhSachSubTheo username={ho_so.username} />
+      ) : tab === "nguoi" ? (
+        <DanhSachUserTheo username={ho_so.username} />
       ) : laTabRieng(tab) ? (
         <DanhSachRieng
           username={ho_so.username}

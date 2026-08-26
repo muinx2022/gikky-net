@@ -163,7 +163,9 @@
           "ly_do": {
             "enum": [
               "phim_hang",
+              "cam_ket_loi_nhuan",
               "lua_dao",
+              "link_nhom_kin",
               "spam",
               "khac"
             ],
@@ -2012,6 +2014,25 @@
         "title": "TheoSubOut",
         "type": "object"
       },
+      "TheoUserOut": {
+        "description": "Kết quả `POST`/`DELETE /users/{username}/theo` — user chốt 2026-08-25.\n\nTrả **trạng thái sau khi ghi**, không trả \"đã đổi hay chưa\": hai cửa đều idempotent\nnên \"đã đổi\" là câu client không dùng được vào việc gì, còn `following` thì client vẽ\nthẳng lên nút. Cùng khuôn `TheoSubOut`.",
+        "properties": {
+          "following": {
+            "title": "Following",
+            "type": "boolean"
+          },
+          "username": {
+            "title": "Username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "username",
+          "following"
+        ],
+        "title": "TheoUserOut",
+        "type": "object"
+      },
       "ThongBaoOut": {
         "description": "Một dòng chuông — PLAN 5.8.\n\n`payload` là **JSON tự do có chủ đích**: ba loại thông báo mang ba bộ trường khác nhau,\nvà ép chúng vào một schema chung sẽ ra một object mà 2/3 số trường luôn `null`. Các\nkhoá chung cho cả ba loại: `mach_id`, `mach_title`, `mach_slug` — đủ để render một\ndòng có link mà **không phải join** sang bảng nào, điều kiện để chuông poll 60 giây\nmột lần không thành một câu truy vấn nặng.\n\nCái giá của việc chép sẵn tiêu đề vào payload: đổi tiêu đề mạch thì dòng chuông cũ giữ\ntiêu đề tại thời điểm báo. Đó là hành vi ĐÚNG cho một thông báo — nó kể lại một sự\nkiện đã xảy ra — không phải một chỗ dữ liệu trôi.\n\n`type`: `\"moc_moi\"` | `\"trich\"` | `\"reply\"`.",
         "properties": {
@@ -2299,6 +2320,30 @@
           "anchor_moc_seq"
         ],
         "title": "TrichOut",
+        "type": "object"
+      },
+      "UserCuaToiOut": {
+        "description": "`GET /users/{username}/me` — nửa per-user của trang hồ sơ.\n\nTrang `/u/<username>` render ở server và **cố ý không biết người xem là ai** (PLAN\n8.4), nên \"tôi có theo người này không\" bắt buộc hỏi riêng ở trình duyệt.\n\n`la_toi` để client **không vẽ nút** trên hồ sơ của chính mình. Suy ở server thay vì để\nclient so `username` với `/me`: hai chỗ so sánh là hai chỗ có thể so sai (hoa/thường,\nkhoảng trắng), và chỗ sai sẽ bày ra một cái nút bấm vào ăn 400.\n\n**Khách nhận 200** với cả ba trường `false`, không phải 401.",
+        "properties": {
+          "dang_nhap": {
+            "title": "Dang Nhap",
+            "type": "boolean"
+          },
+          "following": {
+            "title": "Following",
+            "type": "boolean"
+          },
+          "la_toi": {
+            "title": "La Toi",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "dang_nhap",
+          "following",
+          "la_toi"
+        ],
+        "title": "UserCuaToiOut",
         "type": "object"
       },
       "VoteCuaToiOut": {
@@ -4287,6 +4332,48 @@
         ]
       }
     },
+    "/api/v1/me/dang-theo-user": {
+      "get": {
+        "description": "Người **tôi** đang theo — nguồn của tab \"Đang theo người\" trong hồ sơ.\n\n**Mới theo trước** (`-created_at`), không sắp theo tên: đây là danh sách để quản lý, và\nthứ vừa thêm là thứ người ta hay muốn sửa lại nhất. Khác `GET /subs` — cái đó là một\n**bản đồ** nên sắp theo `slug` cho ổn định.\n\n**Không phân trang**, cùng chuẩn `GET /me/subs`: theo vài chục người là nhiều. Ngày\ntập này dài ra thì cả hai cùng phải đổi — và đổi cùng lúc, vì cùng một lý do.\n\n`select_related(\"nguoi_duoc_theo\")` là bắt buộc chứ không phải tối ưu: thiếu nó thì\nmỗi dòng một truy vấn, và `nguoi_dung_ra` đọc `avatar_khoa` của từng người.",
+        "operationId": "liet_ke_user_dang_theo",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/NguoiDungTomTatOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Liet Ke User Dang Theo",
+        "tags": [
+          "tai-khoan"
+        ]
+      }
+    },
     "/api/v1/me/subs": {
       "get": {
         "description": "Chuyên mục **tôi** đang theo — nguồn của tab \"Chuyên mục\" trong hồ sơ.\n\n**Mới theo trước** (`-created_at` trên `TheoSub`), không sắp theo `slug`: đây là danh\nsách để quản lý, và thứ vừa thêm là thứ người ta hay muốn sửa lại nhất. Khác\n`GET /subs` — cái đó là **bản đồ** nên sắp theo `slug` cho ổn định.\n\n**Không phân trang, có chủ đích.** Một người theo hàng chục chuyên mục là nhiều, và\n`GET /subs` (toàn bộ chuyên mục của site) cũng đã không phân trang vì cùng lý do — v1\ntạo sub bằng tay qua admin. Ngày tập này dài ra thì cả hai cùng phải đổi.\n\nTrả `SubChiTietOut` y hệt `GET /subs` để tab hồ sơ vẽ được cùng một loại thẻ: dùng\nkiểu riêng ở đây là hai schema gần giống nhau, và cái thứ hai sẽ lệch ở lần sửa sau.",
@@ -6015,6 +6102,173 @@
         "summary": "Liet Ke Mach Cua User",
         "tags": [
           "nguoi-dung"
+        ]
+      }
+    },
+    "/api/v1/users/{username}/me": {
+      "get": {
+        "description": "Tôi có đang theo người này không — **không bao giờ cache được**.\n\n**Khách nhận 200** (`dang_nhap=false, following=false`), không phải 401: cùng lý lẽ\n`GET /machs/{id}/me`, `GET /subs/{slug}/me` và `GET /me` — endpoint này chạy ở mọi\nlượt tải trang hồ sơ, kể cả của bot.\n\n`la_toi` để client biết **không vẽ nút**: hồ sơ của chính mình không có gì để theo, và\nmột cái nút bấm vào ăn 400 là nút không nên bày ra.",
+        "operationId": "xem_user_cua_toi",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "required": true,
+            "schema": {
+              "title": "Username",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserCuaToiOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "Xem User Cua Toi",
+        "tags": [
+          "tai-khoan"
+        ]
+      }
+    },
+    "/api/v1/users/{username}/theo": {
+      "delete": {
+        "description": "Bỏ theo. **Idempotent**: bỏ thứ vốn không theo vẫn là 200.\n\nNút \"Hủy\" có ở hai chỗ (hồ sơ người đó và tab \"Đang theo người\"), hai tab trình duyệt\ncùng mở là chuyện thường, và bắt cái bấm sau ăn 404 là báo lỗi cho đúng trạng thái\nngười dùng vốn đã muốn có.\n\n**Không xoá thông báo `theo_user` đã gửi.** Thông báo kể lại một sự kiện ĐÃ xảy ra;\nxoá nó đi là sửa lại quá khứ, và nó cũng là cách để một người theo–bỏ theo liên tục\nmà không để lại dấu vết nào cho người bị theo.",
+        "operationId": "bo_theo_user",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "required": true,
+            "schema": {
+              "title": "Username",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TheoUserOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Bo Theo User Endpoint",
+        "tags": [
+          "tai-khoan"
+        ]
+      },
+      "post": {
+        "description": "Theo dõi một người. **Idempotent** — bấm lần thứ hai vẫn 200.\n\n**Tự theo mình trả 400**, không im lặng bỏ qua: im lặng thì UI vẽ nút thành \"Đang\ntheo\" rồi lượt tải sau nó lật về — một trạng thái nói dối. `core.ghi.dat_theo_user`\nném `ValidationError`, và DB còn một `CheckConstraint` phía sau.\n\n⚠ `auth=dang_nhap` cũng chính là lớp kiểm **CSRF** (xem chú thích `NinjaAPI` ở\n`api/v1.py`): khai `auth=None` cho một cửa ghi là mở cho bất kỳ trang web nào POST\nsang đây bằng cookie phiên của người đang đăng nhập.",
+        "operationId": "theo_user",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "required": true,
+            "schema": {
+              "title": "Username",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TheoUserOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Theo User",
+        "tags": [
+          "tai-khoan"
         ]
       }
     },

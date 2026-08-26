@@ -48,9 +48,27 @@ class Report(models.Model):
     """Báo cáo nội dung → hàng đợi admin (PLAN 5.10 · Phase 4 dùng)."""
 
     class LyDo(models.TextChoices):
+        """Lý do báo cáo — **phủ đủ bốn điều cấm của `/luat`** (user chốt 2026-08-25).
+
+        Trước lượt này chỉ có bốn giá trị, và chúng **không khớp luật**: hai điều cấm có
+        thật ở `/luat` — *cam kết lợi nhuận* và *link nhóm kín trong bài* — không có ô nào
+        để chọn. Người muốn báo đúng chuyện đó chỉ còn "Khác", tức mod nhận một hàng đợi
+        mà lý do thật nằm trong ô ghi chú tự do, không lọc được, không đếm được.
+
+        ⚠ **Chỉ THÊM, không đổi tên khoá cũ.** `lua_dao` ở lại nguyên chuỗi dù nhãn của nó
+        trùng điều 3: đổi khoá là phải migrate mọi hàng `Report` đã có, và một hàng đợi
+        kiểm duyệt là thứ **không** được sửa lại quá khứ — mod đã xử theo lý do nào thì
+        `AuditLog` ghi lý do đó.
+
+        `spam` không nằm trong bốn điều cấm nhưng ở lại: nó là loại vi phạm phổ biến nhất
+        của mọi diễn đàn và `/luat` xử nó ở phần chế tài chứ không ở phần điều cấm.
+        """
+
         PHIM_HANG = "phim_hang", "Hô hào mua bán / phím hàng"
-        LUA_DAO = "lua_dao", "Lừa đảo, mời uỷ thác, room VIP"
-        SPAM = "spam", "Spam"
+        CAM_KET_LOI_NHUAN = "cam_ket_loi_nhuan", "Cam kết lợi nhuận, hứa mức lãi"
+        LUA_DAO = "lua_dao", "Mời uỷ thác, room VIP trả phí, lừa đảo"
+        LINK_NHOM_KIN = "link_nhom_kin", "Link nhóm kín (Zalo, Telegram, group riêng)"
+        SPAM = "spam", "Spam, lôi kéo, đăng lặp"
         KHAC = "khac", "Khác"
 
     class Dich(models.TextChoices):
@@ -63,7 +81,9 @@ class Report(models.Model):
     )
     target_type = models.CharField(max_length=8, choices=Dich)
     target_id = models.BigIntegerField()
-    ly_do = models.CharField(max_length=16, choices=LyDo)
+    #: 24 chứ không 16: khoá dài nhất là `cam_ket_loi_nhuan` (17). Nới sẵn một chút
+    #: để lần thêm lý do sau không kéo theo migration thứ hai chỉ vì một ký tự.
+    ly_do = models.CharField(max_length=24, choices=LyDo)
     ghi_chu = models.TextField(blank=True)
     created_at = models.DateTimeField(default=timezone.now, editable=False)
 

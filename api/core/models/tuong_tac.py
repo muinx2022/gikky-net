@@ -303,3 +303,64 @@ class TheoSub(models.Model):
 
     def __str__(self) -> str:
         return f"{self.user_id} theo chuyên mục {self.sub_id}"
+
+
+class TheoUser(models.Model):
+    """Theo dõi **NGƯỜI** (user chốt 2026-08-25) — bảng thứ ba của họ "theo dõi".
+
+    Ba bảng, ba đích, không gộp được: `Follow` → `Mach` (mang cả vị trí đọc dở),
+    `TheoSub` → `Sub`, `TheoUser` → `User`. Xem docstring `TheoSub` cho lý do đầy đủ.
+
+    ## Nó CÓ sinh thông báo, khác `TheoSub`
+
+    Theo người ⇒ nhận `mach_moi` khi người đó đăng mạch mới
+    (`core/thong_bao.py::bao_mach_moi`). Không có vế ấy thì cái nút là một nút không làm
+    gì, và PLAN mục 4 cấm đúng chuyện đó — *"một cái nút vĩnh viễn không bấm được còn tệ
+    hơn không có nút"*, và một nút bấm được nhưng không đổi gì thì còn tệ hơn nữa vì nó
+    hứa hẹn.
+
+    ## `CheckConstraint` cấm tự theo mình
+
+    Ở tầng DB chứ không chỉ ở endpoint. Tự theo mình không phá gì to, nhưng nó chảy vào
+    mọi truy vấn đếm và vào `bao_mach_moi` — nơi người viết sẽ tự nhận chuông về bài của
+    chính mình. Chặn ở một chỗ duy nhất mà mọi đường ghi đều đi qua thì rẻ hơn nhớ kiểm ở
+    N chỗ.
+
+    ## KHÔNG đếm follower công khai
+
+    Cố ý, ghi ở `plans/2026-08-25-theo-doi-va-chuong.md` §2. Một con số uy tín hiện trên
+    hồ sơ là bậc thang đầu tiên của leaderboard — thứ vòng phản biện đã bác (PLAN mục "đã
+    bị bác"). Bảng này đủ dữ liệu để dựng con số ấy bất cứ lúc nào; việc bày nó ra là một
+    quyết định riêng, phải có lý do riêng.
+    """
+
+    nguoi_theo = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="dang_theo_user"
+    )
+    nguoi_duoc_theo = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="nguoi_theo_toi"
+    )
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    class Meta:
+        verbose_name = "theo người dùng"
+        verbose_name_plural = "theo người dùng"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["nguoi_theo", "nguoi_duoc_theo"], name="theo_user_duy_nhat"
+            ),
+            models.CheckConstraint(
+                condition=~models.Q(nguoi_theo=models.F("nguoi_duoc_theo")),
+                name="theo_user_khong_tu_theo",
+            ),
+        ]
+        #: Tab "Đang theo người" liệt kê mới theo trước — truy vấn nhiều-hàng duy nhất
+        #: chạm bảng này từ phía người theo. Chiều ngược (`nguoi_duoc_theo`) là truy vấn
+        #: của `bao_mach_moi`: lấy mọi người theo một tác giả.
+        indexes = [
+            models.Index(fields=["nguoi_theo", "-created_at"], name="theo_user_cua_toi"),
+            models.Index(fields=["nguoi_duoc_theo"], name="theo_user_nguoi_duoc"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.nguoi_theo_id} theo người {self.nguoi_duoc_theo_id}"

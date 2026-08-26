@@ -63,7 +63,7 @@ export type BaoCaoOut = {
     /**
      * Ly Do
      */
-    ly_do: 'phim_hang' | 'lua_dao' | 'spam' | 'khac';
+    ly_do: 'phim_hang' | 'cam_ket_loi_nhuan' | 'lua_dao' | 'link_nhom_kin' | 'spam' | 'khac';
     reporter: NguoiDungTomTatOut;
     /**
      * Resolved At

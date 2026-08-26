@@ -50,7 +50,7 @@ from core.models.moc import Moc, MocAnh
 from core.models.tuong_tac import Trich
 from core.revalidate import lam_moi_mach
 from core.thoi_gian import nua_dem_vn_ke_tiep
-from core.thong_bao import bao_moc_moi, bao_reply
+from core.thong_bao import bao_binh_luan, bao_mach_moi, bao_moc_moi, bao_reply
 
 from api.ghi_chung import doi_con_song, kiem_occurred_at, nap_mach
 from api.loi import (
@@ -482,6 +482,10 @@ def tao_mach_api(request, du_lieu: MachMoiIn):
             figures=_figures_ra_dict(du_lieu.figures),
         )
         tu_upvote(target=moc)
+        # Trong CÙNG transaction, sau khi `Mach` đã có hàng: `INSERT core_notification`
+        # lấy `FOR KEY SHARE` trên `core_user`, tức cạnh `Mach → User` mà `core/ghi.py`
+        # đã khai. Gọi trước `tao_mach` là dựng cạnh ngược.
+        bao_mach_moi(mach)
     mach.refresh_from_db()
     return Status(201, mach_chi_tiet_ra(mach))
 
@@ -691,6 +695,10 @@ def viet_binh_luan(request, mach_id: int, du_lieu: BinhLuanMoiIn):
         # Báo cho tác giả bình luận CHA, trong cùng transaction (PLAN 5.8). Hàm tự bỏ qua
         # ba ca: không có cha · tự trả lời mình · cha đã bị gỡ.
         bao_reply(c)
+        # `bao_binh_luan` chạy SAU `bao_reply` và tự loại tác giả bình luận cha ra khỏi
+        # danh sách nhận — nếu không, người vừa được trả lời sẽ ăn hai chuông cho cùng
+        # một câu. Xem docstring `core/thong_bao.py::bao_binh_luan`.
+        bao_binh_luan(c)
     c.refresh_from_db()
     nut = Nut(
         binh_luan=c,

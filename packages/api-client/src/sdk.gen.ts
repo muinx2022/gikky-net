@@ -4,7 +4,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { BoTheoMachData, BoTheoMachErrors, BoTheoMachResponses, BoTheoSubData, BoTheoSubErrors, BoTheoSubResponses, DanhDauDaDocData, DanhDauDaDocErrors, DanhDauDaDocResponses, DanhDauDaXemData, DanhDauDaXemErrors, DanhDauDaXemResponses, DatAvatarData, DatAvatarErrors, DatAvatarResponses, DatReactionData, DatReactionErrors, DatReactionResponses, DatVoteData, DatVoteErrors, DatVoteResponses, DongSoMachData, DongSoMachErrors, DongSoMachResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GoTrichData, GoTrichErrors, GoTrichResponses, GuiBaoCaoData, GuiBaoCaoErrors, GuiBaoCaoResponses, LietKeBanCuMocData, LietKeBanCuMocErrors, LietKeBanCuMocResponses, LietKeBinhLuanMachData, LietKeBinhLuanMachErrors, LietKeBinhLuanMachResponses, LietKeBinhLuanMocData, LietKeBinhLuanMocErrors, LietKeBinhLuanMocResponses, LietKeDangTheoData, LietKeDangTheoErrors, LietKeDangTheoResponses, LietKeDaVoteData, LietKeDaVoteErrors, LietKeDaVoteResponses, LietKeFeedDangDienRaData, LietKeFeedDangDienRaErrors, LietKeFeedDangDienRaResponses, LietKeFeedMoiData, LietKeFeedMoiErrors, LietKeFeedMoiResponses, LietKeMachCuaUserData, LietKeMachCuaUserErrors, LietKeMachCuaUserResponses, LietKeSubDangTheoData, LietKeSubDangTheoErrors, LietKeSubDangTheoResponses, LietKeSubData, LietKeSubResponses, LietKeSubToiLamModData, LietKeSubToiLamModErrors, LietKeSubToiLamModResponses, LietKeThongBaoData, LietKeThongBaoErrors, LietKeThongBaoResponses, ModDatAnBinhLuanData, ModDatAnBinhLuanErrors, ModDatAnBinhLuanResponses, ModDatAnMachData, ModDatAnMachErrors, ModDatAnMachResponses, ModDatAnMocData, ModDatAnMocErrors, ModDatAnMocResponses, ModDatKhoaMachData, ModDatKhoaMachErrors, ModDatKhoaMachResponses, MoLaiMachData, MoLaiMachErrors, MoLaiMachResponses, NoiMocData, NoiMocErrors, NoiMocResponses, SuaBinhLuanData, SuaBinhLuanErrors, SuaBinhLuanResponses, SuaMocData, SuaMocErrors, SuaMocResponses, SuaToiData, SuaToiErrors, SuaToiResponses, TaiAnhMocData, TaiAnhMocErrors, TaiAnhMocResponses, TaiAnhNoiDungData, TaiAnhNoiDungErrors, TaiAnhNoiDungResponses, TaoMachData, TaoMachErrors, TaoMachResponses, TheoMachData, TheoMachErrors, TheoMachResponses, TheoSubData, TheoSubErrors, TheoSubResponses, TimKiemData, TimKiemErrors, TimKiemResponses, TrichVaoSoData, TrichVaoSoErrors, TrichVaoSoResponses, VietBinhLuanData, VietBinhLuanErrors, VietBinhLuanResponses, XemHoSoData, XemHoSoErrors, XemHoSoResponses, XemMachCuaToiData, XemMachCuaToiErrors, XemMachCuaToiResponses, XemMachData, XemMachErrors, XemMachResponses, XemSubCuaToiData, XemSubCuaToiErrors, XemSubCuaToiResponses, XemSubData, XemSubErrors, XemSubResponses, XemToiData, XemToiResponses, XoaAnhMocData, XoaAnhMocErrors, XoaAnhMocResponses, XoaAvatarData, XoaAvatarErrors, XoaAvatarResponses, XoaBinhLuanData, XoaBinhLuanErrors, XoaBinhLuanResponses, XoaMocData, XoaMocErrors, XoaMocResponses } from './types.gen';
+import type { BoTheoMachData, BoTheoMachErrors, BoTheoMachResponses, BoTheoSubData, BoTheoSubErrors, BoTheoSubResponses, BoTheoUserData, BoTheoUserErrors, BoTheoUserResponses, DanhDauDaDocData, DanhDauDaDocErrors, DanhDauDaDocResponses, DanhDauDaXemData, DanhDauDaXemErrors, DanhDauDaXemResponses, DatAvatarData, DatAvatarErrors, DatAvatarResponses, DatReactionData, DatReactionErrors, DatReactionResponses, DatVoteData, DatVoteErrors, DatVoteResponses, DongSoMachData, DongSoMachErrors, DongSoMachResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GoTrichData, GoTrichErrors, GoTrichResponses, GuiBaoCaoData, GuiBaoCaoErrors, GuiBaoCaoResponses, LietKeBanCuMocData, LietKeBanCuMocErrors, LietKeBanCuMocResponses, LietKeBinhLuanMachData, LietKeBinhLuanMachErrors, LietKeBinhLuanMachResponses, LietKeBinhLuanMocData, LietKeBinhLuanMocErrors, LietKeBinhLuanMocResponses, LietKeDangTheoData, LietKeDangTheoErrors, LietKeDangTheoResponses, LietKeDaVoteData, LietKeDaVoteErrors, LietKeDaVoteResponses, LietKeFeedDangDienRaData, LietKeFeedDangDienRaErrors, LietKeFeedDangDienRaResponses, LietKeFeedMoiData, LietKeFeedMoiErrors, LietKeFeedMoiResponses, LietKeMachCuaUserData, LietKeMachCuaUserErrors, LietKeMachCuaUserResponses, LietKeSubDangTheoData, LietKeSubDangTheoErrors, LietKeSubDangTheoResponses, LietKeSubData, LietKeSubResponses, LietKeSubToiLamModData, LietKeSubToiLamModErrors, LietKeSubToiLamModResponses, LietKeThongBaoData, LietKeThongBaoErrors, LietKeThongBaoResponses, LietKeUserDangTheoData, LietKeUserDangTheoErrors, LietKeUserDangTheoResponses, ModDatAnBinhLuanData, ModDatAnBinhLuanErrors, ModDatAnBinhLuanResponses, ModDatAnMachData, ModDatAnMachErrors, ModDatAnMachResponses, ModDatAnMocData, ModDatAnMocErrors, ModDatAnMocResponses, ModDatKhoaMachData, ModDatKhoaMachErrors, ModDatKhoaMachResponses, MoLaiMachData, MoLaiMachErrors, MoLaiMachResponses, NoiMocData, NoiMocErrors, NoiMocResponses, SuaBinhLuanData, SuaBinhLuanErrors, SuaBinhLuanResponses, SuaMocData, SuaMocErrors, SuaMocResponses, SuaToiData, SuaToiErrors, SuaToiResponses, TaiAnhMocData, TaiAnhMocErrors, TaiAnhMocResponses, TaiAnhNoiDungData, TaiAnhNoiDungErrors, TaiAnhNoiDungResponses, TaoMachData, TaoMachErrors, TaoMachResponses, TheoMachData, TheoMachErrors, TheoMachResponses, TheoSubData, TheoSubErrors, TheoSubResponses, TheoUserData, TheoUserErrors, TheoUserResponses, TimKiemData, TimKiemErrors, TimKiemResponses, TrichVaoSoData, TrichVaoSoErrors, TrichVaoSoResponses, VietBinhLuanData, VietBinhLuanErrors, VietBinhLuanResponses, XemHoSoData, XemHoSoErrors, XemHoSoResponses, XemMachCuaToiData, XemMachCuaToiErrors, XemMachCuaToiResponses, XemMachData, XemMachErrors, XemMachResponses, XemSubCuaToiData, XemSubCuaToiErrors, XemSubCuaToiResponses, XemSubData, XemSubErrors, XemSubResponses, XemToiData, XemToiResponses, XemUserCuaToiData, XemUserCuaToiErrors, XemUserCuaToiResponses, XoaAnhMocData, XoaAnhMocErrors, XoaAnhMocResponses, XoaAvatarData, XoaAvatarErrors, XoaAvatarResponses, XoaBinhLuanData, XoaBinhLuanErrors, XoaBinhLuanResponses, XoaMocData, XoaMocErrors, XoaMocResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -786,6 +786,32 @@ export const lietKeDangTheo = <ThrowOnError extends boolean = false>(options?: O
 });
 
 /**
+ * Liet Ke User Dang Theo
+ *
+ * Người **tôi** đang theo — nguồn của tab "Đang theo người" trong hồ sơ.
+ *
+ * **Mới theo trước** (`-created_at`), không sắp theo tên: đây là danh sách để quản lý, và
+ * thứ vừa thêm là thứ người ta hay muốn sửa lại nhất. Khác `GET /subs` — cái đó là một
+ * **bản đồ** nên sắp theo `slug` cho ổn định.
+ *
+ * **Không phân trang**, cùng chuẩn `GET /me/subs`: theo vài chục người là nhiều. Ngày
+ * tập này dài ra thì cả hai cùng phải đổi — và đổi cùng lúc, vì cùng một lý do.
+ *
+ * `select_related("nguoi_duoc_theo")` là bắt buộc chứ không phải tối ưu: thiếu nó thì
+ * mỗi dòng một truy vấn, và `nguoi_dung_ra` đọc `avatar_khoa` của từng người.
+ */
+export const lietKeUserDangTheo = <ThrowOnError extends boolean = false>(options?: Options<LietKeUserDangTheoData, ThrowOnError>): RequestResult<LietKeUserDangTheoResponses, LietKeUserDangTheoErrors, ThrowOnError> => (options?.client ?? client).get<LietKeUserDangTheoResponses, LietKeUserDangTheoErrors, ThrowOnError>({
+    security: [{
+            key: 'DangNhap',
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/me/dang-theo-user',
+    ...options
+});
+
+/**
  * Liet Ke Sub Dang Theo
  *
  * Chuyên mục **tôi** đang theo — nguồn của tab "Chuyên mục" trong hồ sơ.
@@ -1481,6 +1507,68 @@ export const xemHoSo = <ThrowOnError extends boolean = false>(options: Options<X
  *
  */
 export const lietKeMachCuaUser = <ThrowOnError extends boolean = false>(options: Options<LietKeMachCuaUserData, ThrowOnError>): RequestResult<LietKeMachCuaUserResponses, LietKeMachCuaUserErrors, ThrowOnError> => (options.client ?? client).get<LietKeMachCuaUserResponses, LietKeMachCuaUserErrors, ThrowOnError>({ url: '/api/v1/users/{username}/machs', ...options });
+
+/**
+ * Xem User Cua Toi
+ *
+ * Tôi có đang theo người này không — **không bao giờ cache được**.
+ *
+ * **Khách nhận 200** (`dang_nhap=false, following=false`), không phải 401: cùng lý lẽ
+ * `GET /machs/{id}/me`, `GET /subs/{slug}/me` và `GET /me` — endpoint này chạy ở mọi
+ * lượt tải trang hồ sơ, kể cả của bot.
+ *
+ * `la_toi` để client biết **không vẽ nút**: hồ sơ của chính mình không có gì để theo, và
+ * một cái nút bấm vào ăn 400 là nút không nên bày ra.
+ */
+export const xemUserCuaToi = <ThrowOnError extends boolean = false>(options: Options<XemUserCuaToiData, ThrowOnError>): RequestResult<XemUserCuaToiResponses, XemUserCuaToiErrors, ThrowOnError> => (options.client ?? client).get<XemUserCuaToiResponses, XemUserCuaToiErrors, ThrowOnError>({ url: '/api/v1/users/{username}/me', ...options });
+
+/**
+ * Bo Theo User Endpoint
+ *
+ * Bỏ theo. **Idempotent**: bỏ thứ vốn không theo vẫn là 200.
+ *
+ * Nút "Hủy" có ở hai chỗ (hồ sơ người đó và tab "Đang theo người"), hai tab trình duyệt
+ * cùng mở là chuyện thường, và bắt cái bấm sau ăn 404 là báo lỗi cho đúng trạng thái
+ * người dùng vốn đã muốn có.
+ *
+ * **Không xoá thông báo `theo_user` đã gửi.** Thông báo kể lại một sự kiện ĐÃ xảy ra;
+ * xoá nó đi là sửa lại quá khứ, và nó cũng là cách để một người theo–bỏ theo liên tục
+ * mà không để lại dấu vết nào cho người bị theo.
+ */
+export const boTheoUser = <ThrowOnError extends boolean = false>(options: Options<BoTheoUserData, ThrowOnError>): RequestResult<BoTheoUserResponses, BoTheoUserErrors, ThrowOnError> => (options.client ?? client).delete<BoTheoUserResponses, BoTheoUserErrors, ThrowOnError>({
+    security: [{
+            key: 'DangNhap',
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/users/{username}/theo',
+    ...options
+});
+
+/**
+ * Theo User
+ *
+ * Theo dõi một người. **Idempotent** — bấm lần thứ hai vẫn 200.
+ *
+ * **Tự theo mình trả 400**, không im lặng bỏ qua: im lặng thì UI vẽ nút thành "Đang
+ * theo" rồi lượt tải sau nó lật về — một trạng thái nói dối. `core.ghi.dat_theo_user`
+ * ném `ValidationError`, và DB còn một `CheckConstraint` phía sau.
+ *
+ * ⚠ `auth=dang_nhap` cũng chính là lớp kiểm **CSRF** (xem chú thích `NinjaAPI` ở
+ * `api/v1.py`): khai `auth=None` cho một cửa ghi là mở cho bất kỳ trang web nào POST
+ * sang đây bằng cookie phiên của người đang đăng nhập.
+ */
+export const theoUser = <ThrowOnError extends boolean = false>(options: Options<TheoUserData, ThrowOnError>): RequestResult<TheoUserResponses, TheoUserErrors, ThrowOnError> => (options.client ?? client).post<TheoUserResponses, TheoUserErrors, ThrowOnError>({
+    security: [{
+            key: 'DangNhap',
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/users/{username}/theo',
+    ...options
+});
 
 /**
  * Dat Vote Api

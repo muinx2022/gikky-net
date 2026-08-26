@@ -53,7 +53,7 @@ from django.db.models import Count, Q
 from core.models.binh_luan import Comment
 from core.models.he_thong import Notification
 from core.models.moc import Moc
-from core.models.tuong_tac import Follow, Trich
+from core.models.tuong_tac import Follow, TheoUser, Trich
 from core.thoi_gian import TZ_VN, khoa_ngay_vn, ngay_vn
 
 logger = logging.getLogger(__name__)
@@ -64,7 +64,37 @@ MOC_MOI = "moc_moi"
 TRICH = "trich"
 REPLY = "reply"
 
-LOAI_HOP_LE = (MOC_MOI, TRICH, REPLY)
+#: Bốn loại thêm 2026-08-25 — xem `plans/2026-08-25-theo-doi-va-chuong.md`.
+THEO_MACH = "theo_mach"
+THEO_USER = "theo_user"
+BINH_LUAN = "binh_luan"
+MACH_MOI = "mach_moi"
+
+LOAI_HOP_LE = (MOC_MOI, TRICH, REPLY, THEO_MACH, THEO_USER, BINH_LUAN, MACH_MOI)
+
+
+def _khoa_ngay(loai: str, dinh_danh: int, khi=None) -> str:
+    """`"{loai}:{id}:{yyyymmdd giờ VN}"` — khuôn dedupe chung cho mọi loại gộp theo ngày.
+
+    Viết một lần thay vì bốn `f-string` giống nhau: bốn bản là bốn chỗ có thể quên
+    `khoa_ngay_vn` mà tự `strftime` theo UTC, và lệch múi giờ ở đây **không bao giờ lộ ra
+    trong một bài đo chạy ban ngày** — xem `khoa_gop_moc_moi` cho ca đã suýt xảy ra.
+    """
+    return f"{loai}:{dinh_danh}:{khoa_ngay_vn(khi)}"
+
+
+def _dem_trong_ngay(qs, khi, cot: str = "created_at") -> int:
+    """Đếm hàng của `qs` rơi trong **ngày lịch VN** của `khi`.
+
+    Ranh giới dựng bằng hai mốc `datetime` aware ở `TZ_VN`, **không** bằng `__date=`: phép
+    `__date` quy đổi theo `settings.TIME_ZONE`, mà `core/thoi_gian.py` nói thẳng đó là
+    *cấu hình hiển thị*. Ai đổi nó sang UTC cho hợp log prod sẽ dời ranh giới "ngày" của
+    mọi con số này đi 7 tiếng, im lặng. Cùng lý lẽ `_dem_moc_trong_ngay`.
+    """
+    dau = datetime.combine(ngay_vn(khi), time.min, tzinfo=TZ_VN)
+    return qs.filter(
+        **{f"{cot}__gte": dau, f"{cot}__lt": dau + timedelta(days=1)}
+    ).count()
 
 
 def khoa_gop_moc_moi(mach_id: int, khi=None) -> str:
@@ -233,6 +263,165 @@ def bao_reply(comment: Comment) -> int:
                     "boi": comment.author.username,
                 },
             )
+        ]
+    )
+
+
+def bao_theo_mach(theo: Follow) -> int:
+    """Báo cho **chủ mạch** rằng có người vừa theo mạch của mình (user chốt 2026-08-25).
+
+    **Tự theo mạch mình không báo** — chuông kể lại việc mình vừa làm là tiếng ồn, cùng
+    luật `bao_moc_moi`.
+
+    **Gộp theo ngày mỗi mạch.** Một mạch lên feed có thể ăn hàng chục lượt theo trong một
+    buổi; báo từng lượt là biến chuông thành máy đếm. Payload mang `so_nguoi_theo_moi`
+    (đếm lại từ nguồn trong ngày) nên dòng chuông đọc được là "N người vừa theo".
+
+    Mạch **bị mod ẩn** thì không báo: nó dẫn chủ mạch tới một trang 404, và nó rò ra rằng
+    vẫn còn người đọc được thứ mod vừa gỡ.
+    """
+    mach = theo.mach
+    if mach.author_id == theo.user_id:
+        return 0
+    if mach.hidden_at is not None:
+        return 0
+    return _ghi_theo_lo(
+        [
+            Notification(
+                user_id=mach.author_id,
+                type=THEO_MACH,
+                payload={
+                    **_tom_tat_mach(mach),
+                    "boi": theo.user.username,
+                    "so_nguoi_theo_moi": _dem_trong_ngay(
+                        Follow.objects.filter(mach=mach).exclude(user_id=mach.author_id),
+                        theo.created_at,
+                    ),
+                },
+                dedupe_key=_khoa_ngay(THEO_MACH, mach.pk, theo.created_at),
+            )
+        ]
+    )
+
+
+def bao_theo_user(theo: TheoUser) -> int:
+    """Báo cho người **được theo** rằng có người vừa theo mình.
+
+    **Gộp theo NGƯỜI THEO, không theo ngày** — `dedupe_key = "theo_user:{id người theo}"`.
+    Theo → bỏ theo → theo lại là trò quấy rối rẻ nhất trên đời, và gộp theo ngày vẫn cho
+    nó một chuông mỗi ngày, mãi mãi. Gộp theo người thì N lần chỉ còn **một** hàng, được
+    cập nhật (`created_at` bump, `read_at` về NULL) — người nhận vẫn biết nó vừa xảy ra
+    lại, nhưng chuông không dài thêm.
+
+    Payload **không có `mach_id`** — đây là loại thông báo duy nhất không gắn với mạch
+    nào. `components/chuong.tsx` phải chịu được ca đó; có bài đo riêng cho nó.
+    """
+    return _ghi_theo_lo(
+        [
+            Notification(
+                user_id=theo.nguoi_duoc_theo_id,
+                type=THEO_USER,
+                payload={
+                    "boi": theo.nguoi_theo.username,
+                    "boi_hien_thi": theo.nguoi_theo.display_name,
+                },
+                dedupe_key=f"{THEO_USER}:{theo.nguoi_theo_id}",
+            )
+        ]
+    )
+
+
+def bao_binh_luan(comment: Comment) -> int:
+    """Báo **chủ mạch + người theo mạch** rằng có bình luận mới.
+
+    Đây là loại lấp đúng lỗ user chỉ ra: trước lượt này, bình luận GỐC trong một mạch
+    không sinh thông báo nào cả — `moc_moi` chỉ báo mốc, `reply` chỉ báo trả lời trực
+    tiếp. Chủ mạch không biết có ai vừa nói gì dưới bài của mình.
+
+    ## Bốn nhóm bị loại khỏi danh sách nhận, mỗi nhóm một lý do
+
+    1. **chính người viết bình luận** — kể lại việc mình vừa làm;
+    2. **tác giả bình luận CHA** — người đó nhận `reply` rồi. Hai chuông cho một sự kiện
+       là lỗi, và nó là loại lỗi chỉ lộ ra khi có người vừa theo mạch vừa được trả lời;
+    3. **mạch bị mod ẩn** — dẫn tới 404, và rò việc còn người đọc được thứ vừa bị gỡ;
+    4. **bình luận không đọc được** — bia mộ hoặc bị ẩn ngay lúc tạo.
+
+    **Gộp theo ngày mỗi mạch**, cùng lý lẽ `bao_moc_moi` và nặng hơn hẳn: bình luận dày
+    hơn mốc nhiều lần, một mạch nóng 50 bình luận/ngày mà báo từng cái thì người ta tắt
+    chuông vĩnh viễn — và tắt luôn cả `reply` lẫn `trich` đi cùng nó.
+    """
+    mach = comment.mach
+    if mach.hidden_at is not None:
+        return 0
+    if comment.deleted_at is not None or comment.hidden_at is not None:
+        return 0
+
+    tru = {comment.author_id}
+    if comment.parent_id is not None:
+        # Người này nhận `reply`. `parent` đã được nạp trong cùng transaction.
+        tru.add(comment.parent.author_id)
+
+    # `sorted(...)` là **thứ tự lấy khoá**, không phải thứ tự hiển thị — xem chú thích dài
+    # trong `bao_moc_moi` về `FOR KEY SHARE` trên `core_user`.
+    nguoi_nhan = sorted(
+        ({mach.author_id} | set(Follow.objects.filter(mach=mach).values_list("user_id", flat=True)))
+        - tru
+    )
+    if not nguoi_nhan:
+        return 0
+
+    payload = {
+        **_tom_tat_mach(mach),
+        "boi": comment.author.username,
+        "so_binh_luan_moi": _dem_trong_ngay(
+            Comment.objects.filter(
+                mach=mach, deleted_at__isnull=True, hidden_at__isnull=True
+            ),
+            comment.created_at,
+        ),
+    }
+    khoa = _khoa_ngay(BINH_LUAN, mach.pk, comment.created_at)
+    return _ghi_theo_lo(
+        [
+            Notification(user_id=uid, type=BINH_LUAN, payload=payload, dedupe_key=khoa)
+            for uid in nguoi_nhan
+        ]
+    )
+
+
+def bao_mach_moi(mach) -> int:
+    """Báo cho người **theo TÁC GIẢ** rằng tác giả vừa đăng mạch mới.
+
+    Đây là thứ khiến nút "Theo dõi" trên hồ sơ có nghĩa. Không có nó thì theo một người
+    là bấm một cái nút rồi không bao giờ nhận được gì — PLAN mục 4 cấm nút không làm gì,
+    và một nút *hứa* rồi im lặng còn tệ hơn.
+
+    Mạch bị ẩn ngay lúc tạo thì không báo (đường sản phẩm không tạo ra ca này; kiểm ở đây
+    vì `tao_mach` gọi được từ seed và từ lệnh quản trị).
+    """
+    if mach.hidden_at is not None:
+        return 0
+    nguoi_nhan = list(
+        TheoUser.objects.filter(nguoi_duoc_theo_id=mach.author_id)
+        .order_by("nguoi_theo_id")
+        .values_list("nguoi_theo_id", flat=True)
+    )
+    if not nguoi_nhan:
+        return 0
+
+    payload = {
+        **_tom_tat_mach(mach),
+        "boi": mach.author.username,
+        "so_mach_moi": _dem_trong_ngay(
+            type(mach).objects.filter(author_id=mach.author_id, hidden_at__isnull=True),
+            mach.created_at,
+        ),
+    }
+    khoa = _khoa_ngay(MACH_MOI, mach.author_id, mach.created_at)
+    return _ghi_theo_lo(
+        [
+            Notification(user_id=uid, type=MACH_MOI, payload=payload, dedupe_key=khoa)
+            for uid in nguoi_nhan
         ]
     )
 

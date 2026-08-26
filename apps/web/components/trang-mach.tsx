@@ -14,6 +14,7 @@ import { JsonLd } from "@/components/json-ld";
 import { KhanDai } from "@/components/khan-dai";
 import { KhungHaiCot } from "@/components/khung-hai-cot";
 import { HanhDongMod } from "@/components/hanh-dong-mod";
+import { NutBaoCaoMach } from "@/components/nut-bao-cao-mach";
 import { KhoiChuMach } from "@/components/khoi-chu-mach";
 import { LoiMoiDoiMat } from "@/components/loi-moi-doi-mat";
 import { MachProvider } from "@/components/mach-ngu-canh";
@@ -333,6 +334,12 @@ export async function TrangMach({
                     </span>
                   </>
                 )}
+                {/* Báo cáo cả BÀI — user chốt 2026-08-25. Trước đó chỉ báo cáo được mốc
+                    và bình luận, nên một bài vi phạm ngay từ tiêu đề (hoặc vi phạm ở tổng
+                    thể) thì người đọc phải chọn bừa một mốc, và mod nhận báo cáo trỏ sai
+                    chỗ. Đặt CUỐI hàng chữ ký: nó là thao tác hiếm, không được tranh chỗ
+                    với tên tác giả và ngày mở. */}
+                <NutBaoCaoMach machId={mach.id} tieuDe={mach.title} />
               </div>
             </header>
 

@@ -364,6 +364,26 @@ Người được trích nhận notification.
   `dedupe_key`, chấp nhận biên ngày là chủ đích)**; mốc thứ 2 trong ngày update payload
   thông báo cũ thay vì tạo mới.
 - Reply bình luận của tôi, trích bình luận của tôi: thông báo thường. (Mention: đã loại, mục 4.)
+- **Bốn loại thêm 2026-08-25** (user: *"nhận đầy đủ thông tin khi có user follow post, user
+  follow và khi có cmt trong bài mình follow và bài của mình"*):
+
+  | Loại | Ai nhận | Gộp (`dedupe_key`) |
+  |---|---|---|
+  | `theo_mach` | chủ mạch, khi có người theo mạch của mình | `theo_mach:{mach}:{ngày VN}` |
+  | `theo_user` | người được theo | `theo_user:{người theo}` — **không** theo ngày |
+  | `binh_luan` | chủ mạch **và** người theo mạch, khi có bình luận mới | `binh_luan:{mach}:{ngày VN}` |
+  | `mach_moi` | người theo TÁC GIẢ, khi tác giả đăng mạch mới | `mach_moi:{tác giả}:{ngày VN}` |
+
+  **Gộp theo ngày là luật đã có ở dòng trên, không phải phát minh mới** — và với `binh_luan`
+  nó còn bắt buộc hơn: bình luận dày hơn mốc nhiều lần, một mạch nóng 50 bình luận/ngày mà
+  báo từng cái thì người ta tắt chuông, mất luôn cả `reply` lẫn `trich` đi cùng.
+
+  `theo_user` gộp theo **người theo** chứ không theo ngày: theo → bỏ theo → theo lại là trò
+  quấy rối rẻ nhất, và gộp theo ngày vẫn cho nó một chuông mỗi 24 giờ, mãi mãi.
+
+  **Ba ca KHÔNG báo**, mỗi ca một lý do khác: tự làm với mình · người vừa nhận `reply`
+  không nhận thêm `binh_luan` cho cùng câu đó · nội dung bị mod ẩn (dẫn tới 404, và rò
+  việc còn người đọc được thứ vừa bị gỡ).
 - Kênh v1: chuông trên web (poll 60s) + email. **Email digest: tuỳ chọn opt-in, gửi tuần —
   8:00 sáng thứ Bảy giờ VN**, gộp mạch đang theo có diễn biến trong tuần.
 - Bảng `Notification` + cron gửi email. **Không websocket ở v1.**
@@ -594,6 +614,9 @@ Ai chỉ đọc `detail`/`code` không phải biết lớp ấy tồn tại; hà
 | `POST /subs/{slug}/theo` · `DELETE /subs/{slug}/theo` | theo / bỏ theo chuyên mục | *(2026-08-24)* `auth`, **idempotent cả hai chiều**. Bảng `TheoSub` riêng, không dùng lại `Follow` (thứ đó khoá ngoài `Mach` + mang vị trí đọc dở) |
 | `GET /me/subs` | chuyên mục **tôi** đang theo | *(2026-08-24)* `auth`, **`no-store`**, không phân trang, **mới theo trước**. Nguồn của tab "Chuyên mục" trong hồ sơ |
 | `GET /me/subs-mod` | chuyên mục **tôi được phân công làm mod** | *(2026-08-24)* `auth`, **`no-store`**, sắp theo `slug`. Nguồn của `/khu-mod`. ⚠ **Danh sách PHÂN CÔNG, không phải danh sách QUYỀN** — `ModSub` chưa cho thêm quyền gì, bốn cửa `/mod/*` vẫn kiểm `is_staff` |
+| `GET /users/{username}/me` | tôi có theo người này không | *(2026-08-25)* **nửa per-user** của trang hồ sơ, **`no-store`**. Khách nhận 200 rỗng. `la_toi` để client không vẽ nút trên hồ sơ của chính mình |
+| `POST /users/{username}/theo` · `DELETE` | theo / bỏ theo **người** | *(2026-08-25)* `auth`, **idempotent cả hai chiều**. Tự theo mình ⇒ **400**; DB còn `CheckConstraint theo_user_khong_tu_theo`. Theo người ⇒ nhận `mach_moi` |
+| `GET /me/dang-theo-user` | người **tôi** đang theo | *(2026-08-25)* `auth`, **`no-store`**, không phân trang, mới theo trước |
 
 > **Vì sao mod có bề mặt RIÊNG trên `/api/v1`, không dùng `/api/admin/*`** *(user chốt
 > 2026-08-24)*: PLAN 8.2 chặn `gikky.net/api/admin/*` **tại Caddy**, nên front công khai

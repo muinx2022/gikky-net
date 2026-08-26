@@ -77,6 +77,8 @@ BANG_DONG_BO: dict[str, tuple[str, str]] = {
     "dat_follow": (KHONG, "quan hệ người–mạch, không phải nội dung"),
     "dat_theo_sub": (KHONG, "quan hệ người–chuyên mục; không chạm mạch nào"),
     "bo_theo_sub": (KHONG, "như `dat_theo_sub`"),
+    "dat_theo_user": (KHONG, "quan hệ người–người; không chạm mạch nào"),
+    "bo_theo_user": (KHONG, "như `dat_theo_user`"),
     "bo_follow": (KHONG, "như `dat_follow`"),
     "dat_da_xem": (KHONG, "trạng thái đọc của một người, không phải nội dung"),
     "trich_vao_so": (

@@ -143,7 +143,7 @@ export type BaoCaoMoiIn = {
     /**
      * Ly Do
      */
-    ly_do: 'phim_hang' | 'lua_dao' | 'spam' | 'khac';
+    ly_do: 'phim_hang' | 'cam_ket_loi_nhuan' | 'lua_dao' | 'link_nhom_kin' | 'spam' | 'khac';
     /**
      * Target Id
      */
@@ -1527,6 +1527,26 @@ export type TheoSubOut = {
 };
 
 /**
+ * TheoUserOut
+ *
+ * Kết quả `POST`/`DELETE /users/{username}/theo` — user chốt 2026-08-25.
+ *
+ * Trả **trạng thái sau khi ghi**, không trả "đã đổi hay chưa": hai cửa đều idempotent
+ * nên "đã đổi" là câu client không dùng được vào việc gì, còn `following` thì client vẽ
+ * thẳng lên nút. Cùng khuôn `TheoSubOut`.
+ */
+export type TheoUserOut = {
+    /**
+     * Following
+     */
+    following: boolean;
+    /**
+     * Username
+     */
+    username: string;
+};
+
+/**
  * ThongBaoOut
  *
  * Một dòng chuông — PLAN 5.8.
@@ -1766,6 +1786,35 @@ export type TrichOut = {
      * Trich Created At
      */
     trich_created_at: string;
+};
+
+/**
+ * UserCuaToiOut
+ *
+ * `GET /users/{username}/me` — nửa per-user của trang hồ sơ.
+ *
+ * Trang `/u/<username>` render ở server và **cố ý không biết người xem là ai** (PLAN
+ * 8.4), nên "tôi có theo người này không" bắt buộc hỏi riêng ở trình duyệt.
+ *
+ * `la_toi` để client **không vẽ nút** trên hồ sơ của chính mình. Suy ở server thay vì để
+ * client so `username` với `/me`: hai chỗ so sánh là hai chỗ có thể so sai (hoa/thường,
+ * khoảng trắng), và chỗ sai sẽ bày ra một cái nút bấm vào ăn 400.
+ *
+ * **Khách nhận 200** với cả ba trường `false`, không phải 401.
+ */
+export type UserCuaToiOut = {
+    /**
+     * Dang Nhap
+     */
+    dang_nhap: boolean;
+    /**
+     * Following
+     */
+    following: boolean;
+    /**
+     * La Toi
+     */
+    la_toi: boolean;
 };
 
 /**
@@ -2826,6 +2875,33 @@ export type LietKeDangTheoResponses = {
 
 export type LietKeDangTheoResponse = LietKeDangTheoResponses[keyof LietKeDangTheoResponses];
 
+export type LietKeUserDangTheoData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/me/dang-theo-user';
+};
+
+export type LietKeUserDangTheoErrors = {
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+};
+
+export type LietKeUserDangTheoError = LietKeUserDangTheoErrors[keyof LietKeUserDangTheoErrors];
+
+export type LietKeUserDangTheoResponses = {
+    /**
+     * Response
+     *
+     * OK
+     */
+    200: Array<NguoiDungTomTatOut>;
+};
+
+export type LietKeUserDangTheoResponse = LietKeUserDangTheoResponses[keyof LietKeUserDangTheoResponses];
+
 export type LietKeSubDangTheoData = {
     body?: never;
     path?: never;
@@ -3753,6 +3829,108 @@ export type LietKeMachCuaUserResponses = {
 };
 
 export type LietKeMachCuaUserResponse = LietKeMachCuaUserResponses[keyof LietKeMachCuaUserResponses];
+
+export type XemUserCuaToiData = {
+    body?: never;
+    path: {
+        /**
+         * Username
+         */
+        username: string;
+    };
+    query?: never;
+    url: '/api/v1/users/{username}/me';
+};
+
+export type XemUserCuaToiErrors = {
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type XemUserCuaToiError = XemUserCuaToiErrors[keyof XemUserCuaToiErrors];
+
+export type XemUserCuaToiResponses = {
+    /**
+     * OK
+     */
+    200: UserCuaToiOut;
+};
+
+export type XemUserCuaToiResponse = XemUserCuaToiResponses[keyof XemUserCuaToiResponses];
+
+export type BoTheoUserData = {
+    body?: never;
+    path: {
+        /**
+         * Username
+         */
+        username: string;
+    };
+    query?: never;
+    url: '/api/v1/users/{username}/theo';
+};
+
+export type BoTheoUserErrors = {
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type BoTheoUserError = BoTheoUserErrors[keyof BoTheoUserErrors];
+
+export type BoTheoUserResponses = {
+    /**
+     * OK
+     */
+    200: TheoUserOut;
+};
+
+export type BoTheoUserResponse = BoTheoUserResponses[keyof BoTheoUserResponses];
+
+export type TheoUserData = {
+    body?: never;
+    path: {
+        /**
+         * Username
+         */
+        username: string;
+    };
+    query?: never;
+    url: '/api/v1/users/{username}/theo';
+};
+
+export type TheoUserErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type TheoUserError = TheoUserErrors[keyof TheoUserErrors];
+
+export type TheoUserResponses = {
+    /**
+     * OK
+     */
+    200: TheoUserOut;
+};
+
+export type TheoUserResponse = TheoUserResponses[keyof TheoUserResponses];
 
 export type DatVoteData = {
     body: VoteIn;
