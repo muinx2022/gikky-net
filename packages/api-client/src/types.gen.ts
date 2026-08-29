@@ -455,6 +455,38 @@ export type DatKhoaMachIn = {
 };
 
 /**
+ * DemLuotXemIn
+ *
+ * Thân request. Hai trường, và không trường nào nhận diện được một con người.
+ */
+export type DemLuotXemIn = {
+    /**
+     * Duong Dan
+     */
+    duong_dan: string;
+    /**
+     * User Agent
+     */
+    user_agent?: string;
+};
+
+/**
+ * DemLuotXemOut
+ *
+ * `{da_dem}` — `True` khi đã ghi một hàng.
+ *
+ * Middleware **không đọc** trường này (nó không `await` lời gọi), nhưng bài đo và người
+ * gõ `curl` thì có, và một endpoint trả thân rỗng là một endpoint không ai kiểm được
+ * bằng tay.
+ */
+export type DemLuotXemOut = {
+    /**
+     * Da Dem
+     */
+    da_dem: boolean;
+};
+
+/**
  * DongSoIn
  *
  * Đóng sổ — `POST /machs/{id}/close`. `ket_qua` tuỳ chọn, ≤40 ký tự (PLAN 5.1).
@@ -2078,6 +2110,35 @@ export type SuaBinhLuanResponses = {
 };
 
 export type SuaBinhLuanResponse = SuaBinhLuanResponses[keyof SuaBinhLuanResponses];
+
+export type DemLuotXemData = {
+    body: DemLuotXemIn;
+    path?: never;
+    query?: never;
+    url: '/api/v1/dem-luot-xem';
+};
+
+export type DemLuotXemErrors = {
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Service Unavailable
+     */
+    503: LoiOut;
+};
+
+export type DemLuotXemError = DemLuotXemErrors[keyof DemLuotXemErrors];
+
+export type DemLuotXemResponses = {
+    /**
+     * OK
+     */
+    200: DemLuotXemOut;
+};
+
+export type DemLuotXemResponse = DemLuotXemResponses[keyof DemLuotXemResponses];
 
 export type LietKeFeedDangDienRaData = {
     body?: never;

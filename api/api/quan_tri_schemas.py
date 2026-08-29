@@ -591,3 +591,68 @@ class TrangNguoiDungOut(Schema):
     #: Đếm **cùng `q`, cùng `trang_thai`**, chỉ khác điều kiện staff. Luôn `0` khi
     #: `trang_thai == "staff"` (bộ lọc ấy không loại gì cả).
     so_staff_an: int
+
+
+# --- Lượt xem (`/luot-xem`, 2026-08-27) --------------------------------------
+#
+# Năm schema dưới đây là bộ DUY NHẤT trong file này **không** mang nội dung của ai:
+# `LuotXem`/`TongNgay` cố ý không có cột nào gắn được với một con người (xem
+# `core/models/luot_xem.py`). Ghi ra vì luật "chỉ trả sau `ChiMod`" ở đầu file được đặt
+# ra vì lý do rò rỉ nội dung, và lý do ấy không áp cho nhóm này — nhưng chúng **vẫn** ở
+# sau `ChiMod`, đơn giản vì cả `api_admin` ở sau nó.
+
+
+class LuotXemTongOut(Schema):
+    """Bốn con số lớn. `so_luot` = `so_luot_nguoi + so_luot_bot`, không hơn.
+
+    Server trả cả tổng lẫn hai vế thay vì để frontend cộng: ba chỗ trên màn hình (bốn ô
+    KPI, biểu đồ, dòng "% bot") phải nói cùng một chuyện, và cách chắc chắn nhất là
+    chúng cùng đọc một phép cộng.
+    """
+
+    so_luot: int
+    so_luot_nguoi: int
+    so_luot_bot: int
+
+
+class LuotXemNgayOut(Schema):
+    """Một ô của biểu đồ cột. Ngày KHÔNG có lượt xem nào vẫn có mặt, với hai số 0."""
+
+    ngay: date
+    so_luot_nguoi: int
+    so_luot_bot: int
+
+
+class TopDuongDanOut(Schema):
+    """Một dòng bảng "Xem nhiều nhất". `duong_dan` **không mang query string**."""
+
+    duong_dan: str
+    so_luot_nguoi: int
+    so_luot_bot: int
+
+
+class TenBotOut(Schema):
+    """Một dòng bảng "Bot nào vào nhiều nhất".
+
+    `ten` là tên CHUẨN HOÁ của `core/bot.py`, hoặc `"khác"` — không phải User-Agent thô.
+    UA thô không được lưu ở bất kỳ đâu.
+    """
+
+    ten: str
+    so_luot: int
+
+
+class LuotXemOut(Schema):
+    """Toàn bộ số liệu của trang `/luot-xem` cho MỘT khoảng."""
+
+    #: Chính giá trị `?khoang=` đã dùng — để màn hình không vẽ số của khoảng này dưới
+    #: nhãn của khoảng kia khi hai request về không đúng thứ tự người bấm.
+    khoang: str
+    tong: LuotXemTongOut
+    chuoi_ngay: list[LuotXemNgayOut]
+    top_duong_dan: list[TopDuongDanOut]
+    top_bot: list[TenBotOut]
+    #: `True` khi `top_bot` hẹp hơn khoảng đang xem — luôn đúng với `khoang=tat_ca`.
+    #: `TongNgay` không có cột `ten_bot`, nên bảng bot chỉ phủ được 90 ngày hàng thô.
+    #: Màn hình **phải nói ra**; giấu đi là để mod đọc bảng ấy như thể nó là toàn thời gian.
+    bot_chi_90_ngay: bool

@@ -1,19 +1,58 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
 
-/** Chọn biến thể route cho trang mạch — PLAN 8.4 điểm 1.
+import { demLuotXem } from "@gikky/api-client";
+
+import { API_ORIGIN } from "@/lib/api";
+import {
+  HEADER_SECRET,
+  nenDem,
+  nenDemRequest,
+  nenRewrite,
+  secretDem,
+} from "@/lib/dem-luot-xem";
+
+/** Middleware của site công khai — **hai việc**, và chúng cố ý không dính vào nhau.
+ *
+ * ```
+ * 1. ĐẾM lượt xem   → mọi trang (2026-08-27)
+ * 2. REWRITE biến thể route trang mạch → chỉ /m/<slug>-<id> có cookie (PLAN 8.4 điểm 1)
+ * ```
+ *
+ * ## Vì sao lượt xem đếm ở ĐÂY chứ không ở Django
+ *
+ * Trang là của Next; Django chỉ phục vụ `/api/*`. Một middleware Django sẽ đếm **API
+ * call**, không phải lượt xem — một con số trông như thật mà sai hoàn toàn. Hai tính
+ * chất của chỗ này làm việc đếm khả thi, và **cả hai phải giữ**:
+ *
+ * - middleware chạy **TRƯỚC cache ISR** (xem mục dưới) ⇒ vẫn thấy request kể cả khi
+ *   trang được phục vụ từ bản cache. Đếm ở tầng React component thì mất sạch lượt cache;
+ * - middleware chạy **trên máy chủ** ⇒ thấy cả bot. Bot không chạy JavaScript, nên mọi
+ *   cách đếm bằng script phía trình duyệt đều **không trả lời được** nửa câu hỏi
+ *   ("bao nhiêu bot vào, những bot nào").
+ *
+ * ## ⚠ Lời gọi đếm KHÔNG được `await`
+ *
+ * `event.waitUntil(...)` — tiến trình sống cho tới khi promise xong, nhưng **response đi
+ * ngay**. Một lượt `await` là mỗi trang của site cộng thêm một round-trip sang Django,
+ * kể cả trang đang được phục vụ từ cache ISR, tức đúng thứ cache sinh ra để tránh.
+ *
+ * Và `.catch(() => {})`: Django chết thì site vẫn phải phục vụ trang. Thống kê hỏng là
+ * phiền; trang chủ 500 vì thống kê hỏng là hỏng sản phẩm.
+ *
+ * ## Chọn biến thể route cho trang mạch — PLAN 8.4 điểm 1
  *
  * ```
  * không cookie phiên → /m/<slug>-<id>         (ISR 1 giờ — bot, khách)
  * có cookie phiên    → /m-phien/<slug>-<id>   (dynamic no-store, rewrite NỘI BỘ)
  * ```
  *
- * ## Vì sao phải là hai route
+ * ### Vì sao phải là hai route
  *
  * App Router hễ đọc `cookies()` là **cả route** thành dynamic, nên "cùng route, khách ăn
  * cache, người đăng nhập ăn dynamic" không tồn tại. Middleware chạy TRƯỚC cache nên nó là
  * chỗ duy nhất còn rẽ nhánh được.
  *
- * ## Nó chỉ nhìn cookie CÓ MẶT hay không — không validate
+ * ### Nó chỉ nhìn cookie CÓ MẶT hay không — không validate
  *
  * Cố ý, và PLAN viết đúng chữ *"kiểm tra **sự tồn tại** của session cookie (không
  * validate)"*. Middleware chạy trên edge runtime, không có DB; validate ở đây nghĩa là
@@ -30,11 +69,19 @@ import { NextResponse, type NextRequest } from "next/server";
  * 1. **`app/m-phien/[slugId]/page.tsx` phải tồn tại.** File này một mình thì tệ hơn không
  *    có: nó rewrite sang một route không có ⇒ trang mạch **404 với đúng người đã đăng
  *    nhập**, và một bộ e2e chạy ẩn danh sẽ xanh hết.
- * 2. **`matcher` chỉ một đoạn đường dẫn** (`/m/:slugId`, không `:path*`). `/m/<slug>-<id>`
- *    còn có con dưới: `opengraph-image`. Rewrite nó sang `/m-phien/…/opengraph-image` là
- *    404 cho thẻ chia sẻ — mà chỉ với người đăng nhập, tức gần như không ai thấy khi test.
+ * 2. **Điều kiện rewrite chỉ khớp MỘT đoạn đường dẫn.** `/m/<slug>-<id>` còn có con dưới:
+ *    `opengraph-image`. Rewrite nó sang `/m-phien/…/opengraph-image` là 404 cho thẻ chia
+ *    sẻ — mà chỉ với người đăng nhập, tức gần như không ai thấy khi test.
+ *
+ *    ⚠ **Chốt này TRƯỚC 2026-08-27 do `matcher` giữ** (`matcher: ["/m/:slugId"]`, một
+ *    đoạn, không `:path*`). Việc đếm lượt xem **bắt buộc phải nới `matcher`**, nên chốt
+ *    ấy đã **chuyển chỗ**: nay nó nằm ở `lib/dem-luot-xem.ts::nenRewrite` +
+ *    `DUONG_DAN_MACH` (`/^\/m\/[^/]+$/`), một hàm thuần có bài đo
+ *    (`e2e/don-vi/dem-luot-xem.spec.ts`, ca R3 canh đúng `opengraph-image`).
+ *    `matcher` nay chỉ còn là bộ lọc **hiệu năng** — siết hay nới nó không đổi được hành
+ *    vi của trang nào. Đọc docstring `lib/dem-luot-xem.ts` trước khi sửa một trong hai.
  * 3. **Tên cookie phải khớp Django.** `SESSION_COOKIE_NAME` mặc định là `sessionid`
- *    (`api/config/settings.py` không đổi nó). Gõ sai tên thì middleware thành no-op im
+ *    (`api/config/settings.py` không đổi nó). Gõ sai tên thì nhánh rewrite thành no-op im
  *    lặng: mọi người ăn bản cache, và "vừa nối mốc mà không thấy mốc đâu" là một lỗi
  *    người ta sẽ đổ cho Django.
  */
@@ -46,14 +93,50 @@ export const COOKIE_PHIEN = "sessionid";
 /** Tiền tố của biến thể dynamic. Không nằm dưới `/m/` để nó không lọt vào `matcher`. */
 export const TIEN_TO_PHIEN = "/m-phien";
 
-export function middleware(req: NextRequest) {
-  if (!req.cookies.has(COOKIE_PHIEN)) return NextResponse.next();
+export function middleware(req: NextRequest, event: NextFetchEvent) {
+  const duong_dan = req.nextUrl.pathname;
+
+  const secret = secretDem();
+  if (secret !== "" && nenDemRequest(req) && nenDem(duong_dan)) {
+    // KHÔNG `await` — xem docstring. `waitUntil` giữ tiến trình sống cho lời gọi, còn
+    // response thì đi ngay.
+    event.waitUntil(
+      demLuotXem({
+        baseUrl: API_ORIGIN,
+        headers: { [HEADER_SECRET]: secret },
+        body: {
+          // `pathname` thôi — **không** query string. Django cắt lần nữa ở đầu bên kia
+          // (`chuan_hoa_duong_dan`), nhưng gửi sạch từ đây là để secret không bao giờ
+          // đi cạnh một chuỗi có `?` trong log của bất kỳ tầng nào.
+          duong_dan,
+          // User-Agent được **gửi để phân loại** (`api/core/bot.py`) và **không được
+          // lưu**. Phân loại ở Django vì bảng bot cần một chỗ duy nhất và cần `pytest`
+          // chấm được; edge runtime thì không.
+          user_agent: req.headers.get("user-agent") ?? "",
+        },
+      }).catch(() => {}),
+    );
+  }
+
+  if (!nenRewrite(duong_dan, req.cookies.has(COOKIE_PHIEN))) return NextResponse.next();
+
   const url = req.nextUrl.clone();
-  url.pathname = `${TIEN_TO_PHIEN}${url.pathname.slice("/m".length)}`;
+  url.pathname = `${TIEN_TO_PHIEN}${duong_dan.slice("/m".length)}`;
   return NextResponse.rewrite(url);
 }
 
 export const config = {
-  // MỘT đoạn, không `:path*` — xem chốt 2 ở docstring.
-  matcher: ["/m/:slugId"],
+  /** Bộ lọc **hiệu năng**, không phải bộ lọc đúng/sai — xem chốt 2 ở docstring.
+   *
+   * Loại đúng ba nhóm đông nhất và rẻ nhất để loại: `/_next/*` (mỗi trang kéo hàng chục
+   * file), `/api/*` và `/media/*` (rewrite sang Django, không phải trang). Ba nhóm ấy là
+   * gần như toàn bộ lưu lượng không-phải-trang.
+   *
+   * **Cố ý KHÔNG loại "mọi đường có dấu chấm" ở đây.** Luật ấy ngắn nhưng nuốt luôn
+   * `/u/nguyen.van.a` — Django cho phép dấu `.` trong `username` — và nuốt ở tầng
+   * `matcher` thì middleware **không chạy**, tức `nenDem()` không có cơ hội nói khác.
+   * File tĩnh do `nenDem()` loại bằng một danh sách đuôi tường minh; `apps/web` hôm nay
+   * không có `public/` nên tập ấy chỉ là `/robots.txt`, `/sitemap.xml`, `/feed.xml`.
+   */
+  matcher: ["/((?!_next/|api/|media/).*)"],
 };

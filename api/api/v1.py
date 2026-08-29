@@ -103,6 +103,7 @@ from api.bao_cao import router as router_bao_cao  # noqa: E402
 from api.anh import router as router_anh  # noqa: E402
 from api.avatar import router as router_avatar  # noqa: E402
 from api.binh_luan import router as router_binh_luan  # noqa: E402
+from api.dem_luot_xem import router as router_dem_luot_xem  # noqa: E402
 from api.feeds import router as router_feeds  # noqa: E402
 from api.ho_so import router as router_ho_so  # noqa: E402
 from api.loi import dang_ky_xu_ly_loi  # noqa: E402
@@ -168,3 +169,9 @@ api_v1.add_router("", router_tim_kiem)
 # gọi lại handler của `api/quan_tri_kiem_duyet.py` — ban user, quản lý sub, nhật ký và mọi
 # bảng danh sách **ở lại** phía admin. Xem docstring `api/mod.py`.
 api_v1.add_router("", router_mod)
+# Đếm lượt xem (2026-08-27) — `POST /dem-luot-xem`, gọi từ `apps/web/middleware.ts`.
+# Router riêng vì nó là endpoint ghi DUY NHẤT của `api_v1` **không có người dùng đứng
+# sau**: auth của nó là một secret dùng chung, không phải phiên đăng nhập. Trộn nó vào
+# một router có sẵn là mời lượt sau chép nhầm `auth=secret_dem_luot_xem` sang một cửa
+# thật sự cần `dang_nhap`. Xem docstring `api/dem_luot_xem.py`.
+api_v1.add_router("", router_dem_luot_xem)

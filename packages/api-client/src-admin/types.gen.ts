@@ -377,6 +377,79 @@ export type LoiOut = {
 };
 
 /**
+ * LuotXemNgayOut
+ *
+ * Một ô của biểu đồ cột. Ngày KHÔNG có lượt xem nào vẫn có mặt, với hai số 0.
+ */
+export type LuotXemNgayOut = {
+    /**
+     * Ngay
+     */
+    ngay: string;
+    /**
+     * So Luot Bot
+     */
+    so_luot_bot: number;
+    /**
+     * So Luot Nguoi
+     */
+    so_luot_nguoi: number;
+};
+
+/**
+ * LuotXemOut
+ *
+ * Toàn bộ số liệu của trang `/luot-xem` cho MỘT khoảng.
+ */
+export type LuotXemOut = {
+    /**
+     * Bot Chi 90 Ngay
+     */
+    bot_chi_90_ngay: boolean;
+    /**
+     * Chuoi Ngay
+     */
+    chuoi_ngay: Array<LuotXemNgayOut>;
+    /**
+     * Khoang
+     */
+    khoang: string;
+    tong: LuotXemTongOut;
+    /**
+     * Top Bot
+     */
+    top_bot: Array<TenBotOut>;
+    /**
+     * Top Duong Dan
+     */
+    top_duong_dan: Array<TopDuongDanOut>;
+};
+
+/**
+ * LuotXemTongOut
+ *
+ * Bốn con số lớn. `so_luot` = `so_luot_nguoi + so_luot_bot`, không hơn.
+ *
+ * Server trả cả tổng lẫn hai vế thay vì để frontend cộng: ba chỗ trên màn hình (bốn ô
+ * KPI, biểu đồ, dòng "% bot") phải nói cùng một chuyện, và cách chắc chắn nhất là
+ * chúng cùng đọc một phép cộng.
+ */
+export type LuotXemTongOut = {
+    /**
+     * So Luot
+     */
+    so_luot: number;
+    /**
+     * So Luot Bot
+     */
+    so_luot_bot: number;
+    /**
+     * So Luot Nguoi
+     */
+    so_luot_nguoi: number;
+};
+
+/**
  * MachDongOut
  *
  * Một hàng của bảng mạch trong khu quản trị.
@@ -893,6 +966,25 @@ export type TaoSubIn = {
 };
 
 /**
+ * TenBotOut
+ *
+ * Một dòng bảng "Bot nào vào nhiều nhất".
+ *
+ * `ten` là tên CHUẨN HOÁ của `core/bot.py`, hoặc `"khác"` — không phải User-Agent thô.
+ * UA thô không được lưu ở bất kỳ đâu.
+ */
+export type TenBotOut = {
+    /**
+     * So Luot
+     */
+    so_luot: number;
+    /**
+     * Ten
+     */
+    ten: string;
+};
+
+/**
  * ThongKeOut
  *
  * Số liệu cho bảng điều khiển. Không cache — xem `Cache-Control` ở endpoint.
@@ -942,6 +1034,26 @@ export type TongOut = {
      * Sub
      */
     sub: number;
+};
+
+/**
+ * TopDuongDanOut
+ *
+ * Một dòng bảng "Xem nhiều nhất". `duong_dan` **không mang query string**.
+ */
+export type TopDuongDanOut = {
+    /**
+     * Duong Dan
+     */
+    duong_dan: string;
+    /**
+     * So Luot Bot
+     */
+    so_luot_bot: number;
+    /**
+     * So Luot Nguoi
+     */
+    so_luot_nguoi: number;
 };
 
 /**
@@ -1265,6 +1377,44 @@ export type QuanTriDatAnBinhLuanResponses = {
 };
 
 export type QuanTriDatAnBinhLuanResponse = QuanTriDatAnBinhLuanResponses[keyof QuanTriDatAnBinhLuanResponses];
+
+export type QuanTriLuotXemData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Khoang
+         */
+        khoang?: string;
+    };
+    url: '/api/admin/luot-xem';
+};
+
+export type QuanTriLuotXemErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+};
+
+export type QuanTriLuotXemError = QuanTriLuotXemErrors[keyof QuanTriLuotXemErrors];
+
+export type QuanTriLuotXemResponses = {
+    /**
+     * OK
+     */
+    200: LuotXemOut;
+};
+
+export type QuanTriLuotXemResponse = QuanTriLuotXemResponses[keyof QuanTriLuotXemResponses];
 
 export type QuanTriLietKeMachData = {
     body?: never;

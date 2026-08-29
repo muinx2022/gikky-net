@@ -206,6 +206,20 @@ CUA_GHI = [
     # 1.6 hai thứ đó là CÙNG một thứ (`auth=dang_nhap`).
     ("post", "/api/v1/users/{username}/theo", {}),
     ("delete", "/api/v1/users/{username}/theo", {}),
+    # --- đếm lượt xem (2026-08-27) ---
+    # Cửa ghi DUY NHẤT của `api_v1` **không có người dùng đứng sau**: nó nhận lượt xem
+    # trang từ `apps/web/middleware.ts`, và auth của nó là một **secret dùng chung**
+    # (`api/dem_luot_xem.py::SecretDemLuotXem`), không phải phiên đăng nhập.
+    #
+    # Nó vẫn thuộc bảng này, và vẫn phải trả **401 `chua_dang_nhap`** cho khách: lớp auth
+    # trả `None` khi request không kèm header nào, tức khách bằng trình duyệt nhận đúng
+    # câu trả lời như ở mọi cửa khác. Hai nhánh còn lại (503 khi server chưa đặt secret,
+    # 401 `sai_secret` khi header sai) được đo riêng ở `test_api_dem_luot_xem.py` — chúng
+    # không đo được ở đây vì bài đo dưới cố ý gửi request TRẦN.
+    #
+    # Nó vắng mặt ở `CUA_CO_CHU` vì đích của nó không có chủ: một lượt xem trang không
+    # thuộc về ai, và bảng `LuotXem` cố ý không có cột nào gắn được với một con người.
+    ("post", "/api/v1/dem-luot-xem", {"duong_dan": "/", "user_agent": "curl/8"}),
 ]
 
 

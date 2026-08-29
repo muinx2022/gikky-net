@@ -463,6 +463,102 @@
         "title": "LoiOut",
         "type": "object"
       },
+      "LuotXemNgayOut": {
+        "description": "Một ô của biểu đồ cột. Ngày KHÔNG có lượt xem nào vẫn có mặt, với hai số 0.",
+        "properties": {
+          "ngay": {
+            "format": "date",
+            "title": "Ngay",
+            "type": "string"
+          },
+          "so_luot_bot": {
+            "title": "So Luot Bot",
+            "type": "integer"
+          },
+          "so_luot_nguoi": {
+            "title": "So Luot Nguoi",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ngay",
+          "so_luot_nguoi",
+          "so_luot_bot"
+        ],
+        "title": "LuotXemNgayOut",
+        "type": "object"
+      },
+      "LuotXemOut": {
+        "description": "Toàn bộ số liệu của trang `/luot-xem` cho MỘT khoảng.",
+        "properties": {
+          "bot_chi_90_ngay": {
+            "title": "Bot Chi 90 Ngay",
+            "type": "boolean"
+          },
+          "chuoi_ngay": {
+            "items": {
+              "$ref": "#/components/schemas/LuotXemNgayOut"
+            },
+            "title": "Chuoi Ngay",
+            "type": "array"
+          },
+          "khoang": {
+            "title": "Khoang",
+            "type": "string"
+          },
+          "tong": {
+            "$ref": "#/components/schemas/LuotXemTongOut"
+          },
+          "top_bot": {
+            "items": {
+              "$ref": "#/components/schemas/TenBotOut"
+            },
+            "title": "Top Bot",
+            "type": "array"
+          },
+          "top_duong_dan": {
+            "items": {
+              "$ref": "#/components/schemas/TopDuongDanOut"
+            },
+            "title": "Top Duong Dan",
+            "type": "array"
+          }
+        },
+        "required": [
+          "khoang",
+          "tong",
+          "chuoi_ngay",
+          "top_duong_dan",
+          "top_bot",
+          "bot_chi_90_ngay"
+        ],
+        "title": "LuotXemOut",
+        "type": "object"
+      },
+      "LuotXemTongOut": {
+        "description": "Bốn con số lớn. `so_luot` = `so_luot_nguoi + so_luot_bot`, không hơn.\n\nServer trả cả tổng lẫn hai vế thay vì để frontend cộng: ba chỗ trên màn hình (bốn ô\nKPI, biểu đồ, dòng \"% bot\") phải nói cùng một chuyện, và cách chắc chắn nhất là\nchúng cùng đọc một phép cộng.",
+        "properties": {
+          "so_luot": {
+            "title": "So Luot",
+            "type": "integer"
+          },
+          "so_luot_bot": {
+            "title": "So Luot Bot",
+            "type": "integer"
+          },
+          "so_luot_nguoi": {
+            "title": "So Luot Nguoi",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "so_luot",
+          "so_luot_nguoi",
+          "so_luot_bot"
+        ],
+        "title": "LuotXemTongOut",
+        "type": "object"
+      },
       "MachDongOut": {
         "description": "Một hàng của bảng mạch trong khu quản trị.",
         "properties": {
@@ -1186,6 +1282,25 @@
         "title": "TaoSubIn",
         "type": "object"
       },
+      "TenBotOut": {
+        "description": "Một dòng bảng \"Bot nào vào nhiều nhất\".\n\n`ten` là tên CHUẨN HOÁ của `core/bot.py`, hoặc `\"khác\"` — không phải User-Agent thô.\nUA thô không được lưu ở bất kỳ đâu.",
+        "properties": {
+          "so_luot": {
+            "title": "So Luot",
+            "type": "integer"
+          },
+          "ten": {
+            "title": "Ten",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ten",
+          "so_luot"
+        ],
+        "title": "TenBotOut",
+        "type": "object"
+      },
       "ThongKeOut": {
         "description": "Số liệu cho bảng điều khiển. Không cache — xem `Cache-Control` ở endpoint.",
         "properties": {
@@ -1264,6 +1379,30 @@
           "sub"
         ],
         "title": "TongOut",
+        "type": "object"
+      },
+      "TopDuongDanOut": {
+        "description": "Một dòng bảng \"Xem nhiều nhất\". `duong_dan` **không mang query string**.",
+        "properties": {
+          "duong_dan": {
+            "title": "Duong Dan",
+            "type": "string"
+          },
+          "so_luot_bot": {
+            "title": "So Luot Bot",
+            "type": "integer"
+          },
+          "so_luot_nguoi": {
+            "title": "So Luot Nguoi",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "duong_dan",
+          "so_luot_nguoi",
+          "so_luot_bot"
+        ],
+        "title": "TopDuongDanOut",
         "type": "object"
       },
       "TrangBaoCaoOut": {
@@ -1880,6 +2019,75 @@
         "summary": "Dat An Binh Luan Endpoint",
         "tags": [
           "quan-tri-kiem-duyet"
+        ]
+      }
+    },
+    "/api/admin/luot-xem": {
+      "get": {
+        "description": "Lượt xem trang theo khoảng: `7` · `30` · `90` · `tat_ca`.\n\nMọi mốc \"ngày\" là **ngày lịch Việt Nam**, và ba khoảng số đếm CẢ hôm nay.",
+        "operationId": "quan_tri_luot_xem",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "khoang",
+            "required": false,
+            "schema": {
+              "default": "30",
+              "title": "Khoang",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LuotXemOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Luot Xem",
+        "tags": [
+          "quan-tri-luot-xem"
         ]
       }
     },

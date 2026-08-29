@@ -1,8 +1,7 @@
 "use client";
 
 import { quanTriToi, type ModOut } from "@gikky/api-client/admin";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { Khung } from "./khung/khung";
@@ -44,6 +43,7 @@ const NGOAI_CONG = ["/dang-nhap"];
 
 export function CongQuanTri({ children }: { children: React.ReactNode }) {
   const duong_dan = usePathname();
+  const router = useRouter();
   const [mod, setMod] = useState<ModOut | null>(null);
   const [loi, setLoi] = useState<{ ma: string | null; mo_ta: string } | null>(null);
   const [dang_hoi, datDangHoi] = useState(true);
@@ -80,6 +80,28 @@ export function CongQuanTri({ children }: { children: React.ReactNode }) {
     void hoi();
   }, [hoi, ngoai_cong]);
 
+  // 401 ⇒ đi thẳng tới trang đăng nhập. Trước 2026-08-26 chỗ này hiện một thẻ "Chưa đăng
+  // nhập" kèm nút "Tới trang đăng nhập" — một cú bấm không mang thông tin gì, vì khi cổng
+  // đã biết chắc là 401 thì chẳng còn lựa chọn nào khác để người dùng cân nhắc.
+  //
+  // **`replace`, không `push`.** `push` để lại cổng 401 trong lịch sử, nên bấm Back sau khi
+  // đăng nhập là quay về đúng cái cổng ấy rồi bị đẩy đi tiếp — một vòng lặp không thoát
+  // được bằng Back.
+  //
+  // **`window.location` chứ không phải `usePathname()`** để dựng `tiep`: cần cả query
+  // string (`/machs?trang=3`), mà `usePathname()` cố ý không trả nó. Đường còn lại là
+  // `useSearchParams()`, và nó bắt cả cây phải có `<Suspense>` bao ngoài — một ràng buộc
+  // dựng sẵn bẫy cho trang sau, đổi lấy đúng một chuỗi đọc được thẳng ở đây.
+  //
+  // **Chỉ nhánh 401.** Ba nhánh còn lại giữ màn hình riêng — xem `ManChan` và docstring
+  // đầu file: gộp chúng lại là người ĐÃ đăng nhập nhìn thấy form đăng nhập lần nữa mà
+  // không hiểu vì sao.
+  useEffect(() => {
+    if (loi?.ma !== MA_CHUA_DANG_NHAP) return;
+    const dang_dung = `${window.location.pathname}${window.location.search}`;
+    router.replace(`/dang-nhap?tiep=${encodeURIComponent(dang_dung)}`);
+  }, [loi, router]);
+
   if (ngoai_cong) return <>{children}</>;
 
   if (mod !== null) {
@@ -108,13 +130,14 @@ function ManChan({
   thuLai: () => void;
 }) {
   if (loi.ma === MA_CHUA_DANG_NHAP) {
+    // Không còn nút nào ở đây: `CongQuanTri` đã gọi `router.replace` cho nhánh này. Dòng
+    // chữ là thứ hiện ra trong khoảng thời gian điều hướng chưa xong — giữ nó lại thay vì
+    // trả `null` để một lần chuyển trang chậm không biến thành một trang trắng không lời
+    // giải thích.
     return (
-      <div className="the p-5" data-testid="man-chua-dang-nhap">
-        <p className="mb-3">Chưa đăng nhập.</p>
-        <Link href="/dang-nhap" className="nut nut-chinh">
-          Tới trang đăng nhập
-        </Link>
-      </div>
+      <p className="text-muc-mo" data-testid="man-chua-dang-nhap">
+        Chưa đăng nhập — đang chuyển tới trang đăng nhập…
+      </p>
     );
   }
   if (loi.ma === MA_KHONG_DU_QUYEN) {

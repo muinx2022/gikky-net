@@ -208,6 +208,13 @@ def test_du_endpoint_cua_plan_muc_7():
         (("POST",), "/users/{username}/theo"),
         (("DELETE",), "/users/{username}/theo"),
         (("GET",), "/me/dang-theo-user"),
+        # --- đếm lượt xem (2026-08-27) ---
+        # Cửa ghi DUY NHẤT của `api_v1` **không có người dùng đứng sau**: nó nhận lượt
+        # xem trang từ `apps/web/middleware.ts` (chỗ duy nhất thấy được lượt xem — trang
+        # là của Next, không của Django), và auth của nó là một **secret dùng chung**.
+        # Nó vẫn khai `auth=`, và khách trần vẫn nhận 401 như mọi cửa ghi khác — xem
+        # docstring `api/dem_luot_xem.py`.
+        (("POST",), "/dem-luot-xem"),
     }
 
 

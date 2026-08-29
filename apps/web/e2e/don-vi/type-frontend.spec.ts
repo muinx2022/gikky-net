@@ -80,6 +80,10 @@ const TU_TRU: Readonly<Record<Luat, Readonly<Record<string, string>>>> = {
     "e2e/don-vi/type-frontend.spec.ts": "chính nó — nêu tên hàm API trong chuỗi kỳ vọng",
     "e2e/don-vi/khong-ghi-cung-sub.spec.ts":
       "hàng rào PLAN mục 7 — phải nêu tên `lietKeSub` để ghim 'đúng một cửa hỏi API'",
+    "e2e/don-vi/dem-luot-xem.spec.ts":
+      "hàng rào 2026-08-27 — nêu `demLuotXem` TRONG một biểu thức chính quy để ghim rằng " +
+      "middleware KHÔNG `await` lời gọi ấy. Miễn trừ đúng MỘT luật; ba luật chống rò " +
+      "session ở trên vẫn áp cho file này.",
   },
 };
 
@@ -404,6 +408,16 @@ test("luật trên có quét trúng lời gọi THẬT ở MỌI cửa (không q
     // là `GOC_TRINH_DUYET` (rỗng, same-origin) như mọi lời gọi trong trình duyệt.
     "lib/anh.ts",
     "lib/api.ts",
+    // Đếm lượt xem (2026-08-27) — `POST /dem-luot-xem`, gọi từ **middleware**, tức từ
+    // edge runtime chứ không từ trình duyệt. Vì thế `baseUrl` của nó là `API_ORIGIN`
+    // (gọi thẳng Django), không phải chuỗi rỗng: middleware không có origin nào để
+    // "same-origin" về, và `rewrites` của `next.config.ts` chỉ áp cho request đi vào.
+    //
+    // Nó **không** mang cookie nào — không `headerGhi()`, không `credentials` — vì nó
+    // không đọc `request.user` ở đầu bên kia; auth của cửa ấy là một secret dùng chung.
+    // Đó cũng là lý do dòng này an toàn dù `baseUrl` khác mọi dòng trên: không có
+    // session của ai để rò.
+    "middleware.ts",
   ]);
   expect(theo_file.get("lib/api.ts")).toBeGreaterThanOrEqual(6);
 });

@@ -41,6 +41,14 @@ export const NHOM_MENU: NhomMenu[] = [
     ten: "Tổng quan",
     muc: [
       { duong_dan: "/", nhan: "Bảng điều khiển", icon: "bang-dieu-khien" },
+      // User chốt 2026-08-27: *"làm 1 page thống kê riêng, không nhúng vào dashboard"* —
+      // nên nó là mục riêng, không phải một khối trên `/`. Nhưng nó ở lại nhóm "Tổng
+      // quan" và đứng ngay sau bảng điều khiển: nó trả lời cùng loại câu hỏi ("site đang
+      // thế nào"), không phải một công cụ và cũng không chỉnh gì của hệ thống.
+      //
+      // Icon dùng lại `"hien"` (con mắt) thay vì thêm một tên mới vào `icon.tsx` — con
+      // mắt đọc ra đúng nghĩa "lượt xem", và `icon.tsx` đang có phiên khác sửa dở.
+      { duong_dan: "/luot-xem", nhan: "Lượt xem", icon: "hien" },
     ],
   },
   {

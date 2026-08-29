@@ -34,9 +34,21 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const duongDanEnv = join(repoRoot, "api", ".env");
 
 /** Biến của `api/.env` mà **tiến trình Next** cũng cần. Danh sách hẹp có chủ đích: đây
- * không phải một cầu nối env đa dụng, nó chỉ tồn tại cho cơ chế 8.4. Thêm tên vào đây là
- * một quyết định phải nêu được lý do. */
-const CAN_CHUYEN = ["REVALIDATE_SECRET"];
+ * không phải một cầu nối env đa dụng. Thêm tên vào đây là một quyết định phải nêu được
+ * lý do; hôm nay có hai, và cả hai là **cùng một secret dùng chung cho hai tiến trình**:
+ *
+ * - `REVALIDATE_SECRET` — cơ chế 8.4, chiều Django → Next (`/lam-moi-cache`);
+ * - `DEM_LUOT_XEM_SECRET` — đếm lượt xem, chiều **ngược lại**: `middleware.ts` →
+ *   `POST /api/v1/dem-luot-xem` (2026-08-27). Thiếu nó ở dev thì `secretDem()` trả chuỗi
+ *   rỗng ⇒ middleware không gọi Django lần nào ⇒ trang `/luot-xem` của khu quản trị đứng
+ *   ở 0 mãi mãi, không có gì báo. Đúng bệnh L07 mà dòng trên đã mắc một lần.
+ *
+ * Không cảnh báo khi thiếu `DEM_LUOT_XEM_SECRET` (khác `REVALIDATE_SECRET` ngay dưới):
+ * `pnpm setup:env` cố ý **không** sinh sẵn nó, vì tắt là mặc định ĐÚNG ở máy dev — không
+ * ai cần thống kê của chính mình bấm quanh. Một cảnh báo cho một trạng thái đúng là một
+ * cảnh báo người ta sẽ học cách bỏ qua.
+ */
+const CAN_CHUYEN = ["REVALIDATE_SECRET", "DEM_LUOT_XEM_SECRET"];
 
 /** Đọc một biến trong file `.env` dạng `TEN=gia tri`. Không có file / không có dòng ⇒ "".
  *

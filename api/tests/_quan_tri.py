@@ -211,6 +211,11 @@ def bang_endpoint(dl: dict) -> list[tuple[str, str, str, dict | None]]:
         ("quan_tri_liet_ke_mach", "get", "/api/admin/machs", None),
         ("quan_tri_liet_ke_binh_luan", "get", "/api/admin/comments", None),
         ("quan_tri_liet_ke_nguoi_dung", "get", "/api/admin/users", None),
+        # Lượt xem (2026-08-27). CHỈ ĐỌC và **không** trả nội dung của ai — hai bảng
+        # nguồn cố ý không có cột nào gắn được với một con người — nhưng nó vẫn phải có
+        # dòng ở đây: hàng rào là "mọi endpoint quản trị đều được chấm phân quyền", và
+        # một ngoại lệ "cái này vô hại thôi" là chỗ ngoại lệ thứ hai chui vào.
+        ("quan_tri_luot_xem", "get", "/api/admin/luot-xem", None),
     ]
 
 

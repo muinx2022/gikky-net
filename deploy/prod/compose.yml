@@ -86,6 +86,7 @@ services:
       # Cửa on-demand revalidate nằm trong mạng docker, KHÔNG đi vòng ra internet.
       REVALIDATE_URL: http://web:3000/lam-moi-cache
       REVALIDATE_SECRET: ${REVALIDATE_SECRET:?thiếu REVALIDATE_SECRET trong file env}
+      DEM_LUOT_XEM_SECRET: ${DEM_LUOT_XEM_SECRET:?thiếu DEM_LUOT_XEM_SECRET trong file env}
       MEILI_URL: http://meili:7700
       # Phải là khoá PHẠM VI HẸP (chỉ index `mach`), KHÔNG phải master key — master key
       # tạo được khoá khác, tức quyền quản trị toàn cụm cho một tiến trình chỉ cần một
@@ -131,6 +132,7 @@ services:
       dockerfile: deploy/prod/node.Dockerfile
       target: web
       args:
+        DEM_LUOT_XEM_SECRET: ${DEM_LUOT_XEM_SECRET:?thiếu DEM_LUOT_XEM_SECRET trong file env}
         API_ORIGIN: http://api:8000
         SITE_ORIGIN: ${SITE_ORIGIN:-https://gikky.net}
     restart: unless-stopped
@@ -140,6 +142,7 @@ services:
       # Phải TRÙNG chuỗi của service `api`. Lệch nhau thì cửa trả 401 và cả cơ chế cache
       # 8.4 chết im lặng: trang mạch đứng nguyên tới một tiếng sau mỗi lần có mốc mới.
       REVALIDATE_SECRET: ${REVALIDATE_SECRET:?thiếu REVALIDATE_SECRET trong file env}
+      DEM_LUOT_XEM_SECRET: ${DEM_LUOT_XEM_SECRET:?thiếu DEM_LUOT_XEM_SECRET trong file env}
       NODE_ENV: production
     depends_on:
       api:
@@ -151,6 +154,11 @@ services:
       dockerfile: deploy/prod/node.Dockerfile
       target: admin
       args:
+        # ⚠ `admin` KHÔNG dùng biến này — `middleware.ts` chỉ có ở `apps/web`. Nó có mặt ở
+        # đây vì **cache**: hai target `web` và `admin` dùng chung stage `builder`, và
+        # build-arg là một phần của cache key. Truyền khác nhau ⇒ Docker dựng `builder`
+        # HAI lần, tức `pnpm install` + hai `next build` chạy hai lượt trên một máy 4 nhân.
+        DEM_LUOT_XEM_SECRET: ${DEM_LUOT_XEM_SECRET:?thiếu DEM_LUOT_XEM_SECRET trong file env}
         API_ORIGIN: http://api:8000
         SITE_ORIGIN: ${SITE_ORIGIN:-https://gikky.net}
     restart: unless-stopped

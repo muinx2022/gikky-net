@@ -34,6 +34,7 @@ env = environ.Env(
     FRONTEND_ORIGIN=(str, "http://localhost:3000"),
     REVALIDATE_URL=(str, "http://localhost:3000/lam-moi-cache"),
     REVALIDATE_SECRET=(str, ""),
+    DEM_LUOT_XEM_SECRET=(str, ""),
     MEILI_URL=(str, ""),
     MEILI_KEY=(str, ""),
 )
@@ -426,6 +427,16 @@ REVALIDATE_SECRET = env("REVALIDATE_SECRET", default="")
 #: `MEILI_KEY` phải là khoá **phạm vi hẹp** (chỉ index `mach`), **không phải master key**
 #: — master key tạo được khoá khác, tức nó là quyền quản trị toàn cụm cho một tiến trình
 #: chỉ cần đọc/ghi một index. Xem docstring `core/tim_kiem.py`.
+#: Secret của cửa ĐẾM LƯỢT XEM (`POST /api/v1/dem-luot-xem`, 2026-08-27) — chiều ngược
+#: lại: middleware của `apps/web` gọi vào Django mỗi lần có ai mở một trang.
+#:
+#: **Rỗng ⇒ cửa TẮT (503) và KHÔNG ghi gì**, cùng khuôn fail-closed với
+#: `REVALIDATE_SECRET` ngay trên. Endpoint này ghi DB mà **không** có phiên đăng nhập,
+#: nên để trần là ai cũng bơm được số liệu rác vào trang thống kê bằng một vòng `curl`.
+#: Mặc định rỗng cũng là trạng thái đúng của máy dev và của `pytest`: không đếm còn hơn
+#: đếm sai.
+DEM_LUOT_XEM_SECRET = env("DEM_LUOT_XEM_SECRET", default="")
+
 #:
 #: URL phải là **nội bộ** (`127.0.0.1:7700`). Meilisearch không bao giờ được Caddy proxy
 #: ra internet: luật che nội dung của sản phẩm sống ở Django, và một khoá search nằm

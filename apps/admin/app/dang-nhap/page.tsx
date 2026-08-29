@@ -6,6 +6,8 @@ import { useState } from "react";
 import { baoDamCsrf, GOC_ALLAUTH } from "../../lib/api";
 import { taoThongTinDangNhap } from "../../lib/dang-nhap";
 
+import { duongDanQuayLai } from "../../lib/quay-lai";
+import { useTieuDeTrang } from "../../lib/tieu-de";
 /**
  * Đăng nhập mod.
  *
@@ -58,6 +60,21 @@ function thongDiepAllauth(du_lieu: unknown): string | null {
 }
 
 export default function TrangDangNhap() {
+/** Header mang tín hiệu "ghi nhớ đăng nhập" sang Django.
+ *
+ * ## Vì sao HEADER chứ không phải một khoá trong body
+ *
+ * Body của `POST …/auth/login` do `LoginInput` của allauth định nghĩa, và nó **loại mọi
+ * khoá lạ** trước khi handler nhìn thấy. Thêm `remember` vào body là gửi một thứ chắc chắn
+ * bị vứt, và bị vứt **im lặng** — form vẫn đăng nhập được, ô tích vẫn bấm được, chỉ có hạn
+ * phiên là không bao giờ đổi.
+ *
+ * Phía Django đọc header này trong một receiver của signal `user_logged_in`
+ * (`api/core/phien.py`) — xem docstring ở đó để biết vì sao là signal chứ không middleware,
+ * và vì sao `ACCOUNT_SESSION_REMEMBER` **không** dùng được.
+ */
+const HEADER_GHI_NHO = "X-Ghi-Nho";
+
   // "định danh": email HOẶC username. Xem `lib/dang-nhap.ts` — allauth đòi client
   // chọn đúng một khoá, nên biến này cố ý không tên là `email`.
   const [dinh_danh, setDinhDanh] = useState("");
@@ -65,6 +82,16 @@ export default function TrangDangNhap() {
   const [ketQua, setKetQua] = useState<string | null>(null);
   const [dangGui, setDangGui] = useState(false);
 
+  const [hienMatKhau, setHienMatKhau] = useState(false);
+  // Mặc định TÍCH SẴN (user chốt 2026-08-26). Hôm nay phiên vốn luôn sống 2 tuần kể cả khi
+  // đóng trình duyệt, nên tích sẵn = giữ nguyên hành vi cũ, không ai bị đăng xuất bất ngờ
+  // sau khi deploy. Ô tích là **lối thoát cho người cần an toàn**, không phải một rào cản
+  // dựng trước mặt người bình thường.
+  const [ghiNho, setGhiNho] = useState(true);
+
+  // Trang này nằm NGOÀI khung quản trị (không `TieuDeTrang`, không sidebar), nên nó tự
+  // đặt tiêu đề tab.
+  useTieuDeTrang("Đăng nhập");
   async function gui(e: React.FormEvent) {
     e.preventDefault();
     setDangGui(true);
@@ -77,13 +104,24 @@ export default function TrangDangNhap() {
           "Content-Type": "application/json",
           "X-CSRFToken": await baoDamCsrf(),
         },
+          [HEADER_GHI_NHO]: ghiNho ? "1" : "0",
         body: JSON.stringify(taoThongTinDangNhap(dinh_danh, matKhau)),
       });
       if (r.ok) {
         // `window.location` chứ không phải `router.push`: cả khu quản trị treo trên
         // `GET /api/admin/me` gọi một lần lúc mount (`CongQuanTri`), và một điều hướng
         // client-side giữ nguyên cây React đã mount với kết quả 401 cũ trong state.
-        window.location.href = "/";
+        //
+        // `?tiep=` là chỗ cổng quản trị ghi lại trang người dùng đang đứng lúc bị đẩy ra
+        // (xem `components/cong-quan-tri.tsx`). Nó đi qua `duongDanQuayLai` **bắt buộc** —
+        // đó là dữ liệu trên URL, tức do người ngoài đặt được; docstring `lib/quay-lai.ts`
+        // kể vì sao nhận thẳng là một open redirect mang thương hiệu gikky.
+        //
+        // Đọc `window.location.search` thay vì `useSearchParams()`: giá trị chỉ cần đúng
+        // một lần, ngay tại đây, và `useSearchParams()` đổi lại bằng việc bắt cả cây phải
+        // có `<Suspense>` bao ngoài.
+        const tiep = new URLSearchParams(window.location.search).get("tiep");
+        window.location.href = duongDanQuayLai(tiep);
         return;
       }
       const than: unknown = await r.json().catch(() => null);
@@ -139,12 +177,64 @@ export default function TrangDangNhap() {
           <label className="block text-sm">
             <span className="mb-1 block text-muc-mo">Mật khẩu</span>
             <input
-              className="o-nhap"
-              type="password"
-              value={matKhau}
-              onChange={(e) => setMatKhau(e.target.value)}
-              required
-              autoComplete="current-password"
+            {/* `relative` + nút `absolute`: nút nằm TRONG ô nhập, nên đổi icon không đẩy
+                layout một pixel nào. `pr-10` chừa chỗ để mật khẩu dài không chui xuống
+                dưới con mắt. */}
+            <span className="relative block">
+              <input
+                className="o-nhap pr-10"
+                type={hienMatKhau ? "text" : "password"}
+                value={matKhau}
+                onChange={(e) => setMatKhau(e.target.value)}
+                required
+                // KHÔNG đổi theo `hienMatKhau`. Trình quản lý mật khẩu nhận diện ô theo
+                // `autoComplete`; đổi nó lúc người ta bấm con mắt là ô vừa được điền tự
+                // động bỗng thành một ô lạ.
+                autoComplete="current-password"
+                // ⚠ Ba thuộc tính này chỉ CẦN khi ô đã đổi sang `type="text"`, nhưng phải
+                // khai **cố định** chứ không theo `hienMatKhau` — khai theo trạng thái là
+                // React gỡ/gắn thuộc tính giữa chừng, đúng lúc người ta đang gõ.
+                //
+                // `type="password"` được trình duyệt miễn tự-viết-hoa; `type="text"` thì
+                // KHÔNG. Trên iOS Safari mặc định là `autocapitalize="sentences"`, nên:
+                // mod bấm con mắt TRƯỚC khi gõ, gõ `matkhau123`, ô nhận `Matkhau123`, và
+                // màn hình báo "sai mật khẩu" cho một mật khẩu đúng. Hỏng im lặng.
+                //
+                // `spellCheck={false}` còn chặn mật khẩu đang hiện rõ bị gửi đi kiểm chính
+                // tả (Chrome enhanced spellcheck gửi nội dung ô lên máy chủ Google).
+                //
+                // Lượt phản biện 2026-08-26 tìm ra.
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
+              />
+              {/* ⚠ `type="button"` là BẮT BUỘC. Nút không ghi `type` nằm trong `<form>`
+                  mặc định là `submit` (HTML spec), nên thiếu nó thì bấm xem mật khẩu =
+                  gửi luôn lần đăng nhập — với mật khẩu mới gõ một nửa. Lỗi kinh điển, và
+                  nó im lặng: giao diện chỉ "tự nhiên báo sai mật khẩu". */}
+              <button
+                type="button"
+                className="absolute inset-y-0 right-0 grid w-10 place-items-center
+                  text-muc-mo hover:text-muc"
+                onClick={() => setHienMatKhau((truoc) => !truoc)}
+                aria-label={hienMatKhau ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                aria-pressed={hienMatKhau}
+                data-testid="nut-con-mat"
+              >
+                <Icon ten={hienMatKhau ? "an" : "hien"} />
+              </button>
+            </span>
+          </label>
+
+          {/* Nhãn nói ra HỆ QUẢ thật, không nói "ghi nhớ tôi" chung chung: người sắp bỏ
+              tích cần biết mình đổi lấy cái gì, và câu đó phải đọc được ngay lúc tay đang
+              ở trên ô tích. */}
+          <label className="flex items-start gap-2 text-sm">
+              type="checkbox"
+              className="mt-0.5"
+              checked={ghiNho}
+              onChange={(e) => setGhiNho(e.target.checked)}
+              data-testid="o-ghi-nho"
             />
           </label>
           <button

@@ -105,3 +105,56 @@ test("giới hạn `figures` ở form khớp `kiem_figures` của Django", () =>
   expect(DAI_FIGURE_LABEL).toBe(docHang(nguon, "DAI_FIGURE_LABEL"));
   expect(DAI_FIGURE_VALUE).toBe(docHang(nguon, "DAI_FIGURE_VALUE"));
 });
+
+/* ===========================================================================
+ * Bản sao THỨ BA: tên header `X-Ghi-Nho` — thêm 2026-08-26 sau lượt phản biện
+ * ========================================================================= */
+
+/** `X-Ghi-Nho` (TS) ⇄ `HTTP_X_GHI_NHO` (Django `request.META`).
+ *
+ * Đây là bản sao thứ ba, và nó **không đi qua OpenAPI được** vì header không nằm trong
+ * schema của endpoint — endpoint ấy là của allauth, gikky không khai. Hai hằng nối với
+ * nhau chỉ bằng hai dòng docstring trỏ chéo, mà docstring thì không đỏ bao giờ.
+ *
+ * Ca hỏng nếu không có chuông này: đổi phía TS thành `"X-GhiNho"` ⇒ `pnpm test` vẫn xanh
+ * (bài đo Python gửi header bằng literal của riêng nó), lint xanh, build xanh, `tsc` xanh
+ * — và ô tích "ghi nhớ đăng nhập" **im lặng ngừng hoạt động cho mọi mod**.
+ *
+ * Đọc CẢ HAI phía bằng regex, fail-closed như ba bản sao trên.
+ */
+function docHangChuoi(nguon: string, ten: string, mau: RegExp): string {
+  const m = nguon.match(mau);
+  if (m === null) throw new Error(`không cắt được hằng ${ten}`);
+  return m[1];
+}
+
+test("tên header `X-Ghi-Nho` khớp nhau giữa admin (TS) và `core/phien.py`", () => {
+  const ts = readFileSync(
+    resolve(GOC, "apps/admin/app/dang-nhap/page.tsx"),
+    "utf8",
+  );
+  const py = readFileSync(resolve(GOC, "api/core/phien.py"), "utf8");
+
+  const ten_ts = docHangChuoi(
+    ts,
+    "HEADER_GHI_NHO (TS)",
+    /const HEADER_GHI_NHO\s*=\s*"([^"]+)"/,
+  );
+  const ten_py = docHangChuoi(
+    py,
+    "HEADER_GHI_NHO (Python)",
+    /^HEADER_GHI_NHO\s*=\s*"([^"]+)"/m,
+  );
+
+  // Django dựng khoá `META` từ tên header: `HTTP_` + viết hoa + `-` thành `_`.
+  const doi = `HTTP_${ten_ts.toUpperCase().replace(/-/g, "_")}`;
+  expect(doi, `TS gửi "${ten_ts}" ⇒ Django thấy "${doi}"`).toBe(ten_py);
+
+  // Và giá trị tắt phải khớp: TS gửi "0" khi bỏ tích, Python coi đúng "0" là tắt.
+  expect(ts).toContain('ghiNho ? "1" : "0"');
+  expect(docHangChuoi(py, "TAT", /^TAT\s*=\s*"([^"]+)"/m)).toBe("0");
+});
+
+test("phép đọc header KHÔNG rỗng và fail-CLOSED", () => {
+  expect(() => docHangChuoi("khong co gi", "x", /const X\s*=\s*"([^"]+)"/)).toThrow();
+});

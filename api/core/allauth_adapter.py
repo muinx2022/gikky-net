@@ -32,6 +32,7 @@ from allauth.account.adapter import DefaultAccountAdapter
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 
 from core.han_muc import dem_dang_ky_trong_ngay_vn, dia_chi_ip, tran_dang_ky_moi_ngay
+from core.phien import stash_ghi_nho
 
 
 class AdapterTaiKhoan(DefaultAccountAdapter):
@@ -63,6 +64,22 @@ class AdapterTaiKhoan(DefaultAccountAdapter):
         """
         user.dang_ky_ip = dia_chi_ip(request) or None
         return super().save_user(request, user, form, commit=commit)
+
+    def pre_login(self, request, user, **kwargs):
+        """Cất tín hiệu "ghi nhớ đăng nhập" vào phiên trước khi luồng login đi tiếp.
+
+        Đây là hook **duy nhất** chạy trên đúng request mang header `X-Ghi-Nho` **và**
+        chạy trước `resume_login` — chỗ luồng có thể thoát sớm vì một login stage
+        (`ACCOUNT_EMAIL_VERIFICATION = "mandatory"` làm `EmailVerificationStage` bật
+        thật). Không có bước cất này thì lựa chọn của người dùng bị vứt im lặng ở mọi lượt
+        đăng nhập phải qua stage. Lý lẽ đầy đủ: `core/phien.py::stash_ghi_nho`.
+
+        Vẫn gọi `super()` và trả nguyên kết quả: hook này được phép trả `HttpResponse` để
+        chặn lượt đăng nhập, và nuốt mất giá trị ấy là mở một cửa vòng qua mọi phép chặn
+        mà allauth (hoặc bản vá sau) đặt ở đây.
+        """
+        stash_ghi_nho(request)
+        return super().pre_login(request, user, **kwargs)
 
 
 class AdapterMangXaHoi(DefaultSocialAccountAdapter):
