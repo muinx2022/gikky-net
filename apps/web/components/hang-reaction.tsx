@@ -44,7 +44,7 @@ import { useTrangThaiToi } from "./trang-thai-toi";
  *
  * Cùng luật với `CotVote`, và cùng lý do đã viết ở đó: một con số client tự cộng mà server
  * không đồng ý là loài hỏng im lặng tệ nhất. Khác một điểm: server trả về **cả bảng đếm**
- * (`kq.data.dem`, đủ 4 khoá), nên sau mỗi lượt bấm ta thay bằng con số của server chứ
+ * (`kq.data.dem`, đủ 5 khoá), nên sau mỗi lượt bấm ta thay bằng con số của server chứ
  * không giữ phép cộng của mình.
  *
  * ## Nút TẮT vẫn phải nói lý do, và nói ĐÚNG lý do
@@ -57,7 +57,7 @@ export function HangReaction({
   dem,
 }: {
   mocId: number;
-  /** `MocOut.reactions` — đủ 4 khoá, kể cả khoá bằng 0. */
+  /** `MocOut.reactions` — đủ 5 khoá, kể cả khoá bằng 0. */
   dem: Record<string, number>;
 }) {
   const { toi, dangTai } = usePhien();

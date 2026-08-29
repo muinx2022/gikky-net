@@ -261,7 +261,7 @@ def test_value_ngoai_khoang_bi_tu_choi_o_tang_schema(client, mach_cua_a, nguoi_b
 def test_reaction_doi_va_rut_va_luon_tra_du_4_khoa(client, mach_cua_a, nguoi_b):
     """PLAN 5.7 — bộ CỐ ĐỊNH 🧠📎❓🔥, một reaction mỗi mốc mỗi người.
 
-    `dem` trả **đủ 4 khoá kể cả khoá 0**: UI vẽ nguyên bộ, và một khoá vắng mặt trong
+    `dem` trả **đủ 5 khoá kể cả khoá 0**: UI vẽ nguyên bộ, và một khoá vắng mặt trong
     response sẽ thành một icon nhấp nháy xuất hiện/biến mất theo lượt bấm.
     """
     client.force_login(nguoi_b)

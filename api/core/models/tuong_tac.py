@@ -107,13 +107,43 @@ class Reaction(models.Model):
     có nghĩa tương ứng nào trong bộ mới, và gán bừa nó thành `ro_rang` là **bịa ra lời
     người dùng chưa từng nói**. Reaction là tín hiệu tương tác nhất thời; mất nó rẻ hơn
     nhiều so với một bảng đếm nói sai điều người ta đã bấm.
+
+    ## Lượt 2026-08-27 — nút thứ NĂM, và `lieu` đổi mặt
+
+    User chốt hai việc cùng lúc:
+
+    1. **`lieu` bỏ chữ "liều"** ⇒ nhãn `"⚠️ rủi ro"`. Glyph 🔥 đi theo sang nút mới, vì
+       lửa đọc ra *"hot take"* chứ không đọc ra *cảnh báo*; ⚠️ nói đúng việc nó làm.
+    2. **Thêm `hay_lam` — `"🔥 hay lắm"`.** Lý do sản phẩm: bốn nút cũ thì ba mang sắc
+       thái SOI XÉT (rõ chưa, có nguồn chưa, đủ dữ kiện chưa) và một mang sắc thái CẢNH
+       BÁO. Không có nút nào để vỗ vai người viết. PLAN 5.7 gọi hàng này là *"bậc thang
+       tham gia rẻ hơn viết"* — một bậc thang chỉ toàn chấm điểm thì người ta thôi leo.
+
+    **Cùng ngày, lượt sau: `hay_lam` lên ĐẦU** *(user: "chuyển action Hay lắm thành
+    action đầu tiên trong chuỗi action")*. Bản trước xếp nó cuối với lý lẽ "hàng nút kết ở
+    một nốt khích lệ"; user chọn mở đầu bằng khích lệ thay vì kết thúc bằng nó — nút rẻ
+    nhất, dễ bấm nhất, đứng ở chỗ mắt chạm trước.
+
+    ⚠ **Thứ tự khai ở đây là HỢP ĐỒNG với frontend**, không phải chuyện trình bày:
+    `apps/web/e2e/don-vi/ban-sao-python.spec.ts` ghim `CAC_REACTION` khớp **đủ và đúng thứ
+    tự** với lớp này. Đảo chỗ ở một đầu là ĐỎ ở đầu kia — và đó là chủ đích. Django cũng
+    coi thứ tự `choices` là một phần state, nên đảo chỗ sinh migration (`0022`).
+
+    ⚠ **Khoá `lieu` GIỮ NGUYÊN dù nhãn nay là "rủi ro"** — đổi khoá là data migration
+    trên hàng đã có, tức rủi ro thật để đổi một chuỗi người dùng không bao giờ nhìn thấy.
+    Khoá đặt theo khái niệm, nhãn đặt theo chữ hiển thị; hai thứ được phép lệch nhau, và
+    chỗ này là chỗ chúng lệch. Đừng "dọn cho khớp" mà không có lý do khác.
+
+    ⚠ **`max_length=8` là trần thật** — `hay_lam` vừa đúng 7. Khoá thứ sáu dài hơn 8 ký
+    tự đòi một migration đổi cột, không phải chỉ thêm một dòng `choices`.
     """
 
     class Emoji(models.TextChoices):
+        HAY_LAM = "hay_lam", "🔥 hay lắm"
         RO_RANG = "ro_rang", "🧠 luận điểm rõ"
         CO_NGUON = "co_nguon", "📎 có dẫn nguồn"
         CAN_THEM = "can_them", "❓ cần thêm dữ kiện"
-        LIEU = "lieu", "🔥 liều"
+        LIEU = "lieu", "⚠️ rủi ro"
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="reactions"

@@ -70,11 +70,29 @@ test.describe("B — form ghi: vòng lặp lõi chạy thật trong trình duy�
     await page.waitForURL(/\/m\/[^/]+-\d+$/, { timeout: 30_000 });
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(title);
     await expect(page.getByTestId("moc-1")).toContainText("nền tích luỹ sáu tuần");
-    // Markdown render thật, không in ra dấu sao.
-    await expect(page.getByTestId("moc-1").locator("strong")).toHaveText("HPG");
-    // Một mốc ⇒ vẫn là BÀI THƯỜNG, không phải mạch (PLAN nguyên tắc 1, 5.1).
+    // ⚠ **Markdown KHÔNG còn được parse ở thân mốc** — kỳ vọng cũ (`locator("strong")`
+    // phải ra `"HPG"`) chết từ lượt Tiptap, và nó chết CÓ CHỦ ĐÍCH, không phải hồi quy:
+    //
+    // 1. ô soạn mốc nay là Tiptap (`components/truong-moc.tsx` dựng `<SoanThao>`, callback
+    //    tên thẳng là `(html) => …`), không còn là textarea markdown;
+    // 2. `core/ghi.py::tao_mach` **ghi cứng** `body_dinh_dang = DINH_DANG_HTML` cho mốc 1
+    //    (commit `64a99e5` — "Backend: … **Tiptap+sanitize** …"), và chú thích ngay tại
+    //    đó nói rõ mặc định của cột là `markdown`, tức nhãn `html` là một lựa chọn;
+    //    `components/than-html.tsx` chốt nốt: *"Mốc cũ (trước migration 0014) là
+    //    `markdown`"* — nhánh markdown chỉ còn phục vụ dữ liệu CŨ.
+    //
+    // Chuỗi `**HPG**` gõ vào một ô Tiptap là văn bản thuần, nên nó ở lại nguyên dấu sao.
+    // Bài đo vì thế hỏi đúng hai điều còn đúng: nhãn định dạng THẬT ở Django, và markdown
+    // không bị parse lén ở đường render HTML.
+    await expect(page.getByTestId("moc-1").locator("strong")).toHaveCount(0);
+    // Một mốc ⇒ vẫn là BÀI THƯỜNG, không phải mạch (PLAN nguyên tắc 1, 5.1). Dấu hiệu
+    // duy nhất còn lại là `data-kieu="don"` trên thẻ mốc: từ 2026-08-27 trang **không
+    // dán nhãn loại bài** nữa (user: "không cần phân biệt bài thường hay mạch"), nên
+    // `banner-trang-thai` không còn tồn tại. Assert dưới đây chốt cả hai vế — kiểu thẻ
+    // đúng, VÀ cái nhãn cũ thật sự đã đi khỏi trang chứ không chỉ đổi chữ.
     await expect(page.getByTestId("moc-1")).toHaveAttribute("data-kieu", "don");
-    await expect(page.getByTestId("banner-trang-thai")).toHaveText("Bài thường");
+    await expect(page.getByTestId("banner")).toHaveCount(0);
+    await expect(page.getByTestId("chan-dong-so")).toHaveCount(0);
 
     // Vế chống "trang tự chứng minh trang": hỏi thẳng Django xem hàng đó có thật không.
     const mach = await timMachTheoTitle(title);
@@ -82,6 +100,10 @@ test.describe("B — form ghi: vòng lặp lõi chạy thật trong trình duy�
     expect(mach.sub.slug).toBe(SUB);
     expect(mach.entry_count).toBe(1);
     expect(mach.mocs[0].body).toContain("nền tích luỹ sáu tuần");
+    // Nhãn định dạng là vế thứ hai của khẳng định trên, và là vế đọc được từ NGUỒN SỰ
+    // THẬT: mốc do sản phẩm tạo ra mang `html`. Ngày nào nó quay về `markdown` thì dấu
+    // sao ở trên phải parse trở lại — hai khẳng định buộc phải đổi cùng nhau.
+    expect(mach.mocs[0].body_dinh_dang).toBe("html");
     expect(mach.mocs[0].occurred_at).toBe(homNayVN());
     expect(duongDan(mach)).toBe(new URL(page.url()).pathname);
   });
@@ -204,10 +226,10 @@ test.describe("B — form ghi: vòng lặp lõi chạy thật trong trình duy�
     await page.getByTestId("dong-so-ket-qua").fill(KET_QUA);
     await page.getByTestId("dong-so-gui").click();
 
-    await expect(page.getByTestId("banner-trang-thai")).toHaveText("Mạch đã đóng", {
+    await expect(page.getByTestId("chan-dong-so-nhan")).toHaveText("Mạch đã đóng", {
       timeout: 20_000,
     });
-    await expect(page.getByTestId("banner-ket-qua")).toHaveText(KET_QUA);
+    await expect(page.getByTestId("chan-dong-so-ket-qua")).toHaveText(KET_QUA);
     // Xác nhận phải nói ra cả ba hệ quả — đóng sổ là hành động một chiều trên thực tế.
     expect(nhac_dong).toContain("Không nối thêm mốc");
     expect(nhac_dong).toContain("Bình luận thì vẫn viết được");
@@ -223,12 +245,14 @@ test.describe("B — form ghi: vòng lặp lõi chạy thật trong trình duy�
 
     page.once("dialog", (d) => void d.accept());
     await page.getByTestId("nut-mo-lai").click();
-    await expect(page.getByTestId("banner-trang-thai")).toHaveText("Mạch đang mở", {
-      timeout: 20_000,
-    });
-    // `ket_qua` bị xoá khi mở lại (`api/machs.py::mo_lai_mach`) — banner phải ẩn hẳn nó,
-    // không để lại một dấu `·` lơ lửng.
-    await expect(page.getByTestId("banner-ket-qua")).toHaveCount(0);
+    // Mở lại ⇒ dòng chốt sổ biến mất HẲN. Bản trước lượt 2026-08-27 đo bằng
+    // `banner-trang-thai` đổi chữ sang "Mạch đang mở"; nay không còn nhãn "đang mở" nào
+    // để đo, nên phép đo đúng là *"không còn gì"* — và nó mạnh hơn: một dòng chốt sổ sót
+    // lại trên mạch đã mở là nói sai trạng thái, chứ không chỉ hiển thị thừa.
+    await expect(page.getByTestId("chan-dong-so")).toHaveCount(0, { timeout: 20_000 });
+    // `ket_qua` bị xoá khi mở lại (`api/machs.py::mo_lai_mach`) — kiểm riêng, vì nó là
+    // dữ liệu server chứ không phải hệ quả hiển thị của dòng trên.
+    await expect(page.getByTestId("chan-dong-so-ket-qua")).toHaveCount(0);
     await expect(page.getByTestId("nut-noi-moc")).toBeVisible();
 
     const mach = await timMachTheoTitle(title);
@@ -277,10 +301,13 @@ test.describe("B — form ghi: vòng lặp lõi chạy thật trong trình duy�
     await page.goto("/dang-mach");
     const moi = page.getByTestId("dang-mach-khach");
     await expect(moi).toBeVisible();
-    await expect(moi.getByRole("link", { name: "Đăng nhập" })).toHaveAttribute(
-      "href",
-      "/dang-nhap",
-    );
+    // **Nút, không phải link** — đổi ở `ec47572` ("… · modal đăng nhập"): lối đăng nhập
+    // nay mở CÙNG cái modal mà nút ở header mở, thay vì điều hướng sang `/dang-nhap`.
+    // Câu hỏi của B7 không đổi ("có lối đăng nhập tìm được, không phải một form vô dụng"),
+    // chỉ cái lối ấy đổi hình. Bấm thật để chắc nó dẫn tới đâu đó — một nút không mở gì
+    // còn tệ hơn một link chết.
+    await moi.getByRole("button", { name: "Đăng nhập" }).click();
+    await expect(page.getByTestId("modal-dang-nhap")).toBeVisible();
     await expect(page.getByTestId("form-dang-mach")).toHaveCount(0);
   });
 });

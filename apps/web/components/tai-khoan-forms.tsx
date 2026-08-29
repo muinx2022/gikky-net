@@ -139,7 +139,14 @@ export function FormDangKy() {
   return (
     <FormTaiKhoan
       tieuDe="Mở tài khoản gikky"
-      moTa="Tên bạn chọn ở đây là địa chỉ hồ sơ công khai — /u/tên-của-bạn. Đăng nhập thì dùng email."
+      // Câu cũ ghi "Đăng nhập thì dùng email." — **sai sự thật**, và user bắt đúng
+      // (2026-08-27: *"nhập tên có dấu cách thì không được, nhưng cũng không dùng tên đó
+      // để đăng nhập được… chỗ này là chỗ gây conflict"*). `settings.py:285` khai
+      // `ACCOUNT_LOGIN_METHODS = {"email", "username"}`, và `lib/dang-nhap.ts` gửi khoá
+      // `username` cho mọi chuỗi không có `@` — tức đăng nhập bằng tên này LUÔN chạy được.
+      // Câu sai ấy là thứ biến một ràng buộc hợp lý (tên đi vào URL nên không có khoảng
+      // trắng) thành một ràng buộc vô cớ trong mắt người đăng ký.
+      moTa="Tên này vừa là địa chỉ hồ sơ công khai — /u/tên-của-bạn — vừa là tên đăng nhập: vào bằng email hay bằng tên đều được."
       nutGui="Đăng ký"
       onGui={async (f) => {
         const vao_duoc = await dangKy({
@@ -164,10 +171,15 @@ export function FormDangKy() {
       }
     >
       <O ten="email" nhan="Email" kieu="email" tuDien="email" />
+      {/* Nhãn cũ "Tên hiển thị công khai" nói được đúng MỘT trong hai vai, và đúng cái
+          vai không giải thích nổi luật ký tự: một tên chỉ để trưng bày thì việc gì cấm
+          khoảng trắng? Nhãn mới nói cả hai vai, nên `goiY` bên dưới đọc ra là hệ quả chứ
+          không phải một điều luật tuỳ hứng. `goiY` giữ nguyên và phải giữ: nó là chỗ DUY
+          NHẤT luật ký tự hiện ra TRƯỚC khi người ta gõ. */}
       <O
         ten="username"
-        nhan="Tên hiển thị công khai"
-        goiY="Không dấu, không khoảng trắng — ví dụ ba_muoi_phien."
+        nhan="Tên đăng nhập, cũng là địa chỉ hồ sơ"
+        goiY="Không dấu, không khoảng trắng — vì nó đi thẳng vào địa chỉ /u/… Ví dụ: ba_muoi_phien."
         tuDien="username"
       />
       <O

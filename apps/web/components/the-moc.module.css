@@ -25,7 +25,11 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: var(--surface);
+  /* Nền = nền THẺ, không phải `--surface`: vòng tròn này đục lỗ trên đường ray (`.ray`),
+     nó phải trùng màu tấm thẻ đang nằm dưới. Thẻ đổi sang `--card` ngày 2026-08-26
+     (`trang-mach.module.css#.the`) nên dòng này đi theo — để `--surface` là một đĩa trắng
+     nổi lên giữa thẻ ở theme sáng. */
+  background: var(--card);
   border: 2px solid var(--line);
   display: grid;
   place-items: center;

@@ -1,0 +1,48 @@
+/* Dòng chốt sổ ở cuối nhật ký — xem docstring `chan-dong-so.tsx`.
+ *
+ * **Nhẹ hơn hẳn `BannerMach` cũ**, và đó là chủ đích chứ không phải chép thiếu. Banner cũ
+ * là một khung viền + nền lõm chiếm trọn chiều ngang, đặt ở đầu trang nơi nó phải cạnh
+ * tranh sự chú ý với tiêu đề. Ở cuối cuốn sổ thì không còn ai để cạnh tranh: người đọc
+ * vừa đọc hết mốc cuối và đang tìm xem còn gì nữa không, nên một dòng chữ là đủ.
+ *
+ * Vạch trên (`border-top`) thay cho khung bao: nó nói "hết phần nhật ký" — đúng việc cần
+ * làm ở đây — mà không dựng thêm một tấm thẻ lồng trong tấm thẻ.
+ *
+ * Lề trái/phải 26px khớp `.nhat_ky` của `trang-mach.module.css` (16px dưới 640px), vì nó
+ * là em út của danh sách mốc chứ không phải một khối độc lập. */
+.chan {
+  margin: 4px 26px 18px;
+  padding-top: 11px;
+  border-top: 1px solid var(--line);
+  font-family: var(--f-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.nhan {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* `ket_qua` là dòng tự do của tác giả (≤40 ký tự) — **không** viết hoa nó. Chuỗi người
+   dùng gõ mà bị `text-transform` bẻ là đổi chữ của họ; phần còn lại của dòng là nhãn hệ
+   thống nên viết hoa được. */
+.ket_qua {
+  color: var(--ink);
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
+.cham {
+  color: var(--line-2);
+  margin: 0 6px;
+}
+
+@media (max-width: 640px) {
+  .chan {
+    margin: 4px 16px 16px;
+  }
+}

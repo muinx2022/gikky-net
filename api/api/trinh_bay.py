@@ -271,11 +271,11 @@ def anh_ra(anh: MocAnh) -> AnhOut:
 
 
 def dem_reaction_rong() -> dict[str, int]:
-    """Đủ 4 khoá reaction, tất cả bằng 0. Không chạm DB.
+    """Đủ 5 khoá reaction, tất cả bằng 0. Không chạm DB.
 
     Dùng ở ba chỗ: mốc vừa tạo (chưa ai react), bia mộ (che), và làm nền cho
     `api/tuong_tac.py::dem_reaction_theo_mach`. Hàm chứ không phải một dict literal chép
-    ba lần: *"đủ 4 khoá"* là bất biến của hợp đồng `MocOut.reactions` /`ReactionOut.dem`,
+    ba lần: *"đủ 5 khoá"* là bất biến của hợp đồng `MocOut.reactions` /`ReactionOut.dem`,
     và ba bản chép tay sẽ có một bản thiếu khoá vào ngày bộ emoji mọc thêm cái thứ sáu.
     """
     return {khoa: 0 for khoa in Reaction.Emoji.values}
@@ -329,7 +329,7 @@ def moc_ra(
         # `core/ghi.py::dong_bo_kho_anh` — nó chuyển file sang kho không server nào phục
         # vụ, vì Caddy đọc thẳng đĩa và không bao giờ hỏi dòng code này.
         anhs=[anh_ra(a) for a in anhs] if hien else [],
-        # Bia mộ: đủ 4 khoá nhưng tất cả 0 — cùng chuẩn với `score`. Người gọi truyền vào
+        # Bia mộ: đủ 5 khoá nhưng tất cả 0 — cùng chuẩn với `score`. Người gọi truyền vào
         # con số thật; phép che nằm ở đây, một chỗ, để ba chỗ gọi không phải nhớ nó.
         reactions=reactions if hien else dem_reaction_rong(),
     )

@@ -7,8 +7,8 @@ import type {
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 
-import { BannerMach } from "@/components/banner-mach";
 import { BaoCursorHong } from "@/components/bao-cursor-hong";
+import { ChanDongSo } from "@/components/chan-dong-so";
 import { DaiGapBung } from "@/components/dai-gap";
 import { JsonLd } from "@/components/json-ld";
 import { KhanDai } from "@/components/khan-dai";
@@ -44,10 +44,10 @@ import { jsonLdMach } from "@/lib/json-ld";
 import {
   HIEN_KHOI_DANG_CHU_Y,
   docSort,
-  idTrongTrang,
+  idTrongTrangGop,
   type SortKhanDai,
 } from "@/lib/khan-dai";
-import { cauMoiComposer, docView, matDeRender } from "@/lib/mat";
+import { docView, matDeRender } from "@/lib/mat";
 import { chonMoiBung, idDaTrich } from "@/lib/moi-bung";
 import { urlTuyetDoi } from "@/lib/site";
 import { TRAN_NGAN_KEO, chayCoTran } from "@/lib/song-song";
@@ -177,12 +177,15 @@ export async function TrangMach({
   const dai = tinhDaiGap(mach.entry_count);
   const co_trich = mach.mocs.some((m) => m.trich !== null);
 
-  // Trang 1 của `hay_nhat` phục vụ HAI việc, và chỉ nạp khi có ít nhất một trong hai
-  // (vá C6 — bản đầu gọi vô điều kiện, tức mọi post thường tốn thừa một lời gọi):
+  // Trang 1 của `hay_nhat` chỉ nạp khi có việc cần tới nó (vá C6 — bản đầu gọi vô điều
+  // kiện, tức mọi post thường tốn thừa một lời gọi). Nay còn **một** việc:
   //
-  // 1. **mồi bung** của dải gập — tính từ trang đầu của chính sort đó (plan con 1c §1),
-  //    KHÔNG theo sort người dùng đang chọn;
-  // 2. **deep-link của khối trích** — xem `duong_dan_trich` bên dưới.
+  // - **deep-link của khối trích** — nửa KHÁN ĐÀI của `idTrongTrangGop`, xem
+  //   `duong_dan_trich` bên dưới.
+  //
+  // (**Mồi bung** từng là việc thứ hai. Từ §G nó ăn `lat_cat` chứ không ăn khán đài nữa —
+  // xem `threadsTrongDai`. `dai.gap` vẫn ở lại trong điều kiện vì một mạch có dải gập gần
+  // như luôn có trích, và giữ nó cho `id_trong_trang` đủ nửa khán đài ở trang đầu.)
   const can_hay_nhat = dai.gap || co_trich || sort === "hay_nhat";
   const hay_nhat = can_hay_nhat
     ? (await docKhanDai(mach.id, "hay_nhat", doc)).du_lieu
@@ -247,9 +250,13 @@ export async function TrangMach({
   const hrefSort = (s: SortKhanDai) =>
     la_bao ? `${co_ban}?view=bao&sort=${s}#khan-dai` : `${co_ban}?khan_dai=1&sort=${s}#khan-dai`;
 
-  // **Deep-link của khối trích tính trạng thái trên ĐÚNG TRANG mà nó dẫn tới** (vá B3).
+  // **Deep-link của khối trích tính trạng thái trên ĐÚNG TRANG mà nó dẫn tới** (vá B3),
+  // và "trang ấy" từ 2026-08-26 có **hai** khu render bình luận chứ không còn một. Công
+  // thức hợp nằm ở `lib/khan-dai.ts::idTrongTrangGop` — nó là luật, không phải hai dòng
+  // tiện tay, nên nó ở chỗ don-vi ghim được (§D3). `lat_cat` đã nạp sẵn cho mọi mốc ở
+  // trên, nên phép hợp này **không thêm lời gọi API nào**.
   const duong_dan_trich = `${co_ban}?khan_dai=1&sort=hay_nhat`;
-  const id_trong_trang = idTrongTrang(hay_nhat?.threads ?? []);
+  const id_trong_trang = idTrongTrangGop(hay_nhat?.threads ?? null, lat_cat.values());
 
   const the_moc = (seq: number) => {
     const m = mach.mocs.find((x) => x.seq === seq);
@@ -267,11 +274,6 @@ export async function TrangMach({
       />
     );
   };
-
-  const moc_moi_nhat = mach.mocs.reduce<typeof mach.mocs[number] | undefined>(
-    (a, b) => (a === undefined || b.seq > a.seq ? b : a),
-    undefined,
-  );
 
   return (
     <KhungHaiCot>
@@ -298,7 +300,6 @@ export async function TrangMach({
         <TrangThaiToiProvider machId={mach.id}>
           <article className={css.the} data-mat={mat} data-testid="the-mach">
             <header className={css.dau}>
-              <BannerMach mach={mach} />
               <div className={css.hang_tren}>
                 <Link className={css.sub} href={duongDanSub(mach.sub.slug)}>
                   s/{mach.sub.slug}
@@ -410,7 +411,7 @@ export async function TrangMach({
                           tongBinhLuanTrongDai(dai, mach.mocs),
                           hien_so_dem,
                         )}
-                        moiBung={moiBung(mach, dai, hay_nhat?.threads ?? [])}
+                        moiBung={moiBung(mach, dai, threadsTrongDai(dai, lat_cat))}
                       >
                         {mach.mocs
                           .filter((m) => trongDaiGap(dai, m.seq))
@@ -426,6 +427,13 @@ export async function TrangMach({
                 </ol>
               )}
             </NganKeoProvider>
+
+            {/* Dòng chốt sổ — CUỐI nhật ký, không phải đầu trang *(user chốt
+                2026-08-27)*. `BannerMach` cũ đứng trong `<header>` và dán nhãn "bài
+                thường / mạch đang mở", thứ trang đã tự nói bằng chính sự có mặt hay
+                vắng mặt của ray thời gian. Component tự trả `null` khi mạch còn mở, nên
+                ở đây không có phép kiểm nào — xem docstring của nó. */}
+            <ChanDongSo mach={mach} />
 
             {/* Khu của chủ mạch — nối mốc · đóng sổ · mở lại (PLAN 5.1). Đặt NGAY DƯỚI
                 nhật ký và TRÊN khán đài, đúng thứ tự việc: mốc mới nối vào cuối cuốn sổ,
@@ -449,13 +457,22 @@ export async function TrangMach({
                 **Đúng MỘT trong hai được render** (L05): `KhanDai` nhận
                 `hienComposer={!la_bao}`, nên mặt BÃO không còn hai ô nhập cùng hình dạng
                 mà khác luật neo. */}
+            {/* **KHÔNG neo mặc định, và KHÔNG câu mồi theo mốc** *(user chốt
+                2026-08-26)*. Cả hai thứ vừa gỡ đều nói cùng một câu sai: rằng ô này viết
+                *về mốc mới nhất*. Từ lượt này ô chung là ô của CẢ BÀI — câu neo mốc rơi
+                vào ngăn kéo mốc đó và không hiện ở đây nữa, nên một mặc định neo sẽ đẩy
+                câu vừa viết ra khỏi đúng khu người viết đang nhìn. Ai muốn gửi vào mốc
+                vẫn chọn được ở select "Neo vào", và chính cái select nói ra điều đó.
+                (Câu mồi cũ — "Mốc 9 vừa lên — bạn nghĩ sao?" — theo `cauMoiComposer`, hàm
+                đã xoá cùng lượt; placeholder mặc định của `Composer` thay chỗ.)
+
+                `neoDoiDuoc={la_mach}`: mặt BÃO **có thể xảy ra ở post thường** —
+                `core/mat.py::tinh_mat_theo_thoi_gian` chỉ hỏi status · khoá · 72h, không
+                hỏi `entry_count`. Post thường không có ngăn kéo (PLAN 5.1), nên một câu
+                neo mốc 1 viết từ đây sẽ không hiện ở bất kỳ đâu. */}
             {la_bao && (
               <div className={css.composer_bao} data-testid="composer-mat-bao">
-                <Composer
-                  anchorMocSeq={moc_moi_nhat?.seq ?? null}
-                  neoDoiDuoc
-                  moi={cauMoiComposer(moc_moi_nhat, mach.status === "closed")}
-                />
+                <Composer neoDoiDuoc={la_mach} />
               </div>
             )}
 
@@ -472,7 +489,7 @@ export async function TrangMach({
                 duongDanKhanDai={duong_dan_khan_dai}
                 hienSoDem={hien_so_dem}
                 cauDangDoc={cau_dang_doc}
-                anchorMocSeq={moc_moi_nhat?.seq ?? null}
+                neoDoiDuoc={la_mach}
                 hienComposer={!la_bao}
               />
             )}
@@ -500,12 +517,44 @@ function hrefXemThem(
     : `${coBan}?${mo}&sort=${sort}&cursor=${encodeURIComponent(trang.cursor_ke_tiep)}#khan-dai`;
 }
 
+/** Tập thread nuôi mồi bung: gộp lát cắt ngăn kéo của **các mốc nằm trong dải gập**.
+ *
+ * ## Vì sao nguồn đổi *(§G, 2026-08-27)*
+ *
+ * Tới 2026-08-26 nguồn là trang 1 `hay_nhat` của khu bình luận chung. Cùng ngày, khu ấy
+ * bắt đầu chỉ giữ thread `anchor_moc_seq IS NULL` — mà `chonMoiBung` đòi ứng viên **có**
+ * neo và neo phải nằm trong dải. Hai điều kiện loại trừ nhau, nên hàm trả `null` với mọi
+ * dữ liệu, ở mọi mạch có dải gập (dải gập cần `entry_count ≥ 5`, phép lọc bật từ `≥ 2`):
+ * tính năng chết hẳn chứ không nghèo đi, và chết **im lặng** — component xử `null` gọn tới
+ * mức không ai thấy gì.
+ *
+ * Nguồn mới đúng hơn nguồn cũ về ngữ nghĩa: teaser quảng cáo cho những mốc đang bị gập,
+ * mà nhà của những câu nói về chúng CHÍNH LÀ ngăn kéo của chúng.
+ *
+ * **Luật chọn không đổi một dòng** (`lib/moi-bung.ts`, don-vi `moi-bung.spec.ts` ghim đủ ba
+ * điều kiện) — đây chỉ là đổi TẬP ĐẦU VÀO. Vẫn lọc `trongDaiGap` lần nữa bên trong luật,
+ * và phép lọc thừa ấy là cố ý: nó giữ cho luật đúng độc lập với việc người gọi đưa vào
+ * đúng hay sai tập.
+ *
+ * Không thêm lời gọi API nào — `lat_cat` đã nạp cho mọi mốc ở trên.
+ */
+function threadsTrongDai(
+  dai: DaiGap,
+  latCat: ReadonlyMap<number, NganKeoOut>,
+): BinhLuanOut[] {
+  const ra: BinhLuanOut[] = [];
+  for (const [seq, lat] of latCat) {
+    if (trongDaiGap(dai, seq)) ra.push(...lat.threads);
+  }
+  return ra;
+}
+
 function moiBung(
   mach: MachChiTietOut,
   dai: DaiGap,
-  threadsHayNhat: readonly BinhLuanOut[],
+  ungVien: readonly BinhLuanOut[],
 ) {
-  const chon = chonMoiBung(threadsHayNhat, dai, idDaTrich(mach));
+  const chon = chonMoiBung(ungVien, dai, idDaTrich(mach));
   if (chon === null || chon.body === null) return null;
   const goi = chon.body.replace(/\s+/g, " ").trim();
   return {

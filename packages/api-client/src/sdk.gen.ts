@@ -4,7 +4,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { BoTheoMachData, BoTheoMachErrors, BoTheoMachResponses, BoTheoSubData, BoTheoSubErrors, BoTheoSubResponses, BoTheoUserData, BoTheoUserErrors, BoTheoUserResponses, DanhDauDaDocData, DanhDauDaDocErrors, DanhDauDaDocResponses, DanhDauDaXemData, DanhDauDaXemErrors, DanhDauDaXemResponses, DatAvatarData, DatAvatarErrors, DatAvatarResponses, DatReactionData, DatReactionErrors, DatReactionResponses, DatVoteData, DatVoteErrors, DatVoteResponses, DongSoMachData, DongSoMachErrors, DongSoMachResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GoTrichData, GoTrichErrors, GoTrichResponses, GuiBaoCaoData, GuiBaoCaoErrors, GuiBaoCaoResponses, LietKeBanCuMocData, LietKeBanCuMocErrors, LietKeBanCuMocResponses, LietKeBinhLuanMachData, LietKeBinhLuanMachErrors, LietKeBinhLuanMachResponses, LietKeBinhLuanMocData, LietKeBinhLuanMocErrors, LietKeBinhLuanMocResponses, LietKeDangTheoData, LietKeDangTheoErrors, LietKeDangTheoResponses, LietKeDaVoteData, LietKeDaVoteErrors, LietKeDaVoteResponses, LietKeFeedDangDienRaData, LietKeFeedDangDienRaErrors, LietKeFeedDangDienRaResponses, LietKeFeedMoiData, LietKeFeedMoiErrors, LietKeFeedMoiResponses, LietKeMachCuaUserData, LietKeMachCuaUserErrors, LietKeMachCuaUserResponses, LietKeSubDangTheoData, LietKeSubDangTheoErrors, LietKeSubDangTheoResponses, LietKeSubData, LietKeSubResponses, LietKeSubToiLamModData, LietKeSubToiLamModErrors, LietKeSubToiLamModResponses, LietKeThongBaoData, LietKeThongBaoErrors, LietKeThongBaoResponses, LietKeUserDangTheoData, LietKeUserDangTheoErrors, LietKeUserDangTheoResponses, ModDatAnBinhLuanData, ModDatAnBinhLuanErrors, ModDatAnBinhLuanResponses, ModDatAnMachData, ModDatAnMachErrors, ModDatAnMachResponses, ModDatAnMocData, ModDatAnMocErrors, ModDatAnMocResponses, ModDatKhoaMachData, ModDatKhoaMachErrors, ModDatKhoaMachResponses, MoLaiMachData, MoLaiMachErrors, MoLaiMachResponses, NoiMocData, NoiMocErrors, NoiMocResponses, SuaBinhLuanData, SuaBinhLuanErrors, SuaBinhLuanResponses, SuaMocData, SuaMocErrors, SuaMocResponses, SuaToiData, SuaToiErrors, SuaToiResponses, TaiAnhMocData, TaiAnhMocErrors, TaiAnhMocResponses, TaiAnhNoiDungData, TaiAnhNoiDungErrors, TaiAnhNoiDungResponses, TaoMachData, TaoMachErrors, TaoMachResponses, TheoMachData, TheoMachErrors, TheoMachResponses, TheoSubData, TheoSubErrors, TheoSubResponses, TheoUserData, TheoUserErrors, TheoUserResponses, TimKiemData, TimKiemErrors, TimKiemResponses, TrichVaoSoData, TrichVaoSoErrors, TrichVaoSoResponses, VietBinhLuanData, VietBinhLuanErrors, VietBinhLuanResponses, XemHoSoData, XemHoSoErrors, XemHoSoResponses, XemMachCuaToiData, XemMachCuaToiErrors, XemMachCuaToiResponses, XemMachData, XemMachErrors, XemMachResponses, XemSubCuaToiData, XemSubCuaToiErrors, XemSubCuaToiResponses, XemSubData, XemSubErrors, XemSubResponses, XemToiData, XemToiResponses, XemUserCuaToiData, XemUserCuaToiErrors, XemUserCuaToiResponses, XoaAnhMocData, XoaAnhMocErrors, XoaAnhMocResponses, XoaAvatarData, XoaAvatarErrors, XoaAvatarResponses, XoaBinhLuanData, XoaBinhLuanErrors, XoaBinhLuanResponses, XoaMocData, XoaMocErrors, XoaMocResponses } from './types.gen';
+import type { BoTheoMachData, BoTheoMachErrors, BoTheoMachResponses, BoTheoSubData, BoTheoSubErrors, BoTheoSubResponses, BoTheoUserData, BoTheoUserErrors, BoTheoUserResponses, DanhDauDaDocData, DanhDauDaDocErrors, DanhDauDaDocResponses, DanhDauDaXemData, DanhDauDaXemErrors, DanhDauDaXemResponses, DatAvatarData, DatAvatarErrors, DatAvatarResponses, DatReactionData, DatReactionErrors, DatReactionResponses, DatVoteData, DatVoteErrors, DatVoteResponses, DemLuotXemData, DemLuotXemErrors, DemLuotXemResponses, DongSoMachData, DongSoMachErrors, DongSoMachResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GoTrichData, GoTrichErrors, GoTrichResponses, GuiBaoCaoData, GuiBaoCaoErrors, GuiBaoCaoResponses, LietKeBanCuMocData, LietKeBanCuMocErrors, LietKeBanCuMocResponses, LietKeBinhLuanMachData, LietKeBinhLuanMachErrors, LietKeBinhLuanMachResponses, LietKeBinhLuanMocData, LietKeBinhLuanMocErrors, LietKeBinhLuanMocResponses, LietKeDangTheoData, LietKeDangTheoErrors, LietKeDangTheoResponses, LietKeDaVoteData, LietKeDaVoteErrors, LietKeDaVoteResponses, LietKeFeedDangDienRaData, LietKeFeedDangDienRaErrors, LietKeFeedDangDienRaResponses, LietKeFeedMoiData, LietKeFeedMoiErrors, LietKeFeedMoiResponses, LietKeMachCuaUserData, LietKeMachCuaUserErrors, LietKeMachCuaUserResponses, LietKeSubDangTheoData, LietKeSubDangTheoErrors, LietKeSubDangTheoResponses, LietKeSubData, LietKeSubResponses, LietKeSubToiLamModData, LietKeSubToiLamModErrors, LietKeSubToiLamModResponses, LietKeThongBaoData, LietKeThongBaoErrors, LietKeThongBaoResponses, LietKeUserDangTheoData, LietKeUserDangTheoErrors, LietKeUserDangTheoResponses, ModDatAnBinhLuanData, ModDatAnBinhLuanErrors, ModDatAnBinhLuanResponses, ModDatAnMachData, ModDatAnMachErrors, ModDatAnMachResponses, ModDatAnMocData, ModDatAnMocErrors, ModDatAnMocResponses, ModDatKhoaMachData, ModDatKhoaMachErrors, ModDatKhoaMachResponses, MoLaiMachData, MoLaiMachErrors, MoLaiMachResponses, NoiMocData, NoiMocErrors, NoiMocResponses, SuaBinhLuanData, SuaBinhLuanErrors, SuaBinhLuanResponses, SuaMocData, SuaMocErrors, SuaMocResponses, SuaToiData, SuaToiErrors, SuaToiResponses, TaiAnhMocData, TaiAnhMocErrors, TaiAnhMocResponses, TaiAnhNoiDungData, TaiAnhNoiDungErrors, TaiAnhNoiDungResponses, TaoMachData, TaoMachErrors, TaoMachResponses, TheoMachData, TheoMachErrors, TheoMachResponses, TheoSubData, TheoSubErrors, TheoSubResponses, TheoUserData, TheoUserErrors, TheoUserResponses, TimKiemData, TimKiemErrors, TimKiemResponses, TrichVaoSoData, TrichVaoSoErrors, TrichVaoSoResponses, VietBinhLuanData, VietBinhLuanErrors, VietBinhLuanResponses, XemHoSoData, XemHoSoErrors, XemHoSoResponses, XemMachCuaToiData, XemMachCuaToiErrors, XemMachCuaToiResponses, XemMachData, XemMachErrors, XemMachResponses, XemSubCuaToiData, XemSubCuaToiErrors, XemSubCuaToiResponses, XemSubData, XemSubErrors, XemSubResponses, XemToiData, XemToiResponses, XemUserCuaToiData, XemUserCuaToiErrors, XemUserCuaToiResponses, XoaAnhMocData, XoaAnhMocErrors, XoaAnhMocResponses, XoaAvatarData, XoaAvatarErrors, XoaAvatarResponses, XoaBinhLuanData, XoaBinhLuanErrors, XoaBinhLuanResponses, XoaMocData, XoaMocErrors, XoaMocResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -121,6 +121,21 @@ export const suaBinhLuan = <ThrowOnError extends boolean = false>(options: Optio
             type: 'apiKey'
         }],
     url: '/api/v1/comments/{comment_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Dem Luot Xem
+ *
+ * Ghi một lượt xem trang. Đòi header secret dùng chung giữa Next và Django.
+ */
+export const demLuotXem = <ThrowOnError extends boolean = false>(options: Options<DemLuotXemData, ThrowOnError>): RequestResult<DemLuotXemResponses, DemLuotXemErrors, ThrowOnError> => (options.client ?? client).post<DemLuotXemResponses, DemLuotXemErrors, ThrowOnError>({
+    security: [{ name: 'X-Dem-Luot-Xem-Secret', type: 'apiKey' }],
+    url: '/api/v1/dem-luot-xem',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -290,7 +305,17 @@ export const dongSoMach = <ThrowOnError extends boolean = false>(options: Option
  * sau mốc mới nhất và còn trong 48 giờ đầu đời của nó. Sibling trong thread sắp theo
  * wilson **thuần** — hệ số tươi không áp cho reply. Phân trang bằng `?offset=`,
  * `?limit=` tối đa 50.
- * - `moi_nhat` / `cu_nhat`: `?cursor=` keyset trên `(created_at, id)`.
+ * - `moi_nhat`: thread gốc sắp theo **hoạt động mới nhất** — `max(created_at)` trên các
+ * nút ĐỌC ĐƯỢC của cả thread — giảm dần, tức *một reply mới đẩy cuộc trao đổi lên
+ * đầu* (user chốt 2026-08-26). Bia mộ không bump: thread toàn bia mộ rơi về
+ * `created_at` của gốc. Reply **trong** thread thì đọc **xuôi**, cũ → mới.
+ * - `cu_nhat`: gốc theo `created_at` tăng dần, KHÔNG bump — "cũ nhất" là *đọc từ đầu*.
+ * Reply cũng cũ → mới.
+ * - Cả hai sort thời gian phân trang bằng `?cursor=` keyset, **trên đúng khoá sắp của
+ * chúng**: `(hoạt động, id)` cho `moi_nhat`, `(created_at, id)` cho `cu_nhat`. Khoá
+ * của `moi_nhat` BIẾN ĐỔI theo dữ liệu nên nó đánh mất lời hứa "không lặp không sót"
+ * khi có người viết/xoá reply giữa hai lần lật trang — đánh đổi có chủ đích, xem
+ * `_cat_goc`.
  *
  * **Hai kiểu phân trang KHÔNG dùng lẫn nhau, dùng nhầm trả 400** với
  * `code = "tham_so_khong_hop_le"`: `?cursor=` kèm `sort=hay_nhat`, hoặc `?offset=` khác
@@ -308,6 +333,30 @@ export const dongSoMach = <ThrowOnError extends boolean = false>(options: Option
  * Bia mộ không được tính vào `comment_count` của mạch, nên số bình luận **đọc được** có
  * thể nhỏ hơn số dòng trả về.
  *
+ * ### Chỉ thread KHÔNG neo — *user chốt 2026-08-26*
+ *
+ * > *"nên có 1 phần cmt chung cho toàn bộ post, không lẫn cmt của các mock vào, từng
+ * > mock có cmt riêng thì cứ kệ nó, không trộn chung các mock vào cmt chung của post"*
+ *
+ * Với **mạch** (`entry_count >= 2`), endpoint này trả **chỉ những thread có bình luận
+ * gốc `anchor_moc_seq IS NULL`**. Thread neo mốc N sống DUY NHẤT trong ngăn kéo mốc N
+ * (`GET /mocs/{id}/comments`, **không đổi**). Đây là thay đổi mô hình so với PLAN 5.4:
+ * ngăn kéo từng là *cửa sổ* chiếu vào khán đài, nay nó là *phòng* — mỗi thread có đúng
+ * một nhà.
+ *
+ * **`entry_count == 1` (post thường) KHÔNG lọc**, và điều kiện ấy là nửa còn lại của
+ * luật chứ không phải một tối ưu: post thường không có ngăn kéo (PLAN 5.1), nên lọc ở
+ * đó là làm bình luận neo mốc 1 — di sản thời composer neo tự động, prod ĐÃ có thể có —
+ * biến mất khỏi **mọi** cửa hiển thị, HTTP 200, không log. Khi post ấy nối mốc 2 thành
+ * mạch, các bình luận neo tự dọn vào ngăn kéo mốc tương ứng.
+ *
+ * Hệ quả phải đọc đúng: `tong_thread` ở đây đếm **chỉ thread chung**, nên nó nhỏ hơn
+ * hẳn `comment_count` của mạch (đếm cả bài). Hai con số đo hai thứ khác nhau.
+ *
+ * Phép lọc chạy **trong bộ nhớ** trên cây đã dựng (`core.doc_noi_dung.goc_khong_neo`),
+ * nên số truy vấn của endpoint không đổi. Phân trang chạy trên danh sách ĐÃ lọc —
+ * keyset `(created_at, id)` giữ nguyên tính chất vì phép lọc không đụng tới khoá.
+ *
  * ### `?dang_doc=1` — "câu đáng đọc" (PLAN 5.5)
  *
  * Trả **phép hợp `đã trích ∪ top-10 theo wilson`** trên các thread GỐC, sắp theo wilson
@@ -318,6 +367,15 @@ export const dongSoMach = <ThrowOnError extends boolean = false>(options: Option
  * Phép hợp là hợp THẬT: một bình luận được trích nhưng xếp hạng thấp **vẫn có mặt**.
  * Không có phân trang ở chế độ này — tập tối đa là `10 + số mốc có trích`, và
  * `offset_ke_tiep`/`cursor_ke_tiep` luôn `null`, `tong_thread` là kích thước của tập.
+ *
+ * ⚠ **Nhánh này tính trên MỌI thread gốc, kể cả thread neo mốc** — nó KHÔNG đi qua phép
+ * lọc "chỉ thread không neo" ở trên (2026-08-26). Giữ nguyên vì khối gắn nhãn "Câu đáng
+ * đọc" đang **TẮT** ở frontend (`lib/khan-dai.ts::HIEN_KHOI_DANG_CHU_Y = false`) và hợp
+ * đồng của nhánh này có bài đo riêng (`tests/test_api_cau_dang_doc.py`) — đổi cùng lượt
+ * là đổi một hợp đồng đang không ai gọi, dựa trên một mô hình UI chưa tồn tại.
+ * **Ngày bật lại khối ấy phải quyết lại tập nguồn của nó**: nếu nó vẫn lấy cả thread
+ * neo, khối sẽ in lại ở khán đài những thread mà khán đài vừa cố ý đẩy vào ngăn kéo —
+ * tức dựng lại đúng cái trộn lẫn mà lượt này gỡ đi.
  *
  * Chế độ này (và **chỉ** chế độ này) trả thêm `so_ung_vien_bo_lai`: số thread gốc đọc
  * được nằm ngoài tập. `0` nghĩa là khối không lọc được gì và UI phải ẩn nó đi (PLAN 5.5,
@@ -980,20 +1038,41 @@ export const taiAnhMoc = <ThrowOnError extends boolean = false>(options: Options
 /**
  * Liet Ke Binh Luan Moc
  *
- * Ngăn kéo của một mốc: lát cắt bình luận neo vào mốc đó, **mới → cũ**.
+ * Ngăn kéo của một mốc — **CHỖ Ở DUY NHẤT** của các thread neo vào mốc đó.
  *
  * Lấy các thread có bình luận **gốc** mang `anchor_moc_seq` bằng `seq` của mốc này, và
  * lấy **cả thread** — reply viết ở thời điểm mốc nào cũng thuộc về thread của gốc
  * (PLAN nguyên tắc 6). Nhờ vậy ngăn kéo của mốc 2 kể được cả lời tiên tri lẫn cái kết.
  *
- * Không có tham số sắp xếp: ngăn kéo là cửa sổ chiếu vào khán đài, không phải một
- * phòng riêng (PLAN 5.4 luật 2). Anchor dùng để CHIẾU, không bao giờ để chia khán đài
- * thành nhiều phòng (PLAN nguyên tắc 4).
+ * ## Ngăn kéo là PHÒNG, không còn là cửa sổ *(user chốt 2026-08-26)*
  *
- * Chiều **mới → cũ** là chiều đổi ngày 2026-08-26 (user), cùng lượt khán đài chuyển
- * mặc định sang `moi_nhat` — hai cửa sổ nhìn cùng một tập bình luận thì không được chạy
- * ngược chiều nhau. Vế "không cho chỉnh" của luật 2 giữ nguyên: chiều gõ cứng ở
- * `core/doc_noi_dung.py::lat_cat_ngan_keo`, không đọc từ `?sort=`.
+ * > *"nên có 1 phần cmt chung cho toàn bộ post, không lẫn cmt của các mock vào, từng
+ * > mock có cmt riêng thì cứ kệ nó"*
+ *
+ * Tới lượt ấy, PLAN 5.4 luật 2 gọi ngăn kéo là *"cửa sổ chiếu vào khán đài"*: cùng một
+ * thread hiện ở cả hai chỗ. Nay `GET /machs/{id}/comments` **lọc bỏ** mọi thread có neo
+ * (khi `entry_count >= 2`), nên thread neo mốc N chỉ còn render ở đây. Hệ quả cho người
+ * gọi: **endpoint này không phải một lối tắt tiện tay — bỏ qua nó là mất hẳn phần lớn
+ * bình luận của mạch**, không phải mất một cách trình bày.
+ *
+ * Vế **"không cho chỉnh"** của luật 2 thì còn nguyên: không có tham số sắp xếp nào, và
+ * nối chiều vào `?sort=` của khán đài là cấp cho ngăn kéo đúng cái phòng riêng mà luật 2
+ * dựng ra để chặn (PLAN nguyên tắc 4).
+ *
+ * ## Thứ tự: gốc BUMP theo hoạt động, reply đọc XUÔI
+ *
+ * Dùng đúng cặp khoá của `?sort=moi_nhat` bên khán đài (`core/doc_noi_dung.py::
+ * lat_cat_ngan_keo` + `sap_goc_bump_hoat_dong`), chốt cuối ngày 2026-08-27:
+ *
+ * - **thread gốc**: `max(created_at)` trên các nút **đọc được** của cả thread, giảm dần —
+ * một reply mới đẩy cuộc trao đổi lên đầu. Bia mộ không bump; thread toàn bia mộ rơi về
+ * `created_at` của gốc;
+ * - **reply bên trong**: `created_at` **tăng** dần — hội thoại đọc từ trên xuống.
+ *
+ * Hai chiều ngược nhau là chủ đích, không phải sót: ngoài danh sách câu hỏi là *"cuộc nào
+ * vừa có người nói"*, trong một thread câu hỏi là *"cuộc này diễn ra thế nào"*.
+ * ⚠ Mô tả cũ **"mới → cũ"** của endpoint này chết ở đó — nó chỉ từng đúng cho tầng gốc,
+ * và chỉ trong khoảng một ngày.
  *
  * Mốc chưa có bình luận nào trả `threads: []`, `so_binh_luan: 0` cùng
  * `question_for_crowd` nếu mốc có câu mồi — UI hiện lời mời chứ **không** hiện "💬 0"
@@ -1017,7 +1096,7 @@ export const lietKeBinhLuanMoc = <ThrowOnError extends boolean = false>(options:
  * thêm hàng: đây là "bậc thang tham gia rẻ hơn viết", không phải phiếu bầu nhiều lựa
  * chọn. `emoji = null` nghĩa là **rút**.
  *
- * Trả về **đủ 4 khoá kể cả khoá đang bằng 0**: UI vẽ nguyên bộ, và một khoá vắng mặt
+ * Trả về **đủ 5 khoá kể cả khoá đang bằng 0**: UI vẽ nguyên bộ, và một khoá vắng mặt
  * trong response sẽ thành một icon nhấp nháy xuất hiện/biến mất theo lượt bấm.
  * Lưu khoá không dấu (`len`/`xuong`/…) chứ không lưu emoji — đổi bộ icon sau này không
  * phải migrate dữ liệu.

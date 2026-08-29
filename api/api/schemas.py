@@ -412,14 +412,14 @@ class MocOut(Schema):
     #: Số bình luận đọc được trong ngăn kéo của mốc này — tính **cả thread**, gồm reply
     #: viết ở thời điểm mốc khác (PLAN nguyên tắc 6).
     so_binh_luan: int
-    #: Đếm reaction theo khoá, **đủ 4 khoá kể cả khoá bằng 0** — cùng hình dạng với
+    #: Đếm reaction theo khoá, **đủ 5 khoá kể cả khoá bằng 0** — cùng hình dạng với
     #: `ReactionOut.dem`, và cùng lý do: UI vẽ nguyên bộ 🧠📎❓🔥, một khoá vắng mặt
     #: là một icon nhấp nháy xuất hiện/biến mất theo lượt bấm.
     #:
     #: **Không phải dữ liệu per-user** ⇒ nằm được trên cửa ISR (PLAN 8.4). Phiếu của
     #: chính người xem đến từ `GET /machs/{id}/me::my_reactions`, ở trình duyệt, sau.
     #:
-    #: Bia mộ trả **rỗng hết 4 khoá**: hàng `Reaction` vẫn còn trong DB (nó không bị xoá
+    #: Bia mộ trả **rỗng hết 5 khoá**: hàng `Reaction` vẫn còn trong DB (nó không bị xoá
     #: cùng nội dung), nhưng phô "🔥 9" trên một thẻ không còn chữ nào là đúng ca mà
     #: `score` đã bị zero hoá để tránh — xem docstring `trinh_bay.py::moc_ra`.
     reactions: dict[str, int]

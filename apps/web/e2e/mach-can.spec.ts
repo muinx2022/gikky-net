@@ -2,6 +2,7 @@ import type { BinhLuanOut, MachChiTietOut } from "@gikky/api-client";
 import { expect, test } from "@playwright/test";
 
 import { SORT_MAC_DINH } from "../lib/khan-dai";
+import { dungTaiKhoan } from "./danh-tinh";
 import {
   TITLE_BIA_MO,
   TITLE_HPG,
@@ -13,6 +14,7 @@ import {
   khanDai,
   lamMoiCacheTrang,
   machTheoId,
+  moComposer,
   moModalDangNhapTuCua,
   nganKeo,
   ngayNganVN,
@@ -94,15 +96,30 @@ async function mocRongHan() {
   return ra;
 }
 
-test.describe("V1 — banner", () => {
-  test("mạch đã đóng: đủ trạng thái + ket_qua + số mốc", async ({ page }) => {
+/** V1 — dòng CHỐT SỔ ở cuối nhật ký *(viết lại 2026-08-27)*.
+ *
+ * Trước lượt này khối đo tên là "banner" và đo `BannerMach` ở ĐẦU trang. User bỏ hẳn
+ * banner — *"không cần phân biệt bài thường hay mạch, cứ để nó tự nhiên"* — và chuyển
+ * phần "đã đóng + kết quả" xuống cuối bài (`components/chan-dong-so.tsx`).
+ *
+ * Ba bài dưới đây giữ nguyên **câu hỏi** của bản cũ (đóng thì nói ra, `ket_qua` null thì
+ * không render rỗng) và thêm một câu hỏi mới mà bản cũ không thể hỏi: **mạch ĐANG MỞ
+ * không được có dòng nào cả**. Không có bài thứ ba ấy thì một lần lỡ tay trả về
+ * `"Mạch đang mở"` sẽ dựng lại đúng cái nhãn user vừa bỏ, và hai bài đầu vẫn xanh.
+ */
+test.describe("V1 — dòng chốt sổ", () => {
+  test("mạch đã đóng: có nhãn + ket_qua, và nằm SAU nhật ký", async ({ page }) => {
     await page.goto(duongDan(hpg));
-    const banner = page.getByTestId("banner");
-    await expect(banner.getByTestId("banner-trang-thai")).toHaveText("Mạch đã đóng");
-    await expect(banner.getByTestId("banner-ket-qua")).toHaveText(hpg.ket_qua ?? "");
-    await expect(banner.getByTestId("banner-so-moc")).toHaveText(
-      `${hpg.entry_count} mốc`,
-    );
+    const chan = page.getByTestId("chan-dong-so");
+    await expect(chan.getByTestId("chan-dong-so-nhan")).toHaveText("Mạch đã đóng");
+    await expect(chan.getByTestId("chan-dong-so-ket-qua")).toHaveText(hpg.ket_qua ?? "");
+
+    // **Vế "nằm sau" là nửa còn lại của yêu cầu**, không phải trang trí: user chốt "Đã
+    // đóng để cuối cùng của post". Một `ChanDongSo` render đúng nội dung nhưng bị đặt lại
+    // vào `<header>` sẽ làm hai assert trên xanh nguyên — nên phải đo VỊ TRÍ.
+    const y_chan = (await chan.boundingBox())?.y ?? 0;
+    const y_nhat_ky = (await page.getByTestId("nhat-ky").boundingBox())?.y ?? 0;
+    expect(y_chan, "dòng chốt sổ phải nằm dưới nhật ký").toBeGreaterThan(y_nhat_ky);
   });
 
   test("ket_qua NULL: khối ket_qua KHÔNG được render (không phải render rỗng)", async ({
@@ -111,8 +128,18 @@ test.describe("V1 — banner", () => {
     // Điều kiện của bài đo — post thường seed phải thật sự có `ket_qua = null`.
     expect(post.ket_qua).toBeNull();
     await page.goto(duongDan(post));
-    await expect(page.getByTestId("banner")).toBeVisible();
-    await expect(page.getByTestId("banner-ket-qua")).toHaveCount(0);
+    await expect(page.getByTestId("chan-dong-so-ket-qua")).toHaveCount(0);
+  });
+
+  test("mạch ĐANG MỞ: không có dòng chốt sổ, và không còn nhãn loại bài nào", async ({
+    page,
+  }) => {
+    expect(post.status).not.toBe("closed");
+    await page.goto(duongDan(post));
+    await expect(page.getByTestId("chan-dong-so")).toHaveCount(0);
+    // `BannerMach` đã bị xoá khỏi repo — bài này chốt luôn rằng nó không quay lại dưới
+    // cùng cái `data-testid` cũ.
+    await expect(page.getByTestId("banner")).toHaveCount(0);
   });
 });
 
@@ -179,6 +206,19 @@ test.describe("V2 — dải gập", () => {
   });
 });
 
+/** V3 — mồi bung. **Nguồn đổi ngày 2026-08-27 (§G); câu hỏi giữ nguyên.**
+ *
+ * Mồi bung vẫn phải là *"câu điểm cao nhất TRONG dải gập, không phải cao nhất toàn mạch"*.
+ * Cái đổi là chỗ lấy ứng viên: tới 2026-08-26 nó ăn trang 1 `hay_nhat` của khu bình luận
+ * chung, mà khu ấy từ cùng ngày chỉ còn thread `anchor_moc_seq IS NULL` — trong khi
+ * `chonMoiBung` đòi ứng viên **có** neo và neo nằm trong dải. Hai điều kiện loại trừ nhau
+ * ⇒ hàm trả `null` với mọi dữ liệu, tức tính năng chết **im lặng** (component xử `null`
+ * gọn tới mức không ai thấy gì). §G nối lại nguồn: các **lát cắt ngăn kéo** của chính
+ * những mốc đang bị gập — xem `trang-mach.tsx::threadsTrongDai`.
+ *
+ * Kỳ vọng vì thế quay về đúng bản trước 2026-08-26, chỉ khác chỗ bài đo đi LẤY dữ liệu
+ * đối chiếu: từ ngăn kéo, không từ khán đài.
+ */
 test.describe("V3 — mồi bung", () => {
   test("là câu điểm cao nhất TRONG dải gập, không phải cao nhất toàn mạch", async ({
     page,
@@ -186,31 +226,39 @@ test.describe("V3 — mồi bung", () => {
     const dai = daiGapDocLap(hpg.entry_count);
     if (!dai.gap) throw new Error("seed HPG phải có dải gập");
 
-    const kd = await khanDai(hpg.id, "hay_nhat");
-    const goc = kd.threads.filter((n) => n.trang_thai === "binh_thuong");
     const da_trich = new Set(
       hpg.mocs.flatMap((m) => (m.trich === null ? [] : [m.trich.comment_id])),
     );
-
+    const doc_duoc = (ns: readonly BinhLuanOut[]) =>
+      ns.filter((n) => n.trang_thai === "binh_thuong" && n.body !== null);
     const cao_nhat = (ds: BinhLuanOut[]) =>
       ds.reduce((a, b) => (b.score > a.score ? b : a));
-    const trong_dai = goc.filter(
-      (n) =>
-        n.anchor_moc_seq !== null &&
-        dai.trong(n.anchor_moc_seq) &&
-        !da_trich.has(n.id),
-    );
 
-    const mong_doi = cao_nhat(trong_dai);
-    const toan_mach = cao_nhat(goc);
+    // Ứng viên THẬT của mồi: gốc trong các ngăn kéo của mốc thuộc dải gập, trừ câu đã trích.
+    const trong_dai: BinhLuanOut[] = [];
+    for (const m of hpg.mocs.filter((x) => dai.trong(x.seq))) {
+      trong_dai.push(
+        ...doc_duoc((await nganKeo(m.id)).threads).filter((n) => !da_trich.has(n.id)),
+      );
+    }
+    // Đối chứng "không phải cao nhất toàn mạch": lấy từ ngăn kéo của mốc NGOÀI dải.
+    const ngoai_dai: BinhLuanOut[] = [];
+    for (const m of hpg.mocs.filter((x) => !dai.trong(x.seq))) {
+      ngoai_dai.push(...doc_duoc((await nganKeo(m.id)).threads));
+    }
 
     // ĐIỀU KIỆN CỦA BÀI ĐO. Seed 1a cố ý tách ba vai thành ba hàng khác nhau; nếu chúng
     // gộp lại thì bài đo dưới đây pass dù cài đặt lấy nhầm, nên phải đỏ ngay tại đây.
+    expect(trong_dai.length, "dải gập phải có bình luận đọc được").toBeGreaterThan(0);
+    expect(ngoai_dai.length, "cần mốc ngoài dải có bình luận để đối chứng").toBeGreaterThan(0);
+    expect(da_trich.size, "seed hỏng: không có trích nào").toBeGreaterThan(0);
+
+    const mong_doi = cao_nhat(trong_dai);
+    const toan_mach = cao_nhat([...trong_dai, ...ngoai_dai]);
     expect(
       toan_mach.id,
       "seed hỏng: câu cao nhất toàn mạch lại nằm trong dải gập ⇒ V3 không đo được gì",
     ).not.toBe(mong_doi.id);
-    expect(da_trich.size, "seed hỏng: không có trích nào").toBeGreaterThan(0);
 
     await page.goto(duongDan(hpg));
     const moi = page.getByTestId("moi-bung");
@@ -315,11 +363,18 @@ test.describe("W6 — ba nhánh bia mộ", () => {
     }
   });
 
-  test("bia mộ KHÔNG lộ nội dung ở khán đài (nhãn, không phải chữ)", async ({
-    page,
-  }) => {
-    const kd = await khanDai(biaMo.id, "hay_nhat");
-    const bia_mo = duyet(kd.threads).filter((n) => n.trang_thai !== "binh_thuong");
+  test("bia mộ KHÔNG lộ nội dung — nhãn, không phải chữ", async ({ page }) => {
+    // **Đổi chỗ đo 2026-08-26, không đổi câu hỏi.** Mạch VNM có 6 thread gốc và **cả sáu
+    // đều neo mốc** (`COMMENTS_BIA_MO` trong `seed_dev.py`), nên từ lượt tách bình luận
+    // chung khỏi bình luận mốc, khán đài của nó RỖNG HẲN và mọi bia mộ sống trong ngăn
+    // kéo. Bài đo cũ hỏi `cay-khan-dai` nên nó đo vào chỗ trống — xanh hay đỏ đều không
+    // còn nói gì về việc nội dung đã gỡ có lọt ra hay không.
+    //
+    // Nguồn dữ liệu vì thế là các LÁT CẮT, và bài đo đi qua đúng cửa mà trang đi qua.
+    const lat = await Promise.all(biaMo.mocs.map((m) => nganKeo(m.id)));
+    const bia_mo = lat.flatMap((nk) =>
+      duyet(nk.threads).filter((n) => n.trang_thai !== "binh_thuong"),
+    );
     // Hai kiểu, hai lý do giữ chỗ khác nhau — xem `test_seed_dev.py`.
     expect(new Set(bia_mo.map((n) => n.trang_thai))).toEqual(
       new Set(["da_xoa", "da_an"]),
@@ -331,14 +386,21 @@ test.describe("W6 — ba nhánh bia mộ", () => {
     }
 
     await page.goto(`${duongDan(biaMo)}?khan_dai=1&sort=hay_nhat`);
-    // Phải bó vào CÂY KHÁN ĐÀI: cùng những bia mộ đó còn xuất hiện trong ngăn kéo của
-    // mốc chúng neo vào, và ngăn kéo nằm sẵn trong HTML (chỉ `hidden`) nên `toHaveCount`
-    // đếm cả chúng.
-    const nhan = page.getByTestId("cay-khan-dai").getByTestId("bia-mo-binh-luan");
+    // Ngăn kéo nằm sẵn trong HTML (chỉ `hidden`) — mặt CẶN là mặt Google index — nên
+    // không cần bấm mở để đếm. Đếm trên CẢ TRANG là đúng đơn vị ở đây: mỗi bia mộ nay
+    // render đúng MỘT lần (khán đài ⊕ ngăn kéo của nó), bất biến mà
+    // `vo-reddit.spec.ts` W11 ghim.
+    const nhan = page.getByTestId("bia-mo-binh-luan");
     await expect(nhan).toHaveCount(bia_mo.length);
     for (const t of await nhan.allInnerTexts()) {
       expect(["[bình luận đã xoá]", "[bình luận đã bị ẩn]"]).toContain(t.trim());
     }
+
+    // Vế chống rỗng của cả bài: khán đài của VNM rỗng là điều KIỆN, không phải tai nạn —
+    // nói ra để lượt sau đổi seed thì bài này đỏ ở đây chứ không âm thầm hết dữ liệu.
+    const kd = await khanDai(biaMo.id, "hay_nhat");
+    expect(kd.threads, "VNM không còn thread CHUNG nào — mọi gốc đều neo mốc").toEqual([]);
+    expect(bia_mo.length).toBeGreaterThan(0);
   });
 
   test("mốc bia mộ giữ chỗ trên nhật ký, mang nhãn, không lộ thân bài", async ({
@@ -402,7 +464,7 @@ test.describe("W6 — ba nhánh bia mộ", () => {
 });
 
 test.describe("V5 — ngăn kéo", () => {
-  test("mở đúng lát cắt, thứ tự khớp API (mới→cũ từ 2026-08-26)", async ({ page }) => {
+  test("mở đúng lát cắt, thứ tự khớp API", async ({ page }) => {
     const moc1 = hpg.mocs.find((m) => m.seq === 1)!;
     const nk = await nganKeo(moc1.id);
     expect(nk.threads.length).toBeGreaterThan(0);
@@ -412,17 +474,18 @@ test.describe("V5 — ngăn kéo", () => {
     const lat = page.getByTestId("lat-cat-1");
     await expect(lat).toBeVisible();
 
-    // Ngăn kéo là một BẢN PHỤ của khán đài, không phải chỗ ở của bình luận, nên nó mang
-    // `data-ban-phu-binh-luan-id` (W11): `data-binh-luan-id` chỉ có ở đúng MỘT nút cho
-    // mỗi comment id trong cả trang.
+    // **`data-binh-luan-id`, không còn `data-ban-phu-…`** *(2026-08-26)*. Ngăn kéo từng
+    // là một BẢN PHỤ của khán đài — cùng thread render hai chỗ, và chỗ mang định danh là
+    // khán đài. Nay khán đài đã lọc hết thread neo, nên ngăn kéo là **nhà duy nhất** của
+    // chúng và nó mang định danh. Bất biến "một comment id ⇒ đúng một nút" giữ nguyên,
+    // chỉ đổi chỗ đứng — xem `vo-reddit.spec.ts` W11.
     //
-    // X6 — thuộc tính này TỪNG tên là `data-trich-binh-luan-id`, và chỗ này là bằng
-    // chứng tên ấy sai: lát cắt ngăn kéo không phải một trích đoạn, nó là toàn bộ thread
-    // neo vào mốc. Bài đo cũ đọc thuộc tính tên "trích" để lấy nội dung ngăn kéo.
+    // (X6 — thuộc tính TỪNG tên `data-trich-binh-luan-id`; chỗ này là bằng chứng tên ấy
+    // sai, và lượt này là bằng chứng cả khái niệm "bản phụ" ở đây cũng đã sai.)
     const id_dom = await lat
-      .locator("[data-ban-phu-binh-luan-id]")
+      .locator("[data-binh-luan-id]")
       .evaluateAll((els) =>
-        els.map((e) => Number(e.getAttribute("data-ban-phu-binh-luan-id"))),
+        els.map((e) => Number(e.getAttribute("data-binh-luan-id"))),
       );
     expect(id_dom).toEqual(duyet(nk.threads).map((n) => n.id));
   });
@@ -522,6 +585,16 @@ test.describe("V6 — chân trang bung khán đài", () => {
     page,
   }) => {
     await page.goto(duongDan(hpg));
+
+    // Chờ ô nhập XUẤT HIỆN trước khi đo thứ tự. `Composer` trả `null` suốt nhịp
+    // `dangTai` (chưa biết mình là ai thì chưa vẽ gì — cùng lý lẽ với `ThanhTaiKhoan`),
+    // nên `page.evaluate` chạy ngay sau `goto` có thể bắt được một DOM chưa có nó và ăn
+    // `compareDocumentPosition ... parameter 1 is not of type 'Node'`.
+    //
+    // Cuộc đua này CÓ THẬT từ trước, chỉ chưa lộ: tới 2026-08-26 khu bình luận của HPG
+    // còn 14 thread nên trang đủ nặng để `/me` luôn về kịp; từ lượt tách bình luận chung
+    // khỏi bình luận mốc nó còn ĐÚNG MỘT thread, trang nhẹ hẳn và nhịp ấy thắng.
+    await expect(page.getByTestId("khan-dai").getByTestId("composer-cua")).toBeVisible();
 
     // Đo bằng **thứ tự tài liệu thật**, không bằng toạ độ pixel: `boundingBox().y` đọc
     // đúng ở desktop rồi đọc sai ở bất kỳ bố cục nào đổi `order` hoặc `grid-row`, và
@@ -638,80 +711,123 @@ test.describe("V8 — nguyên tắc 9: dưới 4 bình luận thì ẩn MỌI s�
   });
 });
 
+/** V15 — deep-link từ khối trích. **Viết lại 2026-08-27 (§D4), không xoá trắng.**
+ *
+ * Tiền đề cũ của cả khối này — *"bình luận được trích nằm trong khán đài `hay_nhat`"* —
+ * chết theo mô hình mới: khu bình luận cuối bài chỉ còn thread `anchor_moc_seq IS NULL`,
+ * mà trích của seed (`r7` trên HPG, `b3` trên VNM) đều neo mốc. Hai bài dưới đây giữ đúng
+ * hai câu hỏi cũ, chỉ đổi ca dựng dữ liệu:
+ *
+ * - **(a) "cuộn được"** cần một thread CHUNG có bình luận được trích. Seed không có ca ấy
+ *   (kiểm bằng `COMMENTS_HPG` / `COMMENTS_BIA_MO` — mọi `Trich` đều trỏ vào gốc có neo),
+ *   nên bài đo **tự dựng**: chủ mạch viết một bình luận không neo rồi tự trích nó vào sổ.
+ *   Đi đúng đường người dùng đi, không chèn hàng thẳng vào DB.
+ * - **(b) W7 "tính trên TRANG MÀ LINK DẪN TỚI"** teo lại và **nhập vào bài (a)**, vì lý do
+ *   kỹ thuật chứ không phải chán. `trang-mach.tsx` nạp lát cắt ngăn kéo cho **mọi mốc** ở
+ *   **mọi** trang khán đài, nên nửa ngăn kéo của tập deep-link **bất biến theo trang**.
+ *   Phần còn biến thiên duy nhất là trang 1 `hay_nhat` của thread CHUNG — tức W7 chỉ còn
+ *   đo được gì **trên đúng ca của bài (a)**. Để nó đứng riêng trên seed là để nó xanh vĩnh
+ *   viễn: trích của seed neo mốc, nên nửa ngăn kéo trả lời hộ và hồi quy B3 (hỏi trang
+ *   đang xem thay vì trang 1 `hay_nhat`) lọt qua. Ca dựng 51 thread cũng bỏ — `?offset=`
+ *   ngoài dải làm nửa khán đài RỖNG HẲN, rẻ hơn và lay động mạnh hơn.
+ *   Công thức hợp thì `don-vi/khan-dai-va-dem.spec.ts` §D3 ghim bằng hai vế thử phá được;
+ *   ca trích-trỏ-vào-thread-NEO có bài riêng ở `binh-luan-chung.spec.ts` (tiêu chí 9).
+ */
 test.describe("V15 — deep-link từ khối trích", () => {
-  test("bình luận có trong trang → bấm là cuộn tới đúng nó", async ({ page }) => {
-    const moc_trich = hpg.mocs.find((m) => m.trich !== null)!;
-    const comment_id = moc_trich.trich!.comment_id;
+  test("trích một bình luận CHUNG → nút nhảy hiện, bấm là cuộn tới đúng nó", async ({
+    page,
+  }) => {
+    // Chủ mạch tự viết câu chung rồi tự trích — hai vai một người là ca hợp lệ, và nó cắt
+    // được nửa số bước dựng so với hai tài khoản.
+    await dungTaiKhoan(page, "v15");
 
-    const kd = await khanDai(hpg.id, "hay_nhat");
-    const co_trong_trang = duyet(kd.threads).some((n) => n.id === comment_id);
-    expect(
-      co_trong_trang,
-      "seed nhỏ nên bình luận được trích phải nằm trong trang 1 của khán đài",
-    ).toBe(true);
+    await page.goto("/dang-mach");
+    await page.getByTestId("dang-mach-sub").selectOption("chung-khoan");
+    await page
+      .getByTestId("dang-mach-title")
+      .fill(`V15 trích câu chung ${Date.now().toString(36)}`);
+    await page.getByTestId("dang-mach-body").fill("Mốc 1 — mở sổ để đo deep-link.");
+    await page.getByTestId("dang-mach-gui").click();
+    await page.waitForURL(/\/m\/[^/]+-\d+$/, { timeout: 30_000 });
+    const duong_dan = new URL(page.url()).pathname;
+    const id = Number(/-(\d+)$/.exec(duong_dan)?.[1]);
 
-    await page.goto(duongDan(hpg));
-    await page.getByTestId("dai-gap-nut").click();
-    const khoi = page.getByTestId(`trich-moc-${moc_trich.seq}`);
-    await khoi.scrollIntoViewIfNeeded();
+    // Bình luận CHUNG: composer khu chung mặc định không neo từ 2026-08-26, nên chỉ cần
+    // gõ và gửi. `?view=can` vì mạch vừa dựng luôn ra mặt BÃO (xem `va-v2.spec.ts`).
+    await page.goto(`${duong_dan}?view=can&khan_dai=1&sort=hay_nhat`);
+    const khu = page.getByTestId("khan-dai");
+    const composer = await moComposer(khu);
+    // Mạch 1 mốc ⇒ `neoDoiDuoc={la_mach}` là `false` ⇒ KHÔNG có select "Neo vào" (§B2).
+    // Vế này bảo đảm câu dưới đây thật sự không neo, chứ không chỉ tình cờ không neo.
+    await expect(khu.getByTestId("composer-chon-moc")).toHaveCount(0);
+    const cau = `Câu chung để trích ${Date.now().toString(36)}`;
+    await composer.getByTestId("composer-o").fill(cau);
+    await composer.getByTestId("composer-gui").click();
+
+    const nut = page
+      .getByTestId("cay-khan-dai")
+      .locator("[data-binh-luan-id]")
+      .filter({ hasText: cau })
+      .first();
+    await expect(nut).toBeVisible({ timeout: 30_000 });
+    const comment_id = Number(await nut.getAttribute("data-binh-luan-id"));
+
+    // Nguồn sự thật là Django: câu ấy phải THẬT SỰ không neo, nếu không bài đo trượt sang
+    // đúng ca mà `binh-luan-chung.spec.ts` đã lo.
+    const kd = await khanDai(id, "hay_nhat");
+    const trong_khu_chung = duyet(kd.threads).find((n) => n.id === comment_id);
+    expect(trong_khu_chung, "câu vừa viết phải ở trang 1 hay_nhat").toBeDefined();
+    expect(trong_khu_chung!.anchor_moc_seq).toBeNull();
+
+    // Chủ mạch tự trích câu ấy vào sổ. `NutTrich` mặc định chọn mốc của `anchor_moc_seq`,
+    // không neo thì rơi về mốc đầu — đúng mốc 1 của mạch này.
+    await nut.getByTestId("nut-mo-trich").click();
+    await nut.getByTestId("trich-gui").click();
+    const khoi = page.getByTestId("trich-moc-1");
+    await expect(khoi).toBeVisible({ timeout: 30_000 });
+    await expect(khoi.getByTestId("trich-chu-thich")).toContainText("bởi chủ mạch");
+
+    // Và đây là câu hỏi của V15: nút nhảy hiện, bấm thì tới nơi thật.
+    await expect(khoi.getByTestId("trich-khong-nhay-duoc")).toHaveCount(0);
     await khoi.getByTestId("trich-nhay-khan-dai").click();
-
     await expect(page).toHaveURL(new RegExp(`#bl-${comment_id}$`));
     const dich = page.locator(`#bl-${comment_id}`);
     await expect(dich).toBeVisible();
     await expect(dich).toBeInViewport();
+
+    // --- W7, nhập vào đây (xem docstring khối) -------------------------------
+    //
+    // Link "nhảy tới khán đài" luôn trỏ **trang 1 của `hay_nhat`**, nên trạng thái phải
+    // tính trên trang ĐÓ, không phải trang người dùng đang đứng (vá B3). `?offset=9999`
+    // làm trang đang xem rỗng hẳn; câu vừa trích KHÔNG neo nên nửa ngăn kéo của phép hợp
+    // không đỡ hộ được — nếu ai đổi `idTrongTrangGop(hay_nhat…)` về `khan_dai_trang` thì
+    // đúng ở đây trang sẽ in "chưa nhảy tới được".
+    await page.goto(`${duong_dan}?view=can&khan_dai=1&sort=hay_nhat&offset=9999`);
+    await expect(page.getByTestId("khan-dai-trang-rong")).toBeVisible();
+    const khoi_xa = page.getByTestId("trich-moc-1");
+    await expect(khoi_xa.getByTestId("trich-nhay-khan-dai")).toBeVisible();
+    await expect(khoi_xa.getByTestId("trich-khong-nhay-duoc")).toHaveCount(0);
   });
 
-  test("trạng thái 'nằm ở trang sau' và trạng thái 'cuộn được' loại trừ nhau", async ({
+  test("trên seed: trích neo mốc vẫn 'cuộn được', không rơi nhánh 'chưa nhảy tới được'", async ({
     page,
   }) => {
+    // Đây là phần còn lại của bài "hai trạng thái loại trừ nhau", đo trên đúng dữ liệu
+    // seed: `r7` neo mốc 5, tức nó sống trong NGĂN KÉO. Nút vẫn phải là nhánh "cuộn
+    // được" — và nó chỉ đúng nhờ phép hợp §D3 (`idTrongTrangGop`). Bỏ vế lát cắt đi thì
+    // trang in "chưa nhảy tới được" cho một bình luận đang có mặt trong chính trang ấy.
+    //
+    // Vế bấm-và-tới-nơi thuộc `binh-luan-chung.spec.ts` (tiêu chí 9); ở đây chỉ hỏi rằng
+    // trên seed KHÔNG khối trích nào rơi nhánh nói-không.
+    const co_trich = hpg.mocs.filter((m) => m.trich !== null);
+    expect(co_trich.length, "seed phải có khối trích").toBeGreaterThan(0);
+
     await page.goto(duongDan(hpg));
     await page.getByTestId("dai-gap-nut").click();
-    // Trên seed này phải là nhánh cuộn được; nhánh còn lại được ghim bằng test đơn vị
-    // `don-vi/khan-dai-va-dem.spec.ts` vì dựng mạch >50 thread chỉ để đo một câu chữ là
-    // đắt hơn giá trị nó mang lại.
     await expect(page.getByTestId("trich-nhay-khan-dai").first()).toBeVisible();
     await expect(page.getByTestId("trich-khong-nhay-duoc")).toHaveCount(0);
   });
 
-  test("W7 — trạng thái tính trên TRANG MÀ LINK DẪN TỚI, không phải trang đang xem", async ({
-    page,
-  }) => {
-    // Vá B3. Link "nhảy tới khán đài" luôn trỏ trang 1 của `hay_nhat`, nhưng bản đầu hỏi
-    // `khan_dai_trang` — trang người dùng đang xem. Sai cả hai chiều: đang ở trang sau
-    // thì một bình luận nằm ở trang 1 bị báo "nằm ở trang sau" (**giấu mất một link vốn
-    // chạy được**), còn bình luận ở trang sau thì link trỏ trang 1 không có neo.
-    const kd = await khanDai(hpg.id, "hay_nhat");
-    // Lấy khối trích nằm TRÊN MẶT TIỀN để bài đo không phải bấm bung — thứ đang đo là
-    // deep-link, không phải dải gập.
-    const dai = daiGapDocLap(hpg.entry_count);
-    const moc_trich = hpg.mocs.find(
-      (m) => m.trich !== null && dai.seqHien.includes(m.seq),
-    )!;
-    expect(moc_trich, "seed phải có khối trích ngoài dải gập").toBeDefined();
-    const comment_id = moc_trich.trich!.comment_id;
-
-    // Một trang khán đài KHÔNG chứa bình luận được trích: trang cuối, dài đúng 1 thread.
-    const offset = kd.tong_thread - 1;
-    expect(offset, "seed phải có ít nhất 2 thread gốc").toBeGreaterThan(0);
-    const trang_cuoi = await khanDai(hpg.id, "hay_nhat", `&offset=${offset}`);
-    expect(
-      duyet(trang_cuoi.threads).some((n) => n.id === comment_id),
-      "trang cuối vẫn chứa bình luận được trích ⇒ bài đo không phân biệt được hai trang",
-    ).toBe(false);
-
-    await page.goto(`${duongDan(hpg)}?khan_dai=1&sort=hay_nhat&offset=${offset}`);
-    const khoi = page.getByTestId(`trich-moc-${moc_trich.seq}`);
-    await expect(khoi).toBeVisible();
-    // Vẫn phải là "cuộn được": link dẫn về trang 1, và ở đó bình luận CÓ mặt.
-    await expect(khoi.getByTestId("trich-nhay-khan-dai")).toBeVisible();
-    await expect(khoi.getByTestId("trich-khong-nhay-duoc")).toHaveCount(0);
-
-    // Và bấm thì tới được thật, không phải chỉ nói suông.
-    await khoi.getByTestId("trich-nhay-khan-dai").click();
-    await expect(page).toHaveURL(new RegExp(`sort=hay_nhat#bl-${comment_id}$`));
-    await expect(page.locator(`#bl-${comment_id}`)).toBeInViewport();
-  });
 });
 
 test.describe("W1 — query string rác không được làm trang 500", () => {

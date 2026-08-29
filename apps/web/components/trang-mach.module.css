@@ -4,8 +4,20 @@
   padding: 26px 22px 40px;
 }
 
+/* **Nền thẻ = `--card`, GIỐNG thẻ ở feed** *(user chốt 2026-08-26: "box show content
+ * post đang có nền nổi quá so với bg, dùng bg như card ở home").*
+ *
+ * Trước đó là `--surface` — trắng tinh ở theme sáng, tức nổi hẳn một bậc rưỡi so với nền
+ * trang. `--card` (khai ở `app/globals.css`) chỉ chênh nền trang đúng một chút, cùng bậc
+ * nổi mà thẻ ở feed đang dùng (`the-mach.module.css#.the`), nên đi từ feed vào trang mạch
+ * không còn cú nhảy sáng.
+ *
+ * ⚠ Ba chỗ khác PHẢI đi theo, không phải trang trí: `.hang_tren` (nền mờ của header dính
+ * nằm ĐÈ lên chính thẻ này) và `the-moc.module.css#.dot` (vòng tròn số mốc đục lỗ trên ray
+ * — nó tô nền thẻ để che đường kẻ). Chỗ nào còn `--surface` sẽ hiện ra thành một mảng sáng
+ * lệch màu ngay giữa thẻ. */
 .the {
-  background: var(--surface);
+  background: var(--card);
   border: 1px solid var(--line);
   border-radius: 6px;
 }
@@ -119,7 +131,7 @@
   gap: 10px;
   margin: -24px -26px 0;
   padding: 10px 26px;
-  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  background: color-mix(in srgb, var(--card) 92%, transparent);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--line);
   border-radius: 6px 6px 0 0;

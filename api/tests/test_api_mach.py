@@ -181,12 +181,17 @@ KHOA_CHO_PHEP = {
     # đây. Nhét nó vào đây "cho tiện client" là đúng cái PLAN 8.4 điểm 4 gọi là điểm dễ
     # làm sai nhất.
     #
-    # Bốn khoá con là bộ reaction của `Reaction.Emoji` — **phản hồi về bài viết**, đổi
+    # Năm khoá con là bộ reaction của `Reaction.Emoji` — **phản hồi về bài viết**, đổi
     # 2026-08-25 (bộ cũ `len/xuong/lua/bang/trung` xem migration 0017). Chúng phải có tên
     # ở đây vì `khoa_json` đi xuống mọi tầng — và đó là một cái chuông nữa: thêm khoá thứ
     # năm ở Django mà quên chỗ này thì bài R3 ĐỎ, cùng lúc với
     # `apps/web/e2e/don-vi/ban-sao-python.spec.ts`.
-    "reactions", "ro_rang", "co_nguon", "can_them", "lieu",
+    #
+    # ✅ Chuông ấy KÊU THẬT ngày 2026-08-27: thêm `hay_lam` (migration 0021) ⇒ bài này đỏ
+    # ngay với `thừa: ['hay_lam']`, trước khi ai kịp nghĩ tới file này. Giữ nguyên lối liệt
+    # kê từng tên thay vì `*Reaction.Emoji.values` — suy từ enum là làm bài đo TỰ ĐỒNG Ý với
+    # bất kỳ khoá nào Django mọc thêm, tức gỡ đúng cái chuông vừa chứng minh là nó kêu.
+    "reactions", "ro_rang", "co_nguon", "can_them", "lieu", "hay_lam",
     # figures
     "label", "value",
     # trích

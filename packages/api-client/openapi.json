@@ -552,6 +552,39 @@
         "title": "DatKhoaMachIn",
         "type": "object"
       },
+      "DemLuotXemIn": {
+        "description": "Thân request. Hai trường, và không trường nào nhận diện được một con người.",
+        "properties": {
+          "duong_dan": {
+            "title": "Duong Dan",
+            "type": "string"
+          },
+          "user_agent": {
+            "default": "",
+            "title": "User Agent",
+            "type": "string"
+          }
+        },
+        "required": [
+          "duong_dan"
+        ],
+        "title": "DemLuotXemIn",
+        "type": "object"
+      },
+      "DemLuotXemOut": {
+        "description": "`{da_dem}` — `True` khi đã ghi một hàng.\n\nMiddleware **không đọc** trường này (nó không `await` lời gọi), nhưng bài đo và người\ngõ `curl` thì có, và một endpoint trả thân rỗng là một endpoint không ai kiểm được\nbằng tay.",
+        "properties": {
+          "da_dem": {
+            "title": "Da Dem",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "da_dem"
+        ],
+        "title": "DemLuotXemOut",
+        "type": "object"
+      },
       "DongSoIn": {
         "description": "Đóng sổ — `POST /machs/{id}/close`. `ket_qua` tuỳ chọn, ≤40 ký tự (PLAN 5.1).\n\nThuần hiển thị, không validate ngữ nghĩa — cùng triết lý với `figures`.",
         "properties": {
@@ -2519,6 +2552,11 @@
         "in": "cookie",
         "name": "sessionid",
         "type": "apiKey"
+      },
+      "SecretDemLuotXem": {
+        "in": "header",
+        "name": "X-Dem-Luot-Xem-Secret",
+        "type": "apiKey"
       }
     }
   },
@@ -2768,6 +2806,64 @@
         "summary": "Sua Binh Luan Api",
         "tags": [
           "binh-luan"
+        ]
+      }
+    },
+    "/api/v1/dem-luot-xem": {
+      "post": {
+        "description": "Ghi một lượt xem trang. Đòi header secret dùng chung giữa Next và Django.",
+        "operationId": "dem_luot_xem",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DemLuotXemIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemLuotXemOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "SecretDemLuotXem": []
+          }
+        ],
+        "summary": "Dem Luot Xem",
+        "tags": [
+          "luot-xem"
         ]
       }
     },
@@ -3257,7 +3353,7 @@
     },
     "/api/v1/machs/{mach_id}/comments": {
       "get": {
-        "description": "Khán đài: **cây bình luận đã dựng sẵn**, server sắp xếp (PLAN mục 7).\n\n`?sort=hay_nhat|moi_nhat|cu_nhat`, mặc định `hay_nhat`. Sort không thuộc ba giá trị\nđó trả 400 `sort_khong_hop_le` — API **không bao giờ tự đổi sort ngầm** dưới tay\nngười dùng (PLAN nguyên tắc 7).\n\n- `hay_nhat`: wilson (z = 1.281) cộng hệ số tươi 0.15 cho bình luận **gốc** ra đời\n  sau mốc mới nhất và còn trong 48 giờ đầu đời của nó. Sibling trong thread sắp theo\n  wilson **thuần** — hệ số tươi không áp cho reply. Phân trang bằng `?offset=`,\n  `?limit=` tối đa 50.\n- `moi_nhat` / `cu_nhat`: `?cursor=` keyset trên `(created_at, id)`.\n\n**Hai kiểu phân trang KHÔNG dùng lẫn nhau, dùng nhầm trả 400** với\n`code = \"tham_so_khong_hop_le\"`: `?cursor=` kèm `sort=hay_nhat`, hoặc `?offset=` khác\n0 kèm hai sort thời gian. Nuốt im lặng tham số sai chỗ là hành vi mà chính\n`api/phan_trang.py` cấm cho cursor rác: người ở trang 3 của `moi_nhat` bấm đổi sang\n`hay_nhat`, router giữ nguyên query string, API trả **trang 1** kèm HTTP 200 — UI\ntưởng mình vẫn ở trang 3 và append tiếp ⇒ lặp dòng hoặc mất dòng, không lần ra được.\n\nBình luận bị mod ẩn, hoặc tác giả tự xoá, chỉ còn lại **bia mộ giữ chỗ** khi nó còn\ncon sống sót trong `replies` — và riêng ca tác giả tự xoá thì cả khi bình luận **đã\ntừng được trích vào sổ**, kể cả trích đã gỡ (PLAN 5.3). Không dính vế nào thì nó biến\nmất hẳn. \"Con sống sót\" không có nghĩa \"con đọc được\": con ấy có thể tự nó là bia mộ,\nnên một thread trong `threads` có thể **toàn bia mộ, không một chữ nội dung nào**, mà\nvẫn chiếm một chỗ trong `tong_thread` và một slot của trang này.\nBia mộ không được tính vào `comment_count` của mạch, nên số bình luận **đọc được** có\nthể nhỏ hơn số dòng trả về.\n\n### `?dang_doc=1` — \"câu đáng đọc\" (PLAN 5.5)\n\nTrả **phép hợp `đã trích ∪ top-10 theo wilson`** trên các thread GỐC, sắp theo wilson\n**thuần** giảm dần. Đây là khối gắn nhãn \"Câu đáng đọc\" nằm trên cùng khi chân trang\nmặt CẶN bung khán đài; cây đầy đủ vẫn lấy bằng một lời gọi thường (không có tham số\nnày).\n\nPhép hợp là hợp THẬT: một bình luận được trích nhưng xếp hạng thấp **vẫn có mặt**.\nKhông có phân trang ở chế độ này — tập tối đa là `10 + số mốc có trích`, và\n`offset_ke_tiep`/`cursor_ke_tiep` luôn `null`, `tong_thread` là kích thước của tập.\n\nChế độ này (và **chỉ** chế độ này) trả thêm `so_ung_vien_bo_lai`: số thread gốc đọc\nđược nằm ngoài tập. `0` nghĩa là khối không lọc được gì và UI phải ẩn nó đi (PLAN 5.5,\nngoại lệ \"tập = cả khán đài\"). Đừng suy con số ấy bằng cách so `tong_thread` của hai\nlời gọi — hai đầu đếm bia mộ khác nhau, xem `KhanDaiOut` (Y1, lượt vá 4).\n\nVì tập này có thứ tự riêng, `?dang_doc=1` **chỉ đi cùng `sort=hay_nhat`** (mặc định)\nvà **không nhận `offset`/`cursor`/`limit`** — dùng lẫn trả 400\n`tham_so_khong_hop_le` thay vì lặng lẽ bỏ qua tham số, đúng luật đang áp cho hai kiểu\nphân trang ở trên. `limit` là **cửa thứ tư của cùng cái luật ấy** (vá V7,\n2026-08-22): nhánh này không đọc `limit` ở đâu cả, nên `?dang_doc=1&limit=5` trước đó\ntrả 200 kèm 11 thread — người gọi tưởng mình đã cắt còn 5.\n\n`limit` mặc định là `None` chứ không phải `GIOI_HAN_TOI_DA`, và đó là cả cách phép\nkiểm trên đứng được: với mặc định là một con số thì \"không truyền\" và \"truyền đúng 50\"\ntrông y hệt nhau ở trong hàm, nên hoặc là bỏ qua im lặng, hoặc là 400 cho một lời gọi\nkhông sai gì.",
+        "description": "Khán đài: **cây bình luận đã dựng sẵn**, server sắp xếp (PLAN mục 7).\n\n`?sort=hay_nhat|moi_nhat|cu_nhat`, mặc định `hay_nhat`. Sort không thuộc ba giá trị\nđó trả 400 `sort_khong_hop_le` — API **không bao giờ tự đổi sort ngầm** dưới tay\nngười dùng (PLAN nguyên tắc 7).\n\n- `hay_nhat`: wilson (z = 1.281) cộng hệ số tươi 0.15 cho bình luận **gốc** ra đời\n  sau mốc mới nhất và còn trong 48 giờ đầu đời của nó. Sibling trong thread sắp theo\n  wilson **thuần** — hệ số tươi không áp cho reply. Phân trang bằng `?offset=`,\n  `?limit=` tối đa 50.\n- `moi_nhat`: thread gốc sắp theo **hoạt động mới nhất** — `max(created_at)` trên các\n  nút ĐỌC ĐƯỢC của cả thread — giảm dần, tức *một reply mới đẩy cuộc trao đổi lên\n  đầu* (user chốt 2026-08-26). Bia mộ không bump: thread toàn bia mộ rơi về\n  `created_at` của gốc. Reply **trong** thread thì đọc **xuôi**, cũ → mới.\n- `cu_nhat`: gốc theo `created_at` tăng dần, KHÔNG bump — \"cũ nhất\" là *đọc từ đầu*.\n  Reply cũng cũ → mới.\n- Cả hai sort thời gian phân trang bằng `?cursor=` keyset, **trên đúng khoá sắp của\n  chúng**: `(hoạt động, id)` cho `moi_nhat`, `(created_at, id)` cho `cu_nhat`. Khoá\n  của `moi_nhat` BIẾN ĐỔI theo dữ liệu nên nó đánh mất lời hứa \"không lặp không sót\"\n  khi có người viết/xoá reply giữa hai lần lật trang — đánh đổi có chủ đích, xem\n  `_cat_goc`.\n\n**Hai kiểu phân trang KHÔNG dùng lẫn nhau, dùng nhầm trả 400** với\n`code = \"tham_so_khong_hop_le\"`: `?cursor=` kèm `sort=hay_nhat`, hoặc `?offset=` khác\n0 kèm hai sort thời gian. Nuốt im lặng tham số sai chỗ là hành vi mà chính\n`api/phan_trang.py` cấm cho cursor rác: người ở trang 3 của `moi_nhat` bấm đổi sang\n`hay_nhat`, router giữ nguyên query string, API trả **trang 1** kèm HTTP 200 — UI\ntưởng mình vẫn ở trang 3 và append tiếp ⇒ lặp dòng hoặc mất dòng, không lần ra được.\n\nBình luận bị mod ẩn, hoặc tác giả tự xoá, chỉ còn lại **bia mộ giữ chỗ** khi nó còn\ncon sống sót trong `replies` — và riêng ca tác giả tự xoá thì cả khi bình luận **đã\ntừng được trích vào sổ**, kể cả trích đã gỡ (PLAN 5.3). Không dính vế nào thì nó biến\nmất hẳn. \"Con sống sót\" không có nghĩa \"con đọc được\": con ấy có thể tự nó là bia mộ,\nnên một thread trong `threads` có thể **toàn bia mộ, không một chữ nội dung nào**, mà\nvẫn chiếm một chỗ trong `tong_thread` và một slot của trang này.\nBia mộ không được tính vào `comment_count` của mạch, nên số bình luận **đọc được** có\nthể nhỏ hơn số dòng trả về.\n\n### Chỉ thread KHÔNG neo — *user chốt 2026-08-26*\n\n> *\"nên có 1 phần cmt chung cho toàn bộ post, không lẫn cmt của các mock vào, từng\n> mock có cmt riêng thì cứ kệ nó, không trộn chung các mock vào cmt chung của post\"*\n\nVới **mạch** (`entry_count >= 2`), endpoint này trả **chỉ những thread có bình luận\ngốc `anchor_moc_seq IS NULL`**. Thread neo mốc N sống DUY NHẤT trong ngăn kéo mốc N\n(`GET /mocs/{id}/comments`, **không đổi**). Đây là thay đổi mô hình so với PLAN 5.4:\nngăn kéo từng là *cửa sổ* chiếu vào khán đài, nay nó là *phòng* — mỗi thread có đúng\nmột nhà.\n\n**`entry_count == 1` (post thường) KHÔNG lọc**, và điều kiện ấy là nửa còn lại của\nluật chứ không phải một tối ưu: post thường không có ngăn kéo (PLAN 5.1), nên lọc ở\nđó là làm bình luận neo mốc 1 — di sản thời composer neo tự động, prod ĐÃ có thể có —\nbiến mất khỏi **mọi** cửa hiển thị, HTTP 200, không log. Khi post ấy nối mốc 2 thành\nmạch, các bình luận neo tự dọn vào ngăn kéo mốc tương ứng.\n\nHệ quả phải đọc đúng: `tong_thread` ở đây đếm **chỉ thread chung**, nên nó nhỏ hơn\nhẳn `comment_count` của mạch (đếm cả bài). Hai con số đo hai thứ khác nhau.\n\nPhép lọc chạy **trong bộ nhớ** trên cây đã dựng (`core.doc_noi_dung.goc_khong_neo`),\nnên số truy vấn của endpoint không đổi. Phân trang chạy trên danh sách ĐÃ lọc —\nkeyset `(created_at, id)` giữ nguyên tính chất vì phép lọc không đụng tới khoá.\n\n### `?dang_doc=1` — \"câu đáng đọc\" (PLAN 5.5)\n\nTrả **phép hợp `đã trích ∪ top-10 theo wilson`** trên các thread GỐC, sắp theo wilson\n**thuần** giảm dần. Đây là khối gắn nhãn \"Câu đáng đọc\" nằm trên cùng khi chân trang\nmặt CẶN bung khán đài; cây đầy đủ vẫn lấy bằng một lời gọi thường (không có tham số\nnày).\n\nPhép hợp là hợp THẬT: một bình luận được trích nhưng xếp hạng thấp **vẫn có mặt**.\nKhông có phân trang ở chế độ này — tập tối đa là `10 + số mốc có trích`, và\n`offset_ke_tiep`/`cursor_ke_tiep` luôn `null`, `tong_thread` là kích thước của tập.\n\n⚠ **Nhánh này tính trên MỌI thread gốc, kể cả thread neo mốc** — nó KHÔNG đi qua phép\nlọc \"chỉ thread không neo\" ở trên (2026-08-26). Giữ nguyên vì khối gắn nhãn \"Câu đáng\nđọc\" đang **TẮT** ở frontend (`lib/khan-dai.ts::HIEN_KHOI_DANG_CHU_Y = false`) và hợp\nđồng của nhánh này có bài đo riêng (`tests/test_api_cau_dang_doc.py`) — đổi cùng lượt\nlà đổi một hợp đồng đang không ai gọi, dựa trên một mô hình UI chưa tồn tại.\n**Ngày bật lại khối ấy phải quyết lại tập nguồn của nó**: nếu nó vẫn lấy cả thread\nneo, khối sẽ in lại ở khán đài những thread mà khán đài vừa cố ý đẩy vào ngăn kéo —\ntức dựng lại đúng cái trộn lẫn mà lượt này gỡ đi.\n\nChế độ này (và **chỉ** chế độ này) trả thêm `so_ung_vien_bo_lai`: số thread gốc đọc\nđược nằm ngoài tập. `0` nghĩa là khối không lọc được gì và UI phải ẩn nó đi (PLAN 5.5,\nngoại lệ \"tập = cả khán đài\"). Đừng suy con số ấy bằng cách so `tong_thread` của hai\nlời gọi — hai đầu đếm bia mộ khác nhau, xem `KhanDaiOut` (Y1, lượt vá 4).\n\nVì tập này có thứ tự riêng, `?dang_doc=1` **chỉ đi cùng `sort=hay_nhat`** (mặc định)\nvà **không nhận `offset`/`cursor`/`limit`** — dùng lẫn trả 400\n`tham_so_khong_hop_le` thay vì lặng lẽ bỏ qua tham số, đúng luật đang áp cho hai kiểu\nphân trang ở trên. `limit` là **cửa thứ tư của cùng cái luật ấy** (vá V7,\n2026-08-22): nhánh này không đọc `limit` ở đâu cả, nên `?dang_doc=1&limit=5` trước đó\ntrả 200 kèm 11 thread — người gọi tưởng mình đã cắt còn 5.\n\n`limit` mặc định là `None` chứ không phải `GIOI_HAN_TOI_DA`, và đó là cả cách phép\nkiểm trên đứng được: với mặc định là một con số thì \"không truyền\" và \"truyền đúng 50\"\ntrông y hệt nhau ở trong hàm, nên hoặc là bỏ qua im lặng, hoặc là 400 cho một lời gọi\nkhông sai gì.",
         "operationId": "liet_ke_binh_luan_mach",
         "parameters": [
           {
@@ -4781,7 +4877,7 @@
     },
     "/api/v1/mocs/{moc_id}/comments": {
       "get": {
-        "description": "Ngăn kéo của một mốc: lát cắt bình luận neo vào mốc đó, **mới → cũ**.\n\nLấy các thread có bình luận **gốc** mang `anchor_moc_seq` bằng `seq` của mốc này, và\nlấy **cả thread** — reply viết ở thời điểm mốc nào cũng thuộc về thread của gốc\n(PLAN nguyên tắc 6). Nhờ vậy ngăn kéo của mốc 2 kể được cả lời tiên tri lẫn cái kết.\n\nKhông có tham số sắp xếp: ngăn kéo là cửa sổ chiếu vào khán đài, không phải một\nphòng riêng (PLAN 5.4 luật 2). Anchor dùng để CHIẾU, không bao giờ để chia khán đài\nthành nhiều phòng (PLAN nguyên tắc 4).\n\nChiều **mới → cũ** là chiều đổi ngày 2026-08-26 (user), cùng lượt khán đài chuyển\nmặc định sang `moi_nhat` — hai cửa sổ nhìn cùng một tập bình luận thì không được chạy\nngược chiều nhau. Vế \"không cho chỉnh\" của luật 2 giữ nguyên: chiều gõ cứng ở\n`core/doc_noi_dung.py::lat_cat_ngan_keo`, không đọc từ `?sort=`.\n\nMốc chưa có bình luận nào trả `threads: []`, `so_binh_luan: 0` cùng\n`question_for_crowd` nếu mốc có câu mồi — UI hiện lời mời chứ **không** hiện \"💬 0\"\n(PLAN 5.4 luật 4, nguyên tắc 9).\n\nNgăn kéo của một mốc đã thành **bia mộ vẫn mở được** (bình luận không biến mất theo\nmốc), nhưng `question_for_crowd` khi đó là `null`: đó là nội dung của mốc, mà nội\ndung của bia mộ thì không trả ra.",
+        "description": "Ngăn kéo của một mốc — **CHỖ Ở DUY NHẤT** của các thread neo vào mốc đó.\n\nLấy các thread có bình luận **gốc** mang `anchor_moc_seq` bằng `seq` của mốc này, và\nlấy **cả thread** — reply viết ở thời điểm mốc nào cũng thuộc về thread của gốc\n(PLAN nguyên tắc 6). Nhờ vậy ngăn kéo của mốc 2 kể được cả lời tiên tri lẫn cái kết.\n\n## Ngăn kéo là PHÒNG, không còn là cửa sổ *(user chốt 2026-08-26)*\n\n> *\"nên có 1 phần cmt chung cho toàn bộ post, không lẫn cmt của các mock vào, từng\n> mock có cmt riêng thì cứ kệ nó\"*\n\nTới lượt ấy, PLAN 5.4 luật 2 gọi ngăn kéo là *\"cửa sổ chiếu vào khán đài\"*: cùng một\nthread hiện ở cả hai chỗ. Nay `GET /machs/{id}/comments` **lọc bỏ** mọi thread có neo\n(khi `entry_count >= 2`), nên thread neo mốc N chỉ còn render ở đây. Hệ quả cho người\ngọi: **endpoint này không phải một lối tắt tiện tay — bỏ qua nó là mất hẳn phần lớn\nbình luận của mạch**, không phải mất một cách trình bày.\n\nVế **\"không cho chỉnh\"** của luật 2 thì còn nguyên: không có tham số sắp xếp nào, và\nnối chiều vào `?sort=` của khán đài là cấp cho ngăn kéo đúng cái phòng riêng mà luật 2\ndựng ra để chặn (PLAN nguyên tắc 4).\n\n## Thứ tự: gốc BUMP theo hoạt động, reply đọc XUÔI\n\nDùng đúng cặp khoá của `?sort=moi_nhat` bên khán đài (`core/doc_noi_dung.py::\nlat_cat_ngan_keo` + `sap_goc_bump_hoat_dong`), chốt cuối ngày 2026-08-27:\n\n- **thread gốc**: `max(created_at)` trên các nút **đọc được** của cả thread, giảm dần —\n  một reply mới đẩy cuộc trao đổi lên đầu. Bia mộ không bump; thread toàn bia mộ rơi về\n  `created_at` của gốc;\n- **reply bên trong**: `created_at` **tăng** dần — hội thoại đọc từ trên xuống.\n\nHai chiều ngược nhau là chủ đích, không phải sót: ngoài danh sách câu hỏi là *\"cuộc nào\nvừa có người nói\"*, trong một thread câu hỏi là *\"cuộc này diễn ra thế nào\"*.\n⚠ Mô tả cũ **\"mới → cũ\"** của endpoint này chết ở đó — nó chỉ từng đúng cho tầng gốc,\nvà chỉ trong khoảng một ngày.\n\nMốc chưa có bình luận nào trả `threads: []`, `so_binh_luan: 0` cùng\n`question_for_crowd` nếu mốc có câu mồi — UI hiện lời mời chứ **không** hiện \"💬 0\"\n(PLAN 5.4 luật 4, nguyên tắc 9).\n\nNgăn kéo của một mốc đã thành **bia mộ vẫn mở được** (bình luận không biến mất theo\nmốc), nhưng `question_for_crowd` khi đó là `null`: đó là nội dung của mốc, mà nội\ndung của bia mộ thì không trả ra.",
         "operationId": "liet_ke_binh_luan_moc",
         "parameters": [
           {
@@ -4824,7 +4920,7 @@
     },
     "/api/v1/mocs/{moc_id}/reactions": {
       "post": {
-        "description": "Reaction 1 chạm trên mốc — bộ **CỐ ĐỊNH** 🧠📎❓🔥 (PLAN 5.7, đổi 2026-08-25).\n\n**Quyền: bất kỳ ai đã đăng nhập**, kể cả trên mốc của chính mình. Mạch bị mod khoá ⇒\n403; mốc đã bị gỡ ⇒ 409.\n\nMột user **một** reaction mỗi mốc (`UNIQUE (user, moc)`) — đổi là `UPDATE`, không phải\nthêm hàng: đây là \"bậc thang tham gia rẻ hơn viết\", không phải phiếu bầu nhiều lựa\nchọn. `emoji = null` nghĩa là **rút**.\n\nTrả về **đủ 4 khoá kể cả khoá đang bằng 0**: UI vẽ nguyên bộ, và một khoá vắng mặt\ntrong response sẽ thành một icon nhấp nháy xuất hiện/biến mất theo lượt bấm.\nLưu khoá không dấu (`len`/`xuong`/…) chứ không lưu emoji — đổi bộ icon sau này không\nphải migrate dữ liệu.",
+        "description": "Reaction 1 chạm trên mốc — bộ **CỐ ĐỊNH** 🧠📎❓🔥 (PLAN 5.7, đổi 2026-08-25).\n\n**Quyền: bất kỳ ai đã đăng nhập**, kể cả trên mốc của chính mình. Mạch bị mod khoá ⇒\n403; mốc đã bị gỡ ⇒ 409.\n\nMột user **một** reaction mỗi mốc (`UNIQUE (user, moc)`) — đổi là `UPDATE`, không phải\nthêm hàng: đây là \"bậc thang tham gia rẻ hơn viết\", không phải phiếu bầu nhiều lựa\nchọn. `emoji = null` nghĩa là **rút**.\n\nTrả về **đủ 5 khoá kể cả khoá đang bằng 0**: UI vẽ nguyên bộ, và một khoá vắng mặt\ntrong response sẽ thành một icon nhấp nháy xuất hiện/biến mất theo lượt bấm.\nLưu khoá không dấu (`len`/`xuong`/…) chứ không lưu emoji — đổi bộ icon sau này không\nphải migrate dữ liệu.",
         "operationId": "dat_reaction",
         "parameters": [
           {

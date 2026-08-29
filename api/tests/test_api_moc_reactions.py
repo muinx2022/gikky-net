@@ -78,7 +78,7 @@ def test_bia_mo_KHONG_pho_so_reaction(client, mach, tac_gia, nguoi_khac):
 
     dat_an_moc(moc=moc2, boi=dung_mod("mod_reaction"), an=True, ly_do="thử")
     dem = _mocs(client, mach.pk)[2]["reactions"]
-    assert set(dem) == BO_KHOA, "bia mộ vẫn phải có ĐỦ 4 khoá — UI vẽ nguyên bộ"
+    assert set(dem) == BO_KHOA, "bia mộ vẫn phải có ĐỦ 5 khoá — UI vẽ nguyên bộ"
     assert set(dem.values()) == {0}
     # Hàng trong DB thì KHÔNG bị xoá — phép che nằm ở tầng trình bày, không ở đường ghi.
     assert Reaction.objects.filter(moc=moc2).count() == 1

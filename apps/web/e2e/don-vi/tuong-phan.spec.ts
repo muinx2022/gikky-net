@@ -48,6 +48,44 @@ export function docToken(css: string, chon: string): Record<string, string> {
   return ra;
 }
 
+/** Suy `--card` từ khai báo `color-mix` trong `globals.css` **thay vì gõ cứng một mã hex**.
+ *
+ * `--card` là token nền của THẺ — thẻ ở feed (từ 2026-08-24) và, từ 2026-08-26, cả tấm thẻ
+ * của trang mạch. Nó không phải mã hex mà là
+ * `color-mix(in srgb, var(--bg) N%, var(--surface-2))`, nên `docToken` (chỉ bắt `#hex`)
+ * **bỏ qua nó** — và bảng cặp bên dưới đã không đo nền thẻ suốt từ ngày token ấy ra đời.
+ * Hậu quả thật: `--ink-3` trên `--card` sáng chỉ 4.37:1, dưới AA, mà bài đo vẫn xanh.
+ *
+ * Đọc thẳng khai báo thay vì chép giá trị: chép là dựng bản sao thứ hai của một hằng, và
+ * bản sao sẽ lệch đúng vào hôm ai đó chỉnh tỉ lệ trộn. Đổi shape khai báo ⇒ hàm này NÉM,
+ * không im lặng trả về một màu đoán được.
+ *
+ * `color-mix(in srgb, …)` nội suy trên toạ độ sRGB **đã gamma-encode** (đúng như trình
+ * duyệt trả về cho `color(srgb …)`), nên đây là phép nội suy tuyến tính trên byte màu.
+ */
+export function docCard(css: string, bang: Record<string, string>): string {
+  const m = css.match(
+    /--card:\s*color-mix\(\s*in srgb\s*,\s*var\((--[\w-]+)\)\s*([\d.]+)%\s*,\s*var\((--[\w-]+)\)\s*\)\s*;/,
+  );
+  if (m === null) {
+    throw new Error(
+      "Không đọc được `--card: color-mix(in srgb, var(--x) N%, var(--y));` trong globals.css — " +
+        "token nền thẻ đổi shape thì bài đo này phải được viết lại, không được lặng lẽ bỏ qua.",
+    );
+  }
+  const [, tenA, phanTram, tenB] = m;
+  const a = bang[tenA];
+  const b = bang[tenB];
+  if (a === undefined || b === undefined) {
+    throw new Error(`\`--card\` trộn từ ${tenA}/${tenB} nhưng theme này thiếu một trong hai.`);
+  }
+  const p = Number(phanTram) / 100;
+  const tron = kenh(a).map((v, i) => v * p + kenh(b)[i] * (1 - p));
+  return (
+    "#" + tron.map((v) => Math.round(v * 255).toString(16).padStart(2, "0")).join("")
+  );
+}
+
 function kenh(hex: string): [number, number, number] {
   const h = hex.replace("#", "");
   const day = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
@@ -94,6 +132,17 @@ const CAP: readonly { chu: string; nen: string; nguong: number; o_dau: string }[
   // chỉ vì nó đang trượt. Hạ ngưỡng là cách "sửa" một bài đo tương phản mà không sửa gì.
   { chu: "--ink-3", nen: "--bg", nguong: AA_CHU_THUONG, o_dau: "mực nhạt trên nền trang" },
   { chu: "--ink-3", nen: "--surface", nguong: AA_CHU_THUONG, o_dau: "mực nhạt trên thẻ" },
+  // ===== Nền THẺ `--card` (feed từ 2026-08-24, trang mạch từ 2026-08-26) =====
+  // Nó TỐI HƠN `--surface` ở theme sáng, nên mọi cặp ở đây căng hơn cặp cùng chữ trên
+  // `--surface` — và suốt từ lúc token ấy ra đời KHÔNG cặp nào được đo (xem `docCard`).
+  { chu: "--ink", nen: "--card", nguong: AA_CHU_THUONG, o_dau: "chữ trên nền thẻ" },
+  { chu: "--ink-2", nen: "--card", nguong: AA_CHU_THUONG, o_dau: "chữ phụ trên nền thẻ" },
+  { chu: "--ink-3", nen: "--card", nguong: AA_CHU_THUONG, o_dau: "mực nhạt trên nền thẻ" },
+  { chu: "--accent", nen: "--card", nguong: AA_CHU_THUONG, o_dau: "link trên nền thẻ" },
+  { chu: "--gain", nen: "--card", nguong: AA_CHU_THUONG, o_dau: "con số LÃI trên nền thẻ" },
+  { chu: "--loss", nen: "--card", nguong: AA_CHU_THUONG, o_dau: "con số LỖ trên nền thẻ" },
+  { chu: "--focus", nen: "--card", nguong: AA_PHI_CHU, o_dau: "vòng focus trên nền thẻ" },
+  { chu: "--stamp", nen: "--card", nguong: AA_PHI_CHU, o_dau: "con dấu trên nền thẻ — MIỄN TRỪ L43" },
   { chu: "--accent", nen: "--bg", nguong: AA_CHU_THUONG, o_dau: "link trên nền trang" },
   { chu: "--accent", nen: "--surface", nguong: AA_CHU_THUONG, o_dau: "link trên thẻ" },
   { chu: "--accent", nen: "--accent-soft", nguong: AA_CHU_THUONG, o_dau: "tab đang chọn" },
@@ -120,6 +169,13 @@ const CAP: readonly { chu: string; nen: string; nguong: number; o_dau: string }[
   { chu: "--stamp", nen: "--bg", nguong: AA_PHI_CHU, o_dau: "vạch mới — MIỄN TRỪ L43" },
   { chu: "--gain", nen: "--surface", nguong: AA_CHU_THUONG, o_dau: "con số LÃI" },
   { chu: "--loss", nen: "--surface", nguong: AA_CHU_THUONG, o_dau: "con số LỖ" },
+  // ===== Chỗ dùng THỨ HAI của xanh/đỏ: thông báo form tài khoản (2026-08-27) =====
+  // `mau-token.spec.ts` vừa nới allowlist cho `form-tai-khoan.module.css` — nới chỗ dùng
+  // thì phải nới cả chỗ ĐO, nếu không thì một màu vừa được cấp phép đi vào một cái nền
+  // chưa ai đo. `.loi`/`.xong` nằm trên `--inset` (nền hộp) chứ không trên `--surface`
+  // (nền thẻ), nên cặp với `--inset` mới là cặp thật sự xuất hiện trên màn hình.
+  { chu: "--loss", nen: "--inset", nguong: AA_CHU_THUONG, o_dau: "chữ LỖI trong form" },
+  { chu: "--gain", nen: "--inset", nguong: AA_CHU_THUONG, o_dau: "chữ XONG trong form" },
   // Vòng focus là thứ WCAG 1.4.11 thật sự đòi 3:1: nó là dấu hiệu TRẠNG THÁI, và nó là
   // thứ duy nhất nói cho người đi bằng bàn phím biết mình đang đứng ở đâu.
   { chu: "--focus", nen: "--bg", nguong: AA_PHI_CHU, o_dau: "vòng focus trên nền trang" },
@@ -133,10 +189,20 @@ const CAP: readonly { chu: string; nen: string; nguong: number; o_dau: string }[
 ];
 
 const CSS = readFileSync(resolve(WEB, "app/globals.css"), "utf8");
-const THEME: Readonly<Record<string, Record<string, string>>> = {
-  sáng: docToken(CSS, ":root {"),
-  tối: docToken(CSS, ':root[data-theme="dark"]'),
-};
+/** ⚠ `--card` được BƠM THÊM vào cả hai bảng (xem `docCard`): nó là token nền của thẻ
+ * nhưng không phải mã hex, nên `docToken` không thấy. Bơm ở đây — chứ không phải thêm một
+ * dòng hex vào `globals.css` — để `globals.css` vẫn giữ đúng MỘT nguồn cho công thức trộn.
+ *
+ * Bản tối khai `--bg`/`--surface-2` riêng còn `--card` thì không (nó là `color-mix` tham
+ * chiếu hai token kia, trình duyệt giải ở lúc DÙNG), nên cùng một công thức cho ra hai màu
+ * khác nhau — đúng như trên trang thật. */
+const THEME: Readonly<Record<string, Record<string, string>>> = (() => {
+  const sang = docToken(CSS, ":root {");
+  const toi = docToken(CSS, ':root[data-theme="dark"]');
+  sang["--card"] = docCard(CSS, sang);
+  toi["--card"] = docCard(CSS, toi);
+  return { sáng: sang, tối: toi };
+})();
 
 test("bảng token đọc được và KHÔNG rỗng ở cả hai theme (chống bài đo rỗng)", () => {
   for (const [ten, bang] of Object.entries(THEME)) {

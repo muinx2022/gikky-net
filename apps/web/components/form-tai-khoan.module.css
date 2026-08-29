@@ -1,10 +1,32 @@
 /* Năm trang tài khoản dùng chung khung này. Chất liệu "sổ nghiêm" của PLAN 9.1: viền
    cứng, bo nhẹ — đây là chỗ người ta khai danh tính, không phải khán đài.
 
-   ⚠ **Không đỏ, không hoàng thổ ở đây.** PLAN 9.1 cấm `--loss` ngoài con số lãi/lỗ, và
-   giao `--stamp` riêng cho "thứ mang tính đóng dấu" — một cái form không nằm trong danh
-   sách ấy. Lỗi và thành công vì thế phát tín hiệu bằng ĐƯỜNG VIỀN và NỀN (cùng lối với
-   `components/bao-cursor-hong.module.css`), không bằng màu cảnh báo. */
+   ⚠ **ĐỎ/XANH ĐƯỢC DÙNG Ở ĐÂY từ 2026-08-27 — đảo lại luật cũ của chính file này.**
+   *(user: "các phần đăng nhập, đăng ký, nếu lỗi, dùng font chữ đỏ, nếu ok, dùng font chữ
+   màu xanh")*
+
+   Bản trước ghi "Không đỏ, không hoàng thổ ở đây" và cho lỗi/thành công phát tín hiệu
+   bằng viền + nền. Nay chữ cũng đổi màu. Ba điều phải nói cho rõ, vì đây là một luật bị
+   nới chứ không phải một dòng CSS bình thường:
+
+   1. **Vì sao nới được.** PLAN 9.1 giữ xanh/đỏ riêng cho con số lãi/lỗ để chúng không
+      mất nghĩa "tiền" vì bị dùng trang trí. Năm trang tài khoản **không có một con số
+      lãi/lỗ nào** — không feed, không thẻ mốc, không `con-so`. Va chạm ngữ nghĩa mà luật
+      ấy phòng không xảy ra được ở nơi không có tiền để hiểu nhầm.
+   2. **Nới ĐÚNG MỘT FILE, và nới ở hàng rào chứ không lách nó.**
+      `e2e/don-vi/mau-token.spec.ts` giữ danh sách nơi được dùng `var(--gain)`/`var(--loss)`;
+      file này được thêm tên vào đó tường minh. Docstring của hàng rào chỉ ra đây đúng là
+      cách nới đã dự liệu: *"muốn thêm chỗ dùng thì phải sửa cả file này — và đó là mục
+      đích: quyết định có chủ đích, không phải một dòng CSS lọt vào lúc nửa đêm."*
+   3. **Màu KHÔNG phải tín hiệu duy nhất.** `.loi` giữ `role="alert"` + viền + nền,
+      `.xong` giữ `role="status"` + viền nét đứt. Một trạng thái chỉ khác nhau ở sắc độ là
+      trạng thái không đọc được với người nhìn màu kém — mà đây là chỗ báo "sai mật khẩu".
+
+   Tương phản của hai màu này trên `--surface` và `--inset` **được đo bằng số** ở
+   `e2e/don-vi/tuong-phan.spec.ts`, cả hai theme. Đổi mã hex mà tụt xuống dưới AA ⇒ đỏ.
+
+   ⚠ Hoàng thổ `--stamp` thì **vẫn cấm** ở đây: PLAN 9.1 giao nó cho "thứ mang tính đóng
+   dấu", và một cái form không nằm trong danh sách ấy. Lượt này không đụng vế đó. */
 
 /* Từ 2026-08-24 mọi trang dùng `.khung` này đều nằm TRONG `KhungHaiCot` (cột chính đã có
    `max-width` + padding của riêng nó). Giữ lại `max-width`/`padding` ở đây là **cộng dồn
@@ -16,13 +38,27 @@
   padding-top: 10px;
 }
 
+/* Bề ngang nới 420 → **560px** *(user chốt 2026-08-27: "các form ở phần đăng nhập, đăng
+   ký, hiện tại đều co cụm ở giữa")*. 420px là bề ngang của một hộp đăng nhập ĐỨNG MỘT
+   MÌNH giữa trang trắng; từ 2026-08-24 nó nằm trong cột chính của `KhungHaiCot` cạnh một
+   sidebar, nên cùng con số ấy đọc ra thành một mẩu giấy lọt thỏm. Padding nới theo, nếu
+   không thì thẻ rộng ra mà chữ vẫn dính mép.
+
+   `width: 100%` giữ nguyên và nó là vế chống tràn: dưới 560px thẻ co theo cột, không đẩy
+   trang cuộn ngang. */
 .the {
   width: 100%;
-  max-width: 420px;
+  max-width: 560px;
   border: 1px solid var(--line);
   border-radius: 6px;
-  padding: 26px 24px 22px;
+  padding: 30px 30px 26px;
   background: var(--surface);
+}
+
+@media (max-width: 640px) {
+  .the {
+    padding: 22px 18px 20px;
+  }
 }
 
 .tieu_de {
@@ -83,31 +119,39 @@
   margin-top: 4px;
 }
 
+/* Lỗi CỦA TỪNG Ô (dưới `<input>`) — cùng màu với hộp lỗi chung để hai chỗ đọc ra là một
+   loại tín hiệu. `aria-invalid` trên chính ô nhập lo phần nghe được. */
 .loi_o {
   display: block;
   font-size: 12px;
-  color: var(--ink-2);
+  color: var(--loss);
+  font-weight: 500;
   margin-top: 4px;
 }
 
 .loi {
   margin: 0 0 15px;
   padding: 9px 13px;
-  border: 1px solid var(--line-2);
+  border: 1px solid var(--loss);
   border-radius: 4px;
   background: var(--inset);
-  color: var(--ink);
+  color: var(--loss);
+  font-weight: 500;
   font-size: 13px;
   line-height: 1.55;
 }
 
+/* Viền vẫn NÉT ĐỨT, khác `.loi` nét liền — đó là vế "màu không phải tín hiệu duy nhất"
+   ở docstring đầu file. Hai hộp cùng cỡ, cùng nền; nếu chỉ khác nhau ở sắc độ thì với
+   người nhìn màu kém chúng là một. */
 .xong {
   margin: 0;
   padding: 12px 13px;
-  border: 1px dashed var(--line-2);
+  border: 1px dashed var(--gain);
   border-radius: 4px;
   background: var(--inset);
-  color: var(--ink-2);
+  color: var(--gain);
+  font-weight: 500;
   font-size: 13.5px;
   line-height: 1.65;
 }

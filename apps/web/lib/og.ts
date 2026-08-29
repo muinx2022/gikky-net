@@ -39,9 +39,11 @@ export const MAU_OG = {
   muc: "#14161b",
   muc_2: "#535a67",
   // Theo `--ink-3` — đổi 2026-08-23 cùng lượt vá tương phản (`#868D9B` cho 3.33:1 trên
-  // nền trắng, dưới AA cho chữ nhỏ). Bản sao này KHÔNG tự đổi theo `globals.css`; thứ bắt
-  // nó đổi là `e2e/don-vi/og-anh.spec.ts`, và nó đã đỏ đúng lúc.
-  muc_3: "#686f7d",
+  // nền trắng, dưới AA cho chữ nhỏ), rồi `#686F7D` → `#646B79` ngày 2026-08-26 khi trang
+  // mạch chuyển nền thẻ sang `--card` (tối hơn `--surface`). Bản sao này KHÔNG tự đổi theo
+  // `globals.css`; thứ bắt nó đổi là `e2e/don-vi/og-anh.spec.ts`, và nó đã đỏ đúng lúc —
+  // cả hai lần.
+  muc_3: "#646b79",
   vach: "#c7cbd4",
   nhan: "#3a46a8",
 } as const;

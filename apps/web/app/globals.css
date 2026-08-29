@@ -27,7 +27,8 @@
  * `e2e/don-vi/tuong-phan.spec.ts` (WCAG 2.1, công thức thật). Đổi một mã hex ở đây mà làm
  * tụt một cặp xuống dưới AA ⇒ bài đo ĐỎ. Hai chỗ đã phải đổi vì phép đo ấy:
  *
- * - `--ink-3` sáng `#868D9B` → **`#686F7D`** (3.33:1 → 5.05:1 trên `--surface`);
+ * - `--ink-3` sáng `#868D9B` → **`#686F7D`** (3.33:1 → 5.05:1 trên `--surface`), rồi
+ *   `#686F7D` → **`#646B79`** lần hai (2026-08-26) vì `--card` tối hơn `--surface`;
  * - `--ink-3` tối `#6F7787` → **`#7A8292`** (3.87:1 → 4.52:1 trên `--surface`).
  *
  * `--ink-3` là mực nhạt nhất — dấu thời gian, nhãn nhóm, dòng gợi ý — tức **chữ nhỏ**, nên
@@ -55,7 +56,14 @@
   --card: color-mix(in srgb, var(--bg) 62%, var(--surface-2));
   --ink: #14161b;
   --ink-2: #535a67;
-  --ink-3: #686f7d;
+  /* Đậm thêm một nấc 2026-08-26: #686F7D → #646B79.
+     Trang mạch đổi nền thẻ sang `--card` (user chốt cùng ngày), mà `--card` TỐI HƠN
+     `--surface` ở theme sáng ⇒ mực nhạt nhất tụt từ 5.05:1 xuống **4.37:1**, dưới AA cho
+     chữ nhỏ. Feed đã dính lỗi này từ 2026-08-24 mà không ai thấy: bảng cặp đo của
+     `tuong-phan.spec.ts` chưa có `--card` (nó bỏ qua mọi token không phải mã hex, mà
+     `--card` là một `color-mix`). Lượt này thêm `--card` vào bảng đo rồi mới sửa số.
+     #646B79 cho 4.64:1 trên `--card`, 5.36:1 trên `--surface`, 4.78:1 trên `--bg`. */
+  --ink-3: #646b79;
   --line: #dbdee5;
   --line-2: #c7cbd4;
   --accent: #3a46a8;

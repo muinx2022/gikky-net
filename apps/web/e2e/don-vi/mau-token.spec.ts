@@ -57,7 +57,27 @@ const HEX_STAMP = ["#B07A2B", "#F5EBDA", "#D8A455", "#2A2318"];
 const HEX_TOKEN = [...HEX_LAI_LO, ...HEX_STAMP];
 
 const NOI_KHAI_TOKEN = "app/globals.css";
-const NOI_DUOC_DUNG = "components/con-so.module.css";
+/** Những file được phép dùng `var(--gain)` / `var(--loss)`.
+ *
+ * **Là DANH SÁCH GÕ TAY, và cái giá của việc thêm một dòng vào đây chính là điểm.** Luật 2
+ * ở docstring đầu file nói rõ: muốn thêm chỗ dùng thì phải sửa file này, để đó là một
+ * quyết định có chủ đích chứ không phải một dòng CSS lọt vào lúc nửa đêm.
+ *
+ * - `con-so.module.css` — con số lãi/lỗ, chỗ dùng gốc mà PLAN 9.1 giao.
+ * - `form-tai-khoan.module.css` — **thêm 2026-08-27** *(user: "các phần đăng nhập, đăng
+ *   ký, nếu lỗi, dùng font chữ đỏ, nếu ok, dùng font chữ màu xanh")*. Lý lẽ để nới, ghi
+ *   đầy đủ ở đầu chính file ấy: PLAN 9.1 giữ xanh/đỏ riêng cho tiền để chúng không mất
+ *   nghĩa vì bị dùng trang trí, mà **năm trang tài khoản không có một con số lãi/lỗ nào**
+ *   — va chạm ngữ nghĩa luật ấy phòng không xảy ra được ở nơi không có tiền để hiểu nhầm.
+ *
+ * ⚠ **Tên file tường minh, KHÔNG dùng pattern.** `components/*.module.css` hay
+ * `**\/form-*` là giấy phép mở cho mọi file sau này — đúng thứ luật này tồn tại để không
+ * có. Danh sách dài ra thì phải thấy nó dài ra.
+ */
+const NOI_DUOC_DUNG: readonly string[] = [
+  "components/con-so.module.css",
+  "components/form-tai-khoan.module.css",
+];
 /** Chính file này liệt kê mọi mã hex trong `HEX_TOKEN` — mã thật, không phải chú thích. */
 const TU_TRU = "e2e/don-vi/mau-token.spec.ts";
 
@@ -321,7 +341,7 @@ test("bộ file quét được không rỗng (bài đo này tự chứng minh m�
   expect(FILES.length).toBeGreaterThan(20);
   const ten = FILES.map((f) => f.ten);
   expect(ten).toContain(NOI_KHAI_TOKEN);
-  expect(ten).toContain(NOI_DUOC_DUNG);
+  for (const n of NOI_DUOC_DUNG) expect(ten).toContain(n);
   expect(ten).toContain(TU_TRU);
   expect(ten).toContain(TU_TRU_QUAN_TRI);
 });
@@ -352,7 +372,7 @@ test("var(--gain) / var(--loss) chỉ được dùng ở con-so.module.css — C
   const pham = FILES.filter(
     (f) =>
       f.ten !== NOI_KHAI_TOKEN &&
-      f.ten !== NOI_DUOC_DUNG &&
+      !NOI_DUOC_DUNG.includes(f.ten) &&
       f.ten !== TU_TRU &&
       f.ten !== TU_TRU_QUAN_TRI &&
       /var\(\s*--(gain|loss)\s*\)/.test(f.sach),
@@ -366,10 +386,17 @@ test("hàng rào .tsx của luật trên KHÔNG rỗng — nó phải quét đư
   expect(FILES.filter((f) => /\.tsx$/.test(f.ten)).length).toBeGreaterThan(10);
 });
 
-test("chỗ được phép DÙNG thật sự có dùng — nếu không, hai luật trên vô nghĩa", () => {
-  const f = FILES.find((x) => x.ten === NOI_DUOC_DUNG);
-  expect(f?.sach).toMatch(/var\(--gain\)/);
-  expect(f?.sach).toMatch(/var\(--loss\)/);
+test("MỌI chỗ được phép DÙNG thật sự có dùng — nếu không, hai luật trên vô nghĩa", () => {
+  // Vế "mọi" là chỗ bài này mạnh lên khi allowlist thành danh sách: một tên nằm lại trong
+  // `NOI_DUOC_DUNG` sau khi file ấy thôi dùng xanh/đỏ là một giấy phép mồ côi — không ai
+  // vi phạm nó, nên không gì đỏ, và nó cứ nằm đó chờ người sau tưởng là đã được duyệt.
+  for (const ten of NOI_DUOC_DUNG) {
+    const f = FILES.find((x) => x.ten === ten);
+    expect(f, `${ten} phải nằm trong bộ file quét`).toBeDefined();
+    expect(f?.sach, `${ten} được cấp phép mà không dùng`).toMatch(
+      /var\(\s*--(gain|loss)\s*\)/,
+    );
+  }
 });
 
 test("globals.css khai đủ mọi giá trị (light + dark) của xanh/đỏ và hoàng thổ", () => {
@@ -383,8 +410,10 @@ test("globals.css khai đủ mọi giá trị (light + dark) của xanh/đỏ v�
 test("hoàng thổ --stamp không rơi vào file con-so (hai hệ dấu không được lẫn)", () => {
   // PLAN 9.1 giao hoàng thổ cho "thứ mang tính đóng dấu"; con số lãi/lỗ không thuộc nhóm
   // đó. Luật nhỏ, nhưng nó chặn đúng kiểu trôi mà hai luật trên không thấy.
-  const f = FILES.find((x) => x.ten === NOI_DUOC_DUNG);
-  expect(f?.sach).not.toMatch(/var\(\s*--stamp/);
+  for (const ten of NOI_DUOC_DUNG) {
+    const f = FILES.find((x) => x.ten === ten);
+    expect(f?.sach, `${ten} lẫn hoàng thổ`).not.toMatch(/var\(\s*--stamp/);
+  }
 });
 
 test("A14 — đọc được danh sách 'đóng dấu' từ PLAN 9.1 (không có thì allowlist tự chế)", () => {
