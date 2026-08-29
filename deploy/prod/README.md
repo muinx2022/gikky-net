@@ -56,14 +56,23 @@ alias gk='docker compose -f deploy/prod/compose.yml --env-file ~/gikky-net/app/.
 | Sinh khoá Meili hẹp | `deploy/prod/tao-khoa-meili.sh` |
 
 ⚠ **`gk build` trần chạy SONG SONG.** Máy còn ~3.4 GiB RAM; xcaddy (Go) cộng hai
-`next build` cùng lúc là OOM. `build.sh` build từng cái một, và đó là lý do nó tồn tại.
+`next build` cùng lúc là OOM. Phải build **từng service một**:
+
+```bash
+for s in api web admin caddy; do gk build "$s" || break; done
+```
+
+⚠ **`build.sh` KHÔNG TỒN TẠI** — không trong repo, không trong lịch sử git, không trên
+prod. Tài liệu này từng nhắc nó ở ba chỗ như thể nó có thật (kiểm 2026-08-29). Ai đó định
+viết mà chưa viết. Dùng vòng lặp trên cho tới khi có script thật; đừng chép lại lời gọi
+`./build.sh` vào chỗ nào nữa.
 
 ### Việc chạy theo lịch: gộp lượt xem — **BẮT BUỘC, không phải tuỳ chọn**
 
 ```bash
 crontab -e
 # 03:10 giờ VN mỗi ngày — sau nửa đêm để "ngày đã xong" thật sự đã xong.
-10 3 * * *  cd /srv/gikky/deploy/prod && docker compose exec -T api python manage.py gom_luot_xem >> /var/log/gikky-gom-luot-xem.log 2>&1
+10 3 * * *  cd ~/gikky-net/src && docker compose -f deploy/prod/compose.yml --env-file ~/gikky-net/app/.env exec -T api python manage.py gom_luot_xem >> ~/gikky-gom-luot-xem.log 2>&1
 ```
 
 Không có lịch này thì **hai chuyện hỏng, cả hai im lặng**:
@@ -81,12 +90,21 @@ Kiểm nó có chạy: `gk exec api python manage.py shell -c "from core.models.
 Từ máy dev (Windows, **không có rsync** — dùng tar qua ssh):
 
 ```bash
-tar czf - --exclude='./.git' --exclude='node_modules' --exclude='.venv' \
-  --exclude='.next' --exclude='__pycache__' --exclude='./backup' \
-  --exclude='./api/media' --exclude='./api/media-an' --exclude='./api/.env' . \
-| ssh vps-muinx 'rm -rf ~/gikky-net/src && mkdir -p ~/gikky-net/src && tar xzf - -C ~/gikky-net/src'
-ssh vps-muinx 'cd ~/gikky-net/src && ./build.sh && docker compose -f deploy/prod/compose.yml --env-file ~/gikky-net/app/.env up -d'
+git archive --format=tar HEAD \
+| ssh vps-muinx 'rm -rf ~/gikky-net/src && mkdir -p ~/gikky-net/src && tar xf - -C ~/gikky-net/src'
+ssh vps-muinx 'cd ~/gikky-net/src && for s in api web admin caddy; do docker compose -f deploy/prod/compose.yml --env-file ~/gikky-net/app/.env build "$s" || break; done'
+ssh vps-muinx 'cd ~/gikky-net/src && docker compose -f deploy/prod/compose.yml --env-file ~/gikky-net/app/.env up -d'
 ```
+
+⚠ **`git archive HEAD`, KHÔNG phải `tar .`** (đổi 2026-08-29). `tar .` gói **cây làm
+việc**, tức đẩy lên prod cả những gì đang sửa dở và chưa ai chạy thử — trên máy này thường
+xuyên có nhiều phiên Claude làm song song, nên lúc deploy cây gần như luôn bẩn. Lần đổi
+này cây có **190 mục chưa commit** của một lượt việc khác; `tar .` sẽ deploy hết.
+
+`git archive` đẩy **đúng commit đã đo**, và tự bỏ mọi thứ `.gitignore` (`.git`,
+`node_modules`, `.venv`, `.next`, `__pycache__`, `api/media`, `api/.env`) nên không cần
+danh sách `--exclude` nào. Đổi lại: file chưa track sẽ KHÔNG lên — đó là tính năng, không
+phải thiếu sót.
 
 `migrate` + `collectstatic` chạy tự động trong entrypoint của `api` mỗi lần container lên.
 
