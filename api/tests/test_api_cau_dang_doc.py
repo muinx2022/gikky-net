@@ -156,22 +156,28 @@ def test_dang_doc_TRAN_van_200(client, seed):
     assert dang_doc(client, seed.pk)["tong_thread"] == TOP_CAU_DANG_DOC + 1
 
 
-def test_khan_dai_THUONG_van_nhan_limit_va_van_co_mac_dinh_50(client, seed):
+def test_khan_dai_THUONG_van_nhan_limit_va_van_co_mac_dinh_50(client, seed_chung):
     """Sentinel `None` chỉ đổi cách `dang_doc` đọc tham số, không đổi hợp đồng của khán
-    đài: `?limit=` vẫn cắt, thiếu nó vẫn là 50, và quá 50 vẫn 400."""
-    d = lay(client, f"/api/v1/machs/{seed.pk}/comments?limit=3")
+    đài: `?limit=` vẫn cắt, thiếu nó vẫn là 50, và quá 50 vẫn 400.
+
+    `seed_chung` từ 2026-08-26: nhánh khán đài THƯỜNG nay lọc bỏ thread neo, và trên seed
+    thô còn đúng 1 thread — `?limit=3` không cắt được gì thì bài đo không còn đo `limit`.
+    Nhánh `?dang_doc=1` ở các bài trên **giữ nguyên `seed`**, vì nó cố ý không đi qua phép
+    lọc ấy (xem docstring endpoint).
+    """
+    d = lay(client, f"/api/v1/machs/{seed_chung.pk}/comments?limit=3")
     assert len(d["threads"]) == 3 and d["offset_ke_tiep"] == 3
 
-    khong_limit = lay(client, f"/api/v1/machs/{seed.pk}/comments")
+    khong_limit = lay(client, f"/api/v1/machs/{seed_chung.pk}/comments")
     assert len(khong_limit["threads"]) == 14 and khong_limit["offset_ke_tiep"] is None
 
     assert lay(
-        client, f"/api/v1/machs/{seed.pk}/comments?limit=51", status=400
+        client, f"/api/v1/machs/{seed_chung.pk}/comments?limit=51", status=400
     )["code"] == "tham_so_khong_hop_le"
 
 
-def test_khong_co_dang_doc_thi_van_la_khan_dai_day_du(client, seed):
-    d = lay(client, f"/api/v1/machs/{seed.pk}/comments")
+def test_khong_co_dang_doc_thi_van_la_khan_dai_day_du(client, seed_chung):
+    d = lay(client, f"/api/v1/machs/{seed_chung.pk}/comments")
     assert d["tong_thread"] == 14
 
 

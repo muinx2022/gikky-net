@@ -28,6 +28,7 @@ export function FormTaiKhoan({
   nutGui,
   onGui,
   children,
+  tren,
   duoi,
   onThanhCong,
   trongModal = false,
@@ -38,6 +39,17 @@ export function FormTaiKhoan({
   /** Ném `LoiTaiKhoan` khi hỏng. Trả `{xong}` để hiện lời nhắn, `{di}` để điều hướng. */
   onGui: (du_lieu: FormData) => Promise<KetQua>;
   children: React.ReactNode;
+  /** Khối đứng **TRƯỚC** `<form>` — chỗ của nút Google *(user chốt 2026-08-27: "nút gg ở
+   * phía trên, form ở phía dưới")*.
+   *
+   * Là một slot riêng chứ không phải một `children` nữa, và đó là điều bắt buộc chứ không
+   * phải cho gọn: `ChoGoogle` **tự nó là một `<form method="POST">`**. Trước lượt này nó
+   * được truyền vào `children`, tức nằm LỒNG trong `<form onSubmit>` của khối này — HTML
+   * cấm `<form>` lồng `<form>`, và bản do trình duyệt phân tích (SSR) sẽ nuốt thẻ trong,
+   * khiến nút Google submit nhầm form ngoài. Chỉ vì React dựng DOM bằng `createElement`
+   * chứ không qua bộ phân tích HTML nên nó vẫn chạy được — một cái sai đứng vững nhờ may.
+   * Đưa ra ngoài `<form>` gỡ luôn cả cái sai ấy. */
+  tren?: React.ReactNode;
   duoi?: React.ReactNode;
   /** Chạy SAU khi `onGui` xong **và** `taiLai()` đã cập nhật phiên — modal đăng nhập
    * dùng nó để tự đóng (2026-08-26).
@@ -90,6 +102,19 @@ export function FormTaiKhoan({
     <section className={css.the}>
       <h1 className={css.tieu_de}>{tieuDe}</h1>
       {moTa && <p className={css.mo_ta}>{moTa}</p>}
+
+      {/* Khối trên (nút Google) chỉ hiện khi CHƯA có kết quả: sau khi đăng ký xong,
+          `xong` chiếm chỗ cả form — bày một lối đăng nhập thứ hai bên trên một lời nhắn
+          "hãy mở hộp thư" là mời người ta bỏ dở đúng việc vừa được giao.
+
+          ⚠ **Vạch "hoặc" nằm TRONG `tren`, không phải ở đây.** Bản đầu của lượt này dựng
+          vạch tại chỗ với điều kiện `tren !== undefined` — sai ngay lần chạy thử đầu:
+          `tren` là một element nên LUÔN khác `undefined`, trong khi component bên trong
+          trả `null` lúc server không có credential Google. Kết quả là một cái vạch "hoặc"
+          lơ lửng ngăn tiêu đề với form, không ngăn cách gì cả. Người quyết có nút hay
+          không phải là người vẽ cái vạch ấy — gộp lại thì trạng thái hỏng đó không dựng
+          lên được nữa. */}
+      {xong === null && tren}
 
       {xong !== null ? (
         <p className={css.xong} role="status" data-testid="form-xong">

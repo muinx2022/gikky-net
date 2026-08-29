@@ -6,6 +6,10 @@
 >
 > Trạng thái: `MỞ` · `ĐANG SỬA` · `ĐÓNG (<commit>)` · `HOÃN CÓ CHỦ ĐÍCH`
 > Hạng: **CHẶN** (không ra mắt được) · **NẶNG** · **VỪA** · **NHỎ**
+>
+> **Từ 2026-08-27 đây cũng là SỔ DỌC ĐƯỜNG của repo** (luật ở `D:\Projects\CLAUDE.md`, mục
+> *Một việc một lúc*): mọi phát hiện **ngoài phạm vi việc đang làm** ghi vào mục **`E`** cuối
+> file, mã `P-YYYYMMDD-n`. Dãy `L…` là di sản các lượt audit cũ — **đừng đánh số tiếp theo nó**.
 
 ## Cách đọc nhanh
 
@@ -956,3 +960,263 @@ Phase 0 → 1d chạy đủ 5 chặng mỗi lượt; **nghiệm thu chấm ĐẠ
 **Hai khuôn mẫu lặp lại nhiều nhất** (đếm được 8 và 15 lần):
 1. *Mỗi lượt vá tự đẻ ra một cửa mới của chính cái luật nó đang đóng.*
 2. *Chữ khẳng định mạnh hơn thứ code làm.*
+
+---
+
+# E · SỔ DỌC ĐƯỜNG — phát hiện ngoài phạm vi (từ 2026-08-27)
+
+Chỗ ĐỖ cho mọi thứ tìm ra dọc đường mà **không thuộc phạm vi việc đang làm**: ghi xuống rồi quay
+lại việc cũ ngay, để không ai phải chọn giữa "quên nó đi" và "bỏ dở việc đang làm".
+
+- Chỉ **THÊM vào cuối**. Không sửa/sắp lại mục cũ khi đang làm việc khác — repo này hay có nhiều
+  phiên chạy song song.
+- **Phiên chính là người ghi duy nhất.** `opus-dev` / `nghiem-thu` / `phan-bien` nêu ở mục
+  `## NGOÀI PHẠM VI` cuối báo cáo; phiên chính chép vào đây ở chặng 5.
+- Mục `MỞ` chỉ được lôi ra làm khi **user duyệt** ở chặng 1 của một việc mới. **Không tự nhặt.**
+- Trạng thái: `MỞ` · `ĐANG SỬA` · `ĐÓNG (<commit>)` · `KHÔNG SỬA (<lý do>)`. Hạng như trên.
+
+Khuôn một mục — chép nguyên rồi điền:
+
+```markdown
+### P-20260827-1 · [MỞ] · VỪA — <một câu: vấn đề là gì>
+- **Thấy lúc**: đang làm `plans/2026-08-27-<việc>.md` (hoặc: trả lời câu hỏi X của user)
+- **Ở đâu**: `đường/dẫn/file.ts:123`
+- **Bằng chứng**: <ca cụ thể vào-gì-ra-gì, hoặc output lệnh — không phải cảm nhận>
+- **Vì sao không sửa ngay**: ngoài phạm vi việc đang làm
+```
+
+Không dựng nổi bằng chứng cụ thể ⇒ ghi rõ là **nghi ngờ**. Sổ đầy phỏng đoán thì mục thật bị
+loãng, và loãng đủ lâu thì cả sổ bị bỏ.
+
+*(chưa có mục nào)*
+
+### P-20260827-1 · [MỞ] · VỪA — `test_me_subs_moi_theo_dung_truoc` FLAKY: `-created_at` hoà nhau nên thứ tự tuỳ ý
+
+- **Thấy lúc**: chạy bộ kiểm trước lượt deploy 2026-08-27 (`plans/2026-08-25-deploy-vps-docker.md`)
+- **Ở đâu**: `api/tests/test_api_theo_sub.py:177` · nguồn thật ở `api/api/theo_sub.py:155`
+  (`TheoSub.objects...order_by("-created_at")`) và `api/core/models/tuong_tac.py:312`
+  (`created_at = DateTimeField(default=timezone.now)`)
+- **Bằng chứng**:
+  1. Chạy RIÊNG bài đo đó 5 lần trên test DB sạch: **2 xanh / 3 đỏ**, cùng một cây mã, không đổi gì.
+     `AssertionError: assert ['chung-khoan', 'crypto'] == ['crypto', 'chung-khoan']`
+  2. Nguyên nhân đo được — đồng hồ máy này KHÔNG phân giải nổi hai lời gọi liên tiếp:
+     ```
+     6 lần timezone.now() liên tiếp → cách nhau 0.0 us, trùng nhau: True
+     số giá trị PHÂN BIỆT được trong 6 lần gọi: 1
+     ```
+     ⇒ hai hàng `TheoSub` do bài đo tạo mang **cùng một `created_at`**; `ORDER BY -created_at`
+     gặp hoà thì Postgres trả thứ tự tuỳ ý. Không phải hồi quy: `api/api/theo_sub.py` không
+     nằm trong 94 file lệch của lượt deploy này.
+- **Vì sao không sửa ngay**: ngoài phạm vi việc đang làm (deploy). Cách chữa nhiều khả năng chỉ
+  là thêm khoá phá hoà — `order_by("-created_at", "-id")` — nhưng nó **đổi hợp đồng thứ tự của
+  một endpoint**, nên phải là một quyết định có chủ đích chứ không phải một dòng tiện tay giữa
+  lượt deploy. Ảnh hưởng thật với người dùng gần như bằng 0 (không ai theo hai chuyên mục trong
+  cùng một tick đồng hồ); ảnh hưởng thật là **bộ kiểm đỏ ngẫu nhiên**, tức lần sau có người sẽ
+  cho rằng đỏ là chuyện bình thường.
+
+### P-20260827-2 · [MỞ] · NẶNG — index Meilisearch trên PROD lệch DB, và lệch IM LẶNG
+
+- **Thấy lúc**: nghiệm thu sau lượt deploy 2026-08-27 (`plans/2026-08-25-deploy-vps-docker.md`)
+- **Ở đâu**: `api/core/tim_kiem.py::dong_bo_mach` · đường ghi `api/core/ghi.py:1553`
+  (`dat_an_mach`) · lệnh đối soát `reindex_tim_kiem`
+- **Bằng chứng** (đo trên prod, TRƯỚC khi sửa):
+  ```
+  Meili  /indexes/mach  numberOfDocuments: 8
+  id trong index : 1000 1001 1002 1003 1004 1005 1006 1007
+  id trong DB    : 1000      1002 1003 1004 1005 1006 1007      (1001 KHÔNG còn)
+  Mach 1005      : hidden_at = 2026-08-26 15:02:58+00  (mod đã ẩn)
+  search filter "hien = true" vẫn trả về CẢ 1001 lẫn 1005
+  ```
+  ⇒ hai lỗi khác nhau cùng lúc: một tài liệu **trỏ tới mạch đã xoá** (người tìm được sẽ
+  bấm vào 404), và một **mạch bị mod ẩn vẫn tìm ra được** — tức lớp che nội dung của sản
+  phẩm bị đi vòng qua đường tìm kiếm.
+- **Đã xử ngay phần hậu quả**: chạy `reindex_tim_kiem --sach` trên prod ⇒ 8 → **6 tài liệu**,
+  đúng 6 mạch công khai; 1001 và 1005 biến mất. Đây là lệnh đối soát chính chủ của repo,
+  idempotent.
+- **Nguyên nhân thì CHƯA BIẾT, và đây là chỗ ghi rõ là NGHI NGỜ:**
+  - Đường ghi **đúng**: `dat_an_mach` có gọi `dong_bo_mach(hang)`; `dong_bo_mach` tự đọc lại
+    trạng thái nên nó gỡ được cả ca ẩn lẫn ca xoá.
+  - 1005 được tạo lúc 15:02:25 và ẩn lúc 15:02:58 — **cách nhau 33 giây**. Trông như một
+    lượt thử tay chứ không phải thao tác của người dùng thật.
+  - **Giả thuyết 1 (không dựng được bằng chứng):** hai hàng ấy bị đụng bằng `manage.py shell`
+    / ORM trực tiếp, tức đi vòng qua `dat_an_mach` nên không có ai gọi `dong_bo_mach`.
+  - **Giả thuyết 2 (cũng không dựng được bằng chứng):** `dong_bo_mach` **nuốt lỗi có chủ đích**
+    ("mất index còn hơn mất bài" — docstring `core/tim_kiem.py`), nên một lần Meili hỏng
+    thoáng qua để lại đúng vết này kèm **một dòng log duy nhất**. Log ấy nay **không còn**:
+    container `api` đã bị recreate ở lượt deploy, log của cửa sổ thời gian đó mất theo.
+- **Vì sao không sửa tiếp ngay**: ngoài phạm vi việc đang làm, và chưa biết sửa cái gì.
+- **Đề nghị cho lượt sau (cần user quyết):** dù nguyên nhân là gì thì cơ chế hiện tại
+  **không có ai phát hiện lệch** — nó chỉ lộ ra vì lượt này tình cờ đếm tay. Hai hướng:
+  (a) chạy `reindex_tim_kiem` định kỳ (cron) như một lượt đối soát;
+  (b) thêm một phép đếm "số tài liệu index vs số mạch công khai" vào `/chan-doan`, để lệch
+  thành thứ NHÌN THẤY ĐƯỢC thay vì thứ phải đi tìm.
+
+### P-20260827-3 · [MỞ] · NẶNG — `api/.env.example` dạy một `EMAIL_URL` TẮT TLS mà không báo gì
+
+- **Thấy lúc**: trả lời câu hỏi của user "có thể tạo email trên Cloudflare không"
+- **Ở đâu**: `api/.env.example` (khối `# Email.`) — dòng mẫu
+  `EMAIL_URL=smtp://user:mat-khau@smtp.example.com:587/?tls=True`
+- **Bằng chứng** (chạy thật với `django-environ` đang cài trong `api/.venv`):
+  ```
+  smtp://u:p@h:587/?tls=True                 -> TLS=None  SSL=None   ← ?tls=True BỊ BỎ QUA
+  smtps://u:p@h:587                          -> TLS=True  SSL=None
+  smtp+ssl://api_token:TOKEN@host:465        -> TLS=None  SSL=True
+  ```
+  Nguyên nhân ở `environ/environ.py:879-892`: TLS/SSL được quyết **THEO SCHEME**, không theo
+  query param. Vòng lặp query chỉ nhận khoá viết hoa lên đúng `EMAIL_USE_TLS` / `EMAIL_USE_SSL`
+  (tức phải viết `?email_use_tls=1`); mọi khoá khác — gồm `tls` — rơi vào `config["OPTIONS"]`,
+  mà backend SMTP của Django **không đọc** `OPTIONS`.
+- **Hậu quả**: ai chép nguyên dòng mẫu lên prod thì Django nối SMTP **không TLS**, gửi
+  user/mật khẩu SMTP dạng thô. Không có warning, không có lỗi — hoặc chạy được (server cho
+  phép plaintext), hoặc chết bằng một thông báo không nhắc gì tới TLS.
+- **Vì sao không sửa ngay**: đang trả lời một câu hỏi, không phải làm một việc có phạm vi.
+  Sửa là đổi đúng một dòng mẫu, nhưng nên sửa kèm ghi chú vì sao (`smtps` = STARTTLS,
+  `smtp+ssl` = TLS ngầm 465) chứ không chỉ thay chuỗi.
+- **Đề nghị**: nên sửa sớm — dòng này là thứ người deploy sẽ chép nguyên văn.
+
+> **Cập nhật `P-20260827-3` (2026-08-27, cùng ngày):** đã SỬA trong cây làm việc — `api/.env.example`
+> và `deploy/prod/env.example` nay dạy `smtp+ssl://` (465) / `smtps://` (587) kèm bảng đo ba dạng
+> URL. Sửa ngay thay vì để đó vì rơi đúng ca "CHẶN việc đang làm": user đang cấu hình SMTP Brevo và
+> sẽ đọc chính hai file ấy trong vài phút tới. Chưa commit ⇒ chưa ghi `ĐÓNG (<commit>)`.
+
+### P-20260827-4 · [MỞ] · VỪA — trang xác thực email phun thông báo lỗi TIẾNG ANH của allauth ra UI tiếng Việt
+
+- **Thấy lúc**: gỡ lỗi "click link xác nhận báo Invalid or expired key" cho user, 2026-08-27
+- **Ở đâu**: `apps/web/components/tai-khoan-forms.tsx:364` (`XacThucEmail`) —
+  `datLoi(e instanceof LoiTaiKhoan ? e.message : "Không gọi được máy chủ…")`
+- **Bằng chứng**: user bấm một link xác nhận có khoá trỏ tới `EmailAddress` đã bị xoá, và
+  màn hình hiện nguyên văn **`Invalid or expired key`** — chuỗi tiếng Anh của allauth, trên
+  một sản phẩm mà mọi chữ khác đều tiếng Việt. Nhánh `else` ngay cạnh nó thì lại có câu
+  tiếng Việt tử tế, nên đây không phải quyết định thiết kế mà là chỗ bị bỏ sót.
+- **Vì sao đáng sửa, không chỉ là chuyện chữ nghĩa**: câu ấy vừa lạc ngôn ngữ vừa **không
+  nói được người dùng phải làm gì**. Ba nguyên nhân rất khác nhau cùng ra đúng một câu:
+  (a) khoá đã dùng rồi, (b) khoá quá 3 ngày, (c) tài khoản/địa chỉ đã bị xoá. Cách xử của
+  người dùng ở ba ca là khác nhau (đăng nhập luôn / xin gửi lại / đăng ký lại), mà thông
+  báo hiện tại không phân biệt được ca nào.
+- **Vì sao không sửa ngay**: ngoài phạm vi việc đang làm (dựng SMTP). Sửa tử tế là **map
+  mã lỗi của allauth sang câu tiếng Việt + một hành động cụ thể** (nút "Gửi lại thư xác
+  nhận"), tức đụng cả `lib/tai-khoan.ts` lẫn component — một việc có plan riêng, không phải
+  một dòng tiện tay.
+- **Đề nghị**: nên sửa sớm. Đây là màn hình mà **mọi người dùng mới đều đi qua**, và khi nó
+  hỏng thì nó hỏng đúng lúc người ta chưa có tài khoản để hỏi ai.
+
+### P-20260827-5 · [MỞ] · NẶNG — hết quota mail ⇒ tài khoản kẹt VĨNH VIỄN, không lối ra
+
+- **Thấy lúc**: tính sức chứa của gói Brevo free khi user hỏi "300 user/ngày thì sao", 2026-08-27
+- **Ở đâu**: đường đăng ký của allauth headless · `api/config/settings.py` (không có
+  `ATOMIC_REQUESTS`) · `api/core/allauth_adapter.py` (không có `try/except` quanh gửi mail)
+- **ĐO ĐƯỢC** (chắc chắn):
+  - `grep ATOMIC_REQUESTS api/config/settings.py` → **không có dòng nào** ⇒ request đăng ký
+    KHÔNG được bọc trong một transaction;
+  - `allauth_adapter.py` không có `try`/`except` nào quanh đường gửi mail;
+  - `ACCOUNT_EMAIL_VERIFICATION = "mandatory"` ⇒ chưa xác thực thì mọi cửa GHI đóng;
+  - `ACCOUNT_PREVENT_ENUMERATION = True` ⇒ đăng ký lại bằng email đã có **không** báo lỗi,
+    nó gửi một thư khác — mà thư ấy cũng không gửi được vì cùng lý do.
+- **SUY RA, CHƯA TÁI HIỆN** (ghi rõ là suy luận): khi SMTP ném (hết quota 300/ngày, Brevo
+  sự cố, key bị xoay nhầm), hàng `User` **đã được ghi** rồi mới tới bước gửi thư ⇒ người
+  dùng nhận **500**, tài khoản **tồn tại nhưng chưa xác thực**, và **không có thư nào**.
+  Từ đó họ: không đăng ký lại được (email đã bị dùng) · không đăng nhập được (chưa xác
+  thực) · không tự xin gửi lại được. **Ngõ cụt, và im lặng.**
+- **Vì sao NẶNG chứ không VỪA**: nó hỏng đúng lúc tệ nhất — quota cạn vì lưu lượng CAO, tức
+  ngày đông người đăng ký nhất là ngày nhiều người bị kẹt nhất. Và người bị kẹt là người
+  **chưa có tài khoản**, nên họ không có kênh nào để báo cho ai.
+- **Cách xác nhận** (chưa làm, vì phải chọc hỏng SMTP trên site đang sống): trỏ `EMAIL_URL`
+  vào một host SMTP chết **trên máy dev**, gọi `POST /api/_allauth/browser/v1/auth/signup`,
+  rồi đếm hàng `User`. Có hàng + 500 ⇒ khẳng định.
+- **Hai hướng chữa** (cần user quyết): (a) bọc đường đăng ký trong `transaction.atomic()` để
+  gửi mail hỏng thì **cuốn luôn** hàng `User` — người dùng thử lại được; (b) bắt lỗi gửi mail,
+  giữ tài khoản, và cho một nút **"gửi lại thư xác nhận"** ở màn hình chờ. (b) tử tế hơn
+  nhưng đụng cả frontend; (a) là một dòng và chặn được ngõ cụt ngay.
+- **Vì sao không sửa ngay**: đang trả lời một câu hỏi, không phải làm một việc có phạm vi.
+
+### P-20260827-6 · [MỞ] · NẶNG — trang HTML của Yahoo Finance trả số CŨ, bot tin tức sẽ đăng số sai kèm link "nguồn"
+
+- **Thấy lúc**: chạy nhiệm vụ hẹn giờ đăng bản tin slot `truoc-phien-my`, 2026-08-27
+- **Ở đâu**: quy trình thu số của `scripts/tin-tuc/lich/*.md` — mục *Nguồn gợi ý* không nói
+  lấy số qua đường nào, nên phản xạ tự nhiên là fetch trang quote HTML.
+- **ĐO ĐƯỢC** (cùng một lượt, cách nhau vài giây):
+  - `finance.yahoo.com/quote/%5EKS11/` → "6.742,74 · +0,68% · At close 6:05:40 PM GMT+9";
+  - `query1.finance.yahoo.com/v8/finance/chart/%5EKS11?range=5d&interval=1d` →
+    `regularMarketPrice = 6912.37`, `regularMarketTime = 1787821540` (= 27/8 16:05 giờ VN),
+    mảng close 5 phiên `[6912.95, 6696.96, 6742.74, 6808.21, 6912.37]`;
+  - tức **6.742,74 là giá đóng cửa của phiên cách đó HAI ngày** (25/8), trùng khớp với con
+    số CNBC đưa cho phiên 25/8. Sai lệch **+2,5%** so với số thật của ngày.
+  - Cùng lượt đó `^N225`, `^HSI`, `000001.SS` thì HTML **đúng** — nên lỗi này **không đều**,
+    không thể phát hiện bằng cách "kiểm một mã rồi tin cả bảng".
+- **Vì sao NẶNG**: bản tin có link nguồn đầy đủ, giọng văn đúng luật, script validate xanh,
+  mã thoát `0` — **không có hàng rào nào đỏ**. Bài vẫn lên gikky.net với một con số sai 2,5%
+  và một cái link trông rất chính danh. Đúng loài *proof đo RỖNG*: mọi thứ báo đạt trừ cái
+  duy nhất quan trọng.
+- **Hướng chữa** (cần user quyết): ghi thẳng vào cả 3 file `scripts/tin-tuc/lich/*.md` rằng
+  số chỉ được lấy qua endpoint `chart` (có `regularMarketTime` để tự kiểm mốc giờ), và
+  **bắt buộc đối chiếu `regularMarketTime` với ngày VN đang chạy** trước khi dùng. Trang
+  quote HTML chỉ dùng làm URL để dẫn link, không dùng để đọc số.
+- **Vì sao không sửa ngay**: nhiệm vụ hẹn giờ chỉ có phạm vi "đăng bản tin hôm nay"; sửa
+  hướng dẫn của cả ba slot là việc khác, và ba file đó là nguồn chân lý của các nhiệm vụ
+  đang chạy tự động.
+
+### P-20260828-1 · [MỞ] · VỪA — lần đọc giờ ĐẦU TIÊN của phiên trả sai 6 giờ 26 phút, agent tin theo và làm việc thừa
+
+- **Thấy lúc**: chạy nhiệm vụ hẹn giờ đăng bản tin slot `dem-qua`, 2026-08-28
+- **Ở đâu**: không phải code repo — là bước "kiểm giờ VN trước khi làm" mà cả ba
+  `scripts/tin-tuc/lich/*.md` đều ngầm yêu cầu (khung giờ là điều kiện đầu tiên của việc).
+- **ĐO ĐƯỢC**, trong cùng một phiên:
+  - Lệnh đầu phiên `Get-Date -Format "yyyy-MM-dd HH:mm:ss zzz"` → `2026-08-28 06:16:09 +07:00`.
+  - **26 phút thực** sau đó, ba nguồn độc lập cùng khớp nhau: `date -u` → `05:42:00`,
+    `node new Date().toISOString()` → `2026-08-28T05:42:00.502Z`, `Get-Date` → local
+    `12:42:02` / utc `05:42:02`.
+  - Đối chiếu ngoài: `time.is/Ho_Chi_Minh` → `12:44:00 Friday, August 28, 2026`
+    (New York `01:44`). Tức giờ thật lúc đầu phiên là **12:16**, lệch **+6h26m**.
+  - `scripts/dang-tin.mjs --thu` in `(Bây giờ là 2026-08-28 lúc 12:41 giờ VN.)` và thoát `4`.
+- **Hậu quả thật của lượt này**: tin vào `06:16` nên đã đi gom số ~25 phút cho một bản tin
+  không bao giờ đăng được. Không có bài sai nào lên site — **hàng rào `som_nhat`/`han_chot`
+  trong `lib.mjs` đã chặn đúng**, đó là chỗ duy nhất tính giờ đáng tin.
+- **Nguyên nhân: CHƯA BIẾT** — ghi rõ đây là **nghi ngờ**, không phải kết luận. Chưa tái
+  hiện được; mới thấy đúng một lần, ở đúng lệnh đầu tiên của phiên.
+- **Hướng chữa** (cần user quyết): thêm vào cả ba `lich/*.md` một câu — muốn biết giờ thì
+  chạy `node scripts/dang-tin.mjs … --thu` và đọc dòng giờ **của chính script**, đừng hỏi
+  `Get-Date` rồi tự suy luận có nằm trong khung hay không.
+- **Vì sao không sửa ngay**: phạm vi lượt này là "đăng bản tin `dem-qua` hôm nay"; sửa hướng
+  dẫn của cả ba slot là việc khác, và ba file đó là nguồn chân lý của các nhiệm vụ tự động.
+
+### P-20260828-1 · [MỞ] · NẶNG — đếm lượt xem KHÔNG chạy trên prod: middleware gửi thân request RỖNG
+
+- **Thấy lúc**: nghiệm thu sau lượt deploy 2026-08-28 (migration `0022`+`0023`, tính năng đếm lượt xem)
+- **Ở đâu**: `apps/web/middleware.ts:104` (lời gọi `demLuotXem`) ·
+  `packages/api-client/src/client/client.gen.ts:60` (chỗ serialize body)
+- **Bằng chứng** (đo trên prod, có đối chứng hai chiều):
+  1. Vào một trang mạch thật ⇒ gunicorn log:
+     `POST /api/v1/dem-luot-xem HTTP/1.1" 400 118` — middleware **CÓ** gọi, Django từ chối.
+  2. Bảng `LuotXem` sau nhiều lượt vào trang: **0 hàng**.
+  3. Dò 118 byte ấy là lỗi gì — khớp **chính xác** ca "thân rỗng":
+     ```
+     thân JSON đúng            -> 200  16 byte   {"da_dem": true}
+     thân = [object Object]    -> 400  71 byte   "Cannot parse request body"
+     thân RỖNG                 -> 400  118 byte  "body.du_lieu: Field required"   ← KHỚP
+     thiếu trường duong_dan    -> 400  128 byte
+     duong_dan = null          -> 400  144 byte
+     ```
+  4. **Không phải lỗi secret**: secret sai ra **401** `{"detail":"sai secret"}`, không phải 400.
+     Middleware ra 400 ⇒ header secret ĐÃ tới nơi và ĐÃ qua lớp auth.
+  5. Endpoint tự nó đúng: `curl` với secret đúng ⇒ **200 `{"da_dem": true}`**, có hay không
+     có `Content-Type` đều được.
+- **Kết luận đo được**: header đi đúng, **thân không đi**. Đây là lỗi *serialize body*, không
+  phải lỗi xác thực, không phải lỗi cấu hình, không phải lỗi endpoint.
+- **Đầu mối (chưa xác nhận)**: `client.gen.ts:60` chỉ serialize khi `opts.bodySerializer` có
+  mặt — nó đến từ `createConfig()` (`...jsonBodySerializer`, `utils.gen.ts:313`). Ở
+  runtime thường thì có. `middleware.ts` chạy **edge runtime**, nên nghi cái singleton
+  `client` khởi tạo khác đi ở đó. **Chưa dựng được bằng chứng** cho bước này.
+- **Vì sao KHÔNG sửa trong lượt này**: user giao "sync + migrate", đây là mã sản phẩm
+  (`middleware.ts` / client sinh ra), không phải cấu hình triển khai.
+- **⚠ Hàng rào hiện có KHÔNG bắt được lỗi này**: `apps/web/e2e/don-vi/dem-luot-xem.spec.ts`
+  là bài đo **đọc mã nguồn** (nhóm `don-vi`), nên nó ghim được "hai file dùng chung tên
+  header" nhưng **mù** với chuyện thân request có đi hay không lúc chạy. Phép đo duy nhất
+  bắt được là *"vào trang thật rồi đếm hàng `LuotXem`"*.
+
+> **`P-20260828-1` — ĐÃ SỬA (2026-08-28, chưa commit).** Nguyên nhân KHÔNG phải client: Next
+> edge runtime gửi thân **chunked**, còn `WSGIRequest` dựng `LimitedStream` theo
+> `CONTENT_LENGTH` nên đọc **0 byte**. Đo dứt điểm: cùng thân + cùng secret, có `Content-Length`
+> ⇒ **200**, chunked ⇒ **400 (118 byte)** — khớp từng byte lỗi của prod. Chữa ở tầng WSGI
+> (`config/wsgi.py::DocThanChunked`, có trần 1 MiB ⇒ 413), phủ luôn mọi cửa edge-runtime về
+> sau. 8 bài đo mới + 3 phép thử phá. Prod: `LuotXem` đã tăng theo lượt xem thật, và lượt của
+> người dùng thật ghi đúng `la_bot=False`. Chi tiết: `plans/2026-08-28-than-chunked-wsgi.md`.

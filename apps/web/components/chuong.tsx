@@ -19,6 +19,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { dauThoiGianServer } from "@/lib/dinh-dang";
+import { neoBinhLuan } from "@/lib/khan-dai";
 import { GOC_TRINH_DUYET, headerGhi } from "@/lib/tai-khoan";
 import { duongDanMach } from "@/lib/url";
 
@@ -194,13 +195,28 @@ function Dong({ tin, onDi }: { tin: ThongBaoOut; onDi: () => void }) {
      của nó cố ý không có `mach_id` (xem `core/thong_bao.py::bao_theo_user`) — nên nó dẫn
      tới HỒ SƠ người vừa theo. Trước lượt này mọi dòng đều giả định có mạch, và một dòng
      `theo_user` sẽ rơi vào nhánh "không có link": chữ hiện ra mà bấm không đi đâu cả. */
+  /* **Neo `#bl-<id>` khi payload có sẵn `comment_id`** *(2026-08-27)*. Từ lượt tách bình
+     luận chung khỏi bình luận mốc, một bình luận neo mốc N chỉ sống trong ngăn kéo mốc N —
+     mặc định ĐÓNG, và có khi còn nằm trong một dải gập cũng đóng. Dẫn người ta tới trang
+     mạch trần rồi để họ tự đi tìm câu vừa được trả lời là bắt họ mò qua hai lớp gập.
+
+     Cái hash này không cần thêm cơ chế nào: `components/ngan-keo.tsx` đã mở mọi khoang gập
+     trên đường rồi cuộn tới đích.
+
+     ⚠ **Chỉ loại `reply` có `comment_id`.** Loại `binh_luan` là chuông **gộp theo ngày**
+     (`payload.so_binh_luan_moi`, `dedupe_key` theo ngày — xem `core/thong_bao.py::
+     bao_binh_luan`): nó nói "N bình luận mới", nên không có MỘT id nào để trỏ tới, và nhét
+     id của cái cuối cùng vào là nói dối về thứ người ta sắp thấy. Muốn nó cũng nhảy được
+     thì phải quyết lại hình dạng của loại chuông ấy — việc khác, đã mở chip. */
+  const comment_id = typeof p.comment_id === "number" ? p.comment_id : null;
   const dich =
     tin.type === "theo_user"
       ? boi !== null
         ? `/u/${boi}`
         : null
       : mach_id !== null && slug !== null
-        ? duongDanMach(slug, mach_id)
+        ? duongDanMach(slug, mach_id) +
+          (comment_id !== null ? `#${neoBinhLuan(comment_id)}` : "")
         : null;
 
   return (

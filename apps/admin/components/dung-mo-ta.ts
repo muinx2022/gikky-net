@@ -9,7 +9,13 @@ import type { BaoCaoOut, DongBaoCaoIn } from "@gikky/api-client/admin";
 
 export const CHU_LY_DO: Record<BaoCaoOut["ly_do"], string> = {
   phim_hang: "Hô hào mua bán / phím hàng",
+  // Hai khoá dưới thêm 2026-08-25 cùng migration `0019_alter_report_ly_do`. Chữ chép
+  // ĐÚNG từ `Report.LyDo` ở `core/models/he_thong.py` — cũng là chữ mà người báo cáo nhìn
+  // thấy lúc chọn (`apps/web/components/bao-cao.tsx::NHAN_LY_DO`): mod và người báo phải
+  // đang nói về cùng một điều, nếu không thì hàng đợi và cái người ta tố lệch nghĩa nhau.
+  cam_ket_loi_nhuan: "Cam kết lợi nhuận, hứa mức lãi",
   lua_dao: "Lừa đảo, mời uỷ thác, room VIP",
+  link_nhom_kin: "Link nhóm kín (Zalo, Telegram, group riêng)",
   spam: "Spam",
   khac: "Khác",
 };

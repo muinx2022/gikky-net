@@ -59,10 +59,27 @@ COPY . .
 # `REVALIDATE_SECRET` thì NGƯỢC LẠI: chỉ ở run, không ở build. Nó được đọc **trong thân
 # handler** (`app/lam-moi-cache/route.ts::secretCuaCua`), nên runtime env là đủ — và một
 # secret truyền qua `ARG` nằm lại vĩnh viễn trong lớp image, đọc được bằng `docker history`.
+#
+# `DEM_LUOT_XEM_SECRET` là NGOẠI LỆ của đoạn ngay trên: nó **phải** có mặt lúc build, và
+# vì thế nó **bị nướng vào lớp image**, đọc được bằng `docker history`. Không tránh được:
+# nó được đọc trong `middleware.ts`, tức **edge runtime**, mà Next nội tuyến `process.env.X`
+# của edge lúc BUILD chứ không đọc lúc chạy (xem `lib/dem-luot-xem.ts::secretDem`, dòng
+# 153-157 nói thẳng điều này). Đặt nó chỉ ở `environment:` của compose thì cửa đếm **im
+# lặng tắt** — middleware thấy chuỗi rỗng và bỏ qua mọi lượt xem, không log, không lỗi.
+#
+# ⚠ **Thiếu dòng `ARG` này là hỏng theo đúng kiểu đó.** `compose.yml` có truyền build-arg,
+# nhưng Docker **bỏ qua build-arg mà Dockerfile không khai** — chỉ in một dòng cảnh báo
+# lẫn giữa hàng trăm dòng build. Đó chính là trạng thái của file này trước 2026-08-27.
+#
+# Mức rủi ro của việc nướng secret vào image, nói thẳng để người sau khỏi phải đoán: image
+# này **không đẩy lên registry nào**, nó chỉ nằm trên chính máy đã có `app/.env`. Và nếu lộ
+# thì hậu quả là ai đó bơm được số lượt xem — không phải quyền đọc/ghi dữ liệu.
 ARG API_ORIGIN=http://api:8000
 ARG SITE_ORIGIN=https://gikky.net
+ARG DEM_LUOT_XEM_SECRET=""
 ENV API_ORIGIN=$API_ORIGIN \
     SITE_ORIGIN=$SITE_ORIGIN \
+    DEM_LUOT_XEM_SECRET=$DEM_LUOT_XEM_SECRET \
     NODE_ENV=production
 
 # Tuần tự, KHÔNG song song: máy chỉ còn ~3.4 GiB RAM trống và đang gánh 4 stack khác.

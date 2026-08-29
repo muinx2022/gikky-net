@@ -77,8 +77,16 @@ export function KhoiTrich({
           // Nợ 1b #8 — `hay_nhat` chỉ trả 50 thread gốc đầu, bia mộ nằm đáy bảng xếp
           // hạng. Không nhảy được thì phải NÓI RA: một nút bấm rồi không đi đâu là lỗi
           // người dùng không có cách nào hiểu.
+          //
+          // **Câu chữ trung tính từ 2026-08-26.** Bản cũ — *"nằm ở trang sau của khán
+          // đài"* — nêu đích danh một nguyên nhân, và từ lượt tách bình luận chung khỏi
+          // bình luận mốc thì nguyên nhân ấy không còn là nguyên nhân duy nhất: bình luận
+          // có thể nằm SÂU trong một ngăn kéo (dưới ngưỡng render), tức không thuộc trang
+          // nào của khán đài cả. Đoán sai nguyên nhân thì người đọc đi tìm ở chỗ không có.
+          // Tên trạng thái `"trang_sau"` trong `lib/khan-dai.ts` giữ nguyên — đổi tên là
+          // một việc khác, và nó không hiện ra màn hình.
           <span className={css.khong_nhay} data-testid="trich-khong-nhay-duoc">
-            bình luận này nằm ở trang sau của khán đài — chưa nhảy tới được
+            bình luận này chưa nhảy tới được từ trang này
           </span>
         )}
         {/* Chỉ chủ mạch thấy; component tự quyết (PLAN 5.6 — trích và gỡ trích đối xứng

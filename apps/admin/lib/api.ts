@@ -56,6 +56,36 @@ export async function baoDamCsrf(): Promise<string> {
   return docCsrf();
 }
 
+/**
+ * Đóng phiên đăng nhập hiện tại (`DELETE /auth/session` của allauth headless).
+ *
+ * ⚠ **allauth trả 401 cho một lượt DELETE THÀNH CÔNG.** Đó không phải lỗi và cũng không
+ * phải quirk cần né: hợp đồng headless nói response của mọi endpoint auth mô tả *trạng
+ * thái phiên sau lời gọi*, mà trạng thái sau khi thoát đúng là "không có phiên" — tức
+ * 401. Viết `if (!r.ok) throw` trần ở đây là báo "đăng xuất thất bại" cho mọi lượt đăng
+ * xuất THÀNH CÔNG, và mod sẽ bấm lại lần thứ hai, thứ ba.
+ *
+ * Nhưng lập luận ấy dừng ở đúng 401. **403 (CSRF) hay 5xx là phiên VẪN CÒN SỐNG**: nuốt
+ * chúng rồi đưa mod ra trang đăng nhập là mod rời máy chung trong lúc cookie session còn
+ * hiệu lực — người ngồi xuống sau gõ `/machs` là vào thẳng khu quản trị bằng danh tính
+ * mod đó, và không có gì trên màn hình nào nói khác. Nên: chấp nhận `r.ok` và `401`,
+ * mọi mã khác NÉM — cùng hợp đồng với bản của mặt tiền
+ * (`apps/web/lib/tai-khoan.ts::goi`, cờ `chapNhan401`).
+ *
+ * Không đi qua client sinh từ OpenAPI vì allauth không nằm trong `NinjaAPI` nào — cùng lý
+ * do đã ghi ở `app/dang-nhap/page.tsx`.
+ */
+export async function thoatPhien(): Promise<void> {
+  const r = await fetch(`${GOC_ALLAUTH}/auth/session`, {
+    method: "DELETE",
+    credentials: "same-origin",
+    headers: { "X-CSRFToken": docCsrf() },
+  });
+  if (!r.ok && r.status !== 401) {
+    throw new Error(`Đăng xuất chưa xong — máy chủ trả HTTP ${r.status}.`);
+  }
+}
+
 /** Hình dạng lỗi `{detail, code}` của PLAN mục 7 — kiểu ở đây là **kiểu THU HẸP**, không
  * phải bản khai lại: `LoiOut` sinh từ OpenAPI cho phép mọi chuỗi `code`, còn hàm dưới chỉ
  * cần biết "object này có mang hai trường đó không" để in ra màn hình. */

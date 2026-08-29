@@ -6,7 +6,7 @@ tố URL**, không theo model): `POST /machs`, `POST /machs/{id}/mocs`,
 Luật quyền của từng cái nằm ngay trong docstring của nó — đó là chỗ người sửa sau đọc.
 """
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from django.core.exceptions import ValidationError as LoiModel
 from django.db import transaction
@@ -21,6 +21,7 @@ from core.doc_noi_dung import (
     cau_dang_doc,
     dem_binh_luan_theo_moc,
     dung_cay_theo_sort,
+    goc_khong_neo,
     nap_binh_luan,
     tap_dang_duoc_trich,
     tap_tung_duoc_trich,
@@ -200,6 +201,20 @@ def mach_chi_tiet_ra(mach: Mach) -> MachChiTietOut:
     )
 
 
+def _khoa_cursor(nut: Nut, sort: str) -> tuple[datetime, int]:
+    """Cặp khoá keyset của một thread gốc — **phải bằng đúng khoá SẮP XẾP của `sort`**.
+
+    Một hàm, hai chỗ gọi (lọc theo cursor, và sinh cursor kế tiếp). Hai bản chép tay là
+    cách một lượt đổi sort chỉ sửa được một nửa, và nửa còn lại không có gì báo.
+
+    `moi_nhat` đọc `Nut.hoat_dong` (bump theo reply, 2026-08-26); `cu_nhat` đọc
+    `created_at` của chính bình luận gốc. `hay_nhat` không đi qua đây — nó phân trang bằng
+    `offset`, xem `_cat_goc`.
+    """
+    khi = nut.hoat_dong if sort == SORT_MOI_NHAT else nut.binh_luan.created_at
+    return (khi, nut.binh_luan.pk)
+
+
 def _cat_goc(
     goc: list[Nut], *, sort: str, cursor: str | None, offset: int, limit: int
 ):
@@ -220,6 +235,23 @@ def _cat_goc(
     xuống đây rồi cho qua — nhánh `hay_nhat` không đọc `cursor` và nhánh thời gian không
     đọc `offset`, nên tham số sai chỗ rơi tới đây sẽ bị **nuốt im lặng** thành trang 1.
 
+    ## Khoá cursor phải BẰNG khoá sort — và của `moi_nhat` nay là khoá BIẾN ĐỔI
+
+    *(2026-08-26, cùng lượt `moi_nhat` chuyển sang bump theo hoạt động — §F)*
+
+    `_khoa_cursor` dưới đây trả đúng cặp mà `sap_goc_bump_hoat_dong` / `sap_theo_thoi_gian`
+    dùng để sắp. Hai thứ lệch nhau là hỏng nặng nhất mà keyset có thể hỏng: cursor cắt
+    danh sách ở một mốc **không liên quan gì** tới thứ tự đang hiện, nên trang 2 lấy một
+    tập tuỳ ý — HTTP 200, không có gì đỏ ngoài số dòng người dùng đếm được.
+
+    ⚠ **Lời hứa cũ của keyset yếu đi ở `moi_nhat`, và đó là đánh đổi đã chốt.** Khoá
+    `(created_at, id)` bất biến theo thời gian; khoá `(hoạt động, id)` thì không — một
+    reply mới đẩy thread vượt lên vùng "đã trả rồi" ⇒ nó **sót** khỏi lượt cuộn; xoá reply
+    mới nhất kéo thread tụt xuống ⇒ nó có thể **hiện hai lần**. Đây là tính chất cố hữu
+    của mọi bump-sort, không phải một cài đặt cẩu thả: cùng loài với `?sort=nhieu_diem`
+    của feed, thứ đã có bài đo tài liệu hoá riêng (`tests/test_keyset_khoa_bien_doi.py`).
+    `cu_nhat` giữ nguyên khoá bất biến, nên nó vẫn là cửa "đọc hết không sót" thật sự.
+
     Ném `CursorHong` khi cursor rác.
     """
     if sort == SORT_HAY_NHAT:
@@ -230,15 +262,13 @@ def _cat_goc(
         khi, id = giai_ma_cursor(cursor)
         moc = (khi, id)
         if sort == SORT_MOI_NHAT:
-            goc = [n for n in goc if (n.binh_luan.created_at, n.binh_luan.pk) < moc]
+            goc = [n for n in goc if _khoa_cursor(n, sort) < moc]
         else:
-            goc = [n for n in goc if (n.binh_luan.created_at, n.binh_luan.pk) > moc]
+            goc = [n for n in goc if _khoa_cursor(n, sort) > moc]
 
     trang, con_nua = cat_trang(goc[: limit + 1], limit)
     ke_tiep = (
-        ma_hoa_cursor(trang[-1].binh_luan.created_at, trang[-1].binh_luan.pk)
-        if con_nua and trang
-        else None
+        ma_hoa_cursor(*_khoa_cursor(trang[-1], sort)) if con_nua and trang else None
     )
     return trang, None, ke_tiep
 
@@ -268,7 +298,17 @@ def liet_ke_binh_luan_mach(
       sau mốc mới nhất và còn trong 48 giờ đầu đời của nó. Sibling trong thread sắp theo
       wilson **thuần** — hệ số tươi không áp cho reply. Phân trang bằng `?offset=`,
       `?limit=` tối đa 50.
-    - `moi_nhat` / `cu_nhat`: `?cursor=` keyset trên `(created_at, id)`.
+    - `moi_nhat`: thread gốc sắp theo **hoạt động mới nhất** — `max(created_at)` trên các
+      nút ĐỌC ĐƯỢC của cả thread — giảm dần, tức *một reply mới đẩy cuộc trao đổi lên
+      đầu* (user chốt 2026-08-26). Bia mộ không bump: thread toàn bia mộ rơi về
+      `created_at` của gốc. Reply **trong** thread thì đọc **xuôi**, cũ → mới.
+    - `cu_nhat`: gốc theo `created_at` tăng dần, KHÔNG bump — "cũ nhất" là *đọc từ đầu*.
+      Reply cũng cũ → mới.
+    - Cả hai sort thời gian phân trang bằng `?cursor=` keyset, **trên đúng khoá sắp của
+      chúng**: `(hoạt động, id)` cho `moi_nhat`, `(created_at, id)` cho `cu_nhat`. Khoá
+      của `moi_nhat` BIẾN ĐỔI theo dữ liệu nên nó đánh mất lời hứa "không lặp không sót"
+      khi có người viết/xoá reply giữa hai lần lật trang — đánh đổi có chủ đích, xem
+      `_cat_goc`.
 
     **Hai kiểu phân trang KHÔNG dùng lẫn nhau, dùng nhầm trả 400** với
     `code = "tham_so_khong_hop_le"`: `?cursor=` kèm `sort=hay_nhat`, hoặc `?offset=` khác
@@ -286,6 +326,30 @@ def liet_ke_binh_luan_mach(
     Bia mộ không được tính vào `comment_count` của mạch, nên số bình luận **đọc được** có
     thể nhỏ hơn số dòng trả về.
 
+    ### Chỉ thread KHÔNG neo — *user chốt 2026-08-26*
+
+    > *"nên có 1 phần cmt chung cho toàn bộ post, không lẫn cmt của các mock vào, từng
+    > mock có cmt riêng thì cứ kệ nó, không trộn chung các mock vào cmt chung của post"*
+
+    Với **mạch** (`entry_count >= 2`), endpoint này trả **chỉ những thread có bình luận
+    gốc `anchor_moc_seq IS NULL`**. Thread neo mốc N sống DUY NHẤT trong ngăn kéo mốc N
+    (`GET /mocs/{id}/comments`, **không đổi**). Đây là thay đổi mô hình so với PLAN 5.4:
+    ngăn kéo từng là *cửa sổ* chiếu vào khán đài, nay nó là *phòng* — mỗi thread có đúng
+    một nhà.
+
+    **`entry_count == 1` (post thường) KHÔNG lọc**, và điều kiện ấy là nửa còn lại của
+    luật chứ không phải một tối ưu: post thường không có ngăn kéo (PLAN 5.1), nên lọc ở
+    đó là làm bình luận neo mốc 1 — di sản thời composer neo tự động, prod ĐÃ có thể có —
+    biến mất khỏi **mọi** cửa hiển thị, HTTP 200, không log. Khi post ấy nối mốc 2 thành
+    mạch, các bình luận neo tự dọn vào ngăn kéo mốc tương ứng.
+
+    Hệ quả phải đọc đúng: `tong_thread` ở đây đếm **chỉ thread chung**, nên nó nhỏ hơn
+    hẳn `comment_count` của mạch (đếm cả bài). Hai con số đo hai thứ khác nhau.
+
+    Phép lọc chạy **trong bộ nhớ** trên cây đã dựng (`core.doc_noi_dung.goc_khong_neo`),
+    nên số truy vấn của endpoint không đổi. Phân trang chạy trên danh sách ĐÃ lọc —
+    keyset `(created_at, id)` giữ nguyên tính chất vì phép lọc không đụng tới khoá.
+
     ### `?dang_doc=1` — "câu đáng đọc" (PLAN 5.5)
 
     Trả **phép hợp `đã trích ∪ top-10 theo wilson`** trên các thread GỐC, sắp theo wilson
@@ -296,6 +360,15 @@ def liet_ke_binh_luan_mach(
     Phép hợp là hợp THẬT: một bình luận được trích nhưng xếp hạng thấp **vẫn có mặt**.
     Không có phân trang ở chế độ này — tập tối đa là `10 + số mốc có trích`, và
     `offset_ke_tiep`/`cursor_ke_tiep` luôn `null`, `tong_thread` là kích thước của tập.
+
+    ⚠ **Nhánh này tính trên MỌI thread gốc, kể cả thread neo mốc** — nó KHÔNG đi qua phép
+    lọc "chỉ thread không neo" ở trên (2026-08-26). Giữ nguyên vì khối gắn nhãn "Câu đáng
+    đọc" đang **TẮT** ở frontend (`lib/khan-dai.ts::HIEN_KHOI_DANG_CHU_Y = false`) và hợp
+    đồng của nhánh này có bài đo riêng (`tests/test_api_cau_dang_doc.py`) — đổi cùng lượt
+    là đổi một hợp đồng đang không ai gọi, dựa trên một mô hình UI chưa tồn tại.
+    **Ngày bật lại khối ấy phải quyết lại tập nguồn của nó**: nếu nó vẫn lấy cả thread
+    neo, khối sẽ in lại ở khán đài những thread mà khán đài vừa cố ý đẩy vào ngăn kéo —
+    tức dựng lại đúng cái trộn lẫn mà lượt này gỡ đi.
 
     Chế độ này (và **chỉ** chế độ này) trả thêm `so_ung_vien_bo_lai`: số thread gốc đọc
     được nằm ngoài tập. `0` nghĩa là khối không lọc được gì và UI phải ẩn nó đi (PLAN 5.5,
@@ -364,6 +437,7 @@ def liet_ke_binh_luan_mach(
     )
 
     if dang_doc:
+        # `dang_doc` đọc `goc` CHƯA lọc — cố ý, xem docstring endpoint.
         tap = cau_dang_doc(goc, dang_duoc_trich=tap_dang_duoc_trich(mach))
         return KhanDaiOut(
             sort=sort,
@@ -373,6 +447,12 @@ def liet_ke_binh_luan_mach(
             offset_ke_tiep=None,
             cursor_ke_tiep=None,
         )
+
+    # Khu "Bình luận" cuối bài chỉ chứa thread **về cả bài** — xem docstring endpoint,
+    # mục "Chỉ thread KHÔNG neo". Điều kiện `entry_count >= 2` là cả nửa còn lại của luật:
+    # post thường không có ngăn kéo nào để thread neo dọn sang.
+    if mach.entry_count >= 2:
+        goc = goc_khong_neo(goc)
 
     try:
         trang, offset_ke_tiep, cursor_ke_tiep = _cat_goc(
@@ -710,11 +790,14 @@ def viet_binh_luan(request, mach_id: int, du_lieu: BinhLuanMoiIn):
         # một câu. Xem docstring `core/thong_bao.py::bao_binh_luan`.
         bao_binh_luan(c)
     c.refresh_from_db()
+    # Bình luận vừa tạo, không cha không con ⇒ hoạt động của thread là chính nó. Trường
+    # này không có mặc định để "quên" ở đường CÂY nổ ngay — xem `Nut.hoat_dong_doc_duoc`.
     nut = Nut(
         binh_luan=c,
         do_sau=c.do_sau,
         trang_thai=trang_thai_noi_dung(c),
         con=[],
+        hoat_dong_doc_duoc=c.created_at,
     )
     return Status(201, nut_ra(nut, chu_mach_id=mach.author_id))
 

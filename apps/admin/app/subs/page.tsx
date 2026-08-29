@@ -25,6 +25,7 @@ import {
   gioVN,
 } from "../../components/ui";
 import { GOC_API, headerGhi, moTaLoi } from "../../lib/api";
+import { useHanhDong } from "../../lib/hanh-dong";
 
 /** CRUD chuyên mục — PLAN 9.3 mục 3.
  *
@@ -42,7 +43,6 @@ import { GOC_API, headerGhi, moTaLoi } from "../../lib/api";
 export default function TrangSub() {
   const [subs, datSubs] = useState<SubQuanTriOut[] | null>(null);
   const [loi, datLoi] = useState<string | null>(null);
-  const [dang_chay, datDangChay] = useState(false);
   /** `null` = ngăn kéo đóng · `""` = đang TẠO MỚI · `"<slug>"` = đang SỬA sub đó.
    *
    * Một biến ba trạng thái thay vì hai cờ (`mo_them` + `dang_sua`): hai cờ cho phép một
@@ -58,8 +58,13 @@ export default function TrangSub() {
    * tổ hợp ấy sẽ xảy ra đúng lúc ai đó thêm đường mở thứ ba. */
   const [mo_mod, datMoMod] = useState<string | null>(null);
 
+  /** slug của sub đang chờ XÁC NHẬN XOÁ, hoặc `null`. Biến thứ ba, theo đúng quy ước
+   * "mỗi ngăn kéo một biến" đã ghi ở hai khối trên. */
+  const [mo_xoa, datMoXoa] = useState<string | null>(null);
+
   const dong = useCallback(() => datDangMo(null), []);
   const dongMod = useCallback(() => datMoMod(null), []);
+  const dongXoa = useCallback(() => datMoXoa(null), []);
 
   const moTao = () => {
     datSlug("");
@@ -91,20 +96,12 @@ export default function TrangSub() {
     void nap();
   }, [nap]);
 
-  const chay = useCallback(
-    async (viec: () => Promise<{ error?: unknown }>) => {
-      datDangChay(true);
-      datLoi(null);
-      try {
-        const { error } = await viec();
-        if (error !== undefined) datLoi(moTaLoi(error));
-        else await nap();
-      } finally {
-        datDangChay(false);
-      }
-    },
-    [nap],
-  );
+  const {
+    dang_chay,
+    loi: loi_hanh_dong,
+    het_phien,
+    chay,
+  } = useHanhDong(nap);
 
   return (
     <>
@@ -120,7 +117,7 @@ export default function TrangSub() {
           </button>
         }
       />
-      <HienLoi loi={loi} />
+      <HienLoi loi={loi_hanh_dong ?? loi} het_phien={het_phien} />
 
       <The>
         {subs === null ? (
@@ -134,9 +131,9 @@ export default function TrangSub() {
                   key={s.slug}
                   s={s}
                   dang_chay={dang_chay}
-                  chay={chay}
                   moSua={() => moSua(s)}
                   moMod={() => datMoMod(s.slug)}
+                  moXoa={() => datMoXoa(s.slug)}
                 />
               ))}
             </tbody>
@@ -236,6 +233,57 @@ export default function TrangSub() {
           chay={chay}
         />
       </NganKeo>
+
+      {/* Xoá chuyên mục là thao tác KHÔNG hoàn tác được và nó nằm cạnh "Sửa" trên cùng
+          một hàng — hai nút cách nhau 6px, một cú bấm trượt là mất một chuyên mục. Trước
+          lượt này nút gọi thẳng API, không hỏi gì. Nay nó chỉ mở ngăn kéo dưới đây, và
+          `quanTriXoaSub` chỉ còn xuất hiện đúng một lần, trong thân ngăn kéo ấy. */}
+      <NganKeo
+        mo={mo_xoa !== null}
+        dong={dongXoa}
+        tieu_de={mo_xoa === null ? "" : `Xoá s/${mo_xoa}?`}
+        mo_ta="Không hoàn tác được. Chuyên mục biến khỏi URL công khai /s/<slug>."
+      >
+        <div className="space-y-4">
+          <p className="text-sm">
+            Sắp xoá <span className="mono">s/{mo_xoa}</span>. Server chỉ cho xoá chuyên
+            mục <strong>không còn mạch nào</strong>; nếu vừa có bài mới rơi vào đây thì
+            lời gọi sẽ bị từ chối và lỗi hiện ở đầu trang.
+          </p>
+          <div className="flex justify-end gap-2 border-t border-vien pt-4">
+            <button
+              type="button"
+              className="nut"
+              onClick={dongXoa}
+              data-testid="nut-huy-xoa-sub"
+            >
+              Huỷ
+            </button>
+            <button
+              type="button"
+              className="nut nut-chinh"
+              disabled={dang_chay || mo_xoa === null}
+              data-testid="nut-xac-nhan-xoa-sub"
+              onClick={() => {
+                if (mo_xoa === null) return;
+                void chay(async () => {
+                  const ket_qua = await quanTriXoaSub({
+                    baseUrl: GOC_API,
+                    headers: headerGhi(),
+                    path: { slug: mo_xoa },
+                  });
+                  // Chỉ đóng khi server ĐÃ nhận — cùng lý do đã ghi ở form tạo/sửa: đóng
+                  // ngay lúc bấm là nuốt mất lời từ chối.
+                  if (ket_qua.error === undefined) dongXoa();
+                  return ket_qua;
+                });
+              }}
+            >
+              {dang_chay ? "Đang xoá…" : "Xoá chuyên mục"}
+            </button>
+          </div>
+        </div>
+      </NganKeo>
     </>
   );
 }
@@ -333,15 +381,15 @@ function KhoiMod({
 function DongSub({
   s,
   dang_chay,
-  chay,
   moSua,
   moMod,
+  moXoa,
 }: {
   s: SubQuanTriOut;
   dang_chay: boolean;
-  chay: (viec: () => Promise<{ error?: unknown }>) => Promise<void>;
   moSua: () => void;
   moMod: () => void;
+  moXoa: () => void;
 }) {
   return (
     <tr className="border-b border-vien last:border-0 hover:bg-nen-mo/50">
@@ -402,15 +450,8 @@ function DongSub({
                 ? `Xoá s/${s.slug} — không xoá được: sub còn ${s.so_mach} mạch`
                 : `Xoá s/${s.slug}`
             }
-            onClick={() =>
-              chay(() =>
-                quanTriXoaSub({
-                  baseUrl: GOC_API,
-                  headers: headerGhi(),
-                  path: { slug: s.slug },
-                }),
-              )
-            }
+            onClick={moXoa}
+            data-testid={`nut-xoa-${s.slug}`}
           >
             Xoá
           </button>

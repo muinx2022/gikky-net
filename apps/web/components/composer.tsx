@@ -10,6 +10,7 @@ import { GOC_TRINH_DUYET, headerGhi } from "@/lib/tai-khoan";
 import css from "./composer.module.css";
 import { useMach } from "./mach-ngu-canh";
 import { useModalDangNhap } from "./modal-dang-nhap";
+import { toiBinhLuan } from "./ngan-keo";
 import { SoanThao } from "./soan-thao";
 import { usePhien } from "./phien";
 
@@ -160,6 +161,29 @@ export function Composer({
       // `moSan` (reply) không đụng tới: chỗ đó `onXong` đã gỡ cả component.
       datMoCua(false);
       onXong?.();
+      // **Câu gửi CÓ NEO từ ô chung phải dẫn người viết tới chỗ nó vừa rơi vào**
+      // *(tiêu chí 16, 2026-08-27)*.
+      //
+      // Từ lượt tách bình luận chung khỏi bình luận mốc, một câu neo mốc N **không** hiện
+      // ở khu chung nữa — nó vào ngăn kéo mốc N, mà ngăn kéo thì mặc định đóng, và có khi
+      // còn nằm trong một dải gập cũng đang đóng. Người viết bấm "Gửi" xong nhìn thấy khu
+      // chung y như cũ, thậm chí vẫn in "Chưa có bình luận chung nào" — họ có mọi lý do để
+      // kết luận là gửi hỏng, rồi gửi lại.
+      //
+      // `toiBinhLuan` dùng lại **nguyên** cơ chế deep-link của `ngan-keo.tsx` (mở mọi
+      // khoang gập trên đường rồi cuộn tới), nên không có bản thứ hai của luật "mở đường"
+      // nào sinh ra ở đây. `id` lấy thẳng từ response — không đoán, không hỏi lại API.
+      //
+      // ⚠ **Không đặt `window.location.hash`** — đã thử và nó chết im lặng: `router.refresh()`
+      // ghi lại lịch sử bằng URL không có hash, nên hash bị xoá dù đặt trước hay sau lời
+      // gọi refresh. Xem `SU_KIEN_TOI_BINH_LUAN`.
+      //
+      // Chỉ áp cho **gốc CÓ neo**: câu không neo hiện ngay trong khu chung ngay dưới ô
+      // nhập (không cần dẫn đi đâu), còn reply thì đã nằm trong khoang đang mở sẵn — một
+      // cú nhảy ở hai ca đó là giật màn hình không ai xin.
+      if (parentId === null && neo !== null) {
+        toiBinhLuan(kq.data.id);
+      }
       router.refresh();
     } catch {
       datLoi("Không gửi được. Thử lại sau ít giây.");

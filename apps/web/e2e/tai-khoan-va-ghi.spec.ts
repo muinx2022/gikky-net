@@ -40,7 +40,9 @@ test.describe("M1 — luồng tài khoản chạy thật, qua hộp thư thật"
     // cách cài (client component hỏi `GET /me`), và nếu ai đó chuyển nó sang server thì
     // `/luat` thôi tĩnh và bài này vẫn xanh nhưng `trang-loi.spec.ts` sẽ đỏ.
     await page.goto("/luat");
-    await expect(page.getByTestId("nut-tai-khoan")).toHaveText(`u/${ai.username}`);
+    // `toContainText`: nút tài khoản render chữ cái avatar TRƯỚC tên (`Lu/ai_do`) từ
+    // `ec47572`, nên khớp chính xác không còn đúng — cùng lý do với `e2e/danh-tinh.ts`.
+    await expect(page.getByTestId("nut-tai-khoan")).toContainText(`u/${ai.username}`);
 
     await page.getByTestId("nut-tai-khoan").click();
     await page.getByTestId("nut-dang-xuat").click();
@@ -58,7 +60,9 @@ test.describe("M1 — luồng tài khoản chạy thật, qua hộp thư thật"
     await expect(page.getByTestId("form-xong")).toBeVisible();
 
     await page.goto("/dang-nhap");
-    await page.getByTestId("o-email").fill(ai.email);
+    // `o-dinh_danh`, không phải `o-email`: form ĐĂNG NHẬP nhận "email hoặc tên đăng nhập"
+    // (`ec47572`), form ĐĂNG KÝ ngay trên vẫn là `o-email` — xem `e2e/danh-tinh.ts`.
+    await page.getByTestId("o-dinh_danh").fill(ai.email);
     await page.getByTestId("o-password").fill(MAT_KHAU);
     await page.getByTestId("form-gui").click();
     await expect(page.getByTestId("form-loi")).toBeVisible();
@@ -67,7 +71,7 @@ test.describe("M1 — luồng tài khoản chạy thật, qua hộp thư thật"
 
   test("sai mật khẩu thì NÓI RA, không im lặng", async ({ page }) => {
     await page.goto("/dang-nhap");
-    await page.getByTestId("o-email").fill("khong-ton-tai@gikky.test");
+    await page.getByTestId("o-dinh_danh").fill("khong-ton-tai@gikky.test");
     await page.getByTestId("o-password").fill("sai-be-bet");
     await page.getByTestId("form-gui").click();
     await expect(page.getByTestId("form-loi")).toBeVisible();

@@ -406,6 +406,14 @@ test("luật trên có quét trúng lời gọi THẬT ở MỌI cửa (không q
     // `Content-Type: application/json`, thứ ghi đè lên `Content-Type` mà `FormData` phải
     // tự sinh kèm `boundary` — server nhận một thân không parse được. `baseUrl` thì vẫn
     // là `GOC_TRINH_DUYET` (rỗng, same-origin) như mọi lời gọi trong trình duyệt.
+    // Bài đo `P-20260828-1` (2026-08-28). Nó gọi hàm client THẬT vào một HTTP server dựng
+    // trong chính bài đo, nên `baseUrl` của nó là địa chỉ `127.0.0.1:<cổng hệ điều hành
+    // cấp>` — không phải `API_ORIGIN`, không phải chuỗi rỗng.
+    //
+    // Vì sao nó phải gọi thật thay vì mock: cả `dem-luot-xem.spec.ts` (hàm thuần + đọc mã
+    // nguồn) lẫn bộ pytest đều xanh trong khi cửa đếm **không ghi được hàng nào** suốt một
+    // bản deploy. Cái hỏng nằm ở tầng không file nào chạm: *byte nào thật sự lên đường*.
+    "e2e/don-vi/dem-luot-xem-goi-that.spec.ts",
     "lib/anh.ts",
     "lib/api.ts",
     // Đếm lượt xem (2026-08-27) — `POST /dem-luot-xem`, gọi từ **middleware**, tức từ

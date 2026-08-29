@@ -51,8 +51,16 @@ def sua_binh_luan_api(request, comment_id: int, du_lieu: BinhLuanSuaIn):
     doi_con_song(c, "Bình luận")
     c = sua_binh_luan(comment=c, body=du_lieu.body, dinh_dang=du_lieu.body_dinh_dang)
     lam_moi_mach(c.mach)
+    # `hoat_dong_doc_duoc` không có mặc định (xem `Nut`) và phải truyền cả ở đây, nơi
+    # `nut_ra` không bao giờ đọc nó: một nút LẺ không cha không con thì hoạt động của nó
+    # là chính nó, và `doi_con_song` ngay trên đã chặn bia mộ nên nhánh `None` không tới
+    # được. Giá trị đúng, và nó tồn tại để "quên" ở đường CÂY vẫn là `TypeError`.
     nut = Nut(
-        binh_luan=c, do_sau=c.do_sau, trang_thai=trang_thai_noi_dung(c), con=[]
+        binh_luan=c,
+        do_sau=c.do_sau,
+        trang_thai=trang_thai_noi_dung(c),
+        con=[],
+        hoat_dong_doc_duoc=c.created_at,
     )
     return nut_ra(nut, chu_mach_id=c.mach.author_id)
 

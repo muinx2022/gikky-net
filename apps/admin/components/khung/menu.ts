@@ -90,6 +90,14 @@ export const NHOM_MENU: NhomMenu[] = [
     ],
   },
   {
+    // Nhóm RIÊNG, không nhét vào "Hệ thống". "Hệ thống" là chỗ chỉnh gikky (cài đặt, chẩn
+    // đoán kết nối Django); Check FX không chỉnh gì của gikky cả — nó đọc một nguồn ngoài
+    // và trả về một phép đo. Trộn hai loại vào một nhóm là dạy sai mod rằng mọi thứ dưới
+    // "Hệ thống" đều có thể đổi trạng thái của hệ thống.
+    ten: "Công cụ",
+    muc: [{ duong_dan: "/check-fx", nhan: "Check FX", icon: "ty-gia" }],
+  },
+  {
     ten: "Hệ thống",
     muc: [
       { duong_dan: "/cai-dat", nhan: "Cài đặt", icon: "cai-dat" },

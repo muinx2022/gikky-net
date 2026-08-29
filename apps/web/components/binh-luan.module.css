@@ -50,14 +50,8 @@
   padding: 1px 5px;
 }
 
-.neo {
-  font-family: var(--f-mono);
-  font-size: 11px;
-  border: 1px solid var(--line-2);
-  border-radius: 3px;
-  padding: 1px 6px;
-  color: var(--ink-2);
-}
+/* `.neo` (chip `‹mốc N›`) xoá 2026-08-26 cùng lượt gỡ render — xem `binh-luan.tsx`.
+   Giữ lại một lớp không ai dùng là để người sau tưởng nó còn sống rồi đi tìm chỗ dùng. */
 
 .khi {
   color: var(--ink-3);

@@ -79,7 +79,7 @@ services:
       # ⚠ Trống ⇒ mail xác thực ghi ra FILE trong container, tức KHÔNG AI ĐĂNG KÝ ĐƯỢC
       # (`ACCOUNT_EMAIL_VERIFICATION = "mandatory"`). Xem README.md mục "Nợ".
       EMAIL_URL: ${EMAIL_URL:-}
-      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-gikky <khong-tra-loi@gikky.net>}
+      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-gikky <no-reply@gikky.net>}
       # Trống ⇒ provider không được đăng ký và frontend KHÔNG render nút (PLAN mục 4).
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}

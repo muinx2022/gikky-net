@@ -35,8 +35,9 @@ import {
   The,
   TieuDeTrang,
 } from "../../components/ui";
-import { GOC_API, headerGhi, moTaLoi } from "../../lib/api";
+import { GOC_API, headerGhi } from "../../lib/api";
 import { useDanhSach } from "../../lib/danh-sach";
+import { useHanhDong } from "../../lib/hanh-dong";
 
 /** Số hàng mỗi trang. Một hằng cho CẢ HAI phía: `limit` gửi lên server và mẫu số để
  * `useDanhSach` chia ra `so_trang`. Hai con số này lệch nhau thì thanh phân trang báo
@@ -82,8 +83,6 @@ const CHU_LOC: Record<Loc, string> = {
 export default function TrangHangDoi() {
   const { lamMoi } = useQuanTri();
   const [loc, datLoc] = useState<Loc>("cho_xu_ly");
-  const [dang_chay, datDangChay] = useState(false);
-  const [loi_hanh_dong, datLoiHanhDong] = useState<string | null>(null);
 
   const nap = useCallback(
     (cursor: string | null) =>
@@ -98,35 +97,25 @@ export default function TrangHangDoi() {
   const ds = useDanhSach<BaoCaoOut>(nap, MOI_TRANG);
 
   /** Bọc một hành động: khoá nút, chạy, rồi **nạp lại từ server** (và làm mới cả badge).
-   *
-   * Nạp lại thay vì sửa state tại chỗ là chủ đích. Sửa tại chỗ đòi frontend suy lại luật
-   * domain ("ẩn xong thì `da_bi_an` thành true, và báo cáo có tự đóng không?") — đúng thứ
-   * PLAN nguyên tắc 10 nói là việc của server.
+   * Vòng đời ấy nằm ở `lib/hanh-dong.ts`; chỗ này chỉ khai *làm tươi nghĩa là gì với
+   * trang này* — bảng nạp lại, và badge chuông cũng vậy vì đóng một báo cáo là con số
+   * trên chuông đổi ngay.
    */
-  const chay = useCallback(
-    async (viec: () => Promise<{ error?: unknown }>) => {
-      datDangChay(true);
-      datLoiHanhDong(null);
-      try {
-        const { error } = await viec();
-        if (error !== undefined) {
-          datLoiHanhDong(moTaLoi(error));
-          return;
-        }
-        await ds.napLai();
-        await lamMoi();
-      } finally {
-        datDangChay(false);
-      }
-    },
-    [ds, lamMoi],
-  );
+  const {
+    dang_chay,
+    loi: loi_hanh_dong,
+    het_phien,
+    chay,
+  } = useHanhDong(async () => {
+    await ds.napLai();
+    await lamMoi();
+  });
 
   return (
     <>
       <TieuDeTrang mo_ta="Ẩn, khoá và ban thi hành ngay trên hàng. Nút “Ghi” chỉ đóng báo cáo." />
 
-      <HienLoi loi={loi_hanh_dong ?? ds.loi} />
+      <HienLoi loi={loi_hanh_dong ?? ds.loi} het_phien={het_phien} />
 
       <The>
         <div className="flex flex-wrap gap-1.5 border-b border-vien p-3">

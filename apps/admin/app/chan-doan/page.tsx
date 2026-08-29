@@ -17,6 +17,11 @@ import { moTaHealth } from "./health-text";
 // `/m/[slug]` là ISR, chỉ biến thể có cookie mới dynamic no-store.
 export const dynamic = "force-dynamic";
 
+// Trang duy nhất của khu quản trị còn là server component, nên nó đặt tiêu đề tab bằng
+// `metadata` — mọi trang client khác đi qua `useTieuDeTrang` (xem `lib/tieu-de.ts`).
+// Hậu tố phải khớp `HAU_TO` bên đó, kẻo tab này lạc giọng với phần còn lại.
+export const metadata = { title: "Chẩn đoán — gikky quản trị" };
+
 // Gọi THẲNG Django, không vòng qua cổng 3001 của chính mình (xem `apps/web`).
 const API_ORIGIN = process.env.API_ORIGIN ?? "http://localhost:8000";
 

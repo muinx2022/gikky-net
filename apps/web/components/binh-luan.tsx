@@ -116,6 +116,17 @@ export function BinhLuan({ nut, doSauToiDa, duongDanKhanDai, datNeo = false }: P
         )}
 
         {con_bi_cat && (
+          /* ⚠ **Quirk đã biết, KHÔNG sửa ở lượt này** *(NHẸ 7, 2026-08-27)*: link này trỏ
+             về `#bl-<id của chính nút đang đứng>`. Ở khán đài nó vốn đã như vậy từ đầu —
+             nút bị cắt con nằm ở tầng 6, và trang đích cũng cắt ở tầng 6, nên "đi tiếp"
+             thực ra là cuộn về đúng chỗ mình đang đứng. Từ lượt ngăn kéo sâu bằng khán đài
+             (§C1), ngăn kéo thừa hưởng y hệt quirk ấy — tức đây là **parity**, không phải
+             một hồi quy mới sinh ra.
+
+             Sửa thật = một trang permalink cho thread (nơi nút ấy thành gốc và cây được
+             dựng lại từ nó), và đó là một việc riêng có tầm vóc riêng. Trước khi có nó,
+             giữ link còn hơn bỏ: nó vẫn nói ra rằng **còn N nhánh nữa** ở dưới, thứ mà
+             một dấu ba chấm im lặng không nói. */
           <p className={css.sau_qua}>
             <Link href={`${duongDanKhanDai}#${neoBinhLuan(nut.id)}`}>
               tiếp tục thread ({nut.replies.length} nhánh) →
@@ -147,11 +158,13 @@ function NoiDung({ nut }: { nut: BinhLuanOut }) {
           u/{nut.author?.username}
         </Link>
         {nut.la_chu_mach && <span className={css.chu_mach}>CHỦ MẠCH</span>}
-        {nut.anchor_moc_seq !== null && (
-          <span className={css.neo} data-testid="chip-neo">
-            ‹mốc {nut.anchor_moc_seq}›
-          </span>
-        )}
+        {/* Chip `‹mốc N›` (`data-testid="chip-neo"`) **gỡ render 2026-08-26**. Nó sinh ra
+            để trả lời "câu này thuộc mốc nào" khi khán đài trộn lẫn hai loại bình luận —
+            câu hỏi không còn tồn tại: ở khán đài mọi thread đều `anchor_moc_seq === null`
+            nên không có ca nào hiện, còn trong ngăn kéo nó lặp lại đúng dòng tiêu đề
+            ngay trên đầu khoang ("Lát cắt bình luận neo vào mốc N"). `anchor_moc_seq`
+            vẫn đi qua `nut` và vẫn được `HanhDongBinhLuan` dùng (trích vào sổ), nên đây
+            là gỡ một CÁCH HIỂN THỊ, không phải gỡ dữ liệu. */}
         <span className={css.khi}>{dauThoiGianServer(nut.created_at)}</span>
         {nut.edited_at !== null && <span className={css.khi}>· đã sửa</span>}
       </div>

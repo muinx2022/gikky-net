@@ -65,20 +65,41 @@ def _moc_cua_mach_hien(moc_id: int) -> Moc | None:
     tags=["binh-luan"],
 )
 def liet_ke_binh_luan_moc(request, moc_id: int):
-    """Ngăn kéo của một mốc: lát cắt bình luận neo vào mốc đó, **mới → cũ**.
+    """Ngăn kéo của một mốc — **CHỖ Ở DUY NHẤT** của các thread neo vào mốc đó.
 
     Lấy các thread có bình luận **gốc** mang `anchor_moc_seq` bằng `seq` của mốc này, và
     lấy **cả thread** — reply viết ở thời điểm mốc nào cũng thuộc về thread của gốc
     (PLAN nguyên tắc 6). Nhờ vậy ngăn kéo của mốc 2 kể được cả lời tiên tri lẫn cái kết.
 
-    Không có tham số sắp xếp: ngăn kéo là cửa sổ chiếu vào khán đài, không phải một
-    phòng riêng (PLAN 5.4 luật 2). Anchor dùng để CHIẾU, không bao giờ để chia khán đài
-    thành nhiều phòng (PLAN nguyên tắc 4).
+    ## Ngăn kéo là PHÒNG, không còn là cửa sổ *(user chốt 2026-08-26)*
 
-    Chiều **mới → cũ** là chiều đổi ngày 2026-08-26 (user), cùng lượt khán đài chuyển
-    mặc định sang `moi_nhat` — hai cửa sổ nhìn cùng một tập bình luận thì không được chạy
-    ngược chiều nhau. Vế "không cho chỉnh" của luật 2 giữ nguyên: chiều gõ cứng ở
-    `core/doc_noi_dung.py::lat_cat_ngan_keo`, không đọc từ `?sort=`.
+    > *"nên có 1 phần cmt chung cho toàn bộ post, không lẫn cmt của các mock vào, từng
+    > mock có cmt riêng thì cứ kệ nó"*
+
+    Tới lượt ấy, PLAN 5.4 luật 2 gọi ngăn kéo là *"cửa sổ chiếu vào khán đài"*: cùng một
+    thread hiện ở cả hai chỗ. Nay `GET /machs/{id}/comments` **lọc bỏ** mọi thread có neo
+    (khi `entry_count >= 2`), nên thread neo mốc N chỉ còn render ở đây. Hệ quả cho người
+    gọi: **endpoint này không phải một lối tắt tiện tay — bỏ qua nó là mất hẳn phần lớn
+    bình luận của mạch**, không phải mất một cách trình bày.
+
+    Vế **"không cho chỉnh"** của luật 2 thì còn nguyên: không có tham số sắp xếp nào, và
+    nối chiều vào `?sort=` của khán đài là cấp cho ngăn kéo đúng cái phòng riêng mà luật 2
+    dựng ra để chặn (PLAN nguyên tắc 4).
+
+    ## Thứ tự: gốc BUMP theo hoạt động, reply đọc XUÔI
+
+    Dùng đúng cặp khoá của `?sort=moi_nhat` bên khán đài (`core/doc_noi_dung.py::
+    lat_cat_ngan_keo` + `sap_goc_bump_hoat_dong`), chốt cuối ngày 2026-08-27:
+
+    - **thread gốc**: `max(created_at)` trên các nút **đọc được** của cả thread, giảm dần —
+      một reply mới đẩy cuộc trao đổi lên đầu. Bia mộ không bump; thread toàn bia mộ rơi về
+      `created_at` của gốc;
+    - **reply bên trong**: `created_at` **tăng** dần — hội thoại đọc từ trên xuống.
+
+    Hai chiều ngược nhau là chủ đích, không phải sót: ngoài danh sách câu hỏi là *"cuộc nào
+    vừa có người nói"*, trong một thread câu hỏi là *"cuộc này diễn ra thế nào"*.
+    ⚠ Mô tả cũ **"mới → cũ"** của endpoint này chết ở đó — nó chỉ từng đúng cho tầng gốc,
+    và chỉ trong khoảng một ngày.
 
     Mốc chưa có bình luận nào trả `threads: []`, `so_binh_luan: 0` cùng
     `question_for_crowd` nếu mốc có câu mồi — UI hiện lời mời chứ **không** hiện "💬 0"

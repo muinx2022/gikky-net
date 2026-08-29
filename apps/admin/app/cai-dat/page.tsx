@@ -16,6 +16,7 @@ import {
   TieuDeTrang,
 } from "../../components/ui";
 import { GOC_API, headerGhi, moTaLoi } from "../../lib/api";
+import { useHanhDong } from "../../lib/hanh-dong";
 
 /** Cài đặt hệ thống — mục đầu tiên: Google OAuth.
  *
@@ -46,7 +47,6 @@ export default function TrangCaiDat() {
 function KhoiGoogle() {
   const [tt, datTt] = useState<CaiDatGoogleOut | null>(null);
   const [loi, datLoi] = useState<string | null>(null);
-  const [dang_chay, datDangChay] = useState(false);
   const [client_id, datClientId] = useState("");
   const [secret, datSecret] = useState("");
 
@@ -70,23 +70,12 @@ function KhoiGoogle() {
     void nap();
   }, [nap]);
 
-  const chay = useCallback(
-    async (viec: () => Promise<{ error?: unknown }>) => {
-      datDangChay(true);
-      datLoi(null);
-      try {
-        const { error } = await viec();
-        if (error !== undefined) {
-          datLoi(moTaLoi(error));
-          return;
-        }
-        await nap();
-      } finally {
-        datDangChay(false);
-      }
-    },
-    [nap],
-  );
+  const {
+    dang_chay,
+    loi: loi_hanh_dong,
+    het_phien,
+    chay,
+  } = useHanhDong(nap);
 
   if (tt === null) {
     return (
@@ -127,7 +116,7 @@ function KhoiGoogle() {
           </p>
         )}
 
-        <HienLoi loi={loi} />
+        <HienLoi loi={loi_hanh_dong ?? loi} het_phien={het_phien} />
 
         {!tt.sua_duoc && (
           <p className="text-sm text-muc-mo" data-testid="chi-doc">

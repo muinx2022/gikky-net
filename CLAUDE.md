@@ -2,6 +2,9 @@
 
 Quy trình làm việc chung nằm ở `D:\Projects\CLAUDE.md` — **không chép lại ở đây**.
 Thiết kế sản phẩm + kiến trúc: `PLAN.md`. Plan con từng phase: `plans/`.
+**Sổ dọc đường của repo này là `LOI-VA-NO.md`, mục `E`** (không phải `SO-TAY.md` như mặc định
+chung) — chỗ ghi mọi phát hiện ngoài phạm vi việc đang làm; xem mục *Một việc một lúc* ở
+`D:\Projects\CLAUDE.md`.
 
 ## Bảng port dev
 

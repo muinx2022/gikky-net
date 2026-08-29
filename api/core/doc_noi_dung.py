@@ -125,6 +125,45 @@ class Nut:
     do_sau: int
     trang_thai: TrangThaiNoiDung
     con: list["Nut"]
+    #: `max(created_at)` trên các nút **ĐỌC ĐƯỢC** của cây con (kể cả chính nút này),
+    #: `None` khi cả cây con là bia mộ. Tính MỘT LẦN lúc dựng cây — xem `hoat_dong`.
+    #:
+    #: **Không có mặc định, cố ý** — cùng lý lẽ với `tung_duoc_trich` của `dung_cay`. Một
+    #: `= None` ở đây biến "quên tính" thành một sort im lặng tụt về `created_at` của gốc:
+    #: đúng ở phần lớn thread (gốc thường là nút mới nhất khi chưa ai reply), sai đúng ở
+    #: những thread mà luật bump sinh ra để phục vụ. Bỏ mặc định thì quên = `TypeError`
+    #: ngay tại lời gọi.
+    hoat_dong_doc_duoc: datetime | None
+
+    @property
+    def hoat_dong(self) -> datetime:
+        """Khoá "hoạt động mới nhất" của thread — *user chốt 2026-08-26*.
+
+        > *"nếu có reply mới thì nổi lên và hiển thị theo đúng chiều đọc hội thoại"*
+
+        Cây con toàn bia mộ (ca có thật, xem `dung_cay`) rơi về `created_at` của chính nút
+        này. **Bia mộ không bump thread**: nó không có nội dung nào để người đọc thấy, nên
+        để nó đẩy thread lên đầu là một thứ tự không giải thích được bằng màn hình — đúng
+        nguyên tắc mà `up`/`down` đã theo khi đọc số ĐÃ CHE.
+
+        Hệ quả cần biết trước: khoá này **biến đổi theo dữ liệu** (một reply mới đổi nó),
+        khác `created_at`. Chỗ trả giá là cursor keyset của `moi_nhat` — xem
+        `api/machs.py::_cat_goc`.
+
+        ⚠ **Đánh đổi thứ hai, chấp nhận có ý thức**: cây con tính ĐỦ MỌI TẦNG, kể cả reply
+        sâu hơn ngưỡng render của UI (`SAU_KHAN_DAI = 6`). Nên một reply ở tầng 9 vẫn đẩy
+        thread lên đầu danh sách trong khi người đọc không nhìn thấy nó ở trang đó — thứ
+        tự có một phần lý do nằm ngoài màn hình.
+
+        Chấp nhận, vì hai lẽ: con số `💬 N` của mốc (`dem_binh_luan_theo_moc`) **cũng** đếm
+        cả tầng sâu, nên cắt ở đây là dựng hai định nghĩa "hoạt động của thread" lệch nhau;
+        và cắt theo một hằng của FRONTEND là kéo một quyết định trình bày xuống tầng đọc,
+        đúng thứ PLAN nguyên tắc 10 phân vai để tránh. Ngày nào UI bỏ ngưỡng 6 thì chỗ này
+        không phải sửa gì.
+        """
+        if self.hoat_dong_doc_duoc is not None:
+            return self.hoat_dong_doc_duoc
+        return self.binh_luan.created_at
 
     @property
     def hien_noi_dung(self) -> bool:
@@ -235,7 +274,22 @@ def dung_cay(
         giu_vi_da_trich = trang_thai == DA_XOA and c.pk in tung_duoc_trich
         if trang_thai != BINH_THUONG and not con and not giu_vi_da_trich:
             return None
-        return Nut(binh_luan=c, do_sau=do_sau, trang_thai=trang_thai, con=sap_con(con))
+        # Khoá "hoạt động" gom **bottom-up ngay tại đây**, một lần cho mỗi nút — không
+        # phải trong hàm khoá của `sorted`, thứ được gọi O(n log n) lần và sẽ đi lại cả
+        # cây con ở mỗi lần. `None` truyền lên nguyên vẹn qua nhánh toàn bia mộ, nên
+        # `created_at` của một bia mộ trung gian không bao giờ leo lên bump tổ tiên nó.
+        moc: list[datetime] = [
+            n.hoat_dong_doc_duoc for n in con if n.hoat_dong_doc_duoc is not None
+        ]
+        if trang_thai == BINH_THUONG:
+            moc.append(c.created_at)
+        return Nut(
+            binh_luan=c,
+            do_sau=do_sau,
+            trang_thai=trang_thai,
+            con=sap_con(con),
+            hoat_dong_doc_duoc=max(moc) if moc else None,
+        )
 
     goc = [dung(c, 1) for c in con_theo_cha.get(None, ())]
     return sap_goc([n for n in goc if n is not None])
@@ -432,6 +486,28 @@ def sap_wilson_thuan(nuts: list[Nut]) -> list[Nut]:
     )
 
 
+def sap_goc_bump_hoat_dong(nuts: list[Nut]) -> list[Nut]:
+    """Gốc của `moi_nhat` (và của ngăn kéo): `(hoạt động DESC, id DESC)` — *2026-08-26*.
+
+    > User: *"nếu có reply mới thì nổi lên và hiển thị theo đúng chiều đọc hội thoại"*
+
+    Trước lượt này `moi_nhat` sắp gốc theo `created_at` của chính bình luận gốc, nên một
+    thread mở tháng trước mà đang có người trả lời nhau nằm im ở đáy trong khi một câu
+    chưa ai đáp đứng trên cùng. Danh sách nói "mới nhất" mà mô tả **lúc bắt đầu**, không
+    phải **lúc gần nhất có người nói**.
+
+    Khoá đọc `Nut.hoat_dong`, tức số đã tính sẵn ở `dung_cay` và đã loại bia mộ. `id` phá
+    hoà (DESC cho cùng chiều với khoá chính) để thứ tự là **toàn phần** — hai thread hoà
+    hoạt động mà `sorted` tự quyết thì trang 2 của keyset lặp hoặc sót đúng những hàng ấy,
+    cùng lý lẽ với `_khoa_thoi_gian`.
+
+    ⚠ `reverse=True` cho CẢ hai vế, không phải `(-hoat_dong, ...)`: `datetime` không có
+    toán tử phủ định. Muốn hai vế ngược chiều nhau thì phải đổi cách viết, và ngày ấy nhớ
+    rằng `_cat_goc` đọc **cùng cặp khoá này** cho cursor `moi_nhat`.
+    """
+    return sorted(nuts, key=lambda n: (n.hoat_dong, n.binh_luan.pk), reverse=True)
+
+
 def sap_theo_thoi_gian(*, moi_truoc: bool) -> SapXep:
     """Sắp theo `(created_at, id)`. `moi_truoc=True` là `moi_nhat`, ngược lại `cu_nhat`.
 
@@ -458,6 +534,24 @@ def dung_cay_theo_sort(
     """Cây khán đài theo một trong ba sort của PLAN 5.3. `sort` phải hợp lệ sẵn.
 
     `tung_duoc_trich` bắt buộc, không mặc định — lý do ở `dung_cay`.
+
+    ## Ba sort, ba cặp khoá — và chúng CỐ Ý bất đối xứng *(2026-08-26)*
+
+    | sort | gốc | con (sibling) |
+    |---|---|---|
+    | `hay_nhat` | rank wilson + hệ số tươi | wilson thuần |
+    | `moi_nhat` | **hoạt động mới nhất DESC** | **cũ → mới** |
+    | `cu_nhat` | `created_at` gốc ASC | cũ → mới |
+
+    Hai chỗ dễ đọc thành "quên sửa", nên nói thẳng:
+
+    - **`moi_nhat` bump gốc nhưng đọc con XUÔI.** Không mâu thuẫn: hai câu hỏi khác nhau.
+      Ngoài danh sách, câu hỏi là *"cuộc nào vừa có người nói"* ⇒ mới trước. Trong một
+      thread, câu hỏi là *"cuộc này diễn ra thế nào"* ⇒ hội thoại đọc từ trên xuống theo
+      thời gian, đúng như mọi chỗ chat người ta đã quen. Trước lượt này con của `moi_nhat`
+      sắp mới → cũ, tức câu trả lời in TRÊN câu hỏi.
+    - **`cu_nhat` KHÔNG bump.** "Cũ nhất" nghĩa là *đọc từ đầu*, không phải *im lặng lâu
+      nhất lên trước* — bump ở đây sẽ đảo đúng cái người dùng vừa chọn để tránh.
     """
     if sort == SORT_HAY_NHAT:
         return dung_cay(
@@ -466,10 +560,13 @@ def dung_cay_theo_sort(
             sap_con=sap_wilson_thuan,
             tung_duoc_trich=tung_duoc_trich,
         )
-    moi_truoc = sort == SORT_MOI_NHAT
-    sap = sap_theo_thoi_gian(moi_truoc=moi_truoc)
+    # Con LUÔN cũ → mới ở cả hai sort thời gian; chỉ khoá của GỐC là khác nhau.
+    xuoi = sap_theo_thoi_gian(moi_truoc=False)
+    sap_goc = (
+        sap_goc_bump_hoat_dong if sort == SORT_MOI_NHAT else xuoi
+    )
     return dung_cay(
-        binh_luan, sap_goc=sap, sap_con=sap, tung_duoc_trich=tung_duoc_trich
+        binh_luan, sap_goc=sap_goc, sap_con=xuoi, tung_duoc_trich=tung_duoc_trich
     )
 
 
@@ -489,27 +586,57 @@ def lat_cat_ngan_keo(
     dựng, không đặt vào truy vấn: lọc `anchor_moc_seq = seq` ngay trong SQL sẽ cắt mất
     mọi reply (reply luôn có `anchor_moc_seq IS NULL` — nó kế thừa neo của gốc).
 
-    ## Luật 2, và chỗ nó vừa đổi *(user chốt 2026-08-26)*
+    ## Luật 2, và chỗ nó vừa đổi *(user chốt 2026-08-26, hai lượt trong cùng ngày)*
 
     PLAN 5.4 luật 2 nguyên văn: *"Sort trong ngăn kéo: **cũ → mới**, không cho chỉnh (nó
-    là cửa sổ, không phải phòng)"*. Vế **"không cho chỉnh"** còn nguyên và là vế mang lý
-    lẽ kiến trúc: ngăn kéo không có tham số sort, nó chiếu vào khán đài chứ không tự làm
-    một phòng riêng (PLAN nguyên tắc 4).
-
-    Vế **chiều** thì lật: nay là **mới → cũ**. Cùng lượt user đổi khán đài sang
-    `moi_nhat`, và hai cửa sổ nhìn vào CÙNG một tập bình luận mà chạy ngược chiều nhau là
-    thứ không giải thích được bằng bất cứ luật nào người đọc thấy — họ mở ngăn kéo mốc 2
-    rồi cuộn xuống khán đài, cùng những câu ấy, đảo đầu.
-
-    ⚠ Chiều này **không** đọc từ `?sort=` của khán đài. Ngăn kéo vẫn không nhận tham số
-    nào; nó gõ cứng `moi_truoc=True` ở đây. Nối hai thứ lại là cấp cho ngăn kéo đúng cái
+    là cửa sổ, không phải phòng)"*. Vế **"không cho chỉnh"** còn nguyên: ngăn kéo không
+    nhận tham số sort nào, và nối nó vào `?sort=` của khán đài là cấp cho nó đúng cái
     "phòng riêng" mà luật 2 dựng ra để chặn.
+
+    Vế **chiều** thì đã đổi hai lần trong ngày, và bản cuối là bản duy nhất còn hiệu lực:
+    ngăn kéo dùng **đúng cặp khoá của `moi_nhat`** — gốc theo **hoạt động mới nhất DESC**
+    (`sap_goc_bump_hoat_dong`), con **cũ → mới**. Lý do là lý do cũ, chỉ mạnh hơn: hai cửa
+    nhìn vào cùng một tập bình luận mà chạy hai luật khác nhau thì người mở ngăn kéo mốc 2
+    rồi cuộn xuống khu chung sẽ thấy cùng những câu ấy xếp khác đi, không giải thích được
+    bằng bất cứ thứ gì trên màn hình. (Bản giữa ngày gõ cứng `moi_truoc=True` cho cả gốc
+    lẫn con — nó chết cùng lượt `moi_nhat` chuyển sang bump.)
+
+    ⚠ Ngăn kéo nay là **PHÒNG chứ không còn là cửa sổ**: thread neo mốc `seq` chỉ render ở
+    đây, khán đài đã lọc chúng ra (`goc_khong_neo`). Vì thế nó cũng không được cụt hơn
+    khán đài — độ sâu render ở frontend nâng lên bằng khán đài, xem
+    `apps/web/lib/khan-dai.ts::SAU_NGAN_KEO`.
     """
-    sap = sap_theo_thoi_gian(moi_truoc=True)
     cay = dung_cay(
-        binh_luan, sap_goc=sap, sap_con=sap, tung_duoc_trich=tung_duoc_trich
+        binh_luan,
+        sap_goc=sap_goc_bump_hoat_dong,
+        sap_con=sap_theo_thoi_gian(moi_truoc=False),
+        tung_duoc_trich=tung_duoc_trich,
     )
     return [n for n in cay if n.binh_luan.anchor_moc_seq == seq]
+
+
+def goc_khong_neo(cay: list[Nut]) -> list[Nut]:
+    """Thread có gốc **không neo mốc nào** — tập của khu "Bình luận" cuối bài.
+
+    Đối xứng với `lat_cat_ngan_keo` ngay trên, và cố ý đặt cạnh nó: cùng MỘT phép chiếu
+    theo `anchor_moc_seq` của bình luận GỐC, hai giá trị của cùng một khoá. Ngăn kéo lấy
+    `== seq`, khán đài lấy `IS NULL`, và hợp của mọi giá trị phủ đúng một lần toàn bộ cây
+    — đó là điều kiện để bất biến *"mỗi thread render đúng MỘT chỗ trên trang"* đứng được
+    (user chốt 2026-08-26: *"không trộn chung các mock vào cmt chung của post"*).
+
+    Lọc ở GỐC, không ở từng nút: reply luôn mang `anchor_moc_seq IS NULL` (nó kế thừa neo
+    của gốc), nên lọc theo từng nút sẽ kéo reply của thread neo mốc 9 vào khán đài mà bỏ
+    lại chính cái gốc của chúng — cây mất cha, không dựng lại được.
+
+    Lọc **trong bộ nhớ**, sau khi cây đã dựng, không đẩy xuống SQL: `nap_binh_luan` nạp cả
+    mạch bằng một truy vấn và mọi endpoint bình luận ghim số truy vấn bằng
+    `django_assert_num_queries`. Thêm một `WHERE` ở đây là thêm một truy vấn.
+
+    ⚠ **Người gọi quyết ĐIỀU KIỆN áp**, hàm này không tự biết: `api/machs.py` chỉ áp khi
+    `entry_count >= 2`. Post thường không có ngăn kéo (PLAN 5.1) nên lọc ở đó là làm bình
+    luận neo mốc 1 biến mất khỏi **mọi** chỗ hiển thị.
+    """
+    return [n for n in cay if n.binh_luan.anchor_moc_seq is None]
 
 
 #: "Câu đáng đọc" lấy bao nhiêu thread theo wilson trước khi hợp với tập đã trích —

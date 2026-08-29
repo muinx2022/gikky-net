@@ -75,9 +75,23 @@ export async function dungTaiKhoan(page: Page, tien_to: string) {
   await expect(page.getByTestId("xac-thuc-xong")).toBeVisible();
 
   await page.goto("/dang-nhap");
-  await page.getByTestId("o-email").fill(ai.email);
+  // ⚠ **`o-dinh_danh`, KHÔNG phải `o-email`** — và hai dòng dưới đây là bản vá một món nợ
+  // có sẵn ở commit `ec47572`, không phải phần của lượt tách bình luận
+  // *(xem §H của `plans/2026-08-26-binh-luan-chung-tach-khoi-moc.md`)*:
+  //
+  // 1. form ĐĂNG NHẬP đổi sang "email HOẶC tên đăng nhập", tức trường của nó nay là
+  //    `<O ten="dinh_danh" …>` (`components/tai-khoan-forms.tsx`) và
+  //    `components/form-tai-khoan.tsx` sinh `data-testid={`o-${ten}`}`. Form ĐĂNG KÝ vẫn
+  //    `ten="email"`, nên `o-email` ở trên vẫn đúng — đừng "dọn" cho giống nhau;
+  // 2. nút tài khoản nay render chữ cái avatar trước tên (`Lu/ai_do`), nên `toHaveText`
+  //    khớp CHÍNH XÁC không còn đúng; `toContainText` mới là câu hỏi thật.
+  //
+  // Hai lệch này làm **~30 bài** e2e đỏ ở HEAD — mọi bài cần đăng nhập — và chúng đỏ theo
+  // kiểu tốn thời gian nhất: timeout 30 giây mỗi bài, ở một dòng không liên quan gì tới
+  // thứ bài đo đang hỏi.
+  await page.getByTestId("o-dinh_danh").fill(ai.email);
   await page.getByTestId("o-password").fill(MAT_KHAU);
   await page.getByTestId("form-gui").click();
-  await expect(page.getByTestId("nut-tai-khoan")).toHaveText(`u/${ai.username}`);
+  await expect(page.getByTestId("nut-tai-khoan")).toContainText(`u/${ai.username}`);
   return ai;
 }

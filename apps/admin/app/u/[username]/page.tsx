@@ -19,6 +19,8 @@ import {
   gioVN,
 } from "../../../components/ui";
 import { GOC_API, headerGhi, moTaLoi } from "../../../lib/api";
+import { useHanhDong } from "../../../lib/hanh-dong";
+import { useTieuDeTrang } from "../../../lib/tieu-de";
 
 /** Hồ sơ một tài khoản dưới góc nhìn mod, kèm nút ban/gỡ ban — PLAN 5.10, 9.3 mục 2. */
 export default function TrangChiTietNguoiDung() {
@@ -26,7 +28,6 @@ export default function TrangChiTietNguoiDung() {
   const username = tham_so.username;
   const [u, datU] = useState<NguoiDungQuanTriOut | null>(null);
   const [loi, datLoi] = useState<string | null>(null);
-  const [dang_chay, datDangChay] = useState(false);
   const [mo_ban, datMoBan] = useState(false);
 
   const nap = useCallback(async () => {
@@ -44,20 +45,16 @@ export default function TrangChiTietNguoiDung() {
     void nap();
   }, [nap]);
 
-  const chay = useCallback(
-    async (viec: () => Promise<{ error?: unknown }>) => {
-      datDangChay(true);
-      datLoi(null);
-      try {
-        const { error } = await viec();
-        if (error !== undefined) datLoi(moTaLoi(error));
-        else await nap();
-      } finally {
-        datDangChay(false);
-      }
-    },
-    [nap],
-  );
+  // Trang này không dùng `TieuDeTrang` (nó có H1 riêng kèm nút "← Bảng tài khoản"), nên
+  // tiêu đề tab phải tự đặt. `username` có ngay từ URL — không phải đợi nạp.
+  useTieuDeTrang(`u/${username}`);
+
+  const {
+    dang_chay,
+    loi: loi_hanh_dong,
+    het_phien,
+    chay,
+  } = useHanhDong(nap);
 
   if (loi !== null && u === null) return <HienLoi loi={loi} />;
   if (u === null) {
@@ -80,7 +77,7 @@ export default function TrangChiTietNguoiDung() {
         <p className="mono text-xs text-muc-mo">u/{u.username}</p>
       </div>
 
-      <HienLoi loi={loi} />
+      <HienLoi loi={loi_hanh_dong ?? loi} het_phien={het_phien} />
 
       <div className="grid gap-4 lg:grid-cols-3">
         <The className="p-4 lg:col-span-2">

@@ -109,10 +109,15 @@ export function CauDangDoc({
  *
  * **Hai điều kiện mới của L05 (2026-08-23):**
  *
- * 1. Nó nhận `anchorMocSeq` — mốc mới nhất — và chip **đổi/gỡ được**. Trước đó khán đài
- *    gọi `<Composer />` không prop, nên mọi câu viết ở đây gửi `anchor_moc_seq: null` và
+ * 1. Chip neo của composer **đổi/gỡ được** (`neoDoiDuoc`). Trước đó khán đài gọi
+ *    `<Composer />` không prop, nên mọi câu viết ở đây gửi `anchor_moc_seq: null` và
  *    không rơi vào ngăn kéo nào; mọi ngăn kéo cứ nói "Chưa ai neo bình luận vào mốc này"
  *    trong khi khán đài đầy chữ.
+ *    ⚠ **Mặc định neo thì đã gỡ ở 2026-08-26**: prop `anchorMocSeq` (từng mang mốc mới
+ *    nhất) không còn, composer ở đây luôn khởi đầu ở "cả mạch (không neo)". Khu này nay
+ *    chỉ chứa thread KHÔNG neo, nên một mặc định neo là đẩy câu vừa viết ra khỏi đúng
+ *    danh sách người viết đang nhìn — họ gửi xong và không thấy gì. Xem
+ *    `api/machs.py::liet_ke_binh_luan_mach` mục "Chỉ thread KHÔNG neo".
  * 2. `hienComposer` — mặt BÃO **tắt** nó. Ở đó `trang-mach.tsx` đã đặt một composer
  *    ngay trên cả khu bình luận (wireframe 9.2) với câu mồi riêng theo mốc mới nhất, nên
  *    giữ thêm một cái nữa ở đây là dựng lại đúng ca "hai ô nhập trông y hệt nhau, hai
@@ -149,7 +154,7 @@ export function KhanDai({
   duongDanKhanDai,
   hienSoDem,
   cauDangDoc = null,
-  anchorMocSeq = null,
+  neoDoiDuoc = false,
   hienComposer = true,
 }: {
   khanDai: KhanDaiOut;
@@ -161,8 +166,12 @@ export function KhanDai({
   hienSoDem: boolean;
   /** Tập "câu đáng đọc" do server tính (`?dang_doc=1`), hoặc `null` để không render khối. */
   cauDangDoc?: KhanDaiOut | null;
-  /** Mốc composer khán đài neo mặc định — mốc MỚI NHẤT (PLAN 5.4 luật 3). */
-  anchorMocSeq?: number | null;
+  /** Người viết được CHỌN mốc để neo (select "Neo vào") — chỉ **mạch**.
+   *
+   * `false` ở post thường: nó không có ngăn kéo (PLAN 5.1), nên một câu neo mốc 1 gửi từ
+   * đây sẽ biến khỏi mọi cửa hiển thị. Không phải "một mốc thì chọn cũng như không" —
+   * `entry_count === 1` vẫn có đúng một `<option>` để chọn nhầm. */
+  neoDoiDuoc?: boolean;
   /** Mặt BÃO tắt cờ này: composer của nó nằm ngoài khu, TRÊN cả tiêu đề. */
   hienComposer?: boolean;
 }) {
@@ -186,10 +195,15 @@ export function KhanDai({
             Bản mới: nói đúng sự thật một lần, rồi MỜI. Không đếm, không nhận xét ai, và
             **không lặp lại câu hỏi trong ô soạn ngay trên** ("…bạn nghĩ sao?") — hai câu
             gần giống nhau trên một màn hình đọc như lỗi copy. */}
+        {/* Chữ "**chung**" thêm 2026-08-26 và nó không phải sắc thái: từ lượt ấy
+            `tong_thread === 0` xảy ra cả khi các mốc đầy bình luận (chúng nằm trong ngăn
+            kéo, không còn render lại ở đây). Câu cũ — "Chưa có bình luận nào" — khi ấy là
+            một lời nói dối đọc được ngay trên cùng màn hình với các nút `💬 N bình luận`
+            của từng mốc ở ngay trên. */}
         <p className={css.mot_dong_moi} data-testid="khan-dai-mot-dong-moi">
-          Chưa có bình luận nào — mời bạn nêu ý kiến.
+          Chưa có bình luận chung nào — mời bạn nêu ý kiến.
         </p>
-        {hienComposer && <Composer anchorMocSeq={anchorMocSeq} neoDoiDuoc />}
+        {hienComposer && <Composer neoDoiDuoc={neoDoiDuoc} />}
       </section>
     );
   }
@@ -207,7 +221,7 @@ export function KhanDai({
 
       {/* Ô nhập NGAY DƯỚI tiêu đề (user chốt 2026-08-26) — xem docstring. Trước cả khối
           "Đáng chú ý": khối ấy là một phép LỌC của danh sách, nó thuộc về danh sách. */}
-      {hienComposer && <Composer anchorMocSeq={anchorMocSeq} neoDoiDuoc />}
+      {hienComposer && <Composer neoDoiDuoc={neoDoiDuoc} />}
 
       {/* TRÊN CÙNG của DANH SÁCH, trước cả thanh sort — PLAN 5.5 chốt đúng vị trí
           này. Đặt nó dưới cây là để cái nhãn trên nút vẫn hứa suông. */}

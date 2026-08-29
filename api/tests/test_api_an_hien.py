@@ -106,6 +106,26 @@ def goc_khong_reply(c: Comment) -> bool:
     return c.parent_id is None and not Comment.objects.filter(parent=c).exists()
 
 
+def nha_cua(client, mach: Mach, c: Comment) -> list[dict]:
+    """Mọi nút của khu **DUY NHẤT** mà thread của `c` được render — *2026-08-26*.
+
+    Từ lượt tách bình luận chung khỏi bình luận mốc, một thread có đúng MỘT nhà: khán đài
+    nếu gốc không neo, ngăn kéo mốc `anchor_moc_seq` nếu có neo
+    (`api/machs.py::liet_ke_binh_luan_mach`). Trước đó bình luận neo hiện ở CẢ HAI, nên
+    những bài đo dưới đây hỏi thẳng khán đài và không cần biết neo là gì.
+
+    Hàm này hỏi đúng câu *"bình luận còn chỗ đứng nào trên trang không"* — câu mà mọi bài
+    đo bia mộ ở dưới thật sự muốn hỏi. Ghim cứng vào khán đài thì từ nay chúng đo mỗi
+    phép lọc mới, không còn đo luật giữ bia mộ.
+    """
+    if c.anchor_moc_seq is None:
+        d = lay(client, f"/api/v1/machs/{mach.pk}/comments?limit=50")
+    else:
+        moc = Moc.objects.get(mach=mach, seq=c.anchor_moc_seq)
+        d = lay(client, f"/api/v1/mocs/{moc.pk}/comments")
+    return phang(d["threads"])
+
+
 def test_binh_luan_TAC_GIA_TU_XOA_van_giu_blockquote_trong_so(client, seed):
     """Đối chứng cho bài trên, và là một quyết định có chủ đích của 1b.
 
@@ -134,18 +154,20 @@ def test_binh_luan_TAC_GIA_TU_XOA_van_giu_blockquote_trong_so(client, seed):
     assert khoi["trang_thai"] == "da_xoa"
     assert khoi["body"] == c.body
 
-    # Đầu kia của liên kết: bia mộ phải có mặt ở khán đài...
-    kd = lay(client, f"/api/v1/machs/{seed.pk}/comments?limit=50")
-    bia = [t for t in phang(kd["threads"]) if t["id"] == khoi["comment_id"]]
-    assert bia, "khối trích trỏ vào một bình luận không có mặt ở khán đài"
+    # Đầu kia của liên kết: bia mộ phải có mặt ở **nhà của nó**. `r7` neo mốc, nên từ
+    # 2026-08-26 nhà ấy là ngăn kéo chứ không còn là khán đài — xem `nha_cua`.
+    assert c.anchor_moc_seq is not None, (
+        "seed phải giữ bình luận được trích ở trạng thái CÓ NEO; hết neo thì bài đo này "
+        "không còn đi qua đường ngăn kéo, tức đo lại đúng đường cũ"
+    )
+    bia = [t for t in nha_cua(client, seed, c) if t["id"] == khoi["comment_id"]]
+    assert bia, "khối trích trỏ vào một bình luận không có mặt ở chỗ nào trên trang"
     assert bia[0]["trang_thai"] == "da_xoa"
     assert bia[0]["body"] is None and bia[0]["author"] is None
-    assert kd["tong_thread"] == 14, "bia mộ giữ chỗ nên số thread gốc không đổi"
 
-    # ...và ở ngăn kéo của đúng mốc nó neo.
-    moc = Moc.objects.get(mach=seed, seq=c.anchor_moc_seq)
-    nk = lay(client, f"/api/v1/mocs/{moc.pk}/comments")
-    assert khoi["comment_id"] in [t["id"] for t in phang(nk["threads"])]
+    # Và nó KHÔNG được hiện thêm một lần nữa ở khán đài: thread neo có đúng một nhà.
+    kd = lay(client, f"/api/v1/machs/{seed.pk}/comments?limit=50")
+    assert khoi["comment_id"] not in [t["id"] for t in phang(kd["threads"])]
 
 
 def test_TRICH_DA_GO_van_giu_bia_mo_khi_tac_gia_tu_xoa(client, seed):
@@ -166,8 +188,7 @@ def test_TRICH_DA_GO_van_giu_bia_mo_khi_tac_gia_tu_xoa(client, seed):
     d = lay(client, f"/api/v1/machs/{seed.pk}")
     assert [m["trich"] for m in d["mocs"]] == [None] * 9, "trích đã gỡ thì không hiện"
 
-    kd = lay(client, f"/api/v1/machs/{seed.pk}/comments?limit=50")
-    bia = [t for t in phang(kd["threads"]) if t["id"] == c.pk]
+    bia = [t for t in nha_cua(client, seed, c) if t["id"] == c.pk]
     assert bia and bia[0]["trang_thai"] == "da_xoa"
     assert bia[0]["body"] is None
 
@@ -183,6 +204,10 @@ def test_binh_luan_DA_TUNG_TRICH_ma_bi_MOD_AN_thi_VAN_bien_mat(client, seed):
     trich = Trich.objects.get(moc__mach=seed, removed_at__isnull=True)
     c = trich.comment
     assert goc_khong_reply(c)
+    moc = Moc.objects.get(mach=seed, seq=c.anchor_moc_seq)
+    # Đo TRƯỚC để con số "mất hẳn một thread" là một hiệu số thật, không phải hằng gõ tay.
+    truoc = lay(client, f"/api/v1/mocs/{moc.pk}/comments")["threads"]
+
     Comment.objects.filter(pk=c.pk).update(hidden_at=timezone.now(), body=BI_AN)
 
     d = lay(client, f"/api/v1/machs/{seed.pk}")
@@ -192,12 +217,13 @@ def test_binh_luan_DA_TUNG_TRICH_ma_bi_MOD_AN_thi_VAN_bien_mat(client, seed):
     kd = lay(client, f"/api/v1/machs/{seed.pk}/comments?limit=50")
     assert khong_lo(kd)
     assert c.pk not in [t["id"] for t in phang(kd["threads"])]
-    assert kd["tong_thread"] == 13, "mất hẳn một thread gốc, không để lại bia mộ"
 
-    moc = Moc.objects.get(mach=seed, seq=c.anchor_moc_seq)
     nk = lay(client, f"/api/v1/mocs/{moc.pk}/comments")
     assert khong_lo(nk)
     assert c.pk not in [t["id"] for t in phang(nk["threads"])]
+    assert len(nk["threads"]) == len(truoc) - 1, (
+        "mất hẳn một thread gốc khỏi ngăn kéo, không để lại bia mộ"
+    )
 
 
 def test_mach_bi_an_bien_mat_khoi_moi_cua(client, seed):

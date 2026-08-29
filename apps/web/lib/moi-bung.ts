@@ -18,10 +18,21 @@ import { trongDaiGap, type DaiGap } from "./dai-gap";
  *
  * Bia mộ bị loại: `body` của nó là `null`, không có chữ nào để làm mồi.
  *
- * ⚠ **GIỚI HẠN ĐÃ BIẾT — chỉ đúng khi mạch có ≤ 50 thread gốc.** Nguồn dữ liệu là trang
- * đầu của `GET /machs/{id}/comments?sort=hay_nhat&limit=50` (PLAN 5.3 chốt 1 trang 50).
- * Mạch đông hơn thế thì câu điểm cao nhất trong dải gập có thể nằm ở trang sau và mồi sẽ
- * là câu cao nhì. Ghi ra thay vì giả vờ đủ; xử thật cần một trường do server tính.
+ * ## Nguồn đổi ngày 2026-08-27 (§G) — và giới hạn cũ chết theo
+ *
+ * Ứng viên nay là **các lát cắt ngăn kéo của chính những mốc trong dải gập**, gộp lại ở
+ * `components/trang-mach.tsx::threadsTrongDai`. Trước đó nguồn là trang đầu của
+ * `GET /machs/{id}/comments?sort=hay_nhat&limit=50` — và nó chết khi khu bình luận chung
+ * bắt đầu chỉ chứa thread `anchor_moc_seq IS NULL` (2026-08-26): điều kiện 2 ở trên đòi
+ * ứng viên **có** neo, hai vế loại trừ nhau, hàm trả `null` với mọi dữ liệu.
+ *
+ * ⚠ **Giới hạn "≤ 50 thread gốc" của bản cũ KHÔNG còn áp**: `GET /mocs/{id}/comments`
+ * không phân trang (nó trả trọn lát cắt của mốc), nên mồi nay luôn được chọn từ **đủ** tập
+ * ứng viên. Đây là một chỗ nguồn mới TỐT HƠN nguồn cũ, không chỉ khác.
+ *
+ * Điều kiện 2 vì thế thành một phép lọc **thừa** trên tập đầu vào hiện tại — giữ cố ý: luật
+ * phải đúng độc lập với việc người gọi đưa vào đúng hay sai tập, và don-vi
+ * `moi-bung.spec.ts` đo nó trên dữ liệu tổng hợp có cả thread ngoài dải.
  */
 export function chonMoiBung(
   threads: readonly BinhLuanOut[],

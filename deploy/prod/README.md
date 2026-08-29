@@ -124,9 +124,18 @@ trúc có tunnel, và nó chặn TRƯỚC khi request rời khỏi mạng Cloudf
 
 ## Nợ biết trước
 
-- **`EMAIL_URL` trống ⇒ KHÔNG AI ĐĂNG KÝ ĐƯỢC.** `ACCOUNT_EMAIL_VERIFICATION="mandatory"`,
-  không SMTP thì mail xác thực ghi ra file trong container và người đăng ký kẹt vĩnh viễn ở
-  trạng thái chưa xác thực. Đây là hạng mục số 1.
+- ~~**`EMAIL_URL` trống ⇒ KHÔNG AI ĐĂNG KÝ ĐƯỢC.**~~ **XONG 2026-08-27** — Brevo SMTP,
+  `smtp+ssl://…@smtp-relay.brevo.com:465`. Đo đủ ba chặng: đăng ký → thư đi (log Brevo xác
+  nhận, từ `no-reply@gikky.net`) → link xác thực đổi `verified=True`.
+  **Ba thứ phải nhớ về nó:**
+  1. **Gói free = 300 thư/NGÀY.** Hết quota thì `send_mail` ném, và allauth **không** tạo
+     được tài khoản. Chưa có cảnh báo nào khi gần chạm trần.
+  2. **Brevo chặn IP là công tắc riêng cho SMTP key và cho API key.** Bật lên mà không
+     thêm IP thì ra `525 5.7.1 Unauthorized IP address` — dễ tưởng là sai key. Phân biệt:
+     sai key ra `535 5.7.8 Authentication failed`. Hiện **đã tắt** cả hai, cố ý: IP của
+     máy này (`42.113.184.243`) là IP động của đường Internet nhà, allowlist trên nó là
+     bom hẹn giờ.
+  3. **`smtp+ssl://` (465), KHÔNG phải `smtps://`** — xem nợ `P-20260827-3`.
 - Google OAuth tắt (không credential) ⇒ frontend không render nút. Đúng theo PLAN mục 4.
 - `SECURE_PROXY_SSL_HEADER` không đặt ⇒ Django tin `scheme=http`. Không gây lỗi hiện tại
   (không có `SECURE_SSL_REDIRECT`; cookie `Secure` do settings chứ không do scheme), nhưng

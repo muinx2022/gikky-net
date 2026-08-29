@@ -278,3 +278,25 @@ def seed(db) -> Mach:
 def seed_post_thuong(seed) -> Mach:
     """Post thường của seed: `entry_count == 1`, `ket_qua` NULL, mạch vẫn `open`."""
     return Mach.objects.get(title=TITLE_POST_THUONG)
+
+
+@pytest.fixture
+def seed_chung(seed) -> Mach:
+    """Mạch HPG với **mọi thread gốc gỡ neo** — cả 14 thread nằm ở khu bình luận chung.
+
+    Có mặt từ 2026-08-26, khi `GET /machs/{id}/comments` bắt đầu chỉ trả thread gốc
+    `anchor_moc_seq IS NULL` (thread neo mốc N sống duy nhất trong ngăn kéo mốc N). Trên
+    seed thô chỉ **1** trong 14 thread là bình luận chung, nên mọi bài đo về *sắp xếp* và
+    *phân trang* của khán đài mất sạch dữ liệu — chúng cần một tập gốc đủ lớn và đủ rải
+    điểm, thứ mà seed dựng sẵn ở `seed_dev.py`.
+
+    Chỉ đụng **gốc**: reply luôn `anchor_moc_seq IS NULL` sẵn, và ghi đè chúng là dựng một
+    trạng thái đường ghi không bao giờ tạo ra.
+
+    ⚠ **Không dùng fixture này để đo chính phép lọc.** Nó gỡ đúng cái điều kiện phép lọc
+    đọc, nên một bài đo "khán đài chỉ chứa thread không neo" chạy trên đây sẽ xanh kể cả
+    khi phép lọc bị gỡ bỏ hoàn toàn — dùng `seed` thô, xem `test_api_khan_dai.py` khối
+    "Chỉ thread KHÔNG neo".
+    """
+    Comment.objects.filter(mach=seed, parent__isnull=True).update(anchor_moc_seq=None)
+    return seed

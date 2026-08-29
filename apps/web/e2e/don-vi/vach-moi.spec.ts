@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { cauMoiComposer, docView, matDeRender } from "../../lib/mat";
+import { docView, matDeRender } from "../../lib/mat";
 import { mocDauChuaXem, oChuaXem, type ViTriDoc } from "../../lib/vach-moi";
 
 /** Hai luật thuần của mặt BÃO — PLAN 5.5. Đo ở đây vì cả hai là hàm thuần, và vì cái
@@ -56,11 +56,5 @@ test("`?view=` THẮNG face của server, và chỉ nó mới thắng", () => {
   expect(matDeRender(soi, "can")).toBe("can");
 });
 
-test("câu mồi composer: câu của TÁC GIẢ thắng, không có thì theo trạng thái sổ", () => {
-  const moc = (q: string | null, seq = 9) =>
-    ({ seq, question_for_crowd: q }) as Parameters<typeof cauMoiComposer>[0];
-  expect(cauMoiComposer(moc("Bạn vào lúc nào?"), true)).toBe("Bạn vào lúc nào?");
-  expect(cauMoiComposer(moc(null), true)).toBe("Mốc 9 vừa đóng sổ — bạn rút ra gì?");
-  expect(cauMoiComposer(moc(null), false)).toBe("Mốc 9 vừa lên — bạn nghĩ sao?");
-  expect(cauMoiComposer(undefined, false)).toBe("Chém gió với chủ mạch…");
-});
+// Bài đo "câu mồi composer" XOÁ 2026-08-26 cùng hàm `cauMoiComposer` — composer mặt BÃO
+// nay là ô của cả bài, không mồi theo mốc nào. Xem `lib/mat.ts` đầu file.

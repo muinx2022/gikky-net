@@ -90,10 +90,18 @@ def test_xem_mach(client, seed, django_assert_num_queries):
 
 
 @pytest.mark.parametrize("sort", ["hay_nhat", "moi_nhat", "cu_nhat"])
-def test_khan_dai_ba_sort_deu_cung_so_query(client, seed, django_assert_num_queries, sort):
-    """Ba sort phải cùng một chi phí: sort là việc của Python, không phải của SQL."""
+def test_khan_dai_ba_sort_deu_cung_so_query(
+    client, seed_chung, django_assert_num_queries, sort
+):
+    """Ba sort phải cùng một chi phí: sort là việc của Python, không phải của SQL.
+
+    `seed_chung` (không phải `seed`) từ 2026-08-26: khán đài chỉ trả thread gốc không neo,
+    và trên seed thô đó là 1/14 thread — con số `24` phía dưới sẽ thành `1` và bài đo mất
+    hết sức nặng. Phép lọc chạy SAU khi cây đã dựng nên nó không đụng tới số truy vấn; đó
+    chính là thứ bài này ghim.
+    """
     with django_assert_num_queries(SO_QUERY["khan_dai"]):
-        d = lay(client, f"/api/v1/machs/{seed.pk}/comments?sort={sort}&limit=50")
+        d = lay(client, f"/api/v1/machs/{seed_chung.pk}/comments?sort={sort}&limit=50")
     assert len(phang(d["threads"])) == 24
 
 
@@ -133,7 +141,7 @@ def test_ho_so(client, seed, django_assert_num_queries):
 
 
 def test_them_binh_luan_KHONG_lam_tang_so_query(
-    client, seed, nguoi_khac, django_assert_num_queries
+    client, seed_chung, nguoi_khac, django_assert_num_queries
 ):
     """Bài đo chống-rỗng cho cả file: số truy vấn phải ĐỘC LẬP với số hàng.
 
@@ -144,34 +152,42 @@ def test_them_binh_luan_KHONG_lam_tang_so_query(
     Số hàng `Trich` cũng tăng 1 → 9 vì truy vấn thứ ba của hai endpoint bình luận
     (`tap_tung_duoc_trich`, Z1) đọc bảng đó: một cài đặt "tra `Trich` cho từng bình luận"
     trông y hệt cài đặt đúng khi cả mạch chỉ có một hàng trích.
+
+    Chạy trên `seed_chung` từ 2026-08-26 (xem fixture): 14 thread gốc của seed nằm ở khu
+    chung, 10 thread thêm vào neo mốc 1 nên chúng nằm ở ngăn kéo. **44 hàng chia làm hai
+    nhà, và bài đo cộng lại đủ 44** — con số ấy quan trọng hơn trước, vì từ lượt này một
+    phép lọc quá tay sẽ làm hàng biến mất khỏi cả hai cửa mà mỗi cửa nhìn riêng vẫn hợp lý.
     """
-    goc = list(Comment.objects.filter(mach=seed, parent__isnull=True))[:10]
+    goc = list(Comment.objects.filter(mach=seed_chung, parent__isnull=True))[:10]
     them = []
     for i, cha in enumerate(goc):
-        viet(seed, nguoi_khac, f"Reply thêm {i}", parent=cha)
-        them.append(viet(seed, nguoi_khac, f"Thread thêm {i}", anchor=1))
-    seed.refresh_from_db()
-    assert Comment.objects.filter(mach=seed).count() == 44
+        viet(seed_chung, nguoi_khac, f"Reply thêm {i}", parent=cha)
+        them.append(viet(seed_chung, nguoi_khac, f"Thread thêm {i}", anchor=1))
+    seed_chung.refresh_from_db()
+    assert Comment.objects.filter(mach=seed_chung).count() == 44
 
     # Mỗi mốc tối đa 1 trích đang hiệu lực (PLAN 5.6 rào 1), nên trải ra 8 mốc còn trống.
     da_trich = set(
-        Trich.objects.filter(moc__mach=seed).values_list("moc_id", flat=True)
+        Trich.objects.filter(moc__mach=seed_chung).values_list("moc_id", flat=True)
     )
     for moc, c in zip(
-        [m for m in Moc.objects.filter(mach=seed) if m.pk not in da_trich], them
+        [m for m in Moc.objects.filter(mach=seed_chung) if m.pk not in da_trich], them
     ):
         Trich.objects.create(moc=moc, comment=c)
-    assert Trich.objects.filter(comment__mach=seed).count() == 9
+    assert Trich.objects.filter(comment__mach=seed_chung).count() == 9
 
     with django_assert_num_queries(SO_QUERY["xem_mach"]):
-        lay(client, f"/api/v1/machs/{seed.pk}")
+        lay(client, f"/api/v1/machs/{seed_chung.pk}")
     with django_assert_num_queries(SO_QUERY["khan_dai"]):
-        d = lay(client, f"/api/v1/machs/{seed.pk}/comments?limit=50")
-    assert len(phang(d["threads"])) == 44
+        d = lay(client, f"/api/v1/machs/{seed_chung.pk}/comments?limit=50")
 
-    moc1 = Moc.objects.get(mach=seed, seq=1)
+    moc1 = Moc.objects.get(mach=seed_chung, seq=1)
     with django_assert_num_queries(SO_QUERY["ngan_keo"]):
-        lay(client, f"/api/v1/mocs/{moc1.pk}/comments")
+        nk = lay(client, f"/api/v1/mocs/{moc1.pk}/comments")
+
+    assert len(phang(d["threads"])) == 34, "14 thread chung + 20 reply"
+    assert len(phang(nk["threads"])) == 10, "10 thread thêm vào, neo mốc 1"
+    assert len(phang(d["threads"])) + len(phang(nk["threads"])) == 44
 
 
 def test_them_mach_KHONG_lam_tang_so_query_cua_feed(

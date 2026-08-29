@@ -101,21 +101,62 @@ Tổng hợp diễn biến **phiên Mỹ và châu Âu đêm qua** (tức đêm 
 - Chỉ số Mỹ: S&P 500, Nasdaq Composite, Dow Jones — mức đóng cửa và mức thay đổi.
 - Chỉ số châu Âu: STOXX 600, DAX, FTSE 100.
 - Hàng hoá: dầu WTI, dầu Brent, vàng giao ngay.
-- Tiền tệ và lợi suất: chỉ số DXY, lợi suất trái phiếu chính phủ Mỹ kỳ hạn 2 năm và
-  10 năm.
+- Tiền tệ và lợi suất: chỉ số DXY, lợi suất trái phiếu chính phủ Mỹ kỳ hạn **10 năm**
+  (`^TNX`) và **5 năm** (`^FVX`).
+  ⚠ **Kỳ hạn 2 năm: BỎ, đừng đi tìm.** Đo 28/08/2026: không nguồn nào đọc được bằng
+  `WebFetch` — CNBC trả 403, Yahoo không có mã, `fred.stlouisfed.org/series/DGS2`,
+  `home.treasury.gov` và `marketwatch.com/investing/bond/tmubmusd02y` đều trượt. Chính
+  con số này đã đẩy lượt 28/08 sang trình duyệt và làm nó treo 376 phút. Ghi 10 năm và
+  5 năm là đủ.
 - Crypto qua đêm: Bitcoin, Ethereum.
 - Tin vĩ mô **đã công bố**: số liệu kinh tế Mỹ/EU ra trong đêm, phát biểu quan chức
   ngân hàng trung ương, quyết định lãi suất.
 
-### Nguồn gợi ý cho slot này
+### Nguồn — danh sách này ĐO ĐƯỢC, không phải gợi ý
 
-Reuters (mục Markets), Bloomberg, CNBC (mục Markets), Investing.com, MarketWatch,
-Financial Times, trang công bố của Cục Dự trữ Liên bang Mỹ (federalreserve.gov), Ngân
-hàng Trung ương châu Âu (ecb.europa.eu), Cục Thống kê Lao động Mỹ (bls.gov), EIA
-(eia.gov) cho tồn kho dầu.
+Đo ngày 28/08/2026 trên chính lượt chạy của khung này: 33 lời gọi, **23 ăn / 10 trượt**.
+Danh sách dưới là kết quả đo đó, nên **đi theo thứ tự này** thay vì tự dò.
 
-Đây là **gợi ý**, không phải danh sách đóng. Nguồn nào cũng được miễn là dẫn được link
-cụ thể tới bài/trang có con số đó.
+**Bậc 1 — `WebFetch` đọc được, dùng trước.** Yahoo Finance phủ gần hết nhu cầu của khung này:
+
+| Cần gì | URL |
+|---|---|
+| Chỉ số thế giới (S&P, Nasdaq, Dow, STOXX, DAX, FTSE) | `https://finance.yahoo.com/markets/world-indices/` |
+| Lợi suất trái phiếu Mỹ **10 năm + 5 năm** (không có 2 năm) | `https://finance.yahoo.com/markets/bonds/` |
+| Hàng hoá | `https://finance.yahoo.com/markets/commodities/` |
+| Crypto qua đêm | `https://finance.yahoo.com/markets/crypto/all/` |
+| Chỉ số đồng đô la (DXY) | `https://finance.yahoo.com/quote/DX-Y.NYB/` |
+| Vàng | `https://finance.yahoo.com/quote/GC%3DF/` (hợp đồng tương lai) |
+| STOXX 600 | `https://finance.yahoo.com/quote/%5ESTOXX/` |
+| Tường thuật phiên + tin vĩ mô | `finance.yahoo.com/markets/live/…`, `finance.yahoo.com/economy/articles/…` |
+
+`fortune.com/article/…` cũng đọc được (đã dùng cho giá dầu).
+
+**Bậc 2 — `WebSearch`.** Ăn 11/11. Dùng để tìm bài tường thuật và số liệu vĩ mô đã công bố,
+rồi `WebFetch` vào link tìm được.
+
+**Bậc 3 — trình duyệt, CHỈ khi bậc 1 và 2 đều không ra số.** Mở bằng
+`preview_start`/`navigate` rồi `get_page_text`. Đọc xong `tabs_close`. Chỉ được đọc —
+không gõ, không bấm, không chạy JavaScript.
+
+⚠ **Đây là bậc đắt nhất, và nó từng làm hỏng hai bản tin sáng.** Ngày 28/08 lượt chạy
+đứng im **376 phút** ở đúng một lời gọi `preview_start` vào `cnbc.com` — nổ lúc 06:16,
+tan lúc 12:40, quá hạn chót 5 tiếng rưỡi. Đừng coi trình duyệt là lối tắt khi `WebFetch`
+trả về ít chữ: **thà bỏ một mục còn hơn treo cả bản tin.**
+
+**Các host dưới đây TRƯỢT 100%, đừng gọi `WebFetch` vào chúng:**
+
+`tradingeconomics.com` (4/4 trượt) · `fred.stlouisfed.org` · `home.treasury.gov` ·
+`marketwatch.com` · `cnbc.com` (live blog) · `dol.gov/ui/data.pdf` (là PDF) ·
+`finance.yahoo.com/quote/XAUUSD%3DX/` (dùng `GC%3DF` thay thế).
+
+Gọi vào chúng là tiêu thời gian của một khung chỉ dài 2 tiếng, rồi vẫn phải quay về bậc 1.
+
+### Ngân sách thời gian
+
+Khung này nổ 06:12 và **hết hạn 07:00** — chỉ khoảng 45 phút. Trong đó phải viết bài và
+đăng. Nếu quá **06:45** mà vẫn chưa đủ số cho một mục, **bỏ mục đó** và viết với những gì
+đã có. Bản tin 6 mục đăng đúng giờ có giá trị; bản tin 12 mục đăng lúc 12:40 thì không.
 
 ## Luật nội dung — đọc kỹ, đây là phần hồn của việc
 

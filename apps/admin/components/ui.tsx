@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { useTieuDeTrang } from "../lib/tieu-de";
 import { mucTheoDuongDan } from "./khung/menu";
 
 /** Những mảnh giao diện lặp lại ở mọi trang quản trị.
@@ -24,6 +26,12 @@ export function TieuDeTrang({
 }) {
   const duong_dan = usePathname();
   const khop = mucTheoDuongDan(duong_dan);
+  const ten_trang = tieu_de ?? khop?.muc.nhan ?? "Quản trị";
+
+  // Tiêu đề tab đi cùng H1 — một nguồn, không hai. Ba trang không dùng component này
+  // (`/m/[machId]`, `/u/[username]`, `/dang-nhap`) tự gọi `useTieuDeTrang`, vì tên của
+  // chúng chỉ biết được sau khi nạp dữ liệu.
+  useTieuDeTrang(ten_trang);
 
   return (
     <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
@@ -32,7 +40,7 @@ export function TieuDeTrang({
           {khop?.nhom.ten ?? "Quản trị"}
         </p>
         <h1 className="text-2xl font-semibold" data-testid="tieu-de-trang">
-          {tieu_de ?? khop?.muc.nhan ?? "Quản trị"}
+          {ten_trang}
         </h1>
         {mo_ta !== undefined && <p className="mt-1 text-sm text-muc-mo">{mo_ta}</p>}
       </div>
@@ -101,7 +109,23 @@ export function Skeleton({ dong = 5 }: { dong?: number }) {
   );
 }
 
-export function HienLoi({ loi }: { loi: string | null }) {
+/** Khối lỗi đỏ đứng trên đầu trang.
+ *
+ * `het_phien` là **lối ra**, không phải một câu chữ đẹp hơn: khi session hết hạn giữa
+ * chừng, mọi nút trên trang đều trả `chua_dang_nhap` và mod đọc câu lỗi ấy vẫn không biết
+ * bấm gì — điều hướng của khu quản trị nằm hết sau `CongQuanTri`, còn `/dang-nhap` thì
+ * không có mục menu nào. Link ở đây là đường duy nhất không phải gõ tay vào thanh địa chỉ.
+ *
+ * Cờ do `useHanhDong` bật (`lib/hanh-dong.ts`) — một chỗ nhận ra mã lỗi, một chỗ vẽ ra
+ * lối thoát.
+ */
+export function HienLoi({
+  loi,
+  het_phien = false,
+}: {
+  loi: string | null;
+  het_phien?: boolean;
+}) {
   if (loi === null) return null;
   return (
     <div
@@ -110,6 +134,15 @@ export function HienLoi({ loi }: { loi: string | null }) {
       data-testid="hien-loi"
     >
       {loi}
+      {het_phien && (
+        <Link
+          href="/dang-nhap"
+          className="nut nut-nho mt-2 block w-fit"
+          data-testid="loi-dang-nhap-lai"
+        >
+          Đăng nhập lại
+        </Link>
+      )}
     </div>
   );
 }
@@ -189,6 +222,7 @@ export function ThanhPhanTrang({
   co_truoc,
   co_sau,
   dang_tai,
+  khoa = false,
   onTruoc,
   onSau,
   ten_muc = "mục",
@@ -199,6 +233,10 @@ export function ThanhPhanTrang({
   co_truoc: boolean;
   co_sau: boolean;
   dang_tai: boolean;
+  /** Khoá hai nút mà KHÔNG đổi dòng chữ — cho lượt hàng loạt đang chạy. Dồn nó vào
+   * `dang_tai` là số trang biến thành "Đang tải…" (trong `aria-live`) suốt nhiều giây
+   * cho một bảng đang đứng yên — hai nghĩa khác nhau thì hai prop. */
+  khoa?: boolean;
   onTruoc: () => void;
   onSau: () => void;
   /** Danh từ đếm được, để câu tổng đọc ra tiếng người: "295 bài", "40 tài khoản". */
@@ -223,7 +261,7 @@ export function ThanhPhanTrang({
         <button
           type="button"
           className="nut"
-          disabled={!co_truoc || dang_tai}
+          disabled={!co_truoc || dang_tai || khoa}
           onClick={onTruoc}
           data-testid="nut-trang-truoc"
         >
@@ -239,7 +277,7 @@ export function ThanhPhanTrang({
         <button
           type="button"
           className="nut"
-          disabled={!co_sau || dang_tai}
+          disabled={!co_sau || dang_tai || khoa}
           onClick={onSau}
           data-testid="nut-trang-sau"
         >

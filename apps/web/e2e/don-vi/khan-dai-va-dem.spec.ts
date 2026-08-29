@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import type { BinhLuanOut, KhanDaiOut } from "@gikky/api-client";
+import type { BinhLuanOut, KhanDaiOut, NganKeoOut } from "@gikky/api-client";
 import { expect, test } from "@playwright/test";
 
 import { boChuThich } from "./quet";
@@ -11,10 +11,12 @@ import { NGUONG_HIEN_SO_DEM, nenHienSoDem } from "../../lib/dem";
 import {
   HIEN_KHOI_DANG_CHU_Y,
   SAU_KHAN_DAI,
+  SAU_NGAN_KEO,
   SORT_KHAN_DAI,
   SORT_MAC_DINH,
   docSort,
   idTrongTrang,
+  idTrongTrangGop,
   nenRenderCauDangDoc,
   neoBinhLuan,
   trangThaiDeepLink,
@@ -93,11 +95,16 @@ test("deep-link: có trong trang thì cuộn được, không có thì phải N�
   expect(trangThaiDeepLink(11, new Set())).toBe("trang_sau");
 });
 
-/** Một chuỗi thẳng `depth = 1 … sau`, gốc ở đầu. `id` trùng `depth` cho dễ đọc. */
-function chuoiSau(sau: number): BinhLuanOut[] {
+/** Một chuỗi thẳng `depth = 1 … sau`, gốc ở đầu.
+ *
+ * `id` = `tuId + depth − 1`, nên mặc định `id` trùng `depth` cho dễ đọc. `tuId` có mặt để
+ * dựng **hai** chuỗi có id RỜI NHAU trong cùng một bài đo (§D3): phép hợp mà hai vế trùng
+ * id thì bỏ vế nào cũng ra cùng kết quả, tức bài đo rỗng.
+ */
+function chuoiSau(sau: number, tuId = 1): BinhLuanOut[] {
   const nut = (depth: number, replies: BinhLuanOut[]): BinhLuanOut => ({
-    id: depth,
-    parent_id: depth === 1 ? null : depth - 1,
+    id: tuId + depth - 1,
+    parent_id: depth === 1 ? null : tuId + depth - 2,
     depth,
     anchor_moc_seq: depth === 1 ? 1 : null,
     author: { username: "ai_do", display_name: "Ai Đó", avatar_url: null },
@@ -143,8 +150,84 @@ test("W8 — deep-link tới bình luận sâu quá ngưỡng phải nói 'nằm
   expect(trangThaiDeepLink(SAU_KHAN_DAI + 2, co)).toBe("trang_sau");
 });
 
+/** Một `NganKeoOut` bọc quanh `threads`. `idTrongTrangGop` chỉ đọc `threads`; các trường
+ * còn lại khai đủ vì kiểu là kiểu SINH RA từ OpenAPI — khai thiếu là lỗi biên dịch, và
+ * đó là hành vi đúng (`tsc --noEmit` bắt, `pnpm e2e:don-vi` thì KHÔNG: Playwright
+ * transpile chứ không type-check). */
+function latCat(seq: number, threads: BinhLuanOut[]): NganKeoOut {
+  return {
+    moc_id: 1000 + seq,
+    moc_seq: seq,
+    so_binh_luan: threads.length,
+    question_for_crowd: null,
+    threads,
+  };
+}
+
+test("§D3 — `idTrongTrangGop` là HỢP thật: thiếu vế nào cũng mất id của vế đó", () => {
+  // Đây là chỗ ghim công thức deep-link của cả trang mạch, và nó thay cho ca "dựng 51
+  // thread trong e2e" mà `mach-can.spec.ts` từng gánh — xem §D4.
+  //
+  // Ba tập id RỜI NHAU: khán đài `1…3`, ngăn kéo mốc 2 `101…103`, ngăn kéo mốc 5
+  // `201…203`. Rời nhau là điều kiện của bài đo: trùng id thì bỏ một vế vẫn ra cùng kết
+  // quả và cả bài xanh rỗng.
+  const chung = chuoiSau(3);
+  const neo_2 = chuoiSau(3, 101);
+  const neo_5 = chuoiSau(3, 201);
+
+  const gop = idTrongTrangGop(chung, [latCat(2, neo_2), latCat(5, neo_5)]);
+
+  expect([...gop].sort((a, b) => a - b)).toEqual([1, 2, 3, 101, 102, 103, 201, 202, 203]);
+
+  // Hai vế, hai câu khẳng định riêng — để lượt thử phá chỉ ra được vế nào chết.
+  for (const id of [1, 2, 3]) {
+    expect(gop.has(id), `mất vế KHÁN ĐÀI: id ${id}`).toBe(true);
+  }
+  for (const id of [101, 102, 103, 201, 202, 203]) {
+    expect(gop.has(id), `mất vế LÁT CẮT ngăn kéo: id ${id}`).toBe(true);
+  }
+
+  // `trangThaiDeepLink` đọc đúng tập ấy — đây mới là thứ người dùng nhìn thấy. Không có
+  // vế này thì bài đo dừng ở một `Set`, còn câu "chưa nhảy tới được" vẫn in ra được.
+  expect(trangThaiDeepLink(102, gop)).toBe("cuon_duoc");
+  expect(trangThaiDeepLink(999, gop)).toBe("trang_sau");
+});
+
+test(`§D3 — hợp cắt ở tầng ${SAU_KHAN_DAI} ở CẢ HAI vế, không riêng khán đài`, () => {
+  // Ngăn kéo nay là bản CHÍNH và sâu bằng khán đài (§C1), nhưng nó vẫn CÓ ngưỡng. Một
+  // cài đặt "khán đài thì cắt, lát cắt thì lấy cả cây" hứa cuộn tới một nút không có
+  // `<li id="bl-N">` nào — đúng nợ B4, chỉ đổi khu.
+  const sau = SAU_KHAN_DAI + 2;
+  const gop = idTrongTrangGop(null, [latCat(2, chuoiSau(sau, 101))]);
+
+  expect(gop.has(101 + SAU_KHAN_DAI - 1), `tầng ${SAU_KHAN_DAI} phải có`).toBe(true);
+  expect(gop.has(101 + SAU_KHAN_DAI), `tầng ${SAU_KHAN_DAI + 1} KHÔNG được có`).toBe(false);
+
+  // `null` là ca THẬT, không phải ca biên bịa ra: `trang-mach.tsx` cố ý không nạp trang 1
+  // `hay_nhat` khi mạch không gập, không trích và không xem sort ấy (vá C6).
+  expect(gop.size).toBe(SAU_KHAN_DAI);
+});
+
 test("neo bình luận là một chỗ sinh một chỗ đọc", () => {
   expect(neoBinhLuan(1234)).toBe("bl-1234");
+});
+
+test("§C1 — ngăn kéo sâu BẰNG khán đài, và `the-moc.tsx` thật sự dùng hằng ấy", () => {
+  // Từ 2026-08-26 ngăn kéo là **nhà duy nhất** của thread neo mốc: khán đài đã lọc chúng
+  // ra (`api/machs.py::goc_khong_neo`), nên link "tiếp tục thread →" không còn nhà đầy đủ
+  // nào để trỏ sang. PLAN 5.4 luật 2 vế "render tối đa 2 tầng reply" (ngưỡng 3) chết theo.
+  expect(SAU_NGAN_KEO).toBe(SAU_KHAN_DAI);
+
+  // Vế thứ hai là vế bắt được ca "hằng đúng, chỗ dùng gõ số": hằng bằng nhau không nói gì
+  // về việc `the-moc.tsx` có đọc nó hay không. `boChuThich` bắt buộc — chú thích ngay trên
+  // lời gọi có nhắc cả hai tên hằng.
+  const src = boChuThich(
+    readFileSync(resolve(__dirname, "..", "..", "components/the-moc.tsx"), "utf8"),
+  );
+  expect(src).toMatch(/doSauToiDa=\{SAU_NGAN_KEO\}/);
+  expect(src, "gõ số thẳng thì hai hằng hết ràng buộc được chỗ render").not.toMatch(
+    /doSauToiDa=\{\s*\d/,
+  );
 });
 
 test("tách `<slug>-<id>`: id là khoá, slug chỉ để đọc", () => {

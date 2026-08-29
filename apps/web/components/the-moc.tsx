@@ -201,6 +201,17 @@ export function TheMoc({
                     nut={n}
                     doSauToiDa={SAU_NGAN_KEO}
                     duongDanKhanDai={duongDanKhanDai}
+                    // **Bản CHÍNH từ 2026-08-26** — `id="bl-N"` và `data-binh-luan-id`
+                    // của thread neo mốc này nằm ở đây, không ở khán đài nữa: khán đài
+                    // chỉ còn thread KHÔNG neo (`api/machs.py`), nên ngăn kéo là nơi
+                    // DUY NHẤT chúng render.
+                    //
+                    // Bất biến "mỗi bình luận đúng MỘT nút mang định danh" vẫn giữ, và
+                    // giữ được là nhờ hai tập nguồn rời nhau: khán đài lấy
+                    // `anchor_moc_seq IS NULL`, ngăn kéo lấy `== seq`. Khối "Câu đáng
+                    // đọc" (đang tắt) vẫn `datNeo=false`, nên bật lại cũng không sinh
+                    // id trùng.
+                    datNeo
                   />
                 ))}
               </DanhSachBinhLuan>

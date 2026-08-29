@@ -27,6 +27,8 @@ import {
 } from "../../../components/ui";
 import { useDanhSach } from "../../../lib/danh-sach";
 import { GOC_API, headerGhi, moTaLoi } from "../../../lib/api";
+import { useHanhDong } from "../../../lib/hanh-dong";
+import { useTieuDeTrang } from "../../../lib/tieu-de";
 
 /** Số hàng mỗi trang. Một hằng cho CẢ HAI phía: `limit` gửi lên server và mẫu số để
  * `useDanhSach` chia ra `so_trang`. Hai con số này lệch nhau thì thanh phân trang báo
@@ -44,7 +46,6 @@ export default function TrangChiTietMach() {
   const mach_id = Number(tham_so.machId);
   const [mach, datMach] = useState<MachQuanTriOut | null>(null);
   const [loi, datLoi] = useState<string | null>(null);
-  const [dang_chay, datDangChay] = useState(false);
 
   const nap = useCallback(async () => {
     datLoi(null);
@@ -62,20 +63,25 @@ export default function TrangChiTietMach() {
     void nap();
   }, [nap, mach_id]);
 
-  const chay = useCallback(
-    async (viec: () => Promise<{ error?: unknown }>) => {
-      datDangChay(true);
-      datLoi(null);
-      try {
-        const { error } = await viec();
-        if (error !== undefined) datLoi(moTaLoi(error));
-        else await nap();
-      } finally {
-        datDangChay(false);
-      }
-    },
-    [nap],
+  // Tiêu đề tab theo TIÊU ĐỀ MẠCH, nên nó chỉ biết được sau khi nạp xong — `null` lúc
+  // chưa có nghĩa là "giữ nguyên tiêu đề cũ" (xem `lib/tieu-de.ts`). Hook phải đứng
+  // TRƯỚC ba nhánh `return` sớm bên dưới: hook không được nằm sau một return có điều kiện.
+  // Hai nhánh KHÔNG BAO GIỜ có tên (id không hợp lệ · nạp hỏng) thì lấy nhãn khu "Bài
+  // viết" — để `null` là tab mang tên của trang TRƯỚC vĩnh viễn.
+  useTieuDeTrang(
+    mach !== null
+      ? mach.title
+      : Number.isNaN(mach_id) || loi !== null
+        ? "Bài viết"
+        : null,
   );
+
+  const {
+    dang_chay,
+    loi: loi_hanh_dong,
+    het_phien,
+    chay,
+  } = useHanhDong(nap);
 
   if (Number.isNaN(mach_id)) return <HienLoi loi="Id mạch không hợp lệ." />;
   if (loi !== null && mach === null) return <HienLoi loi={loi} />;
@@ -107,7 +113,7 @@ export default function TrangChiTietMach() {
         </p>
       </div>
 
-      <HienLoi loi={loi} />
+      <HienLoi loi={loi_hanh_dong ?? loi} het_phien={het_phien} />
 
       <The className="mb-4 p-4">
         <div className="flex flex-wrap items-center gap-2">
@@ -253,8 +259,6 @@ export default function TrangChiTietMach() {
  * `return` có điều kiện.
  */
 function BinhLuanCuaMach({ mach_id }: { mach_id: number }) {
-  const [dang_chay, datDangChay] = useState(false);
-
   const nap = useCallback(
     (cursor: string | null) =>
       quanTriLietKeBinhLuan({
@@ -267,6 +271,15 @@ function BinhLuanCuaMach({ mach_id }: { mach_id: number }) {
 
   const ds = useDanhSach<BinhLuanDongOut>(nap, MOI_TRANG);
 
+  /** ⚠ Khối này từng **nuốt lỗi**: nút Ẩn gọi `quanTriDatAnBinhLuan(...)` rồi vứt kết
+   * quả đi — không đọc `{error}`, không có chỗ nào hiện nó. Server từ chối (hết phiên,
+   * 403 CSRF, bình luận đã bị xoá) thì màn hình vẫn nạp lại y như một lượt thành công, và
+   * mod kết luận là đã ẩn. Đây là chỗ duy nhất trong khu quản trị làm thế; nay nó đi
+   * chung một cửa với tám trang kia. */
+  const { dang_chay, loi, het_phien, chay } = useHanhDong(async () => {
+    await ds.napLai();
+  });
+
   return (
     <The
       tieu_de="Khán đài"
@@ -274,7 +287,7 @@ function BinhLuanCuaMach({ mach_id }: { mach_id: number }) {
       className="mt-4"
     >
       <div className="mt-3">
-        <HienLoi loi={ds.loi} />
+        <HienLoi loi={loi ?? ds.loi} het_phien={het_phien} />
         {ds.items === null ? (
           <Skeleton dong={3} />
         ) : ds.items.length === 0 ? (
@@ -307,20 +320,16 @@ function BinhLuanCuaMach({ mach_id }: { mach_id: number }) {
                       className="nut nut-nho"
                       disabled={dang_chay}
                       data-testid={`nut-an-binh-luan-mach-${c.id}`}
-                      onClick={async () => {
-                        datDangChay(true);
-                        try {
-                          await quanTriDatAnBinhLuan({
+                      onClick={() =>
+                        chay(() =>
+                          quanTriDatAnBinhLuan({
                             baseUrl: GOC_API,
                             headers: headerGhi(),
                             path: { comment_id: c.id },
                             body: { an: !c.da_bi_an, ly_do: "" },
-                          });
-                          await ds.napLai();
-                        } finally {
-                          datDangChay(false);
-                        }
-                      }}
+                          }),
+                        )
+                      }
                     >
                       {c.da_bi_an ? "Gỡ ẩn" : "Ẩn"}
                     </button>

@@ -23,8 +23,9 @@ import {
   TieuDeTrang,
   gioVN,
 } from "../../components/ui";
-import { GOC_API, headerGhi, moTaLoi } from "../../lib/api";
+import { GOC_API, headerGhi } from "../../lib/api";
 import { useDanhSach } from "../../lib/danh-sach";
+import { useHanhDong } from "../../lib/hanh-dong";
 
 /** Số hàng mỗi trang. Một hằng cho CẢ HAI phía — xem ghi chú ở `app/users/page.tsx`. */
 const MOI_TRANG = 25;
@@ -56,8 +57,6 @@ const MOI_TRANG = 25;
  */
 export default function TrangQuanTriVien() {
   const { lamMoi, mod } = useQuanTri();
-  const [dang_chay, datDangChay] = useState(false);
-  const [loi_hanh_dong, datLoiHanhDong] = useState<string | null>(null);
   const [mo_cap, datMoCap] = useState(false);
   /** username đã chọn trong ngăn kéo cấp quyền, hoặc `null` khi chưa chọn ai. */
   const [chon, datChon] = useState<string | null>(null);
@@ -82,26 +81,15 @@ export default function TrangQuanTriVien() {
 
   const ds = useDanhSach<NguoiDungQuanTriOut>(nap, MOI_TRANG);
 
-  const chay = useCallback(
-    async (viec: () => Promise<{ error?: unknown }>) => {
-      datDangChay(true);
-      datLoiHanhDong(null);
-      try {
-        const { error } = await viec();
-        if (error !== undefined) {
-          datLoiHanhDong(moTaLoi(error));
-          return;
-        }
-        await ds.napLai();
-        // `lamMoi` vì hàng vừa đổi CÓ THỂ là chính người đang đăng nhập ở một tab khác,
-        // và vì badge/ngữ cảnh khu quản trị đọc lại quyền từ server.
-        await lamMoi();
-      } finally {
-        datDangChay(false);
-      }
-    },
-    [ds, lamMoi],
-  );
+  const {
+    dang_chay,
+    loi: loi_hanh_dong,
+    het_phien,
+    chay,
+  } = useHanhDong(async () => {
+    await ds.napLai();
+    await lamMoi();
+  });
 
   return (
     <>
@@ -120,7 +108,7 @@ export default function TrangQuanTriVien() {
         }
         mo_ta="Tài khoản có quyền vào khu quản trị. Cấp quyền mod cho ai cũng làm tài khoản đó KHÔNG ban được nữa — chỉ superuser đổi được."
       />
-      <HienLoi loi={loi_hanh_dong ?? ds.loi} />
+      <HienLoi loi={loi_hanh_dong ?? ds.loi} het_phien={het_phien} />
 
       <The>
         {ds.items === null ? (

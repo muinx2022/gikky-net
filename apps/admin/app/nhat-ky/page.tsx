@@ -31,7 +31,44 @@ const MOI_TRANG = 50;
  * Bộ lọc `action` so **BẰNG ĐÚNG**, không so khớp một phần: `an_moc` và `go_an_moc` chỉ
  * khác nhau một tiền tố, nên `icontains` sẽ trả cả hai và mod đọc lịch sử ẩn thành lịch
  * sử gỡ ẩn.
+ *
+ * Và chính vì so bằng đúng nên ô lọc cần `<datalist>`: gõ sai một ký tự là "không có
+ * dòng nào", không phải "ít dòng hơn" — mà mod không có chỗ nào đọc được danh sách mã
+ * hợp lệ. Xem `GOI_Y_ACTION`.
  */
+
+/** 22 hằng `AUDIT_*` của `api/core/ghi.py` (chép tay, 2026-08-26).
+ *
+ * **Chỉ là GỢI Ý.** `<datalist>` không ràng buộc gì: mod vẫn gõ tự do được, và bộ lọc
+ * vẫn so BẰNG ĐÚNG với thứ gõ vào. Nên thêm một action mới ở server mà quên chỗ này thì
+ * **không hỏng gì** — chỉ thiếu một dòng gợi ý. Đó là lý do bản chép tay này chấp nhận
+ * được ở đây trong khi PLAN 8.3 cấm chép schema: nó không phải nguồn sự thật của ai cả,
+ * và nó không thể làm sai một kết quả nào.
+ */
+const GOI_Y_ACTION = [
+  "an_moc",
+  "go_an_moc",
+  "an_binh_luan",
+  "go_an_binh_luan",
+  "an_mach",
+  "go_an_mach",
+  "khoa_mach",
+  "mo_khoa_mach",
+  "ban_user",
+  "go_ban_user",
+  "dong_bao_cao",
+  "tao_sub",
+  "sua_sub",
+  "xoa_sub",
+  "sua_cai_dat_google",
+  "xoa_cai_dat_google",
+  "tao_user",
+  "sua_user",
+  "dat_mat_khau_user",
+  "gan_mod_sub",
+  "go_mod_sub",
+  "doi_quyen_mod",
+];
 export default function TrangNhatKy() {
   const [loc, datLoc] = useState("");
   const [o_loc, datOLoc] = useState("");
@@ -75,8 +112,14 @@ export default function TrangNhatKy() {
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
+              list="goi-y-action"
               data-testid="loc-action"
             />
+            <datalist id="goi-y-action" data-testid="goi-y-action">
+              {GOI_Y_ACTION.map((x) => (
+                <option key={x} value={x} />
+              ))}
+            </datalist>
             <button type="submit" className="nut">
               Lọc
             </button>

@@ -1,10 +1,15 @@
-import type { MachChiTietOut, MocOut } from "@gikky/api-client";
+import type { MachChiTietOut } from "@gikky/api-client";
 
 /** Hai mặt BÃO / CẶN ở phía render — PLAN 5.5.
  *
- * **Luật thì server quyết** (`MachChiTietOut.face`, PLAN nguyên tắc 10); file này chỉ có
- * hai thứ frontend thật sự phải tự biết: cái toggle `?view=` mà PLAN giao cho URL, và câu
- * mồi của composer ở mặt BÃO.
+ * **Luật thì server quyết** (`MachChiTietOut.face`, PLAN nguyên tắc 10); file này chỉ giữ
+ * thứ frontend thật sự phải tự biết: cái toggle `?view=` mà PLAN giao cho URL.
+ *
+ * ⚠ `cauMoiComposer` — câu mồi theo mốc mới nhất của composer mặt BÃO ("Mốc 9 vừa lên —
+ * bạn nghĩ sao?") — **đã xoá 2026-08-26** cùng lượt tách bình luận chung khỏi bình luận
+ * mốc. Ô nhập ở mặt BÃO nay là ô của CẢ BÀI, nên một câu mồi nói tên một mốc là mời viết
+ * đúng thứ sẽ không hiện ra ở khu ấy. Nó không được giữ lại "phòng khi cần": một hàm chỉ
+ * còn test của chính nó gọi là cái bẫy mà `doc_noi_dung.doc_duoc` đã dính một lần.
  */
 
 export const MAT = ["bao", "can"] as const;
@@ -36,18 +41,4 @@ export function docView(gia_tri: string | string[] | undefined): Mat | null {
  */
 export function matDeRender(mach: MachChiTietOut, view: Mat | null): Mat {
   return view ?? mach.face;
-}
-
-/** Câu mồi của composer ở mặt BÃO — wireframe 9.2: `✎ [ Mốc 9 vừa đóng sổ — bạn rút ra gì? ]`
- *
- * "Theo trạng thái" nghĩa là: mạch đã đóng sổ hỏi một câu khác mạch đang chạy, và mốc có
- * `question_for_crowd` thì **câu của tác giả thắng** — người viết mốc biết rõ hơn cái
- * placeholder mặc định điều gì đáng hỏi (PLAN 5.4 luật 4 nói đúng chuyện đó ở ngăn kéo).
- */
-export function cauMoiComposer(mocMoiNhat: MocOut | undefined, dong: boolean): string {
-  if (mocMoiNhat === undefined) return "Chém gió với chủ mạch…";
-  if (mocMoiNhat.question_for_crowd !== null) return mocMoiNhat.question_for_crowd;
-  return dong
-    ? `Mốc ${mocMoiNhat.seq} vừa đóng sổ — bạn rút ra gì?`
-    : `Mốc ${mocMoiNhat.seq} vừa lên — bạn nghĩ sao?`;
 }

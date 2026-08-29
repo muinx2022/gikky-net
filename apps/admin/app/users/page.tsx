@@ -26,8 +26,9 @@ import {
   TieuDeTrang,
   gioVN,
 } from "../../components/ui";
-import { GOC_API, headerGhi, moTaLoi } from "../../lib/api";
+import { GOC_API, headerGhi } from "../../lib/api";
 import { useDanhSach } from "../../lib/danh-sach";
+import { useHanhDong } from "../../lib/hanh-dong";
 
 /** Số hàng mỗi trang. Một hằng cho CẢ HAI phía: `limit` gửi lên server và mẫu số để
  * `useDanhSach` chia ra `so_trang`. Hai con số này lệch nhau thì thanh phân trang báo
@@ -85,8 +86,6 @@ export default function TrangNguoiDung() {
   const [q, datQ] = useState("");
   const [o_tim, datOTim] = useState("");
   const [trang_thai, datTrangThai] = useState<LocHien>("tat_ca");
-  const [dang_chay, datDangChay] = useState(false);
-  const [loi_hanh_dong, datLoiHanhDong] = useState<string | null>(null);
   const [mo_ban, datMoBan] = useState<string | null>(null);
   /** username đang mở ngăn kéo SỬA. Tách khỏi `mo_ban`: gộp là dựng sẵn tổ hợp "vừa
    * ban vừa sửa", và tổ hợp ấy sẽ xảy ra đúng lúc ai đó thêm đường mở thứ ba. */
@@ -105,24 +104,15 @@ export default function TrangNguoiDung() {
 
   const ds = useDanhSach<NguoiDungQuanTriOut>(nap, MOI_TRANG);
 
-  const chay = useCallback(
-    async (viec: () => Promise<{ error?: unknown }>) => {
-      datDangChay(true);
-      datLoiHanhDong(null);
-      try {
-        const { error } = await viec();
-        if (error !== undefined) {
-          datLoiHanhDong(moTaLoi(error));
-          return;
-        }
-        await ds.napLai();
-        await lamMoi();
-      } finally {
-        datDangChay(false);
-      }
-    },
-    [ds, lamMoi],
-  );
+  const {
+    dang_chay,
+    loi: loi_hanh_dong,
+    het_phien,
+    chay,
+  } = useHanhDong(async () => {
+    await ds.napLai();
+    await lamMoi();
+  });
 
   const co_bo_loc = q !== "" || trang_thai !== "tat_ca";
 
@@ -143,7 +133,7 @@ export default function TrangNguoiDung() {
         }
         mo_ta="Không gồm quản trị viên — họ ở trang Quản trị viên."
       />
-      <HienLoi loi={loi_hanh_dong ?? ds.loi} />
+      <HienLoi loi={loi_hanh_dong ?? ds.loi} het_phien={het_phien} />
 
       <The>
         <div className="flex flex-wrap items-center gap-2 border-b border-vien p-3">

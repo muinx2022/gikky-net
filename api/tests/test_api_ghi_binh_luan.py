@@ -21,11 +21,19 @@ from .conftest import dat, lay, ma_loi
 
 @pytest.mark.django_db
 def test_viet_binh_luan_goc_co_neo_thi_vao_dung_NGAN_KEO(client, mach_cua_a, nguoi_b):
-    """PLAN nguyên tắc 4 + 5.4: neo để CHIẾU. Một kho, hai ống kính.
+    """PLAN nguyên tắc 4 + 5.4: neo là để bình luận có một CHỖ Ở.
 
-    Cùng một bình luận phải xuất hiện ở **cả hai** cửa — khán đài và ngăn kéo của đúng mốc
-    được neo. Đo cả hai trong một bài là cách duy nhất phát hiện "ghi vào một chỗ, đọc ở
-    chỗ kia không thấy".
+    Bài đo vẫn soi **cả hai** cửa trong một lượt, vì đó vẫn là cách duy nhất bắt được ca
+    "ghi vào một chỗ, đọc ở chỗ kia không thấy". Cái đổi là kỳ vọng ở cửa thứ hai.
+
+    ⚠ **Kỳ vọng lật ngày 2026-08-26** *(user chốt)*. Câu cũ của docstring này — *"một kho,
+    hai ống kính"*, bình luận neo phải hiện ở **cả** khán đài lẫn ngăn kéo — chính là mô
+    hình vừa bị thay: khu bình luận cuối bài nay chỉ chứa thread nói về CẢ BÀI, thread neo
+    mốc N sống duy nhất trong ngăn kéo mốc N. Nên vế thứ hai đảo dấu: `not in`.
+
+    `mach_cua_a` có `entry_count == 2` nên nó là MẠCH, tức phép lọc áp. Bài đo cho post
+    thường (`entry_count == 1`, KHÔNG lọc) nằm ở
+    `test_api_khan_dai.py::test_POST_THUONG_KHONG_loc_thread_neo`.
     """
     client.force_login(nguoi_b)
     moc1 = Moc.objects.get(mach=mach_cua_a, seq=1)
@@ -41,7 +49,9 @@ def test_viet_binh_luan_goc_co_neo_thi_vao_dung_NGAN_KEO(client, mach_cua_a, ngu
     assert [t["id"] for t in ngan_keo["threads"]] == [d["id"]]
 
     khan_dai = lay(client, f"/api/v1/machs/{mach_cua_a.pk}/comments")
-    assert d["id"] in [t["id"] for t in khan_dai["threads"]]
+    assert d["id"] not in [t["id"] for t in khan_dai["threads"]], (
+        "thread neo mốc chỉ được có MỘT nhà, và nhà đó là ngăn kéo"
+    )
 
 
 @pytest.mark.django_db

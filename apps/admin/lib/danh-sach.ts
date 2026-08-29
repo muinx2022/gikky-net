@@ -83,7 +83,7 @@ export function useDanhSach<T>(
   const [cursor_sau, datCursorSau] = useState<string | null>(null);
   const lan = useRef(0);
 
-  const chay = useCallback(
+  const napTrang = useCallback(
     async (tu_cursor: string | null, toi_chi_so: number) => {
       const cua_toi = ++lan.current;
       datDangTai(true);
@@ -119,8 +119,26 @@ export function useDanhSach<T>(
   useEffect(() => {
     datLichSu([null]);
     datChiSo(0);
-    void chay(null, 0);
-  }, [chay]);
+    void napTrang(null, 0);
+  }, [napTrang]);
+
+  /** Bản MỚI NHẤT của (hàm nạp, vị trí đang xem) — cho `napLai` đọc, thay vì closure.
+   *
+   * `napLai` được gọi từ `useHanhDong`, mà hook ấy giữ `ds` của **lúc bấm nút**. Một
+   * lượt hàng loạt chạy vài giây; nếu trong lúc đó mod lật trang hay đổi bộ lọc thì
+   * closure cũ trỏ vào trang cũ + bộ lọc cũ — lượt nạp-lại cuối vòng lặp sẽ kéo bảng
+   * NGƯỢC về nơi mod vừa rời đi, thậm chí vẽ kết quả của bộ lọc không còn trên URL
+   * (nó là lượt `lan` mới nhất nên cơ chế chống-về-muộn cho nó thắng). Effect không
+   * deps chạy sau MỌI render, nên tới lúc một event handler kịp gọi thì ref luôn tươi.
+   */
+  const moi_nhat = useRef({ napTrang, lich_su, chi_so });
+  useEffect(() => {
+    moi_nhat.current = { napTrang, lich_su, chi_so };
+  });
+  const napLai = useCallback(() => {
+    const hien = moi_nhat.current;
+    return hien.napTrang(hien.lich_su[hien.chi_so] ?? null, hien.chi_so);
+  }, []);
 
   const so_trang = Math.max(1, Math.ceil(tong / moi_trang));
 
@@ -135,11 +153,11 @@ export function useDanhSach<T>(
     co_truoc: chi_so > 0,
     co_sau: cursor_sau !== null,
     truoc: () => {
-      if (chi_so > 0) void chay(lich_su[chi_so - 1] ?? null, chi_so - 1);
+      if (chi_so > 0) void napTrang(lich_su[chi_so - 1] ?? null, chi_so - 1);
     },
     sau: () => {
-      if (cursor_sau !== null) void chay(cursor_sau, chi_so + 1);
+      if (cursor_sau !== null) void napTrang(cursor_sau, chi_so + 1);
     },
-    napLai: () => chay(lich_su[chi_so] ?? null, chi_so),
+    napLai,
   };
 }

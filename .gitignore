@@ -38,3 +38,6 @@ apps/web/test-results/
 apps/web/playwright-report/
 # Worktree tạm của subagent — KHÔNG BAO GIỜ commit (chúng là bản sao cả cây)
 .claude/worktrees/
+
+# Quyền cục bộ của máy này (alias ssh vps-muinx, đường dẫn cá nhân) — không commit.
+.claude/settings.local.json

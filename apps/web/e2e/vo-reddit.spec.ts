@@ -23,6 +23,7 @@ import {
   duongDan,
   khanDai,
   lamMoiCacheTrang,
+  nganKeo,
   timMachTheoTitle,
 } from "./du-lieu";
 
@@ -458,11 +459,41 @@ test.describe("A10 — `[−]` gập/mở nhánh ở cả khán đài lẫn ngă
     await expect(than).toBeVisible();
   });
 
+  /** Ngăn kéo của HPG có nhiều thread nhất, đòi tối thiểu `toiThieu` thread.
+   *
+   * Chọn theo DỮ LIỆU chứ không gõ cứng `seq`: `seed_dev` rải bình luận theo mốc và một
+   * lượt sửa seed sẽ làm một `seq` gõ cứng trỏ vào ngăn kéo rỗng — bài đo khi ấy đỏ vì
+   * lý do không liên quan gì tới thứ nó đo. Đòi `toiThieu` ngay tại đây để ca "hết dữ
+   * liệu" nói ra thành lời thay vì thành một locator không khớp.
+   */
+  async function nganKeoDongNhat(toiThieu: number) {
+    const tat_ca = await Promise.all(
+      hpg.mocs.map(async (m) => ({ seq: m.seq, nk: await nganKeo(m.id) })),
+    );
+    const chon = tat_ca
+      .filter((x) => x.nk.threads.length >= toiThieu)
+      .sort((a, b) => b.nk.threads.length - a.nk.threads.length)[0];
+    expect(
+      chon,
+      `seed phải có ngăn kéo mang ≥${toiThieu} thread thì bài đo mới có gì để đo`,
+    ).toBeDefined();
+    return chon;
+  }
+
+  // Ba bài dưới đây đổi CHỖ ĐO sang ngăn kéo ngày 2026-08-26, không đổi câu hỏi. Khu
+  // bình luận chung của HPG nay giữ đúng MỘT thread (`r8` — gốc duy nhất đã gỡ chip, và
+  // nó không có reply nào), nên "hai thread cạnh nhau" và "thread có nhánh" không còn tồn
+  // tại ở đó. Dữ liệu ấy chưa mất — nó nằm trong ngăn kéo, đúng nhà mới của thread neo.
+  // Describe này vốn đã nói "ở CẢ khán đài lẫn ngăn kéo", nên đây là đổi vế, không nới
+  // phạm vi.
+
   test("gập một nhánh KHÔNG gập nhánh khác (khác accordion của ngăn kéo)", async ({
     page,
   }) => {
+    const { seq } = await nganKeoDongNhat(2);
     await page.goto(`${duongDan(hpg)}?khan_dai=1&sort=hay_nhat`);
-    const goc = page.getByTestId("cay-khan-dai").locator("> [data-binh-luan-id]");
+    await page.getByTestId(`nut-ngan-keo-${seq}`).click();
+    const goc = page.getByTestId(`lat-cat-${seq}`).locator("> [data-binh-luan-id]");
     await expect(goc.nth(1)).toBeVisible();
     await goc.nth(0).getByTestId("nut-gap-nhanh").first().click();
     await expect(goc.nth(0).getByTestId("than-nhanh").first()).toBeHidden();
@@ -472,13 +503,14 @@ test.describe("A10 — `[−]` gập/mở nhánh ở cả khán đài lẫn ngă
   test("tóm tắt nói ra SỐ NHÁNH bị giấu (không thì `[+]` là hộp kín)", async ({
     page,
   }) => {
-    const kd = await khanDai(hpg.id, "hay_nhat");
-    const co_con = kd.threads.find((t) => t.replies.length > 0);
+    const { seq, nk } = await nganKeoDongNhat(1);
+    const co_con = nk.threads.find((t) => t.replies.length > 0);
     expect(co_con, "seed không có thread nào có reply?").toBeDefined();
 
     await page.goto(`${duongDan(hpg)}?khan_dai=1&sort=hay_nhat`);
+    await page.getByTestId(`nut-ngan-keo-${seq}`).click();
     const thread = page
-      .getByTestId("cay-khan-dai")
+      .getByTestId(`lat-cat-${seq}`)
       .locator(`> [data-binh-luan-id="${co_con!.id}"]`);
     await expect(thread).toHaveCount(1);
     await thread.getByTestId("nut-gap-nhanh").first().click();
@@ -490,9 +522,11 @@ test.describe("A10 — `[−]` gập/mở nhánh ở cả khán đài lẫn ngă
   test("nội dung vẫn nằm trong HTML khi gập (bot vẫn đọc được — PLAN mục 1)", async ({
     page,
   }) => {
+    const { seq } = await nganKeoDongNhat(1);
     await page.goto(`${duongDan(hpg)}?khan_dai=1&sort=hay_nhat`);
+    await page.getByTestId(`nut-ngan-keo-${seq}`).click();
     const thread = page
-      .getByTestId("cay-khan-dai")
+      .getByTestId(`lat-cat-${seq}`)
       .locator("> [data-binh-luan-id]")
       .first();
     const chu = (await thread.innerText()).slice(0, 40);
@@ -544,38 +578,42 @@ test.describe("A5 — khối 'Câu đáng đọc' TẮT từ 2026-08-26 (user ch
   }) => {
     // Bất biến bị mất trước W11: `CauDangDoc` render lại tới 10 thread ngay TRÊN cây đầy
     // đủ, và mỗi ngăn kéo render lát cắt của mốc mình (nội dung nằm sẵn trong DOM, chỉ
-    // `hidden`), nên một bình luận có tới BA nút cùng thuộc tính. Bài đo cũ sống sót vì
-    // mọi locator đều scope; cái bẫy dành cho bài đo viết sau.
+    // `hidden`), nên một bình luận có tới BA nút cùng thuộc tính.
     //
-    // **Từ 2026-08-26 chỉ còn HAI nguồn** — khối "Đáng chú ý" đã tắt. Bài đo giữ nguyên
-    // và vẫn có nghĩa: nguồn trùng còn lại (ngăn kéo) tự nó đủ dựng lại bất biến này,
-    // và vế chống rỗng dưới cùng đo đúng chuyện đó.
+    // **Từ 2026-08-26 bất biến này được giữ bằng một CƠ CHẾ KHÁC, và bài đo phải đổi theo**
+    // — không phải vì nó đỏ, mà vì vế chống rỗng cũ đã hết nghĩa. Trước lượt ấy hai khu
+    // render CÙNG những bình luận và định danh chỉ trao cho một khu; nay khán đài lấy
+    // thread `anchor_moc_seq IS NULL`, ngăn kéo lấy `== seq`, hai tập RỜI NHAU, nên **cả
+    // hai** khu đều mang định danh và không đụng nhau. Vế chống rỗng vì thế đổi từ *"còn
+    // nút bản phụ nào trùng số với bản chính không"* thành *"cả hai khu có thật sự cùng
+    // đóng góp nút mang định danh không"*: nếu ngăn kéo ngừng render, `trung` vẫn rỗng —
+    // rỗng một cách rỗng tuếch.
     await page.goto(`${duongDan(hpg)}?khan_dai=1&sort=hay_nhat`);
     await page.getByTestId("nut-ngan-keo-1").click();
     await expect(page.getByTestId("lat-cat-1")).toBeVisible();
 
     const dem = await page.evaluate(() => {
-      const chinh = [...document.querySelectorAll("[data-binh-luan-id]")].map(
-        (e) => (e as HTMLElement).dataset.binhLuanId!,
-      );
-      const ban_phu = [
-        ...document.querySelectorAll("[data-ban-phu-binh-luan-id]"),
-      ].map((e) => (e as HTMLElement).dataset.banPhuBinhLuanId!);
+      const soId = (goc: ParentNode) =>
+        [...goc.querySelectorAll("[data-binh-luan-id]")].map(
+          (e) => (e as HTMLElement).dataset.binhLuanId!,
+        );
+      const chinh = soId(document);
       return {
         trung: chinh.filter((x, i) => chinh.indexOf(x) !== i),
         so_chinh: chinh.length,
-        // Vế chống rỗng: nếu khối phụ ngừng render thì `trung` rỗng một cách rỗng
-        // tuếch, và bài đo này lại đo vào chỗ trống.
-        so_ban_phu_trung_voi_chinh: ban_phu.filter((x) => chinh.includes(x)).length,
+        so_khan_dai: soId(
+          document.querySelector('[data-testid="cay-khan-dai"]') ?? document.createElement("div"),
+        ).length,
+        so_ngan_keo: soId(
+          document.querySelector('[data-testid="lat-cat-1"]') ?? document.createElement("div"),
+        ).length,
       };
     });
 
     expect(dem.trung, "comment id có hai nút `data-binh-luan-id`").toEqual([]);
     expect(dem.so_chinh).toBeGreaterThan(5);
-    expect(
-      dem.so_ban_phu_trung_voi_chinh,
-      "ngăn kéo không còn render lại bình luận của cây đầy đủ ⇒ bài đo trên rỗng",
-    ).toBeGreaterThan(0);
+    expect(dem.so_khan_dai, "khán đài không đóng góp nút nào ⇒ bài đo rỗng").toBeGreaterThan(0);
+    expect(dem.so_ngan_keo, "ngăn kéo không đóng góp nút nào ⇒ bài đo rỗng").toBeGreaterThan(0);
   });
 
 });

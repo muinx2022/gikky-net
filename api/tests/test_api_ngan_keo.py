@@ -60,32 +60,67 @@ def test_ngan_keo_lay_ca_reply_viet_o_thoi_diem_MOC_KHAC(client, seed):
     assert all(t["depth"] > 1 for t in muon)
 
 
-def test_ngan_keo_sap_moi_truoc_cu_o_ca_hai_tang(client, seed):
-    """PLAN 5.4 luật 2 — **mới → cũ** (chiều đổi 2026-08-26), không tham số nào chỉnh được.
+def hoat_dong_that(mach, goc: Comment):
+    """Oracle ĐỘC LẬP của `Nut.hoat_dong`: max `created_at` trên nút ĐỌC ĐƯỢC của thread.
 
-    Đo ở **cả hai tầng** là cả nội dung bài, không phải cẩn thận thừa: `lat_cat_ngan_keo`
-    truyền cùng một hàm sắp cho `sap_goc` và `sap_con`, nên một bản vá chỉ lật gốc mà
-    quên con sẽ cho ngăn kéo mới→cũ ở tầng ngoài và cũ→mới bên trong từng thread — sai
-    lệch chỉ lộ ra ở thread có ≥2 reply.
+    Không import `core.doc_noi_dung` — bài đo phải tự biết câu trả lời đúng, nếu không nó
+    chỉ chứng minh hàm bằng chính nó. Cây con nhận diện bằng tiền tố `path` (segment cố
+    định 6 chữ số nên `"<path>."` là tiền tố an toàn), không cần đệ quy.
+
+    Thread toàn bia mộ rơi về `created_at` của gốc — cùng luật với `Nut.hoat_dong`.
+    """
+    ca = [goc, *Comment.objects.filter(mach=mach, path__startswith=f"{goc.path}.")]
+    doc_duoc = [
+        c.created_at for c in ca if c.deleted_at is None and c.hidden_at is None
+    ]
+    return max(doc_duoc) if doc_duoc else goc.created_at
+
+
+def test_ngan_keo_goc_BUMP_theo_hoat_dong_con_doc_XUOI(client, seed):
+    """PLAN 5.4 luật 2, bản 2026-08-26: gốc **bump theo hoạt động**, con **cũ → mới**.
+
+    Ngăn kéo dùng đúng cặp khoá của `sort=moi_nhat` (`lat_cat_ngan_keo`), nên bài này đo
+    luôn nửa ngăn kéo của tiêu chí 12. Hai tầng phải đo riêng: `lat_cat_ngan_keo` truyền
+    HAI hàm sắp khác nhau cho `sap_goc` và `sap_con`, và một bản vá chỉ sửa một vế thì sai
+    lệch chỉ lộ ở thread có ≥2 reply.
+
+    ⚠ Vế chống rỗng quan trọng nhất nằm ở cuối: nếu thứ tự bump TRÙNG thứ tự theo
+    `created_at` của gốc trên dữ liệu này thì cả bài đo xanh với cả cài đặt cũ. Trên seed,
+    mốc 2 cố ý không như vậy — thread #3 mở trước #7 nhưng có reply mới hơn.
     """
     d = ngan_keo(client, seed, 2)
 
-    def kiem(nuts, o_dau="gốc"):
-        khi = [t["created_at"] for t in nuts]
-        assert khi == sorted(khi, reverse=True), f"tầng {o_dau} chưa mới→cũ: {khi}"
-        for t in nuts:
-            kiem(t["replies"], f"reply của #{t['id']}")
+    goc = list(
+        Comment.objects.filter(mach=seed, parent__isnull=True, anchor_moc_seq=2)
+    )
+    mong_doi = sorted(
+        goc, key=lambda c: (hoat_dong_that(seed, c), c.pk), reverse=True
+    )
+    assert [t["id"] for t in d["threads"]] == [c.pk for c in mong_doi]
+    assert len(d["threads"]) >= 2, "mốc 2 phải có ≥2 thread mới đo được thứ tự gốc"
 
-    kiem(d["threads"])
-    assert len(d["threads"]) >= 2, "mốc 2 phải có ≥2 thread mới đo được thứ tự"
-    # Vế chống rỗng của tầng CON: không có thread nào ≥2 reply thì `kiem` đệ quy vào
-    # những danh sách 0–1 phần tử, và "danh sách 1 phần tử đã sắp giảm dần" là câu đúng
-    # với mọi cách sắp — tức nửa sau của bài đo này biến mất mà không ai hay.
+    def kiem_con(nuts, o_dau):
+        khi = [t["created_at"] for t in nuts]
+        assert khi == sorted(khi), f"tầng {o_dau} chưa cũ→mới: {khi}"
+        for t in nuts:
+            kiem_con(t["replies"], f"reply của #{t['id']}")
+
+    for t in d["threads"]:
+        kiem_con(t["replies"], f"reply của #{t['id']}")
+
+    # Không có thread nào ≥2 reply thì `kiem_con` chỉ đệ quy vào danh sách 0–1 phần tử,
+    # và "danh sách 1 phần tử đã sắp" đúng với mọi cách sắp — nửa sau bài đo biến mất.
     def sau_nhat(n):
         return max([len(n["replies"])] + [sau_nhat(r) for r in n["replies"]])
 
     assert max(sau_nhat(t) for t in d["threads"]) >= 2, (
         "mốc 2 phải có ít nhất một nút mang ≥2 reply, nếu không tầng CON không được đo"
+    )
+
+    theo_goc = [c.pk for c in sorted(goc, key=lambda c: (c.created_at, c.pk), reverse=True)]
+    assert [t["id"] for t in d["threads"]] != theo_goc, (
+        "trên mốc 2, bump phải cho thứ tự KHÁC sắp theo created_at của gốc — nếu không "
+        "bài đo này xanh cả với cài đặt trước 2026-08-26"
     )
 
 

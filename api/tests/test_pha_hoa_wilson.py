@@ -188,7 +188,18 @@ def test_cat_du_so_bien_ca_vung_up_0_thanh_MOT_hang(mach, nguoi_khac):
     a = viet(mach, nguoi_khac, "Không ai vote.")
     b = viet(mach, nguoi_khac, "Bị dìm 5.", down=5)
     c = viet(mach, nguoi_khac, "Bị dìm 20.", down=20)
-    nut = [Nut(binh_luan=x, do_sau=1, trang_thai=BINH_THUONG, con=[]) for x in (a, b, c)]
+    # `hoat_dong_doc_duoc` không có mặc định (2026-08-26) — nút lẻ đọc được thì hoạt động
+    # của nó là chính nó. Nó không tham gia khoá wilson mà bài này đo.
+    nut = [
+        Nut(
+            binh_luan=x,
+            do_sau=1,
+            trang_thai=BINH_THUONG,
+            con=[],
+            hoat_dong_doc_duoc=x.created_at,
+        )
+        for x in (a, b, c)
+    ]
     # Vế đầu của khoá đã ĐẢO DẤU (nó là khoá `sorted` tăng dần), nên "hoà" nghĩa là cả ba
     # ra cùng một số; `-0.0 == 0.0` trong Python nên viết `0.0` cho dễ đọc.
     assert {khoa_sap_wilson(n.up, n.down, n.diem)[0] for n in nut} == {0.0}
@@ -256,7 +267,17 @@ def test_bia_mo_khong_bi_cau_bi_dim_chen_len_truoc(mach, nguoi_khac):
     an.refresh_from_db()
 
     def nut(c, trang_thai=BINH_THUONG):
-        return Nut(binh_luan=c, do_sau=1, trang_thai=trang_thai, con=[])
+        # Bia mộ mang `hoat_dong_doc_duoc=None` đúng như `dung_cay` dựng ra nó — không
+        # nút đọc được nào trong cây con thì không có mốc hoạt động nào.
+        return Nut(
+            binh_luan=c,
+            do_sau=1,
+            trang_thai=trang_thai,
+            con=[],
+            hoat_dong_doc_duoc=(
+                c.created_at if trang_thai == BINH_THUONG else None
+            ),
+        )
 
     xep = sap_wilson_thuan([nut(bi_dim), nut(an, DA_AN), nut(duoc_ung_ho)])
     assert [n.binh_luan.pk for n in xep] == [duoc_ung_ho.pk, an.pk, bi_dim.pk]

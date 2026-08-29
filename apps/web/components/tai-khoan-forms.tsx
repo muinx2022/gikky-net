@@ -164,6 +164,7 @@ export function FormDangKy() {
             "trong đó để kích hoạt tài khoản. Chưa xác nhận thì chưa đăng nhập được.",
         };
       }}
+      tren={<GoogleVaVach bat={toi?.google_bat === true} />}
       duoi={
         <>
           Đã có tài khoản? <LienKet href="/dang-nhap">Đăng nhập</LienKet>
@@ -189,7 +190,6 @@ export function FormDangKy() {
         goiY="Ít nhất 8 ký tự, đừng dùng mật khẩu quá phổ biến."
         tuDien="new-password"
       />
-      <ChoGoogle bat={toi?.google_bat === true} />
     </FormTaiKhoan>
   );
 }
@@ -241,6 +241,7 @@ export function FormDangNhap({
           Chưa có tài khoản? <LienKet href="/dang-ky">Đăng ký</LienKet>
         </>
       }
+          tren={<GoogleVaVach bat={toi?.google_bat === true} />}
     >
       {/* `kieu="text"`, KHÔNG phải `"email"`: trình duyệt chặn tại chỗ mọi chuỗi không
           có `@`, tức chặn luôn đường đăng nhập bằng username — và nó chặn im lặng, người
@@ -252,7 +253,6 @@ export function FormDangNhap({
         tuDien="username"
       />
       <O ten="password" nhan="Mật khẩu" kieu="password" tuDien="current-password" />
-      <ChoGoogle bat={toi?.google_bat === true} />
     </FormTaiKhoan>
   );
 }
@@ -441,12 +441,26 @@ export function XacThucEmail({ khoa }: { khoa: string }) {
  * `callback_url`, `process`, và nó là view trình duyệt bình thường nên Django kiểm CSRF
  * bằng trường ẩn `csrfmiddlewaretoken`. Một thẻ `<a>` ở đây trả 405.
  *
- * ⚠ **NỢ CÓ TÊN — `GOOGLE-CHUA-DO`.** Máy dev không có credential Google, nên đường này
- * **chưa từng chạy một lần nào**: nó được viết theo tài liệu, không theo quan sát. Cái
- * chắc chắn đúng là *nút không hiện khi tắt* (có bài đo). Cái CHƯA kiểm được là luồng
- * OAuth thật, kể cả redirect URI phải đăng ký với Google
- * (`…/api/_allauth/browser/v1/auth/provider/callback`). Ai bật Google lần đầu phải chạy
- * tay trọn luồng trước khi tin dòng nào ở đây.
+ * ## Kiểu dáng: nút PHỤ, không phải nút chính *(user chốt 2026-08-27: "làm lại nút gg và
+ * nút đăng nhập, nhìn xấu quá")*
+ *
+ * Trước lượt này nó dùng chung lớp `.gui` với nút submit ⇒ **hai khối đặc màu nhấn y hệt
+ * nhau** nằm cạnh nhau, không phân cấp, và chẳng ra dáng nút Google. Nay nó là nút nền
+ * trắng + viền (`.google`), còn `.gui` giữ vai nút chính đặc màu. Bọc ngoài cũng thôi
+ * mang lớp `.duoi` — lớp ấy là kiểu CHỮ chân trang, không phải kiểu khối.
+ *
+ * Logo dùng chữ G bốn màu chính thức của Google, gõ hex thẳng trong SVG. **Đây là ngoại
+ * lệ có lý do, không phải chỗ lọt lưới hệ token**: nhận diện thương hiệu của bên thứ ba
+ * do bên ấy quy định, tô nó bằng `--accent` là vừa sai thương hiệu vừa làm người dùng
+ * mất mốc nhận biết. Bốn mã này không nằm trong danh sách mà `mau-token.spec.ts` canh
+ * (chỉ 4 mã lãi/lỗ + 4 mã hoàng thổ), nên không có luật nào bị nới ở đây.
+ *
+ * ⚠ **NỢ `GOOGLE-CHUA-DO` — đã trả MỘT PHẦN 2026-08-27.** Luồng OAuth thật nay đã chạy
+ * trên prod, và nó lộ ra hai lỗi mà bản viết-theo-tài-liệu không thể thấy: Django không
+ * tin `X-Forwarded-Proto` nên gửi `redirect_uri` dạng `http://` (Google từ chối vĩnh
+ * viễn), và chính docstring cũ ở đây chỉ SAI đường callback. Đường đúng là
+ * `…/api/_allauth/google/login/callback/` — xem `api/tests/test_redirect_uri_google.py`.
+ * Phần còn NỢ: máy dev vẫn không có credential, nên ở đây vẫn chưa ai bấm thử được.
  */
 function ChoGoogle({ bat }: { bat: boolean }) {
   const [csrf, datCsrf] = useState("");
@@ -459,15 +473,66 @@ function ChoGoogle({ bat }: { bat: boolean }) {
     <form
       method="POST"
       action="/api/_allauth/browser/v1/auth/provider/redirect"
-      className={css.duoi}
+      className={css.khoi_google}
     >
       <input type="hidden" name="csrfmiddlewaretoken" value={csrf} />
       <input type="hidden" name="provider" value="google" />
       <input type="hidden" name="callback_url" value="/" />
       <input type="hidden" name="process" value="login" />
-      <button type="submit" className={css.gui} data-testid="nut-google">
+      <button type="submit" className={css.google} data-testid="nut-google">
+        <LogoGoogle />
         Tiếp tục với Google
       </button>
     </form>
+  );
+}
+
+/** Nút Google + vạch "hoặc", bọc chung.
+ *
+ * Vạch đi kèm nút chứ không đứng riêng ở `FormTaiKhoan`: nó chỉ có nghĩa khi thật sự có
+ * hai lối để ngăn cách. Cả cụm cùng biến mất khi `bat` là `false` — tách hai thứ ra hai
+ * chỗ là dựng lại đúng lỗi đã gặp: một cái vạch "hoặc" ngăn tiêu đề với form.
+ */
+function GoogleVaVach({ bat }: { bat: boolean }) {
+  if (!bat) return null;
+  return (
+    <>
+      <ChoGoogle bat={bat} />
+      <p className={css.vach} aria-hidden data-testid="vach-hoac">
+        <span>hoặc</span>
+      </p>
+    </>
+  );
+}
+
+/** Chữ G bốn màu của Google. `aria-hidden` vì chữ trên nút đã nói đủ — đọc thêm "logo
+ * Google" là lặp. Kích thước theo `em` để nó co giãn cùng cỡ chữ của nút. */
+function LogoGoogle() {
+  return (
+    <svg
+      className={css.logo_google}
+      viewBox="0 0 18 18"
+      width="1.15em"
+      height="1.15em"
+      aria-hidden
+      focusable="false"
+    >
+      <path
+        fill="#4285F4"
+        d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"
+      />
+      <path
+        fill="#34A853"
+        d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.02-3.7H.96v2.33A9 9 0 0 0 9 18z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M3.98 10.72a5.4 5.4 0 0 1 0-3.44V4.95H.96a9 9 0 0 0 0 8.1l3.02-2.33z"
+      />
+      <path
+        fill="#EA4335"
+        d="M9 3.58c1.32 0 2.5.46 3.44 1.35l2.58-2.58C13.46.9 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.02 2.33C4.68 5.16 6.66 3.58 9 3.58z"
+      />
+    </svg>
   );
 }

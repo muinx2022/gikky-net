@@ -11,6 +11,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
 
+import { ONhoChon, ThanhHangLoat, useChonHang } from "../../components/hang-loat";
 import { Icon } from "../../components/icon";
 import { useQuanTri } from "../../components/khung/ngu-canh";
 import {
@@ -25,8 +26,10 @@ import {
   TieuDeTrang,
   gioVN,
 } from "../../components/ui";
-import { GOC_API, headerGhi, moTaLoi } from "../../lib/api";
+import { GOC_API, MA_CHUA_DANG_NHAP, headerGhi, maLoi } from "../../lib/api";
 import { useDanhSach } from "../../lib/danh-sach";
+import { useHanhDong } from "../../lib/hanh-dong";
+import { locCanLam, tomTatHangLoat } from "../../lib/hang-loat";
 
 /** Số hàng mỗi trang. Một hằng cho CẢ HAI phía: `limit` gửi lên server và mẫu số để
  * `useDanhSach` chia ra `so_trang`. Hai con số này lệch nhau thì thanh phân trang báo
@@ -116,8 +119,10 @@ function BangMach() {
   // giữ nguyên giá trị cũ: bộ lọc đang chạy mà ô lọc trông như trống. Người dùng thấy một
   // bảng đã lọc và một ô rỗng, rồi kết luận bảng đang hiện tất cả.
   useEffect(() => datOTim(q), [q]);
-  const [dang_chay, datDangChay] = useState(false);
-  const [loi_hanh_dong, datLoiHanhDong] = useState<string | null>(null);
+
+  /** Câu tổng kết của lượt hàng loạt gần nhất, hoặc `null`. Sống tới lượt sau — xem
+   * `ThanhHangLoat`. */
+  const [tom_tat, datTomTat] = useState<string | null>(null);
 
   const nap = useCallback(
     (cursor: string | null) =>
@@ -137,6 +142,7 @@ function BangMach() {
   );
 
   const ds = useDanhSach<MachDongOut>(nap, MOI_TRANG);
+  const chon = useChonHang(ds.items);
 
   const datLoc = (khoa: string, gia_tri: string) => {
     const moi = new URLSearchParams(tham_so.toString());
@@ -150,24 +156,102 @@ function BangMach() {
     router.push(`/machs${moi.size > 0 ? `?${moi}` : ""}`);
   };
 
-  const chay = useCallback(
-    async (viec: () => Promise<{ error?: unknown }>) => {
-      datDangChay(true);
-      datLoiHanhDong(null);
-      try {
-        const { error } = await viec();
-        if (error !== undefined) {
-          datLoiHanhDong(moTaLoi(error));
-          return;
+  const {
+    dang_chay,
+    loi: loi_hanh_dong,
+    het_phien,
+    chay,
+  } = useHanhDong(async () => {
+    await ds.napLai();
+    await lamMoi();
+  });
+
+  // Câu tóm tắt kể về MỘT lượt: sang trang khác hay đổi bộ lọc là nó nói về một bảng
+  // không còn trên màn hình — xoá, đừng để nó đứng cạnh lựa chọn mới như thể là kết quả
+  // của lựa chọn ấy. Nạp lại cùng trang (sau chính lượt hàng loạt) thì `trang`/`nap`
+  // không đổi nên câu tóm tắt sống đúng chỗ nó cần sống.
+  // ⚠ Hai ràng buộc cùng chỗ: (1) `nap` phải `useCallback` đúng deps — mất memo là
+  // effect này xoá tóm tắt ở MỌI render và tính năng chết im lặng; (2) nút ĐƠN trên hàng
+  // cố ý KHÔNG xoá câu này — "Lỗi ở: 12, 34, 56" là danh sách việc mod đang sửa tay
+  // từng cái, xoá ở cú bấm đầu tiên là giật mất tờ giấy khỏi tay họ.
+  useEffect(() => datTomTat(null), [nap, ds.trang]);
+
+  /** Ẩn / gỡ ẩn **tuần tự** từng bài đã chọn.
+   *
+   * `for … await`, KHÔNG `Promise.all` — xem khối cùng tên ở `app/binh-luan/page.tsx`:
+   * mỗi lời gọi khoá hàng `Mach`, nên N request đồng thời là N giao dịch tranh khoá; và
+   * một cú bấm không nên dội 25 request cùng lúc.
+   *
+   * Bốn bộ đếm đi theo đúng bốn số phận của một hàng (xem `tomTatHangLoat`): server có
+   * thể trả `da_doi=false` khi một mod khác đổi trước — đếm nó là "đã đổi" là báo dôi.
+   */
+  const anHangLoat = (an: boolean) => {
+    datTomTat(null);
+    return chay(async () => {
+      const muc_tieu = locCanLam(ds.items ?? [], chon.da_chon, (m) => m.da_bi_an, an);
+      let da_doi = 0;
+      let von_vay = 0;
+      const that_bai: number[] = [];
+      for (const id of muc_tieu) {
+        const { data, error } = await quanTriDatAnMach({
+          baseUrl: GOC_API,
+          headers: headerGhi(),
+          path: { mach_id: id },
+          // `ly_do: ""` — đồng nhất với nút đơn trên từng hàng.
+          body: { an, ly_do: "" },
+        });
+        if (error === undefined) {
+          if (data?.da_doi === true) da_doi += 1;
+          else von_vay += 1;
+          continue;
         }
-        await ds.napLai();
-        await lamMoi();
-      } finally {
-        datDangChay(false);
+        // Hết phiên thì mọi lời gọi còn lại đều hỏng y hệt — dừng, đừng đếm ra 24 lỗi
+        // giống nhau. Lỗi này đi ra ngoài để `useHanhDong` mọc link `/dang-nhap`; những
+        // hàng chưa xử lý (kể cả hàng vừa chết vì phiên) vào `bo_do`, KHÔNG vào cột
+        // thành công.
+        if (maLoi(error) === MA_CHUA_DANG_NHAP) {
+          const bo_do = muc_tieu.length - da_doi - von_vay - that_bai.length;
+          datTomTat(tomTatHangLoat({ da_doi, von_vay, that_bai, bo_do }));
+          return { error };
+        }
+        that_bai.push(id);
       }
-    },
-    [ds, lamMoi],
-  );
+      datTomTat(tomTatHangLoat({ da_doi, von_vay, that_bai, bo_do: 0 }));
+      return {};
+    });
+  };
+
+  /** Khoá / mở khoá tuần tự — cùng luật với `anHangLoat`, khác đúng trục trạng thái. */
+  const khoaHangLoat = (khoa: boolean) => {
+    datTomTat(null);
+    return chay(async () => {
+      const muc_tieu = locCanLam(ds.items ?? [], chon.da_chon, (m) => m.da_khoa, khoa);
+      let da_doi = 0;
+      let von_vay = 0;
+      const that_bai: number[] = [];
+      for (const id of muc_tieu) {
+        const { data, error } = await quanTriDatKhoaMach({
+          baseUrl: GOC_API,
+          headers: headerGhi(),
+          path: { mach_id: id },
+          body: { khoa, ly_do: "" },
+        });
+        if (error === undefined) {
+          if (data?.da_doi === true) da_doi += 1;
+          else von_vay += 1;
+          continue;
+        }
+        if (maLoi(error) === MA_CHUA_DANG_NHAP) {
+          const bo_do = muc_tieu.length - da_doi - von_vay - that_bai.length;
+          datTomTat(tomTatHangLoat({ da_doi, von_vay, that_bai, bo_do }));
+          return { error };
+        }
+        that_bai.push(id);
+      }
+      datTomTat(tomTatHangLoat({ da_doi, von_vay, that_bai, bo_do: 0 }));
+      return {};
+    });
+  };
 
   const co_bo_loc =
     q !== "" || sub !== "" || tac_gia !== "" || trang_thai !== mac_dinh;
@@ -181,7 +265,7 @@ function BangMach() {
             : "Mỗi bài là một “mạch”: bài gốc cộng các mốc tác giả nối thêm về sau."
         }
       />
-      <HienLoi loi={loi_hanh_dong ?? ds.loi} />
+      <HienLoi loi={loi_hanh_dong ?? ds.loi} het_phien={het_phien} />
 
       <The>
         <div className="flex flex-wrap items-center gap-2 border-b border-vien p-3">
@@ -189,6 +273,10 @@ function BangMach() {
             className="flex gap-1.5"
             onSubmit={(e) => {
               e.preventDefault();
+              // Đổi bộ lọc GIỮA một lượt hàng loạt là đổi `nap` trong khi vòng lặp còn
+              // chạy trên bảng cũ — hai lượt nạp đua nhau và bảng có thể hiện kết quả
+              // của bộ lọc không còn trên URL. Khoá cho tới khi lượt chạy xong.
+              if (dang_chay) return;
               datLoc("q", o_tim.trim());
             }}
           >
@@ -203,7 +291,7 @@ function BangMach() {
               onChange={(e) => datOTim(e.target.value)}
               data-testid="loc-q"
             />
-            <button type="submit" className="nut">
+            <button type="submit" className="nut" disabled={dang_chay}>
               Lọc
             </button>
           </form>
@@ -215,6 +303,7 @@ function BangMach() {
             id="loc-trang-thai"
             className="nut cursor-pointer"
             value={trang_thai}
+            disabled={dang_chay}
             onChange={(e) => datLoc("trang_thai", e.target.value)}
             data-testid="loc-trang-thai"
           >
@@ -236,6 +325,7 @@ function BangMach() {
             <button
               type="button"
               className="nut nut-nho ml-auto"
+              disabled={dang_chay}
               onClick={() => {
                 datOTim("");
                 router.push("/machs");
@@ -246,6 +336,50 @@ function BangMach() {
           )}
         </div>
 
+        <ThanhHangLoat
+          so_chon={chon.da_chon.size}
+          dang_chay={dang_chay}
+          tom_tat={tom_tat}
+          xoaChon={chon.xoaChon}
+        >
+          <button
+            type="button"
+            className="nut nut-nho"
+            disabled={dang_chay}
+            onClick={() => void anHangLoat(true)}
+            data-testid="nut-hl-an"
+          >
+            Ẩn
+          </button>
+          <button
+            type="button"
+            className="nut nut-nho"
+            disabled={dang_chay}
+            onClick={() => void anHangLoat(false)}
+            data-testid="nut-hl-go-an"
+          >
+            Gỡ ẩn
+          </button>
+          <button
+            type="button"
+            className="nut nut-nho"
+            disabled={dang_chay}
+            onClick={() => void khoaHangLoat(true)}
+            data-testid="nut-hl-khoa"
+          >
+            Khoá
+          </button>
+          <button
+            type="button"
+            className="nut nut-nho"
+            disabled={dang_chay}
+            onClick={() => void khoaHangLoat(false)}
+            data-testid="nut-hl-mo-khoa"
+          >
+            Mở khoá
+          </button>
+        </ThanhHangLoat>
+
         {ds.items === null ? (
           <Skeleton />
         ) : ds.items.length === 0 ? (
@@ -254,6 +388,16 @@ function BangMach() {
           <KhungBang>
             <HangTieuDe
               cot={[
+                <ONhoChon
+                  key="chon"
+                  chon={
+                    ds.items.length > 0 && chon.da_chon.size === ds.items.length
+                  }
+                  doi={chon.chonCaTrang}
+                  khoa={dang_chay}
+                  nhan="Chọn cả trang"
+                  testid="chon-tat-ca"
+                />,
                 "Bài viết",
                 "Chuyên mục",
                 "Tác giả",
@@ -271,6 +415,15 @@ function BangMach() {
                   className="border-b border-vien last:border-0 hover:bg-nen-mo/50"
                   data-testid={`hang-mach-${m.id}`}
                 >
+                  <td className="px-3 py-2.5">
+                    <ONhoChon
+                      chon={chon.da_chon.has(m.id)}
+                      doi={(v) => chon.doi(m.id, v)}
+                      khoa={dang_chay}
+                      nhan={`Chọn bài: ${m.title}`}
+                      testid={`chon-mach-${m.id}`}
+                    />
+                  </td>
                   <td className="max-w-md px-3 py-2.5">
                     <Link
                       href={`/m/${m.id}`}
@@ -389,6 +542,10 @@ function BangMach() {
           co_truoc={ds.co_truoc}
           co_sau={ds.co_sau}
           dang_tai={ds.dang_tai}
+          // `khoa` chứ không dồn vào `dang_tai`: lật trang giữa một lượt hàng loạt thì
+          // vẫn phải chặn, nhưng số trang không được biến thành "Đang tải…" suốt nhiều
+          // giây cho một bảng đang đứng yên.
+          khoa={dang_chay}
           onTruoc={ds.truoc}
           onSau={ds.sau}
           ten_muc="bài"

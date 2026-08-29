@@ -30,7 +30,7 @@ env = environ.Env(
     SESSION_COOKIE_DOMAIN=(str, ""),
     CSRF_COOKIE_DOMAIN=(str, ""),
     EMAIL_URL=(str, ""),
-    DEFAULT_FROM_EMAIL=(str, "gikky <khong-tra-loi@gikky.net>"),
+    DEFAULT_FROM_EMAIL=(str, "gikky <no-reply@gikky.net>"),
     FRONTEND_ORIGIN=(str, "http://localhost:3000"),
     REVALIDATE_URL=(str, "http://localhost:3000/lam-moi-cache"),
     REVALIDATE_SECRET=(str, ""),
@@ -364,7 +364,14 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 
 #: Email. Dev không có SMTP ⇒ ghi ra file, e2e đọc file lấy link xác thực.
-#: `EMAIL_URL` (django-environ) đè được ở prod, vd `smtp://user:pass@host:587/?tls=True`.
+#: `EMAIL_URL` (django-environ) đè được ở prod, vd `smtp+ssl://user:pass@host:465` (TLS
+#: ngầm) hoặc `smtps://user:pass@host:587` (STARTTLS).
+#:
+#: ⚠ **Mã hoá do SCHEME quyết định, KHÔNG do query param.** `smtp://…?tls=True` — dạng ai
+#: cũng gõ theo phản xạ, và dạng chính dòng này từng ghi — **bị bỏ qua im lặng**: TLS/SSL
+#: đọc từ scheme (`environ/environ.py:879-892`), `?tls=True` rơi vào `config["OPTIONS"]`
+#: mà backend SMTP không đọc ⇒ nối SMTP KHÔNG mã hoá, mật khẩu đi dạng thô, không cảnh báo.
+#: Xem nợ `P-20260827-3` trong `LOI-VA-NO.md` cho ba dòng số đo.
 #:
 #: ⚠ **Thư dev nằm ở `api/.mail/`** — xem `EMAIL_FILE_PATH` mấy dòng dưới. Đường dẫn
 #: `api/sent_emails/` nhắc tới ngay sau đây là của một khối cấu hình **đã bị xoá**, không
@@ -383,6 +390,33 @@ if env("EMAIL_URL"):
     vars().update(env.email_url("EMAIL_URL"))
 else:
     EMAIL_BACKEND = "django.core.mail.backends.filebased.EmailBackend"
+
+# --- Django đứng sau reverse proxy: TIN `X-Forwarded-Proto` ------------------
+#
+# **Thiếu dòng này là Google OAuth hỏng ở prod, và hỏng theo kiểu không đọc ra nguyên
+# nhân.** Ca thật, 2026-08-27: bấm "Đăng nhập bằng Google" trên `https://gikky.net` trả
+# `Error 400: redirect_uri_mismatch`. Giải mã payload lỗi của Google ra đúng chuỗi mà app
+# đã gửi:
+#
+#     http://gikky.net/api/_allauth/google/login/callback/
+#      ^^^^ — `http`, trong khi cả site chạy `https`
+#
+# Vì sao: Caddy nhận TLS rồi `reverse_proxy api:8000` bằng HTTP thuần, có gửi kèm
+# `X-Forwarded-Proto: https` (`deploy/prod/Caddyfile`). Nhưng Django **mặc định không tin
+# header ấy**, nên `request.is_secure()` trả `False` và `build_absolute_uri()` — thứ
+# allauth dùng để dựng `redirect_uri` — sinh ra `http://`. Google **không cho đăng ký** URI
+# `http://` cho tên miền thật, nên chuỗi ấy không thể khớp bất cứ thứ gì: sai vĩnh viễn,
+# và không sửa được ở phía Google Console.
+#
+# ⚠ **Chỉ an toàn vì Django KHÔNG bao giờ nhận request trực tiếp.** Tin header này nghĩa là
+# bất kỳ ai gửi được `X-Forwarded-Proto: https` đều làm Django tưởng mình đang chạy TLS.
+# Ở đây điều đó không tới được: `deploy/prod/compose.yml` **không publish cổng nào** cho
+# service `api` — nó chỉ tồn tại trong mạng nội bộ compose, và Caddy là cửa duy nhất.
+# Ngày nào có ai thêm `ports: - "8000:8000"` vào service ấy thì dòng dưới đây thành lỗ
+# giả mạo, và phải bỏ đi cùng lúc.
+#
+# Ở máy dev vô hại: không có proxy nào gửi header đó, nên nó không bao giờ khớp.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # --- CSRF / cookie (PLAN 8.2) ------------------------------------------------
 # **Khối DUY NHẤT khai ba biến này** — cả `api_v1` (Phase 2) lẫn `api_admin` (Phase 4)
@@ -420,13 +454,6 @@ REVALIDATE_URL = env("REVALIDATE_URL", default="http://localhost:3000/lam-moi-ca
 #: tiến trình Next.
 REVALIDATE_SECRET = env("REVALIDATE_SECRET", default="")
 
-#: Meilisearch — chỉ mục tìm kiếm (PLAN 8.5, Phase 7). **Cả hai rỗng ⇒ TẮT HẲN**, cùng
-#: một mặc định và cùng một lý do với `REVALIDATE_SECRET`: clone sạch không đi gọi một
-#: service chưa ai cài, và `pytest` không phụ thuộc vào một tiến trình nền.
-#:
-#: `MEILI_KEY` phải là khoá **phạm vi hẹp** (chỉ index `mach`), **không phải master key**
-#: — master key tạo được khoá khác, tức nó là quyền quản trị toàn cụm cho một tiến trình
-#: chỉ cần đọc/ghi một index. Xem docstring `core/tim_kiem.py`.
 #: Secret của cửa ĐẾM LƯỢT XEM (`POST /api/v1/dem-luot-xem`, 2026-08-27) — chiều ngược
 #: lại: middleware của `apps/web` gọi vào Django mỗi lần có ai mở một trang.
 #:
@@ -437,6 +464,13 @@ REVALIDATE_SECRET = env("REVALIDATE_SECRET", default="")
 #: đếm sai.
 DEM_LUOT_XEM_SECRET = env("DEM_LUOT_XEM_SECRET", default="")
 
+#: Meilisearch — chỉ mục tìm kiếm (PLAN 8.5, Phase 7). **Cả hai rỗng ⇒ TẮT HẲN**, cùng
+#: một mặc định và cùng một lý do với `REVALIDATE_SECRET`: clone sạch không đi gọi một
+#: service chưa ai cài, và `pytest` không phụ thuộc vào một tiến trình nền.
+#:
+#: `MEILI_KEY` phải là khoá **phạm vi hẹp** (chỉ index `mach`), **không phải master key**
+#: — master key tạo được khoá khác, tức nó là quyền quản trị toàn cụm cho một tiến trình
+#: chỉ cần đọc/ghi một index. Xem docstring `core/tim_kiem.py`.
 #:
 #: URL phải là **nội bộ** (`127.0.0.1:7700`). Meilisearch không bao giờ được Caddy proxy
 #: ra internet: luật che nội dung của sản phẩm sống ở Django, và một khoá search nằm

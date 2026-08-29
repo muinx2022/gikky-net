@@ -156,17 +156,44 @@
   line-height: 1.65;
 }
 
-.gui {
+/* ===========================================================================
+ * Hai cái nút, HAI BẬC — user chốt 2026-08-27 ("làm lại nút gg và nút đăng nhập,
+ * nhìn xấu quá")
+ * ===========================================================================
+ *
+ * Bản trước để nút Google dùng chung lớp `.gui` với nút submit, nên trang có **hai khối
+ * đặc màu nhấn giống hệt nhau** xếp chồng. Hai nút cùng trọng lượng thị giác nghĩa là
+ * không nút nào là chính, và người dùng phải đọc chữ mới biết bấm cái nào — đúng việc mà
+ * hình dạng lẽ ra phải làm hộ.
+ *
+ * Nay: `.gui` đặc màu = hành động CHÍNH. `.google` nền thẻ + viền = lối đi thứ hai, ngang
+ * hàng về chức năng nhưng nhẹ hơn về mắt.
+ *
+ * Cả hai cao bằng nhau (`min-height: 44px`) — ngưỡng chạm của WCAG 2.5.8, và hai nút xếp
+ * dọc mà lệch chiều cao thì đọc ra là một cái bị lỗi. */
+
+.gui,
+.google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
   width: 100%;
-  margin-top: 6px;
-  padding: 10px 14px;
-  border: 1px solid var(--accent);
-  border-radius: 4px;
-  background: var(--accent);
-  color: var(--on-accent);
+  min-height: 44px;
+  padding: 11px 16px;
+  border-radius: 6px;
   font: inherit;
+  font-size: 14.5px;
   font-weight: 600;
   cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.gui {
+  margin-top: 12px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
 }
 
 .gui:hover:not(:disabled) {
@@ -176,6 +203,48 @@
 .gui:disabled {
   opacity: 0.55;
   cursor: progress;
+}
+
+/* Nút Google. Nền `--surface` để nó NỔI trên nền `--inset` của ô nhập chứ không chìm
+   xuống — đây là một lối đi, không phải một trường dữ liệu. */
+.google {
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.google:hover {
+  border-color: var(--ink-3);
+  background: var(--inset);
+}
+
+.khoi_google {
+  margin: 0;
+}
+
+/* Logo giữ nguyên kích thước khi nút bị bóp hẹp — `flex` mặc định cho phép co ảnh, và
+   một chữ G méo còn tệ hơn không có chữ G. */
+.logo_google {
+  flex: none;
+}
+
+/* Vạch "hoặc". Hai đoạn kẻ do `::before`/`::after` kéo hết chỗ trống, nên chữ luôn nằm
+   chính giữa mà không cần biết nó dài bao nhiêu. */
+.vach {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0 16px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.vach::before,
+.vach::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
 }
 
 .duoi {

@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { useState } from "react";
 
+import { Icon } from "../../components/icon";
 import { baoDamCsrf, GOC_ALLAUTH } from "../../lib/api";
 import { taoThongTinDangNhap } from "../../lib/dang-nhap";
-
 import { duongDanQuayLai } from "../../lib/quay-lai";
 import { useTieuDeTrang } from "../../lib/tieu-de";
+
 /**
  * Đăng nhập mod.
  *
@@ -59,7 +60,6 @@ function thongDiepAllauth(du_lieu: unknown): string | null {
   return typeof loi === "string" ? loi : null;
 }
 
-export default function TrangDangNhap() {
 /** Header mang tín hiệu "ghi nhớ đăng nhập" sang Django.
  *
  * ## Vì sao HEADER chứ không phải một khoá trong body
@@ -75,13 +75,13 @@ export default function TrangDangNhap() {
  */
 const HEADER_GHI_NHO = "X-Ghi-Nho";
 
+export default function TrangDangNhap() {
   // "định danh": email HOẶC username. Xem `lib/dang-nhap.ts` — allauth đòi client
   // chọn đúng một khoá, nên biến này cố ý không tên là `email`.
   const [dinh_danh, setDinhDanh] = useState("");
   const [matKhau, setMatKhau] = useState("");
   const [ketQua, setKetQua] = useState<string | null>(null);
   const [dangGui, setDangGui] = useState(false);
-
   const [hienMatKhau, setHienMatKhau] = useState(false);
   // Mặc định TÍCH SẴN (user chốt 2026-08-26). Hôm nay phiên vốn luôn sống 2 tuần kể cả khi
   // đóng trình duyệt, nên tích sẵn = giữ nguyên hành vi cũ, không ai bị đăng xuất bất ngờ
@@ -92,6 +92,7 @@ const HEADER_GHI_NHO = "X-Ghi-Nho";
   // Trang này nằm NGOÀI khung quản trị (không `TieuDeTrang`, không sidebar), nên nó tự
   // đặt tiêu đề tab.
   useTieuDeTrang("Đăng nhập");
+
   async function gui(e: React.FormEvent) {
     e.preventDefault();
     setDangGui(true);
@@ -103,8 +104,8 @@ const HEADER_GHI_NHO = "X-Ghi-Nho";
         headers: {
           "Content-Type": "application/json",
           "X-CSRFToken": await baoDamCsrf(),
-        },
           [HEADER_GHI_NHO]: ghiNho ? "1" : "0",
+        },
         body: JSON.stringify(taoThongTinDangNhap(dinh_danh, matKhau)),
       });
       if (r.ok) {
@@ -176,7 +177,6 @@ const HEADER_GHI_NHO = "X-Ghi-Nho";
           </label>
           <label className="block text-sm">
             <span className="mb-1 block text-muc-mo">Mật khẩu</span>
-            <input
             {/* `relative` + nút `absolute`: nút nằm TRONG ô nhập, nên đổi icon không đẩy
                 layout một pixel nào. `pr-10` chừa chỗ để mật khẩu dài không chui xuống
                 dưới con mắt. */}
@@ -230,13 +230,21 @@ const HEADER_GHI_NHO = "X-Ghi-Nho";
               tích cần biết mình đổi lấy cái gì, và câu đó phải đọc được ngay lúc tay đang
               ở trên ô tích. */}
           <label className="flex items-start gap-2 text-sm">
+            <input
               type="checkbox"
               className="mt-0.5"
               checked={ghiNho}
               onChange={(e) => setGhiNho(e.target.checked)}
               data-testid="o-ghi-nho"
             />
+            <span>
+              Ghi nhớ đăng nhập
+              <span className="block text-xs text-muc-mo">
+                Bỏ tích thì đóng trình duyệt là hết phiên.
+              </span>
+            </span>
           </label>
+
           <button
             type="submit"
             className="nut nut-chinh w-full"
