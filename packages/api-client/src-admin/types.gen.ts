@@ -387,6 +387,10 @@ export type LuotXemNgayOut = {
      */
     ngay: string;
     /**
+     * So Khach
+     */
+    so_khach: number | null;
+    /**
      * So Luot Bot
      */
     so_luot_bot: number;
@@ -403,9 +407,9 @@ export type LuotXemNgayOut = {
  */
 export type LuotXemOut = {
     /**
-     * Bot Chi 90 Ngay
+     * Chi Tiet Chi 90 Ngay
      */
-    bot_chi_90_ngay: boolean;
+    chi_tiet_chi_90_ngay: boolean;
     /**
      * Chuoi Ngay
      */
@@ -414,6 +418,18 @@ export type LuotXemOut = {
      * Khoang
      */
     khoang: string;
+    /**
+     * So Truc Tiep
+     */
+    so_truc_tiep: number;
+    /**
+     * Theo Nhom Bot
+     */
+    theo_nhom_bot: Array<NhomBotOut>;
+    /**
+     * Thiet Bi
+     */
+    thiet_bi: Array<MucSoLuotOut>;
     tong: LuotXemTongOut;
     /**
      * Top Bot
@@ -423,18 +439,30 @@ export type LuotXemOut = {
      * Top Duong Dan
      */
     top_duong_dan: Array<TopDuongDanOut>;
+    /**
+     * Top Nguon
+     */
+    top_nguon: Array<NguonOut>;
+    /**
+     * Trinh Duyet
+     */
+    trinh_duyet: Array<MucSoLuotOut>;
 };
 
 /**
  * LuotXemTongOut
  *
- * Bốn con số lớn. `so_luot` = `so_luot_nguoi + so_luot_bot`, không hơn.
+ * Năm con số lớn. `so_luot` = `so_luot_nguoi + so_luot_bot`, không hơn.
  *
- * Server trả cả tổng lẫn hai vế thay vì để frontend cộng: ba chỗ trên màn hình (bốn ô
+ * Server trả cả tổng lẫn hai vế thay vì để frontend cộng: ba chỗ trên màn hình (các ô
  * KPI, biểu đồ, dòng "% bot") phải nói cùng một chuyện, và cách chắc chắn nhất là
  * chúng cùng đọc một phép cộng.
  */
 export type LuotXemTongOut = {
+    /**
+     * So Khach
+     */
+    so_khach: number;
     /**
      * So Luot
      */
@@ -632,6 +660,26 @@ export type ModOut = {
 };
 
 /**
+ * MucSoLuotOut
+ *
+ * Một dòng của hai bảng nhỏ "Trình duyệt" và "Thiết bị".
+ *
+ * `ten` là **khoá ascii** (`chrome`, `di_dong`, …), không phải nhãn hiển thị: nhãn tiếng
+ * Việt do frontend map. Trả nhãn từ server là khoá dữ liệu và chữ trên màn hình dính vào
+ * nhau — đổi một chữ hoa thành một breaking change của API.
+ */
+export type MucSoLuotOut = {
+    /**
+     * So Luot
+     */
+    so_luot: number;
+    /**
+     * Ten
+     */
+    ten: string;
+};
+
+/**
  * NguoiDungQuanTriOut
  *
  * Hồ sơ một tài khoản dưới góc nhìn mod — trạng thái ban + vài con số để phán xử.
@@ -724,6 +772,26 @@ export type NguoiDungTomTatOut = {
 };
 
 /**
+ * NguonOut
+ *
+ * Một dòng bảng "Nguồn truy cập". `nguon` là **tên miền**, không bao giờ là URL.
+ *
+ * Chỉ hàng NGƯỜI, và chỉ `nguon != ""`. Phần rỗng (trực tiếp / nội bộ / rác) đi vào
+ * `LuotXemOut.so_truc_tiep` — gộp chung vào bảng thì nó chiếm dòng đầu ở mọi site và
+ * đẩy hết nguồn thật xuống dưới.
+ */
+export type NguonOut = {
+    /**
+     * Nguon
+     */
+    nguon: string;
+    /**
+     * So Luot
+     */
+    so_luot: number;
+};
+
+/**
  * NhatKyOut
  *
  * Một dòng `AuditLog` (PLAN 5.10: "mọi hành động mod ghi AuditLog").
@@ -756,6 +824,22 @@ export type NhatKyOut = {
      * Target Type
      */
     target_type: string;
+};
+
+/**
+ * NhomBotOut
+ *
+ * Một dòng bảng "Bot theo nhóm". Sáu khoá của `core/bot.py::NHOM_HOP_LE`.
+ */
+export type NhomBotOut = {
+    /**
+     * Nhom
+     */
+    nhom: string;
+    /**
+     * So Luot
+     */
+    so_luot: number;
 };
 
 /**
@@ -974,6 +1058,10 @@ export type TaoSubIn = {
  * UA thô không được lưu ở bất kỳ đâu.
  */
 export type TenBotOut = {
+    /**
+     * Nhom
+     */
+    nhom: string;
     /**
      * So Luot
      */

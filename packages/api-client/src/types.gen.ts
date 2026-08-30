@@ -457,13 +457,27 @@ export type DatKhoaMachIn = {
 /**
  * DemLuotXemIn
  *
- * Thân request. Hai trường, và không trường nào nhận diện được một con người.
+ * Thân request. Bốn trường, và **ba trường sau đều có mặc định**.
+ *
+ * ⚠ **Backward-compatible là BẮT BUỘC, không phải lịch sự.** Deploy không nguyên tử:
+ * trong cửa sổ giữa lúc Django mới lên và lúc `apps/web` mới lên, prod đang chạy
+ * middleware CŨ gửi đúng hai trường `{duong_dan, user_agent}`. Bắt buộc `ip`/`referer`
+ * là mọi lượt xem trong cửa sổ ấy trả 422 và biến mất — im lặng, vì middleware
+ * `.catch(() => {})` mọi lỗi. `tests/test_api_dem_luot_xem.py` ghim đúng ca này.
  */
 export type DemLuotXemIn = {
     /**
      * Duong Dan
      */
     duong_dan: string;
+    /**
+     * Ip
+     */
+    ip?: string;
+    /**
+     * Referer
+     */
+    referer?: string;
     /**
      * User Agent
      */

@@ -471,6 +471,17 @@
             "title": "Ngay",
             "type": "string"
           },
+          "so_khach": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "So Khach"
+          },
           "so_luot_bot": {
             "title": "So Luot Bot",
             "type": "integer"
@@ -483,7 +494,8 @@
         "required": [
           "ngay",
           "so_luot_nguoi",
-          "so_luot_bot"
+          "so_luot_bot",
+          "so_khach"
         ],
         "title": "LuotXemNgayOut",
         "type": "object"
@@ -491,8 +503,8 @@
       "LuotXemOut": {
         "description": "Toàn bộ số liệu của trang `/luot-xem` cho MỘT khoảng.",
         "properties": {
-          "bot_chi_90_ngay": {
-            "title": "Bot Chi 90 Ngay",
+          "chi_tiet_chi_90_ngay": {
+            "title": "Chi Tiet Chi 90 Ngay",
             "type": "boolean"
           },
           "chuoi_ngay": {
@@ -505,6 +517,24 @@
           "khoang": {
             "title": "Khoang",
             "type": "string"
+          },
+          "so_truc_tiep": {
+            "title": "So Truc Tiep",
+            "type": "integer"
+          },
+          "theo_nhom_bot": {
+            "items": {
+              "$ref": "#/components/schemas/NhomBotOut"
+            },
+            "title": "Theo Nhom Bot",
+            "type": "array"
+          },
+          "thiet_bi": {
+            "items": {
+              "$ref": "#/components/schemas/MucSoLuotOut"
+            },
+            "title": "Thiet Bi",
+            "type": "array"
           },
           "tong": {
             "$ref": "#/components/schemas/LuotXemTongOut"
@@ -522,6 +552,20 @@
             },
             "title": "Top Duong Dan",
             "type": "array"
+          },
+          "top_nguon": {
+            "items": {
+              "$ref": "#/components/schemas/NguonOut"
+            },
+            "title": "Top Nguon",
+            "type": "array"
+          },
+          "trinh_duyet": {
+            "items": {
+              "$ref": "#/components/schemas/MucSoLuotOut"
+            },
+            "title": "Trinh Duyet",
+            "type": "array"
           }
         },
         "required": [
@@ -530,14 +574,23 @@
           "chuoi_ngay",
           "top_duong_dan",
           "top_bot",
-          "bot_chi_90_ngay"
+          "theo_nhom_bot",
+          "top_nguon",
+          "so_truc_tiep",
+          "trinh_duyet",
+          "thiet_bi",
+          "chi_tiet_chi_90_ngay"
         ],
         "title": "LuotXemOut",
         "type": "object"
       },
       "LuotXemTongOut": {
-        "description": "Bốn con số lớn. `so_luot` = `so_luot_nguoi + so_luot_bot`, không hơn.\n\nServer trả cả tổng lẫn hai vế thay vì để frontend cộng: ba chỗ trên màn hình (bốn ô\nKPI, biểu đồ, dòng \"% bot\") phải nói cùng một chuyện, và cách chắc chắn nhất là\nchúng cùng đọc một phép cộng.",
+        "description": "Năm con số lớn. `so_luot` = `so_luot_nguoi + so_luot_bot`, không hơn.\n\nServer trả cả tổng lẫn hai vế thay vì để frontend cộng: ba chỗ trên màn hình (các ô\nKPI, biểu đồ, dòng \"% bot\") phải nói cùng một chuyện, và cách chắc chắn nhất là\nchúng cùng đọc một phép cộng.",
         "properties": {
+          "so_khach": {
+            "title": "So Khach",
+            "type": "integer"
+          },
           "so_luot": {
             "title": "So Luot",
             "type": "integer"
@@ -554,7 +607,8 @@
         "required": [
           "so_luot",
           "so_luot_nguoi",
-          "so_luot_bot"
+          "so_luot_bot",
+          "so_khach"
         ],
         "title": "LuotXemTongOut",
         "type": "object"
@@ -797,6 +851,25 @@
         "title": "ModOut",
         "type": "object"
       },
+      "MucSoLuotOut": {
+        "description": "Một dòng của hai bảng nhỏ \"Trình duyệt\" và \"Thiết bị\".\n\n`ten` là **khoá ascii** (`chrome`, `di_dong`, …), không phải nhãn hiển thị: nhãn tiếng\nViệt do frontend map. Trả nhãn từ server là khoá dữ liệu và chữ trên màn hình dính vào\nnhau — đổi một chữ hoa thành một breaking change của API.",
+        "properties": {
+          "so_luot": {
+            "title": "So Luot",
+            "type": "integer"
+          },
+          "ten": {
+            "title": "Ten",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ten",
+          "so_luot"
+        ],
+        "title": "MucSoLuotOut",
+        "type": "object"
+      },
       "NguoiDungQuanTriOut": {
         "description": "Hồ sơ một tài khoản dưới góc nhìn mod — trạng thái ban + vài con số để phán xử.",
         "properties": {
@@ -936,6 +1009,25 @@
         "title": "NguoiDungTomTatOut",
         "type": "object"
       },
+      "NguonOut": {
+        "description": "Một dòng bảng \"Nguồn truy cập\". `nguon` là **tên miền**, không bao giờ là URL.\n\nChỉ hàng NGƯỜI, và chỉ `nguon != \"\"`. Phần rỗng (trực tiếp / nội bộ / rác) đi vào\n`LuotXemOut.so_truc_tiep` — gộp chung vào bảng thì nó chiếm dòng đầu ở mọi site và\nđẩy hết nguồn thật xuống dưới.",
+        "properties": {
+          "nguon": {
+            "title": "Nguon",
+            "type": "string"
+          },
+          "so_luot": {
+            "title": "So Luot",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "nguon",
+          "so_luot"
+        ],
+        "title": "NguonOut",
+        "type": "object"
+      },
       "NhatKyOut": {
         "description": "Một dòng `AuditLog` (PLAN 5.10: \"mọi hành động mod ghi AuditLog\").",
         "properties": {
@@ -986,6 +1078,25 @@
           "created_at"
         ],
         "title": "NhatKyOut",
+        "type": "object"
+      },
+      "NhomBotOut": {
+        "description": "Một dòng bảng \"Bot theo nhóm\". Sáu khoá của `core/bot.py::NHOM_HOP_LE`.",
+        "properties": {
+          "nhom": {
+            "title": "Nhom",
+            "type": "string"
+          },
+          "so_luot": {
+            "title": "So Luot",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "nhom",
+          "so_luot"
+        ],
+        "title": "NhomBotOut",
         "type": "object"
       },
       "NoiDungBiBaoCaoOut": {
@@ -1285,6 +1396,10 @@
       "TenBotOut": {
         "description": "Một dòng bảng \"Bot nào vào nhiều nhất\".\n\n`ten` là tên CHUẨN HOÁ của `core/bot.py`, hoặc `\"khác\"` — không phải User-Agent thô.\nUA thô không được lưu ở bất kỳ đâu.",
         "properties": {
+          "nhom": {
+            "title": "Nhom",
+            "type": "string"
+          },
           "so_luot": {
             "title": "So Luot",
             "type": "integer"
@@ -1296,7 +1411,8 @@
         },
         "required": [
           "ten",
-          "so_luot"
+          "so_luot",
+          "nhom"
         ],
         "title": "TenBotOut",
         "type": "object"

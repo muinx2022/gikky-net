@@ -162,6 +162,51 @@ export function secretDem(): string {
   return process.env.DEM_LUOT_XEM_SECRET ?? "";
 }
 
+/** IP của khách — **chỉ để Django băm rồi vứt**, không bao giờ được lưu.
+ *
+ * ## ⚠ Phần tử ĐẦU của `x-forwarded-for` là thứ client TỰ KHAI — không được đọc nó
+ *
+ * Mỗi proxy NỐI THÊM peer nó nhìn thấy vào **cuối** danh sách; phần đầu chuỗi là do
+ * client gửi lên và giả được bằng một dòng header. Bản đầu của lượt 2026-08-30 lấy `[0]`
+ * — tức một vòng `curl -H "X-Forwarded-For: 9.9.$i.$j" https://gikky.net/` bơm được
+ * mười nghìn "khách" **vĩnh viễn** vào `KhachNgay`, không cần secret, không một dòng
+ * log (lượt phản biện 2026-08-30 tìm ra). Repo đã có đúng luật này từ trước ở
+ * `api/core/han_muc.py::dia_chi_ip` — phần tử CUỐI; hai chỗ nay cùng một chiều.
+ *
+ * Thứ tự đọc, và vì sao:
+ *
+ * 1. `cf-connecting-ip` — Cloudflare **ghi đè** header này ở biên bằng IP thật của
+ *    client, nên nó là nguồn đúng nhất trên prod; snippet `len_django` của Caddyfile
+ *    cũng tin đúng header này cho Django. Ai gọi thẳng origin không qua Cloudflare thì
+ *    giả được — cùng mức tin cậy mà `han_muc.py` đã chấp nhận.
+ * 2. `x-forwarded-for` phần tử **CUỐI** — peer mà proxy gần nhất (Caddy) thật sự nhìn
+ *    thấy. Sau Cloudflare mà thiếu (1) thì phần tử cuối là IP biên của Cloudflare:
+ *    nhiều người chung một "khách", tức đếm THIẾU — chiều hỏng an toàn, ngược hẳn với
+ *    `[0]` (bơm được vô hạn, đếm THỪA).
+ * 3. `""` — dev không có proxy nào: hash rơi về UA-only, "khách" ở dev thô hơn ở prod.
+ *    Chấp nhận — dựng một IP giả ở dev là làm số liệu dev trông đúng mà không đo gì cả.
+ *
+ * (`x-real-ip` từng là fallback ở đây và là NHÁNH CHẾT: không Caddyfile nào trong
+ * `deploy/` đặt nó. Một fallback không bao giờ chạy ở prod chỉ nuôi một bài đo về một
+ * hệ không tồn tại — đã gỡ.)
+ *
+ * Không dùng cho phân quyền, không log, không lưu: giá trị này đi thẳng vào thân request
+ * rồi vào `sha256` ở Django. Xem `api/api/dem_luot_xem.py::hash_khach`.
+ */
+export function ipKhach(req: { headers: { get(ten: string): string | null } }): string {
+  const cf = req.headers.get("cf-connecting-ip");
+  if (cf !== null && cf.trim() !== "") return cf.trim();
+  const xff = req.headers.get("x-forwarded-for");
+  if (xff !== null) {
+    const cac = xff
+      .split(",")
+      .map((p) => p.trim())
+      .filter((p) => p !== "");
+    if (cac.length > 0) return cac[cac.length - 1];
+  }
+  return "";
+}
+
 /** Header mà Next/trình duyệt gắn cho một lượt **nạp trước**, không phải một lượt xem. */
 const HEADER_PREFETCH = ["next-router-prefetch", "purpose", "sec-purpose"];
 

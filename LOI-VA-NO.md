@@ -1220,3 +1220,33 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 > (`config/wsgi.py::DocThanChunked`, có trần 1 MiB ⇒ 413), phủ luôn mọi cửa edge-runtime về
 > sau. 8 bài đo mới + 3 phép thử phá. Prod: `LuotXem` đã tăng theo lượt xem thật, và lượt của
 > người dùng thật ghi đúng `la_bot=False`. Chi tiết: `plans/2026-08-28-than-chunked-wsgi.md`.
+
+### P-20260830-1 · [MỞ] · NẶNG — hàng rào e2e #14 và trang `/luat` mâu thuẫn NGAY TẠI HEAD ⇒ `pnpm e2e:don-vi` đỏ 1 bài trên `main`, độc lập mọi bản vá
+- **Thấy lúc**: chạy nghiệm thu lượt "viết lại thống kê lượt xem" (`plans/2026-08-30-viet-lai-luot-xem.md`)
+- **Ở đâu**: `apps/web/app/luat/page.tsx:14` (`export const dynamic = "force-dynamic"`, thêm 2026-08-25 khi dựng Docker) vs `apps/web/e2e/don-vi/trang-loi.spec.ts:268` (cấm đúng chuỗi ấy)
+- **Bằng chứng**: `git show HEAD:` cả hai file đều đã mang hai vế mâu thuẫn; `git diff HEAD` trên cả hai = 0 dòng. `pnpm e2e:don-vi` = 380/381, bài đỏ duy nhất là nó.
+- **Vì sao không sửa ngay**: cần user quyết bên nào đúng — trang cần `force-dynamic` (lý do Docker có comment tại chỗ) hay hàng rào phải cập nhật. Sửa bên nào cũng là đổi một chốt đã ghi.
+
+### P-20260830-2 · [MỞ] · VỪA — `POST /dem-luot-xem` không có hạn mức nào: đường Next→Django đi trong mạng container, VƯỢT rate_limit của Caddy
+- **Thấy lúc**: lượt phản biện "viết lại thống kê lượt xem"
+- **Ở đâu**: `deploy/prod/Caddyfile:94` (`@ghi` chỉ khớp request đi QUA Caddy) · `apps/web/middleware.ts:104` (gọi thẳng `api:8000`)
+- **Bằng chứng**: bất kỳ ai `GET /` (không cần secret — chính site tự chuyển tiếp) ép được một lượt ghi `LuotXem`; không tầng nào đếm nhịp. `NGUONG_GIU_RIENG` chỉ chặn đường phình của `TongNgay`, còn bảng thô phình tự do trong 90 ngày.
+- **Vì sao không sửa ngay**: ngoài phạm vi lượt (cần quyết cơ chế: đếm nhịp ở middleware, ở Django, hay chấp nhận vì thô tự dọn sau 90 ngày).
+
+### P-20260830-3 · [MỞ] · VỪA (nghi ngờ, chưa đo) — trang `/luot-xem` nay chạy ~9 câu aggregate quét bảng `core_luotxem` mỗi lượt bấm, 4 cột mới đều không index
+- **Thấy lúc**: lượt phản biện "viết lại thống kê lượt xem"
+- **Ở đâu**: `api/api/quan_tri_luot_xem.py` (các hàm `_tho_theo_ngay` · `_khach_tho` · `_top_nguon` · `_theo_cot`…)
+- **Bằng chứng**: chưa dựng được số — phản biện bị cấm chạm DB. Index duy nhất là `(luc, duong_dan)`; các câu `GROUP BY nguon/trinh_duyet/thiet_bi` + `COUNT(DISTINCT khach)` là seq-scan trên bảng ghi nóng nhất site, endpoint `no-store` có nút "Làm mới".
+- **Vì sao không sửa ngay**: là NGHI NGỜ hiệu năng, chưa có phép đo; cần `EXPLAIN ANALYZE` trên dữ liệu thật trước khi quyết thêm index (index thêm là chi phí trên chính đường ghi nóng).
+
+### P-20260830-4 · [MỞ] · NHỎ — `KhungBang` tự render `<table>` nhưng không hàng rào nào chặn trang đặt thêm `<table>` bên trong
+- **Thấy lúc**: lượt thực thi "viết lại thống kê lượt xem" (trang `/luot-xem` cũ mắc đúng lỗi này, đã sửa trong lượt)
+- **Ở đâu**: `apps/admin/components/ui.tsx:176`
+- **Bằng chứng**: bản cũ `apps/admin/app/luot-xem/page.tsx` lồng `<table class="bang">` trong `<table>` của `KhungBang` — HTML không hợp lệ, build vẫn xanh, không gì đỏ.
+- **Vì sao không sửa ngay**: hàng rào quét JSX là việc riêng, ngoài phạm vi.
+
+### P-20260830-5 · [MỞ] · VỪA — git index của repo đang giữ một snapshot CŨ lệch xa worktree (108 file staged, −5118 dòng so với HEAD)
+- **Thấy lúc**: khảo sát đầu lượt "viết lại thống kê lượt xem"
+- **Ở đâu**: gốc repo (`git diff --cached --stat`)
+- **Bằng chứng**: `git diff --cached --stat` = 108 file / +931 / −5118 trong khi worktree ≈ HEAD; hai bên gần như gương nhau — index bị đặt về một trạng thái cũ từ trước lượt này.
+- **Vì sao không sửa ngay**: reset index là thao tác phá — cần user xác nhận không phiên nào khác đang cần nó. ⚠ Commit tới PHẢI `git add` chọn lọc từng file; `git commit` thẳng index hiện tại hay `git commit -a` đều chôn rác.

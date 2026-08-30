@@ -16,6 +16,8 @@ from core.ghi import tao_binh_luan, tao_mach, them_moc
 from core.management.commands.seed_dev import TITLE_HPG, TITLE_POST_THUONG
 from core.models import Comment, Mach, Sub, User
 
+from api.dem_luot_xem import xoa_cache_muoi
+
 
 def chay_seed(*args) -> None:
     """Chạy một lệnh seed dưới `DEBUG=True` — **cách duy nhất** gọi chúng từ pytest.
@@ -300,3 +302,21 @@ def seed_chung(seed) -> Mach:
     """
     Comment.objects.filter(mach=seed, parent__isnull=True).update(anchor_moc_seq=None)
     return seed
+
+
+@pytest.fixture(autouse=True)
+def _don_cache_muoi():
+    """Dọn cache muối của `api/dem_luot_xem.py` trước MỖI bài đo.
+
+    `_CACHE_MUOI` là cache tiến trình cố ý (đường ghi nóng nhất của site không được cộng
+    một query cho mỗi lượt xem). Nhưng `pytest` cuộn ngược mọi transaction, nên một muối
+    cache lại từ bài trước trỏ tới một hàng `MuoiNgay` **đã biến mất** — và khi ấy bài đo
+    "lượt xem đầu tiên trong ngày sinh ra muối" xanh hay đỏ tuỳ **thứ tự chạy**, thứ khó
+    chẩn đoán nhất trong một bộ test.
+
+    `autouse` chứ không để mỗi file tự nhớ: file quên là lỗi quay lại, và nó quay lại ở
+    một file khác.
+    """
+    xoa_cache_muoi()
+    yield
+    xoa_cache_muoi()

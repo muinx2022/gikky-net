@@ -5,6 +5,7 @@ import { expect, test } from "@playwright/test";
 import {
   DUONG_DAN_MACH,
   HEADER_SECRET,
+  ipKhach,
   nenDem,
   nenDemRequest,
   nenRewrite,
@@ -269,4 +270,56 @@ test("middleware GỌI `nenDemRequest` — không chỉ `nenDem`", () => {
   // Hai hàm thuần đúng mà middleware quên gọi một cái thì không bài nào ở trên đỏ.
   const mw = doc("apps/web/middleware.ts");
   expect(mw).toContain("nenDemRequest(req)");
+});
+
+/* ===========================================================================
+ * Lượt 2026-08-30 — IP của khách (chỉ transit) + referer
+ * ========================================================================= */
+
+const reqIp = (h: Record<string, string>) => ({
+  method: "GET",
+  headers: { get: (t: string) => h[t.toLowerCase()] ?? null },
+});
+
+test("X1 — `cf-connecting-ip` thắng: Cloudflare GHI ĐÈ nó ở biên, client không chen được", () => {
+  expect(
+    ipKhach(reqIp({ "cf-connecting-ip": "203.0.113.7", "x-forwarded-for": "9.9.9.9, 1.1.1.1" })),
+  ).toBe("203.0.113.7");
+  expect(ipKhach(reqIp({ "cf-connecting-ip": "  203.0.113.7  " }))).toBe("203.0.113.7");
+});
+
+test("X1b — XFF lấy phần tử CUỐI: phần đầu là thứ client tự khai và GIẢ ĐƯỢC", () => {
+  // Proxy NỐI peer nó thấy vào CUỐI danh sách; phần đầu là do client gửi lên. Bản đầu
+  // của lượt 2026-08-30 lấy `[0]`, tức `curl -H "X-Forwarded-For: 9.9.$i.$j"` bơm được
+  // mười nghìn "khách" vĩnh viễn vào `KhachNgay` không cần secret — lượt phản biện tìm
+  // ra. Cùng luật với `api/core/han_muc.py::dia_chi_ip` (cũng lấy phần tử cuối).
+  expect(ipKhach(reqIp({ "x-forwarded-for": "9.9.9.9, 203.0.113.7" }))).toBe("203.0.113.7");
+  expect(ipKhach(reqIp({ "x-forwarded-for": "  203.0.113.7  " }))).toBe("203.0.113.7");
+});
+
+test("X1c — không header nào ⇒ chuỗi rỗng; XFF rỗng hay chỉ dấu phẩy cũng vậy", () => {
+  // Dev: không proxy nào ⇒ rỗng ⇒ Django băm UA-only. Thô hơn, và đó là đánh đổi đã ghi.
+  // (`x-real-ip` từng là fallback và là NHÁNH CHẾT — không Caddyfile nào đặt nó; đã gỡ.)
+  expect(ipKhach(reqIp({}))).toBe("");
+  expect(ipKhach(reqIp({ "x-forwarded-for": "" }))).toBe("");
+  expect(ipKhach(reqIp({ "x-forwarded-for": "  ,  " }))).toBe("");
+  expect(ipKhach(reqIp({ "x-real-ip": "198.51.100.9" }))).toBe("");
+});
+
+test("X2 — middleware GỬI `ip` và `referer` trong thân request", () => {
+  // Hai hàm thuần đúng mà middleware quên nối vào thân thì không bài nào ở trên đỏ: cửa
+  // đếm vẫn 200, và hai cột mới lặng lẽ rỗng vĩnh viễn trên prod.
+  const mw = doc("apps/web/middleware.ts");
+  expect(mw).toContain("ip: ipKhach(req)");
+  expect(mw).toMatch(/referer:\s*req\.headers\.get\("referer"\)\s*\?\?\s*""/);
+});
+
+test("X3 — Django nhận `ip`/`referer` là trường CÓ MẶC ĐỊNH (deploy lệch)", () => {
+  // Deploy không nguyên tử: vài phút Django mới chạy cạnh middleware CŨ (2 trường). Bắt
+  // buộc hai trường mới là mọi lượt xem trong cửa sổ ấy trả 422 và **biến mất im lặng**,
+  // vì middleware `.catch(() => {})` nuốt hết lỗi. Đọc thẳng schema Python.
+  const py = doc("api/api/dem_luot_xem.py");
+  expect(py).toMatch(/^\s{4}ip: str = ""$/m);
+  expect(py).toMatch(/^\s{4}referer: str = ""$/m);
+  expect(py).toMatch(/^\s{4}user_agent: str = ""$/m);
 });

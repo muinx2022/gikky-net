@@ -11,7 +11,7 @@ theo kiểu ("tất cả FK", "tất cả enum"):
 - `binh_luan`   — `Comment`
 - `tuong_tac`   — `Vote`, `Reaction`, `Trich`, `Follow`
 - `he_thong`    — `Notification`, `Report`, `AuditLog`
-- `luot_xem`    — `LuotXem`, `TongNgay` (hai bảng LÁ, không FK tới gì)
+- `luot_xem`    — `LuotXem`, `TongNgay`, `MuoiNgay`, `KhachNgay` (bảng LÁ, không FK tới gì)
 
 Django lấy `app_label` từ vị trí package trong app `core`, nên không model nào cần khai
 `Meta.app_label`. Điều kiện DUY NHẤT là mọi model phải được import ở đây — model không
@@ -24,7 +24,7 @@ registry mới là thứ `makemigrations` dùng.
 from core.models.binh_luan import Comment
 from core.models.dien_dan import Mach, ModSub, Sub
 from core.models.he_thong import AuditLog, Notification, Report
-from core.models.luot_xem import LuotXem, TongNgay
+from core.models.luot_xem import KhachNgay, LuotXem, MuoiNgay, TongNgay
 from core.models.moc import AnhNoiDung, Moc, MocAnh, MocRevision
 from core.models.nguoi_dung import User
 from core.models.tuong_tac import Follow, Reaction, TheoSub, TheoUser, Trich, Vote
@@ -34,7 +34,9 @@ __all__ = [
     "AuditLog",
     "Comment",
     "Follow",
+    "KhachNgay",
     "LuotXem",
+    "MuoiNgay",
     "Mach",
     "Moc",
     "MocAnh",

@@ -22,7 +22,7 @@ from datetime import datetime, time, timedelta
 
 import pytest
 
-from core.models.luot_xem import LuotXem, TongNgay
+from core.models.luot_xem import KhachNgay, LuotXem, TongNgay
 from core.thoi_gian import TZ_VN, ngay_vn
 
 from ._quan_tri import User, dang_nhap, dung_mod, dung_thuong
@@ -35,13 +35,30 @@ def luc(ngay, gio=12):
     return datetime.combine(ngay, time(gio, 0), tzinfo=TZ_VN)
 
 
-def them(ngay, duong_dan, *, so=1, bot=False, ten="googlebot"):
+def them(
+    ngay,
+    duong_dan,
+    *,
+    so=1,
+    bot=False,
+    ten="googlebot",
+    khach="",
+    nguon="",
+    trinh_duyet="",
+    thiet_bi="",
+):
+    """`khach=""` và ba cột mới rỗng là mặc định **có chủ đích**: đó là hình dạng hàng ghi
+    TRƯỚC 2026-08-30, và mọi bài đo cũ của file này chạy trên đúng hàng ấy."""
     for _ in range(so):
         LuotXem.objects.create(
             duong_dan=duong_dan,
             luc=luc(ngay),
             la_bot=bot,
             ten_bot=ten if bot else "",
+            khach=khach,
+            nguon=nguon,
+            trinh_duyet=trinh_duyet,
+            thiet_bi=thiet_bi,
         )
 
 
@@ -169,7 +186,14 @@ def test_ngay_rong_van_co_o_trong_bieu_do(db, hom_nay):
 def test_Q_tach_nguoi_va_bot_dung(du_lieu):
     js = goi("7").json()
     # 7 ngày phủ hôm nay (2 người + 1 bot) và ngày 3 (4 người + 1 bot).
-    assert js["tong"] == {"so_luot": 9, "so_luot_nguoi": 7, "so_luot_bot": 2}
+    # `so_khach` = 0: seed dựng hàng bằng `them()` với `khach=""` (đúng hình dạng hàng
+    # ghi TRƯỚC 2026-08-30), nên không ngày nào đo được khách. Nhóm K đo phần có khách.
+    assert js["tong"] == {
+        "so_luot": 9,
+        "so_luot_nguoi": 7,
+        "so_luot_bot": 2,
+        "so_khach": 0,
+    }
     assert top(js, "/m/a-1") == {
         "duong_dan": "/m/a-1",
         "so_luot_nguoi": 5,
@@ -202,8 +226,8 @@ def test_Q_top_bot_dung_thu_tu_va_mang_ten_chuan_hoa(du_lieu):
     js = goi("7").json()
     # 1 googlebot (ngày 3) + 1 bingbot (hôm nay) — bằng điểm ⇒ sắp theo tên.
     assert js["top_bot"] == [
-        {"ten": "bingbot", "so_luot": 1},
-        {"ten": "googlebot", "so_luot": 1},
+        {"ten": "bingbot", "so_luot": 1, "nhom": "tim_kiem"},
+        {"ten": "googlebot", "so_luot": 1, "nhom": "tim_kiem"},
     ]
 
 
@@ -211,7 +235,7 @@ def test_Q_top_bot_khong_lan_luot_cua_nguoi(db, hom_nay):
     them(hom_nay, "/", so=50)
     them(hom_nay, "/", so=3, bot=True, ten="ahrefsbot")
     js = goi("7").json()
-    assert js["top_bot"] == [{"ten": "ahrefsbot", "so_luot": 3}]
+    assert js["top_bot"] == [{"ten": "ahrefsbot", "so_luot": 3, "nhom": "seo"}]
 
 
 def test_Q_top_gioi_han_20_dong(db, hom_nay):
@@ -252,7 +276,12 @@ def test_T4_tat_ca_KHONG_cong_chong_ngay_co_o_ca_hai_nguon(du_lieu):
         "so_luot_bot": 1,
     }
     # Toàn bộ: hôm nay 4 (3 người + 1 bot) + ngày 3 là 5 (4+1) + ngày 200 là 107 (100+7).
-    assert js["tong"] == {"so_luot": 116, "so_luot_nguoi": 107, "so_luot_bot": 9}
+    assert js["tong"] == {
+        "so_luot": 116,
+        "so_luot_nguoi": 107,
+        "so_luot_bot": 9,
+        "so_khach": 0,
+    }
 
 
 def test_T4_tat_ca_van_dem_ngay_HOM_NAY(du_lieu):
@@ -273,9 +302,9 @@ def test_T4_co_bao_rang_bang_bot_chi_phu_90_ngay(du_lieu):
     Giấu điều đó đi là để mod đọc bảng ấy như thể nó là toàn thời gian. Cờ này là thứ
     duy nhất trên đường dây nói ra được giới hạn.
     """
-    assert goi("tat_ca").json()["bot_chi_90_ngay"] is True
+    assert goi("tat_ca").json()["chi_tiet_chi_90_ngay"] is True
     for k in ("7", "30", "90"):
-        assert goi(k).json()["bot_chi_90_ngay"] is False
+        assert goi(k).json()["chi_tiet_chi_90_ngay"] is False
 
 
 def test_T4_bieu_do_bi_chan_o_90_o_nhung_TONG_thi_khong(du_lieu):
@@ -295,7 +324,12 @@ def test_T4_bieu_do_bi_chan_o_90_o_nhung_TONG_thi_khong(du_lieu):
 def test_bang_rong_van_tra_200_va_toan_so_0(db):
     """Site chưa có lượt xem nào: trang phải hiện được, không nổ, không thiếu ô."""
     js = goi("30").json()
-    assert js["tong"] == {"so_luot": 0, "so_luot_nguoi": 0, "so_luot_bot": 0}
+    assert js["tong"] == {
+        "so_luot": 0,
+        "so_luot_nguoi": 0,
+        "so_luot_bot": 0,
+        "so_khach": 0,
+    }
     assert len(js["chuoi_ngay"]) == 30
     assert js["top_duong_dan"] == []
     assert js["top_bot"] == []
@@ -358,3 +392,333 @@ def test_tat_ca_TU_LANH_khi_gom_luot_xem_chua_chay(db, hom_nay):
         ngay=hom_nay - timedelta(days=4), duong_dan="/ngay-4", so_luot_nguoi=10, so_luot_bot=0
     )
     assert goi("tat_ca").json()["tong"]["so_luot"] == 50, "đếm hai lần ngày vừa gộp"
+
+
+# ===========================================================================
+# Nhóm Đ — khối mới của `GET /admin/luot-xem` (2026-08-30)
+# ===========================================================================
+#
+# Năm khối chi tiết (`top_bot` · `theo_nhom_bot` · `top_nguon` + `so_truc_tiep` ·
+# `trinh_duyet` · `thiet_bi`) chỉ dựng được từ hàng thô, cộng một cột `so_khach` có ba
+# trạng thái (`n` · `0` · `None`) mà hai trạng thái sau **rất dễ bị nhập làm một**.
+
+
+def o_ngay(js, ngay_):
+    """Ô của `ngay_` trong `chuoi_ngay`, hoặc `None` nếu ngày ấy ngoài biểu đồ."""
+    return next((o for o in js["chuoi_ngay"] if o["ngay"] == ngay_.isoformat()), None)
+
+
+def test_D0_bon_khoang_deu_co_DU_truong_moi(du_lieu):
+    """Trường mới phải có mặt ở CẢ BỐN khoảng, kể cả khi rỗng.
+
+    Một nhánh quên trả `top_nguon` là frontend `undefined.map(...)` — trang trắng, và chỉ
+    ở đúng một lựa chọn của bộ chọn khoảng.
+    """
+    for k in ("7", "30", "90", "tat_ca"):
+        js = goi(k).json()
+        for truong in (
+            "theo_nhom_bot",
+            "top_nguon",
+            "so_truc_tiep",
+            "trinh_duyet",
+            "thiet_bi",
+            "chi_tiet_chi_90_ngay",
+        ):
+            assert truong in js, (k, truong)
+        assert "so_khach" in js["tong"], k
+        assert all("so_khach" in o for o in js["chuoi_ngay"]), k
+    # Tên cờ CŨ phải biến mất — nửa vời là frontend đọc `undefined` và luôn giấu dòng chú.
+    assert "bot_chi_90_ngay" not in goi("tat_ca").json()
+
+
+# --- Đ1: `so_khach` — ba trạng thái, và `None` ≠ `0` -------------------------
+
+
+def test_D1_ngay_CO_NGUOI_ma_khong_do_duoc_tra_None(db, hom_nay):
+    """⚠ Ca của plan §7 N8. `None` = "không đo được", `0` = "đo được, không có ai".
+
+    Dựng đúng cạnh nhau trong một biểu đồ: hôm nay có 5 lượt người mà mọi `khach` rỗng
+    (hàng ghi trước 2026-08-30) ⇒ `None`; hôm qua không có hàng nào ⇒ `0`.
+
+    Trả 0 cho cả hai là vẽ một ngày vắng tanh nằm cạnh cột "lượt người" bằng 5 — hai con
+    số mâu thuẫn trên cùng một biểu đồ, và người đọc sẽ tin cái bé hơn.
+    """
+    them(hom_nay, "/", so=5)  # khach="" — hàng cũ
+
+    js = goi("7").json()
+    assert o_ngay(js, hom_nay)["so_luot_nguoi"] == 5
+    assert o_ngay(js, hom_nay)["so_khach"] is None
+    assert o_ngay(js, hom_nay - timedelta(days=1))["so_khach"] == 0
+
+
+def test_D1b_ngay_CHI_CO_BOT_tra_0_chu_khong_None(db, hom_nay):
+    """0 khách ở một ngày chỉ có bot là một phép ĐO THẬT — nó không phải "chưa đo"."""
+    them(hom_nay, "/", so=4, bot=True, ten="ahrefsbot", khach="b" * 32)
+    assert o_ngay(goi("7").json(), hom_nay)["so_khach"] == 0
+
+
+def test_D1c_dem_DISTINCT_trong_ngay_va_TACH_theo_ngay(db, hom_nay):
+    """Cùng khách xem 3 trang ⇒ 1; sang ngày khác, cùng token vẫn là một khách KHÁC.
+
+    Vế thứ hai không phải chuyện lý thuyết: muối đổi mỗi ngày nên hai ngày không bao giờ
+    dùng chung token. Nhưng một bản cài `COUNT(DISTINCT khach)` **trên cả khoảng** rồi
+    chia đều sẽ xanh ở vế một và sai ở vế hai.
+    """
+    for d in ("/", "/m/a-1", "/s/x"):
+        them(hom_nay, d, khach="a" * 32)
+    them(hom_nay, "/", khach="b" * 32)
+    them(hom_nay - timedelta(days=1), "/", khach="a" * 32)
+
+    js = goi("7").json()
+    assert o_ngay(js, hom_nay)["so_khach"] == 2
+    assert o_ngay(js, hom_nay - timedelta(days=1))["so_khach"] == 1
+    # Tổng = CỘNG THEO NGÀY, tức 3 — không phải 2 (distinct trên cả khoảng).
+    assert js["tong"]["so_khach"] == 3
+
+
+def test_D1d_tong_so_khach_KHONG_dem_hang_bot(db, hom_nay):
+    them(hom_nay, "/", khach="a" * 32)
+    them(hom_nay, "/", so=99, bot=True, ten="googlebot", khach="z" * 32)
+    assert goi("7").json()["tong"]["so_khach"] == 1
+
+
+def test_D1e_tat_ca_doc_KhachNgay_cho_phan_da_gop_va_tho_cho_phan_sau(db, hom_nay):
+    """Ranh giới của khách phải TRÙNG ranh giới của lượt xem — hai bảng ghi cùng lúc.
+
+    Ngày 200 chỉ còn ở bảng gộp (`KhachNgay`), hôm nay chỉ có ở hàng thô. Một bản cài
+    dùng riêng hàng thô cho `tat_ca` sẽ mất trọn phần đã dọn; một bản cài dùng riêng
+    `KhachNgay` sẽ mất trọn ngày đang chạy.
+    """
+    hai_tram = hom_nay - timedelta(days=200)
+    TongNgay.objects.create(
+        ngay=hai_tram, duong_dan="/cu", so_luot_nguoi=100, so_luot_bot=0
+    )
+    KhachNgay.objects.create(ngay=hai_tram, so_khach=42)
+    them(hom_nay, "/", khach="a" * 32)
+    them(hom_nay, "/", khach="b" * 32)
+
+    js = goi("tat_ca").json()
+    assert js["tong"]["so_khach"] == 44
+    assert o_ngay(js, hom_nay)["so_khach"] == 2
+
+
+def test_D1f_tat_ca_ngay_VANG_trong_KhachNgay_tra_None(db, hom_nay):
+    """Ngày đã gộp mà `KhachNgay` không có hàng ⇒ "không đo được", không phải 0.
+
+    Đây chính là mọi ngày TRƯỚC khi cơ chế khách bật: `TongNgay` có, `KhachNgay` không —
+    vì `gom_luot_xem` cố ý không ghi 0 giả cho chúng.
+    """
+    ba_ngay = hom_nay - timedelta(days=3)
+    TongNgay.objects.create(
+        ngay=ba_ngay, duong_dan="/cu", so_luot_nguoi=30, so_luot_bot=0
+    )
+    them(hom_nay, "/", khach="a" * 32)
+
+    js = goi("tat_ca").json()
+    assert o_ngay(js, ba_ngay)["so_luot_nguoi"] == 30
+    assert o_ngay(js, ba_ngay)["so_khach"] is None
+    assert js["tong"]["so_khach"] == 1, "ngày không đo được đóng góp 0, không phải None"
+
+
+def test_D1g_ngay_CHUYEN_TIEP_lan_hang_cu_va_moi_tra_None(db, hom_nay):
+    """Có BẤT KỲ hàng người nào thiếu token ⇒ cả ngày "không đo được" — không trả
+    "phần đo được".
+
+    Cùng một luật với `gom_luot_xem::_khach_moi_ngay`, và phải cùng: hai hàm vẽ chung
+    một chuỗi ngày, lệch nhau là cùng một ô đổi nghĩa tuỳ nó rơi vào vùng thô hay vùng
+    đã gộp. Bản đầu trả 2 cho ngày này — một con số thấp hơn thật, không phân biệt được
+    với một ngày đo đủ. Lượt phản biện 2026-08-30 tìm ra.
+
+    Ca thử phá: đổi điều kiện của `_khach_tho` về `_khach == 0` là bài này đỏ.
+    """
+    them(hom_nay, "/", so=5)  # hàng cũ — khach=""
+    them(hom_nay, "/", khach="a" * 32)
+    them(hom_nay, "/", khach="b" * 32)
+
+    js = goi("7").json()
+    assert o_ngay(js, hom_nay)["so_luot_nguoi"] == 7
+    assert o_ngay(js, hom_nay)["so_khach"] is None
+    assert js["tong"]["so_khach"] == 0
+
+
+# --- Đ2: nguồn truy cập -------------------------------------------------------
+
+
+def test_D2_top_nguon_KHONG_lan_hang_bot(db, hom_nay):
+    """⚠ Ca thử phá §8.4 — quên lọc `la_bot=False` là bài này đỏ.
+
+    Referer là chuỗi do phía gọi tự khai. Một con crawler khai `Referer: https://vip.example`
+    năm nghìn lần sẽ chiếm dòng đầu bảng "ai đang dẫn NGƯỜI tới site" — và bảng ấy trông
+    hoàn toàn bình thường, chỉ nói sai đúng câu hỏi nó sinh ra để trả lời.
+    """
+    them(hom_nay, "/", so=2, nguon="google.com", khach="a" * 32)
+    them(hom_nay, "/", so=50, bot=True, ten="ahrefsbot", nguon="bot-gia.example")
+
+    js = goi("7").json()
+    assert js["top_nguon"] == [{"nguon": "google.com", "so_luot": 2}]
+    assert "bot-gia.example" not in [n["nguon"] for n in js["top_nguon"]]
+
+
+def test_D2b_top_nguon_KHONG_lan_dong_rong(db, hom_nay):
+    """`""` không phải một tên miền — nó đi vào `so_truc_tiep`.
+
+    Để lọt, dòng `""` chiếm vị trí số 1 trên gần như mọi site (truy cập trực tiếp luôn
+    đông nhất) và đẩy hết nguồn thật xuống dưới, dưới một cái nhãn rỗng.
+    """
+    them(hom_nay, "/", so=30, khach="a" * 32)  # nguon=""
+    them(hom_nay, "/", so=2, nguon="t.co", khach="b" * 32)
+
+    js = goi("7").json()
+    assert [n["nguon"] for n in js["top_nguon"]] == ["t.co"]
+    assert js["so_truc_tiep"] == 30
+
+
+def test_D2c_so_truc_tiep_chi_dem_NGUOI(db, hom_nay):
+    them(hom_nay, "/", so=3, khach="a" * 32)
+    them(hom_nay, "/", so=7, bot=True, ten="googlebot")
+    assert goi("7").json()["so_truc_tiep"] == 3
+
+
+def test_D2d_top_nguon_sap_giam_dan_va_TAT_DINH_khi_bang_diem(db, hom_nay):
+    for i, ten in enumerate(("c.example", "a.example", "b.example")):
+        them(hom_nay, f"/{i}", so=2, nguon=ten, khach=f"{i}" * 32)
+    them(hom_nay, "/nhieu", so=9, nguon="z.example", khach="z" * 32)
+
+    lan_1 = [n["nguon"] for n in goi("7").json()["top_nguon"]]
+    lan_2 = [n["nguon"] for n in goi("7").json()["top_nguon"]]
+    assert lan_1 == lan_2 == ["z.example", "a.example", "b.example", "c.example"]
+
+
+def test_D2e_top_nguon_gioi_han_20_dong(db, hom_nay):
+    for i in range(25):
+        them(hom_nay, "/", so=25 - i, nguon=f"n{i:02d}.example", khach=f"{i:032d}")
+    js = goi("7").json()
+    assert len(js["top_nguon"]) == 20
+    assert js["top_nguon"][0]["nguon"] == "n00.example"
+
+
+# --- Đ3: nhóm bot -------------------------------------------------------------
+
+
+def test_D3_top_bot_mang_NHOM(db, hom_nay):
+    them(hom_nay, "/", so=3, bot=True, ten="googlebot")
+    them(hom_nay, "/", so=2, bot=True, ten="gptbot")
+    js = goi("7").json()
+    assert js["top_bot"] == [
+        {"ten": "googlebot", "so_luot": 3, "nhom": "tim_kiem"},
+        {"ten": "gptbot", "so_luot": 2, "nhom": "ai"},
+    ]
+
+
+def test_D3b_theo_nhom_bot_gop_dung_va_bo_qua_hang_nguoi(db, hom_nay):
+    them(hom_nay, "/", so=100)  # người — không được lọt vào bảng nhóm
+    them(hom_nay, "/", so=3, bot=True, ten="googlebot")
+    them(hom_nay, "/", so=2, bot=True, ten="bingbot")
+    them(hom_nay, "/", so=4, bot=True, ten="gptbot")
+    them(hom_nay, "/", so=1, bot=True, ten="khác")
+
+    js = goi("7").json()
+    assert js["theo_nhom_bot"] == [
+        {"nhom": "tim_kiem", "so_luot": 5},
+        {"nhom": "ai", "so_luot": 4},
+        {"nhom": "khac", "so_luot": 1},
+    ]
+    # …và tổng của bảng nhóm phải BẰNG ĐÚNG KPI lượt bot của cùng khoảng.
+    assert sum(n["so_luot"] for n in js["theo_nhom_bot"]) == js["tong"]["so_luot_bot"]
+
+
+def test_D3c_theo_nhom_bot_gop_tu_TOAN_BO_chu_khong_tu_20_dong_top(db, hom_nay):
+    """Bảng nhóm phải phủ cả phần ĐUÔI mà `top_bot` cắt mất.
+
+    Dựng 25 con bot cùng nhóm: `top_bot` chỉ giữ 20 dòng, nên một bản cài gộp nhóm từ đó
+    sẽ thiếu đúng 5 lượt — HTTP 200, và một con số chỉ hơi bé. Vế `== so_luot_bot` là
+    phép chấm bắt được nó mà không phải gõ tay con số nào.
+    """
+    for i in range(25):
+        them(hom_nay, "/", so=1, bot=True, ten=f"bot-la-{i:02d}")
+
+    js = goi("7").json()
+    assert len(js["top_bot"]) == 20
+    assert js["theo_nhom_bot"] == [{"nhom": "khac", "so_luot": 25}]
+    assert sum(n["so_luot"] for n in js["theo_nhom_bot"]) == js["tong"]["so_luot_bot"] == 25
+
+
+# --- Đ4: trình duyệt / thiết bị ----------------------------------------------
+
+
+def test_D4_trinh_duyet_va_thiet_bi_gop_dung_va_sap_giam_dan(db, hom_nay):
+    them(hom_nay, "/", so=5, khach="a" * 32, trinh_duyet="chrome", thiet_bi="may_tinh")
+    them(hom_nay, "/", so=3, khach="b" * 32, trinh_duyet="safari", thiet_bi="di_dong")
+    them(hom_nay, "/", so=2, khach="c" * 32, trinh_duyet="coccoc", thiet_bi="may_tinh")
+
+    js = goi("7").json()
+    assert js["trinh_duyet"] == [
+        {"ten": "chrome", "so_luot": 5},
+        {"ten": "safari", "so_luot": 3},
+        {"ten": "coccoc", "so_luot": 2},
+    ]
+    assert js["thiet_bi"] == [
+        {"ten": "may_tinh", "so_luot": 7},
+        {"ten": "di_dong", "so_luot": 3},
+    ]
+
+
+def test_D4b_hai_bang_ay_BO_dong_rong_va_bo_hang_bot(db, hom_nay):
+    """Hàng cũ (hai cột rỗng) và hàng bot đều không được thành một dòng trong bảng.
+
+    Để lọt, dòng `""` đứng đầu bảng trên mọi site đã chạy trước lượt này — một nhãn rỗng
+    chiếm chỗ số 1, và không ai đọc được nó là cái gì.
+    """
+    them(hom_nay, "/", so=40)  # hàng cũ: trinh_duyet="" thiet_bi=""
+    them(hom_nay, "/", so=9, bot=True, ten="googlebot")
+    them(hom_nay, "/", so=2, khach="a" * 32, trinh_duyet="firefox", thiet_bi="may_tinh")
+
+    js = goi("7").json()
+    assert js["trinh_duyet"] == [{"ten": "firefox", "so_luot": 2}]
+    assert js["thiet_bi"] == [{"ten": "may_tinh", "so_luot": 2}]
+
+
+# --- Đ5: cờ giới hạn phủ ĐÚNG năm khối ---------------------------------------
+
+
+def test_D5_co_chi_tiet_theo_dung_khoang_dang_xem(db, hom_nay):
+    """Năm khối chi tiết phải dùng ĐÚNG khoảng đang xem, không phải hằng 90 ngày.
+
+    Cùng cái bẫy mà lượt phản biện 2026-08-27 bắt được ở bảng bot, nay áp cho cả nguồn,
+    trình duyệt và thiết bị: chọn "7 ngày" mà thấy số liệu của 60 ngày trước là một màn
+    hình tự mâu thuẫn, và cờ khi ấy là `False` — tức nó khẳng định "không có giới hạn".
+    """
+    cu = hom_nay - timedelta(days=60)
+    them(cu, "/cu", so=500, nguon="cu.example", khach="c" * 32, trinh_duyet="opera", thiet_bi="di_dong")
+    them(hom_nay, "/", so=3, nguon="moi.example", khach="a" * 32, trinh_duyet="chrome", thiet_bi="may_tinh")
+
+    for khoang in ("7", "30"):
+        js = goi(khoang).json()
+        assert [n["nguon"] for n in js["top_nguon"]] == ["moi.example"], khoang
+        assert [t["ten"] for t in js["trinh_duyet"]] == ["chrome"], khoang
+        assert [t["ten"] for t in js["thiet_bi"]] == ["may_tinh"], khoang
+        assert js["chi_tiet_chi_90_ngay"] is False, khoang
+
+    js = goi("90").json()
+    assert {n["nguon"] for n in js["top_nguon"]} == {"cu.example", "moi.example"}
+    assert js["chi_tiet_chi_90_ngay"] is False
+
+
+def test_D5b_co_chi_tiet_chi_bat_o_tat_ca(du_lieu):
+    """Ngữ nghĩa giữ NGUYÊN bản 2026-08-27: `True` ⇔ `khoang=tat_ca`."""
+    assert goi("tat_ca").json()["chi_tiet_chi_90_ngay"] is True
+    for k in ("7", "30", "90"):
+        assert goi(k).json()["chi_tiet_chi_90_ngay"] is False
+
+
+def test_D5c_bang_rong_van_tra_200_va_moi_khoi_moi_la_mang_rong(db):
+    """Site chưa có lượt xem nào: trang phải hiện được, không nổ, không `None` lạc chỗ."""
+    js = goi("30").json()
+    assert js["theo_nhom_bot"] == []
+    assert js["top_nguon"] == []
+    assert js["trinh_duyet"] == []
+    assert js["thiet_bi"] == []
+    assert js["so_truc_tiep"] == 0
+    assert js["tong"]["so_khach"] == 0
+    # Ngày rỗng ⇒ 0 khách (đo được, không có ai), KHÔNG phải `None`.
+    assert all(o["so_khach"] == 0 for o in js["chuoi_ngay"])

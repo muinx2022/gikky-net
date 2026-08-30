@@ -46,17 +46,36 @@ hệt mọi cửa ghi khác, bất kể máy đó có bật thống kê hay khô
 
 ## Không lưu User-Agent, không lưu IP
 
-UA được **gửi** sang để phân loại (`core/bot.py`) rồi **vứt đi**; chỉ tên bot chuẩn hoá
-được lưu. Xem `core/models/luot_xem.py` — đó là quyết định của user, và là lý do trang
-thống kê này không cần banner cookie.
+UA và IP được **gửi** sang để suy ra bốn cột dẫn xuất (`ten_bot` · `khach` · `trinh_duyet`
+· `thiet_bi`) rồi **vứt đi**; không cột nào chứa chúng. Xem `core/models/luot_xem.py` —
+đó là quyết định của user, và là lý do trang thống kê này không cần banner cookie.
+
+## Khách duy nhất theo ngày (2026-08-30) — muối, không phải cookie
+
+`khach = sha256(muối-của-ngày | ip | ua)[:32]`. Muối sinh ngẫu nhiên mỗi ngày và bị
+`gom_luot_xem` **huỷ** khi ngày đóng, nên:
+
+- trong ngày: cùng người ⇒ cùng token ⇒ đếm được khách;
+- qua ngày: muối khác ⇒ token khác ⇒ **không nối được hai ngày**, kể cả bởi người cầm DB;
+- sau khi ngày đóng: muối không còn ⇒ không ai dò ngược token bằng cách thử IP.
+
+⚠ Muối đọc qua **cache tiến trình** — đây là đường ghi nóng nhất của cả site, và một
+query `MuoiNgay` cho mỗi lượt xem trang là cái giá không cần trả.
 """
+
+import hashlib
+import secrets
+from datetime import date
+from urllib.parse import urlsplit
 
 from django.conf import settings
 from ninja import Router, Schema, Status
 from ninja.security import APIKeyHeader
 
 from core.bot import ten_bot
-from core.models.luot_xem import LuotXem
+from core.models.luot_xem import LuotXem, MuoiNgay
+from core.nhan_dien_ua import thiet_bi, trinh_duyet
+from core.thoi_gian import ngay_vn
 
 from api.loi import LoiOut
 from api.quyen import LoiGhi
@@ -120,11 +139,25 @@ secret_dem_luot_xem = SecretDemLuotXem()
 
 
 class DemLuotXemIn(Schema):
-    """Thân request. Hai trường, và không trường nào nhận diện được một con người."""
+    """Thân request. Bốn trường, và **ba trường sau đều có mặc định**.
+
+    ⚠ **Backward-compatible là BẮT BUỘC, không phải lịch sự.** Deploy không nguyên tử:
+    trong cửa sổ giữa lúc Django mới lên và lúc `apps/web` mới lên, prod đang chạy
+    middleware CŨ gửi đúng hai trường `{duong_dan, user_agent}`. Bắt buộc `ip`/`referer`
+    là mọi lượt xem trong cửa sổ ấy trả 422 và biến mất — im lặng, vì middleware
+    `.catch(() => {})` mọi lỗi. `tests/test_api_dem_luot_xem.py` ghim đúng ca này.
+    """
 
     duong_dan: str
     #: User-Agent thô — **dùng rồi vứt**. Không có cột nào trong DB nhận nó.
     user_agent: str = ""
+    #: IP của khách, **chỉ transit**: vào hàm băm rồi hết. Không log, không lưu, không
+    #: xuất hiện trong bất kỳ thông báo lỗi nào. Rỗng ở dev (không có proxy) ⇒ hash rơi về
+    #: UA-only, tức "khách" ở dev thô hơn ở prod — chấp nhận, xem `lib/dem-luot-xem.ts`.
+    ip: str = ""
+    #: Referer thô — **chỉ tên miền được giữ** (`chuan_hoa_nguon`). Lưu cả URL là ghi
+    #: credential vào DB: referer nội bộ có thể là `/dat-lai-mat-khau/{key}`.
+    referer: str = ""
 
 
 class DemLuotXemOut(Schema):
@@ -166,6 +199,144 @@ def chuan_hoa_duong_dan(duong_dan: str) -> str:
     return sach.rstrip("/") or "/"
 
 
+def _host_cua_site() -> set[str]:
+    """Tập hostname của **chính site**: `HEADLESS_FRONTEND_URLS` ∪ `ADMIN_HOSTS`.
+
+    Đọc từ hai chỗ đó chứ không thêm một biến cấu hình mới: đấy đã là chỗ khai origin
+    của frontend (và là nguồn mà chuông "đường mang bí mật" ở
+    `e2e/don-vi/dem-luot-xem.spec.ts` đang đọc), còn `ADMIN_HOSTS` đã là danh sách host
+    của khu quản trị. Hai luật cùng nhìn một chỗ thì không lệch được.
+
+    `ADMIN_HOSTS` phải có mặt vì mod bấm link từ `admin.gikky.net` sang site công khai
+    là **điều hướng nội bộ**, không phải một nguồn truy cập — thiếu nó thì host khu quản
+    trị leo vào bảng "Nguồn truy cập" như một site bên ngoài dẫn người tới (lượt phản
+    biện 2026-08-30 tìm ra). Mục của nó mang dạng `host[:port]` chứ không phải URL, nên
+    cắt port trước khi so — `urlsplit().hostname` của referer không bao giờ mang port.
+
+    Đọc **tại thời điểm gọi**, không chụp vào hằng tầng module: `override_settings` trong
+    bài đo phải đổi được kết quả, y như `SecretDemLuotXem.authenticate`.
+    """
+    host = set()
+    for url in settings.HEADLESS_FRONTEND_URLS.values():
+        try:
+            h = urlsplit(url).hostname
+        except ValueError:  # pragma: no cover - cấu hình hỏng tới mức này thì đã nổ sớm
+            continue
+        if h:
+            host.add(_bo_www(h.lower()))
+    for muc in settings.ADMIN_HOSTS:
+        h = muc.split(":", 1)[0].strip().lower()
+        if h:
+            host.add(_bo_www(h))
+    return host
+
+
+def _bo_www(host: str) -> str:
+    return host[4:] if host.startswith("www.") else host
+
+
+#: Bằng ĐÚNG `LuotXem.nguon.max_length`. Tên miền dài hơn thế gần như chắc chắn là rác.
+DAI_TOI_DA_NGUON = 100
+
+
+def chuan_hoa_nguon(referer: str) -> str:
+    """Tên miền của referer, hoặc `""`. **Không bao giờ trả về path hay query.**
+
+    `""` gộp ba ca, và trang gọi chung là "(trực tiếp / nội bộ)":
+
+    1. không có referer (gõ thẳng, bookmark, app);
+    2. referer từ **chính site** — điều hướng nội bộ, không phải một nguồn truy cập;
+    3. referer không parse ra hostname (rác, `about:blank`, URL cụt).
+
+    ## ⚠ Ca 2 là một hàng rào riêng tư, không phải một phép dọn dẹp cho gọn
+
+    Trang `/dat-lai-mat-khau/{key}` mang **khoá còn sống** ngay trên đường dẫn. Mọi link
+    người ta bấm từ trang ấy gửi kèm `Referer: https://gikky.net/dat-lai-mat-khau/<khoá>`.
+    Lưu referer đầy đủ là ghi credential vào bảng thống kê — đúng thứ mà `nenDem()` bên
+    Next đã bỏ công chặn ở đường trực tiếp. Ở đây cả hai lớp cùng chặn: chỉ hostname được
+    giữ, **và** hostname của chính site quy về `""`.
+    """
+    try:
+        host = urlsplit(referer).hostname
+    except ValueError:
+        # `urlsplit` ném với IPv6 cụt (`http://[::1`) và vài dạng port hỏng. Referer là
+        # chuỗi do client tự khai, nên một thân request cố tình méo không được phép làm
+        # đổ một lượt đếm.
+        return ""
+    if not host:
+        return ""
+    host = _bo_www(host.lower())
+    if host in _host_cua_site():
+        return ""
+    return host[:DAI_TOI_DA_NGUON]
+
+
+#: Cache muối của **đúng một ngày** — ngày đang chạy. Đổi ngày là thay cả dict, nên bảng
+#: không phình và không có muối cũ nào nằm lại trong RAM sau nửa đêm.
+#:
+#: ⚠ Cache theo TIẾN TRÌNH, và mỗi worker gunicorn có bản riêng. Chúng hội tụ về cùng một
+#: giá trị vì `get_or_create` khoá ở DB (`ngay` là `unique`), nên hai worker không thể
+#: sinh hai muối khác nhau cho cùng một ngày.
+#:
+#: ⚠ `pytest` cuộn ngược mọi transaction, nên một muối cache lại từ bài đo trước sẽ trỏ
+#: tới một hàng KHÔNG CÒN TỒN TẠI. `tests/conftest.py` có fixture autouse dọn cache này
+#: trước mỗi bài; thiếu nó thì bài "muối được sinh ra" xanh/đỏ tuỳ thứ tự chạy.
+_CACHE_MUOI: dict[date, str] = {}
+
+
+def xoa_cache_muoi() -> None:
+    """Dọn cache muối. Chỉ dùng cho bài đo — xem docstring `_CACHE_MUOI`."""
+    _CACHE_MUOI.clear()
+
+
+def muoi_cua_ngay(ngay: date) -> str:
+    """Muối của `ngay`, sinh ra ở lượt xem đầu tiên trong ngày. Có cache tiến trình.
+
+    Không tự bắt `IntegrityError`: `get_or_create` đã làm đúng việc ấy trong một savepoint
+    (`create` → bắt `IntegrityError` → `get` lại). Viết lại bằng tay là dựng bản thứ hai
+    của cùng một cơ chế, và bản viết tay hay quên savepoint — mà thiếu savepoint thì cả
+    transaction ngoài chết theo, tức lượt xem sau cũng hỏng.
+    """
+    da_co = _CACHE_MUOI.get(ngay)
+    if da_co is not None:
+        return da_co
+    # Lượt ĐẦU TIÊN của tiến trình trong ngày: huỷ muối mọi ngày cũ NGAY Ở ĐƯỜNG GHI,
+    # không đợi cron. `gom_luot_xem` cũng xoá (lưới thứ hai — và là lưới duy nhất cho
+    # ngày không có lượt xem nào), nhưng "muối bị huỷ khi ngày đóng" là một cam kết
+    # RIÊNG TƯ in trên màn hình mod, và nó không được phép treo trên một cron mà runbook
+    # mô tả là "chết thì bạn không thấy gì sai" — cron chết 30 ngày là 30 hàng muối còn
+    # sống, đủ cho ai cầm DB nối một người qua từng ngày. Lượt phản biện 2026-08-30 tìm
+    # ra. Chỉ chạy ở nhánh cache-miss (một lần mỗi tiến trình mỗi ngày) nên không phải
+    # chi phí trên đường nóng; hai worker cùng miss thì hai lượt DELETE idempotent.
+    MuoiNgay.objects.filter(ngay__lt=ngay).delete()
+    hang, _ = MuoiNgay.objects.get_or_create(
+        ngay=ngay, defaults={"muoi": secrets.token_hex(32)}
+    )
+    # Thay CẢ dict, không `[ngay] =`: giữ đúng một ngày trong RAM.
+    _CACHE_MUOI.clear()
+    _CACHE_MUOI[ngay] = hang.muoi
+    return hang.muoi
+
+
+def hash_khach(muoi: str, ip: str, user_agent: str) -> str:
+    """Token khách của ngày, 32 ký tự hex. `""` khi **cả** IP lẫn UA đều rỗng.
+
+    `""` nghĩa là *"không đo được"*, KHÔNG phải *"một khách chung"*: gộp mọi hàng không đo
+    được vào một token là bịa ra đúng một khách ma, và ngày nào cũng có nó. Phía đọc loại
+    hẳn `""` khỏi phép đếm distinct, rồi trả `None` cho ngày mà mọi hàng đều như thế.
+
+    ⚠ **Dấu `|` KHÔNG phải một hàng rào chống va chạm**, và ghi ra để không ai viết một
+    bài đo khẳng định ngược lại (bản đầu của lượt này đã viết, và nó đỏ ngay): `("1.2",
+    "3|4")` và `("1.2|3", "4")` nối ra cùng một chuỗi. Ca ấy vô hại — IP không chứa `|`,
+    nên chỉ một client tự đặt UA có `|` mới trộn được token của **chính nó** với một
+    token khác, tức nhiều nhất là tự bớt đi một khách của mình. Chống nó tử tế cần khai
+    độ dài từng phần, và đó là độ phức tạp không mua được gì ở đây.
+    """
+    if ip == "" and user_agent == "":
+        return ""
+    return hashlib.sha256(f"{muoi}|{ip}|{user_agent}".encode()).hexdigest()[:32]
+
+
 @router.post(
     "/dem-luot-xem",
     response={200: DemLuotXemOut, 401: LoiOut, 503: LoiOut},
@@ -181,10 +352,21 @@ def dem_luot_xem(request, du_lieu: DemLuotXemIn):
     # Không có phép kiểm nào ở thân hàm: cả ba nhánh từ chối đã xảy ra ở lớp auth, tức
     # **trước khi** Ninja parse thân request. Đó là chủ đích — một thân JSON hỏng gửi kèm
     # secret sai không được phép ra một mã lỗi khác với thân JSON đúng gửi kèm secret sai.
+    #
+    # Thứ tự dưới đây có một ràng buộc thật: `trinh_duyet`/`thiet_bi` **chỉ suy cho lượt
+    # người**. Một con bot khai UA của Chrome mà được ghi `trinh_duyet="chrome"` sẽ trộn
+    # lưu lượng máy vào bảng "người đọc site bằng gì" — bảng vẫn đầy, chỉ là đo nhầm thứ.
     ten = ten_bot(du_lieu.user_agent)
+    la_bot = ten != ""
     LuotXem.objects.create(
         duong_dan=chuan_hoa_duong_dan(du_lieu.duong_dan),
-        la_bot=ten != "",
+        la_bot=la_bot,
         ten_bot=ten,
+        khach=hash_khach(
+            muoi_cua_ngay(ngay_vn()), du_lieu.ip, du_lieu.user_agent
+        ),
+        nguon=chuan_hoa_nguon(du_lieu.referer),
+        trinh_duyet="" if la_bot else trinh_duyet(du_lieu.user_agent),
+        thiet_bi="" if la_bot else thiet_bi(du_lieu.user_agent),
     )
     return Status(200, DemLuotXemOut(da_dem=True))

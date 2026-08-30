@@ -75,13 +75,18 @@ crontab -e
 10 3 * * *  cd ~/gikky-net/src && docker compose -f deploy/prod/compose.yml --env-file ~/gikky-net/app/.env exec -T api python manage.py gom_luot_xem >> ~/gikky-gom-luot-xem.log 2>&1
 ```
 
-Không có lịch này thì **hai chuyện hỏng, cả hai im lặng**:
+Không có lịch này thì **ba chuyện hỏng, cả ba im lặng**:
 
 1. Bảng thô `core_luotxem` phình vô hạn — lời hứa "giữ 90 ngày" chỉ được giữ bởi chính
    lệnh này (`gom_luot_xem` gộp xong mới dọn, và chỉ dọn phần đã gộp).
 2. Số liệu dài hạn không bao giờ được dựng. Trang `/luot-xem` **tự lành** ở phép đọc
    ("toàn thời gian" lấy hàng thô cho phần chưa gộp), nên bạn sẽ *không* thấy con số sai
    — chỉ thấy bảng thô lớn dần cho tới ngày nó thành vấn đề.
+3. **Riêng tư**: lệnh này là lưới huỷ **muối khách** (`MuoiNgay`) thứ hai. Đường ghi tự
+   huỷ muối cũ ở lượt xem đầu tiên của ngày mới (`api/dem_luot_xem.py::muoi_cua_ngay`),
+   nhưng một ngày site không có lượt xem nào — hay Django chết — thì chỉ cron này dọn.
+   Muối còn sống là còn nối được một người qua ngày nếu DB bị đọc, tức đúng thứ ba dòng
+   cam kết trên trang `/luot-xem` nói là không thể.
 
 Kiểm nó có chạy: `gk exec api python manage.py shell -c "from core.models.luot_xem import TongNgay; print(TongNgay.objects.count(), TongNgay.objects.order_by('-ngay').values_list('ngay', flat=True).first())"`
 

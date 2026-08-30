@@ -23,6 +23,18 @@ Xoá hàng thô trước khi gộp là mất vĩnh viễn một ngày dữ liệ
 `TongNgay`** — kiểm bằng chính DB, không bằng niềm tin rằng bước gộp ở trên vừa chạy
 xong. Một ngày quá 90 ngày mà vì lý do nào đó chưa được gộp thì nó **ở lại**: một bảng
 hơi phình còn hơn một khoảng trống vĩnh viễn trong biểu đồ.
+
+## Việc thứ ba, thêm 2026-08-30: HUỶ MUỐI của ngày đã đóng
+
+`MuoiNgay` chỉ phục vụ đường ghi, mà đường ghi luôn rơi vào hôm nay — nên muối của mọi
+ngày `< hôm nay` bị xoá **vô điều kiện**. Đó không phải dọn rác: chừng nào muối còn sống
+thì `LuotXem.khach` của ngày ấy còn **dò ngược được** bằng cách thử một danh sách IP, tức
+cột "khách" thành một cột nhận diện người. Huỷ muối là thứ biến nó thành token mờ vĩnh
+viễn — và là điều kiện để câu "không theo dõi được qua ngày" ở `core/models/luot_xem.py`
+đúng theo nghĩa đen.
+
+⚠ Xoá muối **không** kèm điều kiện "đã gộp xong", khác hẳn bước dọn hàng thô. Hai bước hai
+lý lẽ: dọn hàng thô sớm là **mất dữ liệu**, giữ muối lâu là **giữ một rủi ro riêng tư**.
 """
 
 from datetime import date, datetime, time, timedelta  # noqa: F401  (date: type hint)
@@ -32,7 +44,7 @@ from django.db import transaction
 from django.db.models import Count, Q
 from django.db.models.functions import TruncDate
 
-from core.models.luot_xem import LuotXem, TongNgay
+from core.models.luot_xem import KhachNgay, LuotXem, MuoiNgay, TongNgay
 from core.thoi_gian import TZ_VN, ngay_vn
 
 #: Hàng thô sống tối đa bấy nhiêu ngày — quyết định của user ("thô 90 ngày").
@@ -106,11 +118,23 @@ def gom(hom_nay=None) -> tuple[int, int]:
     for h in hang:
         theo_ngay.setdefault(h["_ngay"], {})[h["duong_dan"]] = (h["_nguoi"], h["_bot"])
 
+    khach_theo_ngay = _khach_moi_ngay(hom_nay)
+
     ngay_cham: set = set()
     so_hang = 0
     # Một transaction cho cả lượt gộp: nửa bảng cũ nửa bảng mới là một trang thống kê nói
     # một con số không tương ứng với bất kỳ thời điểm nào.
+    #
+    # `KhachNgay` ghi TRONG CÙNG transaction này, và đó là thứ giữ cho ranh giới tự-lành ở
+    # phía đọc (`api/quan_tri_luot_xem.py`) còn đúng: endpoint lấy mốc từ
+    # `max(TongNgay.ngay)` rồi đọc `KhachNgay` cho phần trước mốc. Hai bảng ghi ở hai
+    # transaction là có lúc mốc đã nhích mà số khách chưa có ⇒ một dải ngày trả `None`
+    # "không đo được" trong khi dữ liệu vẫn còn nguyên trong hàng thô.
     with transaction.atomic():
+        # Huỷ muối của mọi ngày đã đóng — xem docstring module. Đặt TRONG transaction để
+        # một lượt gộp chết giữa chừng không để lại trạng thái nửa vời.
+        MuoiNgay.objects.filter(ngay__lt=hom_nay).delete()
+
         for ngay, theo_duong in theo_ngay.items():
             khac_nguoi = khac_bot = 0
             for duong_dan, (nguoi, bot) in theo_duong.items():
@@ -131,8 +155,43 @@ def gom(hom_nay=None) -> tuple[int, int]:
                     defaults={"so_luot_nguoi": khac_nguoi, "so_luot_bot": khac_bot},
                 )
                 so_hang += 1
+            if ngay in khach_theo_ngay:
+                KhachNgay.objects.update_or_create(
+                    ngay=ngay, defaults={"so_khach": khach_theo_ngay[ngay]}
+                )
             ngay_cham.add(ngay)
     return len(ngay_cham), so_hang
+
+
+def _khach_moi_ngay(hom_nay: date) -> dict[date, int]:
+    """`{ngày đã xong: số khách duy nhất}` — ngày **không đo được** thì VẮNG MẶT.
+
+    "Không đo được" = ngày có **bất kỳ** hàng người nào mang `khach=""` (hàng ghi trước
+    2026-08-30) — không phải "mọi hàng đều rỗng". Bản đầu chỉ bỏ ca mọi-hàng-rỗng, nên
+    NGÀY CHUYỂN TIẾP (deploy giữa ngày: 900 lượt cũ không token + 300 lượt mới của 40
+    khách) được ghi `40` vào bảng giữ-mãi — một con số thấp hơn thật mà không có gì
+    trên màn hình phân biệt được nó với một ngày đo đủ, và mod sẽ đọc "1200 lượt / 40
+    khách" như một phép đo. Lượt phản biện 2026-08-30 tìm ra. Ghi 0 hay ghi một phần
+    đều là lời nói dối trông y hệt một phép đo; vắng mặt thì endpoint trả `None` và
+    biểu đồ nói "chưa đo" — mất một ngày ước lượng, giữ được nghĩa của cả bảng.
+
+    Ngày **chỉ có bot** thì ngược lại: 0 khách là sự thật, và nó được ghi.
+
+    ⚠ `Count("khach", distinct=True, filter=…)` chứ không `Count(distinct)` trên cả bảng:
+    `khach=""` phải bị loại **trước** khi đếm distinct, nếu không mọi hàng không đo được
+    gộp thành đúng một "khách" ma.
+    """
+    hang = (
+        LuotXem.objects.filter(luc__lt=nua_dem_vn(hom_nay))
+        .annotate(_ngay=TruncDate("luc", tzinfo=TZ_VN))
+        .values("_ngay")
+        .annotate(
+            _thieu=Count("pk", filter=Q(la_bot=False) & Q(khach="")),
+            _khach=Count("khach", distinct=True, filter=Q(la_bot=False) & ~Q(khach="")),
+        )
+        .order_by()
+    )
+    return {h["_ngay"]: h["_khach"] for h in hang if h["_thieu"] == 0}
 
 
 def don(hom_nay=None) -> int:

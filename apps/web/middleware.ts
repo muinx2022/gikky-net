@@ -5,6 +5,7 @@ import { demLuotXem } from "@gikky/api-client";
 import { API_ORIGIN } from "@/lib/api";
 import {
   HEADER_SECRET,
+  ipKhach,
   nenDem,
   nenDemRequest,
   nenRewrite,
@@ -113,6 +114,13 @@ export function middleware(req: NextRequest, event: NextFetchEvent) {
           // lưu**. Phân loại ở Django vì bảng bot cần một chỗ duy nhất và cần `pytest`
           // chấm được; edge runtime thì không.
           user_agent: req.headers.get("user-agent") ?? "",
+          // IP: **chỉ transit** — Django băm nó với muối của ngày rồi vứt, không có cột
+          // nào nhận nó. Xem `ipKhach` và `api/api/dem_luot_xem.py::hash_khach`.
+          ip: ipKhach(req),
+          // Referer thô: Django giữ **đúng tên miền** (`chuan_hoa_nguon`). Gửi cả URL từ
+          // đây là có chủ đích — phép cắt sống ở một chỗ, cùng chỗ với danh sách host của
+          // site, thay vì hai bản có thể lệch.
+          referer: req.headers.get("referer") ?? "",
         },
       }).catch(() => {}),
     );

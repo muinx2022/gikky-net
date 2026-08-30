@@ -25,12 +25,32 @@ làm "toàn thời gian" **nhỏ hơn "90 ngày" cả chục lần**, không c�
 Không đòi `is_superuser`. Nó không đổi dữ liệu và không phơi nội dung của ai: hai bảng
 nguồn cố ý không có cột nào gắn được với một con người.
 
-## Bảng "bot nào vào nhiều nhất" theo ĐÚNG khoảng đang xem
+## Năm bảng CHI TIẾT chỉ dựng được từ hàng thô ⇒ tối đa 90 ngày
 
-`TongNgay` không có cột `ten_bot` (xem `core/models/luot_xem.py` — một dòng cho mỗi
-ngày × đường dẫn × tên bot giữ mãi là quá đắt cho một câu hỏi chỉ có nghĩa ngắn hạn). Nên
-bảng bot chỉ dựng được từ hàng thô, tức **tối đa 90 ngày** — và chỉ ở `tat_ca` thì giới
-hạn ấy mới cắt gì; response mang cờ `bot_chi_90_ngay` để màn hình nói ra.
+`TongNgay` chỉ mang `(ngày, đường dẫn, người, bot)` (xem `core/models/luot_xem.py` — một
+dòng cho mỗi tổ hợp ngày × đường dẫn × tên bot × nguồn × trình duyệt giữ mãi là một bảng
+nổ tung để trả lời những câu hỏi vốn chỉ có nghĩa ngắn hạn). Nên **năm khối** dưới đây chỉ
+dựng được từ hàng thô, tức tối đa 90 ngày:
+
+    top_bot · theo_nhom_bot · top_nguon + so_truc_tiep · trinh_duyet · thiet_bi
+
+Chỉ ở `tat_ca` thì giới hạn ấy mới cắt gì; response mang cờ `chi_tiet_chi_90_ngay` để màn
+hình nói ra. *(Tên cũ `bot_chi_90_ngay`, đổi 2026-08-30 khi cờ phủ thêm bốn khối.)*
+
+## Khách/ngày — hai nguồn, cùng ranh giới với lượt xem
+
+| `?khoang=` | Số khách đọc từ |
+|---|---|
+| `7` · `30` · `90` | `COUNT(DISTINCT khach)` trên hàng thô, theo ngày |
+| `tat_ca` | `KhachNgay` (phần đã gộp) **+ distinct thô từ `max(TongNgay.ngay)+1`** |
+
+Dùng **đúng cùng ranh giới** với lượt xem, và đó không phải trùng hợp: `gom_luot_xem` ghi
+`KhachNgay` trong CÙNG transaction với `TongNgay`, nên hai bảng không thể lệch nhau.
+
+⚠ **`None` ≠ `0`.** Ngày có hàng người mà distinct = 0 (mọi `khach` rỗng — hàng ghi trước
+2026-08-30) trả `None`: *"không đo được"*. Ngày chỉ có bot, hoặc ngày không có hàng nào,
+trả `0`: đó là một phép đo thật. Nhập hai thứ ấy làm một là vẽ ra những ngày vắng tanh
+nằm cạnh cột "lượt người" cao ngất.
 
 ⚠ Với `7/30/90` thì bảng bot phải dùng **đúng khoảng đang xem**. Bản đầu truyền một hằng
 90 ngày cho mọi khoảng, nên chọn "7 ngày" mà có bot quét rầm rộ 60 ngày trước sẽ ra một
@@ -44,6 +64,7 @@ thì vừa nặng vừa không đọc được). Cộng các cột đang vẽ đ
 hụt im lặng** đúng bằng phần bị cắt — nên tổng được tính riêng, từ toàn bộ nguồn.
 """
 
+from collections.abc import Callable
 from datetime import date, datetime, time, timedelta
 
 from django.db.models import Count, Max, Q, Sum
@@ -51,7 +72,8 @@ from django.db.models.functions import TruncDate
 from django.http import HttpResponse
 from ninja import Router
 
-from core.models.luot_xem import LuotXem, TongNgay
+from core.bot import NHOM_HOP_LE, nhom_bot
+from core.models.luot_xem import KhachNgay, LuotXem, TongNgay
 from core.thoi_gian import TZ_VN, ngay_vn
 
 from api.loi import THAM_SO_KHONG_HOP_LE, LoiOut, loi
@@ -59,6 +81,9 @@ from api.quan_tri_schemas import (
     LuotXemNgayOut,
     LuotXemOut,
     LuotXemTongOut,
+    MucSoLuotOut,
+    NguonOut,
+    NhomBotOut,
     TenBotOut,
     TopDuongDanOut,
 )
@@ -85,8 +110,9 @@ SO_TOP = 20
 #: không bao giờ cắt gì; nó chỉ có tác dụng ở `tat_ca`.
 SO_O_TOI_DA = 90
 
-#: Bảng bot LUÔN chỉ phủ bấy nhiêu ngày — bằng tuổi của hàng thô. Xem docstring module.
-SO_NGAY_BOT = 90
+#: Năm bảng CHI TIẾT (bot, nhóm bot, nguồn, trình duyệt, thiết bị) LUÔN chỉ phủ bấy nhiêu
+#: ngày — bằng tuổi của hàng thô. Xem docstring module.
+SO_NGAY_CHI_TIET = 90
 
 
 def _nua_dem_vn(ngay: date) -> datetime:
@@ -149,15 +175,116 @@ def _top(gop: dict[str, tuple[int, int]]) -> list[TopDuongDanOut]:
     ]
 
 
-def _top_bot(ngay_dau: date) -> list[TenBotOut]:
+def _bot_theo_ten(ngay_dau: date) -> list[tuple[str, int]]:
+    """`[(tên bot, lượt)]` **toàn bộ**, sắp giảm dần rồi theo tên. Không cắt top ở đây.
+
+    Hai người đọc: `_top_bot` (cắt 20) và `_theo_nhom_bot` (gộp **hết**). Gộp nhóm từ 20
+    dòng đã cắt là thiếu hụt im lặng đúng bằng phần đuôi — và phần đuôi của bảng bot
+    thường dài hơn phần đầu.
+    """
     hang = (
         _tho_tu(ngay_dau)
         .filter(la_bot=True)
         .values("ten_bot")
         .annotate(_so=Count("pk"))
-        .order_by("-_so", "ten_bot")[:SO_TOP]
+        .order_by("-_so", "ten_bot")
     )
-    return [TenBotOut(ten=h["ten_bot"], so_luot=h["_so"]) for h in hang]
+    return [(h["ten_bot"], h["_so"]) for h in hang]
+
+
+def _top_bot(theo_ten: list[tuple[str, int]]) -> list[TenBotOut]:
+    return [
+        TenBotOut(ten=ten, so_luot=so, nhom=nhom_bot(ten))
+        for ten, so in theo_ten[:SO_TOP]
+    ]
+
+
+def _theo_nhom_bot(theo_ten: list[tuple[str, int]]) -> list[NhomBotOut]:
+    """Gộp theo nhóm, sắp giảm dần rồi theo **thứ tự khai** của `NHOM_HOP_LE`.
+
+    Vế thứ hai thay cho "rồi theo tên": sáu nhóm có một thứ tự ĐỌC có nghĩa (tìm kiếm →
+    xem trước → AI → SEO → giám sát → khác), và sắp theo abc sẽ đẩy `ai` lên đầu chỉ vì
+    nó bắt đầu bằng chữ a. Vẫn tất định, vẫn không "nhảy" khi mod bấm F5.
+
+    Nhóm không có lượt nào **không có dòng** — một bảng sáu dòng toàn 0 là sáu dòng nhiễu.
+    """
+    gop: dict[str, int] = {}
+    for ten, so in theo_ten:
+        nhom = nhom_bot(ten)
+        gop[nhom] = gop.get(nhom, 0) + so
+    xep = sorted(gop.items(), key=lambda x: (-x[1], NHOM_HOP_LE.index(x[0])))
+    return [NhomBotOut(nhom=n, so_luot=s) for n, s in xep]
+
+
+def _nguoi_tu(ngay_dau: date):
+    """Hàng NGƯỜI trong khoảng — nền của cả ba bảng nguồn/trình duyệt/thiết bị.
+
+    Ba bảng ấy trả lời câu *"người đọc site đến từ đâu, bằng gì"*. Lẫn một hàng bot vào là
+    đo nhầm sang *"máy nào ghé site"*, mà site đã có hai bảng riêng cho câu ấy.
+    """
+    return _tho_tu(ngay_dau).filter(la_bot=False)
+
+
+def _top_nguon(ngay_dau: date) -> list[NguonOut]:
+    """Top 20 tên miền dẫn người tới. Bỏ `""` — nó đi vào `_so_truc_tiep`."""
+    hang = (
+        _nguoi_tu(ngay_dau)
+        .exclude(nguon="")
+        .values("nguon")
+        .annotate(_so=Count("pk"))
+        .order_by("-_so", "nguon")[:SO_TOP]
+    )
+    return [NguonOut(nguon=h["nguon"], so_luot=h["_so"]) for h in hang]
+
+
+def _so_truc_tiep(ngay_dau: date) -> int:
+    """Lượt người không có nguồn ngoài. Ba ca gộp một — xem `LuotXem.nguon`."""
+    return _nguoi_tu(ngay_dau).filter(nguon="").count()
+
+
+def _theo_cot(ngay_dau: date, cot: str) -> list[MucSoLuotOut]:
+    """Gộp hàng NGƯỜI theo một cột khoá ascii (`trinh_duyet` / `thiet_bi`), bỏ ô rỗng.
+
+    Ô rỗng là hàng bot (hai cột ấy cố ý rỗng khi `la_bot`) và hàng ghi trước 2026-08-30.
+    Đưa chúng vào bảng dưới nhãn `""` là thêm một dòng không đọc được, và nó sẽ đứng đầu
+    bảng trên mọi site đã chạy trước lượt này.
+    """
+    hang = (
+        _nguoi_tu(ngay_dau)
+        .exclude(**{cot: ""})
+        .values(cot)
+        .annotate(_so=Count("pk"))
+        .order_by("-_so", cot)
+    )
+    return [MucSoLuotOut(ten=h[cot], so_luot=h["_so"]) for h in hang]
+
+
+def _khach_tho(ngay_dau: date | None) -> dict[date, int | None]:
+    """`{ngày: số khách}` từ hàng thô. `None` = ngày **không đo được**.
+
+    "Không đo được" = ngày có **bất kỳ** hàng người nào mang `khach=""` — cùng đúng một
+    luật với `gom_luot_xem::_khach_moi_ngay`, và phải cùng, vì hai hàm này vẽ chung một
+    chuỗi ngày: ngày chuyển tiếp (deploy giữa ngày, nửa hàng cũ không token) mà bên này
+    trả một con số còn bên kia trả `None` thì cùng một ô đổi nghĩa tuỳ nó rơi vào vùng
+    thô hay vùng đã gộp. Xem docstring bên ấy về vì sao "một phần" không được ghi.
+
+    Ngày không có hàng nào KHÔNG có mặt ở đây — người gọi quyết định mặc định của nó (0
+    cho vùng hàng thô, `None` cho vùng đã gộp mà `KhachNgay` không có hàng).
+
+    ⚠ `distinct=True` cộng `~Q(khach="")`: hàng không đo được phải bị loại **trước** phép
+    đếm distinct, nếu không tất cả chúng gộp thành đúng một "khách" ma mỗi ngày.
+    """
+    hang = (
+        _tho_tu(ngay_dau)
+        .annotate(_ngay=TruncDate("luc", tzinfo=TZ_VN))
+        .values("_ngay")
+        .annotate(
+            _thieu=Count("pk", filter=Q(la_bot=False) & Q(khach="")),
+            _khach=Count("khach", distinct=True, filter=Q(la_bot=False) & ~Q(khach="")),
+        )
+        .order_by()
+    )
+    return {h["_ngay"]: (None if h["_thieu"] > 0 else h["_khach"]) for h in hang}
 
 
 def _so_o_tat_ca(theo_ngay: dict[date, tuple[int, int]], hom_nay: date) -> int:
@@ -173,7 +300,10 @@ def _so_o_tat_ca(theo_ngay: dict[date, tuple[int, int]], hom_nay: date) -> int:
 
 
 def _chuoi(
-    theo_ngay: dict[date, tuple[int, int]], hom_nay: date, so_ngay: int
+    theo_ngay: dict[date, tuple[int, int]],
+    hom_nay: date,
+    so_ngay: int,
+    khach_cua: "Callable[[date], int | None]",
 ) -> list[LuotXemNgayOut]:
     """Đúng `so_ngay` ô, ô CUỐI luôn là `hom_nay`. Ngày rỗng vẫn có ô, với hai số 0.
 
@@ -190,7 +320,14 @@ def _chuoi(
     for i in range(so_ngay):
         n = ngay_dau + timedelta(days=i)
         nguoi, bot = theo_ngay.get(n, (0, 0))
-        o.append(LuotXemNgayOut(ngay=n, so_luot_nguoi=nguoi, so_luot_bot=bot))
+        o.append(
+            LuotXemNgayOut(
+                ngay=n,
+                so_luot_nguoi=nguoi,
+                so_luot_bot=bot,
+                so_khach=khach_cua(n),
+            )
+        )
     return o
 
 
@@ -223,16 +360,24 @@ def luot_xem(request, response: HttpResponse, khoang: str = "30"):
         ngay_dau = hom_nay - timedelta(days=so_o - 1)
         theo_ngay = _tho_theo_ngay(ngay_dau)
         gop = _tho_theo_duong_dan(ngay_dau)
-        # ⚠ Bảng bot phải dùng ĐÚNG khoảng đang xem, không phải một hằng 90 ngày.
+        # ⚠ Năm bảng chi tiết phải dùng ĐÚNG khoảng đang xem, không phải một hằng 90 ngày.
         #
         # Bản đầu luôn truyền `hom_nay - 89`, nên chọn "7 ngày" mà có một con bot quét
         # rầm rộ 60 ngày trước thì màn hình hiện: KPI "Lượt bot" = **0**, biểu đồ toàn 0,
         # còn bảng "Bot nào vào nhiều nhất" = 500 lượt. Hai con số mâu thuẫn trên cùng
-        # một màn hình, và không có dòng chú nào — vì `bot_chi_90_ngay` khi ấy là `False`,
-        # tức cái cờ sinh ra để nói giới hạn lại đang khẳng định "không có giới hạn".
-        # Lượt phản biện 2026-08-27 tìm ra.
-        ngay_dau_bot = ngay_dau
-        bot_chi_90_ngay = False
+        # một màn hình, và không có dòng chú nào — vì cờ giới hạn khi ấy là `False`, tức
+        # cái cờ sinh ra để nói giới hạn lại đang khẳng định "không có giới hạn".
+        # Lượt phản biện 2026-08-27 tìm ra; từ 2026-08-30 cùng cái bẫy ấy áp cho cả bảng
+        # nguồn, trình duyệt và thiết bị.
+        ngay_dau_chi_tiet = ngay_dau
+        chi_tiet_chi_90_ngay = False
+
+        khach = _khach_tho(ngay_dau)
+        # Ngày vắng mặt trong nhóm gộp = ngày KHÔNG có hàng nào ⇒ 0 khách là một phép đo
+        # thật, không phải "không đo được". Chỉ ngày CÓ người mà distinct = 0 mới là
+        # `None`, và `_khach_tho` đã đánh dấu ca đó.
+        def khach_cua(n: date) -> int | None:
+            return khach.get(n, 0)
     else:
         # --- "toàn thời gian" = TongNgay + LuotXem của phần CHƯA GỘP ---
         #
@@ -271,15 +416,38 @@ def luot_xem(request, response: HttpResponse, khoang: str = "30"):
             cu = gop.get(duong_dan, (0, 0))
             gop[duong_dan] = (cu[0] + n, cu[1] + b)
         so_o = _so_o_tat_ca(theo_ngay, hom_nay)
-        # `TongNgay` không có cột `ten_bot` (mô hình cố ý gọn), nên bảng bot chỉ dựng được
-        # từ hàng thô ⇒ tối đa 90 ngày. Cờ này làm trang nói ra điều đó.
-        ngay_dau_bot = hom_nay - timedelta(days=SO_NGAY_BOT - 1)
-        bot_chi_90_ngay = True
+        # `TongNgay` chỉ mang (ngày, đường dẫn, người, bot), nên NĂM bảng chi tiết chỉ
+        # dựng được từ hàng thô ⇒ tối đa 90 ngày. Cờ này làm trang nói ra điều đó.
+        ngay_dau_chi_tiet = hom_nay - timedelta(days=SO_NGAY_CHI_TIET - 1)
+        chi_tiet_chi_90_ngay = True
+
+        # Khách theo CÙNG ranh giới với lượt xem: `KhachNgay` cho phần đã gộp, distinct
+        # thô cho phần sau mốc. Hai bảng ghi cùng transaction nên chúng không lệch nhau.
+        khach = {
+            k.ngay: k.so_khach
+            for k in KhachNgay.objects.all()
+        }
+        khach.update(_khach_tho(ngay_dau_tho))
+
+        def khach_cua(n: date) -> int | None:
+            if n in khach:
+                return khach[n]
+            # Sau mốc gộp thì hàng thô là nguồn ĐẦY ĐỦ ⇒ vắng mặt = không có hàng nào = 0.
+            if ngay_dau_tho is None or n >= ngay_dau_tho:
+                return 0
+            # Trước mốc mà `KhachNgay` không có hàng ⇒ ngày ấy **không đo được**: hàng thô
+            # đã dọn, và `gom_luot_xem` cố ý không ghi 0 giả cho nó.
+            return None
 
     # Tổng tính từ `theo_ngay` ĐẦY ĐỦ, không từ `chuoi` — `chuoi` bị chặn ở
     # `SO_O_TOI_DA` ô. Xem docstring module.
     tong_nguoi = sum(n for n, _ in theo_ngay.values())
     tong_bot = sum(b for _, b in theo_ngay.values())
+    # Số khách cũng KHÔNG suy từ biểu đồ, cùng lý do. Ngày không đo được đóng góp 0, nên
+    # con số này là một cận DƯỚI — không bao giờ thổi phồng.
+    tong_khach = sum(v for v in khach.values() if v is not None)
+
+    theo_ten_bot = _bot_theo_ten(ngay_dau_chi_tiet)
 
     return LuotXemOut(
         khoang=khoang,
@@ -287,9 +455,15 @@ def luot_xem(request, response: HttpResponse, khoang: str = "30"):
             so_luot=tong_nguoi + tong_bot,
             so_luot_nguoi=tong_nguoi,
             so_luot_bot=tong_bot,
+            so_khach=tong_khach,
         ),
-        chuoi_ngay=_chuoi(theo_ngay, hom_nay, so_o),
+        chuoi_ngay=_chuoi(theo_ngay, hom_nay, so_o, khach_cua),
         top_duong_dan=_top(gop),
-        top_bot=_top_bot(ngay_dau_bot),
-        bot_chi_90_ngay=bot_chi_90_ngay,
+        top_bot=_top_bot(theo_ten_bot),
+        theo_nhom_bot=_theo_nhom_bot(theo_ten_bot),
+        top_nguon=_top_nguon(ngay_dau_chi_tiet),
+        so_truc_tiep=_so_truc_tiep(ngay_dau_chi_tiet),
+        trinh_duyet=_theo_cot(ngay_dau_chi_tiet, "trinh_duyet"),
+        thiet_bi=_theo_cot(ngay_dau_chi_tiet, "thiet_bi"),
+        chi_tiet_chi_90_ngay=chi_tiet_chi_90_ngay,
     )

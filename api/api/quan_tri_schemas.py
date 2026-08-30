@@ -593,19 +593,19 @@ class TrangNguoiDungOut(Schema):
     so_staff_an: int
 
 
-# --- Lượt xem (`/luot-xem`, 2026-08-27) --------------------------------------
+# --- Lượt xem (`/luot-xem`, 2026-08-27 · mở rộng 2026-08-30) -----------------
 #
-# Năm schema dưới đây là bộ DUY NHẤT trong file này **không** mang nội dung của ai:
-# `LuotXem`/`TongNgay` cố ý không có cột nào gắn được với một con người (xem
+# Nhóm schema dưới đây là bộ DUY NHẤT trong file này **không** mang nội dung của ai:
+# bốn bảng nguồn cố ý không có cột nào gắn được với một con người (xem
 # `core/models/luot_xem.py`). Ghi ra vì luật "chỉ trả sau `ChiMod`" ở đầu file được đặt
 # ra vì lý do rò rỉ nội dung, và lý do ấy không áp cho nhóm này — nhưng chúng **vẫn** ở
 # sau `ChiMod`, đơn giản vì cả `api_admin` ở sau nó.
 
 
 class LuotXemTongOut(Schema):
-    """Bốn con số lớn. `so_luot` = `so_luot_nguoi + so_luot_bot`, không hơn.
+    """Năm con số lớn. `so_luot` = `so_luot_nguoi + so_luot_bot`, không hơn.
 
-    Server trả cả tổng lẫn hai vế thay vì để frontend cộng: ba chỗ trên màn hình (bốn ô
+    Server trả cả tổng lẫn hai vế thay vì để frontend cộng: ba chỗ trên màn hình (các ô
     KPI, biểu đồ, dòng "% bot") phải nói cùng một chuyện, và cách chắc chắn nhất là
     chúng cùng đọc một phép cộng.
     """
@@ -613,6 +613,13 @@ class LuotXemTongOut(Schema):
     so_luot: int
     so_luot_nguoi: int
     so_luot_bot: int
+    #: Σ số khách của những ngày **đo được** trong khoảng. Đây là một phép CỘNG THEO NGÀY,
+    #: không phải số người: muối băm đổi mỗi ngày, nên một người ghé ba ngày đếm là ba
+    #: khách. Trang phải ghi "≈" cạnh con số này — xem `/luot-xem`.
+    #:
+    #: Ngày không đo được đóng góp **0** vào tổng (chúng vắng mặt), nên con số này là một
+    #: cận DƯỚI, không bao giờ là một con số thổi phồng.
+    so_khach: int
 
 
 class LuotXemNgayOut(Schema):
@@ -621,6 +628,13 @@ class LuotXemNgayOut(Schema):
     ngay: date
     so_luot_nguoi: int
     so_luot_bot: int
+    #: `None` = **không đo được**, khác hẳn `0` = "đo được, không có ai".
+    #:
+    #: `None` xảy ra ở hai ca: ngày trước khi cơ chế khách bật (mọi `LuotXem.khach` rỗng),
+    #: và ngày mà hàng thô đã bị dọn trong khi `KhachNgay` không có hàng. Trả 0 cho hai ca
+    #: ấy là vẽ ra một ngày vắng tanh cạnh một cột "lượt người" cao ngất — hai con số mâu
+    #: thuẫn trên cùng một biểu đồ, và người đọc sẽ tin cái nào bé hơn.
+    so_khach: int | None
 
 
 class TopDuongDanOut(Schema):
@@ -640,6 +654,41 @@ class TenBotOut(Schema):
 
     ten: str
     so_luot: int
+    #: Khoá nhóm (`core/bot.py::nhom_bot`) — suy **lúc đọc**, không lưu thành cột. Nên
+    #: hàng ghi từ 2026-08-27 cũng có nhóm, và sửa bảng nhóm là số liệu cũ tự phân loại
+    #: lại. Một cột `nhom_bot` trong DB sẽ là bản sao đông cứng, lệch ngay lần sửa đầu.
+    nhom: str
+
+
+class NhomBotOut(Schema):
+    """Một dòng bảng "Bot theo nhóm". Sáu khoá của `core/bot.py::NHOM_HOP_LE`."""
+
+    nhom: str
+    so_luot: int
+
+
+class NguonOut(Schema):
+    """Một dòng bảng "Nguồn truy cập". `nguon` là **tên miền**, không bao giờ là URL.
+
+    Chỉ hàng NGƯỜI, và chỉ `nguon != ""`. Phần rỗng (trực tiếp / nội bộ / rác) đi vào
+    `LuotXemOut.so_truc_tiep` — gộp chung vào bảng thì nó chiếm dòng đầu ở mọi site và
+    đẩy hết nguồn thật xuống dưới.
+    """
+
+    nguon: str
+    so_luot: int
+
+
+class MucSoLuotOut(Schema):
+    """Một dòng của hai bảng nhỏ "Trình duyệt" và "Thiết bị".
+
+    `ten` là **khoá ascii** (`chrome`, `di_dong`, …), không phải nhãn hiển thị: nhãn tiếng
+    Việt do frontend map. Trả nhãn từ server là khoá dữ liệu và chữ trên màn hình dính vào
+    nhau — đổi một chữ hoa thành một breaking change của API.
+    """
+
+    ten: str
+    so_luot: int
 
 
 class LuotXemOut(Schema):
@@ -652,7 +701,26 @@ class LuotXemOut(Schema):
     chuoi_ngay: list[LuotXemNgayOut]
     top_duong_dan: list[TopDuongDanOut]
     top_bot: list[TenBotOut]
-    #: `True` khi `top_bot` hẹp hơn khoảng đang xem — luôn đúng với `khoang=tat_ca`.
-    #: `TongNgay` không có cột `ten_bot`, nên bảng bot chỉ phủ được 90 ngày hàng thô.
-    #: Màn hình **phải nói ra**; giấu đi là để mod đọc bảng ấy như thể nó là toàn thời gian.
-    bot_chi_90_ngay: bool
+    #: Gộp `top_bot` theo nhóm — nhưng từ **toàn bộ** hàng bot, không phải từ 20 dòng của
+    #: `top_bot`. Cộng từ bảng top là thiếu hụt im lặng đúng bằng phần đuôi bị cắt.
+    theo_nhom_bot: list[NhomBotOut]
+    #: Top 20 tên miền dẫn người tới site. Chỉ hàng NGƯỜI: nguồn của một con bot là thứ
+    #: chính nó khai, và trộn nó vào đây là để một con crawler khai referer giả leo lên
+    #: đầu bảng "ai đang dẫn người tới".
+    top_nguon: list[NguonOut]
+    #: Lượt NGƯỜI không có nguồn ngoài — trực tiếp / nội bộ / referer rác, gộp làm một.
+    so_truc_tiep: int
+    trinh_duyet: list[MucSoLuotOut]
+    thiet_bi: list[MucSoLuotOut]
+    #: `True` khi **các bảng chi tiết** hẹp hơn khoảng đang xem — luôn đúng với
+    #: `khoang=tat_ca`, luôn sai với `7/30/90`.
+    #:
+    #: Năm khối chịu giới hạn này: `top_bot`, `theo_nhom_bot`, `top_nguon` + `so_truc_tiep`,
+    #: `trinh_duyet`, `thiet_bi` — tất cả chỉ dựng được từ hàng thô (90 ngày), vì `TongNgay`
+    #: cố ý không mang các chiều ấy. Màn hình **phải nói ra**; giấu đi là để mod đọc chúng
+    #: như thể chúng phủ toàn thời gian.
+    #:
+    #: ⚠ Tên cũ là `bot_chi_90_ngay` (2026-08-27), đổi 2026-08-30 khi giới hạn phủ thêm
+    #: bốn khối nữa — một cái tên nói "bot" cho một cờ điều khiển năm dòng chú là cái tên
+    #: sẽ bị hiểu sai đúng bốn lần.
+    chi_tiet_chi_90_ngay: bool
