@@ -207,6 +207,7 @@ def toi(request):
 from api.quan_tri_bang import router as router_bang  # noqa: E402
 from api.quan_tri_bao_cao import router as router_bao_cao  # noqa: E402
 from api.quan_tri_cai_dat import router as router_cai_dat  # noqa: E402
+from api.quan_tri_chan_doan import router as router_chan_doan  # noqa: E402
 from api.quan_tri_kiem_duyet import router as router_kiem_duyet  # noqa: E402
 from api.quan_tri_luot_xem import router as router_luot_xem  # noqa: E402
 from api.quan_tri_nguoi_dung import router as router_nguoi_dung  # noqa: E402
@@ -217,6 +218,7 @@ from api.quan_tri_thong_ke import router as router_thong_ke  # noqa: E402
 api_admin.add_router("", router_bao_cao)
 api_admin.add_router("", router_bang)
 api_admin.add_router("", router_cai_dat)
+api_admin.add_router("", router_chan_doan)
 api_admin.add_router("", router_kiem_duyet)
 api_admin.add_router("", router_luot_xem)
 api_admin.add_router("", router_nguoi_dung)

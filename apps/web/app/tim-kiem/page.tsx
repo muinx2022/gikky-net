@@ -120,25 +120,44 @@ export default async function TrangTimKiem({
 
       {ket !== null && ket.co_the_tim && (
         <>
+          {/* Bộ lọc chuyên mục CẮT hẳn nhánh bình luận ở API (tài liệu bình luận không
+              mang sub — xem `core/tim_kiem.py::_truy_van_tron`). Nói ra ở mọi trạng thái
+              có `sub`, không chỉ khi rỗng: người dùng đặt `?sub=` rồi không thấy bình
+              luận nào cần biết đó là do bộ lọc, không phải do không có câu nào khớp. */}
+          {sub && (
+            <p className={css.nhac} data-testid="tim-kiem-sub-chi-mach">
+              Bộ lọc chuyên mục không áp cho bình luận — kết quả dưới đây chỉ có mạch.
+            </p>
+          )}
           {ket.items.length === 0 ? (
             <p className={css.nhac} data-testid="tim-kiem-rong">
-              Không có mạch nào khớp <strong>{ket.q}</strong>
               {sub ? (
                 <>
-                  {" "}
-                  trong <code>s/{sub}</code>
+                  Không có mạch nào khớp <strong>{ket.q}</strong> trong{" "}
+                  <code>s/{sub}</code>. Thử ít chữ hơn, hoặc bỏ bộ lọc chuyên mục.
                 </>
-              ) : null}
-              . Thử ít chữ hơn, hoặc bỏ bộ lọc chuyên mục.
+              ) : (
+                <>
+                  Không có mạch hay bình luận nào khớp <strong>{ket.q}</strong>. Thử ít
+                  chữ hơn.
+                </>
+              )}
             </p>
           ) : (
             <>
               <p className={css.dem} data-testid="tim-kiem-dem">
                 Khoảng {ket.tong} kết quả cho <strong>{ket.q}</strong>
               </p>
+              {/* ⚠ Khoá gồm CẢ `loai` và `binh_luan_id`: từ lượt trộn, một mạch có thể
+                  xuất hiện nhiều lần trong cùng trang (một dòng cho chính nó, thêm vài
+                  dòng cho các bình luận của nó). `key={kq.mach.id}` cũ là khoá TRÙNG —
+                  React cảnh báo, rồi tái dùng nhầm nút DOM khi lật trang. */}
               <ul className={css.danh_sach}>
                 {ket.items.map((kq) => (
-                  <DongKetQua key={kq.mach.id} ket_qua={kq} />
+                  <DongKetQua
+                    key={`${kq.loai}-${kq.binh_luan_id ?? kq.mach.id}`}
+                    ket_qua={kq}
+                  />
                 ))}
               </ul>
               <Lat q={q} sub={sub} sort={sort} offset={offset} so_dong={ket.items.length} />

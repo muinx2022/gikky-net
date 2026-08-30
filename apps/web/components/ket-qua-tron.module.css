@@ -1,0 +1,79 @@
+/* Phần thêm cho dòng kết quả **bình luận** — 2026-08-30.
+ *
+ * ## Vì sao là một file thứ hai chứ không thêm vào `ket-qua-tim-kiem.module.css`
+ *
+ * File ấy đang do một phiên khác sửa dở (`git status` báo `M` lúc bắt đầu lượt này), và
+ * luật của `D:/Projects/CLAUDE.md` là **không đụng file phiên khác đang làm**. Hai lớp
+ * dùng chung một dòng `<li>` là chuyện bình thường của CSS Modules; cái phải giữ là
+ * chúng đừng khai trùng tên class — nên mọi thứ ở đây mang tên riêng, không có `.dong`,
+ * `.dau`, `.title` thứ hai.
+ *
+ * Gộp lại làm một file là việc dọn dẹp của lượt sau, khi hai phiên đã ngừng giẫm chân. */
+
+/* Nhãn "Bình luận" — chữ của ỨNG DỤNG nói về loại dòng, không phải chữ người dùng.
+ *
+ * Dùng `--accent-soft` chứ không `--stamp`: PLAN 9.1 giao hoàng thổ riêng cho "thứ mang
+ * tính đóng dấu" (đã trích, đã sửa, đã đóng sổ) và `e2e/don-vi/mau-token.spec.ts` ghim
+ * allowlist ấy tới từng selector. Một nhãn phân loại không phải một con dấu. */
+.nhan {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Dòng ngữ cảnh: "của u/… trong «tiêu đề mạch»". Đây là thứ làm một kết quả bình luận
+   đọc được — một câu trơ trọi không nói được nó thuộc cuộc trò chuyện nào. */
+.trong_mach {
+  margin: 3px 0 4px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-3);
+}
+
+/* Tiêu đề mạch ở dòng ngữ cảnh là một `<span>`, KHÔNG phải một `<a>` thứ hai: cả khối
+   đã nằm trong một `<Link>` tới neo bình luận, và `<a>` lồng `<a>` là HTML không hợp lệ
+   (trình duyệt tự đóng thẻ ngoài, nên nửa dưới của dòng ngừng bấm được). */
+.ten_mach {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.den_cau:hover .ten_mach {
+  color: var(--accent);
+}
+
+/* Thân câu bình luận. Cùng bộ số với `.trich` của dòng mạch — hai loại dòng nằm xen kẽ
+   trong MỘT danh sách, nên chữ chính của chúng phải cùng cỡ; lệch một pixel là danh sách
+   trông như hai danh sách bị dán vào nhau. */
+.cau {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Cả khối bình luận là một liên kết tới đúng neo `#bl-<id>` trên trang mạch. Bọc ngoài
+   thay vì chỉ bọc tiêu đề: dòng này không có tiêu đề, và bắt người ta nhắm vào một câu
+   ba dòng để tìm chỗ bấm là thứ chỉ chuột mới làm được. */
+.den_cau {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.den_cau:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 4px;
+}

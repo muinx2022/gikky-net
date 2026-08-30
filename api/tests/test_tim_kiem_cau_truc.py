@@ -16,9 +16,10 @@ Nên bài đo này đọc **AST của chính `core/ghi.py`** và bắt buộc:
 
 1. **Mọi hàm công khai** trong `core/ghi.py` phải có một dòng trong `BANG_DONG_BO` — hàm
    mới chưa phân loại ⇒ ĐỎ ngay, **trước khi** ai kịp quên gọi;
-2. hàm phân loại `PHAI` phải **thật sự có lời gọi `dong_bo_mach`** trong thân nó;
-3. hàm phân loại `KHONG` phải **không** gọi — nếu không, "gọi ở mọi nơi" cũng xanh ở mọi
-   dòng và bảng mất hết sức phân biệt;
+2. hàm phân loại `PHAI` / `PHAI_BINH_LUAN` phải **thật sự có lời gọi** đúng hàm đồng bộ
+   của nhãn ấy (`dong_bo_mach` / `dong_bo_binh_luan`) trong thân nó;
+3. hàm nào cũng **không được gọi hàm đồng bộ nằm ngoài nhãn của nó** — nếu không, "gọi ở
+   mọi nơi" cũng xanh ở mọi dòng và bảng mất hết sức phân biệt;
 4. **không module nào ngoài `core/ghi.py`** được tự tay ghi `hidden_at` / `deleted_at`.
 
 Vế (4) đóng lối thoát hiển nhiên của (1): thêm đường ghi ở một handler thay vì ở `ghi.py`.
@@ -33,10 +34,21 @@ GOC = Path(__file__).resolve().parents[1]
 FILE_GHI = GOC / "core" / "ghi.py"
 
 #: Tên hàm phải xuất hiện trong thân mỗi cửa ghi có ảnh hưởng tới chỉ mục.
+#:
+#: **HAI hàm từ 2026-08-30**, vì có HAI index (`core/tim_kiem.py::CAC_INDEX`). Bảng dưới
+#: nói mỗi cửa ghi phải gọi cái nào — và bài đo ép **cả hai chiều** cho từng cửa: gọi
+#: thiếu là nội dung ẩn vẫn tìm được, gọi thừa (đẩy lại index mạch từ một cửa chỉ đụng
+#: bình luận) là một `PUT` vô ích trên mọi lượt bình luận của cả site.
 HAM_DONG_BO = "dong_bo_mach"
+HAM_DONG_BO_BINH_LUAN = "dong_bo_binh_luan"
 
-PHAI = "phải đồng bộ index"
-KHONG = "không đổi thứ gì nằm trong tài liệu index"
+PHAI = "phải đồng bộ index MẠCH"
+PHAI_BINH_LUAN = "phải đồng bộ index BÌNH LUẬN"
+KHONG = "không đổi thứ gì nằm trong hai tài liệu index"
+
+#: `{nhãn: hàm bắt buộc phải gọi}`. `KHONG` không có mặt — nó là "không gọi cái nào".
+HAM_CUA_NHAN = {PHAI: HAM_DONG_BO, PHAI_BINH_LUAN: HAM_DONG_BO_BINH_LUAN}
+MOI_HAM = (HAM_DONG_BO, HAM_DONG_BO_BINH_LUAN)
 
 #: **Bảng phân loại MỌI hàm công khai của `core/ghi.py`.**
 #:
@@ -55,17 +67,30 @@ BANG_DONG_BO: dict[str, tuple[str, str]] = {
     "dong_so": (PHAI, "`ket_qua` là trường tìm được"),
     "mo_lai": (PHAI, "`ket_qua` bị xoá theo ⇒ phải rời index"),
     "dat_an_moc": (PHAI, "mốc bị ẩn ⇒ thân rời index; gỡ ẩn ⇒ quay lại"),
-    "dat_an_mach": (PHAI, "cả tài liệu bị XOÁ; gỡ ẩn ⇒ dựng lại"),
+    "dat_an_mach": (
+        PHAI,
+        "cả tài liệu bị XOÁ; gỡ ẩn ⇒ dựng lại. Bình luận của mạch đi theo bằng CASCADE "
+        "trong `_dong_bo_ngay`, không bằng một lời gọi thứ hai ở đây — xem "
+        "`core/tim_kiem.py::_dong_bo_binh_luan_theo_mach_ngay`",
+    ),
     # --- không đụng ---
     "cap_nhat_dem_mach": (
         KHONG,
         "chỉ bốn cột denormalize (`comment_count`, `last_activity_at`…), không cột nào "
         "nằm trong tài liệu",
     ),
-    "tao_binh_luan": (KHONG, "v1 KHÔNG index bình luận — PLAN 8.7, nợ có tên"),
-    "sua_binh_luan": (KHONG, "v1 không index bình luận"),
-    "xoa_binh_luan": (KHONG, "v1 không index bình luận"),
-    "dat_an_binh_luan": (KHONG, "v1 không index bình luận"),
+    # --- có đụng tài liệu BÌNH LUẬN (2026-08-30, nợ "v1 không index bình luận" đã trả) ---
+    "tao_binh_luan": (PHAI_BINH_LUAN, "bình luận mới: `body_thuan` là cả tài liệu"),
+    "sua_binh_luan": (
+        PHAI_BINH_LUAN,
+        "`body` là trường tìm được duy nhất; không đẩy lại là index giữ bản CŨ",
+    ),
+    "xoa_binh_luan": (
+        PHAI_BINH_LUAN,
+        "bia mộ HOẶC xoá thật — cả hai đều phải rời index; hàng bia mộ vẫn nằm trong "
+        "Postgres nên 'còn hàng' không đủ",
+    ),
+    "dat_an_binh_luan": (PHAI_BINH_LUAN, "mod ẩn ⇒ rời index; gỡ ẩn ⇒ quay lại"),
     "dat_vote": (
         KHONG,
         "`diem` cố ý KHÔNG nằm trong tài liệu — index theo vote là cơn bão ghi, xem "
@@ -83,8 +108,9 @@ BANG_DONG_BO: dict[str, tuple[str, str]] = {
     "dat_da_xem": (KHONG, "trạng thái đọc của một người, không phải nội dung"),
     "trich_vao_so": (
         KHONG,
-        "khối trích là nội dung của một BÌNH LUẬN, mà v1 không index bình luận. Ngày nào "
-        "index trích thì dòng này thành PHAI — nợ có tên ở PLAN 8.7",
+        "ghi một hàng `Trich`; `body` của bình luận và của mốc không đổi một ký tự, nên "
+        "không tài liệu nào đổi. (Từ 2026-08-30 bình luận CÓ index — dòng này vẫn KHONG, "
+        "nhưng nay vì lý do đúng: trích không sửa nội dung.)",
     ),
     "go_trich": (KHONG, "như `trich_vao_so`"),
     "them_anh_moc": (KHONG, "ảnh không có chữ để tìm"),
@@ -160,30 +186,42 @@ def test_moi_ham_ghi_deu_duoc_phan_loai():
     )
 
 
-@pytest.mark.parametrize("ten", sorted(n for n, (l, _) in BANG_DONG_BO.items() if l == PHAI))
+@pytest.mark.parametrize(
+    "ten", sorted(n for n, (l, _) in BANG_DONG_BO.items() if l in HAM_CUA_NHAN)
+)
 def test_cua_ghi_PHAI_dong_bo_thi_co_goi_that(ten):
-    """Phân loại `PHAI` mà thân hàm không gọi `dong_bo_mach` ⇒ ĐỎ."""
+    """Phân loại `PHAI`/`PHAI_BINH_LUAN` mà thân hàm không gọi ĐÚNG hàm ấy ⇒ ĐỎ."""
+    nhan, ly_do = BANG_DONG_BO[ten]
+    can = HAM_CUA_NHAN[nhan]
     ham = _ham_cong_khai(_cay_ghi())[ten]
-    assert _co_goi(ham, HAM_DONG_BO), (
-        f"`{ten}` được phân loại PHẢI đồng bộ index ({BANG_DONG_BO[ten][1]}) nhưng thân "
-        f"hàm không gọi `{HAM_DONG_BO}` lần nào.\n"
+    assert _co_goi(ham, can), (
+        f"`{ten}` được phân loại {nhan} ({ly_do}) nhưng thân hàm không gọi `{can}` "
+        "lần nào.\n"
         "Hệ quả nếu bỏ qua: nội dung biến khỏi trang công khai mà VẪN tìm thấy được — "
         "và chỉ mục không tự hết hạn như cache, nên nó nằm đó vĩnh viễn."
     )
 
 
-@pytest.mark.parametrize("ten", sorted(n for n, (l, _) in BANG_DONG_BO.items() if l == KHONG))
-def test_cua_ghi_KHONG_dong_bo_thi_dung_la_khong_goi(ten):
+@pytest.mark.parametrize("ten", sorted(BANG_DONG_BO))
+def test_cua_ghi_KHONG_goi_ham_nam_ngoai_phan_loai_cua_no(ten):
     """Chiều ngược — nếu không có nó, "gọi ở mọi nơi" cũng xanh ở mọi dòng.
 
     Bài đo này là thứ giữ cho `BANG_DONG_BO` có nghĩa: một bảng chỉ kiểm chiều dương thì
     cách rẻ nhất để làm nó xanh là rắc `dong_bo_mach` khắp file, và khi đó bảng không còn
     nói được điều gì về chỗ nào thật sự cần.
+
+    **Từ 2026-08-30 nó chạy cho MỌI dòng, không chỉ dòng `KHONG`**, vì nay có hai hàm
+    đồng bộ: một cửa ghi phân loại `PHAI_BINH_LUAN` mà lại gọi cả `dong_bo_mach` là đẩy
+    lại tài liệu mạch trên **mỗi lượt bình luận của cả site** — đúng loài "cơn bão ghi"
+    mà `core/tim_kiem.py::TRUONG_SAP` từ chối dựng, và không có gì khác bắt được nó.
     """
+    nhan, ly_do = BANG_DONG_BO[ten]
+    duoc_phep = HAM_CUA_NHAN.get(nhan)
     ham = _ham_cong_khai(_cay_ghi())[ten]
-    assert not _co_goi(ham, HAM_DONG_BO), (
-        f"`{ten}` được phân loại KHÔNG cần đồng bộ ({BANG_DONG_BO[ten][1]}) nhưng lại gọi "
-        f"`{HAM_DONG_BO}`. Hoặc lý lẽ ở bảng đã sai (đổi sang PHAI), hoặc lời gọi này thừa."
+    thua = [h for h in MOI_HAM if h != duoc_phep and _co_goi(ham, h)]
+    assert thua == [], (
+        f"`{ten}` được phân loại {nhan} ({ly_do}) nhưng lại gọi {thua}. Hoặc lý lẽ ở "
+        "bảng đã sai (đổi nhãn), hoặc lời gọi này thừa."
     )
 
 

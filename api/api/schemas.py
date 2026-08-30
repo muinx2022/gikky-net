@@ -296,12 +296,23 @@ class FeedOut(Schema):
     cursor_ke_tiep: str | None
 
 
-class KetQuaTimKiemOut(Schema):
-    """Một dòng kết quả tìm kiếm — Phase 7.
+class KetQuaTronOut(Schema):
+    """Một dòng kết quả tìm kiếm — **mạch HOẶC bình luận**, trộn chung một danh sách.
 
-    `mach` là **đúng thẻ mà feed dùng** (`MachTomTatOut`), không phải một hình dạng thứ
-    hai: trang kết quả vẽ lại cùng loại thẻ với trang chủ, nên hai schema khác nhau chỉ
-    tạo hai đường trôi.
+    *(Thay `KetQuaTimKiemOut` của Phase 7 — breaking có chủ đích, 2026-08-30. Consumer
+    duy nhất là trang `/tim-kiem`; giữ thêm một schema cũ không ai gọi là giữ một hợp
+    đồng chết.)*
+
+    `loai` nói dòng này là gì, và nó quyết định trường nào có nghĩa:
+
+    | `loai` | dùng | bỏ trống |
+    |---|---|---|
+    | `"mach"` | `title_to_dam`, `doan_trich` | `binh_luan_id`, `tac_gia`, `luc` |
+    | `"binh_luan"` | `doan_trich`, `binh_luan_id`, `tac_gia`, `luc` | `title_to_dam` |
+
+    `mach` có mặt ở **cả hai** loại: một kết quả bình luận không đọc được nếu không biết
+    nó nằm trong mạch nào, và đích bấm của nó cũng dựng từ đó
+    (`/m/<slug>-<id>#bl-<binh_luan_id>`).
 
     Hai trường tô đậm dùng dấu **`[[` `]]`**, không phải HTML. Trả `<mark>` về đây là mời
     `dangerouslySetInnerHTML` vào một đường dữ liệu do người dùng viết; frontend tự dựng
@@ -309,27 +320,73 @@ class KetQuaTimKiemOut(Schema):
     **Postgres**, không phải từ chỉ mục — xem docstring `api/tim_kiem.py`.
     """
 
+    #: ⚠ **Mọi trường đều BẮT BUỘC**, không trường nào có mặc định — kể cả những trường
+    #: chỉ một loại dùng tới. Khai `= ""` / `= None` ở đây làm chúng thành `?:` trong TS
+    #: client, và khi đó frontend phải viết `?? ""` ở mọi chỗ đọc, cho một giá trị server
+    #: **luôn luôn** gửi. "Bỏ trống" nghĩa là `""` hoặc `null` có mặt trong JSON, không
+    #: phải khoá vắng mặt.
+    loai: Literal["mach", "binh_luan"]
     mach: MachTomTatOut
     title_to_dam: str
     doan_trich: str
+    #: Chỉ `loai = "binh_luan"`. Đích neo trên trang mạch là `#bl-<giá trị này>`.
+    binh_luan_id: int | None
+    tac_gia: NguoiDungTomTatOut | None
+    #: Lúc bình luận được VIẾT. `mach.created_at` là lúc mạch mở — hai con số khác nhau,
+    #: và dòng bình luận phải hiện con số của chính nó.
+    luc: datetime | None
 
 
 class TimKiemOut(Schema):
-    """Một trang kết quả tìm kiếm.
+    """Một trang kết quả tìm kiếm — mạch và bình luận **trộn chung theo độ liên quan**.
 
     `co_the_tim = false` là **xuống thang**, không phải lỗi: Meilisearch chưa cấu hình
     hoặc đang hỏng. Endpoint vẫn trả 200 để trang gọi vẽ được một câu nói bằng tiếng
     người thay vì xử một mã lỗi như xử sự cố (plan con Phase 7 §5).
 
-    `tong` là **ước lượng** của Meilisearch (`estimatedTotalHits`), đếm trước khi lớp lọc
-    Postgres chạy — nên `len(items)` có thể nhỏ hơn `tong` chia trang. Nói ra ở đây để
-    frontend không dựng bộ đếm trang chính xác trên một con số không chính xác.
+    `tong` là **ước lượng** của Meilisearch (`estimatedTotalHits` của federation), đếm
+    trước khi lớp lọc Postgres chạy — nên `len(items)` có thể nhỏ hơn `tong` chia trang.
+    Nói ra ở đây để frontend không dựng bộ đếm trang chính xác trên một con số không
+    chính xác.
+
+    ⚠ **`?sub=` làm mọi kết quả bình luận biến mất**, và đó là hành vi đã biết chứ không
+    phải lỗi: tài liệu bình luận cố ý không mang `sub` — xem
+    `core/tim_kiem.py::_truy_van_tron`.
     """
 
-    items: list[KetQuaTimKiemOut]
+    items: list[KetQuaTronOut]
     tong: int
     co_the_tim: bool
     q: str
+
+
+class GoiYOut(Schema):
+    """Một gợi ý khi đang gõ — **chỉ mạch**, đủ để vẽ một dòng và bấm đi thẳng.
+
+    Cố tình **không** mang đoạn trích, điểm, hay tô đậm: dropdown gợi ý là chỗ chọn nhanh
+    một bài đã biết tên, không phải một trang kết quả thu nhỏ. Kết quả đầy đủ vẫn chỉ
+    hiện khi bấm Enter / nút Tìm.
+
+    `duong_dan` do server dựng từ `slug` + `id` của chính hàng Postgres vừa đọc, nên nó
+    không thể trỏ vào một mạch khác với `mach_id`.
+    """
+
+    mach_id: int
+    title: str
+    sub_ten: str
+    duong_dan: str
+
+
+class TimKiemGoiYOut(Schema):
+    """Gợi ý cho ô tìm kiếm. Tối đa 7 dòng — con số GHIM ở server, không nhận từ query.
+
+    `co_the_tim = false` là xuống thang y hệt `TimKiemOut`: client **giấu dropdown** và
+    không báo lỗi gì. Một ô tìm kiếm nhấp nháy chữ "lỗi" theo từng ký tự gõ vào còn tệ
+    hơn một ô không gợi ý gì.
+    """
+
+    items: list[GoiYOut]
+    co_the_tim: bool
 
 
 class TrichOut(Schema):

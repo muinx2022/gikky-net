@@ -1,24 +1,33 @@
 #!/bin/sh
-# Sinh khoá Meilisearch PHẠM VI HẸP cho index `mach` rồi in ra stdout.
+# Sinh khoá Meilisearch PHẠM VI HẸP cho HAI index (`mach`, `binh_luan`) rồi in ra stdout.
 #
 #   cd ~/gikky-net/src
 #   deploy/prod/tao-khoa-meili.sh   # đọc MEILI_MASTER_KEY từ ~/gikky-net/app/.env
 #
 # Rồi dán kết quả vào `MEILI_KEY=` trong `~/gikky-net/app/.env` và `up -d api`.
 #
+# ⚠ **BẮT BUỘC chạy lại khi deploy bản 2026-08-30 trở đi.** Khoá cũ chỉ khai
+# `indexes: ["mach"]`, nên mọi lời gọi tới index `binh_luan` trả **403** — và đường ghi ở
+# `core/tim_kiem.py` **nuốt lỗi** có chủ đích, nên hỏng đó im lặng tuyệt đối: bình luận
+# không bao giờ vào index, trang tìm kiếm vẫn 200, không dòng log nào ngoài `warning`.
+# Đúng bệnh `P-20260827-2`. Hai thứ bắt được nó sau khi đã lỡ: `reindex_tim_kiem` (ném)
+# và khối "Tìm kiếm" ở `/chan-doan` của khu quản trị.
+#
 # ## Vì sao không dùng thẳng master key
 #
 # Master key **tạo được khoá khác** (`keys.create`), tức là quyền quản trị toàn cụm —
-# cho một tiến trình chỉ cần đọc/ghi ĐÚNG MỘT index. `core/tim_kiem.py` nói rõ điều đó
+# cho một tiến trình chỉ cần đọc/ghi ĐÚNG HAI index. `core/tim_kiem.py` nói rõ điều đó
 # trong docstring; đây là chỗ thực hiện nó.
 #
 # ## Vì sao liệt kê từng action thay vì `["*"]`
 #
 # `"*"` bao gồm cả `keys.*` — tức khoá "hẹp" lại vừa tạo được master key thứ hai, và cả
-# việc giới hạn `indexes: ["mach"]` thành vô nghĩa. Danh sách dưới đây là ĐÚNG những lời
-# gọi có trong `core/tim_kiem.py`: `POST /indexes`, `PATCH .../settings`,
-# `DELETE /indexes/mach`, `PUT .../documents`, `DELETE .../documents/<id>`,
-# `POST .../search`.
+# việc giới hạn `indexes` thành vô nghĩa. Danh sách dưới đây là ĐÚNG những lời gọi có
+# trong `core/tim_kiem.py`: `POST /indexes`, `PATCH .../settings`, `DELETE /indexes/<uid>`,
+# `PUT .../documents`, `GET .../documents`, `DELETE .../documents/<id>`,
+# `POST .../documents/delete` (xoá theo filter — cascade khi ẩn mạch),
+# `POST .../documents/delete-batch` (gỡ ma của `reindex`), `POST .../search`,
+# `POST /multi-search` (kết quả trộn — dùng action `search`).
 set -e
 
 THU_MUC_ENV="${THU_MUC_ENV:-$HOME/gikky-net/app/.env}"
@@ -38,8 +47,8 @@ docker compose -f deploy/prod/compose.yml --env-file "$THU_MUC_ENV" exec -T meil
     -H "Authorization: Bearer $MEILI_MASTER_KEY" \
     -H 'Content-Type: application/json' \
     --data-binary '{
-      "name": "gikky-api-mach",
-      "description": "Doc/ghi index mach cho Django. KHONG co keys.* — xem deploy/prod/tao-khoa-meili.sh",
+      "name": "gikky-api-tim-kiem",
+      "description": "Doc/ghi hai index mach + binh_luan cho Django. KHONG co keys.* — xem deploy/prod/tao-khoa-meili.sh",
       "actions": [
         "search",
         "documents.add",
@@ -54,7 +63,7 @@ docker compose -f deploy/prod/compose.yml --env-file "$THU_MUC_ENV" exec -T meil
         "tasks.get",
         "stats.get"
       ],
-      "indexes": ["mach"],
+      "indexes": ["mach", "binh_luan"],
       "expiresAt": null
     }'
 echo

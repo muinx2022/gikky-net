@@ -165,6 +165,11 @@ def test_du_endpoint_cua_plan_muc_7():
         # 2026-08-23. Dòng bác cũ vẫn nằm nguyên ở mục 4 kèm ngày lật — lịch sử quyết
         # định là thứ mục 4 tồn tại để giữ.
         (("GET",), "/tim-kiem"),
+        # Gợi ý khi đang gõ (2026-08-30). Cửa RIÊNG chứ không phải một `?goi_y=1` trên
+        # dòng trên: nó có `limit` GHIM ở server, chỉ đụng một index, và trả một schema
+        # khác hẳn (`TimKiemGoiYOut`). Nhét hai hình dạng response vào một endpoint là
+        # dựng một endpoint hai chế độ, thứ TS client không mô tả nổi bằng một kiểu.
+        (("GET",), "/tim-kiem/goi-y"),
         # --- ba tab của trang hồ sơ (2026-08-24) ---
         # `GET /users/{username}` đã có từ Phase 1b trả 20 mạch đầu **không cursor**; ba
         # dòng này là ba danh sách lật được, mỗi dòng nuôi một tab của `/u/<username>`.

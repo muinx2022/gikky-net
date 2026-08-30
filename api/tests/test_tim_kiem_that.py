@@ -13,10 +13,14 @@ Chạy được bằng cách đặt hai biến trong `api/.env`:
 rồi bật một tiến trình Meilisearch ở đúng địa chỉ ấy. Không có ⇒ cả file skip, và
 `test_tim_kiem.py` (lớp lọc thứ hai, xuống thang) vẫn chạy đầy đủ trên mọi máy.
 
-⚠ **File này XOÁ SẠCH index `mach`** ở mỗi bài đo. Nó dùng chung index với máy dev chứ
-không dựng index riêng, vì `TEN_INDEX` là hằng của module và một tham số "tên index cho
-test" là một nhánh cấu hình chỉ test đi qua — tức một nhánh không ai kiểm. Dựng lại bằng
-`node scripts/py.mjs reindex_tim_kiem --sach` sau khi chạy.
+⚠ **File này XOÁ SẠCH cả hai index** (`mach` và `binh_luan`) ở mỗi bài đo. Nó dùng chung
+index với máy dev chứ không dựng index riêng, vì `TEN_INDEX` là hằng của module và một
+tham số "tên index cho test" là một nhánh cấu hình chỉ test đi qua — tức một nhánh không
+ai kiểm. Dựng lại bằng `node scripts/py.mjs reindex_tim_kiem --sach` sau khi chạy.
+
+⚠ **`MEILI_KEY` phải có quyền với CẢ HAI index** (2026-08-30). Khoá sinh trước ngày ấy chỉ
+khai `indexes: ["mach"]`; với nó, nhóm bài bình luận dưới đây đỏ ở lời gọi đầu tiên với
+`HTTP 403`. Sinh khoá mới bằng `deploy/prod/tao-khoa-meili.sh` (bản đã sửa).
 """
 
 import time
@@ -24,18 +28,26 @@ import time
 import pytest
 from django.conf import settings
 
-from core.ghi import dat_an_mach, dat_an_moc, tao_mach, them_moc, xoa_moc
+from core.ghi import (
+    dat_an_binh_luan,
+    dat_an_mach,
+    dat_an_moc,
+    tao_mach,
+    them_moc,
+    xoa_moc,
+)
 from core.models.moc import Moc
 from core.tim_kiem import (
     TEN_INDEX,
-    MeiliHong,
-    _goi,
+    TEN_INDEX_BINH_LUAN,
     cau_hinh_index,
+    dem_tai_lieu,
+    _goi,
     suc_khoe,
     xoa_index,
 )
 
-from .conftest import lay
+from .conftest import lay, viet
 
 pytestmark = pytest.mark.django_db(transaction=True)
 
@@ -63,26 +75,26 @@ def _cho_xong(giay: float = 10.0) -> None:
     raise AssertionError(f"Meilisearch chưa xử xong hàng đợi sau {giay}s")
 
 
-def _dem_tai_lieu() -> int:
-    """Số tài liệu đang nằm trong index.
+def _dem_tai_lieu(index: str = TEN_INDEX) -> int:
+    """Số tài liệu đang nằm trong một index.
 
     Đếm bằng `GET /documents?limit=0` chứ không bằng `/stats`: `/stats` đòi action
     `stats.get`, mà khoá của Django cố ý **không** có nó (khoá phạm vi hẹp — plan con §3).
     Nới quyền của khoá sản phẩm để một bài đo đếm cho tiện là đúng thứ "phạm vi hẹp" tồn
     tại để chặn.
     """
-    return _goi("GET", f"/indexes/{TEN_INDEX}/documents?limit=0")["total"]
+    return dem_tai_lieu(index)
 
 
 @pytest.fixture
 def meili():
-    """Index `mach` sạch trước mỗi bài. Trả về hàm `cho_xong` để bài đo gọi sau khi ghi."""
+    """**Cả hai** index sạch trước mỗi bài. Trả hàm `cho_xong` để bài đo gọi sau khi ghi.
+
+    `xoa_index()` nay tự nuốt 404 (index chưa tồn tại là đúng trạng thái mong muốn của
+    một hàm tên như thế) — xem docstring của nó.
+    """
     _bo_qua_neu_khong_co_meili()
-    try:
-        xoa_index()
-    except MeiliHong as loi:
-        if "404" not in str(loi):
-            raise
+    xoa_index()
     cau_hinh_index()
     _cho_xong()
     return _cho_xong
@@ -339,3 +351,170 @@ def test_reindex_khong_dua_mach_bi_an_vao_lai(client, meili, ba_mach, nguoi_a):
 
     assert _dem_tai_lieu() == 2
     assert _tim(client, "HPG") == []
+
+
+# --- BÌNH LUẬN trên Meilisearch THẬT (2026-08-30) ---------------------------
+
+
+def _id_binh_luan_trong_index(q: str) -> list[int]:
+    """Hỏi thẳng Meilisearch, chỉ nhánh bình luận của kết quả trộn."""
+    from core.tim_kiem import tim_tron
+
+    cap, _ = tim_tron(q=q, sub=None, sap_theo_moi=False, offset=0, limit=50)
+    return [ma for loai, ma in cap if loai == TEN_INDEX_BINH_LUAN]
+
+
+def _tron(client, q: str, **them) -> list[tuple[str, int]]:
+    """Gọi endpoint thật, trả `[(loai, id)]` theo đúng thứ tự hiện ra."""
+    truy_van = "&".join(f"{k}={v}" for k, v in them.items())
+    du = lay(client, f"/api/v1/tim-kiem?q={q}" + (f"&{truy_van}" if truy_van else ""))
+    assert du["co_the_tim"] is True, "Meilisearch phải sống ở nhóm bài đo này"
+    return [
+        (i["loai"], i["binh_luan_id"] if i["loai"] == "binh_luan" else i["mach"]["id"])
+        for i in du["items"]
+    ]
+
+
+def test_tim_duoc_theo_noi_dung_binh_luan(client, meili, ba_mach, nguoi_b):
+    """Chữ chỉ có trong một BÌNH LUẬN, không có trong tiêu đề hay thân mốc nào."""
+    a, _, _ = ba_mach
+    c = viet(a, nguoi_b, "Tôi nghĩ vùng kháng cự là 31 nghìn.")
+    meili()
+    assert _tron(client, "kháng%20cự") == [("binh_luan", c.pk)]
+
+
+def test_go_khong_dau_ra_binh_luan_co_dau(client, meili, ba_mach, nguoi_b):
+    """Cùng tính chất tiếng Việt với index `mach` — nó do Meilisearch quyết, nên phải đo
+    lại trên index thứ hai chứ không suy ra."""
+    a, _, _ = ba_mach
+    c = viet(a, nguoi_b, "Vùng kháng cự quanh 31.")
+    meili()
+    assert _tron(client, "khang%20cu") == [("binh_luan", c.pk)]
+
+
+def test_ket_qua_TRON_ca_hai_loai_trong_mot_danh_sach(client, meili, ba_mach, nguoi_b):
+    """Câu khớp cả tiêu đề mạch lẫn nội dung một bình luận ⇒ danh sách có CẢ HAI loại."""
+    a, _, _ = ba_mach
+    c = viet(a, nguoi_b, "HPG hôm nay xanh.")
+    meili()
+    ra = _tron(client, "HPG")
+    assert ("mach", a.pk) in ra
+    assert ("binh_luan", c.pk) in ra
+
+
+def test_mod_an_binh_luan_thi_bien_khoi_ket_qua_va_go_an_thi_quay_lai(
+    client, meili, ba_mach, nguoi_a, nguoi_b
+):
+    """Soi CẢ HAI lớp — vế `_id_binh_luan_trong_index` mới là vế thật.
+
+    Chỉ nhìn kết quả endpoint thì bài này XANH kể cả khi `dong_bo_binh_luan` bị gỡ hẳn
+    khỏi `dat_an_binh_luan`: lớp lọc Postgres một mình đã đủ làm câu bị ẩn biến khỏi kết
+    quả. Một bài đo như thế khẳng định đúng bất kể đường ghi làm gì.
+    """
+    a, _, _ = ba_mach
+    c = viet(a, nguoi_b, "Câu có chữ độc nhất: mangan.")
+    meili()
+    assert _id_binh_luan_trong_index("mangan") == [c.pk]
+
+    dat_an_binh_luan(comment=c, boi=nguoi_a, an=True, ly_do="thử")
+    meili()
+    assert _id_binh_luan_trong_index("mangan") == [], (
+        "tài liệu bình luận vẫn nằm trong index sau khi mod ẩn — lớp một hỏng"
+    )
+    assert _tron(client, "mangan") == []
+
+    dat_an_binh_luan(comment=c, boi=nguoi_a, an=False)
+    meili()
+    assert _id_binh_luan_trong_index("mangan") == [c.pk]
+
+
+def test_an_mach_go_ca_lo_binh_luan_khoi_index_that(
+    client, meili, ba_mach, nguoi_a, nguoi_b
+):
+    """Cascade `mach_id = X` chạy thật trên Meilisearch — `documents/delete` theo filter.
+
+    Bản giả ở `tests/_meili_gia.py` chỉ chứng minh *ta gửi đúng filter*; bài này chứng
+    minh **Meilisearch hiểu nó**. `mach_id` phải nằm trong `filterableAttributes`, và một
+    lượt cấu hình sót trường ấy trả HTTP 400 — mà đường ghi thì nuốt.
+    """
+    a, _, _ = ba_mach
+    for i in range(3):
+        viet(a, nguoi_b, f"Câu số {i} nhắc tới mangan.")
+    meili()
+    assert len(_id_binh_luan_trong_index("mangan")) == 3
+
+    dat_an_mach(mach=a, boi=nguoi_a, an=True, ly_do="thử")
+    meili()
+    assert _dem_tai_lieu(TEN_INDEX_BINH_LUAN) == 0
+    assert _tron(client, "mangan") == []
+
+    dat_an_mach(mach=a, boi=nguoi_a, an=False)
+    meili()
+    assert len(_id_binh_luan_trong_index("mangan")) == 3
+
+
+def test_loc_sub_lam_ket_qua_binh_luan_vang(client, meili, ba_mach, nguoi_b):
+    """Hành vi ĐÃ BIẾT, ghim để nó không đổi âm thầm: `?sub=` ⇒ chỉ còn mạch."""
+    a, _, _ = ba_mach
+    viet(a, nguoi_b, "HPG hôm nay xanh.")
+    meili()
+    assert all(loai == "mach" for loai, _ in _tron(client, "HPG", sub="chung-khoan"))
+
+
+def test_sort_moi_tron_hai_loai_theo_thoi_gian(client, meili, ba_mach, nguoi_b):
+    """Nhánh không-federation chạy thật: hai `sort` per-query, trộn ở Python.
+
+    Bình luận được viết SAU mọi mạch, nên nó phải đứng đầu — nếu Meilisearch bỏ qua
+    `sort` (hoặc nhánh này lỡ đi đường federation, vốn không nhận `sort`) thì thứ tự rơi
+    về độ liên quan và bài đỏ.
+    """
+    a, _, _ = ba_mach
+    c = viet(a, nguoi_b, "Nhật ký mới nhất về HPG.")
+    meili()
+    ra = _tron(client, "Nhật%20ký", sort="moi")
+    assert ra[0] == ("binh_luan", c.pk), ra
+
+
+def test_goi_y_tra_mach_va_KHONG_tra_binh_luan(client, meili, ba_mach, nguoi_b):
+    """Quyết định của user, đo trên đường thật: dropdown chỉ có mạch."""
+    a, _, _ = ba_mach
+    viet(a, nguoi_b, "Nhật ký của tôi về HPG.")
+    meili()
+    du = lay(client, "/api/v1/tim-kiem/goi-y?q=Nhật%20ký")
+    assert du["co_the_tim"] is True
+    assert [i["mach_id"] for i in du["items"]] == [a.pk]
+    assert du["items"][0]["duong_dan"] == f"/m/{a.slug}-{a.pk}"
+
+
+def test_reindex_dung_lai_CA_HAI_index(client, meili, ba_mach, nguoi_b):
+    """S8 mở rộng: xoá sạch rồi dựng lại phải phủ cả bình luận."""
+    from django.core.management import call_command
+
+    a, _, _ = ba_mach
+    viet(a, nguoi_b, "Câu một.")
+    viet(a, nguoi_b, "Câu hai.")
+
+    xoa_index()
+    _cho_xong()
+    call_command("reindex_tim_kiem", sach=True)
+    _cho_xong()
+
+    assert _dem_tai_lieu(TEN_INDEX) == 3
+    assert _dem_tai_lieu(TEN_INDEX_BINH_LUAN) == 2
+
+
+def test_reindex_GO_MA_that_khong_can_sach(client, meili, ba_mach):
+    """Gỡ ma chạy thật: nhồi một tài liệu Postgres không có, rồi đối soát mặc định."""
+    from django.core.management import call_command
+
+    _goi(
+        "PUT",
+        f"/indexes/{TEN_INDEX}/documents?primaryKey=id",
+        [{"id": 999_001, "title": "Ma", "hien": True}],
+    )
+    _cho_xong()
+    assert _dem_tai_lieu(TEN_INDEX) == 4
+
+    call_command("reindex_tim_kiem")
+    _cho_xong()
+    assert _dem_tai_lieu(TEN_INDEX) == 3

@@ -183,6 +183,60 @@ export type CaiDatGoogleOut = {
 };
 
 /**
+ * ChanDoanIndexOut
+ *
+ * Một index: Meilisearch nói bao nhiêu, Postgres nói bao nhiêu.
+ *
+ * `so_tai_lieu = null` nghĩa là **không đọc được** (Meili chết, hoặc khoá không có
+ * quyền với index này) — khác hẳn `0`, vốn nghĩa là "đọc được, và nó rỗng". Gộp hai
+ * trạng thái ấy làm một là để một khoá thiếu quyền trông y hệt một index chưa dựng.
+ *
+ * `lech` **`True` cả khi không đọc được**: không biết cũng là một câu trả lời cần nhìn.
+ */
+export type ChanDoanIndexOut = {
+    /**
+     * Ghi Chu
+     */
+    ghi_chu: string;
+    /**
+     * Lech
+     */
+    lech: boolean;
+    /**
+     * So Hang Postgres
+     */
+    so_hang_postgres: number;
+    /**
+     * So Tai Lieu
+     */
+    so_tai_lieu: number | null;
+    /**
+     * Ten
+     */
+    ten: string;
+};
+
+/**
+ * ChanDoanTimKiemOut
+ *
+ * Trạng thái đối soát của cả cụm tìm kiếm.
+ */
+export type ChanDoanTimKiemOut = {
+    /**
+     * Cac Index
+     */
+    cac_index: Array<ChanDoanIndexOut>;
+    /**
+     * Co Lech
+     */
+    co_lech: boolean;
+    /**
+     * Meili Song
+     */
+    meili_song: boolean;
+};
+
+/**
  * DatAnIn
  *
  * Body của mọi endpoint ẩn/gỡ ẩn.
@@ -1369,6 +1423,35 @@ export type QuanTriLuuCaiDatGoogleResponses = {
 };
 
 export type QuanTriLuuCaiDatGoogleResponse = QuanTriLuuCaiDatGoogleResponses[keyof QuanTriLuuCaiDatGoogleResponses];
+
+export type QuanTriChanDoanTimKiemData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/admin/chan-doan/tim-kiem';
+};
+
+export type QuanTriChanDoanTimKiemErrors = {
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+};
+
+export type QuanTriChanDoanTimKiemError = QuanTriChanDoanTimKiemErrors[keyof QuanTriChanDoanTimKiemErrors];
+
+export type QuanTriChanDoanTimKiemResponses = {
+    /**
+     * OK
+     */
+    200: ChanDoanTimKiemOut;
+};
+
+export type QuanTriChanDoanTimKiemResponse = QuanTriChanDoanTimKiemResponses[keyof QuanTriChanDoanTimKiemResponses];
 
 export type QuanTriLietKeBinhLuanData = {
     body?: never;

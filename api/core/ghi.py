@@ -120,7 +120,7 @@ from core.models.he_thong import AuditLog, Report
 from core.models.moc import Moc, MocAnh, MocRevision, kiem_figures
 from core.models.tuong_tac import Follow, Reaction, TheoSub, TheoUser, Trich, Vote
 from core.thoi_gian import TZ_VN, ngay_vn
-from core.tim_kiem import dong_bo_mach
+from core.tim_kiem import dong_bo_binh_luan, dong_bo_mach
 
 #: PLAN 5.1 — tối đa 3 mốc mỗi **ngày lịch VN** mỗi mạch.
 SO_MOC_TOI_DA_MOI_NGAY = 3
@@ -535,6 +535,10 @@ def tao_binh_luan(
                 # khoá đó. Hai chỗ cùng xin là thừa một round-trip, và tệ hơn là nó dạy
                 # người đọc rằng khoá là việc của người gọi.
                 cap_nhat_dem_mach(mach)
+                # Bình luận mới vào index `binh_luan` (2026-08-30). `dong_bo_binh_luan`
+                # tự đọc lại trạng thái ở `on_commit` — kể cả vế `mach.hidden_at`, thứ
+                # cửa ghi này không có lý do gì phải biết.
+                dong_bo_binh_luan(comment)
         except IntegrityError as loi:
             if not _la_va_cham(loi, RB_COMMENT_PATH):
                 raise
@@ -1019,6 +1023,10 @@ def sua_binh_luan(
         body=body, body_dinh_dang=dinh_dang, edited_at=khi
     )
     comment.refresh_from_db()
+    # `body` là trường TÌM ĐƯỢC duy nhất của tài liệu bình luận, nên sửa thân bài mà
+    # không đẩy lại là để index giữ nguyên văn bản CŨ — tìm ra một câu người viết đã sửa
+    # đi, và chỉ mục không tự hết hạn để tự chữa.
+    dong_bo_binh_luan(comment)
     return comment
 
 
@@ -1056,6 +1064,10 @@ def xoa_binh_luan(*, comment: Comment, khi=None) -> bool:
                 c.deleted_at = khi
                 c.save(update_fields=["deleted_at"])
             cap_nhat_dem_mach(mach)
+            # Bia mộ ⇒ tài liệu phải rời index. Nội dung vẫn nằm trong Postgres (PLAN 5.3
+            # giữ hàng để cây không gãy), nên đây đúng là ca "còn hàng mà không được
+            # tìm" — vế đầu của `hien_cong_khai_binh_luan`.
+            dong_bo_binh_luan(comment)
             return False
 
         Vote.objects.filter(
@@ -1063,6 +1075,11 @@ def xoa_binh_luan(*, comment: Comment, khi=None) -> bool:
         ).delete()
         c.delete()
         cap_nhat_dem_mach(mach)
+        # ⚠ Truyền `comment` (tham số), KHÔNG phải `c`: `c.delete()` vừa đặt `c.pk = None`
+        # theo đúng hợp đồng của Django, nên `dong_bo_binh_luan(c)` sẽ xếp hàng xoá tài
+        # liệu id `None`. Object của người gọi vẫn giữ `pk` thật, và nhánh "không đọc
+        # được hàng nào" ở `_dong_bo_binh_luan_ngay` chính là nhánh XOÁ.
+        dong_bo_binh_luan(comment)
         return True
 
 
@@ -1513,6 +1530,9 @@ def dat_an_binh_luan(*, comment: Comment, boi, an: bool, ly_do: str = "") -> boo
         if not _dat_co_an(hang, boi=boi, bat=an):
             return False
         cap_nhat_dem_mach(Mach.objects.get(pk=hang.mach_id))
+        # Mod ẩn ⇒ tài liệu rời index; gỡ ẩn ⇒ quay lại. Một lời gọi cho cả hai chiều vì
+        # `dong_bo_binh_luan` đọc lại trạng thái hiện thời — cửa ghi này không tự quyết.
+        dong_bo_binh_luan(hang)
         ghi_audit(
             actor=boi,
             action=AUDIT_AN_BINH_LUAN if an else AUDIT_GO_AN_BINH_LUAN,

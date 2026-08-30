@@ -90,6 +90,34 @@ Không có lịch này thì **ba chuyện hỏng, cả ba im lặng**:
 
 Kiểm nó có chạy: `gk exec api python manage.py shell -c "from core.models.luot_xem import TongNgay; print(TongNgay.objects.count(), TongNgay.objects.order_by('-ngay').values_list('ngay', flat=True).first())"`
 
+### Việc chạy theo lịch: đối soát chỉ mục tìm kiếm — **BẮT BUỘC** (2026-08-30)
+
+```bash
+crontab -e
+# 03:40 giờ VN mỗi ngày — SAU `gom_luot_xem` (03:10) để hai lệnh không tranh CPU của một VPS nhỏ.
+40 3 * * *  cd ~/gikky-net/src && docker compose -f deploy/prod/compose.yml --env-file ~/gikky-net/app/.env exec -T api python manage.py reindex_tim_kiem >> ~/gikky-reindex-tim-kiem.log 2>&1
+```
+
+**Không `--sach`.** Bước gỡ tài liệu ma nay chạy mặc định, còn `--sach` xoá hẳn index rồi
+dựng lại — vài giây index rỗng giữa lúc site đang chạy. Đó là lệnh của người ngồi trước
+máy, không phải của cron.
+
+Không có lịch này thì **chỉ mục lệch DB im lặng, vĩnh viễn** (`P-20260827-2`). Ba lớp hợp
+lại làm nó im: đường ghi index **nuốt lỗi** có chủ đích (`core/tim_kiem.py` — mất index
+còn hơn mất bài), lớp lọc thứ hai ở `api/tim_kiem.py` **che mọi hậu quả nhìn thấy được**
+(index lệch chỉ làm trang *thiếu dòng*, không làm nó *sai*), nên không ai kêu. Hai kiểu
+lệch, cả hai đều không tự lành:
+
+1. **thiếu** — `on_commit` chết giữa chừng (deploy đúng lúc, Meili restart) ⇒ bài mới
+   không bao giờ tìm được;
+2. **thừa** — mạch bị mod ẩn mà lời gọi xoá thất bại ⇒ tài liệu nằm lại **mãi mãi**; chỉ
+   mục không hết hạn như cache. Hôm nay lớp lọc Postgres còn che, tức hệ thống đang chạy
+   trên **một** lớp thay vì hai, và không ai biết.
+
+Kiểm nó có chạy: mở `/chan-doan` ở khu quản trị (khối **Tìm kiếm**) — hai con số của mỗi
+index phải bằng nhau. Lệch vài đơn vị ngay sau khi có bài mới là bình thường
+(Meilisearch index bất đồng bộ); lệch dai dẳng thì cron đang chết.
+
 ## Deploy một bản mới
 
 Từ máy dev (Windows, **không có rsync** — dùng tar qua ssh):
@@ -112,6 +140,27 @@ danh sách `--exclude` nào. Đổi lại: file chưa track sẽ KHÔNG lên —
 phải thiếu sót.
 
 `migrate` + `collectstatic` chạy tự động trong entrypoint của `api` mỗi lần container lên.
+
+### Bản 2026-08-30 (tìm kiếm bình luận) — thứ tự BẮT BUỘC, làm MỘT LẦN
+
+Bản này thêm index Meilisearch thứ hai (`binh_luan`). Khoá `MEILI_KEY` đang chạy chỉ khai
+`indexes: ["mach"]`, nên **làm sai thứ tự là hỏng im lặng**: code mới lên trước khoá mới
+thì mọi lời gọi index bình luận ăn 403, đường ghi nuốt, và không có gì trên màn hình nào
+nói khác.
+
+```bash
+# 1. Khoá TRƯỚC (script đã sửa sang hai index) — chạy trên VPS, sau khi đã đẩy code:
+ssh vps-muinx 'cd ~/gikky-net/src && deploy/prod/tao-khoa-meili.sh'
+# 2. Dán chuỗi `key` vừa in vào MEILI_KEY= trong ~/gikky-net/app/.env
+# 3. Deploy như thường (archive → build → up -d)
+# 4. Dựng CẢ HAI index từ đầu — `--sach` ở đây là đúng: cấu hình index vừa đổi
+ssh vps-muinx 'cd ~/gikky-net/src && docker compose -f deploy/prod/compose.yml --env-file ~/gikky-net/app/.env exec -T api python manage.py reindex_tim_kiem --sach'
+# 5. Thêm dòng crontab đối soát (mục "Việc chạy theo lịch" ở trên)
+# 6. Mở /chan-doan ở khu quản trị → khối "Tìm kiếm" phải nói KHỚP cho cả hai index
+```
+
+Bước 6 là bước nghiệm thu thật: nó là màn hình duy nhất phân biệt được "index rỗng" với
+"khoá không có quyền đọc index" (`so_tai_lieu = null`).
 
 ## Bảy phép thử sau mỗi lần deploy
 

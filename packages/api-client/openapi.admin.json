@@ -267,6 +267,74 @@
         "title": "CaiDatGoogleOut",
         "type": "object"
       },
+      "ChanDoanIndexOut": {
+        "description": "Một index: Meilisearch nói bao nhiêu, Postgres nói bao nhiêu.\n\n`so_tai_lieu = null` nghĩa là **không đọc được** (Meili chết, hoặc khoá không có\nquyền với index này) — khác hẳn `0`, vốn nghĩa là \"đọc được, và nó rỗng\". Gộp hai\ntrạng thái ấy làm một là để một khoá thiếu quyền trông y hệt một index chưa dựng.\n\n`lech` **`True` cả khi không đọc được**: không biết cũng là một câu trả lời cần nhìn.",
+        "properties": {
+          "ghi_chu": {
+            "title": "Ghi Chu",
+            "type": "string"
+          },
+          "lech": {
+            "title": "Lech",
+            "type": "boolean"
+          },
+          "so_hang_postgres": {
+            "title": "So Hang Postgres",
+            "type": "integer"
+          },
+          "so_tai_lieu": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "So Tai Lieu"
+          },
+          "ten": {
+            "title": "Ten",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ten",
+          "so_tai_lieu",
+          "so_hang_postgres",
+          "lech",
+          "ghi_chu"
+        ],
+        "title": "ChanDoanIndexOut",
+        "type": "object"
+      },
+      "ChanDoanTimKiemOut": {
+        "description": "Trạng thái đối soát của cả cụm tìm kiếm.",
+        "properties": {
+          "cac_index": {
+            "items": {
+              "$ref": "#/components/schemas/ChanDoanIndexOut"
+            },
+            "title": "Cac Index",
+            "type": "array"
+          },
+          "co_lech": {
+            "title": "Co Lech",
+            "type": "boolean"
+          },
+          "meili_song": {
+            "title": "Meili Song",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "meili_song",
+          "cac_index",
+          "co_lech"
+        ],
+        "title": "ChanDoanTimKiemOut",
+        "type": "object"
+      },
       "DatAnIn": {
         "description": "Body của mọi endpoint ẩn/gỡ ẩn.\n\n**Một endpoint đặt-trạng-thái thay vì hai endpoint `hide`/`unhide`** — hai chiều nhận\ncùng bộ đầu vào, nên tách ra chỉ nhân đôi số chỗ phải kiểm quyền. Và nó **idempotent**:\ngửi `an=true` hai lần cho ra cùng một trạng thái.",
         "properties": {
@@ -1914,6 +1982,54 @@
         "summary": "Luu Cai Dat Google",
         "tags": [
           "quan-tri-cai-dat"
+        ]
+      }
+    },
+    "/api/admin/chan-doan/tim-kiem": {
+      "get": {
+        "description": "Chỉ mục tìm kiếm có khớp Postgres không — **nói to khi lệch**.\n\nVới mỗi index: số tài liệu Meilisearch đang giữ, số hàng công khai Postgres đang có,\nvà một câu tiếng Việt khi hai con số không bằng nhau.\n\nLệch **không phải lúc nào cũng là sự cố**: Meilisearch nhận tài liệu bất đồng bộ, nên\nngay sau một lượt đăng bài con số có thể chênh vài đơn vị trong khoảnh khắc. Lệch\n**dai dẳng** hoặc lệch lớn thì mới là `P-20260827-2`, và cách chữa là\n`reindex_tim_kiem`. Màn hình nói ra cả hai điều đó chứ không tự phán.\n\n`so_tai_lieu = null` là **không đọc được** — hay gặp nhất khi `MEILI_KEY` là khoá cũ\nchỉ khai `indexes: [\"mach\"]`, tức index `binh_luan` trả 403 cho mọi lời gọi và đường\nghi nuốt im lặng.",
+        "operationId": "quan_tri_chan_doan_tim_kiem",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChanDoanTimKiemOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Chan Doan Tim Kiem",
+        "tags": [
+          "quan-tri"
         ]
       }
     },

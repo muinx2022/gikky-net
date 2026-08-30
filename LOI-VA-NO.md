@@ -1014,7 +1014,18 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
   cùng một tick đồng hồ); ảnh hưởng thật là **bộ kiểm đỏ ngẫu nhiên**, tức lần sau có người sẽ
   cho rằng đỏ là chuyện bình thường.
 
-### P-20260827-2 · [MỞ] · NẶNG — index Meilisearch trên PROD lệch DB, và lệch IM LẶNG
+### P-20260827-2 · [ĐANG SỬA — search v2, chưa commit] · NẶNG — index Meilisearch trên PROD lệch DB, và lệch IM LẶNG
+
+> **Cập nhật 2026-08-30 (lượt "search v2"):** hai hướng đề nghị cũ ĐÃ LÀM: (a) `reindex_tim_kiem`
+> nay tự **gỡ tài liệu ma** mặc định (không cần `--sach`) + có dòng **cron đối soát đêm** trong
+> `deploy/prod/README.md`; (b) `/chan-doan` thêm khối "Tìm kiếm" so số tài liệu từng index với
+> số hàng công khai trong Postgres — lệch thành thứ NHÌN THẤY ĐƯỢC. ⚠ Lượt phản biện phát hiện
+> bản đầu của bước gỡ-ma tự đẻ đúng một biến thể của lỗi này (chụp Postgres TRƯỚC khi đọc index
+> ⇒ gỡ nhầm bài mới đăng như "ma"); đã sửa bằng `_xac_nhan_thua` (xác nhận lại Postgres ngay
+> trước khi xoá). Chuyển `ĐÓNG` khi lượt search v2 được commit + deploy + đối soát prod xác nhận
+> index khớp.
+
+
 
 - **Thấy lúc**: nghiệm thu sau lượt deploy 2026-08-27 (`plans/2026-08-25-deploy-vps-docker.md`)
 - **Ở đâu**: `api/core/tim_kiem.py::dong_bo_mach` · đường ghi `api/core/ghi.py:1553`
@@ -1268,3 +1279,20 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Ở đâu**: bài `apps/web/e2e/vo-reddit.spec.ts:522` (`A10 › nội dung vẫn nằm trong HTML khi gập`); thủ phạm nằm trong đường gập của khán đài/ngăn kéo (`binh-luan.tsx`/`khan-dai.tsx`/`ngan-keo.tsx` — nghi commit `8e8a953` "Bình luận chung tách khỏi mốc…")
 - **Bằng chứng**: chạy riêng bài này 2 lần đều ĐỎ tại `vo-reddit.spec.ts:535` — sau click `nut-gap-nhanh`, `thread.textContent()` không còn chứa chữ của bình luận, tức node bị GỠ khỏi DOM chứ không phải ẩn bằng CSS. Ba file component trên trùng HEAD từng byte (`git diff HEAD` rỗng) và phép đo là `textContent` nên 4 file CSS bẩn của phiên khác không can thiệp được ⇒ lỗi thuộc HEAD, không thuộc cây làm việc.
 - **Vì sao không sửa ngay**: ngoài phạm vi lượt (lượt này chỉ đụng header); đường gập là việc của lượt bình luận, cần lượt riêng — và cần quyết: sửa code cho giữ nội dung trong DOM, hay PLAN mục 1 đã đổi ý thì sửa bài đo. ⚠ Hàng rào này chỉ sống trong `pnpm e2e` đầy đủ nên nó sẽ tiếp tục đỏ im lặng tới khi có người chạy lại.
+### P-20260830-9 · [MỞ] · NHỎ — `[[…]]` người dùng gõ trong bình luận bị tô đậm nhầm ở trang kết quả tìm kiếm
+- **Thấy lúc**: lượt phản biện "search v2" (mục #10)
+- **Ở đâu**: `api/api/tim_kiem.py::_boc` (chèn `[[…]]`) + `apps/web/lib/tim-kiem.ts::tachDam` (tách theo `[[…]]`)
+- **Bằng chứng**: bình luận `Xem [[ghi chú]] về HPG`, tìm `HPG` ⇒ API trả `Xem [[ghi chú]] về [[HPG]]` ⇒ frontend tô đậm CẢ "ghi chú". Không phải XSS (không `dangerouslySetInnerHTML`), chỉ sai hiển thị. Gặp thật hơn ở bình luận (văn bản tự do) so với tiêu đề mạch.
+- **Vì sao chưa sửa**: cần đồng bộ một marker thoát ở CẢ HAI đầu (Python chèn + TS tách) kèm bài đo — dễ sinh lỗi mới, và chỉ NHỎ. Ghi để làm gọn ở lượt riêng.
+
+### P-20260830-10 · [MỞ] · VỪA — `reindex_tim_kiem --sach` có thể chết vì task async của Meili chưa xong khi `liet_ke_id` đọc
+- **Thấy lúc**: lượt phản biện "search v2" (mục #12) — NGHI NGỜ, chưa tái hiện được (dev không có Meili)
+- **Ở đâu**: `api/core/management/commands/reindex_tim_kiem.py` (`cau_hinh_index` POST/DELETE index là task bất đồng bộ; `liet_ke_id` là lời gọi đọc)
+- **Bằng chứng (giả thuyết)**: `--sach` DELETE index lớn ⇒ task vào hàng đợi; `_go_ma` đọc `GET …/documents` ngay sau có thể trúng 404 ⇒ `CommandError`, lệnh thoát ≠ 0. Đúng lệnh ở bước 4 runbook deploy.
+- **Vì sao chưa sửa**: cần Meili thật để tái hiện + sửa đúng (chờ `/tasks/{uid}`). ⚠ Sẽ **LỘ NGAY** khi chạy reindex trên prod (ném lỗi, KHÔNG im lặng) — nên nếu bước reindex lúc deploy chạy trót lọt thì ca này không xảy ra lần đó; vẫn ghi để không quên.
+
+### P-20260830-11 · [MỞ] · VỪA (khoảng trống đo lường) — đường đọc trộn federated của search chưa có phép đo nào trên Meili THẬT
+- **Thấy lúc**: nghiệm thu + phản biện "search v2" cùng chỉ ra
+- **Ở đâu**: `api/core/tim_kiem.py::tim_tron` (`POST /multi-search`) · `api/tests/_meili_gia.py` (không hiện thực `/multi-search`) · `test_tim_kiem_that.py` (26 skip trên dev)
+- **Bằng chứng**: dev không có Meili ⇒ toàn bộ "gõ gì ra gì" (không dấu→có dấu, khoan dung lỗi gõ, mã ngắn khớp chính xác), hình dạng response federated (`_federation.indexUid`, `estimatedTotalHits`, sort per-query), và hiệu lực `maxTotalHits=2000` **chưa chạy xanh lần nào**. Lớp PARSE đã phủ bằng phản hồi dựng tay (`test_tim_kiem_tron.py`); lớp XẾP HẠNG THẬT thì chưa.
+- **Cách đóng**: chạy `test_tim_kiem_that.py` trên máy có Meili (skip=0), HOẶC kiểm chứng truy vấn thật trên prod sau deploy (gõ câu không dấu / mã ngắn / câu nằm trong bình luận, xem kết quả). Phiên chính sẽ làm cách sau ngay trong lượt deploy.

@@ -1,12 +1,14 @@
-import type { KetQuaTimKiemOut } from "@gikky/api-client";
+import type { KetQuaTronOut } from "@gikky/api-client";
 import Link from "next/link";
 
 import { CHU_NGUOI_DUNG } from "@/lib/chu-nguoi-dung";
 import { ngayCuaThoiDiem } from "@/lib/dinh-dang";
+import { neoBinhLuan } from "@/lib/khan-dai";
 import { tachDam } from "@/lib/tim-kiem";
 import { duongDanHoSo, duongDanMach, duongDanSub } from "@/lib/url";
 
 import css from "./ket-qua-tim-kiem.module.css";
+import css2 from "./ket-qua-tron.module.css";
 
 /** Chuỗi có dấu `[[…]]` → các đoạn, đoạn khớp bọc `<mark>`.
  *
@@ -29,7 +31,7 @@ function ToDam({ chuoi }: { chuoi: string }) {
   );
 }
 
-/** Một dòng kết quả tìm kiếm — Phase 7.
+/** Một dòng kết quả tìm kiếm — Phase 7, **hai loại từ 2026-08-30**.
  *
  * **Không dùng lại `TheMach`**, và đó là một lựa chọn chứ không phải lười: thẻ feed có cột
  * vote với mũi tên sống, mà một trang kết quả tìm kiếm là chỗ người ta **quét mắt** để
@@ -37,13 +39,44 @@ function ToDam({ chuoi }: { chuoi: string }) {
  * thứ `TheMach` không có khái niệm nào tương ứng. Hai hình dạng khác nhau vì hai việc khác
  * nhau; nhét cả hai vào một component là dựng một component hai chế độ.
  *
+ * ## Hai loại, hai hình dạng, MỘT danh sách
+ *
+ * `ket_qua.loai` rẽ nhánh ngay ở đây. Chúng dùng chung khung `<li>` (cùng viền, cùng nền,
+ * cùng khoảng thở) vì chúng nằm **xen kẽ** trong một danh sách xếp theo độ liên quan —
+ * hai khung khác nhau làm trang trông như hai danh sách bị dán vào nhau, và người đọc sẽ
+ * cố tìm ra quy luật nhóm mà không có quy luật nào.
+ *
+ * Dòng bình luận nhảy tới `/m/<slug>-<id>#bl-<binh_luan_id>`. Neo `bl-` **đã có sẵn** từ
+ * lượt khán đài (`lib/khan-dai.ts::neoBinhLuan`, gắn trong `binh-luan.tsx`) — dùng lại nó
+ * chứ không đẻ một hệ neo `cmt-` thứ hai: hai cách neo cho cùng một bình luận là hai chỗ
+ * để chúng lệch nhau, và `:target { scroll-margin-top }` ở `globals.css` đã né header
+ * dính cho đúng một trong hai.
+ *
+ * ⚠ **Giới hạn đã biết, không sửa ở lượt này**: bình luận nằm trong một nhánh đang gập
+ * (`GapNhanh`) hoặc ở trang sau của khán đài thì neo không cuộn tới được. Mở nhánh tự
+ * động đụng nợ `P-20260830-8`; nó là một lượt riêng.
+ *
  * Bốn nút mang `CHU_NGUOI_DUNG` (slug sub, tên tác giả, tiêu đề, đoạn trích) — cùng luật
- * Y3 với `TheMach`: đó là bốn chuỗi do người dùng gõ.
+ * Y3 với `TheMach`: đó là bốn chuỗi do người dùng gõ. Dòng bình luận thêm hai: tên người
+ * viết và câu của họ. Nhãn "Bình luận" thì **không** — đó là chữ của ứng dụng.
  */
-export function DongKetQua({ ket_qua }: { ket_qua: KetQuaTimKiemOut }) {
+export function DongKetQua({ ket_qua }: { ket_qua: KetQuaTronOut }) {
+  return ket_qua.loai === "binh_luan" ? (
+    <DongBinhLuan ket_qua={ket_qua} />
+  ) : (
+    <DongMach ket_qua={ket_qua} />
+  );
+}
+
+function DongMach({ ket_qua }: { ket_qua: KetQuaTronOut }) {
   const m = ket_qua.mach;
   return (
-    <li className={css.dong} data-testid="ket-qua-tim-kiem" data-mach-id={m.id}>
+    <li
+      className={css.dong}
+      data-testid="ket-qua-tim-kiem"
+      data-loai="mach"
+      data-mach-id={m.id}
+    >
       <div className={css.dau}>
         <Link className={css.sub} href={duongDanSub(m.sub.slug)} {...CHU_NGUOI_DUNG}>
           s/{m.sub.slug}
@@ -86,6 +119,60 @@ export function DongKetQua({ ket_qua }: { ket_qua: KetQuaTimKiemOut }) {
           <ToDam chuoi={ket_qua.doan_trich} />
         </p>
       )}
+    </li>
+  );
+}
+
+function DongBinhLuan({ ket_qua }: { ket_qua: KetQuaTronOut }) {
+  const m = ket_qua.mach;
+  // `binh_luan_id` là `number | null` theo hợp đồng (schema trộn, một trường cho hai
+  // loại). Loại `binh_luan` luôn có nó; nhánh phòng thủ ở đây để một server mới hơn
+  // frontend không làm cả trang nổ — dòng vẫn hiện, chỉ mất cái neo.
+  const dich =
+    ket_qua.binh_luan_id === null
+      ? duongDanMach(m.slug, m.id)
+      : `${duongDanMach(m.slug, m.id)}#${neoBinhLuan(ket_qua.binh_luan_id)}`;
+
+  return (
+    <li
+      className={css.dong}
+      data-testid="ket-qua-tim-kiem"
+      data-loai="binh_luan"
+      data-mach-id={m.id}
+      data-binh-luan-id={ket_qua.binh_luan_id ?? undefined}
+    >
+      <Link className={css2.den_cau} href={dich}>
+        <span className={css.dau}>
+          <span className={css2.nhan}>Bình luận</span>
+          <span className={css.cham} aria-hidden>
+            ·
+          </span>
+          <span className={css.ai} {...CHU_NGUOI_DUNG}>
+            u/{ket_qua.tac_gia?.username ?? ""}
+          </span>
+          {ket_qua.luc !== null && (
+            <>
+              <span className={css.cham} aria-hidden>
+                ·
+              </span>
+              <time dateTime={ket_qua.luc}>{ngayCuaThoiDiem(ket_qua.luc)}</time>
+            </>
+          )}
+        </span>
+
+        <p className={css2.trong_mach}>
+          trong{" "}
+          <span className={css2.ten_mach} {...CHU_NGUOI_DUNG}>
+            “{m.title}”
+          </span>
+        </p>
+
+        {ket_qua.doan_trich !== "" && (
+          <p className={css2.cau} {...CHU_NGUOI_DUNG}>
+            <ToDam chuoi={ket_qua.doan_trich} />
+          </p>
+        )}
+      </Link>
     </li>
   );
 }

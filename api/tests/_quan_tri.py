@@ -216,6 +216,10 @@ def bang_endpoint(dl: dict) -> list[tuple[str, str, str, dict | None]]:
         # dòng ở đây: hàng rào là "mọi endpoint quản trị đều được chấm phân quyền", và
         # một ngoại lệ "cái này vô hại thôi" là chỗ ngoại lệ thứ hai chui vào.
         ("quan_tri_luot_xem", "get", "/api/admin/luot-xem", None),
+        # Chẩn đoán tìm kiếm (2026-08-30, trả `P-20260827-2`). Cùng lý lẽ dòng trên: nó
+        # chỉ trả hai con số đếm, nhưng "mọi endpoint quản trị đều được chấm" không có
+        # ngoại lệ nào — kể cả cho một endpoint vô hại.
+        ("quan_tri_chan_doan_tim_kiem", "get", "/api/admin/chan-doan/tim-kiem", None),
     ]
 
 

@@ -685,6 +685,35 @@
         "title": "FigureOut",
         "type": "object"
       },
+      "GoiYOut": {
+        "description": "Một gợi ý khi đang gõ — **chỉ mạch**, đủ để vẽ một dòng và bấm đi thẳng.\n\nCố tình **không** mang đoạn trích, điểm, hay tô đậm: dropdown gợi ý là chỗ chọn nhanh\nmột bài đã biết tên, không phải một trang kết quả thu nhỏ. Kết quả đầy đủ vẫn chỉ\nhiện khi bấm Enter / nút Tìm.\n\n`duong_dan` do server dựng từ `slug` + `id` của chính hàng Postgres vừa đọc, nên nó\nkhông thể trỏ vào một mạch khác với `mach_id`.",
+        "properties": {
+          "duong_dan": {
+            "title": "Duong Dan",
+            "type": "string"
+          },
+          "mach_id": {
+            "title": "Mach Id",
+            "type": "integer"
+          },
+          "sub_ten": {
+            "title": "Sub Ten",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mach_id",
+          "title",
+          "sub_ten",
+          "duong_dan"
+        ],
+        "title": "GoiYOut",
+        "type": "object"
+      },
       "HealthOut": {
         "description": "Kết quả healthcheck. `db` = \"ok\" chỉ khi truy vấn thật xuống Postgres thành công.",
         "properties": {
@@ -793,15 +822,56 @@
         "title": "KetQuaDoiTrangThaiOut",
         "type": "object"
       },
-      "KetQuaTimKiemOut": {
-        "description": "Một dòng kết quả tìm kiếm — Phase 7.\n\n`mach` là **đúng thẻ mà feed dùng** (`MachTomTatOut`), không phải một hình dạng thứ\nhai: trang kết quả vẽ lại cùng loại thẻ với trang chủ, nên hai schema khác nhau chỉ\ntạo hai đường trôi.\n\nHai trường tô đậm dùng dấu **`[[` `]]`**, không phải HTML. Trả `<mark>` về đây là mời\n`dangerouslySetInnerHTML` vào một đường dữ liệu do người dùng viết; frontend tự dựng\nthẻ từ cặp dấu (`apps/web/lib/tim-kiem.ts`). Chữ trong hai trường này đến từ\n**Postgres**, không phải từ chỉ mục — xem docstring `api/tim_kiem.py`.",
+      "KetQuaTronOut": {
+        "description": "Một dòng kết quả tìm kiếm — **mạch HOẶC bình luận**, trộn chung một danh sách.\n\n*(Thay `KetQuaTimKiemOut` của Phase 7 — breaking có chủ đích, 2026-08-30. Consumer\nduy nhất là trang `/tim-kiem`; giữ thêm một schema cũ không ai gọi là giữ một hợp\nđồng chết.)*\n\n`loai` nói dòng này là gì, và nó quyết định trường nào có nghĩa:\n\n| `loai` | dùng | bỏ trống |\n|---|---|---|\n| `\"mach\"` | `title_to_dam`, `doan_trich` | `binh_luan_id`, `tac_gia`, `luc` |\n| `\"binh_luan\"` | `doan_trich`, `binh_luan_id`, `tac_gia`, `luc` | `title_to_dam` |\n\n`mach` có mặt ở **cả hai** loại: một kết quả bình luận không đọc được nếu không biết\nnó nằm trong mạch nào, và đích bấm của nó cũng dựng từ đó\n(`/m/<slug>-<id>#bl-<binh_luan_id>`).\n\nHai trường tô đậm dùng dấu **`[[` `]]`**, không phải HTML. Trả `<mark>` về đây là mời\n`dangerouslySetInnerHTML` vào một đường dữ liệu do người dùng viết; frontend tự dựng\nthẻ từ cặp dấu (`apps/web/lib/tim-kiem.ts`). Chữ trong hai trường này đến từ\n**Postgres**, không phải từ chỉ mục — xem docstring `api/tim_kiem.py`.",
         "properties": {
+          "binh_luan_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Binh Luan Id"
+          },
           "doan_trich": {
             "title": "Doan Trich",
             "type": "string"
           },
+          "loai": {
+            "enum": [
+              "mach",
+              "binh_luan"
+            ],
+            "title": "Loai",
+            "type": "string"
+          },
+          "luc": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Luc"
+          },
           "mach": {
             "$ref": "#/components/schemas/MachTomTatOut"
+          },
+          "tac_gia": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NguoiDungTomTatOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "title_to_dam": {
             "title": "Title To Dam",
@@ -809,11 +879,15 @@
           }
         },
         "required": [
+          "loai",
           "mach",
           "title_to_dam",
-          "doan_trich"
+          "doan_trich",
+          "binh_luan_id",
+          "tac_gia",
+          "luc"
         ],
-        "title": "KetQuaTimKiemOut",
+        "title": "KetQuaTronOut",
         "type": "object"
       },
       "KetQuaXoaOut": {
@@ -2143,8 +2217,8 @@
         "title": "ThongBaoOut",
         "type": "object"
       },
-      "TimKiemOut": {
-        "description": "Một trang kết quả tìm kiếm.\n\n`co_the_tim = false` là **xuống thang**, không phải lỗi: Meilisearch chưa cấu hình\nhoặc đang hỏng. Endpoint vẫn trả 200 để trang gọi vẽ được một câu nói bằng tiếng\nngười thay vì xử một mã lỗi như xử sự cố (plan con Phase 7 §5).\n\n`tong` là **ước lượng** của Meilisearch (`estimatedTotalHits`), đếm trước khi lớp lọc\nPostgres chạy — nên `len(items)` có thể nhỏ hơn `tong` chia trang. Nói ra ở đây để\nfrontend không dựng bộ đếm trang chính xác trên một con số không chính xác.",
+      "TimKiemGoiYOut": {
+        "description": "Gợi ý cho ô tìm kiếm. Tối đa 7 dòng — con số GHIM ở server, không nhận từ query.\n\n`co_the_tim = false` là xuống thang y hệt `TimKiemOut`: client **giấu dropdown** và\nkhông báo lỗi gì. Một ô tìm kiếm nhấp nháy chữ \"lỗi\" theo từng ký tự gõ vào còn tệ\nhơn một ô không gợi ý gì.",
         "properties": {
           "co_the_tim": {
             "title": "Co The Tim",
@@ -2152,7 +2226,29 @@
           },
           "items": {
             "items": {
-              "$ref": "#/components/schemas/KetQuaTimKiemOut"
+              "$ref": "#/components/schemas/GoiYOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items",
+          "co_the_tim"
+        ],
+        "title": "TimKiemGoiYOut",
+        "type": "object"
+      },
+      "TimKiemOut": {
+        "description": "Một trang kết quả tìm kiếm — mạch và bình luận **trộn chung theo độ liên quan**.\n\n`co_the_tim = false` là **xuống thang**, không phải lỗi: Meilisearch chưa cấu hình\nhoặc đang hỏng. Endpoint vẫn trả 200 để trang gọi vẽ được một câu nói bằng tiếng\nngười thay vì xử một mã lỗi như xử sự cố (plan con Phase 7 §5).\n\n`tong` là **ước lượng** của Meilisearch (`estimatedTotalHits` của federation), đếm\ntrước khi lớp lọc Postgres chạy — nên `len(items)` có thể nhỏ hơn `tong` chia trang.\nNói ra ở đây để frontend không dựng bộ đếm trang chính xác trên một con số không\nchính xác.\n\n⚠ **`?sub=` làm mọi kết quả bình luận biến mất**, và đó là hành vi đã biết chứ không\nphải lỗi: tài liệu bình luận cố ý không mang `sub` — xem\n`core/tim_kiem.py::_truy_van_tron`.",
+        "properties": {
+          "co_the_tim": {
+            "title": "Co The Tim",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/KetQuaTronOut"
             },
             "title": "Items",
             "type": "array"
@@ -5995,7 +6091,7 @@
     },
     "/api/v1/tim-kiem": {
       "get": {
-        "description": "Tìm mạch theo tiêu đề, thân bài gốc, các mốc nối sau, kết quả và tên tác giả.\n\nGõ **không dấu vẫn ra kết quả có dấu** (`nhat ky lenh hpg` → *Nhật ký lệnh HPG*), và\nsai một ký tự ở từ dài vẫn ra. Mã chứng khoán ngắn (`HPG`) khớp **chính xác**.\n\n`?sub=<slug>` lọc theo chuyên mục; sub không tồn tại trả 404 `sub_khong_ton_tai`.\n`?sort=lien_quan` (mặc định) xếp theo độ liên quan; `?sort=moi` xếp mới trước.\n`?offset=` + `?limit=` phân trang; `limit` tối đa 50, `offset` tối đa 1000.\n\nMạch bị mod ẩn không xuất hiện. Nội dung của mốc đã xoá hoặc bị mod ẩn không tìm được.\n\nTìm kiếm tạm ngừng (service phụ đang hỏng hoặc chưa cấu hình) ⇒ vẫn **200**, với\n`co_the_tim = false` và danh sách rỗng, để trang gọi có thể nói ra bằng tiếng người.",
+        "description": "Tìm **mạch và bình luận**, trộn chung một danh sách theo độ liên quan.\n\nMạch khớp theo tiêu đề, thân bài gốc, các mốc nối sau, kết quả và tên tác giả; bình\nluận khớp theo nội dung và tên người viết. Mỗi dòng mang `loai` để biết nó là gì.\n\nGõ **không dấu vẫn ra kết quả có dấu** (`nhat ky lenh hpg` → *Nhật ký lệnh HPG*), và\nsai một ký tự ở từ dài vẫn ra. Mã chứng khoán ngắn (`HPG`) khớp **chính xác**.\n\n`?sub=<slug>` lọc theo chuyên mục; sub không tồn tại trả 404 `sub_khong_ton_tai`.\n⚠ **`?sub=` cũng làm kết quả bình luận biến mất** — tài liệu bình luận không mang\n`sub` (xem `core/tim_kiem.py::_truy_van_tron`).\n`?sort=lien_quan` (mặc định) xếp theo độ liên quan; `?sort=moi` xếp mới trước — mốc\nthời gian của mỗi dòng là lúc mạch mở hoặc lúc bình luận được viết, tuỳ loại.\n`?offset=` + `?limit=` phân trang; `limit` tối đa 50, `offset` tối đa 1000.\n\nMạch bị mod ẩn không xuất hiện. Nội dung của mốc đã xoá hoặc bị mod ẩn không tìm được.\nBình luận đã xoá, bị mod ẩn, **hoặc nằm trong một mạch bị ẩn** đều không xuất hiện.\n\nTìm kiếm tạm ngừng (service phụ đang hỏng hoặc chưa cấu hình) ⇒ vẫn **200**, với\n`co_the_tim = false` và danh sách rỗng, để trang gọi có thể nói ra bằng tiếng người.",
         "operationId": "tim_kiem",
         "parameters": [
           {
@@ -6092,6 +6188,50 @@
           }
         },
         "summary": "Tim Kiem",
+        "tags": [
+          "tim-kiem"
+        ]
+      }
+    },
+    "/api/v1/tim-kiem/goi-y": {
+      "get": {
+        "description": "Gợi ý khi đang gõ — tối đa 7 **mạch**, bấm đi thẳng tới mạch.\n\n**Chỉ mạch, không bình luận** (user chốt): dropdown là chỗ chọn nhanh một bài đã biết\ntên. Kết quả đầy đủ — có cả bình luận — vẫn chỉ hiện khi bấm Enter / nút Tìm, tức ở\n`GET /tim-kiem`.\n\n`q` rỗng ⇒ danh sách rỗng. `limit` **không nhận từ query**, luôn là 7.\n\nĐi qua **cùng lớp lọc thứ hai** với `/tim-kiem`: Meilisearch chỉ cho ID, mọi chữ hiện\nra dựng lại từ Postgres, mạch bị mod ẩn rơi ra ở đó. Không có ngoại lệ \"vì nó chỉ là\ngợi ý\" — một cái tên bài rò ra ở dropdown rò y hệt một cái tên bài rò ở trang kết quả.\n\nMeilisearch hỏng ⇒ **200** với `co_the_tim = false`; client giấu dropdown và không\nbáo lỗi gì.",
+        "operationId": "tim_kiem_goi_y",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Q",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimKiemGoiYOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        },
+        "summary": "Tim Kiem Goi Y",
         "tags": [
           "tim-kiem"
         ]

@@ -390,6 +390,11 @@ test("luật trên có quét trúng lời gọi THẬT ở MỌI cửa (không q
     // thêm `GET /me/dang-theo-user`.
     "components/nut-theo-user-bo.tsx",
     "components/nut-theo-user.tsx",
+    // Gợi ý khi đang gõ (2026-08-30) — `GET /tim-kiem/goi-y`, gọi từ ô tìm ở header theo
+    // từng phím gõ (debounce 250ms + `AbortController`). Client component ⇒ `baseUrl`
+    // RỖNG (same-origin qua `rewrites`), như mọi dòng khác của nhóm này. Nó **không**
+    // mang cookie nào: endpoint là công khai và không đọc `request.user`.
+    "components/o-tim-kiem.tsx",
     "components/phien.tsx", // Phase 2
     "components/soan-thao.tsx",
     "components/tab-ho-so.tsx",

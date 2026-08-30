@@ -2,6 +2,7 @@ import { getHealth } from "@gikky/api-client";
 
 import { HealthSameOrigin } from "./health-same-origin";
 import { moTaHealth } from "./health-text";
+import { KhoiTimKiem } from "./khoi-tim-kiem";
 
 // DI DỜI Ở PHASE 4: trang này từng nằm ở `/` của app admin, nay `/` là hàng đợi báo cáo
 // (PLAN 9.3 mục 1). Nội dung giữ NGUYÊN — nó là bằng chứng nghiệm thu của Phase 0
@@ -56,6 +57,20 @@ export default async function Home() {
           trình duyệt → same-origin <code className="mono">/api/v1/health</code>:{" "}
           <HealthSameOrigin />
         </p>
+      </div>
+
+      {/* Khối "Tìm kiếm" — 2026-08-30, trả `P-20260827-2`. Đặt ở trang CHẨN ĐOÁN chứ
+          không ở bảng điều khiển: đây là số liệu để soi khi nghi ngờ, không phải số liệu
+          để nhìn hằng ngày, và bảng điều khiển đầy thêm một hàng là bảng điều khiển bớt
+          đọc được đi một chút. */}
+      <h2 className="mt-6 mb-1 text-lg font-semibold">Tìm kiếm</h2>
+      <p className="mb-3 text-sm text-muc-mo">
+        Chỉ mục Meilisearch phải khớp số hàng công khai trong Postgres. Lệch vài đơn vị
+        ngay sau khi có bài mới là bình thường (index chạy bất đồng bộ); lệch dai dẳng
+        nghĩa là cron đối soát đang chết — xem <code className="mono">deploy/prod/README.md</code>.
+      </p>
+      <div className="the p-4">
+        <KhoiTimKiem />
       </div>
     </>
   );

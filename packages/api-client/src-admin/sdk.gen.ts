@@ -4,7 +4,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { QuanTriBanNguoiDungData, QuanTriBanNguoiDungErrors, QuanTriBanNguoiDungResponses, QuanTriDatAnBinhLuanData, QuanTriDatAnBinhLuanErrors, QuanTriDatAnBinhLuanResponses, QuanTriDatAnMachData, QuanTriDatAnMachErrors, QuanTriDatAnMachResponses, QuanTriDatAnMocData, QuanTriDatAnMocErrors, QuanTriDatAnMocResponses, QuanTriDatKhoaMachData, QuanTriDatKhoaMachErrors, QuanTriDatKhoaMachResponses, QuanTriDatMatKhauData, QuanTriDatMatKhauErrors, QuanTriDatMatKhauResponses, QuanTriDoiQuyenModData, QuanTriDoiQuyenModErrors, QuanTriDoiQuyenModResponses, QuanTriDongBaoCaoData, QuanTriDongBaoCaoErrors, QuanTriDongBaoCaoResponses, QuanTriGanModSubData, QuanTriGanModSubErrors, QuanTriGanModSubResponses, QuanTriGoBanNguoiDungData, QuanTriGoBanNguoiDungErrors, QuanTriGoBanNguoiDungResponses, QuanTriGoModSubData, QuanTriGoModSubErrors, QuanTriGoModSubResponses, QuanTriLietKeBaoCaoData, QuanTriLietKeBaoCaoErrors, QuanTriLietKeBaoCaoResponses, QuanTriLietKeBinhLuanData, QuanTriLietKeBinhLuanErrors, QuanTriLietKeBinhLuanResponses, QuanTriLietKeMachData, QuanTriLietKeMachErrors, QuanTriLietKeMachResponses, QuanTriLietKeNguoiDungData, QuanTriLietKeNguoiDungErrors, QuanTriLietKeNguoiDungResponses, QuanTriLietKeNhatKyData, QuanTriLietKeNhatKyErrors, QuanTriLietKeNhatKyResponses, QuanTriLietKeSubData, QuanTriLietKeSubErrors, QuanTriLietKeSubResponses, QuanTriLuotXemData, QuanTriLuotXemErrors, QuanTriLuotXemResponses, QuanTriLuuCaiDatGoogleData, QuanTriLuuCaiDatGoogleErrors, QuanTriLuuCaiDatGoogleResponses, QuanTriSuaNguoiDungData, QuanTriSuaNguoiDungErrors, QuanTriSuaNguoiDungResponses, QuanTriSuaSubData, QuanTriSuaSubErrors, QuanTriSuaSubResponses, QuanTriTaoNguoiDungData, QuanTriTaoNguoiDungErrors, QuanTriTaoNguoiDungResponses, QuanTriTaoSubData, QuanTriTaoSubErrors, QuanTriTaoSubResponses, QuanTriThongKeData, QuanTriThongKeErrors, QuanTriThongKeResponses, QuanTriToiData, QuanTriToiErrors, QuanTriToiResponses, QuanTriXemCaiDatGoogleData, QuanTriXemCaiDatGoogleErrors, QuanTriXemCaiDatGoogleResponses, QuanTriXemMachData, QuanTriXemMachErrors, QuanTriXemMachResponses, QuanTriXemNguoiDungData, QuanTriXemNguoiDungErrors, QuanTriXemNguoiDungResponses, QuanTriXoaCaiDatGoogleData, QuanTriXoaCaiDatGoogleErrors, QuanTriXoaCaiDatGoogleResponses, QuanTriXoaSubData, QuanTriXoaSubErrors, QuanTriXoaSubResponses } from './types.gen';
+import type { QuanTriBanNguoiDungData, QuanTriBanNguoiDungErrors, QuanTriBanNguoiDungResponses, QuanTriChanDoanTimKiemData, QuanTriChanDoanTimKiemErrors, QuanTriChanDoanTimKiemResponses, QuanTriDatAnBinhLuanData, QuanTriDatAnBinhLuanErrors, QuanTriDatAnBinhLuanResponses, QuanTriDatAnMachData, QuanTriDatAnMachErrors, QuanTriDatAnMachResponses, QuanTriDatAnMocData, QuanTriDatAnMocErrors, QuanTriDatAnMocResponses, QuanTriDatKhoaMachData, QuanTriDatKhoaMachErrors, QuanTriDatKhoaMachResponses, QuanTriDatMatKhauData, QuanTriDatMatKhauErrors, QuanTriDatMatKhauResponses, QuanTriDoiQuyenModData, QuanTriDoiQuyenModErrors, QuanTriDoiQuyenModResponses, QuanTriDongBaoCaoData, QuanTriDongBaoCaoErrors, QuanTriDongBaoCaoResponses, QuanTriGanModSubData, QuanTriGanModSubErrors, QuanTriGanModSubResponses, QuanTriGoBanNguoiDungData, QuanTriGoBanNguoiDungErrors, QuanTriGoBanNguoiDungResponses, QuanTriGoModSubData, QuanTriGoModSubErrors, QuanTriGoModSubResponses, QuanTriLietKeBaoCaoData, QuanTriLietKeBaoCaoErrors, QuanTriLietKeBaoCaoResponses, QuanTriLietKeBinhLuanData, QuanTriLietKeBinhLuanErrors, QuanTriLietKeBinhLuanResponses, QuanTriLietKeMachData, QuanTriLietKeMachErrors, QuanTriLietKeMachResponses, QuanTriLietKeNguoiDungData, QuanTriLietKeNguoiDungErrors, QuanTriLietKeNguoiDungResponses, QuanTriLietKeNhatKyData, QuanTriLietKeNhatKyErrors, QuanTriLietKeNhatKyResponses, QuanTriLietKeSubData, QuanTriLietKeSubErrors, QuanTriLietKeSubResponses, QuanTriLuotXemData, QuanTriLuotXemErrors, QuanTriLuotXemResponses, QuanTriLuuCaiDatGoogleData, QuanTriLuuCaiDatGoogleErrors, QuanTriLuuCaiDatGoogleResponses, QuanTriSuaNguoiDungData, QuanTriSuaNguoiDungErrors, QuanTriSuaNguoiDungResponses, QuanTriSuaSubData, QuanTriSuaSubErrors, QuanTriSuaSubResponses, QuanTriTaoNguoiDungData, QuanTriTaoNguoiDungErrors, QuanTriTaoNguoiDungResponses, QuanTriTaoSubData, QuanTriTaoSubErrors, QuanTriTaoSubResponses, QuanTriThongKeData, QuanTriThongKeErrors, QuanTriThongKeResponses, QuanTriToiData, QuanTriToiErrors, QuanTriToiResponses, QuanTriXemCaiDatGoogleData, QuanTriXemCaiDatGoogleErrors, QuanTriXemCaiDatGoogleResponses, QuanTriXemMachData, QuanTriXemMachErrors, QuanTriXemMachResponses, QuanTriXemNguoiDungData, QuanTriXemNguoiDungErrors, QuanTriXemNguoiDungResponses, QuanTriXoaCaiDatGoogleData, QuanTriXoaCaiDatGoogleErrors, QuanTriXoaCaiDatGoogleResponses, QuanTriXoaSubData, QuanTriXoaSubErrors, QuanTriXoaSubResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -79,6 +79,33 @@ export const quanTriLuuCaiDatGoogle = <ThrowOnError extends boolean = false>(opt
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * Chan Doan Tim Kiem
+ *
+ * Chỉ mục tìm kiếm có khớp Postgres không — **nói to khi lệch**.
+ *
+ * Với mỗi index: số tài liệu Meilisearch đang giữ, số hàng công khai Postgres đang có,
+ * và một câu tiếng Việt khi hai con số không bằng nhau.
+ *
+ * Lệch **không phải lúc nào cũng là sự cố**: Meilisearch nhận tài liệu bất đồng bộ, nên
+ * ngay sau một lượt đăng bài con số có thể chênh vài đơn vị trong khoảnh khắc. Lệch
+ * **dai dẳng** hoặc lệch lớn thì mới là `P-20260827-2`, và cách chữa là
+ * `reindex_tim_kiem`. Màn hình nói ra cả hai điều đó chứ không tự phán.
+ *
+ * `so_tai_lieu = null` là **không đọc được** — hay gặp nhất khi `MEILI_KEY` là khoá cũ
+ * chỉ khai `indexes: ["mach"]`, tức index `binh_luan` trả 403 cho mọi lời gọi và đường
+ * ghi nuốt im lặng.
+ */
+export const quanTriChanDoanTimKiem = <ThrowOnError extends boolean = false>(options?: Options<QuanTriChanDoanTimKiemData, ThrowOnError>): RequestResult<QuanTriChanDoanTimKiemResponses, QuanTriChanDoanTimKiemErrors, ThrowOnError> => (options?.client ?? client).get<QuanTriChanDoanTimKiemResponses, QuanTriChanDoanTimKiemErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/admin/chan-doan/tim-kiem',
+    ...options
 });
 
 /**

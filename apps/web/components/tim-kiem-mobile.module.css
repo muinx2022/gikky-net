@@ -1,0 +1,83 @@
+/* Icon kính lúp — lối vào tìm kiếm khi ô tìm đã bị ẩn (2026-08-30).
+ *
+ * **Ẩn mặc định, hiện ở ĐÚNG mốc 860px** — cùng con số với chỗ `o-tim-kiem.module.css`
+ * ẩn `.o` và chỗ `chrome.module.css` ẩn `.cho_o_tim`. Ba con số ấy phải bằng nhau: lệch
+ * một phía là có màn hình thấy cả ô lẫn icon, hoặc tệ hơn, không thấy cái nào — tức tìm
+ * kiếm lại mất lối vào, đúng bệnh lượt 2026-08-30 đã chữa một lần.
+ * `e2e/don-vi/loi-vao-tim-kiem.spec.ts` đọc cả ba file và so MỘT hằng số, nên đổi một
+ * phía là đỏ.
+ *
+ * Hình dạng chép theo `.khung` của `cong-tac-theme.module.css` — hai icon đứng cạnh nhau
+ * trong cùng cụm `.phai` mà lệch kích thước thì mắt thấy ngay. */
+.nut {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+
+.nut:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.nut:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* Vùng bấm 44px trên màn hình cảm ứng — nhưng KHÔNG chiếm thêm chỗ trong hàng: hộp nở
+   ra 44 rồi cặp margin âm thu phần chiếm chỗ về đúng 32px như nhánh chuột. Thiếu cặp
+   margin này, cụm phải nở thêm 12px trên đúng dải 421–520px không có `flex-wrap` cứu
+   (iPhone Plus/Max là 428/430px CSS) — mà hai phần tử duy nhất co được trong `.phai`
+   lại chính là hai vùng bấm vừa được hứa 44px. Phản biện 2026-08-30 chỉ ra. */
+@media (pointer: coarse) {
+  .nut {
+    width: 44px;
+    height: 44px;
+    margin: -6px;
+  }
+}
+
+/* Panel xổ full-width ngay DƯỚI header.
+ *
+ * `position: absolute` bám vào `.chrome` — nó `position: sticky`, tức là một phần tử đã
+ * được định vị, nên nó là containing block gần nhất. Không cần thêm `position: relative`
+ * ở đâu cả; thêm vào `.phai` thì panel co lại bằng cụm nút bên phải.
+ *
+ * `top: 100%` = ngay dưới mép dưới của header, kể cả khi header cao lên vì `flex-wrap` ở
+ * ≤420px. Gõ cứng `--cao-chrome` thì panel đè lên chính thanh nav ở đúng khổ ấy. */
+.panel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 25;
+  display: flex;
+  padding: 10px 15px 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg);
+  box-shadow: 0 8px 20px rgb(0 0 0 / 10%);
+}
+
+/* Chỗ giữ trong lúc `Suspense` chưa xong — cùng chiều cao với `.o`, để panel không nhảy
+   một nhịp ngay chỗ mắt người ta vừa nhìn tới. */
+.cho {
+  width: 100%;
+  height: 31px;
+}
+
+@media (max-width: 860px) {
+  /* Đúng lúc `o-tim-kiem.module.css` ẩn `.o`, icon này thế chỗ. Xem chú thích trên đầu
+     file về ba con số phải bằng nhau. */
+  .nut {
+    display: inline-flex;
+  }
+}

@@ -569,6 +569,37 @@ export type FigureOut = {
 };
 
 /**
+ * GoiYOut
+ *
+ * Một gợi ý khi đang gõ — **chỉ mạch**, đủ để vẽ một dòng và bấm đi thẳng.
+ *
+ * Cố tình **không** mang đoạn trích, điểm, hay tô đậm: dropdown gợi ý là chỗ chọn nhanh
+ * một bài đã biết tên, không phải một trang kết quả thu nhỏ. Kết quả đầy đủ vẫn chỉ
+ * hiện khi bấm Enter / nút Tìm.
+ *
+ * `duong_dan` do server dựng từ `slug` + `id` của chính hàng Postgres vừa đọc, nên nó
+ * không thể trỏ vào một mạch khác với `mach_id`.
+ */
+export type GoiYOut = {
+    /**
+     * Duong Dan
+     */
+    duong_dan: string;
+    /**
+     * Mach Id
+     */
+    mach_id: number;
+    /**
+     * Sub Ten
+     */
+    sub_ten: string;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
  * HealthOut
  *
  * Kết quả healthcheck. `db` = "ok" chỉ khi truy vấn thật xuống Postgres thành công.
@@ -676,25 +707,49 @@ export type KetQuaDoiTrangThaiOut = {
 };
 
 /**
- * KetQuaTimKiemOut
+ * KetQuaTronOut
  *
- * Một dòng kết quả tìm kiếm — Phase 7.
+ * Một dòng kết quả tìm kiếm — **mạch HOẶC bình luận**, trộn chung một danh sách.
  *
- * `mach` là **đúng thẻ mà feed dùng** (`MachTomTatOut`), không phải một hình dạng thứ
- * hai: trang kết quả vẽ lại cùng loại thẻ với trang chủ, nên hai schema khác nhau chỉ
- * tạo hai đường trôi.
+ * *(Thay `KetQuaTimKiemOut` của Phase 7 — breaking có chủ đích, 2026-08-30. Consumer
+ * duy nhất là trang `/tim-kiem`; giữ thêm một schema cũ không ai gọi là giữ một hợp
+ * đồng chết.)*
+ *
+ * `loai` nói dòng này là gì, và nó quyết định trường nào có nghĩa:
+ *
+ * | `loai` | dùng | bỏ trống |
+ * |---|---|---|
+ * | `"mach"` | `title_to_dam`, `doan_trich` | `binh_luan_id`, `tac_gia`, `luc` |
+ * | `"binh_luan"` | `doan_trich`, `binh_luan_id`, `tac_gia`, `luc` | `title_to_dam` |
+ *
+ * `mach` có mặt ở **cả hai** loại: một kết quả bình luận không đọc được nếu không biết
+ * nó nằm trong mạch nào, và đích bấm của nó cũng dựng từ đó
+ * (`/m/<slug>-<id>#bl-<binh_luan_id>`).
  *
  * Hai trường tô đậm dùng dấu **`[[` `]]`**, không phải HTML. Trả `<mark>` về đây là mời
  * `dangerouslySetInnerHTML` vào một đường dữ liệu do người dùng viết; frontend tự dựng
  * thẻ từ cặp dấu (`apps/web/lib/tim-kiem.ts`). Chữ trong hai trường này đến từ
  * **Postgres**, không phải từ chỉ mục — xem docstring `api/tim_kiem.py`.
  */
-export type KetQuaTimKiemOut = {
+export type KetQuaTronOut = {
+    /**
+     * Binh Luan Id
+     */
+    binh_luan_id: number | null;
     /**
      * Doan Trich
      */
     doan_trich: string;
+    /**
+     * Loai
+     */
+    loai: 'mach' | 'binh_luan';
+    /**
+     * Luc
+     */
+    luc: string | null;
     mach: MachTomTatOut;
+    tac_gia: NguoiDungTomTatOut | null;
     /**
      * Title To Dam
      */
@@ -1650,17 +1705,42 @@ export type ThongBaoOut = {
 };
 
 /**
+ * TimKiemGoiYOut
+ *
+ * Gợi ý cho ô tìm kiếm. Tối đa 7 dòng — con số GHIM ở server, không nhận từ query.
+ *
+ * `co_the_tim = false` là xuống thang y hệt `TimKiemOut`: client **giấu dropdown** và
+ * không báo lỗi gì. Một ô tìm kiếm nhấp nháy chữ "lỗi" theo từng ký tự gõ vào còn tệ
+ * hơn một ô không gợi ý gì.
+ */
+export type TimKiemGoiYOut = {
+    /**
+     * Co The Tim
+     */
+    co_the_tim: boolean;
+    /**
+     * Items
+     */
+    items: Array<GoiYOut>;
+};
+
+/**
  * TimKiemOut
  *
- * Một trang kết quả tìm kiếm.
+ * Một trang kết quả tìm kiếm — mạch và bình luận **trộn chung theo độ liên quan**.
  *
  * `co_the_tim = false` là **xuống thang**, không phải lỗi: Meilisearch chưa cấu hình
  * hoặc đang hỏng. Endpoint vẫn trả 200 để trang gọi vẽ được một câu nói bằng tiếng
  * người thay vì xử một mã lỗi như xử sự cố (plan con Phase 7 §5).
  *
- * `tong` là **ước lượng** của Meilisearch (`estimatedTotalHits`), đếm trước khi lớp lọc
- * Postgres chạy — nên `len(items)` có thể nhỏ hơn `tong` chia trang. Nói ra ở đây để
- * frontend không dựng bộ đếm trang chính xác trên một con số không chính xác.
+ * `tong` là **ước lượng** của Meilisearch (`estimatedTotalHits` của federation), đếm
+ * trước khi lớp lọc Postgres chạy — nên `len(items)` có thể nhỏ hơn `tong` chia trang.
+ * Nói ra ở đây để frontend không dựng bộ đếm trang chính xác trên một con số không
+ * chính xác.
+ *
+ * ⚠ **`?sub=` làm mọi kết quả bình luận biến mất**, và đó là hành vi đã biết chứ không
+ * phải lỗi: tài liệu bình luận cố ý không mang `sub` — xem
+ * `core/tim_kiem.py::_truy_van_tron`.
  */
 export type TimKiemOut = {
     /**
@@ -1670,7 +1750,7 @@ export type TimKiemOut = {
     /**
      * Items
      */
-    items: Array<KetQuaTimKiemOut>;
+    items: Array<KetQuaTronOut>;
     /**
      * Q
      */
@@ -3841,6 +3921,36 @@ export type TimKiemResponses = {
 };
 
 export type TimKiemResponse = TimKiemResponses[keyof TimKiemResponses];
+
+export type TimKiemGoiYData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Q
+         */
+        q?: string;
+    };
+    url: '/api/v1/tim-kiem/goi-y';
+};
+
+export type TimKiemGoiYErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+};
+
+export type TimKiemGoiYError = TimKiemGoiYErrors[keyof TimKiemGoiYErrors];
+
+export type TimKiemGoiYResponses = {
+    /**
+     * OK
+     */
+    200: TimKiemGoiYOut;
+};
+
+export type TimKiemGoiYResponse = TimKiemGoiYResponses[keyof TimKiemGoiYResponses];
 
 export type XemHoSoData = {
     body?: never;

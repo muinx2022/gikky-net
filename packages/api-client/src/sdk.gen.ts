@@ -4,7 +4,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { BoTheoMachData, BoTheoMachErrors, BoTheoMachResponses, BoTheoSubData, BoTheoSubErrors, BoTheoSubResponses, BoTheoUserData, BoTheoUserErrors, BoTheoUserResponses, DanhDauDaDocData, DanhDauDaDocErrors, DanhDauDaDocResponses, DanhDauDaXemData, DanhDauDaXemErrors, DanhDauDaXemResponses, DatAvatarData, DatAvatarErrors, DatAvatarResponses, DatReactionData, DatReactionErrors, DatReactionResponses, DatVoteData, DatVoteErrors, DatVoteResponses, DemLuotXemData, DemLuotXemErrors, DemLuotXemResponses, DongSoMachData, DongSoMachErrors, DongSoMachResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GoTrichData, GoTrichErrors, GoTrichResponses, GuiBaoCaoData, GuiBaoCaoErrors, GuiBaoCaoResponses, LietKeBanCuMocData, LietKeBanCuMocErrors, LietKeBanCuMocResponses, LietKeBinhLuanMachData, LietKeBinhLuanMachErrors, LietKeBinhLuanMachResponses, LietKeBinhLuanMocData, LietKeBinhLuanMocErrors, LietKeBinhLuanMocResponses, LietKeDangTheoData, LietKeDangTheoErrors, LietKeDangTheoResponses, LietKeDaVoteData, LietKeDaVoteErrors, LietKeDaVoteResponses, LietKeFeedDangDienRaData, LietKeFeedDangDienRaErrors, LietKeFeedDangDienRaResponses, LietKeFeedMoiData, LietKeFeedMoiErrors, LietKeFeedMoiResponses, LietKeMachCuaUserData, LietKeMachCuaUserErrors, LietKeMachCuaUserResponses, LietKeSubDangTheoData, LietKeSubDangTheoErrors, LietKeSubDangTheoResponses, LietKeSubData, LietKeSubResponses, LietKeSubToiLamModData, LietKeSubToiLamModErrors, LietKeSubToiLamModResponses, LietKeThongBaoData, LietKeThongBaoErrors, LietKeThongBaoResponses, LietKeUserDangTheoData, LietKeUserDangTheoErrors, LietKeUserDangTheoResponses, ModDatAnBinhLuanData, ModDatAnBinhLuanErrors, ModDatAnBinhLuanResponses, ModDatAnMachData, ModDatAnMachErrors, ModDatAnMachResponses, ModDatAnMocData, ModDatAnMocErrors, ModDatAnMocResponses, ModDatKhoaMachData, ModDatKhoaMachErrors, ModDatKhoaMachResponses, MoLaiMachData, MoLaiMachErrors, MoLaiMachResponses, NoiMocData, NoiMocErrors, NoiMocResponses, SuaBinhLuanData, SuaBinhLuanErrors, SuaBinhLuanResponses, SuaMocData, SuaMocErrors, SuaMocResponses, SuaToiData, SuaToiErrors, SuaToiResponses, TaiAnhMocData, TaiAnhMocErrors, TaiAnhMocResponses, TaiAnhNoiDungData, TaiAnhNoiDungErrors, TaiAnhNoiDungResponses, TaoMachData, TaoMachErrors, TaoMachResponses, TheoMachData, TheoMachErrors, TheoMachResponses, TheoSubData, TheoSubErrors, TheoSubResponses, TheoUserData, TheoUserErrors, TheoUserResponses, TimKiemData, TimKiemErrors, TimKiemResponses, TrichVaoSoData, TrichVaoSoErrors, TrichVaoSoResponses, VietBinhLuanData, VietBinhLuanErrors, VietBinhLuanResponses, XemHoSoData, XemHoSoErrors, XemHoSoResponses, XemMachCuaToiData, XemMachCuaToiErrors, XemMachCuaToiResponses, XemMachData, XemMachErrors, XemMachResponses, XemSubCuaToiData, XemSubCuaToiErrors, XemSubCuaToiResponses, XemSubData, XemSubErrors, XemSubResponses, XemToiData, XemToiResponses, XemUserCuaToiData, XemUserCuaToiErrors, XemUserCuaToiResponses, XoaAnhMocData, XoaAnhMocErrors, XoaAnhMocResponses, XoaAvatarData, XoaAvatarErrors, XoaAvatarResponses, XoaBinhLuanData, XoaBinhLuanErrors, XoaBinhLuanResponses, XoaMocData, XoaMocErrors, XoaMocResponses } from './types.gen';
+import type { BoTheoMachData, BoTheoMachErrors, BoTheoMachResponses, BoTheoSubData, BoTheoSubErrors, BoTheoSubResponses, BoTheoUserData, BoTheoUserErrors, BoTheoUserResponses, DanhDauDaDocData, DanhDauDaDocErrors, DanhDauDaDocResponses, DanhDauDaXemData, DanhDauDaXemErrors, DanhDauDaXemResponses, DatAvatarData, DatAvatarErrors, DatAvatarResponses, DatReactionData, DatReactionErrors, DatReactionResponses, DatVoteData, DatVoteErrors, DatVoteResponses, DemLuotXemData, DemLuotXemErrors, DemLuotXemResponses, DongSoMachData, DongSoMachErrors, DongSoMachResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GoTrichData, GoTrichErrors, GoTrichResponses, GuiBaoCaoData, GuiBaoCaoErrors, GuiBaoCaoResponses, LietKeBanCuMocData, LietKeBanCuMocErrors, LietKeBanCuMocResponses, LietKeBinhLuanMachData, LietKeBinhLuanMachErrors, LietKeBinhLuanMachResponses, LietKeBinhLuanMocData, LietKeBinhLuanMocErrors, LietKeBinhLuanMocResponses, LietKeDangTheoData, LietKeDangTheoErrors, LietKeDangTheoResponses, LietKeDaVoteData, LietKeDaVoteErrors, LietKeDaVoteResponses, LietKeFeedDangDienRaData, LietKeFeedDangDienRaErrors, LietKeFeedDangDienRaResponses, LietKeFeedMoiData, LietKeFeedMoiErrors, LietKeFeedMoiResponses, LietKeMachCuaUserData, LietKeMachCuaUserErrors, LietKeMachCuaUserResponses, LietKeSubDangTheoData, LietKeSubDangTheoErrors, LietKeSubDangTheoResponses, LietKeSubData, LietKeSubResponses, LietKeSubToiLamModData, LietKeSubToiLamModErrors, LietKeSubToiLamModResponses, LietKeThongBaoData, LietKeThongBaoErrors, LietKeThongBaoResponses, LietKeUserDangTheoData, LietKeUserDangTheoErrors, LietKeUserDangTheoResponses, ModDatAnBinhLuanData, ModDatAnBinhLuanErrors, ModDatAnBinhLuanResponses, ModDatAnMachData, ModDatAnMachErrors, ModDatAnMachResponses, ModDatAnMocData, ModDatAnMocErrors, ModDatAnMocResponses, ModDatKhoaMachData, ModDatKhoaMachErrors, ModDatKhoaMachResponses, MoLaiMachData, MoLaiMachErrors, MoLaiMachResponses, NoiMocData, NoiMocErrors, NoiMocResponses, SuaBinhLuanData, SuaBinhLuanErrors, SuaBinhLuanResponses, SuaMocData, SuaMocErrors, SuaMocResponses, SuaToiData, SuaToiErrors, SuaToiResponses, TaiAnhMocData, TaiAnhMocErrors, TaiAnhMocResponses, TaiAnhNoiDungData, TaiAnhNoiDungErrors, TaiAnhNoiDungResponses, TaoMachData, TaoMachErrors, TaoMachResponses, TheoMachData, TheoMachErrors, TheoMachResponses, TheoSubData, TheoSubErrors, TheoSubResponses, TheoUserData, TheoUserErrors, TheoUserResponses, TimKiemData, TimKiemErrors, TimKiemGoiYData, TimKiemGoiYErrors, TimKiemGoiYResponses, TimKiemResponses, TrichVaoSoData, TrichVaoSoErrors, TrichVaoSoResponses, VietBinhLuanData, VietBinhLuanErrors, VietBinhLuanResponses, XemHoSoData, XemHoSoErrors, XemHoSoResponses, XemMachCuaToiData, XemMachCuaToiErrors, XemMachCuaToiResponses, XemMachData, XemMachErrors, XemMachResponses, XemSubCuaToiData, XemSubCuaToiErrors, XemSubCuaToiResponses, XemSubData, XemSubErrors, XemSubResponses, XemToiData, XemToiResponses, XemUserCuaToiData, XemUserCuaToiErrors, XemUserCuaToiResponses, XoaAnhMocData, XoaAnhMocErrors, XoaAnhMocResponses, XoaAvatarData, XoaAvatarErrors, XoaAvatarResponses, XoaBinhLuanData, XoaBinhLuanErrors, XoaBinhLuanResponses, XoaMocData, XoaMocErrors, XoaMocResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -1519,21 +1519,48 @@ export const theoSub = <ThrowOnError extends boolean = false>(options: Options<T
 /**
  * Tim Kiem
  *
- * Tìm mạch theo tiêu đề, thân bài gốc, các mốc nối sau, kết quả và tên tác giả.
+ * Tìm **mạch và bình luận**, trộn chung một danh sách theo độ liên quan.
+ *
+ * Mạch khớp theo tiêu đề, thân bài gốc, các mốc nối sau, kết quả và tên tác giả; bình
+ * luận khớp theo nội dung và tên người viết. Mỗi dòng mang `loai` để biết nó là gì.
  *
  * Gõ **không dấu vẫn ra kết quả có dấu** (`nhat ky lenh hpg` → *Nhật ký lệnh HPG*), và
  * sai một ký tự ở từ dài vẫn ra. Mã chứng khoán ngắn (`HPG`) khớp **chính xác**.
  *
  * `?sub=<slug>` lọc theo chuyên mục; sub không tồn tại trả 404 `sub_khong_ton_tai`.
- * `?sort=lien_quan` (mặc định) xếp theo độ liên quan; `?sort=moi` xếp mới trước.
+ * ⚠ **`?sub=` cũng làm kết quả bình luận biến mất** — tài liệu bình luận không mang
+ * `sub` (xem `core/tim_kiem.py::_truy_van_tron`).
+ * `?sort=lien_quan` (mặc định) xếp theo độ liên quan; `?sort=moi` xếp mới trước — mốc
+ * thời gian của mỗi dòng là lúc mạch mở hoặc lúc bình luận được viết, tuỳ loại.
  * `?offset=` + `?limit=` phân trang; `limit` tối đa 50, `offset` tối đa 1000.
  *
  * Mạch bị mod ẩn không xuất hiện. Nội dung của mốc đã xoá hoặc bị mod ẩn không tìm được.
+ * Bình luận đã xoá, bị mod ẩn, **hoặc nằm trong một mạch bị ẩn** đều không xuất hiện.
  *
  * Tìm kiếm tạm ngừng (service phụ đang hỏng hoặc chưa cấu hình) ⇒ vẫn **200**, với
  * `co_the_tim = false` và danh sách rỗng, để trang gọi có thể nói ra bằng tiếng người.
  */
 export const timKiem = <ThrowOnError extends boolean = false>(options?: Options<TimKiemData, ThrowOnError>): RequestResult<TimKiemResponses, TimKiemErrors, ThrowOnError> => (options?.client ?? client).get<TimKiemResponses, TimKiemErrors, ThrowOnError>({ url: '/api/v1/tim-kiem', ...options });
+
+/**
+ * Tim Kiem Goi Y
+ *
+ * Gợi ý khi đang gõ — tối đa 7 **mạch**, bấm đi thẳng tới mạch.
+ *
+ * **Chỉ mạch, không bình luận** (user chốt): dropdown là chỗ chọn nhanh một bài đã biết
+ * tên. Kết quả đầy đủ — có cả bình luận — vẫn chỉ hiện khi bấm Enter / nút Tìm, tức ở
+ * `GET /tim-kiem`.
+ *
+ * `q` rỗng ⇒ danh sách rỗng. `limit` **không nhận từ query**, luôn là 7.
+ *
+ * Đi qua **cùng lớp lọc thứ hai** với `/tim-kiem`: Meilisearch chỉ cho ID, mọi chữ hiện
+ * ra dựng lại từ Postgres, mạch bị mod ẩn rơi ra ở đó. Không có ngoại lệ "vì nó chỉ là
+ * gợi ý" — một cái tên bài rò ra ở dropdown rò y hệt một cái tên bài rò ở trang kết quả.
+ *
+ * Meilisearch hỏng ⇒ **200** với `co_the_tim = false`; client giấu dropdown và không
+ * báo lỗi gì.
+ */
+export const timKiemGoiY = <ThrowOnError extends boolean = false>(options?: Options<TimKiemGoiYData, ThrowOnError>): RequestResult<TimKiemGoiYResponses, TimKiemGoiYErrors, ThrowOnError> => (options?.client ?? client).get<TimKiemGoiYResponses, TimKiemGoiYErrors, ThrowOnError>({ url: '/api/v1/tim-kiem/goi-y', ...options });
 
 /**
  * Xem Ho So
