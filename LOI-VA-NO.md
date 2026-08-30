@@ -1250,3 +1250,21 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Ở đâu**: gốc repo (`git diff --cached --stat`)
 - **Bằng chứng**: `git diff --cached --stat` = 108 file / +931 / −5118 trong khi worktree ≈ HEAD; hai bên gần như gương nhau — index bị đặt về một trạng thái cũ từ trước lượt này.
 - **Vì sao không sửa ngay**: reset index là thao tác phá — cần user xác nhận không phiên nào khác đang cần nó. ⚠ Commit tới PHẢI `git add` chọn lọc từng file; `git commit` thẳng index hiện tại hay `git commit -a` đều chôn rác.
+
+### P-20260830-6 · [MỞ] · NHỎ — ở ~861–950px, ô tìm header KHÔNG còn đứng giữa khung nhìn như lời hứa của lưới
+- **Thấy lúc**: lượt phản biện "lối vào tìm kiếm mobile" (`plans/2026-08-30-loi-vao-tim-kiem-mobile.md`)
+- **Ở đâu**: `apps/web/components/chrome.module.css` (khối `.trong`, lưới `1fr clamp(220px,34vw,560px) 1fr`)
+- **Bằng chứng**: tính từ chính các con số trong file — ở 861px: 861 − 44 padding − 28 gap = 789 khả dụng; cột giữa 292.7; rãnh `1fr` = `minmax(auto,1fr)` nên rãnh phải bị min-content của `.phai` (~340px) chống sàn, rãnh trái teo còn ~156px ⇒ ô tìm lệch trái ~92px — trái đúng câu "hai rãnh biên bằng nhau theo định nghĩa" trong docstring. KHÔNG do bản vá icon (icon `display:none` ở dải đó).
+- **Vì sao không sửa ngay**: lỗi thẩm mỹ dải hẹp, ngoài phạm vi lượt; sửa đàng hoàng phải đụng chiến lược lưới và đo lại nhiều mốc.
+
+### P-20260830-7 · [MỞ] · NHỎ — docstring `chrome.tsx` khẳng định "`pnpm build` xác nhận `/luat` đang là `○`" nhưng build hiện tại ra `ƒ`
+- **Thấy lúc**: lượt "lối vào tìm kiếm mobile" — cả opus-dev (đo A/B hai cây) lẫn nghiệm thu và phản biện cùng chỉ ra
+- **Ở đâu**: `apps/web/components/chrome.tsx:19` (khối docstring đầu file)
+- **Bằng chứng**: `pnpm build` ở cả HEAD lẫn cây có bản vá đều in `├ ƒ /luat  566 B  106 kB` — hệ quả của `P-20260830-1` (`force-dynamic` khai ở `app/luat/page.tsx:14` từ 2026-08-25). Câu tài liệu đứng ngay chỗ giải thích ràng buộc kiến trúc nên dễ làm người sau tin ràng buộc vẫn đang được giữ.
+- **Vì sao không sửa ngay**: nó là một mảnh của `P-20260830-1` — đóng nợ ấy (chọn bên nào đúng) thì sửa câu này cùng lượt, sửa lẻ bây giờ là vá chữ trước khi user quyết bản chất.
+
+### P-20260830-8 · [MỞ] · NẶNG — gập bình luận GỠ nội dung khỏi HTML: hợp đồng "bot vẫn đọc được" (PLAN mục 1) đang vỡ ngay tại HEAD
+- **Thấy lúc**: chạy full `pnpm e2e` (trỏ `gikky_e2e`) trong lượt "lối vào tìm kiếm mobile" — lần đầu bộ đầy đủ được chạy sau nhiều commit
+- **Ở đâu**: bài `apps/web/e2e/vo-reddit.spec.ts:522` (`A10 › nội dung vẫn nằm trong HTML khi gập`); thủ phạm nằm trong đường gập của khán đài/ngăn kéo (`binh-luan.tsx`/`khan-dai.tsx`/`ngan-keo.tsx` — nghi commit `8e8a953` "Bình luận chung tách khỏi mốc…")
+- **Bằng chứng**: chạy riêng bài này 2 lần đều ĐỎ tại `vo-reddit.spec.ts:535` — sau click `nut-gap-nhanh`, `thread.textContent()` không còn chứa chữ của bình luận, tức node bị GỠ khỏi DOM chứ không phải ẩn bằng CSS. Ba file component trên trùng HEAD từng byte (`git diff HEAD` rỗng) và phép đo là `textContent` nên 4 file CSS bẩn của phiên khác không can thiệp được ⇒ lỗi thuộc HEAD, không thuộc cây làm việc.
+- **Vì sao không sửa ngay**: ngoài phạm vi lượt (lượt này chỉ đụng header); đường gập là việc của lượt bình luận, cần lượt riêng — và cần quyết: sửa code cho giữ nội dung trong DOM, hay PLAN mục 1 đã đổi ý thì sửa bài đo. ⚠ Hàng rào này chỉ sống trong `pnpm e2e` đầy đủ nên nó sẽ tiếp tục đỏ im lặng tới khi có người chạy lại.

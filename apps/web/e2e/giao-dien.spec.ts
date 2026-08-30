@@ -287,7 +287,10 @@ test.describe("T6/T7 — bàn phím, focus, và mobile", () => {
   test("T7 — 360px: KHÔNG trang nào cuộn ngang", async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 780 });
     const hpg = await timMachTheoTitle(TITLE_HPG);
-    for (const duong of ["/", "/luat", `/s/chung-khoan`, duongDan(hpg)]) {
+    // `/tim-kiem` vào danh sách 2026-08-30: từ lượt "lối vào tìm kiếm mobile", nó là ĐÍCH
+    // của icon kính lúp trên mọi trang di động — một trang chỉ tới được bằng gõ tay URL
+    // thì tràn ngang không ai thấy, một trang có lối vào trên header thì phải chịu T7.
+    for (const duong of ["/", "/luat", `/s/chung-khoan`, "/tim-kiem", duongDan(hpg)]) {
       await page.goto(duong);
       const tran = await page.evaluate(() => ({
         cuon: document.documentElement.scrollWidth,

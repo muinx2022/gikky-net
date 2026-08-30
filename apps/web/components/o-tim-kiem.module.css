@@ -45,7 +45,13 @@
 
 @media (max-width: 860px) {
   /* Dưới ngưỡng này thanh trên cùng hết chỗ cho một ô nhập. Ẩn ô, KHÔNG bỏ hẳn tính năng:
-     trang `/tim-kiem` vẫn vào được và vẫn có ô nhập riêng của nó. */
+     trang `/tim-kiem` vẫn vào được và vẫn có ô nhập riêng của nó.
+
+     ⚠ Câu trên **đúng chữ mà từng sai về sản phẩm** cho tới 2026-08-30: cả app không có
+     một link nào tới `/tim-kiem`, nên "vẫn vào được" chỉ còn nghĩa là gõ tay URL. Chỗ dựa
+     thật của nó nay là icon kính lúp `.nut_tim` trong `chrome.module.css`, hiện ở **đúng
+     mốc 860px này**. Đổi con số ở đây thì phải đổi cả bên ấy —
+     `e2e/don-vi/loi-vao-tim-kiem.spec.ts` so hai con số và đỏ nếu lệch. */
   .o {
     display: none;
   }

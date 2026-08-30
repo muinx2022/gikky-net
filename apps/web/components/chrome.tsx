@@ -1,3 +1,4 @@
+import { Search } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -26,6 +27,13 @@ import { ThanhTaiKhoan } from "./thanh-tai-khoan";
  * 404. Đường thoát của `error.tsx`/`global-error.tsx` **không** phụ thuộc link này: nó
  * gọi thẳng `window.location.assign("/luat")` trên một `<button>`.
  *
+ * **Icon kính lúp trong cụm phải** *(2026-08-30)*: dưới 860px `o-tim-kiem.module.css` ẩn
+ * hẳn ô tìm, và cả app **không có link nào khác** tới `/tim-kiem` — tức tính năng tìm kiếm
+ * mất sạch lối vào trên di động. Icon này là lối vào ấy; nó chỉ hiện ở đúng mốc mà ô tìm
+ * biến mất (xem `.nut_tim` trong `chrome.module.css`), nên không màn hình nào thấy cả hai
+ * hoặc không thấy gì. Là một `Link` trần — không hook, không `"use client"`, để `/luat`
+ * giữ nguyên trạng thái tĩnh nói ở trên.
+ *
  * *(2026-08-23)* Nợ `NAV-GHI-CUNG` đã trả: hai slug `chung-khoan`/`crypto` từng được gõ
  * cứng ngay tại đây, nên mở sub thứ ba qua admin là nó vắng mặt trên nav của mọi trang.
  * Giấy miễn trừ ở `e2e/don-vi/khong-ghi-cung-sub.spec.ts::CHUA_CHUYEN_DUOC` xoá cùng lượt.
@@ -52,6 +60,18 @@ export function Chrome() {
             trống — nút "Đăng bài" trôi ra giữa thanh. Trong hộp này nó không còn khoảng
             trống nào để chia. */}
         <div className={css.phai}>
+          {/* Lối vào `/tim-kiem` khi ô tìm đã bị ẩn — chỉ hiện ≤860px, xem `.nut_tim`.
+              Trang đích có ô nhập riêng (`o-tim-kiem-trang`), nên đây chỉ cần dẫn tới đó
+              chứ không dựng thêm một ô xổ ra trong header. */}
+          <Link
+            href="/tim-kiem"
+            className={css.nut_tim}
+            title="Tìm mạch"
+            aria-label="Tìm mạch"
+            data-testid="nut-tim-kiem"
+          >
+            <Search size={16} strokeWidth={1.9} aria-hidden />
+          </Link>
           <NutDangMach />
           <Chuong />
           <CongTacTheme />
