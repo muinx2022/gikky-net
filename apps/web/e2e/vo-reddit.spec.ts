@@ -522,17 +522,109 @@ test.describe("A10 — `[−]` gập/mở nhánh ở cả khán đài lẫn ngă
   test("nội dung vẫn nằm trong HTML khi gập (bot vẫn đọc được — PLAN mục 1)", async ({
     page,
   }) => {
-    const { seq } = await nganKeoDongNhat(1);
+    const { seq, nk } = await nganKeoDongNhat(1);
+    // Gốc **bình thường**, **không tự gập**, và **có ít nhất một reply đọc được**:
+    // - bia mộ không có thân bài để đo (chữ nó in ra trùng luôn dòng tóm tắt);
+    // - nút `tu_gap` giấu thân trong một `<details>` chưa mở — vế "gập THẬT" bên dưới
+    //   sẽ xanh sẵn từ trước khi có ai bấm gì;
+    // - vế reply là chính HỢP ĐỒNG: `[−]` gập "cả bình luận (thân + mọi nhánh con)"
+    //   (`gap-nhanh.tsx`), nên phải chứng minh nhánh con cũng còn trong HTML.
+    // Chọn theo thuộc tính dữ liệu chứ không `.first()` còn vì một lẽ đã trả giá:
+    // `gikky_e2e` tích rác qua từng lượt chạy, và 5 thread rác 0-reply (2026-08-27)
+    // từng đẩy bài này sang đo một thread rác — cú đỏ bị ghi nhầm thành lỗi sản phẩm
+    // (P-20260830-8, chẩn đoán đã lật).
+    const muc_tieu = nk.threads.find(
+      (t) =>
+        t.trang_thai === "binh_thuong" &&
+        !t.tu_gap &&
+        t.replies.some((r) => r.trang_thai === "binh_thuong"),
+    );
+    expect(
+      muc_tieu,
+      "seed không có thread gốc bình thường có reply đọc được ⇒ không có gì để đo",
+    ).toBeDefined();
+    const con = muc_tieu!.replies.find((r) => r.trang_thai === "binh_thuong")!;
+
     await page.goto(`${duongDan(hpg)}?khan_dai=1&sort=hay_nhat`);
     await page.getByTestId(`nut-ngan-keo-${seq}`).click();
     const thread = page
       .getByTestId(`lat-cat-${seq}`)
-      .locator("> [data-binh-luan-id]")
+      .locator(`> [data-binh-luan-id="${muc_tieu!.id}"]`);
+    await expect(thread).toHaveCount(1);
+    const than = thread.getByTestId("than-nhanh").first();
+    await expect(than).toBeVisible();
+
+    // **Chữ mồi phải là THÂN BÀI.** Bản đầu của bài này lấy dòng đầu `innerText` của cả
+    // thread — mà dòng đó là ký tự `[−]` nằm trên chính cái nút gập, thứ đổi thành `[+]`
+    // ngay sau cú bấm — nên nó đỏ trên bất kỳ thread nào KHÔNG có reply (thread có reply
+    // thì `[−]` của nút con, đang ẩn, vẫn nằm trong `textContent` và cứu nó). Chữ mồi
+    // nay lấy trong đúng khối thân của GỐC: `> [data-chu-nguoi-dung]` là con trực tiếp
+    // duy nhất của `than-nhanh` mang dấu ấy (`than-van.tsx`/`than-html.tsx`) — KHÔNG
+    // `locator("p").first()` trần, vì `p` đầu tiên tính cả cây con có thể là của reply
+    // hay dòng "tiếp tục thread (N nhánh)". Lấy dòng DÀI NHẤT chứ không phải dòng đầu:
+    // `ThanVan` in xuống-dòng-đơn thành `<br>` nên `innerText` tách dòng ở đó
+    // (`textContent` thì không — phải so trong cùng một dòng), và một thân bài mở đầu
+    // bằng "OK." sẽ làm rào độ dài đỏ oan.
+    const dongDaiNhat = (s: string) =>
+      s
+        .split("\n")
+        .map((d) => d.trim())
+        .reduce((a, b) => (b.length > a.length ? b : a), "");
+    const p_goc = than.locator("> [data-chu-nguoi-dung]").locator("p").first();
+    await expect(
+      p_goc,
+      "thân gốc không có thẻ `p` nào (body toàn ul/blockquote?) — đổi cách lấy chữ mồi",
+    ).toBeVisible();
+    const chu = dongDaiNhat(await p_goc.innerText());
+    expect(
+      chu.length,
+      "chữ mồi rỗng/quá ngắn thì các phép dưới pass rỗng",
+    ).toBeGreaterThanOrEqual(10);
+    // Chữ mồi thứ hai: thân của REPLY — vế "mọi nhánh con" của hợp đồng.
+    const p_con = thread
+      .locator(`[data-binh-luan-id="${con.id}"]`)
+      .getByTestId("than-nhanh")
+      .first()
+      .locator("> [data-chu-nguoi-dung]")
+      .locator("p")
       .first();
-    const chu = (await thread.innerText()).slice(0, 40);
+    await expect(
+      p_con,
+      "reply không có thẻ `p` nào — đổi cách lấy chữ mồi",
+    ).toBeVisible();
+    const chu_con = dongDaiNhat(await p_con.innerText());
+    expect(chu_con.length, "chữ mồi của reply quá ngắn").toBeGreaterThanOrEqual(10);
+    // TRƯỚC khi gập, chữ mồi phải đọc được ở **cả hai** lối. Không có vế này thì một
+    // khác biệt câm giữa `innerText` và `textContent` (khoảng trắng gộp,
+    // `text-transform`) biến phép "gập THẬT" bên dưới thành phép luôn đúng.
+    expect(await thread.innerText(), "chữ mồi không hiện trên màn hình").toContain(chu);
+    expect(await thread.innerText(), "chữ mồi reply không hiện").toContain(chu_con);
+    expect(await thread.textContent(), "chữ mồi không có trong DOM").toContain(chu);
+
     await thread.getByTestId("nut-gap-nhanh").first().click();
-    // `innerText` bỏ phần ẩn, nên hỏi `textContent` — thứ bot đọc.
-    expect(await thread.textContent()).toContain(chu.split("\n")[0]);
+    await expect(than).toBeHidden(); // mắt không còn thấy…
+    // Dòng tóm tắt thế chỗ không được CHỨA chữ mồi: nếu chứa thì phép `textContent`
+    // cuối xanh kể cả khi thân bị gỡ sạch (pass rỗng), còn phép `not.toContain` ngay
+    // dưới đỏ với thông điệp đổ oan cho cái nút. Rào này làm cú hỏng tự giải thích.
+    const tom_tat = await thread.getByTestId("tom-tat-nhanh").first().textContent();
+    expect(tom_tat, "dòng tóm tắt chứa chữ mồi ⇒ các phép dưới mất nghĩa").not.toContain(
+      chu,
+    );
+    expect(tom_tat, "dòng tóm tắt chứa chữ mồi reply").not.toContain(chu_con);
+    expect(
+      await thread.innerText(),
+      "gập rồi mà chữ vẫn hiện ⇒ cái nút là no-op",
+    ).not.toContain(chu);
+    // …nhưng `innerText` bỏ phần ẩn, còn bot đọc `textContent`. Đây là hợp đồng PLAN
+    // mục 1: giấu bằng `hidden`, không được GỠ khỏi HTML — cả thân gốc lẫn nhánh con.
+    expect(
+      await thread.textContent(),
+      "gập GỠ thân gốc khỏi HTML ⇒ mặt CẶN tự bịt mắt con bot",
+    ).toContain(chu);
+    expect(
+      await thread.textContent(),
+      "gập GỠ nhánh con khỏi HTML ⇒ mặt CẶN tự bịt mắt con bot",
+    ).toContain(chu_con);
   });
 });
 

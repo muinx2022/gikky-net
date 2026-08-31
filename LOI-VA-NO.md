@@ -1014,16 +1014,16 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
   cùng một tick đồng hồ); ảnh hưởng thật là **bộ kiểm đỏ ngẫu nhiên**, tức lần sau có người sẽ
   cho rằng đỏ là chuyện bình thường.
 
-### P-20260827-2 · [ĐANG SỬA — search v2, chưa commit] · NẶNG — index Meilisearch trên PROD lệch DB, và lệch IM LẶNG
+### P-20260827-2 · [ĐÓNG (dd1dac5, deploy + đối soát prod 2026-08-30)] · NẶNG — index Meilisearch trên PROD lệch DB, và lệch IM LẶNG
 
-> **Cập nhật 2026-08-30 (lượt "search v2"):** hai hướng đề nghị cũ ĐÃ LÀM: (a) `reindex_tim_kiem`
-> nay tự **gỡ tài liệu ma** mặc định (không cần `--sach`) + có dòng **cron đối soát đêm** trong
-> `deploy/prod/README.md`; (b) `/chan-doan` thêm khối "Tìm kiếm" so số tài liệu từng index với
-> số hàng công khai trong Postgres — lệch thành thứ NHÌN THẤY ĐƯỢC. ⚠ Lượt phản biện phát hiện
-> bản đầu của bước gỡ-ma tự đẻ đúng một biến thể của lỗi này (chụp Postgres TRƯỚC khi đọc index
-> ⇒ gỡ nhầm bài mới đăng như "ma"); đã sửa bằng `_xac_nhan_thua` (xác nhận lại Postgres ngay
-> trước khi xoá). Chuyển `ĐÓNG` khi lượt search v2 được commit + deploy + đối soát prod xác nhận
-> index khớp.
+> **ĐÓNG 2026-08-30 (lượt "search v2", commit dd1dac5):** hai hướng đề nghị cũ ĐÃ LÀM: (a)
+> `reindex_tim_kiem` nay tự **gỡ tài liệu ma** mặc định (không cần `--sach`) + **cron đối soát
+> đêm** (03:40 VN) đã cài trên VPS; (b) `/chan-doan` khối "Tìm kiếm" so số tài liệu từng index
+> với hàng công khai Postgres — lệch thành thứ NHÌN THẤY ĐƯỢC. ⚠ Lượt phản biện bắt được bản
+> đầu của bước gỡ-ma tự đẻ một biến thể của chính lỗi này (chụp Postgres TRƯỚC khi đọc index ⇒
+> gỡ nhầm bài mới đăng như "ma"); đã sửa bằng `_xac_nhan_thua`. **Xác minh prod sau deploy:**
+> `reindex --sach` chạy sạch (13 mạch + 0 bình luận, gỡ 0 ma, không CommandError), và đối soát
+> trực tiếp: index `mach` 13=13, `binh_luan` 0=0 — **KHỚP cả hai**.
 
 
 
@@ -1261,6 +1261,7 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Ở đâu**: gốc repo (`git diff --cached --stat`)
 - **Bằng chứng**: `git diff --cached --stat` = 108 file / +931 / −5118 trong khi worktree ≈ HEAD; hai bên gần như gương nhau — index bị đặt về một trạng thái cũ từ trước lượt này.
 - **Vì sao không sửa ngay**: reset index là thao tác phá — cần user xác nhận không phiên nào khác đang cần nó. ⚠ Commit tới PHẢI `git add` chọn lọc từng file; `git commit` thẳng index hiện tại hay `git commit -a` đều chôn rác.
+- **Cập nhật 2026-08-30 (phản biện lượt A10)**: bản staged của `apps/web/e2e/vo-reddit.spec.ts` là bản CŨ đã xoá cả helper `nganKeoDongNhat` lẫn 3 bài A10; `git diff --cached --stat` = 87 file / +887 / −3937. Một `git commit` không `add` chọn lọc sẽ commit bản revert này thay vì bản vá.
 
 ### P-20260830-6 · [MỞ] · NHỎ — ở ~861–950px, ô tìm header KHÔNG còn đứng giữa khung nhìn như lời hứa của lưới
 - **Thấy lúc**: lượt phản biện "lối vào tìm kiếm mobile" (`plans/2026-08-30-loi-vao-tim-kiem-mobile.md`)
@@ -1274,7 +1275,19 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Bằng chứng**: `pnpm build` ở cả HEAD lẫn cây có bản vá đều in `├ ƒ /luat  566 B  106 kB` — hệ quả của `P-20260830-1` (`force-dynamic` khai ở `app/luat/page.tsx:14` từ 2026-08-25). Câu tài liệu đứng ngay chỗ giải thích ràng buộc kiến trúc nên dễ làm người sau tin ràng buộc vẫn đang được giữ.
 - **Vì sao không sửa ngay**: nó là một mảnh của `P-20260830-1` — đóng nợ ấy (chọn bên nào đúng) thì sửa câu này cùng lượt, sửa lẻ bây giờ là vá chữ trước khi user quyết bản chất.
 
-### P-20260830-8 · [MỞ] · NẶNG — gập bình luận GỠ nội dung khỏi HTML: hợp đồng "bot vẫn đọc được" (PLAN mục 1) đang vỡ ngay tại HEAD
+### P-20260830-8 · [ĐANG SỬA — bài đo đã vá trong cây làm việc, chưa commit] · NẶNG (hạ: bài đo hỏng, sản phẩm KHÔNG hỏng) — gập bình luận GỠ nội dung khỏi HTML: hợp đồng "bot vẫn đọc được" (PLAN mục 1) đang vỡ ngay tại HEAD
+
+> **CHẨN ĐOÁN LẬT 2026-08-30 (lượt "sửa bài đo A10", plan `plans/2026-08-30-sua-bai-do-a10-gap-binh-luan.md`):**
+> sản phẩm KHÔNG hỏng — `gap-nhanh.tsx:77` giữ nguyên nội dung trong DOM (`hidden={gap}`), và
+> phản biện soi hết các đường render (khan-dai/binh-luan/KhungNganKeo, không virtualize/remount)
+> không thấy đường nào gỡ nội dung; `8e8a953` vô can. Cú đỏ do HAI thứ cộng lại: (1) bài đo chụp
+> dòng đầu `innerText` của thread làm chữ mồi — dòng đó là ký tự `[−]` trên nút gập, đổi thành
+> `[+]` sau cú bấm; (2) nó chỉ đỏ khi thread mục tiêu KHÔNG có reply — mà `.first()` trúng đúng
+> một thread rác 0-reply do các lượt e2e trước bỏ lại trong `gikky_e2e` (P-20260830-13). Trên DB
+> sạch, bài đo CŨ sẽ XANH. Đã viết lại A10: chọn thread có reply đọc được (đo cả vế "mọi nhánh
+> con"), chữ mồi lấy trong `> [data-chu-nguoi-dung]` của đúng gốc/reply, dòng DÀI NHẤT, 5 rào
+> chống pass rỗng; thử phá (gỡ children thật) ĐỎ đúng phép `textContent`. Bộ đầy đủ sau vá:
+> 565 passed · 2 failed, cả hai NGOÀI phạm vi (P-20260830-1 · P-20260830-12).
 - **Thấy lúc**: chạy full `pnpm e2e` (trỏ `gikky_e2e`) trong lượt "lối vào tìm kiếm mobile" — lần đầu bộ đầy đủ được chạy sau nhiều commit
 - **Ở đâu**: bài `apps/web/e2e/vo-reddit.spec.ts:522` (`A10 › nội dung vẫn nằm trong HTML khi gập`); thủ phạm nằm trong đường gập của khán đài/ngăn kéo (`binh-luan.tsx`/`khan-dai.tsx`/`ngan-keo.tsx` — nghi commit `8e8a953` "Bình luận chung tách khỏi mốc…")
 - **Bằng chứng**: chạy riêng bài này 2 lần đều ĐỎ tại `vo-reddit.spec.ts:535` — sau click `nut-gap-nhanh`, `thread.textContent()` không còn chứa chữ của bình luận, tức node bị GỠ khỏi DOM chứ không phải ẩn bằng CSS. Ba file component trên trùng HEAD từng byte (`git diff HEAD` rỗng) và phép đo là `textContent` nên 4 file CSS bẩn của phiên khác không can thiệp được ⇒ lỗi thuộc HEAD, không thuộc cây làm việc.
@@ -1291,8 +1304,57 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Bằng chứng (giả thuyết)**: `--sach` DELETE index lớn ⇒ task vào hàng đợi; `_go_ma` đọc `GET …/documents` ngay sau có thể trúng 404 ⇒ `CommandError`, lệnh thoát ≠ 0. Đúng lệnh ở bước 4 runbook deploy.
 - **Vì sao chưa sửa**: cần Meili thật để tái hiện + sửa đúng (chờ `/tasks/{uid}`). ⚠ Sẽ **LỘ NGAY** khi chạy reindex trên prod (ném lỗi, KHÔNG im lặng) — nên nếu bước reindex lúc deploy chạy trót lọt thì ca này không xảy ra lần đó; vẫn ghi để không quên.
 
-### P-20260830-11 · [MỞ] · VỪA (khoảng trống đo lường) — đường đọc trộn federated của search chưa có phép đo nào trên Meili THẬT
+### P-20260830-11 · [ĐÓNG (xác minh truy vấn thật trên prod 2026-08-30)] · VỪA (khoảng trống đo lường) — đường đọc trộn federated của search chưa có phép đo nào trên Meili THẬT
+
+> **ĐÓNG 2026-08-30:** kiểm chứng truy vấn thật trên prod (Meili v1.51) sau deploy — mọi ca dev
+> không đo được đều CHẠY ĐÚNG: không dấu `vang mieng` → tô đậm `[[vàng]] [[miếng]]` (4 hit); mã
+> ngắn `FPT` khớp chính xác; `sort=moi` trộn 7 hit; `goi-y?q=trading` ra `duong_dan` đúng. Lớp
+> "gõ gì ra gì" + federated response thật nay đã có bằng chứng. Vẫn còn: index `binh_luan` prod
+> RỖNG (0 bình luận thật) nên nhánh tìm-trong-bình-luận chưa có dữ liệu thật để chấm — sẽ tự
+> chấm khi có bình luận đầu tiên; cơ chế index đã xác nhận đúng (đối soát khớp, xem P-20260827-2).
 - **Thấy lúc**: nghiệm thu + phản biện "search v2" cùng chỉ ra
 - **Ở đâu**: `api/core/tim_kiem.py::tim_tron` (`POST /multi-search`) · `api/tests/_meili_gia.py` (không hiện thực `/multi-search`) · `test_tim_kiem_that.py` (26 skip trên dev)
 - **Bằng chứng**: dev không có Meili ⇒ toàn bộ "gõ gì ra gì" (không dấu→có dấu, khoan dung lỗi gõ, mã ngắn khớp chính xác), hình dạng response federated (`_federation.indexUid`, `estimatedTotalHits`, sort per-query), và hiệu lực `maxTotalHits=2000` **chưa chạy xanh lần nào**. Lớp PARSE đã phủ bằng phản hồi dựng tay (`test_tim_kiem_tron.py`); lớp XẾP HẠNG THẬT thì chưa.
 - **Cách đóng**: chạy `test_tim_kiem_that.py` trên máy có Meili (skip=0), HOẶC kiểm chứng truy vấn thật trên prod sau deploy (gõ câu không dấu / mã ngắn / câu nằm trong bình luận, xem kết quả). Phiên chính sẽ làm cách sau ngay trong lượt deploy.
+
+### P-20260830-12 · [MỞ] · NẶNG — bài đo T8 "ô tìm kiếm là ô SỐNG" đỏ sẵn tại HEAD: locator tìm `searchbox`, Search v2 đã đổi ô thành `combobox`
+- **Thấy lúc**: chạy full `pnpm e2e` (gikky_e2e) trong lượt "sửa bài đo A10" — thực thi lẫn nghiệm thu cùng thấy, phản biện xác nhận không do lượt A10
+- **Ở đâu**: `apps/web/e2e/giao-dien.spec.ts:318` (`header.getByRole("searchbox")`) ↔ `apps/web/components/o-tim-kiem.tsx:233` (`role="combobox"` tường minh, thêm ở `dd1dac5` cho dropdown gợi ý — role tường minh ĐÈ role ngầm của `<input type="search">`)
+- **Bằng chứng**: `pnpm e2e` → `T8 … expect(locator).toHaveCount(expected) failed · Expected: 1 · Received: 0`; `git diff HEAD -- apps/web/e2e/giao-dien.spec.ts apps/web/components/o-tim-kiem.tsx` rỗng ⇒ đỏ thuộc HEAD. Ô tìm kiếm vẫn tồn tại và sống — bài đo hỏng, sản phẩm không hỏng (cùng loài A10/P-20260830-8).
+- **Vì sao không sửa ngay**: ngoài phạm vi lượt A10; vá là một dòng locator nhưng phải kèm thử phá riêng theo luật 4.
+
+### P-20260830-13 · [MỞ] · NẶNG — `gikky_e2e` tích rác qua từng lượt chạy, đổi NGẦM đối tượng đo của mọi bài chọn "mốc đông nhất / thread đầu tiên"
+- **Thấy lúc**: phản biện lượt "sửa bài đo A10", truy vấn chỉ đọc vào `gikky_e2e`
+- **Ở đâu**: nguồn xả rác: `apps/web/e2e/tai-khoan-va-ghi.spec.ts:150,292` (mỗi lượt chạy để lại bình luận SỐNG trong mạch seed HPG); nạn nhân: mọi bài chọn mục tiêu kiểu "đông nhất / đầu tiên" (`vo-reddit.spec.ts:469` `nganKeoDongNhat`, `binh-luan-chung.spec.ts:41` `mocDongNhat`)
+- **Bằng chứng**: mốc 9 HPG: seed đúng 3 thread, DB đang có 8 — 5 hàng rác `md-md_*` neo mốc 9 từ 2026-08-27; chính chúng đẩy A10 cũ sang đo một thread rác 0-reply và sinh cú đỏ bị ghi nhầm thành P-20260830-8. `e2e/dung-seed.ts` chỉ ẨN MẠCH rác (`@gikky.test`), không dọn BÌNH LUẬN rác nằm trong mạch seed.
+- **Vì sao không sửa ngay**: cần quyết cơ chế (dọn bình luận `@gikky.test` trong globalSetup · `seed_dev --reset` cho riêng gikky_e2e · hay ép mọi bài chọn mục tiêu theo thuộc tính ghim được) — việc riêng, đụng nhiều spec.
+
+### P-20260830-14 · [MỞ] · NHỎ — khối comment 5 dòng dán lặp nguyên văn hai lần trong `o-tim-kiem.tsx`
+- **Thấy lúc**: thực thi lượt "sửa bài đo A10" đọc quanh vùng T8
+- **Ở đâu**: `apps/web/components/o-tim-kiem.tsx:190-199`
+- **Bằng chứng**: dòng 190-194 và 195-199 giống nhau từng ký tự ("Đóng khi focus RỜI hẳn vùng bọc … ⇒ đóng")
+- **Vì sao không sửa ngay**: ngoài phạm vi; lượt nào đụng file đó thì gỡ tiện thể.
+
+### P-20260831-1 · [MỞ] · VỪA — `cong-tac-theme` nở 44×44 ở `(pointer: coarse)` KHÔNG có margin âm bù chỗ, ngược hẳn luật mà `tim-kiem-mobile` ghi là bắt buộc
+- **Thấy lúc**: thực thi vòng 2 lượt "header mobile một dòng" (`plans/2026-08-31-header-mobile-mot-dong.md`)
+- **Ở đâu**: `apps/web/components/cong-tac-theme.module.css:37-42` vs `apps/web/components/tim-kiem-mobile.module.css:36-47`
+- **Bằng chứng**: chú thích ở `tim-kiem-mobile` nêu đích danh rủi ro cụm phải nở thêm 12px ở dải 421–520px và cặp margin âm là cách bù; file theme nở đúng 12px đó mà không bù. Hai file cạnh nhau trong cùng cụm `.phai` nói ngược nhau.
+- **Vì sao không sửa ngay**: ngoài phạm vi lượt header; sửa phải đo lại bố cục cụm phải trên màn cảm ứng.
+
+### P-20260831-2 · [MỞ] · VỪA — nút chuông KHÔNG có khối `(pointer: coarse)` nào, vùng bấm ~29px — dưới mốc 44px mà chính repo đặt cho ba nút còn lại cùng cụm
+- **Thấy lúc**: thực thi vòng 2 lượt "header mobile một dòng"
+- **Ở đâu**: `apps/web/components/chuong.module.css:5-18`
+- **Bằng chứng**: `grep "pointer: coarse" chuong.module.css` → 0 kết quả; ba hàng xóm (`cong-tac-theme`, `tim-kiem-mobile`, `thanh-tai-khoan` từ lượt này) đều có khối 44px.
+- **Vì sao không sửa ngay**: ngoài phạm vi; nên gộp với P-20260831-1 thành một lượt "vùng bấm cụm phải" cho đồng bộ.
+
+### P-20260831-3 · [MỞ] · VỪA — luật vùng bấm 44px KHÔNG có hàng rào chạy được ở mức trình duyệt: mọi project Playwright chạy `pointer: fine`
+- **Thấy lúc**: thực thi vòng 2 lượt "header mobile một dòng" — khối coarse mới thêm cho `.ten` không có bài đo nào chạm tới được
+- **Ở đâu**: `apps/web/playwright.config.ts:95` (`devices["Desktop Chrome"]`) · hàng rào coarse duy nhất là phép grep đọc nguồn trong `apps/web/e2e/don-vi/loi-vao-tim-kiem.spec.ts:218-231`, chỉ hỏi đúng `.nut` của `tim-kiem-mobile`
+- **Bằng chứng**: các khối coarse ở theme, form-tai-khoan, composer, chep-link, chon-kieu-xem, thanh-tai-khoan không ai kiểm; bản vá 44px của lượt này chỉ chứng minh được bằng grep bundle CSS đã build.
+- **Vì sao không sửa ngay**: cần quyết cơ chế (project Playwright mobile thật có touch, hay mở rộng phép grep) — việc riêng.
+
+### P-20260831-4 · [MỞ] · NHỎ — `e2e/danh-tinh.ts:95` `toContainText("u/…")` từ nay chỉ còn đúng nhờ `textContent`, vì chữ username đã ẩn thị giác ≤640px
+- **Thấy lúc**: phản biện lượt "header mobile một dòng"
+- **Ở đâu**: `apps/web/e2e/danh-tinh.ts:95`
+- **Bằng chứng**: mọi lời gọi `dungTaiKhoan` hiện chạy ở viewport mặc định nên vẫn xanh; ai gọi helper SAU `setViewportSize(≤640)` hoặc đổi sang `useInnerText` sẽ ăn timeout 30s ở dòng không liên quan bài đo của mình.
+- **Vì sao không sửa ngay**: chưa gây hại; sửa là thêm một câu chú thích hoặc đổi phép so — làm khi đụng file.

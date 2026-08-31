@@ -182,24 +182,38 @@ test("B — icon ẩn MẶC ĐỊNH, chỉ hiện trong một khối media", () 
 });
 
 test("B — MỘT mốc duy nhất: chỗ ẩn ô tìm và chỗ hiện icon là cùng con số", () => {
-  // Đây là bài chính của file. Ba con số dưới đây nằm ở BA file khác nhau và không có gì
+  // Đây là bài chính của file. BỐN con số dưới đây nằm ở ba file khác nhau và không có gì
   // ngoài bài đo này buộc chúng bằng nhau; lệch một cái là có một dải bề ngang màn hình
   // không có lối vào tìm kiếm nào — đúng bệnh lượt 2026-08-30 vừa vá.
+  //
+  // **Con số thứ tư (`.boc`) thêm 2026-08-31**, và nó là con số mà lượt trước KHÔNG có:
+  // `dd1dac5` (Search v2) đổi gốc của `OTimKiem` từ chính `<form class="o">` sang một
+  // `<div class="boc">` bọc ngoài (chỗ neo dropdown gợi ý). Từ đó luật ẩn `.o` chỉ còn ẩn
+  // RUỘT, còn cái vỏ vẫn là grid item của `.trong` — rộng 0px, vô hình, mà vẫn chiếm một
+  // cột của lưới `1fr auto` và đẩy cụm phải xuống hàng hai trên toàn dải 421–860px. Bài
+  // đo này lẽ ra phải bắt được nó, nên nay nó hỏi cả bốn.
   const an_o_tim = mocCua(O_TIM_CSS, ".o", AN);
+  const an_boc = mocCua(O_TIM_CSS, ".boc", AN);
   const an_cho_giu = mocCua(CHROME_CSS, ".cho_o_tim", AN);
   const hien_icon = mocCua(MOBILE_CSS, ".nut", /display:\s*inline-flex/);
 
   expect(an_o_tim, "không tìm thấy mốc ẩn `.o` trong o-tim-kiem.module.css").toHaveLength(
     1,
   );
+  expect(
+    an_boc,
+    "không tìm thấy mốc ẩn `.boc` — hộp bọc `OTimKiem` còn là grid item của `.trong`, " +
+      "tức header vỡ hai dòng ở 421–860px",
+  ).toHaveLength(1);
   expect(an_cho_giu).toHaveLength(1);
   expect(hien_icon).toHaveLength(1);
 
   expect(
-    [an_cho_giu[0], hien_icon[0]],
-    `mốc lệch nhau: ô tìm ẩn ở ${an_o_tim[0]}px, chỗ giữ ẩn ở ${an_cho_giu[0]}px, icon ` +
-      `hiện ở ${hien_icon[0]}px — có dải màn hình không còn lối vào tìm kiếm`,
-  ).toEqual([an_o_tim[0], an_o_tim[0]]);
+    [an_boc[0], an_cho_giu[0], hien_icon[0]],
+    `mốc lệch nhau: ô tìm ẩn ở ${an_o_tim[0]}px, hộp bọc ẩn ở ${an_boc[0]}px, chỗ giữ ẩn ` +
+      `ở ${an_cho_giu[0]}px, icon hiện ở ${hien_icon[0]}px — có dải màn hình không còn ` +
+      `lối vào tìm kiếm, hoặc header vỡ hai dòng`,
+  ).toEqual([an_o_tim[0], an_o_tim[0], an_o_tim[0]]);
 });
 
 test("B — trong panel mobile, ô tìm được GỠ ẨN ở đúng mốc ấy", () => {
@@ -209,8 +223,17 @@ test("B — trong panel mobile, ô tìm được GỠ ẨN ở đúng mốc ấy
   expect(mocCua(O_TIM_CSS, ".o.trong_panel", /display:\s*flex/)).toEqual(
     mocCua(O_TIM_CSS, ".o", AN),
   );
+  // Cùng cửa hậu, một tầng ra ngoài (2026-08-31): từ khi `.boc` cũng bị ẩn dưới 860px để
+  // header khỏi vỡ hai dòng, bản trong panel phải được gỡ ẩn — nếu không thì bấm kính lúp
+  // ra một panel RỖNG, và bài đo `.o.trong_panel` ngay trên vẫn xanh vì nó chỉ nói về ruột.
+  expect(mocCua(O_TIM_CSS, ".boc.boc_panel", /display:\s*block/)).toEqual(
+    mocCua(O_TIM_CSS, ".boc", AN),
+  );
   expect(O_TIM_TSX, "component không truyền cờ ⇒ class ghi đè không bao giờ gắn").toContain(
     "css.trong_panel",
+  );
+  expect(O_TIM_TSX, "gốc component không gắn `boc_panel` ⇒ panel rỗng ở mọi khổ mobile").toContain(
+    "css.boc_panel",
   );
   expect(MOBILE_TSX).toContain("trongPanel");
 });

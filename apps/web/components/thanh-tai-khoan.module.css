@@ -110,9 +110,59 @@
   white-space: nowrap;
 }
 
+/* MỘT khối 640 duy nhất cho file này — mỗi dòng dưới đây bớt một phần bề ngang của cụm
+   phải trên điện thoại. User báo 2026-08-31: đăng nhập xong header trôi xuống 2 dòng
+   (`chrome.module.css` ≤420px cho `.trong` `flex-wrap`, nên cụm phải không lọt thì nó
+   xuống dòng chứ không tràn — T7 vẫn xanh trong lúc header vỡ làm đôi).
+   Thủ phạm là chữ `u/<username>`: mono 13px, dài theo tên, một mình ~95–150px trên khung
+   360px. Bỏ nó đi thì nút còn ~34px (avatar 24 + đệm + viền) và cả hàng lọt trong 360px.
+   ⚠ **320px thì vẫn KHÔNG lọt** — 64.6 (hiệu) + 10 (gap) + 219 (cụm phải) = 293.6 > 290
+   khả dụng. Ở khổ ấy `flex-wrap` của `chrome.module.css` ≤420 là lưới an toàn có chủ
+   đích: cho xuống dòng còn hơn nén chữ. Đừng đọc khối này thành "một dòng ở mọi khổ". */
 @media (max-width: 640px) {
   .chua_xac_thuc {
     display: none;
+  }
+
+  /* Ẩn THỊ GIÁC, không `display: none`: accessible name của nút tài khoản là tên người
+     đang đăng nhập, và một cái tên biến mất theo bề ngang màn hình là nút "menu" vô danh
+     với trình đọc màn hình. `position: absolute` là chỗ thật sự lấy lại bề ngang — phần
+     tử ra khỏi dòng chảy nên `.ten` không còn tính nó, kể cả `gap` (nó thôi là flex item).
+     Neo tuyệt đối rơi vào `.khung` (`position: relative`), tức vẫn trong lòng header. */
+  .ten_chu {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* Không còn chữ ⇒ đệm phải 11px thành lệch tâm; 4px cả hai bên cho nút tròn quanh avatar. */
+  .ten {
+    padding: 3px 4px;
+  }
+}
+
+/* Vùng bấm 44px trên màn hình cảm ứng — cùng luật với hai nút icon đứng ngay cạnh
+   (`cong-tac-theme.module.css`, `tim-kiem-mobile.module.css`), và với câu luật ghi trong
+   `chrome.module.css`: *nén tới mức vùng bấm dưới 44px là đổi một lỗi bố cục lấy hai lỗi
+   trợ năng*. Không có khối này thì chính bản vá ≤640 ở trên bóp nút tài khoản còn 34×32.
+
+   Chép theo `.khung` của công tắc theme — nở THẬT, không cặp margin âm như
+   `tim-kiem-mobile`: nút này là phần tử CUỐI của cụm phải, nên margin âm đẩy hộp của nó
+   ra ngoài `.khung` về phía mép phải màn hình. Chỗ nở ra có sẵn: ở 360px cụm phải chiếm
+   219/290px, và hai nút nở thêm tổng cộng 22px vẫn còn dư.
+
+   `justify-content` phải đặt lại: `min-width` nới hộp mà không nới nội dung, nên thiếu nó
+   avatar dạt về mép trái của một hình tròn 44px. */
+@media (pointer: coarse) {
+  .ten {
+    min-width: 44px;
+    min-height: 44px;
+    justify-content: center;
   }
 }
 

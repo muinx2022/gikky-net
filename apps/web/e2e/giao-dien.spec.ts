@@ -1,7 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { TEN_DAU_CHU_NGUOI_DUNG } from "../lib/chu-nguoi-dung";
 import { KHOA_KIEU_XEM } from "../lib/kieu-xem";
 import { KHOA_THEME } from "../lib/theme";
+import { dungTaiKhoan } from "./danh-tinh";
 import { TITLE_HPG, duongDan, timMachTheoTitle } from "./du-lieu";
 
 /** Lượt giao diện 2026-08-23 — tiêu chí T1…T8 của
@@ -31,6 +33,17 @@ async function daChon(page: Page, khoa: string, gia_tri: string) {
     ([k, v]) => window.localStorage.setItem(k, v),
     [khoa, gia_tri] as const,
   );
+}
+
+/** Thoát ký tự đặc biệt để một chuỗi dữ liệu dùng được làm mẫu regex.
+ *
+ * Username của e2e hiện chỉ có chữ và số, nên hôm nay chuỗi nào cũng an toàn — và đó
+ * chính là lý do phải thoát: ngày `danhTinhMoi` đổi bộ ký tự, một dấu `.` hay `+` lọt vào
+ * sẽ làm mẫu khớp RỘNG hơn ý định, tức bài đo xanh trong khi tên đã sai. Hỏng kiểu ấy
+ * không đỏ ở đâu cả.
+ */
+function thoatRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 test.describe("T1 — công tắc hai trạng thái, và lựa chọn SỐNG qua tải lại", () => {
@@ -303,6 +316,139 @@ test.describe("T6/T7 — bàn phím, focus, và mobile", () => {
         `${duong} cuộn ngang: scrollWidth ${tran.cuon} > clientWidth ${tran.nhin}`,
       ).toBeLessThanOrEqual(tran.nhin + 1);
     }
+  });
+
+  test("T7b — đã đăng nhập: header MỘT dòng, không cuộn ngang, ở CẢ BỐN nhánh CSS", async ({
+    page,
+  }) => {
+    /* **Bài đo của lỗi user báo 2026-08-31**: trên điện thoại, đăng nhập xong thanh trên
+     * cùng trôi xuống HAI dòng.
+     *
+     * T7 ngay trên không bắt được vì nó đo **khách**, và bản đầu của chính bài này không
+     * bắt hết vì nó chỉ đo **một điểm 360px**. Hai nguyên nhân khác nhau đã trốn qua đúng
+     * hai lỗ ấy, nên cả hai đều được đóng ở đây:
+     *
+     * 1. chữ `u/<username>` (mono, dài theo tên) làm cụm phải không lọt khung 360px, và
+     *    `chrome.module.css` ≤420px cho `.trong` `flex-wrap` nên nó xuống dòng thay vì
+     *    tràn — tức T7 vẫn xanh trong lúc header vỡ làm đôi;
+     * 2. hộp bọc `.boc` của `OTimKiem` vẫn là grid item của `.trong` sau khi ô nhập bên
+     *    trong đã bị ẩn ⇒ ba con trong lưới hai cột `1fr auto`, cụm phải bị đẩy xuống
+     *    hàng hai trên TOÀN dải 421–860px, **kể cả khách**. Một bài đo ở 360px không thấy
+     *    gì vì 360 rơi vào nhánh `flex-wrap`, nơi lưới không còn cầm trịch.
+     *
+     * Nên bốn mốc dưới đây không phải là "đo cho nhiều": mỗi con số rơi vào ĐÚNG một
+     * nhánh CSS của thanh trên cùng — 360 (≤420 `flex-wrap`) · 430 (421–640, lưới, iPhone
+     * Plus/Pro Max) · 640 (mép của khối 640) · 768 (641–860, vẫn chưa có ô tìm).
+     */
+    const ai = await dungTaiKhoan(page, "t7b");
+    const chu_ten = `u/${ai.username}`;
+
+    for (const rong of [360, 430, 640, 768]) {
+      // Đặt khung nhìn TRƯỚC khi tải: đo sau một `goto` ở khổ khác là đo một bố cục đã
+      // được tính bằng con số cũ rồi mới co lại.
+      await page.setViewportSize({ width: rong, height: 780 });
+      await page.goto("/");
+
+      // Chống pass rỗng: hai phép đầu so hai hình chữ nhật, mà `boundingBox` của thứ
+      // không tồn tại là `null` — không chốt "đang đăng nhập" trước thì cả bài đo thành
+      // một câu hỏi về hai thứ không có mặt.
+      const nut = page.getByTestId("nut-tai-khoan");
+      await expect(nut, `${rong}px: phải ĐANG đăng nhập thì bài đo mới có nghĩa`).toBeVisible();
+      const hieu = page.locator("header").getByRole("link", { name: "gikky", exact: true });
+      await expect(hieu).toBeVisible();
+
+      const hop_hieu = await hieu.boundingBox();
+      const hop_nut = await nut.boundingBox();
+      if (hop_hieu === null || hop_nut === null) {
+        throw new Error(`${rong}px: không đo được hộp bao của hiệu hoặc của nút tài khoản`);
+      }
+
+      // 1. MỘT dòng — hiệu và nút tài khoản cùng hàng. So tâm-y chứ không so `y`: hai
+      //    phần tử cùng hàng vẫn khác chiều cao (hiệu 23px, nút 32–44px).
+      const tam_hieu = hop_hieu.y + hop_hieu.height / 2;
+      const tam_nut = hop_nut.y + hop_nut.height / 2;
+      expect(
+        Math.abs(tam_hieu - tam_nut),
+        `${rong}px: header trôi 2 dòng — tâm-y hiệu ${tam_hieu} vs nút tài khoản ${tam_nut}`,
+      ).toBeLessThanOrEqual(4);
+
+      // 2. Không cuộn ngang — cùng phép đo của T7, vì "một dòng" cũng đạt được bằng cách
+      //    đẩy cụm phải tràn ra ngoài khung nhìn.
+      const tran = await page.evaluate(() => ({
+        cuon: document.documentElement.scrollWidth,
+        nhin: document.documentElement.clientWidth,
+      }));
+      expect(
+        tran.cuon,
+        `${rong}px: / cuộn ngang — scrollWidth ${tran.cuon} > clientWidth ${tran.nhin}`,
+      ).toBeLessThanOrEqual(tran.nhin + 1);
+
+      // 3. Chữ `u/<username>`: ẩn thị giác ở ≤640px, và **hiện lại** ở trên mốc ấy. Vế
+      //    thứ hai không phải phần thừa — nó là thứ chặn một cú "vá" bằng cách giấu tên
+      //    người dùng ở mọi khổ màn hình.
+      const chu = nut.locator(`[${TEN_DAU_CHU_NGUOI_DUNG}]`);
+      const hop_chu = await chu.boundingBox();
+      expect(
+        hop_chu,
+        `${rong}px: span ${chu_ten} phải còn trong bố cục — \`display: none\` là cách vá sai`,
+      ).not.toBeNull();
+      const rong_chu = hop_chu?.width ?? Number.POSITIVE_INFINITY;
+      if (rong <= 640) {
+        expect(rong_chu, `${rong}px: chữ tên phải ẩn thị giác (bề ngang ≤ 1px)`).toBeLessThanOrEqual(
+          1,
+        );
+        // …nhưng KHÔNG được biến mất khỏi cây trợ năng: accessible name của nút là tên
+        // người đang đăng nhập, và một cái tên đổi theo bề ngang màn hình là một nút
+        // "menu" vô danh với trình đọc màn hình.
+        await expect(
+          nut,
+          `${rong}px: accessible name của nút KHÔNG được đổi theo bề ngang màn hình`,
+        ).toHaveAccessibleName(new RegExp(thoatRegex(chu_ten)));
+      } else {
+        expect(rong_chu, `${rong}px: trên mốc 640 chữ tên phải NHÌN THẤY`).toBeGreaterThan(1);
+      }
+    }
+  });
+
+  test("T7c — 430px: bấm kính lúp vẫn xổ ra Ô TÌM THẬT, không phải panel rỗng", async ({
+    page,
+  }) => {
+    /* Bài này là **cái giá của bản vá T7b #2** và phải đi cùng nó.
+     *
+     * Cách chữa "header vỡ hai dòng ở 421–860px" là ẩn luôn `.boc` — gốc của `OTimKiem` —
+     * dưới 860px, để nó thôi chiếm một cột của lưới. Nhưng panel xổ trên di động nhúng lại
+     * **chính component ấy**, nên cùng một luật ẩn cũng bắn vào bản trong panel: bấm kính
+     * lúp ra một cái hộp trắng, không ô nhập nào. Ghi đè `.boc.boc_panel` chữa chuyện đó.
+     *
+     * `e2e/don-vi/loi-vao-tim-kiem.spec.ts` đã so mốc của hai luật ấy, nhưng nó đọc NGUỒN:
+     * nó không trả lời được câu "ô nhập có thật sự hiện ra không" — thứ phụ thuộc vào
+     * specificity, thứ tự nguồn, và cả việc `trongPanel` có được truyền xuống hay không.
+     * Mà ≤860px thì panel này là lối vào tìm kiếm DUY NHẤT, nên hỏng ở đây là mất hẳn
+     * tính năng trên di động.
+     *
+     * Locator là `input[name="q"]` chứ không `getByRole("searchbox")`: ô nhập mang vai
+     * combobox từ lượt gợi ý-khi-gõ (đúng chỗ T8 đang đỏ, `P-20260830-12`), và bài này
+     * không có lý do gì phải chết theo món nợ đó.
+     */
+    await page.setViewportSize({ width: 430, height: 780 });
+    await page.goto("/");
+
+    const nut = page.getByTestId("nut-tim-kiem");
+    await expect(nut, "≤860px phải có icon kính lúp — lối vào tìm kiếm duy nhất").toBeVisible();
+    await nut.click();
+
+    const panel = page.getByTestId("panel-tim-kiem");
+    await expect(panel).toBeVisible();
+    const o = panel.locator('input[name="q"]');
+    await expect(o, "panel RỖNG: bản `.boc` trong panel không được gỡ ẩn").toBeVisible();
+
+    // Hiện diện trong DOM là chưa đủ — một ô rộng 0px cũng "visible" nếu nó còn viền.
+    const hop = await o.boundingBox();
+    expect(hop?.width ?? 0, "ô tìm trong panel co còn 0px").toBeGreaterThan(100);
+
+    // …và nó gõ được thật, không phải một hộp trang trí.
+    await o.fill("HPG");
+    await expect(o).toHaveValue("HPG");
   });
 });
 

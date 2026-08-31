@@ -154,18 +154,41 @@
     display: none;
   }
 
+  /* **Hộp bọc phải ẩn theo, không chỉ ô nhập** *(vá 2026-08-31)*.
+   *
+   * `.boc` là gốc của `OTimKiem`, và nó là **con trực tiếp của lưới `.trong`**. Ẩn mỗi
+   * `.o` bên trong thì `.boc` vẫn là một grid item — rộng 0px, không thấy gì, nhưng vẫn
+   * chiếm CỘT của nó. Lưới ở mốc này là `1fr auto` (hai cột) mà header có ba con, nên
+   * `.phai` bị đẩy xuống hàng hai: đo thật ở 430px ra `grid-template-rows: 23px 32px`.
+   * Tức thanh trên cùng vỡ làm đôi trên TOÀN dải 421–860px (428/430 là iPhone Plus/Pro
+   * Max), cho cả khách lẫn người đã đăng nhập.
+   *
+   * Hồi quy vào từ `dd1dac5` (Search v2): trước đó gốc của component là chính `<form
+   * class="o">`, nên luật ẩn ngay trên vừa ẩn ô vừa gỡ nó khỏi lưới. Thêm một `<div>` bọc
+   * để neo dropdown gợi ý là vô tình tách hai việc ấy ra, và không có gì đỏ.
+   *
+   * Con số 860 ở đây là con số **thứ tư** phải bằng ba con số kia —
+   * `e2e/don-vi/loi-vao-tim-kiem.spec.ts` so cả bốn. */
+  .boc {
+    display: none;
+  }
+
   /* …trừ MỘT chỗ: bên trong panel xổ của mobile. Đó là chỗ duy nhất ô tìm được phép hiện
      dưới ngưỡng trên, và cờ `trongPanel` của `OTimKiem` bật nó.
 
      Ghi đè bằng specificity (`.o.trong_panel` = 0-2-0) chứ không bằng `!important`, và
      KHÔNG bằng cách gỡ luật ẩn ở trên: luật ấy còn giữ cho lưới header khỏi vỡ, và nó là
-     một trong ba con số mà hàng rào so. */
+     một trong bốn con số mà hàng rào so. */
   .o.trong_panel {
     display: flex;
   }
 
-  /* Trong panel, hộp bọc chiếm hết bề ngang — không còn rãnh lưới nào để bám. */
-  .boc_panel {
+  /* Trong panel, hộp bọc hiện lại và chiếm hết bề ngang — không còn rãnh lưới nào để bám.
+     `display` ở đây là BẮT BUỘC từ 2026-08-31, không phải trang trí: `.boc` nay ẩn mặc
+     định dưới 860px, nên thiếu dòng này thì bấm kính lúp ra một panel RỖNG. Cùng lối ghi
+     đè bằng specificity như `.o.trong_panel` ngay trên (0-2-0). */
+  .boc.boc_panel {
+    display: block;
     width: 100%;
   }
 }
