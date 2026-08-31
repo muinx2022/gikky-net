@@ -506,11 +506,15 @@ export type LuotXemOut = {
 /**
  * LuotXemTongOut
  *
- * Năm con số lớn. `so_luot` = `so_luot_nguoi + so_luot_bot`, không hơn.
+ * Sáu con số lớn. `so_luot` = `so_luot_nguoi + so_luot_bot`, không hơn.
  *
  * Server trả cả tổng lẫn hai vế thay vì để frontend cộng: ba chỗ trên màn hình (các ô
  * KPI, biểu đồ, dòng "% bot") phải nói cùng một chuyện, và cách chắc chắn nhất là
  * chúng cùng đọc một phép cộng.
+ *
+ * ⚠ Năm con số đầu đọc theo `?khoang=`; `so_online` thì **không** — nó luôn là 5 phút
+ * gần nhất. Chúng ở chung một khối vì chúng là chung một hàng ô KPI trên màn hình, chứ
+ * không phải vì chúng cùng một khoảng.
  */
 export type LuotXemTongOut = {
     /**
@@ -529,6 +533,10 @@ export type LuotXemTongOut = {
      * So Luot Nguoi
      */
     so_luot_nguoi: number;
+    /**
+     * So Online
+     */
+    so_online: number;
 };
 
 /**

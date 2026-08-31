@@ -603,11 +603,15 @@ class TrangNguoiDungOut(Schema):
 
 
 class LuotXemTongOut(Schema):
-    """Năm con số lớn. `so_luot` = `so_luot_nguoi + so_luot_bot`, không hơn.
+    """Sáu con số lớn. `so_luot` = `so_luot_nguoi + so_luot_bot`, không hơn.
 
     Server trả cả tổng lẫn hai vế thay vì để frontend cộng: ba chỗ trên màn hình (các ô
     KPI, biểu đồ, dòng "% bot") phải nói cùng một chuyện, và cách chắc chắn nhất là
     chúng cùng đọc một phép cộng.
+
+    ⚠ Năm con số đầu đọc theo `?khoang=`; `so_online` thì **không** — nó luôn là 5 phút
+    gần nhất. Chúng ở chung một khối vì chúng là chung một hàng ô KPI trên màn hình, chứ
+    không phải vì chúng cùng một khoảng.
     """
 
     so_luot: int
@@ -620,6 +624,14 @@ class LuotXemTongOut(Schema):
     #: Ngày không đo được đóng góp **0** vào tổng (chúng vắng mặt), nên con số này là một
     #: cận DƯỚI, không bao giờ là một con số thổi phồng.
     so_khach: int
+    #: Khách phân biệt (người, không bot) có lượt xem trong **5 phút gần nhất** — hằng
+    #: `quan_tri_luot_xem.py::CUA_SO_ONLINE_PHUT`. KHÔNG đổi theo `?khoang=`.
+    #:
+    #: Ước lượng, và giới hạn của nó là hệ quả trực tiếp của việc không có session: cùng
+    #: một người mở hai trình duyệt đếm là hai, còn người ngồi đọc yên quá 5 phút thì rơi
+    #: khỏi con số. Nhãn trên màn hình phải nói ra khoảng 5 phút ấy — nó là ô DUY NHẤT
+    #: trong hàng KPI không đọc theo bộ chọn khoảng.
+    so_online: int
 
 
 class LuotXemNgayOut(Schema):

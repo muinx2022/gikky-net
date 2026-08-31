@@ -21,9 +21,12 @@ Ngày 200 chỉ tồn tại ở `TongNgay` — đó là ca mà 7/30/90 **phải 
 from datetime import datetime, time, timedelta
 
 import pytest
+from django.utils import timezone
 
 from core.models.luot_xem import KhachNgay, LuotXem, TongNgay
 from core.thoi_gian import TZ_VN, ngay_vn
+
+from api.quan_tri_luot_xem import CUA_SO_ONLINE_PHUT
 
 from ._quan_tri import User, dang_nhap, dung_mod, dung_thuong
 
@@ -193,6 +196,8 @@ def test_Q_tach_nguoi_va_bot_dung(du_lieu):
         "so_luot_nguoi": 7,
         "so_luot_bot": 2,
         "so_khach": 0,
+        # Seed của `du_lieu` toàn `khach=""` (hàng trước 2026-08-30) ⇒ không ai "online".
+        "so_online": 0,
     }
     assert top(js, "/m/a-1") == {
         "duong_dan": "/m/a-1",
@@ -281,6 +286,7 @@ def test_T4_tat_ca_KHONG_cong_chong_ngay_co_o_ca_hai_nguon(du_lieu):
         "so_luot_nguoi": 107,
         "so_luot_bot": 9,
         "so_khach": 0,
+        "so_online": 0,
     }
 
 
@@ -329,6 +335,7 @@ def test_bang_rong_van_tra_200_va_toan_so_0(db):
         "so_luot_nguoi": 0,
         "so_luot_bot": 0,
         "so_khach": 0,
+        "so_online": 0,
     }
     assert len(js["chuoi_ngay"]) == 30
     assert js["top_duong_dan"] == []
@@ -722,3 +729,113 @@ def test_D5c_bang_rong_van_tra_200_va_moi_khoi_moi_la_mang_rong(db):
     assert js["tong"]["so_khach"] == 0
     # Ngày rỗng ⇒ 0 khách (đo được, không có ai), KHÔNG phải `None`.
     assert all(o["so_khach"] == 0 for o in js["chuoi_ngay"])
+
+
+# --- O: ô "Online" — 5 phút gần nhất, KHÔNG theo `?khoang=` -------------------
+#
+# Nhóm O của `plans/2026-08-31-o-online.md` §3. Bốn chỗ hỏng được nhắm riêng, vì cả bốn
+# đều trả HTTP 200 và một con số chỉ hơi khác:
+#
+#   bot lọt vào · hàng `khach=""` gộp thành một "khách ma" · cửa sổ sai · đi theo `khoang`
+#
+# ⚠ Mọi bài ở đây ghim mốc theo `timezone.now()` chứ không theo `luc()` (12h trưa VN của
+# `them`): cửa sổ 5 phút là một khoảng TUYỆT ĐỐI, nên seed cũng phải tuyệt đối. Dùng
+# `them` ở đây thì hàng rơi vào 12h trưa — trong cửa sổ hay ngoài tuỳ giờ chạy CI, tức
+# một bài đo xanh đỏ theo đồng hồ.
+
+
+def them_phut(phut_truoc, *, khach, bot=False, duong_dan="/"):
+    """Một lượt xem cách BÂY GIỜ đúng `phut_truoc` phút."""
+    LuotXem.objects.create(
+        duong_dan=duong_dan,
+        luc=timezone.now() - timedelta(minutes=phut_truoc),
+        la_bot=bot,
+        ten_bot="googlebot" if bot else "",
+        khach=khach,
+        nguon="",
+        trinh_duyet="",
+        thiet_bi="",
+    )
+
+
+def test_O2_dem_DISTINCT_khach_trong_cua_so(db):
+    """Hai khách khác nhau ⇒ 2. Cùng một khách xem 3 trang ⇒ vẫn là 1 người."""
+    them_phut(1, khach="a" * 32)
+    them_phut(2, khach="b" * 32)
+    assert goi("30").json()["tong"]["so_online"] == 2
+
+
+def test_O2b_cung_mot_khach_nhieu_luot_van_la_MOT(db):
+    """`COUNT(DISTINCT khach)`, không phải `COUNT(*)` — người bấm 3 trang không thành 3."""
+    for d in ("/", "/m/a-1", "/s/x"):
+        them_phut(1, khach="a" * 32, duong_dan=d)
+    assert goi("30").json()["tong"]["so_online"] == 1
+
+
+def test_O3_luot_BOT_khong_duoc_tinh(db):
+    """Câu hỏi là "bao nhiêu NGƯỜI đang đọc". Một con bot quét rầm rộ không phải độc giả.
+
+    Bot ở đây mang `khach` khác hẳn người, nên bỏ `la_bot=False` ⇒ 2 chứ không phải 1.
+    """
+    them_phut(1, khach="a" * 32)
+    them_phut(1, khach="z" * 32, bot=True)
+    them_phut(2, khach="z" * 32, bot=True)
+    assert goi("30").json()["tong"]["so_online"] == 1
+
+
+def test_O3b_hang_khach_RONG_khong_gop_thanh_mot_khach_ma(db):
+    """⚠ Bẫy của `_khach_tho`, lặp lại nguyên xi ở đây và đắt hơn.
+
+    Hàng ghi trước 2026-08-30 mang `khach=""`. Không loại chúng thì `COUNT(DISTINCT)` gộp
+    tất cả thành đúng MỘT "khách" — và ô hiện "online: 1" vĩnh viễn trên một site không có
+    ai, chỉ cần một lượt cũ rơi vào cửa sổ.
+    """
+    them_phut(1, khach="")
+    them_phut(2, khach="")
+    assert goi("30").json()["tong"]["so_online"] == 0
+
+    # Có người thật rồi thì hàng rỗng vẫn không được cộng thêm một đơn vị nào.
+    them_phut(1, khach="a" * 32)
+    assert goi("30").json()["tong"]["so_online"] == 1
+
+
+def test_O4_ranh_gioi_dung_5_phut(db):
+    """Ghim ranh giới: 4 phút trước CÓ tính, 6 phút trước KHÔNG.
+
+    Bài này ghim **QUAN HỆ**: cửa sổ thật sự dùng để lọc phải bằng đúng
+    `CUA_SO_ONLINE_PHUT`. Quên `luc__gte`, đảo dấu, hay lọc theo một hằng khác ⇒ 2 thay
+    vì 1, và không bài nào khác thấy.
+
+    ⚠ **Hai mốc bám THEO HẰNG, không gõ tay 4 và 6.** Bản đầu gõ cứng nên chỉ ghim được
+    khoảng mở `(4, 6]`: hằng nhận **5 hoặc 6** đều xanh. Lấy `CUA_SO_ONLINE_PHUT ∓ 1` thì
+    bài tự bám khi ai đó đổi cửa sổ có chủ đích, thay vì mục nát thành một con số cũ.
+
+    ⚠ **Và vì thế bài này KHÔNG ghim GIÁ TRỊ của hằng** — đổi 5 → 15 thì nó vẫn xanh, vì
+    quan hệ vẫn đúng. Cái ghim giá trị là chuông ở
+    `apps/web/e2e/don-vi/ban-sao-python.spec.ts` ("cửa sổ Online"), nó đọc hằng Python rồi
+    đòi mọi chỗ nói "<n> phút" trên `/luot-xem` khớp đúng con số ấy. Hai hàng rào bù nhau:
+    thiếu bài này thì lọc sai mà UI vẫn đúng chữ; thiếu chuông kia thì đổi cửa sổ mà màn
+    hình nói dối. Lượt phản biện 2026-08-31 tìm ra cả hai lỗ.
+    """
+    them_phut(CUA_SO_ONLINE_PHUT - 1, khach="a" * 32)
+    them_phut(CUA_SO_ONLINE_PHUT + 1, khach="b" * 32)
+    assert goi("30").json()["tong"]["so_online"] == 1
+
+
+def test_O5_so_online_KHONG_doi_theo_khoang(db, hom_nay):
+    """Ô Online là con số DUY NHẤT trong hàng KPI không đọc theo bộ chọn khoảng.
+
+    Seed cố tình có một khách của 10 ngày trước: nó nằm trong "30 ngày" và "toàn thời
+    gian", nằm ngoài "7 ngày" — nên một bản cài lỡ ghép `so_online` vào `ngay_dau` sẽ ra
+    ba con số khác nhau ở bốn khoảng.
+    """
+    them_phut(1, khach="a" * 32)
+    them(hom_nay - timedelta(days=10), "/", khach="c" * 32)
+
+    so = [goi(k).json()["tong"]["so_online"] for k in ("7", "30", "90", "tat_ca")]
+    assert so == [1, 1, 1, 1], so
+
+
+def test_O_bang_rong_tra_0_chu_khong_None(db):
+    """Site chưa có lượt nào: `0`, và trường vẫn phải có mặt (frontend đọc thẳng)."""
+    assert goi("30").json()["tong"]["so_online"] == 0

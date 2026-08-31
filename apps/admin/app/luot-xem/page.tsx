@@ -28,7 +28,7 @@ import { GOC_API, moTaLoi } from "../../lib/api";
  * vẫn thuộc nhóm **Tổng quan** trong menu, ngay sau "Bảng điều khiển": nó trả lời cùng
  * loại câu hỏi ("site đang thế nào"), nên nó đứng cạnh chứ không lưu lạc xuống "Hệ thống".
  *
- * ## BA giới hạn được NÓI RA, không giấu
+ * ## BỐN giới hạn được NÓI RA, không giấu
  *
  * Cuối trang có một khối chú, và nó không phải chữ cho đủ:
  *
@@ -39,7 +39,11 @@ import { GOC_API, moTaLoi } from "../../lib/api";
  *    huỷ khi ngày đóng, nên một người ghé ba ngày đếm là **ba khách**. Đó chính là cái giá
  *    của việc không theo dõi ai — và một mod tưởng đây là "số người dùng" sẽ ra quyết định
  *    sai theo hướng lạc quan;
- * 3. **Cờ `chi_tiet_chi_90_ngay`** (có điều kiện): năm bảng chi tiết chỉ dựng được từ hàng
+ * 3. **"Online" đếm LƯỢT XEM, không đếm phiên** (2026-08-31): khách phân biệt có lượt xem
+ *    trong 5 phút gần nhất. Hai trình duyệt của cùng một người = hai; người đọc yên một
+ *    trang quá 5 phút rơi khỏi con số. Cùng gốc với giới hạn 2 — không có session, và đó
+ *    là chỗ *không* được "cải thiện" bằng một cái cookie;
+ * 4. **Cờ `chi_tiet_chi_90_ngay`** (có điều kiện): năm bảng chi tiết chỉ dựng được từ hàng
  *    thô, tức tối đa 90 ngày. Cờ ấy do server bật, **không suy ở đây** — hai bên đoán ra
  *    hai câu khác nhau là chuyện chỉ chờ xảy ra.
  *
@@ -173,7 +177,16 @@ export default function TrangLuotXem() {
         </div>
       ) : (
         <div className="space-y-5">
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
+          {/* `2xl:grid-cols-6` (đổi 2026-08-31, từ 5): ô "Online" là ô thứ SÁU, và với 5
+              cột thì nó rơi xuống một hàng riêng đứng mồ côi cạnh khoảng trống — ở `xl`
+              (3 cột) thì 3+3 vẫn đều. Số cột ở đây phải bằng số ô, không phải một con số
+              đẹp sẵn: thêm ô thứ bảy thì đọc lại dòng này. */}
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+            {/* Ô ĐẦU vì nó là con số "ngay lúc này" — nó đứng trước những con số tích
+                luỹ, chứ không lẫn vào giữa chúng. Nhãn phụ bắt buộc: đây là ô DUY NHẤT
+                của hàng này không đọc theo bộ chọn khoảng ở ngay trên, nên không nói ra
+                "5 phút gần nhất" là để mod đọc nó như "khách trong 30 ngày". */}
+            <TheSo nhan="Online" so={so_lieu.tong.so_online} phu="5 phút gần nhất" />
             <TheSo nhan="Tổng lượt xem" so={so_lieu.tong.so_luot} />
             <TheSo nhan="Lượt người" so={so_lieu.tong.so_luot_nguoi} />
             <TheSo
@@ -355,7 +368,7 @@ export default function TrangLuotXem() {
                   Ghi cứng "Ba" là mod đếm được hai đoạn rồi đi tìm đoạn thứ ba không có —
                   và sẽ tin là trang đang giấu mất một dòng. */}
               <strong>
-                {so_lieu.chi_tiet_chi_90_ngay ? "Ba" : "Hai"} giới hạn của trang này.
+                {so_lieu.chi_tiet_chi_90_ngay ? "Bốn" : "Ba"} giới hạn của trang này.
               </strong>{" "}
               Một, nhận diện bot là{" "}
               <em>suy đoán</em> theo User-Agent: một trình duyệt thật đặt UA lạ sẽ bị tính
@@ -369,9 +382,19 @@ export default function TrangLuotXem() {
               <strong>hai khách</strong>. Đó là cái giá của việc không theo dõi ai — không
               cookie, không lưu IP, không dịch vụ ngoài.
             </p>
+            <p className="mt-2" data-testid="chu-online">
+              Ba, <strong>“Online” đếm lượt xem, không đếm phiên</strong>: nó là số khách
+              phân biệt có lượt xem trong <strong>5 phút gần nhất</strong>, nên cùng một
+              người mở hai trình duyệt tính là <strong>hai</strong>, còn người ngồi đọc yên
+              một trang quá 5 phút thì rơi khỏi con số. Ô này giữ nguyên 5 phút ở{" "}
+              <em>mọi</em> lựa chọn của bộ chọn khoảng phía trên. Riêng trong{" "}
+              <strong>5 phút sau nửa đêm</strong>, một người xem xuyên qua mốc 00:00 bị
+              tính là hai — muối băm đổi theo ngày, và đó là cái giá của việc không có
+              phiên đăng nhập để bám vào.
+            </p>
             {so_lieu.chi_tiet_chi_90_ngay && (
               <p className="mt-2" data-testid="chu-chi-tiet-90-ngay">
-                Ba, các bảng <strong>Nguồn · Bot · Trình duyệt · Thiết bị</strong> chỉ phủ{" "}
+                Bốn, các bảng <strong>Nguồn · Bot · Trình duyệt · Thiết bị</strong> chỉ phủ{" "}
                 <strong>90 ngày gần nhất</strong>: tổng theo ngày giữ mãi nhưng không giữ
                 các chiều ấy, còn dữ liệu thô thì dọn sau 90 ngày.
               </p>
@@ -385,7 +408,24 @@ export default function TrangLuotXem() {
 
 /** Một ô số lớn. Không dùng `TheKpi` của bảng điều khiển: ô đó có icon + link đích, mà
  * các con số ở đây không dẫn tới trang nào — một ô trông bấm được mà không bấm được là
- * đúng thứ nguyên tắc 9 của PLAN cấm. */
+ * đúng thứ nguyên tắc 9 của PLAN cấm.
+ *
+ * ## ⚠ `so` khai `number` nhưng thân hàm vẫn phòng `undefined`, và đó KHÔNG phải thừa
+ *
+ * Type nói `number` vì `openapi.json` khai trường ấy `required` — đúng hợp đồng một
+ * chiều `Ninja → OpenAPI → TS`. Nhưng type là lời hứa lúc BIÊN DỊCH, còn thứ chạy trong
+ * trình duyệt là JSON của một Django có thể **cũ hơn** app này: deploy không nguyên tử,
+ * và nếu `apps/admin` lên trước `api` thì `tong.so_online` là `undefined`.
+ *
+ * Không phòng thì `undefined.toLocaleString()` ném ngay trong render — mà `apps/admin`
+ * **không có `error.tsx` nào**, nên cả trang chết: mất luôn 5 ô cũ, biểu đồ và 5 bảng chi
+ * tiết, chỉ vì một ô thứ sáu. Một gạch ngang ở đúng ô ấy là câu trả lời đúng cho một số
+ * liệu chưa có. Cùng lý lẽ backward-compatible mà `api/api/dem_luot_xem.py::DemLuotXemIn`
+ * đã dựng cho chiều ngược lại. Lượt phản biện 2026-08-31 tìm ra.
+ *
+ * Thứ tự deploy đúng vẫn là **`api` trước, `admin` sau** (ghi ở `deploy/prod/README.md`);
+ * dòng phòng này là lưới thứ hai, không phải giấy phép làm ngược.
+ */
 function TheSo({
   nhan,
   so,
@@ -397,11 +437,12 @@ function TheSo({
   la_phan_tram?: boolean;
   phu?: string;
 }) {
+  const co_so = typeof so === "number" && Number.isFinite(so);
   return (
     <div className="the p-4" data-testid={`so-${nhan}`}>
       <p className="text-sm text-muc-mo">{nhan}</p>
       <p className="mt-1 text-2xl font-semibold tabular-nums">
-        {la_phan_tram ? `${so}%` : so.toLocaleString("vi-VN")}
+        {!co_so ? "—" : la_phan_tram ? `${so}%` : so.toLocaleString("vi-VN")}
       </p>
       {phu !== undefined && <p className="mt-0.5 text-xs text-muc-mo">{phu}</p>}
     </div>

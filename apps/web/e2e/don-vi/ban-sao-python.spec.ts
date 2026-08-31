@@ -158,3 +158,51 @@ test("tên header `X-Ghi-Nho` khớp nhau giữa admin (TS) và `core/phien.py`"
 test("phép đọc header KHÔNG rỗng và fail-CLOSED", () => {
   expect(() => docHangChuoi("khong co gi", "x", /const X\s*=\s*"([^"]+)"/)).toThrow();
 });
+
+/* ===========================================================================
+ * Cửa sổ ô "Online" — hằng Python vs BỐN chuỗi chữ trên màn hình quản trị
+ * (thêm 2026-08-31, sau lượt phản biện)
+ * ========================================================================= */
+
+/** `CUA_SO_ONLINE_PHUT` sống ở Python, nhưng con số ấy còn được VIẾT RA THÀNH CHỮ trên
+ * `/luot-xem` — nhãn phụ của ô ("5 phút gần nhất") và đoạn chú giới hạn. Đây là một bản
+ * sao **không đi qua OpenAPI được**: schema chỉ mang `so_online: int`, không mang cửa sổ
+ * đã dùng để tính nó.
+ *
+ * Vì sao đáng một cái chuông: đổi hằng thành 15 thì `test_O4` đỏ, người sửa chỉnh luôn
+ * bài đo ấy (nó bám theo hằng), rồi **pytest xanh · lint xanh · build xanh · e2e xanh** —
+ * và ô KPI hiện con số của 15 phút dưới nhãn "5 phút gần nhất", đoạn chú nói "5 phút"
+ * thêm ba lần nữa. Con số bị đọc sai gấp ba mà không có gì kêu. Chính docstring của
+ * `quan_tri_luot_xem.py` lẫn `LuotXemTongOut` đều viết *"nhãn trên màn hình PHẢI nói ra
+ * khoảng riêng ấy"* — đây là chỗ câu đó được thi hành thật.
+ */
+test("cửa sổ Online: hằng Python khớp MỌI chỗ nói '<n> phút' trên trang quản trị", () => {
+  const phut = docHang(
+    docPython("api/api/quan_tri_luot_xem.py"),
+    "CUA_SO_ONLINE_PHUT",
+  );
+  const trang = docPython("apps/admin/app/luot-xem/page.tsx");
+
+  // Nhãn phụ của ô KPI — chỗ người đọc nhìn đầu tiên khi thấy con số.
+  expect(trang, `nhãn phụ phải nói "${phut} phút gần nhất"`).toContain(
+    `${phut} phút gần nhất`,
+  );
+
+  // Và KHÔNG chỗ nào trong trang được nói một con số phút KHÁC: đoạn chú giới hạn nhắc
+  // lại cửa sổ ba lần, nên lệch một chỗ là trang tự mâu thuẫn với chính nó.
+  const cac_so = [...trang.matchAll(/(\d+)\s*phút/g)].map((m) => Number(m[1]));
+  expect(cac_so.length, "không thấy chuỗi '<n> phút' nào — regex đã mục").toBeGreaterThan(2);
+  expect(
+    [...new Set(cac_so)],
+    `trang nói ${[...new Set(cac_so)].join("/")} phút, hằng Python là ${phut}`,
+  ).toEqual([phut]);
+});
+
+test("phép đọc `CUA_SO_ONLINE_PHUT` KHÔNG rỗng và fail-CLOSED", () => {
+  // Hằng có thật ⇒ đọc ra một số dương; nguồn không có nó ⇒ NÉM, không trả 0 (một số 0
+  // lặng lẽ sẽ làm khẳng định trên đúng một cách rỗng tuếch).
+  expect(
+    docHang(docPython("api/api/quan_tri_luot_xem.py"), "CUA_SO_ONLINE_PHUT"),
+  ).toBeGreaterThan(0);
+  expect(() => docHang("khong co gi", "CUA_SO_ONLINE_PHUT")).toThrow();
+});

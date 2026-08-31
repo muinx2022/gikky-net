@@ -653,7 +653,7 @@
         "type": "object"
       },
       "LuotXemTongOut": {
-        "description": "Năm con số lớn. `so_luot` = `so_luot_nguoi + so_luot_bot`, không hơn.\n\nServer trả cả tổng lẫn hai vế thay vì để frontend cộng: ba chỗ trên màn hình (các ô\nKPI, biểu đồ, dòng \"% bot\") phải nói cùng một chuyện, và cách chắc chắn nhất là\nchúng cùng đọc một phép cộng.",
+        "description": "Sáu con số lớn. `so_luot` = `so_luot_nguoi + so_luot_bot`, không hơn.\n\nServer trả cả tổng lẫn hai vế thay vì để frontend cộng: ba chỗ trên màn hình (các ô\nKPI, biểu đồ, dòng \"% bot\") phải nói cùng một chuyện, và cách chắc chắn nhất là\nchúng cùng đọc một phép cộng.\n\n⚠ Năm con số đầu đọc theo `?khoang=`; `so_online` thì **không** — nó luôn là 5 phút\ngần nhất. Chúng ở chung một khối vì chúng là chung một hàng ô KPI trên màn hình, chứ\nkhông phải vì chúng cùng một khoảng.",
         "properties": {
           "so_khach": {
             "title": "So Khach",
@@ -670,13 +670,18 @@
           "so_luot_nguoi": {
             "title": "So Luot Nguoi",
             "type": "integer"
+          },
+          "so_online": {
+            "title": "So Online",
+            "type": "integer"
           }
         },
         "required": [
           "so_luot",
           "so_luot_nguoi",
           "so_luot_bot",
-          "so_khach"
+          "so_khach",
+          "so_online"
         ],
         "title": "LuotXemTongOut",
         "type": "object"

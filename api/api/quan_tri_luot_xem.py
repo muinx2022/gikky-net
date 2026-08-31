@@ -62,6 +62,17 @@ báo giới hạn khi ấy là `False`, tức nó khẳng định "không có gi
 Biểu đồ của `tat_ca` bị chặn ở `SO_O_TOI_DA` ô (một site chạy ba năm mà vẽ hơn nghìn cột
 thì vừa nặng vừa không đọc được). Cộng các cột đang vẽ để ra "tổng lượt xem" là **thiếu
 hụt im lặng** đúng bằng phần bị cắt — nên tổng được tính riêng, từ toàn bộ nguồn.
+
+## "Online" — con số DUY NHẤT không đọc theo `?khoang=`
+
+`so_online` = số `khach` phân biệt (người, không bot) có lượt xem trong `CUA_SO_ONLINE_PHUT`
+phút gần nhất, **bất kể** người xem đang chọn 7/30/90/tất cả. Nó đứng cạnh năm con số kia
+nhưng trả lời một câu khác hẳn ("ngay lúc này"), nên nhãn trên màn hình phải nói ra khoảng
+riêng ấy — xem `apps/admin/app/luot-xem/page.tsx`.
+
+Nó là **ước lượng**, và giới hạn đến thẳng từ việc không có session: cùng một người mở hai
+trình duyệt = hai "online"; người đọc yên một chỗ quá 5 phút không còn được tính. Đó không
+phải chỗ để "cải thiện" bằng cách thêm cookie.
 """
 
 from collections.abc import Callable
@@ -70,6 +81,7 @@ from datetime import date, datetime, time, timedelta
 from django.db.models import Count, Max, Q, Sum
 from django.db.models.functions import TruncDate
 from django.http import HttpResponse
+from django.utils import timezone
 from ninja import Router
 
 from core.bot import NHOM_HOP_LE, nhom_bot
@@ -113,6 +125,11 @@ SO_O_TOI_DA = 90
 #: Năm bảng CHI TIẾT (bot, nhóm bot, nguồn, trình duyệt, thiết bị) LUÔN chỉ phủ bấy nhiêu
 #: ngày — bằng tuổi của hàng thô. Xem docstring module.
 SO_NGAY_CHI_TIET = 90
+
+#: Cửa sổ của ô "Online", tính bằng phút. Cố định, **không nhận từ query param** — cùng
+#: lý lẽ với `SO_TOP`: một `?phut=525600` là một câu `COUNT(DISTINCT)` trên toàn bảng do
+#: người gọi đặt hàng. Nó cũng KHÔNG đi theo `?khoang=`; xem docstring module.
+CUA_SO_ONLINE_PHUT = 5
 
 
 def _nua_dem_vn(ngay: date) -> datetime:
@@ -287,6 +304,40 @@ def _khach_tho(ngay_dau: date | None) -> dict[date, int | None]:
     return {h["_ngay"]: (None if h["_thieu"] > 0 else h["_khach"]) for h in hang}
 
 
+def _dem_online() -> int:
+    """Số khách phân biệt (NGƯỜI) có lượt xem trong `CUA_SO_ONLINE_PHUT` phút gần nhất.
+
+    ⚠ Mốc là `timezone.now()` — một thời điểm **tuyệt đối**, không phải `ngay_vn()`. Kẹp
+    cửa sổ vào trong ngày lịch VN sẽ làm con số rơi về 0 lúc 00:00 rồi bò lên lại, mỗi
+    đêm một lần; lọc theo mốc tuyệt đối là cách đúng.
+
+    ⚠ **Nhưng cửa sổ cắt qua nửa đêm VN thì ĐẾM ĐÔI, và đó là giới hạn thật.** `khach` là
+    `sha256(muối-của-NGÀY ‖ ip ‖ ua)` (`api/dem_luot_xem.py::hash_khach`) và muối xoay
+    đúng lúc 00:00 giờ VN, nên một người xem trang lúc 23:58 rồi 00:01 để lại **hai** token
+    phân biệt — `COUNT(DISTINCT)` không có cách nào biết chúng là một người. Mỗi đêm một
+    lần, kéo 5 phút, và sai theo hướng **phồng**. Không sửa được ở đây mà không phá thứ
+    khác (kẹp vào ngày lịch còn tệ hơn — xem đoạn trên), nên nó được **nói ra** ở đoạn chú
+    giới hạn của `/luot-xem` thay vì giấu. Lượt phản biện 2026-08-31 tìm ra; bản đầu của
+    docstring này khẳng định ngược ("hoàn toàn đúng") và đó là một câu sai.
+
+    ⚠ `exclude(khach="")` bắt buộc, cùng đúng cái bẫy `_khach_tho` đã đóng: hàng ghi
+    trước 2026-08-30 mang `khach=""`, và `COUNT(DISTINCT)` gộp tất cả chúng thành đúng
+    **một** "khách" ma. Ở đây cái giá còn cao hơn — ô hiện "1 online" vĩnh viễn trên một
+    site không có ai, vì chỉ cần một lượt cũ rơi vào cửa sổ.
+
+    Bot không tính: câu hỏi là "bao nhiêu NGƯỜI đang đọc". Đúng một truy vấn, và nó đi
+    qua index `luotxem_luc_duongdan` (`luc` dẫn đầu) nên tập phải distinct là tập nhỏ.
+    """
+    tu = timezone.now() - timedelta(minutes=CUA_SO_ONLINE_PHUT)
+    return (
+        LuotXem.objects.filter(luc__gte=tu, la_bot=False)
+        .exclude(khach="")
+        .values("khach")
+        .distinct()
+        .count()
+    )
+
+
 def _so_o_tat_ca(theo_ngay: dict[date, tuple[int, int]], hom_nay: date) -> int:
     """Bao nhiêu ô cho `khoang=tat_ca`: từ ngày sớm nhất có dữ liệu tới hôm nay.
 
@@ -456,6 +507,8 @@ def luot_xem(request, response: HttpResponse, khoang: str = "30"):
             so_luot_nguoi=tong_nguoi,
             so_luot_bot=tong_bot,
             so_khach=tong_khach,
+            # KHÔNG phụ thuộc `khoang`: "online" là 5 phút gần nhất ở mọi lựa chọn.
+            so_online=_dem_online(),
         ),
         chuoi_ngay=_chuoi(theo_ngay, hom_nay, so_o, khach_cua),
         top_duong_dan=_top(gop),
