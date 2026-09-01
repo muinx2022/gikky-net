@@ -19,14 +19,41 @@
 
 @media (max-width: 520px) {
   /* Trên màn hình hẹp giữ lại dấu ＋, bỏ chữ: thanh trên cùng đã có bốn thứ tranh chỗ,
-     và cái nút này không được đẩy tên người dùng ra khỏi màn hình. */
+     và cái nút này không được đẩy tên người dùng ra khỏi màn hình.
+
+     `font-size: 0` nuốt chữ "Đăng bài"; dấu ＋ sống sót vì nó là `<svg>` của `lucide-react`
+     mang `size={15}` — kích thước gắn trên thuộc tính SVG, không đi theo `font-size`. Trước
+     2026-08-31 dưới đây còn một luật `.nut > span { font-size: 15px }` để cứu dấu cộng ấy:
+     luật CHẾT, vì `NutDangMach` render `<Plus/>` + chữ trần, không có `<span>` nào. Gỡ rồi;
+     đừng thêm lại mà không mở `nut-dang-mach.tsx` xem có `<span>` thật không. */
   .nut {
     padding: 6px 9px;
     font-size: 0;
     gap: 0;
   }
+}
 
-  .nut > span {
-    font-size: 15px;
+/* Vùng bấm 44px trên màn hình cảm ứng — thêm 2026-08-31. Luật đầy đủ (ba vế) ở docstring
+   khối `(pointer: coarse)` của `tim-kiem-mobile.module.css`. Phép tính riêng của file này:
+
+   - Nhánh QUYẾT ĐỊNH là bản icon-only ≤520px ngay trên: nút còn ~35px ngang (icon 15 +
+     đệm 18 + viền 2) và ~34px cao — dưới mốc ở cả hai chiều, và 421–520px lại đúng dải
+     `chrome.module.css` KHÔNG cho `flex-wrap`. `min-*` nới hộp lên 44 (+9 ngang), cặp
+     `margin-inline: -4px` trả lại 8 — bù thiếu 1px về phía HẸP hơn, tức về phía không tràn.
+     Không lấy `-4.5px` cho tròn phép tính: 4 là trần mà ràng buộc "tổng bù hai nút cạnh
+     nhau ≤ gap (8px ở ≤640)" ở nhà luật cho phép, và vượt trần là ăn mất vùng bấm của hàng
+     xóm chứ không phải làm cụm gọn hơn.
+   - ⚠ Nhánh còn chữ (>520px, máy tính bảng cảm ứng) **không nở ngang** — nút vốn ~92px —
+     nên cặp bù ở đó là bù DƯ 8px. Chấp nhận có chủ đích: ở khổ ấy `gap` là 10px nên vẫn còn
+     2px hở, không nút nào chồng lên viền nút nào, và cụm phải dư hơn 100px. Đổi lại là để
+     nhánh 421–520 nở không bù, tức trả lại đúng lỗi bố cục user báo hôm 08-31.
+   - Chiều dọc không bù: hàng đã cao 44px vì nút tài khoản ở mép nở thật, và nút này chỉ
+     render khi đã đăng nhập nên header khách không đụng tới. */
+@media (pointer: coarse) {
+  .nut {
+    min-width: 44px;
+    min-height: 44px;
+    justify-content: center;
+    margin-inline: -4px;
   }
 }

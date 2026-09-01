@@ -33,16 +33,71 @@
   outline-offset: 2px;
 }
 
-/* Vùng bấm 44px trên màn hình cảm ứng — nhưng KHÔNG chiếm thêm chỗ trong hàng: hộp nở
-   ra 44 rồi cặp margin âm thu phần chiếm chỗ về đúng 32px như nhánh chuột. Thiếu cặp
-   margin này, cụm phải nở thêm 12px trên đúng dải 421–520px không có `flex-wrap` cứu
-   (iPhone Plus/Max là 428/430px CSS) — mà hai phần tử duy nhất co được trong `.phai`
-   lại chính là hai vùng bấm vừa được hứa 44px. Phản biện 2026-08-30 chỉ ra. */
+/* ╔══════════════════════════════════════════════════════════════════════════════════╗
+   ║ NHÀ CỦA LUẬT "vùng bấm cụm phải ≥44px" — bốn file CSS kia trỏ về đây, đừng chép   ║
+   ║ câu chữ ra chỗ thứ sáu. Chốt 2026-08-31 (đóng P-20260831-1/-2/-3).                ║
+   ╚══════════════════════════════════════════════════════════════════════════════════╝
+
+   Phạm vi: **mọi phần tử BẤM ĐƯỢC trong `.phai`** của `chrome.module.css`, cả nhánh ĐĂNG
+   NHẬP (kính lúp · Đăng bài · chuông · theme · nút tài khoản) lẫn nhánh KHÁCH (kính lúp ·
+   theme · "Đăng nhập" · "Đăng ký") — hai nhánh render hai bộ phần tử khác nhau, và bộ của
+   khách là bộ bị bỏ quên ở vòng đầu. `e2e/don-vi/vung-bam-cum-phai.spec.ts` đọc cả 5 file
+   và ghim bảng ấy bằng chính `chrome.tsx`, nên thêm nút thứ sáu mà quên luật là đỏ.
+
+   **Vế 1 — vùng bấm ≥ 44×44 ở `(pointer: coarse)`.** Câu luật gốc ghi ở
+   `chrome.module.css`: *nén tới mức vùng bấm dưới 44px là đổi một lỗi bố cục lấy hai lỗi
+   trợ năng*. Nút kích thước cố định (icon) đặt thẳng `width`/`height`; nút nội dung động
+   (chuông có chấm chưa đọc, "Đăng bài" có/không chữ) đặt `min-width`/`min-height` kèm
+   `justify-content: center` — `min-*` nới HỘP mà không nới nội dung, thiếu căn giữa thì
+   icon dạt về mép trái của một ô 44px.
+
+   **Vế 2 — bù CHỈ NGANG (`margin-inline`), KHÔNG BAO GIỜ bù dọc.**
+
+   *Vì sao có bù:* thiếu nó, cụm phải nở thêm trên đúng dải 421–520px không có `flex-wrap`
+   cứu (iPhone Plus/Max là 428/430px CSS) — mà hai phần tử duy nhất co được trong `.phai`
+   lại chính là hai vùng bấm vừa được hứa 44px. Phản biện 2026-08-30 chỉ ra.
+
+   *Vì sao KHÔNG bù dọc — bài học 2026-08-31, vòng 2:* bản đầu viết `margin: -6px` (bốn
+   phía) cho hai nút icon. Bù dọc thu chiều cao chiếm chỗ của chúng về 32px, nên chiều cao
+   hàng rơi vào tay những nút **chỉ có khi đã đăng nhập**. Đo được ở 360px coarse: header
+   **53px** lúc `dangTai`/khách, **65px** khi `GET /me` trả về ⇒ mỗi lần tải trang trên điện
+   thoại, cả thân trang tụt 12px — đúng cú nhảy bố cục mà `.chua_biet` và `NutDangMach`
+   dựng chỗ giữ để tránh. Bù ngang không có bệnh ấy, nên luật là: **chiều cao hàng không
+   được phụ thuộc nút nào.**
+
+   *Ai phải bù:* chỉ nút **NỞ NGANG**. Nút chỉ nở DỌC ("Đăng nhập"/"Đăng ký" của khách —
+   chữ vốn đã rộng hơn 44px) thì không có gì để bù, và bù ở đó là tự tay tạo chồng lấn.
+
+   *Bù BAO NHIÊU — ràng buộc số, không phải khẩu vị:* **tổng bù của HAI nút CẠNH NHAU phải
+   ≤ `gap` của `.phai`** (10px, và 8px ở ≤640px). Vượt là hai vùng chạm chồng lên nhau và
+   nút thua mất phần vùng bấm vừa được hứa. Bản đầu (-6/-5) vượt đúng chỗ đó: phản biện đo
+   bằng `elementFromPoint` ra vùng chạm THẬT 41–42px, và 3px sát mép phải **viền thấy được**
+   của nút "Đăng bài" lại mở panel chuông (`.khung` của chuông có `position: relative` nên
+   `.nut` của nó thắng cả hai hàng xóm). Chốt: **4px mỗi phía cho cả bốn nút nở ngang**
+   (kính lúp · Đăng bài · chuông · theme). 4 + 4 = 8 = gap hẹp nhất ⇒ khoảng cách đúng 0,
+   không chồng, và tổng bù vẫn đủ để cụm phải KHÔNG rộng hơn trước lượt.
+   ⚠ Bộ số này **bão hoà**: `gap` tụt xuống dưới 8px, hoặc một nút tăng bù, là chồng ngay.
+   Đổi bên nào cũng phải đo lại bằng `elementFromPoint`, không đo bằng `boundingBox` —
+   `boundingBox` vẫn báo 44 trong khi ngón tay chỉ với được 41.
+
+   **Vế 3 — phần tử BẤM ĐƯỢC cuối cùng bên phải nở THẬT, không bù** (`thanh-tai-khoan`:
+   `.ten` khi đã đăng nhập, `.nut_chinh` "Đăng ký" khi khách). Margin âm ở đó đẩy hộp bấm ra
+   ngoài `.khung` về phía mép phải màn hình. Đây là ngoại lệ CÓ TÊN, không phải hai luật
+   ngược nhau — và hàng rào cấm luôn chiều ngược lại (đánh dấu `o_mep` mà lại có margin âm
+   ngang, dù chỉ một phía, cũng đỏ), để một lượt "đồng bộ cho đều" không gỡ được nó.
+   ⚠ *"Cuối cùng" đọc theo phần tử BẤM ĐƯỢC*: trong DOM còn một `.chua_xac_thuc` đứng SAU
+   `.ten` (dải 641–860px). Nó là một cái NHÃN, không bắt sự kiện bấm, nên nó không đổi được
+   vế 3 — nhưng ai đọc DOM rồi kết luận "`.ten` đâu phải phần tử cuối" thì đọc đúng chữ và
+   sai ý.
+
+   **Chưa làm, cố ý:** không có bài đo trình duyệt cảm ứng thật — mọi project Playwright của
+   repo chạy `pointer: fine`. Hàng rào là phép đọc nguồn; số đo bố cục ở `(pointer: coarse)`
+   đo bằng script chạy tay từng lượt. Hướng tương lai ghi ở docstring hàng rào. */
 @media (pointer: coarse) {
   .nut {
     width: 44px;
     height: 44px;
-    margin: -6px;
+    margin-inline: -4px;
   }
 }
 

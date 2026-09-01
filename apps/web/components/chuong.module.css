@@ -21,6 +21,36 @@
   background: var(--inset);
 }
 
+/* Vùng bấm 44px trên màn hình cảm ứng — thêm 2026-08-31 (P-20260831-2: nút này là nút
+   DUY NHẤT của cụm phải không có khối coarse nào, vùng bấm thật ~29px cao trong khi ba
+   hàng xóm đều đã 44).
+
+   Luật đầy đủ (ba vế) ở docstring khối `(pointer: coarse)` của
+   `tim-kiem-mobile.module.css`. Phép tính riêng của file này:
+
+   - Nội dung ĐỘNG — có chấm chưa đọc thì nút rộng thêm ~21px (`.cham` + `gap`) — nên
+     `min-*` chứ không `width`/`height` cố định: kẹp cứng 44 là bóp cái chấm.
+   - Bù ngang bằng cách **nở bằng `padding` một hằng số rồi trừ đúng hằng số ấy**
+     (8→12px mỗi phía, `margin-inline: -4px`): phần chiếm chỗ không đổi ở CẢ HAI nhánh nội
+     dung, khác hẳn kiểu bù theo `min-width` — kiểu đó chỉ đúng ở nhánh hẹp và ăn lẹm 10px
+     gap ở nhánh có chấm. `min-width: 44px` còn lại chỉ là SÀN, cho máy nào vẽ emoji 🔔 hẹp
+     hơn 18px.
+   - Con số 4 (không phải 5 như bản đầu) đến từ ràng buộc **tổng bù hai nút cạnh nhau ≤ gap
+     (8px ở ≤640px)** ở nhà luật: -5/-5 làm hai vùng chạm chồng 2px, và vì `.khung` của
+     chuông có `position: relative` nên chính `.nut` này thắng — 3px sát viền nút "Đăng bài"
+     lại mở panel thông báo. Phản biện đo bằng `elementFromPoint` bắt được.
+   - Chiều dọc không bù: hàng đã cao 44px vì nút tài khoản ở mép nở thật, và chuông chỉ
+     render khi đã đăng nhập nên header khách không đụng tới. */
+@media (pointer: coarse) {
+  .nut {
+    min-width: 44px;
+    min-height: 44px;
+    justify-content: center;
+    padding: 6px 12px;
+    margin-inline: -4px;
+  }
+}
+
 .cham {
   font-family: var(--f-mono);
   font-variant-numeric: tabular-nums;

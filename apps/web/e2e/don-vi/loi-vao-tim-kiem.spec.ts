@@ -241,6 +241,11 @@ test("B — trong panel mobile, ô tìm được GỠ ẨN ở đúng mốc ấy
 test("C — vùng bấm của icon không nhỏ hơn các nút icon lân cận", () => {
   // T7/trợ năng: cụm phải đã cấm vùng bấm co dưới 44px trên màn hình cảm ứng
   // (`cong-tac-theme.module.css`). Icon mới đứng ngay cạnh nó, cùng luật.
+  //
+  // ⚠ Từ 2026-08-31 luật ấy có nhà riêng và hàng rào riêng cho CẢ NĂM nút của cụm phải:
+  // `vung-bam-cum-phai.spec.ts` (bảng ghim bằng chính `chrome.tsx`). Bài này giữ nguyên vì
+  // nó là phép so tại chỗ của file tìm kiếm; sửa luật thì sửa ở đó, đừng nới bài này ra
+  // thành bản thứ hai của cùng một bảng.
   const coarse = [...MOBILE_CSS.matchAll(KHOI_MEDIA)].find((m) =>
     /\(\s*pointer:\s*coarse\s*\)/.test(m[1]),
   );

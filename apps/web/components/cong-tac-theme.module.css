@@ -33,10 +33,26 @@
 }
 
 /* Vùng bấm 44px trên màn hình cảm ứng. Nới cái NÚT, không nới riêng icon — icon vẫn
-   nằm giữa và vùng bấm thật lớn bằng thứ mắt thấy. */
+   nằm giữa và vùng bấm thật lớn bằng thứ mắt thấy.
+
+   Luật đầy đủ (ba vế) ở docstring khối `(pointer: coarse)` của
+   `tim-kiem-mobile.module.css`. Ở đây: nút icon kích thước CỐ ĐỊNH nở 32→44, bù NGANG
+   `-4px` mỗi phía — đúng con số của người hàng xóm cùng hình dạng, và là con số lớn nhất
+   mà ràng buộc "tổng bù hai nút cạnh nhau ≤ gap (8px ở ≤640)" cho phép.
+
+   Cặp bù thêm 2026-08-31 (P-20260831-1): trước đó file này nở 44 mà KHÔNG bù, tức cụm phải
+   dài thêm đúng 12px trên dải 421–520px — chính con số mà chú thích của `tim-kiem-mobile`
+   nêu tên là rủi ro. Hai file cạnh nhau trong cùng cụm nói ngược nhau suốt một ngày vì luật
+   khi ấy chỉ nằm trong đầu một file.
+
+   ⚠ `margin-inline`, KHÔNG phải `margin` bốn phía: bản đầu của lượt này bù cả dọc, và nó
+   làm chiều cao header nhảy 12px khi `GET /me` trả về — nút này với kính lúp là hai nút
+   DUY NHẤT khách cũng thấy, nên chiều cao hàng ở nhánh khách do chính chúng quyết định.
+   Xem vế 2 ở nhà luật. */
 @media (pointer: coarse) {
   .khung {
     width: 44px;
     height: 44px;
+    margin-inline: -4px;
   }
 }

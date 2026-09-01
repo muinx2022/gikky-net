@@ -1336,19 +1336,19 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Bằng chứng**: dòng 190-194 và 195-199 giống nhau từng ký tự ("Đóng khi focus RỜI hẳn vùng bọc … ⇒ đóng")
 - **Vì sao không sửa ngay**: ngoài phạm vi; lượt nào đụng file đó thì gỡ tiện thể.
 
-### P-20260831-1 · [MỞ] · VỪA — `cong-tac-theme` nở 44×44 ở `(pointer: coarse)` KHÔNG có margin âm bù chỗ, ngược hẳn luật mà `tim-kiem-mobile` ghi là bắt buộc
+### P-20260831-1 · [ĐÓNG (lượt vùng bấm 2026-09-01, chờ commit) — luật 3 vế đặt nhà ở tim-kiem-mobile.module.css, bù CHỈ NGANG -4px cả bốn nút, hàng rào 27 bài] · VỪA — `cong-tac-theme` nở 44×44 ở `(pointer: coarse)` KHÔNG có margin âm bù chỗ, ngược hẳn luật mà `tim-kiem-mobile` ghi là bắt buộc
 - **Thấy lúc**: thực thi vòng 2 lượt "header mobile một dòng" (`plans/2026-08-31-header-mobile-mot-dong.md`)
 - **Ở đâu**: `apps/web/components/cong-tac-theme.module.css:37-42` vs `apps/web/components/tim-kiem-mobile.module.css:36-47`
 - **Bằng chứng**: chú thích ở `tim-kiem-mobile` nêu đích danh rủi ro cụm phải nở thêm 12px ở dải 421–520px và cặp margin âm là cách bù; file theme nở đúng 12px đó mà không bù. Hai file cạnh nhau trong cùng cụm `.phai` nói ngược nhau.
 - **Vì sao không sửa ngay**: ngoài phạm vi lượt header; sửa phải đo lại bố cục cụm phải trên màn cảm ứng.
 
-### P-20260831-2 · [MỞ] · VỪA — nút chuông KHÔNG có khối `(pointer: coarse)` nào, vùng bấm ~29px — dưới mốc 44px mà chính repo đặt cho ba nút còn lại cùng cụm
+### P-20260831-2 · [ĐÓNG (lượt vùng bấm 2026-09-01, chờ commit) — chuông 44px + cả nhánh KHÁCH (Đăng nhập 15px→44, Đăng ký 25.6→44); chạm thật đo elementFromPoint ≥44 không chồng, header 65px ổn định 3 trạng thái phiên] · VỪA — nút chuông KHÔNG có khối `(pointer: coarse)` nào, vùng bấm ~29px — dưới mốc 44px mà chính repo đặt cho ba nút còn lại cùng cụm
 - **Thấy lúc**: thực thi vòng 2 lượt "header mobile một dòng"
 - **Ở đâu**: `apps/web/components/chuong.module.css:5-18`
 - **Bằng chứng**: `grep "pointer: coarse" chuong.module.css` → 0 kết quả; ba hàng xóm (`cong-tac-theme`, `tim-kiem-mobile`, `thanh-tai-khoan` từ lượt này) đều có khối 44px.
 - **Vì sao không sửa ngay**: ngoài phạm vi; nên gộp với P-20260831-1 thành một lượt "vùng bấm cụm phải" cho đồng bộ.
 
-### P-20260831-3 · [MỞ] · VỪA — luật vùng bấm 44px KHÔNG có hàng rào chạy được ở mức trình duyệt: mọi project Playwright chạy `pointer: fine`
+### P-20260831-3 · [ĐÓNG (lượt vùng bấm 2026-09-01, chờ commit) — cơ chế chốt: hàng rào đọc-nguồn 27 bài (bảng nút ghim từ chrome.tsx, cấm bù dọc, trần tổng-bù-cặp ≤ gap) + đo tay elementFromPoint; project Playwright cảm ứng thật = hướng tương lai ghi trong docstring hàng rào] · VỪA — luật vùng bấm 44px KHÔNG có hàng rào chạy được ở mức trình duyệt: mọi project Playwright chạy `pointer: fine`
 - **Thấy lúc**: thực thi vòng 2 lượt "header mobile một dòng" — khối coarse mới thêm cho `.ten` không có bài đo nào chạm tới được
 - **Ở đâu**: `apps/web/playwright.config.ts:95` (`devices["Desktop Chrome"]`) · hàng rào coarse duy nhất là phép grep đọc nguồn trong `apps/web/e2e/don-vi/loi-vao-tim-kiem.spec.ts:218-231`, chỉ hỏi đúng `.nut` của `tim-kiem-mobile`
 - **Bằng chứng**: các khối coarse ở theme, form-tai-khoan, composer, chep-link, chon-kieu-xem, thanh-tai-khoan không ai kiểm; bản vá 44px của lượt này chỉ chứng minh được bằng grep bundle CSS đã build.
@@ -1365,3 +1365,32 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Ở đâu**: `apps/web/e2e/danh-tinh.ts:95`
 - **Bằng chứng**: mọi lời gọi `dungTaiKhoan` hiện chạy ở viewport mặc định nên vẫn xanh; ai gọi helper SAU `setViewportSize(≤640)` hoặc đổi sang `useInnerText` sẽ ăn timeout 30s ở dòng không liên quan bài đo của mình.
 - **Vì sao không sửa ngay**: chưa gây hại; sửa là thêm một câu chú thích hoặc đổi phép so — làm khi đụng file.
+
+### P-20260901-2 · [MỞ] · VỪA — `--cao-chrome: 57px` không khớp chiều cao header THẬT ở bất kỳ khổ nào: 53px (chuột) / 65px (cảm ứng, đăng nhập)
+- **Thấy lúc**: thực thi + phản biện lượt "vùng bấm cụm phải" (`plans/2026-08-31-vung-bam-cum-phai.md`) — hai script đo độc lập cùng ra số
+- **Ở đâu**: `apps/web/app/globals.css:94`; nạn nhân đang lệch 4–8px: `trang-mach.module.css:133` (`top: var(--cao-chrome)`), `feed.module.css:150-151`, `khung-hai-cot.module.css:36-37` (rail sticky), `globals.css:206` (`scroll-margin-top` của deep-link)
+- **Bằng chứng**: đo Chromium 360/430px — header cao 53px ở `pointer: fine` mọi trạng thái, 65px ở coarse khi đăng nhập (nút tài khoản nở 44 từ lượt header 2026-08-31); không trạng thái nào ra 57
+- **Vì sao không sửa ngay**: ngoài phạm vi lượt vùng bấm; sửa đàng hoàng phải quyết cơ chế (đồng bộ biến theo đo thật, hay đổi các nạn nhân sang phép đo runtime) và đo lại rail/deep-link ở nhiều khổ.
+
+### P-20260901-3 · [MỞ] · NHỎ — chỗ giữ `.chua_biet` (116×26) không khớp nút tài khoản sau tải (44×44 ở ≤640 coarse) ⇒ cụm phải co ~72px ngang đúng lúc `GET /me` về — ngược mục đích tự khai của nó
+- **Thấy lúc**: phản biện lượt "vùng bấm cụm phải"
+- **Ở đâu**: `apps/web/components/thanh-tai-khoan.module.css:17-22`
+- **Bằng chứng**: đo coarse 360px; có từ lượt header 2026-08-31 (khi `.ten` co về avatar-only), không phải lượt vùng bấm sinh ra
+- **Vì sao không sửa ngay**: cùng họ với P-20260901-2 (bố cục lúc-tải trên cảm ứng) — nên xử một lượt.
+
+### P-20260901-5 · [MỞ] · NHỎ — `.nut_chinh` ("Đăng ký") không có `data-testid`: mọi phép đo phải bám `a[href="/dang-ky"]` — bám URL, thứ đổi được mà không ai nghĩ tới bài đo
+- **Thấy lúc**: thực thi vòng 2 lượt "vùng bấm cụm phải" (script đo phải thêm nhánh chọn selector riêng)
+- **Ở đâu**: `apps/web/components/thanh-tai-khoan.tsx:54`
+- **Vì sao không sửa ngay**: một dòng, nhưng đổi TSX ngoài phạm vi lượt CSS; làm khi đụng file.
+
+### P-20260901-6 · [MỞ] · NHỎ (chớp tắt, 1 lần) — bài `form-ghi B3 (sửa mốc, dấu «đã sửa»)` đỏ một lần trong lượt đầy đủ rồi xanh khi chạy riêng và ở hai lượt đầy đủ khác cùng ngày, cùng code
+- **Thấy lúc**: phiên chính kiểm độc lập lượt "vùng bấm cụm phải" (599/1), thợ và nghiệm thu cùng ngày đều 0 failed
+- **Ở đâu**: `apps/web/e2e/form-ghi.spec.ts:150` (B3)
+- **Bằng chứng**: 599 passed / 1 failed → chạy riêng 1 passed; hai lượt đầy đủ khác 600/0 và 590/0. Chưa có trace phân tích.
+- **Vì sao không sửa ngay**: mới 1 lần, chưa tái hiện được; cùng họ "chớp tắt sau thao tác ghi" với P-20260901-4 — gom điều tra một lượt.
+
+### P-20260901-4 · [MỞ] · VỪA (chớp tắt, 1/3 lượt) — bài vote e2e đỏ `Expected "+54" / Received "+53"` SAU `page.reload()`: nghi đua giữa cú bấm thứ ba (cập nhật lạc quan) và reload huỷ POST đang bay
+- **Thấy lúc**: thực thi lượt "vùng bấm cụm phải" chạy bộ đầy đủ lần 1 (đỏ), chạy riêng + lượt 2 + lượt của nghiệm thu đều xanh — không đổi dòng code nào giữa các lượt
+- **Ở đâu**: `apps/web/e2e/tai-khoan-va-ghi.spec.ts:258-261`
+- **Bằng chứng**: 1 failed/589 passed lượt 1 · 590/0 lượt 2 · 590/0 nghiệm thu, cùng `gikky_e2e`. Khác loài với L36 (đã đóng — nguyên nhân khác).
+- **Vì sao không sửa ngay**: cần tái hiện có chủ đích (chặn/làm chậm POST vote rồi reload) trước khi vá — vá mù kiểu `waitForResponse` dễ thành trang trí.

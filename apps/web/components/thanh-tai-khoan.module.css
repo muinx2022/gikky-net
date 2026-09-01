@@ -157,12 +157,36 @@
    219/290px, và hai nút nở thêm tổng cộng 22px vẫn còn dư.
 
    `justify-content` phải đặt lại: `min-width` nới hộp mà không nới nội dung, nên thiếu nó
-   avatar dạt về mép trái của một hình tròn 44px. */
+   avatar dạt về mép trái của một hình tròn 44px.
+
+   ⚠ **Đây là VẾ 3 — ngoại lệ CÓ TÊN của luật vùng bấm cụm phải**, luật đầy đủ ở docstring
+   khối `(pointer: coarse)` của `tim-kiem-mobile.module.css` (chốt 2026-08-31). Bốn nút nở
+   NGANG thì kèm cặp margin âm bù; nút này là phần tử bấm được cuối cùng bên phải nên KHÔNG
+   bù — lý do ở đoạn trên. `e2e/don-vi/vung-bam-cum-phai.spec.ts` ghim cả hai chiều của luật:
+   thiếu 44px đỏ, mà thêm margin âm NGANG (dù chỉ một phía) cho "đều với hàng xóm" cũng đỏ.
+
+   **Nhánh KHÁCH cũng nằm trong luật** — thêm 2026-08-31 vòng 2. Khách không thấy `.ten`;
+   họ thấy `.lien_ket` ("Đăng nhập") cao 15px và `.nut_chinh` ("Đăng ký") cao 25.6px, tức
+   hai vùng bấm dưới mốc mà không khối coarse nào chạm tới — luật tuyên bố "cả cụm phải" mà
+   bỏ trắng đúng nhánh của người CHƯA có tài khoản, nhóm phụ thuộc hai cái nút ấy nhiều nhất.
+   Hai luật dưới chỉ nở DỌC: chữ "Đăng nhập"/"Đăng ký" vốn rộng hơn 44px nên `min-width` chỉ
+   là sàn phòng hờ, và **không nút nào nở ngang thì không có gì để bù** (vế 2) — thêm margin
+   âm ở đây là tự tay tạo chồng lấn. `min-height` không đội hàng lên: kính lúp và công tắc
+   theme đã giữ hàng ở 44px trong MỌI trạng thái phiên, đó là cả điểm của việc bỏ bù dọc. */
 @media (pointer: coarse) {
   .ten {
     min-width: 44px;
     min-height: 44px;
     justify-content: center;
+  }
+
+  .lien_ket,
+  .nut_chinh {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
   }
 }
 
