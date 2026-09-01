@@ -1324,7 +1324,7 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Bằng chứng**: `pnpm e2e` → `T8 … expect(locator).toHaveCount(expected) failed · Expected: 1 · Received: 0`; `git diff HEAD -- apps/web/e2e/giao-dien.spec.ts apps/web/components/o-tim-kiem.tsx` rỗng ⇒ đỏ thuộc HEAD. Ô tìm kiếm vẫn tồn tại và sống — bài đo hỏng, sản phẩm không hỏng (cùng loài A10/P-20260830-8).
 - **Vì sao không sửa ngay**: ngoài phạm vi lượt A10; vá là một dòng locator nhưng phải kèm thử phá riêng theo luật 4.
 
-### P-20260830-13 · [ĐANG SỬA — command `don_rac_e2e` + 10 bài pytest + hàng rào don-vi đã xong, chờ commit; đo tay trên gikky_e2e: HPG comment_count 24/24 đúng bất biến seed, mốc 9 về 3 thread; vế VOTE tách sang P-20260901-1] · NẶNG — `gikky_e2e` tích rác qua từng lượt chạy, đổi NGẦM đối tượng đo của mọi bài chọn "mốc đông nhất / thread đầu tiên"
+### P-20260830-13 · [ĐÓNG (d88a011) — đo tay trên gikky_e2e: HPG comment_count 24/24 đúng bất biến seed, mốc 9 về 3 thread; vế VOTE tách sang P-20260901-1] · NẶNG — `gikky_e2e` tích rác qua từng lượt chạy, đổi NGẦM đối tượng đo của mọi bài chọn "mốc đông nhất / thread đầu tiên"
 - **Thấy lúc**: phản biện lượt "sửa bài đo A10", truy vấn chỉ đọc vào `gikky_e2e`
 - **Ở đâu**: nguồn xả rác: `apps/web/e2e/tai-khoan-va-ghi.spec.ts:150,292` (mỗi lượt chạy để lại bình luận SỐNG trong mạch seed HPG); nạn nhân: mọi bài chọn mục tiêu kiểu "đông nhất / đầu tiên" (`vo-reddit.spec.ts:469` `nganKeoDongNhat`, `binh-luan-chung.spec.ts:41` `mocDongNhat`)
 - **Bằng chứng**: mốc 9 HPG: seed đúng 3 thread, DB đang có 8 — 5 hàng rác `md-md_*` neo mốc 9 từ 2026-08-27; chính chúng đẩy A10 cũ sang đo một thread rác 0-reply và sinh cú đỏ bị ghi nhầm thành P-20260830-8. `e2e/dung-seed.ts` chỉ ẨN MẠCH rác (`@gikky.test`), không dọn BÌNH LUẬN rác nằm trong mạch seed.
@@ -1336,19 +1336,19 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Bằng chứng**: dòng 190-194 và 195-199 giống nhau từng ký tự ("Đóng khi focus RỜI hẳn vùng bọc … ⇒ đóng")
 - **Vì sao không sửa ngay**: ngoài phạm vi; lượt nào đụng file đó thì gỡ tiện thể.
 
-### P-20260831-1 · [ĐÓNG (lượt vùng bấm 2026-09-01, chờ commit) — luật 3 vế đặt nhà ở tim-kiem-mobile.module.css, bù CHỈ NGANG -4px cả bốn nút, hàng rào 27 bài] · VỪA — `cong-tac-theme` nở 44×44 ở `(pointer: coarse)` KHÔNG có margin âm bù chỗ, ngược hẳn luật mà `tim-kiem-mobile` ghi là bắt buộc
+### P-20260831-1 · [ĐÓNG (35cfdfa) — luật 3 vế đặt nhà ở tim-kiem-mobile.module.css, bù CHỈ NGANG -4px cả bốn nút, hàng rào 27 bài] · VỪA — `cong-tac-theme` nở 44×44 ở `(pointer: coarse)` KHÔNG có margin âm bù chỗ, ngược hẳn luật mà `tim-kiem-mobile` ghi là bắt buộc
 - **Thấy lúc**: thực thi vòng 2 lượt "header mobile một dòng" (`plans/2026-08-31-header-mobile-mot-dong.md`)
 - **Ở đâu**: `apps/web/components/cong-tac-theme.module.css:37-42` vs `apps/web/components/tim-kiem-mobile.module.css:36-47`
 - **Bằng chứng**: chú thích ở `tim-kiem-mobile` nêu đích danh rủi ro cụm phải nở thêm 12px ở dải 421–520px và cặp margin âm là cách bù; file theme nở đúng 12px đó mà không bù. Hai file cạnh nhau trong cùng cụm `.phai` nói ngược nhau.
 - **Vì sao không sửa ngay**: ngoài phạm vi lượt header; sửa phải đo lại bố cục cụm phải trên màn cảm ứng.
 
-### P-20260831-2 · [ĐÓNG (lượt vùng bấm 2026-09-01, chờ commit) — chuông 44px + cả nhánh KHÁCH (Đăng nhập 15px→44, Đăng ký 25.6→44); chạm thật đo elementFromPoint ≥44 không chồng, header 65px ổn định 3 trạng thái phiên] · VỪA — nút chuông KHÔNG có khối `(pointer: coarse)` nào, vùng bấm ~29px — dưới mốc 44px mà chính repo đặt cho ba nút còn lại cùng cụm
+### P-20260831-2 · [ĐÓNG (35cfdfa) — chuông 44px + cả nhánh KHÁCH (Đăng nhập 15px→44, Đăng ký 25.6→44); chạm thật đo elementFromPoint ≥44 không chồng, header 65px ổn định 3 trạng thái phiên] · VỪA — nút chuông KHÔNG có khối `(pointer: coarse)` nào, vùng bấm ~29px — dưới mốc 44px mà chính repo đặt cho ba nút còn lại cùng cụm
 - **Thấy lúc**: thực thi vòng 2 lượt "header mobile một dòng"
 - **Ở đâu**: `apps/web/components/chuong.module.css:5-18`
 - **Bằng chứng**: `grep "pointer: coarse" chuong.module.css` → 0 kết quả; ba hàng xóm (`cong-tac-theme`, `tim-kiem-mobile`, `thanh-tai-khoan` từ lượt này) đều có khối 44px.
 - **Vì sao không sửa ngay**: ngoài phạm vi; nên gộp với P-20260831-1 thành một lượt "vùng bấm cụm phải" cho đồng bộ.
 
-### P-20260831-3 · [ĐÓNG (lượt vùng bấm 2026-09-01, chờ commit) — cơ chế chốt: hàng rào đọc-nguồn 27 bài (bảng nút ghim từ chrome.tsx, cấm bù dọc, trần tổng-bù-cặp ≤ gap) + đo tay elementFromPoint; project Playwright cảm ứng thật = hướng tương lai ghi trong docstring hàng rào] · VỪA — luật vùng bấm 44px KHÔNG có hàng rào chạy được ở mức trình duyệt: mọi project Playwright chạy `pointer: fine`
+### P-20260831-3 · [ĐÓNG (35cfdfa) — cơ chế chốt: hàng rào đọc-nguồn 27 bài (bảng nút ghim từ chrome.tsx, cấm bù dọc, trần tổng-bù-cặp ≤ gap) + đo tay elementFromPoint; project Playwright cảm ứng thật = hướng tương lai ghi trong docstring hàng rào] · VỪA — luật vùng bấm 44px KHÔNG có hàng rào chạy được ở mức trình duyệt: mọi project Playwright chạy `pointer: fine`
 - **Thấy lúc**: thực thi vòng 2 lượt "header mobile một dòng" — khối coarse mới thêm cho `.ten` không có bài đo nào chạm tới được
 - **Ở đâu**: `apps/web/playwright.config.ts:95` (`devices["Desktop Chrome"]`) · hàng rào coarse duy nhất là phép grep đọc nguồn trong `apps/web/e2e/don-vi/loi-vao-tim-kiem.spec.ts:218-231`, chỉ hỏi đúng `.nut` của `tim-kiem-mobile`
 - **Bằng chứng**: các khối coarse ở theme, form-tai-khoan, composer, chep-link, chon-kieu-xem, thanh-tai-khoan không ai kiểm; bản vá 44px của lượt này chỉ chứng minh được bằng grep bundle CSS đã build.
