@@ -14,7 +14,10 @@ import css from "./sidebar.module.css";
  * 1. giới thiệu (trang chủ) hoặc mô tả sub + số mạch + ngày lập (trang sub);
  * 2. luật rút gọn dẫn `/luat` — PLAN 5.10 bắt mọi trang công khai phải có đường tới đó,
  *    và chân trang một mình thì ở dưới quá xa để ai đọc;
- * 3. danh sách các sub.
+ * 3. danh sách các sub — **vắng mặt hẳn khi `cacSub` rỗng** *(2026-08-31)*. Một hộp mang
+ *    tiêu đề "Chuyên mục" mà không có chuyên mục nào là biển chỉ đường chết: nó chiếm chỗ
+ *    và hứa một lối đi không tồn tại. Đây cũng là điều kiện để `KhungHaiCotTinh` dùng lại
+ *    đúng `Sidebar` này với `cacSub={[]}` thay vì chế một sidebar thứ hai.
  *
  * **KHÔNG có nút "Tham gia sub"** — PLAN mục 4 loại nó khỏi v1 *(chốt 2026-08-22)* kèm
  * lý do "một cái nút vĩnh viễn không bấm được còn tệ hơn không có nút". Đây là chỗ nó sẽ
@@ -79,19 +82,21 @@ export function Sidebar({
         </Link>
       </section>
 
-      <section className={css.khoi} data-testid="sidebar-cac-sub">
-        <h2 className={css.tieu_de}>Chuyên mục</h2>
-        <ul className={css.danh_sach_sub}>
-          {cacSub.map((s) => (
-            <li key={s.slug}>
-              <Link className={css.mot_sub} href={duongDanSub(s.slug)}>
-                <span className={`${css.slug} mono`}>s/{s.slug}</span>
-                <span className={css.ten_sub}>{s.ten}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
+      {cacSub.length > 0 && (
+        <section className={css.khoi} data-testid="sidebar-cac-sub">
+          <h2 className={css.tieu_de}>Chuyên mục</h2>
+          <ul className={css.danh_sach_sub}>
+            {cacSub.map((s) => (
+              <li key={s.slug}>
+                <Link className={css.mot_sub} href={duongDanSub(s.slug)}>
+                  <span className={`${css.slug} mono`}>s/{s.slug}</span>
+                  <span className={css.ten_sub}>{s.ten}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </aside>
   );
 }

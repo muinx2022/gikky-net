@@ -212,13 +212,17 @@ trúc có tunnel, và nó chặn TRƯỚC khi request rời khỏi mạng Cloudf
 - `SECURE_PROXY_SSL_HEADER` không đặt ⇒ Django tin `scheme=http`. Không gây lỗi hiện tại
   (không có `SECURE_SSL_REDIRECT`; cookie `Secure` do settings chứ không do scheme), nhưng
   là lệch giữa cái Django tin và cái trình duyệt thấy. Sửa = đụng `settings.py`.
-- **`/luat` không còn là route tĩnh.** `KhungHaiCot` gọi `GET /subs` ở phía server, nên
-  10 trang trước đây tĩnh nay phải khai `force-dynamic` (nếu không `next build` ĐỎ).
-  Hệ quả: Django chết ⇒ `error.tsx` hiện ra, người dùng bấm "về Luật", và `/luat` cũng
-  chết — đường thoát hỏng cùng lúc với thứ nó thoát khỏi. `app/error.tsx:99` và
-  `e2e/don-vi/trang-loi.spec.ts:86` đều ghim hợp đồng "`/luat` là route TĨNH".
-  Chi tiết + hai lối chữa: `plans/2026-08-25-deploy-vps-docker.md` §"Trang tĩnh vỡ vì
-  KhungHaiCot".
+- ~~**`/luat` không còn là route tĩnh.**~~ **XONG 2026-08-31.** `KhungHaiCot` gọi
+  `GET /subs` ở phía server, nên `/luat` phải khai `force-dynamic` (nếu không `next build`
+  ĐỎ) — mà `/luat` là **đường thoát** của `error.tsx`: Django chết ⇒ trang lỗi hiện ra,
+  người dùng bấm "về Luật", và `/luat` chết cùng thứ nó thoát khỏi. Cách trả: `/luat` đổi
+  sang `components/khung-hai-cot-tinh.tsx` — cùng lưới, cùng `Sidebar`, nhưng
+  `cacSub={[]}` nên không hỏi API nào; bảng route của `next build` nay in `/luat` là `○`.
+  Hợp đồng ghim ở `app/error.tsx` + `e2e/don-vi/trang-loi.spec.ts` (`ROUTE_TINH`, cộng
+  một phép kiểm một-bậc-import canh chính khung tĩnh ấy). Chi tiết:
+  `plans/2026-08-31-luat-tinh-tro-lai.md`.
+  **9 trang còn lại vẫn `force-dynamic` — cố ý:** chúng không mang hợp đồng đường thoát,
+  và rail có danh sách chuyên mục trong HTML đầu tiên là thứ đáng giữ ở đó.
 - **Không có backup tự động** cho `gikkynet_pgdata` và `gikkynet_media`.
   `docs/sao-luu-phuc-hoi.md` viết cho máy dev, chưa có bản cho stack này.
 - Ảnh không có giới hạn dung lượng đĩa tổng.

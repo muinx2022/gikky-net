@@ -1262,6 +1262,7 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Bằng chứng**: `git diff --cached --stat` = 108 file / +931 / −5118 trong khi worktree ≈ HEAD; hai bên gần như gương nhau — index bị đặt về một trạng thái cũ từ trước lượt này.
 - **Vì sao không sửa ngay**: reset index là thao tác phá — cần user xác nhận không phiên nào khác đang cần nó. ⚠ Commit tới PHẢI `git add` chọn lọc từng file; `git commit` thẳng index hiện tại hay `git commit -a` đều chôn rác.
 - **Cập nhật 2026-08-30 (phản biện lượt A10)**: bản staged của `apps/web/e2e/vo-reddit.spec.ts` là bản CŨ đã xoá cả helper `nganKeoDongNhat` lẫn 3 bài A10; `git diff --cached --stat` = 87 file / +887 / −3937. Một `git commit` không `add` chọn lọc sẽ commit bản revert này thay vì bản vá.
+- **Cập nhật 2026-08-31 (lượt /luat, tai nạn thật)**: `git checkout -- <file>` lấy bản từ **INDEX** — với index cũ này nó đè mất bản vá chưa commit của `app/luat/page.tsx` ngay giữa lượt (phải dựng lại tay). Khôi phục thử-phá trên file CHƯA commit phải bằng cách đảo lại đúng phép sửa (Edit ngược), tuyệt đối không `git checkout --`/`git restore` chừng nào index chưa được dọn.
 
 ### P-20260830-6 · [MỞ] · NHỎ — ở ~861–950px, ô tìm header KHÔNG còn đứng giữa khung nhìn như lời hứa của lưới
 - **Thấy lúc**: lượt phản biện "lối vào tìm kiếm mobile" (`plans/2026-08-30-loi-vao-tim-kiem-mobile.md`)
@@ -1317,7 +1318,7 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Bằng chứng**: dev không có Meili ⇒ toàn bộ "gõ gì ra gì" (không dấu→có dấu, khoan dung lỗi gõ, mã ngắn khớp chính xác), hình dạng response federated (`_federation.indexUid`, `estimatedTotalHits`, sort per-query), và hiệu lực `maxTotalHits=2000` **chưa chạy xanh lần nào**. Lớp PARSE đã phủ bằng phản hồi dựng tay (`test_tim_kiem_tron.py`); lớp XẾP HẠNG THẬT thì chưa.
 - **Cách đóng**: chạy `test_tim_kiem_that.py` trên máy có Meili (skip=0), HOẶC kiểm chứng truy vấn thật trên prod sau deploy (gõ câu không dấu / mã ngắn / câu nằm trong bình luận, xem kết quả). Phiên chính sẽ làm cách sau ngay trong lượt deploy.
 
-### P-20260830-12 · [MỞ] · NẶNG — bài đo T8 "ô tìm kiếm là ô SỐNG" đỏ sẵn tại HEAD: locator tìm `searchbox`, Search v2 đã đổi ô thành `combobox`
+### P-20260830-12 · [ĐANG SỬA — đã vá locator (`getByRole("combobox", { name: "Tìm mạch" })`), T8 xanh 2/2, chưa commit; TỰ LÀM không kiểm độc lập, vế "đỏ khi hỏng" tựa vào chính hai lần đỏ tại HEAD] · NẶNG — bài đo T8 "ô tìm kiếm là ô SỐNG" đỏ sẵn tại HEAD: locator tìm `searchbox`, Search v2 đã đổi ô thành `combobox`
 - **Thấy lúc**: chạy full `pnpm e2e` (gikky_e2e) trong lượt "sửa bài đo A10" — thực thi lẫn nghiệm thu cùng thấy, phản biện xác nhận không do lượt A10
 - **Ở đâu**: `apps/web/e2e/giao-dien.spec.ts:318` (`header.getByRole("searchbox")`) ↔ `apps/web/components/o-tim-kiem.tsx:233` (`role="combobox"` tường minh, thêm ở `dd1dac5` cho dropdown gợi ý — role tường minh ĐÈ role ngầm của `<input type="search">`)
 - **Bằng chứng**: `pnpm e2e` → `T8 … expect(locator).toHaveCount(expected) failed · Expected: 1 · Received: 0`; `git diff HEAD -- apps/web/e2e/giao-dien.spec.ts apps/web/components/o-tim-kiem.tsx` rỗng ⇒ đỏ thuộc HEAD. Ô tìm kiếm vẫn tồn tại và sống — bài đo hỏng, sản phẩm không hỏng (cùng loài A10/P-20260830-8).
@@ -1329,7 +1330,7 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Bằng chứng**: mốc 9 HPG: seed đúng 3 thread, DB đang có 8 — 5 hàng rác `md-md_*` neo mốc 9 từ 2026-08-27; chính chúng đẩy A10 cũ sang đo một thread rác 0-reply và sinh cú đỏ bị ghi nhầm thành P-20260830-8. `e2e/dung-seed.ts` chỉ ẨN MẠCH rác (`@gikky.test`), không dọn BÌNH LUẬN rác nằm trong mạch seed.
 - **Vì sao không sửa ngay**: cần quyết cơ chế (dọn bình luận `@gikky.test` trong globalSetup · `seed_dev --reset` cho riêng gikky_e2e · hay ép mọi bài chọn mục tiêu theo thuộc tính ghim được) — việc riêng, đụng nhiều spec.
 
-### P-20260830-14 · [MỞ] · NHỎ — khối comment 5 dòng dán lặp nguyên văn hai lần trong `o-tim-kiem.tsx`
+### P-20260830-14 · [ĐANG SỬA — đã gỡ bản lặp, chưa commit; sửa thuần comment, tự làm] · NHỎ — khối comment 5 dòng dán lặp nguyên văn hai lần trong `o-tim-kiem.tsx`
 - **Thấy lúc**: thực thi lượt "sửa bài đo A10" đọc quanh vùng T8
 - **Ở đâu**: `apps/web/components/o-tim-kiem.tsx:190-199`
 - **Bằng chứng**: dòng 190-194 và 195-199 giống nhau từng ký tự ("Đóng khi focus RỜI hẳn vùng bọc … ⇒ đóng")

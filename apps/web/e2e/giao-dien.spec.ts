@@ -461,7 +461,11 @@ test.describe("T8 — không nút CHẾT nào mới", () => {
     // header chẳng có gì, bản này đòi gõ vào rồi phải tới được trang kết quả.
     await page.goto("/");
     const header = page.locator("header");
-    const o = header.getByRole("searchbox");
+    // `combobox` chứ không `searchbox` từ Search v2 (`dd1dac5`): ô nhập khai
+    // `role="combobox"` tường minh để lái dropdown gợi ý, mà role tường minh ĐÈ role ngầm
+    // của `<input type="search">` ⇒ `getByRole("searchbox")` khớp 0 phần tử và bài này đỏ
+    // oan suốt từ commit đó (P-20260830-12 — sản phẩm không hỏng, locator lạc hậu).
+    const o = header.getByRole("combobox", { name: "Tìm mạch" });
     await expect(o, "Phase 7 đã có: header phải có ô tìm kiếm THẬT").toHaveCount(1);
 
     await o.fill("HPG");

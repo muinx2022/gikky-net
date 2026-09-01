@@ -192,11 +192,6 @@ export function OTimKiem({ trongPanel = false, onDi }: Props) {
       // nên đặt ở đây bắt cả blur của input lẫn của các `<Link>` trong dropdown.
       // `relatedTarget` là phần tử SẮP nhận focus: còn nằm trong `boc` (Tab xuống một gợi
       // ý, hoặc chuột bấm vào một option) ⇒ GIỮ mở; ra ngoài / không còn đâu (`null`) ⇒ đóng.
-      // Đóng khi focus RỜI hẳn vùng bọc — `mousedown` ngoài + Esc không bắt được lối ra
-      // bằng bàn phím (Tab tới phần tử kế). `onBlur` của React là `focusout` (nổi bọt),
-      // nên đặt ở đây bắt cả blur của input lẫn của các `<Link>` trong dropdown.
-      // `relatedTarget` là phần tử SẮP nhận focus: còn nằm trong `boc` (Tab xuống một gợi
-      // ý, hoặc chuột bấm vào một option) ⇒ GIỮ mở; ra ngoài / không còn đâu (`null`) ⇒ đóng.
       onBlur={(e) => {
         if (boc.current !== null && !boc.current.contains(e.relatedTarget as Node)) {
           datMo(false);

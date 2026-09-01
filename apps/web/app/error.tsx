@@ -99,8 +99,9 @@ export default function Loi({
           tiếp, và "đường thoát" chỉ là một vòng lặp chậm hơn. `/luat` là route TĨNH
           (`app/luat/page.tsx` không gọi API nào, Next tiền dựng nó lúc build), nên nó lên
           được kể cả khi Django chết hẳn — thứ duy nhất trong repo này đúng như vậy, và
-          `e2e/don-vi/trang-loi.spec.ts` ghim cả tính tĩnh đó. Từ `/luat` người ta còn
-          đường đi tiếp qua thanh điều hướng. */}
+          `e2e/don-vi/trang-loi.spec.ts` ghim cả tính tĩnh đó. Nói cho đúng mức *(sửa
+          2026-08-31)*: mọi lối đi TIẾP từ `/luat` (logo, footer) đều dẫn về route động —
+          nó là chỗ đứng an toàn để đọc trong lúc chờ, không phải cửa vòng qua sự cố. */}
       <button
         type="button"
         className={css.nut}

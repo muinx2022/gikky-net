@@ -256,6 +256,14 @@ test("Phase 6 — trang 404 KHÔNG gọi API: Django chết thì 404 vẫn phả
   expect(sach).not.toMatch(/from\s+"@\/lib\/api"/);
   expect(sach).not.toMatch(/from\s+"@gikky\/api-client"/);
   expect(sach).not.toMatch(/\bfetch\s*\(/);
+  // Cùng lỗ với `/luat` (vá 2026-08-31, phản biện chỉ ra bản sao): bọc 404 vào
+  // `KhungHaiCot` cho có sidebar là nước đi "trông rất hợp lý" mà docstring trên đã cảnh
+  // báo — ba phép grep trên đều câm vì lời gọi API nằm trong component import vào. Quote
+  // đóng cho phép bản `-tinh` (không gọi API) nếu ngày nào 404 muốn có khung.
+  expect(
+    sach,
+    "404 import `khung-hai-cot` (bản hỏi `GET /subs`) ⇒ Django chết là 404 thành 500",
+  ).not.toMatch(/from\s+"@\/components\/khung-hai-cot"/);
 });
 
 test("#14 — `/luat` thật sự là route TĨNH: không gọi API, không `force-dynamic`", () => {
@@ -267,4 +275,55 @@ test("#14 — `/luat` thật sự là route TĨNH: không gọi API, không `for
   expect(luat).not.toMatch(/from\s+"@gikky\/api-client"/);
   expect(luat).not.toMatch(/force-dynamic/);
   expect(luat).not.toMatch(/\bfetch\s*\(/);
+
+  // **Lỗ mà bốn dòng trên KHÔNG bịt được** *(vá 2026-08-31)*: chúng chỉ grep CHÍNH file
+  // trang, nên một lời gọi API nằm trong component được import vào là chuông câm. Đó
+  // đúng là cách hợp đồng vỡ hôm 2026-08-25 — `/luat` chuyển sang `KhungHaiCot`, thứ tự
+  // hỏi `GET /subs` phía server, và chỉ vế `force-dynamic` kêu lên. Nếu ngày nào đó ai
+  // bỏ dòng `dynamic` ấy đi cho "gọn" thì bài này xanh trong lúc `/luat` vẫn động.
+  //
+  // Quote đóng trong mẫu là CÓ CHỦ ĐÍCH: nó cấm `khung-hai-cot` mà vẫn cho
+  // `khung-hai-cot-tinh` — hai file khác nhau đúng ở chỗ bản `-tinh` không gọi API.
+  expect(
+    luat,
+    "`/luat` import `khung-hai-cot` (bản hỏi `GET /subs`) ⇒ hết tĩnh",
+  ).not.toMatch(/from\s+"@\/components\/khung-hai-cot"/);
+
+  // Phép DƯƠNG (vá 2026-08-31, phản biện chỉ ra): các phép CẤM ở trên không buộc `/luat`
+  // dùng khung tĩnh — ai đó viết một khung thứ ba có fetch dưới cái tên khác là mọi chuông
+  // câm, và bài "một bậc import" bên dưới thành bài canh một file mã chết. Dòng này nối
+  // hai bài lại: `/luat` PHẢI đi qua đúng file mà bài kia đang canh.
+  expect(
+    luat,
+    "`/luat` không còn dùng `khung-hai-cot-tinh` — bài kiểm một-bậc bên dưới đang canh một file không ai import",
+  ).toMatch(/from\s+"@\/components\/khung-hai-cot-tinh"/);
+});
+
+/** Khung mà `/luat` được phép dùng — bài trên chỉ mới nói nó KHÔNG dùng khung kia.
+ *
+ * **Giới hạn thành thật, và nó là giới hạn có chủ đích:** đây là phép kiểm **MỘT BẬC
+ * import**, không phải phân tích transitive. `khung-hai-cot-tinh.tsx` import `Sidebar`,
+ * và nếu ngày nào đó `Sidebar` mọc ra một lời gọi API thì hai bài này đều xanh. Lối chữa
+ * "đi hết cây import rồi grep" là viết nửa cái type-checker bằng regex — loài mà repo này
+ * đã diệt nhiều lần (xem `CLAUDE.md`, mục hàng rào `client` singleton). Phép đo thật cho
+ * bậc sâu là bảng route của `next build`: `/luat` phải mang `○`, và nó ĐỎ ngay khi có bất
+ * kỳ lời gọi động nào ở bất kỳ bậc nào.
+ *
+ * Cái hai bài này thật sự mua được: ca "ai đó đổi import của `/luat` sang khung có fetch"
+ * và ca "ai đó thêm fetch thẳng vào khung tĩnh" — hai ca đã xảy ra hoặc suýt xảy ra —
+ * đều đỏ ngay ở một lệnh chạy trong 20 giây, không phải chờ một lượt build đầy đủ.
+ */
+const KHUNG_TINH = "components/khung-hai-cot-tinh.tsx";
+
+test("#14 — khung tĩnh của `/luat` KHÔNG gọi API (kiểm MỘT BẬC import)", () => {
+  const sach = boChuThich(doc(KHUNG_TINH));
+  // Vế chống rỗng, và nó đo phần MÃ chứ không phần chú thích: file mất, bị rút thành cái
+  // vỏ, hay còn mỗi docstring thì mọi `not.toMatch` dưới đây nghiệm đúng một cách vô
+  // nghĩa — đúng loài "proof đo RỖNG".
+  expect(sach.length, `${KHUNG_TINH} rỗng`).toBeGreaterThan(200);
+  expect(sach, `${KHUNG_TINH} không còn render Sidebar`).toMatch(/<Sidebar\b/);
+
+  expect(sach, `${KHUNG_TINH} gọi lib/api`).not.toMatch(/from\s+"@\/lib\/api"/);
+  expect(sach, `${KHUNG_TINH} gọi api-client`).not.toMatch(/from\s+"@gikky\/api-client"/);
+  expect(sach, `${KHUNG_TINH} có fetch()`).not.toMatch(/\bfetch\s*\(/);
 });
