@@ -1,4 +1,4 @@
-# Sổ lỗi và nợ — gikky.net
+﻿# Sổ lỗi và nợ — gikky.net
 
 > Lập 2026-08-23 tại `ab77957`, sau lượt nghiệm thu + 3 lượt phản biện đầu tiên trên
 > Phase 2/3/4/6. **Đây là sổ cái, không phải kế hoạch.** Sửa xong một mục thì đổi trạng thái
@@ -1232,7 +1232,7 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 > sau. 8 bài đo mới + 3 phép thử phá. Prod: `LuotXem` đã tăng theo lượt xem thật, và lượt của
 > người dùng thật ghi đúng `la_bot=False`. Chi tiết: `plans/2026-08-28-than-chunked-wsgi.md`.
 
-### P-20260830-1 · [MỞ] · NẶNG — hàng rào e2e #14 và trang `/luat` mâu thuẫn NGAY TẠI HEAD ⇒ `pnpm e2e:don-vi` đỏ 1 bài trên `main`, độc lập mọi bản vá
+### P-20260830-1 · [ĐÓNG (5d9a8be) — chọn lối (a): `/luat` dùng `KhungHaiCotTinh` không gọi API, bỏ khai dynamic; hàng rào #14 mở rộng 3 phép; bộ đo xanh toàn phần] · NẶNG — hàng rào e2e #14 và trang `/luat` mâu thuẫn NGAY TẠI HEAD ⇒ `pnpm e2e:don-vi` đỏ 1 bài trên `main`, độc lập mọi bản vá
 - **Thấy lúc**: chạy nghiệm thu lượt "viết lại thống kê lượt xem" (`plans/2026-08-30-viet-lai-luot-xem.md`)
 - **Ở đâu**: `apps/web/app/luat/page.tsx:14` (`export const dynamic = "force-dynamic"`, thêm 2026-08-25 khi dựng Docker) vs `apps/web/e2e/don-vi/trang-loi.spec.ts:268` (cấm đúng chuỗi ấy)
 - **Bằng chứng**: `git show HEAD:` cả hai file đều đã mang hai vế mâu thuẫn; `git diff HEAD` trên cả hai = 0 dòng. `pnpm e2e:don-vi` = 380/381, bài đỏ duy nhất là nó.
@@ -1270,13 +1270,13 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Bằng chứng**: tính từ chính các con số trong file — ở 861px: 861 − 44 padding − 28 gap = 789 khả dụng; cột giữa 292.7; rãnh `1fr` = `minmax(auto,1fr)` nên rãnh phải bị min-content của `.phai` (~340px) chống sàn, rãnh trái teo còn ~156px ⇒ ô tìm lệch trái ~92px — trái đúng câu "hai rãnh biên bằng nhau theo định nghĩa" trong docstring. KHÔNG do bản vá icon (icon `display:none` ở dải đó).
 - **Vì sao không sửa ngay**: lỗi thẩm mỹ dải hẹp, ngoài phạm vi lượt; sửa đàng hoàng phải đụng chiến lược lưới và đo lại nhiều mốc.
 
-### P-20260830-7 · [MỞ] · NHỎ — docstring `chrome.tsx` khẳng định "`pnpm build` xác nhận `/luat` đang là `○`" nhưng build hiện tại ra `ƒ`
+### P-20260830-7 · [ĐÓNG (5d9a8be) — theo P-20260830-1: `/luat` lại là `○`, câu docstring ĐÚNG trở lại, không phải sửa chữ] · NHỎ — docstring `chrome.tsx` khẳng định "`pnpm build` xác nhận `/luat` đang là `○`" nhưng build hiện tại ra `ƒ`
 - **Thấy lúc**: lượt "lối vào tìm kiếm mobile" — cả opus-dev (đo A/B hai cây) lẫn nghiệm thu và phản biện cùng chỉ ra
 - **Ở đâu**: `apps/web/components/chrome.tsx:19` (khối docstring đầu file)
 - **Bằng chứng**: `pnpm build` ở cả HEAD lẫn cây có bản vá đều in `├ ƒ /luat  566 B  106 kB` — hệ quả của `P-20260830-1` (`force-dynamic` khai ở `app/luat/page.tsx:14` từ 2026-08-25). Câu tài liệu đứng ngay chỗ giải thích ràng buộc kiến trúc nên dễ làm người sau tin ràng buộc vẫn đang được giữ.
 - **Vì sao không sửa ngay**: nó là một mảnh của `P-20260830-1` — đóng nợ ấy (chọn bên nào đúng) thì sửa câu này cùng lượt, sửa lẻ bây giờ là vá chữ trước khi user quyết bản chất.
 
-### P-20260830-8 · [ĐANG SỬA — bài đo đã vá trong cây làm việc, chưa commit] · NẶNG (hạ: bài đo hỏng, sản phẩm KHÔNG hỏng) — gập bình luận GỠ nội dung khỏi HTML: hợp đồng "bot vẫn đọc được" (PLAN mục 1) đang vỡ ngay tại HEAD
+### P-20260830-8 · [ĐÓNG (c06e8bb)] · NẶNG (hạ: bài đo hỏng, sản phẩm KHÔNG hỏng) — gập bình luận GỠ nội dung khỏi HTML: hợp đồng "bot vẫn đọc được" (PLAN mục 1) đang vỡ ngay tại HEAD
 
 > **CHẨN ĐOÁN LẬT 2026-08-30 (lượt "sửa bài đo A10", plan `plans/2026-08-30-sua-bai-do-a10-gap-binh-luan.md`):**
 > sản phẩm KHÔNG hỏng — `gap-nhanh.tsx:77` giữ nguyên nội dung trong DOM (`hidden={gap}`), và
@@ -1318,19 +1318,19 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Bằng chứng**: dev không có Meili ⇒ toàn bộ "gõ gì ra gì" (không dấu→có dấu, khoan dung lỗi gõ, mã ngắn khớp chính xác), hình dạng response federated (`_federation.indexUid`, `estimatedTotalHits`, sort per-query), và hiệu lực `maxTotalHits=2000` **chưa chạy xanh lần nào**. Lớp PARSE đã phủ bằng phản hồi dựng tay (`test_tim_kiem_tron.py`); lớp XẾP HẠNG THẬT thì chưa.
 - **Cách đóng**: chạy `test_tim_kiem_that.py` trên máy có Meili (skip=0), HOẶC kiểm chứng truy vấn thật trên prod sau deploy (gõ câu không dấu / mã ngắn / câu nằm trong bình luận, xem kết quả). Phiên chính sẽ làm cách sau ngay trong lượt deploy.
 
-### P-20260830-12 · [ĐANG SỬA — đã vá locator (`getByRole("combobox", { name: "Tìm mạch" })`), T8 xanh 2/2, chưa commit; TỰ LÀM không kiểm độc lập, vế "đỏ khi hỏng" tựa vào chính hai lần đỏ tại HEAD] · NẶNG — bài đo T8 "ô tìm kiếm là ô SỐNG" đỏ sẵn tại HEAD: locator tìm `searchbox`, Search v2 đã đổi ô thành `combobox`
+### P-20260830-12 · [ĐÓNG (5d9a8be) — tự làm không kiểm độc lập; vế "đỏ khi hỏng" tựa vào hai lần đỏ tại HEAD] · NẶNG — bài đo T8 "ô tìm kiếm là ô SỐNG" đỏ sẵn tại HEAD: locator tìm `searchbox`, Search v2 đã đổi ô thành `combobox`
 - **Thấy lúc**: chạy full `pnpm e2e` (gikky_e2e) trong lượt "sửa bài đo A10" — thực thi lẫn nghiệm thu cùng thấy, phản biện xác nhận không do lượt A10
 - **Ở đâu**: `apps/web/e2e/giao-dien.spec.ts:318` (`header.getByRole("searchbox")`) ↔ `apps/web/components/o-tim-kiem.tsx:233` (`role="combobox"` tường minh, thêm ở `dd1dac5` cho dropdown gợi ý — role tường minh ĐÈ role ngầm của `<input type="search">`)
 - **Bằng chứng**: `pnpm e2e` → `T8 … expect(locator).toHaveCount(expected) failed · Expected: 1 · Received: 0`; `git diff HEAD -- apps/web/e2e/giao-dien.spec.ts apps/web/components/o-tim-kiem.tsx` rỗng ⇒ đỏ thuộc HEAD. Ô tìm kiếm vẫn tồn tại và sống — bài đo hỏng, sản phẩm không hỏng (cùng loài A10/P-20260830-8).
 - **Vì sao không sửa ngay**: ngoài phạm vi lượt A10; vá là một dòng locator nhưng phải kèm thử phá riêng theo luật 4.
 
-### P-20260830-13 · [MỞ] · NẶNG — `gikky_e2e` tích rác qua từng lượt chạy, đổi NGẦM đối tượng đo của mọi bài chọn "mốc đông nhất / thread đầu tiên"
+### P-20260830-13 · [ĐANG SỬA — command `don_rac_e2e` + 10 bài pytest + hàng rào don-vi đã xong, chờ commit; đo tay trên gikky_e2e: HPG comment_count 24/24 đúng bất biến seed, mốc 9 về 3 thread; vế VOTE tách sang P-20260901-1] · NẶNG — `gikky_e2e` tích rác qua từng lượt chạy, đổi NGẦM đối tượng đo của mọi bài chọn "mốc đông nhất / thread đầu tiên"
 - **Thấy lúc**: phản biện lượt "sửa bài đo A10", truy vấn chỉ đọc vào `gikky_e2e`
 - **Ở đâu**: nguồn xả rác: `apps/web/e2e/tai-khoan-va-ghi.spec.ts:150,292` (mỗi lượt chạy để lại bình luận SỐNG trong mạch seed HPG); nạn nhân: mọi bài chọn mục tiêu kiểu "đông nhất / đầu tiên" (`vo-reddit.spec.ts:469` `nganKeoDongNhat`, `binh-luan-chung.spec.ts:41` `mocDongNhat`)
 - **Bằng chứng**: mốc 9 HPG: seed đúng 3 thread, DB đang có 8 — 5 hàng rác `md-md_*` neo mốc 9 từ 2026-08-27; chính chúng đẩy A10 cũ sang đo một thread rác 0-reply và sinh cú đỏ bị ghi nhầm thành P-20260830-8. `e2e/dung-seed.ts` chỉ ẨN MẠCH rác (`@gikky.test`), không dọn BÌNH LUẬN rác nằm trong mạch seed.
 - **Vì sao không sửa ngay**: cần quyết cơ chế (dọn bình luận `@gikky.test` trong globalSetup · `seed_dev --reset` cho riêng gikky_e2e · hay ép mọi bài chọn mục tiêu theo thuộc tính ghim được) — việc riêng, đụng nhiều spec.
 
-### P-20260830-14 · [ĐANG SỬA — đã gỡ bản lặp, chưa commit; sửa thuần comment, tự làm] · NHỎ — khối comment 5 dòng dán lặp nguyên văn hai lần trong `o-tim-kiem.tsx`
+### P-20260830-14 · [ĐÓNG (5d9a8be) — sửa thuần comment, tự làm] · NHỎ — khối comment 5 dòng dán lặp nguyên văn hai lần trong `o-tim-kiem.tsx`
 - **Thấy lúc**: thực thi lượt "sửa bài đo A10" đọc quanh vùng T8
 - **Ở đâu**: `apps/web/components/o-tim-kiem.tsx:190-199`
 - **Bằng chứng**: dòng 190-194 và 195-199 giống nhau từng ký tự ("Đóng khi focus RỜI hẳn vùng bọc … ⇒ đóng")
@@ -1353,6 +1353,12 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Ở đâu**: `apps/web/playwright.config.ts:95` (`devices["Desktop Chrome"]`) · hàng rào coarse duy nhất là phép grep đọc nguồn trong `apps/web/e2e/don-vi/loi-vao-tim-kiem.spec.ts:218-231`, chỉ hỏi đúng `.nut` của `tim-kiem-mobile`
 - **Bằng chứng**: các khối coarse ở theme, form-tai-khoan, composer, chep-link, chon-kieu-xem, thanh-tai-khoan không ai kiểm; bản vá 44px của lượt này chỉ chứng minh được bằng grep bundle CSS đã build.
 - **Vì sao không sửa ngay**: cần quyết cơ chế (project Playwright mobile thật có touch, hay mở rộng phép grep) — việc riêng.
+
+### P-20260901-1 · [MỞ] · VỪA — nửa còn lại của bài toán rác e2e: VOTE (và report, tài khoản) của `@gikky.test` lên nội dung SEED không bao giờ được dọn — điểm seed trôi vĩnh viễn qua từng lượt chạy
+- **Thấy lúc**: phản biện lượt "dọn rác gikky_e2e" (`plans/2026-08-31-don-rac-gikky-e2e.md`)
+- **Ở đâu**: `apps/web/e2e/tai-khoan-va-ghi.spec.ts:232-262` (vote xong không rút phiếu) · `:200-230` (mỗi lượt đẻ một `Report` nhắm bình luận seed) · `apps/web/e2e/danh-tinh.ts:21-24` (~10 tài khoản + `EmailAddress` mỗi lượt, không đường dọn)
+- **Bằng chứng**: mỗi lượt `pnpm e2e` cộng vĩnh viễn 1 up-vote vào mốc 9 mạch HPG; `Vote` cố ý không có FK (PLAN 5.3) nên ẩn/xoá nội dung không kéo theo; `don_rac_e2e` cố ý chỉ đụng Mach/Comment. Điểm/wilson của seed vì thế trôi — cùng loài "đổi ngầm đối tượng đo" với P-20260830-13, chỉ chậm hơn.
+- **Vì sao không sửa ngay**: ngoài phạm vi lượt dọn bình luận; rút phiếu qua đường ghi (`dat_vote` chiều ngược) + dọn Report/tài khoản là một lượt riêng, cần cân cả `AuditLog` phồng.
 
 ### P-20260831-4 · [MỞ] · NHỎ — `e2e/danh-tinh.ts:95` `toContainText("u/…")` từ nay chỉ còn đúng nhờ `textContent`, vì chữ username đã ẩn thị giác ≤640px
 - **Thấy lúc**: phản biện lượt "header mobile một dòng"

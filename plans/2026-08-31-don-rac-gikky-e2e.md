@@ -64,3 +64,31 @@ Nền hiện tại: bộ đầy đủ 572 passed / 0 failed (đo 2026-08-31, sau
 ## 5. Chặng 5
 
 Ghi sổ, đóng P-20260830-13, commit pathspec (user đã uỷ quyền), báo cáo.
+
+## 6. Cập nhật sau nghiệm thu + phản biện (vòng 2, 2026-09-01)
+
+Tiêu chí #3 mục 4 viết lỏng: *"SAU `pnpm e2e` số đó = 0"* — lệnh dọn ở ĐẦU lượt, nên rác
+của chính lượt vừa chạy nằm lại tới lượt sau (đo được: 17 mạch + ~10 bình luận). Nghĩa
+đúng: **rác của các lượt TRƯỚC mốc globalSetup = 0** — và vế đó ĐẠT.
+
+Phản biện bắt 4 lỗ thật + 2 chuông thiếu, vá ở vòng 2:
+1. Thiếu `deleted_at__isnull=True` ⇒ ẩn bia mộ làm nhãn lật `DA_XOA→DA_AN`, tắt
+   `giu_vi_da_trich`, rơi khối trích — đã vá + bài đo đối chứng.
+2. Thiếu `lam_moi_mach` ⇒ ISR giữ rác tới 60 phút khi server được dùng lại — đã vá (gom
+   mỗi mạch một lời gọi, sau mọi transaction) + bài đo mock.
+3. Thiếu cổng môi trường — cửa đăng ký sản phẩm NHẬN miền `@gikky.test`
+   (`test_tai_khoan.py:66`), nên "prod không có hàng khớp" là giả định, không phải bất
+   biến — đã thêm `doi_dev` (lớp 2) + bài đo DEBUG=False, docstring viết lại trung thực.
+4. Nửa mạch không có chuông chống ghi-thẳng — đã thêm assert AuditLog `an_mach` (bản
+   `.update()` không đẻ audit ⇒ đỏ).
+5. Đối chứng mạch miền seed `@vi-du.gikky.net` bổ sung vào bài 3.
+6. Dây nối globalSetup→command không ai canh — thêm
+   `e2e/don-vi/dung-seed-goi-don-rac.spec.ts` (don-vi thành 403 bài).
+
+Con số ĐỘC LẬP với bộ lọc (phản biện đòi, thay cho "25/25" vốn là phép đo vòng):
+chạy tay lệnh trên gikky_e2e ⇒ HPG `comment_count` **24/24** — đúng bất biến seed
+(`test_seed_dev.py:87`); 0 bình luận `@gikky.test` sống; 0 mạch rác sống; 0 bia mộ bị
+ẩn nhầm; mốc 9 = 3 thread đọc được.
+
+NGOÀI phạm vi lượt, ghi sổ: vote/report/tài khoản `@gikky.test` tích qua các lượt (vote
+là vế nặng nhất — điểm seed trôi vĩnh viễn), xem P-20260901-1.
