@@ -24,6 +24,7 @@ from pydantic import Field
 
 from core.models.binh_luan import DAI_BODY_COMMENT
 from core.models.moc import DAI_BODY_MOC
+from core.models.tin_nhan import DO_DAI_TIN_TOI_DA
 
 #: `ket_qua` ≤40 ký tự (PLAN 5.1) · `loai` ≤20 · `question_for_crowd` ≤200 (PLAN 5.2).
 #: Khai lại ở đây thay vì import từ model là **cố ý ở đúng ba con số này**: chúng đi vào
@@ -308,3 +309,18 @@ class BaoCaoMoiIn(Schema):
         "khac",
     ]
     ghi_chu: str = Field(default="", max_length=DAI_GHI_CHU_BAO_CAO)
+
+
+class TinNhanIn(Schema):
+    """Gửi một tin nhắn riêng — `POST /me/tin-nhan/{username}` (2026-09-03).
+
+    Đúng một trường: **người nhận nằm ở URL**, không nằm trong thân. Hai thứ đó không được
+    cùng ở một chỗ vì người nhận là thứ quyết định 404 và 400 (tự nhắn mình), tức nó phải
+    được đọc trước khi ai chạm tới thân request.
+
+    `body` là **plain text** — không có `body_dinh_dang` như bình luận, và đó là chủ đích:
+    tin nhắn riêng không đi qua kiểm duyệt nào, nên mở cửa HTML ở đây là mở một đường XSS
+    mà không mod nào nhìn thấy. Server `strip()` rồi từ chối chuỗi rỗng.
+    """
+
+    body: str = Field(min_length=1, max_length=DO_DAI_TIN_TOI_DA)

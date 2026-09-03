@@ -1,6 +1,14 @@
 "use client";
 
-import { ImageUp, KeyRound, LogOut, Settings, ShieldCheck, UserRound } from "lucide-react";
+import {
+  ImageUp,
+  KeyRound,
+  LogOut,
+  MessageCircle,
+  Settings,
+  ShieldCheck,
+  UserRound,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -92,6 +100,14 @@ export function ThanhTaiKhoan() {
           <Link href={duongDanHoSo(toi.username ?? "")} role="menuitem" onClick={() => datMo(false)}>
             <UserRound size={15} strokeWidth={2} aria-hidden />
             Hồ sơ của tôi
+          </Link>
+          {/* Hộp thư (2026-09-03). Ngay sau "Hồ sơ của tôi" vì cùng nhóm "của tôi", và
+              trước "Sửa hồ sơ" vì nó là chỗ người ta VÀO thường xuyên, không phải chỗ
+              người ta sửa một lần rồi thôi. Header đã có phong bì kèm số chưa đọc; mục
+              menu này là lối vào thứ hai cho người quen dùng menu. */}
+          <Link href="/tin-nhan" role="menuitem" onClick={() => datMo(false)}>
+            <MessageCircle size={15} strokeWidth={2} aria-hidden />
+            Tin nhắn
           </Link>
           {/* Lối vào SỬA hồ sơ (ảnh đại diện + giới thiệu) — **trang riêng**, user chốt
               2026-08-24. Trước đó nó trỏ `/cai-dat#ho-so`: hai mục menu khác tên mà ra

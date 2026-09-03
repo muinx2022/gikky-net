@@ -58,6 +58,8 @@ QUA_HAN_MUC_MACH = "qua_han_muc_mach"
 QUA_HAN_MUC_BINH_LUAN = "qua_han_muc_binh_luan"
 #: Vượt 30 ảnh nội dung/ngày lịch VN/người (plan 2026-08-24). 429.
 QUA_HAN_MUC_ANH_NOI_DUNG = "qua_han_muc_anh_noi_dung"
+#: Vượt 60 tin nhắn/giờ trượt/người (plan 2026-09-03). 429, kèm `thu_lai_tu`.
+QUA_HAN_MUC_TIN_NHAN = "qua_han_muc_tin_nhan"
 #: Quá 7 ngày kể từ lúc đóng sổ (PLAN 5.1). 409.
 HET_HAN_MO_LAI = "het_han_mo_lai"
 #: Thao tác trên nội dung đã xoá / đã bị mod ẩn. 409.

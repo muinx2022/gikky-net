@@ -803,6 +803,106 @@
         "title": "HoSoOut",
         "type": "object"
       },
+      "HoiThoaiChiTietOut": {
+        "description": "`GET /me/tin-nhan/{username}` — một cuộc trò chuyện.\n\n`hoi_thoai_id = null` nghĩa là **hai người chưa từng nhắn nhau**: `items` rỗng và ô\nnhập vẫn phải mở. Đó là trạng thái bình thường của lần mở đầu tiên, không phải 404.\n\n`items` sắp **TĂNG DẦN theo `id`** — thứ tự đọc của một khung chat, tin cũ ở trên. Phân\ntrang thì đi lùi (`?truoc=<id>` trả các tin có `id` nhỏ hơn), nên trang sau được chèn\nlên ĐẦU danh sách đang hiển thị.",
+        "properties": {
+          "con_cu_hon": {
+            "title": "Con Cu Hon",
+            "type": "boolean"
+          },
+          "hoi_thoai_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hoi Thoai Id"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TinNhanOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "nguoi_kia": {
+            "$ref": "#/components/schemas/NguoiDungTomTatOut"
+          }
+        },
+        "required": [
+          "hoi_thoai_id",
+          "nguoi_kia",
+          "items",
+          "con_cu_hon"
+        ],
+        "title": "HoiThoaiChiTietOut",
+        "type": "object"
+      },
+      "HoiThoaiOut": {
+        "description": "Một dòng trong hộp thư — `GET /me/tin-nhan`.\n\n`nguoi_kia` là phía đối diện của người đang gọi, không phải \"người a\" của hàng dữ\nliệu: thứ tự `a`/`b` trong DB là theo id, một chi tiết lưu trữ mà client không cần\nbiết.\n\n`tin_cuoi` là `null` chỉ trong một ca không xảy ra qua đường sản phẩm (hội thoại\nkhông có tin nào) — nhưng nó khai được `null` vì hàng `HoiThoai` tồn tại độc lập với\ntin, và một client vẽ `tin_cuoi.body` không kiểm `null` sẽ hỏng đúng lúc dữ liệu lạ.",
+        "properties": {
+          "cap_nhat_luc": {
+            "format": "date-time",
+            "title": "Cap Nhat Luc",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "nguoi_kia": {
+            "$ref": "#/components/schemas/NguoiDungTomTatOut"
+          },
+          "so_chua_doc": {
+            "title": "So Chua Doc",
+            "type": "integer"
+          },
+          "tin_cuoi": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TinNhanOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "nguoi_kia",
+          "tin_cuoi",
+          "so_chua_doc",
+          "cap_nhat_luc"
+        ],
+        "title": "HoiThoaiOut",
+        "type": "object"
+      },
+      "HopThuOut": {
+        "description": "`GET /me/tin-nhan` — hộp thư. **Per-user, cấm cache.**\n\n`so_chua_doc` là tổng của **toàn bộ** hộp thư, không phải tổng của trang đang xem —\ncùng lý lẽ `ChuongOut`: con số trên chấm nói \"bạn có N tin chưa đọc\", và tính nó trên\nmột trang sẽ cho ra một con số trông hợp lý và luôn sai.",
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/HoiThoaiOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "so_chua_doc": {
+            "title": "So Chua Doc",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "so_chua_doc"
+        ],
+        "title": "HopThuOut",
+        "type": "object"
+      },
       "KetQuaDoiTrangThaiOut": {
         "description": "Kết quả CHUNG của mọi hành động moderation bật/tắt một trạng thái.\n\nHai trường, và cả hai đều cần:\n\n- `da_doi` — hành động này có đổi gì không. Bấm \"ẩn\" lần thứ hai trả `false`, và đó\n  **không** phải lỗi: `core/ghi.py` cố ý không reset `hidden_at` (mất mốc thời gian\n  moderation thật) và không đẻ dòng `AuditLog` thứ hai. UI đọc trường này để không\n  báo \"đã ẩn xong\" cho một cú bấm chẳng làm gì;\n- `dang_bat` — trạng thái SAU khi gọi. Đây là thứ UI vẽ, và nó đúng ở cả hai nhánh\n  của `da_doi` — nên hai mod bấm cùng lúc vẫn thấy cùng một màn hình.",
         "properties": {
@@ -1739,7 +1839,7 @@
         "type": "object"
       },
       "MocSuaIn": {
-        "description": "Sửa mốc — `PATCH /mocs/{id}`. **Đúng 5 trường của PLAN 5.2, không gì khác.**\n\nĐây là PATCH thật: trường **không gửi** thì không đổi, trường gửi `null` thì xoá.\nPhân biệt hai ca đó bằng `model_fields_set` của pydantic, nên đừng đổi `None` mặc\nđịnh thành một sentinel khác — `api/mocs.py` đọc đúng cơ chế ấy.",
+        "description": "Sửa mốc — `PATCH /mocs/{id}`. **Đúng 5 trường của PLAN 5.2, không gì khác.**\n\nĐây là PATCH thật: trường **không gửi** thì không đổi, trường gửi `null` thì xoá.\nPhân biệt hai ca đó bằng `model_fields_set` của pydantic, nên đừng đổi `None` mặc\nđịnh thành một sentinel khác — `api/mocs.py` đọc đúng cơ chế ấy.\n\n⚠ **`body` KHÔNG được schema chặn ở `null`, dù nó khai `min_length=1`.** `Field` áp\nràng buộc lên nhánh `str` của union, còn `null` đi thẳng qua. Câu \"schema chặn trước\nkhi vào đây\" từng đứng ở đây và ở `api/mocs.py` là **sai**: `{\"body\": null}` xuống tới\n`lam_sach(None)` và nổ `TypeError` ⇒ 500 trần. Phép chặn thật nằm ở\n`core/ghi.py::_kiem_thay_doi_moc` (một chỗ, cho cả cửa v1 lẫn cửa quản trị) và trả\n400 `du_lieu_khong_hop_le`. Vá 2026-09-03.",
         "properties": {
           "body": {
             "anyOf": [
@@ -2002,6 +2102,20 @@
           "dem"
         ],
         "title": "ReactionOut",
+        "type": "object"
+      },
+      "SoChuaDocOut": {
+        "description": "Chỉ một con số — nguồn của chấm trên biểu tượng phong bì ở header.\n\nEndpoint riêng (`GET /me/tin-nhan-chua-doc`) chứ không dùng lại `GET /me/tin-nhan`:\nheader poll con số này 60 giây một lần trên MỌI trang, và trả kèm cả hộp thư ở đó là\nkéo tối đa 100 hội thoại cùng ảnh đại diện về cho một con số.",
+        "properties": {
+          "so_chua_doc": {
+            "title": "So Chua Doc",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "so_chua_doc"
+        ],
+        "title": "SoChuaDocOut",
         "type": "object"
       },
       "SpineOut": {
@@ -2269,6 +2383,52 @@
           "q"
         ],
         "title": "TimKiemOut",
+        "type": "object"
+      },
+      "TinNhanIn": {
+        "description": "Gửi một tin nhắn riêng — `POST /me/tin-nhan/{username}` (2026-09-03).\n\nĐúng một trường: **người nhận nằm ở URL**, không nằm trong thân. Hai thứ đó không được\ncùng ở một chỗ vì người nhận là thứ quyết định 404 và 400 (tự nhắn mình), tức nó phải\nđược đọc trước khi ai chạm tới thân request.\n\n`body` là **plain text** — không có `body_dinh_dang` như bình luận, và đó là chủ đích:\ntin nhắn riêng không đi qua kiểm duyệt nào, nên mở cửa HTML ở đây là mở một đường XSS\nmà không mod nào nhìn thấy. Server `strip()` rồi từ chối chuỗi rỗng.",
+        "properties": {
+          "body": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          }
+        },
+        "required": [
+          "body"
+        ],
+        "title": "TinNhanIn",
+        "type": "object"
+      },
+      "TinNhanOut": {
+        "description": "Một tin nhắn. **Plain text** — client in nó bằng escape, không bao giờ như HTML.\n\n`cua_toi` là trường DUY NHẤT phụ thuộc người xem trong cụm này, và nó được phép tồn\ntại vì mọi cửa nhắn tin đều `no-store`: chúng không nằm trong tập response cache được\ncủa PLAN 8.4. Không có nó thì client phải tự so `username` để biết vẽ bong bóng bên\nnào — tức một bản thứ hai của luật \"ai gửi\", ở nơi không có gì đối chiếu.",
+        "properties": {
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "cua_toi": {
+            "title": "Cua Toi",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "body",
+          "created_at",
+          "cua_toi"
+        ],
+        "title": "TinNhanOut",
         "type": "object"
       },
       "ToiOut": {
@@ -4688,6 +4848,340 @@
         ]
       }
     },
+    "/api/v1/me/tin-nhan": {
+      "get": {
+        "description": "Hộp thư: mọi cuộc trò chuyện của tôi, **mới nhất trước**. Per-user, cấm cache.\n\nTrả tối đa 100 hội thoại và **chưa có phân trang** — hộp thư là danh sách để quản lý,\nkhông phải một feed. Mỗi dòng kèm tin cuối và số tin chưa đọc của riêng tôi.",
+        "operationId": "liet_ke_hoi_thoai",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HopThuOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Liet Ke Hoi Thoai",
+        "tags": [
+          "tin-nhan"
+        ]
+      }
+    },
+    "/api/v1/me/tin-nhan-chua-doc": {
+      "get": {
+        "description": "Số tin chưa đọc trên **toàn hộp thư** — con số trên biểu tượng phong bì ở header.\n\nCửa riêng thay vì dùng lại `GET /me/tin-nhan`: header poll con số này 60 giây một lần\ntrên mọi trang, và trả kèm cả hộp thư ở đó là kéo tối đa 100 hội thoại về cho một số.",
+        "operationId": "dem_tin_nhan_chua_doc",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SoChuaDocOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Dem Tin Nhan Chua Doc",
+        "tags": [
+          "tin-nhan"
+        ]
+      }
+    },
+    "/api/v1/me/tin-nhan/{username}": {
+      "get": {
+        "description": "Một cuộc trò chuyện với `username`. Tin sắp **TĂNG DẦN theo `id`** (cũ ở trên).\n\nChưa từng nhắn nhau ⇒ 200 với `hoi_thoai_id: null` và `items: []` — đó là trạng thái\nbình thường của lần mở đầu tiên, không phải 404. Username không tồn tại ⇒ 404; tự xem\nhội thoại với chính mình ⇒ 400.\n\n**Người đã bị vô hiệu hoá vẫn ĐỌC được cuộc trò chuyện đã có** — nếu không thì những\ntin họ đã gửi kẹt ở trạng thái chưa đọc vĩnh viễn. Chưa từng nhắn nhau thì họ vẫn là\n404, để cửa này không thành cửa dò tài khoản; xem `_nap_nguoi_kia`.\n\nPhân trang đi **lùi**: `?truoc=<id>` trả các tin có `id` nhỏ hơn, tức trang cũ hơn.\n`con_cu_hon` cho biết còn nữa không. `limit` trong 1..50, mặc định 30.\n\n**Không tự đánh dấu đã đọc** — dùng `POST /me/tin-nhan/{username}/doc`. Một `GET` đổi\ntrạng thái là một `GET` mà prefetch của trình duyệt và bot đều gọi được.",
+        "operationId": "xem_hoi_thoai",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "required": true,
+            "schema": {
+              "title": "Username",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "truoc",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Truoc"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HoiThoaiChiTietOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Xem Hoi Thoai",
+        "tags": [
+          "tin-nhan"
+        ]
+      },
+      "post": {
+        "description": "Gửi một tin nhắn riêng. Tạo cuộc trò chuyện nếu chưa có. Trả **201**.\n\nThân là plain text, tối đa 2000 ký tự, không được rỗng sau khi bỏ khoảng trắng.\nNgười nhận không tồn tại hoặc đã bị vô hiệu hoá ⇒ 404; tự nhắn mình ⇒ 400; tài khoản\nbị khoá ⇒ 403.\n\n**Hạn mức 60 tin/giờ trượt cho mỗi người gửi** (đổi được ở\n`settings.HAN_MUC_TIN_NHAN_MOI_GIO`) ⇒ 429 `qua_han_muc_tin_nhan` kèm `thu_lai_tu`.\n\nNgười nhận nhận một dòng chuông loại `tin_nhan`, **gộp theo cuộc trò chuyện**: 20 tin\nliên tiếp là một dòng được cập nhật, không phải 20 dòng.",
+        "operationId": "gui_tin_nhan",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "required": true,
+            "schema": {
+              "title": "Username",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TinNhanIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TinNhanOut"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiThoiGianOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Gui Tin Nhan",
+        "tags": [
+          "tin-nhan"
+        ]
+      }
+    },
+    "/api/v1/me/tin-nhan/{username}/doc": {
+      "post": {
+        "description": "Đánh dấu đã đọc hết cuộc trò chuyện với `username`. **Idempotent.**\n\nTắt luôn dòng chuông `tin_nhan` của đúng cuộc trò chuyện ấy — đọc hội thoại với A\nkhông đụng gì tới chuông của hội thoại với B.\n\nTrả **tổng** số tin còn chưa đọc trên toàn hộp thư, để header cập nhật con số ngay mà\nkhông phải poll thêm một vòng. Chưa từng nhắn nhau ⇒ 200, không làm gì.",
+        "operationId": "doc_hoi_thoai",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "required": true,
+            "schema": {
+              "title": "Username",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SoChuaDocOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Doc Hoi Thoai",
+        "tags": [
+          "tin-nhan"
+        ]
+      }
+    },
     "/api/v1/mocs/{moc_id}": {
       "delete": {
         "description": "Xoá mốc = **bia mộ** giữ chỗ, không bao giờ `DELETE` thật (PLAN nguyên tắc 2).\n\n**Quyền: CHỈ tác giả của mốc.** Mạch bị mod khoá ⇒ 403. Mốc đã bị gỡ rồi ⇒ 409.\n\nTrả về chính thẻ mốc ở trạng thái bia mộ (`trang_thai = \"da_xoa\"`, nội dung `null`)\nchứ không trả 204: UI phải **render lại ô đó** chứ không gỡ nó khỏi timeline — `seq`\nbất biến và spine phải đủ số ô, giấu hẳn một ô là thủng dãy số (PLAN 5.2).\n\nXoá mốc **không** làm `entry_count`/`last_entry_at` lùi (chúng đo *cấu trúc*), nhưng\n**có** làm `comment_count`/`last_activity_at` đổi (chúng đo *nội dung đọc được*) —\nPLAN mục 6, luật đếm 4 cột.",
@@ -4766,7 +5260,7 @@
         ]
       },
       "patch": {
-        "description": "Sửa mốc — **đúng 5 trường** của PLAN 5.2, không gì khác.\n\n**Quyền: CHỈ tác giả của mốc** (`Moc.author`, không phải `Mach.author` — hai thứ đó\ntrùng nhau hôm nay vì chỉ tác giả nối được mốc, nhưng hỏi đúng cột là điều kiện để\nchúng vẫn đúng khi đồng tác giả mở ra). Người khác nhận 403 `khong_phai_chu`.\nMạch bị mod khoá ⇒ 403; mốc đã là bia mộ hoặc bị ẩn ⇒ 409 `noi_dung_da_go`.\n\n**PATCH thật**: trường không gửi thì không đổi, trường gửi `null` thì xoá. `body`\nkhông nhận `null` (mốc phải có thân) — schema chặn trước khi vào đây.\n\nSửa **im lặng trong 15 phút** kể từ `created_at`; sau đó mỗi lần sửa tạo một\n`MocRevision` lưu **đủ cả 5 trường bản trước** và tăng \"đã sửa N lần\". Có\n`occurred_at` trong revision là bắt buộc: sửa lùi ngày sự việc mà không để vết là phá\nđúng giá trị lõi \"ghi-trước-khi-biết-kết-quả\" của sản phẩm.\n\n`occurred_at` mới vẫn **cấm ngày tương lai** (theo giờ VN).",
+        "description": "Sửa mốc — **đúng 5 trường** của PLAN 5.2, không gì khác.\n\n**Quyền: CHỈ tác giả của mốc** (`Moc.author`, không phải `Mach.author` — hai thứ đó\ntrùng nhau hôm nay vì chỉ tác giả nối được mốc, nhưng hỏi đúng cột là điều kiện để\nchúng vẫn đúng khi đồng tác giả mở ra). Người khác nhận 403 `khong_phai_chu`.\nMạch bị mod khoá ⇒ 403; mốc đã là bia mộ hoặc bị ẩn ⇒ 409 `noi_dung_da_go`.\n\n**PATCH thật**: trường không gửi thì không đổi, trường gửi `null` thì xoá. `body`\nkhông nhận `null` (mốc phải có thân) — **`core/ghi.py::_kiem_thay_doi_moc` chặn**, trả\n400 `du_lieu_khong_hop_le`. KHÔNG phải schema: `Field(min_length=1)` trên `str | None`\nchỉ áp cho nhánh `str`, và câu \"schema chặn trước khi vào đây\" đứng ở đây tới\n2026-09-03 là sai — `{\"body\": null}` xuống tới `lam_sach(None)` và trả 500 trần.\n\nSửa **im lặng trong 15 phút** kể từ `created_at`; sau đó mỗi lần sửa tạo một\n`MocRevision` lưu **đủ cả 5 trường bản trước** và tăng \"đã sửa N lần\". Có\n`occurred_at` trong revision là bắt buộc: sửa lùi ngày sự việc mà không để vết là phá\nđúng giá trị lõi \"ghi-trước-khi-biết-kết-quả\" của sản phẩm.\n\n`occurred_at` mới vẫn **cấm ngày tương lai** (theo giờ VN).",
         "operationId": "sua_moc",
         "parameters": [
           {

@@ -12,6 +12,7 @@ theo kiểu ("tất cả FK", "tất cả enum"):
 - `tuong_tac`   — `Vote`, `Reaction`, `Trich`, `Follow`
 - `he_thong`    — `Notification`, `Report`, `AuditLog`
 - `luot_xem`    — `LuotXem`, `TongNgay`, `MuoiNgay`, `KhachNgay` (bảng LÁ, không FK tới gì)
+- `tin_nhan`    — `HoiThoai`, `TinNhan` (nhắn tin riêng 1-1, 2026-09-03)
 
 Django lấy `app_label` từ vị trí package trong app `core`, nên không model nào cần khai
 `Meta.app_label`. Điều kiện DUY NHẤT là mọi model phải được import ở đây — model không
@@ -27,6 +28,7 @@ from core.models.he_thong import AuditLog, Notification, Report
 from core.models.luot_xem import KhachNgay, LuotXem, MuoiNgay, TongNgay
 from core.models.moc import AnhNoiDung, Moc, MocAnh, MocRevision
 from core.models.nguoi_dung import User
+from core.models.tin_nhan import HoiThoai, TinNhan
 from core.models.tuong_tac import Follow, Reaction, TheoSub, TheoUser, Trich, Vote
 
 __all__ = [
@@ -34,6 +36,7 @@ __all__ = [
     "AuditLog",
     "Comment",
     "Follow",
+    "HoiThoai",
     "KhachNgay",
     "LuotXem",
     "MuoiNgay",
@@ -48,6 +51,7 @@ __all__ = [
     "Sub",
     "TheoSub",
     "TheoUser",
+    "TinNhan",
     "TongNgay",
     "Trich",
     "User",

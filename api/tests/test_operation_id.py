@@ -220,6 +220,19 @@ def test_du_endpoint_cua_plan_muc_7():
         # Nó vẫn khai `auth=`, và khách trần vẫn nhận 401 như mọi cửa ghi khác — xem
         # docstring `api/dem_luot_xem.py`.
         (("POST",), "/dem-luot-xem"),
+        # --- nhắn tin riêng 1-1 (2026-09-03) ---
+        # Cụm per-user duy nhất chứa nội dung của HAI người. Người kia luôn được chỉ bằng
+        # **username**, không bao giờ bằng `hoi_thoai_id`: một cửa nhận id hội thoại là
+        # một cửa phải nhớ kiểm chủ sở hữu, và cái phải nhớ là cái sẽ quên. Xem docstring
+        # `api/tin_nhan.py`.
+        (("GET",), "/me/tin-nhan"),
+        # ⚠ Gạch NỐI, không gạch chéo: `chua-doc` là username hợp lệ, nên
+        # `/me/tin-nhan/chua-doc` nằm trong không gian `{username}` ngay dưới và nuốt mất
+        # người dùng tên ấy. Xem chú thích tại route trong `api/tin_nhan.py`.
+        (("GET",), "/me/tin-nhan-chua-doc"),
+        (("GET",), "/me/tin-nhan/{username}"),
+        (("POST",), "/me/tin-nhan/{username}"),
+        (("POST",), "/me/tin-nhan/{username}/doc"),
     }
 
 

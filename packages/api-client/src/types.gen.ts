@@ -682,6 +682,84 @@ export type HoSoOut = {
 };
 
 /**
+ * HoiThoaiChiTietOut
+ *
+ * `GET /me/tin-nhan/{username}` — một cuộc trò chuyện.
+ *
+ * `hoi_thoai_id = null` nghĩa là **hai người chưa từng nhắn nhau**: `items` rỗng và ô
+ * nhập vẫn phải mở. Đó là trạng thái bình thường của lần mở đầu tiên, không phải 404.
+ *
+ * `items` sắp **TĂNG DẦN theo `id`** — thứ tự đọc của một khung chat, tin cũ ở trên. Phân
+ * trang thì đi lùi (`?truoc=<id>` trả các tin có `id` nhỏ hơn), nên trang sau được chèn
+ * lên ĐẦU danh sách đang hiển thị.
+ */
+export type HoiThoaiChiTietOut = {
+    /**
+     * Con Cu Hon
+     */
+    con_cu_hon: boolean;
+    /**
+     * Hoi Thoai Id
+     */
+    hoi_thoai_id: number | null;
+    /**
+     * Items
+     */
+    items: Array<TinNhanOut>;
+    nguoi_kia: NguoiDungTomTatOut;
+};
+
+/**
+ * HoiThoaiOut
+ *
+ * Một dòng trong hộp thư — `GET /me/tin-nhan`.
+ *
+ * `nguoi_kia` là phía đối diện của người đang gọi, không phải "người a" của hàng dữ
+ * liệu: thứ tự `a`/`b` trong DB là theo id, một chi tiết lưu trữ mà client không cần
+ * biết.
+ *
+ * `tin_cuoi` là `null` chỉ trong một ca không xảy ra qua đường sản phẩm (hội thoại
+ * không có tin nào) — nhưng nó khai được `null` vì hàng `HoiThoai` tồn tại độc lập với
+ * tin, và một client vẽ `tin_cuoi.body` không kiểm `null` sẽ hỏng đúng lúc dữ liệu lạ.
+ */
+export type HoiThoaiOut = {
+    /**
+     * Cap Nhat Luc
+     */
+    cap_nhat_luc: string;
+    /**
+     * Id
+     */
+    id: number;
+    nguoi_kia: NguoiDungTomTatOut;
+    /**
+     * So Chua Doc
+     */
+    so_chua_doc: number;
+    tin_cuoi: TinNhanOut | null;
+};
+
+/**
+ * HopThuOut
+ *
+ * `GET /me/tin-nhan` — hộp thư. **Per-user, cấm cache.**
+ *
+ * `so_chua_doc` là tổng của **toàn bộ** hộp thư, không phải tổng của trang đang xem —
+ * cùng lý lẽ `ChuongOut`: con số trên chấm nói "bạn có N tin chưa đọc", và tính nó trên
+ * một trang sẽ cho ra một con số trông hợp lý và luôn sai.
+ */
+export type HopThuOut = {
+    /**
+     * Items
+     */
+    items: Array<HoiThoaiOut>;
+    /**
+     * So Chua Doc
+     */
+    so_chua_doc: number;
+};
+
+/**
  * KetQuaDoiTrangThaiOut
  *
  * Kết quả CHUNG của mọi hành động moderation bật/tắt một trạng thái.
@@ -1316,6 +1394,13 @@ export type MocRevisionsOut = {
  * Đây là PATCH thật: trường **không gửi** thì không đổi, trường gửi `null` thì xoá.
  * Phân biệt hai ca đó bằng `model_fields_set` của pydantic, nên đừng đổi `None` mặc
  * định thành một sentinel khác — `api/mocs.py` đọc đúng cơ chế ấy.
+ *
+ * ⚠ **`body` KHÔNG được schema chặn ở `null`, dù nó khai `min_length=1`.** `Field` áp
+ * ràng buộc lên nhánh `str` của union, còn `null` đi thẳng qua. Câu "schema chặn trước
+ * khi vào đây" từng đứng ở đây và ở `api/mocs.py` là **sai**: `{"body": null}` xuống tới
+ * `lam_sach(None)` và nổ `TypeError` ⇒ 500 trần. Phép chặn thật nằm ở
+ * `core/ghi.py::_kiem_thay_doi_moc` (một chỗ, cho cả cửa v1 lẫn cửa quản trị) và trả
+ * 400 `du_lieu_khong_hop_le`. Vá 2026-09-03.
  */
 export type MocSuaIn = {
     /**
@@ -1489,6 +1574,22 @@ export type ReactionOut = {
      * Moc Id
      */
     moc_id: number;
+};
+
+/**
+ * SoChuaDocOut
+ *
+ * Chỉ một con số — nguồn của chấm trên biểu tượng phong bì ở header.
+ *
+ * Endpoint riêng (`GET /me/tin-nhan-chua-doc`) chứ không dùng lại `GET /me/tin-nhan`:
+ * header poll con số này 60 giây một lần trên MỌI trang, và trả kèm cả hộp thư ở đó là
+ * kéo tối đa 100 hội thoại cùng ảnh đại diện về cho một con số.
+ */
+export type SoChuaDocOut = {
+    /**
+     * So Chua Doc
+     */
+    so_chua_doc: number;
 };
 
 /**
@@ -1759,6 +1860,55 @@ export type TimKiemOut = {
      * Tong
      */
     tong: number;
+};
+
+/**
+ * TinNhanIn
+ *
+ * Gửi một tin nhắn riêng — `POST /me/tin-nhan/{username}` (2026-09-03).
+ *
+ * Đúng một trường: **người nhận nằm ở URL**, không nằm trong thân. Hai thứ đó không được
+ * cùng ở một chỗ vì người nhận là thứ quyết định 404 và 400 (tự nhắn mình), tức nó phải
+ * được đọc trước khi ai chạm tới thân request.
+ *
+ * `body` là **plain text** — không có `body_dinh_dang` như bình luận, và đó là chủ đích:
+ * tin nhắn riêng không đi qua kiểm duyệt nào, nên mở cửa HTML ở đây là mở một đường XSS
+ * mà không mod nào nhìn thấy. Server `strip()` rồi từ chối chuỗi rỗng.
+ */
+export type TinNhanIn = {
+    /**
+     * Body
+     */
+    body: string;
+};
+
+/**
+ * TinNhanOut
+ *
+ * Một tin nhắn. **Plain text** — client in nó bằng escape, không bao giờ như HTML.
+ *
+ * `cua_toi` là trường DUY NHẤT phụ thuộc người xem trong cụm này, và nó được phép tồn
+ * tại vì mọi cửa nhắn tin đều `no-store`: chúng không nằm trong tập response cache được
+ * của PLAN 8.4. Không có nó thì client phải tự so `username` để biết vẽ bong bóng bên
+ * nào — tức một bản thứ hai của luật "ai gửi", ở nơi không có gì đối chiếu.
+ */
+export type TinNhanOut = {
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Cua Toi
+     */
+    cua_toi: boolean;
+    /**
+     * Id
+     */
+    id: number;
 };
 
 /**
@@ -3129,6 +3279,187 @@ export type LietKeSubToiLamModResponses = {
 };
 
 export type LietKeSubToiLamModResponse = LietKeSubToiLamModResponses[keyof LietKeSubToiLamModResponses];
+
+export type LietKeHoiThoaiData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/me/tin-nhan';
+};
+
+export type LietKeHoiThoaiErrors = {
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+};
+
+export type LietKeHoiThoaiError = LietKeHoiThoaiErrors[keyof LietKeHoiThoaiErrors];
+
+export type LietKeHoiThoaiResponses = {
+    /**
+     * OK
+     */
+    200: HopThuOut;
+};
+
+export type LietKeHoiThoaiResponse = LietKeHoiThoaiResponses[keyof LietKeHoiThoaiResponses];
+
+export type DemTinNhanChuaDocData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/me/tin-nhan-chua-doc';
+};
+
+export type DemTinNhanChuaDocErrors = {
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+};
+
+export type DemTinNhanChuaDocError = DemTinNhanChuaDocErrors[keyof DemTinNhanChuaDocErrors];
+
+export type DemTinNhanChuaDocResponses = {
+    /**
+     * OK
+     */
+    200: SoChuaDocOut;
+};
+
+export type DemTinNhanChuaDocResponse = DemTinNhanChuaDocResponses[keyof DemTinNhanChuaDocResponses];
+
+export type XemHoiThoaiData = {
+    body?: never;
+    path: {
+        /**
+         * Username
+         */
+        username: string;
+    };
+    query?: {
+        /**
+         * Truoc
+         */
+        truoc?: number | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/me/tin-nhan/{username}';
+};
+
+export type XemHoiThoaiErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type XemHoiThoaiError = XemHoiThoaiErrors[keyof XemHoiThoaiErrors];
+
+export type XemHoiThoaiResponses = {
+    /**
+     * OK
+     */
+    200: HoiThoaiChiTietOut;
+};
+
+export type XemHoiThoaiResponse = XemHoiThoaiResponses[keyof XemHoiThoaiResponses];
+
+export type GuiTinNhanData = {
+    body: TinNhanIn;
+    path: {
+        /**
+         * Username
+         */
+        username: string;
+    };
+    query?: never;
+    url: '/api/v1/me/tin-nhan/{username}';
+};
+
+export type GuiTinNhanErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+    /**
+     * Too Many Requests
+     */
+    429: LoiThoiGianOut;
+};
+
+export type GuiTinNhanError = GuiTinNhanErrors[keyof GuiTinNhanErrors];
+
+export type GuiTinNhanResponses = {
+    /**
+     * Created
+     */
+    201: TinNhanOut;
+};
+
+export type GuiTinNhanResponse = GuiTinNhanResponses[keyof GuiTinNhanResponses];
+
+export type DocHoiThoaiData = {
+    body?: never;
+    path: {
+        /**
+         * Username
+         */
+        username: string;
+    };
+    query?: never;
+    url: '/api/v1/me/tin-nhan/{username}/doc';
+};
+
+export type DocHoiThoaiErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type DocHoiThoaiError = DocHoiThoaiErrors[keyof DocHoiThoaiErrors];
+
+export type DocHoiThoaiResponses = {
+    /**
+     * OK
+     */
+    200: SoChuaDocOut;
+};
+
+export type DocHoiThoaiResponse = DocHoiThoaiResponses[keyof DocHoiThoaiResponses];
 
 export type XoaMocData = {
     body?: never;

@@ -116,6 +116,7 @@ from api.theo_sub import router as router_theo_sub  # noqa: E402
 from api.theo_user import router as router_theo_user  # noqa: E402
 from api.tim_kiem import router as router_tim_kiem  # noqa: E402
 from api.thong_bao import router as router_thong_bao  # noqa: E402
+from api.tin_nhan import router as router_tin_nhan  # noqa: E402
 from api.toi import router as router_toi  # noqa: E402
 from api.tuong_tac import router as router_tuong_tac  # noqa: E402
 from api.users import router as router_users  # noqa: E402
@@ -175,3 +176,9 @@ api_v1.add_router("", router_mod)
 # một router có sẵn là mời lượt sau chép nhầm `auth=secret_dem_luot_xem` sang một cửa
 # thật sự cần `dang_nhap`. Xem docstring `api/dem_luot_xem.py`.
 api_v1.add_router("", router_dem_luot_xem)
+# Nhắn tin riêng 1-1 (2026-09-03) — năm cửa dưới `/me/tin-nhan…`. Router riêng vì nó là
+# cụm per-user **tuyệt đối** duy nhất chứa nội dung của HAI người: mọi truy vấn của nó tra
+# hội thoại bằng cặp (người gọi, người kia), không bao giờ bằng một id client gửi lên.
+# Trộn nó vào một router có sẵn là mời lượt sau thêm một cửa nhận `hoi_thoai_id` — và một
+# cửa như thế là cửa rò nội dung riêng tư. Xem docstring `api/tin_nhan.py`.
+api_v1.add_router("", router_tin_nhan)

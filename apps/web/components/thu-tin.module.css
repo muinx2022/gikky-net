@@ -1,0 +1,57 @@
+/* Phong bì trên thanh trên cùng — chép ngữ pháp `.nut`/`.cham` của `chuong.module.css`:
+   hai lối vào cùng hạng (một con số chưa đọc trên một icon) phải trông y hệt nhau. */
+
+.nut {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 15px;
+  line-height: 1;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: none;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.nut:hover {
+  border-color: var(--line);
+  background: var(--inset);
+  color: var(--ink);
+}
+
+/* Vùng bấm 44px trên màn hình cảm ứng. Luật đầy đủ (ba vế) ở docstring khối
+   `(pointer: coarse)` của `tim-kiem-mobile.module.css`; hàng rào đo nó là
+   `e2e/don-vi/vung-bam-cum-phai.spec.ts`. Phép tính riêng của file này giống hệt
+   `chuong.module.css`, và đó là chủ đích — hai nút cùng hình dạng, cùng nội dung động:
+
+   - Nội dung ĐỘNG (có chấm chưa đọc thì nút rộng thêm ~21px) ⇒ `min-*` chứ không kích
+     thước cố định: kẹp cứng 44 là bóp cái chấm.
+   - Bù ngang bằng cách nở `padding` một hằng số rồi trừ đúng hằng số ấy (8→12px mỗi phía,
+     `margin-inline: -4px`): phần chiếm chỗ không đổi ở CẢ HAI nhánh nội dung.
+   - Con số 4 chứ không 5: tổng bù của hai nút cạnh nhau phải ≤ `gap` của `.phai` (8px ở
+     ≤640px). Nút này đứng giữa chuông và công tắc theme, tức nó góp vào HAI cặp.
+   - Chiều dọc không bù — bù dọc làm chiều cao header đổi theo trạng thái phiên. */
+@media (pointer: coarse) {
+  .nut {
+    min-width: 44px;
+    min-height: 44px;
+    justify-content: center;
+    padding: 6px 12px;
+    margin-inline: -4px;
+  }
+}
+
+.cham {
+  font-family: var(--f-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 10.5px;
+  font-weight: 500;
+  min-width: 17px;
+  padding: 1px 4px;
+  border-radius: 50px;
+  background: var(--accent);
+  color: var(--on-accent);
+  text-align: center;
+}

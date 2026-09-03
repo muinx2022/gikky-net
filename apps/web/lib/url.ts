@@ -58,3 +58,17 @@ export function duongDanSub(slug: string): string {
 export function duongDanHoSo(username: string): string {
   return `/u/${username}`;
 }
+
+/** `/tin-nhan` (hộp thư) hoặc `/tin-nhan/<username>` (một cuộc trò chuyện) — 2026-09-03.
+ *
+ * Một hàm cho cả hai vì chúng là **một đường dẫn có tham số tuỳ chọn**, không phải hai
+ * khái niệm: hộp thư là danh sách của chính những trang kia. Hai hàm là hai chỗ gõ chuỗi
+ * `/tin-nhan`, và chỗ thứ hai là chỗ sẽ lệch.
+ *
+ * Người kia được chỉ bằng **username**, không bằng id hội thoại — cùng hợp đồng với API
+ * (`api/tin_nhan.py`): một URL mang id hội thoại là một URL dán cho người khác được, và
+ * cái cửa ở đầu kia sẽ phải nhớ kiểm chủ sở hữu.
+ */
+export function duongDanTinNhan(username?: string): string {
+  return username === undefined ? "/tin-nhan" : `/tin-nhan/${username}`;
+}

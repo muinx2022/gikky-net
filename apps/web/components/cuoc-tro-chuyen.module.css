@@ -1,0 +1,164 @@
+/* `/tin-nhan/<username>` — khung chat. Bong bóng của TÔI bên phải nền `--accent-soft`,
+   của họ bên trái nền `--inset`: hai màu đã có trong hệ token, và cặp trái/phải là quy
+   ước mọi người đã biết nên nó không cần một nhãn "bạn"/"họ" nào. */
+
+.cot {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 620px;
+}
+
+.dau {
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.nguoi {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.nguoi:hover .ten {
+  color: var(--accent);
+}
+
+.ten {
+  font-family: var(--f-display);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.cu_hon {
+  align-self: center;
+  padding: 5px 13px;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  background: none;
+  color: var(--ink-3);
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.cu_hon:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.khung_tin {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  /* Trần chiều cao để ô nhập luôn nằm trong tầm mắt — không có nó thì một cuộc trò chuyện
+     30 tin đẩy ô nhập xuống dưới đáy màn hình và mỗi lần gửi phải cuộn hai lần. */
+  max-height: 62vh;
+  overflow-y: auto;
+  padding: 2px;
+}
+
+.rong {
+  margin: 0;
+  padding: 18px 16px;
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+  background: var(--inset);
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+.tin {
+  align-self: flex-start;
+  max-width: 78%;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 11px;
+  border-radius: 10px;
+  background: var(--inset);
+  border: 1px solid var(--line);
+}
+
+.cua_toi {
+  align-self: flex-end;
+  background: var(--accent-soft);
+  border-color: var(--accent-soft);
+}
+
+/* `pre-wrap` giữ xuống dòng người ta gõ bằng Shift+Enter; `overflow-wrap` là thứ chặn một
+   chuỗi 2000 ký tự không khoảng trắng kéo giãn cả khung chat. */
+.than {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.khi {
+  align-self: flex-end;
+  font-family: var(--f-mono);
+  font-size: 10.5px;
+  color: var(--ink-3);
+}
+
+.loi {
+  margin: 0;
+  padding: 8px 11px;
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  background: var(--inset);
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.o_gui {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.o {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 11px;
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13.5px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.o:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.nut_gui {
+  flex: none;
+  padding: 9px 18px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.nut_gui:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.nut_gui:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

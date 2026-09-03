@@ -220,6 +220,14 @@ CUA_GHI = [
     # Nó vắng mặt ở `CUA_CO_CHU` vì đích của nó không có chủ: một lượt xem trang không
     # thuộc về ai, và bảng `LuotXem` cố ý không có cột nào gắn được với một con người.
     ("post", "/api/v1/dem-luot-xem", {"duong_dan": "/", "user_agent": "curl/8"}),
+    # --- nhắn tin riêng (2026-09-03) ---
+    # Người NHẬN nằm trên đường dẫn, người GỬI suy từ phiên — cùng nhóm "theo dõi người"
+    # ngay trên. Không tham số nào trỏ tới hàng của người khác (hội thoại luôn được tra
+    # bằng CẶP người gọi + người kia), nên không cần `doi_chu_so_huu` và chúng vắng mặt ở
+    # `CUA_CO_CHU`. Cái chúng cần là 401 + CSRF, mà ở django-ninja 1.6 hai thứ đó là CÙNG
+    # một thứ (`auth=dang_nhap`) — đó chính là điều bảng này đo.
+    ("post", "/api/v1/me/tin-nhan/{username}", {"body": "B"}),
+    ("post", "/api/v1/me/tin-nhan/{username}/doc", {}),
 ]
 
 

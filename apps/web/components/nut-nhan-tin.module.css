@@ -1,0 +1,24 @@
+/* Nút phụ cạnh "Theo dõi" trên hồ sơ — cùng hình dạng viên thuốc, nhưng viền mảnh nền
+   trong: `.dang_theo` của `nut-theo-sub.module.css` là ngữ pháp được chép. Hai nút nền đặc
+   cạnh nhau thì không nút nào còn là lời mời. */
+
+.nut {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 15px;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.nut:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}

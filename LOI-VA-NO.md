@@ -1395,6 +1395,36 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Bằng chứng**: 1 failed/589 passed lượt 1 · 590/0 lượt 2 · 590/0 nghiệm thu, cùng `gikky_e2e`. Khác loài với L36 (đã đóng — nguyên nhân khác).
 - **Vì sao không sửa ngay**: cần tái hiện có chủ đích (chặn/làm chậm POST vote rồi reload) trước khi vá — vá mù kiểu `waitForResponse` dễ thành trang trí.
 
+### P-20260903-1 · [MỞ] · NẶNG — `tomTat` cắt 150 ký tự từ HTML THÔ của mốc 1 làm `meta description` + `og:description`: một thẻ `<a>` gần đầu bài nuốt trọn ngân sách mô tả bằng markup
+- **Thấy lúc**: trả lời câu hỏi của user về "gắn preview chart + link TradingView cuối bài"
+- **Ở đâu**: `apps/web/components/trang-mach.tsx:104-109`
+- **Bằng chứng**: `than.replace(/\s+/g," ").trim().slice(0,150)` — không gỡ thẻ, mà `body` LUÔN là HTML (`api/core/ghi.py:447` ghi cứng `body_dinh_dang=DINH_DANG_HTML`). Mô phỏng đúng hàm đó với body đã `lam_sach`: `9 moc · <p>Xem <a href="https://www.tradingview.com/chart/?symbol=HOSE%3AFPT" target="_blank" rel="nofollow ugc noopener">FPT tren TradingView</a></p><p>Noi d…` — 0 chữ nội dung thật. Backend ĐÃ có lời giải cho đúng việc này: `van_ban_thuan` gọi trong `xem_truoc` (`api/api/trinh_bay.py:201-209`), docstring ghi rõ *"chuỗi này còn đi tiếp vào `meta description`"*. `grep -rn tomTat apps/web` ⇒ KHÔNG có bài đo nào.
+- **Vì sao không sửa ngay**: ngoài phạm vi câu hỏi. Đây là hỏng IM LẶNG ở đúng thứ PLAN mục 1 nói site sống bằng nó (Google index) — nên sửa sớm.
+
+### P-20260903-2 · [MỞ] · VỪA — `MachChiTietOut` KHÔNG kế thừa `MachTomTatOut` mà nhận bằng kwargs, nên trường chỉ khai ở bản tóm tắt bị pydantic NUỐT im lặng; `xem_truoc` đang là nạn nhân sống
+- **Thấy lúc**: cùng lượt trên (khảo sát đường thêm một trường mới lên `Mach`)
+- **Ở đâu**: `api/api/machs.py:179-180`
+- **Bằng chứng**: `MachChiTietOut(**tom_tat.model_dump(exclude={"diem","moc_1_id"}), …)` — `model_config['extra']` mặc định `ignore`, kwarg thừa bị bỏ không ném. Đo: `MachTomTatOut` có `xem_truoc`, `MachChiTietOut` KHÔNG; `xem_truoc` vắng mặt trong `KHOA_CHO_PHEP` (`api/tests/test_api_mach.py:143-201`) và trong `MachChiTietOut` của `packages/api-client/src/types.gen.ts`. `KHOA_CHO_PHEP` KHÔNG bắt được ca này vì nó so tập khoá của response THẬT — trường bị nuốt thì không bao giờ xuất hiện để mà thừa.
+- **Vì sao không sửa ngay**: cần user quyết `xem_truoc` có nên ra trang chi tiết không (đổi hợp đồng API); riêng cái BẪY thì nên ghi thành comment tại `machs.py:179` ngay khi có ai đụng file.
+
+### P-20260903-3 · [MỞ] · NHỎ — ba quy ước `target`/`rel` khác nhau cho cùng một hành vi "link ra ngoài", không hàng rào nào ép chọn
+- **Thấy lúc**: cùng lượt trên
+- **Ở đâu**: `api/core/lam_sach_html.py:86,89` (`nofollow ugc noopener` + ép `target="_blank"`, KHÔNG `noreferrer`) · `apps/web/components/than-van.tsx:104` (`nofollow ugc noopener noreferrer`, cố ý KHÔNG đặt `target`, lý lẽ ở `:100-102`) · `apps/web/components/gallery-moc.tsx:29` (`target="_blank" rel="noopener noreferrer"`, KHÔNG `nofollow ugc`)
+- **Bằng chứng**: `react/jsx-no-target-blank` bị TẮT ở `node_modules/eslint-config-next/index.js:79` ⇒ `pnpm lint --max-warnings=0` không ép gì. Grep `target=|rel="` trong `apps/web/components|app` ra đúng ba dòng đó.
+- **Vì sao không sửa ngay**: chốt một quy ước là quyết định thiết kế, cần làm cùng lượt có thêm link ngoài — không phải sửa lẻ.
+
+### P-20260903-4 · [MỞ] · NHỎ — `Referrer-Policy` chỉ tồn tại trong `deploy/Caddyfile` (file tự khai là CHƯA BAO GIỜ CHẠY), không có ở Next/Django và không có bài đo nào
+- **Thấy lúc**: cùng lượt trên (đánh giá rò rỉ khi bấm link ra site ngoài)
+- **Ở đâu**: `deploy/Caddyfile:167-172`, `deploy/prod/Caddyfile:139-147`
+- **Bằng chứng**: grep toàn repo (trừ `node_modules`, `.venv`) không thấy `Referrer-Policy` chỗ nào khác; `apps/web/next.config.ts` không khai `headers()`, `api/config/settings.py` không đặt `SECURE_REFERRER_POLICY`. Không spec nào trong `apps/web/e2e/` kiểm header này. Thực tế còn đỡ vì `strict-origin-when-cross-origin` là mặc định của trình duyệt hiện đại.
+- **Vì sao không sửa ngay**: nợ có sẵn, không do việc nào sinh ra; xử cùng lượt dựng header cấp trang (khi thêm CSP thì cũng phải mở `frame-src` nếu có nhúng bên thứ ba).
+
+### P-20260903-5 · [MỞ] · NHỎ — `apps/web` không có một dòng `@media print` nào; bài in ra mất sạch địa chỉ của mọi link
+- **Thấy lúc**: cùng lượt trên
+- **Ở đâu**: toàn `apps/web` — `grep -rn "@media print" --include=*.css apps/web` không kết quả
+- **Bằng chứng**: không có `a[href]::after{content:attr(href)}` hay tương đương; mà link trong `body` bị server ép `target="_blank"` (`api/core/lam_sach_html.py:89`) nên bản in mất luôn đích đến.
+- **Vì sao không sửa ngay**: ngoài phạm vi; giá trị thấp cho một site mobile-first — để đó.
+
 ### P-20260903-6 · [MỞ] · NẶNG — `api/media/` là kho ảnh CHUNG cho cả `gikky_dev` (bài THẬT) lẫn `gikky_e2e`, nên `don_anh_mo_coi` chạy khi đang trỏ DB nháp sẽ XOÁ THẬT ảnh của bài thật
 - **Thấy lúc**: lượt "sửa bài khu quản trị" (`plans/2026-09-03-sua-bai-khu-quan-tri.md`) — cả thực thi lẫn nghiệm thu đều phải dựng ảnh trong `gikky_e2e` và cùng thấy
 - **Ở đâu**: `api/config/settings.py` (`MEDIA_ROOT` mặc định `BASE_DIR / "media"`, không phụ thuộc DB) · `api/core/management/commands/don_anh_mo_coi.py`
@@ -1443,3 +1473,57 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Bằng chứng**: **không dựng nổi ca tái hiện** — `MocAnh.moc` là FK `NOT NULL` nên hàng `Moc` biến mất giữa chừng gần như bất khả. Nếu xảy ra thì ảnh vẫn bị xoá (hàng + file) mà không dòng nhật ký nào, tức mất vết duy nhất của một lượt gỡ.
 - **Vì sao không sửa ngay**: là **nghi ngờ**, không phải lỗi chắc chắn. Cách chữa rẻ nếu muốn: ghi log với `target_id=anh.moc_id` thay vì bỏ qua.
 
+### P-20260903-14 · [MỞ] · VỪA — `NutNhanTin` vẫn hiện trên hồ sơ tài khoản đã bị vô hiệu hoá, bấm vào ra 404
+- **Thấy lúc**: phản biện lượt nhắn tin riêng (`plans/2026-09-03-nhan-tin-rieng.md`)
+- **Ở đâu**: `apps/web/components/nut-nhan-tin.tsx` — điều kiện hiện nút chỉ loại "chính mình"
+- **Bằng chứng**: `GET /api/v1/users/{username}` (`api/api/ho_so.py`) **không lọc `is_active`** và **không trả** trường nào nói tài khoản còn hoạt động, nên hồ sơ của người đã bị `is_active=False` vẫn xem được và nút vẫn vẽ ra. Bấm vào ⇒ `POST /me/tin-nhan/{username}` trả 404 `khong_tim_thay` (đúng thiết kế, xem `_nap_nguoi_kia` nhánh `de_ghi=True`). PLAN mục 4 cấm đúng loại nút này.
+- **Vì sao không sửa ngay**: ẩn nút đòi thêm một trường vào **API hồ sơ công khai** — một endpoint cache được (PLAN 8.4) — nên đó là quyết định về bề mặt API, không phải một dòng sửa tiện tay.
+
+### P-20260903-15 · [MỞ] · VỪA — response LỖI của MỌI cửa `api_v1` không mang `Cache-Control: no-store`, kể cả cửa per-user tuyệt đối
+- **Thấy lúc**: phản biện lượt nhắn tin riêng
+- **Ở đâu**: `api/api/quyen.py` — exception handler dựng response MỚI bằng `api.create_response(...)`, không đi qua tham số `response` mà handler đã đặt header lên
+- **Bằng chứng** (đo thật trên cụm nhắn tin): `404 GET /me/tin-nhan/{u}` → `Cache-Control = None`; `400` tự-nhắn-mình → `None`; `404 POST` → `None`. Thân 200/201 thì có `no-store` đúng.
+- **Phạm vi**: không riêng nhắn tin — mọi lỗi ném qua `LoiGhi` ở cả `api_v1`. Rủi ro thực tế thấp (thân lỗi không chứa nội dung riêng tư), nhưng nó là **chữ nói quá code** ở nhiều docstring "per-user, cấm cache".
+- **Vì sao không sửa ngay**: sửa là đụng handler lỗi dùng chung của cả API — ngoài phạm vi một lượt tính năng. Lượt này đã sửa **lời** cho khớp code thay vì để hai bên nói ngược nhau.
+
+### P-20260903-16 · [MỞ] · VỪA — `don_rac_e2e` không dọn `HoiThoai`/`TinNhan`, nên DB nháp tích rác sau mỗi lượt e2e nhắn tin
+- **Thấy lúc**: chặng 2 + nghiệm thu lượt nhắn tin riêng
+- **Ở đâu**: `api/core/management/commands/don_rac_e2e.py` — lệnh chỉ biết hai loại rác: `Mach` và `Comment`
+- **Bằng chứng**: sau `pnpm e2e -g tin-nhan` trên `gikky_e2e`, lệnh in *"Đã ẩn 0 mạch rác và 0 bình luận rác"* trong khi để lại 1 hàng `HoiThoai` + 2 hàng `TinNhan` của hai tài khoản `@gikky.test`.
+- **Vì sao không sửa ngay**: ngoài phạm vi, và nó **chưa gây hại đo được** — khác rác mạch/bình luận, hai bảng này không có cửa đọc công khai nào nên chúng không đổi ngầm đối tượng đo của bài nào. Sửa thì phải quyết: ẩn (không có cột `hidden_at`) hay xoá thật (đường xoá đầu tiên của cụm này).
+
+### P-20260903-17 · [MỞ] · VỪA — nhắn tin riêng chưa có CHẶN NGƯỜI; hạn mức 60 tin/giờ là hàng rào duy nhất
+- **Thấy lúc**: chặng 2 lượt nhắn tin riêng (đã ghi vào plan §1 "KHÔNG LÀM", cần user quyết)
+- **Ở đâu**: `api/api/tin_nhan.py::gui_tin_nhan` — chỉ hai phép kiểm: người nhận tồn tại + còn hoạt động, và hạn mức giờ trượt
+- **Bằng chứng**: bất kỳ tài khoản đã xác thực email nào cũng nhắn được cho bất kỳ ai, 60 tin/giờ, và người nhận **không có cách nào** ngăn — không nút chặn, không tuỳ chọn "chỉ nhận tin từ người tôi theo", không nút xoá cuộc trò chuyện.
+- **Vì sao không sửa ngay**: đây là quyết định sản phẩm về mức mở của một kênh riêng tư, không phải một thiếu sót kỹ thuật. **Cần user quyết** trước khi ai đó tự chọn hộ.
+
+### P-20260903-18 · [MỞ] · VỪA — không có cửa nào cho mod đọc/kiểm duyệt tin nhắn riêng, nên một lời tố về nội dung tin nhắn hôm nay không xử được
+- **Thấy lúc**: chặng 2 lượt nhắn tin riêng (plan §1 "KHÔNG LÀM")
+- **Ở đâu**: `api/api/tin_nhan.py` — mọi truy vấn tra hội thoại bằng cặp *(người gọi, người kia)*; không endpoint quản trị nào chạm hai bảng mới
+- **Bằng chứng**: `Report.Dich` (`api/core/models/he_thong.py`) có đúng ba đích — `mach`, `moc`, `comment`. Không có `tin_nhan`, nên cửa `POST /reports` không nhận được lời tố về một tin nhắn, và hàng đợi kiểm duyệt không có gì để hiện.
+- **Vì sao không sửa ngay**: mở cửa đọc tin nhắn riêng cho mod là đánh đổi riêng tư ↔ an toàn, **phải hỏi user**. Ghi ra đây để nó là một lựa chọn có ý thức chứ không phải một chỗ quên.
+
+### P-20260903-19 · [MỞ] · NHỎ — hai docstring vẫn nói thông báo có "ba loại", trong khi `LOAI_HOP_LE` nay có TÁM
+- **Thấy lúc**: chặng 2 + phản biện lượt nhắn tin riêng
+- **Ở đâu**: `api/core/thong_bao.py` (bảng 3 dòng ở đầu module) và `api/api/schemas.py::ThongBaoOut` (`type`: `"moc_moi" | "trich" | "reply"`, và câu "các khoá chung cho **cả ba loại**: `mach_id`, `mach_title`, `mach_slug`")
+- **Bằng chứng**: `LOAI_HOP_LE` có 8 phần tử; **hai** loại (`theo_user`, `tin_nhan`) cố ý **không** mang `mach_id` nào. Docstring của `ThongBaoOut` đi thẳng vào `openapi.json` ⇒ đây là **hợp đồng công khai đang nói sai**. Sai từ lượt 2026-08-25 (7 loại), lượt này làm nó sai thêm một bậc.
+- **Vì sao không sửa ngay**: ngoài phạm vi; sửa là đụng hợp đồng công khai của một schema dùng chung, nên nên làm một lượt gọn cho cả tám loại.
+
+### P-20260903-20 · [MỞ] · NHỎ — `core/tin_nhan.py::_dung_cap` là bản chép thứ hai của `core.ghi._la_va_cham`
+- **Thấy lúc**: chặng 2 lượt nhắn tin riêng (thợ tự khai)
+- **Ở đâu**: `api/core/tin_nhan.py` — hàm `_dung_cap`
+- **Bằng chứng**: hai hàm cùng đọc `loi.__cause__.diag.constraint_name` và cùng phương án lùi khi driver không có `diag`. Không bài đo nào ghim chúng phải khớp nhau, nên sửa bản gốc sẽ không kéo theo bản này.
+- **Vì sao không sửa ngay**: chép có chủ đích — lượt này cố ý không thêm import mới nào từ `core/ghi.py` (một phiên khác đang sửa dở file ấy). Gộp lại được ngay khi lượt kia chốt.
+
+### P-20260903-21 · [MỞ] · NHỎ — cách xử "khoảng trống" của vòng poll chat vứt mọi trang cũ người dùng đã bấm về
+- **Thấy lúc**: chặng 5 lượt nhắn tin riêng, khi vá phát hiện "poll bỏ sót tin" của phản biện
+- **Ở đâu**: `apps/web/components/cuoc-tro-chuyen.tsx` — nhánh `laKhoangTrong(...)` thay cả danh sách thay vì nối
+- **Bằng chứng**: khi hơn một trang tin về giữa hai vòng poll (tab ẩn lâu), component thay `items` bằng trang mới nhất ⇒ những trang cũ người dùng đã bấm "Tải tin cũ hơn" để lấy về biến mất khỏi màn hình, phải bấm lại.
+- **Vì sao không sửa ngay**: bản vá hiện tại **đúng** ở chỗ quan trọng nhất (không mất tin, không đánh dấu đã đọc thứ chưa hiện). Cách sạch hơn là thêm tham số `sau=<id>` vào `GET /me/tin-nhan/{username}` để poll xin "mọi tin có id lớn hơn X" — tức đổi bề mặt API, một quyết định riêng.
+
+### P-20260903-22 · [MỞ] · NHỎ — `CLAUDE.md` của repo ghi `pnpm e2e:don-vi` là "151 bài", thực đo hôm nay 443
+- **Thấy lúc**: phản biện lượt nhắn tin riêng
+- **Ở đâu**: `gikky-net/CLAUDE.md`, khối cảnh báo về bẫy `--` nuốt cờ lọc của Playwright
+- **Bằng chứng**: `pnpm e2e:don-vi` → `443 passed`. Con số 151 trong tài liệu đã lạc hậu nhiều lượt.
+- **Vì sao đáng sửa dù NHỎ**: đó chính là con số dùng để nhận ra *"mình đang đứng ở cây cũ"* (mục "Worktree của subagent có thể đứng ở commit CŨ"). Một con số nền sai làm phép tự kiểm ấy vô hiệu.

@@ -1,0 +1,138 @@
+/* Hộp thư `/tin-nhan` — danh sách cuộc trò chuyện. Ngữ pháp thị giác của một DANH SÁCH
+   ĐỂ CHỌN: mỗi dòng là một hàng bấm được cả bề rộng, không phải một thẻ có viền riêng. */
+
+.cot {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 620px;
+}
+
+.tieu_de {
+  margin: 0;
+  font-family: var(--f-display);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.rong {
+  margin: 0;
+  padding: 18px 16px;
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+  background: var(--inset);
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+/* Lời từ chối nạp hộp thư — cùng hình dạng `.rong` nhưng viền liền và chữ đậm hơn: một
+   cái là trạng thái bình thường (chưa có gì), cái kia là chuyện đã hỏng. */
+.loi {
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  background: var(--inset);
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.danh_sach {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.dong {
+  border-bottom: 1px solid var(--line);
+}
+
+.dong:last-child {
+  border-bottom: none;
+}
+
+/* Cả hàng là vùng bấm — hàng cao ~60px nên nó vượt 44px ở mọi con trỏ, không cần khối
+   `(pointer: coarse)` riêng. */
+.lien_ket {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 13px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.lien_ket:hover {
+  background: var(--inset);
+}
+
+.than {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.hang_tren {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.ten {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.khi {
+  flex: none;
+  font-family: var(--f-mono);
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+/* `min-width: 0` ở `.than` + ba dòng dưới là thứ giữ cho một tin dài không kéo giãn hàng:
+   `flex` con mặc định `min-width: auto`, nên thiếu nó thì `text-overflow` không bao giờ
+   chạy và cái chấm chưa đọc bị đẩy ra khỏi mép phải. */
+.xem_truoc {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Có tin chưa đọc thì đậm hơn — cùng ngữ pháp với `.chua_doc` của chuông: một trạng thái
+   nói bằng trọng lượng chữ, không phải bằng một dấu hiệu thứ hai cạnh con số. */
+.co_moi .ten {
+  font-weight: 600;
+}
+
+.co_moi .xem_truoc {
+  color: var(--ink-2);
+}
+
+.cham {
+  flex: none;
+  font-family: var(--f-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 10.5px;
+  font-weight: 500;
+  min-width: 17px;
+  padding: 1px 4px;
+  border-radius: 50px;
+  background: var(--accent);
+  color: var(--on-accent);
+  text-align: center;
+}
