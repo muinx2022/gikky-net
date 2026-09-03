@@ -172,11 +172,29 @@ export function NhanTrangThai({
  * Không phải chuyện thẩm mỹ: bảng mạch có 8 cột, và mod thường xử lý báo cáo trên điện
  * thoại. Không có khung cuộn riêng thì **cả trang** cuộn ngang, và thanh trên dính trôi
  * theo — hỏng ở mọi màn hình hẹp cùng lúc.
+ *
+ * ## `rong` — `min-w-[52rem]` là cho bảng NHIỀU cột, không phải hằng chung
+ *
+ * 832px là sàn hợp lý cho bảng 6–8 cột (mạch, người dùng, nhật ký). Nhưng nó là sàn
+ * **cứng**: một bảng 2 cột ("Trình duyệt · Lượt") cũng bị kéo ra 832px, và đặt hai bảng
+ * như thế cạnh nhau — hay đặt một bảng vào ngăn kéo 448px — là cuộn ngang vô cớ ở đúng
+ * chỗ chẳng có gì để cuộn. Chuyện này đã cắn hai lần (modal online phải bỏ `KhungBang`
+ * 2026-09-03; tab "Người đọc" của `/luot-xem` 2026-09-04). `rong={false}` bỏ sàn ấy cho
+ * bảng ≤3 cột; mặc định `true` để 14 chỗ dùng sẵn không đổi một pixel.
  */
-export function KhungBang({ children }: { children: React.ReactNode }) {
+export function KhungBang({
+  children,
+  rong = true,
+}: {
+  children: React.ReactNode;
+  /** `false` ⇒ không ép `min-w-[52rem]` — chỉ cho bảng ít cột đặt trong khung hẹp. */
+  rong?: boolean;
+}) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[52rem] border-collapse text-sm">{children}</table>
+      <table className={`w-full ${rong ? "min-w-[52rem]" : ""} border-collapse text-sm`}>
+        {children}
+      </table>
     </div>
   );
 }

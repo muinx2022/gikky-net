@@ -228,3 +228,127 @@ test("MODAL ONLINE — không dựng lại bí danh `ma` của khách", () => {
   expect(trang).not.toMatch(/\bk\.ma\b/);
   expect(trang).toMatch(/\bk\.stt\b/);
 });
+
+/* ===========================================================================
+ * TAB CHI TIẾT `/luot-xem` — bốn tab, và KHÔNG bảng nào rơi mất (2026-09-04)
+ * ========================================================================= */
+
+/** Lượt 2026-09-04 gom sáu bảng chi tiết của `/luot-xem` vào bốn tab. Loài lỗi mà chính
+ * cách làm ấy sinh ra là **một bảng rơi mất trong lúc bê từ lưới sang panel**: nó không
+ * gây lỗi biên dịch, không gây lỗi lint, và trên màn hình thì bảng thiếu nằm sau một tab
+ * chưa ai bấm — tức nhìn qua vẫn "chạy đúng". Hai bài đầu dưới đây canh đúng chuyện đó.
+ *
+ * Bài thứ ba canh khối `<details>`: nó là thẻ DUY NHẤT giữ bốn đoạn giải thích giới hạn,
+ * và đổi nó về `<div>` (hoặc thêm `open`) là gỡ mất chính cái đã dọn được cuối trang.
+ *
+ * Bài thứ tư canh khuôn ARIA của `components/tab.tsx`. Tab hỏng a11y **vẫn bấm được bằng
+ * chuột**, nên không có gì kêu: `aria-selected` mất thì trình đọc màn hình không biết tab
+ * nào đang mở, `ArrowRight` mất thì bàn phím kẹt lại ở nút đầu tiên.
+ *
+ * Fail-CLOSED như `nguonTrangLuotXem`: đọc không ra file, hoặc file ngắn bất thường, thì
+ * NÉM chứ không để một chuỗi rỗng làm mọi `toContain` đỏ với thông báo vô nghĩa.
+ */
+function nguonTab(): string {
+  const duong_dan = resolve(ADMIN, "components/tab.tsx");
+  if (!existsSync(duong_dan)) throw new Error(`không thấy ${duong_dan}`);
+  const sach = boChuThich(readFileSync(duong_dan, "utf8"));
+  if (sach.length < 800) throw new Error(`nguồn chỉ còn ${sach.length} ký tự — đã mục`);
+  return sach;
+}
+
+/** Bốn khoá tab, đúng thứ tự bày ra. Nhãn đổi được, khoá thì không — nó đi vào
+ *  `data-testid` và vào `aria-controls`. */
+const KHOA_TAB = ["noi_dung", "nguon", "bot", "nguoi_doc"];
+
+/** Sáu `tbody` chi tiết. Tên đúng như trước lượt gom tab — đó là cả ý nghĩa của bài đo:
+ *  bê bảng sang chỗ khác thì được, đánh rơi thì không. */
+const TESTID_BANG = [
+  "bang-duong-dan",
+  "bang-nguon",
+  "bang-nhom-bot",
+  "bang-bot",
+  "bang-trinh-duyet",
+  "bang-thiet-bi",
+];
+
+test("TAB /luot-xem — đúng bốn khoá tab, không thừa không thiếu", () => {
+  const trang = nguonTrangLuotXem();
+  expect(trang, "trang không còn dùng <KhungTab>").toContain("<KhungTab");
+
+  const doc_duoc = [...trang.matchAll(/khoa:\s*"([a-z_]+)"/g)].map((m) => m[1]);
+  // Chống rỗng: regex hỏng ⇒ mảng rỗng ⇒ phép so dưới đây đỏ với thông báo rõ, chứ
+  // không xanh một cách rỗng tuếch.
+  expect(doc_duoc, "không đọc được khoá tab nào — regex đã mục").toEqual(KHOA_TAB);
+
+  // Nhãn phải còn: một tab không nhãn là một nút trắng.
+  for (const nhan of ["Nội dung", "Nguồn truy cập", "Người đọc"]) {
+    expect(trang, `mất nhãn tab "${nhan}"`).toContain(`"${nhan}"`);
+  }
+});
+
+test("TAB /luot-xem — ba bảng hẹp dùng `KhungBang rong={false}` (vá hồi quy cuộn ngang 640–1279px)", () => {
+  // `KhungBang` ép sàn 832px; hai bảng 2 cột đặt cạnh nhau (tab Người đọc) và bảng nhóm
+  // bot 3 cột KHÔNG được ép — thiếu `rong={false}` là mỗi cột ~414px phải cuộn 418px ở
+  // 1152px. Phản biện 2026-09-04 dựng được ca ấy; đếm ĐÚNG 3 chỗ, không hơn không kém:
+  // thêm vào bảng 4 cột là bảng "Xem nhiều nhất" mất sàn tối thiểu ở màn hẹp.
+  const trang = nguonTrangLuotXem();
+  const so = (trang.match(/<KhungBang rong=\{false\}>/g) ?? []).length;
+  expect(so, "phải ĐÚNG 3 bảng hẹp (nhóm bot · trình duyệt · thiết bị) bỏ sàn min-w").toBe(3);
+});
+
+test("TAB /luot-xem — cả sáu bảng chi tiết còn mặt trong panel", () => {
+  const trang = nguonTrangLuotXem();
+  const mat = TESTID_BANG.filter((t) => !trang.includes(`data-testid="${t}"`));
+  expect(mat, `bảng rơi mất khi gom tab: ${mat.join(", ")}`).toEqual([]);
+  // …và trạng thái rỗng của chúng cũng vậy: một panel trắng trơn đọc y hệt "chưa có dữ
+  // liệu", tức một câu trả lời SAI trông giống hệt một câu trả lời đúng.
+  expect([...trang.matchAll(/<KhoiRong/g)].length).toBeGreaterThanOrEqual(6);
+  // Dòng chú 90 ngày dời lên dưới tablist nhưng phải GIỮ testid cũ.
+  expect(trang).toContain('data-testid="chu-chi-tiet-90-ngay"');
+});
+
+test("TAB /luot-xem — khối giới hạn là <details> có <summary>, đóng mặc định", () => {
+  const trang = nguonTrangLuotXem();
+  const the = /<details([^>]*)data-testid="chu-gioi-han"([^>]*)>/.exec(trang);
+  expect(the, "`chu-gioi-han` không còn nằm trên một <details>").not.toBeNull();
+  expect(trang, "<details> không có <summary> — không có gì bấm để mở").toContain(
+    "<summary",
+  );
+  // `open` trong thẻ mở = mở sẵn, tức không dọn được gì.
+  expect(
+    /\bopen\b/.test(`${the?.[1] ?? ""}${the?.[2] ?? ""}`),
+    "<details> mở sẵn — mất luôn phần dọn của lượt này",
+  ).toBe(false);
+  // Chữ bên trong giữ nguyên: ba chuỗi này là ba giới hạn, không phải trang trí.
+  expect(trang).toContain('data-testid="chu-online"');
+  expect(trang).toContain("ước lượng theo ngày");
+  expect(trang).toContain("giới hạn của trang này");
+});
+
+test("TAB — components/tab.tsx đủ khuôn WAI-ARIA và xử đủ bốn phím", () => {
+  const tab = nguonTab();
+  for (const can of [
+    'role="tablist"',
+    'role="tab"',
+    'role="tabpanel"',
+    "aria-selected",
+    "aria-controls",
+    "aria-labelledby",
+    "aria-label=",
+    "key={dang_mo.khoa}",
+    "tabIndex",
+    "ArrowRight",
+    "ArrowLeft",
+    "Home",
+    "End",
+    "preventDefault",
+  ]) {
+    expect(tab, `components/tab.tsx thiếu ${can}`).toContain(can);
+  }
+  // Roving tabindex: tab không được chọn phải là -1, nếu không `Tab` phải đi qua từng
+  // nút một trước khi tới được nội dung.
+  expect(tab, "thiếu roving tabindex (-1 cho tab không chọn)").toMatch(/-1/);
+  // Cặp testid mà bài đo hành vi (và kiểm mắt) bám vào.
+  expect(tab).toContain("`tab-${");
+  expect(tab).toContain("`tabpanel-${");
+});

@@ -11,6 +11,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { CotNhom } from "../../components/bieu-do";
 import { NganKeo } from "../../components/ngan-keo";
+import { KhungTab } from "../../components/tab";
 import {
   HangTieuDe,
   HienLoi,
@@ -37,7 +38,10 @@ import { GOC_API, moTaLoi } from "../../lib/api";
  *
  * ## BỐN giới hạn được NÓI RA, không giấu
  *
- * Cuối trang có một khối chú, và nó không phải chữ cho đủ:
+ * Cuối trang có một khối chú — từ 2026-09-04 là một `<details>` **đóng mặc định** nhan
+ * đề "Cách đọc số liệu", vì mở sẵn thì bốn đoạn ấy đọc như tài liệu và bị lướt qua. Giới
+ * hạn thứ tư đứng riêng ở một dòng ngay dưới hàng tab, cạnh chính mấy bảng nó nói tới.
+ * Không đoạn nào bị bỏ, và không đoạn nào là chữ cho đủ:
  *
  * 1. **Nhận diện bot là SUY ĐOÁN theo User-Agent.** Một trình duyệt thật đặt UA lạ bị
  *    tính là bot; một con bot khai UA của Chrome được tính là người. Không nói ra thì mod
@@ -50,9 +54,25 @@ import { GOC_API, moTaLoi } from "../../lib/api";
  *    trong 5 phút gần nhất. Hai trình duyệt của cùng một người = hai; người đọc yên một
  *    trang quá 5 phút rơi khỏi con số. Cùng gốc với giới hạn 2 — không có session, và đó
  *    là chỗ *không* được "cải thiện" bằng một cái cookie;
- * 4. **Cờ `chi_tiet_chi_90_ngay`** (có điều kiện): năm bảng chi tiết chỉ dựng được từ hàng
- *    thô, tức tối đa 90 ngày. Cờ ấy do server bật, **không suy ở đây** — hai bên đoán ra
- *    hai câu khác nhau là chuyện chỉ chờ xảy ra.
+ * 4. **Cờ `chi_tiet_chi_90_ngay`** (có điều kiện): NĂM bảng chỉ dựng được từ hàng thô, tức
+ *    tối đa 90 ngày — Nguồn · Bot theo nhóm · Top bot · Trình duyệt · Thiết bị (đúng con
+ *    số của `api/api/quan_tri_luot_xem.py`; trên màn hình gọi gộp thành BỐN tên vì "Bot"
+ *    gộp hai bảng). Bảng "Xem nhiều nhất" KHÔNG nằm trong số đó: ở `tat_ca` nó gộp từ
+ *    `TongNgay` nên không bị cắt. Cờ ấy do server bật, **không suy ở đây** — hai bên đoán
+ *    ra hai câu khác nhau là chuyện chỉ chờ xảy ra.
+ *
+ * ## Sáu bảng chi tiết đứng trong BỐN TAB *(2026-09-04)*
+ *
+ * `Nội dung · Nguồn truy cập · Bot · Người đọc` — xem `components/tab.tsx::KhungTab`. Lưới
+ * 2 cột cũ xếp sáu thẻ cao thấp so le và chen một bảng khác vào giữa hai cặp cùng chủ đề.
+ * Tab đổi chỗ đứng chứ **không bỏ số liệu nào**: sáu `tbody` và sáu `KhoiRong` còn nguyên,
+ * và `apps/web/e2e/don-vi/quan-tri-giao-dien.spec.ts` canh đúng điều đó.
+ *
+ * Cái giá user đã chọn khi chọn tab, ghi ra để không ai tưởng là lỗi: chỉ panel đang mở
+ * nằm trong DOM ⇒ `Ctrl+F` và in trang chỉ thấy MỘT bảng; trước đây cả sáu đều tìm được.
+ * Ba bảng 2–3 cột (nhóm bot, trình duyệt, thiết bị) dùng `KhungBang rong={false}` — không
+ * ép sàn 832px, nên đặt cạnh nhau không còn cuộn ngang ở dải 640–1279px (lượt phản biện
+ * 2026-09-04 chỉ ra bản đầu hồi quy đúng dải ấy).
  *
  * ## Không thêm thư viện biểu đồ
  *
@@ -310,136 +330,216 @@ export default function TrangLuotXem() {
             )}
           </The>
 
-          <div className="grid gap-4 xl:grid-cols-2">
-            <The tieu_de="Xem nhiều nhất" pham_vi="Top 20 đường dẫn">
-              <KhungBang>
-                <HangTieuDe cot={["Đường dẫn", "Người", "Bot", "Tổng"]} />
-                <tbody data-testid="bang-duong-dan">
-                  {so_lieu.top_duong_dan.map((d) => (
-                    <tr key={d.duong_dan}>
-                      <td className="font-mono text-xs break-all">{d.duong_dan}</td>
-                      <td className="tabular-nums">{d.so_luot_nguoi}</td>
-                      <td className="tabular-nums text-muc-mo">{d.so_luot_bot}</td>
-                      <td className="tabular-nums font-semibold">
-                        {d.so_luot_nguoi + d.so_luot_bot}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </KhungBang>
-              {so_lieu.top_duong_dan.length === 0 && (
-                <KhoiRong co_bo_loc={false} chua_co="Chưa có lượt xem nào trong khoảng này." />
-              )}
-            </The>
+          {/* Sáu bảng chi tiết ⇒ BỐN TAB (2026-09-04). Trước đó chúng nằm trong một lưới
+              2 cột: cao thấp so le nên mép dưới răng cưa, và hai cặp cùng chủ đề (Bot
+              theo nhóm / Top bot, Trình duyệt / Thiết bị) bị một bảng khác chen vào
+              giữa. Tab gom theo chủ đề mà **không bỏ một con số nào** — mọi `tbody` cũ,
+              mọi `KhoiRong` cũ vẫn còn, chỉ đổi chỗ đứng.
 
-            <The tieu_de="Nguồn truy cập" pham_vi="Top 20 tên miền · chỉ lượt người">
-              {/* Rỗng thật thì CHỈ khối rỗng — không kèm một bảng một dòng "(trực tiếp) 0"
-                  đứng cạnh câu "chưa có lượt nào": hai thứ ấy nói ngược nhau trên cùng
-                  một thẻ. Lượt phản biện 2026-08-30 tìm ra. */}
-              {so_lieu.top_nguon.length === 0 && so_lieu.so_truc_tiep === 0 ? (
-                <KhoiRong co_bo_loc={false} chua_co="Chưa có lượt người nào trong khoảng này." />
-              ) : (
-                <KhungBang>
-                  <HangTieuDe cot={["Nguồn", "Lượt"]} />
-                  <tbody data-testid="bang-nguon">
-                    {/* Dòng đầu LUÔN là phần trực tiếp/nội bộ: nó gần như luôn đông nhất,
-                        nhưng nó không phải một tên miền — trộn vào bảng là đẩy hết nguồn
-                        thật xuống dưới một cái nhãn rỗng. */}
-                    <tr>
-                      <td className="text-muc-mo">(trực tiếp / nội bộ)</td>
-                      <td className="tabular-nums">{so_lieu.so_truc_tiep}</td>
-                    </tr>
-                    {so_lieu.top_nguon.map((n) => (
-                      <tr key={n.nguon}>
-                        <td className="font-mono text-xs break-all">{n.nguon}</td>
-                        <td className="tabular-nums">{n.so_luot}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </KhungBang>
-              )}
-            </The>
+              Bảng nào cũng full width nên `min-w-[52rem]` của `KhungBang` không còn ép
+              cuộn ngang ở màn rộng — đó là cái được thứ hai, không phải cái được chính. */}
+          <KhungTab
+            nhan_nhom="Chi tiết lượt xem"
+            khoa_mac_dinh="noi_dung"
+            chu={
+              /* Cờ này đứng GIỮA tablist và panel, không chôn ở cuối trang nữa: nó nói
+                 về chính mấy bảng ngay dưới nó, và ở chỗ cũ mod phải cuộn qua hết bảng
+                 mới đọc được cái giới hạn của bảng ấy.
 
-            <The tieu_de="Bot theo nhóm" pham_vi="Gộp từ toàn bộ lượt bot">
-              <KhungBang>
-                <HangTieuDe cot={["Nhóm", "Lượt"]} />
-                <tbody data-testid="bang-nhom-bot">
-                  {so_lieu.theo_nhom_bot.map((n) => (
-                    <tr key={n.nhom}>
-                      <td>{nhanCua(NHAN_NHOM_BOT, n.nhom)}</td>
-                      <td className="tabular-nums">{n.so_luot}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </KhungBang>
-              {so_lieu.theo_nhom_bot.length === 0 && (
-                <KhoiRong co_bo_loc={false} chua_co="Chưa thấy bot nào ghé qua." />
-              )}
-            </The>
+                 ⚠ Câu vẫn gọi ĐÍCH DANH bốn bảng, không rút gọn thành "các bảng dưới
+                 đây": ở `tat_ca` thì `top_duong_dan` gộp từ `TongNgay` nên nó KHÔNG bị
+                 cắt 90 ngày (xem `api/api/quan_tri_luot_xem.py`, nhánh `KHOANG_TAT_CA`).
+                 Rút gọn là biến một câu đúng thành một câu sai với đúng tab đang mở
+                 mặc định. */
+              so_lieu.chi_tiet_chi_90_ngay ? (
+                <p className="text-sm text-muc-mo" data-testid="chu-chi-tiet-90-ngay">
+                  Các bảng <strong>Nguồn · Bot · Trình duyệt · Thiết bị</strong> chỉ phủ{" "}
+                  <strong>90 ngày gần nhất</strong>: tổng theo ngày giữ mãi nhưng không giữ
+                  các chiều ấy, còn dữ liệu thô thì dọn sau 90 ngày.
+                </p>
+              ) : undefined
+            }
+            muc={[
+              {
+                khoa: "noi_dung",
+                nhan: "Nội dung",
+                noi_dung: (
+                  <The tieu_de="Xem nhiều nhất" pham_vi="Top 20 đường dẫn">
+                    <KhungBang>
+                      <HangTieuDe cot={["Đường dẫn", "Người", "Bot", "Tổng"]} />
+                      <tbody data-testid="bang-duong-dan">
+                        {so_lieu.top_duong_dan.map((d) => (
+                          <tr key={d.duong_dan}>
+                            <td className="font-mono text-xs break-all">{d.duong_dan}</td>
+                            <td className="tabular-nums">{d.so_luot_nguoi}</td>
+                            <td className="tabular-nums text-muc-mo">{d.so_luot_bot}</td>
+                            <td className="tabular-nums font-semibold">
+                              {d.so_luot_nguoi + d.so_luot_bot}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </KhungBang>
+                    {so_lieu.top_duong_dan.length === 0 && (
+                      <KhoiRong
+                        co_bo_loc={false}
+                        chua_co="Chưa có lượt xem nào trong khoảng này."
+                      />
+                    )}
+                  </The>
+                ),
+              },
+              {
+                khoa: "nguon",
+                nhan: "Nguồn truy cập",
+                noi_dung: (
+                  <The tieu_de="Nguồn truy cập" pham_vi="Top 20 tên miền · chỉ lượt người">
+                    {/* Rỗng thật thì CHỈ khối rỗng — không kèm một bảng một dòng
+                        "(trực tiếp) 0" đứng cạnh câu "chưa có lượt nào": hai thứ ấy nói
+                        ngược nhau trên cùng một thẻ. Lượt phản biện 2026-08-30 tìm ra. */}
+                    {so_lieu.top_nguon.length === 0 && so_lieu.so_truc_tiep === 0 ? (
+                      <KhoiRong
+                        co_bo_loc={false}
+                        chua_co="Chưa có lượt người nào trong khoảng này."
+                      />
+                    ) : (
+                      <KhungBang>
+                        <HangTieuDe cot={["Nguồn", "Lượt"]} />
+                        <tbody data-testid="bang-nguon">
+                          {/* Dòng đầu LUÔN là phần trực tiếp/nội bộ: nó gần như luôn
+                              đông nhất, nhưng nó không phải một tên miền — trộn vào bảng
+                              là đẩy hết nguồn thật xuống dưới một cái nhãn rỗng. */}
+                          <tr>
+                            <td className="text-muc-mo">(trực tiếp / nội bộ)</td>
+                            <td className="tabular-nums">{so_lieu.so_truc_tiep}</td>
+                          </tr>
+                          {so_lieu.top_nguon.map((n) => (
+                            <tr key={n.nguon}>
+                              <td className="font-mono text-xs break-all">{n.nguon}</td>
+                              <td className="tabular-nums">{n.so_luot}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </KhungBang>
+                    )}
+                  </The>
+                ),
+              },
+              {
+                khoa: "bot",
+                nhan: "Bot",
+                /* HAI khối xếp DỌC trong một panel: "theo nhóm" là bản tóm tắt của chính
+                   danh sách ngay dưới nó, nên đọc cái này rồi đọc cái kia là một mạch.
+                   Ở lưới cũ chúng bị bảng "Trình duyệt" chen vào giữa. */
+                noi_dung: (
+                  <div className="space-y-4">
+                    <The tieu_de="Bot theo nhóm" pham_vi="Gộp từ toàn bộ lượt bot">
+                      <KhungBang rong={false}>
+                        <HangTieuDe cot={["Nhóm", "Lượt"]} />
+                        <tbody data-testid="bang-nhom-bot">
+                          {so_lieu.theo_nhom_bot.map((n) => (
+                            <tr key={n.nhom}>
+                              <td>{nhanCua(NHAN_NHOM_BOT, n.nhom)}</td>
+                              <td className="tabular-nums">{n.so_luot}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </KhungBang>
+                      {so_lieu.theo_nhom_bot.length === 0 && (
+                        <KhoiRong co_bo_loc={false} chua_co="Chưa thấy bot nào ghé qua." />
+                      )}
+                    </The>
 
-            <The tieu_de="Bot nào vào nhiều nhất" pham_vi="Top 20 theo User-Agent">
-              <KhungBang>
-                <HangTieuDe cot={["Bot", "Nhóm", "Lượt"]} />
-                <tbody data-testid="bang-bot">
-                  {so_lieu.top_bot.map((b) => (
-                    <tr key={b.ten}>
-                      <td className="font-mono text-xs">{b.ten}</td>
-                      <td className="text-muc-mo">{nhanCua(NHAN_NHOM_BOT, b.nhom)}</td>
-                      <td className="tabular-nums">{b.so_luot}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </KhungBang>
-              {so_lieu.top_bot.length === 0 && (
-                <KhoiRong co_bo_loc={false} chua_co="Chưa thấy bot nào ghé qua." />
-              )}
-            </The>
+                    <The
+                      tieu_de="Bot nào vào nhiều nhất"
+                      pham_vi="Top 20 theo User-Agent"
+                    >
+                      <KhungBang>
+                        <HangTieuDe cot={["Bot", "Nhóm", "Lượt"]} />
+                        <tbody data-testid="bang-bot">
+                          {so_lieu.top_bot.map((b) => (
+                            <tr key={b.ten}>
+                              <td className="font-mono text-xs">{b.ten}</td>
+                              <td className="text-muc-mo">
+                                {nhanCua(NHAN_NHOM_BOT, b.nhom)}
+                              </td>
+                              <td className="tabular-nums">{b.so_luot}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </KhungBang>
+                      {so_lieu.top_bot.length === 0 && (
+                        <KhoiRong co_bo_loc={false} chua_co="Chưa thấy bot nào ghé qua." />
+                      )}
+                    </The>
+                  </div>
+                ),
+              },
+              {
+                khoa: "nguoi_doc",
+                nhan: "Người đọc",
+                /* Hai bảng CẠNH NHAU: cả hai đọc từ đúng một chuỗi User-Agent và cả hai
+                   chỉ có hai cột, nên đặt cạnh nhau là so được ngay "Chrome/di động" với
+                   "Safari/di động". Dọc ở màn hẹp. */
+                noi_dung: (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <The tieu_de="Trình duyệt" pham_vi="Chỉ lượt người · suy từ User-Agent">
+                      <KhungBang rong={false}>
+                        <HangTieuDe cot={["Trình duyệt", "Lượt"]} />
+                        <tbody data-testid="bang-trinh-duyet">
+                          {so_lieu.trinh_duyet.map((t) => (
+                            <tr key={t.ten}>
+                              <td>{nhanCua(NHAN_TRINH_DUYET, t.ten)}</td>
+                              <td className="tabular-nums">{t.so_luot}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </KhungBang>
+                      {so_lieu.trinh_duyet.length === 0 && (
+                        <KhoiRong
+                          co_bo_loc={false}
+                          chua_co="Chưa đo được trình duyệt nào trong khoảng này."
+                        />
+                      )}
+                    </The>
 
-            <The tieu_de="Trình duyệt" pham_vi="Chỉ lượt người · suy từ User-Agent">
-              <KhungBang>
-                <HangTieuDe cot={["Trình duyệt", "Lượt"]} />
-                <tbody data-testid="bang-trinh-duyet">
-                  {so_lieu.trinh_duyet.map((t) => (
-                    <tr key={t.ten}>
-                      <td>{nhanCua(NHAN_TRINH_DUYET, t.ten)}</td>
-                      <td className="tabular-nums">{t.so_luot}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </KhungBang>
-              {so_lieu.trinh_duyet.length === 0 && (
-                <KhoiRong
-                  co_bo_loc={false}
-                  chua_co="Chưa đo được trình duyệt nào trong khoảng này."
-                />
-              )}
-            </The>
+                    <The tieu_de="Thiết bị" pham_vi="Chỉ lượt người · suy từ User-Agent">
+                      <KhungBang rong={false}>
+                        <HangTieuDe cot={["Thiết bị", "Lượt"]} />
+                        <tbody data-testid="bang-thiet-bi">
+                          {so_lieu.thiet_bi.map((t) => (
+                            <tr key={t.ten}>
+                              <td>{nhanCua(NHAN_THIET_BI, t.ten)}</td>
+                              <td className="tabular-nums">{t.so_luot}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </KhungBang>
+                      {so_lieu.thiet_bi.length === 0 && (
+                        <KhoiRong
+                          co_bo_loc={false}
+                          chua_co="Chưa đo được thiết bị nào trong khoảng này."
+                        />
+                      )}
+                    </The>
+                  </div>
+                ),
+              },
+            ]}
+          />
 
-            <The tieu_de="Thiết bị" pham_vi="Chỉ lượt người · suy từ User-Agent">
-              <KhungBang>
-                <HangTieuDe cot={["Thiết bị", "Lượt"]} />
-                <tbody data-testid="bang-thiet-bi">
-                  {so_lieu.thiet_bi.map((t) => (
-                    <tr key={t.ten}>
-                      <td>{nhanCua(NHAN_THIET_BI, t.ten)}</td>
-                      <td className="tabular-nums">{t.so_luot}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </KhungBang>
-              {so_lieu.thiet_bi.length === 0 && (
-                <KhoiRong
-                  co_bo_loc={false}
-                  chua_co="Chưa đo được thiết bị nào trong khoảng này."
-                />
-              )}
-            </The>
-          </div>
-
-          <div className="text-sm text-muc-mo" data-testid="chu-gioi-han">
-            <p>
-              {/* Đếm theo đúng số đoạn THẬT SỰ hiện ra: đoạn thứ ba chỉ có ở `tat_ca`.
-                  Ghi cứng "Ba" là mod đếm được hai đoạn rồi đi tìm đoạn thứ ba không có —
+          {/* `<details>` ĐÓNG mặc định (2026-09-04). Bốn đoạn văn này là thứ chặn mod
+              đọc sai số liệu, nhưng chúng đọc như tài liệu chứ không như giao diện: mở
+              sẵn thì chúng chiếm nửa màn hình cuối trang và bị lướt qua từ lần thứ hai
+              trở đi. Đóng lại là mod CHỌN đọc, và cái nhãn "Cách đọc số liệu" nói ra là
+              có gì để đọc — chữ bên trong không đổi một câu nào. */}
+          <details className="text-sm text-muc-mo" data-testid="chu-gioi-han">
+            <summary className="cursor-pointer font-medium text-muc">
+              Cách đọc số liệu ({so_lieu.chi_tiet_chi_90_ngay ? "bốn" : "ba"} giới hạn)
+            </summary>
+            <p className="mt-2">
+              {/* Đếm theo đúng số đoạn THẬT SỰ hiện ra: đoạn thứ tư chỉ có ở `tat_ca`.
+                  Ghi cứng "Bốn" là mod đếm được ba đoạn rồi đi tìm đoạn thứ tư không có —
                   và sẽ tin là trang đang giấu mất một dòng. */}
               <strong>
                 {so_lieu.chi_tiet_chi_90_ngay ? "Bốn" : "Ba"} giới hạn của trang này.
@@ -470,14 +570,19 @@ export default function TrangLuotXem() {
               tính là hai — muối băm đổi theo ngày, và đó là cái giá của việc không có
               phiên đăng nhập để bám vào.
             </p>
+            {/* Đoạn thứ tư CHỈ còn một câu trỏ lên: bản đầy đủ của nó nay đứng ngay dưới
+                hàng tab, cạnh chính mấy bảng nó nói tới. Vẫn phải có một dòng ở đây, nếu
+                không thì bộ đếm "Bốn" ở trên đếm một đoạn không tồn tại — đúng cái bẫy mà
+                chú thích của bộ đếm ấy dựng ra để tránh. `data-testid` thì KHÔNG lặp lại:
+                `chu-chi-tiet-90-ngay` đi theo bản đầy đủ ở trên. */}
             {so_lieu.chi_tiet_chi_90_ngay && (
-              <p className="mt-2" data-testid="chu-chi-tiet-90-ngay">
+              <p className="mt-2">
                 Bốn, các bảng <strong>Nguồn · Bot · Trình duyệt · Thiết bị</strong> chỉ phủ{" "}
-                <strong>90 ngày gần nhất</strong>: tổng theo ngày giữ mãi nhưng không giữ
-                các chiều ấy, còn dữ liệu thô thì dọn sau 90 ngày.
+                <strong>90 ngày gần nhất</strong> — nói đủ ở dòng chú ngay dưới hàng tab
+                phía trên.
               </p>
             )}
-          </div>
+          </details>
         </div>
       )}
 
@@ -648,10 +753,18 @@ function KhoiOnline({ k }: { k: KhachOnlineOut }) {
         </span>
         <TrangThaiOnline k={k} />
       </p>
-      <p className="mt-1 text-xs text-muc-mo">
-        {oTrong(nhanCua(NHAN_TRINH_DUYET, k.trinh_duyet), k.trinh_duyet)} ·{" "}
-        {oTrong(nhanCua(NHAN_THIET_BI, k.thiet_bi), k.thiet_bi)}
-      </p>
+      {/* Bot ⇒ BỎ HẲN hàng này (2026-09-04). Đường ghi cố ý không suy trình duyệt/thiết
+          bị cho bot, nên hàng ấy in ra đúng "— · —" ở mọi dòng bot: hai gạch ngang không
+          trả lời câu hỏi nào mà vẫn chiếm một dòng trong mỗi khối, và với một danh sách
+          toàn bot thì cả cột trông như dữ liệu bị mất. `oTrong` vẫn ở lại cho dòng
+          NGƯỜI: một người có thể thiếu đúng một trong hai ô, và ở đó gạch ngang là câu
+          trả lời đúng. */}
+      {!k.la_bot && (
+        <p className="mt-1 text-xs text-muc-mo">
+          {oTrong(nhanCua(NHAN_TRINH_DUYET, k.trinh_duyet), k.trinh_duyet)} ·{" "}
+          {oTrong(nhanCua(NHAN_THIET_BI, k.thiet_bi), k.thiet_bi)}
+        </p>
+      )}
       <p className="mono mt-1 text-xs break-all">{k.duong_dan}</p>
       <p className="mt-1 text-xs text-muc-mo">
         {baoLauTruoc(k.giay_truoc)} · <span className="tabular-nums">{k.so_luot}</span> lượt

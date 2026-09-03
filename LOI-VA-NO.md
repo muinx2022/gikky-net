@@ -1566,3 +1566,15 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Vì sao không sửa ngay**: thuộc cụm nhắn tin của phiên khác, đang tách khỏi `main` sang nhánh `nhan-tin-rieng` (P-20260903-24). Đã báo phiên `gikky-net-3b`: nếu cụm ấy quay lại `main`, luật loại `/tin-nhan/` khỏi `nenDem()` phải đi cùng nó — che ở tầng đọc không thay được không-ghi ở tầng ghi.
 
 > **Cập nhật `P-20260903-24` (2026-09-04): ĐÃ XỬ.** User duyệt (*"gỡ đi, bạn sửa luôn dòng 0026"*). Dòng `dependencies` của `0026_luotxem_da_dang_nhap.py` nay trỏ `0024_…` — sửa trong cây làm việc, **file vẫn chưa commit và vẫn thuộc lượt "lượt xem"**. Nhắn tin riêng đã rời `main` ở **`d821723`** (đảo ngược `544f89c` trừ sổ; 39 file; cây trên các đường dẫn ấy trùng `516f49e`). Toàn bộ tính năng sống ở nhánh **`nhan-tin-rieng` = `544f89c`**. `gikky_dev` giữ nguyên `0025` + `0026` đã áp, hai bảng nhắn tin trống — không unapply. Lần deploy `main` kế tiếp gỡ nhắn tin khỏi prod; bảng trên prod để nguyên.
+
+### P-20260904-3 · [MỞ] · VỪA — vùng cuộn ngang của MỌI bảng khu quản trị không cuộn được bằng bàn phím (WCAG 2.1.1)
+- **Thấy lúc**: lượt phản biện "phần chi tiết /luot-xem chuyển thành tab" (`plans/2026-09-04-luot-xem-tab.md`)
+- **Ở đâu**: `apps/admin/components/ui.tsx::KhungBang` — `div.overflow-x-auto` không có `tabindex="0"` + `role="region"` + nhãn
+- **Bằng chứng**: bảng nhiều cột tràn khung (vd bảng mạch 8 cột ở màn hẹp) ⇒ người dùng chỉ bàn phím không có cách đưa focus vào div cuộn ⇒ các cột bên phải không bao giờ đọc được. Có từ trước lượt tab; lượt tab đã sửa lại một chú thích trong `tab.tsx` từng khẳng định ngược.
+- **Vì sao không sửa ngay**: chạm mọi trang admin (15 chỗ dùng `KhungBang`), cần quyết khuôn chung (`tabindex` + nhãn vùng) — việc riêng, ngoài phạm vi lượt tab.
+
+### P-20260904-4 · [MỞ] · NHỎ — `KhungBang` `min-w-[52rem]` là sàn cứng chung; bảng 2–3 cột nào đặt trong khung hẹp cũng cuộn ngang vô cớ
+- **Thấy lúc**: cùng lượt trên (lần thứ hai bệnh này cắn: modal online 2026-09-03 phải bỏ `KhungBang`; tab "Người đọc" 2026-09-04)
+- **Ở đâu**: `apps/admin/components/ui.tsx::KhungBang`
+- **Bằng chứng**: bảng "Thiết bị" có đúng 2 ô chữ ngắn vẫn bị kéo ra 832px. Lượt tab đã thêm prop `rong={false}` và áp cho 3 bảng hẹp của `/luot-xem`; 12 chỗ dùng khác chưa rà — bảng nào ≤3 cột (vd subs, quản trị viên) có thể muốn `rong={false}`.
+- **Vì sao không sửa ngay**: rà 12 trang là việc riêng; ghi để lượt dọn giao diện admin sau nhặt.
