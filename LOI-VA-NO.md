@@ -1527,3 +1527,16 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Ở đâu**: `gikky-net/CLAUDE.md`, khối cảnh báo về bẫy `--` nuốt cờ lọc của Playwright
 - **Bằng chứng**: `pnpm e2e:don-vi` → `443 passed`. Con số 151 trong tài liệu đã lạc hậu nhiều lượt.
 - **Vì sao đáng sửa dù NHỎ**: đó chính là con số dùng để nhận ra *"mình đang đứng ở cây cũ"* (mục "Worktree của subagent có thể đứng ở commit CŨ"). Một con số nền sai làm phép tự kiểm ấy vô hiệu.
+
+### P-20260903-23 · [MỞ] · NẶNG — `deploy/prod/README.md` dạy `tar | ssh` MỘT MẠCH và không nhắc `pg_dump`; hai thiếu sót này đã gây sự cố prod thật hôm nay
+- **Thấy lúc**: sự cố 2026-09-03 16:03–16:30, hai phiên Claude (`gikky-net-bc` và phiên này) deploy chồng lên nhau trên cùng repo
+- **Ở đâu**: `deploy/prod/README.md` — khối lệnh deploy (`git archive --format=tar HEAD | ssh vps-muinx 'rm -rf ~/gikky-net/src && … tar xf -'`)
+- **Bằng chứng** (bốn vế, đều đo được, không phải suy):
+  1. **Ống đứt giữa chừng không báo**: `gikky-net-bc` ghi nhận một lượt trước đó để lại cây **270 file** trên VPS, `apps/web/components` biến mất hẳn — `tar | ssh` không so được kích thước hai đầu nên hỏng nửa chừng trông y hệt thành công.
+  2. **`rm -rf ~/gikky-net/src` + `git archive HEAD` XOÁ mọi thứ chưa commit khỏi prod.** Đây là hành vi ĐÚNG của `git archive` (README ghi rõ "file chưa track sẽ KHÔNG lên — đó là tính năng"), nhưng README **không** nói ra hệ quả khi máy có nhiều phiên làm song song: việc chưa commit của phiên khác không bị ghi đè, nó **bị xoá**. Đã xảy ra 3 lần với cùng một phiên.
+  3. **Không có bước `pg_dump`** trong quy trình, dù entrypoint `api` tự chạy `migrate` mỗi lần container lên ⇒ mỗi lần rebuild `api` là một lần đổi schema prod tiềm tàng.
+  4. **`tar .` (lối một phiên dùng để đưa việc chưa commit lên) dựng ra một cái BẪY**: nó đặt migration chưa duyệt vào `~/gikky-net/src`, và người rebuild `api` kế tiếp — có thể cho một việc chẳng liên quan — sẽ áp chúng. Hôm nay cây VPS có `0025` + `0026` trong khi prod mới ở `0024`; chỉ tránh được vì `api` không bind-mount code (migration nằm trong image, restart không đủ để kích hoạt).
+- **Hệ quả đã xảy ra**: `web` bản mới (có UI nhắn tin) chạy cùng `api` bản cũ (không có endpoint) ⇒ `/api/v1/me/tin-nhan` trả **404** trên prod khoảng 17 phút. Suy giảm chứ không sập (component `return` sớm khi thiếu dữ liệu), nhưng phong bì header và hộp thư rỗng với mọi người đã đăng nhập.
+- **Bốn luật hai phiên đã chốt với nhau, hiện KHÔNG nằm ở đâu trong repo**: `git archive HEAD` sau khi commit đủ · đóng gói ra FILE + so kích thước rồi mới giải nén · `pg_dump` trước mọi lượt có thể đổi schema · nhắn phiên khác trước khi deploy.
+- **Vì sao không sửa ngay**: sửa README là đổi quy trình deploy — user quyết. Và phép kiểm "cây có đủ việc người khác không" phải hỏi **git**, không hỏi đĩa: `git status --porcelain` còn dòng của người khác ⇒ `git archive` sẽ xoá nó khỏi prod; chặt hơn thì `git archive HEAD | tar tf - | grep -c <đường/dẫn/file>`.
+

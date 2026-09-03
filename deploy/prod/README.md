@@ -120,24 +120,129 @@ index phải bằng nhau. Lệch vài đơn vị ngay sau khi có bài mới là
 
 ## Deploy một bản mới
 
-Từ máy dev (Windows, **không có rsync** — dùng tar qua ssh):
+Từ máy dev (Windows, **không có rsync** — dùng tar qua ssh).
+
+⚠ **Bốn luật dưới đây là BẮT BUỘC, không phải gợi ý.** Cả bốn được chốt ngày 2026-09-03
+sau một sự cố prod thật, giữa hai phiên Claude cùng làm trên repo này. Mỗi luật có một
+sự cố đứng sau nó; phần "Vì sao" ngay dưới kể từng cái. Bỏ luật nào cũng được — cho tới
+lần bạn không bỏ được nữa.
+
+### Luật 1 · Nhắn các phiên khác TRƯỚC khi deploy
+
+Máy này thường xuyên có nhiều phiên Claude làm song song trên cùng checkout. Trước khi
+đẩy bất cứ thứ gì lên prod, hỏi các phiên còn lại (`ListAgents` → `SendMessage`) xem có
+ai đang deploy hoặc sắp deploy không, và nói rõ bạn sắp đẩy commit nào.
+
+### Luật 2 · Commit ĐỦ trước, rồi mới `git archive HEAD`
+
+`git archive` đẩy **đúng commit**, không đẩy cây. Kết hợp với `rm -rf ~/gikky-net/src` ở
+lệnh dưới, hệ quả là: **mọi thứ chưa commit bị XOÁ khỏi prod**, không phải bị ghi đè.
+
+Trước khi deploy, kiểm bằng **git**, đừng kiểm bằng đĩa:
 
 ```bash
-git archive --format=tar HEAD \
-| ssh vps-muinx 'rm -rf ~/gikky-net/src && mkdir -p ~/gikky-net/src && tar xf - -C ~/gikky-net/src'
+# Còn dòng nào không phải của mình ⇒ `git archive` sẽ xoá nó khỏi prod.
+git status --porcelain | grep -vE '^\?\? plans/'
+
+# Chặt hơn, khi biết đích danh file của người khác:
+git archive HEAD | tar tf - | grep -c 'apps/web/components/vi-du.tsx'   # phải 1
+```
+
+⚠ **Phép kiểm "grep cây làm việc" là VÔ DỤNG ở đây** và nó đã lừa được một lượt: cây
+luôn có đủ file, thứ sai là **khoảng cách giữa cây và git**.
+
+### Luật 3 · Đóng gói ra FILE → chuyển → so kích thước → rồi mới giải nén
+
+**Đừng** dùng `tar | ssh` một mạch. Ống đứt giữa chừng **không báo lỗi**: một lượt như
+thế đã để lại cây **270 file** trên VPS với `apps/web/components` biến mất hẳn, và nó
+trông y hệt một lượt thành công.
+
+```bash
+git archive --format=tar HEAD -o /tmp/gikky.tar
+scp /tmp/gikky.tar vps-muinx:/tmp/gikky.tar
+# So kích thước HAI ĐẦU — khác một byte là dừng, đừng giải nén.
+stat -c %s /tmp/gikky.tar 2>/dev/null || wc -c < /tmp/gikky.tar
+ssh vps-muinx 'wc -c < /tmp/gikky.tar'
+ssh vps-muinx 'rm -rf ~/gikky-net/src && mkdir -p ~/gikky-net/src \
+  && tar xf /tmp/gikky.tar -C ~/gikky-net/src && rm -f /tmp/gikky.tar \
+  && echo "giai nen: $(find ~/gikky-net/src -type f | wc -l) file"'
+```
+
+### Luật 4 · `pg_dump` TRƯỚC mọi lượt có thể đổi schema
+
+`api-entrypoint.sh` chạy `migrate` **tự động** mỗi lần container `api` lên. Nên mỗi lần
+rebuild `api` là một lần đổi schema tiềm tàng — kể cả khi bạn đang deploy một việc chẳng
+liên quan gì tới database.
+
+```bash
+# 1. Xem sắp áp cái gì. Không có dòng `[ ]` nào ⇒ không đổi schema, bỏ qua bước 2.
+ssh vps-muinx 'cd ~/gikky-net/src && docker compose -f deploy/prod/compose.yml \
+  --env-file ~/gikky-net/app/.env exec -T api python manage.py showmigrations core | grep "^ \[ \]"'
+
+# 2. Có migration mới ⇒ dump trước, và hỏi user xem migration ấy ĐƯỢC PHÉP lên prod chưa.
+ssh vps-muinx 'mkdir -p ~/gikky-net/backup && cd ~/gikky-net/src && docker compose \
+  -f deploy/prod/compose.yml --env-file ~/gikky-net/app/.env exec -T postgres \
+  pg_dump -U gikky gikky | gzip > ~/gikky-net/backup/gikky-$(date +%Y%m%d-%H%M%S)-truoc-migrate.sql.gz'
+```
+
+### Build + up
+
+**Build TỪNG service một** — `build` trần chạy song song và máy chỉ còn ~3.4 GiB RAM:
+
+```bash
 ssh vps-muinx 'cd ~/gikky-net/src && for s in api web admin caddy; do docker compose -f deploy/prod/compose.yml --env-file ~/gikky-net/app/.env build "$s" || break; done'
 ssh vps-muinx 'cd ~/gikky-net/src && docker compose -f deploy/prod/compose.yml --env-file ~/gikky-net/app/.env up -d'
 ```
 
-⚠ **`git archive HEAD`, KHÔNG phải `tar .`** (đổi 2026-08-29). `tar .` gói **cây làm
-việc**, tức đẩy lên prod cả những gì đang sửa dở và chưa ai chạy thử — trên máy này thường
-xuyên có nhiều phiên Claude làm song song, nên lúc deploy cây gần như luôn bẩn. Lần đổi
-này cây có **190 mục chưa commit** của một lượt việc khác; `tar .` sẽ deploy hết.
+⚠ **Rebuild ĐỦ các service mà commit này đụng tới.** Rebuild `web` mà quên `api` (hoặc
+ngược lại) để lại prod ở trạng thái **nửa vời**: ngày 2026-09-03, `web` mới mang UI nhắn
+tin chạy cùng `api` cũ không có endpoint ⇒ `/api/v1/me/tin-nhan` trả **404** suốt 17 phút,
+phong bì header và hộp thư rỗng với mọi người đã đăng nhập. Không có gì đỏ ở đâu cả.
 
-`git archive` đẩy **đúng commit đã đo**, và tự bỏ mọi thứ `.gitignore` (`.git`,
-`node_modules`, `.venv`, `.next`, `__pycache__`, `api/media`, `api/.env`) nên không cần
-danh sách `--exclude` nào. Đổi lại: file chưa track sẽ KHÔNG lên — đó là tính năng, không
-phải thiếu sót.
+⚠ **Kéo image nền trước nếu mạng chập chờn.** `registry-1.docker.io` từ đường dân dụng
+này hay timeout trong khi `auth.docker.io` vẫn 200 — build `web`/`admin` sẽ chết ở
+`load metadata for node:22-bookworm-slim`. Chữa: `ssh vps-muinx 'docker pull
+node:22-bookworm-slim'`, thử lại vài lần rồi build tiếp.
+
+### Nghiệm thu sau deploy — đo, đừng tin
+
+⚠ **Cổng Caddy của gikkynet là `127.0.0.1:8091`.** Cổng **8090 là stack `trekky`** trên
+cùng máy: gõ nhầm nó trả **200 cho mọi thứ**, kể cả một `PATCH` không đăng nhập và cả
+đường mà PLAN 8.2 bắt phải chặn. Một bảng toàn 200 trông như deploy hoàn hảo. Luôn kiểm
+cổng trước: `docker compose ... ps --format '{{.Service}} -> {{.Ports}}' | grep caddy`.
+
+Phép đo tối thiểu, và **phải có một ca ÂM** để chứng minh bảng không rỗng:
+
+```bash
+P=8091
+curl -so /dev/null -w '/            : %{http_code}\n' -H 'Host: gikky.net' http://127.0.0.1:$P/
+curl -so /dev/null -w '/api/v1/health: %{http_code}\n' -H 'Host: gikky.net' http://127.0.0.1:$P/api/v1/health
+# Cửa quản trị: 401 trên host admin, 403 trên host công khai (PLAN 8.2 chặn ở Caddy).
+curl -so /dev/null -w 'admin  /api/admin/…: %{http_code}\n' -H 'Host: admin.gikky.net' http://127.0.0.1:$P/api/admin/mocs/1
+curl -so /dev/null -w 'public /api/admin/…: %{http_code}\n' -H 'Host: gikky.net'       http://127.0.0.1:$P/api/admin/mocs/1
+# CA ÂM: đường không tồn tại phải 404. Ra 200 ⇒ bạn đang gõ nhầm cổng.
+curl -so /dev/null -w 'khong-ton-tai : %{http_code}\n' -H 'Host: admin.gikky.net' http://127.0.0.1:$P/api/admin/khong-ton-tai
+```
+
+Kiểm thêm: `showmigrations core` không còn dòng `[ ]` · `logs api --since 10m` không có
+traceback · endpoint mới có thật (`401`/`403`, **không phải** `404`).
+
+Khối trên đo **trực tiếp Caddy nội bộ**, nên nó còn đúng khi Cloudflare trục trặc.
+Sau đó chạy nốt **"Bảy phép thử sau mỗi lần deploy"** ở cuối tài liệu — bộ ấy đi qua
+`https://gikky.net` thật, tức đo thêm cả tunnel và lớp media mà khối này không chạm.
+
+---
+
+`git archive` tự bỏ mọi thứ `.gitignore` (`.git`, `node_modules`, `.venv`, `.next`,
+`__pycache__`, `api/media`, `api/.env`) nên không cần danh sách `--exclude` nào.
+
+⚠ **KHÔNG dùng `tar .`** (chốt 2026-08-29, tái khẳng định 2026-09-03). Nó gói cây làm
+việc, tức đẩy lên prod cả thứ đang sửa dở và chưa ai chạy thử — mà trên máy này cây gần
+như luôn bẩn. Lần chốt đầu, cây có **190 mục chưa commit** của một lượt khác. Ngày
+2026-09-03 một lượt `tar .` còn đặt **hai migration chưa duyệt** vào `~/gikky-net/src`,
+nơi chúng nằm chờ người rebuild `api` kế tiếp — người ấy có thể đang làm một việc chẳng
+liên quan gì. May là `api` **không bind-mount code** (migration nằm trong image), nên
+restart không đủ để kích hoạt; chỉ rebuild mới.
 
 `migrate` + `collectstatic` chạy tự động trong entrypoint của `api` mỗi lần container lên.
 
