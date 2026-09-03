@@ -15,6 +15,7 @@ import {
 
 import { BaoCursorHong } from "./bao-cursor-hong";
 import { ChonKieuXem } from "./chon-kieu-xem";
+import { CuonVoHan } from "./cuon-vo-han";
 import css from "./feed.module.css";
 import { TheMach } from "./the-mach";
 
@@ -28,9 +29,18 @@ import { TheMach } from "./the-mach";
  * **"Nhiều điểm nhất" cũng không phải Hot**: khoá của nó là điểm **bài gốc**, con số mà
  * nối thêm mốc không đụng tới — xem `lib/api.ts::TAB_FEED`.
  *
- * Toàn bộ trạng thái (tab, khoảng, cursor) nằm trên URL chứ không trong state: feed là
- * thứ người ta gửi link cho nhau, và PLAN nguyên tắc 7 cấm "tự đổi sort ngầm dưới tay
- * người dùng" — không có state ẩn thì không có chỗ nào để đổi ngầm.
+ * **Tab, khoảng và cursor của TRANG ĐẦU nằm trên URL** chứ không trong state: feed là thứ
+ * người ta gửi link cho nhau, và PLAN nguyên tắc 7 cấm "tự đổi sort ngầm dưới tay người
+ * dùng" — không có state ẩn thì không có chỗ nào để đổi ngầm.
+ *
+ * ⚠ **Từ 2026-09-03 có một ngoại lệ, và nó phải được nói ra**: những trang nối thêm bằng
+ * CUỘN VÔ HẠN (`CuonVoHan`) sống trong state client, không lên URL. Câu "toàn bộ trạng
+ * thái nằm trên URL" ở bản trước vì thế không còn đúng nguyên văn.
+ *
+ * Vì sao vẫn không phá nguyên tắc 7: nguyên tắc ấy cấm đổi ngầm **CÁI GÌ** được bày —
+ * sort, bộ lọc. Cuộn vô hạn không đụng tab/khoảng/sort, nó chỉ đổi **BAO NHIÊU** đã bày,
+ * và đổi vì chính người dùng cuộn xuống. Mở lại link vẫn ra đúng feed ấy, chỉ là từ đầu.
+ * Không có gì ẩn: danh sách dài ra ngay trước mắt người làm nó dài ra.
  *
  * **Đổi tab thì RỚT `cursor`, và giữ `khoang`.** Cursor mang khoá sort của tab sinh ra nó
  * (API trả 400 `cursor_khong_hop_le` nếu đem sang tab khác), nên tha nó theo là biến một
@@ -79,6 +89,7 @@ export function Feed({
   tab,
   khoang,
   coBan,
+  sub,
   tieuDe,
   lede,
   cursorHong = false,
@@ -90,6 +101,10 @@ export function Feed({
   khoang: KhoangFeed;
   /** Đường dẫn gốc của feed: `/` hoặc `/s/<sub>`. */
   coBan: string;
+  /** Slug sub ở `/s/<sub>`; vắng ở `/`. Cuộn vô hạn cần nó để lời gọi trang 2 lọc đúng
+   * tập bài — suy nó ra từ `coBan` bằng cách cắt chuỗi là dựng một bản sao thứ hai của
+   * quy tắc đường dẫn (`lib/url.ts::duongDanSub`), và bản sao ấy sẽ lệch. */
+  sub?: string;
   /** `?cursor=` không dùng được ⇒ đang hiện trang đầu. Xem `lib/api.ts::TrangCursor`. */
   cursorHong?: boolean;
   /** Cột phải. Bắt buộc có mặt — cả hai trang feed đều dựng nó. */
@@ -175,15 +190,21 @@ export function Feed({
           </ul>
         )}
 
-        {feed.cursor_ke_tiep !== null && (
-          <Link
-            className={css.xem_them}
-            data-testid="feed-xem-them"
-            href={`${hrefTab(tab)}&cursor=${encodeURIComponent(feed.cursor_ke_tiep)}`}
-          >
-            xem thêm ↓
-          </Link>
-        )}
+        {/* Cuộn vô hạn — nhưng cái `<a href="…cursor=…">` VẪN Ở TRONG HTML server-render:
+            `CuonVoHan` render đúng cái link ấy rồi mới phủ `IntersectionObserver` lên
+            trên. Bot bò được hết feed, người tắt JS vẫn bấm được, fetch lỗi thì lùi về
+            đúng hành vi cũ. Xem docstring `cuon-vo-han.tsx`. */}
+        <CuonVoHan
+          cursorDau={feed.cursor_ke_tiep}
+          href={
+            feed.cursor_ke_tiep === null
+              ? hrefTab(tab)
+              : `${hrefTab(tab)}&cursor=${encodeURIComponent(feed.cursor_ke_tiep)}`
+          }
+          tab={tab}
+          khoang={khoang}
+          sub={sub}
+        />
       </main>
 
       {/* Rail phải DÍNH khi cuộn — plan giao diện §2.2.

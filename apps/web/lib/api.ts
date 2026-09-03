@@ -536,6 +536,40 @@ export async function docFeed(
   return { du_lieu: trang.du_lieu, cursorHong: trang.cursorHong };
 }
 
+/** Feed cho **CUỘN VÔ HẠN** — chạy trong TRÌNH DUYỆT (2026-09-03).
+ *
+ * Bản song song của `docFeed`/`docFeedSub`, khác đúng một chỗ và chỗ ấy là lý do nó tồn
+ * tại: `baseUrl` là `GOC_TRINH_DUYET` (chuỗi rỗng, same-origin qua `rewrites`) chứ không
+ * phải `API_ORIGIN`. `API_ORIGIN` là tên nội bộ mà **chỉ tiến trình Node phân giải được**;
+ * gọi nó từ trình duyệt là request đi vào hư không. Cùng lý lẽ đã ghi ở
+ * `docCacSubOTrinhDuyet`.
+ *
+ * ⚠ **Hai lời gọi TRỰC TIẾP theo tên**, không gom vào một biến rồi gọi — cùng ràng buộc
+ * với `feedTho` (vá E2): `type-frontend.spec.ts` tìm callee THEO TÊN để ép mọi lời gọi
+ * kèm `baseUrl`, nên `const ham = …; ham(…)` làm hàng rào mù đúng chỗ này.
+ *
+ * Không bọc `TrangCursor` và không ném như `docFeed`: người gọi là một component client
+ * đang xử lỗi mạng tại chỗ (hiện lại nút, không thử lại vô hạn), nên nó cần `null` để rẽ
+ * nhánh chứ không cần một ngoại lệ làm sập cả cây React.
+ */
+export async function docFeedOTrinhDuyet(
+  tab: TabFeed,
+  opts: { sub?: string; cursor: string; khoang?: KhoangFeed; limit?: number },
+): Promise<FeedOut | null> {
+  const query = {
+    sub: opts.sub ?? null,
+    cursor: opts.cursor,
+    limit: opts.limit ?? 20,
+    sort: SORT_API[tab],
+    khoang: khoangGuiLenApi(tab, opts.khoang ?? KHOANG_MAC_DINH),
+  };
+  const kq =
+    tab === "dang-dien-ra"
+      ? await lietKeFeedDangDienRa({ baseUrl: GOC_TRINH_DUYET, query })
+      : await lietKeFeedMoi({ baseUrl: GOC_TRINH_DUYET, query });
+  return kq.data ?? null;
+}
+
 /** Feed **lọc theo sub** — `/s/[sub]`. Đây là chỗ duy nhất `null` có nghĩa thật:
  * `sub_khong_ton_tai` (404), và trang sub phải `notFound()` chứ không hiện feed rỗng. */
 export async function docFeedSub(

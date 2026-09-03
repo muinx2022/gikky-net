@@ -168,3 +168,18 @@
 :global(:root[data-kieu-xem="gon"]) .danh_sach {
   gap: 4px;
 }
+
+/* Dòng "hết bài" ở cuối feed — thay chỗ nút "xem thêm" khi không còn trang nào
+   *(cuộn vô hạn, 2026-09-03)*.
+
+   Có nó vì cuộn vô hạn xoá mất một tín hiệu mà nút bấm vốn cho không: khi nút biến mất,
+   người dùng biết là hết. Cuộn tới cuối rồi thấy trống trơn thì không phân biệt được
+   "hết bài" với "đang tải" hay "hỏng" — và người ta sẽ cuộn thêm vài lần nữa để thử. */
+.het_bai {
+  margin: 18px 0 4px;
+  text-align: center;
+  font-family: var(--f-mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--ink-3);
+}

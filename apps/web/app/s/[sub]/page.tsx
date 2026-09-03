@@ -85,6 +85,7 @@ export default async function TrangSub({
       tab={tab}
       khoang={khoang}
       coBan={duongDanSub(sub)}
+      sub={sub}
       sidebar={<Sidebar sub={chi_tiet} cacSub={cac_sub} />}
       // X9 — **không** truyền kèm `tieuDe`/`lede` nữa: có `header` thì hai prop ấy không
       // render ở đâu, và `lede={chi_tiet.mo_ta}` là bản sao thứ hai của `mo_ta` không ai

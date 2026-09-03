@@ -59,7 +59,15 @@
   font-weight: 600;
   letter-spacing: -0.01em;
   margin: 2px 0 5px;
-  text-wrap: balance;
+  /* **KHÔNG `text-wrap: balance`** *(user chốt 2026-08-27: "sửa cho giãn hết đi")*.
+     `balance` chia chữ cho các dòng dài GẦN BẰNG NHAU, nên một tiêu đề 2 dòng có cả hai
+     dòng dừng giữa chừng, trong khi tiêu đề 1 dòng lại chạy hết mép. Cùng một loại dữ
+     liệu mà trông như hai kiểu — đó là khiếu nại mở ra lượt sửa này.
+     Mặc định (`wrap`) nhồi đầy từng dòng tới sát mép, đều nhau ở mọi tiêu đề.
+     Cái giá đã biết: tiêu đề nào lẻ ra một hai chữ ở dòng cuối thì để vậy. Muốn vừa giãn
+     hết vừa tránh dòng cụt thì có `text-wrap: pretty` — nhưng nó ĐƯỢC PHÉP kéo chữ từ
+     dòng trên xuống để chữa dòng cuối, tức có lúc lại làm dòng 1 ngắn đi, đúng thứ vừa
+     bỏ. Đổi sang `pretty` là một quyết định riêng, đừng làm kèm. */
 }
 
 .chan {
