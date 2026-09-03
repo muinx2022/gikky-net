@@ -49,7 +49,7 @@ from api.loi import (
     LoiOut,
     dang_ky_xu_ly_loi,
 )
-from api.quyen import dang_ky_binh_luan_bien_mat
+from api.quyen import LoiGhi, dang_ky_binh_luan_bien_mat
 from api.v1 import duong_dan_docs
 
 logger = logging.getLogger(__name__)
@@ -171,6 +171,24 @@ def _xu_ly_http_error(request, exc: HttpError):
     )
 
 
+@api_admin.exception_handler(LoiGhi)
+def _xu_ly_loi_ghi(request, exc: LoiGhi):
+    """`LoiGhi` mang sẵn `code` — trả đúng nó, đừng để `_xu_ly_http_error` đoán lại.
+
+    Đăng ký RIÊNG dù `LoiGhi` là con của `HttpError`: django-ninja tra handler theo lớp
+    cụ thể trước. Không có handler này thì nhánh trên đoán mã theo status, và một
+    `LoiGhi(413, "anh_qua_nang", …)` ném từ `api/anh_chung.py` sẽ ra ngoài đội mã
+    `tham_so_khong_hop_le` — đúng status, sai `code`, tức frontend hết phân biệt được
+    "ảnh quá nặng" với "tham số sai".
+
+    Cửa cần nó là ba cửa ảnh của `quan_tri_sua_bai.py` (2026-09-03): chúng dùng lại đúng
+    hai phép dịch của v1, và hai phép dịch ấy nói bằng `LoiGhi`.
+    """
+    return api_admin.create_response(
+        request, LoiOut(detail=str(exc), code=exc.code), status=exc.status_code
+    )
+
+
 class ModOut(Schema):
     """Danh tính của mod đang đăng nhập — đủ để header admin hiện tên và mở khoá UI."""
 
@@ -212,6 +230,7 @@ from api.quan_tri_kiem_duyet import router as router_kiem_duyet  # noqa: E402
 from api.quan_tri_luot_xem import router as router_luot_xem  # noqa: E402
 from api.quan_tri_nguoi_dung import router as router_nguoi_dung  # noqa: E402
 from api.quan_tri_nhat_ky import router as router_nhat_ky  # noqa: E402
+from api.quan_tri_sua_bai import router as router_sua_bai  # noqa: E402
 from api.quan_tri_sub import router as router_sub  # noqa: E402
 from api.quan_tri_thong_ke import router as router_thong_ke  # noqa: E402
 
@@ -223,5 +242,6 @@ api_admin.add_router("", router_kiem_duyet)
 api_admin.add_router("", router_luot_xem)
 api_admin.add_router("", router_nguoi_dung)
 api_admin.add_router("", router_nhat_ky)
+api_admin.add_router("", router_sua_bai)
 api_admin.add_router("", router_sub)
 api_admin.add_router("", router_thong_ke)

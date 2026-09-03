@@ -204,7 +204,10 @@ def sua_moc_api(request, moc_id: int, du_lieu: MocSuaIn):
     Mạch bị mod khoá ⇒ 403; mốc đã là bia mộ hoặc bị ẩn ⇒ 409 `noi_dung_da_go`.
 
     **PATCH thật**: trường không gửi thì không đổi, trường gửi `null` thì xoá. `body`
-    không nhận `null` (mốc phải có thân) — schema chặn trước khi vào đây.
+    không nhận `null` (mốc phải có thân) — **`core/ghi.py::_kiem_thay_doi_moc` chặn**, trả
+    400 `du_lieu_khong_hop_le`. KHÔNG phải schema: `Field(min_length=1)` trên `str | None`
+    chỉ áp cho nhánh `str`, và câu "schema chặn trước khi vào đây" đứng ở đây tới
+    2026-09-03 là sai — `{"body": null}` xuống tới `lam_sach(None)` và trả 500 trần.
 
     Sửa **im lặng trong 15 phút** kể từ `created_at`; sau đó mỗi lần sửa tạo một
     `MocRevision` lưu **đủ cả 5 trường bản trước** và tăng "đã sửa N lần". Có

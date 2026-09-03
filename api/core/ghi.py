@@ -110,12 +110,12 @@ from django.db.models import Max
 from django.utils import timezone
 
 from core.anh import AnhDaXuLy
-from core.anh_luu import an_anh, ghi_anh, hien_anh, khoa_moi, xoa_anh_that
+from core.anh_luu import an_anh, ghi_anh, hien_anh, khoa_moi, url_anh, xoa_anh_that
 from core.cay_binh_luan import cap_phat_path
 from core.doc_noi_dung import doc_duoc
 from core.lam_sach_html import DINH_DANG_HTML, DINH_DANG_MARKDOWN, lam_sach
 from core.models.binh_luan import Comment
-from core.models.dien_dan import Mach, Sub
+from core.models.dien_dan import Mach, Sub, slug_tu_title
 from core.models.he_thong import AuditLog, Report
 from core.models.moc import Moc, MocAnh, MocRevision, kiem_figures
 from core.models.tuong_tac import Follow, Reaction, TheoSub, TheoUser, Trich, Vote
@@ -779,15 +779,42 @@ def sua_moc(*, moc: Moc, thay_doi: dict, khi=None) -> Moc:
     `ValidationError` chứ không bỏ qua — bỏ qua im lặng nghĩa là một trường không sửa được
     trông như đã sửa xong, và người dùng chỉ biết khi tải lại trang.
 
-    **Sửa im lặng ≤15 phút kể từ `created_at`** (PLAN nguyên tắc 2): không `MocRevision`,
-    không `edited_at`, không tăng `edit_count`. Sau đó **mỗi lần sửa tạo một
-    `MocRevision` lưu ĐỦ CẢ 5 TRƯỜNG bản trước** — thiếu `occurred_at` là để người ta sửa
-    lùi ngày sự việc mà không để vết, tức phá đúng giá trị lõi của sản phẩm.
+    **Sửa im lặng ≤15 phút kể từ `created_at` VÀ mốc chưa từng có vết** (PLAN nguyên tắc
+    2): không `MocRevision`, không `edited_at`, không tăng `edit_count`. Ngoài cửa sổ ấy
+    thì **mỗi lần sửa tạo một `MocRevision` lưu ĐỦ CẢ 5 TRƯỜNG bản trước** — thiếu
+    `occurred_at` là để người ta sửa lùi ngày sự việc mà không để vết, tức phá đúng giá
+    trị lõi của sản phẩm.
+
+    ⚠ **Vế `edited_at is None` là BẮT BUỘC, và nó mới có từ 2026-09-03.** Trước lượt ấy
+    không ai ngoài tác giả sửa được mốc, nên trong 15 phút đầu `edited_at` không thể khác
+    `None` và vế này thừa. Từ khi khu quản trị có `sua_moc_boi_mod`, ca sau đây thật:
+    tác giả đăng lúc T (thân A) → superuser sửa lúc T+2 (thân B, revision#1 = A,
+    `edit_count=1`, `AuditLog` trỏ `revision_id=1`) → **tác giả** sửa lúc T+5 (thân C).
+    Không có vế này thì lượt cuối rơi vào cửa sổ im lặng ⇒ **thân B biến mất hoàn toàn**:
+    DB giữ C, lịch sử công khai chỉ có A, nhật ký nói "mod đã sửa" mà không còn đường nào
+    tới thứ mod viết, và nhãn "đã sửa 1 lần" đứng trên một nội dung đã qua hai lần sửa.
+    Không log, không 4xx, không có gì để lần ra. **Mốc đã mang vết thì hết im lặng.**
 
     Cột denormalize **không đổi** ở đây: sửa nội dung không sinh mốc mới, không đổi số
     bình luận, và `last_entry_at`/`last_activity_at` đo *thời điểm ra đời* chứ không phải
     thời điểm chạm vào lần cuối (PLAN mục 6). Sửa mốc mà đẩy `last_activity_at` lên là
     cách tác giả tự giữ bài mình ở mặt BÃO bằng cách sửa chính tả mỗi 71 giờ.
+    """
+    thay_doi = _kiem_thay_doi_moc(thay_doi)
+    khi = khi or timezone.now()
+    con_im_lang = moc.edited_at is None and (khi - moc.created_at) <= timezone.timedelta(
+        minutes=PHUT_SUA_IM_LANG
+    )
+    moc, _ = _ap_sua_moc(moc, thay_doi, khi, de_dau=not con_im_lang)
+    return moc
+
+
+def _kiem_thay_doi_moc(thay_doi: dict) -> dict:
+    """Validate + chuẩn hoá `thay_doi` của một mốc. Trả dict MỚI, không sửa dict gọi vào.
+
+    Tách khỏi `sua_moc` cho đường mod (`sua_moc_boi_mod`) dùng lại nguyên vẹn: hai đường
+    khác nhau ở chuyện *có để vết không*, chứ **không** khác nhau ở chuyện dữ liệu nào
+    hợp lệ. Một bản kiểm thứ hai cho khu quản trị là bản sẽ quên `lam_sach`.
     """
     la = set(thay_doi) - set(TRUONG_SUA_DUOC_CUA_MOC)
     if la:
@@ -795,6 +822,14 @@ def sua_moc(*, moc: Moc, thay_doi: dict, khi=None) -> Moc:
             f"Không sửa được trường {sorted(la)}; chỉ "
             f"{list(TRUONG_SUA_DUOC_CUA_MOC)} sửa được (PLAN 5.2)."
         )
+    if thay_doi.get("body", "") is None:
+        # `MocSuaIn.body` khai `str | None` **chỉ vì** pydantic cần một mặc định để phân
+        # biệt "không gửi" với "gửi null" (`model_fields_set`), và `Field(min_length=1)`
+        # trên một union chỉ áp cho nhánh `str` — `null` đi thẳng qua schema. Trước lượt
+        # vá 2026-09-03, `lam_sach(None)` ném `TypeError` (KHÔNG phải `ValidationError`)
+        # nên cả hai cửa PATCH trả **500 trần**, vỡ hợp đồng `{detail, code}` của PLAN
+        # mục 7. Chặn ở LÕI chứ không ở một tầng API: hai cửa, một luật.
+        raise ValidationError("Thân mốc không được để trống.")
     if "body" in thay_doi:
         # Đường ghi thứ hai của `body` — xem docstring `them_moc`. Không tin vào việc
         # tầng API đã dọn: `sua_moc` cũng được gọi từ shell và từ bài đo.
@@ -804,16 +839,29 @@ def sua_moc(*, moc: Moc, thay_doi: dict, khi=None) -> Moc:
         # khi ai đó gọi `full_clean()` — `create()`/`update()` thì không. Gọi tay ở đây là
         # mục việc mà docstring `MocRevision` hẹn Phase 2 phải làm.
         kiem_figures(thay_doi["figures"])
+    return thay_doi
 
-    khi = khi or timezone.now()
-    con_im_lang = (khi - moc.created_at) <= timezone.timedelta(
-        minutes=PHUT_SUA_IM_LANG
-    )
 
+def _ap_sua_moc(
+    moc: Moc, thay_doi: dict, khi, *, de_dau: bool
+) -> tuple[Moc, MocRevision | None]:
+    """Ghi `thay_doi` (ĐÃ qua `_kiem_thay_doi_moc`) vào hàng `Moc`. Trả `(mốc, bản cũ)`.
+
+    `de_dau` là **tham số**, không phải một phép tính bên trong: hai người gọi trả lời câu
+    "lần sửa này có để vết không" bằng hai luật khác hẳn nhau — tác giả có cửa sổ im lặng
+    15 phút (PLAN nguyên tắc 2), mod thì **không bao giờ** im lặng (sửa lời người khác là
+    việc phải kể lại). Nhét cả hai luật vào đây là dựng một cờ `la_mod` trong đường ghi,
+    tức đường ghi bắt đầu biết người gọi là ai.
+
+    Bọc `atomic()` riêng: người gọi có thể đã mở transaction của mình (đường mod ghi
+    `AuditLog` cùng lượt), và `atomic()` lồng nhau là savepoint — không phải hai lượt
+    commit.
+    """
     with transaction.atomic():
         moc = Moc.objects.select_for_update().get(pk=moc.pk)
-        if not con_im_lang:
-            MocRevision.objects.create(
+        rev = None
+        if de_dau:
+            rev = MocRevision.objects.create(
                 moc=moc,
                 revised_at=khi,
                 **{t: getattr(moc, t) for t in TRUONG_SUA_DUOC_CUA_MOC},
@@ -832,7 +880,7 @@ def sua_moc(*, moc: Moc, thay_doi: dict, khi=None) -> Moc:
             cot_ghi.append("body_dinh_dang")
         moc.save(update_fields=cot_ghi)
         dong_bo_mach(moc.mach)
-    return moc
+    return moc, rev
 
 
 def xoa_moc(*, moc: Moc, khi=None) -> Moc:
@@ -883,8 +931,18 @@ class QuaNhieuAnh(Exception):
         super().__init__(f"Mốc đã có {dem} ảnh, tối đa {SO_ANH_TOI_DA_MOI_MOC}.")
 
 
-def them_anh_moc(*, moc: Moc, anh: AnhDaXuLy) -> MocAnh:
+def them_anh_moc(*, moc: Moc, anh: AnhDaXuLy, boi=None, ly_do: str = "") -> MocAnh:
     """Gắn một ảnh ĐÃ QUA BẢY PHÉP KIỂM vào mốc. **Phép kiểm 7 nằm ở đây.**
+
+    `boi` **mặc định `None` và đó là hành vi CŨ, nguyên vẹn**: đường của tác giả (v1,
+    `POST /mocs/{id}/anh`) không truyền nó và vì thế không đẻ dòng nhật ký nào — người ta
+    thêm ảnh vào bài của chính mình, không có gì để kể lại. Khu quản trị thì truyền
+    (2026-09-03): mod gắn ảnh vào bài NGƯỜI KHÁC là một thay đổi nội dung, và nhật ký là
+    chỗ duy nhất còn nói được ai làm.
+
+    `ghi_audit` gọi **trong `atomic()` sẵn có** — không phải sau nó. Hai lý do, cùng một
+    hướng: log cùng số phận với hàng (luật 1 của khối audit), và lưới `except` bên dưới
+    ("ném thì xoá file vừa ghi") vì thế phủ luôn cả bước ghi log.
 
     Nhận `AnhDaXuLy` chứ không nhận byte thô, và đó là ranh giới có chủ đích: hàm này
     **không được** là chỗ thứ hai biết cách kiểm ảnh. Kiểm + tái mã hoá là việc của
@@ -936,16 +994,46 @@ def them_anh_moc(*, moc: Moc, anh: AnhDaXuLy) -> MocAnh:
                 w=anh.w,
                 h=anh.h,
             )
+            # ⚠ **Bắt buộc, thêm 2026-09-03.** `ghi_anh` luôn ghi vào `kho_hien()`, còn
+            # cửa quản trị cố ý cho gắn ảnh vào mốc của một mạch **đang bị ẩn**. Thiếu
+            # dòng này thì `https://gikky.net/media/anh/<uuid>.jpg` trả **200** cho một
+            # mạch đã bị gỡ — Caddy đọc thẳng đĩa, không qua Django (A9) — trong khi mọi
+            # ảnh CŨ của cùng mốc ấy đang nằm ở kho cách ly và trả 404. Nó tự chữa ở lượt
+            # ẩn/gỡ-ẩn kế tiếp, nên nó không bao giờ nổi lên như một lỗi.
+            #
+            # Không sinh cạnh khoá mới: `dong_bo_kho_anh` khoá `MocAnh`, mà hàm này đang
+            # giữ hàng `Moc` — đúng chiều `Moc → MocAnh` đã có ở chính đây, và `MocAnh`
+            # vẫn là node CUỐI (docstring module, khối "cạnh thứ tư").
+            dong_bo_kho_anh(moc_khoa)
+            if boi is not None:
+                ghi_audit(
+                    actor=boi,
+                    action=AUDIT_THEM_ANH_MOC,
+                    target_type=DICH_MOC,
+                    target_id=moc_khoa.pk,
+                    mach_id=moc_khoa.mach_id,
+                    seq=moc_khoa.seq,
+                    anh_id=hang.pk,
+                    url=url_anh(khoa),
+                    ly_do=ly_do,
+                )
     except Exception:
         if da_ghi:
             xoa_anh_that(khoa)
         raise
+    # `dong_bo_kho_anh` ghi `da_cach_ly` qua một THỂ HIỆN KHÁC (nó tự `select_for_update`),
+    # nên object trong tay người gọi còn mang giá trị lúc `create`. Đọc lại đúng một cột.
+    hang.refresh_from_db(fields=["da_cach_ly"])
     hang.moc = moc
     return hang
 
 
-def xoa_anh_moc(*, anh: MocAnh) -> None:
+def xoa_anh_moc(*, anh: MocAnh, boi=None, ly_do: str = "") -> None:
     """Xoá hàng **và** file (A8). Không bia mộ — ảnh không có `seq` nào để giữ chỗ.
+
+    `boi` cùng hợp đồng với `them_anh_moc`: `None` (đường tác giả ở v1) ⇒ không log, có
+    `boi` (khu quản trị) ⇒ một dòng `AuditLog` trong cùng transaction. Ở cửa gỡ, nhật ký
+    là **vết duy nhất còn lại** — hàng đi, file đi, không có `MocRevision` nào cho ảnh.
 
     Khác `xoa_moc`/`xoa_binh_luan` (bia mộ, PLAN nguyên tắc 2) một cách có chủ đích: bia
     mộ tồn tại để dãy `seq` không thủng và để "đã từng có gì ở đây" còn đọc được. Ảnh
@@ -965,10 +1053,23 @@ def xoa_anh_moc(*, anh: MocAnh) -> None:
     Xem docstring module, khối "cạnh thứ tư".
     """
     khoa = anh.khoa_luu_tru
+    anh_id = anh.pk
     with transaction.atomic():
-        Moc.objects.select_for_update().filter(pk=anh.moc_id).first()
+        moc_khoa = Moc.objects.select_for_update().filter(pk=anh.moc_id).first()
         MocAnh.objects.filter(pk=anh.pk).delete()
         xoa_anh_that(khoa)
+        if boi is not None and moc_khoa is not None:
+            ghi_audit(
+                actor=boi,
+                action=AUDIT_XOA_ANH_MOC,
+                target_type=DICH_MOC,
+                target_id=moc_khoa.pk,
+                mach_id=moc_khoa.mach_id,
+                seq=moc_khoa.seq,
+                anh_id=anh_id,
+                url=url_anh(khoa),
+                ly_do=ly_do,
+            )
 
 
 def dong_bo_kho_anh(moc: Moc) -> int:
@@ -1438,6 +1539,18 @@ AUDIT_GO_MOD_SUB = "go_mod_sub"
 #: đích **miễn nhiễm ban** (`ban_nguoi_dung` trả 409 khi đích là staff) — nên câu hỏi
 #: "ai cho người này làm mod" chỉ trả lời được qua nhật ký này.
 AUDIT_DOI_QUYEN_MOD = "doi_quyen_mod"
+#: Sửa **NỘI DUNG** từ khu quản trị (2026-09-03,
+#: `plans/2026-09-03-sua-bai-khu-quan-tri.md`). Đọc kỹ hai chữ ấy: mọi hằng phía trên là
+#: hành động *che / gỡ / cấm*, thứ luôn đảo ngược được và luôn để nguyên chữ của người
+#: viết. Hai hằng dưới đây là hành động **viết lại lời người khác**, nên nhật ký là chỗ
+#: duy nhất trả lời được "câu này ai sửa" — bản thân nội dung thì không còn nói được nữa.
+#: Vế thứ hai của vết nằm ở `MocRevision` (công khai); vế "ai, lúc nào, vì sao" ở đây.
+AUDIT_SUA_MOC = "sua_moc"
+AUDIT_SUA_TIEU_DE_MACH = "sua_tieu_de_mach"
+#: Ảnh đính kèm mốc, thêm/gỡ **bởi mod** (user lật mục "không sửa ảnh" 2026-09-03). Đường
+#: của tác giả ở v1 không truyền `boi` nên không đi qua hai hằng này — xem `them_anh_moc`.
+AUDIT_THEM_ANH_MOC = "them_anh_moc"
+AUDIT_XOA_ANH_MOC = "xoa_anh_moc"
 
 #: `AuditLog.target_type` — cột `varchar(16)`, giữ chuỗi ngắn.
 DICH_MOC = "moc"
@@ -1608,6 +1721,113 @@ def dat_khoa_mach(*, mach: Mach, boi, khoa: bool, ly_do: str = "") -> bool:
         )
     mach.refresh_from_db()
     return True
+
+
+# --- Sửa NỘI DUNG từ khu quản trị (2026-09-03) -------------------------------
+#
+# Hai hàm dưới đây là hai đường ghi *thứ ba và thứ tư* của khu quản trị, và chúng khác
+# mọi hàm phía trên ở một điểm phải nói rõ: chúng **đổi chữ của người khác**, không chỉ
+# đổi cờ che. Vì thế cả hai theo đúng ba luật của khối audit ở đầu mục này, cộng một luật
+# thứ tư của riêng chúng:
+#
+# 4. **Không đổi thì không ghi gì** — không `MocRevision`, không `AuditLog`, không đụng
+#    `edit_count`. Một mod bấm Lưu mà không sửa gì (hay bấm hai lần) không được đẻ ra một
+#    dấu "đã sửa" trên trang công khai. Phép so nằm ở ĐÂY chứ không ở client, vì client
+#    so trước khi `lam_sach` chạy: gửi lên `<p>a</p><script>x</script>` cho một mốc đang
+#    mang `<p>a</p>` là "có đổi" ở trình duyệt và "không đổi" sau khi lọc.
+#
+# Quyền (chỉ superuser) KHÔNG nằm ở đây: nó phụ thuộc **người gọi**, cùng lý lẽ với hai
+# luật "được ban ai" ở `api/quan_tri_nguoi_dung.py`.
+
+
+def sua_moc_boi_mod(
+    *, moc: Moc, thay_doi: dict, boi, ly_do: str = "", khi=None
+) -> tuple[Moc, bool]:
+    """Mod sửa nội dung một mốc. Trả `(mốc, có đổi không)`. **Luôn để vết khi có đổi.**
+
+    Dùng lại `_kiem_thay_doi_moc` + `_ap_sua_moc` của `sua_moc`, tức cùng `lam_sach`,
+    cùng `kiem_figures`, cùng câu `UPDATE` — docstring `them_moc` chốt "ba đường ghi, hai
+    lời gọi, không có đường thứ tư", và một bản `save()` viết tay ở đây sẽ là đường thứ tư.
+
+    **`de_dau=True` không có điều kiện**, khác `sua_moc`: cửa sổ im lặng 15 phút là để
+    tác giả chữa lỗi chính tả bài MÌNH vừa đăng. Người thứ ba viết lại lời người khác thì
+    không có phút nào im lặng, kể cả trên một mốc hai phút tuổi.
+
+    `AuditLog` ghi **trong cùng transaction** với `save()` (luật 1 của khối audit): rơi ra
+    ngoài là có ngày hàng `Moc` đổi mà nhật ký trống — và nhật ký trống thì không ai biết
+    để đi tìm.
+    """
+    thay_doi = _kiem_thay_doi_moc(thay_doi)
+    # Luật 4 (xem khối trên). So SAU khi chuẩn hoá, và so với hàng đang có.
+    thay_doi = {t: v for t, v in thay_doi.items() if getattr(moc, t) != v}
+    if not thay_doi:
+        return moc, False
+
+    khi = khi or timezone.now()
+    with transaction.atomic():
+        moc, ban_cu = _ap_sua_moc(moc, thay_doi, khi, de_dau=True)
+        ghi_audit(
+            actor=boi,
+            action=AUDIT_SUA_MOC,
+            target_type=DICH_MOC,
+            target_id=moc.pk,
+            mach_id=moc.mach_id,
+            seq=moc.seq,
+            tac_gia=moc.author.username,
+            # `sorted` chứ không `list`: `meta` đi vào JSON và người đọc nhật ký so hai
+            # dòng bằng mắt — thứ tự khoá của một dict không phải thông tin.
+            truong=sorted(thay_doi),
+            # Con trỏ sang vế thứ hai của vết. Không có nó thì người đọc nhật ký biết
+            # "có sửa" mà không có đường nào tới NỘI DUNG trước đó.
+            revision_id=ban_cu.pk,
+            ly_do=ly_do,
+        )
+    return moc, True
+
+
+def sua_tieu_de_mach(
+    *, mach: Mach, title: str, boi, ly_do: str = ""
+) -> tuple[Mach, bool, str]:
+    """Mod đổi tiêu đề một mạch. Trả `(mạch, có đổi không, slug CŨ)`.
+
+    **Trả `slug_cu` là một phần của hợp đồng, không phải tiện thể.** Đổi tiêu đề là đổi
+    slug (PLAN 5.9), và trang `/m/<slug-cũ>-<id>` đang nằm trong cache ISR của Next: người
+    gọi phải làm mới **cả hai** đường. Không trả slug cũ thì người gọi hết đường biết nó —
+    hàng đã ghi đè — và `/m/<slug-cũ>-<id>` phục vụ tiêu đề cũ tới một giờ, HTTP 200,
+    không log, không ai thấy.
+
+    Làm mới ISR là việc của tầng API: `core/ghi.py` cố ý không import `core/revalidate.py`
+    (đường ghi không được biết có một app Next ở đâu đó).
+
+    Khoá: đúng một hàng `Mach`, và `Mach` là hàng khoá SAU CÙNG của mọi chuỗi (docstring
+    đầu file). Hàm này không khoá gì trước đó ⇒ không dựng thêm cạnh nào.
+    """
+    title = title.strip()
+    with transaction.atomic():
+        hang = Mach.objects.select_for_update().get(pk=mach.pk)
+        slug_cu = hang.slug
+        if hang.title == title:
+            return hang, False, slug_cu
+        tieu_de_cu = hang.title
+        hang.title = title
+        # `Mach.save()` chỉ tự sinh slug khi slug đang RỖNG (xem model) — đổi tiêu đề thì
+        # slug phải đặt ở đây, tường minh, vì đó là một quyết định của tầng trên.
+        hang.slug = slug_tu_title(title)
+        hang.save(update_fields=["title", "slug"])
+        # Tiêu đề nằm trong index tìm kiếm; không đồng bộ là Meilisearch trả tiêu đề cũ.
+        dong_bo_mach(hang)
+        ghi_audit(
+            actor=boi,
+            action=AUDIT_SUA_TIEU_DE_MACH,
+            target_type=DICH_MACH,
+            target_id=hang.pk,
+            tieu_de_cu=tieu_de_cu,
+            tieu_de_moi=title,
+            slug_cu=slug_cu,
+            slug_moi=hang.slug,
+            ly_do=ly_do,
+        )
+    return hang, True, slug_cu
 
 
 def ban_user(*, user, boi, vinh_vien: bool, den_khi=None, ly_do: str) -> bool:

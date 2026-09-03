@@ -19,6 +19,7 @@ vừa bị ẩn để gỡ ẩn nó. Lọc `hidden_at__isnull=True` copy sang đ
 from django.db.models import Prefetch
 from ninja import Router
 
+from core.doc_noi_dung import doc_duoc
 from core.ghi import dat_an_binh_luan, dat_an_mach, dat_an_moc, dat_khoa_mach
 from core.models.binh_luan import Comment
 from core.models.dien_dan import Mach
@@ -182,17 +183,21 @@ def xem_mach(request, mach_id: int):
         da_bi_an=mach.hidden_at is not None,
         da_khoa=mach.locked_at is not None,
         duong_dan_cong_khai=duong_dan_mach(mach),
-        mocs=[_moc_ra(m) for m in mach.mocs.all()],
+        mocs=[_moc_ra(m, mach) for m in mach.mocs.all()],
     )
 
 
-def _moc_ra(moc: Moc) -> MocQuanTriOut:
+def _moc_ra(moc: Moc, mach: Mach) -> MocQuanTriOut:
     """`Moc` → schema quản trị. **Cố ý không gọi `api/trinh_bay.py::moc_ra`.**
 
     `moc_ra` áp luật che của cửa công khai (bia mộ mất `body`, mất tác giả). Dùng nó ở đây
     là trang phán xử của mod hiện ra một ô trống — đúng thứ mod cần đọc thì không có. Hai
     hàm, hai luật, và cái tên `_moc_ra` để dưới gạch dưới để không ai import nhầm nó ra
     ngoài file này.
+
+    Nhận `mach` làm THAM SỐ chứ không đọc `moc.mach`: hàm này chạy trong một vòng lặp trên
+    danh sách mốc đã prefetch, và `moc.mach` ở đó là một truy vấn cho MỖI mốc — đúng thứ
+    docstring `xem_mach` hứa là hằng số. Nó cần `mach` vì `sua_duoc` hỏi cả `locked_at`.
     """
     return MocQuanTriOut(
         id=moc.pk,
@@ -203,4 +208,9 @@ def _moc_ra(moc: Moc) -> MocQuanTriOut:
         trich_yeu=trich_yeu(moc.body),
         da_bi_an=moc.hidden_at is not None,
         da_xoa=moc.deleted_at is not None,
+        edit_count=moc.edit_count,
+        # Cùng phép tính với `quan_tri_sua_bai.py::_sua_duoc`, và cùng nguồn luật che
+        # (`core/doc_noi_dung.py`). Hai chỗ gọi vì hai schema khác nhau, không phải hai
+        # luật — bảng này chỉ cần biết có hiện link "Sửa" hay không.
+        sua_duoc=doc_duoc(moc) and mach.locked_at is None,
     )

@@ -91,6 +91,13 @@ class MocSuaIn(Schema):
     Đây là PATCH thật: trường **không gửi** thì không đổi, trường gửi `null` thì xoá.
     Phân biệt hai ca đó bằng `model_fields_set` của pydantic, nên đừng đổi `None` mặc
     định thành một sentinel khác — `api/mocs.py` đọc đúng cơ chế ấy.
+
+    ⚠ **`body` KHÔNG được schema chặn ở `null`, dù nó khai `min_length=1`.** `Field` áp
+    ràng buộc lên nhánh `str` của union, còn `null` đi thẳng qua. Câu "schema chặn trước
+    khi vào đây" từng đứng ở đây và ở `api/mocs.py` là **sai**: `{"body": null}` xuống tới
+    `lam_sach(None)` và nổ `TypeError` ⇒ 500 trần. Phép chặn thật nằm ở
+    `core/ghi.py::_kiem_thay_doi_moc` (một chỗ, cho cả cửa v1 lẫn cửa quản trị) và trả
+    400 `du_lieu_khong_hop_le`. Vá 2026-09-03.
     """
 
     body: str | None = Field(default=None, min_length=1, max_length=DAI_BODY_MOC)

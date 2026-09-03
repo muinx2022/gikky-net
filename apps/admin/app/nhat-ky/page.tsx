@@ -37,7 +37,8 @@ const MOI_TRANG = 50;
  * hợp lệ. Xem `GOI_Y_ACTION`.
  */
 
-/** 22 hằng `AUDIT_*` của `api/core/ghi.py` (chép tay, 2026-08-26).
+/** 26 hằng `AUDIT_*` của `api/core/ghi.py` (chép tay, 2026-08-26; +4 ngày 2026-09-03 khi
+ * khu quản trị mở cửa sửa nội dung bài).
  *
  * **Chỉ là GỢI Ý.** `<datalist>` không ràng buộc gì: mod vẫn gõ tự do được, và bộ lọc
  * vẫn so BẰNG ĐÚNG với thứ gõ vào. Nên thêm một action mới ở server mà quên chỗ này thì
@@ -68,6 +69,10 @@ const GOI_Y_ACTION = [
   "gan_mod_sub",
   "go_mod_sub",
   "doi_quyen_mod",
+  "sua_moc",
+  "sua_tieu_de_mach",
+  "them_anh_moc",
+  "xoa_anh_moc",
 ];
 export default function TrangNhatKy() {
   const [loc, datLoc] = useState("");

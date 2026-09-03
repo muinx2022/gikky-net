@@ -1394,3 +1394,52 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Ở đâu**: `apps/web/e2e/tai-khoan-va-ghi.spec.ts:258-261`
 - **Bằng chứng**: 1 failed/589 passed lượt 1 · 590/0 lượt 2 · 590/0 nghiệm thu, cùng `gikky_e2e`. Khác loài với L36 (đã đóng — nguyên nhân khác).
 - **Vì sao không sửa ngay**: cần tái hiện có chủ đích (chặn/làm chậm POST vote rồi reload) trước khi vá — vá mù kiểu `waitForResponse` dễ thành trang trí.
+
+### P-20260903-6 · [MỞ] · NẶNG — `api/media/` là kho ảnh CHUNG cho cả `gikky_dev` (bài THẬT) lẫn `gikky_e2e`, nên `don_anh_mo_coi` chạy khi đang trỏ DB nháp sẽ XOÁ THẬT ảnh của bài thật
+- **Thấy lúc**: lượt "sửa bài khu quản trị" (`plans/2026-09-03-sua-bai-khu-quan-tri.md`) — cả thực thi lẫn nghiệm thu đều phải dựng ảnh trong `gikky_e2e` và cùng thấy
+- **Ở đâu**: `api/config/settings.py` (`MEDIA_ROOT` mặc định `BASE_DIR / "media"`, không phụ thuộc DB) · `api/core/management/commands/don_anh_mo_coi.py`
+- **Bằng chứng**: lệnh dọn liệt kê file trên đĩa rồi trừ đi khoá của `MocAnh` / `AnhNoiDung` / `User.avatar_khoa` **của DB đang nối**. Trỏ `gikky_e2e` thì mọi khoá của `gikky_dev` vắng mặt ⇒ rơi vào nhánh "mồ côi". Lệnh **xoá thật khi không có cờ** (chỉ né file trẻ hơn 24 giờ), nên ảnh cũ của bài thật đi luôn. Không có cột nào trong khoá phân biệt hai DB.
+- **Vì sao không sửa ngay**: ngoài phạm vi lượt; cần một quyết định (tách `MEDIA_ROOT` theo DB, hay bắt lệnh từ chối chạy khi tên DB không phải DB sản xuất) — user quyết.
+
+### P-20260903-7 · [MỞ] · VỪA — khu quản trị vẫn CHƯA có e2e trình duyệt nào TRONG repo; luồng sửa bài của mod chỉ đo được bằng script dùng-một-lần ngoài repo
+- **Thấy lúc**: cùng lượt trên — tiêu chí 5.6 của plan phải đo bằng script ở scratchpad
+- **Ở đâu**: `apps/web/playwright.config.ts` (`webServer` chỉ dựng 3000 + 8000, không có 3001)
+- **Bằng chứng**: `grep -n "3001" apps/web/playwright.config.ts` không kết quả; toàn bộ `apps/web/e2e/*.spec.ts` không bài nào mở `localhost:3001`. Lượt này phải dựng tay Django + `next start 3001` rồi chạy `do.mjs` ở scratchpad — 15 bước PASS, nhưng script ấy mất khi dọn temp.
+- **Vì sao không sửa ngay**: dựng hạ tầng e2e cho app thứ hai là việc riêng (thêm `webServer` thứ ba, seed superuser, tách cổng khỏi bộ hiện có), không phải một mục tiện tay của lượt sửa bài.
+
+### P-20260903-8 · [MỞ] · VỪA — `AnhNoiDung` (ảnh nhúng giữa thân bài) KHÔNG bao giờ vào kho cách ly, nên ảnh trong một mốc đã bị mod ẩn vẫn trả 200 qua URL trực tiếp
+- **Thấy lúc**: phản biện lượt trên, khi soi vế A9 của ảnh đính kèm
+- **Ở đâu**: `api/core/models/moc.py::AnhNoiDung` (docstring tự khai) · `api/core/anh_noi_dung.py::_xoa_file` ("chỉ quét `kho_hien()`")
+- **Bằng chứng**: `dong_bo_kho_anh` chỉ lặp `MocAnh.objects.filter(moc=moc)`; không truy vấn nào chạm `AnhNoiDung` vì bảng ấy **cố ý không có FK về `Moc`**. Prod cho Caddy phục vụ `/media/*` thẳng từ đĩa (`deploy/prod/Caddyfile`), nên ẩn ở tầng API không giấu được URL.
+- **Vì sao không sửa ngay**: model ghi rõ đây là lựa chọn có chủ đích (không có đường đi ngược ảnh → mốc). Nhưng lượt này mở thêm bề mặt (mod nhúng ảnh vào bài người khác), nên vế "A9 chỉ đúng một nửa" đáng được nhìn lại một lượt riêng.
+
+### P-20260903-9 · [MỞ] · VỪA — `pnpm test -- <cờ>` KHÔNG truyền được cờ cho pytest, trong khi `CLAUDE.md` dạy đúng cú pháp đó
+- **Thấy lúc**: nghiệm thu lượt trên, khi cần chạy riêng một bài
+- **Ở đâu**: `scripts/pytest.mjs` · `D:\Projects\gikky-net\CLAUDE.md` (bảng Lệnh, dòng `pnpm test -- -k health -x`)
+- **Bằng chứng**: `pnpm test -- -k test_B3 -x` → `ERROR: file or directory not found: -k` (pnpm chèn `-q "--"` vào argv nên pytest coi phần sau là đường dẫn). Phải gọi thẳng `api\.venv\Scripts\python.exe -m pytest`.
+- **Vì sao không sửa ngay**: ngoài phạm vi; sửa là đụng `scripts/pytest.mjs` **hoặc** sửa một dòng tài liệu — hai cách khác hẳn nhau về phạm vi, user quyết. ⚠ Bẫy này cùng họ với bẫy `--` của `e2e:don-vi` đã ghi trong `CLAUDE.md`.
+
+### P-20260903-10 · [MỞ] · VỪA — `api/api/quan_tri_cai_dat.py` còn bản chép THỨ BA của phép chặn superuser
+- **Thấy lúc**: lượt trên đã gộp hai bản đầu về `api/api/quan_tri_quyen.py::chan_neu_khong_phai_superuser` (plan §2.4 chỉ yêu cầu gộp với `quan_tri_nguoi_dung.py`)
+- **Ở đâu**: `api/api/quan_tri_cai_dat.py` — hàm `_chan_neu_khong_phai_superuser` cục bộ
+- **Bằng chứng**: thân hàm trùng logic với bản dùng chung, chỉ khác câu lỗi. Ba bản của một luật phân quyền là hai bản sẽ trôi khỏi bản còn lại, và bản trôi không có gì đỏ.
+- **Vì sao không sửa ngay**: ngoài phạm vi lượt (plan chốt gộp đúng hai chỗ).
+
+### P-20260903-11 · [MỞ] · NHỎ — `pnpm codegen` luôn sinh lại CẢ HAI client, nên một lượt chỉ đụng API quản trị vẫn kéo theo diff của client v1
+- **Thấy lúc**: lượt trên — cây đang có việc dở của một phiên khác ở `/api/v1`
+- **Ở đâu**: `scripts/codegen.mjs` (lặp qua `api_registry`)
+- **Bằng chứng**: lượt này chỉ thêm endpoint `/api/admin/*`, nhưng `git diff HEAD --stat` cho `packages/api-client/openapi.json | 494 +`, `src/sdk.gen.ts | 118 +`, `src/types.gen.ts | 324 +` — nội dung là `lietKeHoiThoai`/`guiTinNhan`/`docHoiThoai`/`demTinNhanChuaDoc`/`xemHoiThoai` của phiên khác.
+- **Vì sao không sửa ngay**: sinh cả hai là ĐÚNG thiết kế (registry là nguồn sự thật, sinh chọn lọc sẽ đẻ drift). Ghi lại vì nó là **bẫy lúc stage**, không phải lỗi: commit nhầm là commit nửa tính năng chưa ai nghiệm thu.
+
+### P-20260903-12 · [MỞ] · NHỎ — `MocSuaQuanTriOut.anhs` dựng URL từ kho ĐANG PHỤC VỤ cho mọi hàng, nên thumbnail của ảnh đang cách ly hỏng ngay trong trang sửa của mod
+- **Thấy lúc**: phản biện lượt trên
+- **Ở đâu**: `api/api/trinh_bay.py::anh_ra` → `api/core/anh_luu.py::url_anh` / `url_thumb`
+- **Bằng chứng**: `MocAnh.da_cach_ly=True` ⇒ file ở `MEDIA_AN_ROOT`, mà `MEDIA_AN_ROOT` cố ý nằm NGOÀI `MEDIA_ROOT` và không route nào phục vụ nó ⇒ `<img>` 404. Mod mở trang sửa một mốc đang bị ẩn thấy ô ảnh vỡ, dù `anhs` liệt kê đủ.
+- **Vì sao không sửa ngay**: sửa đúng cách là thêm một cửa đọc ảnh cách ly **sau hàng rào `ChiMod`** — một bề mặt mới, phải quyết có chủ đích. Docstring schema đã tự thú; `PLAN.md` mục 7 nay cũng ghi.
+
+### P-20260903-13 · [MỞ] · NHỎ (NGHI NGỜ) — `xoa_anh_moc` bỏ `ghi_audit` im lặng khi `moc_khoa is None`
+- **Thấy lúc**: phản biện lượt trên
+- **Ở đâu**: `api/core/ghi.py` — nhánh `if boi is not None and moc_khoa is not None:`
+- **Bằng chứng**: **không dựng nổi ca tái hiện** — `MocAnh.moc` là FK `NOT NULL` nên hàng `Moc` biến mất giữa chừng gần như bất khả. Nếu xảy ra thì ảnh vẫn bị xoá (hàng + file) mà không dòng nhật ký nào, tức mất vết duy nhất của một lượt gỡ.
+- **Vì sao không sửa ngay**: là **nghi ngờ**, không phải lỗi chắc chắn. Cách chữa rẻ nếu muốn: ghi log với `target_id=anh.moc_id` thay vì bỏ qua.
+

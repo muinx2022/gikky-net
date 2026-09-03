@@ -45,13 +45,13 @@ from core.ghi import (
 from core.models.nguoi_dung import User
 
 from api.loi import (
-    KHONG_DU_QUYEN,
     THAM_SO_KHONG_HOP_LE,
     XUNG_DOT,
     LoiOut,
     khong_tim_thay,
     loi,
 )
+from api.quan_tri_quyen import chan_neu_khong_phai_superuser
 from api.quan_tri_schemas import (
     BanIn,
     DatMatKhauIn,
@@ -290,14 +290,13 @@ def _kiem_mat_khau(mat_khau: str, *, user: User | None = None):
 
 
 def _chan_neu_khong_phai_superuser(request):
-    """`None` nếu được phép, ngược lại là response 403.
+    """`None` nếu được phép, ngược lại là response 403 — bản của file này.
 
-    Tách khỏi `ChiMod` (cổng `is_staff` của cả khu) vì đây là phép kiểm THỨ HAI, hẹp hơn,
-    chỉ cho vài cửa. Nhét nó vào `ChiMod` là khoá cả khu quản trị khỏi mod thường.
+    Thân hàm chuyển sang `api/quan_tri_quyen.py` (2026-09-03) khi cửa sửa nội dung bài
+    cần đúng phép kiểm ấy: hai bản chép sẽ là hai câu lỗi và, sớm muộn, hai mã lỗi. Vỏ
+    hàm ở lại vì `viec` của cả file này là một — không endpoint nào phải nhắc lại nó.
     """
-    if request.user.is_superuser:
-        return None
-    return loi(403, KHONG_DU_QUYEN, "Chỉ superuser được đổi thông tin tài khoản.")
+    return chan_neu_khong_phai_superuser(request, "đổi thông tin tài khoản")
 
 
 def _con_superuser_khac(u: User) -> bool:

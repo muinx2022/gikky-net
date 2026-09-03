@@ -7,6 +7,7 @@ chạm khi gộp bốn mảng. Ở đây là HÀM THƯỜNG — gọi được t
 `python_files = ["test_*.py"]` trong `pyproject.toml` nên pytest không thu file này.
 """
 
+import io
 from datetime import timedelta
 
 from django.test import Client
@@ -14,6 +15,8 @@ from django.utils import timezone
 
 from core.ghi import tao_binh_luan, tao_mach
 from core.models import Comment, Mach, Moc, Report, Sub, User
+
+from ._anh import anh_byte
 
 
 def dung_mod(username: str = "mod_chinh") -> User:
@@ -220,6 +223,41 @@ def bang_endpoint(dl: dict) -> list[tuple[str, str, str, dict | None]]:
         # chỉ trả hai con số đếm, nhưng "mọi endpoint quản trị đều được chấm" không có
         # ngoại lệ nào — kể cả cho một endpoint vô hại.
         ("quan_tri_chan_doan_tim_kiem", "get", "/api/admin/chan-doan/tim-kiem", None),
+        # Sửa nội dung bài (2026-09-03). Cửa ĐỌC mở cho mọi mod; năm cửa GHI còn lại đòi
+        # superuser — chúng có tên trong `CHI_SUPERUSER` của
+        # `test_api_quan_tri_phan_quyen.py`, và chiều ngược lại được ghim ở đó.
+        ("quan_tri_xem_moc", "get", f"/api/admin/mocs/{dl['moc'].pk}", None),
+        (
+            "quan_tri_sua_moc",
+            "patch",
+            f"/api/admin/mocs/{dl['moc'].pk}",
+            {"loai": "vào lệnh"},
+        ),
+        (
+            "quan_tri_sua_tieu_de_mach",
+            "patch",
+            f"/api/admin/machs/{mach_id}/tieu-de",
+            {"title": "Tiêu đề khác hẳn"},
+        ),
+        # Ba cửa ẢNH. Hai cửa POST phải gửi **file THẬT** (`bytes` ⇒ `goi()` chuyển sang
+        # multipart): django-ninja validate thân request **trước** khi gọi handler, nên
+        # một body rỗng ăn 400 `tham_so_khong_hop_le` và bài đo phân quyền sẽ đọc con số
+        # ấy thành "đã qua hàng rào" — đúng loài proof đo RỖNG. Ảnh 1×1 để lượt của
+        # superuser (`test_superuser_QUA_duoc_…`) tốn ít nhất; bài ấy phải mang fixture
+        # `kho_anh`, nếu không nó ghi thẳng vào `api/media/` của máy dev.
+        (
+            "quan_tri_tai_anh_noi_dung",
+            "post",
+            "/api/admin/anh",
+            {"file": anh_byte(kich_thuoc=(1, 1))},
+        ),
+        (
+            "quan_tri_tai_anh_moc",
+            "post",
+            f"/api/admin/mocs/{dl['moc'].pk}/anh",
+            {"file": anh_byte(kich_thuoc=(1, 1))},
+        ),
+        ("quan_tri_xoa_anh_moc", "delete", "/api/admin/anh/999999", None),
     ]
 
 
@@ -229,10 +267,24 @@ def goi(client: Client, method: str, url: str, body: dict | None):
     `content_type="application/json"` cho mọi verb ghi: Ninja parse thân JSON, và
     `Client.post(url, dict)` mặc định gửi multipart — Ninja sẽ trả 400 vì thiếu thân, và
     bài đo phân quyền sẽ đọc 400 đó thành "đã qua được hàng rào".
+
+    **Ngoại lệ: body chứa `bytes`** ⇒ endpoint ấy nhận multipart thật (ba cửa ảnh của
+    2026-09-03), nên gửi đúng multipart — tức bỏ `content_type` để `Client` tự dựng. Nhận
+    ra bằng kiểu dữ liệu chứ bằng một cờ thêm vào bảng: một cờ là một cột nữa để quên.
     """
     ham = getattr(client, method)
     if body is None:
         return ham(url)
+    if any(isinstance(v, bytes) for v in body.values()):
+        phan = {}
+        for khoa, gia_tri in body.items():
+            if isinstance(gia_tri, bytes):
+                f = io.BytesIO(gia_tri)
+                f.name = "anh.jpg"
+                phan[khoa] = f
+            else:
+                phan[khoa] = gia_tri
+        return ham(url, data=phan)
     return ham(url, data=body, content_type="application/json")
 
 

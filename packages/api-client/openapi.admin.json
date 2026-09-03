@@ -1,6 +1,110 @@
 {
   "components": {
     "schemas": {
+      "AnhNoiDungOut": {
+        "description": "Ảnh vừa tải lên để **nhúng thẳng vào thân bài** — `POST /me/anh` (2026-08-24).\n\nHình dạng cố tình KHÁC `AnhOut`, và khác đúng ở chỗ nói lên bản chất: không `id`\n(không có gì để gọi lại — không có cửa `DELETE`, xem docstring endpoint), không\n`position` (không có gallery để xếp), không `url_thumb` (ảnh giữa bài đọc bằng bản\nchính), không `exif_taken_at` (nó là gợi ý cho `occurred_at` của MỐC, mà cửa này chạy\ntrước khi mốc tồn tại). Còn lại đúng ba trường editor cần.\n\n`width`/`height` chứ không `w`/`h` như `AnhOut`: chúng đi thẳng vào thuộc tính cùng\ntên của node ảnh trong Tiptap, và một lượt đổi tên ở tầng frontend là đúng loại lệch\nkhông ai nhớ. Kích thước là của ảnh **đã tái mã hoá** (`core/anh.py` thu về cạnh\n`CANH_TOI_DA`), tức của đúng file đang được phục vụ.",
+        "properties": {
+          "height": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          },
+          "width": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Width"
+          }
+        },
+        "required": [
+          "url",
+          "width",
+          "height"
+        ],
+        "title": "AnhNoiDungOut",
+        "type": "object"
+      },
+      "AnhOut": {
+        "description": "Một ảnh trong gallery của mốc — Phase 5.\n\n**Không trả `khoa_luu_tru` ra ngoài.** Client cần URL, và URL là thứ `STORAGES` sinh\nra; trả thêm khoá thô là mời frontend tự ghép đường dẫn, rồi ngày đổi sang R2 (nơi\nURL có chữ ký và hạn dùng) thì bản ghép tay ấy vẫn \"chạy\" ở dev và chết trên prod.\n\n`w`/`h` là kích thước ảnh **đã lưu**, không phải file gốc — chúng dùng để đặt\n`width`/`height` trên thẻ `<img>` chống layout shift, nên phải khớp đúng file đang\nđược phục vụ. `null` chỉ xảy ra với hàng cũ ghi trước Phase 5 (không có hàng nào).\n\n`exif_taken_at` là ngày chụp **server** đọc từ file gốc trước khi tái mã hoá xoá sạch\nEXIF. Nó là *gợi ý* cho `occurred_at`, không phải nguồn của nó: PLAN nguyên tắc 3 nói\n`occurred_at` do người dùng đặt, và một tấm ảnh chụp lại màn hình cũ có ngày chụp\nchẳng liên quan gì tới ngày sự việc.",
+        "properties": {
+          "exif_taken_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exif Taken At"
+          },
+          "h": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "H"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "position": {
+            "title": "Position",
+            "type": "integer"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          },
+          "url_thumb": {
+            "title": "Url Thumb",
+            "type": "string"
+          },
+          "w": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "W"
+          }
+        },
+        "required": [
+          "id",
+          "url",
+          "url_thumb",
+          "w",
+          "h",
+          "position",
+          "exif_taken_at"
+        ],
+        "title": "AnhOut",
+        "type": "object"
+      },
       "BanIn": {
         "description": "Body của `POST /users/{username}/ban`.\n\n`vinh_vien`, `den_khi` và `so_ngay` **loại trừ nhau**: đúng một trong ba.\n`core/ghi.py::ban_user` là chỗ ném lỗi cho cặp `vinh_vien`/`den_khi`, không phải\npydantic — luật ấy thuộc đường ghi, và nó phải đúng cả khi ai đó gọi hàm từ\n`manage.py shell`. `so_ngay` thì **không** xuống tới đường ghi: nó được quy đổi thành\n`den_khi` ở tầng API (`api/quan_tri_nguoi_dung.py`), nên `ban_user` vẫn chỉ biết đúng\nhai kiểu ban và bất biến của nó không rộng ra.",
         "properties": {
@@ -460,6 +564,48 @@
         "title": "DongBaoCaoIn",
         "type": "object"
       },
+      "FigureIn": {
+        "description": "Một cặp trong dải số của mốc. Thuần hiển thị — server không validate ngữ nghĩa.",
+        "properties": {
+          "label": {
+            "maxLength": 24,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          },
+          "value": {
+            "maxLength": 24,
+            "minLength": 1,
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "value"
+        ],
+        "title": "FigureIn",
+        "type": "object"
+      },
+      "FigureOut": {
+        "description": "Một cặp trong dải số của mốc, vd `{label: \"GIÁ VÀO\", value: \"27.80\"}`.\n\nThuần hiển thị — server không validate ngữ nghĩa (PLAN 5.2).",
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "value"
+        ],
+        "title": "FigureOut",
+        "type": "object"
+      },
       "GanModSubIn": {
         "description": "Body của `POST /admin/subs/{slug}/mods`.\n\nNhận `username` chứ không `id`: id của `User` không hiện ở đâu trên giao diện quản\ntrị, nên một body mang id là một body không ai dựng lại được bằng tay để thử.",
         "properties": {
@@ -491,6 +637,53 @@
           "dang_bat"
         ],
         "title": "KetQuaDoiTrangThaiOut",
+        "type": "object"
+      },
+      "KetQuaSuaMocOut": {
+        "description": "Kết quả một lượt sửa mốc: có đổi thật không, và mốc SAU khi sửa.\n\n`da_doi=false` nghĩa là mod gửi lên đúng thứ đang có — không revision, không nhãn\n\"đã sửa\", không dòng nhật ký. UI đọc trường này để nói \"Không có gì đổi\" thay vì báo\nthành công cho một lượt chẳng làm gì (cùng lý lẽ `KetQuaDoiTrangThaiOut.da_doi`).",
+        "properties": {
+          "da_doi": {
+            "title": "Da Doi",
+            "type": "boolean"
+          },
+          "moc": {
+            "$ref": "#/components/schemas/MocSuaQuanTriOut"
+          }
+        },
+        "required": [
+          "da_doi",
+          "moc"
+        ],
+        "title": "KetQuaSuaMocOut",
+        "type": "object"
+      },
+      "KetQuaSuaTieuDeOut": {
+        "description": "Kết quả một lượt đổi tiêu đề — kèm slug và đường dẫn công khai MỚI.\n\nTrả `duong_dan_cong_khai` chứ không để frontend ghép `/m/<slug>-<id>`: luật ấy đã có\nhai bản (`core/digest.py`, `apps/web/lib/url.ts`) và khu quản trị không cần bản thứ\nba. Nút \"Mở trang công khai ↗\" đọc thẳng chuỗi này.",
+        "properties": {
+          "da_doi": {
+            "title": "Da Doi",
+            "type": "boolean"
+          },
+          "duong_dan_cong_khai": {
+            "title": "Duong Dan Cong Khai",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "da_doi",
+          "title",
+          "slug",
+          "duong_dan_cong_khai"
+        ],
+        "title": "KetQuaSuaTieuDeOut",
         "type": "object"
       },
       "KetQuaXoaSubOut": {
@@ -866,6 +1059,10 @@
             "title": "Da Xoa",
             "type": "boolean"
           },
+          "edit_count": {
+            "title": "Edit Count",
+            "type": "integer"
+          },
           "id": {
             "title": "Id",
             "type": "integer"
@@ -878,6 +1075,10 @@
           "seq": {
             "title": "Seq",
             "type": "integer"
+          },
+          "sua_duoc": {
+            "title": "Sua Duoc",
+            "type": "boolean"
           },
           "tac_gia": {
             "$ref": "#/components/schemas/NguoiDungTomTatOut"
@@ -895,9 +1096,161 @@
           "tac_gia",
           "trich_yeu",
           "da_bi_an",
-          "da_xoa"
+          "da_xoa",
+          "edit_count",
+          "sua_duoc"
         ],
         "title": "MocQuanTriOut",
+        "type": "object"
+      },
+      "MocSuaQuanTriOut": {
+        "description": "Một mốc mở ra để SỬA trong khu quản trị — đủ 5 trường, `body` **không che**.\n\nKhác `MocQuanTriOut` (bảng liệt kê, chỉ có `trich_yeu`) ở đúng chỗ nó tồn tại: form\nsửa phải prefill được **nguyên văn** thứ đang nằm trong DB, kể cả khi mốc đang bị ẩn.\nTrả trích yếu cho một form sửa là mod bấm Lưu và cắt cụt bài của người ta còn 200 ký\ntự — im lặng, đúng hợp đồng, mất dữ liệu.\n\nKèm luôn ngữ cảnh mạch (`mach_title`, `mach_da_khoa`, `duong_dan_cong_khai`) để trang\nsửa không phải gọi thêm một cửa nữa chỉ để biết mình đang sửa bài nào.",
+        "properties": {
+          "anhs": {
+            "items": {
+              "$ref": "#/components/schemas/AnhOut"
+            },
+            "title": "Anhs",
+            "type": "array"
+          },
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "body_dinh_dang": {
+            "title": "Body Dinh Dang",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "da_bi_an": {
+            "title": "Da Bi An",
+            "type": "boolean"
+          },
+          "da_xoa": {
+            "title": "Da Xoa",
+            "type": "boolean"
+          },
+          "duong_dan_cong_khai": {
+            "title": "Duong Dan Cong Khai",
+            "type": "string"
+          },
+          "edit_count": {
+            "title": "Edit Count",
+            "type": "integer"
+          },
+          "edited_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Edited At"
+          },
+          "figures": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FigureOut"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Figures"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "loai": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Loai"
+          },
+          "mach_da_khoa": {
+            "title": "Mach Da Khoa",
+            "type": "boolean"
+          },
+          "mach_id": {
+            "title": "Mach Id",
+            "type": "integer"
+          },
+          "mach_title": {
+            "title": "Mach Title",
+            "type": "string"
+          },
+          "occurred_at": {
+            "format": "date",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "question_for_crowd": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question For Crowd"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "sua_duoc": {
+            "title": "Sua Duoc",
+            "type": "boolean"
+          },
+          "tac_gia": {
+            "$ref": "#/components/schemas/NguoiDungTomTatOut"
+          },
+          "tran_anh_moi_moc": {
+            "title": "Tran Anh Moi Moc",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "seq",
+          "mach_id",
+          "mach_title",
+          "mach_da_khoa",
+          "tac_gia",
+          "occurred_at",
+          "created_at",
+          "loai",
+          "body",
+          "body_dinh_dang",
+          "question_for_crowd",
+          "figures",
+          "edit_count",
+          "edited_at",
+          "da_bi_an",
+          "da_xoa",
+          "sua_duoc",
+          "duong_dan_cong_khai",
+          "anhs",
+          "tran_anh_moi_moc"
+        ],
+        "title": "MocSuaQuanTriOut",
         "type": "object"
       },
       "ModOut": {
@@ -1268,6 +1621,81 @@
         "title": "NoiDungBiBaoCaoOut",
         "type": "object"
       },
+      "SuaMocQuanTriIn": {
+        "description": "Mod sửa mốc — `PATCH /admin/mocs/{id}`. Đúng 5 trường của `MocSuaIn`, cộng `ly_do`.\n\n**Kế thừa chứ không chép**: 5 trường sửa được của một mốc là MỘT hợp đồng (PLAN 5.2),\nvà bản thứ hai gõ tay ở đây sẽ trôi đúng lúc ai đó nới `DAI_BODY_MOC`. Cơ chế PATCH\nthật (`model_fields_set`) đi theo luôn — trường không gửi thì không đổi.\n\n`ly_do` **không** phải một trường của mốc: nó đi vào `AuditLog.meta`, không vào hàng\n`Moc`. Nên handler phải bóc nó ra TRƯỚC khi dựng `thay_doi`; lọt vào `thay_doi` là\n`core/ghi.py` ném `ValidationError` \"không sửa được trường ly_do\".",
+        "properties": {
+          "body": {
+            "anyOf": [
+              {
+                "maxLength": 10000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Body"
+          },
+          "figures": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FigureIn"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Figures"
+          },
+          "loai": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Loai"
+          },
+          "ly_do": {
+            "default": "",
+            "title": "Ly Do",
+            "type": "string"
+          },
+          "occurred_at": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred At"
+          },
+          "question_for_crowd": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question For Crowd"
+          }
+        },
+        "title": "SuaMocQuanTriIn",
+        "type": "object"
+      },
       "SuaNguoiDungIn": {
         "description": "Body của `PATCH /admin/users/{username}`. Trường `None` = **không đổi**.\n\n`username` **không có mặt** — nó nằm trong URL công khai `/u/<username>` và trong mọi\ntrích dẫn `u/…`; đổi nó là làm chết liên kết đã phát ra ngoài, cùng lý lẽ `Sub.slug`.\n\n`is_staff`/`is_superuser` cũng **không có mặt** — xem `TaoNguoiDungIn`.",
         "properties": {
@@ -1335,6 +1763,27 @@
           }
         },
         "title": "SuaSubIn",
+        "type": "object"
+      },
+      "SuaTieuDeMachIn": {
+        "description": "Mod đổi tiêu đề mạch — `PATCH /admin/machs/{id}/tieu-de`.\n\n⚠ Đường có hậu tố `/tieu-de`, **không** phải `PATCH /admin/machs/{id}`: `GET` cùng\nđường ấy nằm ở router khác nên Django resolver trả 405 — xem khối chú thích ngay trên\nendpoint ở `api/quan_tri_sua_bai.py`. Ghi đúng đường ở đây vì docstring class đi thẳng\nvào `openapi.admin.json`.\n\n`min_length=1` **không** chặn được `\"   \"`: pydantic đo chuỗi thô, còn đường ghi\n`strip()` trước khi so. Nên handler còn một phép kiểm nữa cho tiêu đề toàn khoảng\ntrắng, và nó trả 400 chứ không lặng lẽ lưu một tiêu đề rỗng.",
+        "properties": {
+          "ly_do": {
+            "default": "",
+            "title": "Ly Do",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "SuaTieuDeMachIn",
         "type": "object"
       },
       "SubQuanTriOut": {
@@ -1810,6 +2259,163 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/admin/anh": {
+      "post": {
+        "description": "Tải MỘT ảnh để nhúng vào thân mốc (multipart). Trả `{url, width, height}`.\n\nSong sinh của `POST /api/v1/me/anh`, khác đúng hai chỗ và cả hai có lý do:\n\n- **superuser-only** thay vì mọi tài khoản đăng nhập;\n- **không hạn mức 30 ảnh/ngày**. Hạn mức ấy tồn tại vì cửa v1 mở cho mọi người và\n  không gắn với hàng nào để đếm, tức nó là một kho file miễn phí nếu bỏ trần. Cửa này\n  chỉ superuser vào được, nên trần ngày chỉ còn là một cái bẫy cho chính người đang\n  sửa 20 bài trong một buổi tối.\n\nHàng vẫn là `AnhNoiDung` với `nguoi_tai` = superuser, tức nó vẫn nằm trong whitelist\nmà `don_anh_mo_coi` đọc — không có loài ảnh thứ ba nào sinh ra ở đây.\n\n`url` phải giữ nguyên tiền tố `/media/` tới lúc lưu `body`: `core/lam_sach_html.py`\n**gỡ cả thẻ** `img` nào có `src` trỏ ra ngoài kho của site.\n\n`Cache-Control: no-store` — cùng lý do cửa v1: response nói về tài sản của một phiên.",
+        "operationId": "quan_tri_tai_anh_noi_dung",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "file": {
+                    "format": "binary",
+                    "title": "File",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "file"
+                ],
+                "title": "FileParams",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnhNoiDungOut"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Tai Anh Noi Dung Quan Tri",
+        "tags": [
+          "quan-tri-sua-bai"
+        ]
+      }
+    },
+    "/api/admin/anh/{anh_id}": {
+      "delete": {
+        "description": "Superuser gỡ một ảnh khỏi mốc — **hàng đi, file đi** (A8). Ghi `AuditLog`.\n\nKhác cửa v1 ở hai chỗ, cả hai theo luật 3 của file:\n\n- **không lọc `moc__mach__hidden_at`** — ảnh của một mạch đang bị ẩn vẫn phải gỡ được\n  (đó thường là chính lúc cần gỡ nhất);\n- không hỏi `doi_con_song` — gỡ ảnh khỏi một bia mộ là giải phóng đĩa, và ảnh ấy đã\n  không hiện ở đâu nữa nên không có gì để bảo vệ.\n\nMạch bị **khoá** thì vẫn 403: khoá là đóng băng, không phải \"chỉ chặn người ngoài\".\n\nTrả chính thẻ ảnh vừa xoá chứ không 204 — UI cần `id` để gỡ đúng ô khỏi lưới.",
+        "operationId": "quan_tri_xoa_anh_moc",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "anh_id",
+            "required": true,
+            "schema": {
+              "title": "Anh Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnhOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Xoa Anh Moc Quan Tri",
+        "tags": [
+          "quan-tri-sua-bai"
+        ]
+      }
+    },
     "/api/admin/cai-dat/google": {
       "delete": {
         "description": "Gỡ credential khỏi DB.\n\n⚠ **Không chắc là \"tắt Google\"**: nếu env vẫn có credential thì env đỡ lại và Google\n**vẫn bật**. Response trả về nói ra điều đó (`bat`, `nguon`) thay vì để giao diện đoán\n— đoán sai ở đây làm người ta tưởng đã tắt một thứ vẫn đang chạy.",
@@ -2697,6 +3303,94 @@
         ]
       }
     },
+    "/api/admin/machs/{mach_id}/tieu-de": {
+      "patch": {
+        "description": "Superuser đổi **tiêu đề** một mạch. Đổi tiêu đề ⇒ đổi slug ⇒ hai đường cache.\n\nKhông có cửa nào khác đổi được `Mach.title`, kể cả cho tác giả — chưa có\n`MachRevision` nên tác giả sửa tiêu đề sẽ là sửa một lời gọi đã đăng mà không để vết.\nỞ đây vết nằm ở `AuditLog` (`tieu_de_cu`/`tieu_de_moi`/`slug_cu`/`slug_moi`).\n\n⚠ **Làm mới ISR CẢ đường cũ lẫn đường mới.** Trang đọc theo `id` nên `/m/<slug-cũ>-<id>`\nvẫn phục vụ 200 (PLAN 5.9 cho nó 308 về dạng chuẩn, nhưng bản đã cache thì không chạy\nlại luật ấy). Bỏ vế cũ là tiêu đề cũ sống thêm tới một giờ ở một URL người ta đã chia\nsẻ đi khắp nơi — HTTP 200, không log, không ai thấy.\n\nMạch bị khoá ⇒ 403 (đóng băng). Mạch bị **ẩn** thì vẫn đổi được — khu này với được\nnội dung đã ẩn, đó là cả lý do nó tồn tại.",
+        "operationId": "quan_tri_sua_tieu_de_mach",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mach_id",
+            "required": true,
+            "schema": {
+              "title": "Mach Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuaTieuDeMachIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KetQuaSuaTieuDeOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Sua Tieu De Mach Quan Tri",
+        "tags": [
+          "quan-tri-sua-bai"
+        ]
+      }
+    },
     "/api/admin/me": {
       "get": {
         "description": "Mod đang đăng nhập là ai. Trả 401 nếu chưa đăng nhập, 403 nếu không phải staff.\n\nĐây cũng là endpoint **gieo cookie CSRF** cho khu quản trị: app admin gọi nó khi mở\ntrang, rồi mọi request ghi sau đó gửi kèm `X-CSRFToken` đọc từ cookie ấy.",
@@ -2742,6 +3436,170 @@
         "summary": "Toi",
         "tags": [
           "quan-tri"
+        ]
+      }
+    },
+    "/api/admin/mocs/{moc_id}": {
+      "get": {
+        "description": "Một mốc mở ra để đọc/sửa — **mọi mod**, kể cả mốc đã bị ẩn hoặc là bia mộ.\n\nCửa ĐỌC nên nó không đòi superuser: mod thường vẫn phải đọc được nguyên văn thứ họ\nsắp quyết định ẩn hay gỡ ẩn, đúng như trang chi tiết mạch đã cho họ đọc `trich_yeu`.\nQuyền GHI là chuyện của hai endpoint dưới, và frontend giấu nút Lưu theo\n`ModOut.is_superuser`.\n\n`sua_duoc` trả về **trạng thái nội dung**, không phải quyền của người xem — hai câu\n\"mốc này đã bị gỡ\" và \"bạn không đủ quyền\" dẫn tới hai hành động khác nhau.",
+        "operationId": "quan_tri_xem_moc",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "moc_id",
+            "required": true,
+            "schema": {
+              "title": "Moc Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MocSuaQuanTriOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Xem Moc",
+        "tags": [
+          "quan-tri-sua-bai"
+        ]
+      },
+      "patch": {
+        "description": "Superuser sửa **đúng 5 trường** của một mốc (PLAN 5.2). Luôn để vết khi có đổi.\n\nPATCH thật: trường không gửi thì không đổi, trường gửi `null` thì xoá (`body` không\nnhận `null` — `core/ghi.py::_kiem_thay_doi_moc` chặn và trả 400, **không** phải schema;\nxem docstring `MocSuaIn`). `ly_do` không phải trường của mốc; nó đi vào\n`AuditLog.meta`.\n\n**Mỗi lượt có đổi để lại BA thứ trong một transaction**: một `MocRevision` mang đủ 5\ntrường bản trước (xem được công khai ở `GET /mocs/{id}/revisions`), nhãn \"đã sửa N\nlần\" trên trang mạch, và một dòng nhật ký `sua_moc`. Không có cửa sổ im lặng 15 phút\nở đây — cửa sổ ấy dành cho tác giả sửa chính tả bài mình, không cho người thứ ba viết\nlại lời người khác.\n\nGửi lên đúng thứ đang có ⇒ 200 `da_doi=false`, và **không** revision, **không** log:\nmột cú bấm Lưu chẳng đổi gì không được đóng dấu \"đã sửa\" lên bài của người ta.",
+        "operationId": "quan_tri_sua_moc",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "moc_id",
+            "required": true,
+            "schema": {
+              "title": "Moc Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuaMocQuanTriIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KetQuaSuaMocOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Sua Moc Quan Tri",
+        "tags": [
+          "quan-tri-sua-bai"
         ]
       }
     },
@@ -2820,6 +3678,125 @@
         "summary": "Dat An Moc Endpoint",
         "tags": [
           "quan-tri-kiem-duyet"
+        ]
+      }
+    },
+    "/api/admin/mocs/{moc_id}/anh": {
+      "post": {
+        "description": "Superuser gắn MỘT ảnh vào gallery của một mốc. Ghi `AuditLog` `them_anh_moc`.\n\nCùng bảy phép kiểm và cùng trần `SO_ANH_TOI_DA_MOI_MOC` với cửa v1 — trần đếm TRONG\nkhoá hàng `Moc` ở `core/ghi.py`, không ở đây (L11).\n\nBa ca từ chối giống hệt hai cửa sửa chữ ở trên: mạch khoá ⇒ 403, mốc bia mộ / bị ẩn ⇒\n409, mạch bị ẩn ⇒ **vẫn được**. Đủ ảnh ⇒ 409 `qua_nhieu_anh`.\n\nKhác v1: truyền `boi=request.user` xuống `them_anh_moc` ⇒ một dòng nhật ký trong cùng\ntransaction. Gắn ảnh vào bài NGƯỜI KHÁC là đổi nội dung của họ, và ảnh không có\n`MocRevision` nào để kể lại chuyện đó.",
+        "operationId": "quan_tri_tai_anh_moc",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "moc_id",
+            "required": true,
+            "schema": {
+              "title": "Moc Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "file": {
+                    "format": "binary",
+                    "title": "File",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "file"
+                ],
+                "title": "FileParams",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnhOut"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Tai Anh Moc Quan Tri",
+        "tags": [
+          "quan-tri-sua-bai"
         ]
       }
     },

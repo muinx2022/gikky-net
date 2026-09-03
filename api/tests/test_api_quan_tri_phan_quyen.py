@@ -119,6 +119,16 @@ CHI_SUPERUSER = {
     # miễn nhiễm ban**. Một mod thường cấp được quyền cho người khác là một mod thường
     # dựng được cho mình một đồng minh không ai ban nổi.
     "quan_tri_doi_quyen_mod",
+    # Sửa NỘI DUNG bài (2026-09-03). Ẩn là *gỡ* — đảo ngược được, chữ của người viết còn
+    # nguyên. Sửa là *viết lại*: sau lượt ấy không ai đọc được bản gốc trừ qua
+    # `MocRevision`. Hai việc không cùng một nấc quyền, nên năm cửa GHI ở
+    # `quan_tri_sua_bai.py` đứng cùng nhóm với cấp/thu quyền mod. Cửa ĐỌC
+    # (`quan_tri_xem_moc`) thì KHÔNG ở đây — mod thường vẫn phải đọc được nguyên văn.
+    "quan_tri_sua_moc",
+    "quan_tri_sua_tieu_de_mach",
+    "quan_tri_tai_anh_noi_dung",
+    "quan_tri_tai_anh_moc",
+    "quan_tri_xoa_anh_moc",
 }
 
 
@@ -162,8 +172,13 @@ def test_CHI_SUPERUSER_that_su_chan_mod(du_lieu):
     assert hong == [], hong
 
 
-def test_superuser_QUA_duoc_nhung_endpoint_CHI_SUPERUSER(du_lieu):
-    """Và superuser thì qua được — nếu không, "chỉ superuser" là "không ai"."""
+def test_superuser_QUA_duoc_nhung_endpoint_CHI_SUPERUSER(du_lieu, kho_anh):
+    """Và superuser thì qua được — nếu không, "chỉ superuser" là "không ai".
+
+    `kho_anh` bắt buộc từ 2026-09-03: hai cửa ảnh trong `CHI_SUPERUSER` đi tới đường
+    THÀNH CÔNG với lượt gọi này, tức chúng ghi file thật. Không có fixture thì file rơi
+    vào `api/media/` của máy dev và ở lại đó sau mỗi lượt chạy bộ đo.
+    """
     sieu = dung_mod("sieu_quan_tri")
     sieu.is_superuser = True
     sieu.save(update_fields=["is_superuser"])

@@ -63,6 +63,8 @@ BANG_DONG_BO: dict[str, tuple[str, str]] = {
     "tao_mach": (PHAI, "mạch mới: title, thân mốc 1, sub, tác giả — cả tài liệu"),
     "them_moc": (PHAI, "thân mốc mới vào `than_them`"),
     "sua_moc": (PHAI, "đổi `body` ⇒ đổi `than` hoặc `than_them`"),
+    "sua_moc_boi_mod": (PHAI, "như `sua_moc` — cùng lõi `_ap_sua_moc`, khác ở chỗ để vết"),
+    "sua_tieu_de_mach": (PHAI, "`title` là trường tìm được, và slug đi theo nó"),
     "xoa_moc": (PHAI, "bia mộ ⇒ thân mốc phải rời index"),
     "dong_so": (PHAI, "`ket_qua` là trường tìm được"),
     "mo_lai": (PHAI, "`ket_qua` bị xoá theo ⇒ phải rời index"),
@@ -150,16 +152,52 @@ def _ham_cong_khai(cay: ast.Module) -> dict[str, ast.FunctionDef]:
     }
 
 
-def _co_goi(ham: ast.FunctionDef, ten: str) -> bool:
-    """Thân hàm có lời gọi `ten(...)` nào không (kể cả `mod.ten(...)`)."""
+def _moi_ham(cay: ast.Module) -> dict[str, ast.FunctionDef]:
+    """MỌI hàm mức module, kể cả hàm `_riêng_tư` — nền cho phép đi xuyên ở `_co_goi`."""
+    return {n.name: n for n in cay.body if isinstance(n, ast.FunctionDef)}
+
+
+def _ten_duoc_goi(ham: ast.FunctionDef) -> set[str]:
+    """Tên mọi thứ được GỌI trong thân hàm (kể cả `mod.ten(...)` → `ten`)."""
+    ra: set[str] = set()
     for nut in ast.walk(ham):
         if not isinstance(nut, ast.Call):
             continue
         f = nut.func
-        if isinstance(f, ast.Name) and f.id == ten:
+        if isinstance(f, ast.Name):
+            ra.add(f.id)
+        elif isinstance(f, ast.Attribute):
+            ra.add(f.attr)
+    return ra
+
+
+def _co_goi(ham: ast.FunctionDef, ten: str) -> bool:
+    """Thân hàm có lời gọi `ten(...)` không — **đi XUYÊN qua helper riêng tư cùng file**.
+
+    Bản đầu chỉ nhìn đúng một thân hàm. Nó đủ khi mỗi cửa ghi là một khối liền; nó **sai
+    theo chiều nguy hiểm** ngay khi ai đó tách lõi ra một helper — và điều đó đã xảy ra
+    ngày 2026-09-03, khi `sua_moc` và `sua_moc_boi_mod` dùng chung `_ap_sua_moc`. Lúc ấy
+    bài đo báo `sua_moc` "không đồng bộ index" trong khi nó vẫn đồng bộ, và cách chữa rẻ
+    nhất sẽ là hạ nhãn `sua_moc` xuống `KHONG` — tức tự tay tắt đúng cái chuông này.
+
+    Chỉ đi qua hàm **bắt đầu bằng `_`**: lời gọi tới một hàm CÔNG KHAI khác của cùng file
+    không được tính hộ, vì hàm ấy có dòng phân loại riêng và phải tự trả lời.
+
+    Chiều ngược (`test_cua_ghi_KHONG_goi_ham_nam_ngoai_phan_loai_cua_no`) hưởng đúng phép
+    đi xuyên này, nên nó CHẶT hơn bản cũ: giấu `dong_bo_mach` sau một helper không còn là
+    lối thoát.
+    """
+    tat_ca = _moi_ham(_cay_ghi())
+    da_xet: set[str] = set()
+    hang_doi = [ham]
+    while hang_doi:
+        goi = _ten_duoc_goi(hang_doi.pop())
+        if ten in goi:
             return True
-        if isinstance(f, ast.Attribute) and f.attr == ten:
-            return True
+        for g in goi:
+            if g.startswith("_") and g in tat_ca and g not in da_xet:
+                da_xet.add(g)
+                hang_doi.append(tat_ca[g])
     return False
 
 

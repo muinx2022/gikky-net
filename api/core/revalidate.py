@@ -93,6 +93,23 @@ def lam_moi_mach(mach) -> None:
     _xep_hang(duong_dan_mach(mach))
 
 
+def lam_moi_mach_slug(mach_id: int, slug: str) -> None:
+    """Làm mới trang của một mạch theo MỘT slug cho trước — đường **CŨ** sau khi đổi tiêu đề.
+
+    `lam_moi_mach` đọc slug của object lúc gọi, nên nó chỉ với tới đường HIỆN TẠI. Đổi
+    tiêu đề sinh ra hai đường phải làm mới (PLAN 5.9: URL cũ 308 về URL mới, nhưng trang
+    ở URL cũ vẫn là một entry cache riêng), và đường cũ không còn ở trên object nữa.
+
+    Dựng một `Mach` **chưa lưu** chỉ để hỏi đường dẫn, thay vì ghép chuỗi tại chỗ: luật
+    `/m/<slug>-<id>` đã có hai bản (`core/digest.py` và `apps/web/lib/url.ts`) và bản thứ
+    ba viết tay là bản sẽ trôi. Object này không bao giờ chạm DB.
+    """
+    from core.digest import duong_dan_mach
+    from core.models.dien_dan import Mach
+
+    _xep_hang(duong_dan_mach(Mach(pk=mach_id, slug=slug)))
+
+
 def _xep_hang(duong_dan: str) -> None:
     """Đăng ký lời gọi vào `on_commit`. Không commit ⇒ không bao giờ chạy."""
     if not _bat():

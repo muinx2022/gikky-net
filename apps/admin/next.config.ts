@@ -13,6 +13,18 @@ const nextConfig: NextConfig = {
         source: "/api/:path*",
         destination: `${API_ORIGIN}/api/:path*`,
       },
+      // Ảnh ở DEV. Prod thì Caddy phục vụ `/media/*` thẳng từ đĩa trên cả
+      // `admin.gikky.net` (`deploy/prod/Caddyfile`), không qua Django và không qua Next.
+      //
+      // Thiếu đúng dòng này thì upload trả 201, hàng trong DB đúng, `<img src>` đúng, và
+      // MỌI tấm ảnh trong trình soạn thảo của khu quản trị 404. Không có gì đỏ ở tầng
+      // Python vì Django phục vụ được; chỉ trình duyệt mới thấy. Bản của `apps/web` mang
+      // đúng chú thích này — hai app Next tách biệt, không có chỗ chung cho một dòng
+      // rewrite, nên đây là bản thứ hai có chủ đích.
+      {
+        source: "/media/:path*",
+        destination: `${API_ORIGIN}/media/:path*`,
+      },
     ];
   },
 };

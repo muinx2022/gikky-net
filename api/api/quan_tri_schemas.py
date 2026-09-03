@@ -21,9 +21,10 @@ qua chúng khi chưa bật `use_attribute_docstrings`).
 from datetime import date, datetime
 from typing import Literal
 
-from ninja import Schema
+from ninja import Field, Schema
 
-from api.schemas import NguoiDungTomTatOut
+from api.schemas import AnhOut, FigureOut, NguoiDungTomTatOut
+from api.schemas_ghi import DAI_TITLE, MocSuaIn
 
 #: Trích yếu nội dung trong hàng đợi/nhật ký — đủ để mod nhận ra, không phải cả bài.
 #: Không phải chuyện thẩm mỹ: `body` của một mốc lên tới 10.000 ký tự (PLAN 5.2), và một
@@ -176,6 +177,122 @@ class MocQuanTriOut(Schema):
     #: xoá" (không gỡ được) với "tôi vừa ẩn" (gỡ được) để biết nút nào bấm được.
     da_bi_an: bool
     da_xoa: bool
+    #: Đã sửa mấy lần — cùng con số hiện công khai ở nhãn "đã sửa N lần" trên trang mạch.
+    edit_count: int
+    #: Nội dung này còn sửa được không — **tính ở SERVER** (PLAN nguyên tắc 10).
+    #:
+    #: Nó nói về TRẠNG THÁI NỘI DUNG (bia mộ / bị ẩn / mạch bị khoá), **không** nói về
+    #: quyền của người đang xem — quyền đọc từ `ModOut.is_superuser`. Trộn hai thứ vào
+    #: một cờ là frontend hết phân biệt được "không sửa được vì mốc đã gỡ" với "không sửa
+    #: được vì bạn không phải superuser", mà hai câu ấy dẫn tới hai hành động khác nhau.
+    #:
+    #: Frontend **không** được dựng lại điều kiện này: luật che sống ở
+    #: `core/doc_noi_dung.py`, và bản chép thứ hai bằng TypeScript là bản sẽ quên
+    #: `hidden_at` đúng lúc Phase 4 thêm một trạng thái nữa.
+    sua_duoc: bool
+
+
+class MocSuaQuanTriOut(Schema):
+    """Một mốc mở ra để SỬA trong khu quản trị — đủ 5 trường, `body` **không che**.
+
+    Khác `MocQuanTriOut` (bảng liệt kê, chỉ có `trich_yeu`) ở đúng chỗ nó tồn tại: form
+    sửa phải prefill được **nguyên văn** thứ đang nằm trong DB, kể cả khi mốc đang bị ẩn.
+    Trả trích yếu cho một form sửa là mod bấm Lưu và cắt cụt bài của người ta còn 200 ký
+    tự — im lặng, đúng hợp đồng, mất dữ liệu.
+
+    Kèm luôn ngữ cảnh mạch (`mach_title`, `mach_da_khoa`, `duong_dan_cong_khai`) để trang
+    sửa không phải gọi thêm một cửa nữa chỉ để biết mình đang sửa bài nào.
+    """
+
+    id: int
+    seq: int
+    mach_id: int
+    mach_title: str
+    mach_da_khoa: bool
+    tac_gia: NguoiDungTomTatOut
+
+    occurred_at: date
+    created_at: datetime
+    loai: str | None
+    body: str
+    #: `"html"` cho mọi hàng đi qua đường ghi (xem `core/models/moc.py`). Frontend đọc nó
+    #: để biết editor có được nạp thẳng chuỗi này vào Tiptap không.
+    body_dinh_dang: str
+    question_for_crowd: str | None
+    figures: list[FigureOut] | None
+
+    edit_count: int
+    edited_at: datetime | None
+    da_bi_an: bool
+    da_xoa: bool
+    sua_duoc: bool
+    duong_dan_cong_khai: str
+
+    #: Gallery đính kèm của mốc — **kể cả khi file đang nằm trong kho cách ly** (mốc/mạch
+    #: bị ẩn ⇒ `dong_bo_kho_anh` dời file đi, xem `core/anh_luu.py`). Mod phải thấy để gỡ,
+    #: và thumbnail hỏng ở khu quản trị là cái giá đúng cho việc file đã bị cách ly thật.
+    anhs: list[AnhOut]
+    #: `SO_ANH_TOI_DA_MOI_MOC`. Trả ra để form biết còn chọn thêm được mấy tấm mà không
+    #: phải gõ cứng số 10 (PLAN nguyên tắc 10) — nới trần ở server là UI tự đúng.
+    tran_anh_moi_moc: int
+
+
+class SuaMocQuanTriIn(MocSuaIn):
+    """Mod sửa mốc — `PATCH /admin/mocs/{id}`. Đúng 5 trường của `MocSuaIn`, cộng `ly_do`.
+
+    **Kế thừa chứ không chép**: 5 trường sửa được của một mốc là MỘT hợp đồng (PLAN 5.2),
+    và bản thứ hai gõ tay ở đây sẽ trôi đúng lúc ai đó nới `DAI_BODY_MOC`. Cơ chế PATCH
+    thật (`model_fields_set`) đi theo luôn — trường không gửi thì không đổi.
+
+    `ly_do` **không** phải một trường của mốc: nó đi vào `AuditLog.meta`, không vào hàng
+    `Moc`. Nên handler phải bóc nó ra TRƯỚC khi dựng `thay_doi`; lọt vào `thay_doi` là
+    `core/ghi.py` ném `ValidationError` "không sửa được trường ly_do".
+    """
+
+    ly_do: str = ""
+
+
+class SuaTieuDeMachIn(Schema):
+    """Mod đổi tiêu đề mạch — `PATCH /admin/machs/{id}/tieu-de`.
+
+    ⚠ Đường có hậu tố `/tieu-de`, **không** phải `PATCH /admin/machs/{id}`: `GET` cùng
+    đường ấy nằm ở router khác nên Django resolver trả 405 — xem khối chú thích ngay trên
+    endpoint ở `api/quan_tri_sua_bai.py`. Ghi đúng đường ở đây vì docstring class đi thẳng
+    vào `openapi.admin.json`.
+
+    `min_length=1` **không** chặn được `"   "`: pydantic đo chuỗi thô, còn đường ghi
+    `strip()` trước khi so. Nên handler còn một phép kiểm nữa cho tiêu đề toàn khoảng
+    trắng, và nó trả 400 chứ không lặng lẽ lưu một tiêu đề rỗng.
+    """
+
+    title: str = Field(min_length=1, max_length=DAI_TITLE)
+    ly_do: str = ""
+
+
+class KetQuaSuaMocOut(Schema):
+    """Kết quả một lượt sửa mốc: có đổi thật không, và mốc SAU khi sửa.
+
+    `da_doi=false` nghĩa là mod gửi lên đúng thứ đang có — không revision, không nhãn
+    "đã sửa", không dòng nhật ký. UI đọc trường này để nói "Không có gì đổi" thay vì báo
+    thành công cho một lượt chẳng làm gì (cùng lý lẽ `KetQuaDoiTrangThaiOut.da_doi`).
+    """
+
+    da_doi: bool
+    moc: MocSuaQuanTriOut
+
+
+class KetQuaSuaTieuDeOut(Schema):
+    """Kết quả một lượt đổi tiêu đề — kèm slug và đường dẫn công khai MỚI.
+
+    Trả `duong_dan_cong_khai` chứ không để frontend ghép `/m/<slug>-<id>`: luật ấy đã có
+    hai bản (`core/digest.py`, `apps/web/lib/url.ts`) và khu quản trị không cần bản thứ
+    ba. Nút "Mở trang công khai ↗" đọc thẳng chuỗi này.
+    """
+
+    da_doi: bool
+    title: str
+    slug: str
+    duong_dan_cong_khai: str
 
 
 class MachQuanTriOut(Schema):

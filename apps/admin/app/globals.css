@@ -177,3 +177,67 @@
       whitespace-nowrap;
   }
 }
+
+/* Vùng soạn thảo Tiptap của khu quản trị (2026-09-03) — `components/soan-thao-quan-tri.tsx`.
+ *
+ * ## Vì sao CSS thật chứ không phải utility trên từng thẻ
+ *
+ * Nội dung trong vùng này do **ProseMirror** dựng ra từ tài liệu, không phải do JSX —
+ * không có chỗ nào để gắn `className` vào một `<blockquote>` mà mod vừa gõ. Đây là ca mà
+ * `@apply` trên một selector con là cách DUY NHẤT, không phải cách lười.
+ *
+ * ## Chỉ token, không mã màu
+ *
+ * `apps/web/e2e/don-vi/quan-tri-giao-dien.spec.ts` cho phép mã hex ở đúng khối `@theme`;
+ * mọi màu dưới đây đi qua utility của Tailwind (`text-muc`, `border-vien`…), tức đi qua
+ * token — đổi theme là cả vùng soạn đổi theo mà không dòng nào ở đây phải biết.
+ *
+ * Danh sách thẻ ở đây là **tập con allowlist** của `core/lam_sach_html.py`; thẻ nào server
+ * gỡ thì không cần kiểu ở đây. */
+@layer components {
+  .soan-thao-quan-tri {
+    @apply min-h-40 px-3 py-2 text-sm leading-relaxed text-muc outline-none;
+  }
+
+  .soan-thao-quan-tri p {
+    @apply my-2;
+  }
+
+  .soan-thao-quan-tri h2 {
+    @apply mt-4 mb-2 text-lg font-semibold;
+  }
+
+  .soan-thao-quan-tri h3 {
+    @apply mt-3 mb-1.5 text-base font-semibold;
+  }
+
+  .soan-thao-quan-tri ul {
+    @apply my-2 list-disc pl-5;
+  }
+
+  .soan-thao-quan-tri ol {
+    @apply my-2 list-decimal pl-5;
+  }
+
+  .soan-thao-quan-tri li {
+    @apply my-0.5;
+  }
+
+  .soan-thao-quan-tri blockquote {
+    @apply my-2 border-l-2 border-vien pl-3 text-muc-mo;
+  }
+
+  .soan-thao-quan-tri code {
+    @apply rounded bg-nen-mo px-1 py-0.5 font-mono text-xs;
+  }
+
+  .soan-thao-quan-tri a {
+    @apply text-nhan underline;
+  }
+
+  /* Ảnh trong bài: `max-w-full` là bắt buộc — một tấm 1600px làm cả vùng soạn cuộn
+     ngang, và mod sẽ tưởng bài bị vỡ chứ không tưởng ảnh to. */
+  .soan-thao-quan-tri img {
+    @apply my-2 block h-auto max-w-full rounded-lg border border-vien;
+  }
+}

@@ -26,12 +26,6 @@ from django.http import HttpResponse
 from ninja import File, Router, Status
 from ninja.files import UploadedFile
 
-from core.anh import (
-    ANH_QUA_NANG,
-    BYTE_TOI_DA,
-    LoiAnh,
-    xu_ly_anh_tai_len,
-)
 from core.anh_luu import url_anh
 from core.anh_noi_dung import luu_anh_noi_dung
 from core.ghi import SO_ANH_TOI_DA_MOI_MOC, QuaNhieuAnh, them_anh_moc, xoa_anh_moc
@@ -40,6 +34,7 @@ from core.models.moc import MocAnh
 from core.revalidate import lam_moi_mach
 from core.thoi_gian import nua_dem_vn_ke_tiep
 
+from api.anh_chung import doi_khong_qua_nang, xu_ly_hoac_loi_http
 from api.ghi_chung import doi_con_song, nap_moc
 from api.loi import KHONG_TIM_THAY, LoiOut, LoiThoiGianOut, loi_thoi_gian
 from api.quyen import (
@@ -56,33 +51,6 @@ router = Router()
 
 #: Mốc đã đủ `SO_ANH_TOI_DA_MOI_MOC` ảnh. 409.
 QUA_NHIEU_ANH = "qua_nhieu_anh"
-
-
-def _doi_khong_qua_nang(file: UploadedFile) -> None:
-    """Phép kiểm 1 **trước khi `read()`** — dùng chung cho mọi cửa nhận file ở đây.
-
-    `xu_ly_anh_tai_len` cũng kiểm byte, nhưng nó chỉ chạy được sau khi ai đó đã đọc cả
-    thân request vào RAM/đĩa tạm — tức sau khi thiệt hại đã xảy ra. `file.size` đến từ
-    `Content-Length` của phần multipart nên hỏi được ngay, đúng thứ tự mà `core/anh.py`
-    đòi. `api/avatar.py` giữ một bản chép tay của cùng phép kiểm — nó là cửa per-user
-    tuyệt đối, không dùng gì khác trong file này; hai cửa ở ĐÂY thì dùng chung hàm này,
-    vì chúng còn dùng chung cả `_xu_ly_hoac_loi_http` ngay dưới.
-    """
-    if file.size is not None and file.size > BYTE_TOI_DA:
-        raise LoiGhi(
-            413,
-            ANH_QUA_NANG,
-            f"Ảnh nặng {file.size / 1024 / 1024:.1f}MB, "
-            f"tối đa {BYTE_TOI_DA // 1024 // 1024}MB.",
-        )
-
-
-def _xu_ly_hoac_loi_http(du_lieu: bytes):
-    """Bảy phép kiểm → `AnhDaXuLy`, `LoiAnh` dịch sang mã HTTP. 413 cho nặng, 400 còn lại."""
-    try:
-        return xu_ly_anh_tai_len(du_lieu)
-    except LoiAnh as e:
-        raise LoiGhi(413 if e.ma == ANH_QUA_NANG else 400, e.ma, e.detail) from e
 
 
 @router.post(
@@ -128,11 +96,11 @@ def tai_anh_moc(request, moc_id: int, file: UploadedFile = File(...)):
     doi_mach_tuong_tac_duoc(moc.mach)
     doi_con_song(moc, "Mốc")
 
-    _doi_khong_qua_nang(file)
+    doi_khong_qua_nang(file)
     # Tái mã hoá chạy NGOÀI transaction và ngoài mọi khoá: nó tốn khoảng một giây với ảnh
     # 8MB, và giữ khoá hàng `Moc` suốt thời gian đó là bắt mọi lượt upload của cùng mốc
     # xếp hàng sau nó.
-    anh = _xu_ly_hoac_loi_http(file.read())
+    anh = xu_ly_hoac_loi_http(file.read())
 
     try:
         hang = them_anh_moc(moc=moc, anh=anh)
@@ -242,8 +210,8 @@ def tai_anh_noi_dung(request, response: HttpResponse, file: UploadedFile = File(
             thu_lai_tu=nua_dem_vn_ke_tiep(),
         )
 
-    _doi_khong_qua_nang(file)
-    anh = _xu_ly_hoac_loi_http(file.read())
+    doi_khong_qua_nang(file)
+    anh = xu_ly_hoac_loi_http(file.read())
     hang = luu_anh_noi_dung(user=request.user, anh=anh)
     return Status(
         201,

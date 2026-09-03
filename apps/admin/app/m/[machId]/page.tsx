@@ -6,6 +6,7 @@ import {
   quanTriDatAnMoc,
   quanTriDatKhoaMach,
   quanTriLietKeBinhLuan,
+  quanTriSuaTieuDeMach,
   quanTriXemMach,
   type BinhLuanDongOut,
   type MachQuanTriOut,
@@ -28,6 +29,7 @@ import {
 import { useDanhSach } from "../../../lib/danh-sach";
 import { GOC_API, headerGhi, moTaLoi } from "../../../lib/api";
 import { useHanhDong } from "../../../lib/hanh-dong";
+import { useQuanTri } from "../../../components/khung/ngu-canh";
 import { useTieuDeTrang } from "../../../lib/tieu-de";
 
 /** Số hàng mỗi trang. Một hằng cho CẢ HAI phía: `limit` gửi lên server và mẫu số để
@@ -46,6 +48,12 @@ export default function TrangChiTietMach() {
   const mach_id = Number(tham_so.machId);
   const [mach, datMach] = useState<MachQuanTriOut | null>(null);
   const [loi, datLoi] = useState<string | null>(null);
+  const { mod } = useQuanTri();
+  // Ô sửa tiêu đề mở ra tại chỗ, không phải một trang riêng: nó đúng MỘT trường, và một
+  // trang cho một `<input>` là hai lần điều hướng cho một lần gõ.
+  const [dang_sua_tieu_de, datDangSuaTieuDe] = useState(false);
+  const [tieu_de_moi, datTieuDeMoi] = useState("");
+  const [ly_do_tieu_de, datLyDoTieuDe] = useState("");
 
   const nap = useCallback(async () => {
     datLoi(null);
@@ -173,6 +181,24 @@ export default function TrangChiTietMach() {
           >
             {mach.da_khoa ? "Mở khoá" : "Khoá mạch"}
           </button>
+          {/* Sửa tiêu đề: **chỉ superuser**, và ẩn hẳn khi mạch đang bị khoá — server trả
+              403 `mach_bi_khoa` ở đúng ca ấy, nên một nút bấm được mà chắc chắn hỏng là
+              đúng thứ PLAN mục 4 gọi là "nút chết". Mạch bị ẨN thì vẫn sửa được. */}
+          {mod.is_superuser && !mach.da_khoa && !dang_sua_tieu_de && (
+            <button
+              type="button"
+              className="nut"
+              disabled={dang_chay}
+              data-testid="nut-sua-tieu-de"
+              onClick={() => {
+                datTieuDeMoi(mach.title);
+                datLyDoTieuDe("");
+                datDangSuaTieuDe(true);
+              }}
+            >
+              Sửa tiêu đề
+            </button>
+          )}
           <Link href={`/u/${mach.tac_gia.username}`} className="nut">
             Hồ sơ tác giả
           </Link>
@@ -181,10 +207,74 @@ export default function TrangChiTietMach() {
             target="_blank"
             rel="noreferrer"
             className="nut"
+            data-testid="link-cong-khai"
           >
             Mở trang công khai ↗
           </a>
         </div>
+
+        {dang_sua_tieu_de && (
+          <div className="mt-3 space-y-2 border-t border-vien pt-3">
+            <label className="block text-sm font-medium" htmlFor="o-tieu-de">
+              Tiêu đề mới
+            </label>
+            <input
+              id="o-tieu-de"
+              type="text"
+              className="o-nhap"
+              value={tieu_de_moi}
+              disabled={dang_chay}
+              onChange={(e) => datTieuDeMoi(e.target.value)}
+              data-testid="o-tieu-de"
+            />
+            <label className="block text-sm font-medium" htmlFor="o-ly-do-tieu-de">
+              Lý do <span className="text-muc-mo">(tuỳ chọn — ghi vào nhật ký)</span>
+            </label>
+            <input
+              id="o-ly-do-tieu-de"
+              type="text"
+              className="o-nhap"
+              value={ly_do_tieu_de}
+              disabled={dang_chay}
+              onChange={(e) => datLyDoTieuDe(e.target.value)}
+              data-testid="o-ly-do-tieu-de"
+            />
+            <p className="mono text-xs text-muc-mo">
+              Đổi tiêu đề là đổi cả đường dẫn công khai; đường cũ vẫn mở được và chuyển
+              hướng sang đường mới. Hành động ghi vào nhật ký quản trị.
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className="nut nut-chinh"
+                disabled={dang_chay}
+                data-testid="nut-luu-tieu-de"
+                onClick={() =>
+                  void chay(async () => {
+                    const kq = await quanTriSuaTieuDeMach({
+                      baseUrl: GOC_API,
+                      headers: headerGhi(),
+                      path: { mach_id },
+                      body: { title: tieu_de_moi, ly_do: ly_do_tieu_de },
+                    });
+                    if (kq.error === undefined) datDangSuaTieuDe(false);
+                    return kq;
+                  })
+                }
+              >
+                Lưu tiêu đề
+              </button>
+              <button
+                type="button"
+                className="nut"
+                disabled={dang_chay}
+                onClick={() => datDangSuaTieuDe(false)}
+              >
+                Huỷ
+              </button>
+            </div>
+          </div>
+        )}
       </The>
 
       <The
@@ -209,27 +299,46 @@ export default function TrangChiTietMach() {
                       {m.da_xoa && (
                         <NhanTrangThai tone="chu-y">tác giả đã xoá</NhanTrangThai>
                       )}
+                      {m.edit_count > 0 && (
+                        <NhanTrangThai tone="nhan">
+                          đã sửa {m.edit_count} lần
+                        </NhanTrangThai>
+                      )}
                     </span>
                   </td>
                   <td className="px-3 py-2.5 text-right">
-                    <button
-                      type="button"
-                      className="nut nut-nho"
-                      disabled={dang_chay}
-                      data-testid={`nut-an-moc-${m.id}`}
-                      onClick={() =>
-                        chay(() =>
-                          quanTriDatAnMoc({
-                            baseUrl: GOC_API,
-                            headers: headerGhi(),
-                            path: { moc_id: m.id },
-                            body: { an: !m.da_bi_an, ly_do: "" },
-                          }),
-                        )
-                      }
-                    >
-                      {m.da_bi_an ? "Gỡ ẩn" : "Ẩn"}
-                    </button>
+                    <span className="inline-flex gap-1.5">
+                      {/* Link "Sửa" chỉ hiện khi nội dung sửa được VÀ người xem là
+                          superuser — hai điều kiện khác nhau, và cả hai đến từ server
+                          (`sua_duoc` · `ModOut.is_superuser`). Không hiện nút xám. */}
+                      {m.sua_duoc && mod.is_superuser && (
+                        <Link
+                          href={`/m/${mach_id}/moc/${m.id}`}
+                          className="nut nut-nho"
+                          data-testid={`link-sua-moc-${m.id}`}
+                        >
+                          Sửa
+                        </Link>
+                      )}
+                      <button
+                        type="button"
+                        className="nut nut-nho"
+                        disabled={dang_chay}
+                        data-testid={`nut-an-moc-${m.id}`}
+                        onClick={() =>
+                          chay(() =>
+                            quanTriDatAnMoc({
+                              baseUrl: GOC_API,
+                              headers: headerGhi(),
+                              path: { moc_id: m.id },
+                              body: { an: !m.da_bi_an, ly_do: "" },
+                            }),
+                          )
+                        }
+                      >
+                        {m.da_bi_an ? "Gỡ ẩn" : "Ẩn"}
+                      </button>
+                    </span>
                   </td>
                 </tr>
               ))}
@@ -238,7 +347,9 @@ export default function TrangChiTietMach() {
         </div>
         <p className="mono border-t border-vien px-4 py-3 text-xs text-muc-mo">
           Mốc = một lần tác giả viết thêm vào bài. Ẩn một mốc **không** xoá ô của nó trên
-          spine (PLAN 5.2) — số mốc không lùi, người đọc vẫn thấy có gì đó đã bị gỡ.
+          spine (PLAN 5.2) — số mốc không lùi, người đọc vẫn thấy có gì đó đã bị gỡ. Sửa
+          một mốc ở đây thì bản hiện tại thành bản cũ xem được công khai, mốc mang nhãn
+          «đã sửa», và hành động vào nhật ký quản trị.
         </p>
       </The>
 

@@ -7,6 +7,86 @@ export type ClientOptions = {
 };
 
 /**
+ * AnhNoiDungOut
+ *
+ * Ảnh vừa tải lên để **nhúng thẳng vào thân bài** — `POST /me/anh` (2026-08-24).
+ *
+ * Hình dạng cố tình KHÁC `AnhOut`, và khác đúng ở chỗ nói lên bản chất: không `id`
+ * (không có gì để gọi lại — không có cửa `DELETE`, xem docstring endpoint), không
+ * `position` (không có gallery để xếp), không `url_thumb` (ảnh giữa bài đọc bằng bản
+ * chính), không `exif_taken_at` (nó là gợi ý cho `occurred_at` của MỐC, mà cửa này chạy
+ * trước khi mốc tồn tại). Còn lại đúng ba trường editor cần.
+ *
+ * `width`/`height` chứ không `w`/`h` như `AnhOut`: chúng đi thẳng vào thuộc tính cùng
+ * tên của node ảnh trong Tiptap, và một lượt đổi tên ở tầng frontend là đúng loại lệch
+ * không ai nhớ. Kích thước là của ảnh **đã tái mã hoá** (`core/anh.py` thu về cạnh
+ * `CANH_TOI_DA`), tức của đúng file đang được phục vụ.
+ */
+export type AnhNoiDungOut = {
+    /**
+     * Height
+     */
+    height: number | null;
+    /**
+     * Url
+     */
+    url: string;
+    /**
+     * Width
+     */
+    width: number | null;
+};
+
+/**
+ * AnhOut
+ *
+ * Một ảnh trong gallery của mốc — Phase 5.
+ *
+ * **Không trả `khoa_luu_tru` ra ngoài.** Client cần URL, và URL là thứ `STORAGES` sinh
+ * ra; trả thêm khoá thô là mời frontend tự ghép đường dẫn, rồi ngày đổi sang R2 (nơi
+ * URL có chữ ký và hạn dùng) thì bản ghép tay ấy vẫn "chạy" ở dev và chết trên prod.
+ *
+ * `w`/`h` là kích thước ảnh **đã lưu**, không phải file gốc — chúng dùng để đặt
+ * `width`/`height` trên thẻ `<img>` chống layout shift, nên phải khớp đúng file đang
+ * được phục vụ. `null` chỉ xảy ra với hàng cũ ghi trước Phase 5 (không có hàng nào).
+ *
+ * `exif_taken_at` là ngày chụp **server** đọc từ file gốc trước khi tái mã hoá xoá sạch
+ * EXIF. Nó là *gợi ý* cho `occurred_at`, không phải nguồn của nó: PLAN nguyên tắc 3 nói
+ * `occurred_at` do người dùng đặt, và một tấm ảnh chụp lại màn hình cũ có ngày chụp
+ * chẳng liên quan gì tới ngày sự việc.
+ */
+export type AnhOut = {
+    /**
+     * Exif Taken At
+     */
+    exif_taken_at: string | null;
+    /**
+     * H
+     */
+    h: number | null;
+    /**
+     * Id
+     */
+    id: number;
+    /**
+     * Position
+     */
+    position: number;
+    /**
+     * Url
+     */
+    url: string;
+    /**
+     * Url Thumb
+     */
+    url_thumb: string;
+    /**
+     * W
+     */
+    w: number | null;
+};
+
+/**
  * BanIn
  *
  * Body của `POST /users/{username}/ban`.
@@ -355,6 +435,40 @@ export type DongBaoCaoIn = {
 };
 
 /**
+ * FigureIn
+ *
+ * Một cặp trong dải số của mốc. Thuần hiển thị — server không validate ngữ nghĩa.
+ */
+export type FigureIn = {
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Value
+     */
+    value: string;
+};
+
+/**
+ * FigureOut
+ *
+ * Một cặp trong dải số của mốc, vd `{label: "GIÁ VÀO", value: "27.80"}`.
+ *
+ * Thuần hiển thị — server không validate ngữ nghĩa (PLAN 5.2).
+ */
+export type FigureOut = {
+    /**
+     * Label
+     */
+    label: string;
+    /**
+     * Value
+     */
+    value: string;
+};
+
+/**
  * GanModSubIn
  *
  * Body của `POST /admin/subs/{slug}/mods`.
@@ -392,6 +506,51 @@ export type KetQuaDoiTrangThaiOut = {
      * Dang Bat
      */
     dang_bat: boolean;
+};
+
+/**
+ * KetQuaSuaMocOut
+ *
+ * Kết quả một lượt sửa mốc: có đổi thật không, và mốc SAU khi sửa.
+ *
+ * `da_doi=false` nghĩa là mod gửi lên đúng thứ đang có — không revision, không nhãn
+ * "đã sửa", không dòng nhật ký. UI đọc trường này để nói "Không có gì đổi" thay vì báo
+ * thành công cho một lượt chẳng làm gì (cùng lý lẽ `KetQuaDoiTrangThaiOut.da_doi`).
+ */
+export type KetQuaSuaMocOut = {
+    /**
+     * Da Doi
+     */
+    da_doi: boolean;
+    moc: MocSuaQuanTriOut;
+};
+
+/**
+ * KetQuaSuaTieuDeOut
+ *
+ * Kết quả một lượt đổi tiêu đề — kèm slug và đường dẫn công khai MỚI.
+ *
+ * Trả `duong_dan_cong_khai` chứ không để frontend ghép `/m/<slug>-<id>`: luật ấy đã có
+ * hai bản (`core/digest.py`, `apps/web/lib/url.ts`) và khu quản trị không cần bản thứ
+ * ba. Nút "Mở trang công khai ↗" đọc thẳng chuỗi này.
+ */
+export type KetQuaSuaTieuDeOut = {
+    /**
+     * Da Doi
+     */
+    da_doi: boolean;
+    /**
+     * Duong Dan Cong Khai
+     */
+    duong_dan_cong_khai: string;
+    /**
+     * Slug
+     */
+    slug: string;
+    /**
+     * Title
+     */
+    title: string;
 };
 
 /**
@@ -683,6 +842,10 @@ export type MocQuanTriOut = {
      */
     da_xoa: boolean;
     /**
+     * Edit Count
+     */
+    edit_count: number;
+    /**
      * Id
      */
     id: number;
@@ -694,11 +857,112 @@ export type MocQuanTriOut = {
      * Seq
      */
     seq: number;
+    /**
+     * Sua Duoc
+     */
+    sua_duoc: boolean;
     tac_gia: NguoiDungTomTatOut;
     /**
      * Trich Yeu
      */
     trich_yeu: string;
+};
+
+/**
+ * MocSuaQuanTriOut
+ *
+ * Một mốc mở ra để SỬA trong khu quản trị — đủ 5 trường, `body` **không che**.
+ *
+ * Khác `MocQuanTriOut` (bảng liệt kê, chỉ có `trich_yeu`) ở đúng chỗ nó tồn tại: form
+ * sửa phải prefill được **nguyên văn** thứ đang nằm trong DB, kể cả khi mốc đang bị ẩn.
+ * Trả trích yếu cho một form sửa là mod bấm Lưu và cắt cụt bài của người ta còn 200 ký
+ * tự — im lặng, đúng hợp đồng, mất dữ liệu.
+ *
+ * Kèm luôn ngữ cảnh mạch (`mach_title`, `mach_da_khoa`, `duong_dan_cong_khai`) để trang
+ * sửa không phải gọi thêm một cửa nữa chỉ để biết mình đang sửa bài nào.
+ */
+export type MocSuaQuanTriOut = {
+    /**
+     * Anhs
+     */
+    anhs: Array<AnhOut>;
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Body Dinh Dang
+     */
+    body_dinh_dang: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Da Bi An
+     */
+    da_bi_an: boolean;
+    /**
+     * Da Xoa
+     */
+    da_xoa: boolean;
+    /**
+     * Duong Dan Cong Khai
+     */
+    duong_dan_cong_khai: string;
+    /**
+     * Edit Count
+     */
+    edit_count: number;
+    /**
+     * Edited At
+     */
+    edited_at: string | null;
+    /**
+     * Figures
+     */
+    figures: Array<FigureOut> | null;
+    /**
+     * Id
+     */
+    id: number;
+    /**
+     * Loai
+     */
+    loai: string | null;
+    /**
+     * Mach Da Khoa
+     */
+    mach_da_khoa: boolean;
+    /**
+     * Mach Id
+     */
+    mach_id: number;
+    /**
+     * Mach Title
+     */
+    mach_title: string;
+    /**
+     * Occurred At
+     */
+    occurred_at: string;
+    /**
+     * Question For Crowd
+     */
+    question_for_crowd: string | null;
+    /**
+     * Seq
+     */
+    seq: number;
+    /**
+     * Sua Duoc
+     */
+    sua_duoc: boolean;
+    tac_gia: NguoiDungTomTatOut;
+    /**
+     * Tran Anh Moi Moc
+     */
+    tran_anh_moi_moc: number;
 };
 
 /**
@@ -961,6 +1225,46 @@ export type NoiDungBiBaoCaoOut = {
 };
 
 /**
+ * SuaMocQuanTriIn
+ *
+ * Mod sửa mốc — `PATCH /admin/mocs/{id}`. Đúng 5 trường của `MocSuaIn`, cộng `ly_do`.
+ *
+ * **Kế thừa chứ không chép**: 5 trường sửa được của một mốc là MỘT hợp đồng (PLAN 5.2),
+ * và bản thứ hai gõ tay ở đây sẽ trôi đúng lúc ai đó nới `DAI_BODY_MOC`. Cơ chế PATCH
+ * thật (`model_fields_set`) đi theo luôn — trường không gửi thì không đổi.
+ *
+ * `ly_do` **không** phải một trường của mốc: nó đi vào `AuditLog.meta`, không vào hàng
+ * `Moc`. Nên handler phải bóc nó ra TRƯỚC khi dựng `thay_doi`; lọt vào `thay_doi` là
+ * `core/ghi.py` ném `ValidationError` "không sửa được trường ly_do".
+ */
+export type SuaMocQuanTriIn = {
+    /**
+     * Body
+     */
+    body?: string | null;
+    /**
+     * Figures
+     */
+    figures?: Array<FigureIn> | null;
+    /**
+     * Loai
+     */
+    loai?: string | null;
+    /**
+     * Ly Do
+     */
+    ly_do?: string;
+    /**
+     * Occurred At
+     */
+    occurred_at?: string | null;
+    /**
+     * Question For Crowd
+     */
+    question_for_crowd?: string | null;
+};
+
+/**
  * SuaNguoiDungIn
  *
  * Body của `PATCH /admin/users/{username}`. Trường `None` = **không đổi**.
@@ -1003,6 +1307,31 @@ export type SuaSubIn = {
      * Ten
      */
     ten?: string | null;
+};
+
+/**
+ * SuaTieuDeMachIn
+ *
+ * Mod đổi tiêu đề mạch — `PATCH /admin/machs/{id}/tieu-de`.
+ *
+ * ⚠ Đường có hậu tố `/tieu-de`, **không** phải `PATCH /admin/machs/{id}`: `GET` cùng
+ * đường ấy nằm ở router khác nên Django resolver trả 405 — xem khối chú thích ngay trên
+ * endpoint ở `api/quan_tri_sua_bai.py`. Ghi đúng đường ở đây vì docstring class đi thẳng
+ * vào `openapi.admin.json`.
+ *
+ * `min_length=1` **không** chặn được `"   "`: pydantic đo chuỗi thô, còn đường ghi
+ * `strip()` trước khi so. Nên handler còn một phép kiểm nữa cho tiêu đề toàn khoảng
+ * trắng, và nó trả 400 chứ không lặng lẽ lưu một tiêu đề rỗng.
+ */
+export type SuaTieuDeMachIn = {
+    /**
+     * Ly Do
+     */
+    ly_do?: string;
+    /**
+     * Title
+     */
+    title: string;
 };
 
 /**
@@ -1332,6 +1661,89 @@ export type TrangThaiMachOut = {
      */
     mo: number;
 };
+
+export type QuanTriTaiAnhNoiDungData = {
+    /**
+     * FileParams
+     */
+    body: {
+        /**
+         * File
+         */
+        file: Blob | File;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/admin/anh';
+};
+
+export type QuanTriTaiAnhNoiDungErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Request Entity Too Large
+     */
+    413: LoiOut;
+};
+
+export type QuanTriTaiAnhNoiDungError = QuanTriTaiAnhNoiDungErrors[keyof QuanTriTaiAnhNoiDungErrors];
+
+export type QuanTriTaiAnhNoiDungResponses = {
+    /**
+     * Created
+     */
+    201: AnhNoiDungOut;
+};
+
+export type QuanTriTaiAnhNoiDungResponse = QuanTriTaiAnhNoiDungResponses[keyof QuanTriTaiAnhNoiDungResponses];
+
+export type QuanTriXoaAnhMocData = {
+    body?: never;
+    path: {
+        /**
+         * Anh Id
+         */
+        anh_id: number;
+    };
+    query?: never;
+    url: '/api/admin/anh/{anh_id}';
+};
+
+export type QuanTriXoaAnhMocErrors = {
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type QuanTriXoaAnhMocError = QuanTriXoaAnhMocErrors[keyof QuanTriXoaAnhMocErrors];
+
+export type QuanTriXoaAnhMocResponses = {
+    /**
+     * OK
+     */
+    200: AnhOut;
+};
+
+export type QuanTriXoaAnhMocResponse = QuanTriXoaAnhMocResponses[keyof QuanTriXoaAnhMocResponses];
 
 export type QuanTriXoaCaiDatGoogleData = {
     body?: never;
@@ -1767,6 +2179,48 @@ export type QuanTriDatKhoaMachResponses = {
 
 export type QuanTriDatKhoaMachResponse = QuanTriDatKhoaMachResponses[keyof QuanTriDatKhoaMachResponses];
 
+export type QuanTriSuaTieuDeMachData = {
+    body: SuaTieuDeMachIn;
+    path: {
+        /**
+         * Mach Id
+         */
+        mach_id: number;
+    };
+    query?: never;
+    url: '/api/admin/machs/{mach_id}/tieu-de';
+};
+
+export type QuanTriSuaTieuDeMachErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type QuanTriSuaTieuDeMachError = QuanTriSuaTieuDeMachErrors[keyof QuanTriSuaTieuDeMachErrors];
+
+export type QuanTriSuaTieuDeMachResponses = {
+    /**
+     * OK
+     */
+    200: KetQuaSuaTieuDeOut;
+};
+
+export type QuanTriSuaTieuDeMachResponse = QuanTriSuaTieuDeMachResponses[keyof QuanTriSuaTieuDeMachResponses];
+
 export type QuanTriToiData = {
     body?: never;
     path?: never;
@@ -1795,6 +2249,90 @@ export type QuanTriToiResponses = {
 };
 
 export type QuanTriToiResponse = QuanTriToiResponses[keyof QuanTriToiResponses];
+
+export type QuanTriXemMocData = {
+    body?: never;
+    path: {
+        /**
+         * Moc Id
+         */
+        moc_id: number;
+    };
+    query?: never;
+    url: '/api/admin/mocs/{moc_id}';
+};
+
+export type QuanTriXemMocErrors = {
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type QuanTriXemMocError = QuanTriXemMocErrors[keyof QuanTriXemMocErrors];
+
+export type QuanTriXemMocResponses = {
+    /**
+     * OK
+     */
+    200: MocSuaQuanTriOut;
+};
+
+export type QuanTriXemMocResponse = QuanTriXemMocResponses[keyof QuanTriXemMocResponses];
+
+export type QuanTriSuaMocData = {
+    body: SuaMocQuanTriIn;
+    path: {
+        /**
+         * Moc Id
+         */
+        moc_id: number;
+    };
+    query?: never;
+    url: '/api/admin/mocs/{moc_id}';
+};
+
+export type QuanTriSuaMocErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+    /**
+     * Conflict
+     */
+    409: LoiOut;
+};
+
+export type QuanTriSuaMocError = QuanTriSuaMocErrors[keyof QuanTriSuaMocErrors];
+
+export type QuanTriSuaMocResponses = {
+    /**
+     * OK
+     */
+    200: KetQuaSuaMocOut;
+};
+
+export type QuanTriSuaMocResponse = QuanTriSuaMocResponses[keyof QuanTriSuaMocResponses];
 
 export type QuanTriDatAnMocData = {
     body: DatAnIn;
@@ -1833,6 +2371,64 @@ export type QuanTriDatAnMocResponses = {
 };
 
 export type QuanTriDatAnMocResponse = QuanTriDatAnMocResponses[keyof QuanTriDatAnMocResponses];
+
+export type QuanTriTaiAnhMocData = {
+    /**
+     * FileParams
+     */
+    body: {
+        /**
+         * File
+         */
+        file: Blob | File;
+    };
+    path: {
+        /**
+         * Moc Id
+         */
+        moc_id: number;
+    };
+    query?: never;
+    url: '/api/admin/mocs/{moc_id}/anh';
+};
+
+export type QuanTriTaiAnhMocErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+    /**
+     * Conflict
+     */
+    409: LoiOut;
+    /**
+     * Request Entity Too Large
+     */
+    413: LoiOut;
+};
+
+export type QuanTriTaiAnhMocError = QuanTriTaiAnhMocErrors[keyof QuanTriTaiAnhMocErrors];
+
+export type QuanTriTaiAnhMocResponses = {
+    /**
+     * Created
+     */
+    201: AnhOut;
+};
+
+export type QuanTriTaiAnhMocResponse = QuanTriTaiAnhMocResponses[keyof QuanTriTaiAnhMocResponses];
 
 export type QuanTriTaoNguoiDungData = {
     body: TaoNguoiDungIn;
