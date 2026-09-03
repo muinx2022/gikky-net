@@ -1540,3 +1540,29 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Bốn luật hai phiên đã chốt với nhau, hiện KHÔNG nằm ở đâu trong repo**: `git archive HEAD` sau khi commit đủ · đóng gói ra FILE + so kích thước rồi mới giải nén · `pg_dump` trước mọi lượt có thể đổi schema · nhắn phiên khác trước khi deploy.
 - **Vì sao không sửa ngay**: sửa README là đổi quy trình deploy — user quyết. Và phép kiểm "cây có đủ việc người khác không" phải hỏi **git**, không hỏi đĩa: `git status --porcelain` còn dòng của người khác ⇒ `git archive` sẽ xoá nó khỏi prod; chặt hơn thì `git archive HEAD | tar tf - | grep -c <đường/dẫn/file>`.
 
+### P-20260903-24 · [MỞ] · CHẶN — `0026_luotxem_da_dang_nhap` (chưa commit, lượt "lượt xem") tựa lên `0025_hoithoai_tinnhan`, đúng migration sắp RỜI `main`
+- **Thấy lúc**: user yêu cầu tách tính năng nhắn tin riêng khỏi `main` sang nhánh `nhan-tin-rieng` (2026-09-03, chiều)
+- **Ở đâu**: `api/core/migrations/0026_luotxem_da_dang_nhap.py:9` — `dependencies = [('core', '0025_hoithoai_tinnhan')]`
+- **Bằng chứng**: `grep dependencies` file đó; `django_migrations` trên `gikky_dev` đã có hàng `0026_luotxem_da_dang_nhap` (đã áp). Gỡ file `0025` khỏi cây khi `0026` còn trỏ về nó ⇒ **mọi `manage.py` nổ `NodeNotFoundError`**, kể cả dev server đang chạy (PID 7672, cổng 8000) và `migrate` trên prod.
+- **Vì sao không sửa ngay**: file thuộc lượt khác, chưa commit, chưa rõ chủ; sửa một dòng dependency là việc của lượt ấy hoặc cần user duyệt. Cách sửa: trỏ về `0024_khachngay_muoingay_luotxem_khach_luotxem_nguon_and_more` (số thứ tự lệch không sao với Django, tên mới là thứ nó nhìn). Đã báo phiên `gikky-net-3b`.
+- **Kéo theo**: bước revert nhắn tin khỏi `main` **ĐANG DỪNG** chờ hai quyết định của user (xem khối cập nhật ngay dưới).
+
+> **Cập nhật cụm nhắn tin riêng (2026-09-03, chiều) — user chốt hướng, các mục P-20260903-14..22 đổi trạng thái theo:**
+> - **User chốt: *"không muốn ai, ngay cả admin, đọc được msg private"*.** ⇒ `P-20260903-18` (mở cửa mod đọc/kiểm duyệt tin nhắn) → **KHÔNG SỬA (user chốt)**. Hướng đúng là **mã hoá đầu cuối** — một dự án riêng, phải đánh giá lại từ thiết kế (khoá sống ở trình duyệt, mất máy = mất lịch sử, Google OAuth không có mật khẩu để dẫn xuất khoá, nhiều thiết bị, metadata ai-nhắn-ai vẫn lộ).
+> - **Toàn bộ tính năng chuyển sang nhánh `nhan-tin-rieng` (= `544f89c`) để đánh giá lại.** Các mục `-14`, `-16`, `-17`, `-21` (nút trên hồ sơ người vô hiệu · `don_rac_e2e` · chặn người · khoảng trống poll) đi theo nhánh — không làm trên `main`. `-15` (no-store trên response lỗi của `api_v1`) và `-19`, `-20`, `-22` (docstring 3 vs 8 loại · `_dung_cap` · số 151 trong CLAUDE.md) **vẫn MỞ trên `main`**, vì chúng không thuộc riêng cụm nhắn tin.
+> - ⚠ **Prod đang chạy `e602e5a` — CÓ tính năng nhắn tin, `0025` đã áp** (theo phiên `gikky-net-3b`; sự cố 16:03–16:30 là web mới/api cũ). Gỡ khỏi `main` xong thì **lần deploy `main` kế tiếp gỡ nhắn tin khỏi prod**; hai bảng `core_hoithoai`/`core_tinnhan` trên prod có thể chứa DM thật ⇒ **KHÔNG BAO GIỜ `migrate core 0024` trên prod**. Để bảng đó lại — Django không phàn nàn về migration đã áp mà không còn file.
+> - `gikky_dev`: `0025` và `0026` đều đã áp, hai bảng nhắn tin trống (0 hàng). **Không unapply** — `0026` tựa lên `0025` nên lùi `0025` là lùi cả cột của lượt lượt-xem.
+
+### P-20260904-1 · [MỞ] · NHỎ — hàng rào `X4` (middleware gửi đủ trường schema) khớp tên trường trên TOÀN file `middleware.ts`, không giới hạn trong object `body:`
+- **Thấy lúc**: nghiệm thu lượt "modal ai đang online" (`plans/2026-08-31-modal-online.md`)
+- **Ở đâu**: `apps/web/e2e/don-vi/dem-luot-xem.spec.ts::middlewareCoGui` (regex `\b<ten>\s*[,:]` trên nguồn đã bỏ chú thích)
+- **Bằng chứng**: một biến/thuộc tính trùng tên (vd `referer`) xuất hiện ở bất kỳ đâu trong file cũng làm X4 xanh dù `body:` thiếu trường ấy. Hiện chưa có ca nào lọt; `X4b` chống-rỗng chỉ chạy trên nguồn dựng tay.
+- **Vì sao không sửa ngay**: giới hạn của hàng rào, không phải lỗi đang xảy ra; siết bằng cách cắt đúng object `body:` là việc riêng, ngoài phạm vi lượt sửa.
+
+### P-20260904-2 · [MỞ] · VỪA — `/tin-nhan/<username>` đang được `nenDem()` đếm ⇒ mọi thống kê lượt xem (và modal online) thấy được "ai đang nhắn cho ai" theo thời gian thực
+- **Thấy lúc**: phản biện lượt "modal ai đang online"
+- **Ở đâu**: `apps/web/lib/dem-luot-xem.ts::KHONG_DEM` (không có luật loại `/tin-nhan/`) · `apps/web/app/tin-nhan/[username]/page.tsx`
+- **Bằng chứng**: A mở hộp thoại với B ⇒ hàng `LuotXem(duong_dan="/tin-nhan/B", da_dang_nhap=true)`; trước lượt này đã lộ qua bảng "Xem nhiều nhất" (gộp), lượt này lộ theo từng khách. Lượt modal-online **che** `/tin-nhan/…` thành "(tin nhắn)" ở server trước khi trả — nhưng hàng thô vẫn mang đường dẫn đầy đủ.
+- **Vì sao không sửa ngay**: thuộc cụm nhắn tin của phiên khác, đang tách khỏi `main` sang nhánh `nhan-tin-rieng` (P-20260903-24). Đã báo phiên `gikky-net-3b`: nếu cụm ấy quay lại `main`, luật loại `/tin-nhan/` khỏi `nenDem()` phải đi cùng nó — che ở tầng đọc không thay được không-ghi ở tầng ghi.
+
+> **Cập nhật `P-20260903-24` (2026-09-04): ĐÃ XỬ.** User duyệt (*"gỡ đi, bạn sửa luôn dòng 0026"*). Dòng `dependencies` của `0026_luotxem_da_dang_nhap.py` nay trỏ `0024_…` — sửa trong cây làm việc, **file vẫn chưa commit và vẫn thuộc lượt "lượt xem"**. Nhắn tin riêng đã rời `main` ở **`d821723`** (đảo ngược `544f89c` trừ sổ; 39 file; cây trên các đường dẫn ấy trùng `516f49e`). Toàn bộ tính năng sống ở nhánh **`nhan-tin-rieng` = `544f89c`**. `gikky_dev` giữ nguyên `0025` + `0026` đã áp, hai bảng nhắn tin trống — không unapply. Lần deploy `main` kế tiếp gỡ nhắn tin khỏi prod; bảng trên prod để nguyên.
