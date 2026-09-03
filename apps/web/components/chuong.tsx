@@ -10,7 +10,6 @@ import {
   Bookmark,
   CornerDownRight,
   FileText,
-  MessageCircle,
   MessageSquare,
   Quote,
   UserPlus,
@@ -180,9 +179,6 @@ const HINH_LOAI: Readonly<Record<string, LucideIcon>> = {
   trich: Quote,
   theo_mach: Bookmark,
   theo_user: UserPlus,
-  // Cùng icon với phong bì trên header (`ThuTin`) — dòng chuông và cái nút nó dẫn tới
-  // phải nhận ra nhau bằng hình, trước khi mắt kịp đọc chữ.
-  tin_nhan: MessageCircle,
 };
 
 /** Một dòng chuông. Chưa đọc thì đậm hơn — không phải một chấm thứ hai bên cạnh con số. */
@@ -212,25 +208,16 @@ function Dong({ tin, onDi }: { tin: ThongBaoOut; onDi: () => void }) {
      bao_binh_luan`): nó nói "N bình luận mới", nên không có MỘT id nào để trỏ tới, và nhét
      id của cái cuối cùng vào là nói dối về thứ người ta sắp thấy. Muốn nó cũng nhảy được
      thì phải quyết lại hình dạng của loại chuông ấy — việc khác, đã mở chip. */
-  /* **`tin_nhan` là loại THỨ HAI không gắn với mạch nào** (2026-09-03), cùng nhánh
-     `theo_user`: payload của nó cố ý không có `mach_id` (xem `core/thong_bao.py::
-     bao_tin_nhan`). Nó dẫn thẳng vào cuộc trò chuyện với người vừa nhắn — không phải vào
-     hộp thư `/tin-nhan`, vì dòng chuông đã nói rõ *ai* nhắn và bắt người ta tìm lại tên
-     ấy trong một danh sách là bắt họ làm việc hai lần. */
   const comment_id = typeof p.comment_id === "number" ? p.comment_id : null;
   const dich =
     tin.type === "theo_user"
       ? boi !== null
         ? `/u/${boi}`
         : null
-      : tin.type === "tin_nhan"
-        ? boi !== null
-          ? `/tin-nhan/${boi}`
-          : null
-        : mach_id !== null && slug !== null
-          ? duongDanMach(slug, mach_id) +
-            (comment_id !== null ? `#${neoBinhLuan(comment_id)}` : "")
-          : null;
+      : mach_id !== null && slug !== null
+        ? duongDanMach(slug, mach_id) +
+          (comment_id !== null ? `#${neoBinhLuan(comment_id)}` : "")
+        : null;
 
   return (
     <li
@@ -293,8 +280,5 @@ function cauChuong(
   }
   if (loai === "theo_user") return `${ai} vừa theo dõi bạn`;
   if (loai === "mach_moi") return `${ai} vừa đăng “${tieuDe}”`;
-  // Gộp theo HỘI THOẠI (không theo ngày): con số là số tin CHƯA ĐỌC trong cuộc trò chuyện
-  // ấy, đếm lại từ nguồn mỗi lần bump — xem `core/thong_bao.py::bao_tin_nhan`.
-  if (loai === "tin_nhan") return `${so("so_tin_moi")} tin nhắn mới từ ${ai}`;
   return `Có diễn biến mới ở “${tieuDe}”`;
 }

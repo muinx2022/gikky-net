@@ -358,13 +358,6 @@ test("luật trên có quét trúng lời gọi THẬT ở MỌI cửa (không q
     "components/chuong.tsx", // B2 — chuông thông báo, poll 60s
     "components/composer.tsx", // Phase 2
     "components/cot-vote.tsx", // Phase 2
-    // Nhắn tin riêng 1-1 (2026-09-03) — ba file, cả ba client component, `baseUrl` RỖNG
-    // (same-origin qua `rewrites`) như mọi lời gọi chạy trong trình duyệt:
-    //   `cuoc-tro-chuyen` `GET /me/tin-nhan/{u}` (nạp + poll 10s) · `POST /me/tin-nhan/{u}`
-    //                     · `POST /me/tin-nhan/{u}/doc`;
-    //   `hop-thu`         `GET /me/tin-nhan` — hộp thư, nạp MỘT lần (không poll);
-    //   `thu-tin`         `GET /me/tin-nhan/chua-doc` — con số trên header, poll 60s.
-    "components/cuoc-tro-chuyen.tsx",
     // `/khu-mod` — `GET /me/subs-mod`, danh sách chuyên mục TÔI được phân công. ⚠ Đây là
     // danh sách PHÂN CÔNG, không phải danh sách QUYỀN: `ModSub` chưa cho thêm quyền gì.
     "components/danh-sach-sub-mod.tsx",
@@ -383,7 +376,6 @@ test("luật trên có quét trúng lời gọi THẬT ở MỌI cửa (không q
     "components/hanh-dong-binh-luan.tsx", // form ghi
     "components/hanh-dong-moc.tsx", // form ghi
     "components/hanh-dong-mod.tsx",
-    "components/hop-thu.tsx",
     "components/khoi-chu-mach.tsx", // form ghi
     "components/nut-theo-mach.tsx", // B2 — theo / bỏ theo mạch
     // Theo dõi CHUYÊN MỤC (2026-08-24) — ba cửa mới, cả ba client:
@@ -406,7 +398,6 @@ test("luật trên có quét trúng lời gọi THẬT ở MỌI cửa (không q
     "components/phien.tsx", // Phase 2
     "components/soan-thao.tsx",
     "components/tab-ho-so.tsx",
-    "components/thu-tin.tsx",
     // B2 — cửa PER-USER duy nhất của trang mạch (`/machs/{id}/me` + `/seen`). Nó nằm
     // trong danh sách này để mọi lượt thêm một chỗ đọc dữ liệu per-user đều phải qua diff.
     "components/trang-thai-toi.tsx",

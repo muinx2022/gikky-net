@@ -49,7 +49,6 @@ import logging
 from datetime import datetime, time, timedelta
 
 from django.db.models import Count, Q
-from django.utils import timezone
 
 from core.models.binh_luan import Comment
 from core.models.he_thong import Notification
@@ -71,21 +70,7 @@ THEO_USER = "theo_user"
 BINH_LUAN = "binh_luan"
 MACH_MOI = "mach_moi"
 
-#: Loại thứ tám, 2026-09-03 — xem `plans/2026-09-03-nhan-tin-rieng.md`. Tin nhắn riêng đi
-#: qua ĐÚNG cơ chế chuông này, không dựng kênh thứ hai: chuông đã poll 60 giây sẵn (PLAN
-#: 5.8), và một kênh báo thứ hai là một chỗ nữa phải nhớ tắt khi người ta đã đọc.
-TIN_NHAN = "tin_nhan"
-
-LOAI_HOP_LE = (
-    MOC_MOI,
-    TRICH,
-    REPLY,
-    THEO_MACH,
-    THEO_USER,
-    BINH_LUAN,
-    MACH_MOI,
-    TIN_NHAN,
-)
+LOAI_HOP_LE = (MOC_MOI, TRICH, REPLY, THEO_MACH, THEO_USER, BINH_LUAN, MACH_MOI)
 
 
 def _khoa_ngay(loai: str, dinh_danh: int, khi=None) -> str:
@@ -439,67 +424,6 @@ def bao_mach_moi(mach) -> int:
             for uid in nguoi_nhan
         ]
     )
-
-
-def bao_tin_nhan(tin) -> int:
-    """Báo cho **người nhận** rằng có tin nhắn mới (2026-09-03).
-
-    Gọi trong cùng transaction với `core.tin_nhan.gui_tin` — xem ràng buộc (1) ở đầu
-    module. Người nhận là phía kia của cặp; người gửi không bao giờ nhận.
-
-    **Gộp theo HỘI THOẠI, không theo ngày** — `dedupe_key = "tin_nhan:{hoi_thoai_id}"`,
-    cùng lý lẽ `bao_theo_user`. Một cuộc trò chuyện 20 tin trong 5 phút là MỘT dòng chuông
-    được bump lại (`created_at` mới, `read_at` về `NULL`), không phải 20 dòng đẩy mọi thứ
-    khác ra khỏi chuông. Gộp theo ngày thì mỗi ngày lại thêm một dòng cho cùng một cuộc
-    trò chuyện đang tiếp diễn — đúng thứ nó đang nói dở, không phải một sự kiện mới.
-
-    `payload.so_tin_moi` đếm lại **từ nguồn** (số tin người nhận chưa đọc trong hội thoại
-    ấy) chứ không cộng dồn, cùng lý lẽ `bao_moc_moi`: cộng dồn trên một cột JSON trôi vĩnh
-    viễn sau một lần lỗi.
-
-    Payload **không có `mach_id`** — cùng loài `theo_user`, và `components/chuong.tsx`
-    phải chịu được ca đó (nó dẫn về `/tin-nhan/{boi}`, không về một mạch nào).
-    """
-    from core.tin_nhan import dem_chua_doc_theo_hoi_thoai
-
-    ht = tin.hoi_thoai
-    nguoi_gui = tin.nguoi_gui
-    # Object chứ không chỉ id: `dem_chua_doc_theo_hoi_thoai` nhận một `User`. Một truy vấn
-    # FK lười ở đây rẻ hơn hẳn việc cho phép truyền id vào phép đếm — nhận cả hai kiểu là
-    # cách một chỗ gọi sau này truyền nhầm `hoi_thoai_id` vào chỗ của `user` mà vẫn chạy.
-    nguoi_nhan = ht.nguoi_b if ht.nguoi_a_id == nguoi_gui.pk else ht.nguoi_a
-    so_tin_moi = dem_chua_doc_theo_hoi_thoai(nguoi_nhan, [ht.pk])[ht.pk]
-    return _ghi_theo_lo(
-        [
-            Notification(
-                user_id=nguoi_nhan.pk,
-                type=TIN_NHAN,
-                payload={
-                    "boi": nguoi_gui.username,
-                    "boi_hien_thi": nguoi_gui.display_name,
-                    "so_tin_moi": so_tin_moi,
-                    "hoi_thoai_id": ht.pk,
-                },
-                dedupe_key=f"{TIN_NHAN}:{ht.pk}",
-            )
-        ]
-    )
-
-
-def doc_thong_bao_tin_nhan(user, hoi_thoai_id: int) -> int:
-    """Tắt dòng chuông `tin_nhan` của ĐÚNG một hội thoại. Trả số dòng vừa đổi trạng thái.
-
-    Gọi từ `POST /me/tin-nhan/{username}/doc`: mở một cuộc trò chuyện ra đọc thì cái chuông
-    báo về nó cũng phải tắt. Không có nó thì chấm đỏ trên chuông vẫn sáng vì một thứ người
-    ta vừa đọc xong, và cách duy nhất tắt là bấm "đọc hết" — tức xoá luôn dấu chưa đọc của
-    mọi thông báo khác.
-
-    Hẹp theo `dedupe_key`, không theo `type`: đọc hội thoại với A không được tắt chuông của
-    hội thoại với B.
-    """
-    return Notification.objects.filter(
-        user=user, dedupe_key=f"{TIN_NHAN}:{hoi_thoai_id}", read_at__isnull=True
-    ).update(read_at=timezone.now())
 
 
 def _ghi_theo_lo(hang: list[Notification]) -> int:

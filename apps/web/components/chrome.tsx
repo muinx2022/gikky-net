@@ -7,7 +7,6 @@ import { CongTacTheme } from "./cong-tac-theme";
 import { NutDangMach } from "./nut-dang-mach";
 import { OTimKiem } from "./o-tim-kiem";
 import { ThanhTaiKhoan } from "./thanh-tai-khoan";
-import { ThuTin } from "./thu-tin";
 import { TimKiemMobile } from "./tim-kiem-mobile";
 
 /** Thanh trên cùng.
@@ -72,12 +71,6 @@ export function Chrome() {
           <TimKiemMobile />
           <NutDangMach />
           <Chuong />
-          {/* Phong bì tin nhắn (2026-09-03), đặt ngay SAU chuông: hai lối vào cùng hạng —
-              một con số chưa đọc trên một icon — nên chúng đứng cạnh nhau và trông y hệt
-              nhau. ⚠ Thêm một phần tử vào cụm này là phải sửa `BANG` + `CUM_THAT` + bảng
-              cặp của bài G trong `e2e/don-vi/vung-bam-cum-phai.spec.ts`; hàng rào ấy ép
-              luật 44px phải phủ ĐÚNG cụm phải thật. */}
-          <ThuTin />
           <CongTacTheme />
           <ThanhTaiKhoan />
         </div>

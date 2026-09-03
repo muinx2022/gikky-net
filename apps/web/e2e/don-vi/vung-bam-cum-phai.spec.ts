@@ -78,7 +78,6 @@ const BANG: Muc[] = [
   { tag: "TimKiemMobile", chon: ".nut", bu: "can", vi_sao: "nở 32→44 ngang, có hàng xóm" },
   { tag: "NutDangMach", chon: ".nut", bu: "can", vi_sao: "nở ~35→44 ngang, có hàng xóm" },
   { tag: "Chuong", chon: ".nut", bu: "can", vi_sao: "nở ngang bằng padding, có hàng xóm" },
-  { tag: "ThuTin", chon: ".nut", bu: "can", vi_sao: "nở ngang bằng padding, có hàng xóm" },
   { tag: "CongTacTheme", chon: ".khung", bu: "can", vi_sao: "nở 32→44 ngang, có hàng xóm" },
   { tag: "ThanhTaiKhoan", chon: ".ten", bu: "cam", vi_sao: "vế 3: nút bấm cuối bên phải" },
   {
@@ -96,16 +95,7 @@ const BANG: Muc[] = [
 ];
 
 /** Thứ tự component trong `.phai` — bài A ép bảng trên bằng đúng cụm này. */
-const CUM_THAT = [
-  "TimKiemMobile",
-  "NutDangMach",
-  "Chuong",
-  // Phong bì tin nhắn, thêm 2026-09-03. Nó đứng GIỮA chuông và công tắc theme, tức nó góp
-  // vào HAI cặp của bài G — cả hai đều phải ≤ `gap`.
-  "ThuTin",
-  "CongTacTheme",
-  "ThanhTaiKhoan",
-];
+const CUM_THAT = ["TimKiemMobile", "NutDangMach", "Chuong", "CongTacTheme", "ThanhTaiKhoan"];
 
 /** Một khối `@media` phẳng: điều kiện + thân. Cùng regex với `loi-vao-tim-kiem.spec.ts` —
  * mọi `.module.css` ở đây đều phẳng (không nest). */
@@ -342,20 +332,15 @@ test("G — tổng bù của HAI nút CẠNH NHAU ≤ `gap` hẹp nhất của `
     tim: bu("TimKiemMobile", ".nut"),
     dang: bu("NutDangMach", ".nut"),
     chuong: bu("Chuong", ".nut"),
-    thu: bu("ThuTin", ".nut"),
     theme: bu("CongTacTheme", ".khung"),
     ten: bu("ThanhTaiKhoan", ".ten"),
   };
   const cap: [string, { phai: number }, string, { trai: number }][] = [
     ["kính lúp", nut.tim, "Đăng bài", nut.dang],
     ["Đăng bài", nut.dang, "chuông", nut.chuong],
-    // Phong bì chen vào giữa chuông và theme (2026-09-03) ⇒ cặp `chuông ↔ theme` cũ tách
-    // làm hai. Bỏ sót một trong hai là bỏ trắng đúng chỗ nút mới chạm hàng xóm.
-    ["chuông", nut.chuong, "thư", nut.thu],
-    ["thư", nut.thu, "theme", nut.theme],
+    ["chuông", nut.chuong, "theme", nut.theme],
     ["theme", nut.theme, "tài khoản", nut.ten],
-    // Nhánh KHÁCH: `NutDangMach`, `Chuong` và `ThuTin` đều trả `null`, nên hai nút icon
-    // còn lại đứng sát nhau.
+    // Nhánh KHÁCH: `NutDangMach` và `Chuong` trả `null`, nên hai nút icon đứng sát nhau.
     ["kính lúp (khách)", nut.tim, "theme (khách)", nut.theme],
   ];
   for (const [ta, a, tb, b] of cap) {

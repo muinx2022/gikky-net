@@ -1,4 +1,4 @@
-"""Sáu hạn mức chống lạm dụng — PLAN mục 10 (Phase 6), PLAN 5.10, ảnh nội dung, tin nhắn.
+"""Năm hạn mức chống lạm dụng — PLAN mục 10 (Phase 6), PLAN 5.10, và ảnh nội dung.
 
 | hạn mức | nguồn | ranh giới | cửa áp |
 |---|---|---|---|
@@ -7,13 +7,12 @@
 | 5 đăng ký / IP / ngày | PLAN mục 10 Phase 6 | nửa đêm giờ VN | adapter allauth |
 | 5 bình luận / giờ, tài khoản < 3 ngày tuổi | PLAN 5.10 | **giờ trượt** | `POST /machs/{id}/comments` |
 | 30 ảnh nội dung / user / ngày | plan 2026-08-24 | nửa đêm giờ VN | `POST /me/anh` |
-| 60 tin nhắn / user / giờ | plan 2026-09-03 | **giờ trượt** | `POST /me/tin-nhan/{username}` |
 
 Bốn cái đếm theo **ngày lịch VN** vì PLAN mục 1 chốt mọi chữ "ngày" của sản phẩm theo
 `Asia/Ho_Chi_Minh`; cửa sổ trượt 24 giờ cho ra một tập khác và không gọi tên được bằng
 tiếng Việt. Riêng bình luận đếm theo **giờ trượt** vì PLAN 5.10 viết "5 bình luận/giờ" —
 "giờ" không có ranh giới lịch nào để bám, và một cửa sổ theo giờ tròn thì cho phép 10 bình
-luận trong hai phút quanh 09:00. Tin nhắn theo cùng một cửa sổ và cùng lý lẽ.
+luận trong hai phút quanh 09:00.
 
 ## Vì sao các con số nằm ở `settings`, và cái giá của việc đó
 
@@ -209,53 +208,3 @@ def dem_anh_noi_dung_trong_ngay_vn(user, khi=None) -> int:
     return AnhNoiDung.objects.filter(
         nguoi_tai=user, created_at__gte=dau, created_at__lt=het
     ).count()
-
-
-# --- 60 tin nhắn / user / giờ trượt (plan 2026-09-03) ------------------------
-#
-# Hạn mức DUY NHẤT của nhắn tin riêng ở v1: không chặn người (block), không "chỉ nhận tin
-# từ người mình theo". Con số rộng hơn hẳn một cuộc trò chuyện thật — 60/giờ là một tin
-# mỗi phút, liên tục, suốt một tiếng — nên nó không chạm ai đang nói chuyện; nó chỉ chạm
-# một vòng lặp. Áp cho MỌI tài khoản (không chỉ tài khoản mới như bình luận): tin nhắn
-# riêng không đi qua kiểm duyệt nào, nên tuổi tài khoản không nói được gì về nó.
-
-
-def tran_tin_nhan_moi_gio() -> int:
-    return settings.HAN_MUC_TIN_NHAN_MOI_GIO
-
-
-def dem_tin_nhan_trong_gio(user, khi=None) -> int:
-    """Số tin `user` đã GỬI trong 60 phút gần nhất tính tới `khi`.
-
-    Đếm theo **người gửi trên toàn hệ thống**, không theo từng hội thoại: chia hạn mức
-    theo hội thoại là để một tài khoản spam mở N hội thoại và được N lần trần.
-
-    **Không dưới khoá**, cùng lý do với `dem_mach_trong_ngay_vn` (khối "Hai chỗ KHÔNG
-    khoá" ở đầu file): hai request song song có thể cùng đọc `59 < 60` và lọt ra tin thứ
-    61. Đổi một tin thừa lấy nguy cơ chu trình khoá quanh hàng `User` là lỗ vốn.
-    """
-    from core.models.tin_nhan import TinNhan
-
-    khi = khi or timezone.now()
-    return TinNhan.objects.filter(
-        nguoi_gui=user, created_at__gt=khi - timedelta(hours=1)
-    ).count()
-
-
-def luc_tin_nhan_duoc_lai(user, khi=None) -> datetime:
-    """Lúc `user` gửi được tin tiếp theo — giá trị `thu_lai_tu` của lời từ chối 429.
-
-    Là **thời điểm tin cũ nhất trong cửa sổ rơi ra khỏi cửa sổ**, tức `min(created_at) + 1
-    giờ` — cùng phép tính `luc_binh_luan_duoc_lai`, và cùng lý do: nói "một giờ nữa" là
-    nói thừa tới 59 phút cho người vừa chạm trần bằng những tin gửi cách đây 58 phút.
-    """
-    from core.models.tin_nhan import TinNhan
-
-    khi = khi or timezone.now()
-    cu_nhat = (
-        TinNhan.objects.filter(nguoi_gui=user, created_at__gt=khi - timedelta(hours=1))
-        .order_by("created_at")
-        .values_list("created_at", flat=True)
-        .first()
-    )
-    return khi if cu_nhat is None else cu_nhat + timedelta(hours=1)

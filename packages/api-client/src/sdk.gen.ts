@@ -4,7 +4,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { BoTheoMachData, BoTheoMachErrors, BoTheoMachResponses, BoTheoSubData, BoTheoSubErrors, BoTheoSubResponses, BoTheoUserData, BoTheoUserErrors, BoTheoUserResponses, DanhDauDaDocData, DanhDauDaDocErrors, DanhDauDaDocResponses, DanhDauDaXemData, DanhDauDaXemErrors, DanhDauDaXemResponses, DatAvatarData, DatAvatarErrors, DatAvatarResponses, DatReactionData, DatReactionErrors, DatReactionResponses, DatVoteData, DatVoteErrors, DatVoteResponses, DemLuotXemData, DemLuotXemErrors, DemLuotXemResponses, DemTinNhanChuaDocData, DemTinNhanChuaDocErrors, DemTinNhanChuaDocResponses, DocHoiThoaiData, DocHoiThoaiErrors, DocHoiThoaiResponses, DongSoMachData, DongSoMachErrors, DongSoMachResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GoTrichData, GoTrichErrors, GoTrichResponses, GuiBaoCaoData, GuiBaoCaoErrors, GuiBaoCaoResponses, GuiTinNhanData, GuiTinNhanErrors, GuiTinNhanResponses, LietKeBanCuMocData, LietKeBanCuMocErrors, LietKeBanCuMocResponses, LietKeBinhLuanMachData, LietKeBinhLuanMachErrors, LietKeBinhLuanMachResponses, LietKeBinhLuanMocData, LietKeBinhLuanMocErrors, LietKeBinhLuanMocResponses, LietKeDangTheoData, LietKeDangTheoErrors, LietKeDangTheoResponses, LietKeDaVoteData, LietKeDaVoteErrors, LietKeDaVoteResponses, LietKeFeedDangDienRaData, LietKeFeedDangDienRaErrors, LietKeFeedDangDienRaResponses, LietKeFeedMoiData, LietKeFeedMoiErrors, LietKeFeedMoiResponses, LietKeHoiThoaiData, LietKeHoiThoaiErrors, LietKeHoiThoaiResponses, LietKeMachCuaUserData, LietKeMachCuaUserErrors, LietKeMachCuaUserResponses, LietKeSubDangTheoData, LietKeSubDangTheoErrors, LietKeSubDangTheoResponses, LietKeSubData, LietKeSubResponses, LietKeSubToiLamModData, LietKeSubToiLamModErrors, LietKeSubToiLamModResponses, LietKeThongBaoData, LietKeThongBaoErrors, LietKeThongBaoResponses, LietKeUserDangTheoData, LietKeUserDangTheoErrors, LietKeUserDangTheoResponses, ModDatAnBinhLuanData, ModDatAnBinhLuanErrors, ModDatAnBinhLuanResponses, ModDatAnMachData, ModDatAnMachErrors, ModDatAnMachResponses, ModDatAnMocData, ModDatAnMocErrors, ModDatAnMocResponses, ModDatKhoaMachData, ModDatKhoaMachErrors, ModDatKhoaMachResponses, MoLaiMachData, MoLaiMachErrors, MoLaiMachResponses, NoiMocData, NoiMocErrors, NoiMocResponses, SuaBinhLuanData, SuaBinhLuanErrors, SuaBinhLuanResponses, SuaMocData, SuaMocErrors, SuaMocResponses, SuaToiData, SuaToiErrors, SuaToiResponses, TaiAnhMocData, TaiAnhMocErrors, TaiAnhMocResponses, TaiAnhNoiDungData, TaiAnhNoiDungErrors, TaiAnhNoiDungResponses, TaoMachData, TaoMachErrors, TaoMachResponses, TheoMachData, TheoMachErrors, TheoMachResponses, TheoSubData, TheoSubErrors, TheoSubResponses, TheoUserData, TheoUserErrors, TheoUserResponses, TimKiemData, TimKiemErrors, TimKiemGoiYData, TimKiemGoiYErrors, TimKiemGoiYResponses, TimKiemResponses, TrichVaoSoData, TrichVaoSoErrors, TrichVaoSoResponses, VietBinhLuanData, VietBinhLuanErrors, VietBinhLuanResponses, XemHoiThoaiData, XemHoiThoaiErrors, XemHoiThoaiResponses, XemHoSoData, XemHoSoErrors, XemHoSoResponses, XemMachCuaToiData, XemMachCuaToiErrors, XemMachCuaToiResponses, XemMachData, XemMachErrors, XemMachResponses, XemSubCuaToiData, XemSubCuaToiErrors, XemSubCuaToiResponses, XemSubData, XemSubErrors, XemSubResponses, XemToiData, XemToiResponses, XemUserCuaToiData, XemUserCuaToiErrors, XemUserCuaToiResponses, XoaAnhMocData, XoaAnhMocErrors, XoaAnhMocResponses, XoaAvatarData, XoaAvatarErrors, XoaAvatarResponses, XoaBinhLuanData, XoaBinhLuanErrors, XoaBinhLuanResponses, XoaMocData, XoaMocErrors, XoaMocResponses } from './types.gen';
+import type { BoTheoMachData, BoTheoMachErrors, BoTheoMachResponses, BoTheoSubData, BoTheoSubErrors, BoTheoSubResponses, BoTheoUserData, BoTheoUserErrors, BoTheoUserResponses, DanhDauDaDocData, DanhDauDaDocErrors, DanhDauDaDocResponses, DanhDauDaXemData, DanhDauDaXemErrors, DanhDauDaXemResponses, DatAvatarData, DatAvatarErrors, DatAvatarResponses, DatReactionData, DatReactionErrors, DatReactionResponses, DatVoteData, DatVoteErrors, DatVoteResponses, DemLuotXemData, DemLuotXemErrors, DemLuotXemResponses, DongSoMachData, DongSoMachErrors, DongSoMachResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GoTrichData, GoTrichErrors, GoTrichResponses, GuiBaoCaoData, GuiBaoCaoErrors, GuiBaoCaoResponses, LietKeBanCuMocData, LietKeBanCuMocErrors, LietKeBanCuMocResponses, LietKeBinhLuanMachData, LietKeBinhLuanMachErrors, LietKeBinhLuanMachResponses, LietKeBinhLuanMocData, LietKeBinhLuanMocErrors, LietKeBinhLuanMocResponses, LietKeDangTheoData, LietKeDangTheoErrors, LietKeDangTheoResponses, LietKeDaVoteData, LietKeDaVoteErrors, LietKeDaVoteResponses, LietKeFeedDangDienRaData, LietKeFeedDangDienRaErrors, LietKeFeedDangDienRaResponses, LietKeFeedMoiData, LietKeFeedMoiErrors, LietKeFeedMoiResponses, LietKeMachCuaUserData, LietKeMachCuaUserErrors, LietKeMachCuaUserResponses, LietKeSubDangTheoData, LietKeSubDangTheoErrors, LietKeSubDangTheoResponses, LietKeSubData, LietKeSubResponses, LietKeSubToiLamModData, LietKeSubToiLamModErrors, LietKeSubToiLamModResponses, LietKeThongBaoData, LietKeThongBaoErrors, LietKeThongBaoResponses, LietKeUserDangTheoData, LietKeUserDangTheoErrors, LietKeUserDangTheoResponses, ModDatAnBinhLuanData, ModDatAnBinhLuanErrors, ModDatAnBinhLuanResponses, ModDatAnMachData, ModDatAnMachErrors, ModDatAnMachResponses, ModDatAnMocData, ModDatAnMocErrors, ModDatAnMocResponses, ModDatKhoaMachData, ModDatKhoaMachErrors, ModDatKhoaMachResponses, MoLaiMachData, MoLaiMachErrors, MoLaiMachResponses, NoiMocData, NoiMocErrors, NoiMocResponses, SuaBinhLuanData, SuaBinhLuanErrors, SuaBinhLuanResponses, SuaMocData, SuaMocErrors, SuaMocResponses, SuaToiData, SuaToiErrors, SuaToiResponses, TaiAnhMocData, TaiAnhMocErrors, TaiAnhMocResponses, TaiAnhNoiDungData, TaiAnhNoiDungErrors, TaiAnhNoiDungResponses, TaoMachData, TaoMachErrors, TaoMachResponses, TheoMachData, TheoMachErrors, TheoMachResponses, TheoSubData, TheoSubErrors, TheoSubResponses, TheoUserData, TheoUserErrors, TheoUserResponses, TimKiemData, TimKiemErrors, TimKiemGoiYData, TimKiemGoiYErrors, TimKiemGoiYResponses, TimKiemResponses, TrichVaoSoData, TrichVaoSoErrors, TrichVaoSoResponses, VietBinhLuanData, VietBinhLuanErrors, VietBinhLuanResponses, XemHoSoData, XemHoSoErrors, XemHoSoResponses, XemMachCuaToiData, XemMachCuaToiErrors, XemMachCuaToiResponses, XemMachData, XemMachErrors, XemMachResponses, XemSubCuaToiData, XemSubCuaToiErrors, XemSubCuaToiResponses, XemSubData, XemSubErrors, XemSubResponses, XemToiData, XemToiResponses, XemUserCuaToiData, XemUserCuaToiErrors, XemUserCuaToiResponses, XoaAnhMocData, XoaAnhMocErrors, XoaAnhMocResponses, XoaAvatarData, XoaAvatarErrors, XoaAvatarResponses, XoaBinhLuanData, XoaBinhLuanErrors, XoaBinhLuanResponses, XoaMocData, XoaMocErrors, XoaMocResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -934,126 +934,6 @@ export const lietKeSubToiLamMod = <ThrowOnError extends boolean = false>(options
 });
 
 /**
- * Liet Ke Hoi Thoai
- *
- * Hộp thư: mọi cuộc trò chuyện của tôi, **mới nhất trước**. Per-user, cấm cache.
- *
- * Trả tối đa 100 hội thoại và **chưa có phân trang** — hộp thư là danh sách để quản lý,
- * không phải một feed. Mỗi dòng kèm tin cuối và số tin chưa đọc của riêng tôi.
- */
-export const lietKeHoiThoai = <ThrowOnError extends boolean = false>(options?: Options<LietKeHoiThoaiData, ThrowOnError>): RequestResult<LietKeHoiThoaiResponses, LietKeHoiThoaiErrors, ThrowOnError> => (options?.client ?? client).get<LietKeHoiThoaiResponses, LietKeHoiThoaiErrors, ThrowOnError>({
-    security: [{
-            key: 'DangNhap',
-            in: 'cookie',
-            name: 'sessionid',
-            type: 'apiKey'
-        }],
-    url: '/api/v1/me/tin-nhan',
-    ...options
-});
-
-/**
- * Dem Tin Nhan Chua Doc
- *
- * Số tin chưa đọc trên **toàn hộp thư** — con số trên biểu tượng phong bì ở header.
- *
- * Cửa riêng thay vì dùng lại `GET /me/tin-nhan`: header poll con số này 60 giây một lần
- * trên mọi trang, và trả kèm cả hộp thư ở đó là kéo tối đa 100 hội thoại về cho một số.
- */
-export const demTinNhanChuaDoc = <ThrowOnError extends boolean = false>(options?: Options<DemTinNhanChuaDocData, ThrowOnError>): RequestResult<DemTinNhanChuaDocResponses, DemTinNhanChuaDocErrors, ThrowOnError> => (options?.client ?? client).get<DemTinNhanChuaDocResponses, DemTinNhanChuaDocErrors, ThrowOnError>({
-    security: [{
-            key: 'DangNhap',
-            in: 'cookie',
-            name: 'sessionid',
-            type: 'apiKey'
-        }],
-    url: '/api/v1/me/tin-nhan-chua-doc',
-    ...options
-});
-
-/**
- * Xem Hoi Thoai
- *
- * Một cuộc trò chuyện với `username`. Tin sắp **TĂNG DẦN theo `id`** (cũ ở trên).
- *
- * Chưa từng nhắn nhau ⇒ 200 với `hoi_thoai_id: null` và `items: []` — đó là trạng thái
- * bình thường của lần mở đầu tiên, không phải 404. Username không tồn tại ⇒ 404; tự xem
- * hội thoại với chính mình ⇒ 400.
- *
- * **Người đã bị vô hiệu hoá vẫn ĐỌC được cuộc trò chuyện đã có** — nếu không thì những
- * tin họ đã gửi kẹt ở trạng thái chưa đọc vĩnh viễn. Chưa từng nhắn nhau thì họ vẫn là
- * 404, để cửa này không thành cửa dò tài khoản; xem `_nap_nguoi_kia`.
- *
- * Phân trang đi **lùi**: `?truoc=<id>` trả các tin có `id` nhỏ hơn, tức trang cũ hơn.
- * `con_cu_hon` cho biết còn nữa không. `limit` trong 1..50, mặc định 30.
- *
- * **Không tự đánh dấu đã đọc** — dùng `POST /me/tin-nhan/{username}/doc`. Một `GET` đổi
- * trạng thái là một `GET` mà prefetch của trình duyệt và bot đều gọi được.
- */
-export const xemHoiThoai = <ThrowOnError extends boolean = false>(options: Options<XemHoiThoaiData, ThrowOnError>): RequestResult<XemHoiThoaiResponses, XemHoiThoaiErrors, ThrowOnError> => (options.client ?? client).get<XemHoiThoaiResponses, XemHoiThoaiErrors, ThrowOnError>({
-    security: [{
-            key: 'DangNhap',
-            in: 'cookie',
-            name: 'sessionid',
-            type: 'apiKey'
-        }],
-    url: '/api/v1/me/tin-nhan/{username}',
-    ...options
-});
-
-/**
- * Gui Tin Nhan
- *
- * Gửi một tin nhắn riêng. Tạo cuộc trò chuyện nếu chưa có. Trả **201**.
- *
- * Thân là plain text, tối đa 2000 ký tự, không được rỗng sau khi bỏ khoảng trắng.
- * Người nhận không tồn tại hoặc đã bị vô hiệu hoá ⇒ 404; tự nhắn mình ⇒ 400; tài khoản
- * bị khoá ⇒ 403.
- *
- * **Hạn mức 60 tin/giờ trượt cho mỗi người gửi** (đổi được ở
- * `settings.HAN_MUC_TIN_NHAN_MOI_GIO`) ⇒ 429 `qua_han_muc_tin_nhan` kèm `thu_lai_tu`.
- *
- * Người nhận nhận một dòng chuông loại `tin_nhan`, **gộp theo cuộc trò chuyện**: 20 tin
- * liên tiếp là một dòng được cập nhật, không phải 20 dòng.
- */
-export const guiTinNhan = <ThrowOnError extends boolean = false>(options: Options<GuiTinNhanData, ThrowOnError>): RequestResult<GuiTinNhanResponses, GuiTinNhanErrors, ThrowOnError> => (options.client ?? client).post<GuiTinNhanResponses, GuiTinNhanErrors, ThrowOnError>({
-    security: [{
-            key: 'DangNhap',
-            in: 'cookie',
-            name: 'sessionid',
-            type: 'apiKey'
-        }],
-    url: '/api/v1/me/tin-nhan/{username}',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
-});
-
-/**
- * Doc Hoi Thoai
- *
- * Đánh dấu đã đọc hết cuộc trò chuyện với `username`. **Idempotent.**
- *
- * Tắt luôn dòng chuông `tin_nhan` của đúng cuộc trò chuyện ấy — đọc hội thoại với A
- * không đụng gì tới chuông của hội thoại với B.
- *
- * Trả **tổng** số tin còn chưa đọc trên toàn hộp thư, để header cập nhật con số ngay mà
- * không phải poll thêm một vòng. Chưa từng nhắn nhau ⇒ 200, không làm gì.
- */
-export const docHoiThoai = <ThrowOnError extends boolean = false>(options: Options<DocHoiThoaiData, ThrowOnError>): RequestResult<DocHoiThoaiResponses, DocHoiThoaiErrors, ThrowOnError> => (options.client ?? client).post<DocHoiThoaiResponses, DocHoiThoaiErrors, ThrowOnError>({
-    security: [{
-            key: 'DangNhap',
-            in: 'cookie',
-            name: 'sessionid',
-            type: 'apiKey'
-        }],
-    url: '/api/v1/me/tin-nhan/{username}/doc',
-    ...options
-});
-
-/**
  * Xoa Moc Api
  *
  * Xoá mốc = **bia mộ** giữ chỗ, không bao giờ `DELETE` thật (PLAN nguyên tắc 2).
@@ -1090,10 +970,7 @@ export const xoaMoc = <ThrowOnError extends boolean = false>(options: Options<Xo
  * Mạch bị mod khoá ⇒ 403; mốc đã là bia mộ hoặc bị ẩn ⇒ 409 `noi_dung_da_go`.
  *
  * **PATCH thật**: trường không gửi thì không đổi, trường gửi `null` thì xoá. `body`
- * không nhận `null` (mốc phải có thân) — **`core/ghi.py::_kiem_thay_doi_moc` chặn**, trả
- * 400 `du_lieu_khong_hop_le`. KHÔNG phải schema: `Field(min_length=1)` trên `str | None`
- * chỉ áp cho nhánh `str`, và câu "schema chặn trước khi vào đây" đứng ở đây tới
- * 2026-09-03 là sai — `{"body": null}` xuống tới `lam_sach(None)` và trả 500 trần.
+ * không nhận `null` (mốc phải có thân) — schema chặn trước khi vào đây.
  *
  * Sửa **im lặng trong 15 phút** kể từ `created_at`; sau đó mỗi lần sửa tạo một
  * `MocRevision` lưu **đủ cả 5 trường bản trước** và tăng "đã sửa N lần". Có

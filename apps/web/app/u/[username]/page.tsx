@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 
 import { Avatar } from "@/components/avatar";
 import { KhungHaiCot } from "@/components/khung-hai-cot";
-import { NutNhanTin } from "@/components/nut-nhan-tin";
 import { NutSuaHoSo } from "@/components/nut-sua-ho-so";
 import { NutTheoUser } from "@/components/nut-theo-user";
 import {
@@ -97,10 +96,6 @@ export default async function TrangHoSo({
             Server không quyết được — nó cố ý không biết người xem là ai (PLAN 8.4). */}
         <NutSuaHoSo username={ho_so.username} />
         <NutTheoUser username={ho_so.username} />
-        {/* "Nhắn tin" (2026-09-03) — cũng do CLIENT quyết, cùng lý do: server không biết
-            người xem là ai. Nó đứng SAU "Theo dõi" vì theo dõi là hành động công khai và
-            rẻ hơn; nhắn tin riêng là bậc thang tiếp theo. */}
-        <NutNhanTin username={ho_so.username} />
       </div>
       {ho_so.bio !== "" && (
         <p className={css.bio} {...CHU_NGUOI_DUNG}>

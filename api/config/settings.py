@@ -321,13 +321,6 @@ NGAY_TAI_KHOAN_CON_MOI = env.int("NGAY_TAI_KHOAN_CON_MOI", default=3)
 HAN_MUC_ANH_NOI_DUNG_MOI_USER_NGAY = env.int(
     "HAN_MUC_ANH_NOI_DUNG_MOI_USER_NGAY", default=30
 )
-#: Tin nhắn riêng mỗi người mỗi **giờ trượt** (2026-09-03,
-#: `plans/2026-09-03-nhan-tin-rieng.md`). **Không có trong PLAN** — nhắn tin 1-1 là bề mặt
-#: mới, và nó là bề mặt duy nhất viết thẳng vào hộp thư của một người cụ thể mà không đi
-#: qua kiểm duyệt nào. 60 là một tin mỗi phút suốt một tiếng: rộng hơn hẳn một cuộc trò
-#: chuyện thật, đủ hẹp để chặn một vòng lặp. Đây là hàng rào DUY NHẤT của lượt này —
-#: chặn người (block) và "chỉ nhận tin từ người mình theo" cố ý chưa làm.
-HAN_MUC_TIN_NHAN_MOI_GIO = env.int("HAN_MUC_TIN_NHAN_MOI_GIO", default=60)
 
 #: Có được tin header `X-Forwarded-For` không — xem `core/han_muc.py::dia_chi_ip`.
 #: **Mặc định `False`.** Bật đúng khi CÓ reverse proxy tin cậy ngay trước Django (prod:
