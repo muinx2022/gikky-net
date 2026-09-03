@@ -73,6 +73,33 @@ riêng ấy — xem `apps/admin/app/luot-xem/page.tsx`.
 Nó là **ước lượng**, và giới hạn đến thẳng từ việc không có session: cùng một người mở hai
 trình duyệt = hai "online"; người đọc yên một chỗ quá 5 phút không còn được tính. Đó không
 phải chỗ để "cải thiện" bằng cách thêm cookie.
+
+## `/luot-xem/online` — ai đang online, một dòng mỗi khách (2026-08-31)
+
+Endpoint thứ hai của file này, nuôi cái modal mở ra khi mod bấm ô "Online". Nó **dùng lại
+`CUA_SO_ONLINE_PHUT`**, không đẻ hằng thứ hai: ô KPI và modal phải nói về đúng một cửa sổ.
+
+⚠ **Bất biến bắt buộc: `OnlineOut.tong == LuotXemTongOut.so_online`** trên cùng dữ liệu.
+Hai chỗ đếm cùng một thứ bằng hai đoạn code là đúng chỗ chúng trôi khỏi nhau, và triệu
+chứng là ô nói "5" còn modal liệt kê 7 dòng. Nên `tong` gọi thẳng `_dem_online()`, và
+`test_N4_*` so hai endpoint để phép gọi ấy không bị "dọn" thành `len(items)` — nó **không**
+bằng nhau: danh sách gồm CẢ bot (user hỏi đích danh "người hay bot"), còn ô KPI chỉ đếm
+người.
+
+⚠ **Một mốc, đọc ĐÚNG MỘT LẦN cho cả response** (`luot_xem_online` gọi `_moc_online()` rồi
+truyền xuống). Bản đầu để `_gom_online` và `_dem_online` mỗi hàm tự gọi `timezone.now()`:
+hai phép đo cách nhau vài mili giây, nên một lượt xem ghi đúng vào khe ấy làm `tong` và
+`items` nói về hai cửa sổ khác nhau — bất biến N4 gãy ở đúng lúc site đông nhất, và không
+tái hiện được. Lượt phản biện 2026-09-03 tìm ra (TB-3).
+
+Cột duy nhất phải thêm cho modal là `LuotXem.da_dang_nhap`; ranh giới riêng tư của response
+ghi ở `quan_tri_schemas.py::KhachOnlineOut`.
+
+⚠ **Đường dẫn MANG DANH TÍNH bị che TRƯỚC KHI RỜI SERVER** (`che_duong_dan`): `/u/…` và
+`/tin-nhan/…`. Không có nó thì "Đã đăng nhập · /u/chinhho" là một dòng ghép được bí danh
+với một tài khoản có thật, và một bí danh ổn định trong ngày dựng lại được **lịch sử đọc
+của một người** qua vài lượt bấm F5 — đúng thứ mà cam kết "không cột nào gắn được với một
+con người" hứa là không xảy ra. Cùng lượt phản biện, hạng NẶNG.
 """
 
 from collections.abc import Callable
@@ -90,12 +117,14 @@ from core.thoi_gian import TZ_VN, ngay_vn
 
 from api.loi import THAM_SO_KHONG_HOP_LE, LoiOut, loi
 from api.quan_tri_schemas import (
+    KhachOnlineOut,
     LuotXemNgayOut,
     LuotXemOut,
     LuotXemTongOut,
     MucSoLuotOut,
     NguonOut,
     NhomBotOut,
+    OnlineOut,
     TenBotOut,
     TopDuongDanOut,
 )
@@ -130,6 +159,15 @@ SO_NGAY_CHI_TIET = 90
 #: lý lẽ với `SO_TOP`: một `?phut=525600` là một câu `COUNT(DISTINCT)` trên toàn bảng do
 #: người gọi đặt hàng. Nó cũng KHÔNG đi theo `?khoang=`; xem docstring module.
 CUA_SO_ONLINE_PHUT = 5
+
+#: Trần số hàng thô mà `/luot-xem/online` quét. Cửa sổ chỉ 5 phút nên tập này nhỏ ở mọi
+#: site thật; trần chỉ tồn tại để một đợt bot quét rầm rộ không biến một cái modal thành
+#: câu `SELECT` vài trăm nghìn hàng. Chạm trần ⇒ `bi_cat=True` và modal nói ra.
+SO_HANG_QUET = 5000
+
+#: Trần số DÒNG trả về. Cố định, **không nhận từ query param** — cùng lý lẽ `SO_TOP`.
+#: 200 dòng đã dài hơn mức ai đó đọc hết; cái cần đọc là 20 dòng đầu.
+SO_DONG_ONLINE = 200
 
 
 def _nua_dem_vn(ngay: date) -> datetime:
@@ -304,12 +342,27 @@ def _khach_tho(ngay_dau: date | None) -> dict[date, int | None]:
     return {h["_ngay"]: (None if h["_thieu"] > 0 else h["_khach"]) for h in hang}
 
 
-def _dem_online() -> int:
-    """Số khách phân biệt (NGƯỜI) có lượt xem trong `CUA_SO_ONLINE_PHUT` phút gần nhất.
+def _moc_online() -> datetime:
+    """Mốc dưới của cửa sổ online. **Một chỗ duy nhất** cho cả hai endpoint.
 
-    ⚠ Mốc là `timezone.now()` — một thời điểm **tuyệt đối**, không phải `ngay_vn()`. Kẹp
-    cửa sổ vào trong ngày lịch VN sẽ làm con số rơi về 0 lúc 00:00 rồi bò lên lại, mỗi
-    đêm một lần; lọc theo mốc tuyệt đối là cách đúng.
+    Ô KPI và modal phải nói về đúng cùng một cửa sổ; hai phép trừ chép ra hai chỗ là hai
+    chỗ để một lượt "dọn dẹp" đổi một bên mà không đổi bên kia.
+
+    ⚠ Người GỌI đọc mốc, rồi **truyền xuống** — `_dem_online` và `_gom_online` cố ý nhận
+    `moc` thay vì tự gọi hàm này. Trong một response chỉ được có ĐÚNG MỘT phép đọc đồng
+    hồ: hai phép đọc cách nhau vài mili giây là hai cửa sổ khác nhau, và một lượt xem ghi
+    đúng vào khe ấy làm `tong` không còn bằng số dòng người trong `items`. Bài đo
+    `test_TB3_*` đếm số lần hàm này được gọi trong một request.
+    """
+    return timezone.now() - timedelta(minutes=CUA_SO_ONLINE_PHUT)
+
+
+def _dem_online(moc: datetime) -> int:
+    """Số khách phân biệt (NGƯỜI) có lượt xem từ `moc` trở đi (`_moc_online()`).
+
+    ⚠ Mốc là một thời điểm **tuyệt đối** (`timezone.now()` trừ đi cửa sổ), không phải
+    `ngay_vn()`. Kẹp cửa sổ vào trong ngày lịch VN sẽ làm con số rơi về 0 lúc 00:00 rồi
+    bò lên lại, mỗi đêm một lần; lọc theo mốc tuyệt đối là cách đúng.
 
     ⚠ **Nhưng cửa sổ cắt qua nửa đêm VN thì ĐẾM ĐÔI, và đó là giới hạn thật.** `khach` là
     `sha256(muối-của-NGÀY ‖ ip ‖ ua)` (`api/dem_luot_xem.py::hash_khach`) và muối xoay
@@ -328,9 +381,8 @@ def _dem_online() -> int:
     Bot không tính: câu hỏi là "bao nhiêu NGƯỜI đang đọc". Đúng một truy vấn, và nó đi
     qua index `luotxem_luc_duongdan` (`luc` dẫn đầu) nên tập phải distinct là tập nhỏ.
     """
-    tu = timezone.now() - timedelta(minutes=CUA_SO_ONLINE_PHUT)
     return (
-        LuotXem.objects.filter(luc__gte=tu, la_bot=False)
+        LuotXem.objects.filter(luc__gte=moc, la_bot=False)
         .exclude(khach="")
         .values("khach")
         .distinct()
@@ -508,7 +560,7 @@ def luot_xem(request, response: HttpResponse, khoang: str = "30"):
             so_luot_bot=tong_bot,
             so_khach=tong_khach,
             # KHÔNG phụ thuộc `khoang`: "online" là 5 phút gần nhất ở mọi lựa chọn.
-            so_online=_dem_online(),
+            so_online=_dem_online(_moc_online()),
         ),
         chuoi_ngay=_chuoi(theo_ngay, hom_nay, so_o, khach_cua),
         top_duong_dan=_top(gop),
@@ -519,4 +571,164 @@ def luot_xem(request, response: HttpResponse, khoang: str = "30"):
         trinh_duyet=_theo_cot(ngay_dau_chi_tiet, "trinh_duyet"),
         thiet_bi=_theo_cot(ngay_dau_chi_tiet, "thiet_bi"),
         chi_tiet_chi_90_ngay=chi_tiet_chi_90_ngay,
+    )
+
+
+#: Đường dẫn nào **mang danh tính**, và cái gì hiện ra thay cho nó. Che ở ĐÂY, tức trước
+#: khi dữ liệu rời server — không phải ở frontend, vì frontend chỉ giấu chữ trên màn hình
+#: còn JSON thì vẫn mang đủ.
+#:
+#: ⚠ Đây là vế thứ nhất trong ba vế đóng lại lỗ **NẶNG** của lượt phản biện 2026-09-03:
+#: một dòng "Đã đăng nhập · /u/chinhho" ghép thẳng bí danh của bảng lượt xem với một tài
+#: khoản có thật, và từ đó mọi dòng khác của cùng bí danh là **lịch sử đọc của người ấy**.
+#: Hai vế còn lại: bỏ hẳn bí danh ổn định (`KhachOnlineOut.stt`) và viết lại chú trên modal.
+#:
+#: Khớp theo TIỀN TỐ, không theo phân đoạn: `/u/` phủ cả `/u/ai-do/theo-doi` lẫn `/u/` trần.
+#: Mọi đường khác (`/`, `/m/…`, `/s/…`, `/tim-kiem`, `/tin-nhan` trần) giữ nguyên — chúng
+#: nói site đang được đọc ở đâu, không nói ai đang đọc.
+CHE_DUONG_DAN: tuple[tuple[str, str], ...] = (
+    ("/u/", "(hồ sơ người dùng)"),
+    ("/tin-nhan/", "(tin nhắn)"),
+)
+
+
+def che_duong_dan(duong_dan: str) -> str:
+    """Đường dẫn đã che phần mang danh tính. Hàm THUẦN — xem `CHE_DUONG_DAN`."""
+    for tien_to, thay_bang in CHE_DUONG_DAN:
+        if duong_dan.startswith(tien_to):
+            return thay_bang
+    return duong_dan
+
+
+def _gom_online(moc: datetime) -> tuple[list[KhachOnlineOut], bool, int]:
+    """`(danh sách, có chạm trần quét không, số dòng THẬT)` — gom theo `khach`, MỘT truy vấn.
+
+    `moc` do người gọi truyền (`_moc_online()`), **không** đọc lại đồng hồ ở đây — xem
+    docstring `_moc_online`. Vế thứ ba là số khách phân biệt **trước** khi cắt
+    `SO_DONG_ONLINE`; nó tồn tại để cái trần ấy không cắt im lặng (xem endpoint).
+
+    ## Vì sao gom ở Python chứ không `GROUP BY`
+
+    Mỗi dòng cần **giá trị của lượt gần nhất** (đường dẫn, giây trước) cộng một phép đếm.
+    Trong SQL đó là một `DISTINCT ON` hoặc một window function — Django ORM diễn đạt được
+    nhưng không portable, và tập dữ liệu ở đây là **5 phút lượt xem**, tức nhỏ theo thiết
+    kế. Một vòng `for` trên vài trăm dòng đọc được và không có gì để trôi.
+
+    ## Ba luật phải giống hệt `_dem_online`, và cả ba đều im lặng khi sai
+
+    1. cùng mốc — nay là **cùng một đối tượng `moc`**, không phải hai phép trừ giống nhau;
+    2. `exclude(khach="")` — hàng ghi trước 2026-08-30 mang `""`, và gộp chúng lại là bịa
+       ra đúng MỘT "khách ma" luôn đứng trong danh sách trên một site không có ai;
+    3. `-luc` trước khi cắt trần — cắt rồi mới sắp là danh sách "ai đang online" gồm
+       những người đã rời đi.
+
+    **Khác đúng một luật**: ở đây KHÔNG lọc `la_bot=False`. Câu hỏi của modal là *"ai
+    đang ở đây"*, và bot đang ở đây thật — user hỏi đích danh "là người hay bot". Chính
+    vì thế `tong` **không** được suy từ danh sách này; xem endpoint bên dưới.
+
+    ⚠ `khach` xác định `la_bot`: cả hai suy từ cùng một (IP, UA) qua `hash_khach`/
+    `ten_bot`, nên một nhóm không thể vừa người vừa bot. Nhờ đó "số nhóm không-bot" và
+    `COUNT(DISTINCT khach) WHERE NOT la_bot` là cùng một con số — nhưng chúng vẫn là hai
+    đoạn code, và bài N4 tồn tại để chúng không trôi khỏi nhau.
+    """
+    # Suy từ `moc` chứ không đọc đồng hồ lần nữa: `giay_truoc` phải tính từ đúng cái
+    # "bây giờ" đã dựng nên cửa sổ, nếu không dòng cũ nhất có thể ra một số giây lớn hơn
+    # cả cửa sổ — nhỏ, nhưng là một con số tự mâu thuẫn với cái nhãn ngay trên nó.
+    bay_gio = moc + timedelta(minutes=CUA_SO_ONLINE_PHUT)
+    hang = list(
+        LuotXem.objects.filter(luc__gte=moc)
+        .exclude(khach="")
+        .values(
+            "khach",
+            "la_bot",
+            "ten_bot",
+            "da_dang_nhap",
+            "trinh_duyet",
+            "thiet_bi",
+            "duong_dan",
+            "luc",
+        )
+        # `-pk` là vế TẤT ĐỊNH: hai hàng cùng `luc` tới từng micro giây (seed của một bài
+        # đo, hoặc hai lượt trong cùng một request) sẽ ra thứ tự tuỳ Postgres, và khi ấy
+        # `duong_dan` "gần nhất" của một dòng nhảy giữa hai lượt bấm F5.
+        .order_by("-luc", "-pk")[:SO_HANG_QUET]
+    )
+    # `==` chứ không `>=`: `[:N]` không trả về nhiều hơn N bao giờ. Đúng N hàng nghĩa là
+    # "có thể còn nữa" — cờ này báo NGHI NGỜ bị cắt, và báo thừa một lần ở đúng con số
+    # tròn trịa ấy rẻ hơn nhiều so với một danh sách thiếu mà không ai biết.
+    bi_cat = len(hang) == SO_HANG_QUET
+
+    gom: dict[str, KhachOnlineOut] = {}
+    for h in hang:
+        da_co = gom.get(h["khach"])
+        if da_co is not None:
+            # Hàng đến sau trong danh sách `-luc` là hàng CŨ hơn ⇒ chỉ cộng số lượt, mọi
+            # trường khác giữ của lượt gần nhất (hàng đầu tiên gặp).
+            da_co.so_luot += 1
+            continue
+        gom[h["khach"]] = KhachOnlineOut(
+            # Đánh số lại sau khi cắt — xem cuối hàm.
+            stt=0,
+            la_bot=h["la_bot"],
+            ten_bot=h["ten_bot"],
+            da_dang_nhap=h["da_dang_nhap"],
+            trinh_duyet=h["trinh_duyet"],
+            thiet_bi=h["thiet_bi"],
+            duong_dan=che_duong_dan(h["duong_dan"]),
+            # `max(0, …)`: hàng có `luc` ở TƯƠNG LAI (đồng hồ lệch, hoặc seed của một bài
+            # đo) không được ra "-3 giây trước". Nó không phải lỗi đáng chặn — chỉ là một
+            # con số không được phép hiện ra dưới dạng vô nghĩa.
+            giay_truoc=max(0, int((bay_gio - h["luc"]).total_seconds())),
+            so_luot=1,
+        )
+
+    # `dict` giữ thứ tự chèn, và thứ tự chèn CHÍNH LÀ `-luc` của lượt gần nhất mỗi khách
+    # — không cần sắp lại. Cắt sau khi gom, không trước: cắt trước là cắt nhầm sang
+    # `so_luot` của những dòng còn ở lại.
+    danh_sach = list(gom.values())[:SO_DONG_ONLINE]
+    # Số thứ tự gán SAU khi cắt, và chỉ có nghĩa trong ĐÚNG response này — xem
+    # `KhachOnlineOut.stt`. Không có gì ở đây sống qua hai lần gọi.
+    for i, k in enumerate(danh_sach, 1):
+        k.stt = i
+    return danh_sach, bi_cat, len(gom)
+
+
+@router.get(
+    "/luot-xem/online",
+    response={200: OnlineOut, 401: LoiOut, 403: LoiOut},
+    operation_id="quan_tri_luot_xem_online",
+    tags=["quan-tri-luot-xem"],
+)
+def luot_xem_online(request, response: HttpResponse):
+    """Ai đang online trong 5 phút gần nhất — một dòng cho mỗi *khách ước lượng*.
+
+    Không nhận tham số nào: cửa sổ, trần quét và trần dòng đều cố định phía server.
+    """
+    # GHI CHÚ NỘI BỘ — django-ninja đổ docstring của view vào `description` của OpenAPI.
+    #
+    # `tong` gọi THẲNG `_dem_online()`, tức đúng cái hàm ô KPI của `GET /admin/luot-xem`
+    # gọi. Không phải `len(items)`, và cám dỗ viết `len(items)` là có thật vì nó ngắn hơn
+    # và "trông hiển nhiên đúng":
+    #
+    #   - `items` gồm CẢ bot ⇒ `len(items)` phồng lên đúng bằng số bot đang quét;
+    #   - `items` bị chặn ở `SO_DONG_ONLINE`, còn `_dem_online()` thì không;
+    #   - `items` bị chặn ở `SO_HANG_QUET` hàng thô, `_dem_online()` cũng không.
+    #
+    # Ba chỗ ấy đều trả HTTP 200 và một con số chỉ hơi khác — đúng loài lỗi mà ô KPI nói
+    # "5" còn modal liệt kê 7 dòng. `tests/test_api_quan_tri_luot_xem.py::test_N4_*` so
+    # thẳng hai endpoint trên cùng dữ liệu.
+    #
+    # Mod thường xem được (không đòi `is_superuser`): endpoint chỉ đọc, và nó không phơi
+    # danh tính ai — xem khối ranh giới ở `quan_tri_schemas.py::KhachOnlineOut`.
+    response["Cache-Control"] = "no-store"
+    # ⚠ MỘT phép đọc đồng hồ cho cả response, truyền xuống cả hai hàm. Để mỗi hàm tự gọi
+    # `_moc_online()` là hai cửa sổ lệch nhau vài mili giây, và bất biến N4 gãy ở đúng
+    # lúc site đông nhất — không tái hiện được. Xem `_moc_online`.
+    moc = _moc_online()
+    items, bi_cat, so_dong_that = _gom_online(moc)
+    return OnlineOut(
+        items=items,
+        tong=_dem_online(moc),
+        bi_cat=bi_cat,
+        so_dong_that=so_dong_that,
     )

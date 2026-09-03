@@ -1,9 +1,16 @@
 "use client";
 
-import { quanTriLuotXem, type LuotXemOut } from "@gikky/api-client/admin";
+import {
+  quanTriLuotXem,
+  quanTriLuotXemOnline,
+  type KhachOnlineOut,
+  type LuotXemOut,
+  type OnlineOut,
+} from "@gikky/api-client/admin";
 import { useCallback, useEffect, useState } from "react";
 
 import { CotNhom } from "../../components/bieu-do";
+import { NganKeo } from "../../components/ngan-keo";
 import {
   HangTieuDe,
   HienLoi,
@@ -112,6 +119,19 @@ export default function TrangLuotXem() {
   const [dang_tai, datDangTai] = useState(true);
   const [loi, datLoi] = useState<string | null>(null);
 
+  // --- modal "ai đang online" (2026-08-31) ---
+  //
+  // Bốn state riêng, KHÔNG dùng chung với trang chính: endpoint khác, `no-store`, và
+  // nạp ở thời điểm khác. Nhập chúng vào `dang_tai`/`loi` của trang là một lượt mở modal
+  // hỏng sẽ hiện dải lỗi đỏ trên cả trang và làm sáu ô KPI nhấp nháy "Đang nạp…".
+  const [mo_online, datMoOnline] = useState(false);
+  const [online, datOnline] = useState<OnlineOut | null>(null);
+  const [dang_tai_online, datDangTaiOnline] = useState(false);
+  const [loi_online, datLoiOnline] = useState<string | null>(null);
+  //: Đồng hồ máy mod, ghi lúc số liệu VỀ. Không auto-refresh, nên không nói mốc là để
+  //: mod đọc một danh sách đã cũ vài chục phút như "ngay lúc này".
+  const [luc_nap_online, datLucNapOnline] = useState<string | null>(null);
+
   const nap = useCallback(async (k: string) => {
     datDangTai(true);
     datLoi(null);
@@ -137,10 +157,59 @@ export default function TrangLuotXem() {
     void nap(khoang);
   }, [khoang, nap]);
 
+  /** Nạp danh sách online. Gọi **khi MỞ**, không nạp sẵn cùng trang chính.
+   *
+   * Đây là một endpoint riêng, `no-store`, và nó quét hàng thô của cửa sổ 5 phút — kéo
+   * nó về ở mỗi lượt tải trang là bắt mọi lượt xem thống kê trả giá cho một cái modal mà
+   * phần lớn thời gian không ai mở. Không auto-refresh: mở lại là nạp lại, và một danh
+   * sách tự đổi dưới con trỏ trong lúc mod đang đọc là thứ khó đọc hơn là hữu ích.
+   */
+  const napOnline = useCallback(async () => {
+    datDangTaiOnline(true);
+    datLoiOnline(null);
+    try {
+      const { data, error } = await quanTriLuotXemOnline({
+        baseUrl: GOC_API,
+        cache: "no-store",
+      });
+      if (error !== undefined) throw error;
+      datOnline(data ?? null);
+      datLucNapOnline(new Date().toLocaleTimeString("vi-VN"));
+      // ⚠ Đồng bộ ô KPI theo con số vừa về. Chú trong modal nói "đúng bằng ô Online",
+      // mà ô ấy đứng yên từ lượt tải trang còn modal nạp tươi — nên trước lượt phản biện
+      // 2026-09-03 hai con số cạnh nhau trên cùng màn hình có thể khác nhau, và câu chú
+      // trở thành một lời khẳng định sai. Server bảo đảm `tong` và `so_online` là CÙNG
+      // một phép đếm, nên chép sang đây là làm màn hình khớp với sự thật ấy, không phải
+      // bịa thêm một số liệu.
+      if (data !== undefined) {
+        datSoLieu((cu) =>
+          cu === null ? cu : { ...cu, tong: { ...cu.tong, so_online: data.tong } },
+        );
+      }
+    } catch (e) {
+      datLoiOnline(moTaLoi(e));
+    } finally {
+      datDangTaiOnline(false);
+    }
+  }, []);
+
+  const moOnline = useCallback(() => {
+    // Xoá dữ liệu cũ TRƯỚC khi mở: giữ lại là mod nhìn thấy danh sách của lần mở trước
+    // trong lúc lượt nạp mới đang chạy — một danh sách "ai đang online" cũ vài phút
+    // trông y hệt một danh sách đúng.
+    datOnline(null);
+    datLucNapOnline(null);
+    datMoOnline(true);
+    void napOnline();
+  }, [napOnline]);
+
   return (
     <>
       <TieuDeTrang
-        mo_ta="Lượt xem trang của site công khai. Không cookie, không lưu IP, không dịch vụ ngoài."
+        // ⚠ Câu này từng nói "Không cookie" và từ 2026-08-31 nó SAI: mỗi lượt xem ghi
+        // thêm một bit *có cookie phiên hay không*. Không sửa thì trang tự khẳng định
+        // một cam kết mà chính nó vừa nới — đúng loại chữ mà lượt sau đọc rồi tin.
+        mo_ta="Lượt xem trang của site công khai. Không cookie theo dõi, không lưu IP, không dịch vụ ngoài."
         hanh_dong={
           <button
             type="button"
@@ -186,7 +255,12 @@ export default function TrangLuotXem() {
                 luỹ, chứ không lẫn vào giữa chúng. Nhãn phụ bắt buộc: đây là ô DUY NHẤT
                 của hàng này không đọc theo bộ chọn khoảng ở ngay trên, nên không nói ra
                 "5 phút gần nhất" là để mod đọc nó như "khách trong 30 ngày". */}
-            <TheSo nhan="Online" so={so_lieu.tong.so_online} phu="5 phút gần nhất" />
+            <TheSo
+              nhan="Online"
+              so={so_lieu.tong.so_online}
+              phu="5 phút gần nhất · bấm để xem"
+              onBam={moOnline}
+            />
             <TheSo nhan="Tổng lượt xem" so={so_lieu.tong.so_luot} />
             <TheSo nhan="Lượt người" so={so_lieu.tong.so_luot_nguoi} />
             <TheSo
@@ -380,7 +454,11 @@ export default function TrangLuotXem() {
               gikky băm (IP + trình duyệt) với một chuỗi muối <strong>đổi mỗi ngày</strong>{" "}
               và huỷ muối khi ngày đóng, nên một người ghé hai ngày được đếm là{" "}
               <strong>hai khách</strong>. Đó là cái giá của việc không theo dõi ai — không
-              cookie, không lưu IP, không dịch vụ ngoài.
+              cookie theo dõi, không lưu IP, không dịch vụ ngoài. Từ{" "}
+              <strong>03/09/2026</strong> mỗi lượt xem ghi thêm{" "}
+              <strong>một bit duy nhất</strong>: request có mang cookie phiên hay không.
+              Bit ấy <em>không</em> được kiểm còn hạn và <em>không</em> gắn với tài khoản
+              nào — nó chỉ nuôi cột “Trạng thái” của bảng “Ai đang online”.
             </p>
             <p className="mt-2" data-testid="chu-online">
               Ba, <strong>“Online” đếm lượt xem, không đếm phiên</strong>: nó là số khách
@@ -402,13 +480,276 @@ export default function TrangLuotXem() {
           </div>
         </div>
       )}
+
+      {/* Ngăn kéo dùng lại `components/ngan-keo.tsx` — đã có `role="dialog"`,
+          `aria-modal`, bẫy focus, Escape và trả focus về ô Online khi đóng. Dựng một
+          modal thứ hai chỉ cho màn hình này là chép lại bốn thứ ấy, và bản chép sẽ quên
+          ít nhất một. */}
+      <NganKeo
+        mo={mo_online}
+        dong={() => datMoOnline(false)}
+        tieu_de="Ai đang online"
+        mo_ta="Khách có lượt xem trong 5 phút gần nhất"
+      >
+        <BangOnline
+          online={online}
+          dang_tai={dang_tai_online}
+          loi={loi_online}
+          luc_nap={luc_nap_online}
+          napLai={() => void napOnline()}
+        />
+      </NganKeo>
     </>
   );
+}
+
+/** Ruột của ngăn kéo "Ai đang online" — ba trạng thái, và cả ba đều phải nói được.
+ *
+ * `đang tải` · `lỗi` · `rỗng`. Bỏ trạng thái nào thì nó thành một ngăn kéo trắng trơn,
+ * và một ngăn kéo trắng trơn đọc y hệt "không có ai đang online" — tức một câu trả lời
+ * SAI trông giống hệt một câu trả lời đúng.
+ */
+function BangOnline({
+  online,
+  dang_tai,
+  loi,
+  luc_nap,
+  napLai,
+}: {
+  online: OnlineOut | null;
+  dang_tai: boolean;
+  loi: string | null;
+  luc_nap: string | null;
+  napLai: () => void;
+}) {
+  if (loi !== null) {
+    return (
+      <div data-testid="online-loi">
+        <HienLoi loi={loi} />
+        <button type="button" className="nut" onClick={napLai}>
+          Thử lại
+        </button>
+      </div>
+    );
+  }
+  if (online === null || dang_tai) {
+    return (
+      <div data-testid="online-dang-tai">
+        <Skeleton dong={5} />
+      </div>
+    );
+  }
+  if (online.items.length === 0) {
+    return (
+      <div data-testid="online-rong">
+        <KhoiRong co_bo_loc={false} chua_co="Không ai đang online." />
+        {/* KHÔNG kèm khối chú ở nhánh này: cả ba vế của nó nói về *các dòng* — trạng
+            thái, khách ước lượng, chênh lệch với ô KPI — mà ở đây không có dòng nào.
+            Ba đoạn chữ giải thích một bảng trống là ba đoạn chữ không ai đọc. */}
+        <MocNapOnline luc_nap={luc_nap} napLai={napLai} />
+      </div>
+    );
+  }
+
+  const con_lai = online.so_dong_that - online.items.length;
+
+  return (
+    <div>
+      <p className="mb-3 text-sm" data-testid="online-tom-tat">
+        <strong className="tabular-nums">{online.tong.toLocaleString("vi-VN")}</strong>{" "}
+        người đang online
+        {/* Danh sách gồm CẢ bot, nên số dòng gần như luôn khác con số trên. Hai con số
+            cạnh nhau mà không giải thích là chỗ mod kết luận một trong hai đang sai —
+            nên chênh lệch được nói thẳng ở đây, không để trong dòng chú cuối. */}
+        <span className="text-muc-mo">
+          {" "}
+          · {online.items.length.toLocaleString("vi-VN")} dòng bên dưới (gồm cả bot)
+        </span>
+      </p>
+
+      <MocNapOnline luc_nap={luc_nap} napLai={napLai} />
+
+      {online.bi_cat && (
+        <p className="mb-3 text-xs text-chu-y" data-testid="online-bi-cat">
+          Lưu lượng đang quá lớn nên danh sách bị <strong>cắt bớt</strong>: vài dòng thiếu
+          và vài ô “Số lượt” bị đếm hụt. Con số <strong>người đang online</strong> ở trên
+          thì vẫn đủ — nó đếm riêng, không đọc từ danh sách này.
+        </p>
+      )}
+
+      {/* Trần dòng cắt ở server, và trước 2026-09-03 nó cắt IM LẶNG: một danh sách đủ
+          trần trông y hệt một danh sách đủ thật. `so_dong_that` là số khách gom được
+          trước khi cắt, nên chênh lệch nói ra được bằng một con số. */}
+      {con_lai > 0 && (
+        <p className="mb-3 text-xs text-chu-y" data-testid="online-con-lai">
+          Còn <strong className="tabular-nums">{con_lai.toLocaleString("vi-VN")}</strong>{" "}
+          dòng nữa không hiện — danh sách dừng ở{" "}
+          {online.items.length.toLocaleString("vi-VN")} dòng gần nhất.
+        </p>
+      )}
+
+      {/* MỘT KHỐI cho mỗi khách, xếp dọc — KHÔNG dùng `KhungBang` (2026-09-03).
+          Ngăn kéo rộng `max-w-md` (448px) còn `KhungBang` ép `min-w-[52rem]` (832px),
+          nên bảng 7 cột phải cuộn ngang gần gấp đôi bề rộng khung: đọc một dòng là hai
+          lượt kéo qua kéo lại. Bảng đúng khuôn của khu quản trị, nhưng khuôn ấy dựng cho
+          trang rộng chứ không cho một ngăn kéo. Kiểm mắt N10 chốt đổi. */}
+      <ul className="space-y-2" data-testid="bang-online">
+        {online.items.map((k) => (
+          <KhoiOnline key={k.stt} k={k} />
+        ))}
+      </ul>
+
+      <ChuOnline tong={online.tong} />
+    </div>
+  );
+}
+
+/** Mốc thời gian của số liệu + nút nạp lại. Modal cố ý KHÔNG tự làm mới (một danh sách
+ * đổi dưới con trỏ khó đọc hơn là hữu ích), nên nó phải nói ra số liệu cũ bao lâu — một
+ * danh sách "ai đang online" đã cũ vài chục phút trông y hệt một danh sách đúng. */
+function MocNapOnline({
+  luc_nap,
+  napLai,
+}: {
+  luc_nap: string | null;
+  napLai: () => void;
+}) {
+  return (
+    <p className="mb-3 flex flex-wrap items-center gap-2 text-xs text-muc-mo">
+      <span data-testid="online-luc-nap">
+        Số liệu lúc <strong className="tabular-nums">{luc_nap ?? "—"}</strong>, không tự
+        làm mới
+      </span>
+      <button
+        type="button"
+        className="nut nut-nho"
+        onClick={napLai}
+        data-testid="online-nut-lam-moi"
+      >
+        Làm mới
+      </button>
+    </p>
+  );
+}
+
+/** Một khách = một khối bốn dòng, không phải một hàng bảng.
+ *
+ * Thứ tự dòng đi theo thứ tự mod hỏi: *ai đây* → *bằng gì* → *đang xem gì* → *bao lâu
+ * rồi*. `stt` nằm cạnh loại chứ không thành một cột: nó chỉ để mod nói "dòng 3", không
+ * phải một số liệu.
+ */
+function KhoiOnline({ k }: { k: KhachOnlineOut }) {
+  return (
+    <li className="rounded border border-vien p-3" data-testid={`online-khach-${k.stt}`}>
+      <p className="flex items-baseline justify-between gap-2 text-sm">
+        <span className={k.la_bot ? "text-muc-mo" : "font-semibold"}>
+          <span className="text-muc-mo tabular-nums">{k.stt}.</span>{" "}
+          {k.la_bot ? `Bot${k.ten_bot === "" ? "" : ` · ${k.ten_bot}`}` : "Người"}
+        </span>
+        <TrangThaiOnline k={k} />
+      </p>
+      <p className="mt-1 text-xs text-muc-mo">
+        {oTrong(nhanCua(NHAN_TRINH_DUYET, k.trinh_duyet), k.trinh_duyet)} ·{" "}
+        {oTrong(nhanCua(NHAN_THIET_BI, k.thiet_bi), k.thiet_bi)}
+      </p>
+      <p className="mono mt-1 text-xs break-all">{k.duong_dan}</p>
+      <p className="mt-1 text-xs text-muc-mo">
+        {baoLauTruoc(k.giay_truoc)} · <span className="tabular-nums">{k.so_luot}</span> lượt
+      </p>
+    </li>
+  );
+}
+
+/** Cột "Trạng thái" của một khối. Ba ca, và ca thứ ba là ca đáng thấy nhất.
+ *
+ * ⚠ **Bot MANG cookie phiên là bất thường**, không phải nhiễu: hoặc ai đó đang chạy
+ * script bằng phiên của chính mình, hoặc một phiên đã rò ra ngoài. Đường ghi cố ý không
+ * ép cờ ấy về `False` cho bot (xem `core/models/luot_xem.py`), nên phía đọc cũng không
+ * được nuốt nó. Bản trước in `—` cho MỌI dòng bot kèm một chú thích khẳng định "bot
+ * không mang cookie bao giờ" — một câu sai, và nó làm đúng ca đáng thấy thành vô hình.
+ * Lượt phản biện 2026-09-03 tìm ra (TB-6).
+ */
+function TrangThaiOnline({ k }: { k: KhachOnlineOut }) {
+  if (k.la_bot) {
+    return k.da_dang_nhap ? (
+      <span className="text-chu-y">⚠ có cookie phiên</span>
+    ) : (
+      <span className="text-muc-mo">—</span>
+    );
+  }
+  return k.da_dang_nhap ? (
+    <span className="text-tot">Đã đăng nhập</span>
+  ) : (
+    <span className="text-muc-mo">Khách</span>
+  );
+}
+
+/** Ba vế phải nói ra, và cả ba đều là chỗ một mod đọc sai rồi ra quyết định sai.
+ *
+ * ⚠ Bản trước của khối này có hai câu **SAI**, gỡ 2026-09-03 sau lượt phản biện:
+ * *"gikky không biết đó là ai"* và *"bảng lượt xem cố ý không có cột nào gắn được với
+ * một con người"*. Câu thứ nhất sai vì đường dẫn `/u/…` ghép được một dòng với một tài
+ * khoản (nay đã che ở server, nhưng "không biết là ai" vẫn là một lời hứa mạnh hơn thứ
+ * cơ chế này bảo đảm được); câu thứ hai là một **cam kết về bảng** bị đem sang làm cam
+ * kết về màn hình. Chú giải thích một giới hạn mà chính nó nói sai thì tệ hơn không có.
+ */
+function ChuOnline({ tong }: { tong: number }) {
+  return (
+    <div className="mt-4 border-t border-vien pt-3 text-xs text-muc-mo" data-testid="chu-modal-online">
+      <p>
+        <strong>“Đã đăng nhập” chỉ có nghĩa: request mang một cookie tên</strong>{" "}
+        <span className="mono">sessionid</span>. Cookie ấy do <em>client tự khai</em> —
+        thêm một dòng trong devtools là đủ để một khách hiện ra “Đã đăng nhập” — và gikky{" "}
+        <strong>không kiểm nó còn hạn không</strong>: phép kiểm ấy cần truy vấn cơ sở dữ
+        liệu, mà chỗ đọc cookie chạy ở biên, không có cơ sở dữ liệu.
+      </p>
+      <p className="mt-2">
+        Dữ liệu ở đây <strong>không có tên tài khoản, không IP, không User-Agent</strong>,
+        và đường dẫn tới <strong>hồ sơ người dùng</strong> hay <strong>tin nhắn</strong>{" "}
+        được che trước khi rời máy chủ. Số thứ tự bên trái chỉ có nghĩa trong{" "}
+        <em>lần mở này</em>: đóng rồi mở lại là một cách đánh số khác, nên hai lượt xem
+        không ghép được với nhau.
+      </p>
+      <p className="mt-2">
+        Mỗi khối là một <strong>khách ước lượng theo lượt xem</strong>, không phải một
+        phiên: cùng một người mở hai trình duyệt thành hai khối, còn người ngồi đọc yên
+        một trang quá 5 phút thì rơi khỏi danh sách. Con số{" "}
+        <strong className="tabular-nums">{tong.toLocaleString("vi-VN")}</strong> ở trên chỉ
+        đếm <strong>người</strong>, đúng bằng ô “Online” — khối bot không được cộng vào.
+      </p>
+    </div>
+  );
+}
+
+/** Ô rỗng ⇒ gạch ngang. Bot cố ý không có trình duyệt/thiết bị, và một ô trắng trơn đọc
+ * như "dữ liệu bị mất" chứ không phải "câu hỏi này không áp dụng". */
+function oTrong(nhan: string, khoa: string) {
+  return khoa === "" ? <span className="text-muc-mo">—</span> : nhan;
+}
+
+/** `giay_truoc` → chữ. Server đã tính sẵn khoảng cách nên ở đây không có phép trừ đồng
+ * hồ nào — đồng hồ máy mod lệch thì mọi dòng lệch theo, và lệch âm thì "vừa xong" thành
+ * một mốc trong tương lai. */
+function baoLauTruoc(giay: number): string {
+  if (giay < 60) return "vừa xong";
+  const p = Math.floor(giay / 60);
+  return `${p} phút trước`;
 }
 
 /** Một ô số lớn. Không dùng `TheKpi` của bảng điều khiển: ô đó có icon + link đích, mà
  * các con số ở đây không dẫn tới trang nào — một ô trông bấm được mà không bấm được là
  * đúng thứ nguyên tắc 9 của PLAN cấm.
+ *
+ * ## `onBam` — và vì sao nó đổi cả THẺ chứ không chỉ thêm một handler
+ *
+ * Nguyên tắc 9 chạy **cả hai chiều**: ô bấm được mà trông như chữ tĩnh cũng sai đúng
+ * bằng ô trông bấm được mà không bấm được — chỉ khác là chiều này không ai phàn nàn, họ
+ * chỉ không bao giờ tìm ra tính năng. Nên có `onBam` thì ô là `<button>` thật: con trỏ
+ * tay, đổi nền khi rê chuột, viền `:focus-visible`, và bàn phím `Tab` tới được. Một
+ * `<div onClick>` cho cả ba thứ ấy là ba lần vá tay, và vẫn không có gì đọc màn hình
+ * biết nó bấm được.
+ *
+ * Không có `onBam` thì trả về đúng `<div>` như trước ⇒ **năm ô kia không đổi một pixel**.
  *
  * ## ⚠ `so` khai `number` nhưng thân hàm vẫn phòng `undefined`, và đó KHÔNG phải thừa
  *
@@ -431,21 +772,51 @@ function TheSo({
   so,
   la_phan_tram = false,
   phu,
+  onBam,
 }: {
   nhan: string;
   so: number;
   la_phan_tram?: boolean;
   phu?: string;
+  onBam?: () => void;
 }) {
   const co_so = typeof so === "number" && Number.isFinite(so);
-  return (
-    <div className="the p-4" data-testid={`so-${nhan}`}>
-      <p className="text-sm text-muc-mo">{nhan}</p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums">
+  // ⚠ `<span className="block">`, KHÔNG `<p>`: cùng một khối ruột này được nhét vào cả
+  // `<div>` lẫn `<button>`, và `<p>` bên trong `<button>` là HTML không hợp lệ (content
+  // model của `button` chỉ nhận phrasing content). Trình duyệt "sửa" bằng cách bẻ cây
+  // DOM — nút vỡ làm nhiều mảnh, và triệu chứng chỉ hiện ở một số trình duyệt. Preflight
+  // của Tailwind đã bỏ margin của `<p>`, nên đổi thẻ **không đổi một pixel** nào.
+  const ruot = (
+    <>
+      <span className="block text-sm text-muc-mo">{nhan}</span>
+      <span className="mt-1 block text-2xl font-semibold tabular-nums">
         {!co_so ? "—" : la_phan_tram ? `${so}%` : so.toLocaleString("vi-VN")}
-      </p>
-      {phu !== undefined && <p className="mt-0.5 text-xs text-muc-mo">{phu}</p>}
-    </div>
+      </span>
+      {phu !== undefined && (
+        <span className="mt-0.5 block text-xs text-muc-mo">{phu}</span>
+      )}
+    </>
+  );
+
+  if (onBam === undefined) {
+    return (
+      <div className="the p-4" data-testid={`so-${nhan}`}>
+        {ruot}
+      </div>
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={onBam}
+      // `text-left` bắt buộc: `<button>` canh giữa mặc định, nên thiếu nó là ô này lệch
+      // khỏi năm ô kia đúng một cách chỉ nhìn thấy khi đặt cạnh nhau.
+      className="the w-full cursor-pointer p-4 text-left transition-colors
+        hover:border-nhan hover:bg-nen-mo focus-visible:border-nhan"
+      data-testid={`so-${nhan}`}
+    >
+      {ruot}
+    </button>
   );
 }
 

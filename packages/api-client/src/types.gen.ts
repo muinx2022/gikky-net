@@ -457,7 +457,7 @@ export type DatKhoaMachIn = {
 /**
  * DemLuotXemIn
  *
- * Thân request. Bốn trường, và **ba trường sau đều có mặc định**.
+ * Thân request. Năm trường, và **bốn trường sau đều có mặc định**.
  *
  * ⚠ **Backward-compatible là BẮT BUỘC, không phải lịch sự.** Deploy không nguyên tử:
  * trong cửa sổ giữa lúc Django mới lên và lúc `apps/web` mới lên, prod đang chạy
@@ -466,6 +466,10 @@ export type DatKhoaMachIn = {
  * `.catch(() => {})` mọi lỗi. `tests/test_api_dem_luot_xem.py` ghim đúng ca này.
  */
 export type DemLuotXemIn = {
+    /**
+     * Da Dang Nhap
+     */
+    da_dang_nhap?: boolean;
     /**
      * Duong Dan
      */
@@ -1316,6 +1320,13 @@ export type MocRevisionsOut = {
  * Đây là PATCH thật: trường **không gửi** thì không đổi, trường gửi `null` thì xoá.
  * Phân biệt hai ca đó bằng `model_fields_set` của pydantic, nên đừng đổi `None` mặc
  * định thành một sentinel khác — `api/mocs.py` đọc đúng cơ chế ấy.
+ *
+ * ⚠ **`body` KHÔNG được schema chặn ở `null`, dù nó khai `min_length=1`.** `Field` áp
+ * ràng buộc lên nhánh `str` của union, còn `null` đi thẳng qua. Câu "schema chặn trước
+ * khi vào đây" từng đứng ở đây và ở `api/mocs.py` là **sai**: `{"body": null}` xuống tới
+ * `lam_sach(None)` và nổ `TypeError` ⇒ 500 trần. Phép chặn thật nằm ở
+ * `core/ghi.py::_kiem_thay_doi_moc` (một chỗ, cho cả cửa v1 lẫn cửa quản trị) và trả
+ * 400 `du_lieu_khong_hop_le`. Vá 2026-09-03.
  */
 export type MocSuaIn = {
     /**

@@ -853,3 +853,83 @@ class LuotXemOut(Schema):
     #: bốn khối nữa — một cái tên nói "bot" cho một cờ điều khiển năm dòng chú là cái tên
     #: sẽ bị hiểu sai đúng bốn lần.
     chi_tiet_chi_90_ngay: bool
+
+
+# --- Ai đang online (`/luot-xem/online`, 2026-08-31) -------------------------
+#
+# Modal của ô "Online". Nhóm này là chỗ RIÊNG TƯ dễ vỡ nhất của cả file, nên ranh giới
+# được ghi ngay đây thay vì chỉ trong plan:
+#
+#   ra API:      nhãn 8 hex · người/bot · tên bot · có-cookie-phiên · trình duyệt ·
+#                thiết bị · đường dẫn · giây trước · số lượt
+#   KHÔNG ra:    `khach` đủ 32 ký tự · IP · User-Agent thô · username · user_id
+#
+# `tests/test_api_quan_tri_luot_xem.py` (nhóm N6) quét **mọi giá trị chuỗi** của response
+# và đỏ nếu thấy hash đầy đủ, IP hay UA. Đừng nới danh sách trường mà không đọc bài ấy.
+
+
+class KhachOnlineOut(Schema):
+    """Một *khách ước lượng* đang online — MỘT dòng của modal, không phải một phiên."""
+
+    #: Số thứ tự 1-based **trong đúng response này**, không hơn. Nó chỉ để mod nói "dòng
+    #: 3" với nhau và để React có `key`.
+    #:
+    #: ⚠ Trường này thay cho `ma` (8 hex đầu của `LuotXem.khach`), gỡ 2026-09-03 sau lượt
+    #: phản biện. Lý do: `ma` **ổn định suốt một ngày**, nên hai lượt mở modal cách nhau
+    #: một giờ ghép được với nhau — và một khi một dòng nào đó lộ ra ai (đường dẫn `/u/…`
+    #: là đủ), mọi dòng cùng `ma` trong ngày trở thành **lịch sử đọc của người ấy**. User
+    #: không hề yêu cầu một bí danh; nó được thêm vào như một tiện ích, và tiện ích ấy đắt
+    #: hơn cái nó cho. `stt` không mang bit nào của `khach`, nên nó không ghép được gì.
+    stt: int
+    la_bot: bool
+    #: Tên CHUẨN HOÁ (`core/bot.py`) hoặc `""` khi là người. Không phải User-Agent thô.
+    ten_bot: str
+    #: ⚠ Đọc đúng chữ: *request có mang cookie tên `sessionid`*, **không** phải "phiên còn
+    #: hiệu lực" và **không** phải "người này là ai" — xem
+    #: `core/models/luot_xem.py::LuotXem.da_dang_nhap`. Modal phải nói ra cả hai giới hạn.
+    da_dang_nhap: bool
+    #: Khoá ascii, `""` với bot (`LuotXem.trinh_duyet`).
+    trinh_duyet: str
+    #: `di_dong` · `may_tinh`; `""` với bot.
+    thiet_bi: str
+    #: Đường dẫn của lượt **GẦN NHẤT** trong cửa sổ, không phải lượt đầu tiên: câu hỏi là
+    #: "đang xem gì", không phải "đã vào bằng cửa nào".
+    #:
+    #: ⚠ **Đã CHE phần mang danh tính** (`quan_tri_luot_xem.py::che_duong_dan`): `/u/…` ra
+    #: `"(hồ sơ người dùng)"`, `/tin-nhan/…` ra `"(tin nhắn)"`. Che ở server, không ở màn
+    #: hình — giấu chữ mà vẫn gửi JSON đủ thì chỉ là giấu với người không mở devtools.
+    duong_dan: str
+    #: Bao nhiêu giây trước tính tới lượt gần nhất. Server tính, **không** trả mốc thời
+    #: gian tuyệt đối rồi để trình duyệt trừ: đồng hồ máy mod lệch là mọi dòng lệch theo,
+    #: và lệch âm thì "2 phút trước" thành "trong tương lai".
+    giay_truoc: int
+    #: Số lượt xem của khách này **trong cửa sổ** — 1 là vừa mở một trang, 20 là đang lướt.
+    so_luot: int
+
+
+class OnlineOut(Schema):
+    """Danh sách khách đang online trong `CUA_SO_ONLINE_PHUT` phút gần nhất."""
+
+    #: Sắp theo lượt gần nhất, MỚI trước. Tối đa `SO_DONG_ONLINE` dòng.
+    #:
+    #: ⚠ **Gồm CẢ dòng bot**, nên `len(items)` KHÁC `tong` — xem chú của `tong`.
+    items: list[KhachOnlineOut]
+    #: Số khách **NGƯỜI** phân biệt — bằng ĐÚNG `LuotXemTongOut.so_online` của
+    #: `GET /admin/luot-xem` trên cùng dữ liệu, vì cả hai gọi chung một hàm.
+    #:
+    #: ⚠ Nó **không** phải `len(items)`, và đó là chủ đích: ô KPI trả lời *"bao nhiêu
+    #: NGƯỜI đang đọc"*, còn danh sách trả lời *"ai đang ở đây"* — mà bot cũng đang ở đây.
+    #: Modal phải nói ra chênh lệch ấy; hai con số cạnh nhau không giải thích là chỗ mod
+    #: kết luận một trong hai đang sai.
+    tong: int
+    #: `True` khi cửa sổ có nhiều hơn `SO_HANG_QUET` hàng thô ⇒ danh sách **thiếu** (và
+    #: `so_luot` của vài dòng bị đếm hụt). `tong` KHÔNG bị ảnh hưởng — nó là một câu
+    #: `COUNT(DISTINCT)` chạy trên toàn cửa sổ. Modal phải nói ra khi cờ này bật.
+    bi_cat: bool
+    #: Số khách phân biệt gom được **trước** khi cắt `SO_DONG_ONLINE`. `so_dong_that >
+    #: len(items)` ⇒ trần dòng đã cắt bớt, và modal nói ra "còn N dòng nữa không hiện".
+    #:
+    #: ⚠ `bi_cat` KHÔNG phủ ca này: nó chỉ nói về trần QUÉT. Trước lượt phản biện
+    #: 2026-09-03 trần dòng cắt hoàn toàn im lặng — một danh sách 200 dòng trông y hệt
+    #: một danh sách đủ, và mod đọc "200" như số khách đang online.
+    so_dong_that: int

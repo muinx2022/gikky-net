@@ -18,6 +18,7 @@ Ngày 200 chỉ tồn tại ở `TongNgay` — đó là ca mà 7/30/90 **phải 
 `TongNgay` với toàn bộ `LuotXem` sẽ trả 5 + 5 = 10 cho `/m/a-1` thay vì 5.
 """
 
+import re
 from datetime import datetime, time, timedelta
 
 import pytest
@@ -26,7 +27,8 @@ from django.utils import timezone
 from core.models.luot_xem import KhachNgay, LuotXem, TongNgay
 from core.thoi_gian import TZ_VN, ngay_vn
 
-from api.quan_tri_luot_xem import CUA_SO_ONLINE_PHUT
+from api import quan_tri_luot_xem
+from api.quan_tri_luot_xem import CUA_SO_ONLINE_PHUT, che_duong_dan
 
 from ._quan_tri import User, dang_nhap, dung_mod, dung_thuong
 
@@ -839,3 +841,475 @@ def test_O5_so_online_KHONG_doi_theo_khoang(db, hom_nay):
 def test_O_bang_rong_tra_0_chu_khong_None(db):
     """Site chưa có lượt nào: `0`, và trường vẫn phải có mặt (frontend đọc thẳng)."""
     assert goi("30").json()["tong"]["so_online"] == 0
+
+
+# ===========================================================================
+# Nhóm N — `GET /admin/luot-xem/online` (`plans/2026-08-31-modal-online.md`)
+# ===========================================================================
+#
+# Modal "ai đang online". Nhóm này canh hai loại hỏng khác hẳn nhau:
+#
+#   1. **Số trôi** — `tong` của modal lệch khỏi ô KPI. HTTP 200, hai con số cạnh nhau
+#      trên cùng một màn hình nói ngược nhau, và mod sẽ không tin con số nào nữa.
+#   2. **Rò rỉ** — một trường mới vô tình mang hash đầy đủ / IP / UA ra ngoài. Không bài
+#      đo nào khác của repo nhìn thấy được, vì nó cũng trả 200 và trông đầy đủ hơn.
+#
+# ⚠ Mọi bài dùng mốc TUYỆT ĐỐI (`them_phut_du`), không dùng `them` (12h trưa VN) — cùng
+# lý do đã ghi ở đầu nhóm O.
+
+URL_ONLINE = f"{URL}/online"
+
+
+def goi_online(*, user=None):
+    """GET `/luot-xem/online` với tư cách mod. Cùng khuôn `goi()` ở trên."""
+    client = dang_nhap(
+        user or User.objects.filter(username="mod_chinh").first() or dung_mod()
+    )
+    return client.get(URL_ONLINE)
+
+
+def them_phut_du(phut_truoc, **kw):
+    """Một lượt xem cách BÂY GIỜ đúng `phut_truoc` phút, kèm bốn cột chỉ modal đọc."""
+    hang = LuotXem.objects.create(
+        duong_dan=kw.pop("duong_dan", "/"),
+        luc=timezone.now() - timedelta(minutes=phut_truoc),
+        la_bot=kw.pop("bot", False),
+        ten_bot=kw.pop("ten_bot", ""),
+        khach=kw.pop("khach", "a" * 32),
+        # `nguon` KHÔNG có trong response — và bài `test_N6` tồn tại để nó ở lại như thế.
+        nguon=kw.pop("nguon", ""),
+        trinh_duyet=kw.pop("trinh_duyet", ""),
+        thiet_bi=kw.pop("thiet_bi", ""),
+        da_dang_nhap=kw.pop("da_dang_nhap", False),
+    )
+    assert not kw, f"tham số lạ: {kw}"
+    return hang
+
+
+# --- N7: phân quyền, đúng cùng luật với `/luot-xem` --------------------------
+
+
+def test_N7_khach_401(db, client):
+    assert client.get(URL_ONLINE).status_code == 401
+
+
+def test_N7b_nguoi_thuong_403(db):
+    assert goi_online(user=dung_thuong()).status_code == 403
+
+
+def test_N7c_mod_thuong_200_khong_can_superuser(db):
+    """Chỉ đọc, và **không phơi danh tính ai** ⇒ không đòi `is_superuser`, y như ô KPI."""
+    mod = dung_mod()
+    assert mod.is_superuser is False
+    assert goi_online(user=mod).status_code == 200
+
+
+def test_N7d_khong_cache(db):
+    assert goi_online()["Cache-Control"] == "no-store"
+
+
+# --- N3: gom theo khách -------------------------------------------------------
+
+
+def test_N3_ba_luot_mot_khach_ra_MOT_dong_so_luot_3(db):
+    """Gom theo `khach`, không phải một dòng mỗi lượt xem.
+
+    Không gom thì một người đang lướt 20 trang thành 20 dòng giống hệt nhau, trong khi
+    con số ngay cạnh nói "1" — đúng triệu chứng mà bất biến N4 sinh ra để chặn.
+    """
+    them_phut_du(3, khach="a" * 32, duong_dan="/")
+    them_phut_du(2, khach="a" * 32, duong_dan="/s/x")
+    them_phut_du(1, khach="a" * 32, duong_dan="/m/moi-nhat-1")
+
+    js = goi_online().json()
+    assert len(js["items"]) == 1
+    assert js["items"][0]["so_luot"] == 3
+
+
+def test_N3b_duong_dan_la_luot_GAN_NHAT_chu_khong_phai_dau_tien(db):
+    """"Đang xem gì", không phải "đã vào bằng cửa nào".
+
+    ⚠ Bài này tách được hai cách cài mà `test_N3` không tách: gom bằng "lần đầu gặp trong
+    thứ tự `-luc`" (đúng) và gom bằng "lần cuối ghi đè" (sai) đều ra `so_luot=3`.
+    """
+    them_phut_du(3, khach="a" * 32, duong_dan="/cua-vao")
+    them_phut_du(2, khach="a" * 32, duong_dan="/giua")
+    them_phut_du(1, khach="a" * 32, duong_dan="/dang-xem")
+
+    js = goi_online().json()
+    assert js["items"][0]["duong_dan"] == "/dang-xem"
+    # `giay_truoc` cũng của lượt gần nhất: ~60 giây, không phải ~180.
+    assert js["items"][0]["giay_truoc"] < 120
+
+
+def test_N3c_hai_khach_ra_HAI_dong_moi_truoc(db):
+    """Sắp theo lượt gần nhất, MỚI trước — mod đọc từ trên xuống là đọc theo thời gian."""
+    them_phut_du(4, khach="c" * 32, duong_dan="/cu")
+    them_phut_du(1, khach="d" * 32, duong_dan="/moi")
+
+    js = goi_online().json()
+    assert [i["duong_dan"] for i in js["items"]] == ["/moi", "/cu"]
+    assert all(i["so_luot"] == 1 for i in js["items"])
+
+
+def test_N3d_cac_cot_mo_ta_di_theo_dung_dong(db):
+    """Trình duyệt · thiết bị · đã-đăng-nhập · tên bot: mỗi dòng mang giá trị của CHÍNH nó.
+
+    Hai khách khác hẳn nhau trên mọi cột; trộn dòng là bài này đỏ.
+    """
+    them_phut_du(
+        2,
+        khach="a" * 32,
+        duong_dan="/nguoi",
+        trinh_duyet="chrome",
+        thiet_bi="may_tinh",
+        da_dang_nhap=True,
+    )
+    them_phut_du(1, khach="b" * 32, duong_dan="/bot", bot=True, ten_bot="googlebot")
+
+    theo_duong = {i["duong_dan"]: i for i in goi_online().json()["items"]}
+    nguoi = theo_duong["/nguoi"]
+    assert nguoi["la_bot"] is False
+    assert nguoi["ten_bot"] == ""
+    assert nguoi["da_dang_nhap"] is True
+    assert nguoi["trinh_duyet"] == "chrome"
+    assert nguoi["thiet_bi"] == "may_tinh"
+
+    bot = theo_duong["/bot"]
+    assert bot["la_bot"] is True
+    assert bot["ten_bot"] == "googlebot"
+    # ⚠ Bot trong seed này KHÔNG mang cookie, nên cờ là `False` — nhưng đó là giá trị của
+    # HÀNG, không phải một luật. Bot **có** cookie phiên vẫn giữ `True`; xem `test_TB6_*`.
+    assert bot["da_dang_nhap"] is False
+    # Bot cố ý KHÔNG có hai cột này (`dem_luot_xem` để rỗng); modal hiện dấu gạch.
+    assert bot["trinh_duyet"] == ""
+    assert bot["thiet_bi"] == ""
+
+
+def test_N3e_danh_sach_CO_dong_bot(db):
+    """User hỏi đích danh *"là người hay bot"* ⇒ bot phải có mặt trong danh sách.
+
+    Bài này giữ cho ai đó không "sửa cho nhất quán" bằng cách thêm `la_bot=False` vào
+    truy vấn của modal — lúc ấy hai cột `la_bot`/`ten_bot` thành cột chết mà không gì đỏ.
+    """
+    them_phut_du(1, khach="b" * 32, bot=True, ten_bot="bingbot")
+    js = goi_online().json()
+    assert [i["la_bot"] for i in js["items"]] == [True]
+    # …nhưng nó KHÔNG được cộng vào `tong` — xem N4.
+    assert js["tong"] == 0
+
+
+# --- N4: BẤT BIẾN `tong` == `so_online` ---------------------------------------
+
+
+def test_N4_tong_BANG_so_online_cua_endpoint_kia(db):
+    """⚠ Bất biến trung tâm của lượt này.
+
+    Seed cố tình làm `len(items) != tong`: 2 người + 2 bot ⇒ 4 dòng, `tong` = 2. Nhờ vậy
+    bài đo tách được `tong=_dem_online()` (đúng) khỏi `tong=len(items)` (ngắn hơn, "trông
+    hiển nhiên đúng", và là cách hỏng thật) — với seed chỉ có người thì hai cách cài cho
+    cùng một con số và bài đo không nói được gì.
+    """
+    them_phut_du(1, khach="a" * 32)
+    them_phut_du(2, khach="b" * 32)
+    them_phut_du(1, khach="y" * 32, bot=True, ten_bot="googlebot")
+    them_phut_du(3, khach="z" * 32, bot=True, ten_bot="bingbot")
+
+    js = goi_online().json()
+    assert len(js["items"]) == 4, js["items"]
+    assert js["tong"] == goi("30").json()["tong"]["so_online"]
+    assert js["tong"] == 2
+
+
+def test_N4b_bat_bien_giu_ca_khi_KHONG_co_ai(db):
+    js = goi_online().json()
+    assert js["items"] == []
+    assert js["tong"] == goi("30").json()["tong"]["so_online"] == 0
+    assert js["bi_cat"] is False
+
+
+def test_N4c_bat_bien_giu_ca_khi_chi_co_BOT(db):
+    """Site chỉ có bot: ô KPI nói 0, modal liệt kê bot. Hai con số **cùng đúng**."""
+    them_phut_du(1, khach="y" * 32, bot=True, ten_bot="googlebot")
+    js = goi_online().json()
+    assert len(js["items"]) == 1
+    assert js["tong"] == goi("30").json()["tong"]["so_online"] == 0
+
+
+# --- N5: cửa sổ + hàng không đo được -----------------------------------------
+
+
+def test_N5_hang_khach_RONG_bi_loai_khoi_danh_sach(db):
+    """Cùng bẫy mà `_dem_online` đã đóng, và ở đây đắt hơn: không loại thì modal có một
+    dòng "khách ma" gộp mọi hàng ghi trước 2026-08-30, đứng đó vĩnh viễn."""
+    them_phut_du(1, khach="")
+    them_phut_du(2, khach="")
+
+    js = goi_online().json()
+    assert js["items"] == []
+    assert js["tong"] == 0
+
+
+def test_N5b_ranh_gioi_dung_CUA_SO_ONLINE_PHUT(db):
+    """Hai mốc bám THEO HẰNG, không gõ tay — cùng lý lẽ `test_O4`.
+
+    Bỏ hẳn phép lọc cửa sổ, đảo dấu, hay dùng một hằng thứ hai ⇒ 2 dòng thay vì 1.
+    """
+    them_phut_du(CUA_SO_ONLINE_PHUT - 1, khach="a" * 32, duong_dan="/trong")
+    them_phut_du(CUA_SO_ONLINE_PHUT + 1, khach="b" * 32, duong_dan="/ngoai")
+
+    js = goi_online().json()
+    assert [i["duong_dan"] for i in js["items"]] == ["/trong"]
+    assert js["tong"] == 1
+
+
+def test_N5c_luot_NGOAI_cua_so_khong_cong_vao_so_luot(db):
+    """Cùng một khách, một lượt trong và một lượt ngoài ⇒ `so_luot` là **1**, không phải 2.
+
+    Lọc cửa sổ phải xảy ra TRƯỚC phép gom; gom trước rồi mới lọc là một dòng đúng với một
+    con số sai — loại lỗi không ai nhìn ra khi đọc màn hình.
+    """
+    them_phut_du(CUA_SO_ONLINE_PHUT - 1, khach="a" * 32)
+    them_phut_du(CUA_SO_ONLINE_PHUT + 10, khach="a" * 32)
+
+    js = goi_online().json()
+    assert len(js["items"]) == 1
+    assert js["items"][0]["so_luot"] == 1
+
+
+# --- N6: KHÔNG rò rỉ ----------------------------------------------------------
+
+
+def _moi_chuoi(x):
+    """Mọi giá trị CHUỖI ở mọi độ sâu của một cây JSON."""
+    if isinstance(x, str):
+        yield x
+    elif isinstance(x, dict):
+        for v in x.values():
+            yield from _moi_chuoi(v)
+    elif isinstance(x, list):
+        for v in x:
+            yield from _moi_chuoi(v)
+
+
+#: Bất kỳ chuỗi nào **trông như** một địa chỉ IPv4. Rộng có chủ đích: cái phải chặn là
+#: hình dạng, không phải một địa chỉ cụ thể nào.
+DANG_IPV4 = re.compile(r"\b\d+\.\d+\.\d+\.\d+\b")
+
+
+def test_N6_response_KHONG_chua_bit_nao_cua_khach_khong_IP_khong_UA(db):
+    """⚠ Hàng rào riêng tư của lượt này. Quét **mọi giá trị chuỗi**, không kiểm từng trường.
+
+    Ba thứ bị cấm rời server, và cả ba đều đi ra qua "một trường khác" chứ không qua
+    trường ai đó đang nhìn:
+
+    1. **bất kỳ mẩu nào của `LuotXem.khach`** — kể cả 8 hex đầu. Bản trước của lượt này
+       trả đúng 8 hex ấy dưới tên `ma`, và nó **ổn định suốt một ngày**: đủ để ghép hai
+       lượt mở modal cách nhau một giờ thành một dấu vết. Nay `stt` thay chỗ, và bài đo
+       cấm mọi tiền tố hex ≥ 8 ký tự quay lại (lượt phản biện 2026-09-03, hạng NẶNG);
+    2. **địa chỉ IP** — bảng không có cột IP, nhưng `LuotXem.nguon` **có thể là một IP
+       literal** khi referer trỏ thẳng vào một host số. Seed đúng ca ấy: thêm `nguon` vào
+       schema "cho đủ thông tin" là một rò rỉ có thật, không phải một giả thuyết;
+    3. **User-Agent thô** — không cột nào lưu nó, nên vế này là canh HÌNH DẠNG cho lượt
+       sau: ngày ai đó thêm một cột UA thì bài này đỏ trước khi modal kịp in nó ra.
+    """
+    khach = "0123456789abcdef0123456789abcdef"
+    them_phut_du(
+        1,
+        khach=khach,
+        duong_dan="/s/chung-khoan",
+        trinh_duyet="chrome",
+        thiet_bi="may_tinh",
+        nguon="203.0.113.9",
+    )
+
+    js = goi_online().json()
+    chuoi = list(_moi_chuoi(js))
+    assert chuoi, "không quét được chuỗi nào — bài đo đã mục"
+
+    assert not any(khach in c for c in chuoi), chuoi
+    # …và không phải một mẩu ngắn hơn: 8 hex đầu là tiền tố NGẮN NHẤT bị cấm, nên mọi
+    # tiền tố dài hơn cũng bị bài này chặn theo.
+    assert not any(khach[:8] in c for c in chuoi), chuoi
+    assert not any(DANG_IPV4.search(c) for c in chuoi), chuoi
+    assert not any("Mozilla" in c for c in chuoi), chuoi
+
+
+def test_N6b_response_khong_co_truong_danh_tinh_nao(db):
+    """Ghim ĐÚNG TẬP khoá của một dòng — cùng luật `test_R0_1` với tập cột của bảng.
+
+    So `set` chứ không so `>=`: thêm `username`/`user_id`/`ip`/`ma` vào schema sẽ không
+    làm hỏng bài đo nào khác (mọi thứ vẫn 200), và đó chính là thứ cam kết riêng tư cấm.
+    """
+    them_phut_du(1, khach="a" * 32)
+    js = goi_online().json()
+    assert set(js) == {"items", "tong", "bi_cat", "so_dong_that"}
+    assert set(js["items"][0]) == {
+        "stt",
+        "la_bot",
+        "ten_bot",
+        "da_dang_nhap",
+        "trinh_duyet",
+        "thiet_bi",
+        "duong_dan",
+        "giay_truoc",
+        "so_luot",
+    }
+
+
+def test_N6c_stt_la_so_thu_tu_1_based_cua_RIENG_response_nay(db):
+    """Chống rỗng cho N6: bỏ bí danh rồi thì hai dòng vẫn phải phân biệt được.
+
+    `stt` chạy 1, 2, 3… theo đúng thứ tự hiện ra — và **không mang bit nào** của `khach`,
+    nên hai lượt mở modal không ghép được với nhau.
+    """
+    them_phut_du(1, khach="aaaa1111" + "0" * 24)
+    them_phut_du(2, khach="bbbb2222" + "0" * 24)
+    them_phut_du(3, khach="cccc3333" + "0" * 24)
+    assert [i["stt"] for i in goi_online().json()["items"]] == [1, 2, 3]
+
+
+# --- NẶNG-1a: che đường dẫn MANG DANH TÍNH ------------------------------------
+#
+# Ma trận của hàm thuần `che_duong_dan`. Nó là vế đầu trong ba vế đóng lỗ riêng tư của
+# lượt phản biện 2026-09-03: không che thì một dòng "Đã đăng nhập · /u/chinhho" ghép
+# thẳng bí danh của bảng lượt xem với một tài khoản có thật.
+
+
+@pytest.mark.parametrize(
+    "vao,ra",
+    [
+        # Che: mọi thứ dưới `/u/`, kể cả trang con và cả `/u/` trần.
+        ("/u/chinhho", "(hồ sơ người dùng)"),
+        ("/u/a.b/theo-doi", "(hồ sơ người dùng)"),
+        ("/u/", "(hồ sơ người dùng)"),
+        ("/tin-nhan/x", "(tin nhắn)"),
+        ("/tin-nhan/abc-1/xem", "(tin nhắn)"),
+        # Giữ nguyên: những đường này nói site đang được đọc ở đâu, không nói ai đang đọc.
+        ("/", "/"),
+        ("/m/abc-1", "/m/abc-1"),
+        ("/s/chung-khoan", "/s/chung-khoan"),
+        ("/tim-kiem", "/tim-kiem"),
+        # ⚠ Khớp theo TIỀN TỐ có dấu `/` cuối, nên hai ca dưới KHÔNG bị che nhầm — chúng
+        # không mang tên ai. Che quá tay cũng là một lỗi: nó xoá mất số liệu thật.
+        ("/tin-nhan", "/tin-nhan"),
+        ("/ung-ho", "/ung-ho"),
+    ],
+)
+def test_NANG1a_che_duong_dan_mang_danh_tinh(vao, ra):
+    assert che_duong_dan(vao) == ra
+
+
+def test_NANG1a_duong_dan_ra_API_da_duoc_che(db):
+    """Che ở SERVER, không ở màn hình: JSON phải sạch, kể cả với người mở devtools."""
+    them_phut_du(2, khach="a" * 32, duong_dan="/u/chinhho")
+    them_phut_du(1, khach="b" * 32, duong_dan="/tin-nhan/chinhho")
+
+    duong = [i["duong_dan"] for i in goi_online().json()["items"]]
+    assert duong == ["(tin nhắn)", "(hồ sơ người dùng)"]
+    assert not any("chinhho" in d for d in duong), duong
+
+
+# --- TB-3: MỘT mốc cho cả response --------------------------------------------
+
+
+def test_TB3_mot_request_online_chi_doc_dong_ho_DUNG_MOT_LAN(db, monkeypatch):
+    """`tong` và `items` phải nói về **cùng một** cửa sổ, không phải hai cửa sổ giống nhau.
+
+    Bản đầu để `_gom_online` và `_dem_online` mỗi hàm tự gọi `_moc_online()`: hai phép đo
+    cách nhau vài mili giây, nên một lượt xem ghi đúng vào khe ấy làm bất biến N4 gãy —
+    ở đúng lúc site đông nhất, và không tái hiện được bằng bất kỳ seed nào. Đếm số lần
+    đọc đồng hồ là cách duy nhất đo được chuyện đó một cách tất định.
+    """
+    that = quan_tri_luot_xem._moc_online
+    so_lan = []
+
+    def dem():
+        so_lan.append(1)
+        return that()
+
+    monkeypatch.setattr(quan_tri_luot_xem, "_moc_online", dem)
+    them_phut_du(1, khach="a" * 32)
+
+    assert goi_online().status_code == 200
+    assert len(so_lan) == 1, f"đọc đồng hồ {len(so_lan)} lần trong một response"
+
+
+# --- TB-6: bot CÓ cookie phiên là chuyện đáng thấy ----------------------------
+
+
+def test_TB6_bot_mang_cookie_phien_van_giu_True(db):
+    """Một crawler chạy bằng phiên của ai đó là **bất thường đáng thấy**, không phải nhiễu.
+
+    Đường ghi không ép `da_dang_nhap=False` cho bot, và endpoint cũng không được ép: nếu
+    một con bot khai UA bot mà vẫn mang cookie `sessionid` thì hoặc ai đó đang chạy script
+    bằng phiên của mình, hoặc một phiên đã rò ra ngoài. Bản trước của `test_N3d` ghim
+    ngược ("bot luôn False") và biến ca ấy thành thứ không nhìn thấy được.
+    """
+    them_phut_du(1, khach="y" * 32, bot=True, ten_bot="googlebot", da_dang_nhap=True)
+    js = goi_online().json()
+    assert js["items"][0]["la_bot"] is True
+    assert js["items"][0]["da_dang_nhap"] is True
+
+
+# --- trần quét / trần dòng ----------------------------------------------------
+
+
+def test_N_bi_cat_TAT_khi_du_lieu_nho(db):
+    them_phut_du(1, khach="a" * 32)
+    assert goi_online().json()["bi_cat"] is False
+
+
+def test_N_cham_tran_quet_thi_bi_cat_BAT_va_tong_van_DUNG(db, monkeypatch):
+    """Chạm `SO_HANG_QUET` ⇒ danh sách thiếu, cờ bật, **`tong` vẫn đủ**.
+
+    Vế cuối là vế đáng đo: `tong` đi qua một câu `COUNT(DISTINCT)` trên toàn cửa sổ nên
+    trần quét không chạm tới nó. Một bản cài suy `tong` từ danh sách đã cắt sẽ báo thiếu
+    người, mà cờ `bi_cat` lại làm người đọc tưởng chỉ có DANH SÁCH bị cắt.
+
+    Hạ trần bằng `monkeypatch` thay vì seed 5000 hàng: cùng nhánh code, nhanh hơn nghìn lần.
+    """
+    monkeypatch.setattr(quan_tri_luot_xem, "SO_HANG_QUET", 2)
+    for i, k in enumerate("abc"):
+        them_phut_du(i + 1, khach=k * 32)
+
+    js = goi_online().json()
+    assert js["bi_cat"] is True
+    assert len(js["items"]) == 2
+    assert js["tong"] == goi("30").json()["tong"]["so_online"] == 3
+
+
+def test_N_tran_DONG_cat_danh_sach_nhung_NOI_RA_bang_so_dong_that(db, monkeypatch):
+    """`SO_DONG_ONLINE` cắt SAU khi gom, `tong` không đi theo nó, và **cái cắt được nói ra**.
+
+    ⚠ Trước lượt phản biện 2026-09-03, trần này cắt hoàn toàn im lặng: `bi_cat` chỉ nói
+    về trần QUÉT, nên một danh sách bị cắt trông y hệt một danh sách đủ. `so_dong_that`
+    là số khách gom được **trước** khi cắt — modal so nó với `len(items)` rồi nói "còn N
+    dòng nữa không hiện".
+    """
+    monkeypatch.setattr(quan_tri_luot_xem, "SO_DONG_ONLINE", 2)
+    for i, k in enumerate("abcd"):
+        them_phut_du(i + 1, khach=k * 32)
+
+    js = goi_online().json()
+    assert len(js["items"]) == 2
+    # Cắt SAU khi gom ⇒ hai dòng còn lại là hai dòng MỚI nhất.
+    assert [i["so_luot"] for i in js["items"]] == [1, 1]
+    assert js["tong"] == goi("30").json()["tong"]["so_online"] == 4
+    # Con số nói ra chỗ bị cắt: 4 gom được, 2 hiện ra.
+    assert js["so_dong_that"] == 4
+    # Trần dòng KHÔNG phải "bị cắt vì quá tải": cờ ấy chỉ nói về trần QUÉT.
+    assert js["bi_cat"] is False
+
+
+def test_N_tran_DONG_khong_cham_thi_so_dong_that_BANG_so_dong(db):
+    """Chống rỗng cho bài trên: không chạm trần ⇒ hai con số **bằng nhau**.
+
+    Trả cứng `so_dong_that = SO_DONG_ONLINE` (hoặc một hằng nào đó) làm bài trên vẫn
+    xanh, còn modal thì kêu "còn 198 dòng nữa" trên một site có ba người.
+    """
+    for i, k in enumerate("abc"):
+        them_phut_du(i + 1, khach=k * 32)
+
+    js = goi_online().json()
+    assert js["so_dong_that"] == len(js["items"]) == 3

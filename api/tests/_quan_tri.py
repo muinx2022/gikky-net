@@ -219,6 +219,11 @@ def bang_endpoint(dl: dict) -> list[tuple[str, str, str, dict | None]]:
         # dòng ở đây: hàng rào là "mọi endpoint quản trị đều được chấm phân quyền", và
         # một ngoại lệ "cái này vô hại thôi" là chỗ ngoại lệ thứ hai chui vào.
         ("quan_tri_luot_xem", "get", "/api/admin/luot-xem", None),
+        # Modal "ai đang online" (2026-08-31). Cùng cửa, và dòng này CẦN hơn dòng trên
+        # một bậc: nó trả một danh sách theo từng khách, nên nếu có endpoint quản trị nào
+        # đáng bị soi phân quyền hai lần thì là nó. (Nó vẫn không phơi danh tính ai —
+        # ranh giới ghi ở `api/quan_tri_schemas.py::KhachOnlineOut`.)
+        ("quan_tri_luot_xem_online", "get", "/api/admin/luot-xem/online", None),
         # Chẩn đoán tìm kiếm (2026-08-30, trả `P-20260827-2`). Cùng lý lẽ dòng trên: nó
         # chỉ trả hai con số đếm, nhưng "mọi endpoint quản trị đều được chấm" không có
         # ngoại lệ nào — kể cả cho một endpoint vô hại.

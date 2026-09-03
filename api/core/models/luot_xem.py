@@ -9,11 +9,18 @@ bảng mới đi kèm — `MuoiNgay` (sống đúng một ngày) và `KhachNgay`
 
 ## Ba quyết định của user, và cả ba đều nhìn thấy được ngay ở đây
 
-1. **Chỉ đếm lượt xem.** Không cột IP, không cột User-Agent thô, không cookie. Không có
-   gì trong bốn bảng này gắn được với một con người, và đó là lý do trang thống kê không
-   cần banner cookie. ⚠ User-Agent **vẫn được gửi** sang Django để phân loại bot
-   (`core/bot.py`) và suy trình duyệt/thiết bị (`core/nhan_dien_ua.py`), nó chỉ không
-   được **lưu**.
+1. **Chỉ đếm lượt xem.** Không cột IP, không cột User-Agent thô, **không cookie theo
+   dõi**. Không có gì trong bốn bảng này gắn được với một con người, và đó là lý do trang
+   thống kê không cần banner cookie. ⚠ User-Agent **vẫn được gửi** sang Django để phân
+   loại bot (`core/bot.py`) và suy trình duyệt/thiết bị (`core/nhan_dien_ua.py`), nó chỉ
+   không được **lưu**.
+
+   ⚠ **Từ 2026-09-03 câu trên đọc là "không cookie THEO DÕI", không còn là "không
+   cookie".** Cột `da_dang_nhap` ghi thêm **một bit**: request có mang cookie phiên hay
+   không. Bit ấy không kiểm còn hạn, không gắn với tài khoản nào, và không nối được hai
+   hàng với nhau — nhưng "không cookie" trần thì nay là một câu **sai**, và một cam kết
+   riêng tư viết sai còn tệ hơn một cam kết hẹp hơn viết đúng. Cùng câu ấy đã được sửa
+   trên màn hình `/luot-xem`.
 
    ⚠ **"Khách duy nhất" là NỚI của quyết định cũ, user gật tường minh 2026-08-30.** Ba
    chốt còn lại giữ nguyên: không cookie · không lưu IP thô · **không theo dõi được qua
@@ -100,6 +107,32 @@ class LuotXem(models.Model):
 
     #: `di_dong` · `may_tinh`; **rỗng khi là bot**. Suy đoán thô từ UA — trang nói ra.
     thiet_bi = models.CharField(max_length=10, blank=True, default="")
+
+    #: Request có mang **cookie tên `sessionid`** hay không (2026-08-31). Đọc đúng chữ:
+    #: KHÔNG phải "phiên còn hiệu lực", và KHÔNG phải "người này là ai".
+    #:
+    #: ⚠ Middleware của Next chạy trên **edge runtime, không có DB** nên nó không validate
+    #: được phiên — đúng đánh đổi mà nhánh rewrite `/m/` → `/m-phien/` đã chấp nhận từ
+    #: trước và đã ghi ở docstring `apps/web/middleware.ts`. Hệ quả có thật: cookie hết
+    #: hạn vẫn đếm là "đã đăng nhập". Modal `/luot-xem` **phải nói ra** điều đó, không giấu.
+    #:
+    #: ⚠ **Một boolean KHÔNG gắn hàng này với một con người**, và đó là toàn bộ lý do nó
+    #: được phép tồn tại ở đây: cam kết "bốn bảng này không có cột nào gắn được với một
+    #: con người" (docstring module) **giữ nguyên**. Thêm `user_id` vào bảng này là một
+    #: quyết định KHÁC — phải hỏi lại user và phải sửa `PLAN.md`, đừng làm như một bước
+    #: mở rộng tự nhiên của cột này.
+    #:
+    #: ⚠ **Cột này KHÔNG bị ép về `False` cho bot**, và đó là chủ đích: một crawler mang
+    #: cookie `sessionid` nghĩa là hoặc ai đó đang chạy script bằng phiên của chính mình,
+    #: hoặc một phiên đã rò ra ngoài — đúng thứ đáng thấy. Bot **không** mang cookie thì
+    #: phía đọc hiện `—` chứ không hiện "Khách" (đó là một hằng số, không phải một phép
+    #: đo); bot **có** mang cookie thì phía đọc phải nói ra. Bản đầu của modal in `—` cho
+    #: mọi dòng bot kèm một chú thích khẳng định "bot không mang cookie bao giờ" — câu ấy
+    #: sai, và nó làm đúng ca đáng thấy thành vô hình (lượt phản biện 2026-09-03).
+    #:
+    #: Hàng ghi TRƯỚC lượt này cũng `False`, và không cần backfill: cửa sổ "online" chỉ
+    #: 5 phút nên chúng rơi khỏi câu hỏi duy nhất đọc cột này gần như ngay.
+    da_dang_nhap = models.BooleanField(default=False)
 
     class Meta:
         indexes = [

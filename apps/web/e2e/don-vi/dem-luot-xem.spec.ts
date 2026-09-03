@@ -11,6 +11,7 @@ import {
   nenRewrite,
 } from "../../lib/dem-luot-xem";
 import { COOKIE_PHIEN, TIEN_TO_PHIEN } from "../../middleware";
+import { boChuThich } from "./quet";
 
 const WEB = resolve(__dirname, "..", "..");
 const GOC = resolve(WEB, "..", "..");
@@ -322,4 +323,93 @@ test("X3 — Django nhận `ip`/`referer` là trường CÓ MẶC ĐỊNH (deplo
   expect(py).toMatch(/^\s{4}ip: str = ""$/m);
   expect(py).toMatch(/^\s{4}referer: str = ""$/m);
   expect(py).toMatch(/^\s{4}user_agent: str = ""$/m);
+});
+
+
+/* ===========================================================================
+ * Cờ `da_dang_nhap` (2026-08-31) — `plans/2026-08-31-modal-online.md` §1
+ * ========================================================================= */
+
+/** Tên lớp schema thân request bên Python — **ghép từ hai mẩu, cố ý**.
+ *
+ * `type-frontend.spec.ts` cấm mọi file của `apps/web` NHẮC tới tên một schema của API mà
+ * không `import` nó từ `@gikky/api-client` (chống khai lại type bằng tay, PLAN 8.3). Ở
+ * đây cái tên ấy là **một chuỗi để cắt file Python**, không phải một type — nhưng luật
+ * kia không phân biệt được hai chuyện đó, và nó KHÔNG nên phân biệt: nới nó ra là mở
+ * đường cho một khai-lại thật lọt qua. Ghép chuỗi là lối thoát repo đã dùng cho đúng ca
+ * này ở `type-admin.spec.ts`.
+ */
+const TEN_LOP_THAN = "Dem" + "LuotXemIn";
+
+/** Tên MỌI trường của thân request, đọc thẳng schema Python.
+ *
+ * Cố ý không chép tay danh sách: cái phải giữ không phải "middleware có gửi
+ * `da_dang_nhap` không" mà là **"middleware có gửi đủ những gì Django khai không"** —
+ * một luật tự bám khi lượt sau thêm trường thứ sáu. Danh sách chép tay là thứ để lọt
+ * đúng loại lỗi này (xem `duongDanMangKhoa` ở trên, cùng bài học).
+ *
+ * Fail-closed: cắt không ra gì thì NÉM. Trả mảng rỗng là biến bài đo dưới thành một
+ * vòng `for` không chạy lần nào — xanh, và không đo gì cả.
+ */
+function truongCuaThanRequest(): string[] {
+  const py = doc("api/api/dem_luot_xem.py");
+  const khoi = new RegExp(`class ${TEN_LOP_THAN}\\(Schema\\):([\\s\\S]*?)\\n\\nclass `).exec(py);
+  if (khoi === null) throw new Error(`không cắt được \`class ${TEN_LOP_THAN}\` trong Python`);
+  const ten = [...khoi[1].matchAll(/^ {4}(\w+): (?:str|bool|int)\b/gm)].map((m) => m[1]);
+  if (ten.length < 4) throw new Error(`chỉ cắt được ${ten.length} trường — regex đã mục`);
+  return ten;
+}
+
+/** Trường có mặt trong thân request mà middleware dựng.
+ *
+ * Nhận cả hai lối viết: `ten: gia_tri` và shorthand `ten,` (`duong_dan` đi lối thứ hai).
+ */
+function middlewareCoGui(mw: string, ten: string): boolean {
+  return new RegExp(`\\b${ten}\\s*[,:]`).test(mw);
+}
+
+test("X4 — middleware GỬI ĐỦ mọi trường mà schema thân request khai", () => {
+  // Django khai một trường mà middleware quên nối vào thân ⇒ cột ấy lặng lẽ mang giá
+  // trị mặc định **vĩnh viễn trên prod**: cửa đếm vẫn 200, pytest vẫn xanh (bài đo Python
+  // tự dựng thân request), và không có gì đỏ. Đúng bệnh mà X2 đã đóng cho `ip`/`referer`,
+  // nay đóng cho cả tập trường thay vì cho hai cái tên.
+  const mw = boChuThich(doc("apps/web/middleware.ts"));
+  const truong = truongCuaThanRequest();
+  // Chống rỗng: hôm nay có đúng năm trường, và `da_dang_nhap` phải là một trong số đó.
+  expect(truong).toContain("da_dang_nhap");
+  expect(truong.length).toBeGreaterThanOrEqual(5);
+  for (const ten of truong) {
+    expect(
+      middlewareCoGui(mw, ten),
+      `middleware không gửi \`${ten}\` — Django khai nó trong ${TEN_LOP_THAN}`,
+    ).toBe(true);
+  }
+});
+
+test("X4b — luật trên bắt được hàng giả (chống hàng rào rỗng)", () => {
+  // Nguồn dựng tay, thiếu đúng một trường. Không có bài này thì `middlewareCoGui` có thể
+  // mục thành "luôn trả true" mà X4 vẫn xanh.
+  const gia = 'body: { duong_dan, user_agent: x, ip: ipKhach(req), referer: r },';
+  expect(middlewareCoGui(gia, "referer")).toBe(true);
+  expect(middlewareCoGui(gia, "da_dang_nhap")).toBe(false);
+});
+
+test("X5 — cờ `da_dang_nhap` đọc ĐÚNG cookie phiên, và KHÔNG validate", () => {
+  const mw = boChuThich(doc("apps/web/middleware.ts"));
+  // Bit gửi đi phải chính là `req.cookies.has(COOKIE_PHIEN)` — cùng phép đọc mà nhánh
+  // rewrite `/m/` → `/m-phien/` đã dùng. Suy nó từ chỗ khác (một header, một lời gọi
+  // Django) là đổi nghĩa của cột mà không ai thấy: cột vẫn `bool`, vẫn có giá trị.
+  expect(mw).toMatch(/req\.cookies\.has\(COOKIE_PHIEN\)/);
+  expect(mw).toMatch(/da_dang_nhap:\s*co_cookie_phien/);
+  // …và KHÔNG có phép validate nào: edge runtime không có DB. `fetch` ở đây chỉ được
+  // dùng cho lời gọi đếm (qua `demLuotXem`), không phải để hỏi Django "phiên còn hạn
+  // không" — một round-trip như thế nằm trên MỌI request tới trang mạch, kể cả của bot.
+  expect(mw).not.toMatch(/await\s+fetch\(/);
+});
+
+test("X6 — Django nhận `da_dang_nhap` là trường CÓ MẶC ĐỊNH (deploy lệch)", () => {
+  // Cùng cửa sổ deploy mà X3 đã đóng cho `ip`/`referer`: vài phút Django mới chạy cạnh
+  // middleware CŨ. Bắt buộc trường này là mọi lượt xem trong cửa sổ ấy trả 422 rồi biến
+  // mất im lặng — middleware `.catch(() => {})` nuốt hết lỗi.
+  expect(doc("api/api/dem_luot_xem.py")).toMatch(/^\s{4}da_dang_nhap: bool = False$/m);
 });

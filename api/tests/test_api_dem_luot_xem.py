@@ -250,6 +250,12 @@ def test_R0_1_TAP_COT_cua_LuotXem_bi_GHIM(db):
         "nguon",
         "trinh_duyet",
         "thiet_bi",
+        # 2026-08-31. ⚠ Cột này ĐI QUA hàng rào trên có chủ đích, và đó là chỗ phải đọc
+        # kỹ: nó là MỘT BIT ("request có mang cookie tên `sessionid`"), không phải một
+        # danh tính. Cam kết của §0 giữ nguyên — thêm `user_id` hay `username` vào đây
+        # là một quyết định KHÁC, phải hỏi lại user và sửa `PLAN.md`, chứ không phải
+        # bước tiếp theo tự nhiên của dòng này.
+        "da_dang_nhap",
     }
 
 
@@ -585,3 +591,67 @@ def test_K5b_than_TRAN_chi_co_duong_dan_van_200():
     hang = LuotXem.objects.get()
     assert hang.khach == ""
     assert hang.nguon == ""
+
+
+# ===========================================================================
+# Nhóm N — cờ `da_dang_nhap` (2026-08-31, `plans/2026-08-31-modal-online.md` §1)
+# ===========================================================================
+#
+# Tiêu chí N2 của plan: **body CÓ cờ ⇒ ghi True; body CŨ KHÔNG có cờ ⇒ 200 + False**.
+# Vế thứ hai là vế đắt: nó là cùng đúng cửa sổ deploy mà `test_K5` đã đóng cho `ip`/
+# `referer`, và hỏng theo cùng một kiểu — 422, middleware `.catch(() => {})`, lượt xem
+# biến mất không một dòng log.
+
+
+@pytest.mark.django_db
+@override_settings(DEM_LUOT_XEM_SECRET=SECRET)
+def test_N2_co_co_trong_than_thi_ghi_True():
+    r = goi({"duong_dan": "/", "user_agent": UA_CHROME_WIN, "da_dang_nhap": True})
+    assert r.status_code == 200, r.content
+    assert LuotXem.objects.get().da_dang_nhap is True
+
+
+@pytest.mark.django_db
+@override_settings(DEM_LUOT_XEM_SECRET=SECRET)
+def test_N2b_co_False_tuong_minh_van_ghi_False():
+    goi({"duong_dan": "/", "user_agent": UA_CHROME_WIN, "da_dang_nhap": False})
+    assert LuotXem.objects.get().da_dang_nhap is False
+
+
+@pytest.mark.django_db
+@override_settings(DEM_LUOT_XEM_SECRET=SECRET)
+def test_N2c_than_CU_khong_co_co_van_200_va_ghi_False():
+    """⚠ Bài đo của cửa sổ deploy. `apps/web` cũ gửi bốn trường, không có cờ này.
+
+    Mặc định `False` là câu trả lời đúng cho "không biết": nó nói *"không thấy cookie
+    phiên"*, và với một middleware chưa gửi cờ thì đúng là chưa thấy gì cả. Ca này tự
+    lành sau 5 phút — cửa sổ online ngắn hơn mọi lượt deploy.
+    """
+    r = goi({"duong_dan": "/", "user_agent": UA_CHROME_WIN, "ip": "203.0.113.9"})
+    assert r.status_code == 200, r.content
+    assert r.json() == {"da_dem": True}
+    assert LuotXem.objects.get().da_dang_nhap is False
+
+
+@pytest.mark.django_db
+@override_settings(DEM_LUOT_XEM_SECRET=SECRET)
+def test_N2d_co_KHONG_lam_ro_ri_danh_tinh_nao():
+    """Một bit, và đúng một bit: bật cờ không được kéo theo gì gắn với một con người.
+
+    Quét mọi cột như `test_R0_4`. Bài này là hàng rào của câu *"cột mới không lật cam kết
+    riêng tư"* — nếu ai đó thêm `username`/`user_id` vào thân request rồi lưu, bài này
+    không đỏ (nó chỉ quét chuỗi đã gửi), nhưng `test_R0_1` sẽ đỏ vì tập cột đổi. Hai bài
+    bù nhau; đừng bỏ bài nào.
+    """
+    goi(
+        {
+            "duong_dan": "/",
+            "user_agent": UA_CHROME_WIN,
+            "ip": "203.0.113.9",
+            "da_dang_nhap": True,
+        }
+    )
+    hang = LuotXem.objects.get()
+    gia_tri = [str(getattr(hang, f.attname)) for f in LuotXem._meta.get_fields() if f.concrete]
+    assert not any("203.0.113.9" in v for v in gia_tri), gia_tri
+    assert not any("Chrome/131" in v for v in gia_tri), gia_tri

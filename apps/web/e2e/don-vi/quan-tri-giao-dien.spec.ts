@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { expect, test } from "@playwright/test";
 
-import { quetNguon } from "./quet";
+import { boChuThich, quetNguon } from "./quet";
 
 const GOC = resolve(__dirname, "..", "..", "..", "..");
 const ADMIN = resolve(GOC, "apps/admin");
@@ -166,4 +166,65 @@ test("MÀU — globals.css khai đủ hệ token, và nó là nơi duy nhất c�
   );
   expect(sang.size).toBeGreaterThanOrEqual(12);
   expect([...sang].filter((t) => !toi.has(t))).toEqual([]);
+});
+
+/* ===========================================================================
+ * MODAL "AI ĐANG ONLINE" — chuỗi giải thích phải còn nguyên (2026-09-03)
+ * ========================================================================= */
+
+/** Ba câu chữ trên modal `/luot-xem` là **thứ duy nhất** chặn mod đọc sai số liệu, và cả
+ * ba đều là chữ trần: không type nào, không bài đo hành vi nào giữ chúng.
+ *
+ * Vì sao đáng một cái chuông riêng, và nó không phải giả thuyết — cả ba đã hỏng thật
+ * trong đúng lượt này:
+ *
+ * 1. **tóm tắt "N người · M dòng (gồm cả bot)"** — `tong` KHÁC `items.length` theo thiết
+ *    kế. Xoá dòng ấy đi là hai con số cạnh nhau không giải thích, và mod kết luận một
+ *    trong hai đang sai;
+ * 2. **"gồm cả bot"** — nếu chỉ còn "M dòng" thì chênh lệch đọc như một lỗi đếm;
+ * 3. **mốc thời gian nạp** — modal cố ý không tự làm mới, nên một danh sách "ai đang
+ *    online" 20 phút tuổi trông y hệt một danh sách đúng.
+ *
+ * Fail-CLOSED: đọc không ra file, hoặc file ngắn bất thường, thì NÉM. Một chuỗi rỗng làm
+ * mọi `toContain` dưới đây đỏ, nhưng với một thông báo vô nghĩa — nên ném sớm, nói rõ.
+ */
+function nguonTrangLuotXem(): string {
+  const duong_dan = resolve(ADMIN, "app/luot-xem/page.tsx");
+  if (!existsSync(duong_dan)) throw new Error(`không thấy ${duong_dan}`);
+  // Quét bản đã bỏ chú thích: docstring của chính trang ấy nhắc lại mấy chuỗi này, và
+  // một hàng rào xanh nhờ lời giải thích là một hàng rào rỗng.
+  const sach = boChuThich(readFileSync(duong_dan, "utf8"));
+  if (sach.length < 5000) throw new Error(`nguồn chỉ còn ${sach.length} ký tự — đã mục`);
+  return sach;
+}
+
+test("MODAL ONLINE — dòng tóm tắt, vế 'gồm cả bot' và mốc thời gian nạp còn nguyên", () => {
+  const trang = nguonTrangLuotXem();
+  expect(trang, "mất dòng tóm tắt của modal").toContain('data-testid="online-tom-tat"');
+  expect(trang, "mất vế 'gồm cả bot' — chênh lệch đọc như lỗi đếm").toContain("gồm cả bot");
+  expect(trang, "mất mốc thời gian nạp").toContain('data-testid="online-luc-nap"');
+  expect(trang, "mốc phải là chữ đọc được, không chỉ một testid").toContain("Số liệu lúc");
+  // …và mốc ấy phải là một phép đọc đồng hồ THẬT, không phải một chuỗi ghi cứng.
+  expect(trang).toMatch(/new Date\(\)\.toLocaleTimeString\(/);
+});
+
+test("MODAL ONLINE — chú KHÔNG được khẳng định hai câu đã biết là SAI", () => {
+  // Hai câu này đứng trên modal tới 2026-09-03 và cả hai đều sai: đường dẫn `/u/…` ghép
+  // được một dòng với một tài khoản có thật, và cam kết "không cột nào gắn được với một
+  // con người" là cam kết về BẢNG, không phải về màn hình. Một chú giải thích giới hạn
+  // mà tự nói sai còn tệ hơn không có chú.
+  const trang = nguonTrangLuotXem();
+  expect(trang).not.toContain("không biết đó là ai");
+  expect(trang).not.toContain("không có cột nào gắn được với một con người");
+  // Thay vào đó phải nói đúng nghĩa của bit: một cookie do client tự khai.
+  expect(trang).toContain("sessionid");
+  expect(trang).toContain("client tự khai");
+});
+
+test("MODAL ONLINE — không dựng lại bí danh `ma` của khách", () => {
+  // `ma` (8 hex đầu của `LuotXem.khach`) ổn định suốt một ngày ⇒ ghép được hai lượt mở
+  // modal thành một dấu vết. Đã gỡ khỏi API; hàng rào này chặn nó quay lại qua frontend.
+  const trang = nguonTrangLuotXem();
+  expect(trang).not.toMatch(/\bk\.ma\b/);
+  expect(trang).toMatch(/\bk\.stt\b/);
 });

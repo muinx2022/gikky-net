@@ -139,7 +139,7 @@ secret_dem_luot_xem = SecretDemLuotXem()
 
 
 class DemLuotXemIn(Schema):
-    """Thân request. Bốn trường, và **ba trường sau đều có mặc định**.
+    """Thân request. Năm trường, và **bốn trường sau đều có mặc định**.
 
     ⚠ **Backward-compatible là BẮT BUỘC, không phải lịch sự.** Deploy không nguyên tử:
     trong cửa sổ giữa lúc Django mới lên và lúc `apps/web` mới lên, prod đang chạy
@@ -158,6 +158,15 @@ class DemLuotXemIn(Schema):
     #: Referer thô — **chỉ tên miền được giữ** (`chuan_hoa_nguon`). Lưu cả URL là ghi
     #: credential vào DB: referer nội bộ có thể là `/dat-lai-mat-khau/{key}`.
     referer: str = ""
+    #: Request có mang **cookie tên `sessionid`** hay không — `req.cookies.has(...)` bên
+    #: Next, KHÔNG validate (edge runtime không có DB). Xem
+    #: `core/models/luot_xem.py::LuotXem.da_dang_nhap` cho nghĩa chính xác và giới hạn.
+    #:
+    #: Mặc định `False` **bắt buộc**, cùng lý lẽ với `ip`/`referer`: trong cửa sổ deploy
+    #: giữa lúc Django mới lên và lúc `apps/web` mới lên, prod đang gửi thân request CŨ
+    #: không có trường này. Bắt buộc nó là mọi lượt xem trong cửa sổ ấy trả 422 rồi biến
+    #: mất im lặng (middleware `.catch(() => {})`).
+    da_dang_nhap: bool = False
 
 
 class DemLuotXemOut(Schema):
@@ -368,5 +377,9 @@ def dem_luot_xem(request, du_lieu: DemLuotXemIn):
         nguon=chuan_hoa_nguon(du_lieu.referer),
         trinh_duyet="" if la_bot else trinh_duyet(du_lieu.user_agent),
         thiet_bi="" if la_bot else thiet_bi(du_lieu.user_agent),
+        # Ghi NGUYÊN cờ client gửi, không `and not la_bot`: một con bot mang cookie
+        # `sessionid` là một sự thật đáng thấy (crawler chạy bằng phiên của ai đó), và
+        # dập nó ở đây là bịa. Phía đọc mới là chỗ để dòng bot thành `—`.
+        da_dang_nhap=du_lieu.da_dang_nhap,
     )
     return Status(200, DemLuotXemOut(da_dem=True))

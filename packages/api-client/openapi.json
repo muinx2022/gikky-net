@@ -553,8 +553,13 @@
         "type": "object"
       },
       "DemLuotXemIn": {
-        "description": "Thân request. Bốn trường, và **ba trường sau đều có mặc định**.\n\n⚠ **Backward-compatible là BẮT BUỘC, không phải lịch sự.** Deploy không nguyên tử:\ntrong cửa sổ giữa lúc Django mới lên và lúc `apps/web` mới lên, prod đang chạy\nmiddleware CŨ gửi đúng hai trường `{duong_dan, user_agent}`. Bắt buộc `ip`/`referer`\nlà mọi lượt xem trong cửa sổ ấy trả 422 và biến mất — im lặng, vì middleware\n`.catch(() => {})` mọi lỗi. `tests/test_api_dem_luot_xem.py` ghim đúng ca này.",
+        "description": "Thân request. Năm trường, và **bốn trường sau đều có mặc định**.\n\n⚠ **Backward-compatible là BẮT BUỘC, không phải lịch sự.** Deploy không nguyên tử:\ntrong cửa sổ giữa lúc Django mới lên và lúc `apps/web` mới lên, prod đang chạy\nmiddleware CŨ gửi đúng hai trường `{duong_dan, user_agent}`. Bắt buộc `ip`/`referer`\nlà mọi lượt xem trong cửa sổ ấy trả 422 và biến mất — im lặng, vì middleware\n`.catch(() => {})` mọi lỗi. `tests/test_api_dem_luot_xem.py` ghim đúng ca này.",
         "properties": {
+          "da_dang_nhap": {
+            "default": false,
+            "title": "Da Dang Nhap",
+            "type": "boolean"
+          },
           "duong_dan": {
             "title": "Duong Dan",
             "type": "string"
@@ -1739,7 +1744,7 @@
         "type": "object"
       },
       "MocSuaIn": {
-        "description": "Sửa mốc — `PATCH /mocs/{id}`. **Đúng 5 trường của PLAN 5.2, không gì khác.**\n\nĐây là PATCH thật: trường **không gửi** thì không đổi, trường gửi `null` thì xoá.\nPhân biệt hai ca đó bằng `model_fields_set` của pydantic, nên đừng đổi `None` mặc\nđịnh thành một sentinel khác — `api/mocs.py` đọc đúng cơ chế ấy.",
+        "description": "Sửa mốc — `PATCH /mocs/{id}`. **Đúng 5 trường của PLAN 5.2, không gì khác.**\n\nĐây là PATCH thật: trường **không gửi** thì không đổi, trường gửi `null` thì xoá.\nPhân biệt hai ca đó bằng `model_fields_set` của pydantic, nên đừng đổi `None` mặc\nđịnh thành một sentinel khác — `api/mocs.py` đọc đúng cơ chế ấy.\n\n⚠ **`body` KHÔNG được schema chặn ở `null`, dù nó khai `min_length=1`.** `Field` áp\nràng buộc lên nhánh `str` của union, còn `null` đi thẳng qua. Câu \"schema chặn trước\nkhi vào đây\" từng đứng ở đây và ở `api/mocs.py` là **sai**: `{\"body\": null}` xuống tới\n`lam_sach(None)` và nổ `TypeError` ⇒ 500 trần. Phép chặn thật nằm ở\n`core/ghi.py::_kiem_thay_doi_moc` (một chỗ, cho cả cửa v1 lẫn cửa quản trị) và trả\n400 `du_lieu_khong_hop_le`. Vá 2026-09-03.",
         "properties": {
           "body": {
             "anyOf": [
@@ -4766,7 +4771,7 @@
         ]
       },
       "patch": {
-        "description": "Sửa mốc — **đúng 5 trường** của PLAN 5.2, không gì khác.\n\n**Quyền: CHỈ tác giả của mốc** (`Moc.author`, không phải `Mach.author` — hai thứ đó\ntrùng nhau hôm nay vì chỉ tác giả nối được mốc, nhưng hỏi đúng cột là điều kiện để\nchúng vẫn đúng khi đồng tác giả mở ra). Người khác nhận 403 `khong_phai_chu`.\nMạch bị mod khoá ⇒ 403; mốc đã là bia mộ hoặc bị ẩn ⇒ 409 `noi_dung_da_go`.\n\n**PATCH thật**: trường không gửi thì không đổi, trường gửi `null` thì xoá. `body`\nkhông nhận `null` (mốc phải có thân) — schema chặn trước khi vào đây.\n\nSửa **im lặng trong 15 phút** kể từ `created_at`; sau đó mỗi lần sửa tạo một\n`MocRevision` lưu **đủ cả 5 trường bản trước** và tăng \"đã sửa N lần\". Có\n`occurred_at` trong revision là bắt buộc: sửa lùi ngày sự việc mà không để vết là phá\nđúng giá trị lõi \"ghi-trước-khi-biết-kết-quả\" của sản phẩm.\n\n`occurred_at` mới vẫn **cấm ngày tương lai** (theo giờ VN).",
+        "description": "Sửa mốc — **đúng 5 trường** của PLAN 5.2, không gì khác.\n\n**Quyền: CHỈ tác giả của mốc** (`Moc.author`, không phải `Mach.author` — hai thứ đó\ntrùng nhau hôm nay vì chỉ tác giả nối được mốc, nhưng hỏi đúng cột là điều kiện để\nchúng vẫn đúng khi đồng tác giả mở ra). Người khác nhận 403 `khong_phai_chu`.\nMạch bị mod khoá ⇒ 403; mốc đã là bia mộ hoặc bị ẩn ⇒ 409 `noi_dung_da_go`.\n\n**PATCH thật**: trường không gửi thì không đổi, trường gửi `null` thì xoá. `body`\nkhông nhận `null` (mốc phải có thân) — **`core/ghi.py::_kiem_thay_doi_moc` chặn**, trả\n400 `du_lieu_khong_hop_le`. KHÔNG phải schema: `Field(min_length=1)` trên `str | None`\nchỉ áp cho nhánh `str`, và câu \"schema chặn trước khi vào đây\" đứng ở đây tới\n2026-09-03 là sai — `{\"body\": null}` xuống tới `lam_sach(None)` và trả 500 trần.\n\nSửa **im lặng trong 15 phút** kể từ `created_at`; sau đó mỗi lần sửa tạo một\n`MocRevision` lưu **đủ cả 5 trường bản trước** và tăng \"đã sửa N lần\". Có\n`occurred_at` trong revision là bắt buộc: sửa lùi ngày sự việc mà không để vết là phá\nđúng giá trị lõi \"ghi-trước-khi-biết-kết-quả\" của sản phẩm.\n\n`occurred_at` mới vẫn **cấm ngày tương lai** (theo giờ VN).",
         "operationId": "sua_moc",
         "parameters": [
           {

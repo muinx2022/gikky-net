@@ -705,6 +705,60 @@
         "title": "KetQuaXoaSubOut",
         "type": "object"
       },
+      "KhachOnlineOut": {
+        "description": "Một *khách ước lượng* đang online — MỘT dòng của modal, không phải một phiên.",
+        "properties": {
+          "da_dang_nhap": {
+            "title": "Da Dang Nhap",
+            "type": "boolean"
+          },
+          "duong_dan": {
+            "title": "Duong Dan",
+            "type": "string"
+          },
+          "giay_truoc": {
+            "title": "Giay Truoc",
+            "type": "integer"
+          },
+          "la_bot": {
+            "title": "La Bot",
+            "type": "boolean"
+          },
+          "so_luot": {
+            "title": "So Luot",
+            "type": "integer"
+          },
+          "stt": {
+            "title": "Stt",
+            "type": "integer"
+          },
+          "ten_bot": {
+            "title": "Ten Bot",
+            "type": "string"
+          },
+          "thiet_bi": {
+            "title": "Thiet Bi",
+            "type": "string"
+          },
+          "trinh_duyet": {
+            "title": "Trinh Duyet",
+            "type": "string"
+          }
+        },
+        "required": [
+          "stt",
+          "la_bot",
+          "ten_bot",
+          "da_dang_nhap",
+          "trinh_duyet",
+          "thiet_bi",
+          "duong_dan",
+          "giay_truoc",
+          "so_luot"
+        ],
+        "title": "KhachOnlineOut",
+        "type": "object"
+      },
       "LoiOut": {
         "description": "`{detail, code}` — PLAN mục 7.",
         "properties": {
@@ -1619,6 +1673,38 @@
           "duong_dan_cong_khai"
         ],
         "title": "NoiDungBiBaoCaoOut",
+        "type": "object"
+      },
+      "OnlineOut": {
+        "description": "Danh sách khách đang online trong `CUA_SO_ONLINE_PHUT` phút gần nhất.",
+        "properties": {
+          "bi_cat": {
+            "title": "Bi Cat",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/KhachOnlineOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "so_dong_that": {
+            "title": "So Dong That",
+            "type": "integer"
+          },
+          "tong": {
+            "title": "Tong",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "tong",
+          "bi_cat",
+          "so_dong_that"
+        ],
+        "title": "OnlineOut",
         "type": "object"
       },
       "SuaMocQuanTriIn": {
@@ -2929,6 +3015,54 @@
           }
         ],
         "summary": "Luot Xem",
+        "tags": [
+          "quan-tri-luot-xem"
+        ]
+      }
+    },
+    "/api/admin/luot-xem/online": {
+      "get": {
+        "description": "Ai đang online trong 5 phút gần nhất — một dòng cho mỗi *khách ước lượng*.\n\nKhông nhận tham số nào: cửa sổ, trần quét và trần dòng đều cố định phía server.",
+        "operationId": "quan_tri_luot_xem_online",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnlineOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Luot Xem Online",
         "tags": [
           "quan-tri-luot-xem"
         ]

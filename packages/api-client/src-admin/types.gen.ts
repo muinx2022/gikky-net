@@ -574,6 +574,50 @@ export type KetQuaXoaSubOut = {
 };
 
 /**
+ * KhachOnlineOut
+ *
+ * Một *khách ước lượng* đang online — MỘT dòng của modal, không phải một phiên.
+ */
+export type KhachOnlineOut = {
+    /**
+     * Da Dang Nhap
+     */
+    da_dang_nhap: boolean;
+    /**
+     * Duong Dan
+     */
+    duong_dan: string;
+    /**
+     * Giay Truoc
+     */
+    giay_truoc: number;
+    /**
+     * La Bot
+     */
+    la_bot: boolean;
+    /**
+     * So Luot
+     */
+    so_luot: number;
+    /**
+     * Stt
+     */
+    stt: number;
+    /**
+     * Ten Bot
+     */
+    ten_bot: string;
+    /**
+     * Thiet Bi
+     */
+    thiet_bi: string;
+    /**
+     * Trinh Duyet
+     */
+    trinh_duyet: string;
+};
+
+/**
  * LoiOut
  *
  * `{detail, code}` — PLAN mục 7.
@@ -1222,6 +1266,30 @@ export type NoiDungBiBaoCaoOut = {
      * Trich Yeu
      */
     trich_yeu: string;
+};
+
+/**
+ * OnlineOut
+ *
+ * Danh sách khách đang online trong `CUA_SO_ONLINE_PHUT` phút gần nhất.
+ */
+export type OnlineOut = {
+    /**
+     * Bi Cat
+     */
+    bi_cat: boolean;
+    /**
+     * Items
+     */
+    items: Array<KhachOnlineOut>;
+    /**
+     * So Dong That
+     */
+    so_dong_that: number;
+    /**
+     * Tong
+     */
+    tong: number;
 };
 
 /**
@@ -2006,6 +2074,35 @@ export type QuanTriLuotXemResponses = {
 };
 
 export type QuanTriLuotXemResponse = QuanTriLuotXemResponses[keyof QuanTriLuotXemResponses];
+
+export type QuanTriLuotXemOnlineData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/admin/luot-xem/online';
+};
+
+export type QuanTriLuotXemOnlineErrors = {
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+};
+
+export type QuanTriLuotXemOnlineError = QuanTriLuotXemOnlineErrors[keyof QuanTriLuotXemOnlineErrors];
+
+export type QuanTriLuotXemOnlineResponses = {
+    /**
+     * OK
+     */
+    200: OnlineOut;
+};
+
+export type QuanTriLuotXemOnlineResponse = QuanTriLuotXemOnlineResponses[keyof QuanTriLuotXemOnlineResponses];
 
 export type QuanTriLietKeMachData = {
     body?: never;

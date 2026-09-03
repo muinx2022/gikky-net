@@ -97,6 +97,13 @@ export const TIEN_TO_PHIEN = "/m-phien";
 export function middleware(req: NextRequest, event: NextFetchEvent) {
   const duong_dan = req.nextUrl.pathname;
 
+  // MỘT phép đọc cookie cho CẢ HAI việc của middleware. Nhánh rewrite đã cần nó từ
+  // trước; ô "Online" chỉ chuyển tiếp đúng cái bit ấy sang Django (2026-08-31), không
+  // thêm một phép đọc nào. Hai lời gọi `req.cookies.has(...)` trong cùng một request
+  // không sai, nhưng chúng là hai chỗ để một lượt sửa đổi một bên — mà lệch nhau thì
+  // "đã đăng nhập" trên modal và nhánh dynamic của trang mạch nói ngược nhau.
+  const co_cookie_phien = req.cookies.has(COOKIE_PHIEN);
+
   const secret = secretDem();
   if (secret !== "" && nenDemRequest(req) && nenDem(duong_dan)) {
     // KHÔNG `await` — xem docstring. `waitUntil` giữ tiến trình sống cho lời gọi, còn
@@ -121,12 +128,21 @@ export function middleware(req: NextRequest, event: NextFetchEvent) {
           // đây là có chủ đích — phép cắt sống ở một chỗ, cùng chỗ với danh sách host của
           // site, thay vì hai bản có thể lệch.
           referer: req.headers.get("referer") ?? "",
+          // ⚠ Nghĩa CHÍNH XÁC: *request có mang cookie tên `sessionid`*. **Không**
+          // validate — edge runtime không có DB, đúng đánh đổi mà nhánh rewrite ngay
+          // dưới đã chấp nhận từ trước. Hệ quả: cookie hết hạn vẫn đếm là "đã đăng
+          // nhập", và modal `/luot-xem` phải nói ra chứ không giấu.
+          //
+          // ⚠ Đây là MỘT BIT, không phải một danh tính: không username, không `user_id`,
+          // không gì gắn hàng `LuotXem` với một con người. Cam kết ấy là lý do trang
+          // thống kê không cần banner cookie — xem `api/core/models/luot_xem.py`.
+          da_dang_nhap: co_cookie_phien,
         },
       }).catch(() => {}),
     );
   }
 
-  if (!nenRewrite(duong_dan, req.cookies.has(COOKIE_PHIEN))) return NextResponse.next();
+  if (!nenRewrite(duong_dan, co_cookie_phien)) return NextResponse.next();
 
   const url = req.nextUrl.clone();
   url.pathname = `${TIEN_TO_PHIEN}${duong_dan.slice("/m".length)}`;
