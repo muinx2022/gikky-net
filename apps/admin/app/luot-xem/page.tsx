@@ -370,10 +370,10 @@ export default function TrangLuotXem() {
                       <tbody data-testid="bang-duong-dan">
                         {so_lieu.top_duong_dan.map((d) => (
                           <tr key={d.duong_dan}>
-                            <td className="font-mono text-xs break-all">{d.duong_dan}</td>
-                            <td className="tabular-nums">{d.so_luot_nguoi}</td>
-                            <td className="tabular-nums text-muc-mo">{d.so_luot_bot}</td>
-                            <td className="tabular-nums font-semibold">
+                            <td className="px-3 py-2.5 font-mono text-xs break-all">{d.duong_dan}</td>
+                            <td className="px-3 py-2.5 tabular-nums">{d.so_luot_nguoi}</td>
+                            <td className="px-3 py-2.5 tabular-nums text-muc-mo">{d.so_luot_bot}</td>
+                            <td className="px-3 py-2.5 tabular-nums font-semibold">
                               {d.so_luot_nguoi + d.so_luot_bot}
                             </td>
                           </tr>
@@ -410,13 +410,13 @@ export default function TrangLuotXem() {
                               đông nhất, nhưng nó không phải một tên miền — trộn vào bảng
                               là đẩy hết nguồn thật xuống dưới một cái nhãn rỗng. */}
                           <tr>
-                            <td className="text-muc-mo">(trực tiếp / nội bộ)</td>
-                            <td className="tabular-nums">{so_lieu.so_truc_tiep}</td>
+                            <td className="px-3 py-2.5 text-muc-mo">(trực tiếp / nội bộ)</td>
+                            <td className="px-3 py-2.5 tabular-nums">{so_lieu.so_truc_tiep}</td>
                           </tr>
                           {so_lieu.top_nguon.map((n) => (
                             <tr key={n.nguon}>
-                              <td className="font-mono text-xs break-all">{n.nguon}</td>
-                              <td className="tabular-nums">{n.so_luot}</td>
+                              <td className="px-3 py-2.5 font-mono text-xs break-all">{n.nguon}</td>
+                              <td className="px-3 py-2.5 tabular-nums">{n.so_luot}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -439,8 +439,8 @@ export default function TrangLuotXem() {
                         <tbody data-testid="bang-nhom-bot">
                           {so_lieu.theo_nhom_bot.map((n) => (
                             <tr key={n.nhom}>
-                              <td>{nhanCua(NHAN_NHOM_BOT, n.nhom)}</td>
-                              <td className="tabular-nums">{n.so_luot}</td>
+                              <td className="px-3 py-2.5">{nhanCua(NHAN_NHOM_BOT, n.nhom)}</td>
+                              <td className="px-3 py-2.5 tabular-nums">{n.so_luot}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -459,11 +459,11 @@ export default function TrangLuotXem() {
                         <tbody data-testid="bang-bot">
                           {so_lieu.top_bot.map((b) => (
                             <tr key={b.ten}>
-                              <td className="font-mono text-xs">{b.ten}</td>
-                              <td className="text-muc-mo">
+                              <td className="px-3 py-2.5 font-mono text-xs">{b.ten}</td>
+                              <td className="px-3 py-2.5 text-muc-mo">
                                 {nhanCua(NHAN_NHOM_BOT, b.nhom)}
                               </td>
-                              <td className="tabular-nums">{b.so_luot}</td>
+                              <td className="px-3 py-2.5 tabular-nums">{b.so_luot}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -489,8 +489,8 @@ export default function TrangLuotXem() {
                         <tbody data-testid="bang-trinh-duyet">
                           {so_lieu.trinh_duyet.map((t) => (
                             <tr key={t.ten}>
-                              <td>{nhanCua(NHAN_TRINH_DUYET, t.ten)}</td>
-                              <td className="tabular-nums">{t.so_luot}</td>
+                              <td className="px-3 py-2.5">{nhanCua(NHAN_TRINH_DUYET, t.ten)}</td>
+                              <td className="px-3 py-2.5 tabular-nums">{t.so_luot}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -509,8 +509,8 @@ export default function TrangLuotXem() {
                         <tbody data-testid="bang-thiet-bi">
                           {so_lieu.thiet_bi.map((t) => (
                             <tr key={t.ten}>
-                              <td>{nhanCua(NHAN_THIET_BI, t.ten)}</td>
-                              <td className="tabular-nums">{t.so_luot}</td>
+                              <td className="px-3 py-2.5">{nhanCua(NHAN_THIET_BI, t.ten)}</td>
+                              <td className="px-3 py-2.5 tabular-nums">{t.so_luot}</td>
                             </tr>
                           ))}
                         </tbody>
