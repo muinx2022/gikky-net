@@ -251,8 +251,77 @@ User đã chốt: làm xong thì **commit và deploy**. Tại chặng 5, phiên 
    với user (đây là hành động ảnh hưởng hệ thống đang chạy, không tự động hoá âm thầm dù
    đã được đồng ý trước — báo rõ đang deploy gì, từ commit nào).
 
-## 6 · Nhật ký thực hiện (`opus-dev` điền)
+## 6 · Nhật ký thực hiện
 
-(để trống — điền quyết định nhỏ, số đo cuối, danh sách file test phải sửa vì đổi
-schema/model, và mọi phát hiện ngoài phạm vi vào mục riêng cuối báo cáo theo luật "một việc
-một lúc" ở `D:\Projects\CLAUDE.md`)
+Đã qua **4 lượt sửa** (vượt giới hạn thường lệ 2 lượt, user đồng ý ở lượt 3 và 4) — mỗi
+lượt nghiệm thu/phản biện độc lập tìm ra ít nhất một lỗi thật ở đúng chỗ lượt trước vừa vá,
+nên không dừng sớm hơn được.
+
+### Lượt 1 (thực thi ban đầu)
+Model `CauHinhBienTap`, cột `Moc.edited_by`, chặn `PATCH /api/v1/mocs/{id}` sau cửa sổ,
+`MocOut.sua_duoc_den`/`edited_by`, cài đặt admin, frontend ẩn nút Sửa + nhãn "đã sửa".
+Migration `0029` (nối sau `0028` của Antigravity, không đụng).
+
+### Lượt 2 (sửa theo phản biện vòng 1) — 4 lỗi
+1. Hết cửa sổ tự sửa làm mất luôn nút Xoá mốc → sửa chỉ ẩn nút Sửa.
+2. N+1 query khi `edited_by` khác NULL → thêm `select_related` ở `machs.py`.
+3. Cửa sổ tính từ `created_at`, không tính hẹn giờ phát hành → thêm `max(created_at,
+   published_at)`.
+4. Đường ảnh (thêm/xoá) không bị chặn bởi cửa sổ → thêm `doi_trong_cua_so_tu_sua`.
+
+### Lượt 3 (sửa theo phản biện vòng 2) — 2 lỗi MỚI do chính lượt 2 sinh ra
+1. Form sửa tự đóng giữa chừng khi cửa sổ hết hạn lúc đang gõ → mất dữ liệu im lặng. Sửa:
+   quyết định ẩn/hiện nút Sửa vẫn động theo thời gian, nhưng form ĐÃ MỞ không tự đóng nữa.
+2. `max(created_at, published_at)` mở lại cửa sổ cho TOÀN BỘ mốc cũ mỗi khi admin "rút bài
+   xuống, phát hành lại" → thêm cột `Mach.lan_dau_len_song` (migration `0030`), ghi ĐÚNG
+   MỘT LẦN lúc lên sóng lần đầu (`tao_mach` hoặc `phat_hanh_mach`, chỉ khi đang NULL);
+   `hen_gio_mach` (rút xuống/phát hành lại) cố ý không đụng cột này.
+3. Thêm test đơn vị cho `tuSuaConDuoc` (thiếu từ lượt 1).
+4. Sửa 5 chỗ docstring lệch công thức.
+
+Lượt 3 cũng tự phát hiện và vá thêm: helper test `_lui_created_at` phải lùi cả
+`Mach.published_at`/`lan_dau_len_song`, nếu không 4 bài đo cũ đỏ oan vì chính công thức
+mới của lượt này.
+
+### Lượt 4 (sửa theo phản biện vòng 3, tự kiểm không qua thêm vòng nghiệm thu/phản biện)
+Chỗ giao giữa lượt 2 (ảnh bị chặn bởi cửa sổ) và lượt 3 (form không tự đóng): nếu người
+dùng chỉ đổi ảnh (không đổi chữ) đúng lúc cửa sổ vừa hết hạn, hệ thống báo "Đã lưu, nhưng
+..." dù KHÔNG lưu gì, và xoá sạch ảnh vừa chọn. Sửa: tách hàm thuần `ketQuaLuuMoc` (mới,
+`apps/web/lib/anh.ts`) tính đúng thông báo ("Đã lưu, nhưng.../Chưa lưu được:...") + giữ lại
+đúng những tấm ảnh lỗi. Kèm sửa 4 chỗ còn sót công thức `published_at` cũ.
+
+### Số đo cuối (sau lượt 4, cây làm việc chính)
+
+- `pnpm test` toàn bộ: **1995 passed, 26 skipped, 7 failed** — 7 bài đỏ xác nhận PRE-EXISTING
+  (thuộc `plans/2026-09-04-noi-quyen-chen-anh-staff`, file `api/api/quan_tri_sua_bai.py`
+  không nằm trong diff của việc này qua cả 4 lượt) — xem sổ `P-20260905-2`.
+- `pnpm lint`: 0 warning cả hai app. `pnpm codegen:check`: khớp, exit 0.
+- `pnpm build` (cổng 3000/3001/8000 trống): 0 warning cả hai app.
+- `pnpm e2e:don-vi`: **469 passed, 1 failed** (bài đỏ cùng nhóm pre-existing trên).
+- Kiểm bằng trình duyệt thật trên `gikky_e2e` (nghiệm thu vòng 3, KHÔNG đụng `gikky_dev`):
+  cả 5 kịch bản ở mục 3.6 PASS — hết cửa sổ ẩn đúng nút Sửa/giữ nút Xoá, superuser sửa
+  được qua khu quản trị bất kể cửa sổ, nhãn "Đã sửa bởi X vào giờ" đúng, đổi cấu hình có
+  tác dụng ngay không cache.
+- Migration `0028`→`0029`→`0030` áp được tuần tự trên `gikky_e2e` (532 mạch thật, backfill
+  đúng luật: 25 mạch hiện có giá trị, 0 mạch hiện mà NULL).
+
+### Commit
+
+Tách 2 commit theo đúng dự tính §5 (dù việc chính đã bị một phiên khác gộp làm một commit
+lớn hơn dự kiến — xem cảnh báo bên dưới): lượt 4 (sửa thông báo sai) commit riêng
+`7811a7f`.
+
+⚠ **Lệch so với §5 dự tính**: giữa lúc lượt 3/4 đang chạy, MỘT PHIÊN KHÁC (cùng git user)
+đã tự commit toàn bộ lượt 1-3 của việc này GỘP CHUNG với việc "thu gọn nội dung mốc"
+(`plans/2026-09-05-thu-gon-noi-dung-moc.md`, chưa từng chạy trong phiên soạn plan A) và
+một số file của các phiên song song khác, vào một commit `2787f29 "Cua so tu sua bai va
+thu gon noi dung moc"` — trước khi phiên chính kịp tách theo pathspec như plan yêu cầu.
+Không rõ ai/phiên nào đã chạy lệnh đó. Đã báo user.
+
+### NGOÀI PHẠM VI — đã ghi sổ (`LOI-VA-NO.md` mục E)
+`P-20260905-2` (xác nhận 7+1 bài đỏ pre-existing, cùng gốc `P-20260904-5`) ·
+`P-20260905-3` (N+1 `edited_by` trên đường ghi) · `P-20260905-4` (khe hở backfill migration
+`0030` cho mạch đang rút-xuống-chờ-phát-lại — **cần kiểm trên prod TRƯỚC khi migrate**) ·
+`P-20260905-5` (`lan_dau_len_song` theo giờ hẹn, không phải giờ cron thật chạy) ·
+`P-20260905-6` (`API_ORIGIN` nướng vào build, bẫy script đo cổng phụ) ·
+`P-20260905-7` (đường "trích" không qua cửa sổ tự sửa, docstring nói quá rộng).

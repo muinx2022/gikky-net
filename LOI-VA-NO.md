@@ -1614,3 +1614,39 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Ở đâu**: quy trình §2 của `scripts/bai-viet/lich/tan-man.md` — luật "số liệu có nguồn, dùng công cụ lấy dữ liệu thật" không có cảnh báo nào về việc công cụ đọc PDF có thể trả về số bịa
 - **Bằng chứng**: `WebFetch` trên `lseg.com/.../ftse-faq-document-vietnam-reclassification.pdf` trả về: hiệu lực **23/09/2024**, bốn đợt **25/50/75/100%**, **27** mã, tỷ trọng **1,5%** FTSE Emerging. Số thật, đối chiếu thông cáo FTSE Russell 07/04/2026 + báo cáo Vietcap: hiệu lực **21/09/2026**, các đợt **10/30/65/100%**, tỷ trọng **0,488%** FTSE Emerging All Cap. Không có con số nào trong bản tóm tắt khớp thực tế, và cả bốn đều nằm trong dải hợp lý nên không tự lộ.
 - **Vì sao không sửa ngay**: lượt này chỉ viết bài, không sửa quy trình. Đề xuất: thêm vào §2 của `tan-man.md` một câu buộc **đối chiếu chéo mọi số lấy từ PDF bằng ít nhất một nguồn thứ hai** trước khi đưa vào bài — lượt này bắt được vì mốc 2024/2025 vô lý với sự kiện 2026, nhưng một PDF có năm khớp thì sẽ trôi thẳng vào mục "Nguồn".
+
+### P-20260905-2 · [MỞ] · NẶNG — xác nhận thêm cho `P-20260904-5`: 7 pytest + 1 e2e đỏ sẵn vì test đã nới quyền mod, code `quan_tri_sua_bai.py` thì chưa
+- **Thấy lúc**: nghiệm thu/phản biện 4 vòng của `plans/2026-09-05-cua-so-tu-sua-bai.md` ("cửa sổ tự sửa bài") — đỏ SẴN ở HEAD trước khi lượt này chạm gì, không phải do bản vá
+- **Ở đâu**: `api/api/quan_tri_sua_bai.py` (`sua_moc_quan_tri`, `tai_anh_noi_dung_quan_tri`, `tai_anh_moc_quan_tri`, `xoa_anh_moc_quan_tri`) vẫn `chan_neu_khong_phai_superuser`; `apps/web/e2e/don-vi/hen-gio-phat-hanh.spec.ts:148`
+- **Bằng chứng**: `pnpm test` toàn bộ luôn ra đúng 7 failed (`test_mod_QUA_duoc_moi_endpoint`, 6 bài trong `test_api_quan_tri_sua_bai.py`), `pnpm e2e:don-vi` luôn ra đúng 1 failed — lặp lại giống hệt qua 4 lượt build/test độc lập, không dao động.
+- **Vì sao không sửa ngay**: cùng gốc với `P-20260904-5` (quyết định chính sách cần user chốt), không phải việc của plan "cửa sổ tự sửa bài". Ghi thêm ở đây để bất kỳ ai đọc log CI/test của lượt cửa-sổ-tự-sửa không tưởng nhầm đây là lỗi mới.
+
+### P-20260905-3 · [MỞ] · VỪA — N+1 khi `moc.edited_by` khác NULL trên các đường GHI (PATCH/xoá ảnh), khác đường ĐỌC đã được vá
+- **Thấy lúc**: phản biện vòng 3, `plans/2026-09-05-cua-so-tu-sua-bai.md`
+- **Ở đâu**: `api/api/ghi_chung.py::nap_moc` — thiếu `select_related("edited_by")` (đường ĐỌC `api/api/machs.py:154-158` đã có, ghim bằng `SO_QUERY["xem_mach"]`)
+- **Bằng chứng**: mọi response `MocOut` dựng từ `_moc_ra_day_du` (`api/api/mocs.py:184`) sau một lượt PATCH/xoá ảnh tốn thêm 1 truy vấn `User` nếu mốc đã từng sửa lộ — không có bài đo số truy vấn nào canh đường ghi (`SO_QUERY` chỉ ghim 10 cửa ĐỌC).
+- **Vì sao không sửa ngay**: một dòng sửa rẻ nhưng ngoài phạm vi 4 lượt vá đã giao; nhặt cùng lúc dọn `nap_moc` nói chung cho tiện.
+
+### P-20260905-4 · [MỞ] · NHỎ — Migration `0030` backfill `Mach.lan_dau_len_song` bỏ sót ca "đã từng lên sóng, đang bị rút xuống chờ phát hành lại" tại đúng thời điểm migrate
+- **Thấy lúc**: phản biện vòng 3
+- **Ở đâu**: `api/core/migrations/0030_mach_lan_dau_len_song.py:25-33`
+- **Bằng chứng**: mạch `hidden_at IS NOT NULL` (đang ẩn chờ hẹn phát hành lại) bị backfill bỏ qua, giữ `NULL`; lượt `phat_hanh_mach` kế tiếp sẽ ghi `lan_dau_len_song` = giờ phát hành LẠI (sai, phải là lần đầu) ⇒ mở lại cửa sổ tự sửa cho mọi mốc cũ của mạch đó — đúng lỗi mà cột này sinh ra để chặn. Đã đếm trên `gikky_dev`: **0 hàng** rơi vào ca này lúc kiểm (2 mạch hẹn giờ đang chờ đều là hẹn LẦN ĐẦU, chưa từng lên sóng).
+- **Vì sao không sửa ngay**: hiện không trúng hàng nào, không suy ngược được từ dữ liệu cũ (không có cách biết "lần lên sóng đầu tiên thật" nếu đã bị ghi đè). **Cần làm trước khi migrate PROD**: chạy lại đúng câu đếm này (đếm mạch `hidden_at IS NOT NULL AND published_at trong tương lai AND đã từng có AuditLog hen_gio_mach/phat_hanh_mach`) trên DB prod — ra > 0 thì vá tay bằng UPDATE trước khi `migrate`.
+
+### P-20260905-5 · [MỞ] · NHỎ — `Mach.lan_dau_len_song` ghi theo GIỜ HẸN (`published_at`), không phải giờ cron THẬT SỰ chạy
+- **Thấy lúc**: phản biện vòng 3
+- **Ở đâu**: `api/core/ghi.py:1918-1919` (`phat_hanh_mach`)
+- **Bằng chứng**: nếu cron `phat_hanh_da_hen` chết/trễ nhiều giờ, bài lên sóng lúc T nhưng `lan_dau_len_song` mang giờ hẹn T-nhiều-giờ ⇒ cửa sổ tự sửa có thể đã hết ngay khi bài vừa xuất hiện, không lời giải thích. Bình thường cron chạy mỗi 5 phút nên lệch không đáng kể.
+- **Vì sao không sửa ngay**: đánh đổi chấp nhận được ở mức vận hành hiện tại (cron 5 phút/lượt); chỉ đáng sửa (đổi sang `timezone.now()`) nếu cron từng thực sự chết dài.
+
+### P-20260905-6 · [MỞ] · NHỎ — `next build` nướng `API_ORIGIN` vào `routes-manifest.json`; đổi env lúc `next start` không đổi được đích rewrite phía trình duyệt
+- **Thấy lúc**: nghiệm thu vòng 3 dựng script kiểm trình duyệt thật cho `plans/2026-09-05-cua-so-tu-sua-bai.md`
+- **Ở đâu**: `apps/web/next.config.ts:5` (và tương đương ở `apps/admin`)
+- **Bằng chứng**: build với `API_ORIGIN=http://localhost:8010` rồi `next start` ở cổng khác — request phía SERVER đi đúng 8010, nhưng rewrite phía TRÌNH DUYỆT vẫn trỏ giá trị build-time cũ ⇒ `ECONNREFUSED` khi trang gọi `/api/...` từ client. Phải build lại mỗi khi đổi `API_ORIGIN` cho một script đo dùng cổng phụ.
+- **Vì sao không sửa ngay**: bẫy vận hành cho script kiểm tra dùng-một-lần, không phải lỗi sản phẩm; ghi để lượt sau viết script đo trình duyệt không mất công dò lại.
+
+### P-20260905-7 · [MỞ] · NHỎ — `doi_trong_cua_so_tu_sua` tự nhận "dùng chung cho MỌI đường ghi đổi nội dung công khai của Moc" nhưng đường "trích" (`POST`/`DELETE /mocs/{id}/trich`) không qua nó
+- **Thấy lúc**: phản biện vòng 2, `plans/2026-09-05-cua-so-tu-sua-bai.md`
+- **Ở đâu**: `api/api/quyen.py:165` (docstring) · `api/api/mocs.py:354,454` (`POST`/`DELETE .../trich`)
+- **Bằng chứng**: hai cửa trích đổi `MocOut.trich` hiện ngay trên thẻ mốc, không `MocRevision`, không qua kiểm cửa sổ tự sửa — có luật thời gian RIÊNG (24 giờ, PLAN 5.6) nên không chắc là lỗ hổng, nhưng câu "MỌI đường ghi" trong docstring là sai.
+- **Vì sao không sửa ngay**: cần quyết định có chủ đích (áp cửa sổ tự sửa luôn cho trích, hay giữ luật 24h riêng và chỉ sửa lại câu docstring) — ngoài phạm vi 4 lượt vá đã giao.
