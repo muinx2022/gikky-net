@@ -60,12 +60,12 @@ def cookie(ten):
     return ""
 
 
-def goi(duong, than=None):
+def goi(duong, than=None, goc=ORIGIN):
     h = {
         "Accept": "application/json",
         "User-Agent": UA,
-        "Origin": ORIGIN,
-        "Referer": ORIGIN + "/",
+        "Origin": goc,
+        "Referer": goc + "/",
     }
     data = None
     if than is not None:
@@ -174,12 +174,15 @@ def main(argv=None):
         print(f"Thiếu biến môi trường {ten_bien}.", file=sys.stderr)
         return 1
 
-    ma, _ = goi(ALLAUTH + "/auth/session")
+    goc = ADMIN_ORIGIN if args.hen else ORIGIN
+    allauth = goc + "/api/_allauth/browser/v1"
+
+    ma, _ = goi(allauth + "/auth/session", goc=goc)
     if ma not in (200, 401) or not cookie("csrftoken"):
         print(f"① session lỗi: HTTP {ma}, csrftoken rỗng?", file=sys.stderr)
         return 1
 
-    ma, than = goi(ALLAUTH + "/auth/login", {"email": email, "password": mat_khau})
+    ma, than = goi(allauth + "/auth/login", {"email": email, "password": mat_khau}, goc=goc)
     if ma != 200:
         print(f"② login lỗi: HTTP {ma} {json.dumps(than, ensure_ascii=False)[:200]}",
               file=sys.stderr)
@@ -191,7 +194,7 @@ def main(argv=None):
             "author": AUTHOR_HEN,
             "published_at": args.hen,
         }
-        ma, than = goi(ORIGIN + "/api/admin/machs/hen-gio", than_gui)
+        ma, than = goi(ADMIN_ORIGIN + "/api/admin/machs/hen-gio", than_gui, goc=ADMIN_ORIGIN)
         if ma != 201:
             print(
                 f"③ tạo mạch hẹn giờ lỗi: HTTP {ma} "
