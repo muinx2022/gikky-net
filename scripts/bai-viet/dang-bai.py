@@ -23,6 +23,7 @@ Chuỗi ba request giống `dang-tin.mjs` (xem docstring ở đó): session → 
 """
 
 import argparse
+import base64
 import http.cookiejar
 import json
 import os
@@ -47,7 +48,7 @@ AUTHOR_HEN = "gikky-team-member"
 TRAN = {"title": 160, "body": 10_000, "loai": 20, "question_for_crowd": 200}
 SO_FIGURES_TOI_DA = 6
 DAI_O_FIGURE = 24
-TRUONG_CHO_PHEP = {"sub", "title", "body", "loai", "question_for_crowd", "figures"}
+TRUONG_CHO_PHEP = {"sub", "title", "body", "loai", "question_for_crowd", "figures", "anhs"}
 
 jar = http.cookiejar.CookieJar()
 op = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
@@ -146,10 +147,90 @@ def kiem_offset(iso):
     return None
 
 
+def xu_ly_anhs(bai, author_username):
+    """Xử lý danh sách ảnh đính kèm (nếu có) trong `bai["anhs"]`.
+
+    Mỗi phần tử:
+      {"data": "<base64>", "alt": "...", "placeholder": "{{ANH_1}}"} hoặc
+      {"path": "...", "alt": "...", "placeholder": "{{ANH_1}}"}
+
+    Tái mã hoá, kiểm tra dung lượng/kích thước và lưu qua `luu_anh_noi_dung`.
+    Thay thế placeholder trong `bai["body"]` bằng `<p><img src="..." alt="..."></p>`.
+    """
+    anhs = bai.pop("anhs", None)
+    if not anhs:
+        return []
+    if not isinstance(anhs, list):
+        return ["Trường `anhs` phải là một mảng (list)."]
+
+    try:
+        from core.anh import xu_ly_anh_tai_len
+        from core.anh_luu import url_anh
+        from core.anh_noi_dung import luu_anh_noi_dung
+        from core.models.nguoi_dung import User
+    except ImportError as e:
+        return [f"Không thể import core.anh (phải chạy trong container Django): {e}"]
+
+    tac_gia = User.objects.filter(username=author_username).first()
+    if not tac_gia:
+        return [f"Không tìm thấy tài khoản tác giả {author_username!r} để lưu ảnh."]
+
+    loi = []
+    for i, a in enumerate(anhs):
+        if not isinstance(a, dict):
+            loi.append(f"`anhs[{i}]` phải là dict.")
+            continue
+        raw_bytes = None
+        if "data" in a:
+            try:
+                raw_bytes = base64.b64decode(a["data"])
+            except Exception as e:
+                loi.append(f"`anhs[{i}].data` không phải base64 hợp lệ: {e}")
+                continue
+        elif "path" in a:
+            p = a["path"]
+            if not os.path.exists(p):
+                loi.append(f"Không tìm thấy file ảnh: {p}")
+                continue
+            with open(p, "rb") as f:
+                raw_bytes = f.read()
+        else:
+            loi.append(f"`anhs[{i}]` phải có trường `data` (base64) hoặc `path`.")
+            continue
+
+        try:
+            anh_xu_ly = xu_ly_anh_tai_len(raw_bytes)
+            hang = luu_anh_noi_dung(user=tac_gia, anh=anh_xu_ly)
+            url = url_anh(hang.khoa_luu_tru)
+            alt = a.get("alt", "")
+            placeholder = a.get("placeholder", f"{{{{ANH_{i+1}}}}}")
+            the_img = f'<p><img src="{url}" alt="{alt}"></p>'
+            p_placeholder = f"<p>{placeholder}</p>"
+            if p_placeholder in bai.get("body", ""):
+                bai["body"] = bai["body"].replace(p_placeholder, the_img)
+            elif placeholder in bai.get("body", ""):
+                bai["body"] = bai["body"].replace(placeholder, the_img)
+            else:
+                bai["body"] = (bai.get("body", "") + f"\n{the_img}").strip()
+            print(f"Đã lưu ảnh {i+1}: {url} ({hang.w}x{hang.h})", file=sys.stderr)
+        except Exception as e:
+            loi.append(f"Lỗi lưu ảnh {i+1}: {e}")
+
+    return loi
+
+
 def main(argv=None):
     args = doc_hen(sys.argv[1:] if argv is None else argv)
     with open(DUONG_BAI, encoding="utf-8") as f:
         bai = json.load(f)
+
+    author = AUTHOR_HEN if args.hen else "gikky-team-member"
+    loi_anh = xu_ly_anhs(bai, author)
+    if loi_anh:
+        print("LỖI XỬ LÝ ẢNH:", file=sys.stderr)
+        for c in loi_anh:
+            print(f"  - {c}", file=sys.stderr)
+        return 2
 
     loi = soat(bai)
     if args.hen:

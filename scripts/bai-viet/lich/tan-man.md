@@ -211,20 +211,37 @@ D:\Projects\gikky-net\scripts\bai-viet\.tam\bai.json
   "loai": "Phân tích",
   "question_for_crowd": "…?",
   "figures": [{ "label": "…", "value": "…" }],
-  "body": "<p>…</p>"
+  "anhs": [
+    {
+      "data": "<base64_chuỗi_ảnh_png_hoặc_jpeg>",
+      "alt": "Chú thích nội dung biểu đồ / hình minh hoạ",
+      "placeholder": "{{ANH_1}}"
+    }
+  ],
+  "body": "<p>…</p><p>{{ANH_1}}</p><p>…</p>"
 }
 ```
+
+### Ảnh minh hoạ — BẮT BUỘC 1–2 ảnh mỗi bài (Cập nhật 05/09/2026)
+
+Mỗi bài viết **phải có từ 1 đến 2 ảnh minh hoạ** để làm rõ luận điểm:
+- **Loại ảnh phù hợp:** Biểu đồ số liệu thống kê (vẽ bằng Python `matplotlib`/`Pillow`), sơ đồ cơ chế quy trình, mô hình định lượng hoặc hình minh hoạ trực quan khái niệm.
+- **Cách nhúng:**
+  1. Tạo ảnh và chuyển sang chuỗi Base64 đưa vào mảng `anhs` trong file JSON.
+  2. Đặt thẻ placeholder `{{ANH_1}}`, `{{ANH_2}}` vào vị trí phù hợp trong thân bài `body`.
+  3. Script `dang-bai.py` sẽ tự động tải ảnh vào kho nội dung của site (`/media/anh/`) và thay thế placeholder bằng thẻ `<p><img src="..." alt="..."></p>`.
 
 ### Giới hạn cứng của server — vượt là hỏng
 
 | Trường | Trần | Ghi chú |
 |---|---|---|
 | `title` | 160 ký tự | |
-| `body` | 10 000 ký tự | |
+| `body` | 10 000 ký tự | Đã tính cả các thẻ `<img src="...">` sau khi nhúng |
 | `loai` | 20 ký tự | |
 | `question_for_crowd` | 200 ký tự | **bắt buộc kết thúc bằng `?`** |
 | `figures` | **tối đa 6 cặp** | vượt ⇒ server trả **500**, không phải 400 |
 | `figures[].label` / `.value` | 24 ký tự mỗi ô | |
+| `anhs` | **1–2 ảnh** | Danh sách object `{data, alt, placeholder}` |
 
 `sub` phải là một trong: `chung-khoan` · `vi-mo` · `crypto` · `ngoai-hoi` · `quan-tri-von`.
 Bảng chọn `sub` nằm ở đầu `chu-de.md`.
@@ -237,10 +254,9 @@ thành chỗ để đứng thay vì thứ để đọc rồi thôi. Hỏi một 
 
 ### Thẻ HTML dùng được
 
-`p` `br` `strong` `em` `u` `s` `code` `pre` `blockquote` `ul` `ol` `li` `a` `h2` `h3` `hr`
+`p` `br` `strong` `em` `u` `s` `code` `pre` `blockquote` `ul` `ol` `li` `a` `h2` `h3` `hr` `img`
 
-Thẻ ngoài danh sách bị server lọc âm thầm. Không chèn ảnh (`img` chỉ nhận ảnh đã upload lên
-chính site).
+`img` hợp lệ khi trỏ vào kho của site (`/media/anh/...`). Cơ chế `anhs` ở trên tự động sinh thẻ này.
 
 ### Độ dài
 
