@@ -26,6 +26,7 @@ import {
   The,
   gioVN,
 } from "../../../components/ui";
+import { KhoiHenGio } from "../../../components/khoi-hen-gio";
 import { useDanhSach } from "../../../lib/danh-sach";
 import { GOC_API, headerGhi, moTaLoi } from "../../../lib/api";
 import { useHanhDong } from "../../../lib/hanh-dong";
@@ -125,7 +126,12 @@ export default function TrangChiTietMach() {
 
       <The className="mb-4 p-4">
         <div className="flex flex-wrap items-center gap-2">
-          {mach.da_bi_an && <NhanTrangThai tone="xau">mạch đang bị ẩn</NhanTrangThai>}
+          {mach.da_hen_gio && (
+            <NhanTrangThai tone="chu-y">đã hẹn giờ</NhanTrangThai>
+          )}
+          {mach.da_bi_an && !mach.da_hen_gio && (
+            <NhanTrangThai tone="xau">mạch đang bị ẩn</NhanTrangThai>
+          )}
           {mach.da_khoa && (
             <NhanTrangThai tone="xau">
               bị khoá — đọc được, cấm mọi tương tác
@@ -148,8 +154,13 @@ export default function TrangChiTietMach() {
           <button
             type="button"
             className="nut"
-            disabled={dang_chay}
+            disabled={dang_chay || mach.da_hen_gio}
             data-testid="nut-an-mach"
+            title={
+              mach.da_hen_gio
+                ? "Bài đang hẹn giờ — dùng Phát hành ngay bên dưới"
+                : undefined
+            }
             onClick={() =>
               chay(() =>
                 quanTriDatAnMach({
@@ -212,6 +223,8 @@ export default function TrangChiTietMach() {
             Mở trang công khai ↗
           </a>
         </div>
+
+        <KhoiHenGio mach={mach} dangChay={dang_chay} chay={chay} />
 
         {dang_sua_tieu_de && (
           <div className="mt-3 space-y-2 border-t border-vien pt-3">
@@ -308,10 +321,9 @@ export default function TrangChiTietMach() {
                   </td>
                   <td className="px-3 py-2.5 text-right">
                     <span className="inline-flex gap-1.5">
-                      {/* Link "Sửa" chỉ hiện khi nội dung sửa được VÀ người xem là
-                          superuser — hai điều kiện khác nhau, và cả hai đến từ server
-                          (`sua_duoc` · `ModOut.is_superuser`). Không hiện nút xám. */}
-                      {m.sua_duoc && mod.is_superuser && (
+                      {/* Link "Sửa" chỉ hiện khi nội dung sửa được (`m.sua_duoc`),
+                          mở cho mọi mod (staff). Không hiện nút xám. */}
+                      {m.sua_duoc && (
                         <Link
                           href={`/m/${mach_id}/moc/${m.id}`}
                           className="nut nut-nho"

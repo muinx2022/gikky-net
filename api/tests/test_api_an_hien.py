@@ -15,6 +15,7 @@ from django.utils import timezone
 
 from core.models import Comment, Mach, Moc, Trich
 from tests.conftest import lay, moi_chuoi, phang, viet
+from tests._an_mach import an_mach_tho
 
 pytestmark = pytest.mark.django_db
 
@@ -234,7 +235,7 @@ def test_mach_bi_an_bien_mat_khoi_moi_cua(client, seed):
     đúng ở cả hai thế giới. `not in` mới là câu hỏi đang cần hỏi.
     """
     moc = Moc.objects.get(mach=seed, seq=2)
-    Mach.objects.filter(pk=seed.pk).update(hidden_at=timezone.now())
+    an_mach_tho(Mach.objects.filter(pk=seed.pk))
 
     lay(client, f"/api/v1/machs/{seed.pk}", status=404)
     lay(client, f"/api/v1/machs/{seed.pk}/comments", status=404)

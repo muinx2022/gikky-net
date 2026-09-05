@@ -1,5 +1,8 @@
 # Hẹn giờ — hoàn thiện admin + web + bot + cron
 
+**Trạng thái:** code xong T1–T8 (2026-09-04). T9 (trình duyệt + session mod) chưa chạy —
+plan để chặng 5, không dựng dev server trong lượt thực thi.
+
 Chốt 2026-09-04. User: *"bạn lên plan để làm tất cả từ admin tới front đi"* — sau lượt
 xem lại cặp `created_at` / `published_at`. Backend ghi (cột, constraint, hai cửa admin
 API, cron command, feed Mới, schema) **đã có** trong cây, bám
@@ -250,4 +253,34 @@ Không commit. Không `pnpm e2e` trần. Không dev server (chặng 5). Không `
 
 ## 10. Nhật ký
 
-_(chặng 5 điền)_
+Thực thi 2026-09-04 trên cây đã có backend hẹn giờ (chưa commit). Không đụng
+`form-tai-khoan.module.css`, `plans/2026-08-31-modal-online.md`, `scripts/bai-viet/chu-de.md`.
+
+**Đã làm**
+
+- T2: `POST /admin/machs/hen-gio` gọi `tu_upvote` + `bao_mach_moi` sau `tao_mach`.
+  Bài đo ban đầu ghi `moc.up_count` — mốc không có cột ấy (chỉ `score`). Đổi thành
+  `score == 1` + hàng `Vote` của tác giả đội.
+- T3: `dat_an_mach` ném `KhongTheGoAnHenGio` khi gỡ ẩn bài hẹn; cửa admin và cửa v1
+  `mod_dat_an_mach` trả 409 `noi_dung_da_go`. `pnpm codegen` thêm 409 vào OpenAPI.
+- T4: hồ sơ 20 bài + keyset `/users/{username}/machs` sắp `published_at`. `/me/da-vote`
+  và `/me/dang-theo` giữ `created_at` của Vote/Follow.
+- Admin `/machs`: lọc `hen_gio`, cột Phát hành, nhãn *đã hẹn giờ*, nút Gỡ ẩn khoá khi
+  `da_hen_gio`. `/m/[id]`: khối `khoi-hen-gio.tsx` (`datetime-local` +07:00).
+- Web: thẻ / trang mạch / tìm kiếm / JSON-LD / RSS / mốc 1 dùng `published_at`.
+- Bot `--hen`; `tan-man.md` mục *Viết trước, đăng sau*; crontab `phat_hanh_da_hen` trong
+  `deploy/prod/README.md` (không SSH VPS).
+
+**Đo**
+
+| # | Kết quả |
+|---|---|
+| T1 | `pnpm lint` 0 · `pnpm build` web+admin xanh · `pnpm codegen:check` khớp 34 file · `pnpm test` **1981 passed, 26 skipped** (0 fail, 0 warning) · `pnpm e2e:don-vi` **450 passed** |
+| T2–T4 | pytest mới xanh (sau khi sửa assertion `score`) |
+| T5 | 8 bài `hen-gio-phat-hanh.spec.ts` xanh (kèm T5e mutant) |
+| T6 | bốn mutant đỏ rồi khôi phục: (a) `the-mach` → `created_at` · (b) bỏ `seq===1` · (c) xoá `hen_gio` khỏi `CHU_LOC` · (e) helper `toISOString()`/`Z` |
+| T7 | `quan-tri-giao-dien.spec.ts` + `type-admin.spec.ts` nằm trong 450 don-vi |
+| T8 | `seo-va-trang.spec.ts` ghim `datePublished === hpg.published_at` — **không** chạy `pnpm e2e` trần |
+| T9 | chưa — cần session mod + dev server |
+
+Không commit. Sổ: không thêm gì.

@@ -492,8 +492,13 @@ class _QuaHanMucMoc(Exception):
     """
 
 
-def _figures_ra_dict(figures) -> list[dict] | None:
+def figures_ra_dict(figures) -> list[dict] | None:
     """Schema `FigureIn` → JSON thô cho cột `figures`. `None` giữ nguyên `None`.
+
+    CÔNG KHAI (bỏ gạch dưới 2026-09-03) vì `api/quan_tri_hen_gio.py` dùng lại nó — cùng
+    lý lẽ `api/feeds.py::subs_kem_so_mach`: một bản chép thứ hai của phép đổi này sẽ nhét
+    object pydantic vào `JSONField` ở đúng một trong hai cửa, và lỗi chỉ lộ khi có người
+    đọc lại.
 
     Có hàm riêng vì `figures` là `JSONField`: nhét thẳng object pydantic vào đó thì
     `psycopg` serialize ra một hình dạng khác (hoặc nổ), và lỗi chỉ lộ khi ai đó đọc lại.
@@ -560,7 +565,7 @@ def tao_mach_api(request, du_lieu: MachMoiIn):
             occurred_at=du_lieu.occurred_at,
             loai=du_lieu.loai,
             question_for_crowd=du_lieu.question_for_crowd,
-            figures=_figures_ra_dict(du_lieu.figures),
+            figures=figures_ra_dict(du_lieu.figures),
         )
         tu_upvote(target=moc)
         # Trong CÙNG transaction, sau khi `Mach` đã có hàng: `INSERT core_notification`
@@ -633,7 +638,7 @@ def noi_moc(request, mach_id: int, du_lieu: MocMoiIn):
                 occurred_at=du_lieu.occurred_at,
                 loai=du_lieu.loai,
                 question_for_crowd=du_lieu.question_for_crowd,
-                figures=_figures_ra_dict(du_lieu.figures),
+                figures=figures_ra_dict(du_lieu.figures),
             )
             tu_upvote(target=moc)
             # Thông báo cho follower, TRONG cùng transaction với lời ghi (PLAN 5.8).

@@ -40,7 +40,7 @@ from api.phan_trang import (
     ma_hoa_cursor,
 )
 from api.quan_tri_kiem_duyet import duong_dan_mach
-from api.quan_tri_loc import LOC_MACH_DANH_SACH
+from api.quan_tri_loc import LOC_MACH_DANH_SACH, dang_hen_gio
 from api.quan_tri_nguoi_dung import nguoi_dung_quan_tri_ra
 from api.quan_tri_schemas import (
     BinhLuanDongOut,
@@ -95,6 +95,14 @@ def liet_ke_mach(
     xét từ trên xuống (`api/quan_tri_loc.py`). Nghĩa là **`mo` KHÔNG bao gồm bài đã bị
     ẩn**, dù một bài bị ẩn vẫn "đang mở" trên trục `status`. Mặc định `tat_ca` gồm tất,
     kể cả bài đã gỡ — mod phải thấy để gỡ ẩn.
+
+    ⚠ **`trang_thai=hen_gio` đảo CHIỀU sắp xếp** (2026-09-03): bài chờ giờ hẹn sắp theo
+    `published_at` **tăng dần** — cái sắp lên trước đứng đầu. Mọi nhóm khác giữ nguyên
+    `created_at` giảm dần.
+
+    Không phải khẩu vị: danh sách này là một hàng đợi việc sắp xảy ra, và một hàng đợi
+    xếp ngược thì bài lên trong 10 phút nữa nằm ở trang cuối. Cursor keyset đi theo đúng
+    khoá sắp ấy — hai nửa lệch nhau là trang 2 trùng/sót hàng.
     """
     response["Cache-Control"] = "no-store"
     if (l := kiem_gioi_han(limit)) is not None:
@@ -116,18 +124,28 @@ def liet_ke_mach(
 
     tong = dem_tong(qs)
 
+    # Một biến cho CẢ BA chỗ (lọc keyset, `order_by`, sinh cursor kế tiếp). Ba hằng viết
+    # rời là ba chỗ để lệch, và lệch keyset thì không đỏ — nó chỉ làm trang 2 trả sai.
+    hang_doi_hen = trang_thai == "hen_gio"
+    truong_sap = "published_at" if hang_doi_hen else "created_at"
+
     try:
         moc_cursor = _doc_cursor(cursor)
     except CursorHong as e:
         return loi(400, CURSOR_KHONG_HOP_LE, f"Cursor không hợp lệ: {e}")
     if moc_cursor is not None:
         khi, id = moc_cursor
-        qs = loc_keyset(qs, truong="created_at", khi=khi, id=id, giam_dan=True)
+        qs = loc_keyset(
+            qs, truong=truong_sap, khi=khi, id=id, giam_dan=not hang_doi_hen
+        )
 
-    hang = list(qs.order_by("-created_at", "-pk")[: limit + 1])
+    thu_tu = (truong_sap, "pk") if hang_doi_hen else (f"-{truong_sap}", "-pk")
+    hang = list(qs.order_by(*thu_tu)[: limit + 1])
     trang, con_nua = cat_trang(hang, limit)
     ke_tiep = (
-        ma_hoa_cursor(trang[-1].created_at, trang[-1].pk) if con_nua and trang else None
+        ma_hoa_cursor(getattr(trang[-1], truong_sap), trang[-1].pk)
+        if con_nua and trang
+        else None
     )
     return TrangMachOut(
         items=[
@@ -138,6 +156,8 @@ def liet_ke_mach(
                 tac_gia=nguoi_dung_ra(m.author),
                 status=m.status,
                 created_at=m.created_at,
+                published_at=m.published_at,
+                da_hen_gio=dang_hen_gio(m),
                 last_activity_at=m.last_activity_at,
                 entry_count=m.entry_count,
                 comment_count=m.comment_count,

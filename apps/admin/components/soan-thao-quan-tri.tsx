@@ -57,11 +57,21 @@ export function SoanThaoQuanTri({
   giaTri,
   datGiaTri,
   khoa = false,
+  choPhepAnh = true,
 }: {
   giaTri: string;
   datGiaTri: (html: string) => void;
   /** Chỉ đọc — mốc đã bị gỡ, mạch bị khoá, hoặc người xem không phải superuser. */
   khoa?: boolean;
+  /** Cho phép chèn ảnh vào thân bài (nút 🖼, kéo-thả, dán) hay không — **tách khỏi
+   * `khoa`**: soạn chữ và chèn ảnh có thể cần hai mức quyền khác nhau. Xem `/machs/moi`,
+   * nơi mọi staff soạn được chữ nhưng chỉ superuser chèn được ảnh —
+   * `tai_anh_noi_dung_quan_tri` ở `api/api/quan_tri_sua_bai.py` chặn
+   * `chan_neu_khong_phai_superuser`.
+   *
+   * Mặc định `true` để chỗ gọi cũ (trang sửa mốc, vốn khoá cả editor bằng `khoa`) không
+   * đổi hành vi. */
+  choPhepAnh?: boolean;
 }) {
   const [dang_tai_anh, datDangTaiAnh] = useState(false);
   const [loi_anh, datLoiAnh] = useState<string | null>(null);
@@ -97,8 +107,13 @@ export function SoanThaoQuanTri({
       ed.chain().focus().setImage({ src: kq.data.url, alt: file.name }).run();
     } catch {
       // Client sinh từ OpenAPI không ném theo mã, nên ở đây không phân biệt được
-      // 413/400/403. Câu chung phải nói ra CẢ HAI khả năng hay gặp thay vì một chữ "lỗi".
-      datLoiAnh("Không tải được ảnh — có thể ảnh quá nặng, hoặc không phải JPEG/PNG/WebP.");
+      // 413/400/403. Câu chung phải nói ra CẢ BA khả năng hay gặp thay vì một chữ "lỗi" —
+      // và vế quyền hạn không được bỏ: `tai_anh_noi_dung_quan_tri` chặn non-superuser, nên
+      // một câu chỉ nói "ảnh quá nặng" là đẩy mod đi nén ảnh vô ích.
+      datLoiAnh(
+        "Không tải được ảnh — có thể ảnh quá nặng, không phải JPEG/PNG/WebP, " +
+          "hoặc tài khoản của bạn không đủ quyền chèn ảnh.",
+      );
     } finally {
       datDangTaiAnh(false);
       if (o_file.current !== null) o_file.current.value = "";
@@ -136,7 +151,7 @@ export function SoanThaoQuanTri({
     },
     editorProps: {
       handleDrop: (_view, su_kien) => {
-        if (khoa) return false;
+        if (khoa || !choPhepAnh) return false;
         const ds = (su_kien as DragEvent).dataTransfer?.files;
         const anh = ds ? [...ds].filter((f) => f.type.startsWith("image/")) : [];
         if (anh.length === 0) return false;
@@ -147,7 +162,7 @@ export function SoanThaoQuanTri({
         return true;
       },
       handlePaste: (_view, su_kien) => {
-        if (khoa) return false;
+        if (khoa || !choPhepAnh) return false;
         const ds = (su_kien as ClipboardEvent).clipboardData?.files;
         const anh = ds ? [...ds].filter((f) => f.type.startsWith("image/")) : [];
         if (anh.length === 0) return false;
@@ -173,6 +188,13 @@ export function SoanThaoQuanTri({
       <div className="the min-h-40" aria-busy="true" data-testid="soan-cho" />
     );
   }
+
+  /** Ba lý do cửa ảnh đóng, một cờ — nhưng **hai câu chữ**: "đang bận" và "không được
+   * phép" là hai thứ mod xử lý khác nhau, còn `khoa` thì đã tự nói ra bằng cả một editor
+   * xám. Câu "chỉ superuser" chỉ hiện ở đúng ca mới: chữ mở, ảnh đóng. */
+  const anh_khoa = dang_tai_anh || khoa || !choPhepAnh;
+  const nhan_anh =
+    !choPhepAnh && !khoa ? "Chỉ superuser chèn được ảnh" : "Chèn ảnh vào bài";
 
   const nut = (
     nhan: string,
@@ -226,21 +248,25 @@ export function SoanThaoQuanTri({
         {nut("🔗", "Liên kết", editor.isActive("link"), datLink, "soan-link")}
 
         {/* `<label>` bọc `<input type=file>` ẩn — input file gốc không đổi được hình dạng,
-            còn label thì nhận đúng cú bấm lẫn bàn phím cho ô ẩn bên trong. */}
+            còn label thì nhận đúng cú bấm lẫn bàn phím cho ô ẩn bên trong.
+
+            `opacity-50` gõ tay ở đây chứ không nhờ `disabled:opacity-50` của `.nut`: một
+            `<label>` không có thuộc tính `disabled`, nên biến thể ấy không bao giờ khớp —
+            và một nút trông y hệt lúc bấm được lẫn lúc không là nút mod bấm hoài. */}
         <label
-          className="nut nut-nho"
-          aria-disabled={dang_tai_anh || khoa}
-          title="Chèn ảnh vào bài"
+          className={`nut nut-nho ${anh_khoa ? "opacity-50" : ""}`}
+          aria-disabled={anh_khoa}
+          title={nhan_anh}
           data-testid="soan-anh"
         >
           <span aria-hidden>🖼</span>
-          <span className="sr-only">Chèn ảnh vào bài</span>
+          <span className="sr-only">{nhan_anh}</span>
           <input
             ref={o_file}
             type="file"
             accept="image/jpeg,image/png,image/webp"
             hidden
-            disabled={dang_tai_anh || khoa}
+            disabled={anh_khoa}
             onChange={(e) => {
               const f = e.target.files?.[0];
               if (f) void chenAnh(editor, f);

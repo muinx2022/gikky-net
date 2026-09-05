@@ -396,8 +396,14 @@ def bao_mach_moi(mach) -> int:
     là bấm một cái nút rồi không bao giờ nhận được gì — PLAN mục 4 cấm nút không làm gì,
     và một nút *hứa* rồi im lặng còn tệ hơn.
 
-    Mạch bị ẩn ngay lúc tạo thì không báo (đường sản phẩm không tạo ra ca này; kiểm ở đây
-    vì `tao_mach` gọi được từ seed và từ lệnh quản trị).
+    Mạch bị ẩn ngay lúc tạo thì không báo. Từ 2026-09-03 đây **là** đường sản phẩm chứ
+    không còn là phòng xa: bài hẹn giờ ra đời với `hidden_at` đã đặt (plan §1.1), và
+    chuông của nó phải nổ lúc PHÁT HÀNH — `core/ghi.py::phat_hanh_mach` gọi lại đúng hàm
+    này sau khi `hidden_at` về `NULL`. Bỏ dòng dưới là follower nhận chuông cho một bài
+    chưa lên sóng, kèm một đường dẫn 404.
+
+    Hai mốc thời gian của hàm này đọc **`published_at`**, không phải `created_at` — xem
+    khối `payload`/`khoa` bên dưới.
     """
     if mach.hidden_at is not None:
         return 0
@@ -409,15 +415,26 @@ def bao_mach_moi(mach) -> int:
     if not nguoi_nhan:
         return 0
 
+    # `published_at` cho CẢ HAI mốc dưới đây, và cả hai đều là lỗi thật nếu để `created_at`
+    # *(hẹn giờ, 2026-09-03 §1.3)*:
+    #
+    # - `so_mach_moi` đếm bài của tác giả **trong ngày lịch VN**. Ba bài soạn hôm thứ Hai
+    #   rồi hẹn lên ba ngày khác nhau phải là ba chuông "đăng 1 bài", không phải ba chuông
+    #   cùng nói "đăng 3 bài" — con số ấy đứng ngay trong câu chuông người dùng đọc;
+    # - `dedupe_key` gộp **một chuông / tác giả / ngày**. Với `created_at`, ba bài soạn
+    #   cùng một buổi tối chia chung một khoá: bài thứ hai và thứ ba phát hành vào hai
+    #   ngày sau đó sẽ ghi đè lên chuông cũ (`ON CONFLICT DO UPDATE`) thay vì đẻ chuông
+    #   mới — follower im lặng mất hai bài, và không có gì đỏ.
     payload = {
         **_tom_tat_mach(mach),
         "boi": mach.author.username,
         "so_mach_moi": _dem_trong_ngay(
             type(mach).objects.filter(author_id=mach.author_id, hidden_at__isnull=True),
-            mach.created_at,
+            mach.published_at,
+            cot="published_at",
         ),
     }
-    khoa = _khoa_ngay(MACH_MOI, mach.author_id, mach.created_at)
+    khoa = _khoa_ngay(MACH_MOI, mach.author_id, mach.published_at)
     return _ghi_theo_lo(
         [
             Notification(user_id=uid, type=MACH_MOI, payload=payload, dedupe_key=khoa)

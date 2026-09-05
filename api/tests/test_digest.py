@@ -33,6 +33,7 @@ from core.digest import (
 from core.ghi import them_moc
 from core.models import Moc
 from core.thoi_gian import TZ_VN
+from tests._an_mach import an_mach_tho
 
 GOC = "https://gikky.net"
 
@@ -199,7 +200,7 @@ def test_mach_bi_mod_an_bien_khoi_digest(mach, tac_gia, nguoi_khac):
     tu, _ = cua_so(den)
 
     assert dung_digest(NguoiNhan(nguoi_khac, (mach.pk,)), tu, den, GOC) is not None
-    type(mach).objects.filter(pk=mach.pk).update(hidden_at=den)
+    an_mach_tho(type(mach).objects.filter(pk=mach.pk), den)
     assert dung_digest(NguoiNhan(nguoi_khac, (mach.pk,)), tu, den, GOC) is None
 
 
@@ -362,7 +363,8 @@ def test_mach_bi_mod_an_khong_vao_danh_sach_theo_doi(mach, tac_gia, nguoi_khac):
     nguoi_khac.save(update_fields=["nhan_digest", "email"])
     Follow.objects.create(user=nguoi_khac, mach=mach)
     mach.hidden_at = timezone.now()
-    mach.save(update_fields=["hidden_at"])
+    mach.hidden_by = mach.author
+    mach.save(update_fields=["hidden_at", "hidden_by"])
 
     assert md.nguoi_nhan_digest() == []
 

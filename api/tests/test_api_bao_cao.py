@@ -12,6 +12,7 @@ from django.utils import timezone
 from core.models import Comment, Mach, Moc, Report
 
 from tests._quan_tri import dang_nhap as dang_nhap_mod
+from tests._an_mach import an_mach_tho
 from tests._quan_tri import dung_mod
 
 from .conftest import dat, ma_loi, viet
@@ -188,7 +189,7 @@ def test_dich_khong_ton_tai_tra_404(client, mach_cua_a, nguoi_b):
 @pytest.mark.django_db
 def test_mach_da_bi_mod_AN_tra_404(client, mach_cua_a, nguoi_b):
     """Cùng mã với mọi cửa công khai: 200 ở đây là xác nhận thứ vừa bị gỡ có tồn tại."""
-    Mach.objects.filter(pk=mach_cua_a.pk).update(hidden_at=timezone.now())
+    an_mach_tho(Mach.objects.filter(pk=mach_cua_a.pk))
     client.force_login(nguoi_b)
     assert ma_loi(client, URL, _than("mach", mach_cua_a.pk), status=404) == "khong_tim_thay"
 

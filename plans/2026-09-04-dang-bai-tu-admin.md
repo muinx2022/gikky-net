@@ -156,4 +156,44 @@ Sau Ninja (nếu có): `pnpm codegen`. Không commit trừ khi user bảo.
 
 ## 6. Nhật ký
 
-_(điền khi thực thi)_
+**Thực thi 2026-09-04, quy trình 5 chặng đầy đủ.**
+
+- Chặng 2 (`opus-dev`): dựng `apps/admin/app/machs/moi/page.tsx`, `apps/admin/lib/tac-gia-doi.ts`, nút
+  "Đăng bài" trên `/machs`, 6 bài đo T2a–T2f trong `hen-gio-phat-hanh.spec.ts`.
+- Chặng 3+4 (`nghiem-thu` + `phan-bien`, song song): nghiệm thu ĐẠT 8/9 tiêu chí (T5 kiểm mắt trình
+  duyệt không đo được — thiếu công cụ trình duyệt và không được ghi dữ liệu thật vào `gikky_dev`). Phản
+  biện tìm ra 4 lỗi thật: (1) NẶNG — cửa tạo bài mở cho mọi staff nhưng cả hai cửa ảnh
+  (`tai_anh_moc_quan_tri`, `tai_anh_noi_dung_quan_tri`) superuser-only ⇒ mod thường đâm ngõ cụt sau khi
+  bài đã 201; (2) TRUNG BÌNH — `datetimeLocalSangIsoVN` có thể ném bên trong `chay()` không có `catch` ⇒
+  màn hình câm; (3) TRUNG BÌNH — lỗi mạng sau khi server có thể đã commit ⇒ nút mở lại, rủi ro tạo bài
+  trùng, câu chữ không cảnh báo; (4) TRUNG BÌNH — mốc quá khứ + công tắc hẹn giờ bật ⇒ bài lên NGAY, UI
+  báo sai "không lên feed, không chuông".
+- Sửa vòng 2 (`opus-dev`, lần thứ hai): vá cả 4 lỗi — (1) thêm prop `choPhepAnh` tách khỏi `khoa` ở
+  `SoanThaoQuanTri`, ẩn ô ảnh gallery + khoá nút 🖼 cho non-superuser kèm giải thích (KHÔNG đổi quyền
+  backend — đó là quyết định chính sách, xem `LOI-VA-NO.md` mục `E` · `P-20260904-5`); (2) đổi giờ hẹn
+  TRƯỚC khi vào `chay`, bọc `try/catch`; (3) câu lỗi hai nhánh "không rõ đã tạo hay chưa" cảnh báo kiểm
+  `/machs` trước khi bấm lại; (4) thêm `min` cho ô giờ (`bayGioDatetimeLocalVN` mới trong
+  `lib/thoi-gian.ts`) + đọc `da_hen_gio` từ response, hiện cảnh báo riêng khi lệch với công tắc. Thêm 4
+  bài đo T2g–T2j. Việc phụ: siết T2c, thêm nút "Thử lại" khi nạp sub lỗi.
+- Chặng 5 (phiên chính): tự đọc lại toàn bộ diff, tự chạy độc lập `pnpm lint` (0 warning) · `pnpm build`
+  (xanh cả 2 app, `/machs/moi` có trong bảng route) · `pnpm e2e:don-vi` (460 passed, gồm 10 bài T2a–T2j).
+  Không chạy lại `pnpm test` (5+ phút, không đụng `api/` nên không ảnh hưởng — `codegen:check` khớp xác
+  nhận không lỡ tay đụng Ninja).
+
+**Kết quả kiểm chứng cuối cùng (cây làm việc hiện tại, có nền của
+`plans/2026-09-03-hen-gio-phat-hanh.md` chưa commit — không phải cây sạch):**
+
+| Lệnh | Kết quả |
+|---|---|
+| `pnpm lint` | 0 warning |
+| `pnpm build` | xanh cả 2 app |
+| `pnpm codegen:check` | khớp — 34 file không đổi |
+| `pnpm test` | 1981 passed, 26 skipped, 0 fail (số của nghiệm thu, backend không bị đụng ở vòng sửa sau) |
+| `pnpm e2e:don-vi` | 460 passed, 0 đỏ (tự chạy lại, độc lập) |
+
+**T5 (kiểm mắt trình duyệt) chưa nghiệm thu** — không agent nào trong quy trình có quyền ghi bài thật vào
+`gikky_dev` hoặc điều khiển trình duyệt đăng nhập được. Cần user (hoặc phiên có Browser pane + tài khoản
+staff thật) tự kiểm trước khi coi tính năng là hoàn chỉnh 100%.
+
+**Còn mở, cần user quyết** (không sửa trong lượt này — xem chi tiết ở sổ):
+`P-20260904-5` (chính sách quyền ảnh: nới cho staff hay chấp nhận giới hạn superuser).

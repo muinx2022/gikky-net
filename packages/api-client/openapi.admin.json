@@ -620,6 +620,30 @@
         "title": "GanModSubIn",
         "type": "object"
       },
+      "HenGioMachIn": {
+        "description": "Đặt / dời / huỷ lịch phát hành — `PATCH /admin/machs/{id}/hen-gio` (2026-09-03).\n\n`published_at` **phải kèm offset múi giờ** (`2026-09-10T08:00:00+07:00`). Admin nhập\ngiờ VN, gửi ISO có offset; thiếu offset là bài lên sớm/muộn 7 tiếng — và lệch im lặng,\nvì bài vẫn lên. Handler trả 400 cho `datetime` naive.\n\n`null` (hoặc một mốc quá khứ) nghĩa là **phát hành ngay**, không phải \"xoá ngày đăng\":\n`Mach.published_at` là `NOT NULL`, và giá trị ghi xuống lúc ấy là *bây giờ*.",
+        "properties": {
+          "ly_do": {
+            "default": "",
+            "title": "Ly Do",
+            "type": "string"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          }
+        },
+        "title": "HenGioMachIn",
+        "type": "object"
+      },
       "KetQuaDoiTrangThaiOut": {
         "description": "Kết quả CHUNG của mọi hành động moderation bật/tắt một trạng thái.\n\nHai trường, và cả hai đều cần:\n\n- `da_doi` — hành động này có đổi gì không. Bấm \"ẩn\" lần thứ hai trả `false`, và đó\n  **không** phải lỗi: `core/ghi.py` cố ý không reset `hidden_at` (mất mốc thời gian\n  moderation thật) và không đẻ dòng `AuditLog` thứ hai. UI đọc trường này để không\n  báo \"đã ẩn xong\" cho một cú bấm chẳng làm gì;\n- `dang_bat` — trạng thái SAU khi gọi. Đây là thứ UI vẽ, và nó đúng ở cả hai nhánh\n  của `da_doi` — nên hai mod bấm cùng lúc vẫn thấy cùng một màn hình.",
         "properties": {
@@ -637,6 +661,46 @@
           "dang_bat"
         ],
         "title": "KetQuaDoiTrangThaiOut",
+        "type": "object"
+      },
+      "KetQuaHenGioOut": {
+        "description": "Trạng thái hẹn giờ của một mạch sau một lượt đặt lịch / phát hành / tạo mới.\n\n`da_doi=false` chỉ xảy ra ở đúng một ca: bấm *phát hành ngay* trên bài vốn đã hiện.\nKhông thông báo lại, không dòng nhật ký — cùng luật \"không đổi thì không ghi log\" của\nkhối moderation ở `core/ghi.py`.\n\n`da_hen_gio` là câu trả lời cho *\"bài này còn đang chờ không\"*, suy từ cặp\n`(hidden_at, hidden_by)` — frontend không được tự dựng lại phép suy ấy (PLAN nguyên\ntắc 10), và nó cũng không có hai cột đó để mà dựng.",
+        "properties": {
+          "da_doi": {
+            "title": "Da Doi",
+            "type": "boolean"
+          },
+          "da_hen_gio": {
+            "title": "Da Hen Gio",
+            "type": "boolean"
+          },
+          "duong_dan_cong_khai": {
+            "title": "Duong Dan Cong Khai",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "published_at": {
+            "format": "date-time",
+            "title": "Published At",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "da_doi",
+          "id",
+          "title",
+          "published_at",
+          "da_hen_gio",
+          "duong_dan_cong_khai"
+        ],
+        "title": "KetQuaHenGioOut",
         "type": "object"
       },
       "KetQuaSuaMocOut": {
@@ -949,6 +1013,10 @@
             "title": "Da Bi An",
             "type": "boolean"
           },
+          "da_hen_gio": {
+            "title": "Da Hen Gio",
+            "type": "boolean"
+          },
           "da_khoa": {
             "title": "Da Khoa",
             "type": "boolean"
@@ -974,6 +1042,11 @@
             "title": "Last Activity At",
             "type": "string"
           },
+          "published_at": {
+            "format": "date-time",
+            "title": "Published At",
+            "type": "string"
+          },
           "status": {
             "title": "Status",
             "type": "string"
@@ -997,6 +1070,8 @@
           "tac_gia",
           "status",
           "created_at",
+          "published_at",
+          "da_hen_gio",
           "last_activity_at",
           "entry_count",
           "comment_count",
@@ -1008,9 +1083,114 @@
         "title": "MachDongOut",
         "type": "object"
       },
+      "MachHenGioMoiIn": {
+        "description": "Đăng bài thay mặt tài khoản đội — `POST /admin/machs/hen-gio` (2026-09-03).\n\nKế thừa `MocMoiIn` đúng như `MachMoiIn` của cửa công khai: bài gốc *chính là* mốc 1,\nnên `body`/`occurred_at`/`loai`/`question_for_crowd`/`figures` là của mốc ấy.\n\nHai trường thêm là hai trường khu quản trị:\n\n- `author` — username, **phải nằm trong allowlist tài khoản đội**\n  (`api/quan_tri_hen_gio.py::TAI_KHOAN_DANG_BAI`). Ngoài danh sách ⇒ 400;\n- `published_at` — tương lai thì bài nằm chờ; `null` hoặc quá khứ thì lên ngay.\n  Cùng luật múi giờ với `HenGioMachIn`.",
+        "properties": {
+          "author": {
+            "description": "username của tài khoản đội",
+            "maxLength": 150,
+            "minLength": 1,
+            "title": "Author",
+            "type": "string"
+          },
+          "body": {
+            "maxLength": 10000,
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          },
+          "figures": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FigureIn"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Figures"
+          },
+          "loai": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Loai"
+          },
+          "occurred_at": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred At"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "question_for_crowd": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question For Crowd"
+          },
+          "sub": {
+            "description": "slug của chuyên mục",
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Sub",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "body",
+          "sub",
+          "title",
+          "author"
+        ],
+        "title": "MachHenGioMoiIn",
+        "type": "object"
+      },
       "MachQuanTriOut": {
         "description": "Trang chi tiết một mạch cho mod (PLAN 9.3 mục 2) — kèm mọi mốc để bấm ẩn từng ô.",
         "properties": {
+          "bi_mod_an": {
+            "title": "Bi Mod An",
+            "type": "boolean"
+          },
           "comment_count": {
             "title": "Comment Count",
             "type": "integer"
@@ -1022,6 +1202,10 @@
           },
           "da_bi_an": {
             "title": "Da Bi An",
+            "type": "boolean"
+          },
+          "da_hen_gio": {
+            "title": "Da Hen Gio",
             "type": "boolean"
           },
           "da_khoa": {
@@ -1057,6 +1241,11 @@
             "title": "Mocs",
             "type": "array"
           },
+          "published_at": {
+            "format": "date-time",
+            "title": "Published At",
+            "type": "string"
+          },
           "slug": {
             "title": "Slug",
             "type": "string"
@@ -1085,6 +1274,9 @@
           "tac_gia",
           "status",
           "created_at",
+          "published_at",
+          "da_hen_gio",
+          "bi_mod_an",
           "last_entry_at",
           "last_activity_at",
           "entry_count",
@@ -3070,7 +3262,7 @@
     },
     "/api/admin/machs": {
       "get": {
-        "description": "Bảng mạch cho mod, mới nhất trước, cursor keyset `(created_at, id)`.\n\n`?q=` khớp **một phần, không phân biệt hoa thường** trên tiêu đề. Cố ý không dùng\nMeilisearch ở đây: đây là bảng quản trị, nó phải thấy **cả mạch đã bị ẩn** — mà mạch\nẩn thì bị gỡ khỏi index đúng theo thiết kế của Phase 7. Dùng search ở đây là dựng một\nbảng quản trị mù đúng với thứ cần quản trị nhất.\n\n`?trang_thai=` chia **bốn nhóm LOẠI TRỪ NHAU** — `ẩn → khoá → đã đóng sổ → đang mở`,\nxét từ trên xuống (`api/quan_tri_loc.py`). Nghĩa là **`mo` KHÔNG bao gồm bài đã bị\nẩn**, dù một bài bị ẩn vẫn \"đang mở\" trên trục `status`. Mặc định `tat_ca` gồm tất,\nkể cả bài đã gỡ — mod phải thấy để gỡ ẩn.",
+        "description": "Bảng mạch cho mod, mới nhất trước, cursor keyset `(created_at, id)`.\n\n`?q=` khớp **một phần, không phân biệt hoa thường** trên tiêu đề. Cố ý không dùng\nMeilisearch ở đây: đây là bảng quản trị, nó phải thấy **cả mạch đã bị ẩn** — mà mạch\nẩn thì bị gỡ khỏi index đúng theo thiết kế của Phase 7. Dùng search ở đây là dựng một\nbảng quản trị mù đúng với thứ cần quản trị nhất.\n\n`?trang_thai=` chia **bốn nhóm LOẠI TRỪ NHAU** — `ẩn → khoá → đã đóng sổ → đang mở`,\nxét từ trên xuống (`api/quan_tri_loc.py`). Nghĩa là **`mo` KHÔNG bao gồm bài đã bị\nẩn**, dù một bài bị ẩn vẫn \"đang mở\" trên trục `status`. Mặc định `tat_ca` gồm tất,\nkể cả bài đã gỡ — mod phải thấy để gỡ ẩn.\n\n⚠ **`trang_thai=hen_gio` đảo CHIỀU sắp xếp** (2026-09-03): bài chờ giờ hẹn sắp theo\n`published_at` **tăng dần** — cái sắp lên trước đứng đầu. Mọi nhóm khác giữ nguyên\n`created_at` giảm dần.\n\nKhông phải khẩu vị: danh sách này là một hàng đợi việc sắp xảy ra, và một hàng đợi\nxếp ngược thì bài lên trong 10 phút nữa nằm ở trang cuối. Cursor keyset đi theo đúng\nkhoá sắp ấy — hai nửa lệch nhau là trang 2 trùng/sót hàng.",
         "operationId": "quan_tri_liet_ke_mach",
         "parameters": [
           {
@@ -3127,7 +3319,8 @@
                 "mo",
                 "dong",
                 "bi_khoa",
-                "bi_an"
+                "bi_an",
+                "hen_gio"
               ],
               "title": "Trang Thai",
               "type": "string"
@@ -3213,6 +3406,84 @@
         ]
       }
     },
+    "/api/admin/machs/hen-gio": {
+      "post": {
+        "description": "Đăng bài **thay mặt một tài khoản đội**, có thể hẹn giờ. Cửa cho 100–200 bài viết trước.\n\nCùng bộ trường nội dung với `POST /api/v1/machs` (bài gốc *chính là* mốc 1), cộng hai\ntrường khu quản trị: `author` và `published_at`.\n\n**`author` bị chặn bằng allowlist**, không phải \"user nào cũng được\": đăng bài dưới\ntên người khác là mạo danh, và một cửa quản trị làm được điều đó cho *mọi* tài khoản\nlà một cửa viết bài ký tên người dùng thật. Danh sách là hai tài khoản đội ở\n`TAI_KHOAN_DANG_BAI`.\n\n`published_at` tương lai ⇒ bài ra đời **đang ẩn**, không thông báo, không vào index —\nba tác dụng phụ ấy tự tắt vì bài đang ẩn, không phải vì một nhánh `if` ở đây (xem\n`core/ghi.py::tao_mach`).\n\nKhông gửi, hoặc gửi mốc **quá khứ** ⇒ bài lên ngay như một bài thường, kèm chuông cho\nngười theo tác giả — và `published_at` ghi xuống là *bây giờ*, **không phải** con số\nquá khứ đã gửi. Nói ra vì nó im lặng: đây không phải cửa nhập bài cũ với ngày cũ. Lùi\nngày đăng là một tính năng khác (nó đẩy bài xuống giữa feed) và plan §6 chưa mở nó.\n\n**Không có hạn mức 10 bài/ngày** như cửa v1. Trần ấy tồn tại để chặn spam từ tài khoản\nngười dùng; ở đây người gọi là mod và cả điểm của endpoint là đăng 200 bài một đợt.",
+        "operationId": "quan_tri_tao_mach_hen_gio",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MachHenGioMoiIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KetQuaHenGioOut"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Tao Mach Hen Gio",
+        "tags": [
+          "quan-tri-hen-gio"
+        ]
+      }
+    },
     "/api/admin/machs/{mach_id}": {
       "get": {
         "description": "Trang chi tiết một mạch cho mod (PLAN 9.3 mục 2) — mọi mốc, kể cả ẩn và bia mộ.\n\nTrả **cả** mốc đã bị ẩn và bia mộ, kèm trích yếu nội dung: mod cần đọc để quyết gỡ ẩn.\nĐó là chuyện khu này được phép làm mà `GET /api/v1/machs/{id}` thì không — xem\ndocstring `api/quan_tri_schemas.py`.\n\nSố truy vấn là HẰNG SỐ (mạch + mốc kèm tác giả), không phụ thuộc số mốc.",
@@ -3283,7 +3554,7 @@
     },
     "/api/admin/machs/{mach_id}/an": {
       "post": {
-        "description": "Mod ẩn / gỡ ẩn cả mạch. Idempotent.\n\nMạch bị ẩn biến mất khỏi hai feed, khỏi trang sub, khỏi hồ sơ tác giả và khỏi\n`sitemap`; `GET /machs/{id}` công khai trả 404. Nó **không** đổi con số denormalize\nnào của chính nó — xem `core/ghi.py::dat_an_mach`.",
+        "description": "Mod ẩn / gỡ ẩn cả mạch. Idempotent.\n\nMạch bị ẩn biến mất khỏi hai feed, khỏi trang sub, khỏi hồ sơ tác giả và khỏi\n`sitemap`; `GET /machs/{id}` công khai trả 404. Nó **không** đổi con số denormalize\nnào của chính nó — xem `core/ghi.py::dat_an_mach`.\n\n**Bài đang hẹn giờ ⇒ 409** khi gỡ ẩn: đường đúng là *Phát hành ngay*\n(`PATCH …/hen-gio` với `published_at: null`), không phải nút Gỡ ẩn. Chiều ẩn trên\nbài hẹn là no-op (`da_doi=false`) — bài đã ẩn sẵn.",
         "operationId": "quan_tri_dat_an_mach",
         "parameters": [
           {
@@ -3346,6 +3617,16 @@
               }
             },
             "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
           }
         },
         "security": [
@@ -3356,6 +3637,104 @@
         "summary": "Dat An Mach Endpoint",
         "tags": [
           "quan-tri-kiem-duyet"
+        ]
+      }
+    },
+    "/api/admin/machs/{mach_id}/hen-gio": {
+      "patch": {
+        "description": "Đặt / dời / huỷ lịch phát hành của một mạch.\n\nBa đường vào, một endpoint, vì cả ba là **cùng một câu hỏi** (\"bài này lên sóng lúc\nnào\") và tách chúng ra là ba nút cùng sửa một cột:\n\n- `published_at` ở **tương lai** ⇒ bài rời khỏi mọi cửa công khai, chờ tới giờ đó;\n- `published_at` = `null` ⇒ **phát hành ngay**, `published_at` ghi lại thành *bây\n  giờ*. Đây là nút *Bỏ hẹn* của admin;\n- `published_at` ở **quá khứ** ⇒ cũng là phát hành ngay, cùng đường trên. Plan §2 gộp\n  hai ca này làm một câu (\"null hoặc quá khứ ⇒ phát hành ngay\"), nên chúng đi chung\n  một nhánh và cùng ghi giờ phát hành = bây giờ. Giữ lại con số quá khứ người ta gửi\n  lên sẽ chôn bài xuống giữa feed — im lặng, và không phải thứ ai bấm nút muốn.\n\n**Bài mod đã ẩn ⇒ 409** (`noi_dung_da_go`), kể cả để phát hành ngay: gỡ ẩn là quyết\nđịnh kiểm duyệt, nó có nút riêng ở ngay trang này.\n\nPhát hành ngay chạy **đúng chuỗi tác dụng phụ** của một bài mới lên sóng — thông báo\ncho người theo tác giả, đẩy vào index tìm kiếm, làm mới cache Next. Chuỗi ấy nằm ở\n`core/ghi.py::phat_hanh_mach`, dùng chung với `manage.py phat_hanh_da_hen`.\n\nIdempotent: gọi *phát hành ngay* trên bài đang hiện trả 200 `da_doi=false`, không\nthông báo lại, không dòng nhật ký nào — cùng luật \"không đổi thì không ghi log\" của\nkhối moderation.",
+        "operationId": "quan_tri_hen_gio_mach",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mach_id",
+            "required": true,
+            "schema": {
+              "title": "Mach Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HenGioMachIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KetQuaHenGioOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Hen Gio Mach Quan Tri",
+        "tags": [
+          "quan-tri-hen-gio"
         ]
       }
     },

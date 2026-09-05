@@ -3,7 +3,9 @@
 Chốt 2026-09-03 (`plans/2026-09-03-sua-bai-khu-quan-tri.md`). Bốn câu hỏi mà chỉ tầng
 HTTP trả lời được, và ba trong bốn là chỗ một bản vá "chạy đúng" vẫn hỏng:
 
-1. **ai** ghi được (superuser) và ai chỉ đọc được (mọi mod);
+1. **ai** ghi được — superuser cho "viết lại chữ" và "gỡ ảnh", mọi mod cho "chèn ảnh"
+   (nới quyền 2026-09-04, `plans/2026-09-04-noi-quyen-chen-anh-staff.md`), và ai chỉ đọc
+   được (`quan_tri_xem_moc`, mọi mod);
 2. **mã lỗi** đúng chữ, không chỉ đúng status — frontend rẽ nhánh theo `code`;
 3. **cửa công khai** thấy đúng thứ vừa sửa (B6), tức vòng đi hết một lượt;
 4. **v1 không bị nới** (B11): lượt này mở cửa ở khu quản trị, không mở ở `/api/v1`.
@@ -34,7 +36,13 @@ from core.thoi_gian import ngay_vn
 
 from api.anh import QUA_NHIEU_ANH
 from api.loi import KHONG_DU_QUYEN, KHONG_TIM_THAY
-from api.quyen import DU_LIEU_KHONG_HOP_LE, KHONG_PHAI_CHU, MACH_BI_KHOA, NOI_DUNG_DA_GO
+from api.quyen import (
+    DU_LIEU_KHONG_HOP_LE,
+    KHONG_PHAI_CHU,
+    MACH_BI_KHOA,
+    NOI_DUNG_DA_GO,
+    QUA_HAN_MUC_ANH_NOI_DUNG,
+)
 
 from ._anh import PHP_GIA_JPG, SVG_GIA_JPG, anh_byte, duoi_va_byte
 from ._quan_tri import dang_nhap, dung_mod, ma_loi
@@ -155,38 +163,68 @@ def test_B3_gui_y_nguyen_thi_200_ma_khong_vet_nao(cs, moc1):
 
 
 # =============================================================================
-# B2 — mod thường: đọc được, ghi thì 403
+# B2 — mod thường: đọc được, ghi thì 403 — TRỪ chèn ảnh (nới quyền 2026-09-04)
 # =============================================================================
 
 
-def test_B2_mod_thuong_bi_chan_o_moi_cua_GHI_nhung_van_doc_duoc(cm, mach, moc1):
-    ghi = [
-        cm.patch(
-            url_moc(moc1), data={"body": "cướp"}, content_type="application/json"
-        ),
-        cm.patch(
-            f"/api/admin/machs/{mach.pk}/tieu-de",
-            data={"title": "cướp"},
-            content_type="application/json",
-        ),
-        gui_anh(cm, "/api/admin/anh", anh_byte()),
-        gui_anh(cm, f"/api/admin/mocs/{moc1.pk}/anh", anh_byte()),
-        cm.delete("/api/admin/anh/1"),
-    ]
-    for r in ghi:
-        assert r.status_code == 403, r.content
-        assert ma_loi(r) == KHONG_DU_QUYEN
+def test_B2_mod_thuong_bi_chan_o_sua_tieu_de_nhung_van_doc_duoc(cm, mach, moc1):
+    """Sửa tiêu đề mạch vẫn superuser-only: mod thường bị 403."""
+    r = cm.patch(
+        f"/api/admin/machs/{mach.pk}/tieu-de",
+        data={"title": "cướp"},
+        content_type="application/json",
+    )
+    assert r.status_code == 403, r.content
+    assert ma_loi(r) == KHONG_DU_QUYEN
 
-    moc1.refresh_from_db()
     mach.refresh_from_db()
-    assert moc1.body == "Mốc 1." and mach.title == "Nhật ký lệnh thử nghiệm"
+    assert mach.title == "Nhật ký lệnh thử nghiệm"
     assert AuditLog.objects.count() == 0
-    assert MocAnh.objects.count() == 0
 
     # …và cửa ĐỌC vẫn mở: mod phải đọc được nguyên văn thứ họ sắp quyết định ẩn.
     r = cm.get(url_moc(moc1))
     assert r.status_code == 200
     assert r.json()["body"] == "Mốc 1."
+
+
+def test_B2_mod_thuong_sua_duoc_moc_de_lai_revision_va_log(cm, mod, moc1):
+    """Nới quyền 2026-09-04: mod thường sửa được mốc, để lại revision và AuditLog."""
+    r = cm.patch(
+        url_moc(moc1),
+        data={"body": "Mod sửa thân bài", "ly_do": "Sửa chính tả"},
+        content_type="application/json",
+    )
+    assert r.status_code == 200, r.content
+    d = r.json()
+    assert d["da_doi"] is True
+    assert d["moc"]["body"] == "Mod sửa thân bài"
+    assert d["moc"]["edit_count"] == 1
+
+    moc1.refresh_from_db()
+    assert moc1.body == "Mod sửa thân bài"
+    assert moc1.revisions.count() == 1
+
+    log = AuditLog.objects.get(action="sua_moc")
+    assert log.actor_id == mod.pk
+    assert log.target_id == moc1.pk
+    assert log.meta["ly_do"] == "Sửa chính tả"
+
+
+def test_B2_mod_thuong_xoa_duoc_anh_de_lai_log(cm, mod, cs, kho_anh, moc1):
+    """Nới quyền 2026-09-04: mod thường gỡ được ảnh gallery, để lại AuditLog và file rời đĩa."""
+    phuc_vu, _ = kho_anh
+    anh_id = gui_anh(cs, f"/api/admin/mocs/{moc1.pk}/anh", anh_byte()).json()["id"]
+    assert so_file(phuc_vu) == 2
+    AuditLog.objects.all().delete()
+
+    r = cm.delete(f"/api/admin/anh/{anh_id}")
+    assert r.status_code == 200, r.content
+    assert r.json()["id"] == anh_id
+    assert so_file(phuc_vu) == 0
+    assert MocAnh.objects.count() == 0
+
+    log = AuditLog.objects.get(action="xoa_anh_moc")
+    assert log.actor_id == mod.pk
 
 
 # =============================================================================
@@ -531,11 +569,21 @@ def test_B13_url_song_sot_qua_lam_sach(cs, kho_anh):
     assert url in lam_sach(f'<p><img src="{url}" alt="x"></p>')
 
 
-def test_B13_mod_thuong_403_va_KHONG_MOT_BYTE_nao_xuong_dia(cm, kho_anh):
-    phuc_vu, cach_ly = kho_anh
+def test_B13_mod_thuong_201_dung_han_muc_va_dung_nguoi_tai(cm, mod, kho_anh):
+    """Nới quyền 2026-09-04: mod thường chèn ảnh nội dung được — 201 THẬT, không chỉ
+    "không 403". `nguoi_tai` phải là MOD đang gọi, không phải một tài khoản khác."""
+    phuc_vu, _ = kho_anh
     r = gui_anh(cm, "/api/admin/anh", anh_byte())
-    assert (r.status_code, ma_loi(r)) == (403, KHONG_DU_QUYEN)
-    assert so_file(phuc_vu) == 0 and so_file(cach_ly) == 0
+    assert r.status_code == 201, r.content
+    d = r.json()
+    assert d["url"].startswith("/media/")
+    assert r["Cache-Control"] == "no-store"
+
+    from core.models.moc import AnhNoiDung
+
+    hang = AnhNoiDung.objects.get()
+    assert hang.nguoi_tai_id == mod.pk
+    assert so_file(phuc_vu) == 2
 
 
 def test_B13_file_gia_dang_anh_bi_chan_dung_ma(cs, kho_anh):
@@ -548,16 +596,34 @@ def test_B13_file_gia_dang_anh_bi_chan_dung_ma(cs, kho_anh):
     assert so_file(phuc_vu) == 0
 
 
-def test_B13_KHONG_co_han_muc_ngay_o_cua_quan_tri(cs, kho_anh, settings):
-    """Hạ trần ngày xuống 1 rồi tải 2 tấm — **cả hai** phải 201.
+def test_B13_mod_cham_tran_han_muc_ngay_429_dem_theo_MOD(cm, mod, kho_anh, settings):
+    """Nới quyền 2026-09-04 kéo hạn mức ngày trở lại (xem docstring cửa này) — hạ trần
+    xuống 2 rồi tấm thứ ba phải 429 `qua_han_muc_anh_noi_dung` kèm `thu_lai_tu`.
 
-    Hạn mức 30 ảnh/ngày của `POST /me/anh` tồn tại vì cửa ấy mở cho mọi tài khoản đăng
-    nhập và không gắn với hàng nào để đếm. Cửa này superuser-only, nên trần ngày chỉ còn
-    là một cái bẫy cho chính người đang sửa 20 bài trong một buổi tối.
+    Đếm theo MOD đang gọi, không phải tác giả bài mod đăng thay: `nguoi_tai` của cả hai
+    tấm đã lưu phải là `mod`.
     """
+    settings.HAN_MUC_ANH_NOI_DUNG_MOI_USER_NGAY = 2
+    assert gui_anh(cm, "/api/admin/anh", anh_byte()).status_code == 201
+    assert gui_anh(cm, "/api/admin/anh", anh_byte()).status_code == 201
+
+    r = gui_anh(cm, "/api/admin/anh", anh_byte())
+    d = r.json()
+    assert (r.status_code, d["code"]) == (429, QUA_HAN_MUC_ANH_NOI_DUNG)
+    assert d["thu_lai_tu"], "429 của repo này luôn nói lúc nào thử lại được"
+
+    from core.models.moc import AnhNoiDung
+
+    assert AnhNoiDung.objects.filter(nguoi_tai=mod).count() == 2
+
+
+def test_B13_superuser_CUNG_dinh_han_muc_ngay(cs, kho_anh, settings):
+    """Chiều đối chứng: hạn mức không có ngoại lệ "superuser miễn trần" — nó đếm theo
+    NGƯỜI GỌI, và superuser cũng là một người dùng đã đăng nhập như bất kỳ ai."""
     settings.HAN_MUC_ANH_NOI_DUNG_MOI_USER_NGAY = 1
     assert gui_anh(cs, "/api/admin/anh", anh_byte()).status_code == 201
-    assert gui_anh(cs, "/api/admin/anh", anh_byte()).status_code == 201
+    r = gui_anh(cs, "/api/admin/anh", anh_byte())
+    assert (r.status_code, r.json()["code"]) == (429, QUA_HAN_MUC_ANH_NOI_DUNG)
 
 
 # =============================================================================
@@ -580,6 +646,23 @@ def test_B14_dinh_kem_201_thay_o_cua_cong_khai_va_dung_MOT_dong_log(
     log = AuditLog.objects.get(action="them_anh_moc")
     assert (log.actor_id, log.target_type, log.target_id) == (sieu.pk, "moc", moc1.pk)
     assert log.meta["anh_id"] == d["id"]
+
+
+def test_B14_mod_thuong_201_gan_anh_vao_moc_ghi_log_dung_boi(cm, mod, kho_anh, moc1):
+    """Nới quyền 2026-09-04: mod thường gắn ảnh vào gallery mốc được — 201 THẬT.
+
+    `AuditLog` phải ghi đúng `actor_id` = mod gọi cửa (không phải superuser, không phải
+    tác giả `moc1`) — mod đăng bài thay đội, nhưng vết vẫn phải là danh tính thật của
+    người bấm nút, đúng lý lẽ ghi trong docstring module.
+    """
+    r = gui_anh(cm, f"/api/admin/mocs/{moc1.pk}/anh", anh_byte())
+    assert r.status_code == 201, r.content
+    d = r.json()
+    assert d["position"] == 1
+
+    log = AuditLog.objects.get(action="them_anh_moc")
+    assert log.actor_id == mod.pk
+    assert log.actor_id != moc1.author_id
 
 
 def test_B14_tam_thu_11_bi_tu_choi(cs, kho_anh, moc1):

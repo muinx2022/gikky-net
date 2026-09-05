@@ -67,6 +67,7 @@ const CHU_LOC: Record<LocTrangThai, string> = {
   dong: "Đã đóng sổ",
   bi_khoa: "Bị khoá",
   bi_an: "Bị ẩn",
+  hen_gio: "Đã hẹn giờ",
 };
 
 export default function TrangMach() {
@@ -188,7 +189,12 @@ function BangMach() {
   const anHangLoat = (an: boolean) => {
     datTomTat(null);
     return chay(async () => {
-      const muc_tieu = locCanLam(ds.items ?? [], chon.da_chon, (m) => m.da_bi_an, an);
+      const muc_tieu = locCanLam(
+        (ds.items ?? []).filter((m) => an || !m.da_hen_gio),
+        chon.da_chon,
+        (m) => m.da_bi_an,
+        an,
+      );
       let da_doi = 0;
       let von_vay = 0;
       const that_bai: number[] = [];
@@ -260,9 +266,23 @@ function BangMach() {
     <>
       <TieuDeTrang
         mo_ta={
-          trang_thai === "chua_go"
-            ? "Đang xem bài CHƯA BỊ ẨN — gồm cả bài đã khoá và đã đóng sổ. Bài đã ẩn nằm ở bộ lọc bên dưới."
-            : "Mỗi bài là một “mạch”: bài gốc cộng các mốc tác giả nối thêm về sau."
+          trang_thai === "hen_gio"
+            ? "Hàng đợi bài viết trước, sắp theo giờ phát hành gần nhất trước."
+            : trang_thai === "chua_go"
+              ? "Đang xem bài CHƯA BỊ ẨN — gồm cả bài đã khoá và đã đóng sổ. Bài đã ẩn nằm ở bộ lọc bên dưới."
+              : "Mỗi bài là một “mạch”: bài gốc cộng các mốc tác giả nối thêm về sau."
+        }
+        // Nút, KHÔNG mục sidebar (`plans/2026-09-04-dang-bai-tu-admin.md` §1.3): `/machs`
+        // khai `khop_tien_to`, nên một mục `/machs/moi` trong `NHOM_MENU` làm HAI mục sáng
+        // cùng lúc. Muốn mục riêng thì phải đặt nó ngoài `/machs/`.
+        hanh_dong={
+          <Link
+            href="/machs/moi"
+            className="nut nut-chinh"
+            data-testid="nut-toi-dang-bai"
+          >
+            Đăng bài
+          </Link>
         }
       />
       <HienLoi loi={loi_hanh_dong ?? ds.loi} het_phien={het_phien} />
@@ -404,7 +424,7 @@ function BangMach() {
                 "Số mốc",
                 "Bình luận",
                 "Điểm",
-                "Tạo lúc",
+                "Phát hành",
                 "",
               ]}
             />
@@ -432,7 +452,12 @@ function BangMach() {
                       {m.title}
                     </Link>
                     <span className="mt-1 flex flex-wrap gap-1">
-                      {m.da_bi_an && <NhanTrangThai tone="xau">đã ẩn</NhanTrangThai>}
+                      {m.da_hen_gio && (
+                        <NhanTrangThai tone="chu-y">đã hẹn giờ</NhanTrangThai>
+                      )}
+                      {m.da_bi_an && !m.da_hen_gio && (
+                        <NhanTrangThai tone="xau">đã ẩn</NhanTrangThai>
+                      )}
                       {m.da_khoa && <NhanTrangThai tone="xau">bị khoá</NhanTrangThai>}
                       {m.status === "closed" && (
                         <NhanTrangThai tone="nhan">đã đóng sổ</NhanTrangThai>
@@ -459,7 +484,7 @@ function BangMach() {
                   <td className="mono px-3 py-2.5">{m.comment_count}</td>
                   <td className="mono px-3 py-2.5">{m.diem}</td>
                   <td className="mono px-3 py-2.5 text-xs text-muc-mo">
-                    {gioVN(m.created_at)}
+                    {gioVN(m.published_at)}
                   </td>
                   <td className="px-3 py-2.5">
                     {/* Ba icon MỘT HÀNG (user chốt 2026-08-24). `flex-nowrap` + `shrink-0`
@@ -475,10 +500,22 @@ function BangMach() {
                       <button
                         type="button"
                         className="nut nut-nho shrink-0 px-1.5"
-                        disabled={dang_chay}
+                        disabled={dang_chay || m.da_hen_gio}
                         data-testid={`nut-an-${m.id}`}
-                        title={m.da_bi_an ? "Gỡ ẩn" : "Ẩn"}
-                        aria-label={m.da_bi_an ? `Gỡ ẩn: ${m.title}` : `Ẩn: ${m.title}`}
+                        title={
+                          m.da_hen_gio
+                            ? "Bài đang hẹn giờ — dùng Phát hành ngay ở trang chi tiết"
+                            : m.da_bi_an
+                              ? "Gỡ ẩn"
+                              : "Ẩn"
+                        }
+                        aria-label={
+                          m.da_hen_gio
+                            ? `Bài đang hẹn giờ, không gỡ ẩn tại đây: ${m.title}`
+                            : m.da_bi_an
+                              ? `Gỡ ẩn: ${m.title}`
+                              : `Ẩn: ${m.title}`
+                        }
                         onClick={() =>
                           chay(() =>
                             quanTriDatAnMach({

@@ -30,19 +30,21 @@ Mạch biến mất là `DELETE` thật, và hệ quả khác nhau ở hai cửa
 
 ## Khoá keyset
 
-`(created_at, id)` giảm dần ở cả ba, nhưng **`created_at` của bảng nào là chỗ dễ sai
-nhất**:
+`(mốc thời gian, id)` giảm dần ở cả ba, nhưng **cột nào là chỗ dễ sai nhất**:
 
-- `/users/{username}/machs` → `Mach.created_at` (lúc bài ra đời);
+- `/users/{username}/machs` → `Mach.published_at` (lúc bài LÊN SÓNG — 2026-09-04). Bài
+  soạn trước, đăng sau phải đứng đúng chỗ ngày đăng, không chôn ở đáy theo ngày soạn.
+  Cột này ổn định trên tập đang liệt kê: cửa chỉ trả bài `hidden_at IS NULL`, và bài đã
+  phát hành không được sửa `published_at` (plan hẹn giờ §6);
 - `/me/da-vote` → `Vote.created_at`, `/me/dang-theo` → `Follow.created_at` — tức **thời
   điểm TÔI vote / TÔI theo**, không phải lúc mạch ra đời. Thứ tự người ta mong đợi ở tab
-  "Đã vote" là thứ tự họ vote; và quan trọng hơn, `Mach.created_at` của một hàng đọc qua
+  "Đã vote" là thứ tự họ vote; và quan trọng hơn, `Mach.published_at` của một hàng đọc qua
   `Vote` không phải khoá của tập đang sắp — cắt theo nó là cắt theo một cột không đơn
   điệu trên thứ tự trả về, tức trùng dòng và sót dòng, HTTP 200.
 
-Cả ba khoá đều **BẤT BIẾN**, đúng điều kiện `api/phan_trang.py` đòi: không đường ghi nào
-sửa `created_at` của `Mach`/`Vote`/`Follow` (cả ba khai `editable=False`). `diem_bai_goc`
-thì không thoả — đừng thêm `?sort=` theo điểm vào đây mà không đọc docstring file ấy.
+Hai cửa `/me/*` dùng khoá **BẤT BIẾN** (`Vote`/`Follow`.created_at, `editable=False`).
+`diem_bai_goc` thì không thoả — đừng thêm `?sort=` theo điểm vào đây mà không đọc
+docstring `api/phan_trang.py`.
 """
 
 from django.db.models import QuerySet
@@ -108,33 +110,41 @@ def _the_ra(machs) -> list:
     ]
 
 
-def _cat_keyset(qs: QuerySet, *, cursor: str | None, limit: int):
+def _cat_keyset(
+    qs: QuerySet, *, cursor: str | None, limit: int, truong: str = "created_at"
+):
     """Áp cursor rồi lấy dư một hàng. Trả `(hàng, còn_nữa, None)` hoặc `(None, None, lỗi)`.
 
-    Khoá luôn là `created_at` **của bảng `qs` đang đứng** — xem khối "Khoá keyset" ở đầu
-    module. Hàm nhận queryset đã sắp chưa? Không: nó tự `order_by`, vì thứ tự và điều
-    kiện cắt phải nói về cùng một cột thì keyset mới đúng, và tách hai việc ấy ra hai chỗ
-    gọi là cách chúng lệch nhau.
+    Khoá là `truong` **của bảng `qs` đang đứng** — xem khối "Khoá keyset" ở đầu module.
+    Mặc định `created_at` cho Vote/Follow; cửa mạch của user truyền `published_at`.
+    Hàm tự `order_by` cùng cột đó: thứ tự và điều kiện cắt phải nói về cùng một cột thì
+    keyset mới đúng, và tách hai việc ấy ra hai chỗ gọi là cách chúng lệch nhau.
     """
     if cursor is not None:
         try:
             khi, id = giai_ma_cursor(cursor)
         except CursorHong as e:
             return None, None, loi(400, CURSOR_KHONG_HOP_LE, f"Cursor không hợp lệ: {e}")
-        qs = loc_keyset(qs, truong="created_at", khi=khi, id=id, giam_dan=True)
+        qs = loc_keyset(qs, truong=truong, khi=khi, id=id, giam_dan=True)
 
-    hang, con_nua = cat_trang(list(qs.order_by("-created_at", "-pk")[: limit + 1]), limit)
+    hang, con_nua = cat_trang(
+        list(qs.order_by(f"-{truong}", "-pk")[: limit + 1]), limit
+    )
     return hang, con_nua, None
 
 
-def _ra(hang: list, machs: list, con_nua: bool) -> FeedOut:
+def _ra(hang: list, machs: list, con_nua: bool, *, truong: str = "created_at") -> FeedOut:
     """Dựng `FeedOut`. `hang` mang khoá cursor, `machs` mang nội dung thẻ.
 
     Hai danh sách tách rời vì ở hai cửa `/me/*` chúng là hai loại hàng khác nhau: cursor
     phải mã hoá `(Vote|Follow).created_at`, còn thẻ vẽ từ `Mach`. Mã hoá cursor từ
     `machs[-1]` là đúng cái lỗi mà khối "Khoá keyset" ở đầu module nói tới.
     """
-    ke_tiep = ma_hoa_cursor(hang[-1].created_at, hang[-1].pk) if con_nua and hang else None
+    ke_tiep = (
+        ma_hoa_cursor(getattr(hang[-1], truong), hang[-1].pk)
+        if con_nua and hang
+        else None
+    )
     return FeedOut(items=_the_ra(machs), cursor_ke_tiep=ke_tiep)
 
 
@@ -206,9 +216,12 @@ def liet_ke_mach_cua_user(
         return khong_tim_thay(f"người dùng {username!r}")
 
     hang, con_nua, l = _cat_keyset(
-        _mach_hien().filter(author=user), cursor=cursor, limit=limit
+        _mach_hien().filter(author=user),
+        cursor=cursor,
+        limit=limit,
+        truong="published_at",
     )
-    return l if l is not None else _ra(hang, hang, con_nua)
+    return l if l is not None else _ra(hang, hang, con_nua, truong="published_at")
 
 
 @router.get(

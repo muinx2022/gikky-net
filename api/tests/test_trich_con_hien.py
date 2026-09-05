@@ -23,6 +23,7 @@ from core.doc_noi_dung import TOP_CAU_DANG_DOC, TRICH_CON_HIEN, tap_dang_duoc_tr
 from core.ghi import them_moc
 from core.models import Comment, Mach, Moc, Trich
 from tests.conftest import dung_user, lay, viet
+from tests._an_mach import an_mach_tho
 
 pytestmark = pytest.mark.django_db
 
@@ -131,7 +132,7 @@ def test_cua_thu_nam_mach_bi_mod_an(canh):
     """
     mach, _moc2, bi_trich = canh
     assert tap_dang_duoc_trich(mach) == frozenset({bi_trich.pk})
-    Mach.objects.filter(pk=mach.pk).update(hidden_at=timezone.now())
+    an_mach_tho(Mach.objects.filter(pk=mach.pk))
     mach.refresh_from_db()
     assert tap_dang_duoc_trich(mach) == frozenset()
 

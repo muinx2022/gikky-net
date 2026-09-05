@@ -94,7 +94,7 @@ function DongMach({ ket_qua }: { ket_qua: KetQuaTronOut }) {
         <span className={css.cham} aria-hidden>
           ·
         </span>
-        <time dateTime={m.created_at}>{ngayCuaThoiDiem(m.created_at)}</time>
+        <time dateTime={m.published_at}>{ngayCuaThoiDiem(m.published_at)}</time>
         {m.status === "closed" && (
           <>
             <span className={css.cham} aria-hidden>

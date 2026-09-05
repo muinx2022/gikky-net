@@ -119,16 +119,11 @@ CHI_SUPERUSER = {
     # miễn nhiễm ban**. Một mod thường cấp được quyền cho người khác là một mod thường
     # dựng được cho mình một đồng minh không ai ban nổi.
     "quan_tri_doi_quyen_mod",
-    # Sửa NỘI DUNG bài (2026-09-03). Ẩn là *gỡ* — đảo ngược được, chữ của người viết còn
-    # nguyên. Sửa là *viết lại*: sau lượt ấy không ai đọc được bản gốc trừ qua
-    # `MocRevision`. Hai việc không cùng một nấc quyền, nên năm cửa GHI ở
-    # `quan_tri_sua_bai.py` đứng cùng nhóm với cấp/thu quyền mod. Cửa ĐỌC
-    # (`quan_tri_xem_moc`) thì KHÔNG ở đây — mod thường vẫn phải đọc được nguyên văn.
-    "quan_tri_sua_moc",
+    # Sửa tiêu đề mạch (2026-09-03). Đổi tiêu đề làm đổi slug và cấu trúc URL của
+    # toàn bộ mạch. Chỉ superuser mới được sửa.
+    # Các cửa sửa mốc (quan_tri_sua_moc) và gỡ ảnh (quan_tri_xoa_anh_moc) đã mở cho
+    # mọi mod, xem test_api_quan_tri_sua_bai.py.
     "quan_tri_sua_tieu_de_mach",
-    "quan_tri_tai_anh_noi_dung",
-    "quan_tri_tai_anh_moc",
-    "quan_tri_xoa_anh_moc",
 }
 
 

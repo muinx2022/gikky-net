@@ -47,6 +47,7 @@ from allauth.account.models import EmailAddress
 from django.utils import timezone
 
 from core.models import Mach, Moc, Sub, User
+from tests._an_mach import an_mach_tho
 
 #: `api/tests/x.py` → `api/tests` → `api` → gốc repo.
 GOC_REPO = Path(__file__).resolve().parents[2]
@@ -1150,7 +1151,7 @@ def test_f5_ma_5_phai_noi_ra_cach_cuu_vi_ep_KHONG_cuu_duoc(
     assert dau.returncode == MA_OK, dau.stderr
     mach = Mach.objects.get()
 
-    Mach.objects.update(hidden_at=timezone.now())  # mod ẩn, không phải khoá
+    an_mach_tho(Mach.objects.all())  # mod ẩn, không phải khoá
 
     doi_so = [
         *chung,

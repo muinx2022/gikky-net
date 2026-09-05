@@ -75,6 +75,17 @@ BANG_DONG_BO: dict[str, tuple[str, str]] = {
         "trong `_dong_bo_ngay`, không bằng một lời gọi thứ hai ở đây — xem "
         "`core/tim_kiem.py::_dong_bo_binh_luan_theo_mach_ngay`",
     ),
+    "hen_gio_mach": (
+        PHAI,
+        "đặt lịch = bài rời khỏi mọi cửa công khai ⇒ tài liệu phải BIẾN MẤT khỏi index, "
+        "y hệt `dat_an_mach`. Sót ở đây là bài chưa đăng vẫn tìm ra được nguyên văn tiêu "
+        "đề — đúng chỗ nguy hiểm nhất mà plan Phase 7 §2 gọi tên",
+    ),
+    "phat_hanh_mach": (
+        PHAI,
+        "chiều ngược: bài lên sóng ⇒ tài liệu phải được dựng. Không gọi thì bài mới đăng "
+        "không tìm thấy được, vô thời hạn — index không hết hạn như cache",
+    ),
     # --- không đụng ---
     "cap_nhat_dem_mach": (
         KHONG,

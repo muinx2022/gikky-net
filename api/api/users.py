@@ -72,7 +72,7 @@ def xem_ho_so(request, username: str, limit: int = SO_MACH_TREN_HO_SO):
 
     mach_hien = Mach.objects.filter(author=user, hidden_at__isnull=True)
     machs = list(
-        mach_hien.select_related("sub", "author").order_by("-created_at", "-pk")[:limit]
+        mach_hien.select_related("sub", "author").order_by("-published_at", "-pk")[:limit]
     )
     # `moc_1_id` (đích mũi tên vote) + nội dung xem trước của thẻ, nạp theo LÔ — HAI
     # truy vấn cho cả trang. Gọi trong list comprehension là N+1, và nó không đỏ ở đâu cả.

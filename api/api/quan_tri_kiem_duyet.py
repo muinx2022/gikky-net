@@ -20,13 +20,20 @@ from django.db.models import Prefetch
 from ninja import Router
 
 from core.doc_noi_dung import doc_duoc
-from core.ghi import dat_an_binh_luan, dat_an_mach, dat_an_moc, dat_khoa_mach
+from core.ghi import (
+    KhongTheGoAnHenGio,
+    dat_an_binh_luan,
+    dat_an_mach,
+    dat_an_moc,
+    dat_khoa_mach,
+)
 from core.models.binh_luan import Comment
 from core.models.dien_dan import Mach
 from core.models.moc import Moc
 from core.revalidate import lam_moi_mach
 
-from api.loi import LoiOut, khong_tim_thay
+from api.loi import LoiOut, khong_tim_thay, loi
+from api.quan_tri_loc import dang_hen_gio
 from api.quan_tri_schemas import (
     DatAnIn,
     DatKhoaMachIn,
@@ -35,11 +42,14 @@ from api.quan_tri_schemas import (
     MocQuanTriOut,
     trich_yeu,
 )
+from api.quyen import NOI_DUNG_DA_GO
 from api.trinh_bay import nguoi_dung_ra
 
 router = Router()
 
 TRA_LOI_DOI = {200: KetQuaDoiTrangThaiOut, 401: LoiOut, 403: LoiOut, 404: LoiOut}
+#: Chỉ cửa ẩn/gỡ ẩn **mạch**: gỡ ẩn bài hẹn giờ là 409, không phải no-op 200.
+TRA_LOI_DOI_MACH = {**TRA_LOI_DOI, 409: LoiOut}
 
 
 def duong_dan_mach(mach: Mach) -> str:
@@ -98,7 +108,7 @@ def dat_an_binh_luan_endpoint(request, comment_id: int, du_lieu: DatAnIn):
 
 @router.post(
     "/machs/{int:mach_id}/an",
-    response=TRA_LOI_DOI,
+    response=TRA_LOI_DOI_MACH,
     operation_id="quan_tri_dat_an_mach",
     tags=["quan-tri-kiem-duyet"],
 )
@@ -108,11 +118,24 @@ def dat_an_mach_endpoint(request, mach_id: int, du_lieu: DatAnIn):
     Mạch bị ẩn biến mất khỏi hai feed, khỏi trang sub, khỏi hồ sơ tác giả và khỏi
     `sitemap`; `GET /machs/{id}` công khai trả 404. Nó **không** đổi con số denormalize
     nào của chính nó — xem `core/ghi.py::dat_an_mach`.
+
+    **Bài đang hẹn giờ ⇒ 409** khi gỡ ẩn: đường đúng là *Phát hành ngay*
+    (`PATCH …/hen-gio` với `published_at: null`), không phải nút Gỡ ẩn. Chiều ẩn trên
+    bài hẹn là no-op (`da_doi=false`) — bài đã ẩn sẵn.
     """
     mach = Mach.objects.filter(pk=mach_id).first()
     if mach is None:
         return khong_tim_thay("mạch")
-    da_doi = dat_an_mach(mach=mach, boi=request.user, an=du_lieu.an, ly_do=du_lieu.ly_do)
+    try:
+        da_doi = dat_an_mach(
+            mach=mach, boi=request.user, an=du_lieu.an, ly_do=du_lieu.ly_do
+        )
+    except KhongTheGoAnHenGio:
+        return loi(
+            409,
+            NOI_DUNG_DA_GO,
+            "Bài đang hẹn giờ — dùng Phát hành ngay, đừng gỡ ẩn.",
+        )
     # Cả hai chiều: ẩn thì cache phải đổi sang 404, gỡ ẩn thì phải thôi 404.
     lam_moi_mach(mach)
     return KetQuaDoiTrangThaiOut(da_doi=da_doi, dang_bat=mach.hidden_at is not None)
@@ -176,6 +199,9 @@ def xem_mach(request, mach_id: int):
         tac_gia=nguoi_dung_ra(mach.author),
         status=mach.status,
         created_at=mach.created_at,
+        published_at=mach.published_at,
+        da_hen_gio=dang_hen_gio(mach),
+        bi_mod_an=mach.hidden_by_id is not None,
         last_entry_at=mach.last_entry_at,
         last_activity_at=mach.last_activity_at,
         entry_count=mach.entry_count,

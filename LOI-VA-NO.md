@@ -1578,3 +1578,33 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Ở đâu**: `apps/admin/components/ui.tsx::KhungBang`
 - **Bằng chứng**: bảng "Thiết bị" có đúng 2 ô chữ ngắn vẫn bị kéo ra 832px. Lượt tab đã thêm prop `rong={false}` và áp cho 3 bảng hẹp của `/luot-xem`; 12 chỗ dùng khác chưa rà — bảng nào ≤3 cột (vd subs, quản trị viên) có thể muốn `rong={false}`.
 - **Vì sao không sửa ngay**: rà 12 trang là việc riêng; ghi để lượt dọn giao diện admin sau nhặt.
+
+### P-20260904-5 · [MỞ] · NẶNG — chính sách quyền lệch nhau: mọi staff tạo được bài, nhưng cả hai cửa ảnh đều superuser-only ⇒ mod thường KHÔNG BAO GIỜ đính được ảnh, kể cả đi vòng qua trang sửa mốc
+- **Thấy lúc**: `plans/2026-09-04-dang-bai-tu-admin.md` — lượt phản biện bắt được trước khi hại ai; đã vá phía UI (ẩn ô ảnh + khoá nút 🖼 cho non-superuser ở `/machs/moi`, kèm câu giải thích) trong CHÍNH lượt này, không phải nợ để đó
+- **Ở đâu**: `api/api/quan_tri_sua_bai.py:350` (`tai_anh_noi_dung_quan_tri`) và `:389` (`tai_anh_moc_quan_tri`) đều `chan_neu_khong_phai_superuser`; `api/api/quan_tri_hen_gio.py::tao_mach_hen_gio` thì không (plan §1.2 chốt "mọi staff")
+- **Bằng chứng**: mod `is_staff=True, is_superuser=False` (đúng loại tài khoản `POST /users/{u}/quyen-mod` sinh ra) không có cách nào đính ảnh vào bài mình vừa đăng — kể cả nhờ trang sửa mốc, vì ô ảnh ở đó cũng khoá cho đúng người ấy (`sua_duoc = moc.sua_duoc && la_superuser`)
+- **Vì sao không sửa ngay**: đây là một QUYẾT ĐỊNH CHÍNH SÁCH (nới quyền ảnh cho staff, hay chấp nhận staff không đính ảnh được), không phải lỗi code — cần user chốt hướng trước khi đổi `chan_neu_khong_phai_superuser`. Vá phía UI trong lượt này chỉ che đúng triệu chứng (ngõ cụt sau 201), không giải quyết gốc.
+
+### P-20260904-6 · [MỞ] · VỪA — `useHanhDong.chay` không có `catch`; một callback ném exception là unhandled rejection, màn hình câm
+- **Thấy lúc**: cùng lượt trên — `datetimeLocalSangIsoVN` có thể ném khi ô `datetime-local` cho ra chuỗi lệch dạng (một số trình duyệt cho gõ năm 5 chữ số); gọi nó bên trong `chay(...)` thì cú ném thoát ra ngoài mà không có thông báo nào (`dang_chay` vẫn về `false` nhờ `finally`, nhưng không có `catch`)
+- **Ở đâu**: `apps/admin/lib/hanh-dong.ts:44-65` — `try { await viec() } finally { datDangChay(false) }`, không `catch`
+- **Bằng chứng**: đã vá tại chỗ gọi duy nhất đang có nguy cơ (`/machs/moi` — đổi giờ hẹn TRƯỚC khi vào `chay`, bọc `try/catch` riêng), nhưng hook dùng chung ở 9+ trang khác vẫn hở: bất kỳ callback tương lai nào gọi một hàm có thể ném đều lặp lại đúng ca này
+- **Vì sao không sửa ngay**: sửa tại nguồn (`hanh-dong.ts`) là đổi hành vi của MỌI trang dùng hook — ngoài phạm vi một lượt vá tại chỗ gọi.
+
+### P-20260904-7 · [MỞ] · NHỎ — `<label className="nut">` bọc `<input type=file>` dùng `aria-disabled` mà CSS `.nut` chỉ định nghĩa `disabled:opacity-50` (biến thể không bao giờ khớp trên `<label>`)
+- **Thấy lúc**: cùng lượt trên
+- **Ở đâu**: `apps/admin/components/soan-thao-quan-tri.tsx` (nút 🖼) — đã vá TẠI CHỖ bằng `opacity-50` gõ tay trong lượt này
+- **Bằng chứng**: mọi `<label className="nut">` khác trong repo (nếu có) vẫn mờ nhạt sai kiểu này — nút trông y hệt lúc bấm được lẫn lúc không
+- **Vì sao không sửa ngay**: rà toàn repo tìm `<label className="nut"` là việc riêng; nên đưa luật `.nut[aria-disabled="true"]` vào `globals.css` một lần thay vì vá tay từng chỗ.
+
+### P-20260904-8 · [MỞ] · NHỎ — docstring `menu.ts` trỏ tới một hàng rào không tồn tại (`apps/web/e2e/don-vi/menu-quan-tri.spec.ts`)
+- **Thấy lúc**: `plans/2026-09-04-dang-bai-tu-admin.md`
+- **Ở đâu**: `apps/admin/components/khung/menu.ts:12` — luật "mục menu phải có `page.tsx` thật" thực ra sống ở `quan-tri-giao-dien.spec.ts`
+- **Bằng chứng**: `ls apps/web/e2e/don-vi/ | grep menu` ra rỗng
+- **Vì sao không sửa ngay**: một dòng comment sai chỗ, ngoài phạm vi việc đang làm.
+
+### P-20260904-9 · [MỞ] · NHỎ — `TAI_KHOAN_DANG_BAI` không có chuông chống rỗng
+- **Thấy lúc**: cùng lượt trên
+- **Ở đâu**: `api/api/quan_tri_hen_gio.py:65` — `tuple(username for _, username, _, la_super in TAI_KHOAN if not la_super)`, không assert nào phía sau
+- **Bằng chứng**: nếu cả hai tài khoản đội bị đổi thành `is_superuser=True`, tuple thành rỗng ⇒ mọi lời gọi `POST /admin/machs/hen-gio` trả 400 với danh sách allowlist rỗng trong câu lỗi — fail-closed đúng hướng nhưng câu lỗi vô nghĩa với người đọc.
+- **Vì sao không sửa ngay**: ca biên rất khó xảy ra (đổi cấu hình tài khoản đội), ngoài phạm vi việc đang làm.

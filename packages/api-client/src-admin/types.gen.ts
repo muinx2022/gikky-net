@@ -484,6 +484,29 @@ export type GanModSubIn = {
 };
 
 /**
+ * HenGioMachIn
+ *
+ * Đặt / dời / huỷ lịch phát hành — `PATCH /admin/machs/{id}/hen-gio` (2026-09-03).
+ *
+ * `published_at` **phải kèm offset múi giờ** (`2026-09-10T08:00:00+07:00`). Admin nhập
+ * giờ VN, gửi ISO có offset; thiếu offset là bài lên sớm/muộn 7 tiếng — và lệch im lặng,
+ * vì bài vẫn lên. Handler trả 400 cho `datetime` naive.
+ *
+ * `null` (hoặc một mốc quá khứ) nghĩa là **phát hành ngay**, không phải "xoá ngày đăng":
+ * `Mach.published_at` là `NOT NULL`, và giá trị ghi xuống lúc ấy là *bây giờ*.
+ */
+export type HenGioMachIn = {
+    /**
+     * Ly Do
+     */
+    ly_do?: string;
+    /**
+     * Published At
+     */
+    published_at?: string | null;
+};
+
+/**
  * KetQuaDoiTrangThaiOut
  *
  * Kết quả CHUNG của mọi hành động moderation bật/tắt một trạng thái.
@@ -506,6 +529,46 @@ export type KetQuaDoiTrangThaiOut = {
      * Dang Bat
      */
     dang_bat: boolean;
+};
+
+/**
+ * KetQuaHenGioOut
+ *
+ * Trạng thái hẹn giờ của một mạch sau một lượt đặt lịch / phát hành / tạo mới.
+ *
+ * `da_doi=false` chỉ xảy ra ở đúng một ca: bấm *phát hành ngay* trên bài vốn đã hiện.
+ * Không thông báo lại, không dòng nhật ký — cùng luật "không đổi thì không ghi log" của
+ * khối moderation ở `core/ghi.py`.
+ *
+ * `da_hen_gio` là câu trả lời cho *"bài này còn đang chờ không"*, suy từ cặp
+ * `(hidden_at, hidden_by)` — frontend không được tự dựng lại phép suy ấy (PLAN nguyên
+ * tắc 10), và nó cũng không có hai cột đó để mà dựng.
+ */
+export type KetQuaHenGioOut = {
+    /**
+     * Da Doi
+     */
+    da_doi: boolean;
+    /**
+     * Da Hen Gio
+     */
+    da_hen_gio: boolean;
+    /**
+     * Duong Dan Cong Khai
+     */
+    duong_dan_cong_khai: string;
+    /**
+     * Id
+     */
+    id: number;
+    /**
+     * Published At
+     */
+    published_at: string;
+    /**
+     * Title
+     */
+    title: string;
 };
 
 /**
@@ -761,6 +824,10 @@ export type MachDongOut = {
      */
     da_bi_an: boolean;
     /**
+     * Da Hen Gio
+     */
+    da_hen_gio: boolean;
+    /**
      * Da Khoa
      */
     da_khoa: boolean;
@@ -785,6 +852,10 @@ export type MachDongOut = {
      */
     last_activity_at: string;
     /**
+     * Published At
+     */
+    published_at: string;
+    /**
      * Status
      */
     status: string;
@@ -800,11 +871,73 @@ export type MachDongOut = {
 };
 
 /**
+ * MachHenGioMoiIn
+ *
+ * Đăng bài thay mặt tài khoản đội — `POST /admin/machs/hen-gio` (2026-09-03).
+ *
+ * Kế thừa `MocMoiIn` đúng như `MachMoiIn` của cửa công khai: bài gốc *chính là* mốc 1,
+ * nên `body`/`occurred_at`/`loai`/`question_for_crowd`/`figures` là của mốc ấy.
+ *
+ * Hai trường thêm là hai trường khu quản trị:
+ *
+ * - `author` — username, **phải nằm trong allowlist tài khoản đội**
+ * (`api/quan_tri_hen_gio.py::TAI_KHOAN_DANG_BAI`). Ngoài danh sách ⇒ 400;
+ * - `published_at` — tương lai thì bài nằm chờ; `null` hoặc quá khứ thì lên ngay.
+ * Cùng luật múi giờ với `HenGioMachIn`.
+ */
+export type MachHenGioMoiIn = {
+    /**
+     * Author
+     *
+     * username của tài khoản đội
+     */
+    author: string;
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Figures
+     */
+    figures?: Array<FigureIn> | null;
+    /**
+     * Loai
+     */
+    loai?: string | null;
+    /**
+     * Occurred At
+     */
+    occurred_at?: string | null;
+    /**
+     * Published At
+     */
+    published_at?: string | null;
+    /**
+     * Question For Crowd
+     */
+    question_for_crowd?: string | null;
+    /**
+     * Sub
+     *
+     * slug của chuyên mục
+     */
+    sub: string;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
  * MachQuanTriOut
  *
  * Trang chi tiết một mạch cho mod (PLAN 9.3 mục 2) — kèm mọi mốc để bấm ẩn từng ô.
  */
 export type MachQuanTriOut = {
+    /**
+     * Bi Mod An
+     */
+    bi_mod_an: boolean;
     /**
      * Comment Count
      */
@@ -817,6 +950,10 @@ export type MachQuanTriOut = {
      * Da Bi An
      */
     da_bi_an: boolean;
+    /**
+     * Da Hen Gio
+     */
+    da_hen_gio: boolean;
     /**
      * Da Khoa
      */
@@ -845,6 +982,10 @@ export type MachQuanTriOut = {
      * Mocs
      */
     mocs: Array<MocQuanTriOut>;
+    /**
+     * Published At
+     */
+    published_at: string;
     /**
      * Slug
      */
@@ -2123,7 +2264,7 @@ export type QuanTriLietKeMachData = {
         /**
          * Trang Thai
          */
-        trang_thai?: 'tat_ca' | 'chua_go' | 'mo' | 'dong' | 'bi_khoa' | 'bi_an';
+        trang_thai?: 'tat_ca' | 'chua_go' | 'mo' | 'dong' | 'bi_khoa' | 'bi_an' | 'hen_gio';
         /**
          * Limit
          */
@@ -2161,6 +2302,43 @@ export type QuanTriLietKeMachResponses = {
 };
 
 export type QuanTriLietKeMachResponse = QuanTriLietKeMachResponses[keyof QuanTriLietKeMachResponses];
+
+export type QuanTriTaoMachHenGioData = {
+    body: MachHenGioMoiIn;
+    path?: never;
+    query?: never;
+    url: '/api/admin/machs/hen-gio';
+};
+
+export type QuanTriTaoMachHenGioErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type QuanTriTaoMachHenGioError = QuanTriTaoMachHenGioErrors[keyof QuanTriTaoMachHenGioErrors];
+
+export type QuanTriTaoMachHenGioResponses = {
+    /**
+     * Created
+     */
+    201: KetQuaHenGioOut;
+};
+
+export type QuanTriTaoMachHenGioResponse = QuanTriTaoMachHenGioResponses[keyof QuanTriTaoMachHenGioResponses];
 
 export type QuanTriXemMachData = {
     body?: never;
@@ -2225,6 +2403,10 @@ export type QuanTriDatAnMachErrors = {
      * Not Found
      */
     404: LoiOut;
+    /**
+     * Conflict
+     */
+    409: LoiOut;
 };
 
 export type QuanTriDatAnMachError = QuanTriDatAnMachErrors[keyof QuanTriDatAnMachErrors];
@@ -2237,6 +2419,52 @@ export type QuanTriDatAnMachResponses = {
 };
 
 export type QuanTriDatAnMachResponse = QuanTriDatAnMachResponses[keyof QuanTriDatAnMachResponses];
+
+export type QuanTriHenGioMachData = {
+    body: HenGioMachIn;
+    path: {
+        /**
+         * Mach Id
+         */
+        mach_id: number;
+    };
+    query?: never;
+    url: '/api/admin/machs/{mach_id}/hen-gio';
+};
+
+export type QuanTriHenGioMachErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+    /**
+     * Conflict
+     */
+    409: LoiOut;
+};
+
+export type QuanTriHenGioMachError = QuanTriHenGioMachErrors[keyof QuanTriHenGioMachErrors];
+
+export type QuanTriHenGioMachResponses = {
+    /**
+     * OK
+     */
+    200: KetQuaHenGioOut;
+};
+
+export type QuanTriHenGioMachResponse = QuanTriHenGioMachResponses[keyof QuanTriHenGioMachResponses];
 
 export type QuanTriDatKhoaMachData = {
     body: DatKhoaMachIn;

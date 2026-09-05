@@ -165,7 +165,8 @@ export const demLuotXem = <ThrowOnError extends boolean = false>(options: Option
  * theo điểm bài gốc giảm dần, cursor keyset trên `(diem, id)`. **Cursor của sort này
  * KHÔNG dùng được cho sort kia** — đem nhầm là 400 `cursor_khong_hop_le`.
  *
- * `?khoang=ngay|tuan|thang|tat_ca` (mặc định `tat_ca`) lọc theo `created_at`, ranh giới
+ * `?khoang=ngay|tuan|thang|tat_ca` (mặc định `tat_ca`) lọc theo `published_at` (ngày
+ * ĐĂNG — bài hẹn giờ đăng hôm nay thì thuộc hôm nay, dù soạn từ tuần trước), ranh giới
  * là nửa đêm **giờ VN**; `tuan` = 7 ngày lịch gần nhất kể cả hôm nay, `thang` = 30 ngày.
  * Khoảng áp cho **mọi** sort, không riêng `nhieu_diem`. Giá trị lạ trả 400
  * `tham_so_khong_hop_le` — không bao giờ lặng lẽ quy về `tat_ca`.
@@ -178,10 +179,14 @@ export const lietKeFeedDangDienRa = <ThrowOnError extends boolean = false>(optio
 /**
  * Feed Moi
  *
- * Feed **Mới**: mọi bài, mới đăng trước (`created_at` giảm dần).
+ * Feed **Mới**: mọi bài, mới đăng trước (`published_at` giảm dần).
  *
- * Mạch đã đóng sổ **vẫn xuất hiện** — feed này sắp theo lúc bài ra đời, không theo
+ * Mạch đã đóng sổ **vẫn xuất hiện** — feed này sắp theo lúc bài LÊN SÓNG, không theo
  * trạng thái sổ.
+ *
+ * `published_at` chứ không `created_at`: bài hẹn giờ được soạn trước rồi phát hành sau,
+ * và thứ tự người đọc thấy phải là thứ tự bài xuất hiện. Hai cột đều có trong
+ * `MachTomTatOut` — `created_at` là ngày viết, `published_at` là ngày đăng.
  *
  * `?sub=<slug>` lọc theo chuyên mục; sub không tồn tại trả 404 `sub_khong_ton_tai`.
  * `?cursor=` là cursor keyset lấy từ `cursor_ke_tiep` của trang trước; `null` là hết.
@@ -191,7 +196,8 @@ export const lietKeFeedDangDienRa = <ThrowOnError extends boolean = false>(optio
  * theo điểm bài gốc giảm dần, cursor keyset trên `(diem, id)`. **Cursor của sort này
  * KHÔNG dùng được cho sort kia** — đem nhầm là 400 `cursor_khong_hop_le`.
  *
- * `?khoang=ngay|tuan|thang|tat_ca` (mặc định `tat_ca`) lọc theo `created_at`, ranh giới
+ * `?khoang=ngay|tuan|thang|tat_ca` (mặc định `tat_ca`) lọc theo `published_at` (ngày
+ * ĐĂNG — bài hẹn giờ đăng hôm nay thì thuộc hôm nay, dù soạn từ tuần trước), ranh giới
  * là nửa đêm **giờ VN**; `tuan` = 7 ngày lịch gần nhất kể cả hôm nay, `thang` = 30 ngày.
  * Khoảng áp cho **mọi** sort, không riêng `nhieu_diem`. Giá trị lạ trả 400
  * `tham_so_khong_hop_le` — không bao giờ lặng lẽ quy về `tat_ca`.

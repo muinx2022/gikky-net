@@ -9,6 +9,7 @@ from api.users import SO_MACH_TREN_HO_SO
 from core.ghi import tao_mach
 from core.models import Comment, Mach, Moc, Trich
 from tests.conftest import lay, viet
+from tests._an_mach import an_mach_tho
 
 pytestmark = pytest.mark.django_db
 
@@ -135,7 +136,7 @@ def test_duoc_trich_TUT_khi_khoi_trich_bien_mat(client, seed, che):
 
     khi = timezone.now()
     if che == "mach_an":
-        Mach.objects.filter(pk=seed.pk).update(hidden_at=khi)
+        an_mach_tho(Mach.objects.filter(pk=seed.pk), khi)
     elif che == "moc_an":
         Moc.objects.filter(pk=trich.moc_id).update(hidden_at=khi)
     elif che == "moc_xoa":
@@ -190,7 +191,7 @@ def test_noi_dung_bi_an_hoac_xoa_khong_duoc_dem(client, seed):
 
 
 def test_noi_dung_trong_mach_bi_an_cung_khong_duoc_dem(client, seed):
-    Mach.objects.filter(pk=seed.pk).update(hidden_at=timezone.now())
+    an_mach_tho(Mach.objects.filter(pk=seed.pk))
     d = lay(client, "/api/v1/users/ba_muoi_phien")
 
     assert d["so_mach"] == 0
@@ -271,7 +272,7 @@ def test_bon_chi_so_ve_0_khi_noi_dung_bi_an_SACH(client, seed):
     assert [truoc["so_mach"], truoc["so_moc"], truoc["so_binh_luan"]] != [0, 0, 0]
 
     khi = timezone.now()
-    Mach.objects.filter(author__username="ba_muoi_phien").update(hidden_at=khi)
+    an_mach_tho(Mach.objects.filter(author__username="ba_muoi_phien"), khi)
     Comment.objects.filter(author__username="ba_muoi_phien").update(hidden_at=khi)
 
     d = lay(client, "/api/v1/users/ba_muoi_phien")

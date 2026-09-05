@@ -11,9 +11,9 @@ import { duongDanHoSo, duongDanMach } from "./url";
  *
  * Ba chỗ dễ làm sai, ghi ra để lần sau không phải đoán:
  *
- * - `datePublished` phải là `created_at` của MẠCH (lúc mốc 1 ra đời), không phải
- *   `last_entry_at`. Với sản phẩm mà "ghi trước khi biết kết quả" là giá trị lõi, khai
- *   ngày công bố trôi theo mốc mới nhất là tự xoá đúng thứ mình bán.
+ * - `datePublished` phải là `published_at` của MẠCH (lúc bài lên sóng), không phải
+ *   `created_at` (lúc soạn) và không phải `last_entry_at`. Bài viết trước rồi hẹn giờ
+ *   phải khai ngày đăng; khai ngày soạn là nói dối công cụ tìm kiếm.
  * - `dateModified` thì ngược lại: `last_entry_at`, vì mốc mới đúng là nội dung mới.
  * - `interactionStatistic` chỉ khai khi **có** bình luận. `userInteractionCount: 0` là
  *   phiên bản máy đọc của "0 bình luận" mà nguyên tắc 9 cấm hiện.
@@ -32,7 +32,7 @@ export function jsonLdMach(mach: MachChiTietOut): Record<string, unknown> {
     mainEntityOfPage: url,
     headline: mach.title,
     name: mach.title,
-    datePublished: mach.created_at,
+    datePublished: mach.published_at,
     dateModified: mach.last_entry_at,
     inLanguage: "vi-VN",
     articleSection: mach.sub.ten,

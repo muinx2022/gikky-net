@@ -37,7 +37,7 @@ async function globalSetup() {
  * ### Vì sao phải có, và nó đã hỏng thật
  *
  * `pnpm e2e` GHI vào DB và `seed_dev` không `--reset`, nên rác của mỗi lần chạy ở lại.
- * Feed "Mới" sắp theo `created_at` và **trang 1 chỉ có 20 thẻ**, nên rác tích lại là một
+ * Feed "Mới" sắp theo `published_at` và **trang 1 chỉ có 20 thẻ**, nên rác tích lại là một
  * cái đồng hồ đếm ngược: sau chừng chục lần chạy, mạch seed HPG bị đẩy khỏi trang 1 và
  * bảy bài đo *không liên quan gì tới việc ghi* đồng loạt đỏ (`vo-reddit.spec.ts` A7,
  * `seo-va-trang.spec.ts` feed…). Đúng chuyện đó xảy ra ngày 2026-08-23 khi mảng B thêm bộ

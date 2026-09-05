@@ -82,3 +82,45 @@ Nhóm này là **tản mạn**: dài hơi, liên ngành, không bám một mã.
 - **Hệ thống giao dịch mới**: nó đổi được gì và không đổi được gì.
 - **Cổ tức tiền mặt** — nhóm doanh nghiệp trả đều, và vì sao ít người quan tâm.
 - Vòng đời một **doanh nghiệp niêm yết Việt Nam**: IPO, pha loãng, rồi im lặng.
+
+## H. Tâm lý và kỷ luật — nhịp 3–5 ngày một bài
+
+`sub` = `quan-tri-von` · `loai` = **`Tâm lý`** (hoặc **`Đọc sách`** nếu bài đi từ một cuốn sách).
+
+Nhóm này có **nhịp riêng**, không chờ tới lượt trong vòng luân phiên — xem mục *Hai nhóm có
+nhịp riêng* trong `lich/tan-man.md`.
+
+- **Thiên lệch xác nhận** khi đã cầm hàng: cơ chế, và vì sao đọc thêm tin lại làm nó nặng hơn.
+- **Ác cảm thua lỗ**: vì sao cắt lỗ khó hơn chốt lời, dù cùng một số tiền.
+- **Hiệu ứng mỏ neo** vào giá mua: con số đó không có ý nghĩa gì với thị trường, nhưng có với người cầm.
+- **Ảo tưởng kiểm soát**: giao dịch nhiều hơn không làm kết quả tốt hơn — bằng chứng từ dữ liệu tài khoản.
+- **Ngụy biện chi phí chìm** trong một vị thế đang lỗ.
+- **Kể chuyện sau sự việc**: não dựng nhân quả cho một chuỗi ngẫu nhiên, và vì sao điều đó nguy hiểm.
+- **Quá tự tin sau một chuỗi thắng** — chuỗi thắng dài bao nhiêu thì vẫn có thể là may.
+- **Đám đông và điểm đảo chiều**: khi nào thông tin từ số đông có giá trị, khi nào không.
+- **Nhật ký giao dịch**: thứ gì đáng ghi, thứ gì ghi vào chỉ để tự an ủi.
+- **Cỡ lệnh** như một quyết định tâm lý chứ không phải quyết định toán học.
+- **Nghỉ giao dịch**: chi phí của việc không làm gì, và vì sao nó khó chịu đựng.
+- **Đọc sách**: *Thinking, Fast and Slow* · *Fooled by Randomness* · *The Psychology of Money* ·
+  *Reminiscences of a Stock Operator* · *Misbehaving*.
+
+## I. Phương pháp giao dịch — nhịp 5–7 ngày một bài
+
+`sub` = `quan-tri-von` · `loai` = **`Phương pháp`**.
+
+⚠ **Nhóm này có luật viết RIÊNG và chặt hơn mọi nhóm khác.** Đọc mục *Bài phương pháp
+giao dịch* trong `lich/tan-man.md` TRƯỚC khi viết. Tóm tắt: mô tả phương pháp như một
+**đối tượng nghiên cứu có tác giả và có lịch sử**, không phải như một thứ để người đọc dùng.
+
+- **Trend following kiểu Donchian**: luật gốc, và các giai đoạn nó thua kéo dài nhiều năm.
+- **Turtle Traders**: thí nghiệm của Richard Dennis — cái được kiểm chứng và cái chỉ là giai thoại.
+- **Trung bình động cắt nhau**: vì sao nó phổ biến, và nó giả định gì về thị trường.
+- **Mean reversion** so với **momentum**: hai họ phương pháp đối nghịch, cùng tồn tại được vì sao.
+- **Breakout** và vấn đề tín hiệu giả: chi phí của việc sai nhiều lần liên tiếp.
+- **Phân bổ theo biến động** (volatility targeting): ý tưởng gốc từ đâu.
+- **Kelly criterion** và vì sao gần như không ai dùng nguyên bản.
+- **Backtest**: overfitting, look-ahead bias, survivorship bias — ba cách một đường cong đẹp ra đời.
+- **Chi phí giao dịch** ăn vào phương pháp tần suất cao như thế nào.
+- **Walk-forward analysis**: kiểm một phương pháp mà không tự lừa mình.
+- **Phương pháp thất bại**: LTCM, và các hệ thống từng được ca ngợi rồi biến mất.
+- **Vì sao phần lớn phương pháp công bố không lặp lại được** — dẫn nghiên cứu về suy giảm alpha sau công bố.

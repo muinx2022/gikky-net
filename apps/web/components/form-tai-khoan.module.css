@@ -50,7 +50,10 @@
   width: 100%;
   max-width: 560px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  /* 12px, LỚN HƠN 8px của ruột. Hộp ngoài bo nhỏ hơn thứ nó chứa là một cái sai hình học
+     mắt bắt được ngay mà khó gọi tên: hai đường cong ở góc chạy ngược chiều nhau. Luật
+     chung là bán kính ngoài ≈ bán kính trong + khoảng đệm. */
+  border-radius: 12px;
   padding: 30px 30px 26px;
   background: var(--surface);
 }
@@ -61,40 +64,78 @@
   }
 }
 
+/* ===========================================================================
+ * Nhịp của form — user 2026-08-27: "form đăng nhập nhìn vẫn thô, xấu"
+ * ===========================================================================
+ *
+ * Không phải một lỗi mà là BỐN thứ lệch nhau, và mắt đọc ra cái lệch trước khi đọc ra
+ * từng thứ:
+ *
+ * 1. **Ô nhập lùn hơn nút.** Ô cao ~38px (padding 9px), nút cao 44px. Xếp chồng trong
+ *    một cột hẹp thì chênh 6px ấy đọc ra là "làm dở", không đọc ra là chủ đích.
+ * 2. **Ba bán kính trong một file**: ô nhập `4px`, nút `6px`, `.nut_phu`/`.vung_van`
+ *    `8px`. Bo góc lệch nhau là dấu hiệu kinh điển của giao diện chắp vá.
+ * 3. **Nhãn tô `--ink-3`** — mực NHẠT NHẤT, vai của gợi ý và dấu thời gian. Nhãn là thứ
+ *    dẫn đường chính của một form; để nó nhạt hơn cả chữ mô tả là đảo ngược thứ bậc.
+ * 4. **Khoảng cách chật và đều tăm tắp** (15px giữa mọi thứ), nên không có nhóm nào tách
+ *    khỏi nhóm nào: nhãn dính ô, ô dính ô, ô dính nút.
+ *
+ * Lượt này thống nhất: cao 44px, bo `8px`, nhãn `--ink-2`, và khoảng cách chia bậc
+ * (6px trong một trường · 18px giữa hai trường · 20px trước nút). */
+
 .tieu_de {
   font-family: var(--f-display);
-  font-size: 25px;
+  font-size: 26px;
   font-weight: 600;
-  margin: 0 0 6px;
+  letter-spacing: -0.015em;
+  margin: 0 0 7px;
 }
 
 .mo_ta {
   color: var(--ink-2);
   font-size: 13.5px;
   line-height: 1.6;
-  margin: 0 0 20px;
+  margin: 0 0 22px;
 }
 
 .o {
   display: block;
-  margin-bottom: 15px;
+  margin-bottom: 18px;
 }
 
 .nhan {
   display: block;
-  font-size: 12px;
-  color: var(--ink-3);
-  margin-bottom: 5px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-2);
+  margin-bottom: 6px;
 }
 
 .o input {
   width: 100%;
-  padding: 9px 11px;
+  min-height: 44px;
+  padding: 11px 13px;
   border: 1px solid var(--line-2);
-  border-radius: 4px;
+  border-radius: 8px;
   background: var(--bg);
   color: var(--ink);
   font: inherit;
+  font-size: 15px;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.o input::placeholder {
+  color: var(--ink-3);
+}
+
+/* ⚠ **16px trên thiết bị chạm, và đây là con số của trình duyệt chứ không phải của thẩm
+   mỹ.** Safari trên iOS TỰ PHÓNG TO cả trang khi focus vào một ô có cỡ chữ dưới 16px,
+   rồi không thu lại — người dùng đang gõ mật khẩu thì trang nhảy và lệch. 15px ở trên
+   dính đúng cái bẫy ấy. */
+@media (pointer: coarse) {
+  .o input {
+    font-size: 16px;
+  }
 }
 
 .o input:focus-visible {
@@ -114,9 +155,10 @@
 
 .goi_y {
   display: block;
-  font-size: 11.5px;
+  font-size: 12px;
+  line-height: 1.5;
   color: var(--ink-3);
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 /* Lỗi CỦA TỪNG Ô (dưới `<input>`) — cùng màu với hộp lỗi chung để hai chỗ đọc ra là một
@@ -130,10 +172,10 @@
 }
 
 .loi {
-  margin: 0 0 15px;
-  padding: 9px 13px;
+  margin: 0 0 18px;
+  padding: 11px 14px;
   border: 1px solid var(--loss);
-  border-radius: 4px;
+  border-radius: 8px;
   background: var(--inset);
   color: var(--loss);
   font-weight: 500;
@@ -146,9 +188,9 @@
    người nhìn màu kém chúng là một. */
 .xong {
   margin: 0;
-  padding: 12px 13px;
+  padding: 13px 15px;
   border: 1px dashed var(--gain);
-  border-radius: 4px;
+  border-radius: 8px;
   background: var(--inset);
   color: var(--gain);
   font-weight: 500;
@@ -181,7 +223,7 @@
   width: 100%;
   min-height: 44px;
   padding: 11px 16px;
-  border-radius: 6px;
+  border-radius: 8px;
   font: inherit;
   font-size: 14.5px;
   font-weight: 600;
@@ -190,7 +232,7 @@
 }
 
 .gui {
-  margin-top: 12px;
+  margin-top: 20px;
   border: 1px solid var(--accent);
   background: var(--accent);
   color: var(--on-accent);
@@ -247,8 +289,13 @@
   background: var(--line);
 }
 
+/* Chân form tách hẳn bằng một đường kẻ: nó KHÔNG thuộc luồng "điền rồi bấm" phía trên
+   mà là hai lối rẽ (đổi trang, quên mật khẩu). Không có đường kẻ thì nó đọc như dòng
+   chú thích của cái nút, và mắt bỏ qua. */
 .duoi {
-  margin: 18px 0 0;
+  margin: 22px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
   font-size: 13px;
   color: var(--ink-3);
   line-height: 1.7;
@@ -273,10 +320,10 @@
   gap: 10px;
   padding: 12px 13px;
   border: 1px solid var(--line-2);
-  border-radius: 5px;
+  border-radius: 8px;
   background: var(--inset);
   cursor: pointer;
-  margin-bottom: 15px;
+  margin-bottom: 18px;
 }
 
 .cong_tac input {
@@ -439,8 +486,10 @@
 }
 
 /* `.gui` vốn là `<button>`; ở khối trên nó là một `<a>` nên cần hai dòng canh chữ. */
+/* `.gui` vốn là `<button>`; ở khối "Bạn đang đăng nhập" nó là một `<a>`.
+   ⚠ Phải là `flex`, không phải `block`: `a.gui` đặc hiệu hơn `.gui` nên nó THẮNG, và một
+   `display: block` cao 44px thì chữ dính mép trên thay vì nằm giữa. */
 a.gui {
-  display: block;
-  text-align: center;
+  display: flex;
   text-decoration: none;
 }

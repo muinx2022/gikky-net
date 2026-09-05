@@ -7,6 +7,7 @@ from core.ghi import tao_mach
 from core.management.commands.seed_dev import SUBS
 from core.models import Mach, Sub
 from tests.conftest import lay
+from tests._an_mach import an_mach_tho
 
 pytestmark = pytest.mark.django_db
 
@@ -40,7 +41,7 @@ def test_so_mach_KHONG_dem_mach_bi_mod_an(client, sub, tac_gia):
     và con số to hơn lại là con số kể cho người lạ biết có thứ vừa bị gỡ (PLAN 5.10)."""
     for i in range(3):
         tao_mach(sub=sub, author=tac_gia, title=f"Mạch {i}", body="Mốc 1.")
-    Mach.objects.filter(title="Mạch 1").update(hidden_at=timezone.now())
+    an_mach_tho(Mach.objects.filter(title="Mạch 1"))
     assert lay(client, f"/api/v1/subs/{sub.slug}")["so_mach"] == 2
 
 
@@ -80,7 +81,7 @@ def test_liet_ke_va_xem_sub_noi_CUNG_mot_con_so(client, seed, tac_gia):
     """
     sub = Sub.objects.get(slug="chung-khoan")
     tao_mach(sub=sub, author=tac_gia, title="Mạch sắp bị ẩn", body="Mốc 1.")
-    Mach.objects.filter(title="Mạch sắp bị ẩn").update(hidden_at=timezone.now())
+    an_mach_tho(Mach.objects.filter(title="Mạch sắp bị ẩn"))
 
     theo_danh_sach = {s["slug"]: s["so_mach"] for s in lay(client, "/api/v1/subs")}
     for slug, so in theo_danh_sach.items():
@@ -121,7 +122,7 @@ def test_sub_LAU_DOI_bi_an_het_bai_cung_tra_so_mach_0(client, sub, tac_gia):
     """
     for i in range(3):
         tao_mach(sub=sub, author=tac_gia, title=f"Mạch {i}", body="Mốc 1.")
-    Mach.objects.filter(sub=sub).update(hidden_at=timezone.now())
+    an_mach_tho(Mach.objects.filter(sub=sub))
 
     d = lay(client, f"/api/v1/subs/{sub.slug}")
     assert d["so_mach"] == 0

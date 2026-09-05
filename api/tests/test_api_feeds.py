@@ -17,6 +17,7 @@ from core.models import Mach, Moc, MocAnh, Sub
 
 from api.schemas import DAI_TRICH_FEED
 from tests.conftest import lay
+from tests._an_mach import an_mach_tho
 
 pytestmark = pytest.mark.django_db
 
@@ -111,7 +112,7 @@ def test_cursor_van_dung_khi_co_mach_moi_chen_vao_giua_hai_trang(
 def test_cursor_xoa_mach_giua_chung_khong_lam_sot_hang_con_lai(client, nhieu_mach):
     """Ca ngược: một mạch biến mất giữa hai trang. Keyset không vì thế mà bỏ sót hàng."""
     t1 = lay(client, "/api/v1/feeds/moi?limit=4")
-    Mach.objects.filter(pk=nhieu_mach[0].pk).update(hidden_at=timezone.now())
+    an_mach_tho(Mach.objects.filter(pk=nhieu_mach[0].pk))
 
     con_lai = duyet_het_tu(client, "/api/v1/feeds/moi", 4, t1["cursor_ke_tiep"])
     assert nhieu_mach[0].pk not in ids(t1) + con_lai
@@ -195,7 +196,7 @@ def test_mach_bi_mod_an_khong_xuat_hien_o_ca_hai_feed(client, sub, tac_gia):
     """R10 — mạch bị ẩn biến khỏi mọi danh sách công khai."""
     hien, _ = tao_mach(sub=sub, author=tac_gia, title="Mạch hiện", body="Mốc 1.")
     an, _ = tao_mach(sub=sub, author=tac_gia, title="MẠCH BỊ ẨN", body="Mốc 1.")
-    Mach.objects.filter(pk=an.pk).update(hidden_at=timezone.now())
+    an_mach_tho(Mach.objects.filter(pk=an.pk))
 
     for url in ("/api/v1/feeds/moi?limit=50", "/api/v1/feeds/dang-dien-ra?limit=50"):
         d = lay(client, url)
@@ -245,6 +246,9 @@ def test_the_feed_du_truong_cho_1c(client, seed):
         "entry_count",
         "comment_count",
         "created_at",
+        # Ngày ĐĂNG (hẹn giờ, 2026-09-03) — khoá sắp của chính feed này. `created_at`
+        # vẫn còn: hai cột trả lời hai câu, và bỏ cột cũ là phá client đang đọc nó.
+        "published_at",
         "last_entry_at",
         "last_activity_at",
         # Phase 1d: cột vote của thẻ feed đọc điểm MỐC 1, không phải tổng điểm mạch

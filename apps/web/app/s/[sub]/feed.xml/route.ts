@@ -42,7 +42,7 @@ export async function GET(
       tieuDe: m.title,
       lienKet: urlTuyetDoi(duongDanMach(m.slug, m.id)),
       moTa: moTaMuc(m),
-      ngay: new Date(m.created_at),
+      ngay: new Date(m.published_at),
     })),
   });
 

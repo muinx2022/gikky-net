@@ -1113,6 +1113,11 @@
             "title": "Mocs",
             "type": "array"
           },
+          "published_at": {
+            "format": "date-time",
+            "title": "Published At",
+            "type": "string"
+          },
           "slug": {
             "title": "Slug",
             "type": "string"
@@ -1153,6 +1158,7 @@
           "ket_qua",
           "locked",
           "created_at",
+          "published_at",
           "last_entry_at",
           "last_activity_at",
           "entry_count",
@@ -1366,6 +1372,11 @@
             ],
             "title": "Moc 1 Id"
           },
+          "published_at": {
+            "format": "date-time",
+            "title": "Published At",
+            "type": "string"
+          },
           "slug": {
             "title": "Slug",
             "type": "string"
@@ -1403,6 +1414,7 @@
           "entry_count",
           "comment_count",
           "created_at",
+          "published_at",
           "last_entry_at",
           "last_activity_at",
           "diem",
@@ -2980,7 +2992,7 @@
     },
     "/api/v1/feeds/dang-dien-ra": {
       "get": {
-        "description": "Feed **Đang diễn ra**: mạch còn mở, mốc mới nhất trước\n    (`last_entry_at` giảm dần).\n\n    Feed đặc sản của gikky, **không phải** Hot: mốc mới không \"bump\" bài, nó chỉ cập nhật\n    khoá sort của riêng feed này.\n\n    `last_entry_at` đo **cấu trúc** — mọi mốc đều tính, kể cả mốc bị mod ẩn. Vì thế một\n    mạch có thể đứng đầu feed này mà mở ra là **mặt CẶN** (`face` tính theo\n    `last_activity_at`, vốn chỉ đo nội dung đọc được). Đó là hành vi đúng theo luật đếm\n    hiện hành, đã ghi ở PLAN mục 6 \"hệ quả cố ý 2\" — đừng chữa bằng cách đổi khoá sort.\n\n    `?sub=<slug>` lọc theo chuyên mục; sub không tồn tại trả 404 `sub_khong_ton_tai`.\n    `?cursor=` là cursor keyset lấy từ `cursor_ke_tiep` của trang trước; `null` là hết.\n    `?limit=` tối đa 50.\n\n    `?sort=tu_nhien` (mặc định) giữ khoá sort riêng của feed này. `?sort=nhieu_diem` sắp\n    theo điểm bài gốc giảm dần, cursor keyset trên `(diem, id)`. **Cursor của sort này\n    KHÔNG dùng được cho sort kia** — đem nhầm là 400 `cursor_khong_hop_le`.\n\n    `?khoang=ngay|tuan|thang|tat_ca` (mặc định `tat_ca`) lọc theo `created_at`, ranh giới\n    là nửa đêm **giờ VN**; `tuan` = 7 ngày lịch gần nhất kể cả hôm nay, `thang` = 30 ngày.\n    Khoảng áp cho **mọi** sort, không riêng `nhieu_diem`. Giá trị lạ trả 400\n    `tham_so_khong_hop_le` — không bao giờ lặng lẽ quy về `tat_ca`.\n\n    Mạch bị mod ẩn không xuất hiện.\n",
+        "description": "Feed **Đang diễn ra**: mạch còn mở, mốc mới nhất trước\n    (`last_entry_at` giảm dần).\n\n    Feed đặc sản của gikky, **không phải** Hot: mốc mới không \"bump\" bài, nó chỉ cập nhật\n    khoá sort của riêng feed này.\n\n    `last_entry_at` đo **cấu trúc** — mọi mốc đều tính, kể cả mốc bị mod ẩn. Vì thế một\n    mạch có thể đứng đầu feed này mà mở ra là **mặt CẶN** (`face` tính theo\n    `last_activity_at`, vốn chỉ đo nội dung đọc được). Đó là hành vi đúng theo luật đếm\n    hiện hành, đã ghi ở PLAN mục 6 \"hệ quả cố ý 2\" — đừng chữa bằng cách đổi khoá sort.\n\n    `?sub=<slug>` lọc theo chuyên mục; sub không tồn tại trả 404 `sub_khong_ton_tai`.\n    `?cursor=` là cursor keyset lấy từ `cursor_ke_tiep` của trang trước; `null` là hết.\n    `?limit=` tối đa 50.\n\n    `?sort=tu_nhien` (mặc định) giữ khoá sort riêng của feed này. `?sort=nhieu_diem` sắp\n    theo điểm bài gốc giảm dần, cursor keyset trên `(diem, id)`. **Cursor của sort này\n    KHÔNG dùng được cho sort kia** — đem nhầm là 400 `cursor_khong_hop_le`.\n\n    `?khoang=ngay|tuan|thang|tat_ca` (mặc định `tat_ca`) lọc theo `published_at` (ngày\n    ĐĂNG — bài hẹn giờ đăng hôm nay thì thuộc hôm nay, dù soạn từ tuần trước), ranh giới\n    là nửa đêm **giờ VN**; `tuan` = 7 ngày lịch gần nhất kể cả hôm nay, `thang` = 30 ngày.\n    Khoảng áp cho **mọi** sort, không riêng `nhieu_diem`. Giá trị lạ trả 400\n    `tham_so_khong_hop_le` — không bao giờ lặng lẽ quy về `tat_ca`.\n\n    Mạch bị mod ẩn không xuất hiện.\n",
         "operationId": "liet_ke_feed_dang_dien_ra",
         "parameters": [
           {
@@ -3096,7 +3108,7 @@
     },
     "/api/v1/feeds/moi": {
       "get": {
-        "description": "Feed **Mới**: mọi bài, mới đăng trước (`created_at` giảm dần).\n\n    Mạch đã đóng sổ **vẫn xuất hiện** — feed này sắp theo lúc bài ra đời, không theo\n    trạng thái sổ.\n\n    `?sub=<slug>` lọc theo chuyên mục; sub không tồn tại trả 404 `sub_khong_ton_tai`.\n    `?cursor=` là cursor keyset lấy từ `cursor_ke_tiep` của trang trước; `null` là hết.\n    `?limit=` tối đa 50.\n\n    `?sort=tu_nhien` (mặc định) giữ khoá sort riêng của feed này. `?sort=nhieu_diem` sắp\n    theo điểm bài gốc giảm dần, cursor keyset trên `(diem, id)`. **Cursor của sort này\n    KHÔNG dùng được cho sort kia** — đem nhầm là 400 `cursor_khong_hop_le`.\n\n    `?khoang=ngay|tuan|thang|tat_ca` (mặc định `tat_ca`) lọc theo `created_at`, ranh giới\n    là nửa đêm **giờ VN**; `tuan` = 7 ngày lịch gần nhất kể cả hôm nay, `thang` = 30 ngày.\n    Khoảng áp cho **mọi** sort, không riêng `nhieu_diem`. Giá trị lạ trả 400\n    `tham_so_khong_hop_le` — không bao giờ lặng lẽ quy về `tat_ca`.\n\n    Mạch bị mod ẩn không xuất hiện.\n",
+        "description": "Feed **Mới**: mọi bài, mới đăng trước (`published_at` giảm dần).\n\n    Mạch đã đóng sổ **vẫn xuất hiện** — feed này sắp theo lúc bài LÊN SÓNG, không theo\n    trạng thái sổ.\n\n    `published_at` chứ không `created_at`: bài hẹn giờ được soạn trước rồi phát hành sau,\n    và thứ tự người đọc thấy phải là thứ tự bài xuất hiện. Hai cột đều có trong\n    `MachTomTatOut` — `created_at` là ngày viết, `published_at` là ngày đăng.\n\n    `?sub=<slug>` lọc theo chuyên mục; sub không tồn tại trả 404 `sub_khong_ton_tai`.\n    `?cursor=` là cursor keyset lấy từ `cursor_ke_tiep` của trang trước; `null` là hết.\n    `?limit=` tối đa 50.\n\n    `?sort=tu_nhien` (mặc định) giữ khoá sort riêng của feed này. `?sort=nhieu_diem` sắp\n    theo điểm bài gốc giảm dần, cursor keyset trên `(diem, id)`. **Cursor của sort này\n    KHÔNG dùng được cho sort kia** — đem nhầm là 400 `cursor_khong_hop_le`.\n\n    `?khoang=ngay|tuan|thang|tat_ca` (mặc định `tat_ca`) lọc theo `published_at` (ngày\n    ĐĂNG — bài hẹn giờ đăng hôm nay thì thuộc hôm nay, dù soạn từ tuần trước), ranh giới\n    là nửa đêm **giờ VN**; `tuan` = 7 ngày lịch gần nhất kể cả hôm nay, `thang` = 30 ngày.\n    Khoảng áp cho **mọi** sort, không riêng `nhieu_diem`. Giá trị lạ trả 400\n    `tham_so_khong_hop_le` — không bao giờ lặng lẽ quy về `tat_ca`.\n\n    Mạch bị mod ẩn không xuất hiện.\n",
         "operationId": "liet_ke_feed_moi",
         "parameters": [
           {
@@ -5487,6 +5499,16 @@
               }
             },
             "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
           }
         },
         "security": [

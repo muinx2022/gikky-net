@@ -8,7 +8,7 @@ import { duongDanMach } from "@/lib/url";
  * **Tab "Mới", không phải "Đang diễn ra".** RSS dedupe theo `guid`: một mạch đã nằm
  * trong feed thì mốc thứ hai của nó không làm nó hiện lại ở trình đọc, nên feed sắp theo
  * `last_entry_at` chỉ tạo ra một danh sách xáo trộn liên tục mà không ai thấy gì mới.
- * `created_at` (tab "Mới") là thứ hợp với giao thức này. Mốc mới của mạch đang theo là
+ * `published_at` (tab "Mới") là thứ hợp với giao thức này. Mốc mới của mạch đang theo là
  * việc của notification/digest (PLAN 5.8), không phải của RSS.
  *
  * Lỗi cấu trúc của API **không được nuốt**: `docFeed` ném thay vì trả `null` (vá F1), nên
@@ -31,7 +31,7 @@ export async function GET() {
       tieuDe: m.title,
       lienKet: urlTuyetDoi(duongDanMach(m.slug, m.id)),
       moTa: moTaMuc(m),
-      ngay: new Date(m.created_at),
+      ngay: new Date(m.published_at),
     })),
   });
 

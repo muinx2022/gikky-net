@@ -527,7 +527,8 @@ def test_mach_bi_mod_AN_thi_404_khong_phai_403(client, mach_cua_a, nguoi_a):
     mạch đó tồn tại. `api/loi.py` đã chốt một mã cho cả "không có" lẫn "đã bị ẩn".
     """
     mach_cua_a.hidden_at = timezone.now()
-    mach_cua_a.save(update_fields=["hidden_at"])
+    mach_cua_a.hidden_by = mach_cua_a.author
+    mach_cua_a.save(update_fields=["hidden_at", "hidden_by"])
     client.force_login(nguoi_a)
     assert (
         ma_loi(

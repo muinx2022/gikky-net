@@ -118,6 +118,7 @@ def mach_tom_tat_ra(
         entry_count=mach.entry_count,
         comment_count=mach.comment_count,
         created_at=mach.created_at,
+        published_at=mach.published_at,
         last_entry_at=mach.last_entry_at,
         last_activity_at=mach.last_activity_at,
         diem=mach.diem_bai_goc,

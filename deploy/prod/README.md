@@ -118,6 +118,24 @@ Kiểm nó có chạy: mở `/chan-doan` ở khu quản trị (khối **Tìm ki�
 index phải bằng nhau. Lệch vài đơn vị ngay sau khi có bài mới là bình thường
 (Meilisearch index bất đồng bộ); lệch dai dẳng thì cron đang chết.
 
+### Việc chạy theo lịch: phát hành bài đã hẹn — **BẮT BUỘC** (2026-09-04)
+
+```bash
+crontab -e
+# Mỗi 5 phút — độ trễ chấp nhận sau giờ hẹn: ≤ 5 phút.
+*/5 * * * *  cd ~/gikky-net/src && docker compose -f deploy/prod/compose.yml --env-file ~/gikky-net/app/.env exec -T api python manage.py phat_hanh_da_hen >> ~/gikky-phat-hanh-da-hen.log 2>&1
+```
+
+Không có lịch này thì bài viết trước **không bao giờ lên sóng**. Log phải có một dòng
+mỗi lần chạy, kể cả `"Đã phát hành 0 bài."` — không có dòng nào thì "cron chết" và
+"không có bài nào tới hạn" trông y hệt nhau.
+
+Đối soát (số này phải = **0**; khác 0 là cron chết hoặc lệnh nổ im lặng):
+
+```bash
+gk exec api python manage.py shell -c "from datetime import timedelta; from django.utils import timezone; from core.models.dien_dan import Mach; n=Mach.objects.filter(hidden_at__isnull=False, hidden_by__isnull=True, published_at__lt=timezone.now()-timedelta(minutes=15)).count(); print(n)"
+```
+
 ## Deploy một bản mới
 
 Từ máy dev (Windows, **không có rsync** — dùng tar qua ssh).

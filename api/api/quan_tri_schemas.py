@@ -24,7 +24,7 @@ from typing import Literal
 from ninja import Field, Schema
 
 from api.schemas import AnhOut, FigureOut, NguoiDungTomTatOut
-from api.schemas_ghi import DAI_TITLE, MocSuaIn
+from api.schemas_ghi import DAI_TITLE, MocMoiIn, MocSuaIn
 
 #: Trích yếu nội dung trong hàng đợi/nhật ký — đủ để mod nhận ra, không phải cả bài.
 #: Không phải chuyện thẩm mỹ: `body` của một mốc lên tới 10.000 ký tự (PLAN 5.2), và một
@@ -269,6 +269,63 @@ class SuaTieuDeMachIn(Schema):
     ly_do: str = ""
 
 
+class HenGioMachIn(Schema):
+    """Đặt / dời / huỷ lịch phát hành — `PATCH /admin/machs/{id}/hen-gio` (2026-09-03).
+
+    `published_at` **phải kèm offset múi giờ** (`2026-09-10T08:00:00+07:00`). Admin nhập
+    giờ VN, gửi ISO có offset; thiếu offset là bài lên sớm/muộn 7 tiếng — và lệch im lặng,
+    vì bài vẫn lên. Handler trả 400 cho `datetime` naive.
+
+    `null` (hoặc một mốc quá khứ) nghĩa là **phát hành ngay**, không phải "xoá ngày đăng":
+    `Mach.published_at` là `NOT NULL`, và giá trị ghi xuống lúc ấy là *bây giờ*.
+    """
+
+    published_at: datetime | None = None
+    ly_do: str = ""
+
+
+class MachHenGioMoiIn(MocMoiIn):
+    """Đăng bài thay mặt tài khoản đội — `POST /admin/machs/hen-gio` (2026-09-03).
+
+    Kế thừa `MocMoiIn` đúng như `MachMoiIn` của cửa công khai: bài gốc *chính là* mốc 1,
+    nên `body`/`occurred_at`/`loai`/`question_for_crowd`/`figures` là của mốc ấy.
+
+    Hai trường thêm là hai trường khu quản trị:
+
+    - `author` — username, **phải nằm trong allowlist tài khoản đội**
+      (`api/quan_tri_hen_gio.py::TAI_KHOAN_DANG_BAI`). Ngoài danh sách ⇒ 400;
+    - `published_at` — tương lai thì bài nằm chờ; `null` hoặc quá khứ thì lên ngay.
+      Cùng luật múi giờ với `HenGioMachIn`.
+    """
+
+    sub: str = Field(min_length=1, max_length=40, description="slug của chuyên mục")
+    title: str = Field(min_length=1, max_length=DAI_TITLE)
+    author: str = Field(
+        min_length=1, max_length=150, description="username của tài khoản đội"
+    )
+    published_at: datetime | None = None
+
+
+class KetQuaHenGioOut(Schema):
+    """Trạng thái hẹn giờ của một mạch sau một lượt đặt lịch / phát hành / tạo mới.
+
+    `da_doi=false` chỉ xảy ra ở đúng một ca: bấm *phát hành ngay* trên bài vốn đã hiện.
+    Không thông báo lại, không dòng nhật ký — cùng luật "không đổi thì không ghi log" của
+    khối moderation ở `core/ghi.py`.
+
+    `da_hen_gio` là câu trả lời cho *"bài này còn đang chờ không"*, suy từ cặp
+    `(hidden_at, hidden_by)` — frontend không được tự dựng lại phép suy ấy (PLAN nguyên
+    tắc 10), và nó cũng không có hai cột đó để mà dựng.
+    """
+
+    da_doi: bool
+    id: int
+    title: str
+    published_at: datetime
+    da_hen_gio: bool
+    duong_dan_cong_khai: str
+
+
 class KetQuaSuaMocOut(Schema):
     """Kết quả một lượt sửa mốc: có đổi thật không, và mốc SAU khi sửa.
 
@@ -305,6 +362,14 @@ class MachQuanTriOut(Schema):
     tac_gia: NguoiDungTomTatOut
     status: str
     created_at: datetime
+    #: Ngày ĐĂNG + cờ "đang chờ giờ hẹn" — hai trường khối *Hẹn giờ* của trang chi tiết
+    #: đọc. Xem `MachDongOut` cho lý do `da_hen_gio` phải là một trường chứ không phải một
+    #: phép suy ở frontend.
+    published_at: datetime
+    da_hen_gio: bool
+    #: Bài đã bị **mod** ẩn ⇒ khối *Hẹn giờ* phải KHOÁ (endpoint trả 409). Suy từ
+    #: `hidden_by`, không suy được từ `da_bi_an` — một bài hẹn giờ cũng `da_bi_an=true`.
+    bi_mod_an: bool
     last_entry_at: datetime
     last_activity_at: datetime
     entry_count: int
@@ -627,7 +692,10 @@ class ThongKeOut(Schema):
 #: Bộ lọc của bảng mạch. `tat_ca` gồm **cả mạch đã bị ẩn** — mod phải thấy để phán xử.
 #: `chua_go` = mọi bài chưa bị ẩn (khoá + đóng sổ + đang mở); nó CHỒNG LẤN ba nhóm ấy và
 #: cố ý không có mặt trên vành khuyên — xem `api/quan_tri_loc.py`.
-LocMach = Literal["tat_ca", "chua_go", "mo", "dong", "bi_khoa", "bi_an"]
+#:
+#: `hen_gio` (2026-09-03) = bài **đang chờ giờ hẹn**, một lát con của `bi_an`. Nhóm này
+#: là nhóm DUY NHẤT sắp **tăng dần theo `published_at`** — xem `liet_ke_mach`.
+LocMach = Literal["tat_ca", "chua_go", "mo", "dong", "bi_khoa", "bi_an", "hen_gio"]
 #: Bộ lọc của bảng bình luận. `hien` = còn sống và chưa bị ẩn.
 LocBinhLuan = Literal["tat_ca", "hien", "bi_an", "bia_mo"]
 #: Bộ lọc của bảng người dùng. `moi` = 7 ngày gần nhất.
@@ -654,6 +722,16 @@ class MachDongOut(Schema):
     tac_gia: NguoiDungTomTatOut
     status: str
     created_at: datetime
+    #: Ngày ĐĂNG — cột "Phát hành" của bảng. Khác `created_at` (ngày viết) đúng ở bài hẹn
+    #: giờ; xem `api/schemas.py::MachTomTatOut.published_at`.
+    published_at: datetime
+    #: Bài này đang **chờ tới giờ hẹn** hay không: `hidden_at` có mà `hidden_by` không —
+    #: bất biến của `CheckConstraint` `mach_an_phai_co_nguoi_an_hoac_hen_gio`.
+    #:
+    #: Trả ra thay vì để admin tự suy: hai cột `hidden_*` không có mặt trong schema này
+    #: (và không nên có — `da_bi_an` là thứ mod cần), nên không có cách nào khác để phân
+    #: biệt "mod đã gỡ bài" với "bài chưa tới giờ" trên cùng một hàng đang `da_bi_an=true`.
+    da_hen_gio: bool
     last_activity_at: datetime
     entry_count: int
     comment_count: int

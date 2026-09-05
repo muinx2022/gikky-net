@@ -361,7 +361,8 @@ def test_mach_bi_mod_AN_thi_404_o_ca_ba_cua(client, mach_cua_a, nguoi_b):
     `api/loi.py` chốt một mã cho cả "không có" lẫn "đã bị ẩn".
     """
     mach_cua_a.hidden_at = timezone.now()
-    mach_cua_a.save(update_fields=["hidden_at"])
+    mach_cua_a.hidden_by = mach_cua_a.author
+    mach_cua_a.save(update_fields=["hidden_at", "hidden_by"])
     client.force_login(nguoi_b)
 
     lay(client, f"/api/v1/machs/{mach_cua_a.pk}/me", status=404)

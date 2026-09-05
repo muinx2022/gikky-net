@@ -1,6 +1,6 @@
 """Hai feed của trang chủ + header của sub — PLAN 5.9, mục 7.
 
-`Mới` sắp theo `created_at`; `Đang diễn ra` sắp theo `last_entry_at` trên mạch đang mở.
+`Mới` sắp theo `published_at`; `Đang diễn ra` sắp theo `last_entry_at` trên mạch đang mở.
 Hai feed, hai khoá sort khác nhau, **cố ý không có feed "Hot" nào bump theo mốc mới**:
 PLAN mục 4 loại cơ chế đó vì nó dạy tác giả băm "chốt 1/3" thành ba mốc để ăn ba lượt đẩy.
 
@@ -81,6 +81,12 @@ def _mach_hien(sub: str | None) -> QuerySet:
 
     `hidden_at__isnull=True` là bộ lọc bảo vệ duy nhất của feed — mạch bị mod ẩn không
     được xuất hiện ở bất kỳ danh sách công khai nào (PLAN 5.10).
+
+    Cùng bộ lọc ấy che luôn **bài hẹn giờ chưa tới hạn**, và đó là chủ đích chứ không phải
+    trùng hợp may mắn: plan 2026-09-03 §1.1 lưu bài hẹn như một bài đang ẩn đúng để không
+    phải sờ vào 68 chỗ lọc `hidden_at` rải khắp tầng đọc. Không thêm vế `published_at <=
+    now()` ở đây — thêm là dựng nguồn sự thật thứ hai cho cùng một câu hỏi, và chỗ nào
+    quên vế mới thì rò bài chưa đăng.
     """
     qs = Mach.objects.filter(hidden_at__isnull=True).select_related("sub", "author")
     if sub is not None:
@@ -161,11 +167,17 @@ def _kiem_sub(sub: str | None):
 
 
 def _loc_khoang(qs: QuerySet, khoang: str) -> QuerySet:
-    """Cắt theo `Mach.created_at >= mốc đầu khoảng` (giờ VN — `core/thoi_gian.py`).
+    """Cắt theo `Mach.published_at >= mốc đầu khoảng` (giờ VN — `core/thoi_gian.py`).
 
-    Lọc theo `created_at` chứ không theo `last_entry_at` là chốt của plan con 1d §1:
-    "top tuần" nghĩa là *bài ra đời trong tuần*, không phải *bài được nối mốc trong tuần*
-    — vế thứ hai là feed Hot bằng bump đội lốt, đúng thứ PLAN mục 4 loại.
+    Lọc theo ngày ĐĂNG chứ không theo `last_entry_at` là chốt của plan con 1d §1: "top
+    tuần" nghĩa là *bài ra đời trong tuần*, không phải *bài được nối mốc trong tuần* —
+    vế thứ hai là feed Hot bằng bump đội lốt, đúng thứ PLAN mục 4 loại.
+
+    ⚠ **`published_at`, không phải `created_at`** *(hẹn giờ, 2026-09-03 §1.3)*. Một bài
+    soạn từ 10 ngày trước rồi hẹn lên hôm nay phải nằm trong `khoang=ngay` — nó vừa xuất
+    hiện trước mắt người đọc hôm nay. Lọc theo `created_at` thì nó lên feed "Mới" ở đỉnh
+    (feed sắp theo `published_at`) mà biến mất ngay khi ai đó bấm "hôm nay": hai câu trả
+    lời cãi nhau trên cùng một màn hình.
 
     **`khoang` áp cho MỌI sort, không riêng `nhieu_diem`** — câu trả lời cố ý cho câu hỏi
     "khoang kèm sort thời gian thì làm gì" (chỗ này giữ lại lý lẽ của `_kiem_sort_khoang`
@@ -177,7 +189,7 @@ def _loc_khoang(qs: QuerySet, khoang: str) -> QuerySet:
     Vì thế hàm này nằm ngoài mọi nhánh `sort`: nó chạy trước `_phuc_vu`, cho cả hai sort.
     """
     moc = moc_khoang_vn(khoang)
-    return qs if moc is None else qs.filter(created_at__gte=moc)
+    return qs if moc is None else qs.filter(published_at__gte=moc)
 
 
 def _phuc_vu(qs: QuerySet, *, truong: str, sort: str, cursor: str | None, limit: int):
@@ -202,7 +214,8 @@ _TAI_LIEU_CHUNG = """
     theo điểm bài gốc giảm dần, cursor keyset trên `(diem, id)`. **Cursor của sort này
     KHÔNG dùng được cho sort kia** — đem nhầm là 400 `cursor_khong_hop_le`.
 
-    `?khoang=ngay|tuan|thang|tat_ca` (mặc định `tat_ca`) lọc theo `created_at`, ranh giới
+    `?khoang=ngay|tuan|thang|tat_ca` (mặc định `tat_ca`) lọc theo `published_at` (ngày
+    ĐĂNG — bài hẹn giờ đăng hôm nay thì thuộc hôm nay, dù soạn từ tuần trước), ranh giới
     là nửa đêm **giờ VN**; `tuan` = 7 ngày lịch gần nhất kể cả hôm nay, `thang` = 30 ngày.
     Khoảng áp cho **mọi** sort, không riêng `nhieu_diem`. Giá trị lạ trả 400
     `tham_so_khong_hop_le` — không bao giờ lặng lẽ quy về `tat_ca`.
@@ -210,10 +223,14 @@ _TAI_LIEU_CHUNG = """
     Mạch bị mod ẩn không xuất hiện.
 """
 
-_MO_TA_FEED_MOI = """Feed **Mới**: mọi bài, mới đăng trước (`created_at` giảm dần).
+_MO_TA_FEED_MOI = """Feed **Mới**: mọi bài, mới đăng trước (`published_at` giảm dần).
 
-    Mạch đã đóng sổ **vẫn xuất hiện** — feed này sắp theo lúc bài ra đời, không theo
+    Mạch đã đóng sổ **vẫn xuất hiện** — feed này sắp theo lúc bài LÊN SÓNG, không theo
     trạng thái sổ.
+
+    `published_at` chứ không `created_at`: bài hẹn giờ được soạn trước rồi phát hành sau,
+    và thứ tự người đọc thấy phải là thứ tự bài xuất hiện. Hai cột đều có trong
+    `MachTomTatOut` — `created_at` là ngày viết, `published_at` là ngày đăng.
 """ + _TAI_LIEU_CHUNG
 
 _MO_TA_FEED_DDR = """Feed **Đang diễn ra**: mạch còn mở, mốc mới nhất trước
@@ -250,8 +267,11 @@ def feed_moi(
     if (l := _kiem_sub(sub)) is not None:
         return l
     ket_qua, l = _phuc_vu(
+        # `published_at`, không phải `created_at` — xem `_MO_TA_FEED_MOI`. Khoá sort và
+        # khoá cursor keyset là CÙNG một trường (`_trang` dùng `truong` cho cả hai), nên
+        # đổi ở đây là đổi cả hai cùng lúc; hai nửa lệch nhau là feed trùng/sót hàng.
         _loc_khoang(_mach_hien(sub), khoang),
-        truong="created_at",
+        truong="published_at",
         sort=sort,
         cursor=cursor,
         limit=limit,

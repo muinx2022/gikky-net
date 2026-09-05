@@ -944,6 +944,10 @@ export type MachChiTietOut = {
      */
     mocs: Array<MocOut>;
     /**
+     * Published At
+     */
+    published_at: string;
+    /**
      * Slug
      */
     slug: string;
@@ -1120,6 +1124,10 @@ export type MachTomTatOut = {
      * Moc 1 Id
      */
     moc_1_id: number | null;
+    /**
+     * Published At
+     */
+    published_at: string;
     /**
      * Slug
      */
@@ -3544,6 +3552,10 @@ export type ModDatAnMachErrors = {
      * Not Found
      */
     404: LoiOut;
+    /**
+     * Conflict
+     */
+    409: LoiOut;
 };
 
 export type ModDatAnMachError = ModDatAnMachErrors[keyof ModDatAnMachErrors];

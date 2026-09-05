@@ -271,6 +271,7 @@ export async function TrangMach({
         duongDanKhanDai={duong_dan_khan_dai}
         duongDanTrich={duong_dan_trich}
         idTrongTrangKhanDai={id_trong_trang}
+        publishedAtMach={mach.published_at}
       />
     );
   };
@@ -324,7 +325,7 @@ export async function TrangMach({
                 <span className={css.cham} aria-hidden>
                   ·
                 </span>
-                <span className="mono">mở ngày {ngayCuaThoiDiem(mach.created_at)}</span>
+                <span className="mono">mở ngày {ngayCuaThoiDiem(mach.published_at)}</span>
                 {la_mach && (
                   <>
                     <span className={css.cham} aria-hidden>

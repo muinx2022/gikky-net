@@ -16,6 +16,7 @@ from django.utils import timezone
 
 from core.models import Comment, Mach, Moc, MocRevision
 from tests.conftest import lay, phang
+from tests._an_mach import an_mach_tho
 
 pytestmark = pytest.mark.django_db
 
@@ -208,7 +209,7 @@ def test_ngan_keo_cua_bia_mo_van_mo_duoc_nhung_mat_cau_moi(client, seed):
 
 def test_moc_thuoc_mach_bi_an_thi_404(client, seed):
     moc = moc_seq(seed, 2)
-    Mach.objects.filter(pk=seed.pk).update(hidden_at=timezone.now())
+    an_mach_tho(Mach.objects.filter(pk=seed.pk))
     assert lay(client, f"/api/v1/mocs/{moc.pk}/comments", status=404)["code"] == (
         "khong_tim_thay"
     )

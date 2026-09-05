@@ -122,12 +122,13 @@ def bang_endpoint(dl: dict) -> list[tuple[str, str, str, dict | None]]:
             {"an": True},
         ),
         ("quan_tri_dat_an_mach", "post", f"/api/admin/machs/{mach_id}/an", {"an": True}),
-        (
-            "quan_tri_dat_khoa_mach",
-            "post",
-            f"/api/admin/machs/{mach_id}/khoa",
-            {"khoa": True},
-        ),
+        # ⚠ `quan_tri_dat_khoa_mach` KHÔNG đứng ở đây nữa (nới quyền 2026-09-04). Khoá
+        # mạch làm mọi lời gọi SAU nó trong CÙNG một lượt chạy `test_mod_QUA_duoc_moi_
+        # endpoint` (client + mach dùng chung suốt vòng lặp) ăn 403 `mach_bi_khoa` — vô
+        # hại khi endpoint phía sau còn `CHI_SUPERUSER` (bị `continue` bỏ qua), nhưng
+        # `quan_tri_tai_anh_moc` vừa ra khỏi danh sách đó thì 403 ấy làm bài đo đỏ thật.
+        # Dời khoá mạch xuống cuối (ngay trước "Hẹn giờ") để mọi cửa cần mạch MỞ chạy
+        # xong trước nó — xem dòng có cùng `operation_id` bên dưới.
         ("quan_tri_xem_mach", "get", f"/api/admin/machs/{mach_id}", None),
         (
             "quan_tri_xem_nguoi_dung",
@@ -263,6 +264,40 @@ def bang_endpoint(dl: dict) -> list[tuple[str, str, str, dict | None]]:
             {"file": anh_byte(kich_thuoc=(1, 1))},
         ),
         ("quan_tri_xoa_anh_moc", "delete", "/api/admin/anh/999999", None),
+        # Khoá mạch — dời XUỐNG ĐÂY 2026-09-04 (xem ghi chú ở vị trí cũ, cạnh
+        # `quan_tri_dat_an_mach`). `quan_tri_hen_gio_mach`/`quan_tri_tao_mach_hen_gio`
+        # bên dưới không kiểm `locked_at` nên đứng sau nó vẫn an toàn.
+        (
+            "quan_tri_dat_khoa_mach",
+            "post",
+            f"/api/admin/machs/{mach_id}/khoa",
+            {"khoa": True},
+        ),
+        # Hẹn giờ phát hành (2026-09-03). Cả hai là cửa GHI mở cho **mọi mod** (không nằm
+        # trong `CHI_SUPERUSER`): lập lịch đảo ngược được bằng đúng cái nút bên cạnh, khác
+        # hẳn nhóm "viết lại chữ người khác" ở trên.
+        #
+        # `published_at` phải mang offset tường minh — thiếu nó thì handler trả 400 ngay
+        # trước hàng rào quyền, và bài đo phân quyền sẽ đọc con số 400 ấy thành "đã qua
+        # được hàng rào". Đúng loài proof đo RỖNG mà ba cửa ảnh phía trên đã dính một lần.
+        (
+            "quan_tri_hen_gio_mach",
+            "patch",
+            f"/api/admin/machs/{mach_id}/hen-gio",
+            {"published_at": "2099-01-01T08:00:00+07:00"},
+        ),
+        (
+            "quan_tri_tao_mach_hen_gio",
+            "post",
+            "/api/admin/machs/hen-gio",
+            {
+                "sub": dl["sub"].slug,
+                "title": "Bài hẹn giờ thử",
+                "body": "Thân bài thử.",
+                "author": "gikky-team-news",
+                "published_at": "2099-01-01T08:00:00+07:00",
+            },
+        ),
     ]
 
 

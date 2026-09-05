@@ -93,9 +93,9 @@ test.describe("V11 — JSON-LD", () => {
       hpg.author.display_name,
     );
 
-    // `datePublished` phải là lúc mốc 1 ra đời, KHÔNG trôi theo mốc mới nhất — với sản
-    // phẩm bán "ghi trước khi biết kết quả" thì khai sai chỗ này là tự xoá giá trị lõi.
-    expect(Date.parse(String(d.datePublished))).toBe(Date.parse(hpg.created_at));
+    // `datePublished` phải là lúc bài LÊN SÓNG (`published_at`), KHÔNG trôi theo mốc
+    // mới nhất và không phải lúc soạn (`created_at`).
+    expect(Date.parse(String(d.datePublished))).toBe(Date.parse(hpg.published_at));
     expect(Date.parse(String(d.dateModified))).toBe(Date.parse(hpg.last_entry_at));
 
     const dem = d.interactionStatistic as Record<string, unknown>;

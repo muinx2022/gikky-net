@@ -4,7 +4,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { QuanTriBanNguoiDungData, QuanTriBanNguoiDungErrors, QuanTriBanNguoiDungResponses, QuanTriChanDoanTimKiemData, QuanTriChanDoanTimKiemErrors, QuanTriChanDoanTimKiemResponses, QuanTriDatAnBinhLuanData, QuanTriDatAnBinhLuanErrors, QuanTriDatAnBinhLuanResponses, QuanTriDatAnMachData, QuanTriDatAnMachErrors, QuanTriDatAnMachResponses, QuanTriDatAnMocData, QuanTriDatAnMocErrors, QuanTriDatAnMocResponses, QuanTriDatKhoaMachData, QuanTriDatKhoaMachErrors, QuanTriDatKhoaMachResponses, QuanTriDatMatKhauData, QuanTriDatMatKhauErrors, QuanTriDatMatKhauResponses, QuanTriDoiQuyenModData, QuanTriDoiQuyenModErrors, QuanTriDoiQuyenModResponses, QuanTriDongBaoCaoData, QuanTriDongBaoCaoErrors, QuanTriDongBaoCaoResponses, QuanTriGanModSubData, QuanTriGanModSubErrors, QuanTriGanModSubResponses, QuanTriGoBanNguoiDungData, QuanTriGoBanNguoiDungErrors, QuanTriGoBanNguoiDungResponses, QuanTriGoModSubData, QuanTriGoModSubErrors, QuanTriGoModSubResponses, QuanTriLietKeBaoCaoData, QuanTriLietKeBaoCaoErrors, QuanTriLietKeBaoCaoResponses, QuanTriLietKeBinhLuanData, QuanTriLietKeBinhLuanErrors, QuanTriLietKeBinhLuanResponses, QuanTriLietKeMachData, QuanTriLietKeMachErrors, QuanTriLietKeMachResponses, QuanTriLietKeNguoiDungData, QuanTriLietKeNguoiDungErrors, QuanTriLietKeNguoiDungResponses, QuanTriLietKeNhatKyData, QuanTriLietKeNhatKyErrors, QuanTriLietKeNhatKyResponses, QuanTriLietKeSubData, QuanTriLietKeSubErrors, QuanTriLietKeSubResponses, QuanTriLuotXemData, QuanTriLuotXemErrors, QuanTriLuotXemOnlineData, QuanTriLuotXemOnlineErrors, QuanTriLuotXemOnlineResponses, QuanTriLuotXemResponses, QuanTriLuuCaiDatGoogleData, QuanTriLuuCaiDatGoogleErrors, QuanTriLuuCaiDatGoogleResponses, QuanTriSuaMocData, QuanTriSuaMocErrors, QuanTriSuaMocResponses, QuanTriSuaNguoiDungData, QuanTriSuaNguoiDungErrors, QuanTriSuaNguoiDungResponses, QuanTriSuaSubData, QuanTriSuaSubErrors, QuanTriSuaSubResponses, QuanTriSuaTieuDeMachData, QuanTriSuaTieuDeMachErrors, QuanTriSuaTieuDeMachResponses, QuanTriTaiAnhMocData, QuanTriTaiAnhMocErrors, QuanTriTaiAnhMocResponses, QuanTriTaiAnhNoiDungData, QuanTriTaiAnhNoiDungErrors, QuanTriTaiAnhNoiDungResponses, QuanTriTaoNguoiDungData, QuanTriTaoNguoiDungErrors, QuanTriTaoNguoiDungResponses, QuanTriTaoSubData, QuanTriTaoSubErrors, QuanTriTaoSubResponses, QuanTriThongKeData, QuanTriThongKeErrors, QuanTriThongKeResponses, QuanTriToiData, QuanTriToiErrors, QuanTriToiResponses, QuanTriXemCaiDatGoogleData, QuanTriXemCaiDatGoogleErrors, QuanTriXemCaiDatGoogleResponses, QuanTriXemMachData, QuanTriXemMachErrors, QuanTriXemMachResponses, QuanTriXemMocData, QuanTriXemMocErrors, QuanTriXemMocResponses, QuanTriXemNguoiDungData, QuanTriXemNguoiDungErrors, QuanTriXemNguoiDungResponses, QuanTriXoaAnhMocData, QuanTriXoaAnhMocErrors, QuanTriXoaAnhMocResponses, QuanTriXoaCaiDatGoogleData, QuanTriXoaCaiDatGoogleErrors, QuanTriXoaCaiDatGoogleResponses, QuanTriXoaSubData, QuanTriXoaSubErrors, QuanTriXoaSubResponses } from './types.gen';
+import type { QuanTriBanNguoiDungData, QuanTriBanNguoiDungErrors, QuanTriBanNguoiDungResponses, QuanTriChanDoanTimKiemData, QuanTriChanDoanTimKiemErrors, QuanTriChanDoanTimKiemResponses, QuanTriDatAnBinhLuanData, QuanTriDatAnBinhLuanErrors, QuanTriDatAnBinhLuanResponses, QuanTriDatAnMachData, QuanTriDatAnMachErrors, QuanTriDatAnMachResponses, QuanTriDatAnMocData, QuanTriDatAnMocErrors, QuanTriDatAnMocResponses, QuanTriDatKhoaMachData, QuanTriDatKhoaMachErrors, QuanTriDatKhoaMachResponses, QuanTriDatMatKhauData, QuanTriDatMatKhauErrors, QuanTriDatMatKhauResponses, QuanTriDoiQuyenModData, QuanTriDoiQuyenModErrors, QuanTriDoiQuyenModResponses, QuanTriDongBaoCaoData, QuanTriDongBaoCaoErrors, QuanTriDongBaoCaoResponses, QuanTriGanModSubData, QuanTriGanModSubErrors, QuanTriGanModSubResponses, QuanTriGoBanNguoiDungData, QuanTriGoBanNguoiDungErrors, QuanTriGoBanNguoiDungResponses, QuanTriGoModSubData, QuanTriGoModSubErrors, QuanTriGoModSubResponses, QuanTriHenGioMachData, QuanTriHenGioMachErrors, QuanTriHenGioMachResponses, QuanTriLietKeBaoCaoData, QuanTriLietKeBaoCaoErrors, QuanTriLietKeBaoCaoResponses, QuanTriLietKeBinhLuanData, QuanTriLietKeBinhLuanErrors, QuanTriLietKeBinhLuanResponses, QuanTriLietKeMachData, QuanTriLietKeMachErrors, QuanTriLietKeMachResponses, QuanTriLietKeNguoiDungData, QuanTriLietKeNguoiDungErrors, QuanTriLietKeNguoiDungResponses, QuanTriLietKeNhatKyData, QuanTriLietKeNhatKyErrors, QuanTriLietKeNhatKyResponses, QuanTriLietKeSubData, QuanTriLietKeSubErrors, QuanTriLietKeSubResponses, QuanTriLuotXemData, QuanTriLuotXemErrors, QuanTriLuotXemOnlineData, QuanTriLuotXemOnlineErrors, QuanTriLuotXemOnlineResponses, QuanTriLuotXemResponses, QuanTriLuuCaiDatGoogleData, QuanTriLuuCaiDatGoogleErrors, QuanTriLuuCaiDatGoogleResponses, QuanTriSuaMocData, QuanTriSuaMocErrors, QuanTriSuaMocResponses, QuanTriSuaNguoiDungData, QuanTriSuaNguoiDungErrors, QuanTriSuaNguoiDungResponses, QuanTriSuaSubData, QuanTriSuaSubErrors, QuanTriSuaSubResponses, QuanTriSuaTieuDeMachData, QuanTriSuaTieuDeMachErrors, QuanTriSuaTieuDeMachResponses, QuanTriTaiAnhMocData, QuanTriTaiAnhMocErrors, QuanTriTaiAnhMocResponses, QuanTriTaiAnhNoiDungData, QuanTriTaiAnhNoiDungErrors, QuanTriTaiAnhNoiDungResponses, QuanTriTaoMachHenGioData, QuanTriTaoMachHenGioErrors, QuanTriTaoMachHenGioResponses, QuanTriTaoNguoiDungData, QuanTriTaoNguoiDungErrors, QuanTriTaoNguoiDungResponses, QuanTriTaoSubData, QuanTriTaoSubErrors, QuanTriTaoSubResponses, QuanTriThongKeData, QuanTriThongKeErrors, QuanTriThongKeResponses, QuanTriToiData, QuanTriToiErrors, QuanTriToiResponses, QuanTriXemCaiDatGoogleData, QuanTriXemCaiDatGoogleErrors, QuanTriXemCaiDatGoogleResponses, QuanTriXemMachData, QuanTriXemMachErrors, QuanTriXemMachResponses, QuanTriXemMocData, QuanTriXemMocErrors, QuanTriXemMocResponses, QuanTriXemNguoiDungData, QuanTriXemNguoiDungErrors, QuanTriXemNguoiDungResponses, QuanTriXoaAnhMocData, QuanTriXoaAnhMocErrors, QuanTriXoaAnhMocResponses, QuanTriXoaCaiDatGoogleData, QuanTriXoaCaiDatGoogleErrors, QuanTriXoaCaiDatGoogleResponses, QuanTriXoaSubData, QuanTriXoaSubErrors, QuanTriXoaSubResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -261,6 +261,14 @@ export const quanTriLuotXemOnline = <ThrowOnError extends boolean = false>(optio
  * xét từ trên xuống (`api/quan_tri_loc.py`). Nghĩa là **`mo` KHÔNG bao gồm bài đã bị
  * ẩn**, dù một bài bị ẩn vẫn "đang mở" trên trục `status`. Mặc định `tat_ca` gồm tất,
  * kể cả bài đã gỡ — mod phải thấy để gỡ ẩn.
+ *
+ * ⚠ **`trang_thai=hen_gio` đảo CHIỀU sắp xếp** (2026-09-03): bài chờ giờ hẹn sắp theo
+ * `published_at` **tăng dần** — cái sắp lên trước đứng đầu. Mọi nhóm khác giữ nguyên
+ * `created_at` giảm dần.
+ *
+ * Không phải khẩu vị: danh sách này là một hàng đợi việc sắp xảy ra, và một hàng đợi
+ * xếp ngược thì bài lên trong 10 phút nữa nằm ở trang cuối. Cursor keyset đi theo đúng
+ * khoá sắp ấy — hai nửa lệch nhau là trang 2 trùng/sót hàng.
  */
 export const quanTriLietKeMach = <ThrowOnError extends boolean = false>(options?: Options<QuanTriLietKeMachData, ThrowOnError>): RequestResult<QuanTriLietKeMachResponses, QuanTriLietKeMachErrors, ThrowOnError> => (options?.client ?? client).get<QuanTriLietKeMachResponses, QuanTriLietKeMachErrors, ThrowOnError>({
     security: [{
@@ -270,6 +278,45 @@ export const quanTriLietKeMach = <ThrowOnError extends boolean = false>(options?
         }],
     url: '/api/admin/machs',
     ...options
+});
+
+/**
+ * Tao Mach Hen Gio
+ *
+ * Đăng bài **thay mặt một tài khoản đội**, có thể hẹn giờ. Cửa cho 100–200 bài viết trước.
+ *
+ * Cùng bộ trường nội dung với `POST /api/v1/machs` (bài gốc *chính là* mốc 1), cộng hai
+ * trường khu quản trị: `author` và `published_at`.
+ *
+ * **`author` bị chặn bằng allowlist**, không phải "user nào cũng được": đăng bài dưới
+ * tên người khác là mạo danh, và một cửa quản trị làm được điều đó cho *mọi* tài khoản
+ * là một cửa viết bài ký tên người dùng thật. Danh sách là hai tài khoản đội ở
+ * `TAI_KHOAN_DANG_BAI`.
+ *
+ * `published_at` tương lai ⇒ bài ra đời **đang ẩn**, không thông báo, không vào index —
+ * ba tác dụng phụ ấy tự tắt vì bài đang ẩn, không phải vì một nhánh `if` ở đây (xem
+ * `core/ghi.py::tao_mach`).
+ *
+ * Không gửi, hoặc gửi mốc **quá khứ** ⇒ bài lên ngay như một bài thường, kèm chuông cho
+ * người theo tác giả — và `published_at` ghi xuống là *bây giờ*, **không phải** con số
+ * quá khứ đã gửi. Nói ra vì nó im lặng: đây không phải cửa nhập bài cũ với ngày cũ. Lùi
+ * ngày đăng là một tính năng khác (nó đẩy bài xuống giữa feed) và plan §6 chưa mở nó.
+ *
+ * **Không có hạn mức 10 bài/ngày** như cửa v1. Trần ấy tồn tại để chặn spam từ tài khoản
+ * người dùng; ở đây người gọi là mod và cả điểm của endpoint là đăng 200 bài một đợt.
+ */
+export const quanTriTaoMachHenGio = <ThrowOnError extends boolean = false>(options: Options<QuanTriTaoMachHenGioData, ThrowOnError>): RequestResult<QuanTriTaoMachHenGioResponses, QuanTriTaoMachHenGioErrors, ThrowOnError> => (options.client ?? client).post<QuanTriTaoMachHenGioResponses, QuanTriTaoMachHenGioErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/admin/machs/hen-gio',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**
@@ -301,6 +348,10 @@ export const quanTriXemMach = <ThrowOnError extends boolean = false>(options: Op
  * Mạch bị ẩn biến mất khỏi hai feed, khỏi trang sub, khỏi hồ sơ tác giả và khỏi
  * `sitemap`; `GET /machs/{id}` công khai trả 404. Nó **không** đổi con số denormalize
  * nào của chính nó — xem `core/ghi.py::dat_an_mach`.
+ *
+ * **Bài đang hẹn giờ ⇒ 409** khi gỡ ẩn: đường đúng là *Phát hành ngay*
+ * (`PATCH …/hen-gio` với `published_at: null`), không phải nút Gỡ ẩn. Chiều ẩn trên
+ * bài hẹn là no-op (`da_doi=false`) — bài đã ẩn sẵn.
  */
 export const quanTriDatAnMach = <ThrowOnError extends boolean = false>(options: Options<QuanTriDatAnMachData, ThrowOnError>): RequestResult<QuanTriDatAnMachResponses, QuanTriDatAnMachErrors, ThrowOnError> => (options.client ?? client).post<QuanTriDatAnMachResponses, QuanTriDatAnMachErrors, ThrowOnError>({
     security: [{
@@ -309,6 +360,47 @@ export const quanTriDatAnMach = <ThrowOnError extends boolean = false>(options: 
             type: 'apiKey'
         }],
     url: '/api/admin/machs/{mach_id}/an',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Hen Gio Mach Quan Tri
+ *
+ * Đặt / dời / huỷ lịch phát hành của một mạch.
+ *
+ * Ba đường vào, một endpoint, vì cả ba là **cùng một câu hỏi** ("bài này lên sóng lúc
+ * nào") và tách chúng ra là ba nút cùng sửa một cột:
+ *
+ * - `published_at` ở **tương lai** ⇒ bài rời khỏi mọi cửa công khai, chờ tới giờ đó;
+ * - `published_at` = `null` ⇒ **phát hành ngay**, `published_at` ghi lại thành *bây
+ * giờ*. Đây là nút *Bỏ hẹn* của admin;
+ * - `published_at` ở **quá khứ** ⇒ cũng là phát hành ngay, cùng đường trên. Plan §2 gộp
+ * hai ca này làm một câu ("null hoặc quá khứ ⇒ phát hành ngay"), nên chúng đi chung
+ * một nhánh và cùng ghi giờ phát hành = bây giờ. Giữ lại con số quá khứ người ta gửi
+ * lên sẽ chôn bài xuống giữa feed — im lặng, và không phải thứ ai bấm nút muốn.
+ *
+ * **Bài mod đã ẩn ⇒ 409** (`noi_dung_da_go`), kể cả để phát hành ngay: gỡ ẩn là quyết
+ * định kiểm duyệt, nó có nút riêng ở ngay trang này.
+ *
+ * Phát hành ngay chạy **đúng chuỗi tác dụng phụ** của một bài mới lên sóng — thông báo
+ * cho người theo tác giả, đẩy vào index tìm kiếm, làm mới cache Next. Chuỗi ấy nằm ở
+ * `core/ghi.py::phat_hanh_mach`, dùng chung với `manage.py phat_hanh_da_hen`.
+ *
+ * Idempotent: gọi *phát hành ngay* trên bài đang hiện trả 200 `da_doi=false`, không
+ * thông báo lại, không dòng nhật ký nào — cùng luật "không đổi thì không ghi log" của
+ * khối moderation.
+ */
+export const quanTriHenGioMach = <ThrowOnError extends boolean = false>(options: Options<QuanTriHenGioMachData, ThrowOnError>): RequestResult<QuanTriHenGioMachResponses, QuanTriHenGioMachErrors, ThrowOnError> => (options.client ?? client).patch<QuanTriHenGioMachResponses, QuanTriHenGioMachErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/admin/machs/{mach_id}/hen-gio',
     ...options,
     headers: {
         'Content-Type': 'application/json',

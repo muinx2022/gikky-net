@@ -235,7 +235,16 @@ class MachTomTatOut(Schema):
     #: đài vẫn render bia mộ giữ chỗ cho nhánh con. "💬 N" nghĩa là N bình luận đọc được,
     #: không phải N dòng trên màn hình (PLAN mục 6, luật đếm 4 cột).
     comment_count: int
+    #: Lúc bài được **VIẾT** (dấu server, bất biến). Giữ nguyên sau lượt hẹn giờ
+    #: 2026-09-03 để không phá client nào đang đọc nó — nhưng **ngày hiển thị của bài là
+    #: `published_at`**, không phải cột này.
     created_at: datetime
+    #: Lúc bài **LÊN SÓNG** — khoá sắp của feed "Mới" và của `?khoang=`
+    #: (`plans/2026-09-03-hen-gio-phat-hanh.md`).
+    #:
+    #: Bài thường: bằng đúng `created_at`. Bài viết trước rồi hẹn giờ: `created_at` là
+    #: lúc soạn, cột này là lúc phát hành — và đây mới là con số web hiện dưới tiêu đề.
+    published_at: datetime
     #: Khoá sắp xếp của feed "Đang diễn ra". Đo **cấu trúc**: mọi mốc đều tính, kể cả bia
     #: mộ và mốc bị ẩn.
     last_entry_at: datetime
@@ -551,7 +560,11 @@ class MachChiTietOut(Schema):
     ket_qua: str | None
     #: Mod đã khoá mạch chưa (đọc được, cấm tương tác). Trục RIÊNG với `status`.
     locked: bool
+    #: Ngày VIẾT (bất biến) và ngày ĐĂNG. Web hiện `published_at`; `created_at` giữ lại
+    #: vì nó là dấu server mà `MocRevision` và mọi phép đối chiếu dựa vào. Xem
+    #: `MachTomTatOut`.
     created_at: datetime
+    published_at: datetime
     last_entry_at: datetime
     last_activity_at: datetime
     entry_count: int

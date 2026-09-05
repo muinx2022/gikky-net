@@ -2,10 +2,17 @@
 
     docker compose -p gikkynet exec -T api python - < scripts/bai-viet/dang-bai.py
 
-Thân bài đọc từ `/tmp/bai.json`, mật khẩu đọc từ **biến môi trường của container**
-(`GIKKY_TEAM_MEMBER_PASSWORD`). Hai thứ đó cộng lại là lý do script này chạy trên VPS chứ
-không chạy ở máy dev: **mật khẩu không bao giờ rời khỏi server**, không đi qua log, không
-đi qua transcript, không nằm trong file nào ở máy cá nhân.
+Có `--hen <ISO>` (offset tường minh, ví dụ `2026-09-10T08:00:00+07:00`) thì đăng nhập
+bằng `GIKKY_ADMIN_PASSWORD` và gọi `POST /api/admin/machs/hen-gio` thay mặt
+`gikky-team-member`. Không có `--hen` ⇒ đường cũ: mật khẩu đội + `POST /api/v1/machs`.
+
+    docker compose -p gikkynet exec -T api python - --hen '2026-09-10T08:00:00+07:00' \\
+        < scripts/bai-viet/dang-bai.py
+
+Thân bài đọc từ `/tmp/bai.json`. Mật khẩu đọc từ **biến môi trường của container**.
+Hai thứ đó cộng lại là lý do script này chạy trên VPS chứ không chạy ở máy dev:
+**mật khẩu không bao giờ rời khỏi server**, không đi qua log, không đi qua transcript,
+không nằm trong file nào ở máy cá nhân.
 
 Vì sao không dùng `scripts/dang-tin.mjs`: script ấy là của **bot bản tin** — nó có khung
 giờ, có slot, có sổ cái một-mạch-một-ngày. Bài phân tích không có thứ nào trong đó, và
@@ -15,19 +22,25 @@ Chuỗi ba request giống `dang-tin.mjs` (xem docstring ở đó): session → 
 `Origin`/`Referer` đặt tay vì `urllib` không tự thêm, mà Django đòi chúng với request https.
 """
 
+import argparse
 import http.cookiejar
 import json
 import os
 import sys
 import urllib.error
 import urllib.request
+from datetime import datetime
 
 ORIGIN = os.environ.get("GIKKY_ORIGIN", "https://gikky.net")
+ADMIN_ORIGIN = os.environ.get("GIKKY_ADMIN_ORIGIN", "https://admin.gikky.net")
 ALLAUTH = ORIGIN + "/api/_allauth/browser/v1"
 UA = "gikky-team-poster/1.0 (+https://gikky.net)"
 DUONG_BAI = os.environ.get("GIKKY_BAI_JSON", "/tmp/bai.json")
 TEN_BIEN_MAT_KHAU = os.environ.get("GIKKY_BIEN_MAT_KHAU", "GIKKY_TEAM_MEMBER_PASSWORD")
 EMAIL = os.environ.get("GIKKY_POSTER_EMAIL", "gikky-team-member@gikky.net")
+TEN_BIEN_MAT_KHAU_ADMIN = "GIKKY_ADMIN_PASSWORD"
+EMAIL_ADMIN = os.environ.get("GIKKY_ADMIN_EMAIL", "admin@gikky.net")
+AUTHOR_HEN = "gikky-team-member"
 
 #: Trần của server — phải KHỚP `api/core/models/moc.py` và `api/api/schemas_ghi.py`.
 #: Lệch là 500 chứ không phải 400, vì `api/api/machs.py` chưa bắt `ValidationError`.
@@ -108,20 +121,57 @@ def soat(bai):
     return loi
 
 
-def main():
+def doc_hen(argv):
+    p = argparse.ArgumentParser(add_help=True)
+    p.add_argument(
+        "--hen",
+        default=None,
+        metavar="ISO",
+        help="Giờ phát hành (ISO có offset, ví dụ 2026-09-10T08:00:00+07:00).",
+    )
+    return p.parse_args(argv)
+
+
+def kiem_offset(iso):
+    """Thiếu offset ⇒ chuỗi lỗi; đủ ⇒ None. Chặn TRƯỚC khi gọi mạng."""
+    try:
+        dt = datetime.fromisoformat(iso)
+    except ValueError:
+        return f"published_at không phải ISO datetime: {iso!r}."
+    if dt.tzinfo is None or dt.utcoffset() is None:
+        return (
+            "published_at phải kèm múi giờ tường minh, ví dụ "
+            "'2026-09-10T08:00:00+07:00'. Thiếu offset là hẹn lệch 7 tiếng."
+        )
+    return None
+
+
+def main(argv=None):
+    args = doc_hen(sys.argv[1:] if argv is None else argv)
     with open(DUONG_BAI, encoding="utf-8") as f:
         bai = json.load(f)
 
     loi = soat(bai)
+    if args.hen:
+        lech = kiem_offset(args.hen)
+        if lech:
+            loi.append(lech)
     if loi:
         print("BÀI KHÔNG HỢP LỆ — chưa gọi mạng:", file=sys.stderr)
         for c in loi:
             print(f"  - {c}", file=sys.stderr)
         return 2
 
-    mat_khau = os.environ.get(TEN_BIEN_MAT_KHAU)
+    if args.hen:
+        ten_bien = TEN_BIEN_MAT_KHAU_ADMIN
+        email = EMAIL_ADMIN
+        mat_khau = os.environ.get(ten_bien)
+    else:
+        ten_bien = TEN_BIEN_MAT_KHAU
+        email = EMAIL
+        mat_khau = os.environ.get(ten_bien)
     if not mat_khau:
-        print(f"Thiếu biến môi trường {TEN_BIEN_MAT_KHAU}.", file=sys.stderr)
+        print(f"Thiếu biến môi trường {ten_bien}.", file=sys.stderr)
         return 1
 
     ma, _ = goi(ALLAUTH + "/auth/session")
@@ -129,11 +179,32 @@ def main():
         print(f"① session lỗi: HTTP {ma}, csrftoken rỗng?", file=sys.stderr)
         return 1
 
-    ma, than = goi(ALLAUTH + "/auth/login", {"email": EMAIL, "password": mat_khau})
+    ma, than = goi(ALLAUTH + "/auth/login", {"email": email, "password": mat_khau})
     if ma != 200:
         print(f"② login lỗi: HTTP {ma} {json.dumps(than, ensure_ascii=False)[:200]}",
               file=sys.stderr)
         return 1
+
+    if args.hen:
+        than_gui = {
+            **bai,
+            "author": AUTHOR_HEN,
+            "published_at": args.hen,
+        }
+        ma, than = goi(ORIGIN + "/api/admin/machs/hen-gio", than_gui)
+        if ma != 201:
+            print(
+                f"③ tạo mạch hẹn giờ lỗi: HTTP {ma} "
+                f"{json.dumps(than, ensure_ascii=False)[:400]}",
+                file=sys.stderr,
+            )
+            return 1
+        print(f"{ADMIN_ORIGIN}/m/{than['id']}")
+        print(
+            f"hẹn {than.get('published_at', args.hen)} · {than.get('title', bai['title'])}",
+            file=sys.stderr,
+        )
+        return 0
 
     ma, than = goi(ORIGIN + "/api/v1/machs", bai)
     if ma != 201:

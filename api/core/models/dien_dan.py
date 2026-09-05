@@ -197,10 +197,43 @@ class Mach(models.Model):
     diem_bai_goc = models.IntegerField(default=0)
 
     created_at = models.DateTimeField(default=timezone.now, editable=False)
+    #: **Ngày ĐĂNG**, khác `created_at` (ngày VIẾT) — `plans/2026-09-03-hen-gio-phat-hanh.md`.
+    #:
+    #: Bài thường: bằng đúng `created_at`, và mọi bài có trước migration `0027` được
+    #: backfill như thế. Bài hẹn giờ: giờ hẹn ở tương lai, còn `created_at` là lúc soạn.
+    #:
+    #: **Đây là khoá sắp của feed "Mới" và của `?khoang=`**, không phải `created_at` — một
+    #: bài soạn từ 10 ngày trước phải đứng đúng chỗ của ngày nó lên sóng. `created_at`
+    #: **vẫn giữ** (và index cũ của nó cũng vậy): nó là dấu server bất biến mà `MocRevision`
+    #: và mọi phép đối chiếu "ai viết lúc nào" dựa vào.
+    #:
+    #: ⚠ **Không `editable=False` như `created_at`**: khu quản trị đổi được cột này qua
+    #: `PATCH /api/admin/machs/{id}/hen-gio`. Đó là cả lý do nó tồn tại.
+    published_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
         verbose_name = "mạch"
         verbose_name_plural = "mạch"
+        constraints = [
+            # **Bất biến phân biệt "ẩn vì mod" với "ẩn vì hẹn giờ"** (plan §1.1).
+            #
+            # Bài hẹn giờ được lưu như một bài ĐANG ẨN — đó là quyết định kiến trúc đắt
+            # nhất của lượt này: `hidden_at__isnull=True` nằm rải ở ~68 chỗ, nên một
+            # trạng thái "chưa phát hành" thứ ba sẽ đòi sửa đủ 68 chỗ và thiếu một là rò
+            # bài chưa đăng ra feed/RSS/tìm kiếm.
+            #
+            # Cái giá: hai loài "ẩn" dùng chung một cột. Phân biệt chúng bằng `hidden_by`
+            # (mod ẩn luôn đi qua `dat_an_mach(boi=…)` nên luôn có người ẩn), và ràng buộc
+            # ấy phải là CHECK chứ không phải một câu trong docstring — `phat_hanh_da_hen`
+            # lấy đúng `hidden_by IS NULL` làm điều kiện phát hành, nên một hàng ẩn-không-
+            # ai-ẩn mà không phải bài hẹn sẽ được cron gỡ ẩn hộ, im lặng.
+            models.CheckConstraint(
+                condition=models.Q(hidden_at__isnull=True)
+                | models.Q(hidden_by__isnull=False)
+                | models.Q(published_at__gt=models.F("created_at")),
+                name="mach_an_phai_co_nguoi_an_hoac_hen_gio",
+            ),
+        ]
         indexes = [
             # Feed trong sub (PLAN 5.9 tab "Đang diễn ra" có `?sub=`).
             models.Index(fields=["sub", "-last_entry_at"], name="mach_sub_last_entry"),
@@ -208,6 +241,13 @@ class Mach(models.Model):
             models.Index(fields=["author", "-created_at"], name="mach_author_created"),
             # Feed "Mới" toàn cục.
             models.Index(fields=["-created_at"], name="mach_created_desc"),
+            # Hai index của `published_at` — bản song sinh của hai cái ngay trên, **thêm
+            # chứ không thay** (plan §1.3). Hai cái cũ vẫn phục vụ khu quản trị: bảng
+            # `/machs` sắp theo `created_at` (mod hỏi "ai vừa VIẾT gì"), còn feed công khai
+            # hỏi "cái gì vừa LÊN SÓNG". Hai câu hỏi khác nhau nên hai cây index, và bỏ
+            # cây cũ đi là biến bảng quản trị thành `Sort` trên toàn bảng.
+            models.Index(fields=["author", "-published_at"], name="mach_author_published"),
+            models.Index(fields=["-published_at"], name="mach_published_desc"),
             # Feed "Đang diễn ra" toàn cục — partial: index chỉ chứa mạch đang mở,
             # nhỏ hơn hẳn index đầy đủ và đúng bằng cái feed đó cần.
             models.Index(

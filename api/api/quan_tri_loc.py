@@ -74,7 +74,27 @@ LOC_MACH: dict[str, Q] = {
 #: khoá — bài HPG id=1423 — **biến mất khỏi trang 1**, mà tìm theo tiêu đề thì lại ra.
 #: Đóng sổ là kết thúc BÌNH THƯỜNG do chính tác giả bấm, không phải trạng thái kiểm
 #: duyệt; giấu nó khỏi bảng kiểm duyệt là giấu nội dung đang sống.
+#: Nhóm CHỒNG LẤN thứ hai — bài **đang chờ giờ hẹn** (2026-09-03). Nó là một lát con của
+#: `bi_an`: bài hẹn giờ được lưu như bài đang ẩn (plan §1.1), phân biệt với bài mod gỡ
+#: bằng đúng `hidden_by IS NULL`.
+#:
+#: Cùng lý do `chua_go` không được vào `LOC_MACH`: vành khuyên đọc `LOC_MACH` và bốn lát
+#: ở đó phải rời nhau. Cộng một lát nằm lọt trong lát khác là vành khuyên quá 100%.
+LOC_HEN_GIO = Q(hidden_at__isnull=False, hidden_by__isnull=True)
+
+
+def dang_hen_gio(mach) -> bool:
+    """Bản Python của `LOC_HEN_GIO` — cho một hàng đã nạp, không phải một queryset.
+
+    Hai bản là bắt buộc (SQL không chạy được trên object, Python không lọc được ở DB) nên
+    thứ duy nhất làm được là để chúng **cạnh nhau**: ba schema quản trị trả trường
+    `da_hen_gio` và cả ba gọi hàm này, nên ngày luật phân biệt đổi (thêm một cột chẳng
+    hạn) người sửa nhìn thấy cả hai vế trong một màn hình.
+    """
+    return mach.hidden_at is not None and mach.hidden_by_id is None
+
 LOC_MACH_DANH_SACH: dict[str, Q] = {
     **LOC_MACH,
     "chua_go": Q(hidden_at__isnull=True),
+    "hen_gio": LOC_HEN_GIO,
 }

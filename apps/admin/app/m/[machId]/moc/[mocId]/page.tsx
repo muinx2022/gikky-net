@@ -20,7 +20,6 @@ import {
   The,
   gioVN,
 } from "../../../../../components/ui";
-import { useQuanTri } from "../../../../../components/khung/ngu-canh";
 import { GOC_API, headerGhi, moTaLoi } from "../../../../../lib/api";
 import { useHanhDong } from "../../../../../lib/hanh-dong";
 import { homNayVN } from "../../../../../lib/thoi-gian";
@@ -56,6 +55,11 @@ type Figure = { label: string; value: string };
  * Gộp ba câu thành một chữ "không được" là ba tình huống có ba cách chữa khác nhau cùng
  * dẫn tới một ngõ cụt.
  *
+ * **Ngoại lệ ở câu 2, thêm 2026-09-04**: CHÈN ảnh mới tách khỏi `la_superuser` —
+ * `anh_tai_duoc = moc.sua_duoc` (không nhân thêm `&& la_superuser`). Mọi mod chèn được
+ * ảnh vào nội dung còn sửa-ảnh-được; nút "Gỡ" ảnh cũ và cả năm trường CHỮ vẫn đi theo
+ * `sua_duoc` cũ. Xem `plans/2026-09-04-noi-quyen-chen-anh-staff.md`.
+ *
  * ## Ảnh gửi SAU phần chữ, và một tấm hỏng không cuốn theo phần chữ
  *
  * Cửa ảnh là `POST /admin/mocs/{id}/anh`, một tấm mỗi request (xem `api/anh.py`). Phần
@@ -67,7 +71,6 @@ export default function TrangSuaMoc() {
   const mach_id = Number(tham_so.machId);
   const moc_id = Number(tham_so.mocId);
   const router = useRouter();
-  const { mod } = useQuanTri();
 
   const [moc, datMoc] = useState<MocSuaQuanTriOut | null>(null);
   const [loi_nap, datLoiNap] = useState<string | null>(null);
@@ -157,8 +160,10 @@ export default function TrangSuaMoc() {
     );
   }
 
-  const la_superuser = mod.is_superuser;
-  const sua_duoc = moc.sua_duoc && la_superuser;
+  // Mọi mod (staff) đều sửa được chữ, gỡ ảnh và chèn ảnh mới khi nội dung còn
+  // sửa được (`moc.sua_duoc`: không phải bia mộ/bị ẩn, mạch không khoá).
+  const sua_duoc = moc.sua_duoc;
+  const anh_tai_duoc = moc.sua_duoc;
   const con_cho = moc.tran_anh_moi_moc - moc.anhs.length - anh_moi.length;
 
   /** Chỉ những trường THẬT SỰ đổi — cùng ý với `hanh-dong-moc.tsx::chiPhanDoi` bên web.
@@ -275,7 +280,7 @@ export default function TrangSuaMoc() {
         het_phien={het_phien || het_phien_anh}
       />
 
-      {(!moc.sua_duoc || !la_superuser) && (
+      {!sua_duoc && (
         <The className="mb-4 p-4">
           <div className="flex flex-wrap items-center gap-2">
             {moc.da_xoa && <NhanTrangThai tone="chu-y">tác giả đã xoá</NhanTrangThai>}
@@ -287,9 +292,7 @@ export default function TrangSuaMoc() {
               ? "Tác giả đã xoá mốc này — nội dung không còn để sửa."
               : moc.da_bi_an
                 ? "Mốc đang bị ẩn. Gỡ ẩn ở trang bài rồi mới sửa được."
-                : moc.mach_da_khoa
-                  ? "Mạch đang bị khoá. Mở khoá ở trang bài rồi mới sửa được."
-                  : "Chỉ superuser sửa được nội dung."}
+                : "Mạch đang bị khoá. Mở khoá ở trang bài rồi mới sửa được."}
           </p>
         </The>
       )}
@@ -416,7 +419,7 @@ export default function TrangSuaMoc() {
               type="file"
               accept="image/jpeg,image/png,image/webp"
               multiple
-              disabled={!sua_duoc || ban || con_cho <= 0}
+              disabled={!anh_tai_duoc || ban || con_cho <= 0}
               className="text-sm"
               data-testid="o-anh-moi"
               onChange={(e) => {

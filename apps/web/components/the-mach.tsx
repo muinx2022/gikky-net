@@ -71,7 +71,7 @@ export function TheMach({ mach }: { mach: MachTomTatOut }) {
           <span className={css.cham} aria-hidden>
             ·
           </span>
-          <span className={css.khi}>{ngayCuaThoiDiem(mach.created_at)}</span>
+          <span className={css.khi}>{ngayCuaThoiDiem(mach.published_at)}</span>
           {mach.status === "closed" && (
             <span className={css.dong_so}>đã đóng sổ</span>
           )}

@@ -25,6 +25,7 @@ from core.ghi import (
 from core.mat import MAT_BAO, MAT_CAN, NGUONG_BAO
 from core.models import Mach, Moc, Trich
 from tests._anh import anh_byte
+from tests._an_mach import an_mach_tho
 from tests.conftest import khoa_json, lay
 from tests.test_operation_id import moi_operation
 
@@ -145,6 +146,10 @@ KHOA_CHO_PHEP = {
     "id", "slug", "title", "sub", "author", "status", "closed_at", "ket_qua",
     "locked", "created_at", "last_entry_at", "last_activity_at", "entry_count",
     "comment_count", "face", "mocs", "spine",
+    # Ngày ĐĂNG (hẹn giờ, 2026-09-03). Cache được như `created_at`: nó là thuộc tính của
+    # hàng `Mach`, không có nhánh nào hỏi người xem là ai. Hai cột cùng có mặt vì chúng
+    # trả lời hai câu khác nhau — "viết lúc nào" và "lên sóng lúc nào".
+    "published_at",
     # hạn mở lại sổ (`closed_at + 7 ngày`) — suy từ MẠCH, không từ người xem: hai người
     # mở cùng URL nhận cùng con số, nên nó cache được (nợ `API-THIEU-MOC-THOI-GIAN`).
     "mo_lai_den",
@@ -483,6 +488,6 @@ def test_mach_khong_ton_tai_tra_404_dung_hinh_dang_loi(client, db):
 
 def test_mach_bi_mod_an_thi_404(client, seed):
     """R10 — mạch bị ẩn biến mất khỏi API công khai, kể cả khi biết `id`."""
-    Mach.objects.filter(pk=seed.pk).update(hidden_at=timezone.now())
+    an_mach_tho(Mach.objects.filter(pk=seed.pk))
     d = lay(client, f"/api/v1/machs/{seed.pk}", status=404)
     assert d["code"] == "khong_tim_thay"

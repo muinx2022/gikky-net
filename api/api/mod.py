@@ -43,6 +43,7 @@ from ninja import Router
 from api.loi import KHONG_DU_QUYEN
 from api.quan_tri_kiem_duyet import (
     TRA_LOI_DOI,
+    TRA_LOI_DOI_MACH,
     dat_an_binh_luan_endpoint,
     dat_an_mach_endpoint,
     dat_an_moc_endpoint,
@@ -104,7 +105,7 @@ chi_mod = ChiModTrenV1()
 
 @router.post(
     "/mod/machs/{int:mach_id}/an",
-    response=TRA_LOI_DOI,
+    response=TRA_LOI_DOI_MACH,
     operation_id="mod_dat_an_mach",
     tags=["mod"],
     auth=chi_mod,

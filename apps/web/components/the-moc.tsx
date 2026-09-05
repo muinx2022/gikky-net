@@ -41,6 +41,8 @@ type Props = {
   duongDanTrich: string;
   /** `id` bình luận **được render ra** ở trang 1 của `hay_nhat` — xem `lib/khan-dai.ts`. */
   idTrongTrangKhanDai: ReadonlySet<number>;
+  /** Ngày ĐĂNG của mạch. Mốc 1 hiện cái này thay `moc.created_at` (giờ soạn). */
+  publishedAtMach: string;
 };
 
 /** Một thẻ mốc trên nhật ký — chất liệu "sổ nghiêm" của PLAN 9.1: viền cứng, mono, dải
@@ -53,6 +55,7 @@ export function TheMoc({
   duongDanKhanDai,
   duongDanTrich,
   idTrongTrangKhanDai,
+  publishedAtMach,
 }: Props) {
   const hien = moc.trang_thai === "binh_thuong";
   // Ngăn kéo có HÀNG nào không — kể cả bia mộ. Đây là câu hỏi đúng cho cả cái nút lẫn
@@ -97,7 +100,7 @@ export function TheMoc({
               đặt, bên phải là dấu SERVER bất biến. Cái thứ hai trông như biên lai đúng
               là chủ đích (PLAN 9.1). */}
           <span className={css.bien_lai} data-testid="moc-created-at">
-            ghi {dauThoiGianServer(moc.created_at)}
+            ghi {dauThoiGianServer(moc.seq === 1 ? publishedAtMach : moc.created_at)}
             {moc.edit_count > 0 && (
               <>
                 {" · "}

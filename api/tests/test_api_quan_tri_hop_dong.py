@@ -77,8 +77,30 @@ def test_moi_endpoint_deu_co_description(schema):
     assert thieu == []
 
 
+def _thieu_truong_hop_dong_loi(schema, than: dict) -> str | None:
+    """`None` nếu `than` là một hình dạng lỗi hợp đồng; ngược lại là lý do nó không phải.
+
+    Cùng chuẩn với `tests/test_hop_dong_openapi.py`: đo theo TRƯỜNG (`detail` là chuỗi,
+    có `code`), không ép tên `$ref` phải bằng đúng `LoiOut` (để lớp con như
+    `LoiThoiGianOut` cho mã 429 qua được).
+    """
+    ten = than.get("$ref", "").rsplit("/", 1)[-1]
+    if not ten:
+        return f"không phải $ref tới một schema: {than}"
+    dinh_nghia = schema["components"]["schemas"].get(ten)
+    if dinh_nghia is None:
+        return f"$ref tới schema không tồn tại: {ten}"
+    truong = dinh_nghia.get("properties", {})
+    thieu = [t for t in ("detail", "code") if t not in truong]
+    if thieu:
+        return f"{ten} thiếu {thieu}"
+    if truong["detail"].get("type") != "string":
+        return f"{ten}.detail không phải chuỗi: {truong['detail']}"
+    return None
+
+
 def test_moi_endpoint_deu_khai_hinh_dang_loi_chuan(schema):
-    """Mọi mã 4xx/5xx phải trỏ `LoiOut`. Không có giấy miễn trừ nào ở khu này.
+    """Mọi mã 4xx/5xx phải theo hợp đồng lỗi {detail: str, code: str}.
 
     Khác `api_v1` — nơi `/health` và `GET /subs` được miễn — vì mọi endpoint quản trị đều
     có ít nhất hai đường lỗi (401, 403) do chính hàng rào sinh ra.
@@ -92,8 +114,9 @@ def test_moi_endpoint_deu_khai_hinh_dang_loi_chuan(schema):
                 continue
             for ma in ma_loi:
                 than = op["responses"][ma]["content"]["application/json"]["schema"]
-                if than.get("$ref", "").rsplit("/", 1)[-1] != "LoiOut":
-                    hong.append(f"{m.upper()} {duong} [{ma}]: {than}")
+                loi = _thieu_truong_hop_dong_loi(schema, than)
+                if loi is not None:
+                    hong.append(f"{m.upper()} {duong} [{ma}]: {loi}")
     assert hong == []
 
 

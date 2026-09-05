@@ -119,7 +119,9 @@ from core.models.dien_dan import Mach, Sub, slug_tu_title
 from core.models.he_thong import AuditLog, Report
 from core.models.moc import Moc, MocAnh, MocRevision, kiem_figures
 from core.models.tuong_tac import Follow, Reaction, TheoSub, TheoUser, Trich, Vote
+from core.revalidate import lam_moi_mach
 from core.thoi_gian import TZ_VN, ngay_vn
+from core.thong_bao import bao_mach_moi
 from core.tim_kiem import dong_bo_binh_luan, dong_bo_mach
 
 #: PLAN 5.1 — tối đa 3 mốc mỗi **ngày lịch VN** mỗi mạch.
@@ -337,6 +339,7 @@ def tao_mach(
     loai: str | None = None,
     question_for_crowd: str | None = None,
     figures=None,
+    published_at=None,
     _created_at_seed=None,
 ) -> tuple[Mach, Moc]:
     """Tạo `Mach` + `Moc(seq=1)` trong MỘT transaction (PLAN 5.1).
@@ -345,15 +348,34 @@ def tao_mach(
     trạng thái hợp lệ nào có `Mach` mà không có mốc 1 — hai câu INSERT phải nằm trong
     cùng một transaction, không phải "tạo mạch rồi tí nữa thêm mốc".
 
+    ## `published_at` — cửa HẸN GIỜ (plan 2026-09-03 §1.2)
+
+    Không truyền, hoặc truyền một mốc **không ở tương lai** ⇒ bài thường:
+    `published_at = created_at = now`, `hidden_at = NULL`. Không đổi một hành vi nào của
+    đường ghi cũ.
+
+    Truyền một mốc ở **tương lai** ⇒ bài hẹn giờ: `hidden_at = now`, `hidden_by = NULL`.
+    Nó là một bài ĐANG ẨN, nên ~68 bộ lọc `hidden_at__isnull=True` rải khắp tầng đọc đã
+    loại nó ra sẵn — không cửa đọc nào phải sửa, và đó là cả lý do plan chọn cách này thay
+    vì một trạng thái "chưa phát hành" thứ ba.
+
+    **Hai tác dụng phụ lúc tạo tự tắt, không phải nhờ một nhánh `if` nào ở đây** (§1.4):
+    `dong_bo_mach` bên dưới đọc lại `hidden_at` ở `on_commit` nên nó XOÁ chứ không đẩy tài
+    liệu vào index; `bao_mach_moi` (người gọi ở tầng API) trả 0 ngay dòng đầu khi mạch
+    đang ẩn. Cả hai được ghim bằng test, không tin docstring — plan §1.4 nói thẳng thế.
+
     `_created_at_seed`: chỉ `seed_dev` truyền — xem `_dong_dau_server`.
     """
     khi = _dong_dau_server(_created_at_seed)
+    hen_gio = published_at is not None and published_at > khi
     with transaction.atomic():
         mach = Mach.objects.create(
             sub=sub,
             author=author,
             title=title,
             created_at=khi,
+            published_at=published_at if hen_gio else khi,
+            hidden_at=khi if hen_gio else None,
             last_entry_at=khi,
             last_activity_at=khi,
         )
@@ -1551,6 +1573,16 @@ AUDIT_SUA_TIEU_DE_MACH = "sua_tieu_de_mach"
 #: của tác giả ở v1 không truyền `boi` nên không đi qua hai hằng này — xem `them_anh_moc`.
 AUDIT_THEM_ANH_MOC = "them_anh_moc"
 AUDIT_XOA_ANH_MOC = "xoa_anh_moc"
+#: Hẹn giờ phát hành (2026-09-03, `plans/2026-09-03-hen-gio-phat-hanh.md`). Hai hằng, hai
+#: chiều: đặt lịch (bài rời khỏi mọi cửa công khai) và phát hành (bài lên sóng).
+#:
+#: ⚠ **Chỉ đường QUẢN TRỊ ghi hai dòng này.** Lượt phát hành do cron
+#: (`manage.py phat_hanh_da_hen`) làm **không** có dòng nhật ký nào, và đó là hệ quả của
+#: `AuditLog.actor` NOT NULL chứ không phải một chỗ bỏ sót: nhật ký này trả lời "*ai* làm",
+#: mà cron không phải một ai. Dấu vết của lượt cron nằm ở chính `published_at` + việc
+#: `hidden_at` về NULL, cộng dòng lệnh in ra số bài.
+AUDIT_HEN_GIO_MACH = "hen_gio_mach"
+AUDIT_PHAT_HANH_MACH = "phat_hanh_mach"
 
 #: `AuditLog.target_type` — cột `varchar(16)`, giữ chuỗi ngắn.
 DICH_MOC = "moc"
@@ -1658,6 +1690,14 @@ def dat_an_binh_luan(*, comment: Comment, boi, an: bool, ly_do: str = "") -> boo
     return True
 
 
+class KhongTheGoAnHenGio(Exception):
+    """Bài đang hẹn giờ: gỡ ẩn phải đi `phat_hanh_mach`, không `dat_an_mach`.
+
+    `_dat_co_an(bat=False)` chỉ xoá `hidden_at` — không chuông, không đẩy index đúng lúc,
+    `published_at` vẫn ở tương lai. Tầng API dịch thành 409; nút đúng là *Phát hành ngay*.
+    """
+
+
 def dat_an_mach(*, mach: Mach, boi, an: bool, ly_do: str = "") -> bool:
     """Mod ẩn / gỡ ẩn CẢ mạch (PLAN 5.10). Trả `True` nếu trạng thái vừa đổi.
 
@@ -1673,6 +1713,15 @@ def dat_an_mach(*, mach: Mach, boi, an: bool, ly_do: str = "") -> bool:
     """
     with transaction.atomic():
         hang = Mach.objects.select_for_update().get(pk=mach.pk)
+        # Cùng cặp cột với `api.quan_tri_loc.dang_hen_gio` — không import từ api
+        # (core không phụ thuộc tầng HTTP). Gỡ ẩn bài hẹn bằng đường này bỏ sót chuông
+        # và để `published_at` ở tương lai trên một bài đang hiện.
+        if (
+            not an
+            and hang.hidden_at is not None
+            and hang.hidden_by_id is None
+        ):
+            raise KhongTheGoAnHenGio
         if not _dat_co_an(hang, boi=boi, bat=an):
             return False
         # Ẩn cả mạch phải kéo theo ảnh của MỌI mốc trong đó (A9). Mốc nào vốn đã là bia
@@ -1721,6 +1770,130 @@ def dat_khoa_mach(*, mach: Mach, boi, khoa: bool, ly_do: str = "") -> bool:
         )
     mach.refresh_from_db()
     return True
+
+
+# --- HẸN GIỜ PHÁT HÀNH (2026-09-03) ------------------------------------------
+#
+# `plans/2026-09-03-hen-gio-phat-hanh.md`. Hai hàm dưới là hai chiều của cùng một cái
+# công tắc, và cả hai đi qua đúng bộ luật của khối moderation phía trên (một transaction,
+# khoá hàng rồi mới đọc, không đổi thì không ghi log).
+#
+# **Vì sao chúng gọi cả `bao_mach_moi` lẫn `lam_moi_mach` — hai thứ mọi hàm khác trong
+# file này để cho tầng API gọi.** Không phải vì tiện: đường phát hành có **HAI** người
+# gọi ở hai tầng khác hẳn nhau — `manage.py phat_hanh_da_hen` (không có request, không
+# có handler) và `PATCH /api/admin/machs/{id}/hen-gio`. Để chuỗi tác dụng phụ ở tầng
+# trên là chép nó hai bản, và plan §1.4 gọi đúng cái rủi ro đó bằng tên: bỏ sót một
+# nhánh nghĩa là bài lên sóng mà **không ai được báo**, hoặc không vào index — cả hai
+# đều 200 và không có gì đỏ.
+#
+# **Thứ tự khoá không đổi:** cả hai chỉ chạm hàng `Mach` (và `User` qua `INSERT
+# core_notification`, cạnh đã khai ở đầu file). Không hàng `Moc`/`Comment`/`MocAnh` nào,
+# nên không cạnh ngược nào sinh ra.
+
+
+def hen_gio_mach(*, mach_id: int, published_at, boi, ly_do: str = "") -> Mach | None:
+    """Đặt lịch phát hành cho một mạch: `published_at` tương lai ⇒ bài **rời khỏi** mọi
+    cửa công khai cho tới giờ hẹn. Trả hàng đã cập nhật, hoặc `None` nếu không đặt được.
+
+    `None` nghĩa là **hàng đã bị mod ẩn** (`hidden_by` có) hoặc không còn tồn tại — kiểm
+    lại DƯỚI KHOÁ, vì lượt kiểm ở tầng API chạy ngoài khoá và một mod có thể vừa bấm "ẩn"
+    giữa hai lượt. Người gọi dịch `None` thành 409; xem `api/quan_tri_hen_gio.py`.
+
+    **Không cho lách mod bằng hẹn giờ** — đó là cả lý do vế `hidden_by__isnull=True` nằm
+    trong bộ lọc chứ không phải trong một câu `if` sau khi đã khoá: bài mod ẩn mà đặt lịch
+    được thì tới giờ hẹn cron sẽ gỡ ẩn hộ, và quyết định của mod bị một cái hẹn giờ đảo
+    ngược mà không dòng nhật ký nào nói ai làm.
+
+    Đặt lịch cho một bài **đang hiện** cũng được (nó biến khỏi feed ngay): đó là nút "rút
+    bài xuống, phát hành lại sau" của khu quản trị. `hidden_by` giữ `NULL` để cron nhận ra
+    đây là bài hẹn chứ không phải bài mod gỡ.
+    """
+    with transaction.atomic():
+        hang = (
+            Mach.objects.filter(pk=mach_id, hidden_by__isnull=True)
+            .select_for_update()
+            .first()
+        )
+        if hang is None:
+            return None
+        hang.published_at = published_at
+        hang.hidden_at = hang.hidden_at or timezone.now()
+        hang.save(update_fields=["published_at", "hidden_at"])
+        # Bài vừa rời cửa công khai ⇒ tài liệu phải BIẾN MẤT khỏi index (`dong_bo_mach`
+        # tự đọc `hidden_at` ở `on_commit`), và trang đã cache phải được dựng lại — nếu
+        # không, `/m/<slug>-<id>` phục vụ bản cũ thêm tới một giờ sau khi bài bị rút.
+        dong_bo_mach(hang)
+        lam_moi_mach(hang)
+        ghi_audit(
+            actor=boi,
+            action=AUDIT_HEN_GIO_MACH,
+            target_type=DICH_MACH,
+            target_id=hang.pk,
+            published_at=published_at.isoformat(),
+            ly_do=ly_do,
+        )
+    return hang
+
+
+def phat_hanh_mach(
+    *,
+    mach_id: int,
+    boi=None,
+    ly_do: str = "",
+    dat_gio_phat_hanh: bool = False,
+    bo_qua_neu_ban: bool = False,
+) -> Mach | None:
+    """Phát hành MỘT bài hẹn giờ: `hidden_at` về `NULL` + đủ ba tác dụng phụ của §1.4.
+
+    Trả hàng vừa phát hành, hoặc `None` khi **không có gì để phát hành** — hàng đã được
+    phát hành rồi, là bài mod ẩn, hoặc (với `bo_qua_neu_ban`) đang bị một transaction khác
+    giữ. Ba ca ấy cùng trả `None` vì người gọi làm cùng một việc với cả ba: bỏ qua.
+
+    `bo_qua_neu_ban=True` ⇒ `FOR UPDATE SKIP LOCKED` — dành cho `manage.py
+    phat_hanh_da_hen`. Hai lượt cron chồng nhau (lượt trước chạy quá 5 phút) sẽ **không**
+    phát hành trùng: lượt sau bỏ qua hàng đang bị giữ, và kể cả khi nó tới sau lúc lượt
+    trước đã commit thì bộ lọc `hidden_at__isnull=False` dưới khoá cũng đã sai. Thiếu vế
+    thứ hai ấy thì `SKIP LOCKED` một mình không đủ, và hậu quả là **hai thông báo cho một
+    bài** — plan §7 rủi ro 4.
+
+    `dat_gio_phat_hanh=True` ⇒ ghi luôn `published_at = now`. Chỉ nút *Phát hành ngay* /
+    *Bỏ hẹn* của khu quản trị dùng: người bấm nó muốn bài lên sóng **bây giờ**, và để
+    `published_at` ở giờ hẹn cũ là bài lên feed rồi nằm lọt thỏm giữa những bài của tuần
+    sau. Cron thì **không** đặt lại: giờ hẹn là giờ tác giả chọn, còn cron chỉ chạy muộn
+    hơn nó tối đa 5 phút.
+    """
+    with transaction.atomic():
+        hang = (
+            Mach.objects.filter(
+                pk=mach_id, hidden_at__isnull=False, hidden_by__isnull=True
+            )
+            .select_for_update(skip_locked=bo_qua_neu_ban)
+            .first()
+        )
+        if hang is None:
+            return None
+        cot = ["hidden_at"]
+        if dat_gio_phat_hanh:
+            hang.published_at = timezone.now()
+            cot.append("published_at")
+        hang.hidden_at = None
+        hang.save(update_fields=cot)
+        # Thứ tự ba dòng dưới không quan trọng (hai dòng sau chỉ xếp hàng `on_commit`),
+        # nhưng cả ba phải nằm TRONG transaction: `bao_mach_moi` ghi `Notification` và
+        # rollback ở đây phải cuốn theo cả chuông — cùng lý lẽ `noi_moc` đã ghi.
+        bao_mach_moi(hang)
+        dong_bo_mach(hang)
+        lam_moi_mach(hang)
+        if boi is not None:
+            ghi_audit(
+                actor=boi,
+                action=AUDIT_PHAT_HANH_MACH,
+                target_type=DICH_MACH,
+                target_id=hang.pk,
+                published_at=hang.published_at.isoformat(),
+                ly_do=ly_do,
+            )
+    return hang
 
 
 # --- Sửa NỘI DUNG từ khu quản trị (2026-09-03) -------------------------------

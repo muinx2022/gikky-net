@@ -313,3 +313,20 @@ Số đo (cây hai leaf, pytest `--no-migrations`): pytest 1990 pass/26 skip/0 f
 `api-client` diff chỉ thêm `quanTriLuotXemOnline` (không dính endpoint phiên khác).
 **Còn nợ trước commit:** `pnpm test` ĐẦY ĐỦ (có migrate) + `makemigrations --check` sau khi
 0025 rời cây.
+
+### Deploy — 2026-09-04, commit `36d5065`
+
+pytest đầy đủ CÓ migrate trên cây thẳng hàng (sau khi `0025` rời `main`): **1952 pass / 0 fail /
+0 warning** · lint 0 · build xanh · e2e don-vi 437/437. Theo luật deploy mới của hai phiên
+(`deploy/prod/README.md`): `pg_dump` prod trước schema (`~/gikky-net/backup/gikky-truoc-0026-*.dump`,
+325 KB) · archive ra FILE, so kích thước + số mục hai đầu (**8478720 / 817 khớp**) · thay cây
+nguyên khối · `api` build+up trước — `Applying core.0026_luotxem_da_dang_nhap… OK` · rồi `web`,
+`admin` (lần đầu prod khớp đúng MỘT commit) · đo tại `127.0.0.1:8091` có ca âm (404 cho đường
+không tồn tại; `/me/tin-nhan` 404 vì `d821723` gỡ nhắn tin — hai bảng prod 0/0 hàng, để mồ côi,
+KHÔNG migrate 0024). Đã báo `gikky-net-3b`/`-55` trước và sau.
+
+**Xác minh thật trên prod** (`/admin/luot-xem/online`, tư cách mod): 200 `no-store`; đúng 9 khoá,
+KHÔNG có `ma`; một lượt xem probe mang cookie phiên vào `/u/<user>` hiện **`da_dang_nhap=True`
++ đường dẫn đã che "(hồ sơ người dùng)"**; probe iPhone hiện `safari/di_dong`; bot của chính bài
+đo ca-âm hiện là BOT; **một khách thật** (`chrome/may_tinh`, `/s/vi-mo`, 11 lượt) đang online;
+`tong=3` = `so_online` của ô KPI (bất biến N4 đứng trên prod); `so_dong_that=4` (gồm bot).
