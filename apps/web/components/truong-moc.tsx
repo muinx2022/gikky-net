@@ -178,7 +178,7 @@ export function thanMoc(m: NoiDungMoc) {
     .filter((f) => f.label !== "" && f.value !== "");
   return {
     body: m.body,
-    occurred_at: m.occurred_at,
+    occurred_at: gon(m.occurred_at),
     loai: gon(m.loai),
     question_for_crowd: gon(m.question_for_crowd),
     figures: cap.length === 0 ? null : cap,

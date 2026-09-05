@@ -51,6 +51,8 @@
 .vung {
   padding: 11px 13px;
   min-height: 132px;
+  max-height: 360px;
+  overflow-y: auto;
   outline: none;
   font-size: 15px;
   line-height: 1.6;
