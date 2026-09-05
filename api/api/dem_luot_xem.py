@@ -64,6 +64,7 @@ query `MuoiNgay` cho mỗi lượt xem trang là cái giá không cần trả.
 """
 
 import hashlib
+import re
 import secrets
 from datetime import date
 from urllib.parse import urlsplit
@@ -206,6 +207,19 @@ def chuan_hoa_duong_dan(duong_dan: str) -> str:
     """
     sach = duong_dan.split("?", 1)[0].split("#", 1)[0][:DAI_TOI_DA_DUONG_DAN]
     return sach.rstrip("/") or "/"
+
+
+#: Các mẫu đường dẫn scanner / bot rác / file script không thuộc site công khai của Gikky.
+DUONG_DAN_RAC = re.compile(
+    r"\.(?:php\d?|phtml|asp|aspx|jsp|cgi|pl|env|git|ya?ml|ini|conf|sql|sh|bak|old|swp)$"
+    r"|^/(?:wp[-_]|wordpress|\.env|\.git|xmlrpc|phpmyadmin|actuator|cgi-bin|autodiscover|\.well-known)",
+    re.IGNORECASE,
+)
+
+
+def la_duong_dan_rac(duong_dan: str) -> bool:
+    """True nếu đường dẫn là scanner/bot rác hoặc file script."""
+    return bool(DUONG_DAN_RAC.search(duong_dan))
 
 
 def _host_cua_site() -> set[str]:
@@ -365,10 +379,13 @@ def dem_luot_xem(request, du_lieu: DemLuotXemIn):
     # Thứ tự dưới đây có một ràng buộc thật: `trinh_duyet`/`thiet_bi` **chỉ suy cho lượt
     # người**. Một con bot khai UA của Chrome mà được ghi `trinh_duyet="chrome"` sẽ trộn
     # lưu lượng máy vào bảng "người đọc site bằng gì" — bảng vẫn đầy, chỉ là đo nhầm thứ.
+    duong = chuan_hoa_duong_dan(du_lieu.duong_dan)
+    if la_duong_dan_rac(duong):
+        return Status(200, DemLuotXemOut(da_dem=False))
     ten = ten_bot(du_lieu.user_agent)
     la_bot = ten != ""
     LuotXem.objects.create(
-        duong_dan=chuan_hoa_duong_dan(du_lieu.duong_dan),
+        duong_dan=duong,
         la_bot=la_bot,
         ten_bot=ten,
         khach=hash_khach(

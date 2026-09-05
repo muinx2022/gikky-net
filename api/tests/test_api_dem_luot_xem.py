@@ -655,3 +655,25 @@ def test_N2d_co_KHONG_lam_ro_ri_danh_tinh_nao():
     gia_tri = [str(getattr(hang, f.attname)) for f in LuotXem._meta.get_fields() if f.concrete]
     assert not any("203.0.113.9" in v for v in gia_tri), gia_tri
     assert not any("Chrome/131" in v for v in gia_tri), gia_tri
+
+
+@pytest.mark.django_db
+@override_settings(DEM_LUOT_XEM_SECRET=SECRET)
+def test_G8_duong_dan_rac_khong_ghi_hang_nao():
+    """Scanner/bot rác (.php, /.env, /wp-login.php...) trả 200 {da_dem: False} và KHÔNG ghi DB."""
+    cac_duong_rac = [
+        "/wp-login.php",
+        "/wp-admin",
+        "/xmlrpc.php",
+        "/.env",
+        "/.git/config",
+        "/phpmyadmin",
+        "/test.php",
+        "/shell.jsp",
+    ]
+    for duong in cac_duong_rac:
+        r = goi({"duong_dan": duong, "user_agent": "Mozilla/5.0 Safari/605.1.15"})
+        assert r.status_code == 200, r.content
+        assert r.json() == {"da_dem": False}
+
+    assert LuotXem.objects.count() == 0

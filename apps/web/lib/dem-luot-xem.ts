@@ -100,9 +100,17 @@ const MANG_BI_MAT = /^\/(?:dat-lai-mat-khau|xac-thuc-email)(?:\/|$)/;
 const ANH_APP_ROUTER =
   /^\/(?:m|s)\/[^/]+\/(?:opengraph-image|twitter-image|icon|apple-icon)(?:-[^/]*)?$|^\/(?:opengraph-image|twitter-image|icon|apple-icon)(?:-[^/]*)?$/;
 
+/** Đuôi file script / mã nguồn / config / scanner rác từ internet. */
+const DUOI_SCRIPT_RAC =
+  /\.(?:php\d?|phtml|asp|aspx|jsp|cgi|pl|env|git|ya?ml|ini|conf|sql|sh|bak|old|swp|rar|zip|tar|gz|7z)$/i;
+
+/** Tiền tố của các bot quét lỗ hổng WordPress, config, server. */
+const SCANNER_RAC =
+  /^\/(?:wp[-_]|wordpress|\.env|\.git|xmlrpc|phpmyadmin|actuator|cgi-bin|autodiscover|\.well-known)/i;
+
 /** Đường dẫn KHÔNG bao giờ được đếm là một lượt xem trang.
  *
- * Năm nhóm, năm lý do khác nhau:
+ * Bảy nhóm, bảy lý do khác nhau:
  *
  * 1. `/_next/`, `/api/`, `/media/` — không phải trang. `matcher` cũng loại chúng, nhưng
  *    luật đúng/sai sống ở đây (xem docstring module);
@@ -112,7 +120,10 @@ const ANH_APP_ROUTER =
  *    "có dấu chấm". Lý do ở docstring của hằng ấy;
  * 5. **ảnh sinh động của App Router** (`ANH_APP_ROUTER`). Chúng KHÔNG có phần mở rộng nên
  *    nhóm 4 không bắt được, và chúng là thứ bot mạng xã hội tải mỗi lần ai đó dán link —
- *    đếm chúng là nhân đôi mọi lượt chia sẻ thành hai dòng trong bảng "xem nhiều nhất".
+ *    đếm chúng là nhân đôi mọi lượt chia sẻ thành hai dòng trong bảng "xem nhiều nhất";
+ * 6. **file script / scanner rác** (`DUOI_SCRIPT_RAC`) — bot quét `.php`, `.asp`, `.env`...
+ *    không phải trang của site;
+ * 7. **tiền tố quét lỗ hổng** (`SCANNER_RAC`) — `/wp-login.php`, `/wp-admin`, `/xmlrpc.php`...
  *
  * ⚠ Đây là bộ lọc theo **đường dẫn**. Bộ lọc theo **request** (prefetch, method) nằm ở
  * `nenDemRequest` cuối file — hai câu hỏi khác nhau, đừng gộp.
@@ -127,11 +138,34 @@ const KHONG_DEM = [
   /^\/lam-moi-cache(?:\/|$)/,
   DUOI_TINH,
   ANH_APP_ROUTER,
+  DUOI_SCRIPT_RAC,
+  SCANNER_RAC,
+];
+
+/** Các mẫu đường dẫn công khai hợp lệ của Gikky.
+ *
+ * Site công khai có một tập route xác định:
+ * - Trang chủ `/`
+ * - Mạch `/m/<slugId>` và biến thể dynamic `/m-phien/<slugId>`
+ * - Diễn đàn con `/s/<subSlug>`
+ * - Hồ sơ người dùng `/u/<username>` (và các trang con dưới `/u/`)
+ * - Các trang tĩnh: cai-dat, chan-doan, dang-ky, dang-mach, dang-nhap, doi-mat-khau,
+ *   khu-mod, luat, quen-mat-khau, sua-ho-so, tim-kiem.
+ *
+ * Mọi đường dẫn lạ không khớp cấu trúc trên (vd bot scan gõ URL linh tinh) đều bị loại.
+ */
+export const DUONG_DAN_HOP_LE = [
+  /^\/$/,
+  /^\/(?:m|m-phien)\/[^/]+\/?$/,
+  /^\/s\/[^/]+\/?$/,
+  /^\/u\/[^/]+(?:\/[^/]+)*\/?$/,
+  /^\/(?:cai-dat|chan-doan|dang-ky|dang-mach|dang-nhap|doi-mat-khau|khu-mod|luat|quen-mat-khau|sua-ho-so|tim-kiem)\/?$/,
 ];
 
 /** Có đếm đường dẫn này không. Chỉ nhận `pathname`, **không** nhận query string. */
 export function nenDem(pathname: string): boolean {
-  return !KHONG_DEM.some((r) => r.test(pathname));
+  if (KHONG_DEM.some((r) => r.test(pathname))) return false;
+  return DUONG_DAN_HOP_LE.some((r) => r.test(pathname));
 }
 
 /** Có rewrite sang biến thể `/m-phien/…` không.

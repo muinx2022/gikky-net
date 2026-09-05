@@ -11,7 +11,7 @@ import {
   nenRewrite,
 } from "../../lib/dem-luot-xem";
 import { COOKIE_PHIEN, TIEN_TO_PHIEN } from "../../middleware";
-import { boChuThich } from "./quet";
+import { boChuThich, quetNguon } from "./quet";
 
 const WEB = resolve(__dirname, "..", "..");
 const GOC = resolve(WEB, "..", "..");
@@ -134,6 +134,69 @@ test("R5c — `/u/<tên có dấu chấm>` VẪN được đếm", () => {
   expect(nenDem("/u/a.b/theo-doi")).toBe(true);
   // …nhưng một file thật dưới đường đó thì vẫn không được đếm.
   expect(nenDem("/u/a/anh.png")).toBe(false);
+});
+
+test("R5g — bot scan / URL rác / đường dẫn không thuộc site KHÔNG được đếm", () => {
+  for (const d of [
+    "/wp-login.php",
+    "/wp-admin",
+    "/wp-admin/",
+    "/xmlrpc.php",
+    "/.env",
+    "/.git/config",
+    "/phpmyadmin",
+    "/phpmyadmin/index.php",
+    "/actuator/health",
+    "/test.php",
+    "/shell.jsp",
+    "/cgi-bin/test",
+    "/index.php",
+    "/random-url-khong-ton-tai",
+    "/admin",
+  ]) {
+    expect(nenDem(d), `${d} KHÔNG được đếm`).toBe(false);
+  }
+});
+
+test("R5h — mọi trang tĩnh của site đều được `nenDem` cho phép", () => {
+  for (const trang of [
+    "/",
+    "/cai-dat",
+    "/chan-doan",
+    "/dang-ky",
+    "/dang-mach",
+    "/dang-nhap",
+    "/doi-mat-khau",
+    "/khu-mod",
+    "/luat",
+    "/quen-mat-khau",
+    "/sua-ho-so",
+    "/tim-kiem",
+  ]) {
+    expect(nenDem(trang), `${trang} phải được đếm`).toBe(true);
+    if (trang !== "/") {
+      expect(nenDem(`${trang}/`), `${trang}/ phải được đếm`).toBe(true);
+    }
+  }
+});
+
+test("R5i — chuông cảnh báo: mọi `page.tsx` trong `app/` (trừ trang bí mật) đều được `nenDem` cho phép", () => {
+  const cacTrang = quetNguon(resolve(WEB, "app"), /^page\.tsx$/);
+  expect(cacTrang.length).toBeGreaterThan(10); // chống quét rỗng
+  for (const f of cacTrang) {
+    if (f.ten.includes("dat-lai-mat-khau") || f.ten.includes("xac-thuc-email")) {
+      continue;
+    }
+    let duongDan = "/" + f.ten.replace(/\/page\.tsx$/, "").replace(/^page\.tsx$/, "");
+    duongDan = duongDan
+      .replace(/\[slugId\]/, "mau-1")
+      .replace(/\[sub\]/, "chung-khoan")
+      .replace(/\[username\]/, "ai-do");
+    expect(
+      nenDem(duongDan),
+      `Trang ${f.ten} (${duongDan}) phải được nenDem() cho phép. Nếu đây là trang mới, hãy cập nhật DUONG_DAN_HOP_LE trong lib/dem-luot-xem.ts.`,
+    ).toBe(true);
+  }
 });
 
 // --- hai bản sao bắt buộc phải khớp -----------------------------------------
