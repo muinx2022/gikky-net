@@ -13,6 +13,7 @@ from django.db import transaction
 from django.utils import timezone
 from ninja import Router, Status
 
+from core.cau_hinh import doc_phut_tu_sua_moc
 from core.doc_noi_dung import (
     SORT_HAY_NHAT,
     SORT_HOP_LE,
@@ -148,7 +149,14 @@ def mach_chi_tiet_ra(mach: Mach) -> MachChiTietOut:
     """
     # `select_related("author")`: `MocOut.author` có từ 2026-08-23 (nợ `MOC-THIEU-AUTHOR`).
     # Không có nó thì mỗi thẻ mốc là một truy vấn `User` — N+1 trên đúng endpoint nặng nhất.
-    mocs = list(Moc.objects.filter(mach=mach).select_related("author").order_by("seq"))
+    # `select_related("edited_by")`: `MocOut.edited_by` (2026-09-05) đọc trong vòng lặp
+    # per-mốc ở `trinh_bay.py` — thiếu nó thì mỗi mốc ĐÃ TỪNG SỬA (`edited_by` khác NULL)
+    # sinh thêm một truy vấn `User` riêng, y hệt bệnh N+1 của `author` ở trên.
+    mocs = list(
+        Moc.objects.filter(mach=mach)
+        .select_related("author", "edited_by")
+        .order_by("seq")
+    )
     dem = dem_binh_luan_theo_moc(mach)
     # Gallery của Phase 5. Gom MỘT truy vấn cho cả mạch rồi phát theo `moc_id`, cùng lối
     # `trich_theo_moc` ngay dưới — `m.anhs.all()` trong vòng lặp là N+1 trên đúng
@@ -166,6 +174,9 @@ def mach_chi_tiet_ra(mach: Mach) -> MachChiTietOut:
             moc__mach=mach, removed_at__isnull=True
         ).select_related("comment", "comment__author")
     }
+    # MỘT lần đọc cấu hình cho cả trang — mọi mốc dùng chung giá trị này, gọi lại trong
+    # vòng lặp dưới đây là N+1 (xem docstring `trinh_bay.py::moc_ra`).
+    phut_tu_sua = doc_phut_tu_sua_moc()
 
     # `model_dump()` chứ không phải `.dict()`: pydantic 2 deprecate `.dict()`, mà
     # `filterwarnings = ["error"]` biến `DeprecationWarning` thành lỗi test.
@@ -190,10 +201,12 @@ def mach_chi_tiet_ra(mach: Mach) -> MachChiTietOut:
         mocs=[
             moc_ra(
                 m,
+                mach,
                 so_binh_luan=dem.get(m.seq, 0),
                 trich=trich_theo_moc.get(m.pk),
                 anhs=anh_theo_moc.get(m.pk, []),
                 reactions=reaction_theo_moc.get(m.pk) or dem_reaction_rong(),
+                phut_tu_sua=phut_tu_sua,
             )
             for m in mocs
         ],
@@ -673,7 +686,13 @@ def noi_moc(request, mach_id: int, du_lieu: MocMoiIn):
     return Status(
         201,
         moc_ra(
-            moc, so_binh_luan=0, trich=None, anhs=[], reactions=dem_reaction_rong()
+            moc,
+            mach,
+            so_binh_luan=0,
+            trich=None,
+            anhs=[],
+            reactions=dem_reaction_rong(),
+            phut_tu_sua=doc_phut_tu_sua_moc(),
         ),
     )
 

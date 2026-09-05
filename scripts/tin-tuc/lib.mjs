@@ -41,7 +41,7 @@ export const MUI_GIO_VN = "Asia/Ho_Chi_Minh";
 export const DAI_TITLE = 160;
 
 /** Trần độ dài `body` — PHẢI khớp `DAI_BODY_MOC` ở `api/core/models/moc.py`. */
-export const DAI_BODY = 10000;
+export const DAI_BODY = 50000;
 
 /** Trần độ dài `sub` — khớp `MachMoiIn.sub` (`max_length=40`). */
 export const DAI_SUB = 40;

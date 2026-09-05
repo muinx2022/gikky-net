@@ -1,8 +1,14 @@
-"""Khu Cài đặt của khu quản trị — mục đầu tiên: Google OAuth.
+"""Khu Cài đặt của khu quản trị — Google OAuth + cửa sổ tự sửa bài.
 
 `plans/2026-08-24-cai-dat-google-oauth.md`. User: *"admin thêm 1 phần cài đặt, cài đặt đầu
 tiên là gg oauth, khi tôi nhập vào, lúc chạy site sẽ lấy thông tin này để hiển thị login
 oauth qua gg"*.
+
+Mục thứ hai — "cửa sổ tự sửa bài" (`plans/2026-09-05-cua-so-tu-sua-bai.md`) — dùng lại
+`chan_neu_khong_phai_superuser` CHUNG của `api/quan_tri_quyen.py` thay vì
+`_chan_neu_khong_phai_superuser` riêng ở dưới đây: hàm riêng có từ trước khi bản dùng
+chung tồn tại (2026-08-24, hàm chung mới có từ 2026-09-03), và không có lý do chép một
+phép kiểm giống hệt lần thứ ba — xem `api/quan_tri_sua_bai.py` để thấy bản dùng chung.
 
 ## Ba luật của file này
 
@@ -29,8 +35,10 @@ và cờ `da_doi_secret`. **Không bao giờ** ghi chính secret: một nhật k
 bản sao thứ hai phải đi bảo vệ, nằm ở chỗ không ai nghĩ tới khi đi thu hồi credential.
 """
 
+from django.core.exceptions import ValidationError as LoiModel
 from ninja import Router
 
+from core.cau_hinh import doc_phut_tu_sua_moc, luu_phut_tu_sua_moc
 from core.cau_hinh_oauth import doc_trang_thai, luu_google, xoa_google
 from core.ghi import (
     AUDIT_SUA_CAI_DAT_GOOGLE,
@@ -40,11 +48,23 @@ from core.ghi import (
 )
 
 from api.loi import KHONG_DU_QUYEN, THAM_SO_KHONG_HOP_LE, LoiOut, loi
-from api.quan_tri_schemas import CaiDatGoogleIn, CaiDatGoogleOut
+from api.quan_tri_quyen import chan_neu_khong_phai_superuser
+from api.quan_tri_schemas import (
+    CaiDatBienTapIn,
+    CaiDatBienTapOut,
+    CaiDatGoogleIn,
+    CaiDatGoogleOut,
+    KetQuaLuuCaiDatBienTapOut,
+)
+from api.quyen import DU_LIEU_KHONG_HOP_LE
 
 router = Router()
 
 TRA_LOI = {400: LoiOut, 401: LoiOut, 403: LoiOut}
+
+#: Câu `viec` cho `chan_neu_khong_phai_superuser` — một chuỗi cho endpoint GHI của mục
+#: "cửa sổ tự sửa bài", cùng khuôn với `VIEC_SUA_NOI_DUNG` ở `api/quan_tri_sua_bai.py`.
+VIEC_SUA_CAU_HINH_BIEN_TAP = "đổi cấu hình biên tập"
 
 
 def _ra(request) -> CaiDatGoogleOut:
@@ -162,3 +182,54 @@ def xoa_cai_dat_google(request):
             target_id=None,
         )
     return _ra(request)
+
+
+# =============================================================================
+# Cửa sổ tự sửa bài — `plans/2026-09-05-cua-so-tu-sua-bai.md`
+# =============================================================================
+
+
+@router.get(
+    "/cai-dat/bien-tap",
+    response={200: CaiDatBienTapOut, **TRA_LOI},
+    operation_id="quan_tri_xem_cai_dat_bien_tap",
+    tags=["quan-tri-cai-dat"],
+)
+def xem_cai_dat_bien_tap(request):
+    """Số phút tác giả được tự sửa bài sau khi đăng. Mọi `is_staff` đọc được.
+
+    Cùng lý lẽ với `xem_cai_dat_google`: mod thường cần biết cấu hình đang là bao nhiêu
+    khi có tác giả hỏi "sao tôi không sửa được nữa", dù họ không đổi được con số này.
+    """
+    return CaiDatBienTapOut(
+        phut_tu_sua_moc=doc_phut_tu_sua_moc(),
+        sua_duoc=bool(request.user.is_superuser),
+    )
+
+
+@router.put(
+    "/cai-dat/bien-tap",
+    response={200: KetQuaLuuCaiDatBienTapOut, **TRA_LOI},
+    operation_id="quan_tri_luu_cai_dat_bien_tap",
+    tags=["quan-tri-cai-dat"],
+)
+def luu_cai_dat_bien_tap(request, du_lieu: CaiDatBienTapIn):
+    """Đổi số phút tự sửa. Có hiệu lực **ngay** cho mọi mốc — không cache giá trị cũ ở
+    đâu, `PATCH /mocs/{id}` đọc lại DB ở mỗi request (`core/cau_hinh.py`).
+
+    Gửi đúng giá trị đang có ⇒ 200 `da_doi=false`, không ghi `AuditLog` — cùng luật
+    "không đổi thì không vết" của mọi hành động quản trị khác trong repo.
+    """
+    if (
+        chan := chan_neu_khong_phai_superuser(request, VIEC_SUA_CAU_HINH_BIEN_TAP)
+    ) is not None:
+        return chan
+    try:
+        cau_hinh, da_doi = luu_phut_tu_sua_moc(
+            phut=du_lieu.phut_tu_sua_moc, boi=request.user
+        )
+    except LoiModel as e:
+        return loi(400, DU_LIEU_KHONG_HOP_LE, "; ".join(e.messages))
+    return KetQuaLuuCaiDatBienTapOut(
+        da_doi=da_doi, phut_tu_sua_moc=cau_hinh.phut_tu_sua_moc
+    )

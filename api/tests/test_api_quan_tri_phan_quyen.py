@@ -108,6 +108,9 @@ def test_user_thuong_KHONG_vao_duoc_endpoint_nao(du_lieu):
 CHI_SUPERUSER = {
     "quan_tri_luu_cai_dat_google",
     "quan_tri_xoa_cai_dat_google",
+    # Cửa sổ tự sửa bài (2026-09-05). Đổi số phút này quyết định tác giả có còn tự sửa
+    # được bài của mình hay không trên toàn site — cùng mức nhạy cảm với OAuth client.
+    "quan_tri_luu_cai_dat_bien_tap",
     # CRUD tài khoản (2026-08-25). User chốt "chỉ superadmin mới có quyền thay đổi các
     # thông tin của user". Đặt mật khẩu cho người khác = đăng nhập được bằng tài khoản
     # đó, tức chiếm tài khoản kể cả khi có thiện ý.

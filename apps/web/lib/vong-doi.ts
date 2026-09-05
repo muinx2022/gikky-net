@@ -18,6 +18,10 @@ import { TZ_VN } from "./dinh-dang";
  * | dấu "đã sửa" | `MocOut.sua_im_lang_den` |
  * | 429 hết hạn mức | `LoiThoiGianOut.thu_lai_tu` trên chính thân lỗi |
  *
+ * Bốn từ 2026-09-05 (`plans/2026-09-05-cua-so-tu-sua-bai.md`): **còn tự sửa được không**
+ * — `MocOut.sua_duoc_den` — cùng khuôn, số phút cấu hình (đổi được ở khu quản trị) không
+ * hề chép sang JS, chỉ mốc thời gian đã cộng dồn mới đi qua ranh giới này.
+ *
  * Ba hằng **đã bị xoá**, không để lại "cho chắc": hai bản của một luật là bản sẽ trôi khỏi
  * nhau, và cái chuông giữ chúng khớp nhau chỉ là chi phí của việc có bản thứ hai. Con số
  * duy nhất còn đi từ Django ra UI là **trần mốc/ngày** (`MachChiTietOut.tran_moc_moi_ngay`)
@@ -91,6 +95,25 @@ export function conMoLaiDuoc(
   if (Number.isNaN(han)) return false;
   // `<=` chứ không `<`: server từ chối bằng `>` (`api/machs.py::mo_lai_mach`), nên đúng
   // giây thứ 7×24h vẫn còn mở lại được. Hai bên phải nói cùng một chuyện ở đúng cái biên.
+  return khi.getTime() <= han;
+}
+
+/** Tác giả còn TỰ SỬA được mốc này không? Nhận thẳng `MocOut.sua_duoc_den`.
+ *
+ * `plans/2026-09-05-cua-so-tu-sua-bai.md`: cửa sổ CÓ QUYỀN sửa, khác hẳn
+ * `sua_im_lang_den`/`phutSuaImLangConLai` ở dưới — đó là "có để vết không". Hết cửa sổ
+ * này thì `PATCH /mocs/{id}` trả 403 `het_cua_so_sua` **kể cả tác giả**, nên `false` là
+ * lệnh **không render nút Sửa**, cùng lối `conMoLaiDuoc` (PLAN mục 4).
+ *
+ * `<=` chứ không `<`, cùng lý lẽ `conMoLaiDuoc`: server từ chối bằng `>`
+ * (`api/mocs.py::sua_moc_api`), nên đúng giây cuối của cửa sổ vẫn sửa được ở cả hai bên.
+ */
+export function tuSuaConDuoc(
+  suaDuocDen: string,
+  khi: Date = new Date(),
+): boolean {
+  const han = new Date(suaDuocDen).getTime();
+  if (Number.isNaN(han)) return false;
   return khi.getTime() <= han;
 }
 

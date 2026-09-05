@@ -1,0 +1,20 @@
+---
+description: Mọi việc sửa code trên Cursor chạy 5 chặng — plan, thực thi, phản biện, nghiệm thu, báo cáo.
+alwaysApply: true
+---
+
+# Quy trình 5 chặng (Cursor)
+
+Trước khi làm: việc này **có sửa code không?**
+
+- **Không** → trả lời thẳng, dừng. Không plan, không subagent.
+- **Có** → đọc skill `quy-trinh-5-chang` (máy: `~/.cursor/skills/quy-trinh-5-chang/SKILL.md`) và chạy đủ:
+
+1. **Plan** — `plans/YYYY-MM-DD-<ten>.md`, tiêu chí đo được. Không code. Commit chỉ file plan (nếu user không cấm) rồi dừng; bảo user thực thi.
+2. **Thực thi** — khi user chỉ định plan. Giao `opus-dev` (hoặc tự làm nếu user bảo). Không commit code.
+3. **Phản biện + nghiệm thu** — cùng lúc: `phan-bien` (cấm build/test tích hợp) và `nghiem-thu` (độc quyền build/test). Không mớm kết luận ĐẠT cho phản biện.
+4. **Báo cáo** — số đo thật, bảng ĐẠT/KHÔNG ĐẠT, phản biện tìm gì, sổ dọc đường. Không commit trừ khi user bảo.
+
+Ba ngoại lệ không cần đủ 5 chặng: user nói «tự làm / nhanh thôi»; sửa 1 chỗ đã biết chắc không đổi hành vi; user chỉ đang lập plan.
+
+`git status` trước khi sửa. File `M` không phải việc mình → đừng đụng. Việc ngoài phạm vi → ghi sổ (`LOI-VA-NO.md` mục E), không nhảy sang.

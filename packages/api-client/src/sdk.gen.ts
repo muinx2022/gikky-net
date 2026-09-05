@@ -35,6 +35,11 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
  * giải phóng đĩa), và mốc bia mộ thì ảnh đã không hiện ở đâu nữa nên không có gì để
  * bảo vệ. `doi_mach_tuong_tac_duoc` thì **có** — mạch bị mod khoá là cấm mọi tương tác,
  * kể cả của chính tác giả (PLAN 5.10).
+ *
+ * **Có kiểm cửa sổ tự sửa** (`plans/2026-09-05-cua-so-tu-sua-bai.md`) ⇒ 403
+ * `het_cua_so_sua` khi hết hạn, cùng phép kiểm với `POST /mocs/{id}/anh` ở trên: gỡ ảnh
+ * cũng đổi nội dung công khai của mốc mà không để lại dấu vết nào, đúng thứ cửa sổ này
+ * chặn (`api/quyen.py::doi_trong_cua_so_tu_sua`).
  */
 export const xoaAnhMoc = <ThrowOnError extends boolean = false>(options: Options<XoaAnhMocData, ThrowOnError>): RequestResult<XoaAnhMocResponses, XoaAnhMocErrors, ThrowOnError> => (options.client ?? client).delete<XoaAnhMocResponses, XoaAnhMocErrors, ThrowOnError>({
     security: [{
@@ -987,6 +992,26 @@ export const xoaMoc = <ThrowOnError extends boolean = false>(options: Options<Xo
  * đúng giá trị lõi "ghi-trước-khi-biết-kết-quả" của sản phẩm.
  *
  * `occurred_at` mới vẫn **cấm ngày tương lai** (theo giờ VN).
+ *
+ * ## Cửa sổ TỰ SỬA — khác hẳn cửa sổ im lặng ở trên
+ *
+ * `plans/2026-09-05-cua-so-tu-sua-bai.md`. Quá `doc_phut_tu_sua_moc()` phút kể từ
+ * `core.cau_hinh.moc_bat_dau_tu_sua(moc, mach)` (mặc định 60, đổi được ở khu quản trị) ⇒
+ * 403 `het_cua_so_sua`, **kể cả tác giả** (`api/quyen.py::doi_trong_cua_so_tu_sua` —
+ * dùng chung với hai cửa ảnh gallery ở `api/anh.py`). Chỉ superuser sửa tiếp được, qua
+ * `PATCH /admin/mocs/{id}` (`api/quan_tri_sua_bai.py::sua_moc_quan_tri`) — đường ấy
+ * KHÔNG kiểm mốc này.
+ *
+ * Mốc bắt đầu đếm KHÔNG phải luôn luôn `created_at`: mạch hẹn giờ phát hành
+ * (`plans/2026-09-03-hen-gio-phat-hanh.md`) có `Mach.published_at` ở tương lai, và đếm
+ * từ lúc SOẠN thì cửa sổ có thể hết trước khi bài lên sóng — xem docstring
+ * `moc_bat_dau_tu_sua`.
+ *
+ * Hai cửa sổ đo cùng một khoảng cách nhưng trả lời hai câu hỏi khác nhau: cửa sổ im
+ * lặng nói "có để vết không" (tính từ `created_at`), cửa sổ này nói "có được sửa nữa
+ * không" (tính từ `moc_bat_dau_tu_sua`). Một mốc có thể đã hết im lặng (phải để vết) mà
+ * vẫn còn tự sửa được (< cửa sổ tự sửa), miễn là cửa sổ tự sửa lớn hơn cửa sổ im lặng —
+ * đúng trường hợp mặc định (60 > 15).
  */
 export const suaMoc = <ThrowOnError extends boolean = false>(options: Options<SuaMocData, ThrowOnError>): RequestResult<SuaMocResponses, SuaMocErrors, ThrowOnError> => (options.client ?? client).patch<SuaMocResponses, SuaMocErrors, ThrowOnError>({
     security: [{
@@ -1011,10 +1036,14 @@ export const suaMoc = <ThrowOnError extends boolean = false>(options: Options<Su
  * **Quyền: CHỈ `Moc.author`** — cùng cột mà `PATCH`/`DELETE /mocs/{id}` hỏi, không phải
  * `Mach.author`. Ảnh là nội dung của mốc, nên nó theo quyền của mốc.
  *
- * Ba ca từ chối theo trạng thái, mỗi ca một mã:
+ * Bốn ca từ chối theo trạng thái, mỗi ca một mã:
  *
  * - mạch bị mod **khoá** ⇒ 403 `mach_bi_khoa` (đọc được, cấm tương tác — PLAN 5.10);
  * - mốc đã là **bia mộ** hoặc bị mod ẩn ⇒ 409 `noi_dung_da_go`;
+ * - **quá cửa sổ tự sửa** (`plans/2026-09-05-cua-so-tu-sua-bai.md`) ⇒ 403
+ * `het_cua_so_sua` — thêm ảnh cũng đổi nội dung công khai của mốc, mà không để lại
+ * `MocRevision`/`edited_at` nào; không áp cùng phép kiểm với `PATCH /mocs/{id}` thì
+ * cửa này là đường vòng để sửa bài sau khi hết hạn (xem `api/quyen.py::doi_trong_cua_so_tu_sua`);
  * - mốc đã đủ 10 ảnh ⇒ 409 `qua_nhieu_anh`.
  *
  * **Mạch ĐÃ ĐÓNG SỔ vẫn tải ảnh lên được**, và đó là chủ đích chứ không phải sót:

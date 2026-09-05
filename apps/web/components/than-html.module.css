@@ -79,3 +79,15 @@
   border-top: 1px solid var(--line);
   margin: 1.1em 0;
 }
+
+.than img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  cursor: zoom-in;
+  transition: opacity 0.15s ease;
+}
+
+.than img:hover {
+  opacity: 0.94;
+}

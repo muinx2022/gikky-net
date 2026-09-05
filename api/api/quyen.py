@@ -22,11 +22,14 @@ không gì đỏ. `tests/test_quyen_ghi.py` là cái chuông: nó đòi MỌI op
 """
 
 import logging
+from datetime import timedelta
 
 from django.http import HttpRequest
+from django.utils import timezone
 from ninja.errors import AuthenticationError, HttpError
 from ninja.security import SessionAuth
 
+from core.cau_hinh import doc_phut_tu_sua_moc, moc_bat_dau_tu_sua
 from core.models.binh_luan import Comment
 
 #: `CHUA_DANG_NHAP` được **tái xuất** từ `api/loi.py`, không khai lại ở đây (gộp mảng
@@ -64,6 +67,11 @@ HET_HAN_MO_LAI = "het_han_mo_lai"
 NOI_DUNG_DA_GO = "noi_dung_da_go"
 #: Dữ liệu gửi lên sai luật domain (figures hỏng, ngày tương lai, body rỗng…). 400.
 DU_LIEU_KHONG_HOP_LE = "du_lieu_khong_hop_le"
+#: Quá cửa sổ tự sửa của TÁC GIẢ (`core/cau_hinh.py::doc_phut_tu_sua_moc`, tính từ
+#: `core/cau_hinh.py::moc_bat_dau_tu_sua` — KHÔNG phải luôn `Moc.created_at`, xem
+#: docstring hàm đó) — `plans/2026-09-05-cua-so-tu-sua-bai.md`. 403. Chỉ superuser sửa
+#: tiếp được, qua `PATCH /admin/mocs/{id}` (không giới hạn thời gian).
+HET_CUA_SO_SUA = "het_cua_so_sua"
 
 
 class LoiGhi(HttpError):
@@ -153,6 +161,28 @@ def doi_mach_tuong_tac_duoc(mach) -> None:
     """
     if mach.locked_at is not None:
         raise LoiGhi(403, MACH_BI_KHOA, "Mạch này đã bị khoá, không tương tác được.")
+
+
+def doi_trong_cua_so_tu_sua(moc) -> None:
+    """Ném 403 `het_cua_so_sua` nếu ĐÃ QUÁ cửa sổ tự sửa của tác giả (2026-09-05).
+
+    Dùng chung cho MỌI đường ghi có thể đổi nội dung công khai của một `Moc` sau khi
+    đăng — không chỉ `PATCH /mocs/{id}` mà cả hai cửa ảnh gallery
+    (`POST`/`DELETE /mocs/{id}/anh`, `api/anh.py`): thêm hay gỡ ảnh cũng thay đổi cái mà
+    người đọc thấy, mà không để lại `MocRevision`/`edited_at`/`edited_by` nào — đúng thứ
+    cửa sổ này sinh ra để chặn. Một phép kiểm chép ba lần là ba phép kiểm sẽ trôi khỏi
+    nhau ngay lần đổi công thức tiếp theo.
+
+    Đòi `moc.mach` đã nạp sẵn (mọi người gọi đều đi qua `api/ghi_chung.py::nap_moc`, có
+    `select_related("mach")`) — hỏi thêm ở đây không phải một truy vấn mới.
+
+    `core.cau_hinh.moc_bat_dau_tu_sua` tính đúng mốc bắt đầu đếm cho cả mạch hẹn giờ phát
+    hành (`Mach.published_at` ở tương lai); `doc_phut_tu_sua_moc()` đọc số phút cấu hình
+    HIỆN HÀNH — không phải hằng số cứng, đổi được ở khu quản trị.
+    """
+    han = moc_bat_dau_tu_sua(moc, moc.mach) + timedelta(minutes=doc_phut_tu_sua_moc())
+    if timezone.now() > han:
+        raise LoiGhi(403, HET_CUA_SO_SUA, "Đã quá thời hạn tự sửa bài này.")
 
 
 def dang_ky_xu_ly_loi_ghi(api) -> None:

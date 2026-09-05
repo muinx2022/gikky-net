@@ -7,14 +7,14 @@ import { useRef, useState } from "react";
 import { cauLoiTaiAnh, taiAnhLanLuot } from "@/lib/anh";
 import { cauLoi, layDuLieu } from "@/lib/ghi";
 import { GOC_TRINH_DUYET, headerGhi } from "@/lib/tai-khoan";
-import { gioPhutVN, phutSuaImLangConLai } from "@/lib/vong-doi";
+import { gioPhutVN, phutSuaImLangConLai, tuSuaConDuoc } from "@/lib/vong-doi";
 
 import { FormBaoCao } from "./bao-cao";
 import { AnhDaLuu, ChonAnh } from "./chon-anh";
 import css from "./hanh-dong-moc.module.css";
 import { useMach } from "./mach-ngu-canh";
 import { usePhien } from "./phien";
-import { TruongMoc, thanMoc, type NoiDungMoc } from "./truong-moc";
+import { TruongMoc, thanMoc, DAI_BODY_MOC, type NoiDungMoc } from "./truong-moc";
 
 /** Menu `⋯` trên thẻ mốc: **Sửa** · **Xoá** — PLAN 5.2. Anh em với `HanhDongBinhLuan`.
  *
@@ -80,6 +80,22 @@ export function HanhDongMoc({ moc }: { moc: MocOut }) {
   // Chủ mốc trên một mạch bị khoá không còn hành động nào; người khác vẫn báo cáo được
   // (lượt vá V1 — L03: `api/bao_cao.py` cố ý không áp `doi_mach_tuong_tac_duoc`).
   if (khoa && cua_toi) return null;
+  // Hết cửa sổ TỰ SỬA (PLAN con 2026-09-05) ⇒ chỉ ẩn nút "Sửa mốc" (và chặn MỞ form sửa),
+  // KHÔNG ẩn cả menu: `DELETE /mocs/{id}` không có phép kiểm cửa sổ nào (chỉ
+  // `doi_chu_so_huu`/`doi_con_song`), nên "Xoá mốc" vẫn phải hiện và hoạt động bất kể cửa
+  // sổ này — PLAN chỉ chốt ẩn nút Sửa, không chốt ẩn nút Xoá. Đặt tên `qua_han_tu_sua` —
+  // không trùng `nhac_sua` bên dưới, vì đó là "sửa xong có để dấu không", còn đây là "còn
+  // được sửa nữa không".
+  //
+  // ⚠ **Chỉ dùng để CHẶN MỞ form, không dùng để giữ form đang mở** (lượt vá phản biện
+  // vòng 2, `plans/2026-09-05-cua-so-tu-sua-bai.md` mục 1). Giá trị này tính lại từ
+  // `new Date()` ở MỌI lần render, nên nó là một cái bẫy hẹn giờ ẩn: mở form lúc còn hạn
+  // rồi gõ dở dang, một lượt re-render do state gõ đổi (`datGiaTri`) rơi đúng lúc hạn vừa
+  // trôi qua sẽ làm biến này lật sang `true` — dùng nó để gate luôn cả `{mo && (...)}` bên
+  // dưới thì form UNMOUNT NGAY GIỮA LÚC ĐANG GÕ, mất trắng nội dung và ảnh đã chọn, không
+  // một dòng lỗi. Vì vậy nó chỉ xuất hiện ở điều kiện hiện nút "Sửa mốc" (quyết định MỘT
+  // LẦN tại thời điểm bấm mở) — form ở dưới chỉ còn xét `mo`, không xét lại đồng hồ.
+  const qua_han_tu_sua = cua_toi && !tuSuaConDuoc(moc.sua_duoc_den);
 
   const con = phutSuaImLangConLai(moc.sua_im_lang_den);
   const het_luc = gioPhutVN(moc.sua_im_lang_den);
@@ -91,6 +107,12 @@ export function HanhDongMoc({ moc }: { moc: MocOut }) {
   const luu = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (dangGui || gia_tri.body.trim() === "") return;
+    if (gia_tri.body.length > DAI_BODY_MOC) {
+      datLoi(
+        `Nội dung mốc vượt quá ${DAI_BODY_MOC.toLocaleString("vi-VN")} ký tự (hiện có ${gia_tri.body.length.toLocaleString("vi-VN")} ký tự). Vui lòng rút gọn trước khi lưu.`,
+      );
+      return;
+    }
     const thay_doi = chiPhanDoi(moc, gia_tri);
     // Không đổi chữ **và** không thêm ảnh ⇒ đóng form, không gọi API nào. Đây là luật
     // "không gửi cái không đổi" ở đầu file, nay phải hỏi thêm vế ảnh: mở form ra rồi
@@ -169,17 +191,19 @@ export function HanhDongMoc({ moc }: { moc: MocOut }) {
         <div className={css.hop}>
           {cua_toi && (
             <>
-              <button
-                type="button"
-                onClick={() => {
-                  dongMenu();
-                  datGiaTri(tuMoc(moc));
-                  datMo(true);
-                }}
-                data-testid="nut-sua-moc"
-              >
-                Sửa mốc
-              </button>
+              {!qua_han_tu_sua && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    dongMenu();
+                    datGiaTri(tuMoc(moc));
+                    datMo(true);
+                  }}
+                  data-testid="nut-sua-moc"
+                >
+                  Sửa mốc
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => {

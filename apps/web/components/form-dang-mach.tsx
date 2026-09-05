@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { cauLoiTaiAnh, taiAnhLanLuot } from "@/lib/anh";
-import { cauLoi, layDuLieu } from "@/lib/ghi";
+import { cauLoi, layDuLieu, LoiGhi } from "@/lib/ghi";
 import { GOC_TRINH_DUYET, headerGhi } from "@/lib/tai-khoan";
 import { duongDanMach } from "@/lib/url";
 
@@ -13,7 +13,7 @@ import { ChonAnh } from "./chon-anh";
 import css from "./form-dang-mach.module.css";
 import { useModalDangNhap } from "./modal-dang-nhap";
 import { usePhien } from "./phien";
-import { TruongMoc, mocRong, thanMoc, type NoiDungMoc } from "./truong-moc";
+import { TruongMoc, mocRong, thanMoc, DAI_BODY_MOC, type NoiDungMoc } from "./truong-moc";
 
 /** Đăng bài mới — `POST /machs` (PLAN 5.1). Bài gốc **chính là mốc 1**, không có ngoại lệ.
  *
@@ -96,6 +96,13 @@ export function FormDangMach({
     datDangGui(true);
     datLoi(null);
     try {
+      if (moc.body.length > DAI_BODY_MOC) {
+        throw new LoiGhi(
+          400,
+          "",
+          `Nội dung bài viết vượt quá ${DAI_BODY_MOC.toLocaleString("vi-VN")} ký tự (hiện có ${moc.body.length.toLocaleString("vi-VN")} ký tự). Vui lòng rút gọn trước khi đăng.`,
+        );
+      }
       const mach = layDuLieu(
         await taoMach({
           baseUrl: GOC_TRINH_DUYET,

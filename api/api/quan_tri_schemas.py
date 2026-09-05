@@ -561,6 +561,33 @@ class CaiDatGoogleIn(Schema):
     secret: str | None = None
 
 
+class CaiDatBienTapOut(Schema):
+    """Cấu hình "cửa sổ tự sửa bài" cho trang Cài đặt (`plans/2026-09-05-cua-so-tu-sua-
+    bai.md`) — anh em với `CaiDatGoogleOut` ngay dưới, cùng luật "chỉ superuser ghi".
+    """
+
+    #: Số phút kể từ lần LÊN SÓNG ĐẦU TIÊN (`Mach.lan_dau_len_song`, ngã về
+    #: `Moc.created_at` khi mạch không hẹn giờ — xem `core/cau_hinh.py::
+    #: moc_bat_dau_tu_sua`) mà tác giả còn tự sửa bài — mặc định 60.
+    phut_tu_sua_moc: int
+    #: Người đang xem có được GHI không, cùng luật `CaiDatGoogleOut.sua_duoc`. Mọi
+    #: `is_staff` đọc được cửa GET; chỉ superuser đổi được.
+    sua_duoc: bool
+
+
+class CaiDatBienTapIn(Schema):
+    """Body của `PUT /admin/cai-dat/bien-tap`."""
+
+    phut_tu_sua_moc: int
+
+
+class KetQuaLuuCaiDatBienTapOut(Schema):
+    """Kết quả một lượt lưu — `da_doi=false` khi gửi đúng giá trị đang có (không audit)."""
+
+    da_doi: bool
+    phut_tu_sua_moc: int
+
+
 class GanModSubIn(Schema):
     """Body của `POST /admin/subs/{slug}/mods`.
 

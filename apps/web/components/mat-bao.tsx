@@ -7,6 +7,7 @@ import { nhanDaiGap, tinhDaiGapBao, trongDaiGap } from "@/lib/dai-gap";
 import { mocDauChuaXem, oChuaXem } from "@/lib/vach-moi";
 
 import css from "./mat-bao.module.css";
+import { useMocAccordion } from "./moc-accordion";
 import { useTrangThaiToi } from "./trang-thai-toi";
 
 /** Khung nhật ký của **mặt BÃO** — PLAN 5.5 và wireframe 9.2.
@@ -78,6 +79,7 @@ export function MatBao({
   tatCaMoc: readonly { seq: number; the: React.ReactNode }[];
 }) {
   const { trangThai } = useTrangThaiToi();
+  const { moMoc } = useMocAccordion();
   const [mo, datMo] = useState(false);
   const khungRef = useRef<HTMLDivElement>(null);
 
@@ -109,6 +111,7 @@ export function MatBao({
    * cú bấm ấy chỉ còn việc cuộn tới chỗ vốn đã có sẵn. */
   const nhayToiMoc = (seq: number) => {
     if (trongDaiGap(dai, seq)) datMo(true);
+    if (seq > 1) moMoc(seq);
     requestAnimationFrame(() => {
       khungRef.current
         ?.querySelector(`[data-testid="moc-${seq}"]`)

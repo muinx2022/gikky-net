@@ -14,6 +14,7 @@ import { HanhDongMoc } from "./hanh-dong-moc";
 import { HanhDongMod } from "./hanh-dong-mod";
 import { KhoiTrich } from "./khoi-trich";
 import { KhungNganKeo, NutNganKeo } from "./ngan-keo";
+import { VoThuGonMoc } from "./moc-accordion";
 import css from "./the-moc.module.css";
 import { ThanHtml } from "./than-html";
 
@@ -90,7 +91,7 @@ export function TheMoc({
           cai_gi="moc"
           dich={hien ? { loai: "moc", id: moc.id } : null}
         />
-        <div className={css.noi}>
+        <VoThuGonMoc seq={moc.seq} laMach={laMach}>
         <div className={css.dau}>
           <span className={css.khi} data-testid="moc-occurred-at">
             {ngayDayDu(moc.occurred_at)}
@@ -101,12 +102,28 @@ export function TheMoc({
               là chủ đích (PLAN 9.1). */}
           <span className={css.bien_lai} data-testid="moc-created-at">
             ghi {dauThoiGianServer(moc.seq === 1 ? publishedAtMach : moc.created_at)}
+            {/* "Đã sửa bởi <tên> vào <giờ>" — PLAN con 2026-09-05, thay cho nhãn "đã sửa
+                N lần" trần trụi cũ. `edited_by` chỉ `null` ở hai ca: chưa từng sửa
+                (`edit_count === 0`, nhánh dưới không hiện gì), hoặc dữ liệu CŨ trước
+                migration 0029 (`edit_count > 0` mà không biết ai đã sửa) — ca đó KHÔNG
+                được bịa tên, nên rơi thẳng về nhãn cũ ở nhánh `else`. */}
+            {Boolean(moc.edited_by) && (
+              <>
+                {" · "}
+                <span data-testid="da-sua-boi">
+                  Đã sửa bởi {moc.edited_by?.display_name || moc.edited_by?.username} vào{" "}
+                  {dauThoiGianServer(moc.edited_at ?? moc.created_at)}
+                </span>
+              </>
+            )}
             {moc.edit_count > 0 && (
               <>
                 {" · "}
                 {/* Nhãn "đã sửa N lần" nay **bấm được** — nợ `UI-DIFF-REVISION`, trả
                     2026-08-23. Vẫn cùng vai đóng dấu, chỉ khác là nó dẫn tới bằng chứng
-                    thay vì dừng ở lời khẳng định. Xem `components/ban-cu-moc.tsx`. */}
+                    thay vì dừng ở lời khẳng định. Xem `components/ban-cu-moc.tsx`.
+                    Giữ nguyên CẢ KHI `edited_by` đã hiện ở trên — đây là đường xem
+                    LỊCH SỬ các bản cũ, không phải một cách nói khác của cùng một câu. */}
                 <BanCuMoc mocId={moc.id} soLan={moc.edit_count} />
               </>
             )}
@@ -242,7 +259,7 @@ export function TheMoc({
             />
           </KhungNganKeo>
         )}
-        </div>
+        </VoThuGonMoc>
       </div>
     </li>
   );

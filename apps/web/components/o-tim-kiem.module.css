@@ -15,17 +15,20 @@
   align-items: center;
   gap: 6px;
   padding: 5px 11px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-2);
   border-radius: 999px;
-  background: var(--surface);
+  background: var(--inset);
   /* Co được nhưng không biến mất: thanh trên cùng có bốn thứ tranh chỗ, và ô này phải
      nhường trước tên người dùng chứ không đẩy ai ra khỏi màn hình. */
   flex: 0 1 260px;
   min-width: 0;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
 }
 
 .o:focus-within {
   border-color: var(--accent);
+  background: var(--surface);
+  box-shadow: 0 0 0 2px var(--accent-soft);
 }
 
 .kinh {

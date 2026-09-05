@@ -21,10 +21,11 @@ pytestmark = pytest.mark.django_db
 
 #: Số truy vấn kỳ vọng, viết cứng. Con số tăng lên là một quyết định phải nhìn thấy.
 #:
-#: `GET /machs/{id}` = 6: mạch (kèm sub + author) · mốc · đếm bình luận theo mốc · trích ·
+#: `GET /machs/{id}` = 7: mạch (kèm sub + author) · mốc · đếm bình luận theo mốc · trích ·
 #: **ảnh của mọi mốc** (Phase 5, 2026-08-23) · **đếm reaction của mọi mốc** (lượt giao
 #: diện, 2026-08-23 — nợ `REACTION-CHUA-CO-UI`: wireframe 9.2 có hàng `📈 12 · 🔥 9`, mà
-#: `MocOut` chưa mang con số nào để vẽ nó).
+#: `MocOut` chưa mang con số nào để vẽ nó) · **cấu hình cửa sổ tự sửa** (2026-09-05,
+#: `core/cau_hinh.py::doc_phut_tu_sua_moc`) — MỘT lần cho cả trang, không phải mỗi mốc.
 #: Hai truy vấn cuối đều là MỘT cho cả mạch rồi phát theo `moc_id`, cùng lối
 #: `trich_theo_moc` — `m.anhs.all()` / `dem_reaction(m)` trong vòng lặp là N+1 trên đúng
 #: endpoint nặng nhất (9 mốc = 9 truy vấn thừa mỗi lượt tải trang).
@@ -52,7 +53,7 @@ pytestmark = pytest.mark.django_db
 #: là thứ `test_them_mach_KHONG_lam_tang_so_query_cua_feed` ở cuối file chứng minh: 22 thẻ
 #: vẫn đúng con số này.
 SO_QUERY = {
-    "xem_mach": 6,
+    "xem_mach": 7,
     "khan_dai": 3,
     "ngan_keo": 3,
     "revisions": 2,
@@ -83,10 +84,24 @@ SO_QUERY = {
 #: ở cuối file là thứ chứng minh chỗ đó.
 
 
-def test_xem_mach(client, seed, django_assert_num_queries):
+def test_xem_mach(client, seed, nguoi_khac, django_assert_num_queries):
+    """`edited_by` khác NULL trên một mốc KHÔNG được thêm truy vấn.
+
+    Trên seed thô không mốc nào từng được sửa (`edited_by IS NULL` khắp lượt), nên nhánh
+    N+1 thật — thiếu `select_related("edited_by")` ở `machs.py::mach_chi_tiet_ra` — không
+    hề chạm tới: một `SELECT` vào bảng `User` chỉ nổ ra khi giá trị khác NULL. Đặt
+    `edited_by` cho một mốc TRƯỚC khi đo là điều kiện để con số ghim ở trên thật sự chứng
+    minh "không N+1", không phải trùng hợp N=1.
+    """
+    moc_da_sua = Moc.objects.filter(mach=seed, seq=2).first()
+    Moc.objects.filter(pk=moc_da_sua.pk).update(edited_by=nguoi_khac)
+
     with django_assert_num_queries(SO_QUERY["xem_mach"]):
         d = lay(client, f"/api/v1/machs/{seed.pk}")
     assert len(d["mocs"]) == 9 and sum(s["so_binh_luan"] for s in d["spine"]) == 23
+    sua = next(m for m in d["mocs"] if m["seq"] == 2)
+    assert sua["edited_by"] is not None
+    assert sua["edited_by"]["username"] == nguoi_khac.username
 
 
 @pytest.mark.parametrize("sort", ["hay_nhat", "moi_nhat", "cu_nhat"])

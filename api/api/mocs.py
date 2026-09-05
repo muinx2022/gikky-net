@@ -12,6 +12,7 @@ from django.db import IntegrityError, transaction
 from django.utils import timezone
 from ninja import Router, Status
 
+from core.cau_hinh import doc_phut_tu_sua_moc
 from core.doc_noi_dung import (
     dem_binh_luan_theo_moc,
     dem_nut,
@@ -36,6 +37,7 @@ from api.quyen import (
     dang_nhap,
     doi_chu_so_huu,
     doi_mach_tuong_tac_duoc,
+    doi_trong_cua_so_tu_sua,
 )
 from api.schemas import MocOut, MocRevisionsOut, NganKeoOut, TrichKetQuaOut
 from api.schemas_ghi import MocSuaIn, TrichIn
@@ -181,10 +183,12 @@ def _moc_ra_day_du(moc: Moc) -> MocOut:
     )
     return moc_ra(
         moc,
+        moc.mach,
         so_binh_luan=dem.get(moc.seq, 0),
         trich=trich,
         anhs=anhs,
         reactions=dem_reaction(moc),
+        phut_tu_sua=doc_phut_tu_sua_moc(),
     )
 
 
@@ -215,11 +219,32 @@ def sua_moc_api(request, moc_id: int, du_lieu: MocSuaIn):
     đúng giá trị lõi "ghi-trước-khi-biết-kết-quả" của sản phẩm.
 
     `occurred_at` mới vẫn **cấm ngày tương lai** (theo giờ VN).
+
+    ## Cửa sổ TỰ SỬA — khác hẳn cửa sổ im lặng ở trên
+
+    `plans/2026-09-05-cua-so-tu-sua-bai.md`. Quá `doc_phut_tu_sua_moc()` phút kể từ
+    `core.cau_hinh.moc_bat_dau_tu_sua(moc, mach)` (mặc định 60, đổi được ở khu quản trị) ⇒
+    403 `het_cua_so_sua`, **kể cả tác giả** (`api/quyen.py::doi_trong_cua_so_tu_sua` —
+    dùng chung với hai cửa ảnh gallery ở `api/anh.py`). Chỉ superuser sửa tiếp được, qua
+    `PATCH /admin/mocs/{id}` (`api/quan_tri_sua_bai.py::sua_moc_quan_tri`) — đường ấy
+    KHÔNG kiểm mốc này.
+
+    Mốc bắt đầu đếm KHÔNG phải luôn luôn `created_at`: mạch hẹn giờ phát hành
+    (`plans/2026-09-03-hen-gio-phat-hanh.md`) có `Mach.published_at` ở tương lai, và đếm
+    từ lúc SOẠN thì cửa sổ có thể hết trước khi bài lên sóng — xem docstring
+    `moc_bat_dau_tu_sua`.
+
+    Hai cửa sổ đo cùng một khoảng cách nhưng trả lời hai câu hỏi khác nhau: cửa sổ im
+    lặng nói "có để vết không" (tính từ `created_at`), cửa sổ này nói "có được sửa nữa
+    không" (tính từ `moc_bat_dau_tu_sua`). Một mốc có thể đã hết im lặng (phải để vết) mà
+    vẫn còn tự sửa được (< cửa sổ tự sửa), miễn là cửa sổ tự sửa lớn hơn cửa sổ im lặng —
+    đúng trường hợp mặc định (60 > 15).
     """
     moc = nap_moc(moc_id)
     doi_chu_so_huu(request.user, moc.author_id, "mốc")
     doi_mach_tuong_tac_duoc(moc.mach)
     doi_con_song(moc, "Mốc")
+    doi_trong_cua_so_tu_sua(moc)
 
     thay_doi = du_lieu.model_dump(exclude_unset=True)
     if not thay_doi:

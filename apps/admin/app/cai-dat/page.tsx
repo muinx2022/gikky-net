@@ -1,9 +1,12 @@
 "use client";
 
 import {
+  quanTriLuuCaiDatBienTap,
   quanTriLuuCaiDatGoogle,
+  quanTriXemCaiDatBienTap,
   quanTriXemCaiDatGoogle,
   quanTriXoaCaiDatGoogle,
+  type CaiDatBienTapOut,
   type CaiDatGoogleOut,
 } from "@gikky/api-client/admin";
 import { useCallback, useEffect, useState } from "react";
@@ -40,6 +43,7 @@ export default function TrangCaiDat() {
     <>
       <TieuDeTrang mo_ta="Cấu hình hệ thống. Đổi ở đây có hiệu lực ngay, không cần khởi động lại máy chủ." />
       <KhoiGoogle />
+      <KhoiPhutTuSua />
     </>
   );
 }
@@ -212,6 +216,115 @@ function KhoiGoogle() {
         </form>
 
         <ORedirectUri url={tt.redirect_uri} />
+      </div>
+    </The>
+  );
+}
+
+/** Cửa sổ tự sửa bài — `plans/2026-09-05-cua-so-tu-sua-bai.md`.
+ *
+ * User chốt ba câu: sau cửa sổ chỉ superuser sửa được (khu quản trị, đã có sẵn) · mặc
+ * định 60 phút · hết cửa sổ thì ẨN nút Sửa trên UI (backend vẫn 403 nếu gọi thẳng API).
+ * Khối này chỉ đổi MỘT con số — số phút — chứ không đụng gì tới hai luật kia.
+ *
+ * Cùng khuôn `KhoiGoogle`: `sua_duoc` khoá form cho mod thường (đọc được, không ghi
+ * được), không render nút bấm vào là ăn 403.
+ */
+function KhoiPhutTuSua() {
+  const [tt, datTt] = useState<CaiDatBienTapOut | null>(null);
+  const [loi, datLoi] = useState<string | null>(null);
+  const [phut, datPhut] = useState("");
+
+  const nap = useCallback(async () => {
+    datLoi(null);
+    const { data, error } = await quanTriXemCaiDatBienTap({
+      baseUrl: GOC_API,
+      cache: "no-store",
+    });
+    if (error !== undefined || data === undefined) {
+      datLoi(moTaLoi(error));
+      return;
+    }
+    datTt(data);
+    datPhut(String(data.phut_tu_sua_moc));
+  }, []);
+
+  useEffect(() => {
+    void nap();
+  }, [nap]);
+
+  const {
+    dang_chay,
+    loi: loi_hanh_dong,
+    het_phien,
+    chay,
+  } = useHanhDong(nap);
+
+  if (tt === null) {
+    return (
+      <The tieu_de="Cửa sổ tự sửa bài" pham_vi="Biên tập" className="p-4">
+        <Skeleton dong={2} />
+      </The>
+    );
+  }
+
+  return (
+    <The tieu_de="Cửa sổ tự sửa bài" pham_vi="Biên tập" className="p-4">
+      <div className="mt-3 space-y-4">
+        <p className="text-sm text-muc-mo">
+          Số phút tác giả được tự sửa bài sau khi đăng — hết thời gian này chỉ quản trị
+          viên sửa được.
+        </p>
+
+        <HienLoi loi={loi_hanh_dong ?? loi} het_phien={het_phien} />
+
+        {!tt.sua_duoc && (
+          <p className="text-sm text-muc-mo" data-testid="chi-doc-bien-tap">
+            Chỉ <strong>superuser</strong> được đổi cấu hình này.
+          </p>
+        )}
+
+        <form
+          className="space-y-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const gia_tri = Number(phut);
+            void chay(() =>
+              quanTriLuuCaiDatBienTap({
+                baseUrl: GOC_API,
+                headers: headerGhi(),
+                body: { phut_tu_sua_moc: gia_tri },
+              }),
+            );
+          }}
+        >
+          <label className="block text-sm">
+            <span className="mb-1 block text-muc-mo">Số phút</span>
+            <input
+              type="number"
+              min={1}
+              max={10_080}
+              className="o-nhap mono"
+              value={phut}
+              onChange={(e) => datPhut(e.target.value)}
+              disabled={!tt.sua_duoc || dang_chay}
+              data-testid="phut-tu-sua-moc"
+            />
+          </label>
+
+          {tt.sua_duoc && (
+            <div className="flex items-center justify-end gap-2 border-t border-vien pt-4">
+              <button
+                type="submit"
+                className="nut nut-chinh"
+                disabled={dang_chay}
+                data-testid="nut-luu-bien-tap"
+              >
+                {dang_chay ? "Đang lưu…" : "Lưu"}
+              </button>
+            </div>
+          )}
+        </form>
       </div>
     </The>
   );

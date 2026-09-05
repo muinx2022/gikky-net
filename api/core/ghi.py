@@ -376,6 +376,10 @@ def tao_mach(
             created_at=khi,
             published_at=published_at if hen_gio else khi,
             hidden_at=khi if hen_gio else None,
+            # Lên sóng NGAY ⇒ đây chính là lần đầu (`core/cau_hinh.py::moc_bat_dau_tu_sua`
+            # đọc cột này). Hẹn giờ ⇒ để `NULL`, `phat_hanh_mach` đặt nó đúng một lần khi
+            # bài THẬT SỰ lên sóng.
+            lan_dau_len_song=None if hen_gio else khi,
             last_entry_at=khi,
             last_activity_at=khi,
         )
@@ -802,10 +806,15 @@ def sua_moc(*, moc: Moc, thay_doi: dict, khi=None) -> Moc:
     trông như đã sửa xong, và người dùng chỉ biết khi tải lại trang.
 
     **Sửa im lặng ≤15 phút kể từ `created_at` VÀ mốc chưa từng có vết** (PLAN nguyên tắc
-    2): không `MocRevision`, không `edited_at`, không tăng `edit_count`. Ngoài cửa sổ ấy
-    thì **mỗi lần sửa tạo một `MocRevision` lưu ĐỦ CẢ 5 TRƯỜNG bản trước** — thiếu
-    `occurred_at` là để người ta sửa lùi ngày sự việc mà không để vết, tức phá đúng giá
-    trị lõi của sản phẩm.
+    2): không `MocRevision`, không `edited_at`, không tăng `edit_count`, không đặt
+    `edited_by`. Ngoài cửa sổ ấy thì **mỗi lần sửa tạo một `MocRevision` lưu ĐỦ CẢ 5
+    TRƯỜNG bản trước** — thiếu `occurred_at` là để người ta sửa lùi ngày sự việc mà không
+    để vết, tức phá đúng giá trị lõi của sản phẩm.
+
+    Đây là hàm KHÔNG kiểm "còn trong cửa sổ tự sửa hay chưa" — cửa sổ ấy
+    (`core/cau_hinh.py::doc_phut_tu_sua_moc`) là luật của TẦNG API
+    (`api/mocs.py::sua_moc_api`), không phải bất biến của dữ liệu: `seed_dev`/shell vẫn
+    phải sửa được mốc cũ mà không bị chặn bởi một luật vốn chỉ áp cho request HTTP.
 
     ⚠ **Vế `edited_at is None` là BẮT BUỘC, và nó mới có từ 2026-09-03.** Trước lượt ấy
     không ai ngoài tác giả sửa được mốc, nên trong 15 phút đầu `edited_at` không thể khác
@@ -827,7 +836,7 @@ def sua_moc(*, moc: Moc, thay_doi: dict, khi=None) -> Moc:
     con_im_lang = moc.edited_at is None and (khi - moc.created_at) <= timezone.timedelta(
         minutes=PHUT_SUA_IM_LANG
     )
-    moc, _ = _ap_sua_moc(moc, thay_doi, khi, de_dau=not con_im_lang)
+    moc, _ = _ap_sua_moc(moc, thay_doi, khi, de_dau=not con_im_lang, nguoi_sua=moc.author)
     return moc
 
 
@@ -865,7 +874,7 @@ def _kiem_thay_doi_moc(thay_doi: dict) -> dict:
 
 
 def _ap_sua_moc(
-    moc: Moc, thay_doi: dict, khi, *, de_dau: bool
+    moc: Moc, thay_doi: dict, khi, *, de_dau: bool, nguoi_sua
 ) -> tuple[Moc, MocRevision | None]:
     """Ghi `thay_doi` (ĐÃ qua `_kiem_thay_doi_moc`) vào hàng `Moc`. Trả `(mốc, bản cũ)`.
 
@@ -874,6 +883,11 @@ def _ap_sua_moc(
     15 phút (PLAN nguyên tắc 2), mod thì **không bao giờ** im lặng (sửa lời người khác là
     việc phải kể lại). Nhét cả hai luật vào đây là dựng một cờ `la_mod` trong đường ghi,
     tức đường ghi bắt đầu biết người gọi là ai.
+
+    `nguoi_sua`: ai đứng tên lần sửa này — `sua_moc` truyền `moc.author`, `sua_moc_boi_mod`
+    truyền `boi` (`plans/2026-09-05-cua-so-tu-sua-bai.md` §1.2). Chỉ được đặt vào
+    `moc.edited_by` khi `de_dau=True`, CÙNG nhánh với `edited_at`/`edit_count`: sửa im lặng
+    không để vết gì, kể cả danh tính.
 
     Bọc `atomic()` riêng: người gọi có thể đã mở transaction của mình (đường mod ghi
     `AuditLog` cùng lượt), và `atomic()` lồng nhau là savepoint — không phải hai lượt
@@ -890,9 +904,10 @@ def _ap_sua_moc(
             )
             moc.edited_at = khi
             moc.edit_count += 1
+            moc.edited_by = nguoi_sua
         for ten, gia_tri in thay_doi.items():
             setattr(moc, ten, gia_tri)
-        cot_ghi = [*TRUONG_SUA_DUOC_CUA_MOC, "edited_at", "edit_count"]
+        cot_ghi = [*TRUONG_SUA_DUOC_CUA_MOC, "edited_at", "edit_count", "edited_by"]
         if "body" in thay_doi:
             # `body_dinh_dang` KHÔNG nằm trong `TRUONG_SUA_DUOC_CUA_MOC`: nó không phải
             # trường người dùng sửa được, nó là hệ quả của việc `body` vừa qua `lam_sach`.
@@ -1549,6 +1564,10 @@ AUDIT_XOA_SUB = "xoa_sub"
 #: và nhét một id giả vào đó là mời người đọc nhật ký đi tra một bảng không tồn tại.
 AUDIT_SUA_CAI_DAT_GOOGLE = "sua_cai_dat_google"
 AUDIT_XOA_CAI_DAT_GOOGLE = "xoa_cai_dat_google"
+#: Cấu hình "cửa sổ tự sửa bài" (2026-09-05, `plans/2026-09-05-cua-so-tu-sua-bai.md`).
+#: `target_id` là pk thật của `CauHinhBienTap` (luôn `1`) — khác `AUDIT_SUA_CAI_DAT_GOOGLE`
+#: ở trên, nơi `target_id=None` vì `SocialApp` không có một hàng cố định để trỏ vào.
+AUDIT_SUA_CAU_HINH_BIEN_TAP = "sua_cau_hinh_bien_tap"
 #: CRUD tài khoản (2026-08-25). `AUDIT_DAT_MAT_KHAU_USER` mang cờ `xoa`, **không**
 #: mang chuỗi mật khẩu — một nhật ký chứa mật khẩu là bản sao thứ hai phải đi bảo vệ.
 AUDIT_TAO_USER = "tao_user"
@@ -1807,6 +1826,13 @@ def hen_gio_mach(*, mach_id: int, published_at, boi, ly_do: str = "") -> Mach | 
     Đặt lịch cho một bài **đang hiện** cũng được (nó biến khỏi feed ngay): đó là nút "rút
     bài xuống, phát hành lại sau" của khu quản trị. `hidden_by` giữ `NULL` để cron nhận ra
     đây là bài hẹn chứ không phải bài mod gỡ.
+
+    ⚠ **Cố ý KHÔNG đụng `Mach.lan_dau_len_song`.** Hàm này chỉ ẩn/dời `published_at`; nó
+    không phải nơi quyết định "đây có phải lần đầu lên sóng không" — việc đó thuộc về
+    `phat_hanh_mach` (lúc bài THẬT SỰ hiện ra lần nữa). Một bài đã từng lên sóng rồi bị
+    rút xuống qua đây thì `lan_dau_len_song` giữ nguyên giá trị cũ, đúng ý "cửa sổ tự sửa
+    của mốc cũ không được mở lại chỉ vì admin phát hành lại" (`core/cau_hinh.py::
+    moc_bat_dau_tu_sua`).
     """
     with transaction.atomic():
         hang = (
@@ -1861,6 +1887,18 @@ def phat_hanh_mach(
     `published_at` ở giờ hẹn cũ là bài lên feed rồi nằm lọt thỏm giữa những bài của tuần
     sau. Cron thì **không** đặt lại: giờ hẹn là giờ tác giả chọn, còn cron chỉ chạy muộn
     hơn nó tối đa 5 phút.
+
+    ## `lan_dau_len_song` — đặt đúng MỘT LẦN, ở ĐÂY
+
+    Hàm này chạy cho cả "lần đầu bài hẹn giờ lên sóng" LẪN "phát hành lại sau khi bị rút
+    xuống" (`hen_gio_mach` có thể hẹn lại một mạch ĐANG hiện) — hai ca trông giống hệt
+    nhau ở bộ lọc `hidden_at__isnull=False, hidden_by__isnull=True`, nhưng
+    `core/cau_hinh.py::moc_bat_dau_tu_sua` phải phân biệt được chúng. Chỉ ghi khi cột
+    đang `NULL` (lần đầu); lượt "phát hành lại" sau đó thấy cột đã có giá trị nên bỏ qua —
+    nếu ghi lại mỗi lần thì mọi mốc cũ của mạch "sống lại" cửa sổ tự sửa mỗi lần admin
+    rút bài xuống rồi hẹn phát hành lại (đúng lỗi mà `plans/2026-09-05-cua-so-tu-sua-
+    bai.md` mục 2 mô tả). Đọc SAU khi có thể đã đổi `published_at` ở trên (`dat_gio_phat_
+    hanh=True`) để lấy đúng giá trị CUỐI CÙNG, không phải giờ hẹn cũ.
     """
     with transaction.atomic():
         hang = (
@@ -1877,6 +1915,9 @@ def phat_hanh_mach(
             hang.published_at = timezone.now()
             cot.append("published_at")
         hang.hidden_at = None
+        if hang.lan_dau_len_song is None:
+            hang.lan_dau_len_song = hang.published_at
+            cot.append("lan_dau_len_song")
         hang.save(update_fields=cot)
         # Thứ tự ba dòng dưới không quan trọng (hai dòng sau chỉ xếp hàng `on_commit`),
         # nhưng cả ba phải nằm TRONG transaction: `bao_mach_moi` ghi `Notification` và
@@ -1938,7 +1979,7 @@ def sua_moc_boi_mod(
 
     khi = khi or timezone.now()
     with transaction.atomic():
-        moc, ban_cu = _ap_sua_moc(moc, thay_doi, khi, de_dau=True)
+        moc, ban_cu = _ap_sua_moc(moc, thay_doi, khi, de_dau=True, nguoi_sua=boi)
         ghi_audit(
             actor=boi,
             action=AUDIT_SUA_MOC,

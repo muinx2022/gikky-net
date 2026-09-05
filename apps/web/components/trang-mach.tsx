@@ -19,6 +19,7 @@ import { KhoiChuMach } from "@/components/khoi-chu-mach";
 import { LoiMoiDoiMat } from "@/components/loi-moi-doi-mat";
 import { MachProvider } from "@/components/mach-ngu-canh";
 import { MatBao } from "@/components/mat-bao";
+import { MocAccordionProvider } from "@/components/moc-accordion";
 import { NganKeoProvider } from "@/components/ngan-keo";
 import { NutTheoMach } from "@/components/nut-theo-mach";
 import { TheMoc } from "@/components/the-moc";
@@ -390,44 +391,46 @@ export async function TrangMach({
               <LoiMoiDoiMat matDangRender={mat} href={`${co_ban}?view=bao`} />
             )}
 
-            <NganKeoProvider>
-              {la_bao && la_mach ? (
-                // Mặt BÃO — PLAN 5.5: spine 1 dòng → thẻ mốc 1 + dải gập + thẻ mốc mới
-                // nhất → bung ra là timeline đầy đủ, có vạch mới. Thẻ mốc vẫn render ở
-                // SERVER và đi vào đây dưới dạng `ReactNode` — xem docstring `MatBao`.
-                // Công thức gập của mặt này ở `lib/dai-gap.ts::tinhDaiGapBao`, và `MatBao`
-                // tự gọi: cả hai đầu đều lấy từ `tatCaMoc`, không có nguồn thứ hai.
-                <MatBao
-                  spine={mach.spine}
-                  tatCaMoc={mach.mocs.map((m) => ({ seq: m.seq, the: the_moc(m.seq) }))}
-                />
-              ) : (
-                <ol className={css.nhat_ky} data-testid="nhat-ky">
-                  {dai.gap ? (
-                    <>
-                      {the_moc(1)}
-                      <DaiGapBung
-                        nhan={nhanDaiGap(
-                          dai,
-                          tongBinhLuanTrongDai(dai, mach.mocs),
-                          hien_so_dem,
-                        )}
-                        moiBung={moiBung(mach, dai, threadsTrongDai(dai, lat_cat))}
-                      >
-                        {mach.mocs
-                          .filter((m) => trongDaiGap(dai, m.seq))
-                          .map((m) => the_moc(m.seq))}
-                      </DaiGapBung>
-                      {dai.seqHien
-                        .filter((seq) => seq !== 1)
-                        .map((seq) => the_moc(seq))}
-                    </>
-                  ) : (
-                    mach.mocs.map((m) => the_moc(m.seq))
-                  )}
-                </ol>
-              )}
-            </NganKeoProvider>
+            <MocAccordionProvider>
+              <NganKeoProvider>
+                {la_bao && la_mach ? (
+                  // Mặt BÃO — PLAN 5.5: spine 1 dòng → thẻ mốc 1 + dải gập + thẻ mốc mới
+                  // nhất → bung ra là timeline đầy đủ, có vạch mới. Thẻ mốc vẫn render ở
+                  // SERVER và đi vào đây dưới dạng `ReactNode` — xem docstring `MatBao`.
+                  // Công thức gập của mặt này ở `lib/dai-gap.ts::tinhDaiGapBao`, và `MatBao`
+                  // tự gọi: cả hai đầu đều lấy từ `tatCaMoc`, không có nguồn thứ hai.
+                  <MatBao
+                    spine={mach.spine}
+                    tatCaMoc={mach.mocs.map((m) => ({ seq: m.seq, the: the_moc(m.seq) }))}
+                  />
+                ) : (
+                  <ol className={css.nhat_ky} data-testid="nhat-ky">
+                    {dai.gap ? (
+                      <>
+                        {the_moc(1)}
+                        <DaiGapBung
+                          nhan={nhanDaiGap(
+                            dai,
+                            tongBinhLuanTrongDai(dai, mach.mocs),
+                            hien_so_dem,
+                          )}
+                          moiBung={moiBung(mach, dai, threadsTrongDai(dai, lat_cat))}
+                        >
+                          {mach.mocs
+                            .filter((m) => trongDaiGap(dai, m.seq))
+                            .map((m) => the_moc(m.seq))}
+                        </DaiGapBung>
+                        {dai.seqHien
+                          .filter((seq) => seq !== 1)
+                          .map((seq) => the_moc(seq))}
+                      </>
+                    ) : (
+                      mach.mocs.map((m) => the_moc(m.seq))
+                    )}
+                  </ol>
+                )}
+              </NganKeoProvider>
+            </MocAccordionProvider>
 
             {/* Dòng chốt sổ — CUỐI nhật ký, không phải đầu trang *(user chốt
                 2026-08-27)*. `BannerMach` cũ đứng trong `<header>` và dán nhãn "bài

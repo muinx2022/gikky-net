@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 
-import { ChanTrang } from "@/components/chan-trang";
 import { Chrome } from "@/components/chrome";
+import { LightboxProvider } from "@/components/lightbox";
 import { ModalDangNhapProvider } from "@/components/modal-dang-nhap";
 import { PhienProvider } from "@/components/phien";
 import { ToastProvider } from "@/components/toast";
@@ -130,9 +130,10 @@ export default function RootLayout({
         <PhienProvider>
           <ToastProvider>
             <ModalDangNhapProvider>
-              <Chrome />
-              {children}
-              <ChanTrang />
+              <LightboxProvider>
+                <Chrome />
+                {children}
+              </LightboxProvider>
             </ModalDangNhapProvider>
           </ToastProvider>
         </PhienProvider>

@@ -15,8 +15,8 @@ from django.utils import timezone
 
 from core.lam_sach_html import DINH_DANG_BODY, DINH_DANG_MARKDOWN
 
-#: PLAN 5.2 — body markdown ≤10.000 ký tự.
-DAI_BODY_MOC = 10_000
+#: PLAN 5.2 — body HTML/markdown ≤50.000 ký tự (nới từ 10.000 ký tự để chứa đủ HTML rich text).
+DAI_BODY_MOC = 50_000
 #: PLAN 5.2 — `figures` tối đa 6 cặp {label, value}.
 SO_FIGURES_TOI_DA = 6
 DAI_FIGURE_LABEL = 24
@@ -117,6 +117,22 @@ class Moc(models.Model):
     # --- Sửa / xoá (PLAN 5.2) ------------------------------------------------
     edited_at = models.DateTimeField(null=True, blank=True)
     edit_count = models.PositiveIntegerField(default=0)
+    #: Ai vừa sửa lần GẦN NHẤT — `plans/2026-09-05-cua-so-tu-sua-bai.md` §1.2. Đặt cùng
+    #: nhánh `if de_dau:` với `edited_at`/`edit_count` ở `core/ghi.py::_ap_sua_moc`, nên
+    #: sửa IM LẶNG (cửa sổ 15 phút) không đụng cột này — không để vết thì không có danh
+    #: tính nào để kể.
+    #:
+    #: `null=True` bắt buộc: dữ liệu CŨ (mọi mốc đã từng sửa trước migration 0029) không
+    #: có `edited_by`, và migration không suy ngược ra ai đã sửa. `SET_NULL` chứ không
+    #: `PROTECT`/`CASCADE`: xoá tài khoản người từng sửa không được kéo theo xoá cả mốc,
+    #: và cũng không nên chặn xoá tài khoản đó.
+    edited_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="mocs_da_sua",
+    )
     #: Xoá = bia mộ, hàng vẫn còn (PLAN nguyên tắc 2). **Đường sản phẩm** không `DELETE` thật —
     #: nhưng `Moc.mach` là `CASCADE`, nên `Mach.delete()` (và Django admin) xoá cứng hàng này.
     #: Đó là ca duy nhất làm `entry_count`/`last_entry_at` lùi — xem PLAN mục 6 "Luật đếm 4 cột".

@@ -1608,3 +1608,9 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Ở đâu**: `api/api/quan_tri_hen_gio.py:65` — `tuple(username for _, username, _, la_super in TAI_KHOAN if not la_super)`, không assert nào phía sau
 - **Bằng chứng**: nếu cả hai tài khoản đội bị đổi thành `is_superuser=True`, tuple thành rỗng ⇒ mọi lời gọi `POST /admin/machs/hen-gio` trả 400 với danh sách allowlist rỗng trong câu lỗi — fail-closed đúng hướng nhưng câu lỗi vô nghĩa với người đọc.
 - **Vì sao không sửa ngay**: ca biên rất khó xảy ra (đổi cấu hình tài khoản đội), ngoài phạm vi việc đang làm.
+
+### P-20260905-1 · [MỞ] · NẶNG — `WebFetch` bịa số khi đọc PDF: bản tóm tắt trả về ngày tháng và tỷ lệ hoàn toàn sai, đúng khuôn dạng nên trông y như số thật
+- **Thấy lúc**: chạy lịch `scripts/bai-viet/lich/tan-man.md` (bài nâng hạng FTSE, mạch 1033)
+- **Ở đâu**: quy trình §2 của `scripts/bai-viet/lich/tan-man.md` — luật "số liệu có nguồn, dùng công cụ lấy dữ liệu thật" không có cảnh báo nào về việc công cụ đọc PDF có thể trả về số bịa
+- **Bằng chứng**: `WebFetch` trên `lseg.com/.../ftse-faq-document-vietnam-reclassification.pdf` trả về: hiệu lực **23/09/2024**, bốn đợt **25/50/75/100%**, **27** mã, tỷ trọng **1,5%** FTSE Emerging. Số thật, đối chiếu thông cáo FTSE Russell 07/04/2026 + báo cáo Vietcap: hiệu lực **21/09/2026**, các đợt **10/30/65/100%**, tỷ trọng **0,488%** FTSE Emerging All Cap. Không có con số nào trong bản tóm tắt khớp thực tế, và cả bốn đều nằm trong dải hợp lý nên không tự lộ.
+- **Vì sao không sửa ngay**: lượt này chỉ viết bài, không sửa quy trình. Đề xuất: thêm vào §2 của `tan-man.md` một câu buộc **đối chiếu chéo mọi số lấy từ PDF bằng ít nhất một nguồn thứ hai** trước khi đưa vào bài — lượt này bắt được vì mốc 2024/2025 vô lý với sự kiện 2026, nhưng một PDF có năm khớp thì sẽ trôi thẳng vào mục "Nguồn".

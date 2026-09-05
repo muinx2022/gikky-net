@@ -23,6 +23,7 @@ import logging
 import re
 from datetime import timedelta
 
+from core.cau_hinh import moc_bat_dau_tu_sua
 from core.doc_noi_dung import DA_AN, Nut, doc_duoc, trang_thai_noi_dung
 from core.ghi import NGAY_MO_LAI, PHUT_SUA_IM_LANG
 from core.lam_sach_html import van_ban_thuan
@@ -284,11 +285,13 @@ def dem_reaction_rong() -> dict[str, int]:
 
 def moc_ra(
     moc: Moc,
+    mach: Mach,
     *,
     so_binh_luan: int,
     trich: Trich | None,
     anhs: list[MocAnh],
     reactions: dict[str, int],
+    phut_tu_sua: int,
 ) -> MocOut:
     """Một thẻ mốc. Bia mộ mất sạch 5 trường nội dung, giữ nguyên `seq`/`occurred_at`.
 
@@ -298,6 +301,14 @@ def moc_ra(
     tức "+21" vẫn hiện trên một thẻ không còn chữ nào, và người đọc không có cách nào
     giải thích con số đó. `so_binh_luan` thì KHÔNG về 0: ngăn kéo của bia mộ vẫn mở được
     (PLAN 5.2), nên con số dẫn vào nó phải còn thật.
+
+    `mach`: người gọi truyền vào (đã có sẵn, `select_related`/`nap_mach` từ trước) — cần
+    cho `moc_bat_dau_tu_sua(moc, mach)` bên dưới, hỏi thêm không phải một truy vấn mới.
+
+    `phut_tu_sua`: số phút cấu hình HIỆN HÀNH của cửa sổ tự sửa
+    (`core/cau_hinh.py::doc_phut_tu_sua_moc`) — người gọi đọc **MỘT LẦN** cho cả trang rồi
+    truyền vào đây cho từng mốc; gọi lại hàm ấy bên trong một vòng lặp per-mốc là N+1
+    (một mạch 9 mốc = 9 truy vấn thừa cho một giá trị mọi mốc dùng chung).
     """
     trang_thai = trang_thai_noi_dung(moc)
     hien = doc_duoc(moc)
@@ -310,6 +321,7 @@ def moc_ra(
         occurred_at=moc.occurred_at,
         created_at=moc.created_at,
         sua_im_lang_den=moc.created_at + timedelta(minutes=PHUT_SUA_IM_LANG),
+        sua_duoc_den=moc_bat_dau_tu_sua(moc, mach) + timedelta(minutes=phut_tu_sua),
         loai=moc.loai if hien else None,
         body=moc.body if hien else None,
         # KHÔNG che ở bia mộ: đây là nhãn định dạng, không phải nội dung. Trả `null` thì
@@ -320,6 +332,9 @@ def moc_ra(
         figures=figures_ra(moc.figures) if hien else None,
         edited_at=moc.edited_at if hien else None,
         edit_count=moc.edit_count if hien else 0,
+        # Che theo `hien`, cùng chuẩn `author`: bia mộ không còn ai để "kể" là đã sửa, và
+        # dữ liệu `edited_by` của một mốc bị mod ẩn không phải thứ cửa công khai được trả.
+        edited_by=nguoi_dung_ra(moc.edited_by) if hien and moc.edited_by else None,
         score=moc.score if hien else 0,
         trang_thai=trang_thai,
         so_binh_luan=so_binh_luan,

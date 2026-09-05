@@ -459,6 +459,16 @@ class MocOut(Schema):
     #: sẽ trôi (nợ `API-THIEU-MOC-THOI-GIAN`). Có giá trị cả ở **bia mộ** — nó suy từ
     #: `created_at`, không phải nội dung, nên không có gì để che.
     sua_im_lang_den: datetime
+    #: Mốc hết cửa sổ TỰ SỬA của tác giả — `core/cau_hinh.py::moc_bat_dau_tu_sua(...) +
+    #: phút cấu hình HIỆN HÀNH` (`plans/2026-09-05-cua-so-tu-sua-bai.md`, mặc định 60
+    #: phút, đổi được ở khu quản trị). KHÔNG phải luôn `created_at + phút` — mạch hẹn giờ
+    #: phát hành tính từ lần LÊN SÓNG ĐẦU TIÊN (`Mach.lan_dau_len_song`), và giá trị đó
+    #: không lùi lại mỗi lần admin "rút bài xuống, phát hành lại". Sau mốc này,
+    #: `PATCH /mocs/{id}` trả 403 `het_cua_so_sua` **kể cả tác giả**;
+    #: chỉ superuser sửa tiếp được qua khu quản trị. Khác hẳn `sua_im_lang_den` ở trên —
+    #: đó là "có để vết không", đây là "có được sửa nữa không". Có giá trị cả ở **bia
+    #: mộ**, cùng lý do với `sua_im_lang_den`.
+    sua_duoc_den: datetime
     loai: str | None
     body: str | None
     #: `body` ở định dạng nào — `"html"` (Tiptap, đã `lam_sach` ở server lúc ghi) hay
@@ -473,6 +483,12 @@ class MocOut(Schema):
     figures: list[FigureOut] | None
     edited_at: datetime | None
     edit_count: int
+    #: Ai sửa lần GẦN NHẤT — `null` khi chưa từng sửa lộ (`de_dau=True`), **hoặc** khi
+    #: dữ liệu CŨ trước migration 0029 không có `edited_by` dù `edit_count > 0`. Frontend
+    #: không phân biệt được hai ca đó từ trường này — và không cần: cả hai đều rơi về nhãn
+    #: "đã sửa N lần" cũ (`edit_count`), chỉ ca có `edited_by` mới đổi sang "Đã sửa bởi
+    #: <tên> vào <giờ>" (`components/the-moc.tsx`). `null` ở bia mộ, cùng chuẩn `author`.
+    edited_by: NguoiDungTomTatOut | None
     score: int
     trang_thai: TrangThaiNoiDung
     #: Số bình luận đọc được trong ngăn kéo của mốc này — tính **cả thread**, gồm reply

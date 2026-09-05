@@ -1,8 +1,20 @@
-"""`Notification`, `Report`, `AuditLog` — PLAN mục 6, 5.8, 5.10."""
+"""`Notification`, `Report`, `AuditLog`, `CauHinhBienTap` — PLAN mục 6, 5.8, 5.10.
+
+`CauHinhBienTap` thêm ở `plans/2026-09-05-cua-so-tu-sua-bai.md`.
+"""
 
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+
+#: Mặc định khi chưa ai cấu hình (user chốt 2026-09-05). Khai Ở ĐÂY, cạnh model dùng nó
+#: làm `default` của field — `core/cau_hinh.py` (nơi hằng số này *thuộc về* theo PLAN) chỉ
+#: import lại nó. Đặt ngược lại (hằng ở `core/cau_hinh.py`, model import về) dựng một vòng
+#: import: `core/cau_hinh.py` cũng cần `import CauHinhBienTap` từ chính file này để
+#: `get_or_create`, và Python nổ `ImportError` giữa chừng vì module này chưa xong định
+#: nghĩa lúc cau_hinh.py quay lại xin hằng số. Model KHÔNG phụ thuộc tầng nghiệp vụ là quy
+#: ước chung của package `core/models/`, nên chiều import này cũng là chiều đúng.
+PHUT_TU_SUA_MAC_DINH = 60
 
 
 class Notification(models.Model):
@@ -147,3 +159,20 @@ class AuditLog(models.Model):
 
     def __str__(self) -> str:
         return f"{self.action} bởi {self.actor_id} → {self.target_type}#{self.target_id}"
+
+
+class CauHinhBienTap(models.Model):
+    """Cấu hình biên tập, MỘT hàng duy nhất (pk=1, tạo lười qua `get_or_create`).
+
+    `phut_tu_sua_moc`: số phút kể từ mốc `core/cau_hinh.py::moc_bat_dau_tu_sua` trả về
+    (lần LÊN SÓNG ĐẦU TIÊN của mạch — `Mach.lan_dau_len_song` — hoặc `Moc.created_at` khi
+    mạch không hẹn giờ; KHÔNG phải luôn `Moc.created_at`) mà TÁC GIẢ còn tự sửa bài qua
+    `PATCH /api/v1/mocs/{id}`. Hết cửa sổ này tác giả nhận 403 `het_cua_so_sua`; chỉ
+    superuser sửa tiếp được, qua `PATCH /admin/mocs/{id}` (không giới hạn thời gian —
+    xem `sua_moc_boi_mod`, PLAN 2026-09-03).
+    """
+
+    phut_tu_sua_moc = models.PositiveIntegerField(default=PHUT_TU_SUA_MAC_DINH)
+
+    class Meta:
+        verbose_name = "cấu hình biên tập"

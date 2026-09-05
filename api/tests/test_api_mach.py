@@ -174,6 +174,11 @@ KHOA_CHO_PHEP = {
     "edited_at", "edit_count", "score", "trang_thai", "so_binh_luan", "trich",
     # hạn sửa im lặng (`created_at + 15 phút`) — cùng lý lẽ `mo_lai_den`.
     "sua_im_lang_den",
+    # cửa sổ TỰ SỬA (2026-09-05, `moc_bat_dau_tu_sua(...) + phút cấu hình` — tính từ lần
+    # LÊN SÓNG ĐẦU TIÊN, không phải luôn `created_at`) + ai sửa lần gần nhất —
+    # cả hai là thuộc tính của HÀNG (cấu hình + lịch sử), không phải của người xem: mọi
+    # người mở cùng trang mạch đều thấy đúng cùng hạn và đúng cùng tên người sửa.
+    "sua_duoc_den", "edited_by",
     # gallery ảnh của mốc (Phase 5). Cache được: URL suy từ `khoa_luu_tru`, và ai xem
     # cũng nhận đúng chuỗi ấy — không có nhánh nào hỏi người xem là ai. Bia mộ / mốc bị
     # ẩn nhận `[]`, cùng chuẩn với `body` và `trich`.

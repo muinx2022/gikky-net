@@ -13,9 +13,12 @@ from core.models import Mach
 from core.models.dien_dan import slug_tu_title
 from core.models.moc import SO_FIGURES_TOI_DA, kiem_figures
 
-#: Đủ 14 model của PLAN mục 6. Sửa danh sách này chỉ khi PLAN mục 6 đổi.
+#: Đủ 14 model của PLAN mục 6, cộng `CauHinhBienTap` thêm ở
+#: `plans/2026-09-05-cua-so-tu-sua-bai.md` (tổng 15). Sửa danh sách này chỉ khi PLAN mục 6
+#: đổi, hoặc khi thêm một model "hệ thống" cùng loại `CauHinhBienTap`.
 MODEL_BAT_BUOC = {
     "AuditLog",
+    "CauHinhBienTap",
     "Comment",
     "Follow",
     "Mach",
@@ -32,11 +35,11 @@ MODEL_BAT_BUOC = {
 }
 
 
-def test_du_14_model_va_deu_dang_ky_vao_app_core():
+def test_du_15_model_va_deu_dang_ky_vao_app_core():
     """Đo qua **app registry**, không qua `import` — đó mới là thứ Django thực sự dùng."""
     da_dang_ky = {m.__name__ for m in apps.get_app_config("core").get_models()}
     assert MODEL_BAT_BUOC <= da_dang_ky, MODEL_BAT_BUOC - da_dang_ky
-    assert len(MODEL_BAT_BUOC) == 14
+    assert len(MODEL_BAT_BUOC) == 15
 
 
 @pytest.mark.parametrize(
@@ -56,7 +59,7 @@ def test_du_14_model_va_deu_dang_ky_vao_app_core():
             "Moc",
             [
                 "mach", "seq", "author", "occurred_at", "created_at", "loai", "body",
-                "question_for_crowd", "figures", "edited_at", "edit_count",
+                "question_for_crowd", "figures", "edited_at", "edit_count", "edited_by",
                 "deleted_at", "hidden_at", "hidden_by", "score",
             ],
         ),
@@ -97,6 +100,8 @@ def test_du_14_model_va_deu_dang_ky_vao_app_core():
              "resolved_at", "resolved_by", "action"],
         ),
         ("AuditLog", ["actor", "action", "target_type", "target_id", "meta", "created_at"]),
+        # Cửa sổ tự sửa bài (2026-09-05) — MỘT hàng duy nhất, xem docstring model.
+        ("CauHinhBienTap", ["phut_tu_sua_moc"]),
     ],
 )
 def test_ten_truong_dung_PLAN_muc_6(model, truong):

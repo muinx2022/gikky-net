@@ -26,6 +26,7 @@
 
 .o a {
   display: block;
+  cursor: zoom-in;
 }
 
 .o a:focus-visible {
@@ -33,8 +34,14 @@
   outline-offset: 2px;
 }
 
+.o a:hover img {
+  opacity: 0.92;
+}
+
 .o img {
   display: block;
+  cursor: zoom-in;
+  transition: opacity 0.15s ease;
   /* `width`/`height` trên thẻ đến từ `w`/`h` của ảnh ĐÃ LƯU — chúng giữ tỉ lệ đúng cho
      trình duyệt đặt chỗ trước khi ảnh về (chống layout shift). CSS ở đây chỉ ép khung
      hiển thị; `height: auto` là thứ giữ cho tỉ lệ không bị bóp khi `width` bị ghi đè. */

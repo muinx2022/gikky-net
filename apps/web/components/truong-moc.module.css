@@ -16,6 +16,28 @@
   margin-bottom: 5px;
 }
 
+.hang_nhan {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.hang_nhan .nhan {
+  margin-bottom: 0;
+}
+
+.dem_ky_tu {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+.qua_tai {
+  color: var(--accent);
+  font-weight: 600;
+}
+
 .tuy_chon {
   font-family: var(--f-mono);
   font-size: 10.5px;

@@ -1214,6 +1214,7 @@ export type MocOut = {
      * Edited At
      */
     edited_at: string | null;
+    edited_by: NguoiDungTomTatOut | null;
     /**
      * Figures
      */
@@ -1252,6 +1253,10 @@ export type MocOut = {
      * So Binh Luan
      */
     so_binh_luan: number;
+    /**
+     * Sua Duoc Den
+     */
+    sua_duoc_den: string;
     /**
      * Sua Im Lang Den
      */

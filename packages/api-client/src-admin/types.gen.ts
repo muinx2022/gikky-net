@@ -201,6 +201,35 @@ export type BinhLuanDongOut = {
 };
 
 /**
+ * CaiDatBienTapIn
+ *
+ * Body của `PUT /admin/cai-dat/bien-tap`.
+ */
+export type CaiDatBienTapIn = {
+    /**
+     * Phut Tu Sua Moc
+     */
+    phut_tu_sua_moc: number;
+};
+
+/**
+ * CaiDatBienTapOut
+ *
+ * Cấu hình "cửa sổ tự sửa bài" cho trang Cài đặt (`plans/2026-09-05-cua-so-tu-sua-
+ * bai.md`) — anh em với `CaiDatGoogleOut` ngay dưới, cùng luật "chỉ superuser ghi".
+ */
+export type CaiDatBienTapOut = {
+    /**
+     * Phut Tu Sua Moc
+     */
+    phut_tu_sua_moc: number;
+    /**
+     * Sua Duoc
+     */
+    sua_duoc: boolean;
+};
+
+/**
  * CaiDatGoogleIn
  *
  * Body của `PUT /admin/cai-dat/google`.
@@ -569,6 +598,22 @@ export type KetQuaHenGioOut = {
      * Title
      */
     title: string;
+};
+
+/**
+ * KetQuaLuuCaiDatBienTapOut
+ *
+ * Kết quả một lượt lưu — `da_doi=false` khi gửi đúng giá trị đang có (không audit).
+ */
+export type KetQuaLuuCaiDatBienTapOut = {
+    /**
+     * Da Doi
+     */
+    da_doi: boolean;
+    /**
+     * Phut Tu Sua Moc
+     */
+    phut_tu_sua_moc: number;
 };
 
 /**
@@ -1953,6 +1998,72 @@ export type QuanTriXoaAnhMocResponses = {
 };
 
 export type QuanTriXoaAnhMocResponse = QuanTriXoaAnhMocResponses[keyof QuanTriXoaAnhMocResponses];
+
+export type QuanTriXemCaiDatBienTapData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/admin/cai-dat/bien-tap';
+};
+
+export type QuanTriXemCaiDatBienTapErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+};
+
+export type QuanTriXemCaiDatBienTapError = QuanTriXemCaiDatBienTapErrors[keyof QuanTriXemCaiDatBienTapErrors];
+
+export type QuanTriXemCaiDatBienTapResponses = {
+    /**
+     * OK
+     */
+    200: CaiDatBienTapOut;
+};
+
+export type QuanTriXemCaiDatBienTapResponse = QuanTriXemCaiDatBienTapResponses[keyof QuanTriXemCaiDatBienTapResponses];
+
+export type QuanTriLuuCaiDatBienTapData = {
+    body: CaiDatBienTapIn;
+    path?: never;
+    query?: never;
+    url: '/api/admin/cai-dat/bien-tap';
+};
+
+export type QuanTriLuuCaiDatBienTapErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+};
+
+export type QuanTriLuuCaiDatBienTapError = QuanTriLuuCaiDatBienTapErrors[keyof QuanTriLuuCaiDatBienTapErrors];
+
+export type QuanTriLuuCaiDatBienTapResponses = {
+    /**
+     * OK
+     */
+    200: KetQuaLuuCaiDatBienTapOut;
+};
+
+export type QuanTriLuuCaiDatBienTapResponse = QuanTriLuuCaiDatBienTapResponses[keyof QuanTriLuuCaiDatBienTapResponses];
 
 export type QuanTriXoaCaiDatGoogleData = {
     body?: never;

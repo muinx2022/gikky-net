@@ -210,6 +210,24 @@ class Mach(models.Model):
     #: ⚠ **Không `editable=False` như `created_at`**: khu quản trị đổi được cột này qua
     #: `PATCH /api/admin/machs/{id}/hen-gio`. Đó là cả lý do nó tồn tại.
     published_at = models.DateTimeField(default=timezone.now)
+    #: **Lần ĐẦU TIÊN** mạch chuyển từ "chưa từng công khai" sang "công khai" —
+    #: `plans/2026-09-05-cua-so-tu-sua-bai.md` (lượt vá phản biện thứ hai). KHÁC hẳn
+    #: `published_at` ngay trên: cột đó bị GHI ĐÈ mỗi lần "rút bài xuống, phát hành lại"
+    #: (`core/ghi.py::hen_gio_mach`, cơ chế đã có sẵn từ trước lượt này), nên dùng thẳng
+    #: nó làm mốc bắt đầu cửa sổ tự sửa (`core/cau_hinh.py::moc_bat_dau_tu_sua`) nghĩa là
+    #: MỌI mốc cũ của một mạch "sống lại" cửa sổ sửa mỗi lần admin bấm phát hành lại — kể
+    #: cả mốc viết từ hàng tháng trước.
+    #:
+    #: Đặt đúng **MỘT LẦN**, không bao giờ đổi sau đó: `core/ghi.py::tao_mach` (bài KHÔNG
+    #: hẹn giờ, lên sóng ngay lúc tạo) và `core/ghi.py::phat_hanh_mach` (bài hẹn giờ, lần
+    #: đầu `hidden_at` về `NULL`) là hai nơi DUY NHẤT ghi cột này, và cả hai chỉ ghi khi nó
+    #: đang `NULL`.
+    #:
+    #: `NULL` nghĩa là bài hẹn giờ **chưa từng** lên sóng, hoặc hàng dữ liệu CŨ (trước
+    #: migration 0030) mà backfill không suy ngược ra được lần đầu thật —
+    #: `moc_bat_dau_tu_sua` coi `NULL` như "chưa từng đẩy cửa sổ đi đâu" và ngã về
+    #: `created_at`, đúng hành vi trước khi cột này tồn tại.
+    lan_dau_len_song = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         verbose_name = "mạch"

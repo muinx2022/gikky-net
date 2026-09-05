@@ -7,6 +7,7 @@ import {
   gioPhutVN,
   homNayVN,
   phutSuaImLangConLai,
+  tuSuaConDuoc,
 } from "../../lib/vong-doi";
 import { quetNguon } from "./quet";
 
@@ -111,6 +112,24 @@ test("conMoLaiDuoc đọc `mo_lai_den` của server, không tự cộng 7 ngày"
   expect(conMoLaiDuoc(sau(-1), bay_gio)).toBe(false);
   // Chuỗi rác không được làm nút hiện ra.
   expect(conMoLaiDuoc("khong-phai-ngay", bay_gio)).toBe(false);
+});
+
+test("tuSuaConDuoc đọc `sua_duoc_den` của server, fail-closed khi chuỗi hỏng", () => {
+  // Cùng khuôn `conMoLaiDuoc` ngay trên — hai hàm anh em, một hàng rào NGAY DƯỚI đây
+  // (`plans/2026-09-05-cua-so-tu-sua-bai.md` mục 3) đã thiếu bài đo riêng dù đứng cạnh
+  // đủ ba ca biên của hàm kia.
+  const bay_gio = new Date("2026-09-05T10:00:00Z");
+  const sau = (gio: number) =>
+    new Date(bay_gio.getTime() + gio * 3600_000).toISOString();
+
+  expect(tuSuaConDuoc(sau(1), bay_gio)).toBe(true);
+  // Đúng biên: hạn rơi vào chính lúc này vẫn còn tự sửa được (server từ chối bằng `>`,
+  // không `>=` — `api/mocs.py::sua_moc_api`, xem docstring `tuSuaConDuoc`).
+  expect(tuSuaConDuoc(sau(0), bay_gio)).toBe(true);
+  expect(tuSuaConDuoc(sau(-1), bay_gio)).toBe(false);
+  // Chuỗi rác ⇒ fail-closed: `false`, tức ẨN nút Sửa, không phải hiện nút cho một hạn
+  // không đọc được — đúng nhánh `Number.isNaN` của cài đặt hiện tại.
+  expect(tuSuaConDuoc("khong-phai-ngay", bay_gio)).toBe(false);
 });
 
 test("phutSuaImLangConLai — làm tròn LÊN, và 0 nghĩa là hết", () => {

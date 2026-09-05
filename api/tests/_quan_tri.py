@@ -151,6 +151,18 @@ def bang_endpoint(dl: dict) -> list[tuple[str, str, str, dict | None]]:
         ("quan_tri_liet_ke_sub", "get", "/api/admin/subs", None),
         ("quan_tri_xem_cai_dat_google", "get", "/api/admin/cai-dat/google", None),
         (
+            "quan_tri_xem_cai_dat_bien_tap",
+            "get",
+            "/api/admin/cai-dat/bien-tap",
+            None,
+        ),
+        (
+            "quan_tri_luu_cai_dat_bien_tap",
+            "put",
+            "/api/admin/cai-dat/bien-tap",
+            {"phut_tu_sua_moc": 45},
+        ),
+        (
             "quan_tri_tao_nguoi_dung",
             "post",
             "/api/admin/nguoi-dung",

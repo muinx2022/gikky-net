@@ -12,7 +12,7 @@ import { conMoLaiDuoc, gioPhutVN } from "@/lib/vong-doi";
 import { ChonAnh } from "./chon-anh";
 import css from "./khoi-chu-mach.module.css";
 import { usePhien } from "./phien";
-import { TruongMoc, mocRong, thanMoc, type NoiDungMoc } from "./truong-moc";
+import { TruongMoc, mocRong, thanMoc, DAI_BODY_MOC, type NoiDungMoc } from "./truong-moc";
 
 /** Khu của chủ mạch trên trang mạch: **nối mốc** · **đóng sổ** · **mở lại** (PLAN 5.1).
  *
@@ -122,6 +122,13 @@ export function KhoiChuMach({
   const guiMoc = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     void chay(async () => {
+      if (moc.body.length > DAI_BODY_MOC) {
+        throw new LoiGhi(
+          400,
+          "",
+          `Nội dung mốc vượt quá ${DAI_BODY_MOC.toLocaleString("vi-VN")} ký tự (hiện có ${moc.body.length.toLocaleString("vi-VN")} ký tự). Vui lòng rút gọn trước khi lưu.`,
+        );
+      }
       const moc_moi = layDuLieu(
         await noiMoc({
           baseUrl: GOC_TRINH_DUYET,

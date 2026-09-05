@@ -527,14 +527,14 @@ def test_n8_body_qua_dai_bi_chan_TRUOC_khi_goi_mang(node, tmp_path, moi_truong_s
         node,
         moi_truong_sach,
         "--file",
-        ghi_bai(tmp_path, body="x" * 10001),
+        ghi_bai(tmp_path, body="x" * 50001),
         "--slot",
         "dem-qua",
         "--origin",
         ORIGIN_CHET,
     )
     assert ket_qua.returncode == MA_BAI_HONG, (ket_qua.returncode, ket_qua.stderr)
-    assert "dài 10001 ký tự, trần là 10000" in ket_qua.stderr
+    assert "dài 50001 ký tự, trần là 50000" in ket_qua.stderr
 
 
 def test_hai_tran_do_dai_KHOP_giua_python_va_javascript():

@@ -150,11 +150,11 @@ test("N8: title 161 ký tự bị chặn, 160 thì lọt", () => {
   assert.match(loi[0], /`title` dài 161 ký tự, trần là 160/);
 });
 
-test("N8: body 10.001 ký tự bị chặn, 10.000 thì lọt", () => {
+test("N8: body 50.001 ký tự bị chặn, 50.000 thì lọt", () => {
   assert.deepEqual(kiemTraBaiViet(baiHopLe({ body: "b".repeat(DAI_BODY) })), []);
   const loi = kiemTraBaiViet(baiHopLe({ body: "b".repeat(DAI_BODY + 1) }));
   assert.equal(loi.length, 1);
-  assert.match(loi[0], /`body` dài 10001 ký tự, trần là 10000/);
+  assert.match(loi[0], /`body` dài 50001 ký tự, trần là 50000/);
 });
 
 test("sub rỗng / thiếu / sai kiểu đều là lỗi", () => {

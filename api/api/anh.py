@@ -43,6 +43,7 @@ from api.quyen import (
     dang_nhap,
     doi_chu_so_huu,
     doi_mach_tuong_tac_duoc,
+    doi_trong_cua_so_tu_sua,
 )
 from api.schemas import AnhNoiDungOut, AnhOut
 from api.trinh_bay import anh_ra
@@ -74,10 +75,14 @@ def tai_anh_moc(request, moc_id: int, file: UploadedFile = File(...)):
     **Quyền: CHỈ `Moc.author`** — cùng cột mà `PATCH`/`DELETE /mocs/{id}` hỏi, không phải
     `Mach.author`. Ảnh là nội dung của mốc, nên nó theo quyền của mốc.
 
-    Ba ca từ chối theo trạng thái, mỗi ca một mã:
+    Bốn ca từ chối theo trạng thái, mỗi ca một mã:
 
     - mạch bị mod **khoá** ⇒ 403 `mach_bi_khoa` (đọc được, cấm tương tác — PLAN 5.10);
     - mốc đã là **bia mộ** hoặc bị mod ẩn ⇒ 409 `noi_dung_da_go`;
+    - **quá cửa sổ tự sửa** (`plans/2026-09-05-cua-so-tu-sua-bai.md`) ⇒ 403
+      `het_cua_so_sua` — thêm ảnh cũng đổi nội dung công khai của mốc, mà không để lại
+      `MocRevision`/`edited_at` nào; không áp cùng phép kiểm với `PATCH /mocs/{id}` thì
+      cửa này là đường vòng để sửa bài sau khi hết hạn (xem `api/quyen.py::doi_trong_cua_so_tu_sua`);
     - mốc đã đủ 10 ảnh ⇒ 409 `qua_nhieu_anh`.
 
     **Mạch ĐÃ ĐÓNG SỔ vẫn tải ảnh lên được**, và đó là chủ đích chứ không phải sót:
@@ -95,6 +100,7 @@ def tai_anh_moc(request, moc_id: int, file: UploadedFile = File(...)):
     doi_chu_so_huu(request.user, moc.author_id, "mốc")
     doi_mach_tuong_tac_duoc(moc.mach)
     doi_con_song(moc, "Mốc")
+    doi_trong_cua_so_tu_sua(moc)
 
     doi_khong_qua_nang(file)
     # Tái mã hoá chạy NGOÀI transaction và ngoài mọi khoá: nó tốn khoảng một giây với ảnh
@@ -135,6 +141,11 @@ def xoa_anh_moc_api(request, anh_id: int):
     giải phóng đĩa), và mốc bia mộ thì ảnh đã không hiện ở đâu nữa nên không có gì để
     bảo vệ. `doi_mach_tuong_tac_duoc` thì **có** — mạch bị mod khoá là cấm mọi tương tác,
     kể cả của chính tác giả (PLAN 5.10).
+
+    **Có kiểm cửa sổ tự sửa** (`plans/2026-09-05-cua-so-tu-sua-bai.md`) ⇒ 403
+    `het_cua_so_sua` khi hết hạn, cùng phép kiểm với `POST /mocs/{id}/anh` ở trên: gỡ ảnh
+    cũng đổi nội dung công khai của mốc mà không để lại dấu vết nào, đúng thứ cửa sổ này
+    chặn (`api/quyen.py::doi_trong_cua_so_tu_sua`).
     """
     anh = (
         MocAnh.objects.filter(pk=anh_id, moc__mach__hidden_at__isnull=True)
@@ -145,6 +156,7 @@ def xoa_anh_moc_api(request, anh_id: int):
         raise LoiGhi(404, KHONG_TIM_THAY, f"Không tìm thấy ảnh {anh_id}.")
     doi_chu_so_huu(request.user, anh.moc.author_id, "mốc")
     doi_mach_tuong_tac_duoc(anh.moc.mach)
+    doi_trong_cua_so_tu_sua(anh.moc)
 
     ra = anh_ra(anh)
     with transaction.atomic():

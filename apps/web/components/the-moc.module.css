@@ -173,6 +173,124 @@
   color: var(--ink-3);
 }
 
+/* === Thu gọn / Mở rộng mốc (Accordion) === */
+
+.thu_gon {
+  position: relative;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 4px 8px 6px;
+  margin: -4px -8px 0;
+  transition: background-color 0.15s ease;
+}
+
+.thu_gon:hover {
+  background-color: var(--hover);
+}
+
+.than_thu_gon {
+  max-height: 145px;
+  overflow: hidden;
+  position: relative;
+  -webkit-mask-image: linear-gradient(to bottom, black 70px, transparent 145px);
+  mask-image: linear-gradient(to bottom, black 70px, transparent 145px);
+}
+
+/* Ẩn các khối tương tác/nặng khi mốc đang thu gọn */
+.than_thu_gon .figures,
+.than_thu_gon .cau_moi,
+.than_thu_gon .chan,
+.than_thu_gon :global([data-testid="hang-reaction"]),
+.than_thu_gon :global([data-testid="gallery-moc"]),
+.than_thu_gon :global([data-testid^="trich-moc-"]),
+.than_thu_gon :global([data-testid^="lat-cat-"]),
+.than_thu_gon :global([data-testid^="ngan-keo-"]) {
+  display: none !important;
+}
+
+.phu_mo_thu_gon {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 52px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  padding: 0 8px 6px;
+  background: linear-gradient(to bottom, transparent, var(--card) 85%);
+  pointer-events: none;
+}
+
+.nut_mo_moc {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--surface);
+  border: 1px solid var(--line-2, var(--line));
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 12px;
+  border-radius: 14px;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.06);
+  transition: all 0.15s ease;
+}
+
+.nut_mo_moc:hover {
+  background: var(--card);
+  border-color: var(--accent);
+  color: var(--accent-hover, var(--accent));
+  transform: translateY(-1px);
+}
+
+.mui_ten_mo {
+  font-size: 11px;
+  line-height: 1;
+}
+
+.dang_mo {
+  position: relative;
+}
+
+.chan_thu_gon {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+  padding-top: 4px;
+}
+
+.nut_dong_moc {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: 1px dashed var(--line);
+  color: var(--ink-3);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nut_dong_moc:hover {
+  color: var(--ink);
+  border-color: var(--ink-2);
+  border-style: solid;
+  background: var(--inset);
+}
+
+.mui_ten_dong {
+  font-size: 10px;
+  line-height: 1;
+}
+
 @media (max-width: 640px) {
   .ray {
     margin-left: 12px;

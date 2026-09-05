@@ -5,6 +5,7 @@ import { dongSoMachSub } from "@/lib/dinh-dang";
 import { DIEU_CAM } from "@/lib/phap-ly";
 import { duongDanSub } from "@/lib/url";
 
+import { ChanTrang } from "./chan-trang";
 import css from "./sidebar.module.css";
 
 /** Sidebar phải — bố cục Reddit (plan con 1d §2.5.2 và §2.5.3).
@@ -97,6 +98,9 @@ export function Sidebar({
           </ul>
         </section>
       )}
+
+      <ChanTrang />
     </aside>
   );
 }
+

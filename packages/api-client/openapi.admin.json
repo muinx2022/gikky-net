@@ -295,6 +295,39 @@
         "title": "BinhLuanDongOut",
         "type": "object"
       },
+      "CaiDatBienTapIn": {
+        "description": "Body của `PUT /admin/cai-dat/bien-tap`.",
+        "properties": {
+          "phut_tu_sua_moc": {
+            "title": "Phut Tu Sua Moc",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "phut_tu_sua_moc"
+        ],
+        "title": "CaiDatBienTapIn",
+        "type": "object"
+      },
+      "CaiDatBienTapOut": {
+        "description": "Cấu hình \"cửa sổ tự sửa bài\" cho trang Cài đặt (`plans/2026-09-05-cua-so-tu-sua-\nbai.md`) — anh em với `CaiDatGoogleOut` ngay dưới, cùng luật \"chỉ superuser ghi\".",
+        "properties": {
+          "phut_tu_sua_moc": {
+            "title": "Phut Tu Sua Moc",
+            "type": "integer"
+          },
+          "sua_duoc": {
+            "title": "Sua Duoc",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "phut_tu_sua_moc",
+          "sua_duoc"
+        ],
+        "title": "CaiDatBienTapOut",
+        "type": "object"
+      },
       "CaiDatGoogleIn": {
         "description": "Body của `PUT /admin/cai-dat/google`.\n\n`secret` **vắng hoặc rỗng ⇒ GIỮ NGUYÊN secret cũ**, không phải xoá. Người ta sửa\n`client_id` mà không dán lại secret là chuyện thường; coi \"trống\" là \"xoá\" thì mỗi\nlần sửa `client_id` là một lần vô tình gỡ Google khỏi site. Muốn gỡ hẳn thì dùng\n`DELETE` — một hành động có tên.",
         "properties": {
@@ -703,6 +736,25 @@
         "title": "KetQuaHenGioOut",
         "type": "object"
       },
+      "KetQuaLuuCaiDatBienTapOut": {
+        "description": "Kết quả một lượt lưu — `da_doi=false` khi gửi đúng giá trị đang có (không audit).",
+        "properties": {
+          "da_doi": {
+            "title": "Da Doi",
+            "type": "boolean"
+          },
+          "phut_tu_sua_moc": {
+            "title": "Phut Tu Sua Moc",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "da_doi",
+          "phut_tu_sua_moc"
+        ],
+        "title": "KetQuaLuuCaiDatBienTapOut",
+        "type": "object"
+      },
       "KetQuaSuaMocOut": {
         "description": "Kết quả một lượt sửa mốc: có đổi thật không, và mốc SAU khi sửa.\n\n`da_doi=false` nghĩa là mod gửi lên đúng thứ đang có — không revision, không nhãn\n\"đã sửa\", không dòng nhật ký. UI đọc trường này để nói \"Không có gì đổi\" thay vì báo\nthành công cho một lượt chẳng làm gì (cùng lý lẽ `KetQuaDoiTrangThaiOut.da_doi`).",
         "properties": {
@@ -1094,7 +1146,7 @@
             "type": "string"
           },
           "body": {
-            "maxLength": 10000,
+            "maxLength": 50000,
             "minLength": 1,
             "title": "Body",
             "type": "string"
@@ -1905,7 +1957,7 @@
           "body": {
             "anyOf": [
               {
-                "maxLength": 10000,
+                "maxLength": 50000,
                 "minLength": 1,
                 "type": "string"
               },
@@ -2691,6 +2743,130 @@
         "summary": "Xoa Anh Moc Quan Tri",
         "tags": [
           "quan-tri-sua-bai"
+        ]
+      }
+    },
+    "/api/admin/cai-dat/bien-tap": {
+      "get": {
+        "description": "Số phút tác giả được tự sửa bài sau khi đăng. Mọi `is_staff` đọc được.\n\nCùng lý lẽ với `xem_cai_dat_google`: mod thường cần biết cấu hình đang là bao nhiêu\nkhi có tác giả hỏi \"sao tôi không sửa được nữa\", dù họ không đổi được con số này.",
+        "operationId": "quan_tri_xem_cai_dat_bien_tap",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaiDatBienTapOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Xem Cai Dat Bien Tap",
+        "tags": [
+          "quan-tri-cai-dat"
+        ]
+      },
+      "put": {
+        "description": "Đổi số phút tự sửa. Có hiệu lực **ngay** cho mọi mốc — không cache giá trị cũ ở\nđâu, `PATCH /mocs/{id}` đọc lại DB ở mỗi request (`core/cau_hinh.py`).\n\nGửi đúng giá trị đang có ⇒ 200 `da_doi=false`, không ghi `AuditLog` — cùng luật\n\"không đổi thì không vết\" của mọi hành động quản trị khác trong repo.",
+        "operationId": "quan_tri_luu_cai_dat_bien_tap",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaiDatBienTapIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KetQuaLuuCaiDatBienTapOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Luu Cai Dat Bien Tap",
+        "tags": [
+          "quan-tri-cai-dat"
         ]
       }
     },

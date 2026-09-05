@@ -10,20 +10,20 @@ theo kiểu ("tất cả FK", "tất cả enum"):
 - `moc`         — `Moc`, `MocRevision`, `MocAnh`, `AnhNoiDung`
 - `binh_luan`   — `Comment`
 - `tuong_tac`   — `Vote`, `Reaction`, `Trich`, `Follow`
-- `he_thong`    — `Notification`, `Report`, `AuditLog`
+- `he_thong`    — `Notification`, `Report`, `AuditLog`, `CauHinhBienTap`
 - `luot_xem`    — `LuotXem`, `TongNgay`, `MuoiNgay`, `KhachNgay` (bảng LÁ, không FK tới gì)
 
 Django lấy `app_label` từ vị trí package trong app `core`, nên không model nào cần khai
 `Meta.app_label`. Điều kiện DUY NHẤT là mọi model phải được import ở đây — model không
 import thì Django không thấy, `makemigrations` lặng lẽ bỏ qua (không có gì đỏ).
-`tests/test_models_domain.py::test_du_14_model_va_deu_dang_ky_vao_app_core` ghim đúng
+`tests/test_models_domain.py::test_du_15_model_va_deu_dang_ky_vao_app_core` ghim đúng
 chuyện đó — nó đọc **app registry** của Django chứ không đọc `__all__` ở dưới, vì
 registry mới là thứ `makemigrations` dùng.
 """
 
 from core.models.binh_luan import Comment
 from core.models.dien_dan import Mach, ModSub, Sub
-from core.models.he_thong import AuditLog, Notification, Report
+from core.models.he_thong import AuditLog, CauHinhBienTap, Notification, Report
 from core.models.luot_xem import KhachNgay, LuotXem, MuoiNgay, TongNgay
 from core.models.moc import AnhNoiDung, Moc, MocAnh, MocRevision
 from core.models.nguoi_dung import User
@@ -32,6 +32,7 @@ from core.models.tuong_tac import Follow, Reaction, TheoSub, TheoUser, Trich, Vo
 __all__ = [
     "AnhNoiDung",
     "AuditLog",
+    "CauHinhBienTap",
     "Comment",
     "Follow",
     "KhachNgay",

@@ -44,6 +44,8 @@ export type NoiDungMoc = {
 export const SO_FIGURES_TOI_DA = 6;
 export const DAI_FIGURE_LABEL = 24;
 export const DAI_FIGURE_VALUE = 24;
+/** Trần độ dài body mốc — 50.000 ký tự (nới từ 10.000 ký tự để đủ chỗ cho HTML rich text). */
+export const DAI_BODY_MOC = 50_000;
 
 /** Giá trị khởi tạo của một mốc MỚI: thân rỗng, ngày sự việc = hôm nay giờ VN (PLAN 5.2). */
 export function mocRong(): NoiDungMoc {
@@ -80,9 +82,18 @@ export function TruongMoc({
           `<label>` bọc nó sẽ nuốt cú bấm vào thanh công cụ rồi ném focus lung tung. Nhãn
           nối bằng `id`/`aria-labelledby` thay cho việc bọc. */}
       <div className={css.o}>
-        <span className={css.nhan} id={`${tienTo}-nhan-than`}>
-          {nhanThan}
-        </span>
+        <div className={css.hang_nhan}>
+          <span className={css.nhan} id={`${tienTo}-nhan-than`}>
+            {nhanThan}
+          </span>
+          {gia_tri.body.length > 0 && (
+            <span
+              className={`${css.dem_ky_tu} ${gia_tri.body.length > DAI_BODY_MOC ? css.qua_tai : ""}`}
+            >
+              {gia_tri.body.length.toLocaleString("vi-VN")}/{DAI_BODY_MOC.toLocaleString("vi-VN")} ký tự
+            </span>
+          )}
+        </div>
         <SoanThao
           giaTri={gia_tri.body}
           datGiaTri={(html) => dat("body", html)}
