@@ -226,7 +226,7 @@ D:\Projects\gikky-net\scripts\bai-viet\.tam\bai.json
 | `figures` | **tối đa 6 cặp** | vượt ⇒ server trả **500**, không phải 400 |
 | `figures[].label` / `.value` | 24 ký tự mỗi ô | |
 
-`sub` phải là một trong: `chung-khoan` · `vi-mo` · `crypto` · `quan-tri-von`.
+`sub` phải là một trong: `chung-khoan` · `vi-mo` · `crypto` · `ngoai-hoi` · `quan-tri-von`.
 Bảng chọn `sub` nằm ở đầu `chu-de.md`.
 
 `loai` là nhãn ngắn hiện trên mốc: `Phân tích` · `Tản mạn` · `Đọc sách` · `Ngành`.

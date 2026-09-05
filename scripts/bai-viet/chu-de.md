@@ -13,6 +13,7 @@ mà tránh, và để thấy đã đi qua những đâu.
 | Một mã / một ngành cụ thể trên sàn Việt Nam | `chung-khoan` |
 | Chính sách, lãi suất, tỷ giá, thuế quan, dòng vốn, hàng hoá toàn cầu | `vi-mo` |
 | Bitcoin, altcoin, sàn, on-chain, stablecoin | `crypto` |
+| Ngoại hối, FX, Forex, các cặp tiền tệ, DXY | `ngoai-hoi` |
 | Tâm lý, kỷ luật, cỡ lệnh, sách | `quan-tri-von` |
 
 Phân vân giữa `chung-khoan` và `vi-mo`: hỏi *bài này nói về **doanh nghiệp** hay về **môi

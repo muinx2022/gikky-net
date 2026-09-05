@@ -139,8 +139,8 @@ SUBS = [
     },
     {
         "slug": "ngoai-hoi",
-        "ten": "Ngoại hối",
-        "mo_ta": "Cặp tiền lớn, chỉ số DXY, tỷ giá USD/VND và tác động lên danh mục.",
+        "ten": "Ngoại hối & FX",
+        "mo_ta": "Thị trường ngoại hối (Forex/FX), các cặp tiền lớn, chỉ số DXY, tỷ giá USD/VND và chiến lược giao dịch FX.",
     },
     {
         "slug": "co-phieu-quoc-te",
