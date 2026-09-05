@@ -1003,8 +1003,10 @@ export const xoaMoc = <ThrowOnError extends boolean = false>(options: Options<Xo
  * KHÔNG kiểm mốc này.
  *
  * Mốc bắt đầu đếm KHÔNG phải luôn luôn `created_at`: mạch hẹn giờ phát hành
- * (`plans/2026-09-03-hen-gio-phat-hanh.md`) có `Mach.published_at` ở tương lai, và đếm
- * từ lúc SOẠN thì cửa sổ có thể hết trước khi bài lên sóng — xem docstring
+ * (`plans/2026-09-03-hen-gio-phat-hanh.md`) có `Mach.published_at` ở tương lai lúc soạn,
+ * và đếm từ lúc SOẠN thì cửa sổ có thể hết trước khi bài lên sóng. Mốc thật sự dùng là
+ * `Mach.lan_dau_len_song` (ghi đúng MỘT LẦN lúc lên sóng), KHÔNG phải `published_at`
+ * trực tiếp — cột đó bị ghi đè mỗi lần rút bài xuống rồi phát hành lại — xem docstring
  * `moc_bat_dau_tu_sua`.
  *
  * Hai cửa sổ đo cùng một khoảng cách nhưng trả lời hai câu hỏi khác nhau: cửa sổ im

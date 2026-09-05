@@ -177,8 +177,10 @@ def doi_trong_cua_so_tu_sua(moc) -> None:
     `select_related("mach")`) — hỏi thêm ở đây không phải một truy vấn mới.
 
     `core.cau_hinh.moc_bat_dau_tu_sua` tính đúng mốc bắt đầu đếm cho cả mạch hẹn giờ phát
-    hành (`Mach.published_at` ở tương lai); `doc_phut_tu_sua_moc()` đọc số phút cấu hình
-    HIỆN HÀNH — không phải hằng số cứng, đổi được ở khu quản trị.
+    hành (`Mach.published_at` ở tương lai lúc soạn) — qua `Mach.lan_dau_len_song`, ghi
+    đúng MỘT LẦN lúc lên sóng, KHÔNG phải `published_at` trực tiếp (cột đó bị ghi đè mỗi
+    lần admin rút bài xuống rồi phát hành lại). `doc_phut_tu_sua_moc()` đọc số phút cấu
+    hình HIỆN HÀNH — không phải hằng số cứng, đổi được ở khu quản trị.
     """
     han = moc_bat_dau_tu_sua(moc, moc.mach) + timedelta(minutes=doc_phut_tu_sua_moc())
     if timezone.now() > han:

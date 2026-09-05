@@ -88,3 +88,45 @@ export function cauLoiTaiAnh(ket_qua: readonly KetQuaTaiAnh[]): string | null {
     .map((h) => `${h.ten} (${h.loi})`)
     .join("; ")}`;
 }
+
+/** Kết quả cuối của một lượt Lưu mốc: thông báo hiển thị + ảnh còn lại trong ô chọn. */
+export type KetQuaLuuMoc = {
+  /** `null` khi cả lượt trót lọt — không có gì để báo. */
+  thongBao: string | null;
+  /** Chỉ những tấm CHƯA lên được, giữ nguyên thứ tự đã chọn. */
+  conLai: File[];
+};
+
+/** Tính thông báo hiển thị sau khi Lưu + danh sách ảnh còn lại trong ô chọn.
+ *
+ * Tách khỏi `HanhDongMoc.luu` (component React) để viết được unit test thuần, không cần
+ * dựng cả component — luồng "báo Đã lưu sai khi không có gì được lưu" (lượt vá
+ * `plans/2026-09-05-cua-so-tu-sua-bai.md`, mục 1) từng lọt qua ba lượt sửa vì phép tính
+ * này nằm lẫn trong một hàm xử lý sự kiện, không ai gọi riêng nó để đo được.
+ *
+ * `suaChuThanhCong`: `true` khi PATCH phần chữ đã CHẠY và không ném lỗi. `false` khi
+ * không có gì để sửa chữ (form chỉ đổi ảnh) — KHÔNG phải khi PATCH ném lỗi, vì ca đó
+ * người gọi đã rơi vào nhánh `catch` từ trước, không tới được đây.
+ *
+ * `anhs`/`ketQuaAnh` phải cùng độ dài, cùng thứ tự — đúng thứ `taiAnhLanLuot` trả về (một
+ * kết quả cho mỗi ảnh, theo thứ tự đã gửi).
+ *
+ * "Đã lưu" chỉ được nói khi THẬT SỰ có cái gì đó lưu xuống — chữ hoặc ít nhất một ảnh.
+ * Không đổi chữ (`suaChuThanhCong === false`) mà mọi ảnh đều hỏng thì không có gì lưu cả,
+ * và câu phải nói đúng bản chất đó thay vì "Đã lưu, nhưng ...".
+ */
+export function ketQuaLuuMoc(
+  suaChuThanhCong: boolean,
+  anhs: readonly File[],
+  ketQuaAnh: readonly KetQuaTaiAnh[],
+): KetQuaLuuMoc {
+  const cau = cauLoiTaiAnh(ketQuaAnh);
+  if (cau === null) return { thongBao: null, conLai: [] };
+  const coAnhLen = ketQuaAnh.some((k) => k.loi === null);
+  const conLai = anhs.filter((_, i) => ketQuaAnh[i]?.loi !== null);
+  const daLuuGi = suaChuThanhCong || coAnhLen;
+  return {
+    thongBao: daLuuGi ? `Đã lưu, nhưng ${cau}` : `Chưa lưu được: ${cau}`,
+    conLai,
+  };
+}

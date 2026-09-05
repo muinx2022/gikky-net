@@ -128,7 +128,10 @@ test("tuSuaConDuoc đọc `sua_duoc_den` của server, fail-closed khi chuỗi h
   expect(tuSuaConDuoc(sau(0), bay_gio)).toBe(true);
   expect(tuSuaConDuoc(sau(-1), bay_gio)).toBe(false);
   // Chuỗi rác ⇒ fail-closed: `false`, tức ẨN nút Sửa, không phải hiện nút cho một hạn
-  // không đọc được — đúng nhánh `Number.isNaN` của cài đặt hiện tại.
+  // không đọc được. ⚠ Ca này KHÔNG canh riêng nhánh `if (Number.isNaN(han)) return
+  // false;` của cài đặt hiện tại — xoá hẳn nhánh đó thì bài vẫn xanh, vì
+  // `khi.getTime() <= NaN` tự nhiên đã là `false` trong JS (mọi so sánh với `NaN` đều
+  // `false`). Bài chỉ khẳng định ĐẦU RA đúng, không khẳng định ĐƯỜNG ĐI nào tạo ra nó.
   expect(tuSuaConDuoc("khong-phai-ngay", bay_gio)).toBe(false);
 });
 

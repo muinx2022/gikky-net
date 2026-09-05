@@ -329,7 +329,8 @@ def test_C9_moc_cu_KHONG_co_edited_by_van_doc_duoc_khong_mat_gi(client, mach_cua
 
 
 # =============================================================================
-# C12 / C13 — mốc bắt đầu đếm là max(created_at, published_at), không luôn luôn created_at
+# C12 / C13 — mốc bắt đầu đếm là max(created_at, lan_dau_len_song or created_at), không
+# luôn luôn created_at
 # =============================================================================
 
 
@@ -358,7 +359,7 @@ def _mach_hen_da_phat_hanh(sub, tac_gia, *, soan_truoc: timedelta, hen_cach_day:
     return mach, moc
 
 
-def test_C12_hen_gio_da_len_song_PATCH_van_sua_duoc_theo_published_at(
+def test_C12_hen_gio_da_len_song_PATCH_van_sua_duoc_theo_lan_dau_len_song(
     client, sub, nguoi_a
 ):
     """Soạn 10 ngày trước (`created_at` đã hết cửa sổ theo luật CŨ), hẹn cách đây 1 phút
@@ -384,7 +385,7 @@ def test_C12_hen_gio_da_len_song_PATCH_van_sua_duoc_theo_published_at(
     assert d["body"] == "Sửa ngay sau khi lên sóng."
 
 
-def test_C13_sua_duoc_den_tinh_tu_published_at_khong_phai_created_at(sub, nguoi_a):
+def test_C13_sua_duoc_den_tinh_tu_lan_dau_len_song_khong_phai_created_at(sub, nguoi_a):
     """`MocOut.sua_duoc_den` trên đường ĐỌC phải theo đúng công thức `moc_bat_dau_tu_sua`.
 
     `created_at` và `published_at` cách nhau gần 10 ngày ở đây — nếu API lỡ tính lại từ

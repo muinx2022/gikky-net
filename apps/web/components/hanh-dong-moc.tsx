@@ -4,7 +4,7 @@ import { suaMoc, xoaMoc, type MocOut } from "@gikky/api-client";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
-import { cauLoiTaiAnh, taiAnhLanLuot } from "@/lib/anh";
+import { ketQuaLuuMoc, taiAnhLanLuot } from "@/lib/anh";
 import { cauLoi, layDuLieu } from "@/lib/ghi";
 import { GOC_TRINH_DUYET, headerGhi } from "@/lib/tai-khoan";
 import { gioPhutVN, phutSuaImLangConLai, tuSuaConDuoc } from "@/lib/vong-doi";
@@ -124,6 +124,10 @@ export function HanhDongMoc({ moc }: { moc: MocOut }) {
     datDangGui(true);
     datLoi(null);
     try {
+      // `thay_doi !== null` mà không ném là chữ ĐÃ lưu — cần biết vế này để phân biệt
+      // "Đã lưu, nhưng ..." (có cái gì đó lưu xuống) với "Chưa lưu được: ..." (không có
+      // gì cả) khi ảnh dưới đây hỏng hết. Xem docstring `ketQuaLuuMoc`.
+      const sua_chu_thanh_cong = thay_doi !== null;
       if (thay_doi !== null) {
         layDuLieu(
           await suaMoc({
@@ -137,11 +141,13 @@ export function HanhDongMoc({ moc }: { moc: MocOut }) {
       }
       // Ảnh gửi SAU phần chữ, và một tấm hỏng không cuốn theo phần chữ đã lưu — mốc thì
       // đã sửa thật, nên câu lỗi phải nói đúng chuyện đó.
-      const cau =
-        anhs.length > 0 ? cauLoiTaiAnh(await taiAnhLanLuot(moc.id, anhs)) : null;
-      datAnhs([]);
-      if (cau !== null) {
-        datLoi(`Đã lưu, nhưng ${cau}`);
+      const ket_qua_anh = anhs.length > 0 ? await taiAnhLanLuot(moc.id, anhs) : [];
+      const { thongBao, conLai } = ketQuaLuuMoc(sua_chu_thanh_cong, anhs, ket_qua_anh);
+      // Chỉ xoá khỏi state những tấm ĐÃ lên được — tấm lỗi (403/409/413...) ở lại để
+      // người dùng không phải chọn lại từ đầu.
+      datAnhs(conLai);
+      if (thongBao !== null) {
+        datLoi(thongBao);
         router.refresh();
         return;
       }
