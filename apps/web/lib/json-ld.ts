@@ -1,7 +1,8 @@
 import type { MachChiTietOut } from "@gikky/api-client";
 
 import { urlTuyetDoi } from "./site";
-import { duongDanHoSo, duongDanMach } from "./url";
+import { duongDanHoSo, duongDanMach, duongDanSub } from "./url";
+import { trichVanBanThuan } from "./van-ban";
 
 /** JSON-LD `DiscussionForumPosting` cho trang mạch — PLAN 5.9.
  *
@@ -23,6 +24,8 @@ import { duongDanHoSo, duongDanMach } from "./url";
 export function jsonLdMach(mach: MachChiTietOut): Record<string, unknown> {
   const url = urlTuyetDoi(duongDanMach(mach.slug, mach.id));
   const moc_dau = mach.mocs.find((m) => m.seq === 1);
+  const urlSub = urlTuyetDoi(duongDanSub(mach.sub.slug));
+  const urlTrangChu = urlTuyetDoi("/");
 
   const du_lieu: Record<string, unknown> = {
     "@context": "https://schema.org",
@@ -41,9 +44,32 @@ export function jsonLdMach(mach: MachChiTietOut): Record<string, unknown> {
       name: mach.author.display_name || mach.author.username,
       url: urlTuyetDoi(duongDanHoSo(mach.author.username)),
     },
+    breadcrumb: {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "Trang chủ",
+          item: urlTrangChu,
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: `s/${mach.sub.slug}`,
+          item: urlSub,
+        },
+        {
+          "@type": "ListItem",
+          position: 3,
+          name: mach.title,
+          item: url,
+        },
+      ],
+    },
   };
 
-  if (moc_dau?.body) du_lieu.articleBody = moc_dau.body;
+  if (moc_dau?.body) du_lieu.articleBody = trichVanBanThuan(moc_dau.body);
 
   if (mach.comment_count > 0) {
     du_lieu.interactionStatistic = {
@@ -54,4 +80,38 @@ export function jsonLdMach(mach: MachChiTietOut): Record<string, unknown> {
   }
 
   return du_lieu;
+}
+
+/** JSON-LD WebSite và Organization cho Trang chủ */
+export function jsonLdWebSite(): Record<string, unknown> {
+  const urlTrangChu = urlTuyetDoi("/");
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": `${urlTrangChu}#organization`,
+        name: "gikky.net",
+        url: urlTrangChu,
+        description: "Diễn đàn trading tiếng Việt. Nhật ký giao dịch và luận điểm thị trường.",
+      },
+      {
+        "@type": "WebSite",
+        "@id": `${urlTrangChu}#website`,
+        url: urlTrangChu,
+        name: "gikky.net",
+        publisher: {
+          "@id": `${urlTrangChu}#organization`,
+        },
+        potentialAction: {
+          "@type": "SearchAction",
+          target: {
+            "@type": "EntryPoint",
+            urlTemplate: `${urlTuyetDoi("/tim-kiem")}?q={search_term_string}`,
+          },
+          "query-input": "required name=search_term_string",
+        },
+      },
+    ],
+  };
 }

@@ -15,7 +15,9 @@ import { TheMach } from "@/components/the-mach";
 import { docHoSo } from "@/lib/api";
 import { CHU_NGUOI_DUNG } from "@/lib/chu-nguoi-dung";
 import { ngayCuaThoiDiem } from "@/lib/dinh-dang";
+import { urlTuyetDoi } from "@/lib/site";
 import { docTabHoSo, laTabRieng } from "@/lib/tab-ho-so";
+import { duongDanHoSo } from "@/lib/url";
 
 import css from "./ho-so.module.css";
 
@@ -32,7 +34,25 @@ export async function generateMetadata({
   params: Promise<ThamSo>;
 }): Promise<Metadata> {
   const { username } = await params;
-  return { title: `u/${username}` };
+  const duong_dan = duongDanHoSo(username);
+  const tieu_de = `u/${username}`;
+  const mo_ta = `Hồ sơ và nhật ký giao dịch của u/${username} trên gikky.net.`;
+  return {
+    title: tieu_de,
+    description: mo_ta,
+    alternates: { canonical: urlTuyetDoi(duong_dan) },
+    openGraph: {
+      title: `${tieu_de} · gikky.net`,
+      description: mo_ta,
+      url: urlTuyetDoi(duong_dan),
+      type: "profile",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${tieu_de} · gikky.net`,
+      description: mo_ta,
+    },
+  };
 }
 
 export default async function TrangHoSo({

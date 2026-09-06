@@ -61,9 +61,16 @@
 }
 
 # ===========================================================================
+# CHUYỂN HƯỚNG www.gikky.net -> https://gikky.net
+# ===========================================================================
+http://www.gikky.net {
+	redir https://gikky.net{uri} permanent
+}
+
+# ===========================================================================
 # HOST CÔNG KHAI
 # ===========================================================================
-http://gikky.net, http://www.gikky.net {
+http://gikky.net {
 	encode zstd gzip
 
 	# ⚠ PHẢI ĐỨNG TRƯỚC MỌI RULE `/api/*` — PLAN 8.2 gạch đầu dòng 1. Các khối `handle`

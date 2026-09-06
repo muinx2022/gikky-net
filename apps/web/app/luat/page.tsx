@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { DIEU_CAM, DISCLAIMER_CHAN_TRANG, NHAN_DRAFT } from "@/lib/phap-ly";
 import { KhungHaiCotTinh } from "@/components/khung-hai-cot-tinh";
+import { urlTuyetDoi } from "@/lib/site";
 
 import css from "./luat.module.css";
 
@@ -17,6 +18,9 @@ export const metadata: Metadata = {
   description:
     "Luật cộng đồng gikky (bản draft): cấm phím hàng, cấm cam kết lợi nhuận, cấm mời "
     + "chào uỷ thác, cấm link nhóm kín.",
+  alternates: {
+    canonical: urlTuyetDoi("/luat"),
+  },
 };
 
 /** `/luat` — PLAN 5.10. Bản **DRAFT**: PLAN mục 11 xếp việc duyệt bản cuối vào phần

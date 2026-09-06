@@ -24,8 +24,9 @@ export async function generateMetadata({
   const chi_tiet = await docSub(sub);
   if (chi_tiet === null) return { title: `s/${sub}` };
   const duong_dan = duongDanSub(chi_tiet.slug);
+  const tieu_de = `s/${chi_tiet.slug} — ${chi_tiet.ten}`;
   return {
-    title: `s/${chi_tiet.slug} — ${chi_tiet.ten}`,
+    title: tieu_de,
     description: chi_tiet.mo_ta,
     // Feed RIÊNG của chuyên mục, ghi đè `/feed.xml` toàn site khai ở `app/layout.tsx`:
     // người đăng ký RSS từ trang `s/crypto` muốn crypto, không muốn cả site. Khai cả
@@ -37,6 +38,17 @@ export async function generateMetadata({
           { url: `${duong_dan}/feed.xml`, title: `gikky.net · s/${chi_tiet.slug}` },
         ],
       },
+    },
+    openGraph: {
+      title: `${tieu_de} · gikky.net`,
+      description: chi_tiet.mo_ta,
+      url: urlTuyetDoi(duong_dan),
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${tieu_de} · gikky.net`,
+      description: chi_tiet.mo_ta,
     },
   };
 }

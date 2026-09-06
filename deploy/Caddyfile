@@ -55,9 +55,16 @@
 }
 
 # ---------------------------------------------------------------------------
+# Chuyển hướng www.gikky.net -> https://gikky.net (chuẩn hoá canonical)
+# ---------------------------------------------------------------------------
+www.gikky.net {
+	redir https://gikky.net{uri} permanent
+}
+
+# ---------------------------------------------------------------------------
 # Host CÔNG KHAI
 # ---------------------------------------------------------------------------
-gikky.net, www.gikky.net {
+gikky.net {
 	encode zstd gzip
 
 	# ⚠ LUẬT NÀY PHẢI ĐỨNG TRƯỚC MỌI RULE PROXY /api/* — PLAN 8.2 gạch đầu dòng 1.

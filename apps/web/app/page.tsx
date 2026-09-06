@@ -1,4 +1,7 @@
+import type { Metadata } from "next";
+
 import { Feed } from "@/components/feed";
+import { JsonLd } from "@/components/json-ld";
 import { Sidebar } from "@/components/sidebar";
 import {
   docCacSub,
@@ -8,11 +11,18 @@ import {
   type KhoangFeed,
   type TabFeed,
 } from "@/lib/api";
-import { GIOI_THIEU } from "@/lib/site";
+import { jsonLdWebSite } from "@/lib/json-ld";
+import { GIOI_THIEU, urlTuyetDoi } from "@/lib/site";
 
 // Xem ghi chú ở `app/m/[slugId]/page.tsx`: cơ chế cache của PLAN 8.4 là việc của Phase 3.
 // Dòng này cũng giữ cho `pnpm build` không cần Django sống.
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  alternates: {
+    canonical: urlTuyetDoi("/"),
+  },
+};
 
 // ⚠⚠ **KHÔNG có bộ xương (skeleton) lúc tải, và đây là lý do — đo được, không phải cảm
 // tính.** Plan giao diện §2.5 đòi *"skeleton thay cho khoảng trắng"*; lượt 2026-08-23 thử
@@ -78,20 +88,23 @@ async function FeedDaNap({
   ]);
 
   return (
-    <Feed
-      feed={feed}
-      cursorHong={cursorHong}
-      tab={tab}
-      khoang={khoang}
-      coBan="/"
-      // `<h1>` KHÔNG còn là chữ "gikky": tên hiệu đã nằm ở thanh trên cùng của mọi trang,
-      // nên in lại nó ở đây vừa thừa vừa lấy mất dòng chữ có giá trị nhất của trang chủ
-      // đối với người mới và với máy tìm kiếm. Nay nó nói **sản phẩm là gì** trong một
-      // câu; lede nói **trang này liệt kê gì**. Phần "site vận hành ra sao" thuộc về
-      // `GIOI_THIEU` ở sidebar — xem docstring của hằng ấy.
-      tieuDe="Nhật ký giao dịch, ghi trước khi biết kết quả"
-      lede="Bài mới nhất từ mọi chuyên mục."
-      sidebar={<Sidebar gioiThieu={GIOI_THIEU} cacSub={cac_sub} />}
-    />
+    <>
+      <JsonLd duLieu={jsonLdWebSite()} />
+      <Feed
+        feed={feed}
+        cursorHong={cursorHong}
+        tab={tab}
+        khoang={khoang}
+        coBan="/"
+        // `<h1>` KHÔNG còn là chữ "gikky": tên hiệu đã nằm ở thanh trên cùng của mọi trang,
+        // nên in lại nó ở đây vừa thừa vừa lấy mất dòng chữ có giá trị nhất của trang chủ
+        // đối với người mới và với máy tìm kiếm. Nay nó nói **sản phẩm là gì** trong một
+        // câu; lede nói **trang này liệt kê gì**. Phần "site vận hành ra sao" thuộc về
+        // `GIOI_THIEU` ở sidebar — xem docstring của hằng ấy.
+        tieuDe="Nhật ký giao dịch, ghi trước khi biết kết quả"
+        lede="Bài mới nhất từ mọi chuyên mục."
+        sidebar={<Sidebar gioiThieu={GIOI_THIEU} cacSub={cac_sub} />}
+      />
+    </>
   );
 }

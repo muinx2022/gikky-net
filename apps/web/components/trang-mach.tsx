@@ -53,6 +53,7 @@ import { chonMoiBung, idDaTrich } from "@/lib/moi-bung";
 import { urlTuyetDoi } from "@/lib/site";
 import { TRAN_NGAN_KEO, chayCoTran } from "@/lib/song-song";
 import { duongDanHoSo, duongDanMach, duongDanSub, tachSlugId } from "@/lib/url";
+import { trichVanBanThuan } from "@/lib/van-ban";
 
 import { Composer } from "./composer";
 import css from "./trang-mach.module.css";
@@ -105,8 +106,9 @@ async function nap(slugId: string, doc: ChinhSachDoc) {
 export function tomTat(mach: MachChiTietOut): string {
   const dau = mach.ket_qua ? `${mach.ket_qua} · ` : "";
   const than = mach.mocs.find((m) => m.seq === 1)?.body ?? "";
-  const gon = than.replace(/\s+/g, " ").trim().slice(0, 150);
-  return `${dau}${mach.entry_count} mốc · ${gon}${gon.length >= 150 ? "…" : ""}`;
+  const thuan = trichVanBanThuan(than);
+  const gon = thuan.slice(0, 150);
+  return `${dau}${mach.entry_count} mốc · ${gon}${thuan.length > 150 ? "…" : ""}`;
 }
 
 /** Metadata dùng chung cho cả hai biến thể route.
@@ -119,6 +121,7 @@ export async function metadataMach(slugId: string, doc: ChinhSachDoc) {
   const { mach } = await nap(slugId, doc);
   const duong_dan = duongDanMach(mach.slug, mach.id);
   const mo_ta = tomTat(mach);
+  const tac_gia = mach.author.display_name || mach.author.username;
   return {
     title: mach.title,
     description: mo_ta,
@@ -128,6 +131,15 @@ export async function metadataMach(slugId: string, doc: ChinhSachDoc) {
       title: mach.title,
       description: mo_ta,
       url: urlTuyetDoi(duong_dan),
+      publishedTime: mach.published_at,
+      modifiedTime: mach.last_entry_at,
+      authors: [tac_gia],
+      section: mach.sub.ten,
+    },
+    twitter: {
+      card: "summary_large_image" as const,
+      title: mach.title,
+      description: mo_ta,
     },
   };
 }

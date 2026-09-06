@@ -69,6 +69,23 @@ export const metadata: Metadata = {
       "application/rss+xml": [{ url: "/feed.xml", title: "gikky.net — mạch mới" }],
     },
   },
+  openGraph: {
+    siteName: "gikky.net",
+    locale: "vi_VN",
+    type: "website",
+    title: "gikky.net — nhật ký giao dịch của người Việt",
+    description:
+      "Diễn đàn trading tiếng Việt. Bài viết là một mạch: tác giả nối thêm mốc theo thời "
+      + "gian thực, dấu thời gian máy chủ bất biến.",
+    url: SITE_ORIGIN,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "gikky.net — nhật ký giao dịch của người Việt",
+    description:
+      "Diễn đàn trading tiếng Việt. Bài viết là một mạch: tác giả nối thêm mốc theo thời "
+      + "gian thực, dấu thời gian máy chủ bất biến.",
+  },
 };
 
 export default function RootLayout({
