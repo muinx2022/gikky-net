@@ -1676,3 +1676,57 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Bằng chứng**: Commit `6dcb09d` đã xoá `quan_tri_sua_moc`, `quan_tri_tai_anh_noi_dung`, `quan_tri_tai_anh_moc`, `quan_tri_xoa_anh_moc` khỏi `CHI_SUPERUSER` và thêm assertion vào `hen-gio-phat-hanh.spec.ts`, nhưng backend `quan_tri_sua_bai.py` vẫn giữ nguyên `chan_neu_khong_phai_superuser` ở cả 4 endpoint (chưa áp dụng `plans/2026-09-04-noi-quyen-chen-anh-staff.md`).
 - **Vì sao không sửa ngay**: ngoài phạm vi của tính năng user tắt/mở bình luận mạch; cần một lượt riêng giải quyết đúng phạm vi nới quyền staff/superuser của khu quản trị.
 
+### P-20260907-2 · [ĐÓNG (cây — chờ commit)] · NẶNG — Ảnh thẻ feed mất chỗ dành trước khi tải (CLS) sau khi bỏ `width: 100%`
+- **Thấy lúc**: phản biện `plans/2026-09-07-anh-feed-khong-ep-ngang.md` (commit `6059d24`)
+- **Ở đâu**: `apps/web/components/noi-dung-the.module.css:33-35` + `noi-dung-the.tsx:65-74`
+- **Bằng chứng**: CSS mới `width:auto; height:auto` không còn một trục xác định trước khi file về; `w`/`h` trên `<img>` là kích thước ảnh chính (≤2048) trong khi `src` là thumb (`CANH_THUMB=480`) — chỉ đủ tỉ lệ, không đủ kích thước hiển thị. Không có `aspect-ratio` trong CSS `apps/web`. `loading="lazy"` + cuộn vô hạn ⇒ thẻ dưới màn hình giật lúc ảnh về. Không hàng rào CLS.
+- **Đóng**: plan `plans/2026-09-07-w-thumb-cls-hang-rao.md` — `AnhOut.w_thumb/h_thumb` + `NoiDungThe` style.width = thumb.
+
+### P-20260907-3 · [ĐÓNG (cây — chờ commit)] · VỪA — `xem_truoc.anh.w/h` là ảnh chính trong khi `src` là `url_thumb`
+- **Thấy lúc**: phản biện ảnh feed không ép ngang
+- **Ở đâu**: `api/api/trinh_bay.py` (du_lieu_the / AnhOut) + `api/core/anh.py:290-291` (`w=chinh.width`) vs `CANH_THUMB=480`
+- **Bằng chứng**: client feed đặt `width`/`height` từ `w`/`h` nhưng tải `url_thumb` — mọi phép dành chỗ chống layout shift phải đoán. Hệ quả phụ: bề ngang hiển thị feed desktop bị khóa ~480px (`fit-content` + thumb), nhánh "co khi rộng hơn card" gần như chết trên desktop.
+- **Đóng**: cùng plan — API trả `w_thumb`/`h_thumb` suy từ `kich_thuoc_thumb`; feed + gallery dùng thumb dims.
+
+### P-20260907-4 · [ĐÓNG (cây — chờ commit)] · NHỎ — Không hàng rào nào ghim "ảnh feed không `width:100%`"
+- **Thấy lúc**: nghiệm thu ảnh feed
+- **Ở đâu**: `apps/web/components/noi-dung-the.module.css` · `apps/web/e2e`
+- **Bằng chứng**: grep e2e cho `noi-dung-the|khung_anh|object-fit|340` → 0 match; ai đặt lại `width:100%` sẽ không có gì đỏ.
+- **Đóng**: `apps/web/e2e/don-vi/anh-feed-css.spec.ts` — thử phá đỏ / khôi phục xanh.
+
+### P-20260907-5 · [MỞ] · NHỎ — `<img src={url_thumb}>` thiếu kích thước ở `chon-anh` và trang admin moc
+- **Thấy lúc**: phản biện `plans/2026-09-07-w-thumb-cls-hang-rao.md`
+- **Ở đâu**: `apps/web/components/chon-anh.tsx:246` · `apps/admin/app/m/[machId]/moc/[mocId]/page.tsx` (ảnh thumb)
+- **Bằng chứng**: render thumb trần, không `w_thumb`/`h_thumb` — ngoài phạm vi feed/gallery vừa vá.
+- **Vì sao không sửa ngay**: ngoài phạm vi plan w-thumb CLS feed.
+
+### P-20260907-6 · [MỞ] · NẶNG — `quan_tri_sua_bai` chặn superuser trong khi bài đo đòi mod thường qua
+- **Thấy lúc**: thực thi `plans/2026-09-07-sap-xep-chuyen-muc-drag-drop.md` (pytest toàn bộ)
+- **Ở đâu**: `api/api/quan_tri_sua_bai.py` (`VIEC_SUA_NOI_DUNG` / `chan_neu_khong_phai_superuser`) vs `api/tests/test_api_quan_tri_sua_bai.py`
+- **Bằng chứng**: 6 failed ở `test_api_quan_tri_sua_bai.py` + `test_mod_QUA_duoc_moi_endpoint` liệt kê 4 endpoint bị 403; đỏ sẵn khi chưa có bản vá sắp xếp sub.
+- **Vì sao không sửa ngay**: ngoài phạm vi drag-drop chuyên mục.
+
+### P-20260907-7 · [MỞ] · VỪA — `pnpm codegen` sinh cả hai client nên dễ cuốn diff OpenAPI của phiên khác
+- **Thấy lúc**: thực thi sắp xếp chuyên mục; cây có `schemas.py` `M` của phiên w-thumb
+- **Ở đâu**: `scripts/codegen.mjs` · `packages/api-client/openapi.json` mang `w_thumb`/`h_thumb`
+- **Bằng chứng**: `git diff packages/api-client/openapi.json` chứa thumb dims trong khi việc sắp xếp chỉ cần `openapi.admin.json` + `src-admin/`.
+- **Vì sao không sửa ngay**: cần quy ước commit/stage tường minh khi hai phiên song song; không phải bug sản phẩm của drag-drop.
+
+### P-20260907-8 · [MỞ] · NHỎ — `pnpm test -- -k` không chạy được trên PowerShell
+- **Thấy lúc**: thực thi sắp xếp chuyên mục
+- **Ở đâu**: `CLAUDE.md` mục Lệnh dạy `pnpm test -- -k …`; `scripts/pytest.mjs` nhận `--` thành argv pytest
+- **Bằng chứng**: `pnpm test -- -k "sub"` → `ERROR: file or directory not found: -k`. Lối chạy được: `node scripts/pytest.mjs -k "sub" -q`.
+- **Vì sao không sửa ngay**: tài liệu / script, ngoài phạm vi sản phẩm.
+
+### P-20260907-9 · [MỞ] · NHỎ — `subs_kem_so_mach` có hai docstring liền nhau (chuỗi chết)
+- **Thấy lúc**: phản biện sắp xếp chuyên mục
+- **Ở đâu**: `api/api/feeds.py:312-326`
+- **Bằng chứng**: hai literal string liền nhau trong thân hàm; chuỗi thứ hai không thành `__doc__`.
+- **Vì sao không sửa ngay**: lỗi có sẵn, ngoài phạm vi bản vá.
+
+### P-20260907-10 · [MỞ] · VỪA — `pnpm codegen:check` ghi đè `packages/api-client` trước khi báo lệch
+- **Thấy lúc**: nghiệm thu `plans/2026-09-07-sap-xep-chuyen-muc-drag-drop.md`
+- **Ở đâu**: `scripts/codegen-check.mjs` (docstring tự thú: chạy khi đang sửa tay thì sửa tay mất)
+- **Bằng chứng**: lượt 1 exit 1 LỆCH 4 file (docstring `AnhOut` phiên w-thumb) ⇒ generated bị regenerate; luật chia độc quyền ở CLAUDE.md không liệt kê `codegen:check`.
+- **Vì sao không sửa ngay**: quy ước / tooling, ngoài phạm vi sản phẩm drag-drop.
+

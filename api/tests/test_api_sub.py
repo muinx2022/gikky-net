@@ -48,20 +48,54 @@ def test_so_mach_KHONG_dem_mach_bi_mod_an(client, sub, tac_gia):
 # --- `GET /subs` — liệt kê (vá V8, B10) --------------------------------------
 
 
-def test_liet_ke_tra_MOI_sub_sap_theo_slug(client, seed):
-    """PLAN mục 7: "liệt kê MỌI sub, sắp theo `slug`".
+def test_liet_ke_tra_MOI_sub_khong_sot_cai_nao(client, seed):
+    """PLAN mục 7: "liệt kê MỌI sub".
 
     Sub thứ ba mở ra qua admin phải **tự** có mặt — đó là cả lý do endpoint này tồn tại:
     trước nó, frontend ghi cứng `["chung-khoan", "crypto"]` cho cả sidebar lẫn
     `sitemap.ts`, nên một sub mới vắng mặt ở cả hai chỗ cùng lúc, im lặng, 200 ở mọi cửa.
+
+    Bài này **không** còn nói gì về thứ tự (2026-09-07): thứ tự nay do admin đặt qua
+    `Sub.thu_tu`, và nó có bài đo riêng ngay dưới.
     """
     Sub.objects.create(slug="a-sub-thu-ba", ten="Sub thứ ba", mo_ta="Mới mở.")
     d = lay(client, "/api/v1/subs")
 
     slugs = [s["slug"] for s in d]
-    assert slugs == sorted(slugs)
     assert set(slugs) == set(Sub.objects.values_list("slug", flat=True))
     assert "a-sub-thu-ba" in slugs
+
+
+def test_liet_ke_sap_theo_THU_TU_admin_dat_chu_khong_theo_slug(client, db):
+    """Khoá sắp là `("thu_tu", "slug")` — `plans/2026-09-07-sap-xep-chuyen-muc-drag-drop.md`.
+
+    Ba slug cố ý **ngược** alphabet so với `thu_tu`, nếu không thì `order_by("slug")` cũ
+    cũng cho cùng kết quả và bài đo không phân biệt được hai cách sắp.
+    """
+    for slug, thu_tu in (("a-dau-bang", 2), ("m-giua", 0), ("z-cuoi-bang", 1)):
+        Sub.objects.create(slug=slug, ten=slug, thu_tu=thu_tu)
+
+    d = lay(client, "/api/v1/subs")
+    assert [s["slug"] for s in d] == ["m-giua", "z-cuoi-bang", "a-dau-bang"]
+
+
+def test_hai_sub_cung_thu_tu_thi_slug_pha_hoa(client, db):
+    """`thu_tu` không unique và `default=0`, nên "hai hàng cùng số" là trạng thái bình
+    thường — bỏ `slug` khỏi `order_by` là để Postgres chọn, tức sidebar đổi chỗ giữa hai
+    lần tải mà không ai đổi gì.
+
+    Chèn **ngược** alphabet (`crypto` trước `bitcoin`) để thứ tự pk ≠ alphabet. Bỏ khoá
+    `slug` thì planner hay trả theo pk trên bảng nhỏ — bài ĐỎ; trước đây chỉ assert
+    alphabet nên có cửa xanh tình cờ nếu heap trùng alphabet.
+    """
+    chen = ("crypto", "bitcoin", "chung-khoan")
+    for slug in chen:
+        Sub.objects.create(slug=slug, ten=slug)
+
+    d = lay(client, "/api/v1/subs")
+    slugs = [s["slug"] for s in d]
+    assert slugs == ["bitcoin", "chung-khoan", "crypto"]
+    assert slugs != list(chen)
 
 
 def test_liet_ke_tra_dung_bo_truong_cua_header(client, seed):

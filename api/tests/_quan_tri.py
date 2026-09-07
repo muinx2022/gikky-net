@@ -8,6 +8,7 @@ chạm khi gộp bốn mảng. Ở đây là HÀM THƯỜNG — gọi được t
 """
 
 import io
+from collections.abc import Callable
 from datetime import timedelta
 
 from django.test import Client
@@ -17,6 +18,9 @@ from core.ghi import tao_binh_luan, tao_mach
 from core.models import Comment, Mach, Moc, Report, Sub, User
 
 from ._anh import anh_byte
+
+
+BodyEndpoint = dict | None | Callable[[], dict | None]
 
 
 def dung_mod(username: str = "mod_chinh") -> User:
@@ -89,7 +93,7 @@ NOI_DUNG_MOC = "MOI-MOC-bi-mat-khong-duoc-ro-ra-ngoai"
 NOI_DUNG_BINH_LUAN = "MOI-BINH-LUAN-bi-mat-khong-duoc-ro-ra-ngoai"
 
 
-def bang_endpoint(dl: dict) -> list[tuple[str, str, str, dict | None]]:
+def bang_endpoint(dl: dict) -> list[tuple[str, str, str, BodyEndpoint]]:
     """`(operation_id, method, url, body)` cho **MỌI** endpoint của `api_admin`.
 
     Đây là bảng mà `test_bang_nay_phu_het_moi_endpoint` đối chiếu với danh sách operation
@@ -97,7 +101,9 @@ def bang_endpoint(dl: dict) -> list[tuple[str, str, str, dict | None]]:
     bộ lý do bảng này tồn tại: một endpoint quản trị không có bài đo phân quyền là một
     endpoint chưa xong (chốt của mảng C).
 
-    `body` là `None` cho GET/DELETE.
+    `body` là `None` cho GET/DELETE. Có thể là `Callable` gọi **lúc gửi** (sau các dòng
+    trước trong cùng vòng lặp) — dùng cho `PUT /subs/thu-tu` cần hoán vị đúng tập slug
+    đang có, không phải tập đoán sẵn lúc dựng bảng.
     """
     mach_id = dl["mach"].pk
     return [
@@ -206,6 +212,21 @@ def bang_endpoint(dl: dict) -> list[tuple[str, str, str, dict | None]]:
             {"ten": "Tên mới"},
         ),
         ("quan_tri_xoa_sub", "delete", f"/api/admin/subs/{dl['sub'].slug}", None),
+        # Body là Callable: đọc slug **lúc gọi**, sau `tao_sub`/`xoa_sub` phía trên đã
+        # đổi tập. Hard-code `["sub-moi-tinh", …]` phụ thuộc vị trí dòng — đổi chỗ là
+        # 400 mà `test_mod_QUA_duoc_moi_endpoint` (chỉ bắt 401/403) vẫn xanh.
+        (
+            "quan_tri_dat_thu_tu_sub",
+            "put",
+            "/api/admin/subs/thu-tu",
+            lambda: {
+                "slugs": list(
+                    Sub.objects.order_by("thu_tu", "slug").values_list(
+                        "slug", flat=True
+                    )
+                )
+            },
+        ),
         (
             "quan_tri_gan_mod_sub",
             "post",
@@ -313,7 +334,7 @@ def bang_endpoint(dl: dict) -> list[tuple[str, str, str, dict | None]]:
     ]
 
 
-def goi(client: Client, method: str, url: str, body: dict | None):
+def goi(client: Client, method: str, url: str, body: BodyEndpoint):
     """Gọi một endpoint quản trị theo mô tả trong `bang_endpoint`.
 
     `content_type="application/json"` cho mọi verb ghi: Ninja parse thân JSON, và
@@ -323,7 +344,11 @@ def goi(client: Client, method: str, url: str, body: dict | None):
     **Ngoại lệ: body chứa `bytes`** ⇒ endpoint ấy nhận multipart thật (ba cửa ảnh của
     2026-09-03), nên gửi đúng multipart — tức bỏ `content_type` để `Client` tự dựng. Nhận
     ra bằng kiểu dữ liệu chứ bằng một cờ thêm vào bảng: một cờ là một cột nữa để quên.
+
+    `body` Callable được gọi ngay trước khi gửi — xem docstring `bang_endpoint`.
     """
+    if callable(body):
+        body = body()
     ham = getattr(client, method)
     if body is None:
         return ham(url)

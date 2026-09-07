@@ -1577,6 +1577,12 @@ AUDIT_DONG_BAO_CAO = "dong_bao_cao"
 AUDIT_TAO_SUB = "tao_sub"
 AUDIT_SUA_SUB = "sua_sub"
 AUDIT_XOA_SUB = "xoa_sub"
+#: Kéo thả đổi thứ tự chuyên mục (2026-09-07,
+#: `plans/2026-09-07-sap-xep-chuyen-muc-drag-drop.md`). **MỘT dòng cho cả lượt sắp**, chứ
+#: không phải một dòng mỗi sub đổi chỗ: đây là một thao tác của người dùng, và `meta.slugs`
+#: mang trọn thứ tự mới nên dựng lại được trạng thái trước/sau từ hai dòng liên tiếp.
+#: `target_id` là `None` — đích của nó là *cả bảng*, không một hàng nào.
+AUDIT_DAT_THU_TU_SUB = "dat_thu_tu_sub"
 #: Phân công quyền — PLAN 5.10 đòi ghi sổ mọi hành động mod, và đây là hành động mà
 #: câu hỏi "ai cho người này làm mod chuyên mục" chỉ trả lời được qua nhật ký.
 #: Cài đặt hệ thống. `target_id` là `None` — cài đặt không phải một hàng có khoá chính,

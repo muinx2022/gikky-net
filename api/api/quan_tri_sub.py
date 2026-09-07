@@ -17,11 +17,12 @@ Ba luật, và cả ba đều là "không cho làm" chứ không phải "làm gi
 """
 
 from django.db import IntegrityError, transaction
-from django.db.models import Count, ProtectedError
+from django.db.models import Count, Max, ProtectedError
 from django.utils.text import slugify
 from ninja import Router, Status
 
 from core.ghi import (
+    AUDIT_DAT_THU_TU_SUB,
     AUDIT_GAN_MOD_SUB,
     AUDIT_GO_MOD_SUB,
     AUDIT_SUA_SUB,
@@ -38,6 +39,7 @@ from api.loi import THAM_SO_KHONG_HOP_LE, XUNG_DOT, LoiOut, khong_tim_thay, loi
 from api.quan_tri_schemas import (
     GanModSubIn,
     KetQuaXoaSubOut,
+    SapXepSubIn,
     SuaSubIn,
     SubQuanTriOut,
     TaoSubIn,
@@ -50,6 +52,10 @@ router = Router()
 #: `objects.create()` không gọi validator nào, nên không kiểm là một slug có dấu cách đi
 #: thẳng xuống DB rồi ra một URL `/s/chung khoan` không ai mở được.
 DAI_SLUG_TOI_DA = 40
+
+#: Segment path tĩnh dưới `/subs/…` — tạo sub cùng slug thì `PATCH`/`DELETE /subs/{slug}`
+#: bị route tĩnh nuốt (405 text thô). Bổ sung khi thêm path tĩnh mới cùng namespace.
+SLUG_CAM = frozenset({"thu-tu"})
 
 
 def _co_so_mach():
@@ -76,6 +82,7 @@ def _ra(sub: Sub) -> SubQuanTriOut:
         mo_ta=sub.mo_ta,
         created_at=sub.created_at,
         so_mach=getattr(sub, "_so_mach", 0),
+        thu_tu=sub.thu_tu,
         # Sắp theo username để hai lượt gọi liên tiếp không đổi thứ tự cột trên bảng.
         # `sorted` trong Python chứ không `order_by`: `prefetch_related` đã nạp sẵn,
         # thêm `order_by` ở đây là ném bộ nhớ đệm đi và bắn lại một truy vấn mỗi hàng.
@@ -93,13 +100,17 @@ def _ra(sub: Sub) -> SubQuanTriOut:
     tags=["quan-tri-sub"],
 )
 def liet_ke_sub(request):
-    """Mọi sub, sắp theo `slug`, kèm `so_mach`.
+    """Mọi sub, sắp theo `thu_tu` rồi `slug`, kèm `so_mach`.
+
+    **Cùng khoá sắp với `GET /api/v1/subs`** — bảng này là chỗ người ta kéo thả, nên nó
+    phải hiện đúng cái sidebar công khai sẽ hiện; hai khoá sắp khác nhau nghĩa là mod kéo
+    xong nhìn một thứ tự, khách nhìn một thứ tự khác.
 
     Không phân trang: v1 có hai sub và danh sách này là bảng điều khiển, không phải feed.
     Ngày nào nó dài tới mức cần cursor thì `so_mach` sẽ là thứ vỡ trước (một `COUNT` mỗi
     hàng), và lúc đó phải sửa cả hai thứ cùng lúc.
     """
-    return [_ra(s) for s in _co_so_mach().order_by("slug")]
+    return [_ra(s) for s in _co_so_mach().order_by("thu_tu", "slug")]
 
 
 @router.post(
@@ -129,13 +140,28 @@ def tao_sub(request, du_lieu: TaoSubIn):
             f"slug phải ở dạng chuẩn (chữ thường, số, gạch ngang), ≤{DAI_SLUG_TOI_DA} "
             f"ký tự — nhận {du_lieu.slug!r}.",
         )
+    if slug in SLUG_CAM:
+        return loi(
+            400,
+            THAM_SO_KHONG_HOP_LE,
+            f"slug {slug!r} dành cho đường quản trị — chọn slug khác.",
+        )
     if not du_lieu.ten.strip():
         return loi(400, THAM_SO_KHONG_HOP_LE, "ten không được rỗng.")
 
     try:
         with transaction.atomic():
+            # Sub mới đứng CUỐI, không chen vào giữa bảng người ta vừa sắp. Không khoá gì
+            # để giành `max+1`: hai lượt tạo đồng thời cùng nhận một số là hai hàng cùng
+            # `thu_tu`, mà cột này không unique và khoá sắp có `slug` phá hoà — thứ tự vẫn
+            # ổn định, chỉ là hai sub mới nằm cạnh nhau theo alphabet. Lần kéo thả kế tiếp
+            # ghi lại cả cột và xoá luôn chỗ hoà.
+            cuoi = Sub.objects.aggregate(m=Max("thu_tu"))["m"]
             sub = Sub.objects.create(
-                slug=slug, ten=du_lieu.ten.strip(), mo_ta=du_lieu.mo_ta
+                slug=slug,
+                ten=du_lieu.ten.strip(),
+                mo_ta=du_lieu.mo_ta,
+                thu_tu=0 if cuoi is None else cuoi + 1,
             )
             ghi_audit(
                 actor=request.user,
@@ -154,6 +180,69 @@ def tao_sub(request, du_lieu: TaoSubIn):
     # `filterwarnings = ["error"]` biến mọi DeprecationWarning thành lỗi test — cùng ghi
     # chú với `api/loi.py::loi` và `api/v1.py::health`.
     return Status(201, _ra(sub))
+
+
+# ⚠ Route TĨNH `/subs/thu-tu` khai **TRƯỚC** mọi `/subs/{slug}` bên dưới. Hôm nay không có
+# `PUT /subs/{slug}` nên hai path không giẫm nhau, nhưng ngày ai đó thêm một `PUT` như thế
+# thì `{slug}` sẽ nuốt `thu-tu` — và triệu chứng là một lượt kéo thả trả 404 "không tìm
+# thấy sub 'thu-tu'", tức một câu nói về thứ người ta không hề gõ.
+@router.put(
+    "/subs/thu-tu",
+    response={200: list[SubQuanTriOut], 400: LoiOut, 401: LoiOut, 403: LoiOut},
+    operation_id="quan_tri_dat_thu_tu_sub",
+    tags=["quan-tri-sub"],
+)
+def dat_thu_tu_sub(request, du_lieu: SapXepSubIn):
+    """Ghi lại **toàn bộ** cột `thu_tu` theo thứ tự `slugs` gửi lên. Trả cả bảng đã sắp.
+
+    `slugs` phải là đúng một hoán vị của tập slug trong DB. Thiếu / thừa / trùng ⇒ 400 và
+    **không ghi gì** — chấp nhận một danh sách thiếu nghĩa là những sub vắng mặt giữ số cũ
+    và trộn lẫn vào dãy `0..n-1` vừa gán, tức một bảng sắp sai mà lời gọi vẫn báo 200.
+
+    Trả cả danh sách thay vì 204: bảng quản trị cần biết server đã hiểu thành thứ tự nào,
+    và một `204` buộc UI hoặc gọi thêm một lượt liệt kê, hoặc tin vào trạng thái optimistic
+    của chính nó — cùng lý lẽ với `KetQuaXoaSubOut`.
+    """
+    with transaction.atomic():
+        # Khoá cả bảng theo `pk`, **không** theo thứ tự payload: hai mod cùng kéo với hai
+        # hoán vị khác nhau mà mỗi bên khoá theo hoán vị của mình là hai bên xin khoá
+        # ngược chiều nhau ⇒ deadlock, Postgres huỷ một bên thành 500 ngẫu nhiên dưới tải.
+        # Bảng này vài chục hàng nên khoá trọn là rẻ.
+        dang_co = list(Sub.objects.select_for_update().order_by("pk"))
+        gui = du_lieu.slugs
+
+        if len(set(gui)) != len(gui):
+            trung = sorted({s for s in gui if gui.count(s) > 1})
+            return loi(400, THAM_SO_KHONG_HOP_LE, f"slugs lặp: {', '.join(trung)}.")
+
+        co = {s.slug for s in dang_co}
+        if set(gui) != co:
+            thieu = sorted(co - set(gui))
+            thua = sorted(set(gui) - co)
+            return loi(
+                400,
+                THAM_SO_KHONG_HOP_LE,
+                "slugs phải liệt kê ĐÚNG mọi chuyên mục đang có"
+                + (f" — thiếu: {', '.join(thieu)}" if thieu else "")
+                + (f" — không tồn tại: {', '.join(thua)}" if thua else "")
+                + ".",
+            )
+
+        theo_slug = {s.slug: s for s in dang_co}
+        for i, slug in enumerate(gui):
+            theo_slug[slug].thu_tu = i
+        Sub.objects.bulk_update(dang_co, ["thu_tu"])
+
+        # MỘT dòng cho cả lượt sắp — xem `core/ghi.py::AUDIT_DAT_THU_TU_SUB`.
+        ghi_audit(
+            actor=request.user,
+            action=AUDIT_DAT_THU_TU_SUB,
+            target_type=DICH_SUB,
+            target_id=None,
+            slugs=gui,
+        )
+
+    return [_ra(s) for s in _co_so_mach().order_by("thu_tu", "slug")]
 
 
 @router.patch(

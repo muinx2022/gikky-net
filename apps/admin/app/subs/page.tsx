@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  quanTriDatThuTuSub,
   quanTriGanModSub,
   quanTriGoModSub,
   quanTriLietKeSub,
@@ -10,7 +11,7 @@ import {
   type SubQuanTriOut,
 } from "@gikky/api-client/admin";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { HangNutForm, NganKeo } from "../../components/ngan-keo";
 import { OGoiYUser } from "../../components/o-goi-y-user";
@@ -39,6 +40,17 @@ import { useHanhDong } from "../../lib/hanh-dong";
  * Không phân trang: số chuyên mục của một diễn đàn đếm trên đầu ngón tay, và một nút
  * "Tải thêm" cho bốn dòng là nhiễu. Nếu ngày nào đó nó lên tới hàng trăm thì
  * `api/quan_tri_sub.py` phải đổi trước (nay nó trả về cả danh sách, không cursor).
+ *
+ * ## Kéo thả đổi thứ tự (2026-09-07)
+ *
+ * Thứ tự các hàng ở đây **là** thứ tự khối "Chuyên mục" trên sidebar công khai — cùng
+ * `Sub.thu_tu`, cùng khoá sắp. HTML5 DnD trần, không `@dnd-kit`: một bảng chục hàng
+ * không đáng một dependency, và cái phần khó của thư viện ấy (danh sách ảo hoá, kéo giữa
+ * nhiều vùng) không có ở đây.
+ *
+ * Mỗi cú thả gửi **cả** danh sách slug lên `PUT /subs/thu-tu`, không gửi một phép dời —
+ * xem `api/quan_tri_schemas.py::SapXepSubIn`. Không phân trang là điều kiện để làm được
+ * thế: trang 2 nghĩa là client không còn cầm đủ tập slug để gửi một hoán vị đầy đủ.
  */
 export default function TrangSub() {
   const [subs, datSubs] = useState<SubQuanTriOut[] | null>(null);
@@ -61,6 +73,11 @@ export default function TrangSub() {
   /** slug của sub đang chờ XÁC NHẬN XOÁ, hoặc `null`. Biến thứ ba, theo đúng quy ước
    * "mỗi ngăn kéo một biến" đã ghi ở hai khối trên. */
   const [mo_xoa, datMoXoa] = useState<string | null>(null);
+
+  /** slug đang được KÉO, và slug đang bị RÊ QUA. Hai biến rời: một cú kéo có cả hai, và
+   * gộp chúng lại là mất chính cặp (nguồn, đích) mà phép chèn cần. */
+  const [keo, datKeo] = useState<string | null>(null);
+  const [tren, datTren] = useState<string | null>(null);
 
   const dong = useCallback(() => datDangMo(null), []);
   const dongMod = useCallback(() => datMoMod(null), []);
@@ -103,6 +120,82 @@ export default function TrangSub() {
     chay,
   } = useHanhDong(nap);
 
+  /** Hoán vị mới nhất đang chờ gửi — `null` = hàng đợi trống.
+   *
+   * `useHanhDong.chay` **không** chặn lời gọi chồng nhau. Bấm mũi tên liên tiếp (key
+   * repeat) nếu bắn nhiều `PUT` song song thì thứ tự commit trên server không theo thứ
+   * tự bấm: `select_for_update` chỉ xếp hàng, không bảo đảm ai vào trước. Giữ đúng một
+   * hoán vị "muốn tới" và xả tuần tự — mỗi vòng lấy bản mới nhất lúc bắt đầu, bỏ qua
+   * các nấc trung gian đã bị đè bởi lần bấm sau.
+   */
+  const choGhiThuTu = useRef<SubQuanTriOut[] | null>(null);
+  const dangXaThuTu = useRef(false);
+
+  /** Ghi thứ tự MỚI lên server; bảng đổi ngay, không đợi mạng.
+   *
+   * Nhánh lỗi phải tự `nap()`: `chay` chỉ làm tươi khi THÀNH CÔNG, nên để nguyên bản
+   * optimistic là bảng hiện một thứ tự server chưa bao giờ nhận — và mod không có cách
+   * nào biết ngoài việc tự bấm F5. Thông báo lỗi không bị `nap()` nuốt: nó nằm ở
+   * `loi_hanh_dong`, còn `nap` chỉ dọn `loi`, và `chay` đặt nó SAU khi thunk trả về.
+   */
+  const ghiThuTu = (moi: SubQuanTriOut[]) => {
+    datSubs(moi.map((s, i) => ({ ...s, thu_tu: i })));
+    choGhiThuTu.current = moi;
+    if (dangXaThuTu.current) return;
+    dangXaThuTu.current = true;
+    void (async () => {
+      try {
+        while (choGhiThuTu.current !== null) {
+          const ban = choGhiThuTu.current;
+          choGhiThuTu.current = null;
+          await chay(async () => {
+            const ket_qua = await quanTriDatThuTuSub({
+              baseUrl: GOC_API,
+              headers: headerGhi(),
+              body: { slugs: ban.map((s) => s.slug) },
+            });
+            if (ket_qua.error !== undefined) await nap();
+            return ket_qua;
+          });
+        }
+      } finally {
+        dangXaThuTu.current = false;
+      }
+    })();
+  };
+
+  /** Thả hàng đang kéo vào chỗ của `dich`.
+   *
+   * Chỉ số chèn lấy trên mảng **GỐC**, không trên mảng đã bỏ hàng bị kéo: tính trên mảng
+   * đã bỏ thì mọi cú kéo XUỐNG rơi sớm một nấc — hàng dừng ngay TRÊN đích thay vì đúng
+   * chỗ đích, và người kéo sẽ tưởng mình thả trượt.
+   */
+  const tha = (dich: string) => {
+    datTren(null);
+    if (subs === null || keo === null || keo === dich) return;
+    const i_dich = subs.findIndex((s) => s.slug === dich);
+    const hang = subs.find((s) => s.slug === keo);
+    if (i_dich < 0 || hang === undefined) return;
+    const con_lai = subs.filter((s) => s.slug !== keo);
+    ghiThuTu([...con_lai.slice(0, i_dich), hang, ...con_lai.slice(i_dich)]);
+  };
+
+  /** Dời một hàng lên/xuống một nấc — đường bàn phím của cùng thao tác.
+   *
+   * Kéo thả là chuột-hoặc-không-gì: nút cầm dưới đây là `<button>` nhận focus được, nên
+   * mũi tên lên/xuống là đường duy nhất cho người không rê được chuột. Cùng tinh thần
+   * "luật ba đường" ghi ở nút Xoá bên dưới.
+   */
+  const doiCho = (slug: string, buoc: -1 | 1) => {
+    if (subs === null) return;
+    const i = subs.findIndex((s) => s.slug === slug);
+    const j = i + buoc;
+    if (i < 0 || j < 0 || j >= subs.length) return;
+    const moi = [...subs];
+    [moi[i], moi[j]] = [moi[j], moi[i]];
+    ghiThuTu(moi);
+  };
+
   return (
     <>
       <TieuDeTrang
@@ -124,13 +217,23 @@ export default function TrangSub() {
           <Skeleton dong={4} />
         ) : (
           <KhungBang>
-            <HangTieuDe cot={["slug", "Tên", "Mô tả", "Mod", "Số bài", "Lập", ""]} />
+            <HangTieuDe cot={["", "slug", "Tên", "Mô tả", "Mod", "Số bài", "Lập", ""]} />
             <tbody>
               {subs.map((s) => (
                 <DongSub
                   key={s.slug}
                   s={s}
                   dang_chay={dang_chay}
+                  dang_keo={keo === s.slug}
+                  de_len={tren === s.slug && keo !== null && keo !== s.slug}
+                  batDauKeo={() => datKeo(s.slug)}
+                  ketThucKeo={() => {
+                    datKeo(null);
+                    datTren(null);
+                  }}
+                  reQua={() => datTren(s.slug)}
+                  tha={() => tha(s.slug)}
+                  doiCho={(buoc) => doiCho(s.slug, buoc)}
                   moSua={() => moSua(s)}
                   moMod={() => datMoMod(s.slug)}
                   moXoa={() => datMoXoa(s.slug)}
@@ -381,18 +484,80 @@ function KhoiMod({
 function DongSub({
   s,
   dang_chay,
+  dang_keo,
+  de_len,
+  batDauKeo,
+  ketThucKeo,
+  reQua,
+  tha,
+  doiCho,
   moSua,
   moMod,
   moXoa,
 }: {
   s: SubQuanTriOut;
   dang_chay: boolean;
+  dang_keo: boolean;
+  de_len: boolean;
+  batDauKeo: () => void;
+  ketThucKeo: () => void;
+  reQua: () => void;
+  tha: () => void;
+  doiCho: (buoc: -1 | 1) => void;
   moSua: () => void;
   moMod: () => void;
   moXoa: () => void;
 }) {
   return (
-    <tr className="border-b border-vien last:border-0 hover:bg-nen-mo/50">
+    <tr
+      // Cả HÀNG kéo được, không chỉ nút cầm: một vùng bắt rộng 6px là vùng bắt hụt.
+      draggable={!dang_chay}
+      onDragStart={(e) => {
+        // Firefox không khởi động cú kéo nào nếu `dataTransfer` rỗng — bỏ dòng này thì
+        // trang vẫn "chạy" ở Chrome và chết im ở Firefox.
+        e.dataTransfer.setData("text/plain", s.slug);
+        e.dataTransfer.effectAllowed = "move";
+        batDauKeo();
+      }}
+      onDragEnd={ketThucKeo}
+      onDragOver={(e) => {
+        // `preventDefault` là thứ BÁO cho trình duyệt rằng đây là chỗ thả được. Thiếu nó
+        // thì `onDrop` không bao giờ nổ và con trỏ hiện dấu cấm.
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        reQua();
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        tha();
+      }}
+      className={`border-b border-vien last:border-0 ${
+        dang_keo ? "opacity-50" : ""
+      } ${de_len ? "bg-nhan-mo" : "hover:bg-nen-mo/50"}`}
+      data-testid={`hang-sub-${s.slug}`}
+    >
+      <td className="w-8 px-2 py-2.5">
+        {/* KHÔNG `disabled={dang_chay}` như mọi nút khác của bảng, và đó là chủ đích:
+            trình duyệt lấy lại focus khỏi một nút vừa bị vô hiệu hoá, nên người dùng bàn
+            phím bị văng khỏi hàng ngay giữa chuỗi mũi tên — hỏng đúng cái đường mà nút
+            này tồn tại để mở. Lời gọi `PUT` được xếp hàng ở `ghiThuTu` (chỉ gửi hoán vị
+            mới nhất) nên bấm liên tiếp không chốt DB ở nấc trung gian. */}
+        <button
+          type="button"
+          className="nut nut-nho cursor-grab px-1.5"
+          onKeyDown={(e) => {
+            if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+            // Không có `preventDefault` thì phím mũi tên cuộn cả trang, và hàng vừa dời
+            // trôi ra khỏi tầm nhìn ngay lúc người ta cần nhìn nó nhất.
+            e.preventDefault();
+            doiCho(e.key === "ArrowUp" ? -1 : 1);
+          }}
+          aria-label={`Đổi chỗ s/${s.slug}: kéo thả, hoặc mũi tên lên/xuống`}
+          data-testid={`nut-keo-${s.slug}`}
+        >
+          ⠿
+        </button>
+      </td>
       <td className="mono px-3 py-2.5">
         <Link href={`/machs?sub=${s.slug}`} className="text-nhan hover:underline">
           s/{s.slug}

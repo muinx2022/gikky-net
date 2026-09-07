@@ -30,6 +30,7 @@ Nên: trường **không truyền** thì không đụng tới. Lúc TẠO mới 
 from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand, CommandError
 from django.core.validators import validate_slug
+from django.db.models import Max
 
 from core.models import Sub
 
@@ -76,6 +77,12 @@ class Command(BaseCommand):
                 f"Slug {slug!r} phải viết thường và dùng gạch NGANG, không gạch dưới "
                 f"— ý bạn là {slug.lower().replace('_', '-')!r}?"
             )
+        # Khớp `SLUG_CAM` ở `api/quan_tri_sub.py` — path tĩnh `/subs/thu-tu` nuốt
+        # PATCH/DELETE của chuyên mục cùng slug.
+        if slug == "thu-tu":
+            raise CommandError(
+                f"Slug {slug!r} dành cho đường quản trị — chọn slug khác."
+            )
         if ten is not None and len(ten) > DAI_TEN:
             raise CommandError(f"Tên dài quá {DAI_TEN} ký tự.")
         # `--ten "   "` tạo một sub không có tên hiển thị. Rẻ để chặn, và chặn ở đây
@@ -85,10 +92,17 @@ class Command(BaseCommand):
 
         sub = Sub.objects.filter(slug=slug).first()
         if sub is None:
+            # Chuyên mục mới đứng CUỐI sidebar, đúng như `POST /api/admin/subs`. Lệnh này
+            # chạy lúc triển khai, sau khi admin đã kéo thả một thứ tự có ý — chen sub mới
+            # vào giữa (đó là hệ quả của `default=0`) là đổi bản đồ mà không ai bấm gì.
+            # `thu_tu` **không** nằm trong nhánh cập nhật bên dưới: chạy lại lệnh không
+            # được dời một chuyên mục đã có về cuối.
+            cuoi = Sub.objects.aggregate(m=Max("thu_tu"))["m"]
             Sub.objects.create(
                 slug=slug,
                 ten=(ten if ten is not None else slug),
                 mo_ta=(mo_ta if mo_ta is not None else ""),
+                thu_tu=0 if cuoi is None else cuoi + 1,
             )
             self.stdout.write(self.style.SUCCESS(f"tạo s/{slug}"))
             return

@@ -452,12 +452,32 @@ class SubQuanTriOut(Schema):
     created_at: datetime
     so_mach: int
     mods: list[NguoiDungTomTatOut]
+    #: Thứ tự kéo thả (2026-09-07). Có mặt ở đây mà **không** ở `SubChiTietOut` công khai:
+    #: sidebar chỉ cần thứ tự của mảng API trả về, còn bảng quản trị cần con số thật để
+    #: người sửa đối chiếu khi một lượt kéo trông như không ăn.
+    thu_tu: int
 
 
 class TaoSubIn(Schema):
     slug: str
     ten: str
     mo_ta: str = ""
+
+
+class SapXepSubIn(Schema):
+    """Body của `PUT /admin/subs/thu-tu` — **toàn bộ** thứ tự mới, không phải một phép dời.
+
+    `slugs` phải là đúng một hoán vị của tập slug đang có trong DB (thiếu / thừa / trùng
+    ⇒ 400). Nhận một danh sách đầy đủ chứ không `{slug, vi_tri_moi}` vì cửa này ghi lại cả
+    cột: một phép dời đơn lẻ buộc server tự suy ra chỉ số của mọi hàng còn lại, và hai
+    lượt dời gửi lên gần nhau sẽ suy trên hai ảnh chụp khác nhau của cùng một bảng.
+
+    Cái giá là ghi đè mù — hai mod cùng kéo thì người bấm sau thắng. Chấp nhận được ở đây
+    (khác hẳn danh sách mod, xem `api/quan_tri_sub.py`): thứ tự là một thuộc tính của cả
+    bảng chứ không phải dữ liệu ai đó vừa nhập, và không có hàng nào biến mất.
+    """
+
+    slugs: list[str]
 
 
 class TaoNguoiDungIn(Schema):

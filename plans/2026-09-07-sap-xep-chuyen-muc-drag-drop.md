@@ -4,8 +4,8 @@ Chốt 2026-09-07. User: phần admin / chuyên mục hỗ trợ kéo thả đ�
 
 ## Trạng thái
 
-- **Chặng**: 1 — plan (chưa thực thi)
-- **Nền**: `Sub` không có cột thứ tự; `GET /api/v1/subs` và `GET /api/admin/subs` đều `order_by("slug")`. Sidebar (`apps/web/components/sidebar.tsx`) render đúng thứ tự mảng API trả về — **không tự sắp lại**.
+- **Chặng**: 5 — đã thực thi + vá theo phản biện; chờ commit user
+- **Nền**: đã có `Sub.thu_tu`, `PUT /api/admin/subs/thu-tu`, admin DnD, public `order_by("thu_tu","slug")`.
 
 ## 0 · Ranh giới
 
@@ -74,3 +74,34 @@ Chốt 2026-09-07. User: phần admin / chuyên mục hỗ trợ kéo thả đ�
 - `SubQuanTriOut` assert dict đầy đủ trong test — nếu thêm `thu_tu` phải sửa assert, không nuốt bằng `in`.
 - Route `PUT /subs/thu-tu` phải đăng ký **trước** hoặc tách path rõ để không bị `/subs/{slug}` nuốt (ninja: path tĩnh `thu-tu` vs `{slug}` — ưu tiên khai route tĩnh riêng, kiểm OpenAPI).
 - Thử phá bài đo mới: gửi thiếu một slug → phải đỏ nếu handler quên kiểm tập hợp.
+
+## 5 · Báo cáo thực thi (2026-09-07)
+
+### Đã làm
+
+- Model + migration `0032_sub_thu_tu` (backfill theo slug).
+- Public + admin list `order_by("thu_tu","slug")`; tạo sub → `max+1`.
+- `PUT /api/admin/subs/thu-tu` + audit + codegen admin.
+- Admin HTML5 DnD + mũi tên; hàng đợi client tránh race bấm liên tiếp.
+- Vá phản biện: cấm slug `thu-tu`; `GOI_Y_ACTION`; body Callable trong `bang_endpoint`.
+
+### Số đo
+
+| Kiểm | Kết quả |
+|---|---|
+| Nghiệm thu ([Nghiệm thu](ccf88a26-99fb-4c30-b78b-8fcaadce47f6)) | **6/7 ĐẠT · 1 BỎ QUA** (tiêu chí 7 trình duyệt) · 0 KHÔNG ĐẠT |
+| `node scripts/pytest.mjs -k "sub or quan_tri_sub or thu_tu" -q` | **140 passed**, 2 skipped (MEILI) |
+| `tests/test_api_quan_tri_sub.py` + `test_api_sub.py` | **37–38 passed** (sau vá phản biện) |
+| `pnpm --filter @gikky/admin lint` + build | exit 0, 0 warning |
+| Thử phá (opus-dev) | 4 đột biến đỏ đúng chỗ |
+| Tiêu chí 7 trình duyệt | **BỎ QUA** (cây nhiễm phiên w-thumb) |
+
+### Phản biện → đã sửa
+
+1. Slug `thu-tu` nuốt PATCH/DELETE → `SLUG_CAM` + test.
+2. Race mũi tên → hàng đợi hoán vị mới nhất.
+3. Codegen lẫn `w_thumb` → **không stage** `openapi.json`/`src/` v1 cùng commit việc này (ghi sổ P-20260907-7).
+
+### Commit
+
+Chưa commit code — chờ user. Stage gợi ý: chỉ file thuộc plan + `openapi.admin.json`/`src-admin/*`; **không** gộp `openapi.json`/`src/*` nếu còn mang thumb của phiên khác.

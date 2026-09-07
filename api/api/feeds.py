@@ -347,7 +347,7 @@ def _sub_ra(sub: Sub) -> SubChiTietOut:
     tags=["sub"],
 )
 def liet_ke_sub(request):
-    """MỌI chuyên mục, sắp theo `slug` — PLAN mục 7 *(thêm ở lượt vá Phase 1d)*.
+    """MỌI chuyên mục, sắp theo `thu_tu` — PLAN mục 7 *(thêm ở lượt vá Phase 1d)*.
 
     **Frontend CẤM ghi cứng danh sách slug** (PLAN mục 7 nói thẳng). Trước endpoint này,
     `apps/web` giữ một hằng `SUB_KHOI_DIEM = ["chung-khoan", "crypto"]` nuôi cả sidebar
@@ -360,10 +360,16 @@ def liet_ke_sub(request):
     cursor bây giờ là bắt hai chỗ gọi (sidebar, sitemap) tự lật trang cho một danh sách
     chưa bao giờ dài. Ngày nó dài ra thì đổi ở đây, kèm cursor keyset trên `slug`.
 
-    Sắp theo `slug` chứ không theo `so_mach`: sidebar là một **bản đồ**, và một bản đồ
-    tự sắp lại theo độ đông mỗi lần có bài mới thì không ai nhớ được chỗ nào ở đâu.
+    **Thứ tự do admin đặt** (`Sub.thu_tu`, kéo thả ở `/subs` khu quản trị — 2026-09-07),
+    `slug` chỉ còn là khoá phá hoà cho những hàng cùng số. Trước đó nó sắp theo `slug` và
+    docstring này gọi alphabet là hợp đồng; nay hợp đồng là "thứ tự mảng API trả về", và
+    sidebar (`apps/web/components/sidebar.tsx`) vốn đã render đúng thế nên không phải đổi.
+
+    Vẫn **không** sắp theo `so_mach`: sidebar là một **bản đồ**, và một bản đồ tự sắp lại
+    theo độ đông mỗi lần có bài mới thì không ai nhớ được chỗ nào ở đâu. Một thứ tự do
+    người đặt thì đứng yên cho tới khi có người đổi nó.
     """
-    return [_sub_ra(s) for s in subs_kem_so_mach().order_by("slug")]
+    return [_sub_ra(s) for s in subs_kem_so_mach().order_by("thu_tu", "slug")]
 
 
 @router.get(

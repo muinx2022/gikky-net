@@ -37,8 +37,7 @@ const MOI_TRANG = 50;
  * hợp lệ. Xem `GOI_Y_ACTION`.
  */
 
-/** 26 hằng `AUDIT_*` của `api/core/ghi.py` (chép tay, 2026-08-26; +4 ngày 2026-09-03 khi
- * khu quản trị mở cửa sửa nội dung bài).
+/** Gợi ý các hằng `AUDIT_*` của `api/core/ghi.py` (chép tay; bổ sung khi có action mới).
  *
  * **Chỉ là GỢI Ý.** `<datalist>` không ràng buộc gì: mod vẫn gõ tự do được, và bộ lọc
  * vẫn so BẰNG ĐÚNG với thứ gõ vào. Nên thêm một action mới ở server mà quên chỗ này thì
@@ -61,6 +60,7 @@ const GOI_Y_ACTION = [
   "tao_sub",
   "sua_sub",
   "xoa_sub",
+  "dat_thu_tu_sub",
   "sua_cai_dat_google",
   "xoa_cai_dat_google",
   "tao_user",

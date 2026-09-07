@@ -41,6 +41,15 @@ class Sub(models.Model):
     slug = models.SlugField(max_length=40, unique=True)
     ten = models.CharField(max_length=80)
     mo_ta = models.TextField(blank=True)
+    #: Thứ tự admin kéo thả (`plans/2026-09-07-sap-xep-chuyen-muc-drag-drop.md`).
+    #:
+    #: **KHÔNG unique**, và mọi phép sắp phải là `order_by("thu_tu", "slug")` — `slug` là
+    #: khoá phá hoà cố định. Hai hàng cùng `thu_tu` là trạng thái BÌNH THƯỜNG: `default=0`
+    #: nên mọi sub tạo ngoài hai cửa biết đặt số (`api/quan_tri_sub.py::tao_sub`,
+    #: `core/management/commands/tao_sub.py`) rơi vào nhóm 0, và không có `slug` đi kèm
+    #: thì thứ tự của nhóm ấy là thứ tự tuỳ ý của Postgres — tức sidebar đổi chỗ giữa hai
+    #: lần tải mà không ai đổi gì.
+    thu_tu = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(default=timezone.now, editable=False)
 
     class Meta:

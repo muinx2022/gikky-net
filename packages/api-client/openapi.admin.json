@@ -40,7 +40,7 @@
         "type": "object"
       },
       "AnhOut": {
-        "description": "Một ảnh trong gallery của mốc — Phase 5.\n\n**Không trả `khoa_luu_tru` ra ngoài.** Client cần URL, và URL là thứ `STORAGES` sinh\nra; trả thêm khoá thô là mời frontend tự ghép đường dẫn, rồi ngày đổi sang R2 (nơi\nURL có chữ ký và hạn dùng) thì bản ghép tay ấy vẫn \"chạy\" ở dev và chết trên prod.\n\n`w`/`h` là kích thước ảnh **đã lưu**, không phải file gốc — chúng dùng để đặt\n`width`/`height` trên thẻ `<img>` chống layout shift, nên phải khớp đúng file đang\nđược phục vụ. `null` chỉ xảy ra với hàng cũ ghi trước Phase 5 (không có hàng nào).\n\n`exif_taken_at` là ngày chụp **server** đọc từ file gốc trước khi tái mã hoá xoá sạch\nEXIF. Nó là *gợi ý* cho `occurred_at`, không phải nguồn của nó: PLAN nguyên tắc 3 nói\n`occurred_at` do người dùng đặt, và một tấm ảnh chụp lại màn hình cũ có ngày chụp\nchẳng liên quan gì tới ngày sự việc.",
+        "description": "Một ảnh trong gallery của mốc — Phase 5.\n\n**Không trả `khoa_luu_tru` ra ngoài.** Client cần URL, và URL là thứ `STORAGES` sinh\nra; trả thêm khoá thô là mời frontend tự ghép đường dẫn, rồi ngày đổi sang R2 (nơi\nURL có chữ ký và hạn dùng) thì bản ghép tay ấy vẫn \"chạy\" ở dev và chết trên prod.\n\n`w`/`h` là kích thước ảnh **chính đã lưu** (cạnh ≤ `CANH_TOI_DA`), không phải file\ngốc. `w_thumb`/`h_thumb` là ước lượng kích thước **file `url_thumb`** (cạnh ≤\n`CANH_THUMB`), suy từ `w`/`h` — đủ để dành chỗ layout; có thể lệch ±1px so với file\nthumb thật (hai lần thu nhỏ + làm tròn). `null` khi thiếu/`w`/`h` không hợp lệ.\n\n`exif_taken_at` là ngày chụp **server** đọc từ file gốc trước khi tái mã hoá xoá sạch\nEXIF. Nó là *gợi ý* cho `occurred_at`, không phải nguồn của nó: PLAN nguyên tắc 3 nói\n`occurred_at` do người dùng đặt, và một tấm ảnh chụp lại màn hình cũ có ngày chụp\nchẳng liên quan gì tới ngày sự việc.",
         "properties": {
           "exif_taken_at": {
             "anyOf": [
@@ -64,6 +64,17 @@
               }
             ],
             "title": "H"
+          },
+          "h_thumb": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "H Thumb"
           },
           "id": {
             "title": "Id",
@@ -91,6 +102,17 @@
               }
             ],
             "title": "W"
+          },
+          "w_thumb": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "W Thumb"
           }
         },
         "required": [
@@ -99,6 +121,8 @@
           "url_thumb",
           "w",
           "h",
+          "w_thumb",
+          "h_thumb",
           "position",
           "exif_taken_at"
         ],
@@ -1951,6 +1975,23 @@
         "title": "OnlineOut",
         "type": "object"
       },
+      "SapXepSubIn": {
+        "description": "Body của `PUT /admin/subs/thu-tu` — **toàn bộ** thứ tự mới, không phải một phép dời.\n\n`slugs` phải là đúng một hoán vị của tập slug đang có trong DB (thiếu / thừa / trùng\n⇒ 400). Nhận một danh sách đầy đủ chứ không `{slug, vi_tri_moi}` vì cửa này ghi lại cả\ncột: một phép dời đơn lẻ buộc server tự suy ra chỉ số của mọi hàng còn lại, và hai\nlượt dời gửi lên gần nhau sẽ suy trên hai ảnh chụp khác nhau của cùng một bảng.\n\nCái giá là ghi đè mù — hai mod cùng kéo thì người bấm sau thắng. Chấp nhận được ở đây\n(khác hẳn danh sách mod, xem `api/quan_tri_sub.py`): thứ tự là một thuộc tính của cả\nbảng chứ không phải dữ liệu ai đó vừa nhập, và không có hàng nào biến mất.",
+        "properties": {
+          "slugs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Slugs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "slugs"
+        ],
+        "title": "SapXepSubIn",
+        "type": "object"
+      },
       "SuaMocQuanTriIn": {
         "description": "Mod sửa mốc — `PATCH /admin/mocs/{id}`. Đúng 5 trường của `MocSuaIn`, cộng `ly_do`.\n\n**Kế thừa chứ không chép**: 5 trường sửa được của một mốc là MỘT hợp đồng (PLAN 5.2),\nvà bản thứ hai gõ tay ở đây sẽ trôi đúng lúc ai đó nới `DAI_BODY_MOC`. Cơ chế PATCH\nthật (`model_fields_set`) đi theo luôn — trường không gửi thì không đổi.\n\n`ly_do` **không** phải một trường của mốc: nó đi vào `AuditLog.meta`, không vào hàng\n`Moc`. Nên handler phải bóc nó ra TRƯỚC khi dựng `thay_doi`; lọt vào `thay_doi` là\n`core/ghi.py` ném `ValidationError` \"không sửa được trường ly_do\".",
         "properties": {
@@ -2146,6 +2187,10 @@
           "ten": {
             "title": "Ten",
             "type": "string"
+          },
+          "thu_tu": {
+            "title": "Thu Tu",
+            "type": "integer"
           }
         },
         "required": [
@@ -2154,7 +2199,8 @@
           "mo_ta",
           "created_at",
           "so_mach",
-          "mods"
+          "mods",
+          "thu_tu"
         ],
         "title": "SubQuanTriOut",
         "type": "object"
@@ -4848,7 +4894,7 @@
     },
     "/api/admin/subs": {
       "get": {
-        "description": "Mọi sub, sắp theo `slug`, kèm `so_mach`.\n\nKhông phân trang: v1 có hai sub và danh sách này là bảng điều khiển, không phải feed.\nNgày nào nó dài tới mức cần cursor thì `so_mach` sẽ là thứ vỡ trước (một `COUNT` mỗi\nhàng), và lúc đó phải sửa cả hai thứ cùng lúc.",
+        "description": "Mọi sub, sắp theo `thu_tu` rồi `slug`, kèm `so_mach`.\n\n**Cùng khoá sắp với `GET /api/v1/subs`** — bảng này là chỗ người ta kéo thả, nên nó\nphải hiện đúng cái sidebar công khai sẽ hiện; hai khoá sắp khác nhau nghĩa là mod kéo\nxong nhìn một thứ tự, khách nhìn một thứ tự khác.\n\nKhông phân trang: v1 có hai sub và danh sách này là bảng điều khiển, không phải feed.\nNgày nào nó dài tới mức cần cursor thì `so_mach` sẽ là thứ vỡ trước (một `COUNT` mỗi\nhàng), và lúc đó phải sửa cả hai thứ cùng lúc.",
         "operationId": "quan_tri_liet_ke_sub",
         "parameters": [],
         "responses": {
@@ -4969,6 +5015,78 @@
           }
         ],
         "summary": "Tao Sub",
+        "tags": [
+          "quan-tri-sub"
+        ]
+      }
+    },
+    "/api/admin/subs/thu-tu": {
+      "put": {
+        "description": "Ghi lại **toàn bộ** cột `thu_tu` theo thứ tự `slugs` gửi lên. Trả cả bảng đã sắp.\n\n`slugs` phải là đúng một hoán vị của tập slug trong DB. Thiếu / thừa / trùng ⇒ 400 và\n**không ghi gì** — chấp nhận một danh sách thiếu nghĩa là những sub vắng mặt giữ số cũ\nvà trộn lẫn vào dãy `0..n-1` vừa gán, tức một bảng sắp sai mà lời gọi vẫn báo 200.\n\nTrả cả danh sách thay vì 204: bảng quản trị cần biết server đã hiểu thành thứ tự nào,\nvà một `204` buộc UI hoặc gọi thêm một lượt liệt kê, hoặc tin vào trạng thái optimistic\ncủa chính nó — cùng lý lẽ với `KetQuaXoaSubOut`.",
+        "operationId": "quan_tri_dat_thu_tu_sub",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SapXepSubIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SubQuanTriOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Dat Thu Tu Sub",
         "tags": [
           "quan-tri-sub"
         ]

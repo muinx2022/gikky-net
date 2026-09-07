@@ -46,9 +46,10 @@ export type AnhNoiDungOut = {
  * ra; trả thêm khoá thô là mời frontend tự ghép đường dẫn, rồi ngày đổi sang R2 (nơi
  * URL có chữ ký và hạn dùng) thì bản ghép tay ấy vẫn "chạy" ở dev và chết trên prod.
  *
- * `w`/`h` là kích thước ảnh **đã lưu**, không phải file gốc — chúng dùng để đặt
- * `width`/`height` trên thẻ `<img>` chống layout shift, nên phải khớp đúng file đang
- * được phục vụ. `null` chỉ xảy ra với hàng cũ ghi trước Phase 5 (không có hàng nào).
+ * `w`/`h` là kích thước ảnh **chính đã lưu** (cạnh ≤ `CANH_TOI_DA`), không phải file
+ * gốc. `w_thumb`/`h_thumb` là ước lượng kích thước **file `url_thumb`** (cạnh ≤
+ * `CANH_THUMB`), suy từ `w`/`h` — đủ để dành chỗ layout; có thể lệch ±1px so với file
+ * thumb thật (hai lần thu nhỏ + làm tròn). `null` khi thiếu/`w`/`h` không hợp lệ.
  *
  * `exif_taken_at` là ngày chụp **server** đọc từ file gốc trước khi tái mã hoá xoá sạch
  * EXIF. Nó là *gợi ý* cho `occurred_at`, không phải nguồn của nó: PLAN nguyên tắc 3 nói
@@ -64,6 +65,10 @@ export type AnhOut = {
      * H
      */
     h: number | null;
+    /**
+     * H Thumb
+     */
+    h_thumb: number | null;
     /**
      * Id
      */
@@ -84,6 +89,10 @@ export type AnhOut = {
      * W
      */
     w: number | null;
+    /**
+     * W Thumb
+     */
+    w_thumb: number | null;
 };
 
 /**
@@ -1479,6 +1488,27 @@ export type OnlineOut = {
 };
 
 /**
+ * SapXepSubIn
+ *
+ * Body của `PUT /admin/subs/thu-tu` — **toàn bộ** thứ tự mới, không phải một phép dời.
+ *
+ * `slugs` phải là đúng một hoán vị của tập slug đang có trong DB (thiếu / thừa / trùng
+ * ⇒ 400). Nhận một danh sách đầy đủ chứ không `{slug, vi_tri_moi}` vì cửa này ghi lại cả
+ * cột: một phép dời đơn lẻ buộc server tự suy ra chỉ số của mọi hàng còn lại, và hai
+ * lượt dời gửi lên gần nhau sẽ suy trên hai ảnh chụp khác nhau của cùng một bảng.
+ *
+ * Cái giá là ghi đè mù — hai mod cùng kéo thì người bấm sau thắng. Chấp nhận được ở đây
+ * (khác hẳn danh sách mod, xem `api/quan_tri_sub.py`): thứ tự là một thuộc tính của cả
+ * bảng chứ không phải dữ liệu ai đó vừa nhập, và không có hàng nào biến mất.
+ */
+export type SapXepSubIn = {
+    /**
+     * Slugs
+     */
+    slugs: Array<string>;
+};
+
+/**
  * SuaMocQuanTriIn
  *
  * Mod sửa mốc — `PATCH /admin/mocs/{id}`. Đúng 5 trường của `MocSuaIn`, cộng `ly_do`.
@@ -1625,6 +1655,10 @@ export type SubQuanTriOut = {
      * Ten
      */
     ten: string;
+    /**
+     * Thu Tu
+     */
+    thu_tu: number;
 };
 
 /**
@@ -3100,6 +3134,41 @@ export type QuanTriTaoSubResponses = {
 };
 
 export type QuanTriTaoSubResponse = QuanTriTaoSubResponses[keyof QuanTriTaoSubResponses];
+
+export type QuanTriDatThuTuSubData = {
+    body: SapXepSubIn;
+    path?: never;
+    query?: never;
+    url: '/api/admin/subs/thu-tu';
+};
+
+export type QuanTriDatThuTuSubErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+};
+
+export type QuanTriDatThuTuSubError = QuanTriDatThuTuSubErrors[keyof QuanTriDatThuTuSubErrors];
+
+export type QuanTriDatThuTuSubResponses = {
+    /**
+     * Response
+     *
+     * OK
+     */
+    200: Array<SubQuanTriOut>;
+};
+
+export type QuanTriDatThuTuSubResponse = QuanTriDatThuTuSubResponses[keyof QuanTriDatThuTuSubResponses];
 
 export type QuanTriXoaSubData = {
     body?: never;

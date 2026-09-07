@@ -7,7 +7,7 @@ nội dung của file này — đường thuận thì `test_api_quan_tri_phan_qu
 
 import pytest
 
-from core.models import Sub, User
+from core.models import AuditLog, Sub, User
 
 from tests._quan_tri import dang_nhap, dung_du_lieu, dung_mod, dung_thuong, goi
 
@@ -34,6 +34,9 @@ def test_tao_sua_liet_ke_sub_di_tron_mot_vong(canh):
         # Sub mới không có mod nào. Phép so là dict ĐẦY ĐỦ chứ không phải vài khoá —
         # thêm trường vào SubQuanTriOut mà quên chỗ này thì bài đo ĐỎ, đúng ý định.
         "mods": [],
+        # `chung-khoan` của `dung_du_lieu` tạo bằng `Sub.objects.create` nên giữ mặc định
+        # `0`; sub tạo qua API nhận `max+1` để đứng CUỐI bảng.
+        "thu_tu": 1,
     }
 
     r = goi(mod, "patch", "/api/admin/subs/crypto", {"mo_ta": "Tiền mã hoá"})
@@ -75,6 +78,19 @@ def test_slug_khong_chuan_bi_tu_choi_chu_KHONG_duoc_sua_ho(canh, slug):
     assert Sub.objects.count() == 1
 
 
+def test_slug_thu_tu_bi_cam_vi_trung_path_tinh(canh):
+    """`PUT /subs/thu-tu` là path tĩnh — tạo `s/thu-tu` thì PATCH/DELETE bị 405 text thô.
+
+    Không có danh sách slug cấm thì `slugify("thu-tu") == "thu-tu"` cho qua, chuyên mục
+    lên sidebar, rồi không sửa/xoá được qua khu quản trị (path tĩnh nuốt mọi method).
+    """
+    _, mod = canh
+    r = goi(mod, "post", "/api/admin/subs", {"slug": "thu-tu", "ten": "Thứ tự"})
+    assert r.status_code == 400, r.content
+    assert r.json()["code"] == "tham_so_khong_hop_le"
+    assert not Sub.objects.filter(slug="thu-tu").exists()
+
+
 def test_slug_hop_le_van_qua_duoc_khong_bi_siet_qua_tay(canh):
     """Chiều ngược của bài trên: từ chối sạch mọi slug thì nó vẫn xanh."""
     _, mod = canh
@@ -111,6 +127,105 @@ def test_slug_KHONG_sua_duoc_qua_PATCH(canh):
     assert r.status_code == 200
     assert r.json()["slug"] == "chung-khoan"
     assert not Sub.objects.filter(slug="slug-moi").exists()
+
+
+# --- Thứ tự chuyên mục (kéo thả) --------------------------------------------
+#
+# `plans/2026-09-07-sap-xep-chuyen-muc-drag-drop.md`. Cửa này ghi lại **cả cột** `thu_tu`,
+# nên thứ đáng đo không phải "có ghi không" mà là "có từ chối đúng chỗ không": một danh
+# sách thiếu slug mà được nhận nghĩa là sub vắng mặt giữ số cũ rồi trộn vào dãy `0..n-1`
+# vừa gán — bảng sắp sai trong khi lời gọi trả 200.
+
+
+@pytest.fixture
+def ba_sub(canh):
+    """`chung-khoan` (từ `dung_du_lieu`) + `bitcoin` + `vang`, mỗi cái một `thu_tu` riêng.
+
+    Tạo qua API để `thu_tu` đi đúng đường "sub mới đứng cuối" — thứ tự ban đầu vì thế là
+    `chung-khoan(0), bitcoin(1), vang(2)`, tức **ngược alphabet ở hai hàng cuối**. Đó là
+    chủ đích: một bộ dữ liệu alphabet sẵn không phân biệt được `order_by("thu_tu", "slug")`
+    với `order_by("slug")` cũ.
+    """
+    _, mod = canh
+    for slug, ten in (("vang", "Vàng"), ("bitcoin", "Bitcoin")):
+        r = goi(mod, "post", "/api/admin/subs", {"slug": slug, "ten": ten})
+        assert r.status_code == 201, r.content
+    return mod
+
+
+#: Một hoán vị hợp lệ của `ba_sub`, khác thứ tự ban đầu ở cả ba vị trí.
+XAO = ["vang", "bitcoin", "chung-khoan"]
+
+
+def test_dat_thu_tu_ghi_ca_cot_va_doi_ca_hai_cua_liet_ke(ba_sub, client):
+    mod = ba_sub
+    moi = ["vang", "chung-khoan", "bitcoin"]
+    r = goi(mod, "put", "/api/admin/subs/thu-tu", {"slugs": moi})
+
+    assert r.status_code == 200, r.content
+    assert [s["slug"] for s in r.json()] == moi
+    assert [s["thu_tu"] for s in r.json()] == [0, 1, 2]
+    assert dict(Sub.objects.values_list("slug", "thu_tu")) == {
+        "vang": 0,
+        "chung-khoan": 1,
+        "bitcoin": 2,
+    }
+
+    # Bảng quản trị và sidebar công khai phải nói CÙNG một thứ tự — hai khoá sắp khác nhau
+    # nghĩa là mod kéo xong nhìn một đằng, khách nhìn một nẻo.
+    assert [s["slug"] for s in mod.get("/api/admin/subs").json()] == moi
+    assert [s["slug"] for s in client.get("/api/v1/subs").json()] == moi
+
+
+def test_dat_thu_tu_ghi_dung_MOT_dong_nhat_ky(ba_sub):
+    truoc = AuditLog.objects.count()
+    goi(ba_sub, "put", "/api/admin/subs/thu-tu", {"slugs": XAO})
+
+    assert AuditLog.objects.count() == truoc + 1, "một lượt kéo là MỘT hành động"
+    dong = AuditLog.objects.latest("id")
+    assert dong.action == "dat_thu_tu_sub"
+    assert dong.target_id is None, "đích là cả bảng, không một hàng nào"
+    assert dong.meta["slugs"] == XAO
+
+
+@pytest.mark.parametrize(
+    "slugs",
+    [
+        ["vang", "bitcoin"],
+        ["vang", "bitcoin", "chung-khoan", "khong-co-that"],
+        ["vang", "vang", "bitcoin", "chung-khoan"],
+    ],
+    ids=["thieu", "thua", "trung"],
+)
+def test_slugs_khong_phai_hoan_vi_day_du_tra_400_va_KHONG_ghi_gi(ba_sub, slugs):
+    """Ba cách làm hỏng một hoán vị, và cả ba phải chết trước khi chạm DB.
+
+    Đo cả `thu_tu` sau lời gọi chứ không chỉ status: bỏ phép kiểm tập hợp đi thì ca "thiếu"
+    vẫn trả 200 và ghi `vang=0, bitcoin=1` trong khi `chung-khoan` giữ `0` — hai hàng cùng
+    số, thứ tự do `slug` phá hoà, tức bảng sắp sai mà không cửa nào kêu.
+    """
+    truoc = dict(Sub.objects.values_list("slug", "thu_tu"))
+    r = goi(ba_sub, "put", "/api/admin/subs/thu-tu", {"slugs": slugs})
+
+    assert r.status_code == 400, r.content
+    assert r.json()["code"] == "tham_so_khong_hop_le"
+    assert dict(Sub.objects.values_list("slug", "thu_tu")) == truoc
+
+
+def test_sub_moi_tao_dung_CUOI_chu_khong_chen_vao_giua(ba_sub):
+    """Sau một lượt kéo, chuyên mục tạo tiếp phải nằm cuối — không nhảy lên đầu.
+
+    Đây là chỗ `default=0` cắn: `Sub.objects.create` trần cho sub mới `thu_tu=0`, tức nó
+    chen lên trước mọi thứ admin vừa sắp.
+    """
+    goi(ba_sub, "put", "/api/admin/subs/thu-tu", {"slugs": XAO})
+    r = goi(
+        ba_sub, "post", "/api/admin/subs", {"slug": "bat-dong-san", "ten": "Bất động sản"}
+    )
+
+    assert r.status_code == 201, r.content
+    danh_sach = [s["slug"] for s in ba_sub.get("/api/admin/subs").json()]
+    assert danh_sach == [*XAO, "bat-dong-san"]
 
 
 # --- Ban / gỡ ban -----------------------------------------------------------
