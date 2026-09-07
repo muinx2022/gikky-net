@@ -1676,19 +1676,19 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Bằng chứng**: Commit `6dcb09d` đã xoá `quan_tri_sua_moc`, `quan_tri_tai_anh_noi_dung`, `quan_tri_tai_anh_moc`, `quan_tri_xoa_anh_moc` khỏi `CHI_SUPERUSER` và thêm assertion vào `hen-gio-phat-hanh.spec.ts`, nhưng backend `quan_tri_sua_bai.py` vẫn giữ nguyên `chan_neu_khong_phai_superuser` ở cả 4 endpoint (chưa áp dụng `plans/2026-09-04-noi-quyen-chen-anh-staff.md`).
 - **Vì sao không sửa ngay**: ngoài phạm vi của tính năng user tắt/mở bình luận mạch; cần một lượt riêng giải quyết đúng phạm vi nới quyền staff/superuser của khu quản trị.
 
-### P-20260907-2 · [ĐÓNG (cây — chờ commit)] · NẶNG — Ảnh thẻ feed mất chỗ dành trước khi tải (CLS) sau khi bỏ `width: 100%`
+### P-20260907-2 · [ĐÓNG] · NẶNG — Ảnh thẻ feed mất chỗ dành trước khi tải (CLS) sau khi bỏ `width: 100%`
 - **Thấy lúc**: phản biện `plans/2026-09-07-anh-feed-khong-ep-ngang.md` (commit `6059d24`)
 - **Ở đâu**: `apps/web/components/noi-dung-the.module.css:33-35` + `noi-dung-the.tsx:65-74`
 - **Bằng chứng**: CSS mới `width:auto; height:auto` không còn một trục xác định trước khi file về; `w`/`h` trên `<img>` là kích thước ảnh chính (≤2048) trong khi `src` là thumb (`CANH_THUMB=480`) — chỉ đủ tỉ lệ, không đủ kích thước hiển thị. Không có `aspect-ratio` trong CSS `apps/web`. `loading="lazy"` + cuộn vô hạn ⇒ thẻ dưới màn hình giật lúc ảnh về. Không hàng rào CLS.
 - **Đóng**: plan `plans/2026-09-07-w-thumb-cls-hang-rao.md` — `AnhOut.w_thumb/h_thumb` + `NoiDungThe` style.width = thumb.
 
-### P-20260907-3 · [ĐÓNG (cây — chờ commit)] · VỪA — `xem_truoc.anh.w/h` là ảnh chính trong khi `src` là `url_thumb`
+### P-20260907-3 · [ĐÓNG] · VỪA — `xem_truoc.anh.w/h` là ảnh chính trong khi `src` là `url_thumb`
 - **Thấy lúc**: phản biện ảnh feed không ép ngang
 - **Ở đâu**: `api/api/trinh_bay.py` (du_lieu_the / AnhOut) + `api/core/anh.py:290-291` (`w=chinh.width`) vs `CANH_THUMB=480`
 - **Bằng chứng**: client feed đặt `width`/`height` từ `w`/`h` nhưng tải `url_thumb` — mọi phép dành chỗ chống layout shift phải đoán. Hệ quả phụ: bề ngang hiển thị feed desktop bị khóa ~480px (`fit-content` + thumb), nhánh "co khi rộng hơn card" gần như chết trên desktop.
 - **Đóng**: cùng plan — API trả `w_thumb`/`h_thumb` suy từ `kich_thuoc_thumb`; feed + gallery dùng thumb dims.
 
-### P-20260907-4 · [ĐÓNG (cây — chờ commit)] · NHỎ — Không hàng rào nào ghim "ảnh feed không `width:100%`"
+### P-20260907-4 · [ĐÓNG] · NHỎ — Không hàng rào nào ghim "ảnh feed không `width:100%`"
 - **Thấy lúc**: nghiệm thu ảnh feed
 - **Ở đâu**: `apps/web/components/noi-dung-the.module.css` · `apps/web/e2e`
 - **Bằng chứng**: grep e2e cho `noi-dung-the|khung_anh|object-fit|340` → 0 match; ai đặt lại `width:100%` sẽ không có gì đỏ.
@@ -1729,4 +1729,10 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Ở đâu**: `scripts/codegen-check.mjs` (docstring tự thú: chạy khi đang sửa tay thì sửa tay mất)
 - **Bằng chứng**: lượt 1 exit 1 LỆCH 4 file (docstring `AnhOut` phiên w-thumb) ⇒ generated bị regenerate; luật chia độc quyền ở CLAUDE.md không liệt kê `codegen:check`.
 - **Vì sao không sửa ngay**: quy ước / tooling, ngoài phạm vi sản phẩm drag-drop.
+
+### P-20260907-11 · [MỞ] · NHỎ — Bấm `⋯` trên mốc thu gọn vừa mở menu vừa bung accordion
+- **Thấy lúc**: phản biện `plans/2026-09-07-dong-menu-moc-bam-ngoai.md`
+- **Ở đâu**: `apps/web/components/moc-accordion.tsx:132-136` — `closest("button, a, …")` không gồm `summary`
+- **Bằng chứng**: `<summary>` của menu `⋯` nằm trong vùng `onClick` thu gọn; có từ trước bản vá đóng menu ngoài.
+- **Vì sao không sửa ngay**: ngoài phạm vi; bản vá đã nuốt click khi đóng vì bấm *ngoài* menu, không xử ca bấm chính `⋯`.
 

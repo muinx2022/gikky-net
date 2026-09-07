@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
 import { ketQuaLuuMoc, taiAnhLanLuot } from "@/lib/anh";
+import { useDongDetailsKhiBamNgoai } from "@/lib/dong-details";
 import { cauLoi, layDuLieu } from "@/lib/ghi";
 import { GOC_TRINH_DUYET, headerGhi } from "@/lib/tai-khoan";
 import { gioPhutVN, phutSuaImLangConLai, tuSuaConDuoc } from "@/lib/vong-doi";
@@ -64,6 +65,7 @@ export function HanhDongMoc({ moc }: { moc: MocOut }) {
   const [dangGui, datDangGui] = useState(false);
   const [loi, datLoi] = useState<string | null>(null);
   const hopRef = useRef<HTMLDetailsElement>(null);
+  useDongDetailsKhiBamNgoai(hopRef);
 
   /** Đóng menu `⋯` sau khi chọn một mục — `<details>` là uncontrolled, xem
    * `HanhDongBinhLuan.dongMenu` để biết cái bẫy hai-cú-bấm nó gây ra. */

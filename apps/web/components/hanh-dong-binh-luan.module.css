@@ -27,8 +27,9 @@
   background: var(--accent-soft);
 }
 
-/* `<details>` chứ không phải state React: menu mở được cả khi JS chưa kịp hydrate, và
-   phím Esc/Tab hoạt động sẵn. */
+/* `<details>` chứ không phải state React: menu mở được cả khi JS chưa kịp hydrate.
+   (Esc không đóng `<details>` — khác `<dialog>`; đóng bằng bấm ngoài do
+   `useDongDetailsKhiBamNgoai`.) */
 .menu {
   position: relative;
 }

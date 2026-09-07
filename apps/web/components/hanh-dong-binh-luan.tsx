@@ -4,6 +4,7 @@ import { suaBinhLuan, xoaBinhLuan } from "@gikky/api-client";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
+import { useDongDetailsKhiBamNgoai } from "@/lib/dong-details";
 import { GOC_TRINH_DUYET, headerGhi } from "@/lib/tai-khoan";
 
 import { FormBaoCao } from "./bao-cao";
@@ -71,6 +72,7 @@ export function HanhDongBinhLuan({
   const [dangGui, datDangGui] = useState(false);
   const [loi, datLoi] = useState<string | null>(null);
   const hopRef = useRef<HTMLDetailsElement>(null);
+  useDongDetailsKhiBamNgoai(hopRef);
 
   /** Đóng menu `⋯` sau khi chọn một mục.
    *

@@ -4,8 +4,20 @@ Chốt 2026-09-07. User: dưới từng mốc, bấm `⋯` ra mục Báo cáo (v
 
 ## Trạng thái
 
-- **Chặng**: 1 — plan (chưa thực thi)
-- **Thực thi**: phiên chính (Auto), **không** `opus-dev` (user chốt lối này)
+- **Chặng**: xong (2026-09-07) — Auto; nghiệm thu ĐẠT (browser bỏ qua); phản biện → vá nuốt click xuyên + siết hàng rào
+- **Thực thi**: phiên chính (Auto), **không** `opus-dev`
+
+### Báo cáo thực thi
+
+| Tiêu chí | Kết quả |
+|---|---|
+| 1 · mã đóng ngoài | ĐẠT — `useDongDetailsKhiBamNgoai` ở moc + bình luận |
+| 2 · lint | ĐẠT — exit 0 |
+| 3 · trình duyệt | BỎ QUA (không có server) — phiên chính chưa đo tay |
+| 4 · e2e don-vi | ĐẠT — `dong-menu-bam-ngoai` 1 passed |
+
+Sổ: thêm P-20260907-11. **Chưa commit code / chưa deploy.**
+
 
 ## 0 · Ranh giới
 

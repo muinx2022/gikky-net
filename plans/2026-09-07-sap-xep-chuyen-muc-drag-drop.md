@@ -4,7 +4,7 @@ Chốt 2026-09-07. User: phần admin / chuyên mục hỗ trợ kéo thả đ�
 
 ## Trạng thái
 
-- **Chặng**: 5 — đã thực thi + vá theo phản biện; chờ commit user
+- **Chặng**: xong + đã deploy VPS (2026-09-07)
 - **Nền**: đã có `Sub.thu_tu`, `PUT /api/admin/subs/thu-tu`, admin DnD, public `order_by("thu_tu","slug")`.
 
 ## 0 · Ranh giới
@@ -102,6 +102,10 @@ Chốt 2026-09-07. User: phần admin / chuyên mục hỗ trợ kéo thả đ�
 2. Race mũi tên → hàng đợi hoán vị mới nhất.
 3. Codegen lẫn `w_thumb` → **không stage** `openapi.json`/`src/` v1 cùng commit việc này (ghi sổ P-20260907-7).
 
-### Commit
+### Commit + deploy VPS
 
-Chưa commit code — chờ user. Stage gợi ý: chỉ file thuộc plan + `openapi.admin.json`/`src-admin/*`; **không** gộp `openapi.json`/`src/*` nếu còn mang thumb của phiên khác.
+- Commit `aed311d` (chỉ file việc này + sổ; không gộp `openapi.json`/`src/*` w-thumb).
+- Archive → scp (9082880 = 9082880) → 774 file · backup `gikky-20260907-thu-tu-truoc-0032.sql.gz`
+- Build `api` + `admin` → `up -d` · **`0032_sub_thu_tu` Applied**
+- Smoke `:8091` + HTTPS: `/` 200 · health 200 · admin API 401 · public admin 403 · âm 404 · `PUT /subs/thu-tu` khách 403 (không 404) · `GET /subs` khớp DB · openapi 404 · django admin 403
+- Không rebuild `web` (sidebar đọc thứ tự từ API)
