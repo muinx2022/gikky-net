@@ -46,9 +46,10 @@ export type AnhNoiDungOut = {
  * ra; trả thêm khoá thô là mời frontend tự ghép đường dẫn, rồi ngày đổi sang R2 (nơi
  * URL có chữ ký và hạn dùng) thì bản ghép tay ấy vẫn "chạy" ở dev và chết trên prod.
  *
- * `w`/`h` là kích thước ảnh **đã lưu**, không phải file gốc — chúng dùng để đặt
- * `width`/`height` trên thẻ `<img>` chống layout shift, nên phải khớp đúng file đang
- * được phục vụ. `null` chỉ xảy ra với hàng cũ ghi trước Phase 5 (không có hàng nào).
+ * `w`/`h` là kích thước ảnh **chính đã lưu** (cạnh ≤ `CANH_TOI_DA`), không phải file
+ * gốc. `w_thumb`/`h_thumb` là ước lượng kích thước **file `url_thumb`** (cạnh ≤
+ * `CANH_THUMB`), suy từ `w`/`h` — đủ để dành chỗ layout; có thể lệch ±1px so với file
+ * thumb thật (hai lần thu nhỏ + làm tròn). `null` khi thiếu/`w`/`h` không hợp lệ.
  *
  * `exif_taken_at` là ngày chụp **server** đọc từ file gốc trước khi tái mã hoá xoá sạch
  * EXIF. Nó là *gợi ý* cho `occurred_at`, không phải nguồn của nó: PLAN nguyên tắc 3 nói
@@ -64,6 +65,10 @@ export type AnhOut = {
      * H
      */
     h: number | null;
+    /**
+     * H Thumb
+     */
+    h_thumb: number | null;
     /**
      * Id
      */
@@ -84,6 +89,10 @@ export type AnhOut = {
      * W
      */
     w: number | null;
+    /**
+     * W Thumb
+     */
+    w_thumb: number | null;
 };
 
 /**

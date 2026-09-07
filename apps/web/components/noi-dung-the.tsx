@@ -60,17 +60,25 @@ export function NoiDungThe({
         <span className={css.khung_anh}>
           {/*
             `next/image` cố ý KHÔNG dùng — cùng lý lẽ với `gallery-moc.tsx`: server đã
-            thu ảnh về cạnh tối đa và sinh sẵn thumbnail lúc upload, nên bộ tối ưu của
-            Next chỉ làm lại một việc đã xong, và nó đòi `images.remotePatterns` cho một
-            origin mà prod phục vụ bằng Caddy. `width`/`height` đặt thẳng từ `w`/`h` của
-            server — ĐÓ mới là thứ chống layout shift.
+            thu ảnh về cạnh tối đa và sinh sẵn thumbnail lúc upload. `src` là
+            `url_thumb`, nên `width`/`height` + `style.width` lấy `w_thumb`/`h_thumb`
+            (không phải `w`/`h` ảnh chính) để dành chỗ đúng cỡ file đang tải — chống CLS.
           */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             className={css.anh}
             src={xem_truoc.anh.url_thumb}
-            width={xem_truoc.anh.w ?? undefined}
-            height={xem_truoc.anh.h ?? undefined}
+            width={xem_truoc.anh.w_thumb ?? undefined}
+            height={xem_truoc.anh.h_thumb ?? undefined}
+            style={
+              xem_truoc.anh.w_thumb != null
+                ? {
+                    width: xem_truoc.anh.w_thumb,
+                    maxWidth: "100%",
+                    height: "auto",
+                  }
+                : undefined
+            }
             alt=""
             loading="lazy"
             decoding="async"

@@ -29,6 +29,7 @@ from core.ghi import NGAY_MO_LAI, PHUT_SUA_IM_LANG
 from core.lam_sach_html import _src_cua_site, van_ban_thuan
 from core.models.binh_luan import Comment
 from core.models.dien_dan import Mach
+from core.anh import kich_thuoc_thumb
 from core.anh_luu import url_anh, url_thumb
 from core.models.moc import AnhNoiDung, Moc, MocAnh, MocRevision
 from core.models.tuong_tac import Reaction, Trich
@@ -224,12 +225,17 @@ def du_lieu_the(machs) -> dict[int, tuple[int | None, XemTruocOut | None]]:
             srcs = anh_nd_theo_moc[m.pk]
             khoa = srcs[0].split("?")[0].rsplit("/", 1)[-1]
             nd = anh_nd_map.get(khoa)
+            w = nd.w if nd else None
+            h = nd.h if nd else None
+            wt, ht = _kich_thuoc_thumb_hoac_none(w, h)
             anh_out = AnhOut(
                 id=nd.pk if nd else 0,
                 url=url_anh(khoa) if khoa else srcs[0],
                 url_thumb=url_thumb(khoa) if khoa else srcs[0],
-                w=nd.w if nd else None,
-                h=nd.h if nd else None,
+                w=w,
+                h=h,
+                w_thumb=wt,
+                h_thumb=ht,
                 position=0,
                 exif_taken_at=None,
             )
@@ -312,18 +318,30 @@ def trich_ra(trich: Trich | None) -> TrichOut | None:
     )
 
 
+def _kich_thuoc_thumb_hoac_none(
+    w: int | None, h: int | None
+) -> tuple[int | None, int | None]:
+    """Đường đọc: thiếu hoặc cạnh không hợp lệ → `None` (không 500 cả feed)."""
+    if w is None or h is None or w < 1 or h < 1:
+        return None, None
+    return kich_thuoc_thumb(w, h)
+
+
 def anh_ra(anh: MocAnh) -> AnhOut:
     """Một ảnh trong gallery. URL do `STORAGES` sinh, không ghép tay ở đây.
 
     `url_anh`/`url_thumb` gọi `storage.url(...)`, nên đổi `MEDIA_URL` hay đổi hẳn sang R2
     đều không phải sửa dòng nào ở file này.
     """
+    wt, ht = _kich_thuoc_thumb_hoac_none(anh.w, anh.h)
     return AnhOut(
         id=anh.pk,
         url=url_anh(anh.khoa_luu_tru),
         url_thumb=url_thumb(anh.khoa_luu_tru),
         w=anh.w,
         h=anh.h,
+        w_thumb=wt,
+        h_thumb=ht,
         position=anh.position,
         exif_taken_at=anh.exif_taken_at,
     )

@@ -58,6 +58,29 @@ CANH_TOI_DA = 2048
 #: Cạnh dài nhất của thumbnail trong gallery.
 CANH_THUMB = 480
 
+
+def kich_thuoc_thumb(w: int, h: int) -> tuple[int, int]:
+    """Ước lượng kích thước file thumbnail từ ảnh chính đã lưu.
+
+    Dùng cho `AnhOut.w_thumb`/`h_thumb` (dành chỗ layout), **không** phải byte-accurate
+    đo lại file. Hai lý do có thể lệch ±1px so với file thumb thật:
+
+    1. Pillow `thumbnail` chọn floor/ceil theo tỉ lệ, không phải `round(cạnh * scale)`;
+    2. File thumb sinh từ ảnh gốc, còn `w`/`h` lưu DB là ảnh chính đã qua
+       `CANH_TOI_DA` — suy từ `w`/`h` là làm tròn hai lần.
+
+    Không phóng to khi `max(w,h) <= CANH_THUMB`. Cạnh `< 1` → `ValueError` (gọi từ
+    đường đọc thì bọc bằng `_kich_thuoc_thumb_hoac_none`).
+    """
+    if w < 1 or h < 1:
+        raise ValueError(f"Kích thước ảnh không hợp lệ: {w}×{h}")
+    canh = max(w, h)
+    if canh <= CANH_THUMB:
+        return w, h
+    scale = CANH_THUMB / canh
+    return max(1, round(w * scale)), max(1, round(h * scale))
+
+
 #: Allowlist định dạng (phép kiểm 3): tên Pillow → đuôi file → `Content-Type`.
 #:
 #: `Content-Type` ghi ở đây vì prod phục vụ file bằng Caddy `file_server`, vốn đoán kiểu

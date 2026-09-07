@@ -382,6 +382,8 @@ def test_gallery_THANG_chu_khi_moc_1_co_ca_hai(client, seed_post_thuong):
     assert xt["anh"] is not None
     assert xt["anh"]["position"] == 0, "phải là tấm ĐẦU của gallery"
     assert "anh-thu-0" in xt["anh"]["url_thumb"]
+    assert xt["anh"]["w"] == 800 and xt["anh"]["h"] == 600
+    assert xt["anh"]["w_thumb"] == 480 and xt["anh"]["h_thumb"] == 360
     assert xt["trich"], "có ảnh thì chữ VẪN phải đi kèm (alt + phương án dự phòng)"
 
 
@@ -419,6 +421,7 @@ def test_moc_1_khong_gallery_nhung_co_anh_trong_body_thi_lay_anh_body(
     assert xt["so_anh"] == 2
     assert xt["anh"] is not None
     assert xt["anh"]["w"] == 1200 and xt["anh"]["h"] == 800
+    assert xt["anh"]["w_thumb"] == 480 and xt["anh"]["h_thumb"] == 320
     assert khoa_1 in xt["anh"]["url"]
     assert khoa_1 in xt["anh"]["url_thumb"]
     assert "Nội dung phân tích mã." in xt["trich"]

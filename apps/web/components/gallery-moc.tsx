@@ -36,8 +36,8 @@ export function GalleryMoc({ anhs, seq }: { anhs: readonly AnhOut[]; seq: number
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={a.url_thumb}
-              width={a.w ?? undefined}
-              height={a.h ?? undefined}
+              width={a.w_thumb ?? undefined}
+              height={a.h_thumb ?? undefined}
               alt=""
               loading="lazy"
               decoding="async"

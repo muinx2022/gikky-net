@@ -4,8 +4,20 @@ Chốt 2026-09-07. User: sửa các mục sổ `P-20260907-2` · `P-20260907-3` 
 
 ## Trạng thái
 
-- **Chặng**: 1 — plan (chưa thực thi)
-- **Sổ trong phạm vi**: P-20260907-2 (CLS/NẶNG) · P-20260907-3 (w/h lệch thumb) · P-20260907-4 (thiếu hàng rào)
+- **Chặng**: xong (2026-09-07) — Auto tự làm, không opus-dev; nghiệm thu ĐẠT; phản biện → vá lượt 2 (doc ±1px, hàng rào JSX, ValueError đường đọc)
+- **Sổ**: P-20260907-2/3/4 đóng trên cây (chờ commit); thêm P-20260907-5 (chon-anh/admin)
+
+### Báo cáo thực thi
+
+| Tiêu chí | Kết quả |
+|---|---|
+| 1 · `kich_thuoc_thumb` + pytest | ĐẠT — 4 bài `kich_thuoc_thumb` xanh (kể cả ca lẻ + ±1px vs Pillow) |
+| 2 · `AnhOut.w_thumb/h_thumb` + feed | ĐẠT — schema + feed tests + `KHOA_CHO_PHEP` |
+| 3 · `NoiDungThe` / gallery | ĐẠT — `w_thumb` + `style.width` |
+| 4 · hàng rào e2e | ĐẠT — 2 bài `anh-feed-css` xanh; thử phá CSS đỏ rồi khôi phục |
+| 5 · lint | ĐẠT — `pnpm --filter web lint` exit 0 |
+
+Codegen đã chạy. **Chưa commit code / chưa deploy** — user bảo mới làm.
 
 ## 0 · Ranh giới
 

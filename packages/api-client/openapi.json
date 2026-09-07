@@ -40,7 +40,7 @@
         "type": "object"
       },
       "AnhOut": {
-        "description": "Một ảnh trong gallery của mốc — Phase 5.\n\n**Không trả `khoa_luu_tru` ra ngoài.** Client cần URL, và URL là thứ `STORAGES` sinh\nra; trả thêm khoá thô là mời frontend tự ghép đường dẫn, rồi ngày đổi sang R2 (nơi\nURL có chữ ký và hạn dùng) thì bản ghép tay ấy vẫn \"chạy\" ở dev và chết trên prod.\n\n`w`/`h` là kích thước ảnh **đã lưu**, không phải file gốc — chúng dùng để đặt\n`width`/`height` trên thẻ `<img>` chống layout shift, nên phải khớp đúng file đang\nđược phục vụ. `null` chỉ xảy ra với hàng cũ ghi trước Phase 5 (không có hàng nào).\n\n`exif_taken_at` là ngày chụp **server** đọc từ file gốc trước khi tái mã hoá xoá sạch\nEXIF. Nó là *gợi ý* cho `occurred_at`, không phải nguồn của nó: PLAN nguyên tắc 3 nói\n`occurred_at` do người dùng đặt, và một tấm ảnh chụp lại màn hình cũ có ngày chụp\nchẳng liên quan gì tới ngày sự việc.",
+        "description": "Một ảnh trong gallery của mốc — Phase 5.\n\n**Không trả `khoa_luu_tru` ra ngoài.** Client cần URL, và URL là thứ `STORAGES` sinh\nra; trả thêm khoá thô là mời frontend tự ghép đường dẫn, rồi ngày đổi sang R2 (nơi\nURL có chữ ký và hạn dùng) thì bản ghép tay ấy vẫn \"chạy\" ở dev và chết trên prod.\n\n`w`/`h` là kích thước ảnh **chính đã lưu** (cạnh ≤ `CANH_TOI_DA`), không phải file\ngốc. `w_thumb`/`h_thumb` là ước lượng kích thước **file `url_thumb`** (cạnh ≤\n`CANH_THUMB`), suy từ `w`/`h` — đủ để dành chỗ layout; có thể lệch ±1px so với file\nthumb thật (hai lần thu nhỏ + làm tròn). `null` khi thiếu/`w`/`h` không hợp lệ.\n\n`exif_taken_at` là ngày chụp **server** đọc từ file gốc trước khi tái mã hoá xoá sạch\nEXIF. Nó là *gợi ý* cho `occurred_at`, không phải nguồn của nó: PLAN nguyên tắc 3 nói\n`occurred_at` do người dùng đặt, và một tấm ảnh chụp lại màn hình cũ có ngày chụp\nchẳng liên quan gì tới ngày sự việc.",
         "properties": {
           "exif_taken_at": {
             "anyOf": [
@@ -64,6 +64,17 @@
               }
             ],
             "title": "H"
+          },
+          "h_thumb": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "H Thumb"
           },
           "id": {
             "title": "Id",
@@ -91,6 +102,17 @@
               }
             ],
             "title": "W"
+          },
+          "w_thumb": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "W Thumb"
           }
         },
         "required": [
@@ -99,6 +121,8 @@
           "url_thumb",
           "w",
           "h",
+          "w_thumb",
+          "h_thumb",
           "position",
           "exif_taken_at"
         ],
@@ -6010,7 +6034,7 @@
     },
     "/api/v1/subs": {
       "get": {
-        "description": "MỌI chuyên mục, sắp theo `slug` — PLAN mục 7 *(thêm ở lượt vá Phase 1d)*.\n\n**Frontend CẤM ghi cứng danh sách slug** (PLAN mục 7 nói thẳng). Trước endpoint này,\n`apps/web` giữ một hằng `SUB_KHOI_DIEM = [\"chung-khoan\", \"crypto\"]` nuôi cả sidebar\nlẫn `sitemap.ts`: mở sub thứ ba qua admin thì **cả hai chỗ cùng bỏ sót nó, im lặng**,\nvà chiều ngược cũng im — đổi slug trong admin thì sidebar âm thầm bỏ mục đó (404 →\nlọc khỏi danh sách) trong khi `sitemap.xml` vẫn khai `/s/<slug cũ>` là URL sống.\n\n**Không phân trang, và đó là một chốt chứ không phải một thiếu sót.** v1 tạo sub bằng\ntay qua admin (PLAN mục 1), nên tập này là hàng chục chứ không phải hàng nghìn; thêm\ncursor bây giờ là bắt hai chỗ gọi (sidebar, sitemap) tự lật trang cho một danh sách\nchưa bao giờ dài. Ngày nó dài ra thì đổi ở đây, kèm cursor keyset trên `slug`.\n\nSắp theo `slug` chứ không theo `so_mach`: sidebar là một **bản đồ**, và một bản đồ\ntự sắp lại theo độ đông mỗi lần có bài mới thì không ai nhớ được chỗ nào ở đâu.",
+        "description": "MỌI chuyên mục, sắp theo `thu_tu` — PLAN mục 7 *(thêm ở lượt vá Phase 1d)*.\n\n**Frontend CẤM ghi cứng danh sách slug** (PLAN mục 7 nói thẳng). Trước endpoint này,\n`apps/web` giữ một hằng `SUB_KHOI_DIEM = [\"chung-khoan\", \"crypto\"]` nuôi cả sidebar\nlẫn `sitemap.ts`: mở sub thứ ba qua admin thì **cả hai chỗ cùng bỏ sót nó, im lặng**,\nvà chiều ngược cũng im — đổi slug trong admin thì sidebar âm thầm bỏ mục đó (404 →\nlọc khỏi danh sách) trong khi `sitemap.xml` vẫn khai `/s/<slug cũ>` là URL sống.\n\n**Không phân trang, và đó là một chốt chứ không phải một thiếu sót.** v1 tạo sub bằng\ntay qua admin (PLAN mục 1), nên tập này là hàng chục chứ không phải hàng nghìn; thêm\ncursor bây giờ là bắt hai chỗ gọi (sidebar, sitemap) tự lật trang cho một danh sách\nchưa bao giờ dài. Ngày nó dài ra thì đổi ở đây, kèm cursor keyset trên `slug`.\n\n**Thứ tự do admin đặt** (`Sub.thu_tu`, kéo thả ở `/subs` khu quản trị — 2026-09-07),\n`slug` chỉ còn là khoá phá hoà cho những hàng cùng số. Trước đó nó sắp theo `slug` và\ndocstring này gọi alphabet là hợp đồng; nay hợp đồng là \"thứ tự mảng API trả về\", và\nsidebar (`apps/web/components/sidebar.tsx`) vốn đã render đúng thế nên không phải đổi.\n\nVẫn **không** sắp theo `so_mach`: sidebar là một **bản đồ**, và một bản đồ tự sắp lại\ntheo độ đông mỗi lần có bài mới thì không ai nhớ được chỗ nào ở đâu. Một thứ tự do\nngười đặt thì đứng yên cho tới khi có người đổi nó.",
         "operationId": "liet_ke_sub",
         "parameters": [],
         "responses": {

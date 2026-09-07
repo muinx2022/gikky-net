@@ -270,3 +270,41 @@ def test_A2_anh_8MB_xu_ly_duoi_5_giay():
     print(f"\nA2: {len(du_lieu) / 1024 / 1024:.1f}MB xu ly trong {mat:.2f}s")
     assert mat < 5, f"xử lý mất {mat:.2f}s, PLAN hứa ≤5s"
     assert ra.byte_chinh and ra.byte_thumb
+
+
+# --- kich_thuoc_thumb (w_thumb/h_thumb trên AnhOut) -----------------------------
+
+
+def test_kich_thuoc_thumb_khong_phong_to_anh_hep():
+    from core.anh import kich_thuoc_thumb
+
+    assert kich_thuoc_thumb(200, 100) == (200, 100)
+    assert kich_thuoc_thumb(CANH_THUMB, CANH_THUMB) == (CANH_THUMB, CANH_THUMB)
+
+
+def test_kich_thuoc_thumb_co_anh_rong_hon_tran():
+    from core.anh import kich_thuoc_thumb
+
+    assert kich_thuoc_thumb(2048, 1024) == (480, 240)
+    assert kich_thuoc_thumb(800, 600) == (480, 360)
+
+
+def test_kich_thuoc_thumb_khop_pillow_tren_anh_that():
+    """Ước lượng trong ±1px so với file thumb thật (hai lần thu nhỏ — xem docstring)."""
+    from core.anh import kich_thuoc_thumb
+
+    ra = xu_ly_anh_tai_len(anh_byte(kich_thuoc=(1600, 900), dinh_dang="JPEG"))
+    from io import BytesIO
+
+    thumb = Image.open(BytesIO(ra.byte_thumb))
+    wt, ht = kich_thuoc_thumb(ra.w, ra.h)
+    assert abs(thumb.width - wt) <= 1 and abs(thumb.height - ht) <= 1
+
+
+def test_kich_thuoc_thumb_canh_le_van_co_scale():
+    """Nhánh làm tròn phải chạy — input chia hết không bắt được int() vs round()."""
+    from core.anh import kich_thuoc_thumb
+
+    # 1100 * 480 / 2048 = 257.8125 → round 258, int 257.
+    assert kich_thuoc_thumb(2048, 1100) == (480, 258)
+    assert kich_thuoc_thumb(2048, 1100) != (480, int(1100 * 480 / 2048))

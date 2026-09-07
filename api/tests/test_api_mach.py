@@ -183,7 +183,7 @@ KHOA_CHO_PHEP = {
     # gallery ảnh của mốc (Phase 5). Cache được: URL suy từ `khoa_luu_tru`, và ai xem
     # cũng nhận đúng chuỗi ấy — không có nhánh nào hỏi người xem là ai. Bia mộ / mốc bị
     # ẩn nhận `[]`, cùng chuẩn với `body` và `trich`.
-    "anhs", "url", "url_thumb", "w", "h", "position", "exif_taken_at",
+    "anhs", "url", "url_thumb", "w", "h", "w_thumb", "h_thumb", "position", "exif_taken_at",
     # Đếm reaction của mốc (lượt giao diện, 2026-08-23 — nợ `REACTION-CHUA-CO-UI`).
     #
     # **Cache được, và đây là chỗ phải nói ra vì sao**: nó là con số CHUNG — ai xem cũng
