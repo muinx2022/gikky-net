@@ -152,7 +152,7 @@ export const TRAN_TIEU_DE_OG = 96;
 export function ogTrangChu(): DuLieuOg {
   return {
     nhan: "gikky.net",
-    tieuDe: "Nhật ký giao dịch, ghi trước khi biết kết quả",
+    tieuDe: "Nhật ký giao dịch & Luận điểm thị trường",
     dongPhu: ghepDongPhu([
       "Diễn đàn trading tiếng Việt",
       "Dấu thời gian máy chủ bất biến",

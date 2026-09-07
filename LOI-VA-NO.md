@@ -1,4 +1,4 @@
-﻿# Sổ lỗi và nợ — gikky.net
+# Sổ lỗi và nợ — gikky.net
 
 > Lập 2026-08-23 tại `ab77957`, sau lượt nghiệm thu + 3 lượt phản biện đầu tiên trên
 > Phase 2/3/4/6. **Đây là sổ cái, không phải kế hoạch.** Sửa xong một mục thì đổi trạng thái
@@ -1650,3 +1650,29 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Ở đâu**: `api/api/quyen.py:165` (docstring) · `api/api/mocs.py:354,454` (`POST`/`DELETE .../trich`)
 - **Bằng chứng**: hai cửa trích đổi `MocOut.trich` hiện ngay trên thẻ mốc, không `MocRevision`, không qua kiểm cửa sổ tự sửa — có luật thời gian RIÊNG (24 giờ, PLAN 5.6) nên không chắc là lỗ hổng, nhưng câu "MỌI đường ghi" trong docstring là sai.
 - **Vì sao không sửa ngay**: cần quyết định có chủ đích (áp cửa sổ tự sửa luôn cho trích, hay giữ luật 24h riêng và chỉ sửa lại câu docstring) — ngoài phạm vi 4 lượt vá đã giao.
+
+### P-20260906-1 · [MỞ] · NẶNG — `dang-bai.py` bật `AppRegistryNotReady` ngay khi bài có `anhs`: đường xử lý ảnh import model Django mà `python -` không bootstrap Django
+- **Thấy lúc**: chạy tác vụ hẹn giờ `gikky-bai-tan-man-a` (bài phân tích dệt may, mạch 1036)
+- **Ở đâu**: `scripts/bai-viet/dang-bai.py:167-170` (`xu_ly_anhs` import `core.anh` / `core.anh_noi_dung` / `core.models.nguoi_dung`) — gọi từ `main()` ở dòng 228, TRƯỚC mọi `django.setup()`
+- **Bằng chứng**: lệnh đúng như `scripts/bai-viet/lich/tan-man.md` §4② —
+  `docker compose -p gikkynet exec -T api python - < scripts/bai-viet/dang-bai.py` —
+  thoát mã `1` với `django.core.exceptions.AppRegistryNotReady: Apps aren't loaded yet.`
+  (traceback: `dang-bai.py:169` → `core/anh_noi_dung.py:20` → `core/models/__init__.py:24`).
+  Bài KHÔNG có `anhs` thì không chạm nhánh này nên vẫn chạy được — đó là lý do lỗi sống sót.
+  Đối chứng phạm vi: `Moc.objects.filter(body__contains="<img").count()` trên VPS trả **0**,
+  tức từ lúc thêm `xu_ly_anhs` (commit `7b9e1cd`, 05/09) tới nay CHƯA bài nào đăng được ảnh,
+  trong khi `tan-man.md` §3 đã đặt ảnh thành **bắt buộc 1–2 ảnh mỗi bài**.
+- **Cách đi vòng đã dùng lượt này** (không sửa file trong repo): chép `dang-bai.py` vào
+  container rồi chạy qua wrapper `import django; django.setup(); exec(...)` với
+  `sys.argv = ["dang-bai.py"]`. Ra mã `0`, hai ảnh vào `/media/anh/`, trang trả HTTP 200.
+- **Vì sao không sửa ngay**: ngoài phạm vi "viết một bài"; và `tan-man.md` §4 ghi rõ
+  *"sửa file JSON rồi chạy lại ①②, đừng sửa script"*. Bản vá đúng là hai dòng
+  (`os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings"); django.setup()`)
+  đặt đầu `main()`, nhưng đổi script đăng bài cần một lượt có nghiệm thu riêng.
+
+### P-20260907-1 · [MỞ] · VỪA — Lệch test `CHI_SUPERUSER` khu quản trị giữa `test_api_quan_tri_phan_quyen.py`, `hen-gio-phat-hanh.spec.ts` và `quan_tri_sua_bai.py`
+- **Thấy lúc**: chạy kiểm thử toàn diện sau tính năng tắt/mở bình luận.
+- **Ở đâu**: `api/api/quan_tri_sua_bai.py:215,319,376,419`, `api/tests/test_api_quan_tri_phan_quyen.py:127`, `apps/web/e2e/don-vi/hen-gio-phat-hanh.spec.ts:172`.
+- **Bằng chứng**: Commit `6dcb09d` đã xoá `quan_tri_sua_moc`, `quan_tri_tai_anh_noi_dung`, `quan_tri_tai_anh_moc`, `quan_tri_xoa_anh_moc` khỏi `CHI_SUPERUSER` và thêm assertion vào `hen-gio-phat-hanh.spec.ts`, nhưng backend `quan_tri_sua_bai.py` vẫn giữ nguyên `chan_neu_khong_phai_superuser` ở cả 4 endpoint (chưa áp dụng `plans/2026-09-04-noi-quyen-chen-anh-staff.md`).
+- **Vì sao không sửa ngay**: ngoài phạm vi của tính năng user tắt/mở bình luận mạch; cần một lượt riêng giải quyết đúng phạm vi nới quyền staff/superuser của khu quản trị.
+

@@ -38,6 +38,6 @@ export function urlTuyetDoi(duongDan: string): string {
  * câu vừa đúng vừa mạnh hơn.
  */
 export const GIOI_THIEU =
-  "Mỗi bài là một mạch: tác giả nối thêm mốc theo thời gian, mỗi mốc mang dấu thời " +
-  "gian máy chủ. Sửa mốc được, nhưng bản cũ vẫn công khai — đọc xong là biết ai đã ghi " +
-  "gì, vào lúc nào.";
+  "Mạng xã hội nhật ký giao dịch theo dòng thời gian thực. Mỗi mốc ghi nhận mang dấu " +
+  "thời gian máy chủ độc lập và lưu vết toàn bộ lịch sử chỉnh sửa — tôn vinh năng lực " +
+  "phân tích thực chiến, không thể làm giả kết quả.";

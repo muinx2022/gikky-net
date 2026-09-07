@@ -576,6 +576,8 @@ class MachChiTietOut(Schema):
     ket_qua: str | None
     #: Mod đã khoá mạch chưa (đọc được, cấm tương tác). Trục RIÊNG với `status`.
     locked: bool
+    #: Tác giả đã tắt tính năng bình luận cho mạch này chưa (plans/2026-09-07-tat-mo-binh-luan.md).
+    tat_binh_luan: bool
     #: Ngày VIẾT (bất biến) và ngày ĐĂNG. Web hiện `published_at`; `created_at` giữ lại
     #: vì nó là dấu server mà `MocRevision` và mọi phép đối chiếu dựa vào. Xem
     #: `MachTomTatOut`.

@@ -54,7 +54,7 @@ export function Sidebar({
       ) : (
         gioiThieu !== undefined && (
           <section className={css.khoi} data-testid="sidebar-gioi-thieu">
-            <h2 className={css.tieu_de}>gikky.net</h2>
+            <h2 className={css.tieu_de}>Về gikky.net</h2>
             <p className={css.than}>{gioiThieu}</p>
           </section>
         )

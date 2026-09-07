@@ -42,6 +42,7 @@ def test_tra_du_moc_va_thong_tin_mach(client, seed):
     assert d["status"] == "closed"
     assert d["ket_qua"] == "+18.2% · 163 ngày"
     assert d["locked"] is False
+    assert d["tat_binh_luan"] is False
     assert d["entry_count"] == 9
     assert d["comment_count"] == 24
     assert [m["seq"] for m in d["mocs"]] == list(range(1, 10))
@@ -144,7 +145,7 @@ def test_post_thuong_la_nhanh_doi_chung(client, seed_post_thuong):
 KHOA_CHO_PHEP = {
     # mạch
     "id", "slug", "title", "sub", "author", "status", "closed_at", "ket_qua",
-    "locked", "created_at", "last_entry_at", "last_activity_at", "entry_count",
+    "locked", "tat_binh_luan", "created_at", "last_entry_at", "last_activity_at", "entry_count",
     "comment_count", "face", "mocs", "spine",
     # Ngày ĐĂNG (hẹn giờ, 2026-09-03). Cache được như `created_at`: nó là thuộc tính của
     # hàng `Mach`, không có nhánh nào hỏi người xem là ai. Hai cột cùng có mặt vì chúng

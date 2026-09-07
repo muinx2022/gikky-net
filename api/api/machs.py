@@ -31,6 +31,7 @@ from core.doc_noi_dung import (
 from core.ghi import (
     NGAY_MO_LAI,
     SO_MOC_TOI_DA_MOI_NGAY,
+    dat_tat_binh_luan,
     dem_moc_trong_ngay_vn,
     dong_so,
     mo_lai,
@@ -77,6 +78,7 @@ from api.phan_trang import (
     ma_hoa_cursor,
 )
 from api.quyen import (
+    BINH_LUAN_DA_TAT,
     DU_LIEU_KHONG_HOP_LE,
     HET_HAN_MO_LAI,
     MACH_DA_DONG,
@@ -90,7 +92,7 @@ from api.quyen import (
     doi_mach_tuong_tac_duoc,
 )
 from api.schemas import BinhLuanOut, KhanDaiOut, MachChiTietOut, MocOut
-from api.schemas_ghi import BinhLuanMoiIn, DongSoIn, MachMoiIn, MocMoiIn
+from api.schemas_ghi import BinhLuanMoiIn, DatTatBinhLuanIn, DongSoIn, MachMoiIn, MocMoiIn
 from api.trinh_bay import (
     dem_reaction_rong,
     han_mo_lai,
@@ -193,6 +195,7 @@ def mach_chi_tiet_ra(mach: Mach) -> MachChiTietOut:
         mo_lai_den=han_mo_lai(mach),
         tran_moc_moi_ngay=SO_MOC_TOI_DA_MOI_NGAY,
         locked=mach.locked_at is not None,
+        tat_binh_luan=mach.tat_binh_luan,
         face=tinh_mat_theo_thoi_gian(
             status=mach.status,
             locked_at=mach.locked_at,
@@ -579,6 +582,7 @@ def tao_mach_api(request, du_lieu: MachMoiIn):
             loai=du_lieu.loai,
             question_for_crowd=du_lieu.question_for_crowd,
             figures=figures_ra_dict(du_lieu.figures),
+            tat_binh_luan=du_lieu.tat_binh_luan,
         )
         tu_upvote(target=moc)
         # Trong CÙNG transaction, sau khi `Mach` đã có hàng: `INSERT core_notification`
@@ -748,6 +752,12 @@ def viet_binh_luan(request, mach_id: int, du_lieu: BinhLuanMoiIn):
     """
     mach = nap_mach(mach_id)
     doi_mach_tuong_tac_duoc(mach)
+    if mach.tat_binh_luan:
+        raise LoiGhi(
+            403,
+            BINH_LUAN_DA_TAT,
+            "Tác giả đã tắt tính năng bình luận cho mạch này.",
+        )
 
     if la_tai_khoan_moi(request.user):
         tran_bl = tran_binh_luan_moi_gio()
@@ -888,5 +898,26 @@ def mo_lai_mach(request, mach_id: int):
             f"Quá {NGAY_MO_LAI} ngày kể từ khi đóng sổ — mạch này không mở lại được nữa.",
         )
     mach = mo_lai(mach=mach)
+    lam_moi_mach(mach)
+    return mach_chi_tiet_ra(nap_mach(mach.pk))
+
+
+@router.post(
+    "/machs/{int:mach_id}/tat-binh-luan",
+    response={200: MachChiTietOut, 401: LoiOut, 403: LoiOut, 404: LoiOut},
+    operation_id="tat_binh_luan_mach",
+    tags=["mach"],
+    auth=dang_nhap,
+)
+def tat_binh_luan_mach(request, mach_id: int, du_lieu: DatTatBinhLuanIn):
+    """Tác giả tắt hoặc mở lại bình luận của mạch (plans/2026-09-07-tat-mo-binh-luan.md).
+
+    **Quyền: CHỈ tác giả mạch** (403 `khong_phai_chu`).
+    Mạch bị mod khoá ⇒ 403 `mach_bi_khoa` (không được mở hay tắt khi mod đã khoá).
+    """
+    mach = nap_mach(mach_id)
+    doi_chu_so_huu(request.user, mach.author_id, "mạch")
+    doi_mach_tuong_tac_duoc(mach)
+    dat_tat_binh_luan(mach=mach, tat=du_lieu.tat)
     lam_moi_mach(mach)
     return mach_chi_tiet_ra(nap_mach(mach.pk))

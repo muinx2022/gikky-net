@@ -134,6 +134,10 @@ BANG_DONG_BO: dict[str, tuple[str, str]] = {
         "`locked_at` cấm TƯƠNG TÁC, trang vẫn đọc được và mạch vẫn trên feed — gỡ khỏi "
         "search là lệch với feed",
     ),
+    "dat_tat_binh_luan": (
+        KHONG,
+        "`tat_binh_luan` cấm bình luận mới, trang vẫn đọc được và nội dung bài không đổi",
+    ),
     "ban_user": (
         KHONG,
         "ban chỉ gác cửa GHI (`api/quyen.py`); nội dung cũ của người bị ban vẫn nằm trên "

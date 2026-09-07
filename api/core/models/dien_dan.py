@@ -158,6 +158,11 @@ class Mach(models.Model):
     #: THUẦN HIỂN THỊ — không validate ngữ nghĩa. NULL = không nhập, banner ẩn phần này.
     ket_qua = models.CharField(max_length=40, null=True, blank=True)
 
+    #: Tác giả tắt bình luận (plans/2026-09-07-tat-mo-binh-luan.md).
+    #: True: không cho phép viết bình luận mới hoặc reply. Bình luận cũ vẫn đọc được.
+    #: Tác giả có thể mở lại khi mạch không bị mod khoá (`locked_at IS NULL`).
+    tat_binh_luan = models.BooleanField(default=False)
+
     # --- Moderation (PLAN 5.10 · Phase 4 dùng) -------------------------------
     locked_at = models.DateTimeField(null=True, blank=True)
     hidden_at = models.DateTimeField(null=True, blank=True)

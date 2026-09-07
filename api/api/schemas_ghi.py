@@ -83,6 +83,7 @@ class MachMoiIn(MocMoiIn):
 
     sub: str = Field(min_length=1, max_length=40, description="slug của chuyên mục")
     title: str = Field(min_length=1, max_length=DAI_TITLE)
+    tat_binh_luan: bool = False
 
 
 class MocSuaIn(Schema):
@@ -114,6 +115,15 @@ class DongSoIn(Schema):
     """
 
     ket_qua: str | None = Field(default=None, max_length=DAI_KET_QUA)
+
+
+class DatTatBinhLuanIn(Schema):
+    """Tắt hoặc mở lại bình luận — `POST /machs/{id}/tat-binh-luan` (plans/2026-09-07-tat-mo-binh-luan.md).
+
+    `tat=True`: tắt bình luận; `tat=False`: mở lại bình luận.
+    """
+
+    tat: bool
 
 
 class BinhLuanMoiIn(Schema):

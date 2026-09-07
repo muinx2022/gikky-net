@@ -118,6 +118,7 @@ def test_du_endpoint_cua_plan_muc_7():
         (("POST",), "/machs/{int:mach_id}/comments"),
         (("POST",), "/machs/{int:mach_id}/close"),
         (("POST",), "/machs/{int:mach_id}/reopen"),
+        (("POST",), "/machs/{int:mach_id}/tat-binh-luan"),
         (("PATCH",), "/mocs/{int:moc_id}"),
         (("DELETE",), "/mocs/{int:moc_id}"),
         (("PATCH",), "/comments/{int:comment_id}"),

@@ -22,6 +22,8 @@ export type NguCanhMach = {
   machId: number | null;
   /** Mod đã khoá mạch chưa — "đọc được, không tương tác" (PLAN 5.10). */
   khoa: boolean;
+  /** Tác giả đã tắt tính năng bình luận cho mạch này chưa (plans/2026-09-07-tat-mo-binh-luan.md). */
+  tatBinhLuan: boolean;
   /** `username` của chủ mạch, để gắn badge và để biết ai được đóng sổ. */
   chuMach: string | null;
   /** Mọi mốc của mạch, ở mức đủ để **chọn đích cho một lượt trích** (PLAN 5.6).
@@ -38,6 +40,7 @@ export type NguCanhMach = {
 const NguCanh = createContext<NguCanhMach>({
   machId: null,
   khoa: false,
+  tatBinhLuan: false,
   chuMach: null,
   cacMoc: [],
 });

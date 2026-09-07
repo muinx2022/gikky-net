@@ -42,6 +42,7 @@ export function FormDangMach({
   const [title, datTitle] = useState("");
   const [moc, datMoc] = useState<NoiDungMoc>(mocRong);
   const [anhs, datAnhs] = useState<File[]>([]);
+  const [tatBinhLuan, datTatBinhLuan] = useState(false);
   const [dangGui, datDangGui] = useState(false);
   const [loi, datLoi] = useState<string | null>(null);
 
@@ -81,7 +82,8 @@ export function FormDangMach({
   }
 
   if (cacSub.length === 0) {
-    // Không sub nào thì không có chỗ để đăng. Nói ra thay vì hiện một ô chọn rỗng rồi để
+    // Không có sub nào ⇒ không có chỗ để đăng. Trường hợp này chỉ xảy ra ở DB rỗng chưa
+    // seed, nhưng nó phải được xử lý đàng hoàng thay vì để người dùng gõ xong rồi ăn lỗi
     // server trả `sub_khong_ton_tai` (PLAN nguyên tắc 9 — trạng thái vắng phải duyên dáng).
     return (
       <p className={css.moi} data-testid="dang-mach-khong-co-sub">
@@ -107,7 +109,7 @@ export function FormDangMach({
         await taoMach({
           baseUrl: GOC_TRINH_DUYET,
           headers: await headerGhi(),
-          body: { sub, title: title.trim(), ...thanMoc(moc) },
+          body: { sub, title: title.trim(), tat_binh_luan: tatBinhLuan, ...thanMoc(moc) },
         }),
         "Không đăng được bài.",
       );
@@ -208,6 +210,16 @@ export function FormDangMach({
         tienTo="dang-mach"
         dangGui={dangGui}
       />
+
+      <label className={css.tuy_chon}>
+        <input
+          type="checkbox"
+          checked={tatBinhLuan}
+          onChange={(e) => datTatBinhLuan(e.target.checked)}
+          data-testid="dang-mach-tat-binh-luan"
+        />
+        <span>Tắt bình luận cho bài viết này (có thể mở lại sau)</span>
+      </label>
 
       <div className={css.chan}>
         <p className={css.nhac}>

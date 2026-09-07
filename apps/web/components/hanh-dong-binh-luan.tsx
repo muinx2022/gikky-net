@@ -63,7 +63,7 @@ export function HanhDongBinhLuan({
   /** Mốc bình luận này đang neo — mốc mặc định của một lượt trích (PLAN 5.6). */
   anchorMocSeq: number | null;
 }) {
-  const { khoa } = useMach();
+  const { khoa, tatBinhLuan } = useMach();
   const { toi, dangTai } = usePhien();
   const router = useRouter();
   const [mo, datMo] = useState<"khong" | "tra_loi" | "sua" | "bao_cao">("khong");
@@ -140,7 +140,7 @@ export function HanhDongBinhLuan({
   return (
     <div className={css.khung}>
       <div className={css.hang}>
-        {!khoa && (
+        {!khoa && !tatBinhLuan && (
           <button
             type="button"
             className={css.nhe}

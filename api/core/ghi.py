@@ -340,6 +340,7 @@ def tao_mach(
     question_for_crowd: str | None = None,
     figures=None,
     published_at=None,
+    tat_binh_luan: bool = False,
     _created_at_seed=None,
 ) -> tuple[Mach, Moc]:
     """Tạo `Mach` + `Moc(seq=1)` trong MỘT transaction (PLAN 5.1).
@@ -373,6 +374,7 @@ def tao_mach(
             sub=sub,
             author=author,
             title=title,
+            tat_binh_luan=tat_binh_luan,
             created_at=khi,
             published_at=published_at if hen_gio else khi,
             hidden_at=khi if hen_gio else None,
@@ -1255,6 +1257,23 @@ def mo_lai(*, mach: Mach) -> Mach:
         m.save(update_fields=["status", "closed_at", "ket_qua"])
         dong_bo_mach(m)
     return m
+
+
+def dat_tat_binh_luan(*, mach: Mach, tat: bool) -> bool:
+    """Tác giả tắt hoặc mở lại bình luận của mạch (plans/2026-09-07-tat-mo-binh-luan.md).
+
+    Quyền gọi thuộc về tác giả bài viết, và chỉ khi mạch KHÔNG bị mod khoá
+    (`locked_at is None`) — các phép kiểm đó nằm ở tầng API.
+    Trả về True nếu trạng thái đã đổi, False nếu trạng thái không đổi (idempotent).
+    """
+    with transaction.atomic():
+        m = Mach.objects.select_for_update().get(pk=mach.pk)
+        if m.tat_binh_luan == tat:
+            return False
+        m.tat_binh_luan = tat
+        m.save(update_fields=["tat_binh_luan"])
+        mach.tat_binh_luan = tat
+    return True
 
 
 def dat_reaction(*, user, moc: Moc, emoji: str | None) -> Reaction | None:

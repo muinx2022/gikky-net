@@ -455,6 +455,20 @@ export type DatKhoaMachIn = {
 };
 
 /**
+ * DatTatBinhLuanIn
+ *
+ * Tắt hoặc mở lại bình luận — `POST /machs/{id}/tat-binh-luan` (plans/2026-09-07-tat-mo-binh-luan.md).
+ *
+ * `tat=True`: tắt bình luận; `tat=False`: mở lại bình luận.
+ */
+export type DatTatBinhLuanIn = {
+    /**
+     * Tat
+     */
+    tat: boolean;
+};
+
+/**
  * DemLuotXemIn
  *
  * Thân request. Năm trường, và **bốn trường sau đều có mặc định**.
@@ -961,6 +975,10 @@ export type MachChiTietOut = {
     status: string;
     sub: SubTomTatOut;
     /**
+     * Tat Binh Luan
+     */
+    tat_binh_luan: boolean;
+    /**
      * Title
      */
     title: string;
@@ -1060,6 +1078,10 @@ export type MachMoiIn = {
      * slug của chuyên mục
      */
     sub: string;
+    /**
+     * Tat Binh Luan
+     */
+    tat_binh_luan?: boolean;
     /**
      * Title
      */
@@ -2836,6 +2858,44 @@ export type DanhDauDaXemResponses = {
 };
 
 export type DanhDauDaXemResponse = DanhDauDaXemResponses[keyof DanhDauDaXemResponses];
+
+export type TatBinhLuanMachData = {
+    body: DatTatBinhLuanIn;
+    path: {
+        /**
+         * Mach Id
+         */
+        mach_id: number;
+    };
+    query?: never;
+    url: '/api/v1/machs/{mach_id}/tat-binh-luan';
+};
+
+export type TatBinhLuanMachErrors = {
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type TatBinhLuanMachError = TatBinhLuanMachErrors[keyof TatBinhLuanMachErrors];
+
+export type TatBinhLuanMachResponses = {
+    /**
+     * OK
+     */
+    200: MachChiTietOut;
+};
+
+export type TatBinhLuanMachResponse = TatBinhLuanMachResponses[keyof TatBinhLuanMachResponses];
 
 export type XemToiData = {
     body?: never;

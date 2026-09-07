@@ -552,6 +552,20 @@
         "title": "DatKhoaMachIn",
         "type": "object"
       },
+      "DatTatBinhLuanIn": {
+        "description": "Tắt hoặc mở lại bình luận — `POST /machs/{id}/tat-binh-luan` (plans/2026-09-07-tat-mo-binh-luan.md).\n\n`tat=True`: tắt bình luận; `tat=False`: mở lại bình luận.",
+        "properties": {
+          "tat": {
+            "title": "Tat",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "tat"
+        ],
+        "title": "DatTatBinhLuanIn",
+        "type": "object"
+      },
       "DemLuotXemIn": {
         "description": "Thân request. Năm trường, và **bốn trường sau đều có mặc định**.\n\n⚠ **Backward-compatible là BẮT BUỘC, không phải lịch sự.** Deploy không nguyên tử:\ntrong cửa sổ giữa lúc Django mới lên và lúc `apps/web` mới lên, prod đang chạy\nmiddleware CŨ gửi đúng hai trường `{duong_dan, user_agent}`. Bắt buộc `ip`/`referer`\nlà mọi lượt xem trong cửa sổ ấy trả 422 và biến mất — im lặng, vì middleware\n`.catch(() => {})` mọi lỗi. `tests/test_api_dem_luot_xem.py` ghim đúng ca này.",
         "properties": {
@@ -1136,6 +1150,10 @@
           "sub": {
             "$ref": "#/components/schemas/SubTomTatOut"
           },
+          "tat_binh_luan": {
+            "title": "Tat Binh Luan",
+            "type": "boolean"
+          },
           "title": {
             "title": "Title",
             "type": "string"
@@ -1157,6 +1175,7 @@
           "tran_moc_moi_ngay",
           "ket_qua",
           "locked",
+          "tat_binh_luan",
           "created_at",
           "published_at",
           "last_entry_at",
@@ -1297,6 +1316,11 @@
             "minLength": 1,
             "title": "Sub",
             "type": "string"
+          },
+          "tat_binh_luan": {
+            "default": false,
+            "title": "Tat Binh Luan",
+            "type": "boolean"
           },
           "title": {
             "maxLength": 160,
@@ -4148,6 +4172,84 @@
           }
         ],
         "summary": "Danh Dau Da Xem",
+        "tags": [
+          "mach"
+        ]
+      }
+    },
+    "/api/v1/machs/{mach_id}/tat-binh-luan": {
+      "post": {
+        "description": "Tác giả tắt hoặc mở lại bình luận của mạch (plans/2026-09-07-tat-mo-binh-luan.md).\n\n**Quyền: CHỈ tác giả mạch** (403 `khong_phai_chu`).\nMạch bị mod khoá ⇒ 403 `mach_bi_khoa` (không được mở hay tắt khi mod đã khoá).",
+        "operationId": "tat_binh_luan_mach",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mach_id",
+            "required": true,
+            "schema": {
+              "title": "Mach Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatTatBinhLuanIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MachChiTietOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Tat Binh Luan Mach",
         "tags": [
           "mach"
         ]

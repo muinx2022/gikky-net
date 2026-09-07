@@ -64,7 +64,7 @@ export function Composer({
    * nào — và nó phá luôn `tuDongLayNet`, thứ khiến con trỏ nhảy thẳng vào ô. */
   moSan?: boolean;
 }) {
-  const { machId, khoa, cacMoc } = useMach();
+  const { machId, khoa, tatBinhLuan, cacMoc } = useMach();
   const { toi, dangTai } = usePhien();
   const { moModal } = useModalDangNhap();
   const router = useRouter();
@@ -120,6 +120,14 @@ export function Composer({
     return (
       <p className={css.moi_dang_nhap} data-testid="composer-khoa">
         Mạch đã bị khoá — không bình luận thêm được.
+      </p>
+    );
+  }
+
+  if (tatBinhLuan) {
+    return (
+      <p className={css.moi_dang_nhap} data-testid="composer-tat-binh-luan">
+        Tác giả đã tắt tính năng bình luận cho bài viết này.
       </p>
     );
   }

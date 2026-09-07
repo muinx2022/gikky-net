@@ -1,6 +1,6 @@
 "use client";
 
-import { dongSoMach, moLaiMach, noiMoc } from "@gikky/api-client";
+import { dongSoMach, moLaiMach, noiMoc, tatBinhLuanMach } from "@gikky/api-client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -55,6 +55,7 @@ export function KhoiChuMach({
   chuMach,
   khoa,
   dong,
+  tatBinhLuan,
   moLaiDen,
   tranMocMoiNgay,
   soMoc,
@@ -66,6 +67,8 @@ export function KhoiChuMach({
   khoa: boolean;
   /** `status === "closed"`. */
   dong: boolean;
+  /** Tác giả đã tắt tính năng bình luận cho mạch này chưa (plans/2026-09-07-tat-mo-binh-luan.md). */
+  tatBinhLuan: boolean;
   /** `MachChiTietOut.mo_lai_den` — hạn chót mở lại sổ, `null` khi mạch đang mở. */
   moLaiDen: string | null;
   /** `MachChiTietOut.tran_moc_moi_ngay` — trần N mốc mỗi ngày lịch VN (PLAN 5.1). */
@@ -200,6 +203,24 @@ export function KhoiChuMach({
     }, "Không mở lại được. Kiểm tra kết nối rồi thử lại.");
   };
 
+  const doiTrangThaiBinhLuan = (tat: boolean) => {
+    const cauHoi = tat
+      ? "Tắt tính năng bình luận cho mạch này?\n\nNgười xem sẽ không thể viết bình luận hoặc trả lời nữa. Bình luận cũ vẫn được giữ nguyên."
+      : "Mở lại tính năng bình luận cho mạch này?";
+    if (!window.confirm(cauHoi)) return;
+    void chay(async () => {
+      layDuLieu(
+        await tatBinhLuanMach({
+          baseUrl: GOC_TRINH_DUYET,
+          headers: await headerGhi(),
+          path: { mach_id: machId },
+          body: { tat },
+        }),
+        tat ? "Không tắt bình luận được." : "Không mở bình luận được.",
+      );
+    }, tat ? "Không tắt bình luận được. Kiểm tra kết nối rồi thử lại." : "Không mở bình luận được. Kiểm tra kết nối rồi thử lại.");
+  };
+
   return (
     <section className={css.khoi} data-testid="khoi-chu-mach">
       <p className={css.nhan_khoi}>Sổ của bạn</p>
@@ -211,7 +232,13 @@ export function KhoiChuMach({
       )}
 
       {dong ? (
-        <MatDong moLaiDen={moLaiDen} dangGui={dangGui} onMoLai={guiMoLai} />
+        <MatDong
+          moLaiDen={moLaiDen}
+          dangGui={dangGui}
+          onMoLai={guiMoLai}
+          tatBinhLuan={tatBinhLuan}
+          onDoiBinhLuan={() => doiTrangThaiBinhLuan(!tatBinhLuan)}
+        />
       ) : mo === "noi" ? (
         <form onSubmit={guiMoc} data-testid="form-noi-moc">
           <p className={css.cau}>
@@ -317,6 +344,15 @@ export function KhoiChuMach({
           >
             Đóng sổ
           </button>
+          <button
+            type="button"
+            className={css.nhe}
+            onClick={() => doiTrangThaiBinhLuan(!tatBinhLuan)}
+            disabled={dangGui}
+            data-testid="nut-tat-mo-binh-luan"
+          >
+            {tatBinhLuan ? "Mở bình luận" : "Tắt bình luận"}
+          </button>
         </div>
       )}
     </section>
@@ -334,18 +370,34 @@ function MatDong({
   moLaiDen,
   dangGui,
   onMoLai,
+  tatBinhLuan,
+  onDoiBinhLuan,
 }: {
   moLaiDen: string | null;
   dangGui: boolean;
   onMoLai: () => void;
+  tatBinhLuan: boolean;
+  onDoiBinhLuan: () => void;
 }) {
   const han = moLaiDen === null ? null : gioPhutVN(moLaiDen);
   if (!conMoLaiDuoc(moLaiDen)) {
     return (
-      <p className={css.cau} data-testid="het-han-mo-lai">
-        Hạn mở lại sổ{han === null ? "" : ` (${han})`} đã qua — không mở lại được nữa.
-        Bình luận thì vẫn viết được.
-      </p>
+      <>
+        <p className={css.cau} data-testid="het-han-mo-lai">
+          Hạn mở lại sổ{han === null ? "" : ` (${han})`} đã qua — không mở lại được nữa.
+        </p>
+        <div className={css.hang}>
+          <button
+            type="button"
+            className={css.nhe}
+            onClick={onDoiBinhLuan}
+            disabled={dangGui}
+            data-testid="nut-tat-mo-binh-luan-dong"
+          >
+            {tatBinhLuan ? "Mở bình luận" : "Tắt bình luận"}
+          </button>
+        </div>
+      </>
     );
   }
   return (
@@ -363,6 +415,15 @@ function MatDong({
           data-testid="nut-mo-lai"
         >
           Mở lại sổ
+        </button>
+        <button
+          type="button"
+          className={css.nhe}
+          onClick={onDoiBinhLuan}
+          disabled={dangGui}
+          data-testid="nut-tat-mo-binh-luan-dong"
+        >
+          {tatBinhLuan ? "Mở bình luận" : "Tắt bình luận"}
         </button>
       </div>
     </>

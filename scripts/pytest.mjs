@@ -13,6 +13,11 @@ import { apiDir, venvPython } from "./py.mjs";
 const ket_qua = spawnSync(venvPython(), ["-m", "pytest", ...process.argv.slice(2)], {
   cwd: apiDir,
   stdio: "inherit",
+  env: {
+    ...process.env,
+    PYTHONIOENCODING: "utf-8",
+    PYTHONUTF8: "1",
+  },
 });
 
 if (ket_qua.error) throw ket_qua.error;

@@ -1,94 +1,254 @@
-.khung {
-  max-width: var(--khung);
-  margin: 0 auto;
-  padding: 26px 22px 40px;
+﻿.trang {
+  display: grid;
+  gap: 28px;
+  padding-bottom: 24px;
 }
 
-.draft {
-  display: inline-block;
-  margin: 0 0 14px;
-  font-size: 10.5px;
+.dau_trang {
+  display: grid;
+  gap: 12px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  font-family: var(--f-mono, monospace);
+  font-size: 11px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--stamp);
-  border: 1px dashed var(--stamp);
-  border-radius: 2px;
-  padding: 3px 7px;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  background: var(--accent-soft, rgba(234, 88, 12, 0.1));
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  padding: 4px 12px;
 }
 
 .tieu_de {
   font-family: var(--f-display);
-  font-size: clamp(25px, 4.2vw, 33px);
-  line-height: 1.22;
-  font-weight: 600;
-  letter-spacing: -0.015em;
-  margin: 0 0 12px;
+  font-size: clamp(26px, 4vw, 36px);
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--ink);
 }
 
 .lede {
-  margin: 0 0 26px;
-  font-size: 14px;
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
   color: var(--ink-2);
-  max-width: 62ch;
+  max-width: 68ch;
 }
 
-.dieu {
+/* === Hộp miễn trừ trách nhiệm pháp lý === */
+.hop_disclaimer {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+  padding: 18px 20px;
+  display: grid;
+  gap: 10px;
+}
+
+.tieu_de_disclaimer {
+  font-family: var(--f-ui, inherit);
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.noi_dung_disclaimer {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.danh_sach_disclaimer {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  display: grid;
+  gap: 6px;
+}
+
+/* === Khối phần === */
+.phan {
+  display: grid;
+  gap: 14px;
+}
+
+.phan_tieu_de {
+  font-family: var(--f-display);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.phan_mo_ta {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  max-width: 68ch;
+}
+
+/* === Lưới 4 điều cấm cốt lõi === */
+.luoi_dieu {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+  gap: 16px;
+  margin: 4px 0 0;
   padding: 0;
   list-style: none;
-  display: grid;
-  gap: 16px;
 }
 
-.mot_dieu {
-  display: grid;
-  grid-template-columns: 26px 1fr;
+.the_dieu {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
-  align-items: start;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.so {
-  font-size: 11.5px;
+.the_dieu:hover {
+  border-color: var(--line-2, var(--line));
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+.the_dieu_header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.so_dieu {
+  font-family: var(--f-mono, monospace);
+  font-size: 12px;
+  font-weight: 700;
   color: var(--accent);
+  background: var(--accent-soft, rgba(234, 88, 12, 0.1));
   border: 1px solid var(--accent);
-  border-radius: 3px;
-  text-align: center;
-  padding: 1px 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.ten_dieu {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.35;
+}
+
+.chi_tiet_dieu {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+.hop_so_sanh {
+  display: grid;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  font-size: 12.5px;
   line-height: 1.5;
 }
 
-.dieu_tieu_de {
-  margin: 0 0 2px;
-  font-size: 14.5px;
-  font-weight: 600;
+.dong_cho_phep {
+  color: var(--gain, #16a34a);
+  display: flex;
+  gap: 6px;
 }
 
-.dieu_giai_thich {
-  margin: 0;
-  font-size: 13.5px;
-  color: var(--ink-2);
-  max-width: 62ch;
+.dong_cam {
+  color: var(--loss, #dc2626);
+  display: flex;
+  gap: 6px;
 }
 
-.phu_tieu_de {
-  font-family: var(--f-mono);
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--ink-3);
-  font-weight: 500;
-  margin: 30px 0 6px;
+/* === Lưới tính minh bạch & chế tài === */
+.luoi_minh_bach {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
 }
 
-.than {
+.the_tinh_nang {
+  background: var(--inset, var(--card));
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px 18px;
+  display: grid;
+  gap: 6px;
+}
+
+.tieu_de_tinh_nang {
   margin: 0;
   font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mo_ta_tinh_nang {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
   color: var(--ink-2);
-  max-width: 62ch;
+}
+
+/* === Chân trang điều khoản === */
+.chan_dieu_khoan {
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--ink-3);
+  font-family: var(--f-mono, monospace);
 }
 
 @media (max-width: 640px) {
-  .khung {
-    padding: 16px 12px 34px;
+  .trang {
+    gap: 22px;
+  }
+  .luoi_dieu {
+    grid-template-columns: 1fr;
+  }
+  .hop_disclaimer {
+    padding: 14px 16px;
   }
 }

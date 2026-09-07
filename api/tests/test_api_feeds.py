@@ -13,7 +13,7 @@ import pytest
 from django.utils import timezone
 
 from core.ghi import tao_mach, them_moc
-from core.models import Mach, Moc, MocAnh, Sub
+from core.models import AnhNoiDung, Mach, Moc, MocAnh, Sub
 
 from api.schemas import DAI_TRICH_FEED
 from tests.conftest import lay
@@ -391,3 +391,62 @@ def test_moc_1_khong_anh_thi_chi_co_chu(client, seed_post_thuong):
     xt = next(m for m in d["items"] if m["id"] == seed_post_thuong.pk)["xem_truoc"]
     assert xt["anh"] is None and xt["so_anh"] == 0
     assert xt["trich"]
+
+
+def test_moc_1_khong_gallery_nhung_co_anh_trong_body_thi_lay_anh_body(
+    client, seed_post_thuong
+):
+    """Tầng 2: mốc không có MocAnh nhưng có <img src="..."> trong body."""
+    moc_1 = Moc.objects.get(mach=seed_post_thuong, seq=1)
+    khoa_1 = "test-body-1.png"
+    khoa_2 = "test-body-2.png"
+    AnhNoiDung.objects.create(
+        nguoi_tai=seed_post_thuong.author, khoa_luu_tru=khoa_1, w=1200, h=800
+    )
+    AnhNoiDung.objects.create(
+        nguoi_tai=seed_post_thuong.author, khoa_luu_tru=khoa_2, w=1000, h=600
+    )
+    moc_1.body = (
+        f'<p>Nội dung phân tích mã.</p>'
+        f'<img src="/media/anh/{khoa_1}" alt="Biểu đồ 1">'
+        f'<img src="/media/anh/{khoa_2}" alt="Biểu đồ 2">'
+    )
+    moc_1.save(update_fields=["body"])
+
+    d = lay(client, "/api/v1/feeds/moi?limit=50")
+    xt = next(m for m in d["items"] if m["id"] == seed_post_thuong.pk)["xem_truoc"]
+
+    assert xt["so_anh"] == 2
+    assert xt["anh"] is not None
+    assert xt["anh"]["w"] == 1200 and xt["anh"]["h"] == 800
+    assert khoa_1 in xt["anh"]["url"]
+    assert khoa_1 in xt["anh"]["url_thumb"]
+    assert "Nội dung phân tích mã." in xt["trich"]
+    assert "<img" not in xt["trich"]
+
+
+def test_uu_tien_gallery_truoc_anh_body(client, seed_post_thuong):
+    """Ưu tiên 1 (gallery) cao hơn Ưu tiên 2 (ảnh trong body)."""
+    moc_1 = Moc.objects.get(mach=seed_post_thuong, seq=1)
+    MocAnh.objects.create(
+        moc=moc_1,
+        khoa_luu_tru="anh-gallery.jpg",
+        status=MocAnh.TrangThai.XAC_NHAN,
+        position=0,
+        w=800,
+        h=600,
+    )
+    khoa_body = "anh-body.png"
+    AnhNoiDung.objects.create(
+        nguoi_tai=seed_post_thuong.author, khoa_luu_tru=khoa_body, w=1200, h=800
+    )
+    moc_1.body = f'<p>Có cả gallery lẫn body.</p><img src="/media/anh/{khoa_body}">'
+    moc_1.save(update_fields=["body"])
+
+    d = lay(client, "/api/v1/feeds/moi?limit=50")
+    xt = next(m for m in d["items"] if m["id"] == seed_post_thuong.pk)["xem_truoc"]
+
+    # Phải chọn ảnh gallery
+    assert "anh-gallery" in xt["anh"]["url"]
+    assert xt["so_anh"] == 1
+

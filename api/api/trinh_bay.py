@@ -26,11 +26,11 @@ from datetime import timedelta
 from core.cau_hinh import moc_bat_dau_tu_sua
 from core.doc_noi_dung import DA_AN, Nut, doc_duoc, trang_thai_noi_dung
 from core.ghi import NGAY_MO_LAI, PHUT_SUA_IM_LANG
-from core.lam_sach_html import van_ban_thuan
+from core.lam_sach_html import _src_cua_site, van_ban_thuan
 from core.models.binh_luan import Comment
 from core.models.dien_dan import Mach
 from core.anh_luu import url_anh, url_thumb
-from core.models.moc import Moc, MocAnh, MocRevision
+from core.models.moc import AnhNoiDung, Moc, MocAnh, MocRevision
 from core.models.tuong_tac import Reaction, Trich
 
 from api.schemas import (
@@ -139,6 +139,16 @@ def moc_1_theo_mach(machs) -> dict[int, int]:
     )
 
 
+_RE_IMG_SRC = re.compile(r'<img\b[^>]*\bsrc=["\']([^"\']+)["\']', re.IGNORECASE)
+
+
+def _trich_anh_noi_dung(body: str) -> list[str]:
+    """Tìm mọi URL `src` của ảnh hợp lệ nhúng trong `body`. Chỉ nhận ảnh của site."""
+    if "<img" not in body.lower():
+        return []
+    return [s for s in _RE_IMG_SRC.findall(body) if _src_cua_site(s)]
+
+
 def du_lieu_the(machs) -> dict[int, tuple[int | None, XemTruocOut | None]]:
     """`{mach_id: (id mốc 1, nội dung xem trước)}` cho một LÔ mạch — **HAI truy vấn**.
 
@@ -146,6 +156,11 @@ def du_lieu_the(machs) -> dict[int, tuple[int | None, XemTruocOut | None]]:
     một tập hàng**: mốc 1 của trang. Tách ra là hai lần `WHERE seq=1 AND mach_id IN (…)`
     cho đúng những hàng ấy — bản đầu của lượt này làm thế và `test_api_so_query.py` bắt
     được ngay (feed 2 → 4 truy vấn thay vì 2 → 3).
+
+    Thứ tự ưu tiên xem trước:
+    1. Ảnh gallery mốc 1 (`MocAnh`);
+    2. Ảnh nhúng trong nội dung mốc 1 (`<img src="...">` / `AnhNoiDung`);
+    3. Trích đoạn văn bản thuần.
 
     ⚠ **Mốc 1 không đọc được thì không có xem trước** — nhưng `moc_1_id` VẪN trả về.
     Hai thứ khác nhau: `moc_1_id` là đích của mũi tên vote, và vote vào một bia mộ vẫn là
@@ -175,18 +190,60 @@ def du_lieu_the(machs) -> dict[int, tuple[int | None, XemTruocOut | None]]:
         ).order_by("position", "id"):
             anh_theo_moc.setdefault(a.moc_id, []).append(a)
 
+    # Ưu tiên 2: Những mốc không có gallery, quét ảnh nhúng trong nội dung body
+    anh_nd_theo_moc: dict[int, list[str]] = {}
+    khoas_can_tra: set[str] = set()
+    for m in mocs:
+        if not doc_duoc(m):
+            continue
+        if not anh_theo_moc.get(m.pk):
+            srcs = _trich_anh_noi_dung(m.body)
+            if srcs:
+                anh_nd_theo_moc[m.pk] = srcs
+                khoa = srcs[0].split("?")[0].rsplit("/", 1)[-1]
+                if khoa:
+                    khoas_can_tra.add(khoa)
+
+    anh_nd_map: dict[str, AnhNoiDung] = {}
+    if khoas_can_tra:
+        anh_nd_map = {
+            nd.khoa_luu_tru: nd
+            for nd in AnhNoiDung.objects.filter(khoa_luu_tru__in=khoas_can_tra)
+        }
+
     ra: dict[int, tuple[int | None, XemTruocOut | None]] = {}
     for m in mocs:
         if not doc_duoc(m):
             ra[m.mach_id] = (m.pk, None)
             continue
-        anh = anh_theo_moc.get(m.pk, [])
+        anh_gallery = anh_theo_moc.get(m.pk, [])
+        if anh_gallery:
+            anh_out = anh_ra(anh_gallery[0])
+            so_anh = len(anh_gallery)
+        elif m.pk in anh_nd_theo_moc:
+            srcs = anh_nd_theo_moc[m.pk]
+            khoa = srcs[0].split("?")[0].rsplit("/", 1)[-1]
+            nd = anh_nd_map.get(khoa)
+            anh_out = AnhOut(
+                id=nd.pk if nd else 0,
+                url=url_anh(khoa) if khoa else srcs[0],
+                url_thumb=url_thumb(khoa) if khoa else srcs[0],
+                w=nd.w if nd else None,
+                h=nd.h if nd else None,
+                position=0,
+                exif_taken_at=None,
+            )
+            so_anh = len(srcs)
+        else:
+            anh_out = None
+            so_anh = 0
+
         ra[m.mach_id] = (
             m.pk,
             XemTruocOut(
                 trich=trich_van_ban(m.body),
-                anh=anh_ra(anh[0]) if anh else None,
-                so_anh=len(anh),
+                anh=anh_out,
+                so_anh=so_anh,
             ),
         )
     return ra

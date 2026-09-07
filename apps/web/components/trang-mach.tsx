@@ -300,6 +300,7 @@ export async function TrangMach({
         gia_tri={{
           machId: mach.id,
           khoa: mach.locked,
+          tatBinhLuan: mach.tat_binh_luan,
           chuMach: mach.author.username,
           cacMoc: mach.mocs.map((m) => ({
             id: m.id,
@@ -460,6 +461,7 @@ export async function TrangMach({
               chuMach={mach.author.username}
               khoa={mach.locked}
               dong={mach.status === "closed"}
+              tatBinhLuan={mach.tat_binh_luan}
               moLaiDen={mach.mo_lai_den}
               tranMocMoiNgay={mach.tran_moc_moi_ngay}
               soMoc={mach.entry_count}

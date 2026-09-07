@@ -101,8 +101,8 @@ async function FeedDaNap({
         // đối với người mới và với máy tìm kiếm. Nay nó nói **sản phẩm là gì** trong một
         // câu; lede nói **trang này liệt kê gì**. Phần "site vận hành ra sao" thuộc về
         // `GIOI_THIEU` ở sidebar — xem docstring của hằng ấy.
-        tieuDe="Nhật ký giao dịch, ghi trước khi biết kết quả"
-        lede="Bài mới nhất từ mọi chuyên mục."
+        tieuDe="Nhật ký giao dịch & Luận điểm thị trường"
+        lede="Ghi nhận nhận định trước khi có kết quả. Mọi mốc đều lưu vết thời gian thực và lịch sử minh bạch."
         sidebar={<Sidebar gioiThieu={GIOI_THIEU} cacSub={cac_sub} />}
       />
     </>

@@ -49,6 +49,8 @@ BI_KHOA = "bi_khoa"
 CSRF_KHONG_HOP_LE = "csrf_khong_hop_le"
 #: Mạch bị mod khoá — đọc được, cấm mọi tương tác (PLAN 5.10). 403.
 MACH_BI_KHOA = "mach_bi_khoa"
+#: Tác giả đã tắt tính năng bình luận cho mạch này. 403.
+BINH_LUAN_DA_TAT = "binh_luan_da_tat"
 #: Mạch đã đóng sổ ⇒ không nối/sửa mốc được (PLAN 5.1). 409.
 MACH_DA_DONG = "mach_da_dong"
 #: Mạch đang mở ⇒ không "mở lại" được. 409.
