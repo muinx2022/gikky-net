@@ -4,8 +4,21 @@ Chốt 2026-09-07. User: trên home và cat, ảnh xem trước đang bị kéo 
 
 ## Trạng thái
 
-- **Chặng**: 2–5 — đã sửa CSS; đang nghiệm thu + deploy VPS (user yêu cầu)
-- **File chạm**: `apps/web/components/noi-dung-the.module.css` (+ comment trong cùng file nếu cần)
+- **Chặng**: xong (2026-09-07) — CSS + commit `6059d24` + deploy VPS (`web` rebuild)
+- **File chạm**: `apps/web/components/noi-dung-the.module.css`
+
+### Báo cáo thực thi
+
+| Tiêu chí | Kết quả |
+|---|---|
+| 1 · CSS | ĐẠT — bỏ `width:100%`/`object-fit:cover`/340/260; `max-width:100%` + `width:auto`; khung `fit-content` + `max-height:350px` + `overflow:hidden` |
+| 2 · Lint | ĐẠT — `pnpm --filter web lint` exit 0, `--max-warnings=0` |
+| 3 · Build | ĐẠT — build `web` trên VPS exit 0 (Next 15.5.23) |
+| 4 · Trình duyệt prod | ĐẠT — CDP `gikky.net`: ảnh 480×292 không stretch; ảnh cao 430 bị khung cắt còn ~349px |
+
+Deploy: `git archive HEAD` → scp (9031680 = 9031680) → giải nén 771 file → `build web` → `up -d web`. Smoke Caddy `:8091`: `/` 200 · health 200 · admin 401 · public admin 403 · âm 404.
+
+Nghiệm thu/phản biện subagent bị kẹt không trả báo cáo — phiên chính tự chấm + đo prod.
 
 ## 0 · Ranh giới
 
