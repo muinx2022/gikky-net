@@ -4,7 +4,7 @@ Chốt 2026-09-07. User: trên home và cat, ảnh xem trước đang bị kéo 
 
 ## Trạng thái
 
-- **Chặng**: 1 — plan (chưa thực thi)
+- **Chặng**: 2–5 — đã sửa CSS; đang nghiệm thu + deploy VPS (user yêu cầu)
 - **File chạm**: `apps/web/components/noi-dung-the.module.css` (+ comment trong cùng file nếu cần)
 
 ## 0 · Ranh giới

@@ -15,23 +15,24 @@
 .khung_anh {
   position: relative;
   display: block;
+  /* Ôm ảnh hẹp hơn card — không kéo viền full bề ngang thẻ. */
+  width: fit-content;
+  max-width: 100%;
   margin-bottom: 6px;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 5px;
-  /* Trần chiều cao, không phải tỉ lệ cố định: ảnh dọc (ảnh chụp màn hình điện thoại —
-     thứ người ta dán nhiều nhất ở đây) mà ép 16:9 thì bị cắt mất phần quan trọng nhất.
-     `object-fit: cover` chỉ vào việc khi ảnh vượt trần. */
-  max-height: 340px;
+  /* Trần cao 350px: ảnh cao hơn bị cắt bởi overflow (phần trên giữ lại). Không ép tỉ lệ
+     cố định — ảnh dọc (ảnh chụp màn hình) không bị kéo 16:9. */
+  max-height: 350px;
 }
 
 .anh {
   display: block;
-  width: 100%;
+  /* Không `width: 100%`: ảnh hẹp hơn card giữ kích thước gốc; chỉ co khi rộng hơn card. */
+  max-width: 100%;
+  width: auto;
   height: auto;
-  max-height: 340px;
-  object-fit: cover;
-  object-position: top;
   background: var(--surface-2, var(--surface));
 }
 
@@ -75,7 +76,7 @@
 }
 
 /* Kiểu xem GỌN (`ChonKieuXem`): bỏ hẳn ảnh, chữ còn một dòng. Người chọn "gọn" đang nói
-   họ muốn nhiều thẻ trên một màn hình — trả lại một dải ảnh 340px là làm ngược. */
+   họ muốn nhiều thẻ trên một màn hình — trả lại một dải ảnh 350px là làm ngược. */
 :global([data-kieu-xem="gon"]) .khung_anh {
   display: none;
 }
@@ -83,11 +84,4 @@
 :global([data-kieu-xem="gon"]) .trich {
   -webkit-line-clamp: 1;
   line-clamp: 1;
-}
-
-@media (max-width: 640px) {
-  .khung_anh,
-  .anh {
-    max-height: 260px;
-  }
 }
