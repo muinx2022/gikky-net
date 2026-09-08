@@ -793,11 +793,12 @@ def test_T3_go_an_bai_hen_gio_tra_409_khong_len_song(canh):
         content_type="application/json",
     )
     assert r2.status_code == 200
-    assert r2.json()["da_doi"] is False
+    assert r2.json()["da_doi"] is True
+    hen.refresh_from_db()
+    assert hen.hidden_by_id is not None
 
 
 def test_T4_ho_so_tac_gia_sap_theo_published_at(client, canh, meili):
-    """A soạn trước, đăng sau ⇒ A đứng trên B ở hồ sơ (cả 20 bài đầu lẫn cửa lật trang)."""
     a = _hen_toi_han(canh, title="A soạn trước")
     b, _ = tao_mach(
         sub=canh["sub"], author=canh["tac_gia"], title="B đăng ngay", body="<p>Thân.</p>"

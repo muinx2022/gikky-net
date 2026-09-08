@@ -1661,11 +1661,20 @@ def _dat_co_an(dich, *, boi, bat: bool) -> bool:
     ngay sau đó (`cap_nhat_dem_mach`), và thứ tự hai khoá ấy là ràng buộc của cả module —
     nó không được nằm rải trong một hàm tiện ích.
     """
-    dang_an = dich.hidden_at is not None
-    if dang_an == bat:
+    dang_bi_mod_an = dich.hidden_by_id is not None
+    if dang_bi_mod_an == bat:
         return False
-    dich.hidden_at = timezone.now() if bat else None
+        
     dich.hidden_by = boi if bat else None
+    
+    published_at = getattr(dich, "published_at", None)
+    hen_gio = published_at is not None and published_at > timezone.now()
+    
+    if bat or hen_gio:
+        dich.hidden_at = dich.hidden_at or timezone.now()
+    else:
+        dich.hidden_at = None
+        
     dich.save(update_fields=["hidden_at", "hidden_by"])
     return True
 
