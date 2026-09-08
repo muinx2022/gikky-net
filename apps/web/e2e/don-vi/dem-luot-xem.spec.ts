@@ -315,12 +315,25 @@ test("lượt NẠP TRƯỚC của `<Link>` không phải một lượt xem", ()
   expect(nenDemRequest(req({ "next-router-prefetch": "1" }))).toBe(false);
   expect(nenDemRequest(req({ purpose: "prefetch" }))).toBe(false);
   expect(nenDemRequest(req({ "sec-purpose": "prefetch;prerender" }))).toBe(false);
+  expect(nenDemRequest(req({ "x-purpose": "preview" }))).toBe(false);
+  expect(nenDemRequest(req({ "x-purpose": "prefetch" }))).toBe(false);
+  expect(nenDemRequest(req({ "x-moz": "prefetch" }))).toBe(false);
+
+  // RFC 9218 priority headers: Chromium gửi u=5..7 (rất thấp / idle) khi prefetch
+  expect(nenDemRequest(req({ priority: "u=5, i" }))).toBe(false);
+  expect(nenDemRequest(req({ priority: "u=5" }))).toBe(false);
+  expect(nenDemRequest(req({ priority: "u=6" }))).toBe(false);
+  expect(nenDemRequest(req({ priority: "u=7, i" }))).toBe(false);
 });
 
 test("điều hướng RSC (bấm `<Link>`) VẪN là một lượt xem", () => {
   // Có `RSC: 1` nhưng KHÔNG có header nạp trước ⇒ người ta đang thật sự mở trang ấy.
   // Loại nó đi là mất phần lớn lượt xem của người dùng thật.
   expect(nenDemRequest(req({ rsc: "1" }))).toBe(true);
+  expect(nenDemRequest(req({ rsc: "1", priority: "u=1" }))).toBe(true);
+  // Trình duyệt tải trang chính gửi `priority: u=0, i` (độ khẩn cao nhất + streaming)
+  expect(nenDemRequest(req({ priority: "u=0, i" }))).toBe(true);
+  expect(nenDemRequest(req({ priority: "u=0, i=0" }))).toBe(true);
   expect(nenDemRequest(req({}))).toBe(true);
 });
 

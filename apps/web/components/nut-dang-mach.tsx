@@ -23,7 +23,7 @@ export function NutDangMach() {
   if (dangTai || !(toi?.dang_nhap ?? false)) return null;
 
   return (
-    <Link href="/dang-mach" className={css.nut} data-testid="nut-dang-mach">
+    <Link href="/dang-mach" prefetch={false} className={css.nut} data-testid="nut-dang-mach">
       <Plus size={15} strokeWidth={2.2} aria-hidden />
       Đăng bài
     </Link>

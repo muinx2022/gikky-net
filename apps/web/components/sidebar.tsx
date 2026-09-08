@@ -78,7 +78,7 @@ export function Sidebar({
             <li key={d.tieu_de}>{d.tieu_de}</li>
           ))}
         </ul>
-        <Link className={css.dan} href="/luat" data-testid="sidebar-dan-luat">
+        <Link className={css.dan} href="/luat" prefetch={false} data-testid="sidebar-dan-luat">
           Đọc luật cộng đồng →
         </Link>
       </section>
@@ -89,7 +89,7 @@ export function Sidebar({
           <ul className={css.danh_sach_sub}>
             {cacSub.map((s) => (
               <li key={s.slug}>
-                <Link className={css.mot_sub} href={duongDanSub(s.slug)}>
+                <Link className={css.mot_sub} href={duongDanSub(s.slug)} prefetch={false}>
                   <span className={`${css.slug} mono`}>s/{s.slug}</span>
                   <span className={css.ten_sub}>{s.ten}</span>
                 </Link>

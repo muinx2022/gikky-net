@@ -242,7 +242,31 @@ export function ipKhach(req: { headers: { get(ten: string): string | null } }): 
 }
 
 /** Header mà Next/trình duyệt gắn cho một lượt **nạp trước**, không phải một lượt xem. */
-const HEADER_PREFETCH = ["next-router-prefetch", "purpose", "sec-purpose"];
+const HEADER_PREFETCH = [
+  "next-router-prefetch",
+  "purpose",
+  "sec-purpose",
+  "x-purpose",
+  "x-moz",
+];
+
+/** Kiểm tra header priority xem có phải mức ưu tiên thấp/idle (do `fetchPriority: 'low'` của prefetch sinh ra).
+ *
+ * Trên Next.js Node.js server runtime, `adapter.js` gỡ các flight headers (`next-router-prefetch`,
+ * `rsc`, `next-router-state-tree`) khỏi `requestHeaders` trước khi gọi middleware.
+ * Trình duyệt Chromium (Chrome, Edge) gửi header RFC 9218 `Priority: i` (incremental low) hoặc mức
+ * ưu tiên thấp `u=5`, `u=6` khi gọi `fetch(..., { priority: 'low' })`.
+ */
+function laPriorityPrefetch(priority: string | null): boolean {
+  if (priority === null) return false;
+  const p = priority.toLowerCase().trim();
+  // RFC 9218 Extensible Prioritization Scheme:
+  // - `u` là urgency từ 0 đến 7 (0: critical/document navigation như "u=0, i", 1: high như RSC click).
+  // - Khi prefetch (`fetchPriority: 'low'`), Chromium gửi `priority: u=5, i` hoặc `u=5` (hoặc `u=6`/`u=7` cho background).
+  // - Flag `i` (incremental) có mặt ở CẢ tài liệu chính ("u=0, i") lẫn prefetch ("u=5, i"),
+  //   nên KHÔNG được coi `i` là prefetch — chỉ độ khẩn u=5..7 mới là prefetch/background.
+  return /\bu=[567]\b/.test(p);
+}
 
 /** Request này có phải một lượt XEM thật không — xét ở tầng header, không phải đường dẫn.
  *
@@ -263,7 +287,8 @@ const HEADER_PREFETCH = ["next-router-prefetch", "purpose", "sec-purpose"];
  *
  * ## Điều hướng RSC thì VẪN đếm — có chủ đích
  *
- * Bấm một `<Link>` sinh request có `RSC: 1` nhưng **không** có `next-router-prefetch`.
+ * Bấm một `<Link>` sinh request có `RSC: 1` nhưng **không** có `next-router-prefetch`
+ * và không có `priority: i` (Next.js cấp `fetchPriority: 'high'` cho lượt bấm).
  * Đó là một lượt xem thật (người ta đang mở trang ấy), chỉ khác là khung không tải lại.
  * Loại nó đi là mất phần lớn lượt xem của người dùng thật.
  *
@@ -276,8 +301,22 @@ export function nenDemRequest(req: {
   headers: { get(ten: string): string | null };
 }): boolean {
   if (req.method !== "GET") return false;
-  return !HEADER_PREFETCH.some((h) => {
+
+  // 1. Header prefetch tường minh
+  const coHeaderPrefetch = HEADER_PREFETCH.some((h) => {
     const v = req.headers.get(h);
-    return v !== null && (v === "1" || v.toLowerCase().includes("prefetch"));
+    return (
+      v !== null &&
+      (v === "1" ||
+        v.toLowerCase().includes("prefetch") ||
+        v.toLowerCase().includes("preview"))
+    );
   });
+  if (coHeaderPrefetch) return false;
+
+  // 2. Next.js router prefetch qua `fetchPriority: 'low'`: Chromium gửi `Priority: i` hoặc `u=5..6`.
+  // Trên Node server runtime, Next.js adapter.js gỡ mất `next-router-prefetch` nên đây là hàng rào thứ hai.
+  if (laPriorityPrefetch(req.headers.get("priority"))) return false;
+
+  return true;
 }

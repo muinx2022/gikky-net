@@ -143,6 +143,7 @@ export function Feed({
                 <Link
                   key={t}
                   href={hrefTab(t)}
+                  prefetch={false}
                   className={
                     t === tab ? `${css.mot_tab} ${css.tab_dang_chon}` : css.mot_tab
                   }
@@ -164,6 +165,7 @@ export function Feed({
               <Link
                 key={k}
                 href={hrefKhoang(k)}
+                prefetch={false}
                 className={
                   k === khoang ? `${css.mot_khoang} ${css.khoang_dang_chon}` : css.mot_khoang
                 }

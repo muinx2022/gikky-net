@@ -13,8 +13,8 @@ export function ChanTrang() {
           {DISCLAIMER_CHAN_TRANG}
         </p>
         <nav className={css.lien_ket}>
-          <Link href="/luat">Luật cộng đồng</Link>
-          <Link href="/">Trang chủ</Link>
+          <Link href="/luat" prefetch={false}>Luật cộng đồng</Link>
+          <Link href="/" prefetch={false}>Trang chủ</Link>
         </nav>
       </div>
     </footer>

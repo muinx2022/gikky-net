@@ -55,7 +55,12 @@ export function TheMach({ mach }: { mach: MachTomTatOut }) {
             url={mach.author.avatar_url}
             co={18}
           />
-          <Link className={css.sub} href={duongDanSub(mach.sub.slug)} {...CHU_NGUOI_DUNG}>
+          <Link
+            className={css.sub}
+            href={duongDanSub(mach.sub.slug)}
+            prefetch={false}
+            {...CHU_NGUOI_DUNG}
+          >
             s/{mach.sub.slug}
           </Link>
           <span className={css.cham} aria-hidden>
@@ -64,6 +69,7 @@ export function TheMach({ mach }: { mach: MachTomTatOut }) {
           <Link
             className={css.ai}
             href={duongDanHoSo(mach.author.username)}
+            prefetch={false}
             {...CHU_NGUOI_DUNG}
           >
             u/{mach.author.username}
@@ -91,7 +97,7 @@ export function TheMach({ mach }: { mach: MachTomTatOut }) {
         </div>
 
         <h2 className={css.tieu_de}>
-          <Link href={duongDanMach(mach.slug, mach.id)} {...CHU_NGUOI_DUNG}>
+          <Link href={duongDanMach(mach.slug, mach.id)} prefetch={false} {...CHU_NGUOI_DUNG}>
             {mach.title}
           </Link>
         </h2>
@@ -118,6 +124,7 @@ export function TheMach({ mach }: { mach: MachTomTatOut }) {
             <Link
               className={css.chip_moc_moi}
               href={`${duongDanMach(mach.slug, mach.id)}#moc-${mach.moc_moi_nhat.seq}`}
+              prefetch={false}
               data-testid="the-mach-moc-moi"
               title={`Xem mốc ${mach.moc_moi_nhat.seq}`}
             >
@@ -134,6 +141,7 @@ export function TheMach({ mach }: { mach: MachTomTatOut }) {
             <Link
               className={css.nut_binh_luan}
               href={duongDanKhanDai(mach.slug, mach.id)}
+              prefetch={false}
               data-testid="the-mach-so-binh-luan"
             >
               💬 {mach.comment_count} bình luận

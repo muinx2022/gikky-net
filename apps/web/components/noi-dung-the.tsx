@@ -52,6 +52,7 @@ export function NoiDungThe({
     <Link
       className={css.khoi}
       href={href}
+      prefetch={false}
       aria-label={`Mở bài: ${tieu_de}`}
       tabIndex={-1}
       data-testid="the-mach-noi-dung"

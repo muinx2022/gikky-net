@@ -47,7 +47,7 @@ export function Chrome() {
   return (
     <header className={css.chrome}>
       <div className={css.trong}>
-        <Link href="/" className={css.hieu}>
+        <Link href="/" prefetch={false} className={css.hieu}>
           gikky
         </Link>
         {/* `OTimKiem` đọc `useSearchParams` để giữ lại câu vừa gõ khi bấm back. Hook đó
