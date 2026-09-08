@@ -641,6 +641,18 @@
       "DongSoIn": {
         "description": "Đóng sổ — `POST /machs/{id}/close`. `ket_qua` tuỳ chọn, ≤40 ký tự (PLAN 5.1).\n\nThuần hiển thị, không validate ngữ nghĩa — cùng triết lý với `figures`.",
         "properties": {
+          "bai_hoc": {
+            "anyOf": [
+              {
+                "maxLength": 5000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bai Hoc"
+          },
           "ket_qua": {
             "anyOf": [
               {
@@ -1070,6 +1082,17 @@
           "author": {
             "$ref": "#/components/schemas/NguoiDungTomTatOut"
           },
+          "bai_hoc": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bai Hoc"
+          },
           "closed_at": {
             "anyOf": [
               {
@@ -1156,6 +1179,11 @@
             "title": "Published At",
             "type": "string"
           },
+          "rieng_tu": {
+            "default": false,
+            "title": "Rieng Tu",
+            "type": "boolean"
+          },
           "slug": {
             "title": "Slug",
             "type": "string"
@@ -1185,6 +1213,17 @@
           "tran_moc_moi_ngay": {
             "title": "Tran Moc Moi Ngay",
             "type": "integer"
+          },
+          "truong_phai": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Truong Phai"
           }
         },
         "required": [
@@ -1334,6 +1373,11 @@
             ],
             "title": "Question For Crowd"
           },
+          "rieng_tu": {
+            "default": false,
+            "title": "Rieng Tu",
+            "type": "boolean"
+          },
           "sub": {
             "description": "slug của chuyên mục",
             "maxLength": 40,
@@ -1351,6 +1395,18 @@
             "minLength": 1,
             "title": "Title",
             "type": "string"
+          },
+          "truong_phai": {
+            "anyOf": [
+              {
+                "maxLength": 30,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Truong Phai"
           }
         },
         "required": [
@@ -1435,6 +1491,11 @@
             "title": "Published At",
             "type": "string"
           },
+          "rieng_tu": {
+            "default": false,
+            "title": "Rieng Tu",
+            "type": "boolean"
+          },
           "slug": {
             "title": "Slug",
             "type": "string"
@@ -1449,6 +1510,17 @@
           "title": {
             "title": "Title",
             "type": "string"
+          },
+          "truong_phai": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Truong Phai"
           },
           "xem_truoc": {
             "anyOf": [
@@ -3120,6 +3192,22 @@
           },
           {
             "in": "query",
+            "name": "truong_phai",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Truong Phai"
+            }
+          },
+          {
+            "in": "query",
             "name": "sort",
             "required": false,
             "schema": {
@@ -3232,6 +3320,22 @@
                 }
               ],
               "title": "Sub"
+            }
+          },
+          {
+            "in": "query",
+            "name": "truong_phai",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Truong Phai"
             }
           },
           {
@@ -3799,6 +3903,74 @@
         "summary": "Viet Binh Luan",
         "tags": [
           "binh-luan"
+        ]
+      }
+    },
+    "/api/v1/machs/{mach_id}/cong-khai": {
+      "post": {
+        "description": "Công khai một mạch riêng tư. **Quyền: CHỈ tác giả mạch**.",
+        "operationId": "cong_khai_mach",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mach_id",
+            "required": true,
+            "schema": {
+              "title": "Mach Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MachChiTietOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Cong Khai Mach Api",
+        "tags": [
+          "mach"
         ]
       }
     },

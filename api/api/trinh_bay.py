@@ -122,6 +122,8 @@ def mach_tom_tat_ra(
         author=nguoi_dung_ra(mach.author),
         status=mach.status,
         ket_qua=mach.ket_qua,
+        truong_phai=mach.truong_phai,
+        rieng_tu=mach.rieng_tu,
         entry_count=mach.entry_count,
         comment_count=mach.comment_count,
         created_at=mach.created_at,

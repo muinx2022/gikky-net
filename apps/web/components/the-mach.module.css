@@ -175,6 +175,32 @@
   color: var(--stamp);
 }
 
+.rieng_tu {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  color: var(--ink-2);
+  background: var(--surface-2);
+  border: 1px dashed var(--line-2);
+  border-radius: 3px;
+  padding: 0 5px;
+}
+
+.truong_phai {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  color: var(--accent);
+  background: var(--surface-2);
+  border: 1px solid var(--line-2);
+  border-radius: 3px;
+  padding: 0 5px;
+  text-decoration: none;
+}
+
+.truong_phai:hover {
+  background: var(--accent-soft);
+}
+
+
 /* ===========================================================================
  * Kiểu xem GỌN — `:root[data-kieu-xem="gon"]`, đặt bởi script inline trong `<head>`
  * ===========================================================================

@@ -77,6 +77,7 @@ const NOI_KHAI_TOKEN = "app/globals.css";
 const NOI_DUOC_DUNG: readonly string[] = [
   "components/con-so.module.css",
   "components/form-tai-khoan.module.css",
+  "components/ti-le-rr.module.css",
 ];
 /** Chính file này liệt kê mọi mã hex trong `HEX_TOKEN` — mã thật, không phải chú thích. */
 const TU_TRU = "e2e/don-vi/mau-token.spec.ts";

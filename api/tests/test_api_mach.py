@@ -145,6 +145,7 @@ def test_post_thuong_la_nhanh_doi_chung(client, seed_post_thuong):
 KHOA_CHO_PHEP = {
     # mạch
     "id", "slug", "title", "sub", "author", "status", "closed_at", "ket_qua",
+    "bai_hoc", "truong_phai", "rieng_tu",
     "locked", "tat_binh_luan", "created_at", "last_entry_at", "last_activity_at", "entry_count",
     "comment_count", "face", "mocs", "spine",
     # Ngày ĐĂNG (hẹn giờ, 2026-09-03). Cache được như `created_at`: nó là thuộc tính của

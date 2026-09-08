@@ -522,7 +522,7 @@ export async function docCacSubOTrinhDuyet(): Promise<SubChiTietOut[]> {
  */
 export async function docFeed(
   tab: TabFeed,
-  opts: { cursor?: string; limit?: number; khoang?: KhoangFeed } = {},
+  opts: { cursor?: string; limit?: number; khoang?: KhoangFeed; truong_phai?: string } = {},
 ): Promise<TrangCursor<FeedOut>> {
   const trang = await feedTho(tab, opts);
   if (trang.du_lieu === null) {
@@ -554,7 +554,7 @@ export async function docFeed(
  */
 export async function docFeedOTrinhDuyet(
   tab: TabFeed,
-  opts: { sub?: string; cursor: string; khoang?: KhoangFeed; limit?: number },
+  opts: { sub?: string; cursor: string; khoang?: KhoangFeed; limit?: number; truong_phai?: string },
 ): Promise<FeedOut | null> {
   const query = {
     sub: opts.sub ?? null,
@@ -562,6 +562,7 @@ export async function docFeedOTrinhDuyet(
     limit: opts.limit ?? 20,
     sort: SORT_API[tab],
     khoang: khoangGuiLenApi(tab, opts.khoang ?? KHOANG_MAC_DINH),
+    truong_phai: opts.truong_phai ?? null,
   };
   const kq =
     tab === "dang-dien-ra"
@@ -575,14 +576,14 @@ export async function docFeedOTrinhDuyet(
 export async function docFeedSub(
   sub: string,
   tab: TabFeed,
-  opts: { cursor?: string; limit?: number; khoang?: KhoangFeed } = {},
+  opts: { cursor?: string; limit?: number; khoang?: KhoangFeed; truong_phai?: string } = {},
 ): Promise<TrangCursor<FeedOut | null>> {
   return feedTho(tab, { ...opts, sub });
 }
 
 async function feedTho(
   tab: TabFeed,
-  opts: { sub?: string; cursor?: string; limit?: number; khoang?: KhoangFeed },
+  opts: { sub?: string; cursor?: string; limit?: number; khoang?: KhoangFeed; truong_phai?: string },
 ): Promise<TrangCursor<FeedOut | null>> {
   const xin = cursorHopLe(opts.cursor);
   const cursor_bi_bo = xin === null && opts.cursor !== undefined;
@@ -604,6 +605,7 @@ async function feedTho(
       // MỌI tab, nhưng tab không bày ra control chọn khoảng thì không được gửi nó lên —
       // xem `khoangGuiLenApi`.
       khoang: khoangGuiLenApi(tab, opts.khoang ?? KHOANG_MAC_DINH),
+      truong_phai: opts.truong_phai ?? null,
     };
     if (tab === "dang-dien-ra") return lietKeFeedDangDienRa({ ...CHUNG, query: q });
     return lietKeFeedMoi({ ...CHUNG, query: q });

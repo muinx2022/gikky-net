@@ -536,6 +536,10 @@ export type DemLuotXemOut = {
  */
 export type DongSoIn = {
     /**
+     * Bai Hoc
+     */
+    bai_hoc?: string | null;
+    /**
      * Ket Qua
      */
     ket_qua?: string | null;
@@ -919,6 +923,10 @@ export type LoiThoiGianOut = {
 export type MachChiTietOut = {
     author: NguoiDungTomTatOut;
     /**
+     * Bai Hoc
+     */
+    bai_hoc?: string | null;
+    /**
      * Closed At
      */
     closed_at: string | null;
@@ -971,6 +979,10 @@ export type MachChiTietOut = {
      */
     published_at: string;
     /**
+     * Rieng Tu
+     */
+    rieng_tu?: boolean;
+    /**
      * Slug
      */
     slug: string;
@@ -995,6 +1007,10 @@ export type MachChiTietOut = {
      * Tran Moc Moi Ngay
      */
     tran_moc_moi_ngay: number;
+    /**
+     * Truong Phai
+     */
+    truong_phai?: string | null;
 };
 
 /**
@@ -1082,6 +1098,10 @@ export type MachMoiIn = {
      */
     question_for_crowd?: string | null;
     /**
+     * Rieng Tu
+     */
+    rieng_tu?: boolean;
+    /**
      * Sub
      *
      * slug của chuyên mục
@@ -1095,6 +1115,10 @@ export type MachMoiIn = {
      * Title
      */
     title: string;
+    /**
+     * Truong Phai
+     */
+    truong_phai?: string | null;
 };
 
 /**
@@ -1161,6 +1185,10 @@ export type MachTomTatOut = {
      */
     published_at: string;
     /**
+     * Rieng Tu
+     */
+    rieng_tu?: boolean;
+    /**
      * Slug
      */
     slug: string;
@@ -1173,6 +1201,10 @@ export type MachTomTatOut = {
      * Title
      */
     title: string;
+    /**
+     * Truong Phai
+     */
+    truong_phai?: string | null;
     xem_truoc: XemTruocOut | null;
 };
 
@@ -2319,6 +2351,10 @@ export type LietKeFeedDangDienRaData = {
          */
         sub?: string | null;
         /**
+         * Truong Phai
+         */
+        truong_phai?: string | null;
+        /**
          * Sort
          */
         sort?: 'tu_nhien' | 'nhieu_diem';
@@ -2368,6 +2404,10 @@ export type LietKeFeedMoiData = {
          * Sub
          */
         sub?: string | null;
+        /**
+         * Truong Phai
+         */
+        truong_phai?: string | null;
         /**
          * Sort
          */
@@ -2652,6 +2692,44 @@ export type VietBinhLuanResponses = {
 };
 
 export type VietBinhLuanResponse = VietBinhLuanResponses[keyof VietBinhLuanResponses];
+
+export type CongKhaiMachData = {
+    body?: never;
+    path: {
+        /**
+         * Mach Id
+         */
+        mach_id: number;
+    };
+    query?: never;
+    url: '/api/v1/machs/{mach_id}/cong-khai';
+};
+
+export type CongKhaiMachErrors = {
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type CongKhaiMachError = CongKhaiMachErrors[keyof CongKhaiMachErrors];
+
+export type CongKhaiMachResponses = {
+    /**
+     * OK
+     */
+    200: MachChiTietOut;
+};
+
+export type CongKhaiMachResponse = CongKhaiMachResponses[keyof CongKhaiMachResponses];
 
 export type BoTheoMachData = {
     body?: never;

@@ -271,6 +271,9 @@ def test_the_feed_du_truong_cho_1c(client, seed):
         "xem_truoc",
         # 2026-09-08: thông tin mốc mới nhất phục vụ chip trên thẻ
         "moc_moi_nhat",
+        # Trading features: trường phái và trạng thái riêng tư
+        "truong_phai",
+        "rieng_tu",
     }
     assert the["moc_1_id"] == Moc.objects.get(mach=seed, seq=1).pk
     assert the["ket_qua"] == "+18.2% · 163 ngày"

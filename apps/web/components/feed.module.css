@@ -91,6 +91,32 @@
   font-weight: 500;
 }
 
+.bo_loc_truong_phai {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 4px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.xoa_bo_loc {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  color: var(--accent);
+  text-decoration: none;
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.xoa_bo_loc:hover {
+  background: var(--accent-soft);
+}
+
 /* Danh sách thẻ RỜI, cách nhau bằng `gap` — không còn khung bọc chung (user thấy các
    thẻ dính sát nhau quá, 2026-08-24). Mỗi `.the` tự mang nền + bo góc. */
 .danh_sach {

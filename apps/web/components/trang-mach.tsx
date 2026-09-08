@@ -24,6 +24,7 @@ import { NganKeoProvider } from "@/components/ngan-keo";
 import { NutTheoMach } from "@/components/nut-theo-mach";
 import { TheMoc } from "@/components/the-moc";
 import { TrangThaiToiProvider } from "@/components/trang-thai-toi";
+import { XuatCaseStudy } from "@/components/xuat-case-study";
 import {
   docCauDangDoc,
   docKhanDai,
@@ -319,7 +320,18 @@ export async function TrangMach({
                 <Link className={css.sub} href={duongDanSub(mach.sub.slug)}>
                   s/{mach.sub.slug}
                 </Link>
+                {mach.truong_phai && (
+                  <Link
+                    href={`/?truong_phai=${encodeURIComponent(mach.truong_phai)}`}
+                    className={css.truong_phai}
+                    data-testid="mach-truong-phai"
+                    title={`Trường phái ${mach.truong_phai}`}
+                  >
+                    #{mach.truong_phai}
+                  </Link>
+                )}
                 <NutTheoMach />
+                <XuatCaseStudy mach={mach} />
                 {/* Công cụ mod của MẠCH: ẩn + khoá. `dangAn` luôn `false` — mạch bị ẩn
                     trả 404 ở cửa công khai nên không tới được đây; xem docstring
                     `HanhDongMod`. */}
@@ -331,6 +343,14 @@ export async function TrangMach({
                   nhan="mạch này"
                 />
               </div>
+              {mach.rieng_tu && (
+                <div className={css.banner_rieng_tu} data-testid="banner-rieng-tu">
+                  <span>
+                    🔒 Mạch riêng tư — chỉ bạn và quản trị viên nhìn thấy. Bạn có thể bấm
+                    &quot;Công khai mạch&quot; ở khu chủ mạch bên dưới khi sẵn sàng.
+                  </span>
+                </div>
+              )}
               <h1 className={css.tieu_de}>{mach.title}</h1>
               <div className={css.chu_ky}>
                 <Link className={css.ai} href={duongDanHoSo(mach.author.username)}>
@@ -465,6 +485,7 @@ export async function TrangMach({
               moLaiDen={mach.mo_lai_den}
               tranMocMoiNgay={mach.tran_moc_moi_ngay}
               soMoc={mach.entry_count}
+              riengTu={mach.rieng_tu}
             />
 
             {cursor_hong && <BaoCursorHong />}

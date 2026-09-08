@@ -1,0 +1,67 @@
+﻿.danh_sach {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.the {
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.dau {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line-2);
+  font-family: var(--f-mono);
+  font-size: 11px;
+}
+
+.nhan {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ink-2);
+  font-weight: 500;
+}
+
+.lien_ket {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.lien_ket:hover {
+  text-decoration: underline;
+}
+
+.anh_khung {
+  position: relative;
+  width: 100%;
+  max-height: 420px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-2);
+  overflow: hidden;
+  cursor: zoom-in;
+}
+
+.anh {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  max-height: 420px;
+  object-fit: contain;
+}
+
+@media print {
+  .the {
+    break-inside: avoid;
+  }
+}

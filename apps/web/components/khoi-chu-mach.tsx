@@ -1,6 +1,12 @@
 "use client";
 
-import { dongSoMach, moLaiMach, noiMoc, tatBinhLuanMach } from "@gikky/api-client";
+import {
+  congKhaiMach,
+  dongSoMach,
+  moLaiMach,
+  noiMoc,
+  tatBinhLuanMach,
+} from "@gikky/api-client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -59,6 +65,7 @@ export function KhoiChuMach({
   moLaiDen,
   tranMocMoiNgay,
   soMoc,
+  riengTu = false,
 }: {
   machId: number;
   /** `username` chủ mạch — so với `GET /me` để biết có phải mình không. */
@@ -75,6 +82,8 @@ export function KhoiChuMach({
   tranMocMoiNgay: number;
   /** `entry_count`, để đánh số cái mốc sắp nối. */
   soMoc: number;
+  /** `rieng_tu === true`: mạch chỉ mình tôi, có nút công khai. */
+  riengTu?: boolean;
 }) {
   const { toi, dangTai } = usePhien();
   const router = useRouter();
@@ -82,6 +91,7 @@ export function KhoiChuMach({
   const [moc, datMoc] = useState<NoiDungMoc>(mocRong);
   const [anhs, datAnhs] = useState<File[]>([]);
   const [ketQua, datKetQua] = useState("");
+  const [baiHoc, datBaiHoc] = useState("");
   const [dangGui, datDangGui] = useState(false);
   const [loi, datLoi] = useState<string | null>(null);
 
@@ -173,12 +183,35 @@ export function KhoiChuMach({
           baseUrl: GOC_TRINH_DUYET,
           headers: await headerGhi(),
           path: { mach_id: machId },
-          body: { ket_qua: ketQua.trim() === "" ? null : ketQua.trim() },
+          body: {
+            ket_qua: ketQua.trim() === "" ? null : ketQua.trim(),
+            bai_hoc: baiHoc.trim() === "" ? null : baiHoc.trim(),
+          },
         }),
         "Không đóng sổ được.",
       );
       datMo("khong");
     }, "Không đóng sổ được. Kiểm tra kết nối rồi thử lại.");
+  };
+
+  const guiCongKhai = () => {
+    if (
+      !window.confirm(
+        "Công khai mạch này?\n\nMạch sẽ xuất hiện trên feed công khai, hồ sơ của bạn và người khác có thể đọc/bình luận.",
+      )
+    ) {
+      return;
+    }
+    void chay(async () => {
+      layDuLieu(
+        await congKhaiMach({
+          baseUrl: GOC_TRINH_DUYET,
+          headers: await headerGhi(),
+          path: { mach_id: machId },
+        }),
+        "Không công khai mạch được.",
+      );
+    }, "Không công khai mạch được. Kiểm tra kết nối rồi thử lại.");
   };
 
   const guiMoLai = () => {
@@ -238,6 +271,8 @@ export function KhoiChuMach({
           onMoLai={guiMoLai}
           tatBinhLuan={tatBinhLuan}
           onDoiBinhLuan={() => doiTrangThaiBinhLuan(!tatBinhLuan)}
+          riengTu={riengTu}
+          onCongKhai={guiCongKhai}
         />
       ) : mo === "noi" ? (
         <form onSubmit={guiMoc} data-testid="form-noi-moc">
@@ -307,6 +342,20 @@ export function KhoiChuMach({
               Một dòng tự do, hiện ở đầu trang và trên thẻ chia sẻ. Bỏ trống cũng được.
             </span>
           </label>
+          <label className={css.o}>
+            <span className={css.nhan}>
+              Mổ xẻ sau lệnh / Bài học rút ra <span className={css.tuy_chon}>tuỳ chọn, ≤5000 ký tự</span>
+            </span>
+            <textarea
+              className={css.vung_o}
+              value={baiHoc}
+              maxLength={5000}
+              rows={4}
+              onChange={(e) => datBaiHoc(e.target.value)}
+              placeholder="Ghi lại bài học kinh nghiệm, phân tích sai lầm hoặc điều đã làm tốt để rèn giũa kỷ luật..."
+              data-testid="dong-so-bai-hoc"
+            />
+          </label>
           <div className={css.hang}>
             <button
               type="button"
@@ -353,6 +402,18 @@ export function KhoiChuMach({
           >
             {tatBinhLuan ? "Mở bình luận" : "Tắt bình luận"}
           </button>
+          {riengTu && (
+            <button
+              type="button"
+              className={css.nhe}
+              onClick={guiCongKhai}
+              disabled={dangGui}
+              data-testid="nut-cong-khai-mach"
+              title="Công khai mạch để mọi người cùng xem"
+            >
+              🔓 Công khai mạch
+            </button>
+          )}
         </div>
       )}
     </section>
@@ -372,12 +433,16 @@ function MatDong({
   onMoLai,
   tatBinhLuan,
   onDoiBinhLuan,
+  riengTu,
+  onCongKhai,
 }: {
   moLaiDen: string | null;
   dangGui: boolean;
   onMoLai: () => void;
   tatBinhLuan: boolean;
   onDoiBinhLuan: () => void;
+  riengTu?: boolean;
+  onCongKhai?: () => void;
 }) {
   const han = moLaiDen === null ? null : gioPhutVN(moLaiDen);
   if (!conMoLaiDuoc(moLaiDen)) {
@@ -396,6 +461,17 @@ function MatDong({
           >
             {tatBinhLuan ? "Mở bình luận" : "Tắt bình luận"}
           </button>
+          {riengTu && onCongKhai && (
+            <button
+              type="button"
+              className={css.nhe}
+              onClick={onCongKhai}
+              disabled={dangGui}
+              data-testid="nut-cong-khai-mach-dong"
+            >
+              🔓 Công khai mạch
+            </button>
+          )}
         </div>
       </>
     );
@@ -425,6 +501,17 @@ function MatDong({
         >
           {tatBinhLuan ? "Mở bình luận" : "Tắt bình luận"}
         </button>
+        {riengTu && onCongKhai && (
+          <button
+            type="button"
+            className={css.nhe}
+            onClick={onCongKhai}
+            disabled={dangGui}
+            data-testid="nut-cong-khai-mach-dong"
+          >
+            🔓 Công khai mạch
+          </button>
+        )}
       </div>
     </>
   );

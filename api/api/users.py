@@ -70,7 +70,19 @@ def xem_ho_so(request, username: str, limit: int = SO_MACH_TREN_HO_SO):
     if user is None:
         return khong_tim_thay(f"người dùng {username!r}")
 
+    la_toi = (
+        request.user is not None
+        and getattr(request.user, "is_authenticated", False)
+        and request.user.pk == user.pk
+    )
+    la_staff = (
+        request.user is not None
+        and getattr(request.user, "is_authenticated", False)
+        and getattr(request.user, "is_staff", False)
+    )
     mach_hien = Mach.objects.filter(author=user, hidden_at__isnull=True)
+    if not (la_toi or la_staff):
+        mach_hien = mach_hien.filter(rieng_tu=False)
     machs = list(
         mach_hien.select_related("sub", "author").order_by("-published_at", "-pk")[:limit]
     )

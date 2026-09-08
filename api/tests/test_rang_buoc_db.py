@@ -272,8 +272,8 @@ def test_index_feed_cua_mach(ten, manh):
 
 
 def test_index_feed_dang_dien_ra_la_partial_theo_status_open():
-    dn = dinh_nghia_index("mach_open_last_entry")
-    assert "(last_entry_at DESC)" in dn, dn
+    dn = dinh_nghia_index("mach_open_last_disc")
+    assert "(last_discussion_at DESC)" in dn, dn
     assert "WHERE ((status)::text = 'open'::text)" in dn, dn
 
 

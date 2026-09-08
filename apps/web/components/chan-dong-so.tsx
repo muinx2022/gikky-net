@@ -44,28 +44,38 @@ import css from "./chan-dong-so.module.css";
 export function ChanDongSo({
   mach,
 }: {
-  mach: Pick<MachChiTietOut, "status" | "ket_qua" | "closed_at">;
+  mach: Pick<MachChiTietOut, "status" | "ket_qua" | "closed_at" | "bai_hoc">;
 }) {
   if (mach.status !== "closed") return null;
 
   return (
-    <p className={css.chan} data-testid="chan-dong-so">
-      <span className={css.nhan} data-testid="chan-dong-so-nhan">
-        Mạch đã đóng
-      </span>
-      {mach.closed_at !== null && (
-        <span className="mono"> ngày {ngayCuaThoiDiem(mach.closed_at)}</span>
+    <div className={css.khung_chan} data-testid="chan-dong-so">
+      <p className={css.dong_trang_thai}>
+        <span className={css.nhan} data-testid="chan-dong-so-nhan">
+          Mạch đã đóng
+        </span>
+        {mach.closed_at !== null && (
+          <span className="mono"> ngày {ngayCuaThoiDiem(mach.closed_at)}</span>
+        )}
+        {mach.ket_qua !== null && (
+          <>
+            <span className={css.cham} aria-hidden>
+              ·
+            </span>
+            <span className={css.ket_qua} data-testid="chan-dong-so-ket-qua">
+              {mach.ket_qua}
+            </span>
+          </>
+        )}
+      </p>
+      {mach.bai_hoc && (
+        <div className={css.khoi_bai_hoc} data-testid="chan-dong-so-bai-hoc">
+          <div className={css.tieu_de_bai_hoc}>
+            <span>📋 Mổ xẻ sau lệnh &amp; Bài học</span>
+          </div>
+          <p className={css.noi_dung_bai_hoc}>{mach.bai_hoc}</p>
+        </div>
       )}
-      {mach.ket_qua !== null && (
-        <>
-          <span className={css.cham} aria-hidden>
-            ·
-          </span>
-          <span className={css.ket_qua} data-testid="chan-dong-so-ket-qua">
-            {mach.ket_qua}
-          </span>
-        </>
-      )}
-    </p>
+    </div>
   );
 }

@@ -53,6 +53,10 @@ DAI_DANH_SACH_DA_DOC = 500
 DAI_TITLE = 160
 
 
+DAI_BAI_HOC = 5000
+DAI_TRUONG_PHAI = 30
+
+
 class FigureIn(Schema):
     """Một cặp trong dải số của mốc. Thuần hiển thị — server không validate ngữ nghĩa."""
 
@@ -84,6 +88,8 @@ class MachMoiIn(MocMoiIn):
     sub: str = Field(min_length=1, max_length=40, description="slug của chuyên mục")
     title: str = Field(min_length=1, max_length=DAI_TITLE)
     tat_binh_luan: bool = False
+    truong_phai: str | None = Field(default=None, max_length=DAI_TRUONG_PHAI)
+    rieng_tu: bool = False
 
 
 class MocSuaIn(Schema):
@@ -115,6 +121,7 @@ class DongSoIn(Schema):
     """
 
     ket_qua: str | None = Field(default=None, max_length=DAI_KET_QUA)
+    bai_hoc: str | None = Field(default=None, max_length=DAI_BAI_HOC)
 
 
 class DatTatBinhLuanIn(Schema):

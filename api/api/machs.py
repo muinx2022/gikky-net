@@ -31,6 +31,7 @@ from core.doc_noi_dung import (
 from core.ghi import (
     NGAY_MO_LAI,
     SO_MOC_TOI_DA_MOI_NGAY,
+    cong_khai_mach,
     dat_tat_binh_luan,
     dem_moc_trong_ngay_vn,
     dong_so,
@@ -106,13 +107,24 @@ from api.tuong_tac import dem_reaction_theo_mach
 router = Router()
 
 
-def _mach_hien(mach_id: int):
-    """Mạch công khai theo `id`. Ẩn bởi mod ⇒ coi như không tồn tại (PLAN 5.10)."""
-    return (
+def _mach_hien(mach_id: int, user=None):
+    """Mạch theo `id`. Ẩn bởi mod ⇒ coi như không tồn tại (PLAN 5.10).
+    Mạch riêng tư (`rieng_tu=True`): chỉ tác giả hoặc staff xem được.
+    """
+    mach = (
         Mach.objects.filter(pk=mach_id, hidden_at__isnull=True)
         .select_related("sub", "author")
         .first()
     )
+    if mach is None:
+        return None
+    if mach.rieng_tu:
+        da_auth = user is not None and getattr(user, "is_authenticated", False)
+        la_tac_gia = da_auth and user.pk == mach.author_id
+        la_staff = da_auth and getattr(user, "is_staff", False)
+        if not (la_tac_gia or la_staff):
+            return None
+    return mach
 
 
 @router.get(
@@ -135,7 +147,7 @@ def xem_mach(request, mach_id: int):
     chỗ**, không kèm nội dung: `seq` bất biến, giấu hẳn một ô là thủng dãy số và phá bất
     biến `entry_count == số ô trên spine` (PLAN 5.2).
     """
-    mach = _mach_hien(mach_id)
+    mach = _mach_hien(mach_id, user=request.user)
     if mach is None:
         return khong_tim_thay(f"mạch {mach_id}")
     return mach_chi_tiet_ra(mach)
@@ -192,6 +204,7 @@ def mach_chi_tiet_ra(mach: Mach) -> MachChiTietOut:
     return MachChiTietOut(
         **tom_tat.model_dump(exclude={"diem", "moc_1_id"}),
         closed_at=mach.closed_at,
+        bai_hoc=mach.bai_hoc,
         mo_lai_den=han_mo_lai(mach),
         tran_moc_moi_ngay=SO_MOC_TOI_DA_MOI_NGAY,
         locked=mach.locked_at is not None,
@@ -583,12 +596,16 @@ def tao_mach_api(request, du_lieu: MachMoiIn):
             question_for_crowd=du_lieu.question_for_crowd,
             figures=figures_ra_dict(du_lieu.figures),
             tat_binh_luan=du_lieu.tat_binh_luan,
+            truong_phai=du_lieu.truong_phai,
+            rieng_tu=du_lieu.rieng_tu,
         )
         tu_upvote(target=moc)
         # Trong CÙNG transaction, sau khi `Mach` đã có hàng: `INSERT core_notification`
         # lấy `FOR KEY SHARE` trên `core_user`, tức cạnh `Mach → User` mà `core/ghi.py`
         # đã khai. Gọi trước `tao_mach` là dựng cạnh ngược.
-        bao_mach_moi(mach)
+        # Mạch riêng tư thì KHÔNG gửi thông báo mốc mới cho người theo dõi.
+        if not du_lieu.rieng_tu:
+            bao_mach_moi(mach)
     mach.refresh_from_db()
     return Status(201, mach_chi_tiet_ra(mach))
 
@@ -859,9 +876,28 @@ def dong_so_mach(request, mach_id: int, du_lieu: DongSoIn):
     doi_mach_tuong_tac_duoc(mach)
     if mach.status == Mach.TrangThai.DONG:
         raise LoiGhi(409, MACH_DA_DONG, "Mạch này đã đóng sổ rồi.")
-    mach = dong_so(mach=mach, ket_qua=du_lieu.ket_qua)
+    mach = dong_so(mach=mach, ket_qua=du_lieu.ket_qua, bai_hoc=du_lieu.bai_hoc)
     # Đóng sổ lật mặt BÃO → CẶN và đổi banner — sự kiện CÓ signal, PLAN 8.4 điểm 2.
     lam_moi_mach(mach)
+    return mach_chi_tiet_ra(nap_mach(mach.pk))
+
+
+@router.post(
+    "/machs/{int:mach_id}/cong-khai",
+    response={200: MachChiTietOut, 401: LoiOut, 403: LoiOut, 404: LoiOut},
+    operation_id="cong_khai_mach",
+    tags=["mach"],
+    auth=dang_nhap,
+)
+def cong_khai_mach_api(request, mach_id: int):
+    """Công khai một mạch riêng tư. **Quyền: CHỈ tác giả mạch**."""
+    mach = nap_mach(mach_id)
+    doi_chu_so_huu(request.user, mach.author_id, "mạch")
+    doi_mach_tuong_tac_duoc(mach)
+    if mach.rieng_tu:
+        mach = cong_khai_mach(mach=mach)
+        bao_mach_moi(mach)
+        lam_moi_mach(mach)
     return mach_chi_tiet_ra(nap_mach(mach.pk))
 
 

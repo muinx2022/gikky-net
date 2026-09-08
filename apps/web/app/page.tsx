@@ -61,9 +61,10 @@ export default async function TrangChu({
   const tab = docTab(q.tab);
   const khoang = docKhoang(q.khoang);
   const cursor = Array.isArray(q.cursor) ? q.cursor[0] : q.cursor;
+  const truongPhai = typeof q.truong_phai === "string" ? q.truong_phai : undefined;
 
   return (
-    <FeedDaNap tab={tab} khoang={khoang} cursor={cursor} />
+    <FeedDaNap tab={tab} khoang={khoang} cursor={cursor} truongPhai={truongPhai} />
   );
 }
 
@@ -71,10 +72,12 @@ async function FeedDaNap({
   tab,
   khoang,
   cursor,
+  truongPhai,
 }: {
   tab: TabFeed;
   khoang: KhoangFeed;
   cursor: string | undefined;
+  truongPhai: string | undefined;
 }) {
   // `?cursor=rac` KHÔNG được làm trang chủ 500: `docFeed` lùi về trang đầu và trả cờ để
   // `Feed` hiện dòng giải thích (vá A1).
@@ -83,7 +86,7 @@ async function FeedDaNap({
   // trả `null`, nên ở đây không còn gì để `?? { items: [] }` — xem docstring của nó, vá
   // F1. "Chưa có bài nào ở đây" chỉ được nói khi Django thật sự trả về 0 mạch.
   const [{ du_lieu: feed, cursorHong }, cac_sub] = await Promise.all([
-    docFeed(tab, { cursor, khoang }),
+    docFeed(tab, { cursor, khoang, truong_phai: truongPhai }),
     docCacSub(),
   ]);
 
@@ -96,6 +99,7 @@ async function FeedDaNap({
         tab={tab}
         khoang={khoang}
         coBan="/"
+        truongPhai={truongPhai}
         // `<h1>` KHÔNG còn là chữ "gikky": tên hiệu đã nằm ở thanh trên cùng của mọi trang,
         // nên in lại nó ở đây vừa thừa vừa lấy mất dòng chữ có giá trị nhất của trang chủ
         // đối với người mới và với máy tìm kiếm. Nay nó nói **sản phẩm là gì** trong một

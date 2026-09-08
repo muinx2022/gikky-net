@@ -10,10 +10,14 @@
  *
  * Lề trái/phải 26px khớp `.nhat_ky` của `trang-mach.module.css` (16px dưới 640px), vì nó
  * là em út của danh sách mốc chứ không phải một khối độc lập. */
-.chan {
+.khung_chan {
   margin: 4px 26px 18px;
   padding-top: 11px;
   border-top: 1px solid var(--line);
+}
+
+.dong_trang_thai {
+  margin: 0;
   font-family: var(--f-mono);
   font-size: 11.5px;
   letter-spacing: 0.06em;
@@ -41,8 +45,37 @@
   margin: 0 6px;
 }
 
+.khoi_bai_hoc {
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: var(--surface-2);
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+}
+
+.tieu_de_bai_hoc {
+  font-family: var(--f-mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.noi_dung_bai_hoc {
+  font-family: var(--f-body);
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ink);
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+}
+
 @media (max-width: 640px) {
-  .chan {
+  .khung_chan {
     margin: 4px 16px 16px;
   }
 }
+

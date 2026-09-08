@@ -349,6 +349,8 @@ def tao_mach(
     figures=None,
     published_at=None,
     tat_binh_luan: bool = False,
+    truong_phai: str | None = None,
+    rieng_tu: bool = False,
     _created_at_seed=None,
 ) -> tuple[Mach, Moc]:
     """Tạo `Mach` + `Moc(seq=1)` trong MỘT transaction (PLAN 5.1).
@@ -383,6 +385,8 @@ def tao_mach(
             author=author,
             title=title,
             tat_binh_luan=tat_binh_luan,
+            truong_phai=truong_phai,
+            rieng_tu=rieng_tu,
             created_at=khi,
             published_at=published_at if hen_gio else khi,
             hidden_at=khi if hen_gio else None,
@@ -405,7 +409,8 @@ def tao_mach(
             figures=figures,
             _created_at_seed=khi,
         )
-        dong_bo_mach(mach)
+        if not rieng_tu:
+            dong_bo_mach(mach)
     return mach, moc
 
 
@@ -1262,9 +1267,16 @@ def xoa_binh_luan(*, comment: Comment, khi=None) -> bool:
         return True
 
 
-def dong_so(*, mach: Mach, ket_qua: str | None = None, khi=None) -> Mach:
+def dong_so(
+    *,
+    mach: Mach,
+    ket_qua: str | None = None,
+    bai_hoc: str | None = None,
+    khi=None,
+) -> Mach:
     """Đóng sổ mạch (PLAN 5.1). `ket_qua` là một dòng tự do ≤40 ký tự, **thuần hiển thị**.
 
+    `bai_hoc` là phân tích / mổ xẻ sau lệnh (≤5000 ký tự).
     Mạch đóng **vẫn bình luận được**, chỉ không nối mốc được — hai chuyện đó nằm ở tầng
     API, đây chỉ ghi trạng thái. `status` và `locked_at` là hai trục riêng: đóng sổ không
     đụng vào khoá của mod và ngược lại (PLAN 5.10).
@@ -1275,7 +1287,8 @@ def dong_so(*, mach: Mach, ket_qua: str | None = None, khi=None) -> Mach:
         m.status = Mach.TrangThai.DONG
         m.closed_at = khi
         m.ket_qua = (ket_qua or "").strip() or None
-        m.save(update_fields=["status", "closed_at", "ket_qua"])
+        m.bai_hoc = (bai_hoc or "").strip() or None
+        m.save(update_fields=["status", "closed_at", "ket_qua", "bai_hoc"])
         dong_bo_mach(m)
     return m
 
@@ -1283,9 +1296,9 @@ def dong_so(*, mach: Mach, ket_qua: str | None = None, khi=None) -> Mach:
 def mo_lai(*, mach: Mach) -> Mach:
     """Mở lại mạch đã đóng sổ (PLAN 5.1 — trong 7 ngày, sau đó nút biến mất).
 
-    **`ket_qua` bị xoá theo**, và đó là chủ đích: nó là dòng tổng kết của một cuốn sổ đã
-    khép ("+18.2% · 163 ngày") và nó hiện trên banner mặt CẶN lẫn OG card. Giữ lại nó trên
-    một mạch vừa mở lại là in một con số tổng kết lên một câu chuyện chưa kết thúc.
+    **`ket_qua` và `bai_hoc` bị xoá theo**, và đó là chủ đích: nó là dòng tổng kết của một
+    cuốn sổ đã khép ("+18.2% · 163 ngày") và nó hiện trên banner mặt CẶN lẫn OG card. Giữ lại
+    nó trên một mạch vừa mở lại là in một con số tổng kết lên một câu chuyện chưa kết thúc.
     Hạn 7 ngày là luật của tầng API — nó cần "bây giờ", không phải bất biến dữ liệu.
     """
     with transaction.atomic():
@@ -1293,8 +1306,20 @@ def mo_lai(*, mach: Mach) -> Mach:
         m.status = Mach.TrangThai.MO
         m.closed_at = None
         m.ket_qua = None
-        m.save(update_fields=["status", "closed_at", "ket_qua"])
+        m.bai_hoc = None
+        m.save(update_fields=["status", "closed_at", "ket_qua", "bai_hoc"])
         dong_bo_mach(m)
+    return m
+
+
+def cong_khai_mach(*, mach: Mach) -> Mach:
+    """Chuyển mạch riêng tư thành công khai (PLAN trung hạn)."""
+    with transaction.atomic():
+        m = Mach.objects.select_for_update().get(pk=mach.pk)
+        if m.rieng_tu:
+            m.rieng_tu = False
+            m.save(update_fields=["rieng_tu"])
+            dong_bo_mach(m)
     return m
 
 

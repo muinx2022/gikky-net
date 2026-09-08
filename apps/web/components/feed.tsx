@@ -95,6 +95,7 @@ export function Feed({
   cursorHong = false,
   sidebar,
   header,
+  truongPhai,
 }: {
   feed: FeedOut;
   tab: TabFeed;
@@ -109,6 +110,8 @@ export function Feed({
   cursorHong?: boolean;
   /** Cột phải. Bắt buộc có mặt — cả hai trang feed đều dựng nó. */
   sidebar: React.ReactNode;
+  /** Bộ lọc trường phái giao dịch trên feed (nếu có). */
+  truongPhai?: string;
 } & DauTrang) {
   /** `?khoang=` đi kèm MỌI tab, nhưng chỉ khi khác mặc định: URL sạch thì link chia sẻ
    * đọc được, và `?khoang=tat_ca` không nói thêm gì so với việc thiếu nó.
@@ -117,8 +120,9 @@ export function Feed({
    * đánh rơi lựa chọn của người dùng ngay lúc họ bấm sang tab khác. Cửa "gửi lên API"
    * đóng ở `lib/api.ts`, không đóng bằng cách xoá tham số khỏi URL. */
   const duoi = (k: KhoangFeed) => (k !== KHOANG_MAC_DINH ? `&khoang=${k}` : "");
-  const hrefTab = (t: TabFeed) => `${coBan}?tab=${t}${duoi(khoang)}`;
-  const hrefKhoang = (k: KhoangFeed) => `${coBan}?tab=${tab}${duoi(k)}`;
+  const duoiTruongPhai = truongPhai ? `&truong_phai=${encodeURIComponent(truongPhai)}` : "";
+  const hrefTab = (t: TabFeed) => `${coBan}?tab=${t}${duoi(khoang)}${duoiTruongPhai}`;
+  const hrefKhoang = (k: KhoangFeed) => `${coBan}?tab=${tab}${duoi(k)}${duoiTruongPhai}`;
 
   return (
     <div className={css.khung}>
@@ -178,11 +182,29 @@ export function Feed({
           </nav>
         )}
 
+        {truongPhai && (
+          <div className={css.bo_loc_truong_phai} data-testid="bo-loc-truong-phai">
+            <span>
+              Trường phái: <strong>#{truongPhai}</strong>
+            </span>
+            <Link
+              href={`${coBan}?tab=${tab}${duoi(khoang)}`}
+              className={css.xoa_bo_loc}
+              title="Bỏ lọc trường phái"
+              prefetch={false}
+            >
+              ✕ Bỏ lọc
+            </Link>
+          </div>
+        )}
+
         {feed.items.length === 0 ? (
           <p className={css.rong} data-testid="feed-rong">
-            {tabCoKhoang(tab) && khoang !== KHOANG_MAC_DINH
-              ? "Chưa có bài nào trong khoảng này."
-              : "Chưa có bài nào ở đây."}
+            {truongPhai
+              ? `Chưa có mạch nào thuộc trường phái #${truongPhai}.`
+              : tabCoKhoang(tab) && khoang !== KHOANG_MAC_DINH
+                ? "Chưa có bài nào trong khoảng này."
+                : "Chưa có bài nào ở đây."}
           </p>
         ) : (
           <ul className={css.danh_sach} data-testid="feed">
@@ -206,6 +228,7 @@ export function Feed({
           tab={tab}
           khoang={khoang}
           sub={sub}
+          truongPhai={truongPhai}
         />
       </main>
 

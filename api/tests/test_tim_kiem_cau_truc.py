@@ -68,6 +68,10 @@ BANG_DONG_BO: dict[str, tuple[str, str]] = {
     "xoa_moc": (PHAI, "bia mộ ⇒ thân mốc phải rời index"),
     "dong_so": (PHAI, "`ket_qua` là trường tìm được"),
     "mo_lai": (PHAI, "`ket_qua` bị xoá theo ⇒ phải rời index"),
+    "cong_khai_mach": (
+        PHAI,
+        "chuyển mạch riêng tư thành công khai ⇒ tài liệu phải được dựng vào index",
+    ),
     "dat_an_moc": (PHAI, "mốc bị ẩn ⇒ thân rời index; gỡ ẩn ⇒ quay lại"),
     "dat_an_mach": (
         PHAI,

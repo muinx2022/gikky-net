@@ -205,3 +205,53 @@
     margin: 0 16px 12px;
   }
 }
+
+.truong_phai {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  color: var(--accent);
+  background: var(--surface-2);
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  padding: 1px 7px;
+  text-decoration: none;
+}
+
+.truong_phai:hover {
+  background: var(--accent-soft);
+}
+
+.banner_rieng_tu {
+  margin: 10px 0 14px;
+  padding: 10px 14px;
+  background: var(--surface-2);
+  border: 1px dashed var(--line-2);
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+
+@media print {
+  .hang_tren,
+  .doi_mat,
+  .composer_bao,
+  .banner_rieng_tu {
+    display: none !important;
+  }
+
+  .the {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .dau {
+    padding: 0 0 16px 0 !important;
+  }
+
+  .nhat_ky {
+    padding: 0 !important;
+  }
+}
+

@@ -241,6 +241,8 @@ class MachTomTatOut(Schema):
     author: NguoiDungTomTatOut
     status: str
     ket_qua: str | None
+    truong_phai: str | None = None
+    rieng_tu: bool = False
     entry_count: int
     #: Số bình luận **ĐỌC ĐƯỢC** — bình luận đã xoá hoặc bị ẩn không được đếm, dù khán
     #: đài vẫn render bia mộ giữ chỗ cho nhánh con. "💬 N" nghĩa là N bình luận đọc được,
@@ -587,6 +589,9 @@ class MachChiTietOut(Schema):
     #: trôi, và một trường ở đây rẻ hơn hẳn cái chuông đó.
     tran_moc_moi_ngay: int
     ket_qua: str | None
+    bai_hoc: str | None = None
+    truong_phai: str | None = None
+    rieng_tu: bool = False
     #: Mod đã khoá mạch chưa (đọc được, cấm tương tác). Trục RIÊNG với `status`.
     locked: bool
     #: Tác giả đã tắt tính năng bình luận cho mạch này chưa (plans/2026-09-07-tat-mo-binh-luan.md).

@@ -58,6 +58,7 @@ export function CuonVoHan({
   tab,
   khoang,
   sub,
+  truongPhai,
 }: {
   /** `cursor_ke_tiep` của trang server render. `null` = hết bài, component không render gì. */
   cursorDau: string | null;
@@ -67,6 +68,8 @@ export function CuonVoHan({
   khoang: KhoangFeed;
   /** Có mặt ở `/s/<sub>`, vắng ở `/`. */
   sub?: string;
+  /** Bộ lọc trường phái giao dịch (nếu có). */
+  truongPhai?: string;
 }) {
   const [them, datThem] = useState<MachTomTatOut[]>([]);
   const [cursor, datCursor] = useState<string | null>(cursorDau);
@@ -87,7 +90,7 @@ export function CuonVoHan({
     if (dangTai.current || cursor === null) return;
     dangTai.current = true;
     try {
-      const trang = await docFeedOTrinhDuyet(tab, { sub, cursor, khoang });
+      const trang = await docFeedOTrinhDuyet(tab, { sub, cursor, khoang, truong_phai: truongPhai });
       if (trang === null) {
         datLoi(true);
         return;
@@ -102,7 +105,7 @@ export function CuonVoHan({
     } finally {
       dangTai.current = false;
     }
-  }, [cursor, khoang, sub, tab]);
+  }, [cursor, khoang, sub, tab, truongPhai]);
 
   useEffect(() => {
     const el = moc.current;

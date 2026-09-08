@@ -75,13 +75,14 @@ export default async function TrangSub({
   const tab = docTab(q.tab);
   const khoang = docKhoang(q.khoang);
   const cursor = Array.isArray(q.cursor) ? q.cursor[0] : q.cursor;
+  const truongPhai = typeof q.truong_phai === "string" ? q.truong_phai : undefined;
 
   // API trả 404 `sub_khong_ton_tai` cho slug lạ — `docFeedSub` quy nó về `null`, và trang
   // sub không tồn tại phải là 404 thật chứ không phải một feed rỗng trông như bình thường.
   // Hàm RIÊNG cho nhánh có sub (vá F1): đây là chỗ duy nhất `null` có nghĩa thật, nên chỉ
   // chỗ này được nhận một kiểu nullable.
   const [{ du_lieu: feed, cursorHong }, chi_tiet, cac_sub] = await Promise.all([
-    docFeedSub(sub, tab, { cursor, khoang }),
+    docFeedSub(sub, tab, { cursor, khoang, truong_phai: truongPhai }),
     docSub(sub),
     docCacSub(),
   ]);
@@ -98,6 +99,7 @@ export default async function TrangSub({
       khoang={khoang}
       coBan={duongDanSub(sub)}
       sub={sub}
+      truongPhai={truongPhai}
       sidebar={<Sidebar sub={chi_tiet} cacSub={cac_sub} />}
       // X9 — **không** truyền kèm `tieuDe`/`lede` nữa: có `header` thì hai prop ấy không
       // render ở đâu, và `lede={chi_tiet.mo_ta}` là bản sao thứ hai của `mo_ta` không ai

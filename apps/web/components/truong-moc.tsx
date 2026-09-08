@@ -261,14 +261,36 @@ function TruongFigures({
         </div>
       ))}
       {gia_tri.length < SO_FIGURES_TOI_DA ? (
-        <button
-          type="button"
-          className={css.fig_them}
-          onClick={() => dat([...gia_tri, { label: "", value: "" }])}
-          data-testid={`${tienTo}-fig-them`}
-        >
-          ＋ thêm cặp số
-        </button>
+        <>
+          <div className={css.goi_y_chips}>
+            <span className={css.goi_y_tieu_de}>Gợi ý:</span>
+            {["Giá vào", "Dừng lỗ", "Chốt lời"].map((chip) => (
+              <button
+                key={chip}
+                type="button"
+                className={css.chip_goi_y}
+                onClick={() => {
+                  const trong = gia_tri.findIndex((f) => f.label.trim() === "");
+                  if (trong !== -1) {
+                    sua(trong, "label", chip);
+                  } else {
+                    dat([...gia_tri, { label: chip, value: "" }]);
+                  }
+                }}
+              >
+                ＋ {chip}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            className={css.fig_them}
+            onClick={() => dat([...gia_tri, { label: "", value: "" }])}
+            data-testid={`${tienTo}-fig-them`}
+          >
+            ＋ thêm cặp số
+          </button>
+        </>
       ) : (
         // Nói ra vì sao cái nút biến mất. Một nút vắng mặt không lý do là người ta bấm
         // quanh chỗ đó rồi tưởng trang hỏng.

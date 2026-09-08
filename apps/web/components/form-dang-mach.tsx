@@ -43,6 +43,8 @@ export function FormDangMach({
   const [moc, datMoc] = useState<NoiDungMoc>(mocRong);
   const [anhs, datAnhs] = useState<File[]>([]);
   const [tatBinhLuan, datTatBinhLuan] = useState(false);
+  const [truongPhai, datTruongPhai] = useState("");
+  const [riengTu, datRiengTu] = useState(false);
   const [dangGui, datDangGui] = useState(false);
   const [loi, datLoi] = useState<string | null>(null);
 
@@ -109,7 +111,14 @@ export function FormDangMach({
         await taoMach({
           baseUrl: GOC_TRINH_DUYET,
           headers: await headerGhi(),
-          body: { sub, title: title.trim(), tat_binh_luan: tatBinhLuan, ...thanMoc(moc) },
+          body: {
+            sub,
+            title: title.trim(),
+            tat_binh_luan: tatBinhLuan,
+            truong_phai: truongPhai === "" ? null : truongPhai,
+            rieng_tu: riengTu,
+            ...thanMoc(moc),
+          },
         }),
         "Không đăng được bài.",
       );
@@ -171,6 +180,27 @@ export function FormDangMach({
         </select>
       </label>
 
+      <label className={css.o}>
+        <span className={css.nhan}>
+          Trường phái / Phương pháp <span className={css.tuy_chon}>tuỳ chọn</span>
+        </span>
+        <select
+          className={css.chon}
+          value={truongPhai}
+          onChange={(e) => datTruongPhai(e.target.value)}
+          data-testid="dang-mach-truong-phai"
+        >
+          <option value="">-- Không chọn --</option>
+          <option value="vsa">VSA / Wyckoff</option>
+          <option value="smc">SMC / Price Action</option>
+          <option value="co-ban">Đầu tư cơ bản / BCTC</option>
+          <option value="breakout">Breakout / VCP</option>
+          <option value="trend">Trend Following</option>
+          <option value="swing">Swing Trading</option>
+          <option value="scalping">Scalping / T+</option>
+        </select>
+      </label>
+
       {/* **Placeholder là HƯỚNG DẪN, không phải bài mẫu** — user chốt 2026-08-24, và luật
           này áp cho mọi form trong `apps/web`.
 
@@ -219,6 +249,16 @@ export function FormDangMach({
           data-testid="dang-mach-tat-binh-luan"
         />
         <span>Tắt bình luận cho bài viết này (có thể mở lại sau)</span>
+      </label>
+
+      <label className={css.tuy_chon}>
+        <input
+          type="checkbox"
+          checked={riengTu}
+          onChange={(e) => datRiengTu(e.target.checked)}
+          data-testid="dang-mach-rieng-tu"
+        />
+        <span>🔒 Nhật ký riêng tư (Chỉ mình tôi xem, có thể công khai sau)</span>
       </label>
 
       <div className={css.chan}>

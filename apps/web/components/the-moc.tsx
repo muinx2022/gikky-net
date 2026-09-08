@@ -17,6 +17,9 @@ import { KhungNganKeo, NutNganKeo } from "./ngan-keo";
 import { VoThuGonMoc } from "./moc-accordion";
 import css from "./the-moc.module.css";
 import { ThanHtml } from "./than-html";
+import { TiLeRR } from "./ti-le-rr";
+import { timTradingViewSnapshots } from "@/lib/tradingview";
+import { TradingViewSnapshot } from "./tradingview-snapshot";
 
 type Props = {
   moc: MocOut;
@@ -62,6 +65,7 @@ export function TheMoc({
   // Ngăn kéo có HÀNG nào không — kể cả bia mộ. Đây là câu hỏi đúng cho cả cái nút lẫn
   // câu mồi; `so_binh_luan > 0` là câu hỏi khác và nó nói dối ở mốc chỉ còn bia mộ.
   const co_hang = nganKeo !== null && nganKeo.threads.length > 0;
+  const tvSnapshots = hien && moc.body ? timTradingViewSnapshots(moc.body) : [];
 
   return (
     <li
@@ -140,22 +144,29 @@ export function TheMoc({
             />
 
             {moc.figures !== null && moc.figures.length > 0 && (
-              <dl className={css.figures} data-testid="figures">
-                {moc.figures.map((f, i) => (
-                  <div key={`${f.label}-${i}`} className={css.fig}>
-                    <dt>{f.label}</dt>
-                    <dd>
-                      <SoLaiLo value={f.value} />
-                    </dd>
-                  </div>
-                ))}
-              </dl>
+              <>
+                <dl className={css.figures} data-testid="figures">
+                  {moc.figures.map((f, i) => (
+                    <div key={`${f.label}-${i}`} className={css.fig}>
+                      <dt>{f.label}</dt>
+                      <dd>
+                        <SoLaiLo value={f.value} />
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+                <TiLeRR figures={moc.figures} />
+              </>
             )}
 
             {/* Ảnh đứng SAU con số, TRƯỚC khối trích: thứ tự đọc là chữ → số → ảnh →
                 câu được trích. Nguyên tắc 9 — `GalleryMoc` tự trả `null` khi không có
                 ảnh, nên không có khung rỗng nào ở đây. */}
             <GalleryMoc anhs={moc.anhs} seq={moc.seq} />
+
+            {tvSnapshots.length > 0 && (
+              <TradingViewSnapshot snapshots={tvSnapshots} />
+            )}
 
             {moc.trich !== null && (
               <KhoiTrich

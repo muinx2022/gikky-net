@@ -214,3 +214,23 @@ a:hover {
     animation: none !important;
   }
 }
+
+@media print {
+  header:has(a[href="/"]),
+  nav,
+  footer,
+  aside,
+  [data-testid="khoi-chu-mach"],
+  [data-testid="khan-dai"],
+  [data-testid="nut-bao-cao-mach"],
+  [data-testid="nut-theo-mach"],
+  [data-testid="xuat-case-study"] {
+    display: none !important;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+}
+

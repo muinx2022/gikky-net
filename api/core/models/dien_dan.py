@@ -166,6 +166,12 @@ class Mach(models.Model):
     #: Một dòng tự do ≤40 ký tự khi đóng sổ, vd "+18.2% · 163 ngày" (PLAN 5.1).
     #: THUẦN HIỂN THỊ — không validate ngữ nghĩa. NULL = không nhập, banner ẩn phần này.
     ket_qua = models.CharField(max_length=40, null=True, blank=True)
+    #: Bài học / mổ xẻ sau lệnh khi đóng sổ
+    bai_hoc = models.TextField(null=True, blank=True)
+    #: Trường phái / phương pháp giao dịch (VSA, SMC, Cơ bản, Trend, Breakout...)
+    truong_phai = models.CharField(max_length=30, null=True, blank=True)
+    #: Mạch riêng tư: True = chỉ tác giả và staff xem được; False = công khai
+    rieng_tu = models.BooleanField(default=False)
 
     #: Tác giả tắt bình luận (plans/2026-09-07-tat-mo-binh-luan.md).
     #: True: không cho phép viết bình luận mới hoặc reply. Bình luận cũ vẫn đọc được.

@@ -94,6 +94,27 @@ export function TheMach({ mach }: { mach: MachTomTatOut }) {
           {mach.status === "closed" && (
             <span className={css.dong_so}>đã đóng sổ</span>
           )}
+          {mach.rieng_tu && (
+            <span
+              className={css.rieng_tu}
+              data-testid="the-mach-rieng-tu"
+              title="Chỉ bạn và quản trị viên nhìn thấy"
+            >
+              🔒 riêng tư
+            </span>
+          )}
+          {mach.truong_phai && (
+            <Link
+              href={`/?truong_phai=${encodeURIComponent(mach.truong_phai)}`}
+              className={css.truong_phai}
+              data-testid="the-mach-truong-phai"
+              title={`Lọc theo trường phái ${mach.truong_phai}`}
+              prefetch={false}
+              {...CHU_NGUOI_DUNG}
+            >
+              #{mach.truong_phai}
+            </Link>
+          )}
         </div>
 
         <h2 className={css.tieu_de}>

@@ -174,6 +174,34 @@
   border-style: solid;
 }
 
+.goi_y_chips {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.goi_y_tieu_de {
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+
+.chip_goi_y {
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line-hairline);
+  background: var(--surface);
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+
+.chip_goi_y:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 @media (pointer: coarse) {
   .fig_xoa {
     width: 44px;

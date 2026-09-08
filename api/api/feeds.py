@@ -81,21 +81,17 @@ def _the_ra(trang) -> list:
     ]
 
 
-def _mach_hien(sub: str | None) -> QuerySet:
-    """Mạch được phép hiện ra API công khai, đã lọc `?sub=`.
+def _mach_hien(sub: str | None, truong_phai: str | None = None) -> QuerySet:
+    """Mạch được phép hiện ra API công khai, đã lọc `?sub=`, `?truong_phai=`, và loại trừ `rieng_tu=True`.
 
-    `hidden_at__isnull=True` là bộ lọc bảo vệ duy nhất của feed — mạch bị mod ẩn không
-    được xuất hiện ở bất kỳ danh sách công khai nào (PLAN 5.10).
-
-    Cùng bộ lọc ấy che luôn **bài hẹn giờ chưa tới hạn**, và đó là chủ đích chứ không phải
-    trùng hợp may mắn: plan 2026-09-03 §1.1 lưu bài hẹn như một bài đang ẩn đúng để không
-    phải sờ vào 68 chỗ lọc `hidden_at` rải khắp tầng đọc. Không thêm vế `published_at <=
-    now()` ở đây — thêm là dựng nguồn sự thật thứ hai cho cùng một câu hỏi, và chỗ nào
-    quên vế mới thì rò bài chưa đăng.
+    `hidden_at__isnull=True` và `rieng_tu=False` là bộ lọc bảo vệ của feed — mạch bị mod ẩn
+    hoặc mạch riêng tư không được xuất hiện ở bất kỳ feed công khai nào.
     """
-    qs = Mach.objects.filter(hidden_at__isnull=True).select_related("sub", "author")
+    qs = Mach.objects.filter(hidden_at__isnull=True, rieng_tu=False).select_related("sub", "author")
     if sub is not None:
         qs = qs.filter(sub__slug=sub)
+    if truong_phai is not None:
+        qs = qs.filter(truong_phai=truong_phai)
     return qs
 
 
@@ -261,6 +257,7 @@ _MO_TA_FEED_DDR = """Feed **Đang diễn ra**: mạch còn mở, mốc mới nh�
 def feed_moi(
     request,
     sub: str | None = None,
+    truong_phai: str | None = None,
     sort: SortFeed = SORT_TU_NHIEN,
     khoang: KhoangThoiGian = KHOANG_TAT_CA,
     cursor: str | None = None,
@@ -272,7 +269,7 @@ def feed_moi(
     if (l := _kiem_sub(sub)) is not None:
         return l
     ket_qua, l = _phuc_vu(
-        _loc_khoang(_mach_hien(sub), khoang),
+        _loc_khoang(_mach_hien(sub, truong_phai=truong_phai), khoang),
         truong="last_content_at",
         sort=sort,
         cursor=cursor,
@@ -291,6 +288,7 @@ def feed_moi(
 def feed_dang_dien_ra(
     request,
     sub: str | None = None,
+    truong_phai: str | None = None,
     sort: SortFeed = SORT_TU_NHIEN,
     khoang: KhoangThoiGian = KHOANG_TAT_CA,
     cursor: str | None = None,
@@ -302,7 +300,7 @@ def feed_dang_dien_ra(
     if (l := _kiem_sub(sub)) is not None:
         return l
     ket_qua, l = _phuc_vu(
-        _loc_khoang(_mach_hien(sub).filter(status=TrangThaiMach.MO), khoang),
+        _loc_khoang(_mach_hien(sub, truong_phai=truong_phai).filter(status=TrangThaiMach.MO), khoang),
         truong="last_discussion_at",
         sort=sort,
         cursor=cursor,
@@ -315,19 +313,12 @@ def subs_kem_so_mach() -> QuerySet:
     """CÔNG KHAI (bỏ gạch dưới 2026-08-24) vì `api/theo_sub.py` dùng lại nó.
 
     Đây là **một** định nghĩa của "mạch hiện được" cho con số `so_mach`. Chép công thức
-    `Count(..., filter=hidden_at__isnull=True)` sang module kia là dựng nguồn sự thật thứ
+    `Count(..., filter=Q(machs__hidden_at__isnull=True, machs__rieng_tu=False))` sang module kia là dựng nguồn sự thật thứ
     hai: ngày luật che đổi (thêm `deleted_at` chẳng hạn) sẽ có đúng một chỗ được sửa, và
     hai màn hình cùng nói "12 mạch" / "9 mạch" mà không chỗ nào đỏ.
     """
-    """`Sub` kèm `so_mach_hien` — **cùng bộ lọc với `_mach_hien`**, đếm bằng annotate.
-
-    Một định nghĩa cho cả hai endpoint sub: `xem_sub` và `liet_ke_sub` nói cùng một con
-    số về cùng một chuyên mục, còn hai bản chép tay thì sẽ lệch nhau đúng lúc luật che
-    của feed đổi — và lệch ở đây nghĩa là header trang sub và sidebar cãi nhau ngay trên
-    cùng một màn hình.
-    """
     return Sub.objects.annotate(
-        so_mach_hien=Count("machs", filter=Q(machs__hidden_at__isnull=True))
+        so_mach_hien=Count("machs", filter=Q(machs__hidden_at__isnull=True, machs__rieng_tu=False))
     )
 
 
