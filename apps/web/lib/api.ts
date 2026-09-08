@@ -642,7 +642,7 @@ export async function docTimKiem(opts: {
       query: {
         q: opts.q,
         sub: opts.sub ?? null,
-        sort: opts.sort ?? "lien_quan",
+        sort: opts.sort ?? "moi",
         offset: opts.offset ?? 0,
         limit: SO_KET_QUA_MOI_TRANG,
       },

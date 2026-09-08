@@ -40,9 +40,10 @@ def gia_meili(monkeypatch):
     Phase 7, giữ nguyên để chúng không phải viết lại), còn `("binh_luan", id)` nói rõ
     loại. Trả về đúng hình dạng `tim_tron` thật: `[(indexUid, id)]`.
     """
-    trang_thai: dict = {"cap": [], "no": None}
+    trang_thai: dict = {"cap": [], "no": None, "sap_theo_moi": None}
 
     def _tim_tron(*, q, sub, sap_theo_moi, offset, limit):
+        trang_thai["sap_theo_moi"] = sap_theo_moi
         if trang_thai["no"] is not None:
             raise trang_thai["no"]
         cap = trang_thai["cap"]
@@ -55,7 +56,9 @@ def gia_meili(monkeypatch):
             h if isinstance(h, tuple) else (TEN_INDEX, h) for h in (hits or [])
         ]
         trang_thai["no"] = no
+        return dat
 
+    dat.trang_thai = trang_thai
     return dat
 
 
@@ -666,3 +669,19 @@ def test_goi_y_giu_dung_thu_tu_meilisearch(client, gia_meili_goi_y, sub, nguoi_a
 
     du = lay(client, "/api/v1/tim-kiem/goi-y?q=Mạch")
     assert [i["mach_id"] for i in du["items"]] == mong
+
+
+@pytest.mark.django_db
+def test_tim_kiem_mac_dinh_sap_theo_moi(client, gia_meili):
+    """Không truyền ?sort= ⇒ mặc định gọi tim_tron với sap_theo_moi=True (ngày mới -> cũ)."""
+    gia_meili([])
+    lay(client, "/api/v1/tim-kiem?q=fpt")
+    assert gia_meili.trang_thai["sap_theo_moi"] is True
+
+
+@pytest.mark.django_db
+def test_tim_kiem_khi_truyen_sort_lien_quan(client, gia_meili):
+    """Truyền ?sort=lien_quan ⇒ gọi tim_tron với sap_theo_moi=False."""
+    gia_meili([])
+    lay(client, "/api/v1/tim-kiem?q=fpt&sort=lien_quan")
+    assert gia_meili.trang_thai["sap_theo_moi"] is False

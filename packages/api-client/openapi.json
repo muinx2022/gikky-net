@@ -6261,7 +6261,7 @@
     },
     "/api/v1/tim-kiem": {
       "get": {
-        "description": "Tìm **mạch và bình luận**, trộn chung một danh sách theo độ liên quan.\n\nMạch khớp theo tiêu đề, thân bài gốc, các mốc nối sau, kết quả và tên tác giả; bình\nluận khớp theo nội dung và tên người viết. Mỗi dòng mang `loai` để biết nó là gì.\n\nGõ **không dấu vẫn ra kết quả có dấu** (`nhat ky lenh hpg` → *Nhật ký lệnh HPG*), và\nsai một ký tự ở từ dài vẫn ra. Mã chứng khoán ngắn (`HPG`) khớp **chính xác**.\n\n`?sub=<slug>` lọc theo chuyên mục; sub không tồn tại trả 404 `sub_khong_ton_tai`.\n⚠ **`?sub=` cũng làm kết quả bình luận biến mất** — tài liệu bình luận không mang\n`sub` (xem `core/tim_kiem.py::_truy_van_tron`).\n`?sort=lien_quan` (mặc định) xếp theo độ liên quan; `?sort=moi` xếp mới trước — mốc\nthời gian của mỗi dòng là lúc mạch mở hoặc lúc bình luận được viết, tuỳ loại.\n`?offset=` + `?limit=` phân trang; `limit` tối đa 50, `offset` tối đa 1000.\n\nMạch bị mod ẩn không xuất hiện. Nội dung của mốc đã xoá hoặc bị mod ẩn không tìm được.\nBình luận đã xoá, bị mod ẩn, **hoặc nằm trong một mạch bị ẩn** đều không xuất hiện.\n\nTìm kiếm tạm ngừng (service phụ đang hỏng hoặc chưa cấu hình) ⇒ vẫn **200**, với\n`co_the_tim = false` và danh sách rỗng, để trang gọi có thể nói ra bằng tiếng người.",
+        "description": "Tìm **mạch và bình luận**, trộn chung một danh sách theo độ liên quan.\n\nMạch khớp theo tiêu đề, thân bài gốc, các mốc nối sau, kết quả và tên tác giả; bình\nluận khớp theo nội dung và tên người viết. Mỗi dòng mang `loai` để biết nó là gì.\n\nGõ **không dấu vẫn ra kết quả có dấu** (`nhat ky lenh hpg` → *Nhật ký lệnh HPG*), và\nsai một ký tự ở từ dài vẫn ra. Mã chứng khoán ngắn (`HPG`) khớp **chính xác**.\n\n`?sub=<slug>` lọc theo chuyên mục; sub không tồn tại trả 404 `sub_khong_ton_tai`.\n⚠ **`?sub=` cũng làm kết quả bình luận biến mất** — tài liệu bình luận không mang\n`sub` (xem `core/tim_kiem.py::_truy_van_tron`).\n`?sort=moi` (mặc định) xếp mới trước — mốc thời gian của mỗi dòng là lúc mạch mở\nhoặc lúc bình luận được viết, tuỳ loại; `?sort=lien_quan` xếp theo độ liên quan.\n`?offset=` + `?limit=` phân trang; `limit` tối đa 50, `offset` tối đa 1000.\n\nMạch bị mod ẩn không xuất hiện. Nội dung của mốc đã xoá hoặc bị mod ẩn không tìm được.\nBình luận đã xoá, bị mod ẩn, **hoặc nằm trong một mạch bị ẩn** đều không xuất hiện.\n\nTìm kiếm tạm ngừng (service phụ đang hỏng hoặc chưa cấu hình) ⇒ vẫn **200**, với\n`co_the_tim = false` và danh sách rỗng, để trang gọi có thể nói ra bằng tiếng người.",
         "operationId": "tim_kiem",
         "parameters": [
           {
@@ -6295,7 +6295,7 @@
             "name": "sort",
             "required": false,
             "schema": {
-              "default": "lien_quan",
+              "default": "moi",
               "enum": [
                 "lien_quan",
                 "moi"

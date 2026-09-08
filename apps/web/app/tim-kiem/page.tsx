@@ -38,7 +38,7 @@ export default async function TrangTimKiem({
   const tham_so = await searchParams;
   const q = (mot(tham_so.q) ?? "").trim();
   const sub = mot(tham_so.sub);
-  const sort = mot(tham_so.sort) === "moi" ? "moi" : "lien_quan";
+  const sort = mot(tham_so.sort) === "lien_quan" ? "lien_quan" : "moi";
   const offset = Number.parseInt(mot(tham_so.offset) ?? "0", 10) || 0;
 
   const [cac_sub, ket] = await Promise.all([
@@ -86,8 +86,8 @@ export default async function TrangTimKiem({
           aria-label="Sắp xếp"
           className={css.chon}
         >
-          <option value="lien_quan">Liên quan nhất</option>
           <option value="moi">Mới nhất</option>
+          <option value="lien_quan">Liên quan nhất</option>
         </select>
         <button type="submit" className={css.nut}>
           Tìm

@@ -210,12 +210,26 @@ TRUONG_SAP_BINH_LUAN = ["created_at_ts"]
 #: nên nó là nhánh đụng trần trước nhất.
 TRAN_PHAN_TRANG = 2000
 
+#: Quy tắc xếp hạng: giữ nguyên các quy tắc mặc định của Meilisearch nhưng thêm
+#: `created_at_ts:desc` vào cuối làm tie-breaker. Khi các tài liệu có điểm liên quan
+#: tương đương (ví dụ cùng chứa mã cổ phiếu), bài mới hơn luôn được xếp trước bài cũ.
+QUY_TAC_XEP_HANG = [
+    "words",
+    "typo",
+    "proximity",
+    "attribute",
+    "sort",
+    "exactness",
+    "created_at_ts:desc",
+]
+
 #: Cấu hình từng index, khoá = tên index. `cau_hinh_index` lặp trên bảng này.
 CAU_HINH: dict[str, dict] = {
     TEN_INDEX: {
         "searchableAttributes": TRUONG_TIM,
         "filterableAttributes": TRUONG_LOC,
         "sortableAttributes": TRUONG_SAP,
+        "rankingRules": QUY_TAC_XEP_HANG,
         "typoTolerance": KHOAN_DUNG_LOI_GO,
         "pagination": {"maxTotalHits": TRAN_PHAN_TRANG},
     },
@@ -223,6 +237,7 @@ CAU_HINH: dict[str, dict] = {
         "searchableAttributes": TRUONG_TIM_BINH_LUAN,
         "filterableAttributes": TRUONG_LOC_BINH_LUAN,
         "sortableAttributes": TRUONG_SAP_BINH_LUAN,
+        "rankingRules": QUY_TAC_XEP_HANG,
         "pagination": {"maxTotalHits": TRAN_PHAN_TRANG},
         # Ghim Y HỆT index `mach`, và đó là chủ đích: một mã chứng khoán gõ vào ô tìm phải
         # cho cùng luật khớp ở cả hai loại kết quả. Hai ngưỡng khoan dung khác nhau trong

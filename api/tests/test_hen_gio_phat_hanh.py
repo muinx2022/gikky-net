@@ -799,6 +799,7 @@ def test_T3_go_an_bai_hen_gio_tra_409_khong_len_song(canh):
 
 
 def test_T4_ho_so_tac_gia_sap_theo_published_at(client, canh, meili):
+    """A soạn trước, đăng sau ⇒ A đứng trên B ở hồ sơ (cả 20 bài đầu lẫn cửa lật trang)."""
     a = _hen_toi_han(canh, title="A soạn trước")
     b, _ = tao_mach(
         sub=canh["sub"], author=canh["tac_gia"], title="B đăng ngay", body="<p>Thân.</p>"

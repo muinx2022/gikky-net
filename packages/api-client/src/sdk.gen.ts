@@ -1599,8 +1599,8 @@ export const theoSub = <ThrowOnError extends boolean = false>(options: Options<T
  * `?sub=<slug>` lọc theo chuyên mục; sub không tồn tại trả 404 `sub_khong_ton_tai`.
  * ⚠ **`?sub=` cũng làm kết quả bình luận biến mất** — tài liệu bình luận không mang
  * `sub` (xem `core/tim_kiem.py::_truy_van_tron`).
- * `?sort=lien_quan` (mặc định) xếp theo độ liên quan; `?sort=moi` xếp mới trước — mốc
- * thời gian của mỗi dòng là lúc mạch mở hoặc lúc bình luận được viết, tuỳ loại.
+ * `?sort=moi` (mặc định) xếp mới trước — mốc thời gian của mỗi dòng là lúc mạch mở
+ * hoặc lúc bình luận được viết, tuỳ loại; `?sort=lien_quan` xếp theo độ liên quan.
  * `?offset=` + `?limit=` phân trang; `limit` tối đa 50, `offset` tối đa 1000.
  *
  * Mạch bị mod ẩn không xuất hiện. Nội dung của mốc đã xoá hoặc bị mod ẩn không tìm được.
