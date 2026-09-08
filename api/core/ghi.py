@@ -1992,6 +1992,7 @@ def phat_hanh_mach(
             hang.lan_dau_len_song = hang.published_at
             cot.append("lan_dau_len_song")
         hang.save(update_fields=cot)
+        hang = cap_nhat_dem_mach(hang)
         # Thứ tự ba dòng dưới không quan trọng (hai dòng sau chỉ xếp hàng `on_commit`),
         # nhưng cả ba phải nằm TRONG transaction: `bao_mach_moi` ghi `Notification` và
         # rollback ở đây phải cuốn theo cả chuông — cùng lý lẽ `noi_moc` đã ghi.
