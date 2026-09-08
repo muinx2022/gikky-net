@@ -51,7 +51,7 @@ export function ThanhTaiKhoan() {
         >
           Đăng nhập
         </button>
-        <Link href="/dang-ky" className={css.nut_chinh}>
+        <Link href="/dang-ky" prefetch={false} className={css.nut_chinh}>
           Đăng ký
         </Link>
       </div>
@@ -89,7 +89,7 @@ export function ThanhTaiKhoan() {
       </button>
       {mo && (
         <div className={css.menu} role="menu" data-testid="menu-tai-khoan">
-          <Link href={duongDanHoSo(toi.username ?? "")} role="menuitem" onClick={() => datMo(false)}>
+          <Link href={duongDanHoSo(toi.username ?? "")} prefetch={false} role="menuitem" onClick={() => datMo(false)}>
             <UserRound size={15} strokeWidth={2} aria-hidden />
             Hồ sơ của tôi
           </Link>
@@ -98,11 +98,11 @@ export function ThanhTaiKhoan() {
               đúng một trang mang tiêu đề "Cài đặt" là một cái menu nói dối, và cái neo
               chỉ cuộn chứ không đổi được tiêu đề ấy. "Hồ sơ của tôi" ngay trên chỉ để
               XEM. */}
-          <Link href="/sua-ho-so" role="menuitem" onClick={() => datMo(false)}>
+          <Link href="/sua-ho-so" prefetch={false} role="menuitem" onClick={() => datMo(false)}>
             <ImageUp size={15} strokeWidth={2} aria-hidden />
             Sửa hồ sơ
           </Link>
-          <Link href="/cai-dat" role="menuitem" onClick={() => datMo(false)}>
+          <Link href="/cai-dat" prefetch={false} role="menuitem" onClick={() => datMo(false)}>
             <Settings size={15} strokeWidth={2} aria-hidden />
             Cài đặt
           </Link>
@@ -112,12 +112,12 @@ export function ThanhTaiKhoan() {
               Ngày quyền theo-sub được nối, điều kiện ở đây phải đổi theo, và trang
               `/khu-mod` đã tự nói ra giới hạn ấy cho ai lỡ tới. */}
           {toi.la_staff === true && (
-            <Link href="/khu-mod" role="menuitem" onClick={() => datMo(false)}>
+            <Link href="/khu-mod" prefetch={false} role="menuitem" onClick={() => datMo(false)}>
               <ShieldCheck size={15} strokeWidth={2} aria-hidden />
               Khu mod
             </Link>
           )}
-          <Link href="/doi-mat-khau" role="menuitem" onClick={() => datMo(false)}>
+          <Link href="/doi-mat-khau" prefetch={false} role="menuitem" onClick={() => datMo(false)}>
             <KeyRound size={15} strokeWidth={2} aria-hidden />
             Đổi mật khẩu
           </Link>
