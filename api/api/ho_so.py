@@ -68,7 +68,7 @@ from api.phan_trang import (
 )
 from api.quyen import dang_nhap
 from api.schemas import FeedOut
-from api.trinh_bay import du_lieu_the, mach_tom_tat_ra
+from api.trinh_bay import DuLieuThe, du_lieu_the, mach_tom_tat_ra
 
 router = Router()
 
@@ -104,9 +104,14 @@ def _the_ra(machs) -> list:
     """
     theo_mach = du_lieu_the(machs)
     return [
-        mach_tom_tat_ra(m, moc_1_id=moc_1_id, xem_truoc=xem_truoc)
+        mach_tom_tat_ra(
+            m,
+            moc_1_id=d.moc_1_id,
+            xem_truoc=d.xem_truoc,
+            moc_moi_nhat=d.moc_moi_nhat,
+        )
         for m in machs
-        for moc_1_id, xem_truoc in [theo_mach.get(m.pk, (None, None))]
+        for d in [theo_mach.get(m.pk, DuLieuThe(None, None, None))]
     ]
 
 

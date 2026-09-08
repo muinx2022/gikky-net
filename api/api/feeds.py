@@ -38,7 +38,7 @@ from api.phan_trang import (
     ma_hoa_cursor_so,
 )
 from api.schemas import FeedOut, SubChiTietOut
-from api.trinh_bay import du_lieu_the, mach_tom_tat_ra
+from api.trinh_bay import DuLieuThe, du_lieu_the, mach_tom_tat_ra
 
 router = Router()
 
@@ -70,9 +70,14 @@ def _the_ra(trang) -> list:
     """
     theo_mach = du_lieu_the(trang)
     return [
-        mach_tom_tat_ra(m, moc_1_id=moc_1_id, xem_truoc=xem_truoc)
+        mach_tom_tat_ra(
+            m,
+            moc_1_id=d.moc_1_id,
+            xem_truoc=d.xem_truoc,
+            moc_moi_nhat=d.moc_moi_nhat,
+        )
         for m in trang
-        for moc_1_id, xem_truoc in [theo_mach.get(m.pk, (None, None))]
+        for d in [theo_mach.get(m.pk, DuLieuThe(None, None, None))]
     ]
 
 
@@ -267,11 +272,8 @@ def feed_moi(
     if (l := _kiem_sub(sub)) is not None:
         return l
     ket_qua, l = _phuc_vu(
-        # `published_at`, không phải `created_at` — xem `_MO_TA_FEED_MOI`. Khoá sort và
-        # khoá cursor keyset là CÙNG một trường (`_trang` dùng `truong` cho cả hai), nên
-        # đổi ở đây là đổi cả hai cùng lúc; hai nửa lệch nhau là feed trùng/sót hàng.
         _loc_khoang(_mach_hien(sub), khoang),
-        truong="published_at",
+        truong="last_content_at",
         sort=sort,
         cursor=cursor,
         limit=limit,
@@ -301,7 +303,7 @@ def feed_dang_dien_ra(
         return l
     ket_qua, l = _phuc_vu(
         _loc_khoang(_mach_hien(sub).filter(status=TrangThaiMach.MO), khoang),
-        truong="last_entry_at",
+        truong="last_discussion_at",
         sort=sort,
         cursor=cursor,
         limit=limit,

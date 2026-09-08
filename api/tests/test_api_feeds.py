@@ -130,7 +130,7 @@ def duyet_het_tu(client, url: str, limit: int, cursor: str | None) -> list[int]:
     return ra
 
 
-def test_feed_dang_dien_ra_chi_lay_mach_MO_va_sap_theo_last_entry_at(
+def test_feed_dang_dien_ra_chi_lay_mach_MO_va_sap_theo_last_discussion_at(
     client, seed, seed_post_thuong, tac_gia
 ):
     """Mạch HPG của seed đã đóng sổ ⇒ phải vắng mặt, dù nó là mạch giàu nội dung nhất."""
@@ -149,17 +149,17 @@ def test_feed_dang_dien_ra_chi_lay_mach_MO_va_sap_theo_last_entry_at(
     assert seed_post_thuong.pk in ids(d)
     assert len(d["items"]) == 4
     assert all(m["status"] == "open" for m in d["items"])
-    khi = [m["last_entry_at"] for m in d["items"]]
+    khi = [m["created_at"] for m in d["items"]]
     assert khi == sorted(khi, reverse=True)
 
 
 def test_hai_feed_dung_hai_khoa_sort_khac_nhau(client, sub, tac_gia, nguoi_khac):
-    """Đối chứng cho bài trên: nếu hai feed cùng khoá sort thì mọi bài đo đều rỗng một nửa.
-
-    Dựng hai mạch có thứ tự `created_at` NGƯỢC với thứ tự `last_entry_at`: mạch cũ vừa
-    được nối mốc, mạch mới thì chưa. Feed "Mới" phải cho mạch mới lên đầu, feed "Đang
-    diễn ra" phải cho mạch cũ lên đầu.
+    """Đối chứng cho hai feed:
+    - Feed "Mới" sắp theo `last_content_at`: mốc mới vừa nối đưa mạch cũ lên đầu.
+    - Feed "Đang diễn ra" sắp theo `last_discussion_at`: chỉ cập nhật khi có bình luận chất lượng.
     """
+    from core.ghi import tao_binh_luan
+
     cu, _ = tao_mach(
         sub=sub,
         author=tac_gia,
@@ -175,8 +175,18 @@ def test_hai_feed_dung_hai_khoa_sort_khac_nhau(client, sub, tac_gia, nguoi_khac)
         _created_at_seed=timezone.now() - timedelta(days=1),
     )
     them_moc(mach=cu, author=tac_gia, body="Mốc 2 vừa nối.")
+    # Mạch cũ vừa nối mốc => lên đầu feed Mới
+    assert ids(lay(client, "/api/v1/feeds/moi?limit=50")) == [cu.pk, moi.pk]
 
-    assert ids(lay(client, "/api/v1/feeds/moi?limit=50")) == [moi.pk, cu.pk]
+    # Nhưng feed Đang diễn ra chưa có bình luận chất lượng nên mạch mới vẫn đứng trên mạch cũ
+    assert ids(lay(client, "/api/v1/feeds/dang-dien-ra?limit=50")) == [moi.pk, cu.pk]
+
+    # Thêm bình luận chất lượng vào mạch cũ => mạch cũ nhảy lên đầu feed Đang diễn ra
+    tao_binh_luan(
+        mach=cu,
+        author=tac_gia,
+        body="Tác giả đích thân phân tích phản hồi chi tiết cho cộng đồng đọc.",
+    )
     assert ids(lay(client, "/api/v1/feeds/dang-dien-ra?limit=50")) == [cu.pk, moi.pk]
 
 
@@ -259,6 +269,8 @@ def test_the_feed_du_truong_cho_1c(client, seed):
         "moc_1_id",
         # 2026-08-23: nội dung xem trước lấy từ mốc 1 (ảnh gallery, hoặc trích đoạn chữ).
         "xem_truoc",
+        # 2026-09-08: thông tin mốc mới nhất phục vụ chip trên thẻ
+        "moc_moi_nhat",
     }
     assert the["moc_1_id"] == Moc.objects.get(mach=seed, seq=1).pk
     assert the["ket_qua"] == "+18.2% · 163 ngày"
@@ -452,4 +464,35 @@ def test_uu_tien_gallery_truoc_anh_body(client, seed_post_thuong):
     # Phải chọn ảnh gallery
     assert "anh-gallery" in xt["anh"]["url"]
     assert xt["so_anh"] == 1
+
+
+def test_moc_moi_nhat_tren_the_feed(client, seed_post_thuong):
+    """Thẻ feed trả về `moc_moi_nhat` khi mạch có >= 2 mốc và mốc mới nhất đọc được."""
+    from core.ghi import them_moc
+
+    d = lay(client, "/api/v1/feeds/moi?limit=50")
+    the = next(m for m in d["items"] if m["id"] == seed_post_thuong.pk)
+    assert the["moc_moi_nhat"] is None
+
+    # Thêm mốc 2
+    moc_2 = them_moc(
+        mach=seed_post_thuong,
+        author=seed_post_thuong.author,
+        occurred_at=timezone.now().date(),
+        loai="Chờ đợi",
+        body="Nội dung mốc 2 cập nhật tình hình.",
+    )
+
+    d = lay(client, "/api/v1/feeds/moi?limit=50")
+    the = next(m for m in d["items"] if m["id"] == seed_post_thuong.pk)
+    assert the["moc_moi_nhat"] is not None
+    assert the["moc_moi_nhat"]["seq"] == 2
+    assert the["moc_moi_nhat"]["loai"] == "Chờ đợi"
+
+    # Mốc 2 bị ẩn -> moc_moi_nhat trả None
+    Moc.objects.filter(pk=moc_2.pk).update(hidden_at=timezone.now())
+    d = lay(client, "/api/v1/feeds/moi?limit=50")
+    the = next(m for m in d["items"] if m["id"] == seed_post_thuong.pk)
+    assert the["moc_moi_nhat"] is None
+
 

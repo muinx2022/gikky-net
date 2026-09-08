@@ -13,7 +13,7 @@ from core.models.tuong_tac import Trich
 from api.loi import LoiOut, khong_tim_thay
 from api.phan_trang import kiem_gioi_han
 from api.schemas import HoSoOut
-from api.trinh_bay import du_lieu_the, mach_tom_tat_ra
+from api.trinh_bay import DuLieuThe, du_lieu_the, mach_tom_tat_ra
 
 router = Router()
 
@@ -113,8 +113,13 @@ def xem_ho_so(request, username: str, limit: int = SO_MACH_TREN_HO_SO):
             .count()
         ),
         machs=[
-            mach_tom_tat_ra(m, moc_1_id=moc_1_id, xem_truoc=xem_truoc)
+            mach_tom_tat_ra(
+                m,
+                moc_1_id=d.moc_1_id,
+                xem_truoc=d.xem_truoc,
+                moc_moi_nhat=d.moc_moi_nhat,
+            )
             for m in machs
-            for moc_1_id, xem_truoc in [the.get(m.pk, (None, None))]
+            for d in [the.get(m.pk, DuLieuThe(None, None, None))]
         ],
     )

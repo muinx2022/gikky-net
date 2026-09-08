@@ -72,6 +72,19 @@ export function TheMach({ mach }: { mach: MachTomTatOut }) {
             ·
           </span>
           <span className={css.khi}>{ngayCuaThoiDiem(mach.published_at)}</span>
+          {mach.entry_count >= 2 && mach.moc_moi_nhat && (
+            <>
+              <span className={css.cham} aria-hidden>
+                ·
+              </span>
+              <span
+                className={css.khi_cap_nhat}
+                title={`Mốc ${mach.moc_moi_nhat.seq} ngày ${ngayCuaThoiDiem(mach.moc_moi_nhat.created_at)}`}
+              >
+                nối mốc {ngayCuaThoiDiem(mach.moc_moi_nhat.created_at)}
+              </span>
+            </>
+          )}
           {mach.status === "closed" && (
             <span className={css.dong_so}>đã đóng sổ</span>
           )}
@@ -100,6 +113,22 @@ export function TheMach({ mach }: { mach: MachTomTatOut }) {
             <span className={css.dem} data-testid="the-mach-so-moc">
               {mach.entry_count} mốc
             </span>
+          )}
+          {mach.entry_count >= 2 && mach.moc_moi_nhat && (
+            <Link
+              className={css.chip_moc_moi}
+              href={`${duongDanMach(mach.slug, mach.id)}#moc-${mach.moc_moi_nhat.seq}`}
+              data-testid="the-mach-moc-moi"
+              title={`Xem mốc ${mach.moc_moi_nhat.seq}`}
+            >
+              <span className={css.chip_icon} aria-hidden>
+                ⚡
+              </span>
+              <span>
+                Mốc {mach.moc_moi_nhat.seq}
+                {mach.moc_moi_nhat.loai ? `: ${mach.moc_moi_nhat.loai}` : ""}
+              </span>
+            </Link>
           )}
           {hien_so_dem && (
             <Link

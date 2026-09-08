@@ -65,6 +65,7 @@ export function TheMoc({
 
   return (
     <li
+      id={`moc-${moc.seq}`}
       className={laMach ? css.hang : css.hang_don}
       data-testid={`moc-${moc.seq}`}
       data-trang-thai={moc.trang_thai}

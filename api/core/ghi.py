@@ -113,7 +113,7 @@ from core.anh import AnhDaXuLy
 from core.anh_luu import an_anh, ghi_anh, hien_anh, khoa_moi, url_anh, xoa_anh_that
 from core.cay_binh_luan import cap_phat_path
 from core.doc_noi_dung import doc_duoc
-from core.lam_sach_html import DINH_DANG_HTML, DINH_DANG_MARKDOWN, lam_sach
+from core.lam_sach_html import DINH_DANG_HTML, DINH_DANG_MARKDOWN, lam_sach, van_ban_thuan
 from core.models.binh_luan import Comment
 from core.models.dien_dan import Mach, Sub, slug_tu_title
 from core.models.he_thong import AuditLog, Report
@@ -301,6 +301,13 @@ def cap_nhat_dem_mach(mach: Mach) -> Mach:
     # có ai vào.
     mach.last_activity_at = max(hoat_dong) if hoat_dong else mach.created_at
     mach.diem_bai_goc = _diem_bai_goc(mach)
+
+    # `last_content_at` đo thời điểm có nội dung chính chủ mới nhất (bài đăng hoặc mốc đọc được)
+    # Khoá sắp xếp của feed "Mới nhất" (chốt 2026-09-08)
+    moc_doc_duoc_moi = moc_doc_duoc.aggregate(Max("created_at"))["created_at__max"]
+    cac_moc_content = [t for t in (mach.published_at, moc_doc_duoc_moi) if t is not None]
+    mach.last_content_at = max(cac_moc_content) if cac_moc_content else mach.published_at
+
     mach.save(
         update_fields=[
             "entry_count",
@@ -308,6 +315,7 @@ def cap_nhat_dem_mach(mach: Mach) -> Mach:
             "last_entry_at",
             "last_activity_at",
             "diem_bai_goc",
+            "last_content_at",
         ]
     )
     return mach
@@ -384,6 +392,8 @@ def tao_mach(
             lan_dau_len_song=None if hen_gio else khi,
             last_entry_at=khi,
             last_activity_at=khi,
+            last_content_at=published_at if hen_gio else khi,
+            last_discussion_at=khi,
         )
         moc = them_moc(
             mach=mach,
@@ -562,7 +572,36 @@ def tao_binh_luan(
                 # Không tự khoá hàng `Mach` ở đây nữa: `cap_nhat_dem_mach` tự lấy đúng
                 # khoá đó. Hai chỗ cùng xin là thừa một round-trip, và tệ hơn là nó dạy
                 # người đọc rằng khoá là việc của người gọi.
-                cap_nhat_dem_mach(mach)
+                mach_cap_nhat = cap_nhat_dem_mach(mach)
+
+                # Kiểm tra điều kiện bình luận chất lượng để cập nhật `last_discussion_at`
+                # (đẩy lên tab "Đang diễn ra" - chốt 2026-09-08):
+                # 1. Tác giả của bài viết (chủ mạch) đích thân bình luận / phản hồi
+                # 2. Hoặc bình luận có văn bản thuần >= 80 ký tự (phân tích có chiều sâu)
+                # 3. Hoặc là reply trong một thread đã có trao đổi (ít nhất 2 tác giả khác nhau)
+                la_chu_mach = author.pk == mach_cap_nhat.author_id
+                chuoi_thuan = van_ban_thuan(body) if dinh_dang == DINH_DANG_HTML else " ".join(body.split())
+                du_dai = len(chuoi_thuan) >= 80
+                co_trao_doi = False
+                if parent is not None:
+                    # Kiểm tra thread này có ít nhất 2 tác giả khác nhau tham gia không
+                    goc_path = comment.path.split(".")[0]
+                    so_tac_gia = (
+                        Comment.objects.filter(
+                            mach=mach_cap_nhat,
+                            path__startswith=goc_path,
+                            deleted_at__isnull=True,
+                            hidden_at__isnull=True,
+                        )
+                        .values("author_id")
+                        .distinct()
+                        .count()
+                    )
+                    co_trao_doi = so_tac_gia >= 2
+
+                if la_chu_mach or du_dai or co_trao_doi:
+                    Mach.objects.filter(pk=mach_cap_nhat.pk).update(last_discussion_at=khi)
+
                 # Bình luận mới vào index `binh_luan` (2026-08-30). `dong_bo_binh_luan`
                 # tự đọc lại trạng thái ở `on_commit` — kể cả vế `mach.hidden_at`, thứ
                 # cửa ghi này không có lý do gì phải biết.

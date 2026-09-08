@@ -22,6 +22,9 @@ ngoài `doc_noi_dung` ở ngay đầu module đó.
 import logging
 import re
 from datetime import timedelta
+from typing import NamedTuple
+
+from django.db.models import Q
 
 from core.cau_hinh import moc_bat_dau_tu_sua
 from core.doc_noi_dung import DA_AN, Nut, doc_duoc, trang_thai_noi_dung
@@ -40,6 +43,7 @@ from api.schemas import (
     BinhLuanOut,
     FigureOut,
     MachTomTatOut,
+    MocMoiNhatTomTatOut,
     MocOut,
     MocRevisionOut,
     NguoiDungTomTatOut,
@@ -101,6 +105,7 @@ def mach_tom_tat_ra(
     *,
     moc_1_id: int | None = None,
     xem_truoc: XemTruocOut | None = None,
+    moc_moi_nhat: MocMoiNhatTomTatOut | None = None,
 ) -> MachTomTatOut:
     """Thẻ mạch cho feed và cho hồ sơ. Cần `sub` + `author` đã `select_related`.
 
@@ -126,6 +131,7 @@ def mach_tom_tat_ra(
         diem=mach.diem_bai_goc,
         moc_1_id=moc_1_id,
         xem_truoc=xem_truoc,
+        moc_moi_nhat=moc_moi_nhat,
     )
 
 
@@ -150,8 +156,14 @@ def _trich_anh_noi_dung(body: str) -> list[str]:
     return [s for s in _RE_IMG_SRC.findall(body) if _src_cua_site(s)]
 
 
-def du_lieu_the(machs) -> dict[int, tuple[int | None, XemTruocOut | None]]:
-    """`{mach_id: (id mốc 1, nội dung xem trước)}` cho một LÔ mạch — **HAI truy vấn**.
+class DuLieuThe(NamedTuple):
+    moc_1_id: int | None = None
+    xem_truoc: XemTruocOut | None = None
+    moc_moi_nhat: MocMoiNhatTomTatOut | None = None
+
+
+def du_lieu_the(machs) -> dict[int, DuLieuThe]:
+    """`{mach_id: DuLieuThe(id mốc 1, nội dung xem trước, mốc mới nhất)}` cho một LÔ mạch — **HAI truy vấn**.
 
     Gộp hai phép nạp vào một hàm chứ không để hai hàm cạnh nhau, vì cả hai đọc **cùng
     một tập hàng**: mốc 1 của trang. Tách ra là hai lần `WHERE seq=1 AND mach_id IN (…)`
@@ -175,12 +187,23 @@ def du_lieu_the(machs) -> dict[int, tuple[int | None, XemTruocOut | None]]:
     cách ly (mốc bia mộ / bị ẩn) nên URL của nó trả 404; `status` phải là `confirmed`.
     Thiếu một trong hai phép lọc là thẻ feed hiện một ô ảnh vỡ.
     """
+    if not machs:
+        return {}
+
+    bo_loc = Q(mach__in=machs, seq=1)
+    machs_nhieu_moc = [m for m in machs if m.entry_count >= 2]
+    if machs_nhieu_moc:
+        or_mocs = Q()
+        for m in machs_nhieu_moc:
+            or_mocs |= Q(mach_id=m.pk, seq=m.entry_count)
+        bo_loc |= or_mocs
+
     mocs = list(
-        Moc.objects.filter(mach__in=machs, seq=1).only(
-            "id", "mach_id", "body", "deleted_at", "hidden_at"
+        Moc.objects.filter(bo_loc).only(
+            "id", "mach_id", "seq", "loai", "created_at", "body", "deleted_at", "hidden_at"
         )
     )
-    doc_duoc_ids = [m.pk for m in mocs if doc_duoc(m)]
+    doc_duoc_ids = [m.pk for m in mocs if m.seq == 1 and doc_duoc(m)]
 
     anh_theo_moc: dict[int, list[MocAnh]] = {}
     if doc_duoc_ids:
@@ -191,11 +214,11 @@ def du_lieu_the(machs) -> dict[int, tuple[int | None, XemTruocOut | None]]:
         ).order_by("position", "id"):
             anh_theo_moc.setdefault(a.moc_id, []).append(a)
 
-    # Ưu tiên 2: Những mốc không có gallery, quét ảnh nhúng trong nội dung body
+    # Ưu tiên 2: Những mốc không có gallery, quét ảnh nhúng trong nội dung body mốc 1
     anh_nd_theo_moc: dict[int, list[str]] = {}
     khoas_can_tra: set[str] = set()
     for m in mocs:
-        if not doc_duoc(m):
+        if m.seq != 1 or not doc_duoc(m):
             continue
         if not anh_theo_moc.get(m.pk):
             srcs = _trich_anh_noi_dung(m.body)
@@ -212,17 +235,40 @@ def du_lieu_the(machs) -> dict[int, tuple[int | None, XemTruocOut | None]]:
             for nd in AnhNoiDung.objects.filter(khoa_luu_tru__in=khoas_can_tra)
         }
 
-    ra: dict[int, tuple[int | None, XemTruocOut | None]] = {}
-    for m in mocs:
-        if not doc_duoc(m):
-            ra[m.mach_id] = (m.pk, None)
+    mocs_theo_mach_seq: dict[tuple[int, int], Moc] = {
+        (x.mach_id, x.seq): x for x in mocs
+    }
+
+    ra: dict[int, DuLieuThe] = {}
+    for mach in machs:
+        m1 = mocs_theo_mach_seq.get((mach.pk, 1))
+        if m1 is None:
             continue
-        anh_gallery = anh_theo_moc.get(m.pk, [])
+
+        moc_moi_nhat: MocMoiNhatTomTatOut | None = None
+        if mach.entry_count >= 2:
+            m_cuoi = mocs_theo_mach_seq.get((mach.pk, mach.entry_count))
+            if m_cuoi and doc_duoc(m_cuoi):
+                moc_moi_nhat = MocMoiNhatTomTatOut(
+                    seq=m_cuoi.seq,
+                    loai=m_cuoi.loai,
+                    created_at=m_cuoi.created_at,
+                )
+
+        if not doc_duoc(m1):
+            ra[mach.pk] = DuLieuThe(
+                moc_1_id=m1.pk,
+                xem_truoc=None,
+                moc_moi_nhat=moc_moi_nhat,
+            )
+            continue
+
+        anh_gallery = anh_theo_moc.get(m1.pk, [])
         if anh_gallery:
             anh_out = anh_ra(anh_gallery[0])
             so_anh = len(anh_gallery)
-        elif m.pk in anh_nd_theo_moc:
-            srcs = anh_nd_theo_moc[m.pk]
+        elif m1.pk in anh_nd_theo_moc:
+            srcs = anh_nd_theo_moc[m1.pk]
             khoa = srcs[0].split("?")[0].rsplit("/", 1)[-1]
             nd = anh_nd_map.get(khoa)
             w = nd.w if nd else None
@@ -244,13 +290,14 @@ def du_lieu_the(machs) -> dict[int, tuple[int | None, XemTruocOut | None]]:
             anh_out = None
             so_anh = 0
 
-        ra[m.mach_id] = (
-            m.pk,
-            XemTruocOut(
-                trich=trich_van_ban(m.body),
+        ra[mach.pk] = DuLieuThe(
+            moc_1_id=m1.pk,
+            xem_truoc=XemTruocOut(
+                trich=trich_van_ban(m1.body),
                 anh=anh_out,
                 so_anh=so_anh,
             ),
+            moc_moi_nhat=moc_moi_nhat,
         )
     return ra
 

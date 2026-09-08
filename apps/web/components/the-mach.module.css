@@ -124,6 +124,39 @@
   font-variant-numeric: tabular-nums;
 }
 
+.khi_cap_nhat {
+  font-family: var(--f-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+.chip_moc_moi {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--f-mono);
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--accent);
+  background: var(--surface-2);
+  border: 1px solid var(--line-2);
+  border-radius: 3px;
+  padding: 0 6px;
+  text-decoration: none;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.chip_moc_moi:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.chip_icon {
+  font-size: 11px;
+  line-height: 1;
+}
+
 .ket_qua {
   font-family: var(--f-mono);
   font-variant-numeric: tabular-nums;

@@ -210,6 +210,14 @@ class Mach(models.Model):
     #: Công thức + ca bia mộ: `core/ghi.py::cap_nhat_dem_mach` và CHỈ ở đó.
     diem_bai_goc = models.IntegerField(default=0)
 
+    #: Thời điểm có nội dung chính chủ mới nhất (bài đăng hoặc mốc mới đọc được)
+    #: Dùng làm khoá sắp xếp cho feed "Mới nhất" (chốt 2026-09-08)
+    last_content_at = models.DateTimeField(default=timezone.now)
+
+    #: Thời điểm có thảo luận chất lượng mới nhất (comment chất lượng đọc được)
+    #: Dùng làm khoá sắp xếp cho feed "Đang diễn ra" (chốt 2026-09-08)
+    last_discussion_at = models.DateTimeField(default=timezone.now)
+
     created_at = models.DateTimeField(default=timezone.now, editable=False)
     #: **Ngày ĐĂNG**, khác `created_at` (ngày VIẾT) — `plans/2026-09-03-hen-gio-phat-hanh.md`.
     #:
@@ -280,13 +288,16 @@ class Mach(models.Model):
             # cây cũ đi là biến bảng quản trị thành `Sort` trên toàn bảng.
             models.Index(fields=["author", "-published_at"], name="mach_author_published"),
             models.Index(fields=["-published_at"], name="mach_published_desc"),
-            # Feed "Đang diễn ra" toàn cục — partial: index chỉ chứa mạch đang mở,
-            # nhỏ hơn hẳn index đầy đủ và đúng bằng cái feed đó cần.
+            # Feed "Mới" toàn cục và trong sub: sắp theo last_content_at (mạch đăng mới hoặc nối mốc)
+            models.Index(fields=["-last_content_at"], name="mach_last_content_desc"),
+            models.Index(fields=["sub", "-last_content_at"], name="mach_sub_last_content"),
+            # Feed "Đang diễn ra": sắp theo last_discussion_at (thảo luận chất lượng mới)
             models.Index(
-                fields=["-last_entry_at"],
+                fields=["-last_discussion_at"],
                 condition=models.Q(status=TrangThaiMach.MO),
-                name="mach_open_last_entry",
+                name="mach_open_last_disc",
             ),
+            models.Index(fields=["sub", "-last_discussion_at"], name="mach_sub_last_disc"),
             # Feed "Nhiều điểm nhất" toàn thời gian (plan con 1d §1). Cặp `(điểm, id)` là
             # đúng khoá cursor keyset của feed đó — `diem_bai_goc` một mình không duy
             # nhất, và keyset trên khoá không duy nhất lại rơi đúng vào bệnh trùng/sót mà

@@ -3,12 +3,14 @@
   grid-template-columns: var(--rail) 1fr;
   column-gap: var(--gutter);
   padding-bottom: 26px;
+  scroll-margin-top: 60px;
 }
 
 /* Bài thường (`entry_count === 1`) không có spine — PLAN 5.1. Một cột, không ray. */
 .hang_don {
   display: block;
   padding-bottom: 20px;
+  scroll-margin-top: 60px;
 }
 
 .ray {

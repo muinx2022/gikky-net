@@ -1420,6 +1420,16 @@
             ],
             "title": "Moc 1 Id"
           },
+          "moc_moi_nhat": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MocMoiNhatTomTatOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "published_at": {
             "format": "date-time",
             "title": "Published At",
@@ -1536,6 +1546,38 @@
           "body"
         ],
         "title": "MocMoiIn",
+        "type": "object"
+      },
+      "MocMoiNhatTomTatOut": {
+        "description": "Thông tin tóm tắt mốc mới nhất phục vụ render badge/chip trên thẻ feed.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "loai": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Loai"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "seq",
+          "loai",
+          "created_at"
+        ],
+        "title": "MocMoiNhatTomTatOut",
         "type": "object"
       },
       "MocOut": {

@@ -1155,6 +1155,7 @@ export type MachTomTatOut = {
      * Moc 1 Id
      */
     moc_1_id: number | null;
+    moc_moi_nhat?: MocMoiNhatTomTatOut | null;
     /**
      * Published At
      */
@@ -1205,6 +1206,26 @@ export type MocMoiIn = {
      * Question For Crowd
      */
     question_for_crowd?: string | null;
+};
+
+/**
+ * MocMoiNhatTomTatOut
+ *
+ * Thông tin tóm tắt mốc mới nhất phục vụ render badge/chip trên thẻ feed.
+ */
+export type MocMoiNhatTomTatOut = {
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Loai
+     */
+    loai: string | null;
+    /**
+     * Seq
+     */
+    seq: number;
 };
 
 /**

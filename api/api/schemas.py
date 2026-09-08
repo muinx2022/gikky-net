@@ -207,6 +207,14 @@ class XemTruocOut(Schema):
     so_anh: int
 
 
+class MocMoiNhatTomTatOut(Schema):
+    """Thông tin tóm tắt mốc mới nhất phục vụ render badge/chip trên thẻ feed."""
+
+    seq: int
+    loai: str | None
+    created_at: datetime
+
+
 class MachTomTatOut(Schema):
     """Một mạch ở mức thẻ feed / danh sách hồ sơ.
 
@@ -272,6 +280,8 @@ class MachTomTatOut(Schema):
     #: khi đó vẽ thẻ chỉ-tiêu-đề như trước, **không** bịa một dòng "nội dung đã bị gỡ" —
     #: thẻ feed không phải chỗ thông báo chuyện kiểm duyệt.
     xem_truoc: XemTruocOut | None
+    #: Thông tin mốc mới nhất (khi mạch có >= 2 mốc và mốc đọc được)
+    moc_moi_nhat: MocMoiNhatTomTatOut | None = None
 
 
 class SubChiTietOut(Schema):
