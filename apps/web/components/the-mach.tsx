@@ -2,7 +2,6 @@ import type { MachTomTatOut } from "@gikky/api-client";
 import Link from "next/link";
 
 import { CHU_NGUOI_DUNG } from "@/lib/chu-nguoi-dung";
-import { nenHienSoDem } from "@/lib/dem";
 import { ngayCuaThoiDiem } from "@/lib/dinh-dang";
 import { duongDanHoSo, duongDanKhanDai, duongDanMach, duongDanSub } from "@/lib/url";
 
@@ -24,18 +23,14 @@ import css from "./the-mach.module.css";
  *    `id` ấy đi kèm, nếu không cái nút là nút chết;
  * 2. `💬 N` là **link thật** dẫn thẳng vào khán đài đang mở, không còn là một dòng chữ.
  *    Trên Reddit đó là lối vào chính của một thẻ, và ở đây nó cũng là lối duy nhất tới
- *    khán đài mà không phải cuộn hết nhật ký;
+ *    khán đài mà không phải cuộn hết nhật ký; luôn hiển thị số bình luận để người đọc
+ *    biết mức độ thảo luận của bài;
  * 3. dòng dày đặc hơn (`the-mach.module.css`) — PLAN 9.1 "mật độ là oxy".
- *
- * `comment_count` chịu nguyên tắc 9 y như trên trang mạch: mạch dưới 4 bình luận thì
- * KHÔNG hiện con số nào, và khi đó không có cả cái nút — một nút "💬" không số dẫn vào
- * một khán đài trống là phô đúng sự im lặng mà nguyên tắc 9 cấm.
  *
  * `entry_count` chỉ hiện khi ≥ 2: một mốc thì nó chưa phải mạch (PLAN 5.1), và "1 mốc"
  * là con số duy nhất nó có thể có.
  */
 export function TheMach({ mach }: { mach: MachTomTatOut }) {
-  const hien_so_dem = nenHienSoDem(mach.comment_count);
   return (
     <li className={css.the} data-testid="the-mach" data-mach-id={mach.id}>
       <CotVote
@@ -158,16 +153,14 @@ export function TheMach({ mach }: { mach: MachTomTatOut }) {
               </span>
             </Link>
           )}
-          {hien_so_dem && (
-            <Link
-              className={css.nut_binh_luan}
-              href={duongDanKhanDai(mach.slug, mach.id)}
-              prefetch={false}
-              data-testid="the-mach-so-binh-luan"
-            >
-              💬 {mach.comment_count} bình luận
-            </Link>
-          )}
+          <Link
+            className={css.nut_binh_luan}
+            href={duongDanKhanDai(mach.slug, mach.id)}
+            prefetch={false}
+            data-testid="the-mach-so-binh-luan"
+          >
+            💬 {mach.comment_count} bình luận
+          </Link>
           {mach.ket_qua !== null && (
             <span
               className={css.ket_qua}
