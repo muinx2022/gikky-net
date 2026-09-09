@@ -23,8 +23,8 @@ import css from "./the-mach.module.css";
  *    `id` ấy đi kèm, nếu không cái nút là nút chết;
  * 2. `💬 N` là **link thật** dẫn thẳng vào khán đài đang mở, không còn là một dòng chữ.
  *    Trên Reddit đó là lối vào chính của một thẻ, và ở đây nó cũng là lối duy nhất tới
- *    khán đài mà không phải cuộn hết nhật ký; luôn hiển thị số bình luận để người đọc
- *    biết mức độ thảo luận của bài;
+ *    khán đài mà không phải cuộn hết nhật ký; chỉ hiển thị khi có ≥ 1 bình luận (0 bình luận
+ *    thì bỏ qua, không phô số 0);
  * 3. dòng dày đặc hơn (`the-mach.module.css`) — PLAN 9.1 "mật độ là oxy".
  *
  * `entry_count` chỉ hiện khi ≥ 2: một mốc thì nó chưa phải mạch (PLAN 5.1), và "1 mốc"
@@ -153,14 +153,16 @@ export function TheMach({ mach }: { mach: MachTomTatOut }) {
               </span>
             </Link>
           )}
-          <Link
-            className={css.nut_binh_luan}
-            href={duongDanKhanDai(mach.slug, mach.id)}
-            prefetch={false}
-            data-testid="the-mach-so-binh-luan"
-          >
-            💬 {mach.comment_count} bình luận
-          </Link>
+          {mach.comment_count >= 1 && (
+            <Link
+              className={css.nut_binh_luan}
+              href={duongDanKhanDai(mach.slug, mach.id)}
+              prefetch={false}
+              data-testid="the-mach-so-binh-luan"
+            >
+              💬 {mach.comment_count} bình luận
+            </Link>
+          )}
           {mach.ket_qua !== null && (
             <span
               className={css.ket_qua}

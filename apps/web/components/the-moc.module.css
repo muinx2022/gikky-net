@@ -155,7 +155,6 @@
   background: var(--inset);
   padding: 7px 12px;
   border-radius: 0 3px 3px 0;
-  max-width: 62ch;
 }
 
 /* Điểm mốc đã dời sang cột vote bên trái (`cot-vote.module.css`) — chân thẻ chỉ còn cái
