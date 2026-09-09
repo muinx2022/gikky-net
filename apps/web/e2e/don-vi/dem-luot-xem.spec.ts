@@ -9,6 +9,7 @@ import {
   nenDem,
   nenDemRequest,
   nenRewrite,
+  quocGiaKhach,
 } from "../../lib/dem-luot-xem";
 import { COOKIE_PHIEN, TIEN_TO_PHIEN } from "../../middleware";
 import { boChuThich, quetNguon } from "./quet";
@@ -488,4 +489,22 @@ test("X6 — Django nhận `da_dang_nhap` là trường CÓ MẶC ĐỊNH (deplo
   // middleware CŨ. Bắt buộc trường này là mọi lượt xem trong cửa sổ ấy trả 422 rồi biến
   // mất im lặng — middleware `.catch(() => {})` nuốt hết lỗi.
   expect(doc("api/api/dem_luot_xem.py")).toMatch(/^\s{4}da_dang_nhap: bool = False$/m);
+});
+
+test("X7 — quocGiaKhach đọc đúng header cf-ipcountry, chuẩn hóa hoa và xử lý ca rỗng/sai", () => {
+  const reqVn = { headers: { get: (t: string) => (t === "cf-ipcountry" ? "VN" : null) } };
+  expect(quocGiaKhach(reqVn)).toBe("VN");
+
+  const reqThuong = { headers: { get: (t: string) => (t === "cf-ipcountry" ? "us" : null) } };
+  expect(quocGiaKhach(reqThuong)).toBe("US");
+
+  const reqRong = { headers: { get: () => null } };
+  expect(quocGiaKhach(reqRong)).toBe("");
+
+  const reqSai = { headers: { get: (t: string) => (t === "cf-ipcountry" ? "VNM" : null) } };
+  expect(quocGiaKhach(reqSai)).toBe("");
+});
+
+test("X8 — Django nhận `quoc_gia` là trường CÓ MẶC ĐỊNH (deploy lệch)", () => {
+  expect(doc("api/api/dem_luot_xem.py")).toMatch(/^\s{4}quoc_gia: str = ""$/m);
 });

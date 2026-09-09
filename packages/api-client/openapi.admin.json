@@ -864,6 +864,10 @@
             "title": "La Bot",
             "type": "boolean"
           },
+          "quoc_gia": {
+            "title": "Quoc Gia",
+            "type": "string"
+          },
           "so_luot": {
             "title": "So Luot",
             "type": "integer"
@@ -894,7 +898,8 @@
           "thiet_bi",
           "duong_dan",
           "giay_truoc",
-          "so_luot"
+          "so_luot",
+          "quoc_gia"
         ],
         "title": "KhachOnlineOut",
         "type": "object"
@@ -1040,6 +1045,20 @@
             "title": "Top Nguon",
             "type": "array"
           },
+          "top_quoc_gia_bot": {
+            "items": {
+              "$ref": "#/components/schemas/MucSoLuotOut"
+            },
+            "title": "Top Quoc Gia Bot",
+            "type": "array"
+          },
+          "top_quoc_gia_nguoi": {
+            "items": {
+              "$ref": "#/components/schemas/MucSoLuotOut"
+            },
+            "title": "Top Quoc Gia Nguoi",
+            "type": "array"
+          },
           "trinh_duyet": {
             "items": {
               "$ref": "#/components/schemas/MucSoLuotOut"
@@ -1059,6 +1078,8 @@
           "so_truc_tiep",
           "trinh_duyet",
           "thiet_bi",
+          "top_quoc_gia_nguoi",
+          "top_quoc_gia_bot",
           "chi_tiet_chi_90_ngay"
         ],
         "title": "LuotXemOut",

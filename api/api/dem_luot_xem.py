@@ -171,6 +171,9 @@ class DemLuotXemIn(Schema):
     #: không có trường này. Bắt buộc nó là mọi lượt xem trong cửa sổ ấy trả 422 rồi biến
     #: mất im lặng (middleware `.catch(() => {})`).
     da_dang_nhap: bool = False
+    #: Mã quốc gia ISO 3166-1 alpha-2 từ header CF-IPCountry của Cloudflare.
+    #: Mặc định rỗng bắt buộc để bảo đảm backward-compatible khi deploy lệch.
+    quoc_gia: str = ""
 
 
 class DemLuotXemOut(Schema):
@@ -297,6 +300,12 @@ def chuan_hoa_nguon(referer: str) -> str:
     return host[:DAI_TOI_DA_NGUON]
 
 
+def chuan_hoa_quoc_gia(quoc_gia: str) -> str:
+    """Mã quốc gia ISO 3166-1 alpha-2, 2 ký tự in hoa hoặc rỗng."""
+    qg = quoc_gia.strip().upper()
+    return qg if len(qg) == 2 and qg.isalpha() else ""
+
+
 #: Cache muối của **đúng một ngày** — ngày đang chạy. Đổi ngày là thay cả dict, nên bảng
 #: không phình và không có muối cũ nào nằm lại trong RAM sau nửa đêm.
 #:
@@ -419,6 +428,7 @@ def dem_luot_xem(request, du_lieu: DemLuotXemIn):
         # `sessionid` là một sự thật đáng thấy (crawler chạy bằng phiên của ai đó), và
         # dập nó ở đây là bịa. Phía đọc mới là chỗ để dòng bot thành `—`.
         da_dang_nhap=du_lieu.da_dang_nhap,
+        quoc_gia=chuan_hoa_quoc_gia(du_lieu.quoc_gia),
     )
     return Status(200, DemLuotXemOut(da_dem=True))
 

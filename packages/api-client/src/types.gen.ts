@@ -502,6 +502,10 @@ export type DemLuotXemIn = {
      */
     ip?: string;
     /**
+     * Quoc Gia
+     */
+    quoc_gia?: string;
+    /**
      * Referer
      */
     referer?: string;

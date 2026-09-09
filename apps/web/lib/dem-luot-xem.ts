@@ -241,6 +241,20 @@ export function ipKhach(req: { headers: { get(ten: string): string | null } }): 
   return "";
 }
 
+/** Mã quốc gia ISO 3166-1 alpha-2 từ header `CF-IPCountry` của Cloudflare.
+ *
+ * Cloudflare tự động gắn header này ở biên trên mọi request; mã gồm 2 chữ cái in hoa
+ * (VN, US, SG, JP...) hoặc T1 (Tor), XX (không rõ).
+ *
+ * Nếu không có header (môi trường dev không qua proxy) hoặc header dị dạng, trả về chuỗi rỗng `""`.
+ */
+export function quocGiaKhach(req: { headers: { get(ten: string): string | null } }): string {
+  const qg = req.headers.get("cf-ipcountry");
+  if (qg === null) return "";
+  const ma = qg.trim().toUpperCase();
+  return /^[A-Z]{2}$/.test(ma) ? ma : "";
+}
+
 /** Header mà Next/trình duyệt gắn cho một lượt **nạp trước**, không phải một lượt xem. */
 const HEADER_PREFETCH = [
   "next-router-prefetch",

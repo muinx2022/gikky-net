@@ -51,6 +51,7 @@ def them(
     nguon="",
     trinh_duyet="",
     thiet_bi="",
+    quoc_gia="",
 ):
     """`khach=""` và ba cột mới rỗng là mặc định **có chủ đích**: đó là hình dạng hàng ghi
     TRƯỚC 2026-08-30, và mọi bài đo cũ của file này chạy trên đúng hàng ấy."""
@@ -64,6 +65,7 @@ def them(
             nguon=nguon,
             trinh_duyet=trinh_duyet,
             thiet_bi=thiet_bi,
+            quoc_gia=quoc_gia,
         )
 
 
@@ -881,6 +883,7 @@ def them_phut_du(phut_truoc, **kw):
         trinh_duyet=kw.pop("trinh_duyet", ""),
         thiet_bi=kw.pop("thiet_bi", ""),
         da_dang_nhap=kw.pop("da_dang_nhap", False),
+        quoc_gia=kw.pop("quoc_gia", ""),
     )
     assert not kw, f"tham số lạ: {kw}"
     return hang
@@ -1154,6 +1157,7 @@ def test_N6b_response_khong_co_truong_danh_tinh_nao(db):
         "duong_dan",
         "giay_truoc",
         "so_luot",
+        "quoc_gia",
     }
 
 
@@ -1313,3 +1317,42 @@ def test_N_tran_DONG_khong_cham_thi_so_dong_that_BANG_so_dong(db):
 
     js = goi_online().json()
     assert js["so_dong_that"] == len(js["items"]) == 3
+
+
+def test_top_quoc_gia_nguoi_va_bot(db, hom_nay):
+    """top_quoc_gia_nguoi và top_quoc_gia_bot gom đúng theo quốc gia và tách biệt người/bot."""
+    them(hom_nay, "/", so=3, quoc_gia="VN", khach="1" * 32)
+    them(hom_nay, "/m/a-1", so=2, quoc_gia="SG", khach="2" * 32)
+    them(hom_nay, "/", so=1, quoc_gia="US", khach="3" * 32)
+    # Rỗng -> không vào top_quoc_gia_nguoi
+    them(hom_nay, "/", so=4, quoc_gia="", khach="4" * 32)
+
+    # Bot
+    them(hom_nay, "/", so=5, bot=True, ten="googlebot", quoc_gia="US")
+    them(hom_nay, "/", so=2, bot=True, ten="petalbot", quoc_gia="SG")
+    them(hom_nay, "/", so=1, bot=True, ten="scanner", quoc_gia="")
+
+    js = goi("7").json()
+
+    assert js["top_quoc_gia_nguoi"] == [
+        {"ten": "VN", "so_luot": 3},
+        {"ten": "SG", "so_luot": 2},
+        {"ten": "US", "so_luot": 1},
+    ]
+
+    assert js["top_quoc_gia_bot"] == [
+        {"ten": "US", "so_luot": 5},
+        {"ten": "SG", "so_luot": 2},
+    ]
+
+
+def test_quoc_gia_trong_online(db):
+    """KhachOnlineOut trả về đúng trường quoc_gia của lượt xem gần nhất."""
+    them_phut_du(1, khach="a" * 32, quoc_gia="VN")
+    them_phut_du(2, bot=True, ten_bot="googlebot", khach="b" * 32, quoc_gia="US")
+    them_phut_du(3, khach="c" * 32, quoc_gia="")
+
+    js = goi_online().json()
+    items = {i["ten_bot"] or "nguoi": i["quoc_gia"] for i in js["items"]}
+    assert items["nguoi"] in ("VN", "")
+    assert items["googlebot"] == "US"

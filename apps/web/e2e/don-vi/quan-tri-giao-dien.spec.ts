@@ -267,8 +267,10 @@ const TESTID_BANG = [
   "bang-nguon",
   "bang-nhom-bot",
   "bang-bot",
+  "bang-quoc-gia-bot",
   "bang-trinh-duyet",
   "bang-thiet-bi",
+  "bang-quoc-gia-nguoi",
 ];
 
 test("TAB /luot-xem — đúng bốn khoá tab, không thừa không thiếu", () => {
@@ -286,23 +288,23 @@ test("TAB /luot-xem — đúng bốn khoá tab, không thừa không thiếu", (
   }
 });
 
-test("TAB /luot-xem — ba bảng hẹp dùng `KhungBang rong={false}` (vá hồi quy cuộn ngang 640–1279px)", () => {
+test("TAB /luot-xem — năm bảng hẹp dùng `KhungBang rong={false}` (vá hồi quy cuộn ngang 640–1279px)", () => {
   // `KhungBang` ép sàn 832px; hai bảng 2 cột đặt cạnh nhau (tab Người đọc) và bảng nhóm
   // bot 3 cột KHÔNG được ép — thiếu `rong={false}` là mỗi cột ~414px phải cuộn 418px ở
-  // 1152px. Phản biện 2026-09-04 dựng được ca ấy; đếm ĐÚNG 3 chỗ, không hơn không kém:
+  // 1152px. Phản biện 2026-09-04 dựng được ca ấy; đếm ĐÚNG 5 chỗ, không hơn không kém:
   // thêm vào bảng 4 cột là bảng "Xem nhiều nhất" mất sàn tối thiểu ở màn hẹp.
   const trang = nguonTrangLuotXem();
   const so = (trang.match(/<KhungBang rong=\{false\}>/g) ?? []).length;
-  expect(so, "phải ĐÚNG 3 bảng hẹp (nhóm bot · trình duyệt · thiết bị) bỏ sàn min-w").toBe(3);
+  expect(so, "phải ĐÚNG 5 bảng hẹp (nhóm bot · quốc gia bot · trình duyệt · thiết bị · quốc gia người) bỏ sàn min-w").toBe(5);
 });
 
-test("TAB /luot-xem — cả sáu bảng chi tiết còn mặt trong panel", () => {
+test("TAB /luot-xem — cả tám bảng chi tiết còn mặt trong panel", () => {
   const trang = nguonTrangLuotXem();
   const mat = TESTID_BANG.filter((t) => !trang.includes(`data-testid="${t}"`));
   expect(mat, `bảng rơi mất khi gom tab: ${mat.join(", ")}`).toEqual([]);
   // …và trạng thái rỗng của chúng cũng vậy: một panel trắng trơn đọc y hệt "chưa có dữ
   // liệu", tức một câu trả lời SAI trông giống hệt một câu trả lời đúng.
-  expect([...trang.matchAll(/<KhoiRong/g)].length).toBeGreaterThanOrEqual(6);
+  expect([...trang.matchAll(/<KhoiRong/g)].length).toBeGreaterThanOrEqual(8);
   // Dòng chú 90 ngày dời lên dưới tablist nhưng phải GIỮ testid cũ.
   expect(trang).toContain('data-testid="chu-chi-tiet-90-ngay"');
 });

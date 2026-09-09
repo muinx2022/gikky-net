@@ -713,6 +713,10 @@ export type KhachOnlineOut = {
      */
     la_bot: boolean;
     /**
+     * Quoc Gia
+     */
+    quoc_gia: string;
+    /**
      * So Luot
      */
     so_luot: number;
@@ -852,6 +856,14 @@ export type LuotXemOut = {
      * Top Nguon
      */
     top_nguon: Array<NguonOut>;
+    /**
+     * Top Quoc Gia Bot
+     */
+    top_quoc_gia_bot: Array<MucSoLuotOut>;
+    /**
+     * Top Quoc Gia Nguoi
+     */
+    top_quoc_gia_nguoi: Array<MucSoLuotOut>;
     /**
      * Trinh Duyet
      */

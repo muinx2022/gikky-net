@@ -134,6 +134,11 @@ class LuotXem(models.Model):
     #: 5 phút nên chúng rơi khỏi câu hỏi duy nhất đọc cột này gần như ngay.
     da_dang_nhap = models.BooleanField(default=False)
 
+    #: Mã quốc gia ISO 3166-1 alpha-2 (2 chữ cái in hoa như VN, US, SG...; hoặc rỗng).
+    #: Nhận từ header `CF-IPCountry` của Cloudflare. Không lưu IP, chỉ lưu mã quốc gia
+    #: mang tính thống kê tổng hợp cao nên không định danh bất kỳ cá nhân nào.
+    quoc_gia = models.CharField(max_length=2, blank=True, default="")
+
     class Meta:
         indexes = [
             # MỘT index, phục vụ cả hai câu đọc: lọc `luc >= mốc` (7/30/90 ngày, và cả

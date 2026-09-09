@@ -256,6 +256,9 @@ def test_R0_1_TAP_COT_cua_LuotXem_bi_GHIM(db):
         # là một quyết định KHÁC, phải hỏi lại user và sửa `PLAN.md`, chứ không phải
         # bước tiếp theo tự nhiên của dòng này.
         "da_dang_nhap",
+        # 2026-09-09: mã quốc gia ISO 3166-1 alpha-2 từ CF-IPCountry của Cloudflare.
+        # Mang tính tổng hợp cao, không định danh cá nhân; không lưu IP.
+        "quoc_gia",
     }
 
 
@@ -737,5 +740,32 @@ def test_dem_luot_xem_tang_view_count_cua_mach(seed):
     })
     seed.refresh_from_db()
     assert seed.view_count == 2
+
+
+@pytest.mark.django_db
+@override_settings(DEM_LUOT_XEM_SECRET=SECRET)
+def test_QG1_quoc_gia_hop_le_duoc_luu_dung():
+    """Mã quốc gia ISO 2 chữ cái hợp lệ được ghi nhận."""
+    goi({"duong_dan": "/", "quoc_gia": "VN"})
+    assert LuotXem.objects.get().quoc_gia == "VN"
+
+
+@pytest.mark.django_db
+@override_settings(DEM_LUOT_XEM_SECRET=SECRET)
+def test_QG2_quoc_gia_chuan_hoa_chu_thuong_thanh_chu_hoa():
+    """Mã quốc gia chữ thường (vn, us) tự động chuẩn hóa thành chữ hoa (VN, US)."""
+    goi({"duong_dan": "/", "quoc_gia": "us"})
+    assert LuotXem.objects.get().quoc_gia == "US"
+
+
+@pytest.mark.django_db
+@override_settings(DEM_LUOT_XEM_SECRET=SECRET)
+def test_QG3_quoc_gia_sai_dinh_dang_hoac_thieu_thi_ra_rong():
+    """Mã không phải 2 chữ cái hoặc vắng mặt -> lưu chuỗi rỗng."""
+    goi({"duong_dan": "/", "quoc_gia": "VNM"})
+    goi({"duong_dan": "/", "quoc_gia": "12"})
+    goi({"duong_dan": "/"})
+    cac_qg = list(LuotXem.objects.values_list("quoc_gia", flat=True))
+    assert cac_qg == ["", "", ""]
 
 

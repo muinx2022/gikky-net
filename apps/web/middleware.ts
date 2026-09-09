@@ -9,6 +9,7 @@ import {
   nenDem,
   nenDemRequest,
   nenRewrite,
+  quocGiaKhach,
   secretDem,
 } from "@/lib/dem-luot-xem";
 
@@ -137,6 +138,8 @@ export function middleware(req: NextRequest, event: NextFetchEvent) {
           // không gì gắn hàng `LuotXem` với một con người. Cam kết ấy là lý do trang
           // thống kê không cần banner cookie — xem `api/core/models/luot_xem.py`.
           da_dang_nhap: co_cookie_phien,
+          // Mã quốc gia ISO 3166-1 alpha-2 từ header CF-IPCountry của Cloudflare.
+          quoc_gia: quocGiaKhach(req),
         },
       }).catch(() => {}),
     );

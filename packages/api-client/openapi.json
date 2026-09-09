@@ -607,6 +607,11 @@
             "title": "Ip",
             "type": "string"
           },
+          "quoc_gia": {
+            "default": "",
+            "title": "Quoc Gia",
+            "type": "string"
+          },
           "referer": {
             "default": "",
             "title": "Referer",

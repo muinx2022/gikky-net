@@ -25,17 +25,17 @@ làm "toàn thời gian" **nhỏ hơn "90 ngày" cả chục lần**, không c�
 Không đòi `is_superuser`. Nó không đổi dữ liệu và không phơi nội dung của ai: hai bảng
 nguồn cố ý không có cột nào gắn được với một con người.
 
-## Năm bảng CHI TIẾT chỉ dựng được từ hàng thô ⇒ tối đa 90 ngày
+## Bảy bảng CHI TIẾT chỉ dựng được từ hàng thô ⇒ tối đa 90 ngày
 
 `TongNgay` chỉ mang `(ngày, đường dẫn, người, bot)` (xem `core/models/luot_xem.py` — một
 dòng cho mỗi tổ hợp ngày × đường dẫn × tên bot × nguồn × trình duyệt giữ mãi là một bảng
-nổ tung để trả lời những câu hỏi vốn chỉ có nghĩa ngắn hạn). Nên **năm khối** dưới đây chỉ
+nổ tung để trả lời những câu hỏi vốn chỉ có nghĩa ngắn hạn). Nên **bảy khối** dưới đây chỉ
 dựng được từ hàng thô, tức tối đa 90 ngày:
 
-    top_bot · theo_nhom_bot · top_nguon + so_truc_tiep · trinh_duyet · thiet_bi
+    top_bot · theo_nhom_bot · top_nguon + so_truc_tiep · trinh_duyet · thiet_bi · top_quoc_gia_nguoi · top_quoc_gia_bot
 
 Chỉ ở `tat_ca` thì giới hạn ấy mới cắt gì; response mang cờ `chi_tiet_chi_90_ngay` để màn
-hình nói ra. *(Tên cũ `bot_chi_90_ngay`, đổi 2026-08-30 khi cờ phủ thêm bốn khối.)*
+hình nói ra. *(Tên cũ `bot_chi_90_ngay`, đổi 2026-08-30 khi cờ phủ thêm bốn khối; thêm quốc gia 2026-09-09.)*
 
 ## Khách/ngày — hai nguồn, cùng ranh giới với lượt xem
 
@@ -314,6 +314,31 @@ def _theo_cot(ngay_dau: date, cot: str) -> list[MucSoLuotOut]:
     return [MucSoLuotOut(ten=h[cot], so_luot=h["_so"]) for h in hang]
 
 
+def _top_quoc_gia_nguoi(ngay_dau: date) -> list[MucSoLuotOut]:
+    """Top 20 quốc gia của hàng NGƯỜI, bỏ ô rỗng (không rõ)."""
+    hang = (
+        _nguoi_tu(ngay_dau)
+        .exclude(quoc_gia="")
+        .values("quoc_gia")
+        .annotate(_so=Count("pk"))
+        .order_by("-_so", "quoc_gia")[:SO_TOP]
+    )
+    return [MucSoLuotOut(ten=h["quoc_gia"], so_luot=h["_so"]) for h in hang]
+
+
+def _top_quoc_gia_bot(ngay_dau: date) -> list[MucSoLuotOut]:
+    """Top 20 quốc gia xuất xứ của BOT, bỏ ô rỗng (không rõ)."""
+    hang = (
+        _tho_tu(ngay_dau)
+        .filter(la_bot=True)
+        .exclude(quoc_gia="")
+        .values("quoc_gia")
+        .annotate(_so=Count("pk"))
+        .order_by("-_so", "quoc_gia")[:SO_TOP]
+    )
+    return [MucSoLuotOut(ten=h["quoc_gia"], so_luot=h["_so"]) for h in hang]
+
+
 def _khach_tho(ngay_dau: date | None) -> dict[date, int | None]:
     """`{ngày: số khách}` từ hàng thô. `None` = ngày **không đo được**.
 
@@ -570,6 +595,8 @@ def luot_xem(request, response: HttpResponse, khoang: str = "30"):
         so_truc_tiep=_so_truc_tiep(ngay_dau_chi_tiet),
         trinh_duyet=_theo_cot(ngay_dau_chi_tiet, "trinh_duyet"),
         thiet_bi=_theo_cot(ngay_dau_chi_tiet, "thiet_bi"),
+        top_quoc_gia_nguoi=_top_quoc_gia_nguoi(ngay_dau_chi_tiet),
+        top_quoc_gia_bot=_top_quoc_gia_bot(ngay_dau_chi_tiet),
         chi_tiet_chi_90_ngay=chi_tiet_chi_90_ngay,
     )
 
@@ -647,6 +674,7 @@ def _gom_online(moc: datetime) -> tuple[list[KhachOnlineOut], bool, int]:
             "thiet_bi",
             "duong_dan",
             "luc",
+            "quoc_gia",
         )
         # `-pk` là vế TẤT ĐỊNH: hai hàng cùng `luc` tới từng micro giây (seed của một bài
         # đo, hoặc hai lượt trong cùng một request) sẽ ra thứ tự tuỳ Postgres, và khi ấy
@@ -680,6 +708,7 @@ def _gom_online(moc: datetime) -> tuple[list[KhachOnlineOut], bool, int]:
             # con số không được phép hiện ra dưới dạng vô nghĩa.
             giay_truoc=max(0, int((bay_gio - h["luc"]).total_seconds())),
             so_luot=1,
+            quoc_gia=h["quoc_gia"],
         )
 
     # `dict` giữ thứ tự chèn, và thứ tự chèn CHÍNH LÀ `-luc` của lượt gần nhất mỗi khách

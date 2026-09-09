@@ -133,6 +133,24 @@ function nhanCua(bang: Record<string, string>, khoa: string): string {
   return bang[khoa] ?? khoa;
 }
 
+const boDichTenNuoc = new Intl.DisplayNames(["vi"], { type: "region" });
+
+/** Tên tiếng Việt của mã quốc gia ISO 3166-1 alpha-2, hoặc fallback về mã. */
+function tenQuocGia(ma: string): string {
+  if (!ma) return "(không rõ)";
+  try {
+    return boDichTenNuoc.of(ma) ?? ma;
+  } catch {
+    return ma;
+  }
+}
+
+/** Emoji lá cờ từ mã 2 ký tự ISO (ví dụ VN -> 🇻🇳, US -> 🇺🇸). */
+function coQuocGia(ma: string): string {
+  if (!/^[A-Z]{2}$/.test(ma) || ma === "XX") return "";
+  return String.fromCodePoint(...[...ma].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65));
+}
+
 export default function TrangLuotXem() {
   const [khoang, datKhoang] = useState<string>("30");
   const [so_lieu, datSoLieu] = useState<LuotXemOut | null>(null);
@@ -353,7 +371,7 @@ export default function TrangLuotXem() {
                  mặc định. */
               so_lieu.chi_tiet_chi_90_ngay ? (
                 <p className="text-sm text-muc-mo" data-testid="chu-chi-tiet-90-ngay">
-                  Các bảng <strong>Nguồn · Bot · Trình duyệt · Thiết bị</strong> chỉ phủ{" "}
+                  Các bảng <strong>Nguồn · Bot · Trình duyệt · Thiết bị · Quốc gia</strong> chỉ phủ{" "}
                   <strong>90 ngày gần nhất</strong>: tổng theo ngày giữ mãi nhưng không giữ
                   các chiều ấy, còn dữ liệu thô thì dọn sau 90 ngày.
                 </p>
@@ -472,6 +490,32 @@ export default function TrangLuotXem() {
                         <KhoiRong co_bo_loc={false} chua_co="Chưa thấy bot nào ghé qua." />
                       )}
                     </The>
+
+                    <The
+                      tieu_de="Quốc gia của bot"
+                      pham_vi="Top 20 quốc gia xuất xứ của bot"
+                    >
+                      <KhungBang rong={false}>
+                        <HangTieuDe cot={["Quốc gia", "Mã", "Lượt"]} />
+                        <tbody data-testid="bang-quoc-gia-bot">
+                          {so_lieu.top_quoc_gia_bot.map((q) => {
+                            const co = coQuocGia(q.ten);
+                            return (
+                              <tr key={q.ten}>
+                                <td className="px-3 py-2.5">
+                                  {co ? `${co} ` : ""}{tenQuocGia(q.ten)}
+                                </td>
+                                <td className="px-3 py-2.5 font-mono text-xs text-muc-mo">{q.ten}</td>
+                                <td className="px-3 py-2.5 tabular-nums">{q.so_luot}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </KhungBang>
+                      {so_lieu.top_quoc_gia_bot.length === 0 && (
+                        <KhoiRong co_bo_loc={false} chua_co="Chưa ghi nhận quốc gia nào của bot." />
+                      )}
+                    </The>
                   </div>
                 ),
               },
@@ -482,46 +526,74 @@ export default function TrangLuotXem() {
                    chỉ có hai cột, nên đặt cạnh nhau là so được ngay "Chrome/di động" với
                    "Safari/di động". Dọc ở màn hẹp. */
                 noi_dung: (
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <The tieu_de="Trình duyệt" pham_vi="Chỉ lượt người · suy từ User-Agent">
+                  <div className="space-y-4">
+                    <The tieu_de="Quốc gia" pham_vi="Top 20 quốc gia · chỉ lượt người">
                       <KhungBang rong={false}>
-                        <HangTieuDe cot={["Trình duyệt", "Lượt"]} />
-                        <tbody data-testid="bang-trinh-duyet">
-                          {so_lieu.trinh_duyet.map((t) => (
-                            <tr key={t.ten}>
-                              <td className="px-3 py-2.5">{nhanCua(NHAN_TRINH_DUYET, t.ten)}</td>
-                              <td className="px-3 py-2.5 tabular-nums">{t.so_luot}</td>
-                            </tr>
-                          ))}
+                        <HangTieuDe cot={["Quốc gia", "Mã", "Lượt"]} />
+                        <tbody data-testid="bang-quoc-gia-nguoi">
+                          {so_lieu.top_quoc_gia_nguoi.map((q) => {
+                            const co = coQuocGia(q.ten);
+                            return (
+                              <tr key={q.ten}>
+                                <td className="px-3 py-2.5">
+                                  {co ? `${co} ` : ""}{tenQuocGia(q.ten)}
+                                </td>
+                                <td className="px-3 py-2.5 font-mono text-xs text-muc-mo">{q.ten}</td>
+                                <td className="px-3 py-2.5 tabular-nums">{q.so_luot}</td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </KhungBang>
-                      {so_lieu.trinh_duyet.length === 0 && (
+                      {so_lieu.top_quoc_gia_nguoi.length === 0 && (
                         <KhoiRong
                           co_bo_loc={false}
-                          chua_co="Chưa đo được trình duyệt nào trong khoảng này."
+                          chua_co="Chưa ghi nhận quốc gia nào trong khoảng này."
                         />
                       )}
                     </The>
 
-                    <The tieu_de="Thiết bị" pham_vi="Chỉ lượt người · suy từ User-Agent">
-                      <KhungBang rong={false}>
-                        <HangTieuDe cot={["Thiết bị", "Lượt"]} />
-                        <tbody data-testid="bang-thiet-bi">
-                          {so_lieu.thiet_bi.map((t) => (
-                            <tr key={t.ten}>
-                              <td className="px-3 py-2.5">{nhanCua(NHAN_THIET_BI, t.ten)}</td>
-                              <td className="px-3 py-2.5 tabular-nums">{t.so_luot}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </KhungBang>
-                      {so_lieu.thiet_bi.length === 0 && (
-                        <KhoiRong
-                          co_bo_loc={false}
-                          chua_co="Chưa đo được thiết bị nào trong khoảng này."
-                        />
-                      )}
-                    </The>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <The tieu_de="Trình duyệt" pham_vi="Chỉ lượt người · suy từ User-Agent">
+                        <KhungBang rong={false}>
+                          <HangTieuDe cot={["Trình duyệt", "Lượt"]} />
+                          <tbody data-testid="bang-trinh-duyet">
+                            {so_lieu.trinh_duyet.map((t) => (
+                              <tr key={t.ten}>
+                                <td className="px-3 py-2.5">{nhanCua(NHAN_TRINH_DUYET, t.ten)}</td>
+                                <td className="px-3 py-2.5 tabular-nums">{t.so_luot}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </KhungBang>
+                        {so_lieu.trinh_duyet.length === 0 && (
+                          <KhoiRong
+                            co_bo_loc={false}
+                            chua_co="Chưa đo được trình duyệt nào trong khoảng này."
+                          />
+                        )}
+                      </The>
+
+                      <The tieu_de="Thiết bị" pham_vi="Chỉ lượt người · suy từ User-Agent">
+                        <KhungBang rong={false}>
+                          <HangTieuDe cot={["Thiết bị", "Lượt"]} />
+                          <tbody data-testid="bang-thiet-bi">
+                            {so_lieu.thiet_bi.map((t) => (
+                              <tr key={t.ten}>
+                                <td className="px-3 py-2.5">{nhanCua(NHAN_THIET_BI, t.ten)}</td>
+                                <td className="px-3 py-2.5 tabular-nums">{t.so_luot}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </KhungBang>
+                        {so_lieu.thiet_bi.length === 0 && (
+                          <KhoiRong
+                            co_bo_loc={false}
+                            chua_co="Chưa đo được thiết bị nào trong khoảng này."
+                          />
+                        )}
+                      </The>
+                    </div>
                   </div>
                 ),
               },
@@ -577,7 +649,7 @@ export default function TrangLuotXem() {
                 `chu-chi-tiet-90-ngay` đi theo bản đầy đủ ở trên. */}
             {so_lieu.chi_tiet_chi_90_ngay && (
               <p className="mt-2">
-                Bốn, các bảng <strong>Nguồn · Bot · Trình duyệt · Thiết bị</strong> chỉ phủ{" "}
+                Bốn, các bảng <strong>Nguồn · Bot · Trình duyệt · Thiết bị · Quốc gia</strong> chỉ phủ{" "}
                 <strong>90 ngày gần nhất</strong> — nói đủ ở dòng chú ngay dưới hàng tab
                 phía trên.
               </p>
@@ -763,8 +835,21 @@ function KhoiOnline({ k }: { k: KhachOnlineOut }) {
         <p className="mt-1 text-xs text-muc-mo">
           {oTrong(nhanCua(NHAN_TRINH_DUYET, k.trinh_duyet), k.trinh_duyet)} ·{" "}
           {oTrong(nhanCua(NHAN_THIET_BI, k.thiet_bi), k.thiet_bi)}
+          {k.quoc_gia ? (
+            <>
+              {" · "}
+              {coQuocGia(k.quoc_gia) ? `${coQuocGia(k.quoc_gia)} ` : ""}
+              {tenQuocGia(k.quoc_gia)} ({k.quoc_gia})
+            </>
+          ) : null}
         </p>
       )}
+      {k.la_bot && k.quoc_gia ? (
+        <p className="mt-1 text-xs text-muc-mo">
+          {coQuocGia(k.quoc_gia) ? `${coQuocGia(k.quoc_gia)} ` : ""}
+          {tenQuocGia(k.quoc_gia)} ({k.quoc_gia})
+        </p>
+      ) : null}
       <p className="mono mt-1 text-xs break-all">{k.duong_dan}</p>
       <p className="mt-1 text-xs text-muc-mo">
         {baoLauTruoc(k.giay_truoc)} · <span className="tabular-nums">{k.so_luot}</span> lượt

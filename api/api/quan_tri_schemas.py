@@ -966,17 +966,15 @@ class LuotXemOut(Schema):
     so_truc_tiep: int
     trinh_duyet: list[MucSoLuotOut]
     thiet_bi: list[MucSoLuotOut]
+    top_quoc_gia_nguoi: list[MucSoLuotOut]
+    top_quoc_gia_bot: list[MucSoLuotOut]
     #: `True` khi **các bảng chi tiết** hẹp hơn khoảng đang xem — luôn đúng với
     #: `khoang=tat_ca`, luôn sai với `7/30/90`.
     #:
-    #: Năm khối chịu giới hạn này: `top_bot`, `theo_nhom_bot`, `top_nguon` + `so_truc_tiep`,
-    #: `trinh_duyet`, `thiet_bi` — tất cả chỉ dựng được từ hàng thô (90 ngày), vì `TongNgay`
-    #: cố ý không mang các chiều ấy. Màn hình **phải nói ra**; giấu đi là để mod đọc chúng
-    #: như thể chúng phủ toàn thời gian.
-    #:
-    #: ⚠ Tên cũ là `bot_chi_90_ngay` (2026-08-27), đổi 2026-08-30 khi giới hạn phủ thêm
-    #: bốn khối nữa — một cái tên nói "bot" cho một cờ điều khiển năm dòng chú là cái tên
-    #: sẽ bị hiểu sai đúng bốn lần.
+    #: Các khối chịu giới hạn này: `top_bot`, `theo_nhom_bot`, `top_nguon` + `so_truc_tiep`,
+    #: `trinh_duyet`, `thiet_bi`, `top_quoc_gia_nguoi`, `top_quoc_gia_bot` — tất cả chỉ dựng
+    #: được từ hàng thô (90 ngày), vì `TongNgay` cố ý không mang các chiều ấy. Màn hình
+    #: **phải nói ra**; giấu đi là để mod đọc chúng như thể chúng phủ toàn thời gian.
     chi_tiet_chi_90_ngay: bool
 
 
@@ -1030,6 +1028,8 @@ class KhachOnlineOut(Schema):
     giay_truoc: int
     #: Số lượt xem của khách này **trong cửa sổ** — 1 là vừa mở một trang, 20 là đang lướt.
     so_luot: int
+    #: Mã quốc gia ISO 3166-1 alpha-2 (hoặc chuỗi rỗng nếu không rõ).
+    quoc_gia: str
 
 
 class OnlineOut(Schema):
