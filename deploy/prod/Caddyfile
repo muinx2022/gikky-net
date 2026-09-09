@@ -113,8 +113,20 @@ http://gikky.net {
 		import len_django
 	}
 
-	# API đọc.
+	# Healthcheck không cần rate limit để giám sát hoạt động thông suốt.
+	handle /api/v1/health {
+		import len_django
+	}
+
+	# API đọc — trần thô theo IP để chặn script cào quét ồ ạt nếu lọt qua Cloudflare.
 	handle /api/* {
+		rate_limit {
+			zone api_doc {
+				key {http.request.header.CF-Connecting-IP}
+				events 120
+				window 1m
+			}
+		}
 		import len_django
 	}
 

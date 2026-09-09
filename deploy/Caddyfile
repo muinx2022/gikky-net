@@ -110,8 +110,20 @@ gikky.net {
 		reverse_proxy 127.0.0.1:8000
 	}
 
-	# API đọc.
+	# Healthcheck không cần rate limit để giám sát hoạt động thông suốt.
+	handle /api/v1/health {
+		reverse_proxy 127.0.0.1:8000
+	}
+
+	# API đọc — trần thô theo IP để chặn script cào quét ồ ạt.
 	handle /api/* {
+		rate_limit {
+			zone api_doc {
+				key {remote_host}
+				events 120
+				window 1m
+			}
+		}
 		reverse_proxy 127.0.0.1:8000
 	}
 
