@@ -70,10 +70,12 @@ from datetime import date
 from urllib.parse import urlsplit
 
 from django.conf import settings
+from django.db.models import F
 from ninja import Router, Schema, Status
 from ninja.security import APIKeyHeader
 
 from core.bot import ten_bot
+from core.models.dien_dan import Mach
 from core.models.luot_xem import LuotXem, MuoiNgay
 from core.nhan_dien_ua import thiet_bi, trinh_duyet
 from core.thoi_gian import ngay_vn
@@ -399,4 +401,6 @@ def dem_luot_xem(request, du_lieu: DemLuotXemIn):
         # dập nó ở đây là bịa. Phía đọc mới là chỗ để dòng bot thành `—`.
         da_dang_nhap=du_lieu.da_dang_nhap,
     )
+    if not la_bot and (m_mach := re.match(r"^/m(?:-phien)?/(?:.*-)?(\d+)$", duong)):
+        Mach.objects.filter(pk=int(m_mach.group(1))).update(view_count=F("view_count") + 1)
     return Status(200, DemLuotXemOut(da_dem=True))

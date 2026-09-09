@@ -677,3 +677,30 @@ def test_G8_duong_dan_rac_khong_ghi_hang_nao():
         assert r.json() == {"da_dem": False}
 
     assert LuotXem.objects.count() == 0
+
+
+@pytest.mark.django_db
+@override_settings(DEM_LUOT_XEM_SECRET=SECRET)
+def test_dem_luot_xem_tang_view_count_cua_mach(seed):
+    assert seed.view_count == 0
+    r = goi({"duong_dan": f"/m/{seed.slug}-{seed.pk}", "user_agent": "Mozilla/5.0 Chrome/131"})
+    assert r.status_code == 200
+    seed.refresh_from_db()
+    assert seed.view_count == 1
+
+    # Bot không tăng view_count
+    goi({
+        "duong_dan": f"/m/{seed.slug}-{seed.pk}",
+        "user_agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+    })
+    seed.refresh_from_db()
+    assert seed.view_count == 1
+
+    # Đường /m-phien (khi user đăng nhập truy cập trực tiếp) cũng tăng view_count
+    goi({
+        "duong_dan": f"/m-phien/{seed.slug}-{seed.pk}",
+        "user_agent": "Mozilla/5.0 Chrome/131",
+    })
+    seed.refresh_from_db()
+    assert seed.view_count == 2
+

@@ -45,6 +45,7 @@ def test_tra_du_moc_va_thong_tin_mach(client, seed):
     assert d["tat_binh_luan"] is False
     assert d["entry_count"] == 9
     assert d["comment_count"] == 24
+    assert d["view_count"] == 0
     assert [m["seq"] for m in d["mocs"]] == list(range(1, 10))
     assert [s["seq"] for s in d["spine"]] == list(range(1, 10))
     assert d["mocs"][0]["figures"] == [
@@ -147,7 +148,7 @@ KHOA_CHO_PHEP = {
     "id", "slug", "title", "sub", "author", "status", "closed_at", "ket_qua",
     "bai_hoc", "truong_phai", "rieng_tu",
     "locked", "tat_binh_luan", "created_at", "last_entry_at", "last_activity_at", "entry_count",
-    "comment_count", "face", "mocs", "spine",
+    "comment_count", "view_count", "face", "mocs", "spine",
     # Ngày ĐĂNG (hẹn giờ, 2026-09-03). Cache được như `created_at`: nó là thuộc tính của
     # hàng `Mach`, không có nhánh nào hỏi người xem là ai. Hai cột cùng có mặt vì chúng
     # trả lời hai câu khác nhau — "viết lúc nào" và "lên sóng lúc nào".

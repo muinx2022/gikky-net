@@ -205,6 +205,8 @@ class Mach(models.Model):
     last_activity_at = models.DateTimeField(default=timezone.now)
     entry_count = models.PositiveIntegerField(default=0)
     comment_count = models.PositiveIntegerField(default=0)
+    #: Tổng lượt xem bài viết (tăng khi người đọc xem chi tiết mạch)
+    view_count = models.PositiveIntegerField(default=0)
     #: Điểm của **mốc 1** — khoá sort của feed "Nhiều điểm nhất" (plan con 1d §1).
     #:
     #: `IntegerField` chứ không `PositiveIntegerField`: `Moc.score` là `up − down` nên nó

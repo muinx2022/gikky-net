@@ -751,6 +751,41 @@ export type LoiOut = {
 };
 
 /**
+ * LoiThoiGianOut
+ *
+ * Lời từ chối **vì thời gian**: `{detail, code, thu_lai_tu}` — PLAN mục 7.
+ *
+ * Hôm nay đúng một cửa dùng nó: 429 `qua_han_muc_moc` của `POST /machs/{id}/mocs`.
+ * `detail` của mã ấy dừng ở *"mai nối tiếp nhé"* — đúng, nhưng thiếu con số, và "mai"
+ * lúc 23:50 nghĩa là mười phút nữa. Để frontend tự tính là bắt nó dựng lại luật "nửa
+ * đêm giờ VN" ở phía client: đó chính là nợ `API-THIEU-MOC-THOI-GIAN`, trả 2026-08-23.
+ *
+ * **Kế thừa chứ không phải hình dạng lỗi thứ hai.** Hợp đồng "mọi lỗi có `detail` +
+ * `code`" giữ nguyên; ai chỉ đọc hai trường ấy không phải biết lớp này tồn tại. Và nó
+ * **không** được gộp vào `LoiOut`: một `thu_lai_tu: null` gắn vào mọi 404 của cả hai
+ * `NinjaAPI` là một trường vô nghĩa ở 99% số lời từ chối, và hai bài đo hình dạng lỗi
+ * của khu quản trị ghim đúng chuyện đó.
+ *
+ * ⚠ **Không ném qua `LoiGhi` được** (`api/quyen.py`): exception handler chỉ dựng được
+ * `LoiOut`. Cửa nào cần trường này thì `return` thẳng `Status(...)` — phép kiểm của nó
+ * vì thế phải nằm ở tầng handler, trước `transaction.atomic()`.
+ */
+export type LoiThoiGianOut = {
+    /**
+     * Code
+     */
+    code: string;
+    /**
+     * Detail
+     */
+    detail: string;
+    /**
+     * Thu Lai Tu
+     */
+    thu_lai_tu: string;
+};
+
+/**
  * LuotXemNgayOut
  *
  * Một ô của biểu đồ cột. Ngày KHÔNG có lượt xem nào vẫn có mặt, với hai số 0.
@@ -1982,6 +2017,10 @@ export type QuanTriTaiAnhNoiDungErrors = {
      * Request Entity Too Large
      */
     413: LoiOut;
+    /**
+     * Too Many Requests
+     */
+    429: LoiThoiGianOut;
 };
 
 export type QuanTriTaiAnhNoiDungError = QuanTriTaiAnhNoiDungErrors[keyof QuanTriTaiAnhNoiDungErrors];

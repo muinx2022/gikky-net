@@ -918,6 +918,31 @@
         "title": "LoiOut",
         "type": "object"
       },
+      "LoiThoiGianOut": {
+        "description": "Lời từ chối **vì thời gian**: `{detail, code, thu_lai_tu}` — PLAN mục 7.\n\nHôm nay đúng một cửa dùng nó: 429 `qua_han_muc_moc` của `POST /machs/{id}/mocs`.\n`detail` của mã ấy dừng ở *\"mai nối tiếp nhé\"* — đúng, nhưng thiếu con số, và \"mai\"\nlúc 23:50 nghĩa là mười phút nữa. Để frontend tự tính là bắt nó dựng lại luật \"nửa\nđêm giờ VN\" ở phía client: đó chính là nợ `API-THIEU-MOC-THOI-GIAN`, trả 2026-08-23.\n\n**Kế thừa chứ không phải hình dạng lỗi thứ hai.** Hợp đồng \"mọi lỗi có `detail` +\n`code`\" giữ nguyên; ai chỉ đọc hai trường ấy không phải biết lớp này tồn tại. Và nó\n**không** được gộp vào `LoiOut`: một `thu_lai_tu: null` gắn vào mọi 404 của cả hai\n`NinjaAPI` là một trường vô nghĩa ở 99% số lời từ chối, và hai bài đo hình dạng lỗi\ncủa khu quản trị ghim đúng chuyện đó.\n\n⚠ **Không ném qua `LoiGhi` được** (`api/quyen.py`): exception handler chỉ dựng được\n`LoiOut`. Cửa nào cần trường này thì `return` thẳng `Status(...)` — phép kiểm của nó\nvì thế phải nằm ở tầng handler, trước `transaction.atomic()`.",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "thu_lai_tu": {
+            "format": "date-time",
+            "title": "Thu Lai Tu",
+            "type": "string"
+          }
+        },
+        "required": [
+          "detail",
+          "code",
+          "thu_lai_tu"
+        ],
+        "title": "LoiThoiGianOut",
+        "type": "object"
+      },
       "LuotXemNgayOut": {
         "description": "Một ô của biểu đồ cột. Ngày KHÔNG có lượt xem nào vẫn có mặt, với hai số 0.",
         "properties": {
@@ -2637,7 +2662,7 @@
   "paths": {
     "/api/admin/anh": {
       "post": {
-        "description": "Tải MỘT ảnh để nhúng vào thân mốc (multipart). Trả `{url, width, height}`.\n\nSong sinh của `POST /api/v1/me/anh`, khác đúng hai chỗ và cả hai có lý do:\n\n- **superuser-only** thay vì mọi tài khoản đăng nhập;\n- **không hạn mức 30 ảnh/ngày**. Hạn mức ấy tồn tại vì cửa v1 mở cho mọi người và\n  không gắn với hàng nào để đếm, tức nó là một kho file miễn phí nếu bỏ trần. Cửa này\n  chỉ superuser vào được, nên trần ngày chỉ còn là một cái bẫy cho chính người đang\n  sửa 20 bài trong một buổi tối.\n\nHàng vẫn là `AnhNoiDung` với `nguoi_tai` = superuser, tức nó vẫn nằm trong whitelist\nmà `don_anh_mo_coi` đọc — không có loài ảnh thứ ba nào sinh ra ở đây.\n\n`url` phải giữ nguyên tiền tố `/media/` tới lúc lưu `body`: `core/lam_sach_html.py`\n**gỡ cả thẻ** `img` nào có `src` trỏ ra ngoài kho của site.\n\n`Cache-Control: no-store` — cùng lý do cửa v1: response nói về tài sản của một phiên.",
+        "description": "Tải MỘT ảnh để nhúng vào thân mốc (multipart). Trả `{url, width, height}`.\n\nSong sinh của `POST /api/v1/me/anh`, khác đúng hai chỗ và cả hai có lý do:\n\n- **mọi staff** (nới quyền 2026-09-04);\n- có hạn mức theo ngày lịch VN đếm theo `request.user`.\n\nHàng vẫn là `AnhNoiDung` với `nguoi_tai` = user đang gọi, tức nó vẫn nằm trong whitelist\nmà `don_anh_mo_coi` đọc — không có loài ảnh thứ ba nào sinh ra ở đây.\n\n`url` phải giữ nguyên tiền tố `/media/` tới lúc lưu `body`: `core/lam_sach_html.py`\n**gỡ cả thẻ** `img` nào có `src` trỏ ra ngoài kho của site.\n\n`Cache-Control: no-store` — cùng lý do cửa v1: response nói về tài sản của một phiên.",
         "operationId": "quan_tri_tai_anh_noi_dung",
         "parameters": [],
         "requestBody": {
@@ -2711,6 +2736,16 @@
               }
             },
             "description": "Request Entity Too Large"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiThoiGianOut"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           }
         },
         "security": [

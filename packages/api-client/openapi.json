@@ -1224,6 +1224,11 @@
               }
             ],
             "title": "Truong Phai"
+          },
+          "view_count": {
+            "default": 0,
+            "title": "View Count",
+            "type": "integer"
           }
         },
         "required": [

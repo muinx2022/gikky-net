@@ -45,8 +45,14 @@
   padding: 2px 8px;
 }
 
-.gui {
+.nhom_gui {
   margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gui {
   padding: 7px 16px;
   border: 1px solid var(--accent);
   border-radius: 999px;
@@ -64,6 +70,9 @@
 }
 
 .nhe {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 7px 12px;
   border: 1px solid var(--line-2);
   border-radius: 999px;

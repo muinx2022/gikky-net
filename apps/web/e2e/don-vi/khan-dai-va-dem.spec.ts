@@ -327,3 +327,44 @@ test("D5 — hai đường cũ (vá A1) vẫn còn nguyên", () => {
   // Cursor trông hợp lệ kèm sort thời gian thì để API phán, chưa báo gì ở đây.
   expect(thamSoPhanTrangBiBo("moi_nhat", { cursor: "abc" })).toBe(false);
 });
+
+/* ---- Chỉ 1 form bình luận mở tại 1 thời điểm (2026-09-09) ----------------- */
+
+test("chỉ 1 form bình luận mở tại một thời điểm — FormBinhLuanProvider và useFormBinhLuan", () => {
+  const maNguon = readFileSync(
+    resolve(__dirname, "../../components/form-binh-luan-ngu-canh.tsx"),
+    "utf8",
+  );
+  expect(maNguon).toContain("export function FormBinhLuanProvider");
+  expect(maNguon).toContain("export function useFormBinhLuan");
+  expect(maNguon).toContain("formDangMo");
+  expect(maNguon).toContain("moForm");
+  expect(maNguon).toContain("dongForm");
+});
+
+test("TrangMach bọc FormBinhLuanProvider quanh toàn bộ thẻ mạch", () => {
+  const maTrang = readFileSync(
+    resolve(__dirname, "../../components/trang-mach.tsx"),
+    "utf8",
+  );
+  expect(maTrang).toContain("<FormBinhLuanProvider>");
+  expect(maTrang).toContain("</FormBinhLuanProvider>");
+});
+
+test("Composer và HanhDongBinhLuan kết nối useFormBinhLuan để đóng mở đồng bộ", () => {
+  const maComposer = readFileSync(
+    resolve(__dirname, "../../components/composer.tsx"),
+    "utf8",
+  );
+  expect(maComposer).toContain("useFormBinhLuan");
+  expect(maComposer).toContain("cuaDangMo");
+
+  const maHanhDong = readFileSync(
+    resolve(__dirname, "../../components/hanh-dong-binh-luan.tsx"),
+    "utf8",
+  );
+  expect(maHanhDong).toContain("useFormBinhLuan");
+  expect(maHanhDong).toContain("idTraLoi");
+  expect(maHanhDong).toContain("hop_tra_loi");
+});
+

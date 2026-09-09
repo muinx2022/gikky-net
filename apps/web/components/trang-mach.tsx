@@ -22,6 +22,7 @@ import { MatBao } from "@/components/mat-bao";
 import { MocAccordionProvider } from "@/components/moc-accordion";
 import { NganKeoProvider } from "@/components/ngan-keo";
 import { NutTheoMach } from "@/components/nut-theo-mach";
+import { FormBinhLuanProvider } from "@/components/form-binh-luan-ngu-canh";
 import { TheMoc } from "@/components/the-moc";
 import { TrangThaiToiProvider } from "@/components/trang-thai-toi";
 import { XuatCaseStudy } from "@/components/xuat-case-study";
@@ -314,7 +315,8 @@ export async function TrangMach({
             và nó phải bọc cả cột vote lẫn nút "Theo mạch" lẫn spine. Mọi thứ bên trong
             vẫn là server component. */}
         <TrangThaiToiProvider machId={mach.id}>
-          <article className={css.the} data-mat={mat} data-testid="the-mach">
+          <FormBinhLuanProvider>
+            <article className={css.the} data-mat={mat} data-testid="the-mach">
             <header className={css.dau}>
               <div className={css.hang_tren}>
                 <Link className={css.sub} href={duongDanSub(mach.sub.slug)}>
@@ -380,6 +382,12 @@ export async function TrangMach({
                     </span>
                   </>
                 )}
+                <span className={css.cham} aria-hidden>
+                  ·
+                </span>
+                <span className={css.dem} data-testid="chu-ky-luot-xem">
+                  {(mach.view_count ?? 0).toLocaleString("vi-VN")} lượt xem
+                </span>
                 {/* Báo cáo cả BÀI — user chốt 2026-08-25. Trước đó chỉ báo cáo được mốc
                     và bình luận, nên một bài vi phạm ngay từ tiêu đề (hoặc vi phạm ở tổng
                     thể) thì người đọc phải chọn bừa một mốc, và mod nhận báo cáo trỏ sai
@@ -533,6 +541,7 @@ export async function TrangMach({
               />
             )}
           </article>
+          </FormBinhLuanProvider>
         </TrangThaiToiProvider>
       </MachProvider>
     </KhungHaiCot>

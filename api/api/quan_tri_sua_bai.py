@@ -55,14 +55,16 @@ from core.ghi import (
     them_anh_moc,
     xoa_anh_moc,
 )
+from core.han_muc import dem_anh_noi_dung_trong_ngay_vn, tran_anh_noi_dung_moi_ngay
 from core.models.dien_dan import Mach
 from core.models.moc import Moc, MocAnh
 from core.revalidate import lam_moi_mach, lam_moi_mach_slug
+from core.thoi_gian import nua_dem_vn_ke_tiep
 
 from api.anh import QUA_NHIEU_ANH
 from api.anh_chung import doi_khong_qua_nang, xu_ly_hoac_loi_http
 from api.ghi_chung import kiem_occurred_at
-from api.loi import LoiOut, khong_tim_thay, loi
+from api.loi import LoiOut, LoiThoiGianOut, khong_tim_thay, loi, loi_thoi_gian
 from api.quan_tri_kiem_duyet import duong_dan_mach
 from api.quan_tri_quyen import chan_neu_khong_phai_superuser
 from api.quan_tri_schemas import (
@@ -72,7 +74,13 @@ from api.quan_tri_schemas import (
     SuaMocQuanTriIn,
     SuaTieuDeMachIn,
 )
-from api.quyen import DU_LIEU_KHONG_HOP_LE, MACH_BI_KHOA, NOI_DUNG_DA_GO, LoiGhi
+from api.quyen import (
+    DU_LIEU_KHONG_HOP_LE,
+    MACH_BI_KHOA,
+    NOI_DUNG_DA_GO,
+    QUA_HAN_MUC_ANH_NOI_DUNG,
+    LoiGhi,
+)
 from api.schemas import AnhNoiDungOut, AnhOut
 from api.trinh_bay import anh_ra, nguoi_dung_ra
 
@@ -212,8 +220,6 @@ def sua_moc_quan_tri(request, moc_id: int, du_lieu: SuaMocQuanTriIn):
     Gửi lên đúng thứ đang có ⇒ 200 `da_doi=false`, và **không** revision, **không** log:
     một cú bấm Lưu chẳng đổi gì không được đóng dấu "đã sửa" lên bài của người ta.
     """
-    if (chan := chan_neu_khong_phai_superuser(request, VIEC_SUA_NOI_DUNG)) is not None:
-        return chan
     moc = _nap_moc_quan_tri(moc_id)
     if moc is None:
         return khong_tim_thay("mốc")
@@ -321,7 +327,14 @@ def sua_tieu_de_mach_quan_tri(request, mach_id: int, du_lieu: SuaTieuDeMachIn):
 
 @router.post(
     "/anh",
-    response={201: AnhNoiDungOut, 400: LoiOut, 401: LoiOut, 403: LoiOut, 413: LoiOut},
+    response={
+        201: AnhNoiDungOut,
+        400: LoiOut,
+        401: LoiOut,
+        403: LoiOut,
+        413: LoiOut,
+        429: LoiThoiGianOut,
+    },
     operation_id="quan_tri_tai_anh_noi_dung",
     tags=["quan-tri-sua-bai"],
 )
@@ -332,13 +345,10 @@ def tai_anh_noi_dung_quan_tri(
 
     Song sinh của `POST /api/v1/me/anh`, khác đúng hai chỗ và cả hai có lý do:
 
-    - **superuser-only** thay vì mọi tài khoản đăng nhập;
-    - **không hạn mức 30 ảnh/ngày**. Hạn mức ấy tồn tại vì cửa v1 mở cho mọi người và
-      không gắn với hàng nào để đếm, tức nó là một kho file miễn phí nếu bỏ trần. Cửa này
-      chỉ superuser vào được, nên trần ngày chỉ còn là một cái bẫy cho chính người đang
-      sửa 20 bài trong một buổi tối.
+    - **mọi staff** (nới quyền 2026-09-04);
+    - có hạn mức theo ngày lịch VN đếm theo `request.user`.
 
-    Hàng vẫn là `AnhNoiDung` với `nguoi_tai` = superuser, tức nó vẫn nằm trong whitelist
+    Hàng vẫn là `AnhNoiDung` với `nguoi_tai` = user đang gọi, tức nó vẫn nằm trong whitelist
     mà `don_anh_mo_coi` đọc — không có loài ảnh thứ ba nào sinh ra ở đây.
 
     `url` phải giữ nguyên tiền tố `/media/` tới lúc lưu `body`: `core/lam_sach_html.py`
@@ -347,8 +357,14 @@ def tai_anh_noi_dung_quan_tri(
     `Cache-Control: no-store` — cùng lý do cửa v1: response nói về tài sản của một phiên.
     """
     response["Cache-Control"] = "no-store"
-    if (chan := chan_neu_khong_phai_superuser(request, VIEC_SUA_NOI_DUNG)) is not None:
-        return chan
+    tran = tran_anh_noi_dung_moi_ngay()
+    if dem_anh_noi_dung_trong_ngay_vn(request.user) >= tran:
+        return loi_thoi_gian(
+            429,
+            QUA_HAN_MUC_ANH_NOI_DUNG,
+            f"Hôm nay bạn đã tải đủ {tran} ảnh vào bài — mai tải tiếp nhé.",
+            thu_lai_tu=nua_dem_vn_ke_tiep(),
+        )
 
     doi_khong_qua_nang(file)
     anh = xu_ly_hoac_loi_http(file.read())
@@ -386,8 +402,6 @@ def tai_anh_moc_quan_tri(request, moc_id: int, file: UploadedFile = File(...)):
     transaction. Gắn ảnh vào bài NGƯỜI KHÁC là đổi nội dung của họ, và ảnh không có
     `MocRevision` nào để kể lại chuyện đó.
     """
-    if (chan := chan_neu_khong_phai_superuser(request, VIEC_SUA_NOI_DUNG)) is not None:
-        return chan
     moc = _nap_moc_quan_tri(moc_id)
     if moc is None:
         return khong_tim_thay("mốc")
@@ -429,8 +443,6 @@ def xoa_anh_moc_quan_tri(request, anh_id: int):
 
     Trả chính thẻ ảnh vừa xoá chứ không 204 — UI cần `id` để gỡ đúng ô khỏi lưới.
     """
-    if (chan := chan_neu_khong_phai_superuser(request, VIEC_SUA_NOI_DUNG)) is not None:
-        return chan
     anh = (
         MocAnh.objects.filter(pk=anh_id).select_related("moc", "moc__mach").first()
     )

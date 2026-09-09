@@ -27,13 +27,10 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
  *
  * Song sinh của `POST /api/v1/me/anh`, khác đúng hai chỗ và cả hai có lý do:
  *
- * - **superuser-only** thay vì mọi tài khoản đăng nhập;
- * - **không hạn mức 30 ảnh/ngày**. Hạn mức ấy tồn tại vì cửa v1 mở cho mọi người và
- * không gắn với hàng nào để đếm, tức nó là một kho file miễn phí nếu bỏ trần. Cửa này
- * chỉ superuser vào được, nên trần ngày chỉ còn là một cái bẫy cho chính người đang
- * sửa 20 bài trong một buổi tối.
+ * - **mọi staff** (nới quyền 2026-09-04);
+ * - có hạn mức theo ngày lịch VN đếm theo `request.user`.
  *
- * Hàng vẫn là `AnhNoiDung` với `nguoi_tai` = superuser, tức nó vẫn nằm trong whitelist
+ * Hàng vẫn là `AnhNoiDung` với `nguoi_tai` = user đang gọi, tức nó vẫn nằm trong whitelist
  * mà `don_anh_mo_coi` đọc — không có loài ảnh thứ ba nào sinh ra ở đây.
  *
  * `url` phải giữ nguyên tiền tố `/media/` tới lúc lưu `body`: `core/lam_sach_html.py`

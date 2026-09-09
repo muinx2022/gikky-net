@@ -8,6 +8,7 @@ import { useId, useState } from "react";
 import { GOC_TRINH_DUYET, headerGhi } from "@/lib/tai-khoan";
 
 import css from "./composer.module.css";
+import { useFormBinhLuan } from "./form-binh-luan-ngu-canh";
 import { useMach } from "./mach-ngu-canh";
 import { useModalDangNhap } from "./modal-dang-nhap";
 import { toiBinhLuan } from "./ngan-keo";
@@ -34,6 +35,7 @@ import { usePhien } from "./phien";
  * của cây — bản không có `path`, không có thứ hạng, không có `la_chu_mach`.
  */
 export function Composer({
+  formId,
   parentId = null,
   anchorMocSeq = null,
   neoDoiDuoc = false,
@@ -44,6 +46,7 @@ export function Composer({
   tuDongLayNet = false,
   moSan = false,
 }: {
+  formId?: string;
   parentId?: number | null;
   anchorMocSeq?: number | null;
   /** Người viết được đổi/gỡ mốc neo — **chỉ** composer khán đài (PLAN 5.4 luật 3).
@@ -67,10 +70,30 @@ export function Composer({
   const { machId, khoa, tatBinhLuan, cacMoc } = useMach();
   const { toi, dangTai } = usePhien();
   const { moModal } = useModalDangNhap();
+  const nguCanhForm = useFormBinhLuan();
   const router = useRouter();
   const [than, datThan] = useState("");
   const [dangGui, datDangGui] = useState(false);
   const [loi, datLoi] = useState<string | null>(null);
+
+  const idThuc =
+    formId ??
+    (parentId !== null
+      ? `reply-${parentId}`
+      : anchorMocSeq !== null
+        ? `moc-${anchorMocSeq}`
+        : "khan-dai");
+  const [moCucBo, datMoCucBo] = useState(false);
+
+  const cuaDangMo = nguCanhForm ? nguCanhForm.formDangMo === idThuc : moCucBo;
+  const datCuaDangMo = (mo: boolean) => {
+    if (nguCanhForm) {
+      if (mo) nguCanhForm.moForm(idThuc);
+      else nguCanhForm.dongForm(idThuc);
+    } else {
+      datMoCucBo(mo);
+    }
+  };
   /** Neo do người viết chọn trong lượt này. `undefined` = chưa động vào ⇒ theo prop.
    *
    * Không khởi tạo bằng `anchorMocSeq`: `useState` chỉ đọc đối số ở lần render đầu, nên
@@ -79,34 +102,8 @@ export function Composer({
    * hai thứ mà một `number | null` gộp làm một. */
   const [neoTay, datNeoTay] = useState<number | null | undefined>(undefined);
   /** Công tắc trình soạn thảo — **mặc định TẮT** (user chốt 2026-08-26: *"bấm tùy chọn
-   * thì mới hiện tiptap, còn không thì cứ để textarea như hiện tại"*).
-   *
-   * Mặc định tắt không phải để tiết kiệm: bình luận phần lớn là một hai câu, và một
-   * thanh công cụ đậm phía trên ô gõ làm việc gõ một câu trông nặng hơn nó vốn có. Ai cần
-   * đậm/nghiêng/link/ảnh thì bấm một cái.
-   *
-   * **Không nhớ lựa chọn qua các lần bình luận** (không `localStorage`). Cố ý: một ô soạn
-   * tự mở ra ở dạng khác với lần trước, ở một trang khác, là một cú nhảy không ai xin.
-   * Ngày nào muốn nhớ thì đó là một quyết định riêng — và chỗ nhớ phải là `/cai-dat`, nơi
-   * người dùng thấy được mình đã bật cái gì.
-   *
-   * ⚠ Đổi công tắc **giữ nguyên `than`**: chuỗi markdown đang gõ dở sẽ hiện trong Tiptap
-   * dưới dạng văn bản thuần (Tiptap parse HTML, và markdown không phải HTML nên nó vào
-   * như một đoạn chữ). Không mất chữ — đó là điều kiện duy nhất bắt buộc ở đây. Dịch
-   * markdown → HTML khi bật công tắc là dựng một bộ chuyển đổi thứ hai ở client, trong
-   * khi `core/markdown_sang_html.py` đã có một bản ở server. */
+   * thì mới hiện tiptap, còn không thì cứ để textarea như hiện tại"*). */
   const [dungSoanThao, datDungSoanThao] = useState(false);
-  /** Cửa đã mở chưa — user chốt 2026-08-26: *"không nên show form luôn, show 1 div báo
-   * click vào đây để bình luận"*.
-   *
-   * Trang mạch có tới **10+ composer** cùng lúc (khán đài + mỗi ngăn kéo một cái), và
-   * mỗi cái là một `<textarea>` cao 3 dòng cộng một hàng nút. Chúng chiếm chỗ, và không
-   * cái nào trong số đó là thứ người đọc tới để đọc.
-   *
-   * State cục bộ, **không** nâng lên ngữ cảnh: hai cửa mở cùng lúc là chuyện bình thường
-   * (viết vào khán đài, rồi mở ngăn kéo mốc 5). Một "chỉ-một-cửa-mở" ở đây sẽ xoá chữ
-   * người ta đang gõ dở ở cửa kia. */
-  const [moCua, datMoCua] = useState(false);
 
   // Chưa biết mình là ai thì chưa vẽ gì — cùng lý lẽ với `ThanhTaiKhoan`: chớp một lời
   // mời đăng nhập vào mặt người đang đăng nhập là một cú nhảy vô cớ.
@@ -167,7 +164,7 @@ export function Composer({
       // ở dưới, nên một ô trống nằm nguyên đó chỉ mời viết tiếp — mà "viết tiếp" gần như
       // luôn là reply vào chính câu ấy, không phải một thread gốc thứ hai.
       // `moSan` (reply) không đụng tới: chỗ đó `onXong` đã gỡ cả component.
-      datMoCua(false);
+      datCuaDangMo(false);
       onXong?.();
       // **Câu gửi CÓ NEO từ ô chung phải dẫn người viết tới chỗ nó vừa rơi vào**
       // *(tiêu chí 16, 2026-08-27)*.
@@ -204,7 +201,7 @@ export function Composer({
   // nhập, chứ **không** phải một `<div onClick>`: nó nhận focus bằng Tab, kích hoạt bằng
   // Enter/Space, và trình đọc màn hình gọi đúng tên nó là một nút. Câu user viết là "1
   // div", nhưng thứ user mô tả là một cái bấm được — và cái bấm được thì có sẵn một thẻ.
-  if (!moSan && !moCua) {
+  if (!moSan && !cuaDangMo) {
     return (
       <button
         type="button"
@@ -216,7 +213,7 @@ export function Composer({
             moModal();
             return;
           }
-          datMoCua(true);
+          datCuaDangMo(true);
         }}
         data-testid="composer-cua"
         data-khach={dangNhapRoi ? undefined : "1"}
@@ -234,7 +231,7 @@ export function Composer({
         <SoanThao
           giaTri={than}
           datGiaTri={datThan}
-          moi={moi ?? "Chém gió với chủ mạch…"}
+          moi={moi ?? (parentId !== null ? "Viết phản hồi…" : "Chém gió với chủ mạch…")}
           testId="composer-soan-thao"
         />
       ) : (
@@ -242,9 +239,9 @@ export function Composer({
           className={css.o}
           value={than}
           onChange={(e) => datThan(e.target.value)}
-          placeholder={moi ?? "Chém gió với chủ mạch…"}
+          placeholder={moi ?? (parentId !== null ? "Viết phản hồi…" : "Chém gió với chủ mạch…")}
           rows={3}
-          autoFocus={tuDongLayNet || moCua}
+          autoFocus={tuDongLayNet || cuaDangMo}
           data-testid="composer-o"
         />
       )}
@@ -270,7 +267,7 @@ export function Composer({
           data-testid="composer-cong-tac-soan-thao"
         >
           <PenLine size={13} strokeWidth={2} aria-hidden />
-          {dungSoanThao ? "Ô gõ thường" : "Trình soạn thảo"}
+          <span>{dungSoanThao ? "Ô gõ thường" : "Trình soạn thảo"}</span>
         </button>
         {parentId === null &&
           (neoDoiDuoc ? (
@@ -287,24 +284,30 @@ export function Composer({
               </span>
             )
           ))}
-        {onHuy !== undefined && (
+        <div className={css.nhom_gui}>
+          {(onHuy !== undefined || (!moSan && cuaDangMo)) && (
+            <button
+              type="button"
+              className={css.nhe}
+              onClick={() => {
+                datThan("");
+                datCuaDangMo(false);
+                onHuy?.();
+              }}
+              data-testid="composer-huy"
+            >
+              Huỷ
+            </button>
+          )}
           <button
-            type="button"
-            className={css.nhe}
-            onClick={onHuy}
-            data-testid="composer-huy"
+            type="submit"
+            className={css.gui}
+            disabled={dangGui || than.trim() === ""}
+            data-testid="composer-gui"
           >
-            Huỷ
+            {dangGui ? "Đang gửi…" : nutGui}
           </button>
-        )}
-        <button
-          type="submit"
-          className={css.gui}
-          disabled={dangGui || than.trim() === ""}
-          data-testid="composer-gui"
-        >
-          {dangGui ? "Đang gửi…" : nutGui}
-        </button>
+        </div>
       </div>
     </form>
   );

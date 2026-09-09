@@ -31,7 +31,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, relative } from "node:path";
+import { dirname, join, relative } from "node:path";
 
 import { danhSachApi, duongDanCho, repoRoot } from "./api-registry.mjs";
 import { runManage } from "./py.mjs";
@@ -59,7 +59,16 @@ function normalize(files) {
   for (const file of files) {
     let text = readFileSync(file, "utf8").replace(/\r\n/g, "\n");
     if (file.endsWith(".ts") && !text.startsWith(BANNER)) text = BANNER + text;
-    writeFileSync(file, text, { encoding: "utf8" });
+    let attempts = 0;
+    while (true) {
+      try {
+        writeFileSync(file, text, { encoding: "utf8" });
+        break;
+      } catch (e) {
+        if (++attempts >= 5) throw e;
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 100);
+      }
+    }
   }
 }
 
@@ -135,7 +144,12 @@ async function sinhVaTraoDoi(khoa, schemaPath, srcDir) {
 
     const moi = new Set(walk(tam).map((f) => relative(tam, f)));
     mkdirSync(srcDir, { recursive: true });
-    cpSync(tam, srcDir, { recursive: true, force: true });
+    for (const rel of moi) {
+      const srcFile = join(tam, rel);
+      const destFile = join(srcDir, rel);
+      mkdirSync(dirname(destFile), { recursive: true });
+      writeFileSync(destFile, readFileSync(srcFile));
+    }
 
     // Quét ngược: gỡ file của lần sinh TRƯỚC mà lần này không còn sinh ra nữa. Không có
     // bước này thì một endpoint bị xoá khỏi Django vẫn để lại type của nó nằm đó, và

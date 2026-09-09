@@ -1011,6 +1011,10 @@ export type MachChiTietOut = {
      * Truong Phai
      */
     truong_phai?: string | null;
+    /**
+     * View Count
+     */
+    view_count?: number;
 };
 
 /**

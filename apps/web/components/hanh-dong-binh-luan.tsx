@@ -9,8 +9,10 @@ import { GOC_TRINH_DUYET, headerGhi } from "@/lib/tai-khoan";
 
 import { FormBaoCao } from "./bao-cao";
 import { Composer } from "./composer";
+import { useFormBinhLuan } from "./form-binh-luan-ngu-canh";
 import css from "./hanh-dong-binh-luan.module.css";
 import { useMach } from "./mach-ngu-canh";
+import { useModalDangNhap } from "./modal-dang-nhap";
 import { usePhien } from "./phien";
 import { NutTrich } from "./trich";
 
@@ -54,6 +56,8 @@ export function HanhDongBinhLuan({
   than,
   daXoa,
   anchorMocSeq,
+  vote,
+  mod,
 }: {
   id: number;
   /** `username` tác giả bình luận. `null` ở bia mộ. */
@@ -63,34 +67,66 @@ export function HanhDongBinhLuan({
   daXoa: boolean;
   /** Mốc bình luận này đang neo — mốc mặc định của một lượt trích (PLAN 5.6). */
   anchorMocSeq: number | null;
+  vote?: React.ReactNode;
+  mod?: React.ReactNode;
 }) {
   const { khoa, tatBinhLuan } = useMach();
-  const { toi, dangTai } = usePhien();
+  const { toi } = usePhien();
+  const { moModal } = useModalDangNhap();
+  const nguCanhForm = useFormBinhLuan();
   const router = useRouter();
-  const [mo, datMo] = useState<"khong" | "tra_loi" | "sua" | "bao_cao">("khong");
+
+  const idTraLoi = `reply-${id}`;
+  const idSua = `sua-${id}`;
+  const idBaoCao = `bao_cao-${id}`;
+
+  const [moCucBo, datMoCucBo] = useState<"khong" | "tra_loi" | "sua" | "bao_cao">("khong");
+
+  const mo: "khong" | "tra_loi" | "sua" | "bao_cao" = nguCanhForm
+    ? nguCanhForm.formDangMo === idTraLoi
+      ? "tra_loi"
+      : nguCanhForm.formDangMo === idSua
+        ? "sua"
+        : nguCanhForm.formDangMo === idBaoCao
+          ? "bao_cao"
+          : "khong"
+    : moCucBo;
+
+  const datMo = (k: "khong" | "tra_loi" | "sua" | "bao_cao") => {
+    if (nguCanhForm) {
+      if (k === "khong") {
+        nguCanhForm.dongForm();
+      } else if (k === "tra_loi") {
+        if (nguCanhForm.formDangMo === idTraLoi) {
+          nguCanhForm.dongForm(idTraLoi);
+        } else {
+          nguCanhForm.moForm(idTraLoi);
+        }
+      } else if (k === "sua") {
+        nguCanhForm.moForm(idSua);
+      } else if (k === "bao_cao") {
+        nguCanhForm.moForm(idBaoCao);
+      }
+    } else {
+      datMoCucBo(k);
+    }
+  };
+
   const [chu, datChu] = useState(than);
   const [dangGui, datDangGui] = useState(false);
   const [loi, datLoi] = useState<string | null>(null);
   const hopRef = useRef<HTMLDetailsElement>(null);
   useDongDetailsKhiBamNgoai(hopRef);
 
-  /** Đóng menu `⋯` sau khi chọn một mục.
-   *
-   * `<details>` là **uncontrolled**: trạng thái mở nằm trong DOM, không trong React. Chọn
-   * "Sửa" rồi để nó mở nguyên là menu che mất chính cái ô sửa vừa bung ra, và lần bấm `⋯`
-   * kế tiếp lại **đóng** menu thay vì mở — người dùng phải bấm hai lần mà không hiểu vì
-   * sao. (Đúng cái bẫy này làm bài đo e2e "tự sửa và tự xoá" treo ở cú bấm thứ hai.)
-   */
   const dongMenu = () => {
     if (hopRef.current !== null) hopRef.current.open = false;
   };
 
-  if (dangTai || daXoa) return null;
+  if (daXoa) return null;
   const dang_nhap = toi?.dang_nhap === true;
-  if (!dang_nhap) return null;
   const cua_toi = tacGia !== null && toi?.username === tacGia;
   // Mạch bị khoá: chỉ còn đúng đường báo cáo (xem docstring, ngoại lệ 1).
-  const co_menu = khoa ? !cua_toi : true;
+  const co_menu = dang_nhap && (khoa ? !cua_toi : true);
 
   const luu = async () => {
     const moi = chu.trim();
@@ -142,11 +178,18 @@ export function HanhDongBinhLuan({
   return (
     <div className={css.khung}>
       <div className={css.hang}>
+        {vote}
         {!khoa && !tatBinhLuan && (
           <button
             type="button"
-            className={css.nhe}
-            onClick={() => datMo(mo === "tra_loi" ? "khong" : "tra_loi")}
+            className={mo === "tra_loi" ? `${css.nhe} ${css.nhe_dang_mo}` : css.nhe}
+            onClick={() => {
+              if (!dang_nhap) {
+                moModal();
+                return;
+              }
+              datMo(mo === "tra_loi" ? "khong" : "tra_loi");
+            }}
             data-testid="nut-tra-loi"
           >
             Trả lời
@@ -154,7 +197,7 @@ export function HanhDongBinhLuan({
         )}
         {/* Chỉ chủ mạch thấy — component tự quyết, cùng lối `HanhDongMoc`. Một phép kiểm
             quyền chép ra hai chỗ là chỗ thứ hai sẽ quên. */}
-        {!khoa && <NutTrich commentId={id} anchorMocSeq={anchorMocSeq} />}
+        {dang_nhap && !khoa && <NutTrich commentId={id} anchorMocSeq={anchorMocSeq} />}
         {co_menu && (
           <details className={css.menu} ref={hopRef} data-testid="menu-binh-luan">
             <summary aria-label="Thêm hành động">⋯</summary>
@@ -200,6 +243,7 @@ export function HanhDongBinhLuan({
             </div>
           </details>
         )}
+        {mod}
       </div>
 
       {loi !== null && (
@@ -249,15 +293,17 @@ export function HanhDongBinhLuan({
       )}
 
       {mo === "tra_loi" && (
-        <Composer
-          parentId={id}
-          nutGui="Trả lời"
-          tuDongLayNet
-          // Người dùng vừa bấm "Trả lời" — cú bấm mở cửa đã xảy ra rồi (2026-08-26).
-          moSan
-          onXong={() => datMo("khong")}
-          onHuy={() => datMo("khong")}
-        />
+        <div className={css.hop_tra_loi}>
+          <Composer
+            parentId={id}
+            moi={tacGia ? `Trả lời u/${tacGia}…` : "Viết phản hồi…"}
+            nutGui="Trả lời"
+            tuDongLayNet
+            moSan
+            onXong={() => datMo("khong")}
+            onHuy={() => datMo("khong")}
+          />
+        </div>
       )}
     </div>
   );

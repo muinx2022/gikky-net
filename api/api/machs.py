@@ -203,6 +203,7 @@ def mach_chi_tiet_ra(mach: Mach) -> MachChiTietOut:
     tom_tat = mach_tom_tat_ra(mach)
     return MachChiTietOut(
         **tom_tat.model_dump(exclude={"diem", "moc_1_id"}),
+        view_count=mach.view_count,
         closed_at=mach.closed_at,
         bai_hoc=mach.bai_hoc,
         mo_lai_den=han_mo_lai(mach),

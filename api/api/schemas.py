@@ -605,6 +605,7 @@ class MachChiTietOut(Schema):
     last_activity_at: datetime
     entry_count: int
     comment_count: int
+    view_count: int = 0
     #: Mặt BÃO hay CẶN, **server quyết** (PLAN nguyên tắc 10, 5.5).
     #:
     #: Ở bản này `face` tính THUẦN theo luật thời gian: mạch đang mở · chưa bị khoá ·

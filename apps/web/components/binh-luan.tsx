@@ -176,39 +176,31 @@ function NoiDung({ nut }: { nut: BinhLuanOut }) {
         dinhDang={nut.body_dinh_dang}
         className={css.than}
       />
-      <div className={css.chan}>
-        {/* Cột vote của bình luận nằm NGANG (thẻ mốc thì dọc): khán đài dày, một cột dọc
-            cho mỗi dòng sẽ ăn hết bề ngang trên mobile. Vẫn CÙNG component, nên luật
-            "nói ra vì sao không bấm được" và luật lạc quan chỉ có đúng một bản.
-            `testIdDiem` giữ nguyên `diem-binh-luan` — con số vẫn ở đúng chỗ cũ, chỉ mọc
-            thêm hai mũi tên quanh nó. */}
-        <CotVote
-          diem={nut.score}
-          nhan={`bình luận của u/${nut.author?.username ?? ""}`}
-          cai_gi="binh-luan"
-          nam_ngang
-          testIdDiem="diem-binh-luan"
-          dich={{ loai: "comment", id: nut.id }}
-        />
-        {/* "Trả lời" + menu `⋯` (sửa/xoá). Client component: nó phải hỏi "cái này có
-            phải của tôi không", mà câu trả lời là dữ liệu per-user và không được nướng
-            vào HTML cache (PLAN 8.4 điểm 4). */}
-        <HanhDongBinhLuan
-          id={nut.id}
-          tacGia={nut.author?.username ?? null}
-          than={nut.body ?? ""}
-          daXoa={nut.trang_thai !== "binh_thuong"}
-          anchorMocSeq={nut.anchor_moc_seq}
-        />
-        {/* Công cụ mod — chỉ mod thấy, xem `HanhDongMod`. Đặt CUỐI hàng chân: nó là công
-            cụ của một nhóm nhỏ, không được tranh chỗ với vote và "Trả lời". */}
-        <HanhDongMod
-          loai="binh-luan"
-          id={nut.id}
-          dangAn={nut.trang_thai === "da_an"}
-          nhan="bình luận này"
-        />
-      </div>
+      <HanhDongBinhLuan
+        id={nut.id}
+        tacGia={nut.author?.username ?? null}
+        than={nut.body ?? ""}
+        daXoa={nut.trang_thai !== "binh_thuong"}
+        anchorMocSeq={nut.anchor_moc_seq}
+        vote={
+          <CotVote
+            diem={nut.score}
+            nhan={`bình luận của u/${nut.author?.username ?? ""}`}
+            cai_gi="binh-luan"
+            nam_ngang
+            testIdDiem="diem-binh-luan"
+            dich={{ loai: "comment", id: nut.id }}
+          />
+        }
+        mod={
+          <HanhDongMod
+            loai="binh-luan"
+            id={nut.id}
+            dangAn={nut.trang_thai === "da_an"}
+            nhan="bình luận này"
+          />
+        }
+      />
     </>
   );
 
