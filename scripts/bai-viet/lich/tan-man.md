@@ -222,12 +222,12 @@ D:\Projects\gikky-net\scripts\bai-viet\.tam\bai.json
 }
 ```
 
-### Ảnh minh hoạ — BẮT BUỘC 1–2 ảnh mỗi bài (Cập nhật 05/09/2026)
+### Ảnh minh hoạ — BẮT BUỘC 1–2 ảnh mỗi bài (Cập nhật 09/09/2026)
 
-Mỗi bài viết **phải có từ 1 đến 2 ảnh minh hoạ** để làm rõ luận điểm:
-- **Loại ảnh phù hợp:** Biểu đồ số liệu thống kê (vẽ bằng Python `matplotlib`/`Pillow`), sơ đồ cơ chế quy trình, mô hình định lượng hoặc hình minh hoạ trực quan khái niệm.
-- **Cách nhúng:**
-  1. Tạo ảnh và chuyển sang chuỗi Base64 đưa vào mảng `anhs` trong file JSON.
+Mỗi bài viết **phải có từ 1 đến 2 ảnh minh hoạ** sinh động, gắn liền với chủ đề:
+- **Phong cách ảnh:** Ưu tiên ảnh chụp cảnh quan, bối cảnh thực tế hoặc hình ảnh chủ đề giàu tính gợi cảm và thẩm mỹ (ví dụ: bài về đồng Yên dùng hình ảnh tiền Yên và đô thị Tokyo; bài về thuỷ điện dùng hình ảnh đập xả nước, hồ chứa; bài về ngân hàng dùng hình ảnh thanh toán số, toà nhà tài chính...). **Tránh vẽ các biểu đồ hộp khối hay box chữ thô cứng** tạo cảm giác như slide báo cáo nội bộ.
+- **Cách tạo và nhúng:**
+  1. Tạo ảnh bằng công cụ sinh ảnh AI (`generate_image` với tỷ lệ 16:9) hoặc chuẩn bị ảnh chất lượng cao, chuyển sang chuỗi Base64 đưa vào mảng `anhs` trong file JSON.
   2. Đặt thẻ placeholder `{{ANH_1}}`, `{{ANH_2}}` vào vị trí phù hợp trong thân bài `body`.
   3. Script `dang-bai.py` sẽ tự động tải ảnh vào kho nội dung của site (`/media/anh/`) và thay thế placeholder bằng thẻ `<p><img src="..." alt="..."></p>`.
 

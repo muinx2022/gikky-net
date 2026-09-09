@@ -17,10 +17,8 @@ Vài điểm không được quên:
 
 - Thư mục làm việc: `D:\Projects\gikky-net`
 - **KIỂM TRÙNG TRƯỚC KHI VIẾT.** Chạy lệnh liệt kê bài đã đăng ở §1 của file hướng dẫn, chọn chủ đề chưa có bài nào gần giống. Trùng chủ đề hỏng nặng hơn bỏ một lượt.
-- **Đây KHÔNG phải bot bản tin.** Bài này ĐƯỢC phân tích, được nêu nhận định có dẫn chứng. Cái vẫn CẤM là **khuyến nghị mua bán** (giá mục tiêu, điểm mua, dừng lỗ, "nên mua/bán") và **bịa trải nghiệm cá nhân**.
-- Số liệu phải lấy từ công cụ thật (Finhay, TCInvest, tìm kiếm web), có nguồn ghi ở cuối bài. Không nhớ ra số, không ước lượng.
 - **Đừng nhồi số.** Mật độ mục tiêu khoảng một con số cho mỗi 11–12 từ; số đặc trưng đẩy sang trường `figures` (tối đa **6 cặp** — vượt là server trả 500).
-- **Ảnh minh hoạ (BẮT BUỘC 1–2 ảnh):** Tạo 1–2 ảnh minh hoạ (biểu đồ số liệu qua python/matplotlib, sơ đồ cơ chế) đưa vào mảng `anhs` (base64) và đặt thẻ placeholder `{{ANH_1}}`, `{{ANH_2}}` trong thân bài `body` theo hướng dẫn §3 của `tan-man.md`.
+- **Ảnh minh hoạ (BẮT BUỘC 1–2 ảnh):** Tạo 1–2 ảnh minh hoạ sinh động, giàu tính gợi cảm và thẩm mỹ theo đúng chủ đề bài viết (dùng `generate_image` tỷ lệ 16:9 chụp cảnh quan/bối cảnh thực tế: ví dụ về Yên thì dùng hình ảnh tiền Yên/Tokyo, thuỷ điện thì dùng đập xả nước/hồ chứa, ngân hàng dùng app số/toà nhà tài chính; tránh vẽ các box chữ, sơ đồ khối hộp thô cứng). Đưa vào mảng `anhs` (base64) và đặt thẻ placeholder `{{ANH_1}}`, `{{ANH_2}}` trong thân bài `body` theo hướng dẫn §3 của `tan-man.md`.
 - Đăng bằng ba lệnh ssh ở §4. Mật khẩu nằm trong container trên VPS và **không được mang về máy này**.
 
 Báo cáo lại ngắn gọn: chủ đề đã chọn và vì sao, URL bài, nguồn số liệu, chỗ nào dữ liệu không đủ để kết luận.
