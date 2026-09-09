@@ -23,7 +23,9 @@ import { MocAccordionProvider } from "@/components/moc-accordion";
 import { NganKeoProvider } from "@/components/ngan-keo";
 import { NutTheoMach } from "@/components/nut-theo-mach";
 import { FormBinhLuanProvider } from "@/components/form-binh-luan-ngu-canh";
+import { ChuKyLuotXem } from "@/components/chu-ky-luot-xem";
 import { TheMoc } from "@/components/the-moc";
+
 import { TrangThaiToiProvider } from "@/components/trang-thai-toi";
 import { XuatCaseStudy } from "@/components/xuat-case-study";
 import {
@@ -385,9 +387,10 @@ export async function TrangMach({
                 <span className={css.cham} aria-hidden>
                   ·
                 </span>
-                <span className={css.dem} data-testid="chu-ky-luot-xem">
-                  {(mach.view_count ?? 0).toLocaleString("vi-VN")} lượt xem
-                </span>
+                <ChuKyLuotXem
+                  initialCount={mach.view_count ?? 0}
+                  className={css.dem}
+                />
                 {/* Báo cáo cả BÀI — user chốt 2026-08-25. Trước đó chỉ báo cáo được mốc
                     và bình luận, nên một bài vi phạm ngay từ tiêu đề (hoặc vi phạm ở tổng
                     thể) thì người đọc phải chọn bừa một mốc, và mod nhận báo cáo trỏ sai

@@ -89,7 +89,7 @@ def xem_mach_cua_toi(request, mach_id: int):
     )
     user = request.user
     if not user.is_authenticated:
-        return _khach(mat_thoi_gian)
+        return _khach(mat_thoi_gian, view_count=mach.view_count)
 
     theo = Follow.objects.filter(user=user, mach=mach).first()
     tung_binh_luan = Comment.objects.filter(mach=mach, author=user).exists()
@@ -110,7 +110,9 @@ def xem_mach_cua_toi(request, mach_id: int):
         last_seen_entry_seq=theo.last_seen_entry_seq if theo else 0,
         tung_binh_luan=tung_binh_luan,
         noi_dung_cua_toi=_noi_dung_bi_che_cua_toi(user, mach),
+        view_count=mach.view_count,
     )
+
 
 
 def _noi_dung_bi_che_cua_toi(user, mach) -> list[NoiDungCuaToiOut]:
@@ -180,7 +182,7 @@ def _mach_hien(mach_id: int):
     return Mach.objects.filter(pk=mach_id, hidden_at__isnull=True).first()
 
 
-def _khach(mat_thoi_gian) -> MachCuaToiOut:
+def _khach(mat_thoi_gian, view_count: int = 0) -> MachCuaToiOut:
     """Hình dạng cho khách. Tách hàm để không có hai bản rỗng lệch nhau (như `ToiOut`)."""
     return MachCuaToiOut(
         dang_nhap=False,
@@ -191,7 +193,9 @@ def _khach(mat_thoi_gian) -> MachCuaToiOut:
         last_seen_entry_seq=0,
         tung_binh_luan=False,
         noi_dung_cua_toi=[],
+        view_count=view_count,
     )
+
 
 
 def _phieu_cua_toi(user, mach) -> list[VoteCuaToiOut]:

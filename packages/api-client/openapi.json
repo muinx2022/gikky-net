@@ -1304,6 +1304,11 @@
           "tung_binh_luan": {
             "title": "Tung Binh Luan",
             "type": "boolean"
+          },
+          "view_count": {
+            "default": 0,
+            "title": "View Count",
+            "type": "integer"
           }
         },
         "required": [

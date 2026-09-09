@@ -683,8 +683,31 @@ def test_G8_duong_dan_rac_khong_ghi_hang_nao():
 @override_settings(DEM_LUOT_XEM_SECRET=SECRET)
 def test_dem_luot_xem_tang_view_count_cua_mach(seed):
     assert seed.view_count == 0
-    r = goi({"duong_dan": f"/m/{seed.slug}-{seed.pk}", "user_agent": "Mozilla/5.0 Chrome/131"})
+    # Khách 1 vào xem lần đầu -> tăng 1
+    r = goi({
+        "duong_dan": f"/m/{seed.slug}-{seed.pk}",
+        "user_agent": "Mozilla/5.0 Chrome/131",
+        "ip": "1.1.1.1",
+    })
     assert r.status_code == 200
+    seed.refresh_from_db()
+    assert seed.view_count == 1
+
+    # Khách 1 F5 (tải lại cùng trang trong cửa sổ cooldown) -> KHÔNG tăng
+    goi({
+        "duong_dan": f"/m/{seed.slug}-{seed.pk}",
+        "user_agent": "Mozilla/5.0 Chrome/131",
+        "ip": "1.1.1.1",
+    })
+    seed.refresh_from_db()
+    assert seed.view_count == 1
+
+    # Khách 1 truy cập đường /m-phien cùng mạch -> KHÔNG tăng (vẫn cùng khách)
+    goi({
+        "duong_dan": f"/m-phien/{seed.slug}-{seed.pk}",
+        "user_agent": "Mozilla/5.0 Chrome/131",
+        "ip": "1.1.1.1",
+    })
     seed.refresh_from_db()
     assert seed.view_count == 1
 
@@ -692,15 +715,27 @@ def test_dem_luot_xem_tang_view_count_cua_mach(seed):
     goi({
         "duong_dan": f"/m/{seed.slug}-{seed.pk}",
         "user_agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+        "ip": "2.2.2.2",
     })
     seed.refresh_from_db()
     assert seed.view_count == 1
 
-    # Đường /m-phien (khi user đăng nhập truy cập trực tiếp) cũng tăng view_count
+    # Khách 2 (IP khác) vào xem -> tăng lên 2
     goi({
-        "duong_dan": f"/m-phien/{seed.slug}-{seed.pk}",
-        "user_agent": "Mozilla/5.0 Chrome/131",
+        "duong_dan": f"/m/{seed.slug}-{seed.pk}",
+        "user_agent": "Mozilla/5.0 Firefox/133",
+        "ip": "3.3.3.3",
     })
     seed.refresh_from_db()
     assert seed.view_count == 2
+
+    # Khách 2 F5 -> KHÔNG tăng tiếp
+    goi({
+        "duong_dan": f"/m/{seed.slug}-{seed.pk}",
+        "user_agent": "Mozilla/5.0 Firefox/133",
+        "ip": "3.3.3.3",
+    })
+    seed.refresh_from_db()
+    assert seed.view_count == 2
+
 

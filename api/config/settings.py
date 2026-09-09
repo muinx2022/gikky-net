@@ -35,9 +35,11 @@ env = environ.Env(
     REVALIDATE_URL=(str, "http://localhost:3000/lam-moi-cache"),
     REVALIDATE_SECRET=(str, ""),
     DEM_LUOT_XEM_SECRET=(str, ""),
+    CUA_SO_LUOT_XEM_MACH_PHUT=(int, 1440),
     MEILI_URL=(str, ""),
     MEILI_KEY=(str, ""),
 )
+
 environ.Env.read_env(BASE_DIR / ".env")
 
 try:
@@ -463,6 +465,9 @@ REVALIDATE_SECRET = env("REVALIDATE_SECRET", default="")
 #: Mặc định rỗng cũng là trạng thái đúng của máy dev và của `pytest`: không đếm còn hơn
 #: đếm sai.
 DEM_LUOT_XEM_SECRET = env("DEM_LUOT_XEM_SECRET", default="")
+#: Cửa sổ thời gian (phút) để tính tối đa 1 lượt xem cho một khách (IP + UA) trên cùng một bài viết.
+#: Mặc định: 1440 phút (24 giờ / 1 ngày).
+CUA_SO_LUOT_XEM_MACH_PHUT = env("CUA_SO_LUOT_XEM_MACH_PHUT", default=1440)
 
 #: Meilisearch — chỉ mục tìm kiếm (PLAN 8.5, Phase 7). **Cả hai rỗng ⇒ TẮT HẲN**, cùng
 #: một mặc định và cùng một lý do với `REVALIDATE_SECRET`: clone sạch không đi gọi một

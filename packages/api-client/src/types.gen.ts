@@ -1071,6 +1071,10 @@ export type MachCuaToiOut = {
      * Tung Binh Luan
      */
     tung_binh_luan: boolean;
+    /**
+     * View Count
+     */
+    view_count?: number;
 };
 
 /**

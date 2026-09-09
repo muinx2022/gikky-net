@@ -66,11 +66,12 @@ query `MuoiNgay` cho mỗi lượt xem trang là cái giá không cần trả.
 import hashlib
 import re
 import secrets
-from datetime import date
+from datetime import date, timedelta
 from urllib.parse import urlsplit
 
 from django.conf import settings
 from django.db.models import F
+from django.utils import timezone
 from ninja import Router, Schema, Status
 from ninja.security import APIKeyHeader
 
@@ -386,13 +387,31 @@ def dem_luot_xem(request, du_lieu: DemLuotXemIn):
         return Status(200, DemLuotXemOut(da_dem=False))
     ten = ten_bot(du_lieu.user_agent)
     la_bot = ten != ""
+    token_khach = hash_khach(
+        muoi_cua_ngay(ngay_vn()), du_lieu.ip, du_lieu.user_agent
+    )
+
+    # Khử trùng lặp lượt xem cho bài viết: một khách (IP + UA) chỉ được tính 1 lượt xem
+    # cho cùng một bài viết trong cửa sổ CUA_SO_LUOT_XEM_MACH_PHUT (mặc định 24 giờ).
+    # F5 hoặc tải lại trang liên tục không làm tăng view_count.
+    if not la_bot and token_khach and (m_mach := re.match(r"^/m(?:-phien)?/(?:.*-)?(\d+)$", duong)):
+        mach_id = int(m_mach.group(1))
+        cua_so = timezone.now() - timedelta(minutes=settings.CUA_SO_LUOT_XEM_MACH_PHUT)
+        cac_duong = [duong, duong.replace("/m-phien/", "/m/"), duong.replace("/m/", "/m-phien/")]
+        da_xem = LuotXem.objects.filter(
+            luc__gte=cua_so,
+            duong_dan__in=cac_duong,
+            khach=token_khach,
+            la_bot=False,
+        ).exists()
+        if not da_xem:
+            Mach.objects.filter(pk=mach_id).update(view_count=F("view_count") + 1)
+
     LuotXem.objects.create(
         duong_dan=duong,
         la_bot=la_bot,
         ten_bot=ten,
-        khach=hash_khach(
-            muoi_cua_ngay(ngay_vn()), du_lieu.ip, du_lieu.user_agent
-        ),
+        khach=token_khach,
         nguon=chuan_hoa_nguon(du_lieu.referer),
         trinh_duyet="" if la_bot else trinh_duyet(du_lieu.user_agent),
         thiet_bi="" if la_bot else thiet_bi(du_lieu.user_agent),
@@ -401,6 +420,5 @@ def dem_luot_xem(request, du_lieu: DemLuotXemIn):
         # dập nó ở đây là bịa. Phía đọc mới là chỗ để dòng bot thành `—`.
         da_dang_nhap=du_lieu.da_dang_nhap,
     )
-    if not la_bot and (m_mach := re.match(r"^/m(?:-phien)?/(?:.*-)?(\d+)$", duong)):
-        Mach.objects.filter(pk=int(m_mach.group(1))).update(view_count=F("view_count") + 1)
     return Status(200, DemLuotXemOut(da_dem=True))
+

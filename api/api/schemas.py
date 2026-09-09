@@ -1019,6 +1019,9 @@ class MachCuaToiOut(Schema):
     #: "tác giả vẫn thấy kèm nhãn" của PLAN 5.2 + 5.10. Rỗng với khách và với người không
     #: có nội dung nào bị che. Xem `NoiDungCuaToiOut`.
     noi_dung_cua_toi: list[NoiDungCuaToiOut]
+    #: Số lượt xem trực tiếp từ DB của mạch, nạp live ở client để không bị kẹt cache tĩnh.
+    view_count: int = 0
+
 
 
 class DaXemOut(Schema):
