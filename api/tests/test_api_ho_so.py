@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from api.users import SO_MACH_TREN_HO_SO
 from core.ghi import tao_mach
-from core.models import Comment, Mach, Moc, Trich
+from core.models import Comment, Mach, Moc, Trich, User
 from tests.conftest import lay, viet
 from tests._an_mach import an_mach_tho
 
@@ -277,3 +277,14 @@ def test_bon_chi_so_ve_0_khi_noi_dung_bi_an_SACH(client, seed):
 
     d = lay(client, "/api/v1/users/ba_muoi_phien")
     assert [d["so_mach"], d["so_moc"], d["so_binh_luan"], d["duoc_trich"]] == [0, 0, 0, 0]
+
+
+def test_ho_so_username_mang_email_hoac_url_encoded(client):
+    """Username chứa '@' (như email hoặc Google login) vẫn tra được khi client encode '%40'."""
+    User.objects.create(username="nguoi@gikky.net", email="nguoi@gikky.net")
+    d1 = lay(client, "/api/v1/users/nguoi%40gikky.net")
+    assert d1["username"] == "nguoi@gikky.net"
+
+    d2 = lay(client, "/api/v1/users/nguoi@gikky.net")
+    assert d2["username"] == "nguoi@gikky.net"
+

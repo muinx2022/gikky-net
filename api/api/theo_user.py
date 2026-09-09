@@ -19,6 +19,8 @@ là **khác biệt so với `TheoSub`** — theo chuyên mục ở lượt trư�
 nào. Không có vế nhận thì cái nút là một nút không làm gì, và PLAN mục 4 cấm đúng thế.
 """
 
+from urllib.parse import unquote
+
 from django.core.exceptions import ValidationError as LoiModel
 from django.http import HttpResponse
 from ninja import Router
@@ -48,7 +50,7 @@ def _nap_user(username: str) -> User:
     nên "không theo được" phải là một quyết định riêng nếu ngày nào cần — không phải hệ
     quả tình cờ của việc lọc ở đây.
     """
-    u = User.objects.filter(username=username).first()
+    u = User.objects.filter(username=unquote(username)).first()
     if u is None:
         raise LoiGhi(404, KHONG_TIM_THAY, f"Không tìm thấy người dùng {username!r}.")
     return u

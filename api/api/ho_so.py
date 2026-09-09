@@ -47,6 +47,8 @@ Hai cửa `/me/*` dùng khoá **BẤT BIẾN** (`Vote`/`Follow`.created_at, `edi
 docstring `api/phan_trang.py`.
 """
 
+from urllib.parse import unquote
+
 from django.db.models import QuerySet
 from django.http import HttpResponse
 from ninja import Router
@@ -216,7 +218,7 @@ def liet_ke_mach_cua_user(
     # Tra user trước rồi mới lọc mạch: `filter(author__username=…)` trên một username lạ
     # trả danh sách rỗng, mà rỗng trông y hệt "người này chưa viết gì". Một chữ gõ nhầm
     # trong URL sẽ thành một hồ sơ trống thay vì 404 — cùng lý lẽ với `feeds._kiem_sub`.
-    user = User.objects.filter(username=username).first()
+    user = User.objects.filter(username=unquote(username)).first()
     if user is None:
         return khong_tim_thay(f"người dùng {username!r}")
 

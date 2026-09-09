@@ -322,7 +322,7 @@ export async function docNganKeo(
 
 export async function docHoSo(username: string, limit = 20): Promise<HoSoOut | null> {
   return lay(
-    await xemHoSo({ ...CHUNG, path: { username }, query: { limit } }),
+    await xemHoSo({ ...CHUNG, path: { username: decodeURIComponent(username) }, query: { limit } }),
     `xem_ho_so(${username})`,
   );
 }

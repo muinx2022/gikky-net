@@ -275,6 +275,7 @@ export function HanhDongMoc({ moc }: { moc: MocOut }) {
             tran={Math.max(0, toi.tran_anh_moi_moc - moc.anhs.length)}
             tienTo="sua-moc"
             dangGui={dangGui}
+            nhan={`Thêm ảnh cho mốc ${moc.seq}`}
           />
           <div className={css.chan}>
             <button

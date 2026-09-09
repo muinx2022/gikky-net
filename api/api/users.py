@@ -1,5 +1,7 @@
 """Hồ sơ công khai `/u/<username>` — PLAN 5.9, mục 7."""
 
+from urllib.parse import unquote
+
 from ninja import Router
 
 from core.anh_luu import url_thumb
@@ -66,7 +68,7 @@ def xem_ho_so(request, username: str, limit: int = SO_MACH_TREN_HO_SO):
     if (l := kiem_gioi_han(limit)) is not None:
         return l
 
-    user = User.objects.filter(username=username).first()
+    user = User.objects.filter(username=unquote(username)).first()
     if user is None:
         return khong_tim_thay(f"người dùng {username!r}")
 

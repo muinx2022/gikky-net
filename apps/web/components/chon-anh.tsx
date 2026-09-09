@@ -29,6 +29,8 @@ export function ChonAnh({
   tran,
   tienTo,
   dangGui = false,
+  nhan = "Ảnh",
+  moTa,
 }: {
   files: readonly File[];
   datFiles: (moi: File[]) => void;
@@ -37,6 +39,8 @@ export function ChonAnh({
   /** Tiền tố `data-testid`, cùng quy ước `TruongMoc`. */
   tienTo: string;
   dangGui?: boolean;
+  nhan?: string;
+  moTa?: string;
 }) {
   const id = useId();
   const [loi, datLoi] = useState<string | null>(null);
@@ -89,7 +93,7 @@ export function ChonAnh({
   return (
     <div className={css.o}>
       <div className={css.nhan}>
-        <span>Ảnh</span>
+        <span>{nhan}</span>
         <span className={css.tuy_chon}>tuỳ chọn</span>
       </div>
 
@@ -111,6 +115,8 @@ export function ChonAnh({
       >
         {day ? `Đã đủ ${tran} ảnh` : "Chọn ảnh…"}
       </label>
+
+      {moTa !== undefined && <p className={css.goi_y}>{moTa}</p>}
 
       <p className={css.goi_y}>
         JPEG, PNG hoặc WebP · tối đa 8MB mỗi tấm · còn {Math.max(0, con_lai)} chỗ.

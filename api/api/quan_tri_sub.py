@@ -16,6 +16,8 @@ Ba luật, và cả ba đều là "không cho làm" chứ không phải "làm gi
    `None` nghĩa là **không đổi**, không phải "đặt về rỗng".
 """
 
+from urllib.parse import unquote
+
 from django.db import IntegrityError, transaction
 from django.db.models import Count, Max, ProtectedError
 from django.utils.text import slugify
@@ -451,7 +453,7 @@ def go_mod_sub(request, slug: str, username: str):
 
     with transaction.atomic():
         so_xoa, _ = ModSub.objects.filter(
-            sub=sub, user__username=username
+            sub=sub, user__username=unquote(username)
         ).delete()
         if so_xoa == 0:
             return khong_tim_thay(f"phân công mod {username!r} ở s/{slug}")

@@ -293,6 +293,8 @@ export function KhoiChuMach({
             tran={toi.tran_anh_moi_moc}
             tienTo="noi-moc"
             dangGui={dangGui}
+            nhan={`Ảnh đính kèm mốc ${soMoc + 1}`}
+            moTa={`Ảnh đính kèm riêng cho mốc ${soMoc + 1}.`}
           />
           <div className={css.hang}>
             <button

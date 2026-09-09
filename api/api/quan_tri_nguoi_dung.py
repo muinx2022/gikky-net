@@ -23,6 +23,7 @@ trong đường ghi. Cùng lý lẽ với rate limit ở `core/ghi.py::them_moc`
 """
 
 from datetime import timedelta
+from urllib.parse import unquote
 
 from allauth.account.models import EmailAddress
 from django.contrib.auth.password_validation import validate_password
@@ -82,7 +83,7 @@ def _tim(username: str) -> User | None:
     không nổ ở đâu cả — nó chỉ làm mod tin rằng mình đang nhìn một tài khoản spam.
     """
     return (
-        User.objects.filter(username=username)
+        User.objects.filter(username=unquote(username))
         .annotate(
             _so_mach=Count("machs", distinct=True),
             _so_binh_luan=Count("comments", distinct=True),

@@ -239,6 +239,8 @@ export function FormDangMach({
         tran={toi.tran_anh_moi_moc}
         tienTo="dang-mach"
         dangGui={dangGui}
+        nhan="Ảnh đính kèm mốc 1"
+        moTa="Ảnh đính kèm riêng cho mốc 1 (tối đa 10 ảnh). Khi nối thêm các mốc tiếp theo (mốc 2, mốc 3...), bạn cũng sẽ có ô tải ảnh riêng cho từng mốc."
       />
 
       <label className={css.tuy_chon}>

@@ -34,9 +34,10 @@ export async function generateMetadata({
   params: Promise<ThamSo>;
 }): Promise<Metadata> {
   const { username } = await params;
-  const duong_dan = duongDanHoSo(username);
-  const tieu_de = `u/${username}`;
-  const mo_ta = `Hồ sơ và nhật ký giao dịch của u/${username} trên gikky.net.`;
+  const username_giai_ma = decodeURIComponent(username);
+  const duong_dan = duongDanHoSo(username_giai_ma);
+  const tieu_de = `u/${username_giai_ma}`;
+  const mo_ta = `Hồ sơ và nhật ký giao dịch của u/${username_giai_ma} trên gikky.net.`;
   return {
     title: tieu_de,
     description: mo_ta,
@@ -63,8 +64,9 @@ export default async function TrangHoSo({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { username } = await params;
+  const username_giai_ma = decodeURIComponent(username);
   const tab = docTabHoSo((await searchParams).tab);
-  const ho_so = await docHoSo(username);
+  const ho_so = await docHoSo(username_giai_ma);
   if (ho_so === null) notFound();
 
   // Nợ 1b #6: hồ sơ CẮT ở `limit` và **không có cursor** — phần dôi ra không có đường
