@@ -12,6 +12,10 @@ from django.db import models
 from django.utils import timezone
 
 
+#: Hạn mức số lần người dùng được tự đổi tên hiển thị.
+SO_LAN_DOI_TEN_TOI_DA = 2
+
+
 class User(AbstractUser):
     """User của gikky.net.
 
@@ -25,6 +29,8 @@ class User(AbstractUser):
 
     #: Tên hiển thị; rỗng thì UI rơi về `username`. Không unique — chỉ `username` là định danh.
     display_name = models.CharField(max_length=60, blank=True)
+    #: Số lần người dùng đã tự đổi tên hiển thị (tối đa SO_LAN_DOI_TEN_TOI_DA).
+    so_lan_doi_ten = models.PositiveSmallIntegerField(default=0)
     bio = models.TextField(blank=True, validators=[MaxLengthValidator(500)])
 
     #: KHOÁ kho ảnh của avatar — **không** phải URL (giống `MocAnh.khoa_luu_tru`). Rỗng =

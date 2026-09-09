@@ -162,3 +162,54 @@ def test_display_name_qua_60_ky_tu_la_4xx(client, nguoi_a):
         content_type="application/json",
     )
     assert 400 <= r.status_code < 500, f"quá 60 ký tự phải là 4xx, được {r.status_code}"
+
+
+@pytest.mark.django_db
+def test_doi_ten_tang_so_lan_doi_ten(client, nguoi_a):
+    client.force_login(nguoi_a)
+    me = lay(client, "/api/v1/me")
+    assert me["so_lan_doi_ten"] == 0
+    assert me["so_lan_doi_ten_toi_da"] == 2
+
+    # Lần 1
+    ra1 = dat(client, "/api/v1/me", {"display_name": "Tên Một"}, status=200, method="patch")
+    assert ra1["display_name"] == "Tên Một"
+    assert ra1["so_lan_doi_ten"] == 1
+
+    # Lần 2
+    ra2 = dat(client, "/api/v1/me", {"display_name": "Tên Hai"}, status=200, method="patch")
+    assert ra2["display_name"] == "Tên Hai"
+    assert ra2["so_lan_doi_ten"] == 2
+
+    # Không đổi tên (gửi cùng tên hoặc chỉ đổi bio) -> không tăng lượt
+    ra3 = dat(client, "/api/v1/me", {"display_name": "Tên Hai", "bio": "Bio mới"}, status=200, method="patch")
+    assert ra3["so_lan_doi_ten"] == 2
+    assert User.objects.get(pk=nguoi_a.pk).bio == "Bio mới"
+
+
+@pytest.mark.django_db
+def test_qua_hai_lan_doi_ten_bi_chan(client, nguoi_a):
+    client.force_login(nguoi_a)
+    User.objects.filter(pk=nguoi_a.pk).update(so_lan_doi_ten=2, display_name="Tên Cũ")
+    nguoi_a.refresh_from_db()
+
+    # Đổi sang tên mới -> 400 het_luot_doi_ten
+    code = ma_loi(
+        client,
+        "/api/v1/me",
+        {"display_name": "Tên Ba"},
+        status=400,
+        method="patch",
+    )
+    assert code == "het_luot_doi_ten"
+
+    # Nhưng đổi bio (kèm display_name cũ) -> 200 thành công
+    ra = dat(
+        client,
+        "/api/v1/me",
+        {"display_name": "Tên Cũ", "bio": "Vẫn sửa được bio"},
+        status=200,
+        method="patch",
+    )
+    assert User.objects.get(pk=nguoi_a.pk).bio == "Vẫn sửa được bio"
+    assert ra["so_lan_doi_ten"] == 2

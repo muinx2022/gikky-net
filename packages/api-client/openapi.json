@@ -2538,6 +2538,16 @@
             "title": "Nhan Digest",
             "type": "boolean"
           },
+          "so_lan_doi_ten": {
+            "default": 0,
+            "title": "So Lan Doi Ten",
+            "type": "integer"
+          },
+          "so_lan_doi_ten_toi_da": {
+            "default": 2,
+            "title": "So Lan Doi Ten Toi Da",
+            "type": "integer"
+          },
           "tran_anh_moi_moc": {
             "title": "Tran Anh Moi Moc",
             "type": "integer"

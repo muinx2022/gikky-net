@@ -74,6 +74,8 @@ DU_LIEU_KHONG_HOP_LE = "du_lieu_khong_hop_le"
 #: docstring hàm đó) — `plans/2026-09-05-cua-so-tu-sua-bai.md`. 403. Chỉ superuser sửa
 #: tiếp được, qua `PATCH /admin/mocs/{id}` (không giới hạn thời gian).
 HET_CUA_SO_SUA = "het_cua_so_sua"
+#: Đã hết số lần đổi tên hiển thị cho phép (tối đa 2 lần). 400.
+HET_LUOT_DOI_TEN = "het_luot_doi_ten"
 
 
 class LoiGhi(HttpError):

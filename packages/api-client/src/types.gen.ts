@@ -1933,6 +1933,14 @@ export type ToiOut = {
      */
     nhan_digest: boolean;
     /**
+     * So Lan Doi Ten
+     */
+    so_lan_doi_ten?: number;
+    /**
+     * So Lan Doi Ten Toi Da
+     */
+    so_lan_doi_ten_toi_da?: number;
+    /**
      * Tran Anh Moi Moc
      */
     tran_anh_moi_moc: number;

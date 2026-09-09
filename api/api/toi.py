@@ -13,10 +13,11 @@ from django.http import HttpResponse
 from ninja import Router
 
 from api.feeds import subs_kem_so_mach
-from api.loi import LoiOut
-from api.quyen import dang_nhap
+from api.loi import LoiOut, loi
+from api.quyen import HET_LUOT_DOI_TEN, dang_nhap
 from core.cau_hinh_oauth import google_dang_bat
 from core.models.dien_dan import ModSub
+from core.models.nguoi_dung import SO_LAN_DOI_TEN_TOI_DA
 from core.anh_luu import url_thumb
 from core.ghi import SO_ANH_TOI_DA_MOI_MOC
 
@@ -62,6 +63,8 @@ def xem_toi(request):
         google_bat=google_dang_bat(request),
         nhan_digest=bool(user.nhan_digest),
         tran_anh_moi_moc=SO_ANH_TOI_DA_MOI_MOC,
+        so_lan_doi_ten=getattr(user, "so_lan_doi_ten", 0),
+        so_lan_doi_ten_toi_da=SO_LAN_DOI_TEN_TOI_DA,
     )
 
 
@@ -108,6 +111,20 @@ def sua_toi(request, du_lieu: ToiSuaIn):
     thay_doi = {
         k: v for k, v in du_lieu.model_dump(exclude_unset=True).items() if v is not None
     }
+    if "display_name" in thay_doi:
+        ten_moi = thay_doi["display_name"].strip()
+        thay_doi["display_name"] = ten_moi
+        ten_hien_tai = (request.user.display_name or "").strip()
+        if ten_moi != ten_hien_tai:
+            so_lan_hien_tai = getattr(request.user, "so_lan_doi_ten", 0)
+            if so_lan_hien_tai >= SO_LAN_DOI_TEN_TOI_DA:
+                return loi(
+                    400,
+                    HET_LUOT_DOI_TEN,
+                    f"Bạn đã đổi tên hiển thị tối đa {SO_LAN_DOI_TEN_TOI_DA} lần.",
+                )
+            thay_doi["so_lan_doi_ten"] = so_lan_hien_tai + 1
+
     if thay_doi:
         from core.models.nguoi_dung import User
 
@@ -140,6 +157,8 @@ def _khach(request) -> ToiOut:
         google_bat=google_dang_bat(request),
         nhan_digest=False,
         tran_anh_moi_moc=SO_ANH_TOI_DA_MOI_MOC,
+        so_lan_doi_ten=0,
+        so_lan_doi_ten_toi_da=SO_LAN_DOI_TEN_TOI_DA,
     )
 
 

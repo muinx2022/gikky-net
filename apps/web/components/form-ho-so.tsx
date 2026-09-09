@@ -92,6 +92,10 @@ export function FormHoSo() {
     return null;
   }
 
+  const soLanDoiTen = toi.so_lan_doi_ten ?? 0;
+  const soLanToiDa = toi.so_lan_doi_ten_toi_da ?? 2;
+  const hetLuotDoiTen = soLanDoiTen >= soLanToiDa;
+
   const doiAnh = async (file: File) => {
     datLoi(null);
     // Chặn sớm cho lời lỗi tử tế; server vẫn là hàng rào thật (nhận dạng bằng nội dung).
@@ -145,19 +149,31 @@ export function FormHoSo() {
     datLoi(null);
     datDangLuu(true);
     try {
+      const duLieu: { display_name?: string; bio: string } = {
+        bio: gioiThieu,
+      };
+      if (!hetLuotDoiTen) {
+        duLieu.display_name = tenHienThi;
+      }
       const kq = await suaToi({
         baseUrl: GOC_TRINH_DUYET,
         headers: await headerGhi(),
-        // Gửi cả hai: chuỗi rỗng là "xoá" hợp lệ. Server khớp validator (tên ≤ 60, giới
-        // thiệu ≤ 500) và trả 4xx nếu quá — bắt ở nhánh `catch`.
-        body: { display_name: tenHienThi, bio: gioiThieu },
+        body: duLieu,
       });
+      if (kq.error !== undefined) {
+        const errorDetail = (kq.error as { detail?: string })?.detail;
+        throw new Error(errorDetail || "Không lưu được. Kiểm tra dữ liệu rồi thử lại.");
+      }
       if (kq.data === undefined) throw new Error("phản hồi rỗng");
       await taiLai();
       router.refresh();
       bao("Đã lưu hồ sơ.");
-    } catch {
-      datLoi("Không lưu được. Kiểm tra độ dài rồi thử lại.");
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : "Không lưu được. Kiểm tra độ dài rồi thử lại.";
+      datLoi(msg);
     } finally {
       datDangLuu(false);
     }
@@ -216,17 +232,32 @@ export function FormHoSo() {
       </div>
 
       <label className={css.o}>
-        <span className={css.nhan}>Tên hiển thị</span>
+        <div className={css.nhan_hang}>
+          <span className={css.nhan}>Tên hiển thị</span>
+          {hetLuotDoiTen ? (
+            <span className={css.badge_het_luot}>
+              Hết lượt đổi ({soLanDoiTen}/{soLanToiDa})
+            </span>
+          ) : (
+            <span className={css.badge_con_luot}>
+              Còn {soLanToiDa - soLanDoiTen}/{soLanToiDa} lần đổi
+            </span>
+          )}
+        </div>
         <input
           type="text"
           maxLength={60}
           value={tenHienThi}
-          disabled={dang_ban}
+          disabled={dang_ban || hetLuotDoiTen}
           onChange={(e) => datTenHienThi(e.target.value)}
           placeholder={username}
           data-testid="cai-dat-ten-hien-thi"
         />
-        <span className={css.goi_y}>Bỏ trống thì hồ sơ hiện u/{username}.</span>
+        <span className={css.goi_y}>
+          {hetLuotDoiTen
+            ? "Bạn đã đổi tên hiển thị tối đa 2 lần. Không thể đổi thêm."
+            : `Được đổi tối đa ${soLanToiDa} lần (còn ${soLanToiDa - soLanDoiTen} lần). Bỏ trống thì hồ sơ hiện u/${username}.`}
+        </span>
       </label>
 
       <label className={css.o}>

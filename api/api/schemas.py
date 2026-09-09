@@ -885,6 +885,10 @@ class ToiOut(Schema):
     #: lần (`API-THIEU-MOC-THOI-GIAN`), và một hằng chép tay ở frontend là hằng sẽ trôi
     #: khi server đổi số — im lặng, và về phía cho phép nhiều hơn thực tế.
     tran_anh_moi_moc: int
+    #: Số lần đã tự đổi tên hiển thị (tối đa `so_lan_doi_ten_toi_da`).
+    so_lan_doi_ten: int = 0
+    #: Hạn mức số lần được tự đổi tên hiển thị.
+    so_lan_doi_ten_toi_da: int = 2
 
 
 class BaoCaoDaGuiOut(Schema):

@@ -111,6 +111,28 @@
   margin-bottom: 6px;
 }
 
+.nhan_hang {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.nhan_hang .nhan {
+  margin-bottom: 0;
+}
+
+.badge_con_luot {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.badge_het_luot {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--loss);
+}
+
 .o input {
   width: 100%;
   min-height: 44px;
@@ -122,6 +144,14 @@
   font: inherit;
   font-size: 15px;
   transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.o input:disabled,
+.vung_van:disabled {
+  background: var(--inset);
+  color: var(--ink-3);
+  cursor: not-allowed;
+  opacity: 0.8;
 }
 
 .o input::placeholder {
