@@ -182,7 +182,7 @@ export function FormDangMach({
 
       <label className={css.o}>
         <span className={css.nhan}>
-          Trường phái / Phương pháp <span className={css.tuy_chon}>tuỳ chọn</span>
+          Trường phái / Phương pháp <span className={css.nhan_phu}>cách giao dịch</span>
         </span>
         <select
           className={css.chon}
@@ -190,7 +190,7 @@ export function FormDangMach({
           onChange={(e) => datTruongPhai(e.target.value)}
           data-testid="dang-mach-truong-phai"
         >
-          <option value="">-- Không chọn --</option>
+          <option value="">-- Chọn cách giao dịch --</option>
           <option value="vsa">VSA / Wyckoff</option>
           <option value="smc">SMC / Price Action</option>
           <option value="co-ban">Đầu tư cơ bản / BCTC</option>

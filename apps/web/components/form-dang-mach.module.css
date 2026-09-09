@@ -20,6 +20,17 @@
   margin-bottom: 5px;
 }
 
+.nhan_phu {
+  font-family: var(--f-mono);
+  font-size: 10.5px;
+  color: var(--ink-3);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 1px 6px;
+  margin-left: 6px;
+  font-weight: 400;
+}
+
 .dong,
 .chon {
   width: 100%;
