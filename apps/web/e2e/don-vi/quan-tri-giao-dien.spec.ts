@@ -256,14 +256,15 @@ function nguonTab(): string {
   return sach;
 }
 
-/** Bốn khoá tab, đúng thứ tự bày ra. Nhãn đổi được, khoá thì không — nó đi vào
+/** Năm khoá tab, đúng thứ tự bày ra. Nhãn đổi được, khoá thì không — nó đi vào
  *  `data-testid` và vào `aria-controls`. */
-const KHOA_TAB = ["noi_dung", "nguon", "bot", "nguoi_doc"];
+const KHOA_TAB = ["noi_dung", "quoc_gia", "nguon", "bot", "nguoi_doc"];
 
-/** Sáu `tbody` chi tiết. Tên đúng như trước lượt gom tab — đó là cả ý nghĩa của bài đo:
+/** Chín `tbody` chi tiết. Tên đúng như trước lượt gom tab — đó là cả ý nghĩa của bài đo:
  *  bê bảng sang chỗ khác thì được, đánh rơi thì không. */
 const TESTID_BANG = [
   "bang-duong-dan",
+  "bang-quoc-gia-tong",
   "bang-nguon",
   "bang-nhom-bot",
   "bang-bot",
@@ -273,7 +274,7 @@ const TESTID_BANG = [
   "bang-quoc-gia-nguoi",
 ];
 
-test("TAB /luot-xem — đúng bốn khoá tab, không thừa không thiếu", () => {
+test("TAB /luot-xem — đúng năm khoá tab, không thừa không thiếu", () => {
   const trang = nguonTrangLuotXem();
   expect(trang, "trang không còn dùng <KhungTab>").toContain("<KhungTab");
 
@@ -283,7 +284,7 @@ test("TAB /luot-xem — đúng bốn khoá tab, không thừa không thiếu", (
   expect(doc_duoc, "không đọc được khoá tab nào — regex đã mục").toEqual(KHOA_TAB);
 
   // Nhãn phải còn: một tab không nhãn là một nút trắng.
-  for (const nhan of ["Nội dung", "Nguồn truy cập", "Người đọc"]) {
+  for (const nhan of ["Nội dung", "Quốc gia", "Nguồn truy cập", "Người đọc"]) {
     expect(trang, `mất nhãn tab "${nhan}"`).toContain(`"${nhan}"`);
   }
 });
@@ -298,13 +299,13 @@ test("TAB /luot-xem — năm bảng hẹp dùng `KhungBang rong={false}` (vá h�
   expect(so, "phải ĐÚNG 5 bảng hẹp (nhóm bot · quốc gia bot · trình duyệt · thiết bị · quốc gia người) bỏ sàn min-w").toBe(5);
 });
 
-test("TAB /luot-xem — cả tám bảng chi tiết còn mặt trong panel", () => {
+test("TAB /luot-xem — cả chín bảng chi tiết còn mặt trong panel", () => {
   const trang = nguonTrangLuotXem();
   const mat = TESTID_BANG.filter((t) => !trang.includes(`data-testid="${t}"`));
   expect(mat, `bảng rơi mất khi gom tab: ${mat.join(", ")}`).toEqual([]);
   // …và trạng thái rỗng của chúng cũng vậy: một panel trắng trơn đọc y hệt "chưa có dữ
   // liệu", tức một câu trả lời SAI trông giống hệt một câu trả lời đúng.
-  expect([...trang.matchAll(/<KhoiRong/g)].length).toBeGreaterThanOrEqual(8);
+  expect([...trang.matchAll(/<KhoiRong/g)].length).toBeGreaterThanOrEqual(9);
   // Dòng chú 90 ngày dời lên dưới tablist nhưng phải GIỮ testid cũ.
   expect(trang).toContain('data-testid="chu-chi-tiet-90-ngay"');
 });

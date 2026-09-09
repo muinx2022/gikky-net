@@ -127,6 +127,7 @@ from api.quan_tri_schemas import (
     OnlineOut,
     TenBotOut,
     TopDuongDanOut,
+    TopQuocGiaOut,
 )
 
 router = Router()
@@ -312,6 +313,27 @@ def _theo_cot(ngay_dau: date, cot: str) -> list[MucSoLuotOut]:
         .order_by("-_so", cot)
     )
     return [MucSoLuotOut(ten=h[cot], so_luot=h["_so"]) for h in hang]
+
+
+def _top_quoc_gia(ngay_dau: date) -> list[TopQuocGiaOut]:
+    """Top 20 quốc gia có lượt truy cập nhiều nhất (người + bot), bỏ ô rỗng."""
+    hang = (
+        _tho_tu(ngay_dau)
+        .exclude(quoc_gia="")
+        .values("quoc_gia")
+        .annotate(**_DEM_TACH)
+        .order_by()
+    )
+    xep = sorted(hang, key=lambda x: (-(x["_nguoi"] + x["_bot"]), x["quoc_gia"]))
+    return [
+        TopQuocGiaOut(
+            quoc_gia=h["quoc_gia"],
+            so_luot_nguoi=h["_nguoi"],
+            so_luot_bot=h["_bot"],
+            so_luot=h["_nguoi"] + h["_bot"],
+        )
+        for h in xep[:SO_TOP]
+    ]
 
 
 def _top_quoc_gia_nguoi(ngay_dau: date) -> list[MucSoLuotOut]:
@@ -589,6 +611,7 @@ def luot_xem(request, response: HttpResponse, khoang: str = "30"):
         ),
         chuoi_ngay=_chuoi(theo_ngay, hom_nay, so_o, khach_cua),
         top_duong_dan=_top(gop),
+        top_quoc_gia=_top_quoc_gia(ngay_dau_chi_tiet),
         top_bot=_top_bot(theo_ten_bot),
         theo_nhom_bot=_theo_nhom_bot(theo_ten_bot),
         top_nguon=_top_nguon(ngay_dau_chi_tiet),

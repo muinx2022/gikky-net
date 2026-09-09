@@ -1345,6 +1345,12 @@ def test_top_quoc_gia_nguoi_va_bot(db, hom_nay):
         {"ten": "SG", "so_luot": 2},
     ]
 
+    assert js["top_quoc_gia"] == [
+        {"quoc_gia": "US", "so_luot_nguoi": 1, "so_luot_bot": 5, "so_luot": 6},
+        {"quoc_gia": "SG", "so_luot_nguoi": 2, "so_luot_bot": 2, "so_luot": 4},
+        {"quoc_gia": "VN", "so_luot_nguoi": 3, "so_luot_bot": 0, "so_luot": 3},
+    ]
+
 
 def test_quoc_gia_trong_online(db):
     """KhachOnlineOut trả về đúng trường quoc_gia của lượt xem gần nhất."""

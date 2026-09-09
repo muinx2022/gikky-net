@@ -408,6 +408,92 @@ export default function TrangLuotXem() {
                 ),
               },
               {
+                khoa: "quoc_gia",
+                nhan: "Quốc gia",
+                noi_dung: (
+                  <div className="space-y-4">
+                    <The tieu_de="Quốc gia truy cập" pham_vi="Top 20 quốc gia · người đọc và bot">
+                      <KhungBang>
+                        <HangTieuDe cot={["Quốc gia", "Người", "Bot", "Tổng", "Tỉ lệ"]} />
+                        <tbody data-testid="bang-quoc-gia-tong">
+                          {so_lieu.top_quoc_gia.map((q) => {
+                            const co = coQuocGia(q.quoc_gia);
+                            const tongCoQG = so_lieu.top_quoc_gia.reduce((acc, cur) => acc + cur.so_luot, 0);
+                            const tiLe = tongCoQG > 0 ? ((q.so_luot / tongCoQG) * 100).toFixed(1) + "%" : "—";
+                            return (
+                              <tr key={q.quoc_gia}>
+                                <td className="px-3 py-2.5">
+                                  {co ? `${co} ` : ""}{tenQuocGia(q.quoc_gia)}{" "}
+                                  <span className="font-mono text-xs text-muc-mo">({q.quoc_gia})</span>
+                                </td>
+                                <td className="px-3 py-2.5 tabular-nums">{q.so_luot_nguoi}</td>
+                                <td className="px-3 py-2.5 tabular-nums text-muc-mo">{q.so_luot_bot}</td>
+                                <td className="px-3 py-2.5 tabular-nums font-semibold">{q.so_luot}</td>
+                                <td className="px-3 py-2.5 tabular-nums text-muc-mo">{tiLe}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </KhungBang>
+                      {so_lieu.top_quoc_gia.length === 0 && (
+                        <KhoiRong
+                          co_bo_loc={false}
+                          chua_co="Chưa ghi nhận quốc gia nào trong khoảng này (bắt đầu lưu từ 09/09/2026)."
+                        />
+                      )}
+                    </The>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <The tieu_de="Người đọc theo quốc gia" pham_vi="Top 20 quốc gia · chỉ lượt người">
+                        <KhungBang rong={false}>
+                          <HangTieuDe cot={["Quốc gia", "Mã", "Lượt"]} />
+                          <tbody data-testid="bang-quoc-gia-nguoi">
+                            {so_lieu.top_quoc_gia_nguoi.map((q) => {
+                              const co = coQuocGia(q.ten);
+                              return (
+                                <tr key={q.ten}>
+                                  <td className="px-3 py-2.5">
+                                    {co ? `${co} ` : ""}{tenQuocGia(q.ten)}
+                                  </td>
+                                  <td className="px-3 py-2.5 font-mono text-xs text-muc-mo">{q.ten}</td>
+                                  <td className="px-3 py-2.5 tabular-nums">{q.so_luot}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </KhungBang>
+                        {so_lieu.top_quoc_gia_nguoi.length === 0 && (
+                          <KhoiRong co_bo_loc={false} chua_co="Chưa ghi nhận quốc gia người đọc nào." />
+                        )}
+                      </The>
+
+                      <The tieu_de="Quốc gia của bot" pham_vi="Top 20 quốc gia · xuất xứ bot">
+                        <KhungBang rong={false}>
+                          <HangTieuDe cot={["Quốc gia", "Mã", "Lượt"]} />
+                          <tbody data-testid="bang-quoc-gia-bot">
+                            {so_lieu.top_quoc_gia_bot.map((q) => {
+                              const co = coQuocGia(q.ten);
+                              return (
+                                <tr key={q.ten}>
+                                  <td className="px-3 py-2.5">
+                                    {co ? `${co} ` : ""}{tenQuocGia(q.ten)}
+                                  </td>
+                                  <td className="px-3 py-2.5 font-mono text-xs text-muc-mo">{q.ten}</td>
+                                  <td className="px-3 py-2.5 tabular-nums">{q.so_luot}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </KhungBang>
+                        {so_lieu.top_quoc_gia_bot.length === 0 && (
+                          <KhoiRong co_bo_loc={false} chua_co="Chưa ghi nhận quốc gia nào của bot." />
+                        )}
+                      </The>
+                    </div>
+                  </div>
+                ),
+              },
+              {
                 khoa: "nguon",
                 nhan: "Nguồn truy cập",
                 noi_dung: (
@@ -490,32 +576,6 @@ export default function TrangLuotXem() {
                         <KhoiRong co_bo_loc={false} chua_co="Chưa thấy bot nào ghé qua." />
                       )}
                     </The>
-
-                    <The
-                      tieu_de="Quốc gia của bot"
-                      pham_vi="Top 20 quốc gia xuất xứ của bot"
-                    >
-                      <KhungBang rong={false}>
-                        <HangTieuDe cot={["Quốc gia", "Mã", "Lượt"]} />
-                        <tbody data-testid="bang-quoc-gia-bot">
-                          {so_lieu.top_quoc_gia_bot.map((q) => {
-                            const co = coQuocGia(q.ten);
-                            return (
-                              <tr key={q.ten}>
-                                <td className="px-3 py-2.5">
-                                  {co ? `${co} ` : ""}{tenQuocGia(q.ten)}
-                                </td>
-                                <td className="px-3 py-2.5 font-mono text-xs text-muc-mo">{q.ten}</td>
-                                <td className="px-3 py-2.5 tabular-nums">{q.so_luot}</td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </KhungBang>
-                      {so_lieu.top_quoc_gia_bot.length === 0 && (
-                        <KhoiRong co_bo_loc={false} chua_co="Chưa ghi nhận quốc gia nào của bot." />
-                      )}
-                    </The>
                   </div>
                 ),
               },
@@ -526,74 +586,46 @@ export default function TrangLuotXem() {
                    chỉ có hai cột, nên đặt cạnh nhau là so được ngay "Chrome/di động" với
                    "Safari/di động". Dọc ở màn hẹp. */
                 noi_dung: (
-                  <div className="space-y-4">
-                    <The tieu_de="Quốc gia" pham_vi="Top 20 quốc gia · chỉ lượt người">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <The tieu_de="Trình duyệt" pham_vi="Chỉ lượt người · suy từ User-Agent">
                       <KhungBang rong={false}>
-                        <HangTieuDe cot={["Quốc gia", "Mã", "Lượt"]} />
-                        <tbody data-testid="bang-quoc-gia-nguoi">
-                          {so_lieu.top_quoc_gia_nguoi.map((q) => {
-                            const co = coQuocGia(q.ten);
-                            return (
-                              <tr key={q.ten}>
-                                <td className="px-3 py-2.5">
-                                  {co ? `${co} ` : ""}{tenQuocGia(q.ten)}
-                                </td>
-                                <td className="px-3 py-2.5 font-mono text-xs text-muc-mo">{q.ten}</td>
-                                <td className="px-3 py-2.5 tabular-nums">{q.so_luot}</td>
-                              </tr>
-                            );
-                          })}
+                        <HangTieuDe cot={["Trình duyệt", "Lượt"]} />
+                        <tbody data-testid="bang-trinh-duyet">
+                          {so_lieu.trinh_duyet.map((t) => (
+                            <tr key={t.ten}>
+                              <td className="px-3 py-2.5">{nhanCua(NHAN_TRINH_DUYET, t.ten)}</td>
+                              <td className="px-3 py-2.5 tabular-nums">{t.so_luot}</td>
+                            </tr>
+                          ))}
                         </tbody>
                       </KhungBang>
-                      {so_lieu.top_quoc_gia_nguoi.length === 0 && (
+                      {so_lieu.trinh_duyet.length === 0 && (
                         <KhoiRong
                           co_bo_loc={false}
-                          chua_co="Chưa ghi nhận quốc gia nào trong khoảng này."
+                          chua_co="Chưa đo được trình duyệt nào trong khoảng này."
                         />
                       )}
                     </The>
 
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <The tieu_de="Trình duyệt" pham_vi="Chỉ lượt người · suy từ User-Agent">
-                        <KhungBang rong={false}>
-                          <HangTieuDe cot={["Trình duyệt", "Lượt"]} />
-                          <tbody data-testid="bang-trinh-duyet">
-                            {so_lieu.trinh_duyet.map((t) => (
-                              <tr key={t.ten}>
-                                <td className="px-3 py-2.5">{nhanCua(NHAN_TRINH_DUYET, t.ten)}</td>
-                                <td className="px-3 py-2.5 tabular-nums">{t.so_luot}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </KhungBang>
-                        {so_lieu.trinh_duyet.length === 0 && (
-                          <KhoiRong
-                            co_bo_loc={false}
-                            chua_co="Chưa đo được trình duyệt nào trong khoảng này."
-                          />
-                        )}
-                      </The>
-
-                      <The tieu_de="Thiết bị" pham_vi="Chỉ lượt người · suy từ User-Agent">
-                        <KhungBang rong={false}>
-                          <HangTieuDe cot={["Thiết bị", "Lượt"]} />
-                          <tbody data-testid="bang-thiet-bi">
-                            {so_lieu.thiet_bi.map((t) => (
-                              <tr key={t.ten}>
-                                <td className="px-3 py-2.5">{nhanCua(NHAN_THIET_BI, t.ten)}</td>
-                                <td className="px-3 py-2.5 tabular-nums">{t.so_luot}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </KhungBang>
-                        {so_lieu.thiet_bi.length === 0 && (
-                          <KhoiRong
-                            co_bo_loc={false}
-                            chua_co="Chưa đo được thiết bị nào trong khoảng này."
-                          />
-                        )}
-                      </The>
-                    </div>
+                    <The tieu_de="Thiết bị" pham_vi="Chỉ lượt người · suy từ User-Agent">
+                      <KhungBang rong={false}>
+                        <HangTieuDe cot={["Thiết bị", "Lượt"]} />
+                        <tbody data-testid="bang-thiet-bi">
+                          {so_lieu.thiet_bi.map((t) => (
+                            <tr key={t.ten}>
+                              <td className="px-3 py-2.5">{nhanCua(NHAN_THIET_BI, t.ten)}</td>
+                              <td className="px-3 py-2.5 tabular-nums">{t.so_luot}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </KhungBang>
+                      {so_lieu.thiet_bi.length === 0 && (
+                        <KhoiRong
+                          co_bo_loc={false}
+                          chua_co="Chưa đo được thiết bị nào trong khoảng này."
+                        />
+                      )}
+                    </The>
                   </div>
                 ),
               },
@@ -834,22 +866,29 @@ function KhoiOnline({ k }: { k: KhachOnlineOut }) {
       {!k.la_bot && (
         <p className="mt-1 text-xs text-muc-mo">
           {oTrong(nhanCua(NHAN_TRINH_DUYET, k.trinh_duyet), k.trinh_duyet)} ·{" "}
-          {oTrong(nhanCua(NHAN_THIET_BI, k.thiet_bi), k.thiet_bi)}
+          {oTrong(nhanCua(NHAN_THIET_BI, k.thiet_bi), k.thiet_bi)} ·{" "}
           {k.quoc_gia ? (
             <>
-              {" · "}
               {coQuocGia(k.quoc_gia) ? `${coQuocGia(k.quoc_gia)} ` : ""}
               {tenQuocGia(k.quoc_gia)} ({k.quoc_gia})
             </>
-          ) : null}
+          ) : (
+            <span>Chưa rõ quốc gia</span>
+          )}
         </p>
       )}
-      {k.la_bot && k.quoc_gia ? (
+      {k.la_bot && (
         <p className="mt-1 text-xs text-muc-mo">
-          {coQuocGia(k.quoc_gia) ? `${coQuocGia(k.quoc_gia)} ` : ""}
-          {tenQuocGia(k.quoc_gia)} ({k.quoc_gia})
+          {k.quoc_gia ? (
+            <>
+              {coQuocGia(k.quoc_gia) ? `${coQuocGia(k.quoc_gia)} ` : ""}
+              {tenQuocGia(k.quoc_gia)} ({k.quoc_gia})
+            </>
+          ) : (
+            <span>Chưa rõ quốc gia</span>
+          )}
         </p>
-      ) : null}
+      )}
       <p className="mono mt-1 text-xs break-all">{k.duong_dan}</p>
       <p className="mt-1 text-xs text-muc-mo">
         {baoLauTruoc(k.giay_truoc)} · <span className="tabular-nums">{k.so_luot}</span> lượt

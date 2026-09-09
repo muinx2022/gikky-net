@@ -857,6 +857,10 @@ export type LuotXemOut = {
      */
     top_nguon: Array<NguonOut>;
     /**
+     * Top Quoc Gia
+     */
+    top_quoc_gia: Array<TopQuocGiaOut>;
+    /**
      * Top Quoc Gia Bot
      */
     top_quoc_gia_bot: Array<MucSoLuotOut>;
@@ -1860,6 +1864,30 @@ export type TopDuongDanOut = {
      * Duong Dan
      */
     duong_dan: string;
+    /**
+     * So Luot Bot
+     */
+    so_luot_bot: number;
+    /**
+     * So Luot Nguoi
+     */
+    so_luot_nguoi: number;
+};
+
+/**
+ * TopQuocGiaOut
+ *
+ * Một dòng bảng "Quốc gia truy cập". `quoc_gia` là mã ISO 3166-1 alpha-2.
+ */
+export type TopQuocGiaOut = {
+    /**
+     * Quoc Gia
+     */
+    quoc_gia: string;
+    /**
+     * So Luot
+     */
+    so_luot: number;
     /**
      * So Luot Bot
      */

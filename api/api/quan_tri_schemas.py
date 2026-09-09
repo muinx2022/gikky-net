@@ -933,6 +933,15 @@ class NguonOut(Schema):
     so_luot: int
 
 
+class TopQuocGiaOut(Schema):
+    """Một dòng bảng "Quốc gia truy cập". `quoc_gia` là mã ISO 3166-1 alpha-2."""
+
+    quoc_gia: str
+    so_luot_nguoi: int
+    so_luot_bot: int
+    so_luot: int
+
+
 class MucSoLuotOut(Schema):
     """Một dòng của hai bảng nhỏ "Trình duyệt" và "Thiết bị".
 
@@ -954,6 +963,7 @@ class LuotXemOut(Schema):
     tong: LuotXemTongOut
     chuoi_ngay: list[LuotXemNgayOut]
     top_duong_dan: list[TopDuongDanOut]
+    top_quoc_gia: list[TopQuocGiaOut]
     top_bot: list[TenBotOut]
     #: Gộp `top_bot` theo nhóm — nhưng từ **toàn bộ** hàng bot, không phải từ 20 dòng của
     #: `top_bot`. Cộng từ bảng top là thiếu hụt im lặng đúng bằng phần đuôi bị cắt.

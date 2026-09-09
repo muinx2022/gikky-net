@@ -1045,6 +1045,13 @@
             "title": "Top Nguon",
             "type": "array"
           },
+          "top_quoc_gia": {
+            "items": {
+              "$ref": "#/components/schemas/TopQuocGiaOut"
+            },
+            "title": "Top Quoc Gia",
+            "type": "array"
+          },
           "top_quoc_gia_bot": {
             "items": {
               "$ref": "#/components/schemas/MucSoLuotOut"
@@ -1072,6 +1079,7 @@
           "tong",
           "chuoi_ngay",
           "top_duong_dan",
+          "top_quoc_gia",
           "top_bot",
           "theo_nhom_bot",
           "top_nguon",
@@ -2463,6 +2471,35 @@
           "so_luot_bot"
         ],
         "title": "TopDuongDanOut",
+        "type": "object"
+      },
+      "TopQuocGiaOut": {
+        "description": "Một dòng bảng \"Quốc gia truy cập\". `quoc_gia` là mã ISO 3166-1 alpha-2.",
+        "properties": {
+          "quoc_gia": {
+            "title": "Quoc Gia",
+            "type": "string"
+          },
+          "so_luot": {
+            "title": "So Luot",
+            "type": "integer"
+          },
+          "so_luot_bot": {
+            "title": "So Luot Bot",
+            "type": "integer"
+          },
+          "so_luot_nguoi": {
+            "title": "So Luot Nguoi",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "quoc_gia",
+          "so_luot_nguoi",
+          "so_luot_bot",
+          "so_luot"
+        ],
+        "title": "TopQuocGiaOut",
         "type": "object"
       },
       "TrangBaoCaoOut": {
