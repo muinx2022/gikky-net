@@ -121,7 +121,7 @@ def sua_toi(request, du_lieu: ToiSuaIn):
                 return loi(
                     400,
                     HET_LUOT_DOI_TEN,
-                    f"Bạn đã đổi tên hiển thị tối đa {SO_LAN_DOI_TEN_TOI_DA} lần.",
+                    f"Chỉ được đổi tên {SO_LAN_DOI_TEN_TOI_DA} lần. Sau {SO_LAN_DOI_TEN_TOI_DA} lần sẽ không đổi được nữa.",
                 )
             thay_doi["so_lan_doi_ten"] = so_lan_hien_tai + 1
 

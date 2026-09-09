@@ -255,8 +255,8 @@ export function FormHoSo() {
         />
         <span className={css.goi_y}>
           {hetLuotDoiTen
-            ? "Bạn đã đổi tên hiển thị tối đa 2 lần. Không thể đổi thêm."
-            : `Được đổi tối đa ${soLanToiDa} lần (còn ${soLanToiDa - soLanDoiTen} lần). Bỏ trống thì hồ sơ hiện u/${username}.`}
+            ? "Chỉ được đổi tên 2 lần. Sau 2 lần sẽ không đổi được nữa (bạn đã dùng hết 2 lần đổi)."
+            : `Chỉ được đổi tên 2 lần. Sau 2 lần sẽ không đổi được nữa (còn ${soLanToiDa - soLanDoiTen} lần). Bỏ trống thì hồ sơ hiện u/${username}.`}
         </span>
       </label>
 
