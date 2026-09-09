@@ -45,20 +45,6 @@ export function TheMach({ mach }: { mach: MachTomTatOut }) {
               tiêu đề, kết quả — bốn chuỗi do người dùng gõ. Phần còn lại ("mốc", "bình
               luận", "đã đóng sổ") là chữ của ứng dụng và ở lại trong phép quét. */}
           <Link
-            href={duongDanHoSo(mach.author.username)}
-            prefetch={false}
-            tabIndex={-1}
-            aria-hidden="true"
-            className={css.ai_avatar}
-          >
-            <Avatar
-              ten={mach.author.username}
-              hienThi={mach.author.display_name}
-              url={mach.author.avatar_url}
-              co={18}
-            />
-          </Link>
-          <Link
             className={css.sub}
             href={duongDanSub(mach.sub.slug)}
             prefetch={false}
@@ -69,15 +55,31 @@ export function TheMach({ mach }: { mach: MachTomTatOut }) {
           <span className={css.cham} aria-hidden>
             ·
           </span>
-          <Link
-            className={css.ai}
-            href={duongDanHoSo(mach.author.username)}
-            prefetch={false}
-            title={`u/${mach.author.username}`}
-            {...CHU_NGUOI_DUNG}
-          >
-            {mach.author.display_name || `u/${mach.author.username}`}
-          </Link>
+          <span className={css.cum_tac_gia}>
+            <Link
+              href={duongDanHoSo(mach.author.username)}
+              prefetch={false}
+              tabIndex={-1}
+              aria-hidden="true"
+              className={css.ai_avatar}
+            >
+              <Avatar
+                ten={mach.author.username}
+                hienThi={mach.author.display_name}
+                url={mach.author.avatar_url}
+                co={18}
+              />
+            </Link>
+            <Link
+              className={css.ai}
+              href={duongDanHoSo(mach.author.username)}
+              prefetch={false}
+              title={`u/${mach.author.username}`}
+              {...CHU_NGUOI_DUNG}
+            >
+              {mach.author.display_name || `u/${mach.author.username}`}
+            </Link>
+          </span>
           <span className={css.cham} aria-hidden>
             ·
           </span>

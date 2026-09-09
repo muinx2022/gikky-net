@@ -79,6 +79,12 @@
   color: var(--ink-3);
 }
 
+.cum_tac_gia {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
 .ai_avatar {
   display: inline-flex;
   align-items: center;

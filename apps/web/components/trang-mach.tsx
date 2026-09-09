@@ -359,27 +359,29 @@ export async function TrangMach({
               )}
               <h1 className={css.tieu_de}>{mach.title}</h1>
               <div className={css.chu_ky}>
-                <Link
-                  className={css.ai_avatar}
-                  href={duongDanHoSo(mach.author.username)}
-                  tabIndex={-1}
-                  aria-hidden="true"
-                >
-                  <Avatar
-                    ten={mach.author.username}
-                    hienThi={mach.author.display_name}
-                    url={mach.author.avatar_url}
-                    co={20}
-                  />
-                </Link>
-                <Link
-                  className={css.ai}
-                  href={duongDanHoSo(mach.author.username)}
-                  title={`u/${mach.author.username}`}
-                  {...CHU_NGUOI_DUNG}
-                >
-                  {mach.author.display_name || `u/${mach.author.username}`}
-                </Link>
+                <span className={css.cum_tac_gia}>
+                  <Link
+                    className={css.ai_avatar}
+                    href={duongDanHoSo(mach.author.username)}
+                    tabIndex={-1}
+                    aria-hidden="true"
+                  >
+                    <Avatar
+                      ten={mach.author.username}
+                      hienThi={mach.author.display_name}
+                      url={mach.author.avatar_url}
+                      co={20}
+                    />
+                  </Link>
+                  <Link
+                    className={css.ai}
+                    href={duongDanHoSo(mach.author.username)}
+                    title={`u/${mach.author.username}`}
+                    {...CHU_NGUOI_DUNG}
+                  >
+                    {mach.author.display_name || `u/${mach.author.username}`}
+                  </Link>
+                </span>
                 <span className={css.cham} aria-hidden>
                   ·
                 </span>

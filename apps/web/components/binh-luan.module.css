@@ -35,6 +35,12 @@
   font-size: 12.5px;
 }
 
+.cum_tac_gia {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .ai_avatar {
   display: inline-flex;
   align-items: center;
