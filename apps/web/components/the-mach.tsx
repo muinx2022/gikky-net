@@ -44,12 +44,20 @@ export function TheMach({ mach }: { mach: MachTomTatOut }) {
           {/* Bốn nút mang dấu `CHU_NGUOI_DUNG` trong thẻ này (Y3): slug sub, tên tác giả,
               tiêu đề, kết quả — bốn chuỗi do người dùng gõ. Phần còn lại ("mốc", "bình
               luận", "đã đóng sổ") là chữ của ứng dụng và ở lại trong phép quét. */}
-          <Avatar
-            ten={mach.author.username}
-            hienThi={mach.author.display_name}
-            url={mach.author.avatar_url}
-            co={18}
-          />
+          <Link
+            href={duongDanHoSo(mach.author.username)}
+            prefetch={false}
+            tabIndex={-1}
+            aria-hidden="true"
+            className={css.ai_avatar}
+          >
+            <Avatar
+              ten={mach.author.username}
+              hienThi={mach.author.display_name}
+              url={mach.author.avatar_url}
+              co={18}
+            />
+          </Link>
           <Link
             className={css.sub}
             href={duongDanSub(mach.sub.slug)}
@@ -65,9 +73,10 @@ export function TheMach({ mach }: { mach: MachTomTatOut }) {
             className={css.ai}
             href={duongDanHoSo(mach.author.username)}
             prefetch={false}
+            title={`u/${mach.author.username}`}
             {...CHU_NGUOI_DUNG}
           >
-            u/{mach.author.username}
+            {mach.author.display_name || `u/${mach.author.username}`}
           </Link>
           <span className={css.cham} aria-hidden>
             ·

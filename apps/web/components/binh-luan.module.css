@@ -35,6 +35,13 @@
   font-size: 12.5px;
 }
 
+.ai_avatar {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 50%;
+  text-decoration: none;
+}
+
 .ai {
   font-weight: 600;
   font-size: 13px;

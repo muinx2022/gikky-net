@@ -87,9 +87,10 @@ function DongMach({ ket_qua }: { ket_qua: KetQuaTronOut }) {
         <Link
           className={css.ai}
           href={duongDanHoSo(m.author.username)}
+          title={`u/${m.author.username}`}
           {...CHU_NGUOI_DUNG}
         >
-          u/{m.author.username}
+          {m.author.display_name || `u/${m.author.username}`}
         </Link>
         <span className={css.cham} aria-hidden>
           ·

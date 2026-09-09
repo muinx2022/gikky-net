@@ -60,6 +60,13 @@
   color: var(--ink-3);
 }
 
+.ai_avatar {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 50%;
+  text-decoration: none;
+}
+
 .ai {
   color: var(--ink-2);
   font-weight: 500;

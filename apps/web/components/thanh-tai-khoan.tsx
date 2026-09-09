@@ -83,8 +83,12 @@ export function ThanhTaiKhoan() {
         <Avatar ten={toi.username ?? ""} hienThi={toi.display_name} url={toi.avatar_url} co={24} />
         {/* Class riêng vì ≤640px chữ này bị ẩn THỊ GIÁC — xem `.ten_chu` trong file CSS
             cạnh đây. Nó vẫn ở lại DOM, nên `{...CHU_NGUOI_DUNG}` giữ nguyên. */}
-        <span className={css.ten_chu} {...CHU_NGUOI_DUNG}>
-          u/{toi.username}
+        <span
+          className={css.ten_chu}
+          title={toi.username ? `u/${toi.username}` : undefined}
+          {...CHU_NGUOI_DUNG}
+        >
+          {toi.display_name || `u/${toi.username}`}
         </span>
       </button>
       {mo && (

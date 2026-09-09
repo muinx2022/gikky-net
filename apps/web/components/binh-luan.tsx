@@ -144,18 +144,26 @@ function NoiDung({ nut }: { nut: BinhLuanOut }) {
       <div className={css.dau}>
         {/* Tên tác giả là chữ người dùng gõ (Y3) — thân bình luận cũng vậy, nhưng dấu
             của nó nằm trong `ThanVan`, chỗ duy nhất in `body`. */}
-        <Avatar
-          ten={nut.author?.username ?? ""}
-          hienThi={nut.author?.display_name}
-          url={nut.author?.avatar_url}
-          co={22}
-        />
+        <Link
+          href={duongDanHoSo(nut.author?.username ?? "")}
+          tabIndex={-1}
+          aria-hidden="true"
+          className={css.ai_avatar}
+        >
+          <Avatar
+            ten={nut.author?.username ?? ""}
+            hienThi={nut.author?.display_name}
+            url={nut.author?.avatar_url}
+            co={22}
+          />
+        </Link>
         <Link
           className={css.ai}
           href={duongDanHoSo(nut.author?.username ?? "")}
+          title={nut.author?.username ? `u/${nut.author.username}` : undefined}
           {...CHU_NGUOI_DUNG}
         >
-          u/{nut.author?.username}
+          {nut.author?.display_name || `u/${nut.author?.username ?? ""}`}
         </Link>
         {nut.la_chu_mach && <span className={css.chu_mach}>CHỦ MẠCH</span>}
         {/* Chip `‹mốc N›` (`data-testid="chip-neo"`) **gỡ render 2026-08-26**. Nó sinh ra

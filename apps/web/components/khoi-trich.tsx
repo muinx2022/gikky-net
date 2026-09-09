@@ -53,7 +53,12 @@ export function KhoiTrich({
         <ThanHtml body={trich.body} dinhDang={trich.body_dinh_dang} />
       </blockquote>
       <div className={css.ky}>
-        <Link href={duongDanHoSo(trich.author.username)}>u/{trich.author.username}</Link>
+        <Link
+          href={duongDanHoSo(trich.author.username)}
+          title={`u/${trich.author.username}`}
+        >
+          {trich.author.display_name || `u/${trich.author.username}`}
+        </Link>
         <span className={css.dau_thoi_gian} data-testid="trich-viet">
           viết {ngayNganCuaThoiDiem(trich.comment_created_at)}
         </span>
