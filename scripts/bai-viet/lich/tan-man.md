@@ -226,8 +226,9 @@ D:\Projects\gikky-net\scripts\bai-viet\.tam\bai.json
 
 Mỗi bài viết **phải có từ 1 đến 2 ảnh minh hoạ** sinh động, gắn liền với chủ đề:
 - **Phong cách ảnh:** Ưu tiên ảnh chụp cảnh quan, bối cảnh thực tế hoặc hình ảnh chủ đề giàu tính gợi cảm và thẩm mỹ (ví dụ: bài về đồng Yên dùng hình ảnh tiền Yên và đô thị Tokyo; bài về thuỷ điện dùng hình ảnh đập xả nước, hồ chứa; bài về ngân hàng dùng hình ảnh thanh toán số, toà nhà tài chính...). **Tránh vẽ các biểu đồ hộp khối hay box chữ thô cứng** tạo cảm giác như slide báo cáo nội bộ.
+- **Kích thước & Bố cục:** Kích thước hiển thị của các ảnh minh hoạ được tự động phân bổ ngẫu nhiên trong khoảng **72% – 92%** và căn giữa, tránh việc các ảnh chiếm trọn 100% bằng nhau một lượt gây đơn điệu. Khi sinh ảnh có thể linh hoạt tỷ lệ 16:9, 4:3 hoặc 3:2.
 - **Cách tạo và nhúng:**
-  1. Tạo ảnh bằng công cụ sinh ảnh AI (`generate_image` với tỷ lệ 16:9) hoặc chuẩn bị ảnh chất lượng cao, chuyển sang chuỗi Base64 đưa vào mảng `anhs` trong file JSON.
+  1. Tạo ảnh bằng công cụ sinh ảnh AI (`generate_image`) hoặc chuẩn bị ảnh chất lượng cao, chuyển sang chuỗi Base64 đưa vào mảng `anhs` trong file JSON.
   2. Đặt thẻ placeholder `{{ANH_1}}`, `{{ANH_2}}` vào vị trí phù hợp trong thân bài `body`.
   3. Script `dang-bai.py` sẽ tự động tải ảnh vào kho nội dung của site (`/media/anh/`) và thay thế placeholder bằng thẻ `<p><img src="..." alt="..."></p>`.
 

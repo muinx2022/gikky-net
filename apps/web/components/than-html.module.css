@@ -80,12 +80,18 @@
   margin: 1.1em 0;
 }
 
+.than p:has(> img) {
+  text-align: center;
+}
+
 .than img {
   max-width: 100%;
   height: auto;
   border-radius: 6px;
   cursor: zoom-in;
   transition: opacity 0.15s ease;
+  display: block;
+  margin: 1.2em auto;
 }
 
 .than img:hover {
