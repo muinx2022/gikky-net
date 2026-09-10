@@ -97,8 +97,8 @@ export function ThanhTren({ moNganKeo }: { moNganKeo: () => void }) {
         />
         <input
           id="o-tim-quan-tri"
-          className="o-nhap pl-9"
-          placeholder="Tìm mạch theo tiêu đề…"
+          className="o-nhap pl-9 placeholder:truncate text-sm"
+          placeholder="Tìm mạch…"
           value={tim}
           onChange={(e) => datTim(e.target.value)}
           data-testid="o-tim-quan-tri"
@@ -110,7 +110,7 @@ export function ThanhTren({ moNganKeo }: { moNganKeo: () => void }) {
         <OTraCuu />
       </div>
 
-      <div className="ml-auto flex items-center gap-1.5">
+      <div className="ml-auto flex items-center gap-1 sm:gap-1.5">
         <Link
           href="/bao-cao"
           className="nut relative"

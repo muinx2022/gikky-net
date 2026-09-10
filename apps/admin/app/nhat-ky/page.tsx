@@ -110,7 +110,7 @@ export default function TrangNhatKy() {
             </label>
             <input
               id="loc-action"
-              className="o-nhap mono w-64"
+              className="o-nhap mono w-full sm:w-64"
               value={o_loc}
               onChange={(e) => datOLoc(e.target.value)}
               placeholder="an_moc, ban_user, …"

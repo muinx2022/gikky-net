@@ -185,14 +185,16 @@ export function NhanTrangThai({
 export function KhungBang({
   children,
   rong = true,
+  className = "",
 }: {
   children: React.ReactNode;
   /** `false` ⇒ không ép `min-w-[52rem]` — chỉ cho bảng ít cột đặt trong khung hẹp. */
   rong?: boolean;
+  className?: string;
 }) {
   return (
     <div className="overflow-x-auto">
-      <table className={`w-full ${rong ? "min-w-[52rem]" : ""} border-collapse text-sm`}>
+      <table className={`w-full ${rong ? "min-w-[52rem]" : ""} ${className} border-collapse text-sm`}>
         {children}
       </table>
     </div>

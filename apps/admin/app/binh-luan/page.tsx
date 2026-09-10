@@ -182,11 +182,9 @@ function BangBinhLuan() {
       <The>
         <div className="flex flex-wrap items-center gap-2 border-b border-vien p-3">
           <form
-            className="flex gap-1.5"
+            className="flex flex-1 sm:flex-initial items-center gap-1.5"
             onSubmit={(e) => {
               e.preventDefault();
-              // Backstop cho nút submit `disabled`: bộ lọc ở trang này là state trực
-              // tiếp nên đổi `nap` là TỨC THÌ — giữa một lượt hàng loạt thì không được.
               if (dang_chay) return;
               datQ(o_tim.trim());
             }}
@@ -196,7 +194,7 @@ function BangBinhLuan() {
             </label>
             <input
               id="loc-q-binh-luan"
-              className="o-nhap w-56"
+              className="o-nhap w-full sm:w-56"
               placeholder="Nội dung chứa…"
               value={o_tim}
               onChange={(e) => datOTim(e.target.value)}
@@ -288,7 +286,7 @@ function BangBinhLuan() {
         ) : ds.items.length === 0 ? (
           <KhoiRong co_bo_loc={co_bo_loc} chua_co="Chưa có bình luận nào." />
         ) : (
-          <KhungBang rong={false}>
+          <KhungBang rong={false} className="min-w-[44rem]">
             <HangTieuDe
               cot={[
                 <ONhoChon
@@ -349,11 +347,14 @@ function BangBinhLuan() {
                   </td>
                   <td className="mono px-3 py-2.5 text-xs whitespace-nowrap">{c.score}</td>
                   <td className="relative mono px-3 py-2.5 text-xs whitespace-nowrap text-muc-mo text-right">
-                    <span className="transition-opacity group-hover:opacity-0">
+                    <span className="hidden md:inline transition-opacity group-hover:opacity-0">
                       {gioVN(c.created_at)}
                     </span>
-                    {/* Floating action overlay khi hover */}
-                    <div className="absolute inset-y-0 right-2 flex items-center justify-end opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-10">
+                    <span className="block md:hidden text-[11px] mb-1">
+                      {gioVN(c.created_at)}
+                    </span>
+                    {/* Floating action overlay khi hover trên desktop, hiển thị trực tiếp trên mobile */}
+                    <div className="flex items-center justify-end md:absolute md:inset-y-0 md:right-2 md:opacity-0 md:pointer-events-none md:group-hover:opacity-100 md:group-hover:pointer-events-auto transition-opacity z-10">
                       <span className="flex flex-nowrap items-center gap-1 bg-nen border border-vien shadow-md rounded-lg p-1">
                         <button
                           type="button"

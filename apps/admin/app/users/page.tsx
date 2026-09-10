@@ -139,7 +139,7 @@ export default function TrangNguoiDung() {
       <The>
         <div className="flex flex-wrap items-center gap-2 border-b border-vien p-3">
           <form
-            className="flex gap-1.5"
+            className="flex flex-1 sm:flex-initial items-center gap-1.5"
             onSubmit={(e) => {
               e.preventDefault();
               datQ(o_tim.trim());
@@ -150,7 +150,7 @@ export default function TrangNguoiDung() {
             </label>
             <input
               id="loc-q-user"
-              className="o-nhap w-56"
+              className="o-nhap w-full sm:w-56"
               placeholder="username hoặc tên hiển thị…"
               value={o_tim}
               onChange={(e) => datOTim(e.target.value)}
@@ -219,7 +219,7 @@ export default function TrangNguoiDung() {
         ) : ds.items.length === 0 ? (
           <KhoiRong co_bo_loc={co_bo_loc} chua_co="Chưa có tài khoản nào." />
         ) : (
-          <KhungBang rong={false}>
+          <KhungBang rong={false} className="min-w-[44rem]">
             <HangTieuDe
               cot={[
                 "Tài khoản",
@@ -271,7 +271,7 @@ export default function TrangNguoiDung() {
                       {gioVN(u.date_joined)}
                     </td>
                     <td className="relative px-3 py-2.5">
-                      <span className="flex flex-wrap gap-1 transition-opacity group-hover:opacity-0">
+                      <span className="flex flex-wrap gap-1 transition-opacity md:group-hover:opacity-0">
                         {u.is_staff && <NhanTrangThai tone="nhan">quản trị</NhanTrangThai>}
                         {u.dang_bi_ban && (
                           <NhanTrangThai tone="xau">
@@ -284,11 +284,11 @@ export default function TrangNguoiDung() {
                         )}
                       </span>
                       {u.dang_bi_ban && u.ban_reason !== null && (
-                        <span className="mono mt-1 block text-xs text-muc-mo transition-opacity group-hover:opacity-0">
+                        <span className="mono mt-1 block text-xs text-muc-mo transition-opacity md:group-hover:opacity-0">
                           {u.ban_reason}
                         </span>
                       )}
-                      <div className="absolute inset-y-0 right-2 flex items-center justify-end opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-10">
+                      <div className="mt-1.5 flex items-center justify-end md:mt-0 md:absolute md:inset-y-0 md:right-2 md:opacity-0 md:pointer-events-none md:group-hover:opacity-100 md:group-hover:pointer-events-auto transition-opacity z-10">
                         <span className="flex flex-nowrap items-center gap-1 bg-nen border border-vien shadow-md rounded-lg p-1">
                           {/* Chỉ superuser: user chốt "chỉ superadmin mới có quyền thay
                               đổi các thông tin của user". Không render nút rồi để nó ăn

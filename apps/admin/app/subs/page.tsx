@@ -218,7 +218,7 @@ export default function TrangSub() {
         {subs === null ? (
           <Skeleton dong={4} />
         ) : (
-          <KhungBang rong={false}>
+          <KhungBang rong={false} className="min-w-[44rem]">
             <HangTieuDe cot={["", "slug", "Tên", "Mô tả", "Mod", "Số bài", "Lập"]} />
             <tbody>
               {subs.map((s) => (
@@ -582,10 +582,14 @@ function DongSub({
       </td>
       <td className="mono px-3 py-2.5">{s.so_mach}</td>
       <td className="relative mono px-3 py-2.5 text-xs whitespace-nowrap text-muc-mo text-right">
-        <span className="transition-opacity group-hover:opacity-0">
+        <span className="hidden md:inline transition-opacity group-hover:opacity-0">
           {gioVN(s.created_at)}
         </span>
-        <div className="absolute inset-y-0 right-2 flex items-center justify-end opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-10">
+        <span className="block md:hidden text-[11px] mb-1">
+          {gioVN(s.created_at)}
+        </span>
+        {/* Floating action overlay khi di chuột trên desktop, hiển thị trực tiếp trên mobile */}
+        <div className="flex items-center justify-end md:absolute md:inset-y-0 md:right-2 md:opacity-0 md:pointer-events-none md:group-hover:opacity-100 md:group-hover:pointer-events-auto transition-opacity z-10">
           <span className="flex flex-nowrap items-center gap-1 bg-nen border border-vien shadow-md rounded-lg p-1">
             <button
               type="button"

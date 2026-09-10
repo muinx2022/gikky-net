@@ -117,7 +117,7 @@ export default function TrangQuanTriVien() {
         ) : ds.items.length === 0 ? (
           <KhoiRong co_bo_loc={false} chua_co="Chưa có quản trị viên nào." />
         ) : (
-          <KhungBang rong={false}>
+          <KhungBang rong={false} className="min-w-[38rem]">
             <HangTieuDe
               cot={[
                 "Tài khoản",
@@ -164,7 +164,7 @@ export default function TrangQuanTriVien() {
                     {gioVN(u.date_joined)}
                   </td>
                   <td className="relative px-3 py-2.5">
-                    <span className="flex flex-wrap gap-1 transition-opacity group-hover:opacity-0">
+                    <span className="flex flex-wrap gap-1 transition-opacity md:group-hover:opacity-0">
                       {u.dang_bi_ban && (
                         <NhanTrangThai tone="xau">
                           {u.ban_permanent ? "ban vĩnh viễn" : "ban tạm"}
@@ -185,7 +185,7 @@ export default function TrangQuanTriVien() {
                     {mod.is_superuser &&
                       !u.is_superuser &&
                       u.username !== mod.username && (
-                        <div className="absolute inset-y-0 right-2 flex items-center justify-end opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-10">
+                        <div className="mt-1.5 flex items-center justify-end md:mt-0 md:absolute md:inset-y-0 md:right-2 md:opacity-0 md:pointer-events-none md:group-hover:opacity-100 md:group-hover:pointer-events-auto transition-opacity z-10">
                           <span className="flex flex-nowrap items-center gap-1 bg-nen border border-vien shadow-md rounded-lg p-1">
                             <button
                               type="button"
