@@ -35,6 +35,7 @@ import { GOC_API, headerGhi, moTaLoi } from "../../../lib/api";
 import { useHanhDong } from "../../../lib/hanh-dong";
 import { useQuanTri } from "../../../components/khung/ngu-canh";
 import { useTieuDeTrang } from "../../../lib/tieu-de";
+import { duongDanCongKhai } from "../../../lib/url";
 
 /** Số hàng mỗi trang. Một hằng cho CẢ HAI phía: `limit` gửi lên server và mẫu số để
  * `useDanhSach` chia ra `so_trang`. Hai con số này lệch nhau thì thanh phân trang báo
@@ -218,7 +219,7 @@ export default function TrangChiTietMach() {
             Hồ sơ tác giả
           </Link>
           <a
-            href={mach.duong_dan_cong_khai}
+            href={duongDanCongKhai(mach.duong_dan_cong_khai)}
             target="_blank"
             rel="noreferrer"
             className="nut"

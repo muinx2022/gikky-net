@@ -21,6 +21,7 @@ import {
 import { GOC_API, headerGhi, moTaLoi } from "../../../lib/api";
 import { useHanhDong } from "../../../lib/hanh-dong";
 import { useTieuDeTrang } from "../../../lib/tieu-de";
+import { duongDanCongKhai } from "../../../lib/url";
 
 /** Hồ sơ một tài khoản dưới góc nhìn mod, kèm nút ban/gỡ ban — PLAN 5.10, 9.3 mục 2. */
 export default function TrangChiTietNguoiDung() {
@@ -67,14 +68,26 @@ export default function TrangChiTietNguoiDung() {
 
   return (
     <>
-      <div className="mb-5">
-        <Link href="/users" className="mono text-xs text-nhan hover:underline">
-          ← Bảng tài khoản
-        </Link>
-        <h1 className="mt-1 text-2xl font-semibold">
-          {u.display_name || u.username}
-        </h1>
-        <p className="mono text-xs text-muc-mo">u/{u.username}</p>
+      <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <Link href="/users" className="mono text-xs text-nhan hover:underline">
+            ← Bảng tài khoản
+          </Link>
+          <h1 className="mt-1 text-2xl font-semibold">
+            {u.display_name || u.username}
+          </h1>
+          <p className="mono text-xs text-muc-mo">u/{u.username}</p>
+        </div>
+        <div>
+          <a
+            href={duongDanCongKhai(`/u/${u.username}`)}
+            target="_blank"
+            rel="noreferrer"
+            className="nut"
+          >
+            Mở trang công khai ↗
+          </a>
+        </div>
       </div>
 
       <HienLoi loi={loi_hanh_dong ?? loi} het_phien={het_phien} />

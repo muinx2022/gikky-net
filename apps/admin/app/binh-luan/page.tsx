@@ -29,6 +29,7 @@ import { GOC_API, MA_CHUA_DANG_NHAP, headerGhi, maLoi } from "../../lib/api";
 import { useDanhSach } from "../../lib/danh-sach";
 import { useHanhDong } from "../../lib/hanh-dong";
 import { locCanLam, tomTatHangLoat } from "../../lib/hang-loat";
+import { duongDanCongKhai } from "../../lib/url";
 
 /** Số hàng mỗi trang. Một hằng cho CẢ HAI phía: `limit` gửi lên server và mẫu số để
  * `useDanhSach` chia ra `so_trang`. Hai con số này lệch nhau thì thanh phân trang báo
@@ -379,7 +380,7 @@ function BangBinhLuan() {
                           <Icon ten={c.da_bi_an ? "hien" : "an"} className="size-4" />
                         </button>
                         <a
-                          href={c.duong_dan_cong_khai}
+                          href={duongDanCongKhai(c.duong_dan_cong_khai)}
                           target="_blank"
                           rel="noreferrer"
                           className="nut nut-nho shrink-0 px-1.5"

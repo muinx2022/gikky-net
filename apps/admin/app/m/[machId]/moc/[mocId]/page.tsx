@@ -24,6 +24,7 @@ import { GOC_API, headerGhi, moTaLoi } from "../../../../../lib/api";
 import { useHanhDong } from "../../../../../lib/hanh-dong";
 import { homNayVN } from "../../../../../lib/thoi-gian";
 import { useTieuDeTrang } from "../../../../../lib/tieu-de";
+import { duongDanCongKhai } from "../../../../../lib/url";
 
 /** Ba con số là **BẢN SAO** của `api/core/models/moc.py` + `api/api/schemas_ghi.py`.
  *
@@ -498,7 +499,7 @@ export default function TrangSuaMoc() {
               Huỷ
             </Link>
             <a
-              href={moc.duong_dan_cong_khai}
+              href={duongDanCongKhai(moc.duong_dan_cong_khai)}
               target="_blank"
               rel="noreferrer"
               className="nut"

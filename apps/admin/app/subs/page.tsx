@@ -28,6 +28,7 @@ import {
 } from "../../components/ui";
 import { GOC_API, headerGhi, moTaLoi } from "../../lib/api";
 import { useHanhDong } from "../../lib/hanh-dong";
+import { duongDanCongKhai } from "../../lib/url";
 
 /** CRUD chuyên mục — PLAN 9.3 mục 3.
  *
@@ -606,6 +607,16 @@ function DongSub({
             >
               <Icon ten="sua" className="size-4" />
             </button>
+            <a
+              href={duongDanCongKhai(`/s/${s.slug}`)}
+              target="_blank"
+              rel="noreferrer"
+              className="nut nut-nho p-1.5"
+              title="Mở trang công khai"
+              aria-label={`Mở trang công khai của s/${s.slug}`}
+            >
+              <Icon ten="mo-ngoai" className="size-4" />
+            </a>
             {/* **Luật ba đường** (L30, vá 2026-08-23): `disabled` chặn cú bấm · `title`
                 cho người rê chuột · `aria-label` cho trình đọc màn hình. */}
             <button

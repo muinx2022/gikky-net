@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import {
   quanTriSuaMoc,
@@ -14,6 +14,7 @@ import { useCallback, useEffect, useState } from "react";
 import { GOC_API, headerGhi, moTaLoi } from "../lib/api";
 import { useHanhDong } from "../lib/hanh-dong";
 import { homNayVN } from "../lib/thoi-gian";
+import { duongDanCongKhai } from "../lib/url";
 import { SoanThaoQuanTri } from "./soan-thao-quan-tri";
 import { HienLoi, NhanTrangThai, Skeleton, gioVN } from "./ui";
 
@@ -381,7 +382,7 @@ export function FormSuaMoc({
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-vien pt-4">
         <div>
           <a
-            href={moc.duong_dan_cong_khai}
+            href={duongDanCongKhai(moc.duong_dan_cong_khai)}
             target="_blank"
             rel="noreferrer"
             className="nut text-xs"

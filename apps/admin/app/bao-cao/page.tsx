@@ -38,6 +38,7 @@ import {
 import { GOC_API, headerGhi } from "../../lib/api";
 import { useDanhSach } from "../../lib/danh-sach";
 import { useHanhDong } from "../../lib/hanh-dong";
+import { duongDanCongKhai } from "../../lib/url";
 
 /** Số hàng mỗi trang. Một hằng cho CẢ HAI phía: `limit` gửi lên server và mẫu số để
  * `useDanhSach` chia ra `so_trang`. Hai con số này lệch nhau thì thanh phân trang báo
@@ -237,7 +238,7 @@ function Hang({
                   </Link>
                 )}
                 <a
-                  href={dich.duong_dan_cong_khai}
+                  href={duongDanCongKhai(dich.duong_dan_cong_khai)}
                   target="_blank"
                   rel="noreferrer"
                   className="text-nhan hover:underline"

@@ -26,10 +26,13 @@ import {
   TieuDeTrang,
   gioVN,
 } from "../../components/ui";
+import { FormDangBai } from "../../components/form-dang-bai";
+import { NganKeo } from "../../components/ngan-keo";
 import { GOC_API, MA_CHUA_DANG_NHAP, headerGhi, maLoi } from "../../lib/api";
 import { useDanhSach } from "../../lib/danh-sach";
 import { useHanhDong } from "../../lib/hanh-dong";
 import { locCanLam, tomTatHangLoat } from "../../lib/hang-loat";
+import { duongDanCongKhai } from "../../lib/url";
 
 /** Số hàng mỗi trang. Một hằng cho CẢ HAI phía: `limit` gửi lên server và mẫu số để
  * `useDanhSach` chia ra `so_trang`. Hai con số này lệch nhau thì thanh phân trang báo
@@ -124,6 +127,7 @@ function BangMach() {
   /** Câu tổng kết của lượt hàng loạt gần nhất, hoặc `null`. Sống tới lượt sau — xem
    * `ThanhHangLoat`. */
   const [tom_tat, datTomTat] = useState<string | null>(null);
+  const [mo_dang_bai, datMoDangBai] = useState(false);
 
   const nap = useCallback(
     (cursor: string | null) =>
@@ -276,13 +280,14 @@ function BangMach() {
         // khai `khop_tien_to`, nên một mục `/machs/moi` trong `NHOM_MENU` làm HAI mục sáng
         // cùng lúc. Muốn mục riêng thì phải đặt nó ngoài `/machs/`.
         hanh_dong={
-          <Link
-            href="/machs/moi"
+          <button
+            type="button"
             className="nut nut-chinh"
             data-testid="nut-toi-dang-bai"
+            onClick={() => datMoDangBai(true)}
           >
             Đăng bài
-          </Link>
+          </button>
         }
       />
       <HienLoi loi={loi_hanh_dong ?? ds.loi} het_phien={het_phien} />
@@ -565,7 +570,7 @@ function BangMach() {
                           />
                         </button>
                         <a
-                          href={m.duong_dan_cong_khai}
+                          href={duongDanCongKhai(m.duong_dan_cong_khai)}
                           target="_blank"
                           rel="noreferrer"
                           className="nut nut-nho shrink-0 px-1.5"
@@ -599,6 +604,24 @@ function BangMach() {
           ten_muc="bài"
         />
       </The>
+
+      <NganKeo
+        mo={mo_dang_bai}
+        dong={() => datMoDangBai(false)}
+        tieu_de="Đăng bài"
+        mo_ta="Soạn một bài mới thay mặt tài khoản đội. Đăng ngay, hoặc hẹn giờ phát hành."
+        rong="to"
+      >
+        {mo_dang_bai && (
+          <FormDangBai
+            dong={() => datMoDangBai(false)}
+            onThanhCong={() => {
+              datMoDangBai(false);
+              void ds.napLai();
+            }}
+          />
+        )}
+      </NganKeo>
     </>
   );
 }
