@@ -1,4 +1,4 @@
-import { docCacSub, docFeed } from "@/lib/api";
+import { docCacSub, docFeed, docFeedSub } from "@/lib/api";
 
 import css from "./khung-hai-cot.module.css";
 import { Sidebar } from "./sidebar";
@@ -18,11 +18,12 @@ import { Sidebar } from "./sidebar";
  * nhưng ba con số ở đó **phải khớp** với ba con số ở đây; xem chú thích trong
  * `khung-hai-cot.module.css`.
  *
- * ## Nó tự hỏi `GET /subs` và `GET /feeds/moi`
+ * ## Nó tự hỏi `GET /subs` và `GET /feeds/moi` (hoặc feed theo sub)
  *
- * `Sidebar` cần danh sách chuyên mục và các bài mới nhất. Bắt mỗi trang tự nạp rồi truyền
- * xuống là nhiều chỗ cùng làm một việc. Lời gọi đi song song và `docCacSub` đi qua data cache
- * của Next nên chi phí gần như không tốn gì — và **cấm gõ cứng slug** ở đây, đúng nợ `NAV-GHI-CUNG`.
+ * `Sidebar` cần danh sách chuyên mục và các bài mới nhất (hoặc bài mới cùng chuyên mục).
+ * Bắt mỗi trang tự nạp rồi truyền xuống là nhiều chỗ cùng làm một việc. Lời gọi đi song song
+ * và `docCacSub` đi qua data cache của Next nên chi phí gần như không tốn gì — và **cấm gõ cứng
+ * slug** ở đây, đúng nợ `NAV-GHI-CUNG`.
  *
  * ## `<main>` nằm ở ĐÂY, không ở trang con
  *
@@ -33,17 +34,23 @@ import { Sidebar } from "./sidebar";
 export async function KhungHaiCot({
   children,
   idMachHienTai,
+  subSlug,
 }: {
   children: React.ReactNode;
   idMachHienTai?: number;
+  subSlug?: string;
 }) {
   const [cac_sub, feed] = await Promise.all([
     docCacSub(),
-    docFeed("moi", { limit: 6 }),
+    subSlug
+      ? docFeedSub(subSlug, "moi", { limit: 6 })
+      : docFeed("moi", { limit: 6 }),
   ]);
-  const bai_moi = feed.du_lieu.items
+  const items = feed.du_lieu?.items ?? [];
+  const bai_moi = items
     .filter((m) => m.id !== idMachHienTai)
     .slice(0, 5);
+  const tieu_de = subSlug ? "Cùng chuyên mục" : "Bài mới nhất";
 
   return (
     <div className={css.khung}>
@@ -52,7 +59,7 @@ export async function KhungHaiCot({
           dính ở trang chủ mà KHÔNG dính ở các trang khác, tức lại một kiểu "nhảy nhót"
           nữa, chỉ là theo chiều dọc. */}
       <div className={css.rail}>
-        <Sidebar cacSub={cac_sub} baiMoi={bai_moi} />
+        <Sidebar cacSub={cac_sub} baiMoi={bai_moi} tieuDeBaiMoi={tieu_de} />
       </div>
     </div>
   );

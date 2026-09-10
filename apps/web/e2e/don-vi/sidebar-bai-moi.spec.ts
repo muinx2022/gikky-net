@@ -19,23 +19,25 @@ test.describe("sidebar-bai-moi", () => {
     expect(sach).not.toMatch(/\bfetch\s*\(/);
   });
 
-  test("Sidebar co khoi sidebar-bai-moi co dieu kien baiMoi.length > 0", () => {
+  test("Sidebar co khoi sidebar-bai-moi co dieu kien baiMoi.length > 0 va nhan tieuDeBaiMoi", () => {
     const sach = boChuThich(doc("components/sidebar.tsx"));
     expect(sach).toContain('data-testid="sidebar-bai-moi"');
     expect(sach).toMatch(/baiMoi\s*&&\s*baiMoi\.length\s*>\s*0/);
-    expect(sach).toContain("Bài mới nhất");
+    expect(sach).toContain("{tieuDeBaiMoi}");
   });
 
-  test("KhungHaiCot nap docFeed moi va loc bo idMachHienTai", () => {
+  test("KhungHaiCot ho tro subSlug: nap docFeedSub va dat tieu de 'Cung chuyen muc'", () => {
     const sach = boChuThich(doc("components/khung-hai-cot.tsx"));
-    expect(sach).toMatch(/docFeed\s*\(\s*["']moi["']/);
+    expect(sach).toMatch(/docFeedSub\s*\(\s*subSlug/);
+    expect(sach).toMatch(/subSlug\s*\?\s*["']Cùng chuyên mục["']\s*:\s*["']Bài mới nhất["']/);
     expect(sach).toMatch(/m\.id\s*!==\s*idMachHienTai/);
     expect(sach).toContain("baiMoi={bai_moi}");
+    expect(sach).toContain("tieuDeBaiMoi={tieu_de}");
   });
 
-  test("trang-mach truyen idMachHienTai={mach.id} vao KhungHaiCot", () => {
+  test("trang-mach truyen idMachHienTai={mach.id} va subSlug={mach.sub.slug} vao KhungHaiCot", () => {
     const sach = boChuThich(doc("components/trang-mach.tsx"));
-    expect(sach).toMatch(/<KhungHaiCot\s+idMachHienTai=\{mach\.id\}/);
+    expect(sach).toMatch(/<KhungHaiCot\s+idMachHienTai=\{mach\.id\}\s+subSlug=\{mach\.sub\.slug\}/);
   });
 
   test("Logic loc bai moi khong bao gio chua chinh bai dang xem", () => {

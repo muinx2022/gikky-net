@@ -35,6 +35,7 @@ export function Sidebar({
   sub,
   cacSub,
   baiMoi,
+  tieuDeBaiMoi = "Bài mới nhất",
 }: {
   /** Hai dòng giới thiệu — trang chủ dùng, trang sub thay bằng `mo_ta` của chính sub. */
   gioiThieu?: string;
@@ -45,6 +46,8 @@ export function Sidebar({
   cacSub: readonly SubChiTietOut[];
   /** Danh sách bài mới nhất; vắng mặt hoặc rỗng thì không render khối. */
   baiMoi?: readonly MachTomTatOut[];
+  /** Tiêu đề khối bài mới: "Bài mới nhất" hoặc "Cùng chuyên mục" (khi ở trang mạch). */
+  tieuDeBaiMoi?: string;
 }) {
   return (
     <aside className={css.cot} data-testid="sidebar">
@@ -106,7 +109,7 @@ export function Sidebar({
 
       {baiMoi && baiMoi.length > 0 && (
         <section className={css.khoi} data-testid="sidebar-bai-moi">
-          <h2 className={css.tieu_de}>Bài mới nhất</h2>
+          <h2 className={css.tieu_de}>{tieuDeBaiMoi}</h2>
           <ul className={css.danh_sach_bai_moi}>
             {baiMoi.map((m) => (
               <li key={m.id} className={css.muc_bai_moi}>
