@@ -4,6 +4,7 @@ import {
   quanTriDatAnMach,
   quanTriDatKhoaMach,
   quanTriLietKeMach,
+  quanTriSuaTieuDeMach,
   type MachDongOut,
   type QuanTriLietKeMachData,
 } from "@gikky/api-client/admin";
@@ -14,6 +15,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import { ONhoChon, ThanhHangLoat, useChonHang } from "../../components/hang-loat";
 import { Icon } from "../../components/icon";
 import { useQuanTri } from "../../components/khung/ngu-canh";
+import { HangNutForm, NganKeo } from "../../components/ngan-keo";
 import {
   HangTieuDe,
   HienLoi,
@@ -87,7 +89,22 @@ export default function TrangMach() {
 function BangMach() {
   const router = useRouter();
   const tham_so = useSearchParams();
-  const { lamMoi } = useQuanTri();
+  const { lamMoi, mod } = useQuanTri();
+
+  /** mach đang mở ngăn kéo SỬA, hoặc null */
+  const [mach_sua, datMachSua] = useState<MachDongOut | null>(null);
+  const [tieu_de, datTieuDe] = useState("");
+  const [ly_do, datLyDo] = useState("");
+
+  const moSua = (m: MachDongOut) => {
+    datMachSua(m);
+    datTieuDe(m.title);
+    datLyDo("");
+  };
+
+  const dongSua = useCallback(() => {
+    datMachSua(null);
+  }, []);
 
   const q = tham_so.get("q") ?? "";
   const sub = tham_so.get("sub") ?? "";
@@ -442,13 +459,22 @@ function BangMach() {
                     />
                   </td>
                   <td className="min-w-[240px] px-3 py-2.5">
-                    <Link
-                      href={`/m/${m.id}`}
-                      className="font-medium text-nhan hover:underline"
+                    <button
+                      type="button"
+                      onClick={() => moSua(m)}
+                      className="text-left font-medium text-nhan hover:underline block"
+                      data-testid={`tieu-de-mach-${m.id}`}
                     >
                       {m.title}
-                    </Link>
-                    <span className="mt-1 flex flex-wrap gap-1">
+                    </button>
+                    <span className="mt-1 flex flex-wrap items-center gap-1.5">
+                      <Link
+                        href={`/m/${m.id}`}
+                        className="mono text-xs text-muc-mo hover:underline hover:text-nhan"
+                        title="Xem trang chi tiết quản trị"
+                      >
+                        #{m.id}
+                      </Link>
                       {m.da_hen_gio && (
                         <NhanTrangThai tone="chu-y">đã hẹn giờ</NhanTrangThai>
                       )}
@@ -507,6 +533,17 @@ function BangMach() {
                     {/* Floating action overlay khi di chuột lên dòng */}
                     <div className="absolute inset-y-0 right-2 flex items-center justify-end opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-10">
                       <span className="flex flex-nowrap items-center gap-1 bg-nen border border-vien shadow-md rounded-lg p-1">
+                        <button
+                          type="button"
+                          className="nut nut-nho shrink-0 px-1.5"
+                          disabled={dang_chay}
+                          data-testid={`nut-sua-${m.id}`}
+                          title="Sửa bài viết"
+                          aria-label={`Sửa bài viết: ${m.title}`}
+                          onClick={() => moSua(m)}
+                        >
+                          <Icon ten="sua" className="size-4" />
+                        </button>
                         <button
                           type="button"
                           className="nut nut-nho shrink-0 px-1.5"
@@ -599,6 +636,146 @@ function BangMach() {
           ten_muc="bài"
         />
       </The>
+
+      <NganKeo
+        mo={mach_sua !== null}
+        dong={dongSua}
+        tieu_de={mach_sua !== null ? `Sửa bài #${mach_sua.id}` : ""}
+        mo_ta="Đổi tiêu đề bài viết. Đổi tiêu đề sẽ đổi cả slug công khai, URL cũ vẫn chuyển hướng 308 bình thường."
+      >
+        {mach_sua !== null && (
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!mod.is_superuser || mach_sua.da_khoa) return;
+              void chay(async () => {
+                const ket_qua = await quanTriSuaTieuDeMach({
+                  baseUrl: GOC_API,
+                  headers: headerGhi(),
+                  path: { mach_id: mach_sua.id },
+                  body: { title: tieu_de.trim(), ly_do: ly_do.trim() },
+                });
+                if (ket_qua.error === undefined) {
+                  dongSua();
+                }
+                return ket_qua;
+              });
+            }}
+          >
+            <div className="space-y-1">
+              <span className="block text-xs font-medium text-muc-mo uppercase tracking-wider">
+                Chuyên mục & Tác giả
+              </span>
+              <p className="text-sm">
+                <Link
+                  href={`/machs?sub=${mach_sua.sub_slug}`}
+                  className="font-mono text-nhan hover:underline"
+                >
+                  s/{mach_sua.sub_slug}
+                </Link>
+                <span className="text-muc-mo mx-1.5">·</span>
+                <Link
+                  href={`/u/${mach_sua.tac_gia.username}`}
+                  className="font-mono text-nhan hover:underline"
+                >
+                  u/{mach_sua.tac_gia.username}
+                </Link>
+                {mach_sua.tac_gia.display_name && (
+                  <span className="text-muc-mo ml-1">
+                    ({mach_sua.tac_gia.display_name})
+                  </span>
+                )}
+              </p>
+            </div>
+
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium">
+                Tiêu đề <span className="text-xau">*</span>
+              </span>
+              <input
+                className="o-nhap"
+                value={tieu_de}
+                onChange={(e) => datTieuDe(e.target.value)}
+                required
+                maxLength={160}
+                disabled={dang_chay || !mod.is_superuser || mach_sua.da_khoa}
+                data-testid="o-sua-tieu-de-mach"
+                autoFocus
+              />
+              {!mod.is_superuser && (
+                <span className="mt-1 block text-xs text-muc-mo">
+                  Chỉ superuser mới có quyền sửa tiêu đề bài viết.
+                </span>
+              )}
+              {mach_sua.da_khoa && (
+                <span className="mt-1 block text-xs text-xau">
+                  Mạch đang bị khoá. Cần mở khoá trước khi sửa tiêu đề.
+                </span>
+              )}
+            </label>
+
+            <label className="block text-sm">
+              <span className="mb-1 block text-muc-mo">
+                Lý do sửa <span className="text-xs">(tuỳ chọn — ghi vào nhật ký)</span>
+              </span>
+              <input
+                className="o-nhap"
+                value={ly_do}
+                onChange={(e) => datLyDo(e.target.value)}
+                placeholder="Ví dụ: Sửa chính tả, cập nhật thông tin..."
+                disabled={dang_chay || !mod.is_superuser || mach_sua.da_khoa}
+                data-testid="o-ly-do-sua-mach"
+              />
+            </label>
+
+            <div className="rounded-lg border border-vien p-3 bg-nen-mo/30 space-y-2 text-xs">
+              <div className="flex justify-between text-muc-mo">
+                <span>Số mốc:</span>
+                <span className="font-mono font-medium text-chu">{mach_sua.entry_count}</span>
+              </div>
+              <div className="flex justify-between text-muc-mo">
+                <span>Bình luận:</span>
+                <span className="font-mono font-medium text-chu">{mach_sua.comment_count}</span>
+              </div>
+              <div className="flex justify-between text-muc-mo">
+                <span>Điểm:</span>
+                <span className="font-mono font-medium text-chu">{mach_sua.diem}</span>
+              </div>
+              <div className="flex justify-between text-muc-mo">
+                <span>Phát hành:</span>
+                <span className="font-mono text-chu">{gioVN(mach_sua.published_at)}</span>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-vien flex flex-col gap-2">
+              <Link
+                href={`/m/${mach_sua.id}`}
+                className="nut text-sm text-center flex items-center justify-center gap-1.5"
+                onClick={dongSua}
+              >
+                <span>Xem chi tiết các mốc & bình luận</span>
+                <span>→</span>
+              </Link>
+              <a
+                href={mach_sua.duong_dan_cong_khai}
+                target="_blank"
+                rel="noreferrer"
+                className="nut text-sm text-center flex items-center justify-center gap-1.5"
+              >
+                <span>Mở bài viết công khai</span>
+                <span>↗</span>
+              </a>
+            </div>
+
+            <HangNutForm
+              dong={dongSua}
+              nhan_chinh="Lưu"
+              dang_chay={dang_chay || !mod.is_superuser || mach_sua.da_khoa}
+            />
+          </form>
+        )}
+      </NganKeo>
     </>
   );
 }
