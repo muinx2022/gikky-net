@@ -97,3 +97,68 @@
   font-size: 12.5px;
   color: var(--ink-2);
 }
+
+.danh_sach_bai_moi {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.muc_bai_moi {
+  margin: 0;
+  padding: 0;
+}
+
+.link_bai_moi {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 8px;
+  margin: 0 -8px;
+  border-radius: 6px;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.12s ease;
+}
+
+.link_bai_moi:hover {
+  background: var(--surface-2);
+}
+
+.link_bai_moi:hover .tieu_de_bai_moi {
+  color: var(--accent);
+}
+
+.tieu_de_bai_moi {
+  font-size: 13px;
+  line-height: 1.45;
+  font-weight: 500;
+  color: var(--ink-1);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.meta_bai_moi {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  font-size: 11.5px;
+  color: var(--ink-3);
+  line-height: 1.3;
+}
+
+.slug_bai_moi {
+  color: var(--accent);
+  font-size: 11.5px;
+}
+
+.cham_phan_cach {
+  color: var(--ink-3);
+  user-select: none;
+}

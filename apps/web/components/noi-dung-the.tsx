@@ -77,11 +77,15 @@ export function NoiDungThe({
             src={xem_truoc.anh.url_thumb}
             width={xem_truoc.anh.w_thumb ?? undefined}
             height={xem_truoc.anh.h_thumb ?? undefined}
-            style={{
-              width: "100%",
-              maxWidth: "100%",
-              height: "auto",
-            }}
+            style={
+              xem_truoc.anh.w_thumb != null
+                ? {
+                    width: xem_truoc.anh.w_thumb,
+                    maxWidth: "100%",
+                    height: "auto",
+                  }
+                : undefined
+            }
             alt=""
             loading="lazy"
             decoding="async"

@@ -1,16 +1,16 @@
-import type { SubChiTietOut } from "@gikky/api-client";
+import type { MachTomTatOut, SubChiTietOut } from "@gikky/api-client";
 import Link from "next/link";
 
 import { dongSoMachSub } from "@/lib/dinh-dang";
 import { DIEU_CAM } from "@/lib/phap-ly";
-import { duongDanSub } from "@/lib/url";
+import { duongDanMach, duongDanSub } from "@/lib/url";
 
 import { ChanTrang } from "./chan-trang";
 import css from "./sidebar.module.css";
 
 /** Sidebar phải — bố cục Reddit (plan con 1d §2.5.2 và §2.5.3).
  *
- * Ba khối, và **không có khối thứ tư**:
+ * Các khối:
  *
  * 1. giới thiệu (trang chủ) hoặc mô tả sub + số mạch + ngày lập (trang sub);
  * 2. luật rút gọn dẫn `/luat` — PLAN 5.10 bắt mọi trang công khai phải có đường tới đó,
@@ -19,6 +19,8 @@ import css from "./sidebar.module.css";
  *    tiêu đề "Chuyên mục" mà không có chuyên mục nào là biển chỉ đường chết: nó chiếm chỗ
  *    và hứa một lối đi không tồn tại. Đây cũng là điều kiện để `KhungHaiCotTinh` dùng lại
  *    đúng `Sidebar` này với `cacSub={[]}` thay vì chế một sidebar thứ hai.
+ * 4. bài mới nhất — **vắng mặt hẳn khi `baiMoi` rỗng** *(2026-09-10)*. Lấp khoảng trống
+ *    ở rail phải khi xem trang chi tiết mạch `/m/[slugId]` và các trang dùng `KhungHaiCot`.
  *
  * **KHÔNG có nút "Tham gia sub"** — PLAN mục 4 loại nó khỏi v1 *(chốt 2026-08-22)* kèm
  * lý do "một cái nút vĩnh viễn không bấm được còn tệ hơn không có nút". Đây là chỗ nó sẽ
@@ -32,6 +34,7 @@ export function Sidebar({
   gioiThieu,
   sub,
   cacSub,
+  baiMoi,
 }: {
   /** Hai dòng giới thiệu — trang chủ dùng, trang sub thay bằng `mo_ta` của chính sub. */
   gioiThieu?: string;
@@ -40,6 +43,8 @@ export function Sidebar({
   /** Các chuyên mục để nhảy sang. Trang sub vẫn liệt kê cả chính nó — nó là bản đồ, và
    * một bản đồ thiếu chỗ mình đang đứng thì khó đọc hơn. */
   cacSub: readonly SubChiTietOut[];
+  /** Danh sách bài mới nhất; vắng mặt hoặc rỗng thì không render khối. */
+  baiMoi?: readonly MachTomTatOut[];
 }) {
   return (
     <aside className={css.cot} data-testid="sidebar">
@@ -92,6 +97,40 @@ export function Sidebar({
                 <Link className={css.mot_sub} href={duongDanSub(s.slug)} prefetch={false}>
                   <span className={`${css.slug} mono`}>s/{s.slug}</span>
                   <span className={css.ten_sub}>{s.ten}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {baiMoi && baiMoi.length > 0 && (
+        <section className={css.khoi} data-testid="sidebar-bai-moi">
+          <h2 className={css.tieu_de}>Bài mới nhất</h2>
+          <ul className={css.danh_sach_bai_moi}>
+            {baiMoi.map((m) => (
+              <li key={m.id} className={css.muc_bai_moi}>
+                <Link
+                  className={css.link_bai_moi}
+                  href={duongDanMach(m.slug, m.id)}
+                  prefetch={false}
+                >
+                  <span className={css.tieu_de_bai_moi}>{m.title}</span>
+                  <span className={css.meta_bai_moi}>
+                    <span className={`${css.slug_bai_moi} mono`}>s/{m.sub.slug}</span>
+                    {m.entry_count > 1 && (
+                      <>
+                        <span className={css.cham_phan_cach}>·</span>
+                        <span>{m.entry_count} mốc</span>
+                      </>
+                    )}
+                    {m.comment_count > 0 && (
+                      <>
+                        <span className={css.cham_phan_cach}>·</span>
+                        <span>{m.comment_count} bình luận</span>
+                      </>
+                    )}
+                  </span>
                 </Link>
               </li>
             ))}

@@ -296,7 +296,7 @@ export async function TrangMach({
   };
 
   return (
-    <KhungHaiCot>
+    <KhungHaiCot idMachHienTai={mach.id}>
       <JsonLd duLieu={jsonLdMach(mach)} />
       {/* Ba sự thật về mạch, chia cho mọi widget CLIENT nằm sâu bên trong (cột vote,
           composer, menu `⋯`). Provider là client component nhưng children của nó vẫn là

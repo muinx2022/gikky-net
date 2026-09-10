@@ -1,4 +1,4 @@
-import { docCacSub } from "@/lib/api";
+import { docCacSub, docFeed } from "@/lib/api";
 
 import css from "./khung-hai-cot.module.css";
 import { Sidebar } from "./sidebar";
@@ -18,11 +18,11 @@ import { Sidebar } from "./sidebar";
  * nhưng ba con số ở đó **phải khớp** với ba con số ở đây; xem chú thích trong
  * `khung-hai-cot.module.css`.
  *
- * ## Nó tự hỏi `GET /subs`
+ * ## Nó tự hỏi `GET /subs` và `GET /feeds/moi`
  *
- * `Sidebar` cần danh sách chuyên mục, và bắt mỗi trang tự nạp rồi truyền xuống là bốn chỗ
- * cùng làm một việc. `docCacSub` đi qua data cache của Next nên lời gọi thêm này gần như
- * không tốn gì — và **cấm gõ cứng slug** ở đây, đúng nợ `NAV-GHI-CUNG`.
+ * `Sidebar` cần danh sách chuyên mục và các bài mới nhất. Bắt mỗi trang tự nạp rồi truyền
+ * xuống là nhiều chỗ cùng làm một việc. Lời gọi đi song song và `docCacSub` đi qua data cache
+ * của Next nên chi phí gần như không tốn gì — và **cấm gõ cứng slug** ở đây, đúng nợ `NAV-GHI-CUNG`.
  *
  * ## `<main>` nằm ở ĐÂY, không ở trang con
  *
@@ -30,8 +30,21 @@ import { Sidebar } from "./sidebar";
  * `<main>` — HTML sai và trình đọc màn hình mất mốc điều hướng. Nên trang con nay trả về
  * **nội dung trần**, khung này lo thẻ `<main>`.
  */
-export async function KhungHaiCot({ children }: { children: React.ReactNode }) {
-  const cac_sub = await docCacSub();
+export async function KhungHaiCot({
+  children,
+  idMachHienTai,
+}: {
+  children: React.ReactNode;
+  idMachHienTai?: number;
+}) {
+  const [cac_sub, feed] = await Promise.all([
+    docCacSub(),
+    docFeed("moi", { limit: 6 }),
+  ]);
+  const bai_moi = feed.du_lieu.items
+    .filter((m) => m.id !== idMachHienTai)
+    .slice(0, 5);
+
   return (
     <div className={css.khung}>
       <main className={css.chinh}>{children}</main>
@@ -39,7 +52,7 @@ export async function KhungHaiCot({ children }: { children: React.ReactNode }) {
           dính ở trang chủ mà KHÔNG dính ở các trang khác, tức lại một kiểu "nhảy nhót"
           nữa, chỉ là theo chiều dọc. */}
       <div className={css.rail}>
-        <Sidebar cacSub={cac_sub} />
+        <Sidebar cacSub={cac_sub} baiMoi={bai_moi} />
       </div>
     </div>
   );
