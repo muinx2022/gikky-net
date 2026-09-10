@@ -421,9 +421,7 @@ function BangMach() {
                 "Bài viết",
                 "Chuyên mục",
                 "Tác giả",
-                "Số mốc",
-                "Bình luận",
-                "Điểm",
+                "Chỉ số",
                 "Phát hành",
                 "",
               ]}
@@ -435,7 +433,7 @@ function BangMach() {
                   className="border-b border-vien last:border-0 hover:bg-nen-mo/50"
                   data-testid={`hang-mach-${m.id}`}
                 >
-                  <td className="px-3 py-2.5">
+                  <td className="w-10 px-3 py-2.5">
                     <ONhoChon
                       chon={chon.da_chon.has(m.id)}
                       doi={(v) => chon.doi(m.id, v)}
@@ -444,7 +442,7 @@ function BangMach() {
                       testid={`chon-mach-${m.id}`}
                     />
                   </td>
-                  <td className="max-w-md px-3 py-2.5">
+                  <td className="min-w-[280px] px-3 py-2.5">
                     <Link
                       href={`/m/${m.id}`}
                       className="font-medium text-nhan hover:underline"
@@ -464,7 +462,7 @@ function BangMach() {
                       )}
                     </span>
                   </td>
-                  <td className="mono px-3 py-2.5 text-xs">
+                  <td className="mono px-3 py-2.5 text-xs whitespace-nowrap">
                     <Link
                       href={`/machs?sub=${m.sub_slug}`}
                       className="hover:underline"
@@ -472,7 +470,7 @@ function BangMach() {
                       s/{m.sub_slug}
                     </Link>
                   </td>
-                  <td className="mono px-3 py-2.5 text-xs">
+                  <td className="mono px-3 py-2.5 text-xs whitespace-nowrap">
                     <Link
                       href={`/u/${m.tac_gia.username}`}
                       className="hover:underline"
@@ -480,13 +478,29 @@ function BangMach() {
                       u/{m.tac_gia.username}
                     </Link>
                   </td>
-                  <td className="mono px-3 py-2.5">{m.entry_count}</td>
-                  <td className="mono px-3 py-2.5">{m.comment_count}</td>
-                  <td className="mono px-3 py-2.5">{m.diem}</td>
-                  <td className="mono px-3 py-2.5 text-xs text-muc-mo">
+                  <td
+                    className="mono px-3 py-2.5 text-xs whitespace-nowrap text-muc-mo"
+                    data-testid={`chi-so-mach-${m.id}`}
+                  >
+                    <span title="Số mốc">
+                      <span className="font-medium text-chu">{m.entry_count}</span>{" "}
+                      mốc
+                    </span>
+                    <span className="mx-1.5 opacity-40">·</span>
+                    <span title="Số bình luận">
+                      <span className="font-medium text-chu">{m.comment_count}</span>{" "}
+                      bình luận
+                    </span>
+                    <span className="mx-1.5 opacity-40">·</span>
+                    <span title="Điểm">
+                      <span className="font-medium text-chu">{m.diem}</span>{" "}
+                      điểm
+                    </span>
+                  </td>
+                  <td className="mono px-3 py-2.5 text-xs whitespace-nowrap text-muc-mo">
                     {gioVN(m.published_at)}
                   </td>
-                  <td className="px-3 py-2.5">
+                  <td className="w-px px-3 py-2.5 whitespace-nowrap">
                     {/* Ba icon MỘT HÀNG (user chốt 2026-08-24). `flex-nowrap` + `shrink-0`
                         là cặp không tách được: bỏ `flex-nowrap` thì cột hẹp lại đẩy nút
                         thứ ba xuống dòng; bỏ `shrink-0` thì ba nút co lại chồng lên nhau.
