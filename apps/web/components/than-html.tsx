@@ -1,19 +1,11 @@
 "use client";
 
+import { phanTramChieuRongAnh } from "@/lib/anh";
 import { CHU_NGUOI_DUNG } from "@/lib/chu-nguoi-dung";
 
 import { useLightbox } from "./lightbox";
 import css from "./than-html.module.css";
 import { ThanVan } from "./than-van";
-
-/** Băm chuỗi URL thành số nguyên không âm ổn định (deterministic). */
-function bamUrl(str: string): number {
-  let h = 5381;
-  for (let i = 0; i < str.length; i++) {
-    h = ((h << 5) + h) ^ str.charCodeAt(i);
-  }
-  return Math.abs(h);
-}
 
 /** Tự động phân bổ chiều rộng ngẫu nhiên (72% – 92%) cho các ảnh minh hoạ
  * để tránh cảm giác bằng phẳng, rập khuôn 100% cột nội dung.
@@ -25,7 +17,7 @@ function phanBoKichThuocAnh(html: string): string {
     if (/\b(?:width|style)\s*=/i.test(thuocTinh)) return khop;
     const khopSrc = thuocTinh.match(/src="([^"]+)"/i);
     const src = khopSrc ? khopSrc[1] : thuocTinh;
-    const phanTram = (bamUrl(src) % 21) + 72; // 72% – 92%
+    const phanTram = phanTramChieuRongAnh(src);
     return `<img${thuocTinh} style="width: ${phanTram}%">`;
   });
 }
