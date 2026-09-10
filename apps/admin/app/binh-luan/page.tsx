@@ -11,6 +11,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
 
 import { ONhoChon, ThanhHangLoat, useChonHang } from "../../components/hang-loat";
+import { Icon } from "../../components/icon";
 import { useQuanTri } from "../../components/khung/ngu-canh";
 import {
   HangTieuDe,
@@ -286,7 +287,7 @@ function BangBinhLuan() {
         ) : ds.items.length === 0 ? (
           <KhoiRong co_bo_loc={co_bo_loc} chua_co="Chưa có bình luận nào." />
         ) : (
-          <KhungBang>
+          <KhungBang rong={false}>
             <HangTieuDe
               cot={[
                 <ONhoChon
@@ -304,17 +305,16 @@ function BangBinhLuan() {
                 "Bài viết",
                 "Điểm",
                 "Lúc",
-                "",
               ]}
             />
             <tbody>
               {ds.items.map((c) => (
                 <tr
                   key={c.id}
-                  className="border-b border-vien last:border-0 hover:bg-nen-mo/50"
+                  className="group relative border-b border-vien last:border-0 hover:bg-nen-mo/50"
                   data-testid={`hang-binh-luan-${c.id}`}
                 >
-                  <td className="px-3 py-2.5">
+                  <td className="w-10 px-3 py-2.5">
                     <ONhoChon
                       chon={chon.da_chon.has(c.id)}
                       doi={(v) => chon.doi(c.id, v)}
@@ -330,7 +330,7 @@ function BangBinhLuan() {
                       {c.da_xoa && <NhanTrangThai tone="chu-y">bia mộ</NhanTrangThai>}
                     </span>
                   </td>
-                  <td className="mono px-3 py-2.5 text-xs">
+                  <td className="mono px-3 py-2.5 text-xs whitespace-nowrap">
                     <Link
                       href={`/u/${c.tac_gia.username}`}
                       className="hover:underline"
@@ -346,45 +346,50 @@ function BangBinhLuan() {
                       {c.mach_title}
                     </Link>
                   </td>
-                  <td className="mono px-3 py-2.5">{c.score}</td>
-                  <td className="mono px-3 py-2.5 text-xs text-muc-mo">
-                    {gioVN(c.created_at)}
-                  </td>
-                  <td className="px-3 py-2.5">
-                    <span className="flex justify-end gap-1.5">
-                      <button
-                        type="button"
-                        className="nut nut-nho"
-                        disabled={dang_chay}
-                        data-testid={`nut-an-binh-luan-${c.id}`}
-                        onClick={() =>
-                          chay(() =>
-                            quanTriDatAnBinhLuan({
-                              baseUrl: GOC_API,
-                              headers: headerGhi(),
-                              path: { comment_id: c.id },
-                              body: { an: !c.da_bi_an, ly_do: "" },
-                            }),
-                          )
-                        }
-                      >
-                        {c.da_bi_an ? "Gỡ ẩn" : "Ẩn"}
-                      </button>
-                      {/* **Luật ba đường** (L30): mũi tên `↗` một mình đọc lên thành
-                          "liên kết, mũi tên đông bắc" — đúng ký tự, không có thông tin
-                          nào. `title` cho người rê chuột, `aria-label` kèm trích yếu cho
-                          trình đọc màn hình. Cùng mẫu với `/machs`. */}
-                      <a
-                        href={c.duong_dan_cong_khai}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="nut nut-nho"
-                        title="Mở trang công khai"
-                        aria-label={`Mở trang công khai của bình luận: ${c.trich_yeu}`}
-                      >
-                        ↗
-                      </a>
+                  <td className="mono px-3 py-2.5 text-xs whitespace-nowrap">{c.score}</td>
+                  <td className="relative mono px-3 py-2.5 text-xs whitespace-nowrap text-muc-mo text-right">
+                    <span className="transition-opacity group-hover:opacity-0">
+                      {gioVN(c.created_at)}
                     </span>
+                    {/* Floating action overlay khi hover */}
+                    <div className="absolute inset-y-0 right-2 flex items-center justify-end opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-10">
+                      <span className="flex flex-nowrap items-center gap-1 bg-nen border border-vien shadow-md rounded-lg p-1">
+                        <button
+                          type="button"
+                          className="nut nut-nho shrink-0 px-1.5"
+                          disabled={dang_chay}
+                          data-testid={`nut-an-binh-luan-${c.id}`}
+                          title={c.da_bi_an ? "Gỡ ẩn" : "Ẩn"}
+                          aria-label={
+                            c.da_bi_an
+                              ? `Gỡ ẩn bình luận: ${c.trich_yeu}`
+                              : `Ẩn bình luận: ${c.trich_yeu}`
+                          }
+                          onClick={() =>
+                            chay(() =>
+                              quanTriDatAnBinhLuan({
+                                baseUrl: GOC_API,
+                                headers: headerGhi(),
+                                path: { comment_id: c.id },
+                                body: { an: !c.da_bi_an, ly_do: "" },
+                              }),
+                            )
+                          }
+                        >
+                          <Icon ten={c.da_bi_an ? "hien" : "an"} className="size-4" />
+                        </button>
+                        <a
+                          href={c.duong_dan_cong_khai}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="nut nut-nho shrink-0 px-1.5"
+                          title="Mở trang công khai"
+                          aria-label={`Mở trang công khai của bình luận: ${c.trich_yeu}`}
+                        >
+                          <Icon ten="mo-ngoai" className="size-4" />
+                        </a>
+                      </span>
+                    </div>
                   </td>
                 </tr>
               ))}

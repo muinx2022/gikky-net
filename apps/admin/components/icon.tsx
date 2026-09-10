@@ -28,7 +28,13 @@ export type TenIcon =
   | "khoa"
   | "mo-khoa"
   | "cai-dat"
-  | "ty-gia";
+  | "ty-gia"
+  | "sua"
+  | "xoa"
+  | "ban"
+  | "go-ban"
+  | "mod"
+  | "thu-quyen";
 
 const DUONG: Record<TenIcon, React.ReactNode> = {
   "bang-dieu-khien": (
@@ -130,6 +136,44 @@ const DUONG: Record<TenIcon, React.ReactNode> = {
   "ty-gia": (
     <>
       <path d="M4 8h13l-3-3M20 16H7l3 3" />
+    </>
+  ),
+  sua: (
+    <>
+      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+      <path d="m15 5 4 4" />
+    </>
+  ),
+  xoa: (
+    <>
+      <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+      <path d="M10 11v6M14 11v6" />
+    </>
+  ),
+  ban: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="m5.5 5.5 13 13" />
+    </>
+  ),
+  "go-ban": (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="m9 12 2 2 4-4" />
+    </>
+  ),
+  mod: (
+    <>
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M19 8v6M22 11h-6" />
+    </>
+  ),
+  "thu-quyen": (
+    <>
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M17 11h5" />
     </>
   ),
 };

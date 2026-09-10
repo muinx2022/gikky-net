@@ -13,6 +13,7 @@ import {
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { Icon } from "../../components/icon";
 import { HangNutForm, NganKeo } from "../../components/ngan-keo";
 import { OGoiYUser } from "../../components/o-goi-y-user";
 import {
@@ -216,8 +217,8 @@ export default function TrangSub() {
         {subs === null ? (
           <Skeleton dong={4} />
         ) : (
-          <KhungBang>
-            <HangTieuDe cot={["", "slug", "Tên", "Mô tả", "Mod", "Số bài", "Lập", ""]} />
+          <KhungBang rong={false}>
+            <HangTieuDe cot={["", "slug", "Tên", "Mô tả", "Mod", "Số bài", "Lập"]} />
             <tbody>
               {subs.map((s) => (
                 <DongSub
@@ -531,7 +532,7 @@ function DongSub({
         e.preventDefault();
         tha();
       }}
-      className={`border-b border-vien last:border-0 ${
+      className={`group relative border-b border-vien last:border-0 ${
         dang_keo ? "opacity-50" : ""
       } ${de_len ? "bg-nhan-mo" : "hover:bg-nen-mo/50"}`}
       data-testid={`hang-sub-${s.slug}`}
@@ -579,48 +580,51 @@ function DongSub({
         )}
       </td>
       <td className="mono px-3 py-2.5">{s.so_mach}</td>
-      <td className="mono px-3 py-2.5 text-xs whitespace-nowrap text-muc-mo">
-        {gioVN(s.created_at)}
-      </td>
-      <td className="px-3 py-2.5">
-        <span className="flex justify-end gap-1.5">
-          <button
-            type="button"
-            className="nut nut-nho"
-            onClick={moMod}
-            data-testid={`nut-mod-${s.slug}`}
-          >
-            Mod
-          </button>
-          <button
-            type="button"
-            className="nut nut-nho"
-            onClick={moSua}
-            data-testid={`nut-sua-${s.slug}`}
-          >
-            Sửa
-          </button>
-          {/* **Luật ba đường** (L30, vá 2026-08-23): `disabled` chặn cú bấm · `title`
-              cho người rê chuột · `aria-label` cho trình đọc màn hình. Đường thứ ba hay
-              bị quên nhất, và nó là đường duy nhất của người không nhìn thấy: `title`
-              một mình thì phần lớn trình đọc màn hình bỏ qua, nên nút chỉ đọc thành
-              "Xoá, không dùng được" — đúng, và không nói được VÌ SAO. */}
-          <button
-            type="button"
-            className="nut nut-nho"
-            disabled={dang_chay || s.so_mach > 0}
-            title={s.so_mach > 0 ? "Sub còn mạch — chuyển hoặc xoá chúng trước." : ""}
-            aria-label={
-              s.so_mach > 0
-                ? `Xoá s/${s.slug} — không xoá được: sub còn ${s.so_mach} mạch`
-                : `Xoá s/${s.slug}`
-            }
-            onClick={moXoa}
-            data-testid={`nut-xoa-${s.slug}`}
-          >
-            Xoá
-          </button>
+      <td className="relative mono px-3 py-2.5 text-xs whitespace-nowrap text-muc-mo text-right">
+        <span className="transition-opacity group-hover:opacity-0">
+          {gioVN(s.created_at)}
         </span>
+        <div className="absolute inset-y-0 right-2 flex items-center justify-end opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-10">
+          <span className="flex flex-nowrap items-center gap-1 bg-nen border border-vien shadow-md rounded-lg p-1">
+            <button
+              type="button"
+              className="nut nut-nho p-1.5"
+              onClick={moMod}
+              aria-label={`Phân công mod cho s/${s.slug}`}
+              title="Phân công mod"
+              data-testid={`nut-mod-${s.slug}`}
+            >
+              <Icon ten="mod" className="size-4" />
+            </button>
+            <button
+              type="button"
+              className="nut nut-nho p-1.5"
+              onClick={moSua}
+              aria-label={`Sửa s/${s.slug}`}
+              title="Sửa chuyên mục"
+              data-testid={`nut-sua-${s.slug}`}
+            >
+              <Icon ten="sua" className="size-4" />
+            </button>
+            {/* **Luật ba đường** (L30, vá 2026-08-23): `disabled` chặn cú bấm · `title`
+                cho người rê chuột · `aria-label` cho trình đọc màn hình. */}
+            <button
+              type="button"
+              className="nut nut-nho p-1.5 text-xau hover:bg-xau/10"
+              disabled={dang_chay || s.so_mach > 0}
+              title={s.so_mach > 0 ? "Sub còn mạch — chuyển hoặc xoá chúng trước." : "Xoá chuyên mục"}
+              aria-label={
+                s.so_mach > 0
+                  ? `Xoá s/${s.slug} — không xoá được: sub còn ${s.so_mach} mạch`
+                  : `Xoá s/${s.slug}`
+              }
+              onClick={moXoa}
+              data-testid={`nut-xoa-${s.slug}`}
+            >
+              <Icon ten="xoa" className="size-4" />
+            </button>
+          </span>
+        </div>
       </td>
     </tr>
   );

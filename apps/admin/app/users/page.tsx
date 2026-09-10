@@ -12,6 +12,7 @@ import { Fragment, useCallback, useState } from "react";
 import { FormBan } from "../../components/form-ban";
 import { FormSuaUser } from "../../components/form-sua-user";
 import { FormTaoUser } from "../../components/form-tao-user";
+import { Icon } from "../../components/icon";
 import { NganKeo } from "../../components/ngan-keo";
 import { useQuanTri } from "../../components/khung/ngu-canh";
 import {
@@ -218,7 +219,7 @@ export default function TrangNguoiDung() {
         ) : ds.items.length === 0 ? (
           <KhoiRong co_bo_loc={co_bo_loc} chua_co="Chưa có tài khoản nào." />
         ) : (
-          <KhungBang>
+          <KhungBang rong={false}>
             <HangTieuDe
               cot={[
                 "Tài khoản",
@@ -227,14 +228,13 @@ export default function TrangNguoiDung() {
                 "Bình luận",
                 "Tham gia",
                 "Trạng thái",
-                "",
               ]}
             />
             <tbody>
               {ds.items.map((u) => (
                 <Fragment key={u.username}>
                   <tr
-                    className="border-b border-vien hover:bg-nen-mo/50"
+                    className="group relative border-b border-vien hover:bg-nen-mo/50"
                     data-testid={`hang-user-${u.username}`}
                   >
                     <td className="px-3 py-2.5">
@@ -270,8 +270,8 @@ export default function TrangNguoiDung() {
                     <td className="mono px-3 py-2.5 text-xs text-muc-mo">
                       {gioVN(u.date_joined)}
                     </td>
-                    <td className="px-3 py-2.5">
-                      <span className="flex flex-wrap gap-1">
+                    <td className="relative px-3 py-2.5">
+                      <span className="flex flex-wrap gap-1 transition-opacity group-hover:opacity-0">
                         {u.is_staff && <NhanTrangThai tone="nhan">quản trị</NhanTrangThai>}
                         {u.dang_bi_ban && (
                           <NhanTrangThai tone="xau">
@@ -284,64 +284,69 @@ export default function TrangNguoiDung() {
                         )}
                       </span>
                       {u.dang_bi_ban && u.ban_reason !== null && (
-                        <span className="mono mt-1 block text-xs text-muc-mo">
+                        <span className="mono mt-1 block text-xs text-muc-mo transition-opacity group-hover:opacity-0">
                           {u.ban_reason}
                         </span>
                       )}
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <span className="flex justify-end gap-1.5">
-                        {/* Chỉ superuser: user chốt "chỉ superadmin mới có quyền thay
-                            đổi các thông tin của user". Không render nút rồi để nó ăn
-                            403 — PLAN mục 4. */}
-                        {mod.is_superuser && (
-                          <button
-                            type="button"
-                            className="nut nut-nho"
-                            disabled={dang_chay}
-                            aria-expanded={mo_sua === u.username}
-                            onClick={() => datMoSua(u.username)}
-                            data-testid={`nut-sua-user-${u.username}`}
-                          >
-                            Sửa
-                          </button>
-                        )}
-                        {u.dang_bi_ban ? (
-                          <button
-                            type="button"
-                            className="nut nut-nho"
-                            disabled={dang_chay}
-                            data-testid={`nut-go-ban-${u.username}`}
-                            onClick={() =>
-                              chay(() =>
-                                quanTriGoBanNguoiDung({
-                                  baseUrl: GOC_API,
-                                  headers: headerGhi(),
-                                  path: { username: u.username },
-                                }),
-                              )
-                            }
-                          >
-                            Gỡ ban
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            className="nut nut-nho"
-                            disabled={dang_chay || u.is_staff}
-                            aria-expanded={mo_ban === u.username}
-                            title={
-                              u.is_staff
-                                ? "Không ban được một tài khoản quản trị."
-                                : undefined
-                            }
-                            data-testid={`nut-ban-${u.username}`}
-                            onClick={() => datMoBan(u.username)}
-                          >
-                            Ban…
-                          </button>
-                        )}
-                      </span>
+                      <div className="absolute inset-y-0 right-2 flex items-center justify-end opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-10">
+                        <span className="flex flex-nowrap items-center gap-1 bg-nen border border-vien shadow-md rounded-lg p-1">
+                          {/* Chỉ superuser: user chốt "chỉ superadmin mới có quyền thay
+                              đổi các thông tin của user". Không render nút rồi để nó ăn
+                              403 — PLAN mục 4. */}
+                          {mod.is_superuser && (
+                            <button
+                              type="button"
+                              className="nut nut-nho p-1.5"
+                              disabled={dang_chay}
+                              aria-expanded={mo_sua === u.username}
+                              aria-label={`Sửa tài khoản u/${u.username}`}
+                              title="Sửa tài khoản"
+                              onClick={() => datMoSua(u.username)}
+                              data-testid={`nut-sua-user-${u.username}`}
+                            >
+                              <Icon ten="sua" className="size-4" />
+                            </button>
+                          )}
+                          {u.dang_bi_ban ? (
+                            <button
+                              type="button"
+                              className="nut nut-nho p-1.5 text-tot hover:bg-tot/10"
+                              disabled={dang_chay}
+                              aria-label={`Gỡ ban u/${u.username}`}
+                              title="Gỡ ban"
+                              data-testid={`nut-go-ban-${u.username}`}
+                              onClick={() =>
+                                chay(() =>
+                                  quanTriGoBanNguoiDung({
+                                    baseUrl: GOC_API,
+                                    headers: headerGhi(),
+                                    path: { username: u.username },
+                                  }),
+                                )
+                              }
+                            >
+                              <Icon ten="go-ban" className="size-4" />
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className="nut nut-nho p-1.5 text-xau hover:bg-xau/10"
+                              disabled={dang_chay || u.is_staff}
+                              aria-expanded={mo_ban === u.username}
+                              aria-label={`Ban u/${u.username}`}
+                              title={
+                                u.is_staff
+                                  ? "Không ban được một tài khoản quản trị."
+                                  : "Ban tài khoản"
+                              }
+                              data-testid={`nut-ban-${u.username}`}
+                              onClick={() => datMoBan(u.username)}
+                            >
+                              <Icon ten="ban" className="size-4" />
+                            </button>
+                          )}
+                        </span>
+                      </div>
                     </td>
                   </tr>
                 </Fragment>

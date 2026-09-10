@@ -8,6 +8,7 @@ import {
 import Link from "next/link";
 import { useCallback, useState } from "react";
 
+import { Icon } from "../../components/icon";
 import { useQuanTri } from "../../components/khung/ngu-canh";
 import { HangNutForm, NganKeo } from "../../components/ngan-keo";
 import { OGoiYUser } from "../../components/o-goi-y-user";
@@ -116,7 +117,7 @@ export default function TrangQuanTriVien() {
         ) : ds.items.length === 0 ? (
           <KhoiRong co_bo_loc={false} chua_co="Chưa có quản trị viên nào." />
         ) : (
-          <KhungBang>
+          <KhungBang rong={false}>
             <HangTieuDe
               cot={[
                 "Tài khoản",
@@ -124,14 +125,13 @@ export default function TrangQuanTriVien() {
                 "Chuyên mục phụ trách",
                 "Tham gia",
                 "Trạng thái",
-                "",
               ]}
             />
             <tbody>
               {ds.items.map((u) => (
                 <tr
                   key={u.username}
-                  className="border-b border-vien last:border-0 hover:bg-nen-mo/50"
+                  className="group relative border-b border-vien last:border-0 hover:bg-nen-mo/50"
                   data-testid={`hang-quan-tri-${u.username}`}
                 >
                   <td className="px-3 py-2.5">
@@ -163,8 +163,8 @@ export default function TrangQuanTriVien() {
                   <td className="mono px-3 py-2.5 text-xs text-muc-mo">
                     {gioVN(u.date_joined)}
                   </td>
-                  <td className="px-3 py-2.5">
-                    <span className="flex flex-wrap gap-1">
+                  <td className="relative px-3 py-2.5">
+                    <span className="flex flex-wrap gap-1 transition-opacity group-hover:opacity-0">
                       {u.dang_bi_ban && (
                         <NhanTrangThai tone="xau">
                           {u.ban_permanent ? "ban vĩnh viễn" : "ban tạm"}
@@ -175,46 +175,53 @@ export default function TrangQuanTriVien() {
                         <NhanTrangThai tone="tot">bình thường</NhanTrangThai>
                       )}
                     </span>
-                  </td>
-                  <td className="px-3 py-2.5">
-                    <span className="flex justify-end gap-1.5">
-                      {/* Ẩn hẳn với superuser và với chính mình: server từ chối cả hai
-                          (T3/T2), nên một cái nút ở đây chỉ để ăn 409.
-                          Còn phụ trách chuyên mục (T5) thì **mờ chứ không ẩn** — khác
-                          hai ca trên vì đây là trạng thái **gỡ được**: cột "Chuyên mục
-                          phụ trách" ngay bên trái nói ra cần gỡ cái gì, và `title` nói
-                          gỡ ở đâu. Ẩn hẳn sẽ biến một việc làm được thành một nút không
-                          tồn tại, không giải thích. */}
-                      {mod.is_superuser &&
-                        !u.is_superuser &&
-                        u.username !== mod.username && (
-                          <button
-                            type="button"
-                            className="nut nut-nho"
-                            disabled={dang_chay || u.subs_mod.length > 0}
-                            title={
-                              u.subs_mod.length > 0
-                                ? `Còn phụ trách ${u.subs_mod
-                                    .map((s) => `s/${s}`)
-                                    .join(" · ")} — gỡ phân công ở trang Chuyên mục trước.`
-                                : undefined
-                            }
-                            data-testid={`nut-thu-quyen-${u.username}`}
-                            onClick={() =>
-                              chay(() =>
-                                quanTriDoiQuyenMod({
-                                  baseUrl: GOC_API,
-                                  headers: headerGhi(),
-                                  path: { username: u.username },
-                                  body: { bat: false },
-                                }),
-                              )
-                            }
-                          >
-                            Thu quyền mod
-                          </button>
-                        )}
-                    </span>
+                    {/* Ẩn hẳn với superuser và với chính mình: server từ chối cả hai
+                        (T3/T2), nên một cái nút ở đây chỉ để ăn 409.
+                        Còn phụ trách chuyên mục (T5) thì **mờ chứ không ẩn** — khác
+                        hai ca trên vì đây là trạng thái **gỡ được**: cột "Chuyên mục
+                        phụ trách" ngay bên trái nói ra cần gỡ cái gì, và `title` nói
+                        gỡ ở đâu. Ẩn hẳn sẽ biến một việc làm được thành một nút không
+                        tồn tại, không giải thích. */}
+                    {mod.is_superuser &&
+                      !u.is_superuser &&
+                      u.username !== mod.username && (
+                        <div className="absolute inset-y-0 right-2 flex items-center justify-end opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-10">
+                          <span className="flex flex-nowrap items-center gap-1 bg-nen border border-vien shadow-md rounded-lg p-1">
+                            <button
+                              type="button"
+                              className="nut nut-nho p-1.5 text-xau hover:bg-xau/10"
+                              disabled={dang_chay || u.subs_mod.length > 0}
+                              title={
+                                u.subs_mod.length > 0
+                                  ? `Còn phụ trách ${u.subs_mod
+                                      .map((s) => `s/${s}`)
+                                      .join(" · ")} — gỡ phân công ở trang Chuyên mục trước.`
+                                  : "Thu quyền mod"
+                              }
+                              aria-label={
+                                u.subs_mod.length > 0
+                                  ? `Thu quyền mod u/${u.username} — không thu được: còn phụ trách ${u.subs_mod
+                                      .map((s) => `s/${s}`)
+                                      .join(" · ")}`
+                                  : `Thu quyền mod u/${u.username}`
+                              }
+                              data-testid={`nut-thu-quyen-${u.username}`}
+                              onClick={() =>
+                                chay(() =>
+                                  quanTriDoiQuyenMod({
+                                    baseUrl: GOC_API,
+                                    headers: headerGhi(),
+                                    path: { username: u.username },
+                                    body: { bat: false },
+                                  }),
+                                )
+                              }
+                            >
+                              <Icon ten="thu-quyen" className="size-4" />
+                            </button>
+                          </span>
+                        </div>
+                      )}
                   </td>
                 </tr>
               ))}
