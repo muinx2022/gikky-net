@@ -1,6 +1,7 @@
 import type { XemTruocOut } from "@gikky/api-client";
 import Link from "next/link";
 
+import { phanTramChieuRongAnh } from "@/lib/anh";
 import { CHU_NGUOI_DUNG } from "@/lib/chu-nguoi-dung";
 
 import css from "./noi-dung-the.module.css";
@@ -58,7 +59,12 @@ export function NoiDungThe({
       data-testid="the-mach-noi-dung"
     >
       {xem_truoc.anh !== null && (
-        <span className={css.khung_anh}>
+        <span
+          className={css.khung_anh}
+          style={{
+            width: `${phanTramChieuRongAnh(xem_truoc.anh.url_thumb)}%`,
+          }}
+        >
           {/*
             `next/image` cố ý KHÔNG dùng — cùng lý lẽ với `gallery-moc.tsx`: server đã
             thu ảnh về cạnh tối đa và sinh sẵn thumbnail lúc upload. `src` là
@@ -71,15 +77,11 @@ export function NoiDungThe({
             src={xem_truoc.anh.url_thumb}
             width={xem_truoc.anh.w_thumb ?? undefined}
             height={xem_truoc.anh.h_thumb ?? undefined}
-            style={
-              xem_truoc.anh.w_thumb != null
-                ? {
-                    width: xem_truoc.anh.w_thumb,
-                    maxWidth: "100%",
-                    height: "auto",
-                  }
-                : undefined
-            }
+            style={{
+              width: "100%",
+              maxWidth: "100%",
+              height: "auto",
+            }}
             alt=""
             loading="lazy"
             decoding="async"

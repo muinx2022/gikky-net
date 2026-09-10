@@ -130,3 +130,18 @@ export function ketQuaLuuMoc(
     conLai,
   };
 }
+
+/** Băm chuỗi URL thành số nguyên không âm ổn định (deterministic). */
+export function bamUrl(str: string): number {
+  let h = 5381;
+  for (let i = 0; i < str.length; i++) {
+    h = ((h << 5) + h) ^ str.charCodeAt(i);
+  }
+  return Math.abs(h);
+}
+
+/** Tỷ lệ phần trăm chiều rộng ngẫu nhiên ổn định trong khoảng 72% – 92%. */
+export function phanTramChieuRongAnh(url: string): number {
+  return (bamUrl(url) % 21) + 72;
+}
+
