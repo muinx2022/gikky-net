@@ -7,7 +7,8 @@ import {
   type QuanTriLietKeBinhLuanData,
 } from "@gikky/api-client/admin";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useState } from "react";
 
 import { ONhoChon, ThanhHangLoat, useChonHang } from "../../components/hang-loat";
 import { useQuanTri } from "../../components/khung/ngu-canh";
@@ -39,9 +40,7 @@ const MOI_TRANG = 25;
  * có reply hoặc đã từng được trích), và mod đôi khi cần đọc đúng cái tác giả rút lại sau
  * khi bị tố. Không có bảng này thì thứ duy nhất đọc được nó là `manage.py shell`.
  *
- * Bộ lọc ở đây là **state cục bộ**, không phải URL — khác trang mạch. Lý do: không có lối
- * nào từ ngoài đẩy tới đây kèm bộ lọc (ô tìm trên thanh trên đi tới `/machs`), nên một
- * bộ lọc trong URL chỉ thêm một tầng đồng bộ không ai dùng.
+ * Hỗ trợ lọc theo `?mach_id=...` khi chuyển tiếp từ danh sách bài viết.
  */
 type LocTrangThai = NonNullable<
   NonNullable<QuanTriLietKeBinhLuanData["query"]>["trang_thai"]
@@ -55,6 +54,26 @@ const CHU_LOC: Record<LocTrangThai, string> = {
 };
 
 export default function TrangBinhLuan() {
+  return (
+    <Suspense
+      fallback={
+        <The>
+          <Skeleton />
+        </The>
+      }
+    >
+      <BangBinhLuan />
+    </Suspense>
+  );
+}
+
+function BangBinhLuan() {
+  const router = useRouter();
+  const tham_so = useSearchParams();
+  const mach_id_param = tham_so.get("mach_id");
+  const mach_id_so = mach_id_param ? Number(mach_id_param) : null;
+  const mach_id = mach_id_so !== null && Number.isFinite(mach_id_so) ? mach_id_so : null;
+
   const { lamMoi } = useQuanTri();
   const [q, datQ] = useState("");
   const [o_tim, datOTim] = useState("");
@@ -68,9 +87,15 @@ export default function TrangBinhLuan() {
       quanTriLietKeBinhLuan({
         baseUrl: GOC_API,
         cache: "no-store",
-        query: { q, trang_thai, limit: MOI_TRANG, cursor },
+        query: {
+          q,
+          mach_id,
+          trang_thai,
+          limit: MOI_TRANG,
+          cursor,
+        },
       }),
-    [q, trang_thai],
+    [q, mach_id, trang_thai],
   );
 
   const ds = useDanhSach<BinhLuanDongOut>(nap, MOI_TRANG);
@@ -138,11 +163,18 @@ export default function TrangBinhLuan() {
     });
   };
 
-  const co_bo_loc = q !== "" || trang_thai !== "tat_ca";
+  const co_bo_loc =
+    q !== "" || trang_thai !== "tat_ca" || mach_id !== null;
 
   return (
     <>
-      <TieuDeTrang mo_ta="Gồm cả bia mộ và bình luận đã bị ẩn." />
+      <TieuDeTrang
+        mo_ta={
+          mach_id !== null
+            ? `Đang xem các bình luận của bài viết #${mach_id}.`
+            : "Gồm cả bia mộ và bình luận đã bị ẩn."
+        }
+      />
       <HienLoi loi={loi_hanh_dong ?? ds.loi} het_phien={het_phien} />
 
       <The>
@@ -193,6 +225,19 @@ export default function TrangBinhLuan() {
             ))}
           </select>
 
+          {mach_id !== null && (
+            <span className="mono flex items-center gap-1.5 text-xs text-muc-mo">
+              <span>Bài viết #{mach_id}</span>
+              <Link
+                href={`/m/${mach_id}`}
+                className="text-nhan hover:underline text-[11px]"
+                title="Mở trang chi tiết bài viết"
+              >
+                (chi tiết)
+              </Link>
+            </span>
+          )}
+
           {co_bo_loc && (
             <button
               type="button"
@@ -202,6 +247,7 @@ export default function TrangBinhLuan() {
                 datOTim("");
                 datQ("");
                 datTrangThai("tat_ca");
+                router.push("/binh-luan");
               }}
             >
               Xoá bộ lọc

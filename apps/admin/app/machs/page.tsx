@@ -405,7 +405,7 @@ function BangMach() {
         ) : ds.items.length === 0 ? (
           <KhoiRong co_bo_loc={co_bo_loc} chua_co="Chưa có bài viết nào." />
         ) : (
-          <KhungBang>
+          <KhungBang rong={false}>
             <HangTieuDe
               cot={[
                 <ONhoChon
@@ -423,14 +423,13 @@ function BangMach() {
                 "Tác giả",
                 "Chỉ số",
                 "Phát hành",
-                "",
               ]}
             />
             <tbody>
               {ds.items.map((m) => (
                 <tr
                   key={m.id}
-                  className="border-b border-vien last:border-0 hover:bg-nen-mo/50"
+                  className="group relative border-b border-vien last:border-0 hover:bg-nen-mo/50"
                   data-testid={`hang-mach-${m.id}`}
                 >
                   <td className="w-10 px-3 py-2.5">
@@ -442,7 +441,7 @@ function BangMach() {
                       testid={`chon-mach-${m.id}`}
                     />
                   </td>
-                  <td className="min-w-[280px] px-3 py-2.5">
+                  <td className="min-w-[240px] px-3 py-2.5">
                     <Link
                       href={`/m/${m.id}`}
                       className="font-medium text-nhan hover:underline"
@@ -479,106 +478,104 @@ function BangMach() {
                     </Link>
                   </td>
                   <td
-                    className="mono px-3 py-2.5 text-xs whitespace-nowrap text-muc-mo"
+                    className="mono px-3 py-2 text-[11px] leading-tight whitespace-nowrap text-muc-mo"
                     data-testid={`chi-so-mach-${m.id}`}
                   >
-                    <span title="Số mốc">
-                      <span className="font-medium text-chu">{m.entry_count}</span>{" "}
-                      mốc
-                    </span>
-                    <span className="mx-1.5 opacity-40">·</span>
-                    <span title="Số bình luận">
-                      <span className="font-medium text-chu">{m.comment_count}</span>{" "}
-                      bình luận
-                    </span>
-                    <span className="mx-1.5 opacity-40">·</span>
-                    <span title="Điểm">
-                      <span className="font-medium text-chu">{m.diem}</span>{" "}
-                      điểm
-                    </span>
+                    <div className="flex flex-col gap-0.5">
+                      <span title="Số mốc">
+                        <span className="font-medium text-chu">{m.entry_count}</span>{" "}
+                        mốc
+                      </span>
+                      <Link
+                        href={`/binh-luan?mach_id=${m.id}`}
+                        className="text-nhan hover:underline inline-block"
+                        title={`Xem bình luận của bài viết #${m.id}`}
+                      >
+                        <span className="font-medium">{m.comment_count}</span>{" "}
+                        bình luận
+                      </Link>
+                      <span title="Điểm">
+                        <span className="font-medium text-chu">{m.diem}</span>{" "}
+                        điểm
+                      </span>
+                    </div>
                   </td>
-                  <td className="mono px-3 py-2.5 text-xs whitespace-nowrap text-muc-mo">
-                    {gioVN(m.published_at)}
-                  </td>
-                  <td className="w-px px-3 py-2.5 whitespace-nowrap">
-                    {/* Ba icon MỘT HÀNG (user chốt 2026-08-24). `flex-nowrap` + `shrink-0`
-                        là cặp không tách được: bỏ `flex-nowrap` thì cột hẹp lại đẩy nút
-                        thứ ba xuống dòng; bỏ `shrink-0` thì ba nút co lại chồng lên nhau.
-                        Nhãn chuyển sang icon để hàng đủ hẹp mà không phải nới cột.
-
-                        **Luật ba đường** (L30): icon một mình thì trình đọc màn hình
-                        không đọc được gì (icon `aria-hidden`), nên `aria-label` + `title`
-                        là bắt buộc, không phải trang trí — và cả hai đổi theo trạng thái,
-                        vì cùng một nút vừa "Ẩn" vừa "Gỡ ẩn". */}
-                    <span className="flex flex-nowrap items-center justify-end gap-1">
-                      <button
-                        type="button"
-                        className="nut nut-nho shrink-0 px-1.5"
-                        disabled={dang_chay || m.da_hen_gio}
-                        data-testid={`nut-an-${m.id}`}
-                        title={
-                          m.da_hen_gio
-                            ? "Bài đang hẹn giờ — dùng Phát hành ngay ở trang chi tiết"
-                            : m.da_bi_an
-                              ? "Gỡ ẩn"
-                              : "Ẩn"
-                        }
-                        aria-label={
-                          m.da_hen_gio
-                            ? `Bài đang hẹn giờ, không gỡ ẩn tại đây: ${m.title}`
-                            : m.da_bi_an
-                              ? `Gỡ ẩn: ${m.title}`
-                              : `Ẩn: ${m.title}`
-                        }
-                        onClick={() =>
-                          chay(() =>
-                            quanTriDatAnMach({
-                              baseUrl: GOC_API,
-                              headers: headerGhi(),
-                              path: { mach_id: m.id },
-                              body: { an: !m.da_bi_an, ly_do: "" },
-                            }),
-                          )
-                        }
-                      >
-                        <Icon ten={m.da_bi_an ? "hien" : "an"} className="size-4" />
-                      </button>
-                      <button
-                        type="button"
-                        className="nut nut-nho shrink-0 px-1.5"
-                        disabled={dang_chay}
-                        data-testid={`nut-khoa-${m.id}`}
-                        title={m.da_khoa ? "Mở khoá" : "Khoá"}
-                        aria-label={
-                          m.da_khoa ? `Mở khoá: ${m.title}` : `Khoá: ${m.title}`
-                        }
-                        onClick={() =>
-                          chay(() =>
-                            quanTriDatKhoaMach({
-                              baseUrl: GOC_API,
-                              headers: headerGhi(),
-                              path: { mach_id: m.id },
-                              body: { khoa: !m.da_khoa, ly_do: "" },
-                            }),
-                          )
-                        }
-                      >
-                        <Icon
-                          ten={m.da_khoa ? "mo-khoa" : "khoa"}
-                          className="size-4"
-                        />
-                      </button>
-                      <a
-                        href={m.duong_dan_cong_khai}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="nut nut-nho shrink-0 px-1.5"
-                        title="Mở trang công khai"
-                        aria-label={`Mở trang công khai của: ${m.title}`}
-                      >
-                        <Icon ten="mo-ngoai" className="size-4" />
-                      </a>
+                  <td className="relative mono px-3 py-2.5 text-xs whitespace-nowrap text-muc-mo text-right">
+                    <span className="transition-opacity group-hover:opacity-0">
+                      {gioVN(m.published_at)}
                     </span>
+                    {/* Floating action overlay khi di chuột lên dòng */}
+                    <div className="absolute inset-y-0 right-2 flex items-center justify-end opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-10">
+                      <span className="flex flex-nowrap items-center gap-1 bg-nen border border-vien shadow-md rounded-lg p-1">
+                        <button
+                          type="button"
+                          className="nut nut-nho shrink-0 px-1.5"
+                          disabled={dang_chay || m.da_hen_gio}
+                          data-testid={`nut-an-${m.id}`}
+                          title={
+                            m.da_hen_gio
+                              ? "Bài đang hẹn giờ — dùng Phát hành ngay ở trang chi tiết"
+                              : m.da_bi_an
+                                ? "Gỡ ẩn"
+                                : "Ẩn"
+                          }
+                          aria-label={
+                            m.da_hen_gio
+                              ? `Bài đang hẹn giờ, không gỡ ẩn tại đây: ${m.title}`
+                              : m.da_bi_an
+                                ? `Gỡ ẩn: ${m.title}`
+                                : `Ẩn: ${m.title}`
+                          }
+                          onClick={() =>
+                            chay(() =>
+                              quanTriDatAnMach({
+                                baseUrl: GOC_API,
+                                headers: headerGhi(),
+                                path: { mach_id: m.id },
+                                body: { an: !m.da_bi_an, ly_do: "" },
+                              }),
+                            )
+                          }
+                        >
+                          <Icon ten={m.da_bi_an ? "hien" : "an"} className="size-4" />
+                        </button>
+                        <button
+                          type="button"
+                          className="nut nut-nho shrink-0 px-1.5"
+                          disabled={dang_chay}
+                          data-testid={`nut-khoa-${m.id}`}
+                          title={m.da_khoa ? "Mở khoá" : "Khoá"}
+                          aria-label={
+                            m.da_khoa ? `Mở khoá: ${m.title}` : `Khoá: ${m.title}`
+                          }
+                          onClick={() =>
+                            chay(() =>
+                              quanTriDatKhoaMach({
+                                baseUrl: GOC_API,
+                                headers: headerGhi(),
+                                path: { mach_id: m.id },
+                                body: { khoa: !m.da_khoa, ly_do: "" },
+                              }),
+                            )
+                          }
+                        >
+                          <Icon
+                            ten={m.da_khoa ? "mo-khoa" : "khoa"}
+                            className="size-4"
+                          />
+                        </button>
+                        <a
+                          href={m.duong_dan_cong_khai}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="nut nut-nho shrink-0 px-1.5"
+                          title="Mở trang công khai"
+                          aria-label={`Mở trang công khai của: ${m.title}`}
+                        >
+                          <Icon ten="mo-ngoai" className="size-4" />
+                        </a>
+                      </span>
+                    </div>
                   </td>
                 </tr>
               ))}
