@@ -28,6 +28,8 @@ import {
 } from "../../../components/ui";
 import { Icon } from "../../../components/icon";
 import { KhoiHenGio } from "../../../components/khoi-hen-gio";
+import { FormSuaMoc } from "../../../components/form-sua-moc";
+import { NganKeo } from "../../../components/ngan-keo";
 import { useDanhSach } from "../../../lib/danh-sach";
 import { GOC_API, headerGhi, moTaLoi } from "../../../lib/api";
 import { useHanhDong } from "../../../lib/hanh-dong";
@@ -56,6 +58,7 @@ export default function TrangChiTietMach() {
   const [dang_sua_tieu_de, datDangSuaTieuDe] = useState(false);
   const [tieu_de_moi, datTieuDeMoi] = useState("");
   const [ly_do_tieu_de, datLyDoTieuDe] = useState("");
+  const [mo_sua_moc, datMoSuaMoc] = useState<number | null>(null);
 
   const nap = useCallback(async () => {
     datLoi(null);
@@ -326,15 +329,16 @@ export default function TrangChiTietMach() {
                     <div className="absolute inset-y-0 right-2 flex items-center justify-end opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-10">
                       <span className="flex flex-nowrap items-center gap-1 bg-nen border border-vien shadow-md rounded-lg p-1">
                         {m.sua_duoc && (
-                          <Link
-                            href={`/m/${mach_id}/moc/${m.id}`}
+                          <button
+                            type="button"
                             className="nut nut-nho shrink-0 px-1.5"
-                            data-testid={`link-sua-moc-${m.id}`}
+                            data-testid={`nut-sua-moc-${m.id}`}
                             title="Sửa mốc"
                             aria-label={`Sửa mốc ${m.seq}`}
+                            onClick={() => datMoSuaMoc(m.id)}
                           >
                             <Icon ten="sua" className="size-4" />
-                          </Link>
+                          </button>
                         )}
                         <button
                           type="button"
@@ -377,6 +381,28 @@ export default function TrangChiTietMach() {
       </The>
 
       <BinhLuanCuaMach mach_id={mach_id} />
+
+      <NganKeo
+        mo={mo_sua_moc !== null}
+        dong={() => datMoSuaMoc(null)}
+        tieu_de={
+          mo_sua_moc !== null
+            ? `Sửa mốc ${mach.mocs.find((m) => m.id === mo_sua_moc)?.seq ?? `#${mo_sua_moc}`} — ${mach.title}`
+            : "Sửa mốc"
+        }
+        rong="to"
+      >
+        {mo_sua_moc !== null && (
+          <FormSuaMoc
+            mocId={mo_sua_moc}
+            dong={() => datMoSuaMoc(null)}
+            onThanhCong={async () => {
+              datMoSuaMoc(null);
+              await nap();
+            }}
+          />
+        )}
+      </NganKeo>
     </>
   );
 }

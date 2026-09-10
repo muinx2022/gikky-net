@@ -63,12 +63,14 @@ export function NganKeo({
   dong,
   tieu_de,
   mo_ta,
+  rong = "vua",
   children,
 }: {
   mo: boolean;
   dong: () => void;
   tieu_de: string;
   mo_ta?: string;
+  rong?: "vua" | "rong" | "to";
   children: React.ReactNode;
 }) {
   const [trong_dom, datTrongDom] = useState(false);
@@ -159,8 +161,15 @@ export function NganKeo({
         aria-modal="true"
         aria-label={tieu_de}
         tabIndex={-1}
-        className={`absolute inset-y-0 right-0 flex w-full max-w-md flex-col border-l
+        className={`absolute inset-y-0 right-0 flex w-full flex-col border-l
           border-vien bg-nen shadow-2xl transition-transform duration-200
+          ${
+            rong === "to"
+              ? "max-w-3xl"
+              : rong === "rong"
+                ? "max-w-2xl"
+                : "max-w-md"
+          }
           ${dang_hien ? "translate-x-0" : "translate-x-full"}`}
         data-testid="ngan-keo-panel"
         data-mo={dang_hien ? "1" : "0"}
