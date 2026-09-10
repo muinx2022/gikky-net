@@ -1,4 +1,4 @@
-﻿/** Chuyển đường dẫn tương đối của bài viết/bình luận/chuyên mục/tài khoản
+/** Chuyển đường dẫn tương đối của bài viết/bình luận/chuyên mục/tài khoản
  * sang URL tuyệt đối trỏ tới site công khai (gikky.net).
  *
  * Trên khu quản trị (admin.gikky.net), nếu để đường dẫn tương đối `/m/<slug>-<id>`,
@@ -27,4 +27,23 @@ export function duongDanCongKhai(duongDan?: string | null): string {
 
   const goc = process.env.NEXT_PUBLIC_SITE_ORIGIN || "https://gikky.net";
   return `${goc.replace(/\/$/, "")}${cleanPath}`;
+}
+
+/** Bỏ các thẻ HTML trong văn bản trích yếu (như `<p>`, `<em>`, `<strong>`...)
+ * và giải mã các thực thể HTML cơ bản, trả về văn bản thuần sạch sẽ.
+ */
+export function boTheHtml(html?: string | null): string {
+  if (!html) return "";
+  return html
+    .replace(/<br\s*\/?>/gi, " ")
+    .replace(/<\/p>/gi, " ")
+    .replace(/<[^>]*>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
 }

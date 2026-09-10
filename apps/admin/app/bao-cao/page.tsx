@@ -38,7 +38,7 @@ import {
 import { GOC_API, headerGhi } from "../../lib/api";
 import { useDanhSach } from "../../lib/danh-sach";
 import { useHanhDong } from "../../lib/hanh-dong";
-import { duongDanCongKhai } from "../../lib/url";
+import { boTheHtml, duongDanCongKhai } from "../../lib/url";
 
 /** Số hàng mỗi trang. Một hằng cho CẢ HAI phía: `limit` gửi lên server và mẫu số để
  * `useDanhSach` chia ra `so_trang`. Hai con số này lệch nhau thì thanh phân trang báo
@@ -218,7 +218,7 @@ function Hang({
             </p>
           ) : (
             <>
-              <p className="text-sm">{dich.trich_yeu}</p>
+              <p className="text-sm">{boTheHtml(dich.trich_yeu)}</p>
               <p className="mono mt-1 flex flex-wrap gap-x-3 text-xs text-muc-mo">
                 <span>
                   {dich.tac_gia === null ? "—" : `u/${dich.tac_gia.username}`}

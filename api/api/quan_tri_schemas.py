@@ -21,6 +21,7 @@ qua chúng khi chưa bật `use_attribute_docstrings`).
 from datetime import date, datetime
 from typing import Literal
 
+from django.utils.html import strip_tags
 from ninja import Field, Schema
 
 from api.schemas import AnhOut, FigureOut, NguoiDungTomTatOut
@@ -663,11 +664,11 @@ class TrangNhatKyOut(Schema):
 def trich_yeu(body: str) -> str:
     """Cắt `body` xuống `DAI_TRICH_YEU`, gộp khoảng trắng, thêm `…` khi đã cắt.
 
-    Gộp khoảng trắng vì `body` là markdown nhiều dòng: một dòng bảng trong hàng đợi mà
-    mang cả `\\n` là bảng vỡ. Đây là phép cắt để HIỂN THỊ, không phải sanitize — nội dung
-    này đi vào JSON và frontend render nó như văn bản thuần.
+    Gộp khoảng trắng và lọc sạch thẻ HTML từ rich text editor. Đây là phép cắt để
+    HIỂN THỊ, không phải sanitize — nội dung này đi vào JSON và frontend render nó
+    như văn bản thuần.
     """
-    gon = " ".join(body.split())
+    gon = " ".join(strip_tags(body).split())
     if len(gon) <= DAI_TRICH_YEU:
         return gon
     return gon[:DAI_TRICH_YEU] + "…"

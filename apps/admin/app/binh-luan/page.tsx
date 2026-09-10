@@ -29,7 +29,7 @@ import { GOC_API, MA_CHUA_DANG_NHAP, headerGhi, maLoi } from "../../lib/api";
 import { useDanhSach } from "../../lib/danh-sach";
 import { useHanhDong } from "../../lib/hanh-dong";
 import { locCanLam, tomTatHangLoat } from "../../lib/hang-loat";
-import { duongDanCongKhai } from "../../lib/url";
+import { boTheHtml, duongDanCongKhai } from "../../lib/url";
 
 /** Số hàng mỗi trang. Một hằng cho CẢ HAI phía: `limit` gửi lên server và mẫu số để
  * `useDanhSach` chia ra `so_trang`. Hai con số này lệch nhau thì thanh phân trang báo
@@ -320,12 +320,12 @@ function BangBinhLuan() {
                       chon={chon.da_chon.has(c.id)}
                       doi={(v) => chon.doi(c.id, v)}
                       khoa={dang_chay}
-                      nhan={`Chọn bình luận: ${c.trich_yeu}`}
+                      nhan={`Chọn bình luận: ${boTheHtml(c.trich_yeu)}`}
                       testid={`chon-binh-luan-${c.id}`}
                     />
                   </td>
                   <td className="max-w-lg px-3 py-2.5">
-                    <span className="block">{c.trich_yeu}</span>
+                    <span className="block">{boTheHtml(c.trich_yeu)}</span>
                     <span className="mt-1 flex flex-wrap gap-1">
                       {c.da_bi_an && <NhanTrangThai tone="xau">đã ẩn</NhanTrangThai>}
                       {c.da_xoa && <NhanTrangThai tone="chu-y">bia mộ</NhanTrangThai>}
@@ -363,8 +363,8 @@ function BangBinhLuan() {
                           title={c.da_bi_an ? "Gỡ ẩn" : "Ẩn"}
                           aria-label={
                             c.da_bi_an
-                              ? `Gỡ ẩn bình luận: ${c.trich_yeu}`
-                              : `Ẩn bình luận: ${c.trich_yeu}`
+                              ? `Gỡ ẩn bình luận: ${boTheHtml(c.trich_yeu)}`
+                              : `Ẩn bình luận: ${boTheHtml(c.trich_yeu)}`
                           }
                           onClick={() =>
                             chay(() =>

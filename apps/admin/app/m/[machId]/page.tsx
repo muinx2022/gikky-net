@@ -35,7 +35,7 @@ import { GOC_API, headerGhi, moTaLoi } from "../../../lib/api";
 import { useHanhDong } from "../../../lib/hanh-dong";
 import { useQuanTri } from "../../../components/khung/ngu-canh";
 import { useTieuDeTrang } from "../../../lib/tieu-de";
-import { duongDanCongKhai } from "../../../lib/url";
+import { boTheHtml, duongDanCongKhai } from "../../../lib/url";
 
 /** Số hàng mỗi trang. Một hằng cho CẢ HAI phía: `limit` gửi lên server và mẫu số để
  * `useDanhSach` chia ra `so_trang`. Hai con số này lệch nhau thì thanh phân trang báo
@@ -301,21 +301,30 @@ export default function TrangChiTietMach() {
       >
         <div className="mt-3">
           <KhungBang rong={false}>
-            <HangTieuDe cot={["#", "Ngày", "Tác giả", "Nội dung", "Trạng thái"]} />
+            <HangTieuDe cot={["#", "Nội dung & Thông tin mốc", <span key="thao-tac" className="sr-only">Thao tác</span>]} />
             <tbody>
               {mach.mocs.map((m) => (
                 <tr
                   key={m.id}
-                  className="group relative border-b border-vien last:border-0 hover:bg-nen-mo/50"
+                  className="border-b border-vien last:border-0 hover:bg-nen-mo/50"
+                  data-testid={`hang-moc-${m.id}`}
                 >
-                  <td className="mono px-3 py-2.5">{m.seq}</td>
-                  <td className="mono px-3 py-2.5 text-xs whitespace-nowrap">
-                    {m.occurred_at}
+                  <td className="w-12 px-3 py-3 align-top font-mono text-sm font-semibold text-muc-mo">
+                    #{m.seq}
                   </td>
-                  <td className="mono px-3 py-2.5 text-xs whitespace-nowrap">u/{m.tac_gia.username}</td>
-                  <td className="max-w-lg px-3 py-2.5">{m.trich_yeu}</td>
-                  <td className="relative px-3 py-2.5 text-right">
-                    <span className="flex flex-wrap justify-end gap-1 transition-opacity group-hover:opacity-0">
+                  <td className="px-3 py-3 align-top">
+                    <p className="text-sm leading-relaxed text-chu">
+                      {boTheHtml(m.trich_yeu)}
+                    </p>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-xs text-muc-mo">
+                      <span>{m.occurred_at}</span>
+                      <span>·</span>
+                      <Link
+                        href={`/u/${m.tac_gia.username}`}
+                        className="text-nhan hover:underline"
+                      >
+                        u/{m.tac_gia.username}
+                      </Link>
                       {m.da_bi_an && <NhanTrangThai tone="xau">đã ẩn</NhanTrangThai>}
                       {m.da_xoa && (
                         <NhanTrangThai tone="chu-y">tác giả đã xoá</NhanTrangThai>
@@ -325,47 +334,46 @@ export default function TrangChiTietMach() {
                           đã sửa {m.edit_count} lần
                         </NhanTrangThai>
                       )}
-                    </span>
-                    {/* Floating action overlay khi hover */}
-                    <div className="absolute inset-y-0 right-2 flex items-center justify-end opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-10">
-                      <span className="flex flex-nowrap items-center gap-1 bg-nen border border-vien shadow-md rounded-lg p-1">
-                        {m.sua_duoc && (
-                          <button
-                            type="button"
-                            className="nut nut-nho shrink-0 px-1.5"
-                            data-testid={`nut-sua-moc-${m.id}`}
-                            title="Sửa mốc"
-                            aria-label={`Sửa mốc ${m.seq}`}
-                            onClick={() => datMoSuaMoc(m.id)}
-                          >
-                            <Icon ten="sua" className="size-4" />
-                          </button>
-                        )}
+                    </div>
+                  </td>
+                  <td className="w-24 px-3 py-3 align-top text-right whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-1.5">
+                      {m.sua_duoc && (
                         <button
                           type="button"
                           className="nut nut-nho shrink-0 px-1.5"
-                          disabled={dang_chay}
-                          data-testid={`nut-an-moc-${m.id}`}
-                          title={m.da_bi_an ? "Gỡ ẩn" : "Ẩn"}
-                          aria-label={
-                            m.da_bi_an
-                              ? `Gỡ ẩn mốc ${m.seq}`
-                              : `Ẩn mốc ${m.seq}`
-                          }
-                          onClick={() =>
-                            chay(() =>
-                              quanTriDatAnMoc({
-                                baseUrl: GOC_API,
-                                headers: headerGhi(),
-                                path: { moc_id: m.id },
-                                body: { an: !m.da_bi_an, ly_do: "" },
-                              }),
-                            )
-                          }
+                          data-testid={`nut-sua-moc-${m.id}`}
+                          title="Sửa mốc"
+                          aria-label={`Sửa mốc ${m.seq}`}
+                          onClick={() => datMoSuaMoc(m.id)}
                         >
-                          <Icon ten={m.da_bi_an ? "hien" : "an"} className="size-4" />
+                          <Icon ten="sua" className="size-4" />
                         </button>
-                      </span>
+                      )}
+                      <button
+                        type="button"
+                        className="nut nut-nho shrink-0 px-1.5"
+                        disabled={dang_chay}
+                        data-testid={`nut-an-moc-${m.id}`}
+                        title={m.da_bi_an ? "Gỡ ẩn" : "Ẩn"}
+                        aria-label={
+                          m.da_bi_an
+                            ? `Gỡ ẩn mốc ${m.seq}`
+                            : `Ẩn mốc ${m.seq}`
+                        }
+                        onClick={() =>
+                          chay(() =>
+                            quanTriDatAnMoc({
+                              baseUrl: GOC_API,
+                              headers: headerGhi(),
+                              path: { moc_id: m.id },
+                              body: { an: !m.da_bi_an, ly_do: "" },
+                            }),
+                          )
+                        }
+                      >
+                        <Icon ten={m.da_bi_an ? "hien" : "an"} className="size-4" />
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -455,55 +463,59 @@ function BinhLuanCuaMach({ mach_id }: { mach_id: number }) {
           <KhoiRong co_bo_loc={false} chua_co="Chưa ai bình luận vào bài này." />
         ) : (
           <KhungBang rong={false}>
-            <HangTieuDe cot={["Nội dung", "Tác giả", "Điểm", "Lúc"]} />
+            <HangTieuDe cot={["Bình luận", <span key="thao-tac" className="sr-only">Thao tác</span>]} />
             <tbody>
               {ds.items.map((c) => (
                 <tr
                   key={c.id}
-                  className="group relative border-b border-vien last:border-0 hover:bg-nen-mo/50"
+                  className="border-b border-vien last:border-0 hover:bg-nen-mo/50"
                   data-testid={`hang-binh-luan-mach-${c.id}`}
                 >
-                  <td className="max-w-lg px-3 py-2.5">
-                    <span className="block">{c.trich_yeu}</span>
-                    <span className="mt-1 flex flex-wrap gap-1">
+                  <td className="px-3 py-3 align-top">
+                    <p className="text-sm leading-relaxed text-chu">
+                      {boTheHtml(c.trich_yeu)}
+                    </p>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-xs text-muc-mo">
+                      <span>{gioVN(c.created_at)}</span>
+                      <span>·</span>
+                      <Link
+                        href={`/u/${c.tac_gia.username}`}
+                        className="text-nhan hover:underline"
+                      >
+                        u/{c.tac_gia.username}
+                      </Link>
+                      <span>·</span>
+                      <span>{c.score} điểm</span>
                       {c.da_bi_an && <NhanTrangThai tone="xau">đã ẩn</NhanTrangThai>}
                       {c.da_xoa && <NhanTrangThai tone="chu-y">bia mộ</NhanTrangThai>}
-                    </span>
+                    </div>
                   </td>
-                  <td className="mono px-3 py-2.5 text-xs whitespace-nowrap">u/{c.tac_gia.username}</td>
-                  <td className="mono px-3 py-2.5 whitespace-nowrap">{c.score}</td>
-                  <td className="relative mono px-3 py-2.5 text-xs whitespace-nowrap text-muc-mo text-right">
-                    <span className="transition-opacity group-hover:opacity-0">
-                      {gioVN(c.created_at)}
-                    </span>
-                    {/* Floating action overlay khi hover */}
-                    <div className="absolute inset-y-0 right-2 flex items-center justify-end opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-10">
-                      <span className="flex flex-nowrap items-center gap-1 bg-nen border border-vien shadow-md rounded-lg p-1">
-                        <button
-                          type="button"
-                          className="nut nut-nho shrink-0 px-1.5"
-                          disabled={dang_chay}
-                          data-testid={`nut-an-binh-luan-mach-${c.id}`}
-                          title={c.da_bi_an ? "Gỡ ẩn" : "Ẩn"}
-                          aria-label={
-                            c.da_bi_an
-                              ? `Gỡ ẩn bình luận: ${c.trich_yeu}`
-                              : `Ẩn bình luận: ${c.trich_yeu}`
-                          }
-                          onClick={() =>
-                            chay(() =>
-                              quanTriDatAnBinhLuan({
-                                baseUrl: GOC_API,
-                                headers: headerGhi(),
-                                path: { comment_id: c.id },
-                                body: { an: !c.da_bi_an, ly_do: "" },
-                              }),
-                            )
-                          }
-                        >
-                          <Icon ten={c.da_bi_an ? "hien" : "an"} className="size-4" />
-                        </button>
-                      </span>
+                  <td className="w-16 px-3 py-3 align-top text-right whitespace-nowrap">
+                    <div className="flex items-center justify-end">
+                      <button
+                        type="button"
+                        className="nut nut-nho shrink-0 px-1.5"
+                        disabled={dang_chay}
+                        data-testid={`nut-an-binh-luan-mach-${c.id}`}
+                        title={c.da_bi_an ? "Gỡ ẩn" : "Ẩn"}
+                        aria-label={
+                          c.da_bi_an
+                            ? `Gỡ ẩn bình luận: ${boTheHtml(c.trich_yeu)}`
+                            : `Ẩn bình luận: ${boTheHtml(c.trich_yeu)}`
+                        }
+                        onClick={() =>
+                          chay(() =>
+                            quanTriDatAnBinhLuan({
+                              baseUrl: GOC_API,
+                              headers: headerGhi(),
+                              path: { comment_id: c.id },
+                              body: { an: !c.da_bi_an, ly_do: "" },
+                            }),
+                          )
+                        }
+                      >
+                        <Icon ten={c.da_bi_an ? "hien" : "an"} className="size-4" />
+                      </button>
                     </div>
                   </td>
                 </tr>
