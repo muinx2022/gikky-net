@@ -9,11 +9,18 @@ function doc(duongDanTuongDoi: string): string {
 }
 
 test.describe("chu-ky-binh-luan", () => {
-  test("trang-mach co link href='#khan-dai' de cuon xuong khan dai", () => {
+  test("trang-mach su dung NutCuonBinhLuan", () => {
     const tsx = doc("components/trang-mach.tsx");
+    expect(tsx).toMatch(/<NutCuonBinhLuan\s+soBinhLuan=\{mach\.comment_count\}/);
+  });
+
+  test("nut-cuon-binh-luan co href='#khan-dai' va cuon nhanh muot ma", () => {
+    const tsx = doc("components/nut-cuon-binh-luan.tsx");
     expect(tsx).toContain('href="#khan-dai"');
     expect(tsx).toContain('data-testid="chu-ky-so-binh-luan"');
-    expect(tsx).toMatch(/mach\.comment_count\s*>=\s*1\s*\?\s*`\$\{mach\.comment_count\}\s*Bình luận`\s*:\s*["']Bình luận["']/);
+    expect(tsx).toMatch(/soBinhLuan\s*>=\s*1\s*\?\s*`\$\{soBinhLuan\}\s*Bình luận`\s*:\s*["']Bình luận["']/);
+    expect(tsx).toMatch(/window\.scrollTo/);
+    expect(tsx).toMatch(/requestAnimationFrame/);
   });
 
   test("khan-dai.module.css co scroll-margin-top tranh bi che boi header", () => {

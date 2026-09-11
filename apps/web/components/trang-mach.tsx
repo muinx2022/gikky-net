@@ -25,6 +25,7 @@ import { NganKeoProvider } from "@/components/ngan-keo";
 import { NutTheoMach } from "@/components/nut-theo-mach";
 import { FormBinhLuanProvider } from "@/components/form-binh-luan-ngu-canh";
 import { ChuKyLuotXem } from "@/components/chu-ky-luot-xem";
+import { NutCuonBinhLuan } from "@/components/nut-cuon-binh-luan";
 import { TheMoc } from "@/components/the-moc";
 
 import { TrangThaiToiProvider } from "@/components/trang-thai-toi";
@@ -406,16 +407,7 @@ export async function TrangMach({
                 <span className={css.cham} aria-hidden>
                   ·
                 </span>
-                <a
-                  href="#khan-dai"
-                  className={css.link_binh_luan}
-                  data-testid="chu-ky-so-binh-luan"
-                  title="Cuộn xuống phần bình luận"
-                >
-                  {mach.comment_count >= 1
-                    ? `${mach.comment_count} Bình luận`
-                    : "Bình luận"}
-                </a>
+                <NutCuonBinhLuan soBinhLuan={mach.comment_count} />
                 {/* Báo cáo cả BÀI — user chốt 2026-08-25. Trước đó chỉ báo cáo được mốc
                     và bình luận, nên một bài vi phạm ngay từ tiêu đề (hoặc vi phạm ở tổng
                     thể) thì người đọc phải chọn bừa một mốc, và mod nhận báo cáo trỏ sai
