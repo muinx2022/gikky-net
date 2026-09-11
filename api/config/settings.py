@@ -267,6 +267,7 @@ HEADLESS_FRONTEND_URLS = {
     "account_reset_password": f"{FRONTEND_ORIGIN}/quen-mat-khau",
     "account_reset_password_from_key": f"{FRONTEND_ORIGIN}/dat-lai-mat-khau/{{key}}",
     "account_signup": f"{FRONTEND_ORIGIN}/dang-ky",
+    "socialaccount_login_error": f"{FRONTEND_ORIGIN}/dang-nhap?loi=google",
 }
 
 #: Đăng nhập **bằng email** (username là danh tính công khai `/u/<username>`, không phải
@@ -495,3 +496,34 @@ CSRF_COOKIE_SAMESITE = "Lax"
 #: Dev chạy HTTP nên không ép `Secure`; prod bật qua biến môi trường của tầng triển khai.
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+        "django.request": {
+            "handlers": ["console"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+        "allauth": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+    },
+}

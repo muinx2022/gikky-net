@@ -187,3 +187,23 @@ def test_custom_schemes_allowed_redirect():
             assert resp["Location"] == url
         except DisallowedRedirect:
             pytest.fail(f"HttpResponseRedirect raised DisallowedRedirect for custom scheme: {url}")
+
+
+def test_on_authentication_error_redirects_to_mobile():
+    from allauth.core.exceptions import ImmediateHttpResponse
+    from core.allauth_adapter import AdapterMangXaHoi
+    from django.test import RequestFactory
+    from django.contrib.sessions.backends.db import SessionStore
+
+    rf = RequestFactory()
+    req = rf.get("/api/_allauth/google/login/callback/")
+    req.session = SessionStore()
+    req.session["mobile_redirect_uri"] = "exp://192.168.1.222:8081/--/auth/callback"
+
+    adapter = AdapterMangXaHoi()
+    with pytest.raises(ImmediateHttpResponse) as exc_info:
+        adapter.on_authentication_error(req, provider="google")
+
+    resp = exc_info.value.response
+    assert resp.status_code == 302
+    assert resp["Location"].startswith("exp://192.168.1.222:8081/--/auth/callback?error=")

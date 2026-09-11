@@ -177,3 +177,25 @@ class AdapterMangXaHoi(DefaultSocialAccountAdapter):
             return
         user.set_unusable_password()
         user.save(update_fields=["password"])
+
+    def on_authentication_error(
+        self,
+        request,
+        provider,
+        error=None,
+        exception=None,
+        extra_context=None,
+    ):
+        """Nếu luồng từ mobile bị lỗi (hết hạn, huỷ, v.v.), điều hướng về mobile app thay vì báo lỗi HTML/500."""
+        mobile_redirect = request.session.pop("mobile_redirect_uri", None)
+        if mobile_redirect:
+            from allauth.core.exceptions import ImmediateHttpResponse
+            from django.http import HttpResponseRedirect
+
+            sep = "&" if "?" in mobile_redirect else "?"
+            raise ImmediateHttpResponse(
+                HttpResponseRedirect(f"{mobile_redirect}{sep}error=auth_error")
+            )
+        super().on_authentication_error(
+            request, provider, error=error, exception=exception, extra_context=extra_context
+        )
