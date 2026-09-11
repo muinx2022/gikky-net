@@ -396,16 +396,6 @@ export async function TrangMach({
                     </span>
                   </>
                 )}
-                {hien_so_dem && (
-                  <>
-                    <span className={css.cham} aria-hidden>
-                      ·
-                    </span>
-                    <span className={css.dem} data-testid="chu-ky-so-binh-luan">
-                      {mach.comment_count} bình luận
-                    </span>
-                  </>
-                )}
                 <span className={css.cham} aria-hidden>
                   ·
                 </span>
@@ -413,6 +403,19 @@ export async function TrangMach({
                   initialCount={mach.view_count ?? 0}
                   className={css.dem}
                 />
+                <span className={css.cham} aria-hidden>
+                  ·
+                </span>
+                <a
+                  href="#khan-dai"
+                  className={css.link_binh_luan}
+                  data-testid="chu-ky-so-binh-luan"
+                  title="Cuộn xuống phần bình luận"
+                >
+                  {mach.comment_count >= 1
+                    ? `${mach.comment_count} Bình luận`
+                    : "Bình luận"}
+                </a>
                 {/* Báo cáo cả BÀI — user chốt 2026-08-25. Trước đó chỉ báo cáo được mốc
                     và bình luận, nên một bài vi phạm ngay từ tiêu đề (hoặc vi phạm ở tổng
                     thể) thì người đọc phải chọn bừa một mốc, và mod nhận báo cáo trỏ sai

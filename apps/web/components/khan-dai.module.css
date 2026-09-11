@@ -2,6 +2,7 @@
   border-top: 1px solid var(--line);
   margin-top: 6px;
   padding: 20px 26px 26px;
+  scroll-margin-top: calc(var(--cao-chrome) + 14px);
 }
 
 .dau {
