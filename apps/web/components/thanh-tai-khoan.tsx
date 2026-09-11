@@ -3,7 +3,7 @@
 import { ImageUp, KeyRound, LogOut, Settings, ShieldCheck, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { CHU_NGUOI_DUNG } from "@/lib/chu-nguoi-dung";
 import { dangXuat } from "@/lib/tai-khoan";
@@ -28,8 +28,30 @@ export function ThanhTaiKhoan() {
   const { toi, dangTai, taiLai } = usePhien();
   const { moModal } = useModalDangNhap();
   const router = useRouter();
+  const hopRef = useRef<HTMLDivElement | null>(null);
   const [mo, datMo] = useState(false);
   const [dangThoat, datDangThoat] = useState(false);
+
+  // Bấm ra ngoài hoặc phím Escape thì đóng menu tài khoản
+  useEffect(() => {
+    if (!mo) return;
+    const ngoai = (e: MouseEvent) => {
+      if (hopRef.current !== null && !hopRef.current.contains(e.target as Node)) {
+        datMo(false);
+      }
+    };
+    const phim = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        datMo(false);
+      }
+    };
+    document.addEventListener("mousedown", ngoai);
+    document.addEventListener("keydown", phim);
+    return () => {
+      document.removeEventListener("mousedown", ngoai);
+      document.removeEventListener("keydown", phim);
+    };
+  }, [mo]);
 
   if (dangTai) {
     return <span className={css.chua_biet} aria-hidden data-testid="tai-khoan-dang-tai" />;
@@ -71,7 +93,7 @@ export function ThanhTaiKhoan() {
   };
 
   return (
-    <div className={css.khung} data-testid="thanh-tai-khoan">
+    <div className={css.khung} ref={hopRef} data-testid="thanh-tai-khoan">
       <button
         type="button"
         className={css.ten}
