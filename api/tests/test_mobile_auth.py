@@ -170,3 +170,20 @@ def test_mobile_session_middleware():
     assert res_me2.status_code == 200
     assert res_me2.json()["dang_nhap"] is True
     assert res_me2.json()["username"] == "test_mobile_user"
+
+
+def test_custom_schemes_allowed_redirect():
+    from django.http import HttpResponseRedirect
+    from django.core.exceptions import DisallowedRedirect
+
+    for url in (
+        "exp://192.168.1.222:8081/--/auth/callback?sessionid=xyz",
+        "exps://192.168.1.222:8081/--/auth/callback",
+        "gikky://auth/callback?sessionid=xyz",
+    ):
+        try:
+            resp = HttpResponseRedirect(url)
+            assert resp.status_code == 302
+            assert resp["Location"] == url
+        except DisallowedRedirect:
+            pytest.fail(f"HttpResponseRedirect raised DisallowedRedirect for custom scheme: {url}")

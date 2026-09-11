@@ -20,3 +20,9 @@ class CoreConfig(AppConfig):
         """
         from core import kiem_trien_khai  # noqa: F401 - import LÀ mục đích
         from core import phien  # noqa: F401 - import LÀ mục đích
+
+        # Cho phép Django HttpResponseRedirect chuyển hướng sang custom scheme của mobile app
+        from django.http.response import HttpResponseRedirectBase
+        for scheme in ("exp", "exps", "gikky"):
+            if scheme not in HttpResponseRedirectBase.allowed_schemes:
+                HttpResponseRedirectBase.allowed_schemes = list(HttpResponseRedirectBase.allowed_schemes) + [scheme]

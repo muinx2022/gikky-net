@@ -34,6 +34,12 @@ from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 
 from core.han_muc import dem_dang_ky_trong_ngay_vn, dia_chi_ip, tran_dang_ky_moi_ngay
 from core.phien import stash_ghi_nho
+from django.http.response import HttpResponseRedirectBase
+
+# Đảm bảo Django HttpResponseRedirect chấp nhận custom schemes của Expo và Gikky Mobile
+for scheme in ("exp", "exps", "gikky"):
+    if scheme not in HttpResponseRedirectBase.allowed_schemes:
+        HttpResponseRedirectBase.allowed_schemes = list(HttpResponseRedirectBase.allowed_schemes) + [scheme]
 
 
 class AdapterTaiKhoan(DefaultAccountAdapter):
