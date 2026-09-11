@@ -868,6 +868,9 @@ class ToiOut(Schema):
     email_da_xac_thuc: bool
     la_staff: bool
     google_bat: bool
+    #: Client ID công khai của Google App nếu `google_bat = True`. Dùng để frontend khởi tạo
+    #: Google One Tap (Google Identity Services) cho khách chưa đăng nhập.
+    google_client_id: str | None = None
     #: Có nhận email digest tuần không (PLAN 5.8 — **opt-in**, mặc định `false`). Đặt bằng
     #: `PATCH /me`. Có mặt ở đây vì một công tắc không đọc lại được trạng thái là một công
     #: tắc UI phải đoán; khách chưa đăng nhập nhận `false`.

@@ -131,6 +131,19 @@ def google_dang_bat(request=None) -> bool:
     return True
 
 
+def client_id_google(request=None) -> str:
+    """Client ID công khai của app Google đang hoạt động, hoặc chuỗi rỗng nếu tắt.
+
+    Dùng cho frontend để khởi tạo luồng Google One Tap (Google Identity Services).
+    Gọi qua `get_adapter().get_app` để đảm bảo cùng nguồn với `google_dang_bat`.
+    """
+    try:
+        app = get_adapter().get_app(request or HttpRequest(), PROVIDER)
+        return app.client_id
+    except Exception:
+        return ""
+
+
 def doc_trang_thai(request=None) -> TrangThaiGoogle:
     """Trạng thái cho trang Cài đặt. Không bao giờ mang secret ra ngoài."""
     hang = _hang_db()

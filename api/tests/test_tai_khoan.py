@@ -245,9 +245,17 @@ def test_google_TAT_khi_khong_co_credential(db):
 
 @pytest.mark.django_db
 def test_me_noi_ra_google_bat_hay_tat(client):
-    from core.cau_hinh_oauth import google_dang_bat
+    from core.cau_hinh_oauth import client_id_google, google_dang_bat, luu_google
 
     assert toi(client)["google_bat"] is google_dang_bat()
+    assert toi(client)["google_client_id"] == (client_id_google() or None)
+
+    # Khi cấu hình Google được bật, client_id phải xuất hiện trên GET /me
+    luu_google(client_id="test-client-id-one-tap", secret="test-secret")
+    du_lieu = toi(client)
+    assert du_lieu["google_bat"] is True
+    assert du_lieu["google_client_id"] == "test-client-id-one-tap"
+
 
 
 @pytest.mark.django_db

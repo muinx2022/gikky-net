@@ -1961,6 +1961,10 @@ export type ToiOut = {
      */
     google_bat: boolean;
     /**
+     * Google Client Id
+     */
+    google_client_id?: string | null;
+    /**
      * La Staff
      */
     la_staff: boolean;

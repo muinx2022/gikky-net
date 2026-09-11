@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 
 import { Chrome } from "@/components/chrome";
+import { GoogleOneTap } from "@/components/google-one-tap";
 import { LightboxProvider } from "@/components/lightbox";
 import { ModalDangNhapProvider } from "@/components/modal-dang-nhap";
 import { PhienProvider } from "@/components/phien";
@@ -145,6 +146,7 @@ export default function RootLayout({
             toast. Nó chỉ render `<dialog>` khi có người mở — trang chưa ai bấm gì thì
             trong DOM không có gì thêm, nên `/luat` giữ nguyên `○` (tĩnh). */}
         <PhienProvider>
+          <GoogleOneTap />
           <ToastProvider>
             <ModalDangNhapProvider>
               <LightboxProvider>

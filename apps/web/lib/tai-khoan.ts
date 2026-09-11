@@ -198,3 +198,28 @@ export async function doiMatKhau(cu: string, moi: string): Promise<void> {
     than: { current_password: cu, new_password: moi },
   });
 }
+
+/** Đăng nhập bằng Google ID Token (dùng cho Google One Tap).
+ *
+ * Gửi token lên endpoint `/auth/provider/token` của allauth headless.
+ * Backend tự xác thực JWT ký bởi Google, tìm/tạo người dùng, xoá pass nếu trùng email
+ * (AdapterMangXaHoi) và cấp session cookie `sessionid`.
+ */
+export async function dangNhapGoogleToken({
+  clientId,
+  idToken,
+}: {
+  clientId: string;
+  idToken: string;
+}): Promise<void> {
+  await goi("/auth/provider/token", {
+    than: {
+      provider: "google",
+      process: "login",
+      token: {
+        client_id: clientId,
+        id_token: idToken,
+      },
+    },
+  });
+}

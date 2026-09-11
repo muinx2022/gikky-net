@@ -15,7 +15,7 @@ from ninja import Router
 from api.feeds import subs_kem_so_mach
 from api.loi import LoiOut, loi
 from api.quyen import HET_LUOT_DOI_TEN, dang_nhap
-from core.cau_hinh_oauth import google_dang_bat
+from core.cau_hinh_oauth import client_id_google, google_dang_bat
 from core.models.dien_dan import ModSub
 from core.models.nguoi_dung import SO_LAN_DOI_TEN_TOI_DA
 from core.anh_luu import url_thumb
@@ -61,6 +61,7 @@ def xem_toi(request):
         ).exists(),
         la_staff=bool(user.is_staff),
         google_bat=google_dang_bat(request),
+        google_client_id=client_id_google(request) or None,
         nhan_digest=bool(user.nhan_digest),
         tran_anh_moi_moc=SO_ANH_TOI_DA_MOI_MOC,
         so_lan_doi_ten=getattr(user, "so_lan_doi_ten", 0),
@@ -155,6 +156,7 @@ def _khach(request) -> ToiOut:
         email_da_xac_thuc=False,
         la_staff=False,
         google_bat=google_dang_bat(request),
+        google_client_id=client_id_google(request) or None,
         nhan_digest=False,
         tran_anh_moi_moc=SO_ANH_TOI_DA_MOI_MOC,
         so_lan_doi_ten=0,
