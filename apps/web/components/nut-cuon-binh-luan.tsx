@@ -18,14 +18,17 @@ function cuonNhanhXuong(el: HTMLElement) {
 
   if (Math.abs(diff) < 10) return;
 
-  const duration = 380; // ms: lướt nhanh, dứt khoát
+  const duration = 650; // ms: cuộn êm ái, rõ ràng nhưng không lê thê
   const startTime = performance.now();
 
   function buocCuon(currentTime: number) {
     const elapsed = currentTime - startTime;
     const progress = Math.min(elapsed / duration, 1);
-    // Easing easeOutQuart: lướt vút đi rồi phanh êm ái
-    const ease = 1 - Math.pow(1 - progress, 4);
+    // Easing easeInOutCubic: khởi đầu êm, lướt đầm và hãm phanh từ tốn
+    const ease =
+      progress < 0.5
+        ? 4 * progress * progress * progress
+        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
 
     window.scrollTo(0, startY + diff * ease);
 
