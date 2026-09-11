@@ -6,13 +6,27 @@ const monorepoRoot = path.resolve(projectRoot, "../..");
 
 const config = getDefaultConfig(projectRoot);
 
-// Theo dõi toàn bộ monorepo để resolve packages/api-client
-config.watchFolders = [monorepoRoot];
+// Chỉ theo dõi packages/api-client và node_modules của monorepo, tránh theo dõi cả repo
+config.watchFolders = [
+  path.resolve(monorepoRoot, "packages/api-client"),
+  path.resolve(monorepoRoot, "node_modules"),
+];
 
 // Ưu tiên resolve node_modules của project rồi đến monorepo root
 config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, "node_modules"),
   path.resolve(monorepoRoot, "node_modules"),
+];
+
+// Chặn Metro quét các thư mục không liên quan (api/.venv, apps/web/.next, .git, v.v.)
+config.resolver.blockList = [
+  /.*[/\\]api[/\\].*/,
+  /.*[/\\]apps[/\\]web[/\\].*/,
+  /.*[/\\]apps[/\\]admin[/\\].*/,
+  /.*[/\\]\.venv[/\\].*/,
+  /.*[/\\]\.next[/\\].*/,
+  /.*[/\\]\.git[/\\].*/,
+  /.*[/\\]\.pytest_cache[/\\].*/,
 ];
 
 config.resolver.unstable_enablePackageExports = false;
