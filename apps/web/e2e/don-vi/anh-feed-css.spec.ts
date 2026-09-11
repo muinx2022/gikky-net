@@ -79,7 +79,7 @@ test.describe("anh-feed-css", () => {
     expect(src).not.toMatch(/height=\{xem_truoc\.anh\.h\b/);
   });
 
-  test("phanTramChieuRongAnh phan bo ngau nhien on dinh trong khoang 60% - 95%", () => {
+  test("phanTramChieuRongAnh phan bo ngau nhien on dinh trong khoang 72% - 92%", () => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { phanTramChieuRongAnh } = require("../../lib/anh");
     const urls = [
@@ -92,8 +92,8 @@ test.describe("anh-feed-css", () => {
 
     const ketQua = urls.map((u) => phanTramChieuRongAnh(u));
     for (const pt of ketQua) {
-      expect(pt).toBeGreaterThanOrEqual(60);
-      expect(pt).toBeLessThanOrEqual(95);
+      expect(pt).toBeGreaterThanOrEqual(72);
+      expect(pt).toBeLessThanOrEqual(92);
     }
 
     // Tinh deterministic: goi lai cung URL tra ve dung ket qua cu

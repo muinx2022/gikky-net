@@ -140,8 +140,8 @@ export function bamUrl(str: string): number {
   return Math.abs(h);
 }
 
-/** Tỷ lệ phần trăm chiều rộng ngẫu nhiên ổn định trong khoảng 60% – 95%. */
+/** Tỷ lệ phần trăm chiều rộng ngẫu nhiên ổn định trong khoảng 72% – 92%. */
 export function phanTramChieuRongAnh(url: string): number {
-  return (bamUrl(url) % 36) + 60;
+  return (bamUrl(url) % 21) + 72;
 }
 
