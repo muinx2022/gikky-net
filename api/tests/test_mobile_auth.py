@@ -94,13 +94,25 @@ def test_mobile_google_start_tat():
 
 @patch("core.cau_hinh_oauth.google_dang_bat", return_value=True)
 def test_mobile_google_start_va_redirect(mock_google_bat):
+    from allauth.socialaccount.models import SocialApp
+    from django.contrib.sites.models import Site
+    from django.conf import settings
     from core.allauth_adapter import AdapterTaiKhoan
     from django.test import RequestFactory
+
+    app = SocialApp.objects.create(
+        provider="google",
+        name="Google",
+        client_id="test-google-client-id",
+        secret="test-secret",
+    )
+    app.sites.add(Site.objects.get(pk=settings.SITE_ID))
 
     client = Client()
     res = client.get("/api/mobile/google/start?redirect_uri=gikky://auth/callback")
     assert res.status_code == 302
-    assert "/api/_allauth/google/login/" in res.url
+    assert "accounts.google.com" in res.url
+    assert "test-google-client-id" in res.url
     assert client.session.get("mobile_redirect_uri") == "gikky://auth/callback"
 
     # Kiểm tra get_login_redirect_url lấy uri từ session và nối sessionid
