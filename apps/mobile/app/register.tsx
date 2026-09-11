@@ -12,12 +12,13 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { AlertCircle, Eye, EyeOff, Lock, Mail, User } from "lucide-react-native";
+import Svg, { Path } from "react-native-svg";
 
 import { useAuth } from "../context/AuthContext";
 
 export default function RegisterScreen() {
   const router = useRouter();
-  const { dangKy } = useAuth();
+  const { dangKy, dangNhapGoogleOAuth, googleBat } = useAuth();
 
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
@@ -77,6 +78,21 @@ export default function RegisterScreen() {
       router.replace("/");
     } else {
       setLoi(res.loi || "Đăng ký không thành công.");
+    }
+  };
+
+  const handleDangNhapGoogle = async () => {
+    setDangXuLy(true);
+    setLoi(null);
+    try {
+      const res = await dangNhapGoogleOAuth();
+      if (res.thanhCong) {
+        router.replace("/");
+      } else if (res.loi && !res.loi.includes("Đã huỷ")) {
+        setLoi(res.loi);
+      }
+    } finally {
+      setDangXuLy(false);
     }
   };
 
@@ -202,6 +218,43 @@ export default function RegisterScreen() {
               <Text style={styles.footerLink}> Đăng nhập</Text>
             </TouchableOpacity>
           </View>
+
+          {/* Vạch ngăn cách & Nút Google OAuth (chỉ hiện khi server bật Google) */}
+          {googleBat ? (
+            <>
+              <View style={styles.dividerRow}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>hoặc</Text>
+                <View style={styles.dividerLine} />
+              </View>
+
+              <TouchableOpacity
+                style={styles.googleBtn}
+                onPress={handleDangNhapGoogle}
+                disabled={dangXuLy}
+              >
+                <Svg width={18} height={18} viewBox="0 0 18 18">
+                  <Path
+                    fill="#4285F4"
+                    d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"
+                  />
+                  <Path
+                    fill="#34A853"
+                    d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.02-3.7H.96v2.33A9 9 0 0 0 9 18z"
+                  />
+                  <Path
+                    fill="#FBBC05"
+                    d="M3.98 10.72a5.4 5.4 0 0 1 0-3.44V4.95H.96a9 9 0 0 0 0 8.1l3.02-2.33z"
+                  />
+                  <Path
+                    fill="#EA4335"
+                    d="M9 3.58c1.32 0 2.5.46 3.44 1.35l2.58-2.58C13.46.9 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.02 2.33C4.68 5.16 6.66 3.58 9 3.58z"
+                  />
+                </Svg>
+                <Text style={styles.googleBtnText}>Tiếp tục với Google</Text>
+              </TouchableOpacity>
+            </>
+          ) : null}
 
           {/* Nút Quay lại */}
           <TouchableOpacity
@@ -331,4 +384,36 @@ const styles = StyleSheet.create({
     color: "#71717a",
     fontSize: 14,
   },
+  dividerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 14,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#27272a",
+  },
+  dividerText: {
+    color: "#71717a",
+    fontSize: 12,
+    marginHorizontal: 12,
+    textTransform: "lowercase",
+  },
+  googleBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#ffffff",
+    height: 46,
+    borderRadius: 8,
+    gap: 10,
+    marginBottom: 10,
+  },
+  googleBtnText: {
+    color: "#18181b",
+    fontSize: 14,
+    fontWeight: "600",
+  },
 });
+

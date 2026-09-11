@@ -22,7 +22,7 @@ import { API_BASE_URL } from "../lib/config";
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { dangNhap } = useAuth();
+  const { dangNhap, dangNhapGoogleOAuth, googleBat } = useAuth();
 
   const [taiKhoan, setTaiKhoan] = useState("");
   const [matKhau, setMatKhau] = useState("");
@@ -51,6 +51,21 @@ export default function LoginScreen() {
       router.back();
     } else {
       setLoi(res.loi || "Đăng nhập không thành công.");
+    }
+  };
+
+  const handleDangNhapGoogle = async () => {
+    setDangXuLy(true);
+    setLoi(null);
+    try {
+      const res = await dangNhapGoogleOAuth();
+      if (res.thanhCong) {
+        router.back();
+      } else if (res.loi && !res.loi.includes("Đã huỷ")) {
+        setLoi(res.loi);
+      }
+    } finally {
+      setDangXuLy(false);
     }
   };
 
@@ -170,57 +185,42 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Vạch ngăn cách 'hoặc' */}
-        <View style={styles.dividerRow}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>hoặc</Text>
-          <View style={styles.dividerLine} />
-        </View>
+        {/* Vạch ngăn cách & Nút Google OAuth (chỉ hiện khi server bật Google) */}
+        {googleBat ? (
+          <>
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>hoặc</Text>
+              <View style={styles.dividerLine} />
+            </View>
 
-        {/* Nút Google OAuth */}
-        <TouchableOpacity
-          style={styles.googleBtn}
-          onPress={async () => {
-            const googleUrl = `${API_BASE_URL}/api/_allauth/browser/v1/auth/provider/redirect?provider=google`;
-            try {
-              const hoTro = await Linking.canOpenURL(googleUrl);
-              if (hoTro) {
-                await Linking.openURL(googleUrl);
-              } else {
-                Alert.alert(
-                  "Google OAuth",
-                  "Tính năng Google OAuth yêu cầu cấu hình Google Client ID trong trang Cài đặt quản trị của gikky."
-                );
-              }
-            } catch {
-              Alert.alert(
-                "Google OAuth",
-                "Máy chủ dev hiện chưa cấu hình Google Client ID & Secret trong DB hoặc .env."
-              );
-            }
-          }}
-          disabled={dangXuLy}
-        >
-          <Svg width={18} height={18} viewBox="0 0 18 18">
-            <Path
-              fill="#4285F4"
-              d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"
-            />
-            <Path
-              fill="#34A853"
-              d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.02-3.7H.96v2.33A9 9 0 0 0 9 18z"
-            />
-            <Path
-              fill="#FBBC05"
-              d="M3.98 10.72a5.4 5.4 0 0 1 0-3.44V4.95H.96a9 9 0 0 0 0 8.1l3.02-2.33z"
-            />
-            <Path
-              fill="#EA4335"
-              d="M9 3.58c1.32 0 2.5.46 3.44 1.35l2.58-2.58C13.46.9 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.02 2.33C4.68 5.16 6.66 3.58 9 3.58z"
-            />
-          </Svg>
-          <Text style={styles.googleBtnText}>Tiếp tục với Google</Text>
-        </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.googleBtn}
+              onPress={handleDangNhapGoogle}
+              disabled={dangXuLy}
+            >
+              <Svg width={18} height={18} viewBox="0 0 18 18">
+                <Path
+                  fill="#4285F4"
+                  d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"
+                />
+                <Path
+                  fill="#34A853"
+                  d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.02-3.7H.96v2.33A9 9 0 0 0 9 18z"
+                />
+                <Path
+                  fill="#FBBC05"
+                  d="M3.98 10.72a5.4 5.4 0 0 1 0-3.44V4.95H.96a9 9 0 0 0 0 8.1l3.02-2.33z"
+                />
+                <Path
+                  fill="#EA4335"
+                  d="M9 3.58c1.32 0 2.5.46 3.44 1.35l2.58-2.58C13.46.9 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.02 2.33C4.68 5.16 6.66 3.58 9 3.58z"
+                />
+              </Svg>
+              <Text style={styles.googleBtnText}>Tiếp tục với Google</Text>
+            </TouchableOpacity>
+          </>
+        ) : null}
 
         {/* Nút Huỷ / Đóng */}
         <TouchableOpacity

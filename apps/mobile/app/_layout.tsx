@@ -5,6 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { AuthProvider } from "../context/AuthContext";
+import { GoogleOneTap } from "../components/GoogleOneTap";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -58,6 +59,7 @@ export default function RootLayout() {
               }}
             />
           </Stack>
+          <GoogleOneTap />
         </AuthProvider>
       </QueryClientProvider>
     </SafeAreaProvider>
