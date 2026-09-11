@@ -95,12 +95,9 @@ function DaDangNhap({ username }: { username: string }) {
   return (
     <div className={css.khung}>
       <div className={css.the} data-testid="da-dang-nhap">
-        <h1 className={css.tieu_de}>Bạn đang đăng nhập</h1>
-        {/* Chỉ nói phiên hiện tại là AI. Bản đầu còn một câu giải thích khu quản trị và
-            trang công khai dùng chung phiên — **bỏ** (user chốt 2026-08-25): đó là chi
-            tiết kiến trúc, người dùng không cần biết và cũng không làm gì được với nó. */}
+        <h1 className={css.tieu_de}>Đăng nhập thành công</h1>
         <p className={css.mo_ta}>
-          Phiên hiện tại là <span className="mono">u/{username}</span>.
+          Bạn đã đăng nhập với tài khoản <span className="mono">u/{username}</span>.
         </p>
         <Link className={css.gui} href="/" data-testid="da-dang-nhap-ve-trang-chu">
           Về trang chủ
@@ -110,7 +107,7 @@ function DaDangNhap({ username }: { username: string }) {
             bấm "Đăng xuất". `role="status"` để trình đọc màn hình cũng biết. */}
         {!huy && (
           <p className={css.duoi} role="status" data-testid="da-dang-nhap-dem-nguoc">
-            Tự về trang chủ sau {conLai} giây.
+            Tự động chuyển về trang chủ sau {conLai} giây.
           </p>
         )}
         <p className={css.duoi}>
