@@ -322,20 +322,40 @@
       "CaiDatBienTapIn": {
         "description": "Body của `PUT /admin/cai-dat/bien-tap`.",
         "properties": {
+          "phut_tu_sua_binh_luan": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phut Tu Sua Binh Luan"
+          },
           "phut_tu_sua_moc": {
-            "title": "Phut Tu Sua Moc",
-            "type": "integer"
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phut Tu Sua Moc"
           }
         },
-        "required": [
-          "phut_tu_sua_moc"
-        ],
         "title": "CaiDatBienTapIn",
         "type": "object"
       },
       "CaiDatBienTapOut": {
         "description": "Cấu hình \"cửa sổ tự sửa bài\" cho trang Cài đặt (`plans/2026-09-05-cua-so-tu-sua-\nbai.md`) — anh em với `CaiDatGoogleOut` ngay dưới, cùng luật \"chỉ superuser ghi\".",
         "properties": {
+          "phut_tu_sua_binh_luan": {
+            "default": 15,
+            "title": "Phut Tu Sua Binh Luan",
+            "type": "integer"
+          },
           "phut_tu_sua_moc": {
             "title": "Phut Tu Sua Moc",
             "type": "integer"
@@ -767,6 +787,10 @@
             "title": "Da Doi",
             "type": "boolean"
           },
+          "phut_tu_sua_binh_luan": {
+            "title": "Phut Tu Sua Binh Luan",
+            "type": "integer"
+          },
           "phut_tu_sua_moc": {
             "title": "Phut Tu Sua Moc",
             "type": "integer"
@@ -774,7 +798,8 @@
         },
         "required": [
           "da_doi",
-          "phut_tu_sua_moc"
+          "phut_tu_sua_moc",
+          "phut_tu_sua_binh_luan"
         ],
         "title": "KetQuaLuuCaiDatBienTapOut",
         "type": "object"
@@ -2943,7 +2968,7 @@
         ]
       },
       "put": {
-        "description": "Đổi số phút tự sửa. Có hiệu lực **ngay** cho mọi mốc — không cache giá trị cũ ở\nđâu, `PATCH /mocs/{id}` đọc lại DB ở mỗi request (`core/cau_hinh.py`).\n\nGửi đúng giá trị đang có ⇒ 200 `da_doi=false`, không ghi `AuditLog` — cùng luật\n\"không đổi thì không vết\" của mọi hành động quản trị khác trong repo.",
+        "description": "Đổi số phút tự sửa. Có hiệu lực **ngay** cho mọi mốc/bình luận — không cache giá trị cũ ở\nđâu, `PATCH /mocs/{id}` và `PATCH /comments/{id}` đọc lại DB ở mỗi request (`core/cau_hinh.py`).\n\nGửi đúng giá trị đang có ⇒ 200 `da_doi=false`, không ghi `AuditLog` — cùng luật\n\"không đổi thì không vết\" của mọi hành động quản trị khác trong repo.",
         "operationId": "quan_tri_luu_cai_dat_bien_tap",
         "parameters": [],
         "requestBody": {

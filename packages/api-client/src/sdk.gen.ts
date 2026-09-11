@@ -4,7 +4,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { BoTheoMachData, BoTheoMachErrors, BoTheoMachResponses, BoTheoSubData, BoTheoSubErrors, BoTheoSubResponses, BoTheoUserData, BoTheoUserErrors, BoTheoUserResponses, CongKhaiMachData, CongKhaiMachErrors, CongKhaiMachResponses, DanhDauDaDocData, DanhDauDaDocErrors, DanhDauDaDocResponses, DanhDauDaXemData, DanhDauDaXemErrors, DanhDauDaXemResponses, DatAvatarData, DatAvatarErrors, DatAvatarResponses, DatReactionData, DatReactionErrors, DatReactionResponses, DatVoteData, DatVoteErrors, DatVoteResponses, DemLuotXemData, DemLuotXemErrors, DemLuotXemResponses, DongSoMachData, DongSoMachErrors, DongSoMachResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GoTrichData, GoTrichErrors, GoTrichResponses, GuiBaoCaoData, GuiBaoCaoErrors, GuiBaoCaoResponses, LietKeBanCuMocData, LietKeBanCuMocErrors, LietKeBanCuMocResponses, LietKeBinhLuanMachData, LietKeBinhLuanMachErrors, LietKeBinhLuanMachResponses, LietKeBinhLuanMocData, LietKeBinhLuanMocErrors, LietKeBinhLuanMocResponses, LietKeDangTheoData, LietKeDangTheoErrors, LietKeDangTheoResponses, LietKeDaVoteData, LietKeDaVoteErrors, LietKeDaVoteResponses, LietKeFeedDangDienRaData, LietKeFeedDangDienRaErrors, LietKeFeedDangDienRaResponses, LietKeFeedMoiData, LietKeFeedMoiErrors, LietKeFeedMoiResponses, LietKeMachCuaUserData, LietKeMachCuaUserErrors, LietKeMachCuaUserResponses, LietKeSubDangTheoData, LietKeSubDangTheoErrors, LietKeSubDangTheoResponses, LietKeSubData, LietKeSubResponses, LietKeSubToiLamModData, LietKeSubToiLamModErrors, LietKeSubToiLamModResponses, LietKeThongBaoData, LietKeThongBaoErrors, LietKeThongBaoResponses, LietKeUserDangTheoData, LietKeUserDangTheoErrors, LietKeUserDangTheoResponses, ModDatAnBinhLuanData, ModDatAnBinhLuanErrors, ModDatAnBinhLuanResponses, ModDatAnMachData, ModDatAnMachErrors, ModDatAnMachResponses, ModDatAnMocData, ModDatAnMocErrors, ModDatAnMocResponses, ModDatKhoaMachData, ModDatKhoaMachErrors, ModDatKhoaMachResponses, MoLaiMachData, MoLaiMachErrors, MoLaiMachResponses, NoiMocData, NoiMocErrors, NoiMocResponses, SuaBinhLuanData, SuaBinhLuanErrors, SuaBinhLuanResponses, SuaMocData, SuaMocErrors, SuaMocResponses, SuaToiData, SuaToiErrors, SuaToiResponses, TaiAnhMocData, TaiAnhMocErrors, TaiAnhMocResponses, TaiAnhNoiDungData, TaiAnhNoiDungErrors, TaiAnhNoiDungResponses, TaoMachData, TaoMachErrors, TaoMachResponses, TatBinhLuanMachData, TatBinhLuanMachErrors, TatBinhLuanMachResponses, TheoMachData, TheoMachErrors, TheoMachResponses, TheoSubData, TheoSubErrors, TheoSubResponses, TheoUserData, TheoUserErrors, TheoUserResponses, TimKiemData, TimKiemErrors, TimKiemGoiYData, TimKiemGoiYErrors, TimKiemGoiYResponses, TimKiemResponses, TrichVaoSoData, TrichVaoSoErrors, TrichVaoSoResponses, VietBinhLuanData, VietBinhLuanErrors, VietBinhLuanResponses, XemHoSoData, XemHoSoErrors, XemHoSoResponses, XemMachCuaToiData, XemMachCuaToiErrors, XemMachCuaToiResponses, XemMachData, XemMachErrors, XemMachResponses, XemSubCuaToiData, XemSubCuaToiErrors, XemSubCuaToiResponses, XemSubData, XemSubErrors, XemSubResponses, XemToiData, XemToiResponses, XemUserCuaToiData, XemUserCuaToiErrors, XemUserCuaToiResponses, XoaAnhMocData, XoaAnhMocErrors, XoaAnhMocResponses, XoaAvatarData, XoaAvatarErrors, XoaAvatarResponses, XoaBinhLuanData, XoaBinhLuanErrors, XoaBinhLuanResponses, XoaMocData, XoaMocErrors, XoaMocResponses } from './types.gen';
+import type { AnBinhLuanData, AnBinhLuanErrors, AnBinhLuanResponses, BoTheoMachData, BoTheoMachErrors, BoTheoMachResponses, BoTheoSubData, BoTheoSubErrors, BoTheoSubResponses, BoTheoUserData, BoTheoUserErrors, BoTheoUserResponses, CongKhaiMachData, CongKhaiMachErrors, CongKhaiMachResponses, DanhDauDaDocData, DanhDauDaDocErrors, DanhDauDaDocResponses, DanhDauDaXemData, DanhDauDaXemErrors, DanhDauDaXemResponses, DatAvatarData, DatAvatarErrors, DatAvatarResponses, DatReactionData, DatReactionErrors, DatReactionResponses, DatVoteData, DatVoteErrors, DatVoteResponses, DemLuotXemData, DemLuotXemErrors, DemLuotXemResponses, DongSoMachData, DongSoMachErrors, DongSoMachResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GoTrichData, GoTrichErrors, GoTrichResponses, GuiBaoCaoData, GuiBaoCaoErrors, GuiBaoCaoResponses, LietKeBanCuMocData, LietKeBanCuMocErrors, LietKeBanCuMocResponses, LietKeBinhLuanMachData, LietKeBinhLuanMachErrors, LietKeBinhLuanMachResponses, LietKeBinhLuanMocData, LietKeBinhLuanMocErrors, LietKeBinhLuanMocResponses, LietKeDangTheoData, LietKeDangTheoErrors, LietKeDangTheoResponses, LietKeDaVoteData, LietKeDaVoteErrors, LietKeDaVoteResponses, LietKeFeedDangDienRaData, LietKeFeedDangDienRaErrors, LietKeFeedDangDienRaResponses, LietKeFeedMoiData, LietKeFeedMoiErrors, LietKeFeedMoiResponses, LietKeMachCuaUserData, LietKeMachCuaUserErrors, LietKeMachCuaUserResponses, LietKeSubDangTheoData, LietKeSubDangTheoErrors, LietKeSubDangTheoResponses, LietKeSubData, LietKeSubResponses, LietKeSubToiLamModData, LietKeSubToiLamModErrors, LietKeSubToiLamModResponses, LietKeThongBaoData, LietKeThongBaoErrors, LietKeThongBaoResponses, LietKeUserDangTheoData, LietKeUserDangTheoErrors, LietKeUserDangTheoResponses, ModDatAnBinhLuanData, ModDatAnBinhLuanErrors, ModDatAnBinhLuanResponses, ModDatAnMachData, ModDatAnMachErrors, ModDatAnMachResponses, ModDatAnMocData, ModDatAnMocErrors, ModDatAnMocResponses, ModDatKhoaMachData, ModDatKhoaMachErrors, ModDatKhoaMachResponses, MoLaiMachData, MoLaiMachErrors, MoLaiMachResponses, NoiMocData, NoiMocErrors, NoiMocResponses, SuaBinhLuanData, SuaBinhLuanErrors, SuaBinhLuanResponses, SuaMocData, SuaMocErrors, SuaMocResponses, SuaToiData, SuaToiErrors, SuaToiResponses, TaiAnhMocData, TaiAnhMocErrors, TaiAnhMocResponses, TaiAnhNoiDungData, TaiAnhNoiDungErrors, TaiAnhNoiDungResponses, TaoMachData, TaoMachErrors, TaoMachResponses, TatBinhLuanMachData, TatBinhLuanMachErrors, TatBinhLuanMachResponses, TheoMachData, TheoMachErrors, TheoMachResponses, TheoSubData, TheoSubErrors, TheoSubResponses, TheoUserData, TheoUserErrors, TheoUserResponses, TimKiemData, TimKiemErrors, TimKiemGoiYData, TimKiemGoiYErrors, TimKiemGoiYResponses, TimKiemResponses, TrichVaoSoData, TrichVaoSoErrors, TrichVaoSoResponses, VietBinhLuanData, VietBinhLuanErrors, VietBinhLuanResponses, XemHoSoData, XemHoSoErrors, XemHoSoResponses, XemMachCuaToiData, XemMachCuaToiErrors, XemMachCuaToiResponses, XemMachData, XemMachErrors, XemMachResponses, XemSubCuaToiData, XemSubCuaToiErrors, XemSubCuaToiResponses, XemSubData, XemSubErrors, XemSubResponses, XemToiData, XemToiResponses, XemUserCuaToiData, XemUserCuaToiErrors, XemUserCuaToiResponses, XoaAnhMocData, XoaAnhMocErrors, XoaAnhMocResponses, XoaAvatarData, XoaAvatarErrors, XoaAvatarResponses, XoaBinhLuanData, XoaBinhLuanErrors, XoaBinhLuanResponses, XoaMocData, XoaMocErrors, XoaMocResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -55,38 +55,9 @@ export const xoaAnhMoc = <ThrowOnError extends boolean = false>(options: Options
 /**
  * Xoa Binh Luan Api
  *
- * Xoá bình luận theo **luật hai vế** của PLAN 5.3 — nợ 1a bàn giao, trả ở đây.
+ * Xoá bình luận — CHỈ Admin/Staff mới có quyền xoá bình luận.
  *
- * **Quyền: CHỈ tác giả của bình luận.** Mạch bị mod khoá ⇒ 403; đã xoá rồi ⇒ 409.
- *
- * Luật, nguyên văn: giữ chỗ "[đã xoá]" nếu **có reply con** HOẶC **đã TỪNG được trích
- * vào sổ (kể cả trích đã gỡ)**; xoá thật chỉ khi không dính cả hai. Chữ "đã TỪNG" khớp
- * đúng `Trich.comment = PROTECT` — `PROTECT` chặn theo hàng, nó không biết `removed_at`
- * là gì. Đọc thành "đang được trích" là tiền-kiểm `removed_at IS NULL`, quyết "xoá
- * thật", rồi ăn `ProtectedError` ⇒ 500 trên một thao tác hợp lệ của chính chủ.
- *
- * **Xoá thật thì dọn `Vote` mồ côi trong cùng transaction** — `Vote` cố ý không có FK
- * tới đích nên không có `ON DELETE` nào; nợ này ghi sẵn trong docstring của model từ 1a.
- *
- * `xoa_that = false` nghĩa là nút ở lại làm bia mộ: UI phải **render lại** nó chứ không
- * gỡ khỏi cây, nếu không cả nhánh con mất chỗ bám.
- *
- * ### Vì sao HAI cửa này gọi `lam_moi_mach` còn `POST /comments` thì không (L06)
- *
- * PLAN 8.4 điểm 2 xếp *"bình luận mới"* vào nhóm **KHÔNG có signal** — nó sống bằng
- * vòng revalidate nền, vì ép nó vào on-demand là gọi ngược gần như mỗi request trên một
- * mạch đang sôi. Sửa/xoá thì khác hẳn về hạng: đó là **nội dung biến khỏi trang công
- * khai**, cùng ranh giới mà `api/quan_tri_kiem_duyet.py` đã công nhận là sự kiện có
- * signal khi mod ẩn một bình luận.
- *
- * Bỏ sót nó có giá cụ thể và im lặng: khách xem trang mạch nhận bản ISR
- * (`revalidate = 3600`); tác giả xoá xong thì hàng biến khỏi Postgres, nhưng tác giả
- * đang đăng nhập nên đi nhánh `/m-phien/` (force-dynamic) — **họ thấy nó đã mất và tin
- * là xong**, trong khi khách vẫn đọc nguyên văn tới 60 phút.
- *
- * Gọi **sau** khi `core.ghi` đóng transaction của nó: `lam_moi_mach` bọc
- * `transaction.on_commit`, mà ngoài `atomic()` thì `on_commit` chạy ngay — tức đúng lúc
- * dữ liệu đã nằm trong DB. Cùng lối với `api/mocs.py::trich_vao_so_api`.
+ * Người dùng thường không được xoá bình luận đã đăng.
  */
 export const xoaBinhLuan = <ThrowOnError extends boolean = false>(options: Options<XoaBinhLuanData, ThrowOnError>): RequestResult<XoaBinhLuanResponses, XoaBinhLuanErrors, ThrowOnError> => (options.client ?? client).delete<XoaBinhLuanResponses, XoaBinhLuanErrors, ThrowOnError>({
     security: [{
@@ -102,21 +73,10 @@ export const xoaBinhLuan = <ThrowOnError extends boolean = false>(options: Optio
 /**
  * Sua Binh Luan Api
  *
- * Sửa bình luận: đổi `body`, hiện dấu `*đã sửa*` (PLAN 5.3).
+ * Sửa bình luận trong cửa sổ thời gian cho phép.
  *
- * **Quyền: CHỈ tác giả của bình luận** — 403 `khong_phai_chu` cho mọi người khác, kể cả
- * chủ mạch. Chủ mạch có quyền trên *cuốn sổ*, không có quyền trên *lời của người khác*.
- * Mạch bị mod khoá ⇒ 403; bình luận đã là bia mộ hoặc bị ẩn ⇒ 409.
- *
- * **Không có cửa sổ sửa im lặng 15 phút** như mốc, và đó là chủ đích: mốc là *bằng
- * chứng* nên nó cần lịch sử bản cũ, bình luận là *tán gẫu* nên nó chỉ cần nói ra rằng đã
- * sửa. `anchor_moc_seq` **không** sửa được — đổi neo sau khi thread đã có reply là dời
- * cả thread sang một ngăn kéo khác dưới chân người đang đọc.
- *
- * Trả về nút bình luận **không kèm `replies`** (mảng rỗng): endpoint này sửa đúng một
- * dòng, và trả cả nhánh con là mời UI thay nguyên nhánh bằng dữ liệu nó không hỏi.
- *
- * **Gọi `lam_moi_mach`** — xem ghi chú chung ở `xoa_binh_luan_api`.
+ * **Quyền: Tác giả bình luận trong thời gian cho phép hoặc staff.**
+ * Sau `doc_phut_tu_sua_binh_luan()` phút kể từ `created_at`, người dùng thường bị chặn 403 `het_cua_so_sua`.
  */
 export const suaBinhLuan = <ThrowOnError extends boolean = false>(options: Options<SuaBinhLuanData, ThrowOnError>): RequestResult<SuaBinhLuanResponses, SuaBinhLuanErrors, ThrowOnError> => (options.client ?? client).patch<SuaBinhLuanResponses, SuaBinhLuanErrors, ThrowOnError>({
     security: [{
@@ -126,6 +86,30 @@ export const suaBinhLuan = <ThrowOnError extends boolean = false>(options: Optio
             type: 'apiKey'
         }],
     url: '/api/v1/comments/{comment_id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * An Binh Luan Api
+ *
+ * Ẩn hoặc bỏ ẩn bình luận.
+ *
+ * - Tác giả hoặc Mod/Admin mới có quyền.
+ * - Hướng 2: Tác giả CHỈ được ẩn bình luận khi CHƯA có ai phản hồi (c.replies không có).
+ * Nếu đã có thảo luận con, chặn ẩn để tránh làm mất ngữ cảnh.
+ */
+export const anBinhLuan = <ThrowOnError extends boolean = false>(options: Options<AnBinhLuanData, ThrowOnError>): RequestResult<AnBinhLuanResponses, AnBinhLuanErrors, ThrowOnError> => (options.client ?? client).post<AnBinhLuanResponses, AnBinhLuanErrors, ThrowOnError>({
+    security: [{
+            key: 'DangNhap',
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/comments/{comment_id}/an',
     ...options,
     headers: {
         'Content-Type': 'application/json',

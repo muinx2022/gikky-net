@@ -38,7 +38,13 @@ bản sao thứ hai phải đi bảo vệ, nằm ở chỗ không ai nghĩ tới
 from django.core.exceptions import ValidationError as LoiModel
 from ninja import Router
 
-from core.cau_hinh import doc_phut_tu_sua_moc, luu_phut_tu_sua_moc
+from core.cau_hinh import (
+    doc_phut_tu_sua_binh_luan,
+    doc_phut_tu_sua_moc,
+    luu_phut_tu_sua_binh_luan,
+    luu_phut_tu_sua_moc,
+)
+from core.models.he_thong import CauHinhBienTap
 from core.cau_hinh_oauth import doc_trang_thai, luu_google, xoa_google
 from core.ghi import (
     AUDIT_SUA_CAI_DAT_GOOGLE,
@@ -203,6 +209,7 @@ def xem_cai_dat_bien_tap(request):
     """
     return CaiDatBienTapOut(
         phut_tu_sua_moc=doc_phut_tu_sua_moc(),
+        phut_tu_sua_binh_luan=doc_phut_tu_sua_binh_luan(),
         sua_duoc=bool(request.user.is_superuser),
     )
 
@@ -214,8 +221,8 @@ def xem_cai_dat_bien_tap(request):
     tags=["quan-tri-cai-dat"],
 )
 def luu_cai_dat_bien_tap(request, du_lieu: CaiDatBienTapIn):
-    """Đổi số phút tự sửa. Có hiệu lực **ngay** cho mọi mốc — không cache giá trị cũ ở
-    đâu, `PATCH /mocs/{id}` đọc lại DB ở mỗi request (`core/cau_hinh.py`).
+    """Đổi số phút tự sửa. Có hiệu lực **ngay** cho mọi mốc/bình luận — không cache giá trị cũ ở
+    đâu, `PATCH /mocs/{id}` và `PATCH /comments/{id}` đọc lại DB ở mỗi request (`core/cau_hinh.py`).
 
     Gửi đúng giá trị đang có ⇒ 200 `da_doi=false`, không ghi `AuditLog` — cùng luật
     "không đổi thì không vết" của mọi hành động quản trị khác trong repo.
@@ -224,12 +231,23 @@ def luu_cai_dat_bien_tap(request, du_lieu: CaiDatBienTapIn):
         chan := chan_neu_khong_phai_superuser(request, VIEC_SUA_CAU_HINH_BIEN_TAP)
     ) is not None:
         return chan
+    da_doi_tong = False
     try:
-        cau_hinh, da_doi = luu_phut_tu_sua_moc(
-            phut=du_lieu.phut_tu_sua_moc, boi=request.user
-        )
+        if du_lieu.phut_tu_sua_moc is not None:
+            _, da_doi_moc = luu_phut_tu_sua_moc(
+                phut=du_lieu.phut_tu_sua_moc, boi=request.user
+            )
+            da_doi_tong = da_doi_tong or da_doi_moc
+        if du_lieu.phut_tu_sua_binh_luan is not None:
+            _, da_doi_bl = luu_phut_tu_sua_binh_luan(
+                phut=du_lieu.phut_tu_sua_binh_luan, boi=request.user
+            )
+            da_doi_tong = da_doi_tong or da_doi_bl
     except LoiModel as e:
         return loi(400, DU_LIEU_KHONG_HOP_LE, "; ".join(e.messages))
+
     return KetQuaLuuCaiDatBienTapOut(
-        da_doi=da_doi, phut_tu_sua_moc=cau_hinh.phut_tu_sua_moc
+        da_doi=da_doi_tong,
+        phut_tu_sua_moc=doc_phut_tu_sua_moc(),
+        phut_tu_sua_binh_luan=doc_phut_tu_sua_binh_luan(),
     )

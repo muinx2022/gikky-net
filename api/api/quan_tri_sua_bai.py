@@ -220,6 +220,8 @@ def sua_moc_quan_tri(request, moc_id: int, du_lieu: SuaMocQuanTriIn):
     Gửi lên đúng thứ đang có ⇒ 200 `da_doi=false`, và **không** revision, **không** log:
     một cú bấm Lưu chẳng đổi gì không được đóng dấu "đã sửa" lên bài của người ta.
     """
+    if (chan := chan_neu_khong_phai_superuser(request, VIEC_SUA_NOI_DUNG)) is not None:
+        return chan
     moc = _nap_moc_quan_tri(moc_id)
     if moc is None:
         return khong_tim_thay("mốc")

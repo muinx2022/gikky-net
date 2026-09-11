@@ -141,6 +141,7 @@ CUA_GHI = [
     ("delete", "/api/v1/mocs/{moc}", {}),
     ("patch", "/api/v1/comments/{comment}", {"body": "B"}),
     ("delete", "/api/v1/comments/{comment}", {}),
+    ("post", "/api/v1/comments/{comment}/an", {"an": True}),
     ("post", "/api/v1/votes", {"target_type": "moc", "target_id": 0, "value": 1}),
     ("post", "/api/v1/mocs/{moc}/reactions", {"emoji": "lieu"}),
     # --- Phase 3 ---
@@ -306,7 +307,7 @@ CUA_CO_CHU = [
     ("patch", "/api/v1/mocs/{moc}", {"body": "B sửa mốc của A"}),
     ("delete", "/api/v1/mocs/{moc}", {}),
     ("patch", "/api/v1/comments/{comment}", {"body": "B sửa bình luận của A"}),
-    ("delete", "/api/v1/comments/{comment}", {}),
+    ("post", "/api/v1/comments/{comment}/an", {"an": True}),
     # Trích vào sổ: chủ là **`Mach.author`**, không phải `Moc.author` — rào 4 của PLAN 5.6
     # ghi rõ blockquote là "trích từ khán đài, bởi chủ mạch".
     ("post", "/api/v1/mocs/{moc}/trich", {"comment_id": 0}),
@@ -387,6 +388,16 @@ def test_chu_mach_KHONG_sua_duoc_binh_luan_cua_nguoi_khac(client, mach_cua_a, ng
     )
     assert (
         ma_loi(client, f"/api/v1/comments/{cua_b.pk}", status=403, method="delete")
+        == "khong_phai_admin"
+    )
+    assert (
+        ma_loi(
+            client,
+            f"/api/v1/comments/{cua_b.pk}/an",
+            {"an": True},
+            status=403,
+            method="post",
+        )
         == KHONG_PHAI_CHU
     )
 

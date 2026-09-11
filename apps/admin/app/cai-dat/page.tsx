@@ -234,6 +234,7 @@ function KhoiPhutTuSua() {
   const [tt, datTt] = useState<CaiDatBienTapOut | null>(null);
   const [loi, datLoi] = useState<string | null>(null);
   const [phut, datPhut] = useState("");
+  const [phutBinhLuan, datPhutBinhLuan] = useState("");
 
   const nap = useCallback(async () => {
     datLoi(null);
@@ -247,6 +248,7 @@ function KhoiPhutTuSua() {
     }
     datTt(data);
     datPhut(String(data.phut_tu_sua_moc));
+    datPhutBinhLuan(String(data.phut_tu_sua_binh_luan ?? 15));
   }, []);
 
   useEffect(() => {
@@ -262,17 +264,17 @@ function KhoiPhutTuSua() {
 
   if (tt === null) {
     return (
-      <The tieu_de="Cửa sổ tự sửa bài" pham_vi="Biên tập" className="p-4">
+      <The tieu_de="Cửa sổ tự sửa bài và bình luận" pham_vi="Biên tập" className="p-4">
         <Skeleton dong={2} />
       </The>
     );
   }
 
   return (
-    <The tieu_de="Cửa sổ tự sửa bài" pham_vi="Biên tập" className="p-4">
+    <The tieu_de="Cửa sổ tự sửa bài và bình luận" pham_vi="Biên tập" className="p-4">
       <div className="mt-3 space-y-4">
         <p className="text-sm text-muc-mo">
-          Số phút tác giả được tự sửa bài sau khi đăng — hết thời gian này chỉ quản trị
+          Số phút tác giả được tự sửa bài viết và bình luận sau khi đăng — hết thời gian này chỉ quản trị
           viên sửa được.
         </p>
 
@@ -285,32 +287,52 @@ function KhoiPhutTuSua() {
         )}
 
         <form
-          className="space-y-3"
+          className="space-y-4"
           onSubmit={(e) => {
             e.preventDefault();
-            const gia_tri = Number(phut);
+            const gia_tri_moc = Number(phut);
+            const gia_tri_bl = Number(phutBinhLuan);
             void chay(() =>
               quanTriLuuCaiDatBienTap({
                 baseUrl: GOC_API,
                 headers: headerGhi(),
-                body: { phut_tu_sua_moc: gia_tri },
+                body: {
+                  phut_tu_sua_moc: gia_tri_moc,
+                  phut_tu_sua_binh_luan: gia_tri_bl,
+                },
               }),
             );
           }}
         >
-          <label className="block text-sm">
-            <span className="mb-1 block text-muc-mo">Số phút</span>
-            <input
-              type="number"
-              min={1}
-              max={10_080}
-              className="o-nhap mono"
-              value={phut}
-              onChange={(e) => datPhut(e.target.value)}
-              disabled={!tt.sua_duoc || dang_chay}
-              data-testid="phut-tu-sua-moc"
-            />
-          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <label className="block text-sm">
+              <span className="mb-1 block text-muc-mo">Số phút tự sửa mốc (bài viết)</span>
+              <input
+                type="number"
+                min={1}
+                max={10_080}
+                className="o-nhap mono"
+                value={phut}
+                onChange={(e) => datPhut(e.target.value)}
+                disabled={!tt.sua_duoc || dang_chay}
+                data-testid="phut-tu-sua-moc"
+              />
+            </label>
+
+            <label className="block text-sm">
+              <span className="mb-1 block text-muc-mo">Số phút tự sửa bình luận</span>
+              <input
+                type="number"
+                min={1}
+                max={10_080}
+                className="o-nhap mono"
+                value={phutBinhLuan}
+                onChange={(e) => datPhutBinhLuan(e.target.value)}
+                disabled={!tt.sua_duoc || dang_chay}
+                data-testid="phut-tu-sua-binh-luan"
+              />
+            </label>
+          </div>
 
           {tt.sua_duoc && (
             <div className="flex items-center justify-end gap-2 border-t border-vien pt-4">

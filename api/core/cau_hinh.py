@@ -22,13 +22,20 @@ from django.core.exceptions import ValidationError
 
 from core.ghi import AUDIT_SUA_CAU_HINH_BIEN_TAP, DICH_CAI_DAT, ghi_audit
 from core.models.dien_dan import Mach
-from core.models.he_thong import CauHinhBienTap, PHUT_TU_SUA_MAC_DINH
+from core.models.he_thong import (
+    CauHinhBienTap,
+    PHUT_TU_SUA_BINH_LUAN_MAC_DINH,
+    PHUT_TU_SUA_MAC_DINH,
+)
 from core.models.moc import Moc
 
 __all__ = [
+    "PHUT_TU_SUA_BINH_LUAN_MAC_DINH",
     "PHUT_TU_SUA_MAC_DINH",
     "PHUT_TU_SUA_TOI_DA",
+    "doc_phut_tu_sua_binh_luan",
     "doc_phut_tu_sua_moc",
+    "luu_phut_tu_sua_binh_luan",
     "luu_phut_tu_sua_moc",
     "moc_bat_dau_tu_sua",
 ]
@@ -55,6 +62,16 @@ def doc_phut_tu_sua_moc() -> int:
     """
     cau_hinh = CauHinhBienTap.objects.filter(pk=1).first()
     return cau_hinh.phut_tu_sua_moc if cau_hinh is not None else PHUT_TU_SUA_MAC_DINH
+
+
+def doc_phut_tu_sua_binh_luan() -> int:
+    """Số phút tác giả được tự sửa bình luận — mặc định 15 phút."""
+    cau_hinh = CauHinhBienTap.objects.filter(pk=1).first()
+    return (
+        cau_hinh.phut_tu_sua_binh_luan
+        if cau_hinh is not None
+        else PHUT_TU_SUA_BINH_LUAN_MAC_DINH
+    )
 
 
 def moc_bat_dau_tu_sua(moc: Moc, mach: Mach) -> datetime:
@@ -112,6 +129,33 @@ def luu_phut_tu_sua_moc(*, phut: int, boi, ly_do: str = "") -> tuple[CauHinhBien
     phut_cu = cau_hinh.phut_tu_sua_moc
     cau_hinh.phut_tu_sua_moc = phut
     cau_hinh.save(update_fields=["phut_tu_sua_moc"])
+    ghi_audit(
+        actor=boi,
+        action=AUDIT_SUA_CAU_HINH_BIEN_TAP,
+        target_type=DICH_CAI_DAT,
+        target_id=cau_hinh.pk,
+        phut_cu=phut_cu,
+        phut_moi=phut,
+        ly_do=ly_do,
+    )
+    return cau_hinh, True
+
+
+def luu_phut_tu_sua_binh_luan(
+    *, phut: int, boi, ly_do: str = ""
+) -> tuple[CauHinhBienTap, bool]:
+    """Đổi số phút tự sửa bình luận. Trả `(cấu hình, có đổi không)`."""
+    if not (1 <= phut <= PHUT_TU_SUA_TOI_DA):
+        raise ValidationError(
+            f"Số phút tự sửa bình luận phải trong khoảng 1–{PHUT_TU_SUA_TOI_DA}, nhận {phut}."
+        )
+    cau_hinh, _ = CauHinhBienTap.objects.get_or_create(pk=1)
+    if cau_hinh.phut_tu_sua_binh_luan == phut:
+        return cau_hinh, False
+
+    phut_cu = cau_hinh.phut_tu_sua_binh_luan
+    cau_hinh.phut_tu_sua_binh_luan = phut
+    cau_hinh.save(update_fields=["phut_tu_sua_binh_luan"])
     ghi_audit(
         actor=boi,
         action=AUDIT_SUA_CAU_HINH_BIEN_TAP,

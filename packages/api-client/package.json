@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "description": "TS client sinh từ OpenAPI của Django Ninja. Thư mục src/ KHÔNG SỬA TAY — chạy `pnpm codegen` ở root. Cố ý KHÔNG export subpath './client': nó đưa ra `client` singleton dùng chung cả tiến trình Node; ai gọi `client.setConfig({headers:{cookie}})` trong server component là mở đường cho request của user B đọc dữ liệu bằng session user A — hỏng im lặng, trang vẫn 200. Xem CLAUDE.md.",
+  "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
     "./admin": "./src-admin/index.ts"

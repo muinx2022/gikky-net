@@ -1,6 +1,23 @@
 {
   "components": {
     "schemas": {
+      "AnBinhLuanIn": {
+        "description": "Ẩn / bỏ ẩn bình luận — `POST /comments/{id}/an`.",
+        "properties": {
+          "an": {
+            "default": true,
+            "title": "An",
+            "type": "boolean"
+          },
+          "ly_do": {
+            "default": "",
+            "title": "Ly Do",
+            "type": "string"
+          }
+        },
+        "title": "AnBinhLuanIn",
+        "type": "object"
+      },
       "AnhNoiDungOut": {
         "description": "Ảnh vừa tải lên để **nhúng thẳng vào thân bài** — `POST /me/anh` (2026-08-24).\n\nHình dạng cố tình KHÁC `AnhOut`, và khác đúng ở chỗ nói lên bản chất: không `id`\n(không có gì để gọi lại — không có cửa `DELETE`, xem docstring endpoint), không\n`position` (không có gallery để xếp), không `url_thumb` (ảnh giữa bài đọc bằng bản\nchính), không `exif_taken_at` (nó là gợi ý cho `occurred_at` của MỐC, mà cửa này chạy\ntrước khi mốc tồn tại). Còn lại đúng ba trường editor cần.\n\n`width`/`height` chứ không `w`/`h` như `AnhOut`: chúng đi thẳng vào thuộc tính cùng\ntên của node ảnh trong Tiptap, và một lượt đổi tên ở tầng frontend là đúng loại lệch\nkhông ai nhớ. Kích thước là của ảnh **đã tái mã hoá** (`core/anh.py` thu về cạnh\n`CANH_TOI_DA`), tức của đúng file đang được phục vụ.",
         "properties": {
@@ -360,6 +377,18 @@
           "score": {
             "title": "Score",
             "type": "integer"
+          },
+          "sua_duoc_den": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sua Duoc Den"
           },
           "trang_thai": {
             "enum": [
@@ -861,6 +890,25 @@
           "machs"
         ],
         "title": "HoSoOut",
+        "type": "object"
+      },
+      "KetQuaAnBinhLuanOut": {
+        "description": "Kết quả `POST /comments/{id}/an`.",
+        "properties": {
+          "da_an": {
+            "title": "Da An",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "da_an"
+        ],
+        "title": "KetQuaAnBinhLuanOut",
         "type": "object"
       },
       "KetQuaDoiTrangThaiOut": {
@@ -2964,7 +3012,7 @@
     },
     "/api/v1/comments/{comment_id}": {
       "delete": {
-        "description": "Xoá bình luận theo **luật hai vế** của PLAN 5.3 — nợ 1a bàn giao, trả ở đây.\n\n**Quyền: CHỈ tác giả của bình luận.** Mạch bị mod khoá ⇒ 403; đã xoá rồi ⇒ 409.\n\nLuật, nguyên văn: giữ chỗ \"[đã xoá]\" nếu **có reply con** HOẶC **đã TỪNG được trích\nvào sổ (kể cả trích đã gỡ)**; xoá thật chỉ khi không dính cả hai. Chữ \"đã TỪNG\" khớp\nđúng `Trich.comment = PROTECT` — `PROTECT` chặn theo hàng, nó không biết `removed_at`\nlà gì. Đọc thành \"đang được trích\" là tiền-kiểm `removed_at IS NULL`, quyết \"xoá\nthật\", rồi ăn `ProtectedError` ⇒ 500 trên một thao tác hợp lệ của chính chủ.\n\n**Xoá thật thì dọn `Vote` mồ côi trong cùng transaction** — `Vote` cố ý không có FK\ntới đích nên không có `ON DELETE` nào; nợ này ghi sẵn trong docstring của model từ 1a.\n\n`xoa_that = false` nghĩa là nút ở lại làm bia mộ: UI phải **render lại** nó chứ không\ngỡ khỏi cây, nếu không cả nhánh con mất chỗ bám.\n\n### Vì sao HAI cửa này gọi `lam_moi_mach` còn `POST /comments` thì không (L06)\n\nPLAN 8.4 điểm 2 xếp *\"bình luận mới\"* vào nhóm **KHÔNG có signal** — nó sống bằng\nvòng revalidate nền, vì ép nó vào on-demand là gọi ngược gần như mỗi request trên một\nmạch đang sôi. Sửa/xoá thì khác hẳn về hạng: đó là **nội dung biến khỏi trang công\nkhai**, cùng ranh giới mà `api/quan_tri_kiem_duyet.py` đã công nhận là sự kiện có\nsignal khi mod ẩn một bình luận.\n\nBỏ sót nó có giá cụ thể và im lặng: khách xem trang mạch nhận bản ISR\n(`revalidate = 3600`); tác giả xoá xong thì hàng biến khỏi Postgres, nhưng tác giả\nđang đăng nhập nên đi nhánh `/m-phien/` (force-dynamic) — **họ thấy nó đã mất và tin\nlà xong**, trong khi khách vẫn đọc nguyên văn tới 60 phút.\n\nGọi **sau** khi `core.ghi` đóng transaction của nó: `lam_moi_mach` bọc\n`transaction.on_commit`, mà ngoài `atomic()` thì `on_commit` chạy ngay — tức đúng lúc\ndữ liệu đã nằm trong DB. Cùng lối với `api/mocs.py::trich_vao_so_api`.",
+        "description": "Xoá bình luận — CHỈ Admin/Staff mới có quyền xoá bình luận.\n\nNgười dùng thường không được xoá bình luận đã đăng.",
         "operationId": "xoa_binh_luan",
         "parameters": [
           {
@@ -3040,7 +3088,7 @@
         ]
       },
       "patch": {
-        "description": "Sửa bình luận: đổi `body`, hiện dấu `*đã sửa*` (PLAN 5.3).\n\n**Quyền: CHỈ tác giả của bình luận** — 403 `khong_phai_chu` cho mọi người khác, kể cả\nchủ mạch. Chủ mạch có quyền trên *cuốn sổ*, không có quyền trên *lời của người khác*.\nMạch bị mod khoá ⇒ 403; bình luận đã là bia mộ hoặc bị ẩn ⇒ 409.\n\n**Không có cửa sổ sửa im lặng 15 phút** như mốc, và đó là chủ đích: mốc là *bằng\nchứng* nên nó cần lịch sử bản cũ, bình luận là *tán gẫu* nên nó chỉ cần nói ra rằng đã\nsửa. `anchor_moc_seq` **không** sửa được — đổi neo sau khi thread đã có reply là dời\ncả thread sang một ngăn kéo khác dưới chân người đang đọc.\n\nTrả về nút bình luận **không kèm `replies`** (mảng rỗng): endpoint này sửa đúng một\ndòng, và trả cả nhánh con là mời UI thay nguyên nhánh bằng dữ liệu nó không hỏi.\n\n**Gọi `lam_moi_mach`** — xem ghi chú chung ở `xoa_binh_luan_api`.",
+        "description": "Sửa bình luận trong cửa sổ thời gian cho phép.\n\n**Quyền: Tác giả bình luận trong thời gian cho phép hoặc staff.**\nSau `doc_phut_tu_sua_binh_luan()` phút kể từ `created_at`, người dùng thường bị chặn 403 `het_cua_so_sua`.",
         "operationId": "sua_binh_luan",
         "parameters": [
           {
@@ -3131,6 +3179,104 @@
           }
         ],
         "summary": "Sua Binh Luan Api",
+        "tags": [
+          "binh-luan"
+        ]
+      }
+    },
+    "/api/v1/comments/{comment_id}/an": {
+      "post": {
+        "description": "Ẩn hoặc bỏ ẩn bình luận.\n\n- Tác giả hoặc Mod/Admin mới có quyền.\n- Hướng 2: Tác giả CHỈ được ẩn bình luận khi CHƯA có ai phản hồi (c.replies không có).\n  Nếu đã có thảo luận con, chặn ẩn để tránh làm mất ngữ cảnh.",
+        "operationId": "an_binh_luan",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "comment_id",
+            "required": true,
+            "schema": {
+              "title": "Comment Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnBinhLuanIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KetQuaAnBinhLuanOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "An Binh Luan Api",
         "tags": [
           "binh-luan"
         ]

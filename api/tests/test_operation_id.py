@@ -124,6 +124,7 @@ def test_du_endpoint_cua_plan_muc_7():
         (("DELETE",), "/mocs/{int:moc_id}"),
         (("PATCH",), "/comments/{int:comment_id}"),
         (("DELETE",), "/comments/{int:comment_id}"),
+        (("POST",), "/comments/{int:comment_id}/an"),
         (("POST",), "/votes"),
         (("POST",), "/mocs/{int:moc_id}/reactions"),
         # --- mặt BÃO + vòng lặp quay lại (Phase 3) ---

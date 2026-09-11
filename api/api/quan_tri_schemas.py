@@ -591,6 +591,7 @@ class CaiDatBienTapOut(Schema):
     #: `Moc.created_at` khi mạch không hẹn giờ — xem `core/cau_hinh.py::
     #: moc_bat_dau_tu_sua`) mà tác giả còn tự sửa bài — mặc định 60.
     phut_tu_sua_moc: int
+    phut_tu_sua_binh_luan: int = 15
     #: Người đang xem có được GHI không, cùng luật `CaiDatGoogleOut.sua_duoc`. Mọi
     #: `is_staff` đọc được cửa GET; chỉ superuser đổi được.
     sua_duoc: bool
@@ -599,7 +600,8 @@ class CaiDatBienTapOut(Schema):
 class CaiDatBienTapIn(Schema):
     """Body của `PUT /admin/cai-dat/bien-tap`."""
 
-    phut_tu_sua_moc: int
+    phut_tu_sua_moc: int | None = None
+    phut_tu_sua_binh_luan: int | None = None
 
 
 class KetQuaLuuCaiDatBienTapOut(Schema):
@@ -607,6 +609,7 @@ class KetQuaLuuCaiDatBienTapOut(Schema):
 
     da_doi: bool
     phut_tu_sua_moc: int
+    phut_tu_sua_binh_luan: int
 
 
 class GanModSubIn(Schema):

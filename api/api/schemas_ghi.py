@@ -185,6 +185,13 @@ class BinhLuanSuaIn(Schema):
     body_dinh_dang: Literal["markdown", "html"] = "markdown"
 
 
+class AnBinhLuanIn(Schema):
+    """Ẩn / bỏ ẩn bình luận — `POST /comments/{id}/an`."""
+
+    an: bool = True
+    ly_do: str = ""
+
+
 class VoteIn(Schema):
     """Vote / đổi / rút — `POST /votes` (PLAN 5.7, mục 7).
 

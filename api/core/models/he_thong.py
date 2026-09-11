@@ -15,6 +15,7 @@ from django.utils import timezone
 #: nghĩa lúc cau_hinh.py quay lại xin hằng số. Model KHÔNG phụ thuộc tầng nghiệp vụ là quy
 #: ước chung của package `core/models/`, nên chiều import này cũng là chiều đúng.
 PHUT_TU_SUA_MAC_DINH = 60
+PHUT_TU_SUA_BINH_LUAN_MAC_DINH = 15
 
 
 class Notification(models.Model):
@@ -173,6 +174,9 @@ class CauHinhBienTap(models.Model):
     """
 
     phut_tu_sua_moc = models.PositiveIntegerField(default=PHUT_TU_SUA_MAC_DINH)
+    phut_tu_sua_binh_luan = models.PositiveIntegerField(
+        default=PHUT_TU_SUA_BINH_LUAN_MAC_DINH
+    )
 
     class Meta:
         verbose_name = "cấu hình biên tập"

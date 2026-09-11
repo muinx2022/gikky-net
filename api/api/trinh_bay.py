@@ -26,7 +26,7 @@ from typing import NamedTuple
 
 from django.db.models import Q
 
-from core.cau_hinh import moc_bat_dau_tu_sua
+from core.cau_hinh import doc_phut_tu_sua_binh_luan, moc_bat_dau_tu_sua
 from core.doc_noi_dung import DA_AN, Nut, doc_duoc, trang_thai_noi_dung
 from core.ghi import NGAY_MO_LAI, PHUT_SUA_IM_LANG
 from core.lam_sach_html import _src_cua_site, van_ban_thuan
@@ -515,7 +515,9 @@ def revision_ra(ban: MocRevision) -> MocRevisionOut:
     )
 
 
-def nut_ra(nut: Nut, *, chu_mach_id: int) -> BinhLuanOut:
+def nut_ra(
+    nut: Nut, *, chu_mach_id: int, phut_tu_sua_bl: int | None = None
+) -> BinhLuanOut:
     """Một nút cây bình luận, đệ quy xuống hết nhánh.
 
     Bia mộ trả `author = null`, `body = null`, `edited_at = null`, `up/down/score = 0`,
@@ -528,8 +530,11 @@ def nut_ra(nut: Nut, *, chu_mach_id: int) -> BinhLuanOut:
     `trang_thai` và `replies` — không cái nào tiết lộ nội dung, và thiếu chúng thì nhánh
     con không nối lại được vào cây, còn khối trích trên thẻ mốc mất chỗ để nhảy tới.
     """
+    if phut_tu_sua_bl is None:
+        phut_tu_sua_bl = doc_phut_tu_sua_binh_luan()
     c: Comment = nut.binh_luan
     hien = nut.hien_noi_dung
+    sua_duoc_den = (c.created_at + timedelta(minutes=phut_tu_sua_bl)) if hien else None
     return BinhLuanOut(
         id=c.pk,
         parent_id=c.parent_id,
@@ -550,5 +555,9 @@ def nut_ra(nut: Nut, *, chu_mach_id: int) -> BinhLuanOut:
         trang_thai=nut.trang_thai,
         la_chu_mach=hien and c.author_id == chu_mach_id,
         tu_gap=nut.tu_gap,
-        replies=[nut_ra(x, chu_mach_id=chu_mach_id) for x in nut.con],
+        sua_duoc_den=sua_duoc_den,
+        replies=[
+            nut_ra(x, chu_mach_id=chu_mach_id, phut_tu_sua_bl=phut_tu_sua_bl)
+            for x in nut.con
+        ],
     )

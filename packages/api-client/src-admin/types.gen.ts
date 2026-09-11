@@ -216,9 +216,13 @@ export type BinhLuanDongOut = {
  */
 export type CaiDatBienTapIn = {
     /**
+     * Phut Tu Sua Binh Luan
+     */
+    phut_tu_sua_binh_luan?: number | null;
+    /**
      * Phut Tu Sua Moc
      */
-    phut_tu_sua_moc: number;
+    phut_tu_sua_moc?: number | null;
 };
 
 /**
@@ -228,6 +232,10 @@ export type CaiDatBienTapIn = {
  * bai.md`) — anh em với `CaiDatGoogleOut` ngay dưới, cùng luật "chỉ superuser ghi".
  */
 export type CaiDatBienTapOut = {
+    /**
+     * Phut Tu Sua Binh Luan
+     */
+    phut_tu_sua_binh_luan?: number;
     /**
      * Phut Tu Sua Moc
      */
@@ -619,6 +627,10 @@ export type KetQuaLuuCaiDatBienTapOut = {
      * Da Doi
      */
     da_doi: boolean;
+    /**
+     * Phut Tu Sua Binh Luan
+     */
+    phut_tu_sua_binh_luan: number;
     /**
      * Phut Tu Sua Moc
      */

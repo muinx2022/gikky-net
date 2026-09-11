@@ -21,6 +21,12 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
+from api.mobile_auth import (
+    dang_ky_mobile,
+    dang_nhap_mobile,
+    dang_xuat_mobile,
+    quen_mat_khau_mobile,
+)
 from api.quan_tri import api_admin
 from api.v1 import api_v1
 
@@ -66,6 +72,11 @@ urlpatterns = [
     # Cả prefix này — kể cả nhánh `django/` ở trên — đi qua hàng rào Host
     # `config/host_admin.py` (PLAN 8.2), rồi mới tới `ChiMod` của Ninja.
     path("api/admin/", api_admin.urls),
+    # Cửa đăng nhập, đăng ký & quên mật khẩu dành riêng cho ứng dụng Mobile (React Native / Expo)
+    path("api/mobile/login", dang_nhap_mobile, name="mobile_login"),
+    path("api/mobile/logout", dang_xuat_mobile, name="mobile_logout"),
+    path("api/mobile/signup", dang_ky_mobile, name="mobile_signup"),
+    path("api/mobile/forgot-password", quen_mat_khau_mobile, name="mobile_forgot_password"),
 ]
 
 # --- Ảnh ở DEV (Phase 5) -----------------------------------------------------

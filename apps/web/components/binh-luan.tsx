@@ -192,6 +192,9 @@ function NoiDung({ nut }: { nut: BinhLuanOut }) {
         than={nut.body ?? ""}
         daXoa={nut.trang_thai !== "binh_thuong"}
         anchorMocSeq={nut.anchor_moc_seq}
+        suaDuocDen={nut.sua_duoc_den}
+        soReplies={nut.replies.length}
+        dangAn={nut.trang_thai === "da_an"}
         vote={
           <CotVote
             diem={nut.score}

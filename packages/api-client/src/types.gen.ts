@@ -7,6 +7,22 @@ export type ClientOptions = {
 };
 
 /**
+ * AnBinhLuanIn
+ *
+ * Ẩn / bỏ ẩn bình luận — `POST /comments/{id}/an`.
+ */
+export type AnBinhLuanIn = {
+    /**
+     * An
+     */
+    an?: boolean;
+    /**
+     * Ly Do
+     */
+    ly_do?: string;
+};
+
+/**
  * AnhNoiDungOut
  *
  * Ảnh vừa tải lên để **nhúng thẳng vào thân bài** — `POST /me/anh` (2026-08-24).
@@ -271,6 +287,10 @@ export type BinhLuanOut = {
      * Score
      */
     score: number;
+    /**
+     * Sua Duoc Den
+     */
+    sua_duoc_den?: string | null;
     /**
      * Trang Thai
      */
@@ -714,6 +734,22 @@ export type HoSoOut = {
      * Username
      */
     username: string;
+};
+
+/**
+ * KetQuaAnBinhLuanOut
+ *
+ * Kết quả `POST /comments/{id}/an`.
+ */
+export type KetQuaAnBinhLuanOut = {
+    /**
+     * Da An
+     */
+    da_an: boolean;
+    /**
+     * Id
+     */
+    id: number;
 };
 
 /**
@@ -2332,6 +2368,52 @@ export type SuaBinhLuanResponses = {
 };
 
 export type SuaBinhLuanResponse = SuaBinhLuanResponses[keyof SuaBinhLuanResponses];
+
+export type AnBinhLuanData = {
+    body: AnBinhLuanIn;
+    path: {
+        /**
+         * Comment Id
+         */
+        comment_id: number;
+    };
+    query?: never;
+    url: '/api/v1/comments/{comment_id}/an';
+};
+
+export type AnBinhLuanErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+    /**
+     * Conflict
+     */
+    409: LoiOut;
+};
+
+export type AnBinhLuanError = AnBinhLuanErrors[keyof AnBinhLuanErrors];
+
+export type AnBinhLuanResponses = {
+    /**
+     * OK
+     */
+    200: KetQuaAnBinhLuanOut;
+};
+
+export type AnBinhLuanResponse = AnBinhLuanResponses[keyof AnBinhLuanResponses];
 
 export type DemLuotXemData = {
     body: DemLuotXemIn;

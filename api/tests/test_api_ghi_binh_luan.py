@@ -151,16 +151,85 @@ def test_sua_binh_luan_hien_dau_da_sua(client, mach_cua_a, nguoi_b):
     assert d2["body"] == "bản sau" and d2["edited_at"] is not None
 
 
-# --- xoá: luật HAI VẾ của PLAN 5.3 -------------------------------------------
+@pytest.fixture
+def admin_user(db):
+    from django.contrib.auth import get_user_model
+    return get_user_model().objects.create_user(
+        username="admin_user", is_staff=True
+    )
 
 
 @pytest.mark.django_db
-def test_xoa_binh_luan_khong_dinh_gi_thi_xoa_THAT(client, mach_cua_a, nguoi_b):
-    """Không reply con, chưa từng được trích ⇒ **biến mất hẳn**, không để bia mộ."""
+def test_sua_binh_luan_qua_han_thi_403_het_cua_so_sua(client, mach_cua_a, nguoi_b):
+    from datetime import timedelta
+    client.force_login(nguoi_b)
+    d = dat(
+        client, f"/api/v1/machs/{mach_cua_a.pk}/comments", {"body": "bản đầu"}, status=201
+    )
+    Comment.objects.filter(pk=d["id"]).update(created_at=timezone.now() - timedelta(minutes=60))
+    assert (
+        ma_loi(client, f"/api/v1/comments/{d['id']}", {"body": "sửa muộn"}, status=403, method="patch")
+        == "het_cua_so_sua"
+    )
+
+
+# --- ẩn: Hướng 2 (chỉ ẩn khi chưa có reply) ----------------------------------
+
+
+@pytest.mark.django_db
+def test_an_binh_luan_chua_co_reply_thi_thanh_cong_va_bo_an_duoc(client, mach_cua_a, nguoi_b):
+    client.force_login(nguoi_b)
+    d = dat(
+        client, f"/api/v1/machs/{mach_cua_a.pk}/comments", {"body": "sắp ẩn"}, status=201
+    )
+    # Ẩn
+    kq = dat(client, f"/api/v1/comments/{d['id']}/an", {"an": True}, status=200)
+    assert kq["da_an"] is True
+    c = Comment.objects.get(pk=d["id"])
+    assert c.hidden_at is not None
+
+    # Bỏ ẩn
+    kq2 = dat(client, f"/api/v1/comments/{d['id']}/an", {"an": False}, status=200)
+    assert kq2["da_an"] is False
+    c.refresh_from_db()
+    assert c.hidden_at is None
+
+
+@pytest.mark.django_db
+def test_an_binh_luan_da_co_reply_thi_400_da_co_tra_loi(client, mach_cua_a, nguoi_a, nguoi_b):
+    goc = tao_binh_luan(mach=mach_cua_a, author=nguoi_b, body="gốc")
+    tao_binh_luan(mach=mach_cua_a, author=nguoi_a, body="reply con", parent=goc)
+
+    client.force_login(nguoi_b)
+    assert (
+        ma_loi(client, f"/api/v1/comments/{goc.pk}/an", {"an": True}, status=400, method="post")
+        == "da_co_tra_loi"
+    )
+
+
+# --- xoá: CHỈ admin/staff mới được xoá (PLAN mới) ----------------------------
+
+
+@pytest.mark.django_db
+def test_user_thuong_xoa_binh_luan_thi_403_khong_phai_admin(client, mach_cua_a, nguoi_b):
     client.force_login(nguoi_b)
     d = dat(
         client, f"/api/v1/machs/{mach_cua_a.pk}/comments", {"body": "sẽ xoá"}, status=201
     )
+    assert (
+        ma_loi(client, f"/api/v1/comments/{d['id']}", status=403, method="delete")
+        == "khong_phai_admin"
+    )
+
+
+@pytest.mark.django_db
+def test_xoa_binh_luan_khong_dinh_gi_thi_xoa_THAT(client, mach_cua_a, nguoi_b, admin_user):
+    """Admin xoá: không reply con, chưa từng được trích ⇒ **biến mất hẳn**, không để bia mộ."""
+    client.force_login(nguoi_b)
+    d = dat(
+        client, f"/api/v1/machs/{mach_cua_a.pk}/comments", {"body": "sẽ xoá"}, status=201
+    )
+    client.force_login(admin_user)
     kq = dat(client, f"/api/v1/comments/{d['id']}", status=200, method="delete")
     assert kq["xoa_that"] is True
     assert not Comment.objects.filter(pk=d["id"]).exists()
@@ -170,15 +239,10 @@ def test_xoa_binh_luan_khong_dinh_gi_thi_xoa_THAT(client, mach_cua_a, nguoi_b):
 
 
 @pytest.mark.django_db
-def test_xoa_that_DON_luon_Vote_mo_coi(client, mach_cua_a, nguoi_a, nguoi_b):
+def test_xoa_that_DON_luon_Vote_mo_coi(client, mach_cua_a, nguoi_a, nguoi_b, admin_user):
     """**Nợ 1a bàn giao**: `Vote` cố ý không có FK ⇒ không có `ON DELETE` nào.
 
-    Bình luận biến mất mà phiếu ở lại vĩnh viễn, và không ai dọn. Đây là bài đo giết
-    mutant "xoá comment mà quên dọn phiếu": nó xanh ở mọi bài đo khác, vì hàng rác không
-    làm hỏng phép đếm nào — nó chỉ lớn dần.
-
-    Bài đo dựng **hai** phiếu (tự upvote của người viết + phiếu của A) để nó không nhầm
-    "dọn được một hàng" với "dọn sạch".
+    Bình luận biến mất mà phiếu ở lại vĩnh viễn, và không ai dọn.
     """
     client.force_login(nguoi_b)
     d = dat(
@@ -195,7 +259,7 @@ def test_xoa_that_DON_luon_Vote_mo_coi(client, mach_cua_a, nguoi_a, nguoi_b):
         Vote.objects.filter(target_type=Vote.Loai.COMMENT, target_id=d["id"]).count() == 2
     )
 
-    client.force_login(nguoi_b)
+    client.force_login(admin_user)
     dat(client, f"/api/v1/comments/{d['id']}", status=200, method="delete")
     assert not Vote.objects.filter(
         target_type=Vote.Loai.COMMENT, target_id=d["id"]
@@ -203,12 +267,12 @@ def test_xoa_that_DON_luon_Vote_mo_coi(client, mach_cua_a, nguoi_a, nguoi_b):
 
 
 @pytest.mark.django_db
-def test_co_reply_con_thi_giu_BIA_MO(client, mach_cua_a, nguoi_a, nguoi_b):
+def test_co_reply_con_thi_giu_BIA_MO(client, mach_cua_a, nguoi_a, nguoi_b, admin_user):
     """Vế 1 của PLAN 5.3 — bia mộ giữ chỗ để nhánh con không mồ côi."""
     goc = tao_binh_luan(mach=mach_cua_a, author=nguoi_b, body="gốc")
     tao_binh_luan(mach=mach_cua_a, author=nguoi_a, body="reply", parent=goc)
 
-    client.force_login(nguoi_b)
+    client.force_login(admin_user)
     kq = dat(client, f"/api/v1/comments/{goc.pk}", status=200, method="delete")
     assert kq["xoa_that"] is False
     goc.refresh_from_db()
@@ -222,25 +286,15 @@ def test_co_reply_con_thi_giu_BIA_MO(client, mach_cua_a, nguoi_a, nguoi_b):
 
 @pytest.mark.django_db
 def test_da_TUNG_duoc_trich_thi_giu_bia_mo_KE_CA_trich_da_go(
-    client, mach_cua_a, nguoi_a, nguoi_b
+    client, mach_cua_a, nguoi_a, nguoi_b, admin_user
 ):
-    """Vế 2 của PLAN 5.3, và là chỗ dễ đọc hụt nhất — chữ **"đã TỪNG"**.
-
-    `Trich.comment` là `PROTECT` và `PROTECT` **không biết `removed_at` là gì**: nó chặn
-    theo HÀNG. Ai đọc thành "đang được trích" sẽ tiền-kiểm `removed_at IS NULL`, kết luận
-    "chưa trích, xoá thật được", rồi ăn `ProtectedError` ⇒ **500 trên một thao tác hợp lệ
-    của chính chủ**.
-
-    Bài đo dựng đúng ca hiểm: trích rồi **GỠ** rồi mới xoá. Bình luận không có reply nào,
-    nên vế 1 không cứu — chỉ vế 2 giữ được nó, và mutant nào lọc `removed_at` thì bài này
-    đỏ bằng một 500 chứ không bằng một khẳng định.
-    """
+    """Vế 2 của PLAN 5.3, và là chỗ dễ đọc hụt nhất — chữ **"đã TỪNG"**."""
     c = tao_binh_luan(mach=mach_cua_a, author=nguoi_b, body="câu được vào sổ")
     moc2 = Moc.objects.get(mach=mach_cua_a, seq=2)
     t = Trich.objects.create(moc=moc2, comment=c)
     Trich.objects.filter(pk=t.pk).update(removed_at=timezone.now())
 
-    client.force_login(nguoi_b)
+    client.force_login(admin_user)
     kq = dat(client, f"/api/v1/comments/{c.pk}", status=200, method="delete")
     assert kq["xoa_that"] is False, "trích ĐÃ GỠ vẫn phải chặn xoá thật (PLAN 5.3)"
     c.refresh_from_db()
@@ -249,10 +303,10 @@ def test_da_TUNG_duoc_trich_thi_giu_bia_mo_KE_CA_trich_da_go(
 
 
 @pytest.mark.django_db
-def test_xoa_hai_lan_thi_409(client, mach_cua_a, nguoi_a, nguoi_b):
+def test_xoa_hai_lan_thi_409(client, mach_cua_a, nguoi_a, nguoi_b, admin_user):
     goc = tao_binh_luan(mach=mach_cua_a, author=nguoi_b, body="gốc")
     tao_binh_luan(mach=mach_cua_a, author=nguoi_a, body="reply", parent=goc)
-    client.force_login(nguoi_b)
+    client.force_login(admin_user)
     dat(client, f"/api/v1/comments/{goc.pk}", status=200, method="delete")
     assert (
         ma_loi(client, f"/api/v1/comments/{goc.pk}", status=409, method="delete")
@@ -261,12 +315,8 @@ def test_xoa_hai_lan_thi_409(client, mach_cua_a, nguoi_a, nguoi_b):
 
 
 @pytest.mark.django_db
-def test_xoa_binh_luan_lam_comment_count_tut(client, mach_cua_a, nguoi_b):
-    """`comment_count` đo **nội dung đọc được** — bia mộ không được đếm (PLAN mục 6).
-
-    Ghim luôn rằng `cap_nhat_dem_mach` được gọi trên CẢ HAI nhánh xoá (thật lẫn bia mộ):
-    quên nhánh nào thì banner nói một đằng, khán đài hiện một nẻo, vĩnh viễn.
-    """
+def test_xoa_binh_luan_lam_comment_count_tut(client, mach_cua_a, nguoi_b, admin_user):
+    """`comment_count` đo **nội dung đọc được** — bia mộ không được đếm (PLAN mục 6)."""
     client.force_login(nguoi_b)
     d = dat(
         client, f"/api/v1/machs/{mach_cua_a.pk}/comments", {"body": "một câu"}, status=201
@@ -274,6 +324,7 @@ def test_xoa_binh_luan_lam_comment_count_tut(client, mach_cua_a, nguoi_b):
     mach_cua_a.refresh_from_db()
     assert mach_cua_a.comment_count == 1
 
+    client.force_login(admin_user)
     dat(client, f"/api/v1/comments/{d['id']}", status=200, method="delete")
     mach_cua_a.refresh_from_db()
     assert mach_cua_a.comment_count == 0

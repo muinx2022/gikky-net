@@ -1,6 +1,6 @@
 "use client";
 
-import { suaBinhLuan, xoaBinhLuan } from "@gikky/api-client";
+import { anBinhLuan, suaBinhLuan, xoaBinhLuan } from "@gikky/api-client";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
@@ -56,6 +56,9 @@ export function HanhDongBinhLuan({
   than,
   daXoa,
   anchorMocSeq,
+  suaDuocDen,
+  soReplies,
+  dangAn,
   vote,
   mod,
 }: {
@@ -67,6 +70,9 @@ export function HanhDongBinhLuan({
   daXoa: boolean;
   /** Mốc bình luận này đang neo — mốc mặc định của một lượt trích (PLAN 5.6). */
   anchorMocSeq: number | null;
+  suaDuocDen?: string | null;
+  soReplies?: number;
+  dangAn?: boolean;
   vote?: React.ReactNode;
   mod?: React.ReactNode;
 }) {
@@ -125,8 +131,15 @@ export function HanhDongBinhLuan({
   if (daXoa) return null;
   const dang_nhap = toi?.dang_nhap === true;
   const cua_toi = tacGia !== null && toi?.username === tacGia;
+  const con_han_sua = suaDuocDen ? new Date(suaDuocDen).getTime() > Date.now() : true;
+  const sua_duoc = (cua_toi && con_han_sua) || toi?.la_staff === true;
+  const xoa_duoc = toi?.la_staff === true;
+  const cho_phep_an =
+    (cua_toi && (soReplies === undefined || soReplies === 0)) || toi?.la_staff === true;
   // Mạch bị khoá: chỉ còn đúng đường báo cáo (xem docstring, ngoại lệ 1).
-  const co_menu = dang_nhap && (khoa ? !cua_toi : true);
+  const co_menu =
+    dang_nhap &&
+    (khoa ? !cua_toi : sua_duoc || xoa_duoc || cho_phep_an || !cua_toi);
 
   const luu = async () => {
     const moi = chu.trim();
@@ -151,10 +164,6 @@ export function HanhDongBinhLuan({
   };
 
   const xoa = async () => {
-    // `confirm` của trình duyệt chứ không phải một modal tự vẽ: xoá bình luận là hành
-    // động **không hoàn tác được** ở nhánh "xoá thật" (PLAN 5.3), nên nó phải có một
-    // bước xác nhận — và một bước xác nhận có sẵn, dùng được bằng bàn phím, đúng ngôn
-    // ngữ hệ điều hành thì tốt hơn một modal viết vội.
     if (!window.confirm("Xoá bình luận này? Thao tác không hoàn tác được.")) return;
     datDangGui(true);
     datLoi(null);
@@ -165,11 +174,36 @@ export function HanhDongBinhLuan({
         path: { comment_id: id },
       });
       if (kq.data === undefined) throw new Error("phản hồi rỗng");
-      // Không tự gỡ nút khỏi DOM: server quyết bình luận biến mất hẳn hay ở lại làm bia
-      // mộ (`xoa_that`), và gỡ nhầm ở nhánh bia mộ là làm mồ côi cả nhánh con.
       router.refresh();
     } catch {
       datLoi("Không xoá được. Thử lại.");
+    } finally {
+      datDangGui(false);
+    }
+  };
+
+  const toggleAn = async () => {
+    const muonAn = !dangAn;
+    datDangGui(true);
+    datLoi(null);
+    try {
+      const kq = await anBinhLuan({
+        baseUrl: GOC_TRINH_DUYET,
+        headers: await headerGhi(),
+        path: { comment_id: id },
+        body: { an: muonAn },
+      });
+      if (kq.data === undefined) {
+        const err = kq.error as { code?: string; detail?: string } | undefined;
+        if (err?.code === "da_co_tra_loi") {
+          datLoi(err.detail || "Bình luận đã có người phản hồi, không thể ẩn.");
+          return;
+        }
+        throw new Error("Thao tác thất bại");
+      }
+      router.refresh();
+    } catch {
+      datLoi("Thao tác thất bại. Thử lại.");
     } finally {
       datDangGui(false);
     }
@@ -202,31 +236,44 @@ export function HanhDongBinhLuan({
           <details className={css.menu} ref={hopRef} data-testid="menu-binh-luan">
             <summary aria-label="Thêm hành động">⋯</summary>
             <div className={css.hop}>
-              {cua_toi && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      dongMenu();
-                      datChu(than);
-                      datMo("sua");
-                    }}
-                    data-testid="nut-sua-binh-luan"
-                  >
-                    Sửa
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      dongMenu();
-                      void xoa();
-                    }}
-                    disabled={dangGui}
-                    data-testid="nut-xoa-binh-luan"
-                  >
-                    Xoá
-                  </button>
-                </>
+              {sua_duoc && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    dongMenu();
+                    datChu(than);
+                    datMo("sua");
+                  }}
+                  data-testid="nut-sua-binh-luan"
+                >
+                  Sửa
+                </button>
+              )}
+              {cho_phep_an && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    dongMenu();
+                    void toggleAn();
+                  }}
+                  disabled={dangGui}
+                  data-testid="nut-an-binh-luan"
+                >
+                  {dangAn ? "Bỏ ẩn bình luận" : "Ẩn bình luận"}
+                </button>
+              )}
+              {xoa_duoc && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    dongMenu();
+                    void xoa();
+                  }}
+                  disabled={dangGui}
+                  data-testid="nut-xoa-binh-luan"
+                >
+                  Xoá
+                </button>
               )}
               {!cua_toi && (
                 <button

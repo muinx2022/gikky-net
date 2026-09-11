@@ -100,8 +100,8 @@ export const quanTriXemCaiDatBienTap = <ThrowOnError extends boolean = false>(op
 /**
  * Luu Cai Dat Bien Tap
  *
- * Đổi số phút tự sửa. Có hiệu lực **ngay** cho mọi mốc — không cache giá trị cũ ở
- * đâu, `PATCH /mocs/{id}` đọc lại DB ở mỗi request (`core/cau_hinh.py`).
+ * Đổi số phút tự sửa. Có hiệu lực **ngay** cho mọi mốc/bình luận — không cache giá trị cũ ở
+ * đâu, `PATCH /mocs/{id}` và `PATCH /comments/{id}` đọc lại DB ở mỗi request (`core/cau_hinh.py`).
  *
  * Gửi đúng giá trị đang có ⇒ 200 `da_doi=false`, không ghi `AuditLog` — cùng luật
  * "không đổi thì không vết" của mọi hành động quản trị khác trong repo.

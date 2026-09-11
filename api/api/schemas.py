@@ -671,6 +671,7 @@ class BinhLuanOut(Schema):
     la_chu_mach: bool
     #: Điểm ≤ −5 ⇒ UI gập sẵn, bấm mới mở (PLAN 5.3).
     tu_gap: bool
+    sua_duoc_den: datetime | None = None
     replies: list["BinhLuanOut"]
 
 
@@ -920,6 +921,13 @@ class KetQuaXoaOut(Schema):
 
     id: int
     xoa_that: bool
+
+
+class KetQuaAnBinhLuanOut(Schema):
+    """Kết quả `POST /comments/{id}/an`."""
+
+    id: int
+    da_an: bool
 
 
 # --- Trạng thái của VIEWER (Phase 3) -----------------------------------------
