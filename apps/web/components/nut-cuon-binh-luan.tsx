@@ -18,7 +18,7 @@ function cuonNhanhXuong(el: HTMLElement) {
 
   if (Math.abs(diff) < 10) return;
 
-  const duration = 650; // ms: cuộn êm ái, rõ ràng nhưng không lê thê
+  const duration = 900; // ms: cuộn từ tốn, êm ái và không vội vã
   const startTime = performance.now();
 
   function buocCuon(currentTime: number) {
