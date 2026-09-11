@@ -68,8 +68,9 @@ export function NoiDungThe({
           {/*
             `next/image` cố ý KHÔNG dùng — cùng lý lẽ với `gallery-moc.tsx`: server đã
             thu ảnh về cạnh tối đa và sinh sẵn thumbnail lúc upload. `src` là
-            `url_thumb`, nên `width`/`height` + `style.width` lấy `w_thumb`/`h_thumb`
-            (không phải `w`/`h` ảnh chính) để dành chỗ đúng cỡ file đang tải — chống CLS.
+            `url_thumb`. `width`/`height` lấy `w_thumb`/`h_thumb` để giữ tỉ lệ aspect-ratio
+            chống CLS, còn `style.width: 100%` để lấp đầy `khung_anh` vốn đã được phân bổ
+            chiều rộng ngẫu nhiên.
           */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -77,15 +78,11 @@ export function NoiDungThe({
             src={xem_truoc.anh.url_thumb}
             width={xem_truoc.anh.w_thumb ?? undefined}
             height={xem_truoc.anh.h_thumb ?? undefined}
-            style={
-              xem_truoc.anh.w_thumb != null
-                ? {
-                    width: xem_truoc.anh.w_thumb,
-                    maxWidth: "100%",
-                    height: "auto",
-                  }
-                : undefined
-            }
+            style={{
+              width: "100%",
+              maxWidth: "100%",
+              height: "auto",
+            }}
             alt=""
             loading="lazy"
             decoding="async"

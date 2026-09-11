@@ -69,15 +69,38 @@ test.describe("anh-feed-css", () => {
     expect(khung).toMatch(/\bmax-width\s*:\s*100%/);
   });
 
-  test("jsx danh cho thumb bang w_thumb, khong style width 100%", () => {
+  test("jsx dung phanTramChieuRongAnh cho khung anh va w_thumb/h_thumb chong CLS", () => {
     const src = boChuThichTs(readFileSync(TSX, "utf8"));
     expect(src).toMatch(/w_thumb/);
     expect(src).toMatch(/h_thumb/);
+    expect(src).toMatch(/phanTramChieuRongAnh/);
     // Không gắn width thuộc tính từ ảnh chính khi src là thumb.
     expect(src).not.toMatch(/width=\{xem_truoc\.anh\.w\b/);
     expect(src).not.toMatch(/height=\{xem_truoc\.anh\.h\b/);
-    // Inline style không được kéo full bề ngang thẻ.
-    expect(src).not.toMatch(/width\s*:\s*["']100%["']/);
-    expect(src).not.toMatch(/width\s*:\s*`100%`/);
+  });
+
+  test("phanTramChieuRongAnh phan bo ngau nhien on dinh trong khoang 60% - 95%", () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { phanTramChieuRongAnh } = require("../../lib/anh");
+    const urls = [
+      "/media/anh/2026/09/a.webp",
+      "/media/anh/2026/09/b.webp",
+      "/media/anh/2026/09/c.webp",
+      "/media/anh/2026/09/d.webp",
+      "/media/anh/2026/09/e.webp",
+    ];
+
+    const ketQua = urls.map((u) => phanTramChieuRongAnh(u));
+    for (const pt of ketQua) {
+      expect(pt).toBeGreaterThanOrEqual(60);
+      expect(pt).toBeLessThanOrEqual(95);
+    }
+
+    // Tinh deterministic: goi lai cung URL tra ve dung ket qua cu
+    expect(phanTramChieuRongAnh(urls[0])).toBe(ketQua[0]);
+
+    // Co su bien thien giua cac URL khac nhau (khong bang nhau ca luot)
+    const setGiaTri = new Set(ketQua);
+    expect(setGiaTri.size).toBeGreaterThan(1);
   });
 });
