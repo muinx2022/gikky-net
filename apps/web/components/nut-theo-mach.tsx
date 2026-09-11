@@ -39,17 +39,16 @@ export function NutTheoMach() {
   const [dangGui, datDangGui] = useState(false);
   const [loi, datLoi] = useState<string | null>(null);
 
-  // Ba nhịp "chưa biết" gộp về một: chưa biết mình là ai · chưa biết mình có theo không ·
-  // không ở trong mạch nào. Vẽ "Theo mạch" rồi đổi thành "Đang theo" là một cú nhảy ngay
-  // chỗ mắt người ta nhìn.
+  // Chỉ người đã đăng nhập mới thấy nút theo mạch. Khách không thấy gì.
   if (dangTaiPhien || machId === null) return null;
   if (!(toi?.dang_nhap ?? false)) return null;
-  if (trangThai === null || !trangThai.dang_nhap) return null;
+  if (trangThai !== null && !trangThai.dang_nhap) return null;
 
-  const dang_theo = trangThai.following;
+  const dang_theo = trangThai?.following ?? false;
+  const dangTaiTrangThai = trangThai === null;
 
   const bam = async () => {
-    if (dangGui) return;
+    if (dangGui || dangTaiTrangThai) return;
     datDangGui(true);
     datLoi(null);
     datTheoMach(!dang_theo);

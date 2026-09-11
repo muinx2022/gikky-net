@@ -179,6 +179,20 @@
   border-radius: 6px 6px 0 0;
 }
 
+.cum_trai {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cum_phai {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 /* Mặt BÃO: composer đứng giữa nhật ký và khán đài (wireframe 9.2). */
 .composer_bao {
   padding: 0 26px 18px;

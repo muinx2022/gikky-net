@@ -319,36 +319,40 @@ export async function TrangMach({
         {/* Nửa PER-USER của trang, và nó bắt đầu ở ĐÂY chứ không ở layout: nó cần `machId`,
             và nó phải bọc cả cột vote lẫn nút "Theo mạch" lẫn spine. Mọi thứ bên trong
             vẫn là server component. */}
-        <TrangThaiToiProvider machId={mach.id}>
+        <TrangThaiToiProvider key={mach.id} machId={mach.id}>
           <FormBinhLuanProvider>
             <article className={css.the} data-mat={mat} data-testid="the-mach">
             <header className={css.dau}>
               <div className={css.hang_tren}>
-                <Link className={css.sub} href={duongDanSub(mach.sub.slug)}>
-                  s/{mach.sub.slug}
-                </Link>
-                {mach.truong_phai && (
-                  <Link
-                    href={`/?truong_phai=${encodeURIComponent(mach.truong_phai)}`}
-                    className={css.truong_phai}
-                    data-testid="mach-truong-phai"
-                    title={`Trường phái ${mach.truong_phai}`}
-                  >
-                    #{mach.truong_phai}
+                <div className={css.cum_trai}>
+                  <Link className={css.sub} href={duongDanSub(mach.sub.slug)}>
+                    s/{mach.sub.slug}
                   </Link>
-                )}
-                <NutTheoMach />
-                <XuatCaseStudy mach={mach} />
-                {/* Công cụ mod của MẠCH: ẩn + khoá. `dangAn` luôn `false` — mạch bị ẩn
-                    trả 404 ở cửa công khai nên không tới được đây; xem docstring
-                    `HanhDongMod`. */}
-                <HanhDongMod
-                  loai="mach"
-                  id={mach.id}
-                  dangAn={false}
-                  dangKhoa={mach.locked}
-                  nhan="mạch này"
-                />
+                  {mach.truong_phai && (
+                    <Link
+                      href={`/?truong_phai=${encodeURIComponent(mach.truong_phai)}`}
+                      className={css.truong_phai}
+                      data-testid="mach-truong-phai"
+                      title={`Trường phái ${mach.truong_phai}`}
+                    >
+                      #{mach.truong_phai}
+                    </Link>
+                  )}
+                </div>
+                <div className={css.cum_phai}>
+                  <NutTheoMach />
+                  <XuatCaseStudy mach={mach} />
+                  {/* Công cụ mod của MẠCH: ẩn + khoá. `dangAn` luôn `false` — mạch bị ẩn
+                      trả 404 ở cửa công khai nên không tới được đây; xem docstring
+                      `HanhDongMod`. */}
+                  <HanhDongMod
+                    loai="mach"
+                    id={mach.id}
+                    dangAn={false}
+                    dangKhoa={mach.locked}
+                    nhan="mạch này"
+                  />
+                </div>
               </div>
               {mach.rieng_tu && (
                 <div className={css.banner_rieng_tu} data-testid="banner-rieng-tu">
