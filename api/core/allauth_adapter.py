@@ -28,6 +28,7 @@ do không dùng:
 động", không mang chữ nào của mình).
 """
 
+from django.conf import settings
 from allauth.account.adapter import DefaultAccountAdapter
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 
@@ -90,7 +91,11 @@ class AdapterTaiKhoan(DefaultAccountAdapter):
             csrf_token = get_token(request) or ""
             sep = "&" if "?" in mobile_redirect else "?"
             return f"{mobile_redirect}{sep}sessionid={session_key}&csrftoken={csrf_token}"
-        return super().get_login_redirect_url(request)
+        return getattr(settings, "LOGIN_REDIRECT_URL", "/")
+
+    def get_signup_redirect_url(self, request):
+        """Chuyển hướng sau đăng ký (kể cả lần đầu đăng nhập Google tạo tài khoản mới)."""
+        return self.get_login_redirect_url(request)
 
 
 class AdapterMangXaHoi(DefaultSocialAccountAdapter):

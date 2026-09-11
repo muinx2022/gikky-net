@@ -123,3 +123,13 @@ def test_mobile_google_start_va_redirect(mock_google_bat):
     redirect_url = adapter.get_login_redirect_url(req)
     assert redirect_url.startswith("gikky://auth/callback?sessionid=")
     assert "csrftoken=" in redirect_url
+
+    # Kiểm tra get_signup_redirect_url cũng lấy uri từ session cho user mới
+    req.session["mobile_redirect_uri"] = "exp://192.168.1.222:8081/--/auth/callback"
+    signup_url = adapter.get_signup_redirect_url(req)
+    assert signup_url.startswith("exp://192.168.1.222:8081/--/auth/callback?sessionid=")
+    assert "csrftoken=" in signup_url
+
+    # Khi không có mobile_redirect_uri thì trả về LOGIN_REDIRECT_URL ("/")
+    assert adapter.get_login_redirect_url(req) == "/"
+    assert adapter.get_signup_redirect_url(req) == "/"

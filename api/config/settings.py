@@ -300,6 +300,8 @@ ACCOUNT_ADAPTER = "core.allauth_adapter.AdapterTaiKhoan"
 #: bản hẹp hơn (chỉ xoá khi email CHƯA xác thực), mà gikky bắt buộc xác thực nên bản ấy
 #: gần như không bao giờ chạy — xem docstring `AdapterMangXaHoi`.
 SOCIALACCOUNT_ADAPTER = "core.allauth_adapter.AdapterMangXaHoi"
+LOGIN_REDIRECT_URL = "/"
+LOGIN_URL = "/dang-nhap"
 
 # --- Hạn mức chống lạm dụng (PLAN mục 10 Phase 6 + PLAN 5.10) ----------------
 # **Mặc định ở đây là con số của PLAN**, tức con số chạy trên prod (nơi không ai khai
