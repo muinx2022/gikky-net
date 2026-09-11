@@ -375,6 +375,50 @@ export async function dangNhap(taiKhoan: string, matKhau: string): Promise<KetQu
   }
 }
 
+/** Đăng nhập bằng Google ID Token (Google One Tap / Google Sign-In) */
+export async function dangNhapGoogle(
+  idToken: string,
+  clientId?: string | null
+): Promise<KetQuaDangNhap> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/mobile/google`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id_token: idToken.trim(),
+        client_id: clientId || undefined,
+      }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.ok) {
+      if (data.sessionid) {
+        await luuSessionToken(data.sessionid);
+      }
+      if (data.csrftoken) {
+        await luuCsrfToken(data.csrftoken);
+      }
+      return {
+        thanhCong: true,
+        token: data.sessionid,
+      };
+    }
+
+    const loiNhan =
+      data?.error ||
+      data?.errors?.[0]?.message ||
+      data?.detail ||
+      "Đăng nhập bằng tài khoản Google không thành công.";
+    return { thanhCong: false, thongBaoLoi: loiNhan };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Không thể kết nối đến máy chủ.";
+    return { thanhCong: false, thongBaoLoi: msg };
+  }
+}
+
+
 /** Đăng xuất phiên làm việc của mobile */
 export async function dangXuat(): Promise<void> {
   try {

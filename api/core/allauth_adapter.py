@@ -81,6 +81,17 @@ class AdapterTaiKhoan(DefaultAccountAdapter):
         stash_ghi_nho(request)
         return super().pre_login(request, user, **kwargs)
 
+    def get_login_redirect_url(self, request):
+        """Chuyển hướng sau đăng nhập: hỗ trợ trả sessionid về app mobile nếu luồng khởi từ mobile."""
+        mobile_redirect = request.session.pop("mobile_redirect_uri", None)
+        if mobile_redirect:
+            from django.middleware.csrf import get_token
+            session_key = request.session.session_key or ""
+            csrf_token = get_token(request) or ""
+            sep = "&" if "?" in mobile_redirect else "?"
+            return f"{mobile_redirect}{sep}sessionid={session_key}&csrftoken={csrf_token}"
+        return super().get_login_redirect_url(request)
+
 
 class AdapterMangXaHoi(DefaultSocialAccountAdapter):
     """Khai ở `settings.SOCIALACCOUNT_ADAPTER`. Một việc: **Google thắng mật khẩu**.

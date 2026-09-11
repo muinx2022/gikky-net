@@ -23,8 +23,10 @@ from django.urls import include, path
 
 from api.mobile_auth import (
     dang_ky_mobile,
+    dang_nhap_google_mobile,
     dang_nhap_mobile,
     dang_xuat_mobile,
+    khoi_chay_google_mobile,
     quen_mat_khau_mobile,
 )
 from api.quan_tri import api_admin
@@ -77,6 +79,8 @@ urlpatterns = [
     path("api/mobile/logout", dang_xuat_mobile, name="mobile_logout"),
     path("api/mobile/signup", dang_ky_mobile, name="mobile_signup"),
     path("api/mobile/forgot-password", quen_mat_khau_mobile, name="mobile_forgot_password"),
+    path("api/mobile/google", dang_nhap_google_mobile, name="mobile_google"),
+    path("api/mobile/google/start", khoi_chay_google_mobile, name="mobile_google_start"),
 ]
 
 # --- Ảnh ở DEV (Phase 5) -----------------------------------------------------
