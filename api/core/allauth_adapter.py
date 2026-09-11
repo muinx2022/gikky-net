@@ -97,6 +97,14 @@ class AdapterTaiKhoan(DefaultAccountAdapter):
         """Chuyển hướng sau đăng ký (kể cả lần đầu đăng nhập Google tạo tài khoản mới)."""
         return self.get_login_redirect_url(request)
 
+    def logout(self, request):
+        """Giữ lại mobile_redirect_uri nếu phiên bị flush trong lúc Allauth chuyển luồng."""
+        mobile_redirect = request.session.get("mobile_redirect_uri")
+        super().logout(request)
+        if mobile_redirect:
+            request.session["mobile_redirect_uri"] = mobile_redirect
+            request.session.save()
+
 
 class AdapterMangXaHoi(DefaultSocialAccountAdapter):
     """Khai ở `settings.SOCIALACCOUNT_ADAPTER`. Một việc: **Google thắng mật khẩu**.
@@ -146,6 +154,14 @@ class AdapterMangXaHoi(DefaultSocialAccountAdapter):
         ký mới thì `user` chưa lưu và `pk` là `None` (và cũng chưa có mật khẩu nào để xoá,
         nên nhánh dưới là no-op).
         """
+        # Khôi phục mobile_redirect_uri từ state data nếu session bị flush
+        state_data = getattr(sociallogin, "state", None) or {}
+        if isinstance(state_data, dict):
+            mobile_redirect = state_data.get("data", {}).get("mobile_redirect_uri")
+            if mobile_redirect and not request.session.get("mobile_redirect_uri"):
+                request.session["mobile_redirect_uri"] = mobile_redirect
+                request.session.save()
+
         super().pre_social_login(request, sociallogin)
 
         user = getattr(sociallogin, "user", None)

@@ -133,3 +133,40 @@ def test_mobile_google_start_va_redirect(mock_google_bat):
     # Khi không có mobile_redirect_uri thì trả về LOGIN_REDIRECT_URL ("/")
     assert adapter.get_login_redirect_url(req) == "/"
     assert adapter.get_signup_redirect_url(req) == "/"
+
+    # Kiểm tra adapter.logout bảo toàn mobile_redirect_uri
+    req.session["mobile_redirect_uri"] = "gikky://auth/callback"
+    adapter.logout(req)
+    assert req.session.get("mobile_redirect_uri") == "gikky://auth/callback"
+
+
+@pytest.mark.django_db
+def test_mobile_session_middleware():
+    from core.models.nguoi_dung import User
+    from django.contrib.auth import login
+    from django.test import Client
+
+    user = User.objects.create_user(username="test_mobile_user", password="password123")
+    client = Client()
+    # Đăng nhập mobile để sinh session
+    res = client.post(
+        "/api/mobile/login",
+        data={"tai_khoan": "test_mobile_user", "mat_khau": "password123"},
+        content_type="application/json",
+    )
+    assert res.status_code == 200
+    session_id = res.json()["sessionid"]
+
+    # Client mới không có cookie sessionid, gửi X-Session-Token
+    new_client = Client()
+    res_me = new_client.get("/api/v1/me", HTTP_X_SESSION_TOKEN=session_id)
+    assert res_me.status_code == 200
+    assert res_me.json()["dang_nhap"] is True
+    assert res_me.json()["username"] == "test_mobile_user"
+
+    # Gửi qua Authorization: Bearer
+    new_client2 = Client()
+    res_me2 = new_client2.get("/api/v1/me", HTTP_AUTHORIZATION=f"Bearer {session_id}")
+    assert res_me2.status_code == 200
+    assert res_me2.json()["dang_nhap"] is True
+    assert res_me2.json()["username"] == "test_mobile_user"

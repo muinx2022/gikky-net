@@ -88,7 +88,9 @@ async function taoHeaderYeuCau(): Promise<Record<string, string>> {
   const headers: Record<string, string> = {};
   if (token) {
     headers["X-Session-Token"] = token;
-    headers["cookie"] = `sessionid=${token}` + (csrfToken ? `; csrftoken=${csrfToken}` : "");
+    headers["Authorization"] = `Bearer ${token}`;
+    headers["Cookie"] = `sessionid=${token}` + (csrfToken ? `; csrftoken=${csrfToken}` : "");
+    headers["cookie"] = headers["Cookie"];
   }
   if (csrfToken) {
     headers["X-CSRFToken"] = csrfToken;

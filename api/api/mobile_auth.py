@@ -263,11 +263,17 @@ def dang_nhap_google_mobile(request: HttpRequest) -> JsonResponse:
 def khoi_chay_google_mobile(request: HttpRequest) -> HttpResponse:
     """Khởi chạy luồng Google OAuth cho mobile qua WebBrowser / Custom Tabs."""
     from django.http import HttpResponseBadRequest
+    from django.contrib.auth import logout
     from core.cau_hinh_oauth import google_dang_bat
     from allauth.socialaccount.adapter import get_adapter
 
     if not google_dang_bat(request):
         return HttpResponseBadRequest("Tính năng đăng nhập Google chưa được kích hoạt.")
+
+    # Nếu trình duyệt trong Custom Tabs đang lưu phiên cũ, logout trước để tránh
+    # việc Allauth phát hiện user.is_authenticated rồi flush session xoá mất mobile_redirect_uri
+    if getattr(request, "user", None) and request.user.is_authenticated:
+        logout(request)
 
     redirect_uri = request.GET.get("redirect_uri", "gikky://auth/callback")
     request.session["mobile_redirect_uri"] = redirect_uri
@@ -275,5 +281,5 @@ def khoi_chay_google_mobile(request: HttpRequest) -> HttpResponse:
 
     adapter = get_adapter()
     provider = adapter.get_provider(request, "google")
-    return provider.redirect(request, "login")
+    return provider.redirect(request, "login", data={"mobile_redirect_uri": redirect_uri})
 

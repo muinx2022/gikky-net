@@ -103,6 +103,7 @@ MIDDLEWARE = [
     # host public phải chết trước khi bất cứ thứ gì đọc session hay chạm DB. Nó không cần
     # `request.user` nên không có lý do xếp sau `AuthenticationMiddleware`.
     "config.host_admin.ChanApiAdminNgoaiHostAdmin",
+    "core.middleware_mobile_session.MobileSessionMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
