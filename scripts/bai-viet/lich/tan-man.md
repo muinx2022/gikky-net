@@ -15,3 +15,5 @@ Nhiệm vụ: Viết một bài tản mạn thị trường, góc nhìn vĩ mô 
 * **Ảnh minh hoạ:** 1–2 ảnh tỷ lệ 16:9 giàu tính nghệ thuật, chụp cảnh quan đêm, trung tâm dữ liệu, góc phố tài chính, nhà máy công nghệ cao (dùng `generate_image`).
 * **Dải số (`figures`):** 4–6 cặp `{label, value}`, mỗi ô ≤24 ký tự.
 * **Câu hỏi tương tác (`question_for_crowd`):** ≤200 ký tự, kết thúc bằng dấu `?`.
+* **Định dạng HTML bắt buộc (`body`):** Bắt buộc viết bằng các thẻ HTML chuẩn (`<p>`, `<h3>`, `<h4>`, `<strong>`, `<em>`, `<ul><li>`, `<ol><li>`, `<hr>`). Tuyệt đối không dùng raw markdown trần để tránh dính liền text. Chia bài viết thành các đoạn văn ngắn gọn, thoáng đãng (`<p>...</p>`) và in đậm (`<strong>`) có chọn lọc các ý tứ chiêm nghiệm.
+

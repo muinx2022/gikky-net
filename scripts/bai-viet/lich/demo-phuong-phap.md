@@ -13,43 +13,44 @@ Nhiệm vụ: Tạo một mạch (thread) demo thực chiến mô phỏng chu tr
 
 ## Cấu trúc 3 mốc bắt buộc
 
+> **Nguyên tắc phân bổ nội dung:** Mốc 1 và Mốc 2 viết **ngắn gọn, súc tích, khách quan** (thông số kỹ thuật, hành vi nến, hành động dời lệnh). **Dành toàn bộ cảm xúc, chiều sâu phân tích và mổ xẻ tâm lý cho Mốc 3 (Đóng sổ & Rút ra bài học).**
+
 ### Kịch bản A: Kèo Thắng (Đạt mục tiêu TP)
 1. **Mốc 1 (Loại: `Vào lệnh`):**
-   - Nhận diện tín hiệu kỹ thuật chuẩn mực (Price Action, MA Crossover, VSA, Harmonic, Đột phá cản...).
-   - Xác định rõ Entry, Stop Loss (-1R), Take Profit kỳ vọng (≥ 2R–3R).
-   - Biểu đồ minh hoạ Chart 1: Setup mở vị thế.
+   - *Viết ngắn gọn, trực diện:* Nhận diện setup chuẩn (1–2 câu), thông số Entry, Stop Loss (-1R), Take Profit (≥2R–3R), tỷ lệ R:R.
+   - Biểu đồ minh hoạ Chart 1.
 2. **Mốc 2 (Loại: `Quản trị lệnh`):**
-   - Diễn biến giá thuận lợi chạm mốc lợi nhuận trung gian (1R hoặc cản ngắn).
-   - Quy tắc: Chốt lời 50% (TP1), dời Stop Loss về điểm hoà vốn (Breakeven) hoặc kéo Trailing Stop.
-   - Biểu đồ minh hoạ Chart 2: Vị thế an toàn không còn rủi ro.
+   - *Viết ngắn gọn, kỷ luật:* Giá chạm lợi nhuận trung gian 1R hoặc cản ngắn, chốt 50% và dời SL về hoà vốn (Breakeven).
+   - Biểu đồ minh hoạ Chart 2.
 3. **Mốc 3 (Loại: `Đóng lệnh`):**
-   - Giá hoàn tất mục tiêu kỳ vọng (TP2) hoặc kích hoạt thoát lệnh.
-   - Đóng toàn bộ vị thế, tổng kết lợi nhuận thực tế (ví dụ: +2.5R).
+   - *Đóng sổ & đầu tư chiều sâu cảm xúc, phân tích:* Giá hoàn tất mục tiêu, tổng kết lợi nhuận thực tế (+2.5R).
    - **Bài học thực chiến & Tâm lý giao dịch (Bắt buộc):**
-     * *Có nên FOMO không?* Bài học về việc tránh mua đuổi khi giá đã chạy xa điểm kích hoạt; giữ vững kế hoạch thay vì nhảy vào giữa chừng khiến tỷ lệ R:R bị bóp méo.
-     * *Có nên kiên nhẫn chờ đợi không?* Phân tích giá trị của sự kiên nhẫn (chờ đúng nến xác nhận, chờ nhịp hồi retest thay vì vội vã).
-     * *Tâm lý sau deal thắng:* Không tự mãn, không vội vàng tăng vol ở lệnh kế tiếp, tuân thủ nguyên tắc một chuỗi lệnh độc lập.
-   - Biểu đồ minh hoạ Chart 3: Toàn bộ chu trình hoàn tất.
+     * *Có nên FOMO không?* Bài học tránh mua đuổi khi giá đã chạy xa; kiên định với kế hoạch.
+     * *Có nên kiên nhẫn chờ đợi không?* Giá trị của sự kiên nhẫn (chờ đúng nến xác nhận, chờ nhịp retest).
+     * *Tâm lý sau deal thắng:* Không tự mãn, không vội vàng tăng vol ở lệnh kế tiếp.
+   - Biểu đồ minh hoạ Chart 3.
 
 ### Kịch bản B: Kèo Thua (Dính Stop Loss -1R & Mổ xẻ nguyên nhân)
 1. **Mốc 1 (Loại: `Vào lệnh`):**
-   - Nhận diện tín hiệu chuẩn theo lý thuyết nhưng tiềm ẩn bối cảnh rủi ro (ví dụ: Breakout trong thị trường biên hẹp, nến tín hiệu khối lượng chưa đủ dứt khoát).
-   - Xác định Entry, Stop Loss chuẩn (-1R) và TP kỳ vọng.
-   - Biểu đồ minh hoạ Chart 1: Setup nến mở vị thế.
+   - *Viết ngắn gọn, trực diện:* Setup nến vượt cản/bắt đáy, kế hoạch Entry, Stop Loss chuẩn (-1R) và TP kỳ vọng.
+   - Biểu đồ minh hoạ Chart 1.
 2. **Mốc 2 (Loại: `Quản trị lệnh` - Diễn biến bất lợi):**
-   - Giá không tiếp diễn đà tăng/giảm mà xuất hiện phản ứng tiêu cực (nến bẫy Bull Trap/Bear Trap, lực cầu/cung cạn kiệt, giá tụt ngược lại).
-   - **Kỷ luật sống còn:** Tuyệt đối KHÔNG gồng lỗ, KHÔNG dời Stop Loss ra xa, KHÔNG nhồi lệnh bình quân giá (No Martingale/Averaging down). Kiên định giữ nguyên ngưỡng Stop Loss ban đầu.
-   - Biểu đồ minh hoạ Chart 2: Tín hiệu bẫy giá và cách xử lý tâm lý khi vị thế chịu áp lực.
+   - *Viết ngắn gọn, kỷ luật thép:* Tín hiệu bẫy giá đảo chiều (Bull Trap/Bear Trap), trạng thái lệnh chịu lỗ tạm tính. Nhấn mạnh 3 KHÔNG: Không gồng lỗ, không nới Stop Loss, không nhồi lệnh bình quân giá.
+   - Biểu đồ minh hoạ Chart 2.
 3. **Mốc 3 (Loại: `Đóng lệnh` - Cắn Stop Loss & Mổ xẻ sau lệnh):**
-   - Giá xuyên thủng Stop Loss, hệ thống tự động ngắt vị thế ở mức lỗ đúng **-1.0R**.
-   - **Mổ xẻ nguyên nhân (Post-mortem):** Phân tích vì sao setup thất bại (khối lượng giả, bẫy thanh khoản của dòng tiền lớn, xung đột khung thời gian lớn hơn...).
+   - *Đóng sổ & đầu tư toàn bộ cảm xúc, mổ xẻ tâm lý:* Giá chạm SL tự động (-1.0R), thị trường tiếp tục lao dốc sau đó.
+   - **Mổ xẻ nguyên nhân kỹ thuật (Post-mortem):** Khối lượng giả, bẫy thanh khoản, xung đột xu hướng lớn.
    - **Bài học thực chiến & Tâm lý giao dịch (Bắt buộc):**
-     * *Có nên FOMO không?* Phân tích cái bẫy tâm lý sợ bỏ lỡ cơ hội khiến trader vội vã mua đuổi ngay đỉnh kháng cự mà không kiểm tra cấu trúc dòng tiền, biến mình thành thanh khoản cho Smart Money xả hàng.
-     * *Có nên kiên nhẫn chờ đợi không?* Nhấn mạnh bài học kiên nhẫn: Nếu chờ nến đóng cửa xác nhận vượt cản dứt khoát hoặc chờ nhịp test thành công, trader đã hoàn toàn tránh được cái bẫy này hoặc vào lệnh với vị thế ít rủi ro hơn nhiều.
-     * *Kỷ luật cắt lỗ:* Việc dứt khoát chấp nhận mất 1R giúp bảo toàn 99% tài khoản, tránh được cú rơi tự do hàng chục phần trăm sau đó. Tuyệt đối không cay cú trả thù thị trường (revenge trade).
-   - Biểu đồ minh hoạ Chart 3: Toàn bộ quá trình giá xuyên thủng SL và tiếp tục lao dốc.
+     * *Có nên FOMO không?* Phân tích cái bẫy tâm lý sợ lỡ cơ hội khiến trader vội vã mua đuổi ngay đỉnh kháng cự, biến mình thành thanh khoản cho Smart Money xả hàng.
+     * *Có nên kiên nhẫn chờ đợi không?* Nếu kiên nhẫn chờ nến đóng cửa hoặc chờ nhịp retest kiểm định cản, trader đã hoàn toàn đứng ngoài và bảo vệ 100% vốn.
+     * *Kỷ luật cắt lỗ:* Việc dứt khoát chấp nhận mất 1R giúp bảo toàn 99% tài khoản, tránh cú rơi tự do hàng chục phần trăm sau đó.
+   - Biểu đồ minh hoạ Chart 3.
 
-## Yêu cầu kỹ thuật
+## Yêu cầu kỹ thuật & Định dạng trình bày
+* **Định dạng HTML bắt buộc (`body`):** Mọi nội dung mốc **bắt buộc viết bằng thẻ HTML chuẩn** (`<p>`, `<h3>`, `<h4>`, `<strong>`, `<em>`, `<ul><li>`, `<ol><li>`, `<hr>`).
+  - *Tuyệt đối KHÔNG dùng raw markdown trần* (vì trình duyệt web không tự chèn thẻ `<p>`, khiến bài viết bị dính liền thành một khối dài không xuống dòng).
+  - *Xuống dòng rõ ràng:* Chia nhỏ thành từng đoạn văn ngắn 2–3 câu trong cặp thẻ `<p>...</p>`, tạo khoảng thở thị giác dễ chịu.
+  - *In đậm (`<strong>`):* Bold đậm có chọn lọc các thuật ngữ then chốt, mốc giá, tỷ lệ R:R và bài học cốt lõi.
 * **Tiêu đề:** Bắt đầu bằng tiền tố `[Nhật kí demo] <Mô tả setup và kết quả (Đạt mục tiêu TP hoặc Dính Stop Loss)>` (≤160 ký tự).
   - *Lưu ý quan trọng:* **KHÔNG lặp lại tên phương pháp trong tiêu đề** (ví dụ: viết `[Nhật kí demo] Mô hình Spring kiểm định đáy...`, KHÔNG viết `[Nhật kí demo] VSA: ...`), vì phương pháp đã được chọn riêng ở trường `truong_phai` và hiển thị thành badge trên giao diện.
 * **Trường phái (`truong_phai`):** Đặt đúng tên trường phái (`Price Action`, `Breakout Trading`, `MA Crossover`, `VSA / Wyckoff`, `Harmonic Patterns`, `Bollinger Bands`...).

@@ -15,7 +15,9 @@ Nhiệm vụ: Viết một bài phân tích chuyên sâu về kinh tế vĩ mô,
 * **Ảnh minh hoạ:** 1–2 ảnh tỷ lệ 16:9 chất lượng cao chụp cảnh quan thực tế, chuỗi sản xuất, nhà máy, bến cảng, hạ tầng sinh động (dùng `generate_image`, tránh vẽ box chữ sơ đồ thô cứng).
 * **Dải số (`figures`):** 4–6 cặp `{label, value}`, mỗi ô ≤24 ký tự.
 * **Câu hỏi tương tác (`question_for_crowd`):** ≤200 ký tự, kết thúc bằng dấu `?`.
+* **Định dạng HTML bắt buộc (`body`):** Bắt buộc viết bằng các thẻ HTML chuẩn (`<p>`, `<h3>`, `<h4>`, `<strong>`, `<em>`, `<ul><li>`, `<ol><li>`, `<hr>`). Tuyệt đối không dùng raw markdown trần để tránh dính liền text. Chia bài viết thành các đoạn văn ngắn gọn, thoáng đãng (`<p>...</p>`) và in đậm (`<strong>`) có chọn lọc các số liệu và ý quan trọng.
 
 ## Cách đăng bài
 1. Xuất file `D:\Projects\gikky-net\scripts\bai-viet\.tam\bai.json` chứa `sub`, `title`, `body`, `loai`, `figures`, `question_for_crowd`, `anhs` (dữ liệu base64).
 2. Chuyển vào container `api` trên VPS và chạy `scripts/bai-viet/dang-bai.py`.
+
