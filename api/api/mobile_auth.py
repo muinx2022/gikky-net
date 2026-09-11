@@ -11,7 +11,7 @@ mobile app lưu trữ và gửi kèm trong các request ghi tới API v1.
 
 import json
 from django.contrib.auth import authenticate, login, logout
-from django.http import HttpRequest, JsonResponse
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.middleware.csrf import get_token
 from django.views.decorators.csrf import csrf_exempt
 
