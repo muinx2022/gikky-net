@@ -1,10 +1,11 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   FlatList,
   Modal,
   RefreshControl,
+  ScrollView,
   Share,
   StyleSheet,
   Text,
@@ -18,6 +19,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowUp,
   MessageSquare,
+  Clock,
   Lock,
   CheckCircle2,
   Bookmark,
@@ -239,6 +241,68 @@ export default function MachDetailScreen() {
     enabled: !!machId,
   });
 
+  // State quản lý Accordion thu gọn / mở rộng các mốc
+  const [mocsMoState, setMocsMoState] = useState<Record<number, boolean>>({});
+  const mocOffsets = useRef<Record<number, number>>({});
+
+  useEffect(() => {
+    if (mach?.mocs && mach.mocs.length > 0) {
+      const initial: Record<number, boolean> = {};
+      const total = mach.mocs.length;
+      mach.mocs.forEach((m) => {
+        // Mốc 1 và mốc cuối cùng (mới nhất) luôn mở mặc định
+        // Các mốc giữa (1 < seq < total) mặc định thu gọn
+        if (m.seq === 1 || m.seq === total) {
+          initial[m.seq] = true;
+        } else {
+          initial[m.seq] = false;
+        }
+      });
+      setMocsMoState(initial);
+    }
+  }, [mach?.mocs]);
+
+  const coMocThuGon = Boolean(
+    mach?.mocs &&
+      mach.mocs.length > 2 &&
+      mach.mocs.some((m) => m.seq > 1 && m.seq < mach.mocs.length && !mocsMoState[m.seq])
+  );
+
+  const handleToggleMoc = (seq: number) => {
+    setMocsMoState((prev) => ({
+      ...prev,
+      [seq]: !prev[seq],
+    }));
+  };
+
+  const handleToggleAllMocs = () => {
+    if (!mach?.mocs) return;
+    const nextState: Record<number, boolean> = {};
+    const total = mach.mocs.length;
+    const openAll = coMocThuGon;
+    mach.mocs.forEach((m) => {
+      if (m.seq === 1 || m.seq === total) {
+        nextState[m.seq] = true;
+      } else {
+        nextState[m.seq] = openAll;
+      }
+    });
+    setMocsMoState(nextState);
+  };
+
+  const handleNhayToiMoc = (seq: number) => {
+    if (!mocsMoState[seq]) {
+      setMocsMoState((prev) => ({ ...prev, [seq]: true }));
+    }
+    const y = mocOffsets.current[seq];
+    if (typeof y === "number") {
+      flatListRef.current?.scrollToOffset({
+        offset: Math.max(0, y - 80),
+        animated: true,
+      });
+    }
+  };
+
   // Query trạng thái cá nhân đối với mạch (ví dụ: đã theo dõi chưa)
   const { data: machMe } = useQuery({
     queryKey: ["mach-me", machId],
@@ -422,25 +486,36 @@ export default function MachDetailScreen() {
         ref={flatListRef}
         data={mach.mocs}
         keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <MocItem
-            moc={item}
-            onMoBinhLuan={handleMoNganKeo}
-            onVote={handleVoteMoc}
-            laStaff={nguoiDung?.la_staff ?? false}
-            laChuMach={laChuMach}
-            onBaoCao={(mocId, seq) =>
-              handleMoBaoCao("moc", mocId, `Mốc #${seq} (${mach.title})`)
-            }
-            onModAction={(mocId, seq, dangAn) =>
-              handleMoModAction("moc", mocId, `Mốc #${seq} (${mach.title})`, undefined, dangAn)
-            }
-            onXemAnh={(anhUrl) => setAnhPhongsTo(anhUrl)}
-            onXemLichSu={handleMoLichSuMoc}
-            onSuaMoc={handleMoSuaMoc}
-            onXoaMoc={handleXoaMoc}
-          />
-        )}
+        renderItem={({ item }) => {
+          const total = mach.mocs.length;
+          const coTheThuGon = total > 2 && item.seq > 1 && item.seq < total;
+          const isExpanded = mocsMoState[item.seq] ?? (item.seq === 1 || item.seq === total);
+          return (
+            <MocItem
+              moc={item}
+              thuGon={coTheThuGon && !isExpanded}
+              coTheThuGon={coTheThuGon}
+              onToggleThuGon={() => handleToggleMoc(item.seq)}
+              onLayout={(e) => {
+                mocOffsets.current[item.seq] = e.nativeEvent.layout.y;
+              }}
+              onMoBinhLuan={handleMoNganKeo}
+              onVote={handleVoteMoc}
+              laStaff={nguoiDung?.la_staff ?? false}
+              laChuMach={laChuMach}
+              onBaoCao={(mocId, seq) =>
+                handleMoBaoCao("moc", mocId, `Mốc #${seq} (${mach.title})`)
+              }
+              onModAction={(mocId, seq, dangAn) =>
+                handleMoModAction("moc", mocId, `Mốc #${seq} (${mach.title})`, undefined, dangAn)
+              }
+              onXemAnh={(anhUrl) => setAnhPhongsTo(anhUrl)}
+              onXemLichSu={handleMoLichSuMoc}
+              onSuaMoc={handleMoSuaMoc}
+              onXoaMoc={handleXoaMoc}
+            />
+          );
+        }}
         contentContainerStyle={styles.listContent}
         onScroll={(e) => {
           const y = e.nativeEvent.contentOffset.y;
@@ -585,6 +660,70 @@ export default function MachDetailScreen() {
                 </TouchableOpacity>
               )}
             </View>
+
+            {/* Thanh Timeline ngang (Quick Jump Bar) */}
+            {mach.mocs && mach.mocs.length > 1 ? (
+              <View style={styles.timelineBarWrap}>
+                <View style={styles.timelineBarHeader}>
+                  <View style={styles.timelineTitleWrap}>
+                    <Clock size={13} color="#9ca3af" />
+                    <Text style={styles.timelineBarTitle}>
+                      Dòng thời gian ({mach.mocs.length} mốc)
+                    </Text>
+                  </View>
+                  {mach.mocs.length > 2 ? (
+                    <TouchableOpacity
+                      onPress={handleToggleAllMocs}
+                      style={styles.toggleAllBtn}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Text style={styles.toggleAllBtnText}>
+                        {coMocThuGon ? "Mở tất cả" : "Thu gọn"}
+                      </Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.timelineChipsList}
+                >
+                  {mach.mocs.map((m) => {
+                    const isLast = m.seq === mach.mocs.length;
+                    const isFirst = m.seq === 1;
+                    const d = new Date(m.occurred_at);
+                    const ngayThang = `${d.getDate()}/${d.getMonth() + 1}`;
+                    const isOpening = mocsMoState[m.seq] ?? (isFirst || isLast);
+
+                    return (
+                      <TouchableOpacity
+                        key={m.id}
+                        style={[
+                          styles.timelineChip,
+                          isOpening && styles.timelineChipActive,
+                        ]}
+                        onPress={() => handleNhayToiMoc(m.seq)}
+                        activeOpacity={0.7}
+                      >
+                        <Text
+                          style={[
+                            styles.timelineChipText,
+                            isOpening && styles.timelineChipTextActive,
+                          ]}
+                        >
+                          {isFirst
+                            ? "📌 #1 Mở đầu"
+                            : isLast
+                            ? `🔥 #${m.seq} Mới nhất`
+                            : `#${m.seq} · ${ngayThang}`}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            ) : null}
 
             <View style={styles.divider} />
           </View>
@@ -1057,5 +1196,68 @@ const styles = StyleSheet.create({
     color: "#dbeafe",
     fontSize: 13,
     fontWeight: "600",
+  },
+  timelineBarWrap: {
+    marginTop: 14,
+    marginBottom: 4,
+    backgroundColor: "#1c1c20",
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: "#27272a",
+  },
+  timelineBarHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  timelineTitleWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  timelineBarTitle: {
+    color: "#a1a1aa",
+    fontSize: 12,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  toggleAllBtn: {
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+  },
+  toggleAllBtnText: {
+    color: "#60a5fa",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  timelineChipsList: {
+    flexDirection: "row",
+    gap: 6,
+    paddingVertical: 2,
+  },
+  timelineChip: {
+    backgroundColor: "#27272a",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#3f3f46",
+  },
+  timelineChipActive: {
+    backgroundColor: "#1e3a8a",
+    borderColor: "#3b82f6",
+  },
+  timelineChipText: {
+    color: "#d4d4d8",
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  timelineChipTextActive: {
+    color: "#93c5fd",
+    fontWeight: "700",
   },
 });

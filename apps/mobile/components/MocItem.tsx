@@ -4,8 +4,11 @@ import {
   ArrowBigDown,
   ArrowBigUp,
   Calendar,
+  ChevronDown,
+  ChevronUp,
   Edit2,
   Flag,
+  Image as ImageIcon,
   MessageCircle,
   ShieldAlert,
   Trash2,
@@ -26,6 +29,10 @@ interface Props {
   onXemLichSu?: (mocId: number, seq: number) => void;
   onSuaMoc?: (moc: MocOut) => void;
   onXoaMoc?: (moc: MocOut) => void;
+  thuGon?: boolean;
+  coTheThuGon?: boolean;
+  onToggleThuGon?: () => void;
+  onLayout?: (e: any) => void;
 }
 
 export function MocItem({
@@ -40,6 +47,10 @@ export function MocItem({
   onXemLichSu,
   onSuaMoc,
   onXoaMoc,
+  thuGon = false,
+  coTheThuGon = false,
+  onToggleThuGon,
+  onLayout,
 }: Props) {
   const ngayDienRa = new Date(moc.occurred_at).toLocaleString("vi-VN", {
     day: "numeric",
@@ -49,7 +60,7 @@ export function MocItem({
   });
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} onLayout={onLayout}>
       {/* Cột mốc trái: Node & Line */}
       <View style={styles.timelineCol}>
         <View style={[styles.seqNode, moc.seq === 1 ? styles.rootNode : styles.updateNode]}>
@@ -78,32 +89,72 @@ export function MocItem({
             ) : null}
           </View>
 
-          {/* Thân bài Mốc */}
-          <ThanHtml body={moc.body || "(Không có nội dung)"} style={styles.body} />
+          {/* Thân bài Mốc & Ảnh đính kèm */}
+          {thuGon ? (
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={onToggleThuGon}
+              style={styles.collapsedContentWrap}
+            >
+              <View style={styles.collapsedBodyBox}>
+                <ThanHtml body={moc.body || "(Không có nội dung)"} style={styles.body} />
+              </View>
+              {/* Lớp phủ mờ đáy kèm nút mở rộng */}
+              <View style={styles.fadeOverlay}>
+                {moc.anhs && moc.anhs.length > 0 ? (
+                  <View style={styles.previewImageBadge}>
+                    <ImageIcon size={12} color="#60a5fa" />
+                    <Text style={styles.previewImageText}>
+                      {moc.anhs.length} ảnh đính kèm
+                    </Text>
+                  </View>
+                ) : null}
+                <View style={styles.expandBtn}>
+                  <Text style={styles.expandBtnText}>Xem thêm mốc này</Text>
+                  <ChevronDown size={14} color="#60a5fa" />
+                </View>
+              </View>
+            </TouchableOpacity>
+          ) : (
+            <>
+              <ThanHtml body={moc.body || "(Không có nội dung)"} style={styles.body} />
 
-          {/* Ảnh đính kèm (nếu có) */}
-          {moc.anhs && moc.anhs.length > 0 ? (
-            <View style={styles.imageGrid}>
-              {moc.anhs.map((anh: AnhOut) => {
-                const anhUrl = anh.url.startsWith("http")
-                  ? anh.url
-                  : `${API_BASE_URL}${anh.url}`;
-                return (
-                  <TouchableOpacity
-                    key={anh.id}
-                    onPress={() => onXemAnh?.(anhUrl)}
-                    activeOpacity={0.85}
-                  >
-                    <Image
-                      source={{ uri: anhUrl }}
-                      style={styles.attachedImage}
-                      resizeMode="cover"
-                    />
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          ) : null}
+              {/* Ảnh đính kèm (nếu có) */}
+              {moc.anhs && moc.anhs.length > 0 ? (
+                <View style={styles.imageGrid}>
+                  {moc.anhs.map((anh: AnhOut) => {
+                    const anhUrl = anh.url.startsWith("http")
+                      ? anh.url
+                      : `${API_BASE_URL}${anh.url}`;
+                    return (
+                      <TouchableOpacity
+                        key={anh.id}
+                        onPress={() => onXemAnh?.(anhUrl)}
+                        activeOpacity={0.85}
+                      >
+                        <Image
+                          source={{ uri: anhUrl }}
+                          style={styles.attachedImage}
+                          resizeMode="cover"
+                        />
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              ) : null}
+
+              {coTheThuGon ? (
+                <TouchableOpacity
+                  style={styles.collapseBtn}
+                  onPress={onToggleThuGon}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.collapseBtnText}>Thu gọn</Text>
+                  <ChevronUp size={13} color="#9ca3af" />
+                </TouchableOpacity>
+              ) : null}
+            </>
+          )}
 
           {/* Footer Mốc: Vote + Nút Ngăn Kéo Bình Luận */}
           <View style={styles.footer}>
@@ -324,5 +375,76 @@ const styles = StyleSheet.create({
     backgroundColor: "#2c2817",
     borderWidth: 1,
     borderColor: "#eab308",
+  },
+  collapsedContentWrap: {
+    position: "relative",
+    overflow: "hidden",
+    borderRadius: 8,
+    marginVertical: 4,
+  },
+  collapsedBodyBox: {
+    maxHeight: 105,
+    overflow: "hidden",
+  },
+  fadeOverlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 75,
+    backgroundColor: "rgba(24, 24, 27, 0.94)",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    paddingBottom: 8,
+    gap: 6,
+  },
+  previewImageBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "#1e293b",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#334155",
+  },
+  previewImageText: {
+    color: "#93c5fd",
+    fontSize: 11,
+    fontWeight: "500",
+  },
+  expandBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#27272a",
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#3f3f46",
+  },
+  expandBtnText: {
+    color: "#60a5fa",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  collapseBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    paddingVertical: 6,
+    marginVertical: 6,
+    backgroundColor: "#27272a",
+    borderRadius: 6,
+    alignSelf: "center",
+    paddingHorizontal: 14,
+  },
+  collapseBtnText: {
+    color: "#9ca3af",
+    fontSize: 12,
+    fontWeight: "500",
   },
 });
