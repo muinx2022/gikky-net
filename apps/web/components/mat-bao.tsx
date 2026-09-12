@@ -163,7 +163,28 @@ export function MatBao({
                 aria-controls="dai-gap-bao-noi-dung"
                 data-testid="nut-mo-ca-mach"
               >
-                {mo ? "▴ gập lại" : `▤ ${nhan_gap} · mở cả mạch ▾`}
+                {mo ? (
+                  <>
+                    <span className={css.bieu_tuong} aria-hidden>
+                      ▴
+                    </span>
+                    <span>gập lại</span>
+                  </>
+                ) : (
+                  <>
+                    <span className={css.bieu_tuong} aria-hidden>
+                      ▤
+                    </span>
+                    <span className={css.chu_moc}>{nhan_gap}</span>
+                    <span className={css.phan_cach} aria-hidden>
+                      ·
+                    </span>
+                    <span className={css.chu_mo}>mở cả mạch</span>
+                    <span className={css.mui_ten} aria-hidden>
+                      ▾
+                    </span>
+                  </>
+                )}
               </button>
             </li>
             <li

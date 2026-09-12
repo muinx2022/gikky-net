@@ -72,16 +72,15 @@
   list-style: none;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 2px 0 18px;
+  gap: 14px;
+  padding: 12px 0 22px;
 }
 
 .hang_dai_gap::before,
 .hang_dai_gap::after {
   content: "";
   flex: 1;
-  height: 1px;
-  background: var(--line);
+  border-top: 1.5px dashed var(--line-2);
 }
 
 /* "Vạch mới" — PLAN 9.1 giao hoàng thổ cho nó đích danh. Là một `<li>` (con trực tiếp của
@@ -120,19 +119,69 @@
 }
 
 .mo_ca_mach {
-  font-family: var(--f-mono);
-  font-size: 12px;
-  padding: 7px 13px;
-  border: 1px solid var(--line);
-  border-radius: 5px;
-  background: var(--inset);
-  color: var(--ink-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--f-ui);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 18px;
+  border: 1.5px solid var(--accent);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
   cursor: pointer;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.07);
+  transition: all 0.15s ease-in-out;
+  white-space: nowrap;
 }
 
 .mo_ca_mach:hover {
-  border-color: var(--line-2);
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
+  box-shadow: 0 3px 8px rgb(58 70 168 / 0.25);
+  transform: translateY(-1px);
+}
+
+.mo_ca_mach[aria-expanded="true"] {
+  background: var(--surface-2);
+  color: var(--ink-2);
+  border: 1px solid var(--line-2);
+  font-weight: 500;
+  box-shadow: none;
+}
+
+.mo_ca_mach[aria-expanded="true"]:hover {
+  background: var(--surface);
   color: var(--ink);
+  border-color: var(--line);
+  transform: none;
+}
+
+.bieu_tuong {
+  font-size: 14px;
+  line-height: 1;
+  opacity: 0.85;
+}
+
+.chu_moc {
+  font-weight: 700;
+}
+
+.phan_cach {
+  opacity: 0.5;
+  margin: 0 1px;
+}
+
+.chu_mo {
+  font-weight: 600;
+}
+
+.mui_ten {
+  font-size: 12px;
+  line-height: 1;
+  transition: transform 0.15s ease;
 }
 
 @media (max-width: 640px) {
@@ -142,5 +191,15 @@
 
   .nhat_ky {
     padding: 0 16px 4px;
+  }
+
+  .hang_dai_gap {
+    gap: 8px;
+    padding: 10px 0 18px;
+  }
+
+  .mo_ca_mach {
+    font-size: 12.5px;
+    padding: 7px 14px;
   }
 }
