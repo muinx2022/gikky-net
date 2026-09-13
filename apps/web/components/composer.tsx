@@ -267,7 +267,7 @@ export function Composer({
           data-testid="composer-cong-tac-soan-thao"
         >
           <PenLine size={13} strokeWidth={2} aria-hidden />
-          <span>{dungSoanThao ? "Ô gõ thường" : "Trình soạn thảo"}</span>
+          <span className={css.chu_nhe}>{dungSoanThao ? "Ô gõ thường" : "Trình soạn thảo"}</span>
         </button>
         {parentId === null &&
           (neoDoiDuoc ? (

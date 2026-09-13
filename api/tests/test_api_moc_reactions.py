@@ -46,7 +46,7 @@ def test_dem_dung_sau_khi_co_nguoi_react(client, mach, tac_gia, nguoi_khac):
 
     dem = _mocs(client, mach.pk)[1]["reactions"]
     assert dem["lieu"] == 2
-    assert dem["ro_rang"] == 0
+    assert dem["can_them"] == 0
     # Đổi reaction là UPDATE, không phải thêm hàng (`UNIQUE (user, moc)`).
     dat_reaction(user=nguoi_khac, moc=moc1, emoji="can_them")
     dem = _mocs(client, mach.pk)[1]["reactions"]
@@ -59,12 +59,12 @@ def test_dem_KHONG_lan_giua_hai_moc(client, mach, tac_gia, nguoi_khac):
     from core.ghi import them_moc
 
     moc2 = them_moc(mach=mach, author=tac_gia, body="mốc hai", occurred_at=None)
-    dat_reaction(user=tac_gia, moc=mach.mocs.get(seq=1), emoji="ro_rang")
-    dat_reaction(user=nguoi_khac, moc=moc2, emoji="co_nguon")
+    dat_reaction(user=tac_gia, moc=mach.mocs.get(seq=1), emoji="hay_lam")
+    dat_reaction(user=nguoi_khac, moc=moc2, emoji="can_them")
 
     m = _mocs(client, mach.pk)
-    assert m[1]["reactions"]["ro_rang"] == 1 and m[1]["reactions"]["co_nguon"] == 0
-    assert m[2]["reactions"]["co_nguon"] == 1 and m[2]["reactions"]["ro_rang"] == 0
+    assert m[1]["reactions"]["hay_lam"] == 1 and m[1]["reactions"]["can_them"] == 0
+    assert m[2]["reactions"]["can_them"] == 1 and m[2]["reactions"]["hay_lam"] == 0
 
 
 def test_bia_mo_KHONG_pho_so_reaction(client, mach, tac_gia, nguoi_khac):

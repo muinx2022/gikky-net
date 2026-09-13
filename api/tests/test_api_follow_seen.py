@@ -375,9 +375,9 @@ def test_reaction_cua_toi_hien_trong_me(client, mach_cua_a, nguoi_b):
     """Đối chứng dương cho `my_reactions` — nếu không, `[]` cứng cũng xanh ở mọi bài trên."""
     moc = Moc.objects.get(mach=mach_cua_a, seq=1)
     client.force_login(nguoi_b)
-    dat(client, f"/api/v1/mocs/{moc.pk}/reactions", {"emoji": "co_nguon"})
+    dat(client, f"/api/v1/mocs/{moc.pk}/reactions", {"emoji": "can_them"})
     assert _me(client, mach_cua_a.pk)["my_reactions"] == [
-        {"moc_id": moc.pk, "emoji": "co_nguon"}
+        {"moc_id": moc.pk, "emoji": "can_them"}
     ]
     dat(client, f"/api/v1/mocs/{moc.pk}/reactions", {"emoji": None})
     assert _me(client, mach_cua_a.pk)["my_reactions"] == []

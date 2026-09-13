@@ -140,10 +140,8 @@ class Reaction(models.Model):
 
     class Emoji(models.TextChoices):
         HAY_LAM = "hay_lam", "🔥 hay lắm"
-        RO_RANG = "ro_rang", "🧠 luận điểm rõ"
-        CO_NGUON = "co_nguon", "📎 có dẫn nguồn"
-        CAN_THEM = "can_them", "❓ cần thêm dữ kiện"
         LIEU = "lieu", "⚠️ rủi ro"
+        CAN_THEM = "can_them", "❓ cần thêm dữ kiện"
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="reactions"

@@ -204,7 +204,7 @@ KHOA_CHO_PHEP = {
     # ngay với `thừa: ['hay_lam']`, trước khi ai kịp nghĩ tới file này. Giữ nguyên lối liệt
     # kê từng tên thay vì `*Reaction.Emoji.values` — suy từ enum là làm bài đo TỰ ĐỒNG Ý với
     # bất kỳ khoá nào Django mọc thêm, tức gỡ đúng cái chuông vừa chứng minh là nó kêu.
-    "reactions", "ro_rang", "co_nguon", "can_them", "lieu", "hay_lam",
+    "reactions", "can_them", "lieu", "hay_lam",
     # figures
     "label", "value",
     # trích

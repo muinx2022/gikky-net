@@ -93,7 +93,7 @@ test("mỗi khoá reaction có glyph + chữ, và glyph khớp nhãn trong Pytho
 
 test("phép đọc Python KHÔNG rỗng và fail-CLOSED (nếu không, ba bài trên rỗng tuếch)", () => {
   const nguon = docPython("api/core/models/tuong_tac.py");
-  expect(docKhoaReaction(nguon).length).toBeGreaterThanOrEqual(4);
+  expect(docKhoaReaction(nguon).length).toBeGreaterThanOrEqual(3);
   expect(() => docKhoaReaction("khong co gi")).toThrow();
   expect(() => docGlyphReaction("khong co gi")).toThrow();
   expect(() => docHang("khong co gi", "SO_FIGURES_TOI_DA")).toThrow();
