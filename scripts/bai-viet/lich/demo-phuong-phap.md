@@ -1,10 +1,10 @@
-# Mạch Demo Phương pháp Giao dịch — 16:45 hàng ngày
+# Mạch Demo Phương pháp Giao dịch — 16:45 cách ngày (Thứ Ba, Thứ Năm, Thứ Bảy)
 
 Nhiệm vụ: Tạo một mạch (thread) demo thực chiến mô phỏng chu trình vào lệnh, quản trị lệnh và đóng lệnh theo một phương pháp giao dịch cụ thể lên gikky.net bằng tài khoản `u/gikky-team-member`.
 
 ## Khung giờ & Tần suất
-* **Khung giờ chạy:** 16:45 hàng ngày (sau khi phiên giao dịch trong nước đóng cửa).
-* **Tần suất:** 1 mạch mỗi ngày (gồm 3 mốc thời gian hoàn chỉnh).
+* **Khung giờ chạy:** 16:45 Thứ Ba, Thứ Năm, Thứ Bảy (xen kẽ cách ngày với bài viết Thời sự).
+* **Tần suất:** Cách ngày 1 mạch (3 bài/tuần, mỗi mạch gồm 3 mốc thời gian hoàn chỉnh).
 
 ## Nguyên tắc cốt lõi: Phản ánh thực tế (Có Thắng - Có Thua)
 * **Bắt buộc có deal THUA LỖ (Stop Loss):** Bất kỳ phương pháp kỹ thuật nào cũng có xác suất thất bại tùy thuộc vào bối cảnh thị trường (ví dụ: Trend-following thất bại khi thị trường đi ngang choppy, Breakout gặp bẫy Bull/Bear trap do cạn kiệt thanh khoản, v.v.). **Tuyệt đối không đăng toàn deal thắng.**
