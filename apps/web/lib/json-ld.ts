@@ -27,14 +27,31 @@ export function jsonLdMach(mach: MachChiTietOut): Record<string, unknown> {
   const urlSub = urlTuyetDoi(duongDanSub(mach.sub.slug));
   const urlTrangChu = urlTuyetDoi("/");
 
+  const loaiBanTin = ["Bản tin", "Thời sự", "Điểm tin"];
+  const loaiPhanTich = ["Phân tích", "Ngành", "Phương pháp"];
+
+  const loaiMoc = moc_dau?.loai;
+  let loaiSchema: string | string[] = "DiscussionForumPosting";
+  if (loaiMoc && loaiBanTin.includes(loaiMoc)) {
+    loaiSchema = ["NewsArticle", "DiscussionForumPosting"];
+  } else if (loaiMoc && loaiPhanTich.includes(loaiMoc)) {
+    loaiSchema = ["Article", "DiscussionForumPosting"];
+  }
+
+  const anhOg = urlTuyetDoi(`/m/${mach.slug}-${mach.id}/opengraph-image`);
+  const dsAnh = moc_dau?.anhs && moc_dau.anhs.length > 0
+    ? [moc_dau.anhs[0].url, anhOg]
+    : [anhOg];
+
   const du_lieu: Record<string, unknown> = {
     "@context": "https://schema.org",
-    "@type": "DiscussionForumPosting",
+    "@type": loaiSchema,
     "@id": url,
     url,
     mainEntityOfPage: url,
     headline: mach.title,
     name: mach.title,
+    image: dsAnh,
     datePublished: mach.published_at,
     dateModified: mach.last_entry_at,
     inLanguage: "vi-VN",
@@ -43,6 +60,15 @@ export function jsonLdMach(mach: MachChiTietOut): Record<string, unknown> {
       "@type": "Person",
       name: mach.author.display_name || mach.author.username,
       url: urlTuyetDoi(duongDanHoSo(mach.author.username)),
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "gikky.net",
+      url: urlTrangChu,
+      logo: {
+        "@type": "ImageObject",
+        url: urlTuyetDoi("/icon.png"),
+      },
     },
     breadcrumb: {
       "@type": "BreadcrumbList",
@@ -69,7 +95,11 @@ export function jsonLdMach(mach: MachChiTietOut): Record<string, unknown> {
     },
   };
 
-  if (moc_dau?.body) du_lieu.articleBody = trichVanBanThuan(moc_dau.body);
+  if (moc_dau?.body) {
+    const vanBan = trichVanBanThuan(moc_dau.body);
+    du_lieu.articleBody = vanBan;
+    du_lieu.description = vanBan.length > 160 ? `${vanBan.slice(0, 157)}…` : vanBan;
+  }
 
   if (mach.comment_count > 0) {
     du_lieu.interactionStatistic = {

@@ -147,6 +147,82 @@ def kiem_offset(iso):
     return None
 
 
+def them_watermark(raw_bytes: bytes, text: str = "gikky.net") -> bytes:
+    """Gắn watermark `gikky.net` ở góc phải dưới của ảnh do gikky tạo ra."""
+    try:
+        import io
+        from PIL import Image, ImageDraw, ImageFont
+
+        img = Image.open(io.BytesIO(raw_bytes))
+        orig_format = img.format or "PNG"
+        orig_mode = img.mode
+
+        # Chuyển sang RGBA để vẽ lớp phủ bán trong suốt
+        im_rgba = img.convert("RGBA")
+        overlay = Image.new("RGBA", im_rgba.size, (255, 255, 255, 0))
+        draw = ImageDraw.Draw(overlay)
+
+        w, h = im_rgba.size
+        # Kích thước font tỷ lệ thuận với chiều cao của ảnh
+        font_size = max(13, min(int(h * 0.028), 32))
+        try:
+            font = ImageFont.truetype("arial.ttf", font_size)
+        except Exception:
+            try:
+                font = ImageFont.truetype(
+                    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", font_size
+                )
+            except Exception:
+                try:
+                    font = ImageFont.truetype(
+                        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", font_size
+                    )
+                except Exception:
+                    font = ImageFont.load_default()
+
+        # Đo kích thước chữ
+        bbox = draw.textbbox((0, 0), text, font=font)
+        text_w = bbox[2] - bbox[0]
+        text_h = bbox[3] - bbox[1]
+
+        padding_x = int(font_size * 0.55)
+        padding_y = int(font_size * 0.3)
+        margin = int(font_size * 0.75)
+
+        box_w = text_w + padding_x * 2
+        box_h = text_h + padding_y * 2
+
+        box_x = w - box_w - margin
+        box_y = h - box_h - margin
+
+        # Vẽ pill nền bán trong suốt
+        draw.rounded_rectangle(
+            [box_x, box_y, box_x + box_w, box_y + box_h],
+            radius=max(3, int(box_h * 0.25)),
+            fill=(15, 15, 15, 150),
+            outline=(255, 255, 255, 35),
+            width=1,
+        )
+
+        # Vẽ chữ watermark
+        text_x = box_x + padding_x
+        text_y = box_y + padding_y
+        draw.text((text_x, text_y), text, fill=(255, 255, 255, 230), font=font)
+
+        watermarked = Image.alpha_composite(im_rgba, overlay)
+
+        out_buf = io.BytesIO()
+        if orig_mode in ("RGB", "L") or orig_format == "JPEG":
+            watermarked.convert("RGB").save(out_buf, format="JPEG", quality=92)
+        else:
+            watermarked.save(out_buf, format=orig_format)
+
+        return out_buf.getvalue()
+    except Exception as e:
+        print(f"Cảnh báo: không gắn được watermark ({e}), giữ nguyên ảnh gốc.", file=sys.stderr)
+        return raw_bytes
+
+
 def xu_ly_anhs(bai, author_username):
     """Xử lý danh sách ảnh đính kèm (nếu có) trong `bai["anhs"]`.
 
@@ -154,7 +230,7 @@ def xu_ly_anhs(bai, author_username):
       {"data": "<base64>", "alt": "...", "placeholder": "{{ANH_1}}"} hoặc
       {"path": "...", "alt": "...", "placeholder": "{{ANH_1}}"}
 
-    Tái mã hoá, kiểm tra dung lượng/kích thước và lưu qua `luu_anh_noi_dung`.
+    Tự động gắn watermark `gikky.net` ở góc phải dưới, tái mã hoá và lưu qua `luu_anh_noi_dung`.
     Thay thế placeholder trong `bai["body"]` bằng `<p><img src="..." alt="..."></p>`.
     """
     anhs = bai.pop("anhs", None)
@@ -208,6 +284,7 @@ def xu_ly_anhs(bai, author_username):
             continue
 
         try:
+            raw_bytes = them_watermark(raw_bytes, text="gikky.net")
             anh_xu_ly = xu_ly_anh_tai_len(raw_bytes)
             hang = luu_anh_noi_dung(user=tac_gia, anh=anh_xu_ly)
             url = url_anh(hang.khoa_luu_tru)

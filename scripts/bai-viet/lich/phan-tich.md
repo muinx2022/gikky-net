@@ -12,7 +12,7 @@ Nhiệm vụ: Viết một bài phân tích chuyên sâu về kinh tế vĩ mô,
 * **Chuyên mục (`sub`):** `vi-mo` hoặc `chung-khoan`.
 * **Loại (`loai`):** `Phân tích` hoặc `Ngành`.
 * **Giọng văn:** Khách quan, trung lập, ngôi thứ ba, mô tả cấu trúc kinh tế và sự thật vận hành. Tuyệt đối không khuyến nghị mua bán cổ phiếu, không dùng từ mệnh lệnh ("hãy", "nên", "cần").
-* **Ảnh minh hoạ:** 1–2 ảnh tỷ lệ 16:9 chất lượng cao chụp cảnh quan thực tế, chuỗi sản xuất, nhà máy, bến cảng, hạ tầng sinh động (dùng `generate_image`, tránh vẽ box chữ sơ đồ thô cứng).
+* **Ảnh minh hoạ:** 1–2 ảnh tỷ lệ 16:9 chất lượng cao chụp cảnh quan thực tế, chuỗi sản xuất, nhà máy, bến cảng, hạ tầng sinh động (dùng `generate_image`, tránh vẽ box chữ sơ đồ thô cứng). Khi chèn ảnh hoặc biểu đồ vào nội dung HTML, bắt buộc phải có thuộc tính `alt` mô tả đúng ngữ cảnh và từ khóa chính (VD: `<img src="..." alt="Biểu đồ phân tích biên lợi nhuận và chuỗi giá trị ngành thép">`).
 * **Dải số (`figures`):** 4–6 cặp `{label, value}`, mỗi ô ≤24 ký tự.
 * **Câu hỏi tương tác (`question_for_crowd`):** ≤200 ký tự, kết thúc bằng dấu `?`.
 * **Định dạng HTML bắt buộc (`body`):** Bắt buộc viết bằng các thẻ HTML chuẩn (`<p>`, `<h3>`, `<h4>`, `<strong>`, `<em>`, `<ul><li>`, `<ol><li>`, `<hr>`). Tuyệt đối không dùng raw markdown trần để tránh dính liền text. Chia bài viết thành các đoạn văn ngắn gọn, thoáng đãng (`<p>...</p>`) và in đậm (`<strong>`) có chọn lọc các số liệu và ý quan trọng.

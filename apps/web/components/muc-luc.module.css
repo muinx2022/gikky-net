@@ -1,0 +1,70 @@
+.khung {
+  margin: 1rem 0 1.5rem;
+  background-color: var(--nen-the);
+  border: 1px solid var(--vien);
+  border-radius: var(--bo-goc-md);
+  overflow: hidden;
+}
+
+.details {
+  padding: 0.75rem 1rem;
+}
+
+.summary {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  font-size: var(--co-chu-sm);
+  color: var(--chu);
+  outline: none;
+  list-style: none;
+}
+
+.summary::-webkit-details-marker {
+  display: none;
+}
+
+.tieu_de {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.danh_sach {
+  margin: 0.75rem 0 0.25rem;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.muc {
+  font-size: var(--co-chu-sm);
+  line-height: var(--chieu-cao-dong-vua);
+}
+
+.cap_3 {
+  padding-left: 1.25rem;
+  font-size: 0.84rem;
+}
+
+.link {
+  color: var(--chu-phu);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  transition: color 0.15s ease;
+}
+
+.link:hover {
+  color: var(--chu-sang);
+  text-decoration: underline;
+}
+
+.so {
+  font-family: var(--font-ibm-plex-mono);
+  font-size: 0.78rem;
+  color: var(--chu-mo);
+}

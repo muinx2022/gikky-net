@@ -141,6 +141,7 @@ export function TheMoc({
               body={moc.body ?? ""}
               dinhDang={moc.body_dinh_dang}
               className={css.than}
+              coMucLuc={moc.seq === 1}
             />
 
             {moc.figures !== null && moc.figures.length > 0 && (

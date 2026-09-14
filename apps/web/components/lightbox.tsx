@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import {
   createContext,
@@ -187,6 +187,9 @@ export function LightboxProvider({ children }: { children: ReactNode }) {
                 alt={altHienTai}
                 className={css.anh_chinh}
               />
+              <span className={css.watermark_anh} aria-hidden="true">
+                gikky.net
+              </span>
             </div>
 
             <div className={css.thong_tin_duoi}>
@@ -204,6 +207,10 @@ export function LightboxProvider({ children }: { children: ReactNode }) {
               >
                 <span>Mở ảnh gốc ↗</span>
               </a>
+            </div>
+
+            <div className={css.watermark_man_hinh} aria-hidden="true">
+              <span>gikky.net</span>
             </div>
           </div>,
           document.body,

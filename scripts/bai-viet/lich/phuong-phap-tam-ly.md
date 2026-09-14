@@ -14,7 +14,7 @@ Nhiệm vụ: Viết một bài lý thuyết chuyên sâu về phương pháp k�
 * **Chuyên mục (`sub`):**
   - Bài về **Tâm lý, kỷ luật, đọc sách hành vi** (Nhóm H): Đăng vào `tam-ly-giao-dich` (Tâm lý giao dịch).
   - Bài về **Phương pháp kỹ thuật, hệ thống quản trị rủi ro** (Nhóm I): Đăng vào `quan-tri-von` (Quản trị vốn).
-* **Ảnh minh hoạ:** 1–2 ảnh tỷ lệ 16:9 chụp không gian làm việc trader, bàn đọc sách tài chính, góc thư viện nghiên cứu hoặc bối cảnh nghệ thuật sâu lắng gợi mở tâm lý (dùng `generate_image`, tránh vẽ box chữ sơ đồ thô cứng).
+* **Ảnh minh hoạ:** 1–2 ảnh tỷ lệ 16:9 chụp không gian làm việc trader, bàn đọc sách tài chính, góc thư viện nghiên cứu hoặc bối cảnh nghệ thuật sâu lắng gợi mở tâm lý (dùng `generate_image`, tránh vẽ box chữ sơ đồ thô cứng). Khi chèn vào HTML, ảnh bắt buộc phải có thuộc tính `alt` mô tả trực quan và chứa từ khóa bài viết (VD: `<img src="..." alt="Mô hình tâm lý thị trường và kỷ luật giao dịch">`).
 * **Dải số (`figures`):** 4–6 cặp `{label, value}`, mỗi ô ≤24 ký tự.
 * **Câu hỏi tương tác (`question_for_crowd`):** ≤200 ký tự, kết thúc bằng dấu `?`.
 * **Định dạng HTML bắt buộc (`body`):** Bắt buộc viết bằng các thẻ HTML chuẩn (`<p>`, `<h3>`, `<h4>`, `<strong>`, `<em>`, `<ul><li>`, `<ol><li>`, `<hr>`). Tuyệt đối không dùng raw markdown trần để tránh dính liền text. Chia bài viết thành các đoạn văn ngắn gọn, thoáng đãng (`<p>...</p>`) và in đậm (`<strong>`) có chọn lọc các ý tứ đắt giá.

@@ -83,7 +83,7 @@ export function NoiDungThe({
               maxWidth: "100%",
               height: "auto",
             }}
-            alt=""
+            alt={`Ảnh minh họa: ${tieu_de}`}
             loading="lazy"
             decoding="async"
           />

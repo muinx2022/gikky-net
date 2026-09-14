@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import type { AnhOut } from "@gikky/api-client";
 
@@ -38,7 +38,7 @@ export function GalleryMoc({ anhs, seq }: { anhs: readonly AnhOut[]; seq: number
               src={a.url_thumb}
               width={a.w_thumb ?? undefined}
               height={a.h_thumb ?? undefined}
-              alt=""
+              alt={`Ảnh đính kèm mốc ${seq} — Hình ${i + 1}/${anhs.length}`}
               loading="lazy"
               decoding="async"
             />

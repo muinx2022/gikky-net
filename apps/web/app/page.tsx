@@ -19,8 +19,26 @@ import { GIOI_THIEU, urlTuyetDoi } from "@/lib/site";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
+  title: "gikky.net — Nhật ký giao dịch chứng khoán, phân tích vĩ mô & quản trị vốn",
+  description:
+    "Mạng xã hội nhật ký giao dịch chứng khoán, crypto, dữ liệu kinh tế vĩ mô và quản trị vốn. Ghi nhận nhận định theo thời gian thực minh bạch, lịch sử bất biến.",
   alternates: {
     canonical: urlTuyetDoi("/"),
+  },
+  openGraph: {
+    title: "gikky.net — Nhật ký giao dịch chứng khoán, phân tích vĩ mô & quản trị vốn",
+    description:
+      "Mạng xã hội nhật ký giao dịch chứng khoán, crypto, dữ liệu kinh tế vĩ mô và quản trị vốn. Ghi nhận nhận định theo thời gian thực minh bạch, lịch sử bất biến.",
+    url: urlTuyetDoi("/"),
+    siteName: "gikky.net",
+    locale: "vi_VN",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "gikky.net — Nhật ký giao dịch chứng khoán, phân tích vĩ mô & quản trị vốn",
+    description:
+      "Mạng xã hội nhật ký giao dịch chứng khoán, crypto, dữ liệu kinh tế vĩ mô và quản trị vốn. Ghi nhận nhận định theo thời gian thực minh bạch, lịch sử bất biến.",
   },
 };
 
@@ -105,7 +123,7 @@ async function FeedDaNap({
         // đối với người mới và với máy tìm kiếm. Nay nó nói **sản phẩm là gì** trong một
         // câu; lede nói **trang này liệt kê gì**. Phần "site vận hành ra sao" thuộc về
         // `GIOI_THIEU` ở sidebar — xem docstring của hằng ấy.
-        tieuDe="Nhật ký giao dịch & Luận điểm thị trường"
+        tieuDe="Nhật ký giao dịch chứng khoán & Luận điểm thị trường"
         lede="Ghi nhận nhận định trước khi có kết quả. Mọi mốc đều lưu vết thời gian thực và lịch sử minh bạch."
         sidebar={<Sidebar gioiThieu={GIOI_THIEU} cacSub={cac_sub} />}
       />
