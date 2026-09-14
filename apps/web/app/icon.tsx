@@ -1,7 +1,23 @@
 import { ImageResponse } from "next/og";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 
 export const size = { width: 32, height: 32 };
 export const contentType = "image/png";
+
+function docIconBase64(): string {
+  const duongDan = [
+    join(process.cwd(), "public", "icon.png"),
+    join(process.cwd(), "apps", "web", "public", "icon.png"),
+    join(__dirname, "..", "..", "public", "icon.png"),
+  ];
+  for (const p of duongDan) {
+    if (existsSync(p)) return readFileSync(p).toString("base64");
+  }
+  return "";
+}
+
+const iconDataUrl = `data:image/png;base64,${docIconBase64()}`;
 
 export default function Icon() {
   return new ImageResponse(
@@ -11,68 +27,20 @@ export default function Icon() {
           width: "100%",
           height: "100%",
           display: "flex",
-          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          background: "#0f172a",
-          borderRadius: "50%",
-          border: "1px solid #1e293b",
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#ffffff",
-            fontSize: "16px",
-            fontWeight: 800,
-            fontFamily: "sans-serif",
-            lineHeight: 1,
-            marginTop: "-1px",
-          }}
-        >
-          G
-        </div>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            width: "18px",
-            marginTop: "2px",
-          }}
-        >
-          <div
-            style={{
-              width: "3px",
-              height: "3px",
-              borderRadius: "50%",
-              background: "#d49b42",
-            }}
-          />
-          <div style={{ flex: 1, height: "1px", background: "#d49b42" }} />
-          <div
-            style={{
-              width: "3px",
-              height: "3px",
-              borderRadius: "50%",
-              background: "#d49b42",
-            }}
-          />
-          <div style={{ flex: 1, height: "1px", background: "#d49b42" }} />
-          <div
-            style={{
-              width: "3px",
-              height: "3px",
-              borderRadius: "50%",
-              background: "#d49b42",
-            }}
-          />
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={iconDataUrl}
+          alt=""
+          width="32"
+          height="32"
+          style={{ width: "32px", height: "32px" }}
+        />
       </div>
     ),
     { ...size }
   );
 }
-

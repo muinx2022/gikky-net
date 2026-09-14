@@ -1,26 +1,27 @@
 .khung_hieu {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   line-height: 1;
 }
 
-.huy_hieu {
+.bieu_tuong {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
 
-.svg_huy_hieu {
+.anh_bieu_tuong {
   display: block;
-  border-radius: 50%;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  transition: transform 0.2s ease;
 }
 
-.khung_hieu:hover .svg_huy_hieu {
-  transform: scale(1.05);
+.khung_hieu:hover .anh_bieu_tuong {
+  transform: scale(1.08);
 }
 
 .chu_hieu {
