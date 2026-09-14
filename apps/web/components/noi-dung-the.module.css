@@ -36,6 +36,31 @@
   background: var(--surface-2, var(--surface));
 }
 
+.watermark {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  padding: 1.5px 6px;
+  background: rgba(15, 15, 15, 0.68);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 3px;
+  font-family: var(--f-mono, monospace);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  color: rgba(255, 255, 255, 0.88);
+  pointer-events: none;
+  user-select: none;
+  line-height: 1.3;
+  z-index: 2;
+}
+
+.watermark_co_them {
+  right: 48px;
+}
+
 /* "+N" cho phần gallery không hiện ra. Góc dưới-phải: góc trên-phải là chỗ mắt tìm nút
    đóng, và trên thẻ feed thì không có nút đóng nào. */
 .them_anh {

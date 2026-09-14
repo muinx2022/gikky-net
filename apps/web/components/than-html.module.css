@@ -81,8 +81,10 @@
   margin: 1.1em 0;
 }
 
-.than p:has(> img) {
+.than p:has(> img),
+.than p:has(> .khung_anh_noi_dung) {
   text-align: center;
+  margin: 1.2em 0;
 }
 
 .than img {
@@ -97,4 +99,40 @@
 
 .than img:hover {
   opacity: 0.94;
+}
+
+.khung_anh_noi_dung {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  border-radius: 6px;
+  overflow: hidden;
+  line-height: 0;
+  vertical-align: middle;
+}
+
+.khung_anh_noi_dung img {
+  margin: 0 !important;
+  display: block;
+}
+
+.watermark_noi_dung {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  padding: 2.5px 7px;
+  background: rgba(15, 15, 15, 0.68);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 4px;
+  font-family: var(--f-mono, monospace);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.4px;
+  color: rgba(255, 255, 255, 0.9);
+  pointer-events: none;
+  user-select: none;
+  line-height: 1.2;
+  z-index: 2;
 }

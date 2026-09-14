@@ -42,6 +42,9 @@ export function GalleryMoc({ anhs, seq }: { anhs: readonly AnhOut[]; seq: number
               loading="lazy"
               decoding="async"
             />
+            <span className={css.watermark} aria-hidden="true">
+              gikky.net
+            </span>
           </a>
         </li>
       ))}

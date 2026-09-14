@@ -87,6 +87,12 @@ export function NoiDungThe({
             loading="lazy"
             decoding="async"
           />
+          <span
+            className={`${css.watermark} ${con_lai > 0 ? css.watermark_co_them : ""}`}
+            aria-hidden="true"
+          >
+            gikky.net
+          </span>
           {con_lai > 0 && (
             <span className={css.them_anh} data-testid="the-mach-them-anh">
               +{con_lai}

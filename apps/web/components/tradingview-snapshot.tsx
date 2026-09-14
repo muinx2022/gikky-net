@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { ExternalLink, LineChart } from "lucide-react";
 import type { TradingViewSnapshotInfo } from "@/lib/tradingview";
@@ -51,6 +51,9 @@ export function TradingViewSnapshot({
                 (e.target as HTMLElement).style.display = "none";
               }}
             />
+            <span className={css.watermark} aria-hidden="true">
+              gikky.net
+            </span>
           </div>
         </div>
       ))}

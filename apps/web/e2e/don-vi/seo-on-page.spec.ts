@@ -150,4 +150,34 @@ test.describe("SEO On-page & Content Improvements", () => {
     expect(pageSrc).toContain("quản trị vốn");
     expect(pageSrc).toContain("Nhật ký giao dịch chứng khoán & Luận điểm thị trường");
   });
+
+  test("6. Watermark gikky.net hiện diện trên gallery thumb, feed preview thumb, nội dung bài viết và lightbox", () => {
+    const gallerySrc = readFileSync(
+      resolve(WEB, "components/gallery-moc.tsx"),
+      "utf8",
+    );
+    expect(gallerySrc).toContain("gikky.net");
+    expect(gallerySrc).toContain("watermark");
+
+    const theSrc = readFileSync(
+      resolve(WEB, "components/noi-dung-the.tsx"),
+      "utf8",
+    );
+    expect(theSrc).toContain("gikky.net");
+    expect(theSrc).toContain("watermark");
+
+    const thanHtmlSrc = readFileSync(
+      resolve(WEB, "components/than-html.tsx"),
+      "utf8",
+    );
+    expect(thanHtmlSrc).toContain("watermark_noi_dung");
+    expect(thanHtmlSrc).toContain("gikky.net");
+
+    const lightboxSrc = readFileSync(
+      resolve(WEB, "components/lightbox.tsx"),
+      "utf8",
+    );
+    expect(lightboxSrc).toContain("watermark_anh");
+    expect(lightboxSrc).toContain("gikky.net");
+  });
 });

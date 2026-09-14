@@ -26,12 +26,33 @@
 
 .o a {
   display: block;
+  position: relative;
   cursor: zoom-in;
 }
 
 .o a:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
+}
+
+.watermark {
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  padding: 1.5px 5px;
+  background: rgba(15, 15, 15, 0.68);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 3px;
+  font-family: var(--f-mono, monospace);
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  color: rgba(255, 255, 255, 0.88);
+  pointer-events: none;
+  user-select: none;
+  line-height: 1.2;
 }
 
 .o a:hover img {

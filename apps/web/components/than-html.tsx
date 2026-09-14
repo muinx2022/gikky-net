@@ -30,7 +30,9 @@ export function ThanHtml({
 
   const xuLyBam = (e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
-    const img = target.closest("img");
+    const img =
+      target.closest("img") ??
+      target.closest(`.${css.khung_anh_noi_dung}`)?.querySelector("img");
     if (img) {
       const src = img.currentSrc || img.getAttribute("src") || "";
       if (src) {
@@ -48,10 +50,18 @@ export function ThanHtml({
       </div>
     );
   }
-  const { htmlMoi, mucLuc } =
+  const { htmlMoi: htmlMucLuc, mucLuc } =
     coMucLuc && dinhDang === "html"
       ? xuLyMucLuc(body)
       : { htmlMoi: body, mucLuc: [] };
+
+  const htmlCuoi = htmlMucLuc.replace(
+    /<img\b([^>]*)>/gi,
+    (_khop, attrs: string = "") => {
+      const attrsSach = attrs.replace(/\/+$/, "").trim();
+      return `<span class="${css.khung_anh_noi_dung}"><img ${attrsSach} /><span class="${css.watermark_noi_dung}" aria-hidden="true">gikky.net</span></span>`;
+    },
+  );
 
   return (
     <>
@@ -61,7 +71,7 @@ export function ThanHtml({
         {...CHU_NGUOI_DUNG}
         onClick={xuLyBam}
         // Chuỗi này đã qua `lam_sach` ở server trước khi vào DB.
-        dangerouslySetInnerHTML={{ __html: htmlMoi }}
+        dangerouslySetInnerHTML={{ __html: htmlCuoi }}
       />
     </>
   );
