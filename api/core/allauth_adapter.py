@@ -88,6 +88,63 @@ class AdapterTaiKhoan(DefaultAccountAdapter):
         stash_ghi_nho(request)
         return super().pre_login(request, user, **kwargs)
 
+    def populate_username(self, request, user) -> None:
+        """Sinh username khi đăng ký không qua form (Google OAuth / One Tap).
+
+        User yêu cầu (2026-09-13):
+        - Mặc định allauth lấy first_name làm username (vd 'Mùi' -> 'mui', 'Thùy' -> 'thuy')
+          dẫn đến username chỉ có 3 hoặc 4 ký tự dù email là muinx2022@gmail.com / thuydtb86@gmail.com.
+        - Lấy tên username đầy đủ từ phần trước '@' của email (vd: 'muinx2022', 'thuydtb86').
+        - Nếu bị trùng tên đăng nhập thì giữ nguyên cả email (vd: 'muinx2022@gmail.com').
+        - Nếu cả email cũng trùng (rất hiếm) thì sinh số hậu tố duy nhất để không bao giờ lỗi.
+        """
+        from allauth.account.utils import filter_users_by_username, user_email, user_username
+        from django.core.exceptions import ValidationError
+
+        current = user_username(user) or ""
+        email = (user_email(user) or "").strip()
+        prefix = email.split("@")[0].strip() if email else ""
+
+        def _is_available(name: str) -> bool:
+            if not name:
+                return False
+            try:
+                cleaned = self.clean_username(name, shallow=True)
+            except ValidationError:
+                return False
+            qs = filter_users_by_username(cleaned)
+            if getattr(user, "pk", None):
+                qs = qs.exclude(pk=user.pk)
+            return not qs.exists()
+
+        # Nếu provider khác đã cung cấp sẵn username riêng (không phải prefix hay email) và còn trống
+        if current and current not in (prefix, email) and _is_available(current):
+            user_username(user, current)
+            return
+
+        # 1. Thử lấy username đầy đủ từ prefix của email (vd: 'muinx2022', 'thuydtb86')
+        if prefix and _is_available(prefix):
+            user_username(user, prefix)
+            return
+
+        # 2. Nếu bị trùng tên đăng nhập -> giữ nguyên cả email (vd: 'muinx2022@gmail.com')
+        if email and _is_available(email):
+            user_username(user, email)
+            return
+
+        # 3. Nếu cả email cũng trùng -> sinh số hậu tố duy nhất
+        base = prefix or "user"
+        for i in range(1, 1000):
+            candidate = f"{base}{i}"
+            if _is_available(candidate):
+                user_username(user, candidate)
+                return
+
+        # Fallback an toàn nếu không có email
+        first_name = getattr(user, "first_name", "")
+        last_name = getattr(user, "last_name", "")
+        user_username(user, self.generate_unique_username([prefix, email, first_name, last_name, "user"]))
+
     def get_login_redirect_url(self, request):
         """Chuyển hướng sau đăng nhập: hỗ trợ trả sessionid về app mobile nếu luồng khởi từ mobile."""
         mobile_redirect = request.session.pop("mobile_redirect_uri", None)
@@ -151,6 +208,21 @@ class AdapterMangXaHoi(DefaultSocialAccountAdapter):
     `GET /api/v1/me` phải trả thêm một cờ `co_mat_khau`. Ghi ở đây để người mở file này
     thấy, thay vì để nó thành một bug báo về sau.
     """
+
+    def populate_user(self, request, sociallogin, data):
+        """Gợi ý thông tin user từ tài khoản mạng xã hội (Google).
+
+        Google không trả username mà chỉ có email và first/last name.
+        Ta gợi ý username ban đầu là prefix của email (vd: 'muinx2022', 'thuydtb86')
+        thay vì để rỗng khiến allauth tự lấy first_name ('mui', 'thuy').
+        """
+        user = super().populate_user(request, sociallogin, data)
+        email = (data.get("email") or getattr(user, "email", "") or "").strip()
+        if email and not user.username:
+            prefix = email.split("@")[0].strip()
+            if prefix:
+                user.username = prefix
+        return user
 
     def pre_social_login(self, request, sociallogin):
         """Xoá mật khẩu khi lượt đăng nhập Google rơi vào một tài khoản ĐÃ CÓ.
