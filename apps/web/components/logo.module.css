@@ -1,0 +1,33 @@
+.khung_hieu {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1;
+}
+
+.huy_hieu {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.svg_huy_hieu {
+  display: block;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.khung_hieu:hover .svg_huy_hieu {
+  transform: scale(1.05);
+}
+
+.chu_hieu {
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  transition: color 0.15s ease;
+}

@@ -50,6 +50,8 @@
    nói. */
 .hieu {
   justify-self: start;
+  display: inline-flex;
+  align-items: center;
   font-family: var(--f-display);
   font-size: 23px;
   font-weight: 700;
@@ -57,6 +59,7 @@
   line-height: 1;
   color: var(--ink);
   transition: color 0.15s ease;
+  text-decoration: none;
 }
 
 .hieu:hover {

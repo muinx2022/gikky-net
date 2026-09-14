@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { Chuong } from "./chuong";
 import css from "./chrome.module.css";
 import { CongTacTheme } from "./cong-tac-theme";
+import { LogoGikky } from "./logo";
 import { NutDangMach } from "./nut-dang-mach";
 import { OTimKiem } from "./o-tim-kiem";
 import { ThanhTaiKhoan } from "./thanh-tai-khoan";
@@ -48,7 +49,7 @@ export function Chrome() {
     <header className={css.chrome}>
       <div className={css.trong}>
         <Link href="/" prefetch={false} className={css.hieu}>
-          gikky
+          <LogoGikky />
         </Link>
         {/* `OTimKiem` đọc `useSearchParams` để giữ lại câu vừa gõ khi bấm back. Hook đó
             **bắt buộc phải nằm trong `Suspense`**, nếu không Next từ chối render tĩnh
