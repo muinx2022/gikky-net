@@ -848,6 +848,10 @@ export type LuotXemOut = {
      */
     so_truc_tiep: number;
     /**
+     * So Tu Khoa An
+     */
+    so_tu_khoa_an: number;
+    /**
      * Theo Nhom Bot
      */
     theo_nhom_bot: Array<NhomBotOut>;
@@ -880,6 +884,10 @@ export type LuotXemOut = {
      * Top Quoc Gia Nguoi
      */
     top_quoc_gia_nguoi: Array<MucSoLuotOut>;
+    /**
+     * Top Tu Khoa
+     */
+    top_tu_khoa: Array<TopTuKhoaOut>;
     /**
      * Trinh Duyet
      */
@@ -1908,6 +1916,22 @@ export type TopQuocGiaOut = {
      * So Luot Nguoi
      */
     so_luot_nguoi: number;
+};
+
+/**
+ * TopTuKhoaOut
+ *
+ * Một dòng bảng "Từ khóa tìm kiếm". Chỉ hàng NGƯỜI và chỉ `tu_khoa != ""`.
+ */
+export type TopTuKhoaOut = {
+    /**
+     * So Luot
+     */
+    so_luot: number;
+    /**
+     * Tu Khoa
+     */
+    tu_khoa: string;
 };
 
 /**

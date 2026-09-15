@@ -25,17 +25,17 @@ làm "toàn thời gian" **nhỏ hơn "90 ngày" cả chục lần**, không c�
 Không đòi `is_superuser`. Nó không đổi dữ liệu và không phơi nội dung của ai: hai bảng
 nguồn cố ý không có cột nào gắn được với một con người.
 
-## Bảy bảng CHI TIẾT chỉ dựng được từ hàng thô ⇒ tối đa 90 ngày
+## Tám bảng CHI TIẾT chỉ dựng được từ hàng thô ⇒ tối đa 90 ngày
 
 `TongNgay` chỉ mang `(ngày, đường dẫn, người, bot)` (xem `core/models/luot_xem.py` — một
 dòng cho mỗi tổ hợp ngày × đường dẫn × tên bot × nguồn × trình duyệt giữ mãi là một bảng
-nổ tung để trả lời những câu hỏi vốn chỉ có nghĩa ngắn hạn). Nên **bảy khối** dưới đây chỉ
+nổ tung để trả lời những câu hỏi vốn chỉ có nghĩa ngắn hạn). Nên **tám khối** dưới đây chỉ
 dựng được từ hàng thô, tức tối đa 90 ngày:
 
-    top_bot · theo_nhom_bot · top_nguon + so_truc_tiep · trinh_duyet · thiet_bi · top_quoc_gia_nguoi · top_quoc_gia_bot
+    top_bot · theo_nhom_bot · top_nguon + so_truc_tiep · top_tu_khoa + so_tu_khoa_an · trinh_duyet · thiet_bi · top_quoc_gia_nguoi · top_quoc_gia_bot
 
 Chỉ ở `tat_ca` thì giới hạn ấy mới cắt gì; response mang cờ `chi_tiet_chi_90_ngay` để màn
-hình nói ra. *(Tên cũ `bot_chi_90_ngay`, đổi 2026-08-30 khi cờ phủ thêm bốn khối; thêm quốc gia 2026-09-09.)*
+hình nói ra. *(Tên cũ `bot_chi_90_ngay`, đổi 2026-08-30 khi cờ phủ thêm bốn khối; thêm quốc gia 2026-09-09; thêm từ khóa 2026-09-15.)*
 
 ## Khách/ngày — hai nguồn, cùng ranh giới với lượt xem
 
@@ -114,6 +114,7 @@ from ninja import Router
 from core.bot import NHOM_HOP_LE, nhom_bot
 from core.models.luot_xem import KhachNgay, LuotXem, TongNgay
 from core.thoi_gian import TZ_VN, ngay_vn
+from core.trang_search import la_trang_search
 
 from api.loi import THAM_SO_KHONG_HOP_LE, LoiOut, loi
 from api.quan_tri_schemas import (
@@ -128,6 +129,7 @@ from api.quan_tri_schemas import (
     TenBotOut,
     TopDuongDanOut,
     TopQuocGiaOut,
+    TopTuKhoaOut,
 )
 
 router = Router()
@@ -296,6 +298,36 @@ def _top_nguon(ngay_dau: date) -> list[NguonOut]:
 def _so_truc_tiep(ngay_dau: date) -> int:
     """Lượt người không có nguồn ngoài. Ba ca gộp một — xem `LuotXem.nguon`."""
     return _nguoi_tu(ngay_dau).filter(nguon="").count()
+
+
+def _top_tu_khoa(ngay_dau: date) -> list[TopTuKhoaOut]:
+    """Top 20 từ khóa tìm kiếm khi người dùng vào từ các trang search.
+
+    Chỉ hàng NGƯỜI, và chỉ `tu_khoa != ""`. Sắp theo lượt giảm dần rồi theo từ khóa (tất định).
+    """
+    hang = (
+        _nguoi_tu(ngay_dau)
+        .exclude(tu_khoa="")
+        .values("tu_khoa")
+        .annotate(_so=Count("pk"))
+        .order_by("-_so", "tu_khoa")[:SO_TOP]
+    )
+    return [TopTuKhoaOut(tu_khoa=h["tu_khoa"], so_luot=h["_so"]) for h in hang]
+
+
+def _so_tu_khoa_an(ngay_dau: date) -> int:
+    """Lượt người đến từ các trang search nhưng từ khóa bị ẩn / không gửi (tu_khoa="").
+
+    Ví dụ: Google qua SSL mặc định không gửi query param trong Referer.
+    """
+    cac_nguon = (
+        _nguoi_tu(ngay_dau)
+        .filter(tu_khoa="")
+        .exclude(nguon="")
+        .values("nguon")
+        .annotate(_so=Count("pk"))
+    )
+    return sum(h["_so"] for h in cac_nguon if la_trang_search(h["nguon"]))
 
 
 def _theo_cot(ngay_dau: date, cot: str) -> list[MucSoLuotOut]:
@@ -616,6 +648,8 @@ def luot_xem(request, response: HttpResponse, khoang: str = "30"):
         theo_nhom_bot=_theo_nhom_bot(theo_ten_bot),
         top_nguon=_top_nguon(ngay_dau_chi_tiet),
         so_truc_tiep=_so_truc_tiep(ngay_dau_chi_tiet),
+        top_tu_khoa=_top_tu_khoa(ngay_dau_chi_tiet),
+        so_tu_khoa_an=_so_tu_khoa_an(ngay_dau_chi_tiet),
         trinh_duyet=_theo_cot(ngay_dau_chi_tiet, "trinh_duyet"),
         thiet_bi=_theo_cot(ngay_dau_chi_tiet, "thiet_bi"),
         top_quoc_gia_nguoi=_top_quoc_gia_nguoi(ngay_dau_chi_tiet),

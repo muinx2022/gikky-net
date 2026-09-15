@@ -80,6 +80,7 @@ from core.models.dien_dan import Mach
 from core.models.luot_xem import LuotXem, MuoiNgay
 from core.nhan_dien_ua import thiet_bi, trinh_duyet
 from core.thoi_gian import ngay_vn
+from core.trang_search import trich_xuat_tu_khoa
 
 from api.loi import LoiOut
 from api.quyen import LoiGhi
@@ -174,6 +175,8 @@ class DemLuotXemIn(Schema):
     #: Mã quốc gia ISO 3166-1 alpha-2 từ header CF-IPCountry của Cloudflare.
     #: Mặc định rỗng bắt buộc để bảo đảm backward-compatible khi deploy lệch.
     quoc_gia: str = ""
+    #: Query string của request (ví dụ "?q=..." hoặc "?utm_term=..."). Mặc định rỗng.
+    truy_van: str = ""
 
 
 class DemLuotXemOut(Schema):
@@ -429,6 +432,13 @@ def dem_luot_xem(request, du_lieu: DemLuotXemIn):
         # dập nó ở đây là bịa. Phía đọc mới là chỗ để dòng bot thành `—`.
         da_dang_nhap=du_lieu.da_dang_nhap,
         quoc_gia=chuan_hoa_quoc_gia(du_lieu.quoc_gia),
+        tu_khoa=""
+        if la_bot
+        else trich_xuat_tu_khoa(
+            referer=du_lieu.referer,
+            truy_van=du_lieu.truy_van,
+            duong_dan=duong,
+        ),
     )
     return Status(200, DemLuotXemOut(da_dem=True))
 

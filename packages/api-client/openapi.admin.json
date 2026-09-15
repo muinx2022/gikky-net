@@ -1032,6 +1032,10 @@
             "title": "So Truc Tiep",
             "type": "integer"
           },
+          "so_tu_khoa_an": {
+            "title": "So Tu Khoa An",
+            "type": "integer"
+          },
           "theo_nhom_bot": {
             "items": {
               "$ref": "#/components/schemas/NhomBotOut"
@@ -1091,6 +1095,13 @@
             "title": "Top Quoc Gia Nguoi",
             "type": "array"
           },
+          "top_tu_khoa": {
+            "items": {
+              "$ref": "#/components/schemas/TopTuKhoaOut"
+            },
+            "title": "Top Tu Khoa",
+            "type": "array"
+          },
           "trinh_duyet": {
             "items": {
               "$ref": "#/components/schemas/MucSoLuotOut"
@@ -1109,6 +1120,8 @@
           "theo_nhom_bot",
           "top_nguon",
           "so_truc_tiep",
+          "top_tu_khoa",
+          "so_tu_khoa_an",
           "trinh_duyet",
           "thiet_bi",
           "top_quoc_gia_nguoi",
@@ -2525,6 +2538,25 @@
           "so_luot"
         ],
         "title": "TopQuocGiaOut",
+        "type": "object"
+      },
+      "TopTuKhoaOut": {
+        "description": "Một dòng bảng \"Từ khóa tìm kiếm\". Chỉ hàng NGƯỜI và chỉ `tu_khoa != \"\"`.",
+        "properties": {
+          "so_luot": {
+            "title": "So Luot",
+            "type": "integer"
+          },
+          "tu_khoa": {
+            "title": "Tu Khoa",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tu_khoa",
+          "so_luot"
+        ],
+        "title": "TopTuKhoaOut",
         "type": "object"
       },
       "TrangBaoCaoOut": {

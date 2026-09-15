@@ -646,6 +646,11 @@
             "title": "Referer",
             "type": "string"
           },
+          "truy_van": {
+            "default": "",
+            "title": "Truy Van",
+            "type": "string"
+          },
           "user_agent": {
             "default": "",
             "title": "User Agent",

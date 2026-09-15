@@ -52,6 +52,7 @@ def them(
     trinh_duyet="",
     thiet_bi="",
     quoc_gia="",
+    tu_khoa="",
 ):
     """`khach=""` và ba cột mới rỗng là mặc định **có chủ đích**: đó là hình dạng hàng ghi
     TRƯỚC 2026-08-30, và mọi bài đo cũ của file này chạy trên đúng hàng ấy."""
@@ -66,6 +67,7 @@ def them(
             trinh_duyet=trinh_duyet,
             thiet_bi=thiet_bi,
             quoc_gia=quoc_gia,
+            tu_khoa=tu_khoa,
         )
 
 
@@ -1362,3 +1364,36 @@ def test_quoc_gia_trong_online(db):
     items = {i["ten_bot"] or "nguoi": i["quoc_gia"] for i in js["items"]}
     assert items["nguoi"] in ("VN", "")
     assert items["googlebot"] == "US"
+
+
+def test_top_tu_khoa_sap_xep_va_chi_tinh_nguoi(db, hom_nay):
+    """Top từ khóa sắp theo lượt giảm dần rồi theo từ khóa; chỉ tính người, bỏ qua bot và ô rỗng."""
+    them(hom_nay, "/m/a-1", so=5, tu_khoa="chung khoan", khach="1" * 32)
+    them(hom_nay, "/m/a-2", so=3, tu_khoa="phan tich vi mo", khach="2" * 32)
+    them(hom_nay, "/m/a-3", so=3, tu_khoa="co phieu vcb", khach="3" * 32)
+    # Bot mang tu_khoa -> không được tính
+    them(hom_nay, "/m/a-4", so=10, bot=True, ten="googlebot", tu_khoa="chung khoan")
+    # Người không có tu_khoa
+    them(hom_nay, "/m/a-5", so=4, tu_khoa="", khach="4" * 32)
+
+    js = goi("7").json()
+    assert js["top_tu_khoa"] == [
+        {"tu_khoa": "chung khoan", "so_luot": 5},
+        {"tu_khoa": "co phieu vcb", "so_luot": 3},
+        {"tu_khoa": "phan tich vi mo", "so_luot": 3},
+    ]
+
+
+def test_so_tu_khoa_an(db, hom_nay):
+    """Đếm số lượt người đến từ trang search (Google, Bing...) nhưng tu_khoa rỗng."""
+    them(hom_nay, "/", so=7, nguon="google.com", tu_khoa="", khach="1" * 32)
+    them(hom_nay, "/", so=3, nguon="bing.com", tu_khoa="", khach="2" * 32)
+    # Đến từ Google nhưng có từ khóa -> không tính vào ẩn
+    them(hom_nay, "/", so=2, nguon="google.com", tu_khoa="tam ly trading", khach="3" * 32)
+    # Đến từ nguồn không phải search (facebook) -> không tính vào search ẩn
+    them(hom_nay, "/", so=4, nguon="facebook.com", tu_khoa="", khach="4" * 32)
+    # Bot đến từ google -> không tính
+    them(hom_nay, "/", so=8, bot=True, ten="googlebot", nguon="google.com", tu_khoa="")
+
+    js = goi("7").json()
+    assert js["so_tu_khoa_an"] == 10  # 7 từ google + 3 từ bing

@@ -259,6 +259,9 @@ def test_R0_1_TAP_COT_cua_LuotXem_bi_GHIM(db):
         # 2026-09-09: mã quốc gia ISO 3166-1 alpha-2 từ CF-IPCountry của Cloudflare.
         # Mang tính tổng hợp cao, không định danh cá nhân; không lưu IP.
         "quoc_gia",
+        # 2026-09-15: từ khóa tìm kiếm khi người dùng vào từ các trang search.
+        # Mang tính thống kê, không định danh cá nhân; không lưu IP/cookie.
+        "tu_khoa",
     }
 
 
@@ -767,5 +770,45 @@ def test_QG3_quoc_gia_sai_dinh_dang_hoac_thieu_thi_ra_rong():
     goi({"duong_dan": "/"})
     cac_qg = list(LuotXem.objects.values_list("quoc_gia", flat=True))
     assert cac_qg == ["", "", ""]
+
+
+@pytest.mark.django_db
+@override_settings(DEM_LUOT_XEM_SECRET=SECRET)
+def test_TK1_tu_khoa_tu_referer_search_duoc_luu():
+    """Lượt người dùng từ Cốc Cốc / Bing / Google có query param được lưu từ khóa."""
+    goi({
+        "duong_dan": "/m/bai-viet-1",
+        "referer": "https://coccoc.com/search?query=phan+tich+vi+mo",
+        "user_agent": "Mozilla/5.0",
+    })
+    hang = LuotXem.objects.get()
+    assert hang.nguon == "coccoc.com"
+    assert hang.tu_khoa == "phan tich vi mo"
+
+
+@pytest.mark.django_db
+@override_settings(DEM_LUOT_XEM_SECRET=SECRET)
+def test_TK2_tu_khoa_tu_truy_van_duoc_luu():
+    """Lượt người dùng có query utm_term hoặc tìm kiếm nội bộ được lưu từ khóa."""
+    goi({
+        "duong_dan": "/m/bai-viet-1",
+        "truy_van": "?utm_source=google&utm_term=chung+khoan",
+        "user_agent": "Mozilla/5.0",
+    })
+    assert LuotXem.objects.get().tu_khoa == "chung khoan"
+
+
+@pytest.mark.django_db
+@override_settings(DEM_LUOT_XEM_SECRET=SECRET)
+def test_TK3_bot_khong_luu_tu_khoa():
+    """Bot truy cập kể cả mang query param search cũng không lưu tu_khoa."""
+    goi({
+        "duong_dan": "/m/bai-viet-1",
+        "referer": "https://www.bing.com/search?q=tam+ly",
+        "user_agent": "Mozilla/5.0 (compatible; Googlebot/2.1)",
+    })
+    hang = LuotXem.objects.get()
+    assert hang.la_bot is True
+    assert hang.tu_khoa == ""
 
 

@@ -139,6 +139,10 @@ class LuotXem(models.Model):
     #: mang tính thống kê tổng hợp cao nên không định danh bất kỳ cá nhân nào.
     quoc_gia = models.CharField(max_length=2, blank=True, default="")
 
+    #: Từ khóa tìm kiếm khi người dùng vào từ các trang search (Google, Cốc Cốc, Bing,
+    #: Yahoo, DuckDuckGo, tìm kiếm nội bộ, utm_term...). Rỗng khi không có hoặc bị ẩn.
+    tu_khoa = models.CharField(max_length=200, blank=True, default="")
+
     class Meta:
         indexes = [
             # MỘT index, phục vụ cả hai câu đọc: lọc `luc >= mốc` (7/30/90 ngày, và cả

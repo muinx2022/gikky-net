@@ -140,6 +140,8 @@ export function middleware(req: NextRequest, event: NextFetchEvent) {
           da_dang_nhap: co_cookie_phien,
           // Mã quốc gia ISO 3166-1 alpha-2 từ header CF-IPCountry của Cloudflare.
           quoc_gia: quocGiaKhach(req),
+          // Query string của URL đích (ví dụ "?q=..." hoặc "?utm_term=...")
+          truy_van: req.nextUrl.search ?? "",
         },
       }).catch(() => {}),
     );

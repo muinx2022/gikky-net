@@ -958,6 +958,13 @@ class MucSoLuotOut(Schema):
     so_luot: int
 
 
+class TopTuKhoaOut(Schema):
+    """Một dòng bảng "Từ khóa tìm kiếm". Chỉ hàng NGƯỜI và chỉ `tu_khoa != ""`."""
+
+    tu_khoa: str
+    so_luot: int
+
+
 class LuotXemOut(Schema):
     """Toàn bộ số liệu của trang `/luot-xem` cho MỘT khoảng."""
 
@@ -978,6 +985,9 @@ class LuotXemOut(Schema):
     top_nguon: list[NguonOut]
     #: Lượt NGƯỜI không có nguồn ngoài — trực tiếp / nội bộ / referer rác, gộp làm một.
     so_truc_tiep: int
+    top_tu_khoa: list[TopTuKhoaOut]
+    #: Lượt NGƯỜI đến từ các trang search nhưng công cụ tìm kiếm không gửi từ khóa (hoặc ẩn qua SSL).
+    so_tu_khoa_an: int
     trinh_duyet: list[MucSoLuotOut]
     thiet_bi: list[MucSoLuotOut]
     top_quoc_gia_nguoi: list[MucSoLuotOut]
@@ -986,9 +996,10 @@ class LuotXemOut(Schema):
     #: `khoang=tat_ca`, luôn sai với `7/30/90`.
     #:
     #: Các khối chịu giới hạn này: `top_bot`, `theo_nhom_bot`, `top_nguon` + `so_truc_tiep`,
-    #: `trinh_duyet`, `thiet_bi`, `top_quoc_gia_nguoi`, `top_quoc_gia_bot` — tất cả chỉ dựng
-    #: được từ hàng thô (90 ngày), vì `TongNgay` cố ý không mang các chiều ấy. Màn hình
-    #: **phải nói ra**; giấu đi là để mod đọc chúng như thể chúng phủ toàn thời gian.
+    #: `top_tu_khoa` + `so_tu_khoa_an`, `trinh_duyet`, `thiet_bi`, `top_quoc_gia_nguoi`,
+    #: `top_quoc_gia_bot` — tất cả chỉ dựng được từ hàng thô (90 ngày), vì `TongNgay` cố ý
+    #: không mang các chiều ấy. Màn hình **phải nói ra**; giấu đi là để mod đọc chúng như
+    #: thể chúng phủ toàn thời gian.
     chi_tiet_chi_90_ngay: bool
 
 

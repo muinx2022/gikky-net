@@ -371,7 +371,7 @@ export default function TrangLuotXem() {
                  mặc định. */
               so_lieu.chi_tiet_chi_90_ngay ? (
                 <p className="text-sm text-muc-mo" data-testid="chu-chi-tiet-90-ngay">
-                  Các bảng <strong>Nguồn · Bot · Trình duyệt · Thiết bị · Quốc gia</strong> chỉ phủ{" "}
+                  Các bảng <strong>Nguồn · Từ khóa · Bot · Trình duyệt · Thiết bị · Quốc gia</strong> chỉ phủ{" "}
                   <strong>90 ngày gần nhất</strong>: tổng theo ngày giữ mãi nhưng không giữ
                   các chiều ấy, còn dữ liệu thô thì dọn sau 90 ngày.
                 </p>
@@ -497,36 +497,68 @@ export default function TrangLuotXem() {
                 khoa: "nguon",
                 nhan: "Nguồn truy cập",
                 noi_dung: (
-                  <The tieu_de="Nguồn truy cập" pham_vi="Top 20 tên miền · chỉ lượt người">
-                    {/* Rỗng thật thì CHỈ khối rỗng — không kèm một bảng một dòng
-                        "(trực tiếp) 0" đứng cạnh câu "chưa có lượt nào": hai thứ ấy nói
-                        ngược nhau trên cùng một thẻ. Lượt phản biện 2026-08-30 tìm ra. */}
-                    {so_lieu.top_nguon.length === 0 && so_lieu.so_truc_tiep === 0 ? (
-                      <KhoiRong
-                        co_bo_loc={false}
-                        chua_co="Chưa có lượt người nào trong khoảng này."
-                      />
-                    ) : (
-                      <KhungBang>
-                        <HangTieuDe cot={["Nguồn", "Lượt"]} />
-                        <tbody data-testid="bang-nguon">
-                          {/* Dòng đầu LUÔN là phần trực tiếp/nội bộ: nó gần như luôn
-                              đông nhất, nhưng nó không phải một tên miền — trộn vào bảng
-                              là đẩy hết nguồn thật xuống dưới một cái nhãn rỗng. */}
-                          <tr>
-                            <td className="px-3 py-2.5 text-muc-mo">(trực tiếp / nội bộ)</td>
-                            <td className="px-3 py-2.5 tabular-nums">{so_lieu.so_truc_tiep}</td>
-                          </tr>
-                          {so_lieu.top_nguon.map((n) => (
-                            <tr key={n.nguon}>
-                              <td className="px-3 py-2.5 font-mono text-xs break-all">{n.nguon}</td>
-                              <td className="px-3 py-2.5 tabular-nums">{n.so_luot}</td>
+                  <div className="space-y-4">
+                    <The tieu_de="Nguồn truy cập" pham_vi="Top 20 tên miền · chỉ lượt người">
+                      {/* Rỗng thật thì CHỈ khối rỗng — không kèm một bảng một dòng
+                          "(trực tiếp) 0" đứng cạnh câu "chưa có lượt nào": hai thứ ấy nói
+                          ngược nhau trên cùng một thẻ. Lượt phản biện 2026-08-30 tìm ra. */}
+                      {so_lieu.top_nguon.length === 0 && so_lieu.so_truc_tiep === 0 ? (
+                        <KhoiRong
+                          co_bo_loc={false}
+                          chua_co="Chưa có lượt người nào trong khoảng này."
+                        />
+                      ) : (
+                        <KhungBang>
+                          <HangTieuDe cot={["Nguồn", "Lượt"]} />
+                          <tbody data-testid="bang-nguon">
+                            {/* Dòng đầu LUÔN là phần trực tiếp/nội bộ: nó gần như luôn
+                                đông nhất, nhưng nó không phải một tên miền — trộn vào bảng
+                                là đẩy hết nguồn thật xuống dưới một cái nhãn rỗng. */}
+                            <tr>
+                              <td className="px-3 py-2.5 text-muc-mo">(trực tiếp / nội bộ)</td>
+                              <td className="px-3 py-2.5 tabular-nums">{so_lieu.so_truc_tiep}</td>
                             </tr>
-                          ))}
-                        </tbody>
-                      </KhungBang>
-                    )}
-                  </The>
+                            {so_lieu.top_nguon.map((n) => (
+                              <tr key={n.nguon}>
+                                <td className="px-3 py-2.5 font-mono text-xs break-all">{n.nguon}</td>
+                                <td className="px-3 py-2.5 tabular-nums">{n.so_luot}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </KhungBang>
+                      )}
+                    </The>
+
+                    <The
+                      tieu_de="Từ khóa tìm kiếm"
+                      pham_vi="Top 20 từ khóa · người dùng vào từ các trang search"
+                    >
+                      {so_lieu.top_tu_khoa.length === 0 ? (
+                        <KhoiRong
+                          co_bo_loc={false}
+                          chua_co="Chưa ghi nhận từ khóa tìm kiếm nào trong khoảng này."
+                        />
+                      ) : (
+                        <KhungBang>
+                          <HangTieuDe cot={["Từ khóa", "Lượt"]} />
+                          <tbody data-testid="bang-tu-khoa">
+                            {so_lieu.top_tu_khoa.map((t) => (
+                              <tr key={t.tu_khoa}>
+                                <td className="px-3 py-2.5 font-medium">{t.tu_khoa}</td>
+                                <td className="px-3 py-2.5 tabular-nums">{t.so_luot}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </KhungBang>
+                      )}
+                      {so_lieu.so_tu_khoa_an > 0 && (
+                        <p className="mt-3 text-xs text-muc-mo" data-testid="chu-tu-khoa-an">
+                          Ghi nhận thêm <strong>{so_lieu.so_tu_khoa_an}</strong> lượt từ các trang search nhưng bị ẩn từ khóa
+                          (do chính sách bảo mật Referrer-Policy của Google và các công cụ tìm kiếm).
+                        </p>
+                      )}
+                    </The>
+                  </div>
                 ),
               },
               {
@@ -681,7 +713,7 @@ export default function TrangLuotXem() {
                 `chu-chi-tiet-90-ngay` đi theo bản đầy đủ ở trên. */}
             {so_lieu.chi_tiet_chi_90_ngay && (
               <p className="mt-2">
-                Bốn, các bảng <strong>Nguồn · Bot · Trình duyệt · Thiết bị · Quốc gia</strong> chỉ phủ{" "}
+                Bốn, các bảng <strong>Nguồn · Từ khóa · Bot · Trình duyệt · Thiết bị · Quốc gia</strong> chỉ phủ{" "}
                 <strong>90 ngày gần nhất</strong> — nói đủ ở dòng chú ngay dưới hàng tab
                 phía trên.
               </p>

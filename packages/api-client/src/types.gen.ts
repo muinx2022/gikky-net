@@ -530,6 +530,10 @@ export type DemLuotXemIn = {
      */
     referer?: string;
     /**
+     * Truy Van
+     */
+    truy_van?: string;
+    /**
      * User Agent
      */
     user_agent?: string;
