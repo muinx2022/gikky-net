@@ -1736,3 +1736,8 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Bằng chứng**: `<summary>` của menu `⋯` nằm trong vùng `onClick` thu gọn; có từ trước bản vá đóng menu ngoài.
 - **Vì sao không sửa ngay**: ngoài phạm vi; bản vá đã nuốt click khi đóng vì bấm *ngoài* menu, không xử ca bấm chính `⋯`.
 
+### P-20260915-1 · [MỞ] · VỪA — 10 bài e2e:don-vi đỏ sẵn ở hen-gio-phat-hanh và khong-ghi-cung-sub
+- **Thấy lúc**: đo baseline cho yêu cầu sửa logo và nút cuộn về đầu trang (2026-09-15)
+- **Ở đâu**: `apps/web/e2e/don-vi/hen-gio-phat-hanh.spec.ts` (9 bài đòi /machs/moi trong khi admin đang dùng drawer) và `apps/web/e2e/don-vi/khong-ghi-cung-sub.spec.ts` (app/page.tsx chứa từ "crypto" trong metadata)
+- **Bằng chứng**: `pnpm e2e:don-vi` báo 10 failed / 502 passed
+- **Vì sao không sửa ngay**: ngoài phạm vi việc đang làm (sửa logo và nút cuộn feed).

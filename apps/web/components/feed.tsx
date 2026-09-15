@@ -17,6 +17,7 @@ import { BaoCursorHong } from "./bao-cursor-hong";
 import { ChonKieuXem } from "./chon-kieu-xem";
 import { CuonVoHan } from "./cuon-vo-han";
 import css from "./feed.module.css";
+import { NutVeDauTrang } from "./nut-ve-dau-trang";
 import { TheMach } from "./the-mach";
 
 /** Feed ba tab — PLAN 5.9 (Mới · Đang diễn ra) + plan con 1d §2.5.4 ("Nhiều điểm nhất").
@@ -242,6 +243,7 @@ export function Feed({
           bọc thêm một `<aside>` là hai landmark lồng nhau cho cùng một khối. Lớp bọc này
           chỉ còn làm đúng việc của nó: `position: sticky`. */}
       <div className={css.rail}>{sidebar}</div>
+      <NutVeDauTrang />
     </div>
   );
 }

@@ -17,11 +17,7 @@
   width: 24px;
   height: 24px;
   color: var(--ink);
-  transition: transform 0.2s ease, color 0.15s ease;
-}
-
-.khung_hieu:hover .svg_g {
-  transform: scale(1.08);
+  transition: color 0.15s ease;
 }
 
 .chu_hieu {
