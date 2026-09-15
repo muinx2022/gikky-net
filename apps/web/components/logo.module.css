@@ -12,15 +12,15 @@
   flex-shrink: 0;
 }
 
-.anh_bieu_tuong {
+.svg_g {
   display: block;
-  width: 26px;
-  height: 26px;
-  object-fit: contain;
-  transition: transform 0.2s ease;
+  width: 24px;
+  height: 24px;
+  color: var(--ink);
+  transition: transform 0.2s ease, color 0.15s ease;
 }
 
-.khung_hieu:hover .anh_bieu_tuong {
+.khung_hieu:hover .svg_g {
   transform: scale(1.08);
 }
 
