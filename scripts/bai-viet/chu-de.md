@@ -125,3 +125,19 @@ giao dịch* trong `lich/tan-man.md` TRƯỚC khi viết. Tóm tắt: mô tả p
 - **Walk-forward analysis**: kiểm một phương pháp mà không tự lừa mình.
 - **Phương pháp thất bại**: LTCM, và các hệ thống từng được ca ngợi rồi biến mất.
 - **Vì sao phần lớn phương pháp công bố không lặp lại được** — dẫn nghiên cứu về suy giảm alpha sau công bố.
+
+## J. Hồ sơ nhân vật & Huyền thoại đầu cơ lịch sử
+
+`sub` = `quan-tri-von` hoặc `tam-ly-giao-dich` · `loai` = **`Hồ sơ`** hoặc **`Nhân vật`**.
+
+Nhóm này mổ xẻ cuộc đời, phương pháp giao dịch, cấu trúc tư duy và những bài học xương máu (đặc biệt là sai lầm và bi kịch kỷ luật) của các huyền thoại tài chính. Không viết tiểu sử văn học sáo rỗng, phải bóc tách dưới lăng kính thực chiến của trader / nhà đầu tư:
+
+- **Jesse Livermore**: "Con gấu vĩ đại phố Wall" — từ cậu bé ghi bảng bucket shop đến tài sản 100 triệu USD năm 1929, hệ thống điểm xoay (Pivotal Points), 4 lần phá sản làm lại từ đầu và hồi kết bi kịch khi phá vỡ kỷ luật.
+- **Nicolas Darvas**: Vũ công kiếm 2.000.000 USD từ chứng khoán — phát minh lý thuyết Hộp (Darvas Box), cách quản trị lệnh dời stop-loss tự động và nghệ thuật cách ly hoàn toàn với tiếng ồn phố Wall.
+- **Richard Dennis & William Eckhardt**: Thí nghiệm Những chú rùa (Turtle Traders) — tranh luận liệu trader sinh ra hay được đào tạo, hệ thống phá vỡ kênh giá Donchian và bài học định cỡ vị thế theo độ biến động (ATR).
+- **Ed Seykota**: Người tiên phong mang máy tính vào phân tích kỹ thuật — hệ thống theo xu hướng thuần túy và triết lý tâm lý học sâu sắc: "Dù thắng hay thua, ai cũng nhận được từ thị trường chính xác thứ họ muốn".
+- **Paul Tudor Jones**: Huyền thoại bán khống Black Monday 1987 nhân ba tài khoản — nguyên tắc phòng thủ rủi ro bất đối xứng 5:1 và đường MA 200 ngày bảo vệ vốn.
+- **Bernard Baruch**: Nhà đầu cơ vượt qua Đại suy thoái 1929 — nghệ thuật biết điểm dừng, tín hiệu cậu bé đánh giày và nguyên tắc "không bao giờ cố mua ở đáy và bán ở đỉnh".
+- **Hetty Green**: "Phù thủy phố Wall" — người phụ nữ giàu nhất thời kỳ Gilded Age với triết lý đầu tư giá trị cực đoan, kỷ luật tiền mặt tàn nhẫn và khả năng giải cứu thị trường trong khủng hoảng.
+- **Jim Simons & Quỹ Medallion**: Bậc thầy toán học mở ra kỷ nguyên định lượng (Quant trading) — bóc tách các bất thường vi mô thống kê và cuộc cách mạng loại bỏ cảm xúc con người khỏi giao dịch.
+
