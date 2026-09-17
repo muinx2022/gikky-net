@@ -7,8 +7,8 @@ Nhiệm vụ: Sản xuất định kỳ 2 video YouTube dài (16:9) và 2 video 
 ## ⏰ Khung Giờ & Tần Suất
 * **Tần suất:** 2 lần / tuần (Tổng cộng: 2 Video dài + 2 Shorts / tuần).
 * **Lịch cố định:**
-  - **Thứ Hai (09:00):** Video định hướng tuần mới / Phân tích vĩ mô / Tâm lý giao dịch đầu tuần.
-  - **Thứ Năm (09:00):** Video phương pháp thực chiến / Mạch demo lệnh / Quản trị vốn R:R trước thềm phiên Mỹ & cuối tuần.
+  - **Thứ Hai (12:00):** Video định hướng tuần mới / Phân tích vĩ mô / Tâm lý giao dịch đầu tuần.
+  - **Thứ Năm (12:00):** Video phương pháp thực chiến / Mạch demo lệnh / Quản trị vốn R:R trước thềm phiên Mỹ & cuối tuần.
 
 ---
 

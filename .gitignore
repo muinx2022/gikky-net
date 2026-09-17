@@ -5,6 +5,7 @@ __pycache__/
 .next/
 .env
 .env.local
+.env.facebook
 .pytest_cache/
 dist/
 *.log

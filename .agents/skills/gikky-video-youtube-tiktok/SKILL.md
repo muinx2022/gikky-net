@@ -1,9 +1,9 @@
 ---
 name: gikky-video-youtube-tiktok
-description: Sản xuất video YouTube (16:9) và video ngắn TikTok/Shorts (9:16) — 09:00 Thứ Hai & Thứ Năm hàng tuần
+description: Sản xuất video YouTube (16:9) và video ngắn TikTok/Shorts (9:16) — 12:00 Thứ Hai & Thứ Năm hàng tuần
 ---
 
-Nhiệm vụ: Tự động sản xuất trọn gói 1 video dài YouTube 16:9 ($1920 \times 1080\text{ px}$) và 1 video ngắn TikTok/Shorts 9:16 ($1080 \times 1920\text{ px}$) theo chủ đề mới nhất của gikky.net vào **09:00 Thứ Hai và Thứ Năm hàng tuần**.
+Nhiệm vụ: Tự động sản xuất trọn gói 1 video dài YouTube 16:9 ($1920 \times 1080\text{ px}$) và 1 video ngắn TikTok/Shorts 9:16 ($1080 \times 1920\text{ px}$) theo chủ đề mới nhất của gikky.net vào **12:00 Thứ Hai và Thứ Năm hàng tuần**.
 
 **Toàn bộ quy chuẩn và hướng dẫn sản xuất nằm trong file:**
 

@@ -258,6 +258,7 @@ export function quocGiaKhach(req: { headers: { get(ten: string): string | null }
 /** Header mà Next/trình duyệt gắn cho một lượt **nạp trước**, không phải một lượt xem. */
 const HEADER_PREFETCH = [
   "next-router-prefetch",
+  "next-router-segment-prefetch",
   "purpose",
   "sec-purpose",
   "x-purpose",
@@ -322,6 +323,7 @@ export function nenDemRequest(req: {
     return (
       v !== null &&
       (v === "1" ||
+        v !== "" ||
         v.toLowerCase().includes("prefetch") ||
         v.toLowerCase().includes("preview"))
     );

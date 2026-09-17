@@ -78,7 +78,7 @@ function DongMach({ ket_qua }: { ket_qua: KetQuaTronOut }) {
       data-mach-id={m.id}
     >
       <div className={css.dau}>
-        <Link className={css.sub} href={duongDanSub(m.sub.slug)} {...CHU_NGUOI_DUNG}>
+        <Link className={css.sub} href={duongDanSub(m.sub.slug)} prefetch={false} {...CHU_NGUOI_DUNG}>
           s/{m.sub.slug}
         </Link>
         <span className={css.cham} aria-hidden>
@@ -88,6 +88,7 @@ function DongMach({ ket_qua }: { ket_qua: KetQuaTronOut }) {
           className={css.ai}
           href={duongDanHoSo(m.author.username)}
           title={`u/${m.author.username}`}
+          prefetch={false}
           {...CHU_NGUOI_DUNG}
         >
           {m.author.display_name || `u/${m.author.username}`}
@@ -107,7 +108,7 @@ function DongMach({ ket_qua }: { ket_qua: KetQuaTronOut }) {
       </div>
 
       <h2 className={css.title}>
-        <Link href={duongDanMach(m.slug, m.id)} {...CHU_NGUOI_DUNG}>
+        <Link href={duongDanMach(m.slug, m.id)} prefetch={false} {...CHU_NGUOI_DUNG}>
           <ToDam chuoi={ket_qua.title_to_dam} />
         </Link>
       </h2>
@@ -142,7 +143,7 @@ function DongBinhLuan({ ket_qua }: { ket_qua: KetQuaTronOut }) {
       data-mach-id={m.id}
       data-binh-luan-id={ket_qua.binh_luan_id ?? undefined}
     >
-      <Link className={css2.den_cau} href={dich}>
+      <Link className={css2.den_cau} href={dich} prefetch={false}>
         <span className={css.dau}>
           <span className={css2.nhan}>Bình luận</span>
           <span className={css.cham} aria-hidden>

@@ -325,7 +325,7 @@ export async function TrangMach({
             <header className={css.dau}>
               <div className={css.hang_tren}>
                 <div className={css.cum_trai}>
-                  <Link className={css.sub} href={duongDanSub(mach.sub.slug)}>
+                  <Link className={css.sub} href={duongDanSub(mach.sub.slug)} prefetch={false}>
                     s/{mach.sub.slug}
                   </Link>
                   {mach.truong_phai && (
@@ -334,6 +334,7 @@ export async function TrangMach({
                       className={css.truong_phai}
                       data-testid="mach-truong-phai"
                       title={`Trường phái ${mach.truong_phai}`}
+                      prefetch={false}
                     >
                       #{mach.truong_phai}
                     </Link>
@@ -370,6 +371,7 @@ export async function TrangMach({
                     href={duongDanHoSo(mach.author.username)}
                     tabIndex={-1}
                     aria-hidden="true"
+                    prefetch={false}
                   >
                     <Avatar
                       ten={mach.author.username}
@@ -382,6 +384,7 @@ export async function TrangMach({
                     className={css.ai}
                     href={duongDanHoSo(mach.author.username)}
                     title={`u/${mach.author.username}`}
+                    prefetch={false}
                     {...CHU_NGUOI_DUNG}
                   >
                     {mach.author.display_name || `u/${mach.author.username}`}
@@ -448,7 +451,7 @@ export async function TrangMach({
                     ký của tác giả" — xem `loi-moi-doi-mat.tsx` cho chiều còn lại. Đặt hai
                     tên khác nhau cho cùng một thứ ở hai chỗ là bắt người dùng học hai lần. */}
                 Đang xem <strong>bản đầy đủ</strong> — bình luận hiện xen giữa các mốc.{" "}
-                <Link href={`${co_ban}?view=can`} data-testid="doi-sang-mat-can">
+                <Link href={`${co_ban}?view=can`} data-testid="doi-sang-mat-can" prefetch={false}>
                   Chỉ đọc nhật ký của tác giả
                 </Link>
               </p>

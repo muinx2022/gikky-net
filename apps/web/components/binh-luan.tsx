@@ -128,7 +128,7 @@ export function BinhLuan({ nut, doSauToiDa, duongDanKhanDai, datNeo = false }: P
              giữ link còn hơn bỏ: nó vẫn nói ra rằng **còn N nhánh nữa** ở dưới, thứ mà
              một dấu ba chấm im lặng không nói. */
           <p className={css.sau_qua}>
-            <Link href={`${duongDanKhanDai}#${neoBinhLuan(nut.id)}`}>
+            <Link href={`${duongDanKhanDai}#${neoBinhLuan(nut.id)}`} prefetch={false}>
               tiếp tục thread ({nut.replies.length} nhánh) →
             </Link>
           </p>
@@ -150,6 +150,7 @@ function NoiDung({ nut }: { nut: BinhLuanOut }) {
             tabIndex={-1}
             aria-hidden="true"
             className={css.ai_avatar}
+            prefetch={false}
           >
             <Avatar
               ten={nut.author?.username ?? ""}
@@ -162,6 +163,7 @@ function NoiDung({ nut }: { nut: BinhLuanOut }) {
             className={css.ai}
             href={duongDanHoSo(nut.author?.username ?? "")}
             title={nut.author?.username ? `u/${nut.author.username}` : undefined}
+            prefetch={false}
             {...CHU_NGUOI_DUNG}
           >
             {nut.author?.display_name || `u/${nut.author?.username ?? ""}`}

@@ -233,6 +233,7 @@ export function KhanDai({
           <Link
             key={s}
             href={hrefSort(s)}
+            prefetch={false}
             className={s === sort ? `${css.sort} ${css.sort_dang_chon}` : css.sort}
             aria-current={s === sort ? "true" : undefined}
             data-testid={`sort-${s}`}
@@ -249,7 +250,7 @@ export function KhanDai({
         // cấm ở nhánh trên, chỉ khác lối vào. Có đường quay về, không chỉ có lời báo.
         <p className={css.trang_rong} data-testid="khan-dai-trang-rong" role="status">
           Trang này không còn bình luận nào.{" "}
-          <Link href={duongDanKhanDai} data-testid="khan-dai-ve-trang-dau">
+          <Link href={duongDanKhanDai} data-testid="khan-dai-ve-trang-dau" prefetch={false}>
             Về trang đầu
           </Link>
         </p>
@@ -270,7 +271,7 @@ export function KhanDai({
       )}
 
       {hrefXemThem !== null && (
-        <Link className={css.xem_them} href={hrefXemThem} data-testid="khan-dai-xem-them">
+        <Link className={css.xem_them} href={hrefXemThem} data-testid="khan-dai-xem-them" prefetch={false}>
           xem thêm bình luận ↓
         </Link>
       )}

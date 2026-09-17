@@ -264,7 +264,7 @@ export function DanhSachSubTheo({ username }: { username: string }) {
       {items.map((s) => (
         <li key={s.slug} className={css.dong_sub} data-testid="dong-sub">
           <div className={css.sub_chu}>
-            <Link href={`/s/${s.slug}`} className={css.sub_ten}>
+            <Link href={`/s/${s.slug}`} className={css.sub_ten} prefetch={false}>
               {s.ten}
             </Link>
             <p className={`${css.sub_slug} mono`}>s/{s.slug}</p>
@@ -349,7 +349,7 @@ export function DanhSachUserTheo({ username }: { username: string }) {
         <li key={u.username} className={css.dong_sub} data-testid="dong-user">
           <Avatar ten={u.username} hienThi={u.display_name} url={u.avatar_url} co={36} />
           <div className={css.sub_chu}>
-            <Link href={`/u/${u.username}`} className={css.sub_ten} {...CHU_NGUOI_DUNG}>
+            <Link href={`/u/${u.username}`} className={css.sub_ten} prefetch={false} {...CHU_NGUOI_DUNG}>
               {u.display_name || u.username}
             </Link>
             <p className={`${css.sub_slug} mono`} {...CHU_NGUOI_DUNG}>

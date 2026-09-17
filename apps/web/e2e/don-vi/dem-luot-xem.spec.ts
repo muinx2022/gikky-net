@@ -314,6 +314,8 @@ test("lượt NẠP TRƯỚC của `<Link>` không phải một lượt xem", ()
   // Không có phép kiểm này thì mở trang chủ có 20 thẻ mạch, không bấm gì, không cuộn,
   // đã sinh 20 "lượt xem" — và bảng "xem nhiều nhất" đo nhầm sang "lọt vào tầm mắt".
   expect(nenDemRequest(req({ "next-router-prefetch": "1" }))).toBe(false);
+  expect(nenDemRequest(req({ "next-router-segment-prefetch": "1" }))).toBe(false);
+  expect(nenDemRequest(req({ "next-router-segment-prefetch": "_tree" }))).toBe(false);
   expect(nenDemRequest(req({ purpose: "prefetch" }))).toBe(false);
   expect(nenDemRequest(req({ "sec-purpose": "prefetch;prerender" }))).toBe(false);
   expect(nenDemRequest(req({ "x-purpose": "preview" }))).toBe(false);

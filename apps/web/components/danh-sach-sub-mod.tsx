@@ -86,7 +86,7 @@ export function DanhSachSubMod() {
       <ul className={css.danh_sach} data-testid="khu-mod-danh-sach">
         {items.map((s) => (
           <li key={s.slug}>
-            <Link href={`/s/${s.slug}`} className={css.the} data-testid="the-sub-mod">
+            <Link href={`/s/${s.slug}`} className={css.the} data-testid="the-sub-mod" prefetch={false}>
               <ShieldCheck size={17} strokeWidth={2} aria-hidden className={css.khien} />
               <span className={css.chu}>
                 <span className={css.ten}>{s.ten}</span>
