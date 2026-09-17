@@ -27,7 +27,7 @@ from typing import NamedTuple
 from django.db.models import Q
 
 from core.cau_hinh import doc_phut_tu_sua_binh_luan, moc_bat_dau_tu_sua
-from core.doc_noi_dung import DA_AN, Nut, doc_duoc, trang_thai_noi_dung
+from core.doc_noi_dung import DA_AN, Nut, doc_duoc, la_moc_chat_luong, trang_thai_noi_dung
 from core.ghi import NGAY_MO_LAI, PHUT_SUA_IM_LANG
 from core.lam_sach_html import _src_cua_site, van_ban_thuan
 from core.models.binh_luan import Comment
@@ -202,7 +202,16 @@ def du_lieu_the(machs) -> dict[int, DuLieuThe]:
 
     mocs = list(
         Moc.objects.filter(bo_loc).only(
-            "id", "mach_id", "seq", "loai", "created_at", "body", "deleted_at", "hidden_at"
+            "id",
+            "mach_id",
+            "seq",
+            "loai",
+            "created_at",
+            "body",
+            "body_dinh_dang",
+            "figures",
+            "deleted_at",
+            "hidden_at",
         )
     )
     doc_duoc_ids = [m.pk for m in mocs if m.seq == 1 and doc_duoc(m)]
@@ -250,7 +259,7 @@ def du_lieu_the(machs) -> dict[int, DuLieuThe]:
         moc_moi_nhat: MocMoiNhatTomTatOut | None = None
         if mach.entry_count >= 2:
             m_cuoi = mocs_theo_mach_seq.get((mach.pk, mach.entry_count))
-            if m_cuoi and doc_duoc(m_cuoi):
+            if m_cuoi and doc_duoc(m_cuoi) and la_moc_chat_luong(m_cuoi):
                 moc_moi_nhat = MocMoiNhatTomTatOut(
                     seq=m_cuoi.seq,
                     loai=m_cuoi.loai,

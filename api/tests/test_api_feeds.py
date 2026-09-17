@@ -174,8 +174,12 @@ def test_hai_feed_dung_hai_khoa_sort_khac_nhau(client, sub, tac_gia, nguoi_khac)
         body="Mốc 1.",
         _created_at_seed=timezone.now() - timedelta(days=1),
     )
-    them_moc(mach=cu, author=tac_gia, body="Mốc 2 vừa nối.")
-    # Mạch cũ vừa nối mốc => lên đầu feed Mới
+    them_moc(
+        mach=cu,
+        author=tac_gia,
+        body="Mốc 2 cập nhật phân tích chi tiết lệnh giao dịch và diễn biến thị trường hôm nay.",
+    )
+    # Mạch cũ vừa nối mốc chất lượng => lên đầu feed Mới
     assert ids(lay(client, "/api/v1/feeds/moi?limit=50")) == [cu.pk, moi.pk]
 
     # Nhưng feed Đang diễn ra chưa có bình luận chất lượng nên mạch mới vẫn đứng trên mạch cũ

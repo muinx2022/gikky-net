@@ -60,8 +60,10 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Callable, Iterable, Literal
 
+from core.lam_sach_html import DINH_DANG_HTML, van_ban_thuan
 from core.models.binh_luan import Comment
 from core.models.dien_dan import Mach
+from core.models.moc import Moc, MocAnh
 from core.models.tuong_tac import Trich
 from core.xep_hang import wilson_lower_bound, xep_hang_binh_luan_goc
 
@@ -110,6 +112,47 @@ def doc_duoc(obj) -> bool:
     sau, và là lý do nó được nối vào đây thay vì bị xoá.
     """
     return trang_thai_noi_dung(obj) == BINH_THUONG
+
+
+def la_moc_chat_luong(moc) -> bool:
+    """Kiểm tra mốc có đạt tiêu chuẩn nội dung để tính là mốc cập nhật chất lượng (bump feed).
+
+    Chặn hành vi spam nối mốc cụt lủn ("UP", "hóng", ".") để đẩy bài lên feed "Mới nhất":
+    1. Văn bản thuần (sau khi lọc sạch HTML) >= 80 ký tự;
+    2. HOẶC có số liệu giao dịch cụ thể (`figures`: dải số lệnh vào/ra/dừng lỗ...);
+    3. HOẶC có gắn nhãn `loai` (ví dụ: "vào lệnh", "chốt 1/3", "cắt lỗ"...) kèm văn bản thuần >= 30 ký tự;
+    4. HOẶC có đính kèm ảnh (ảnh nhúng trong body hoặc ảnh gallery đã xác nhận).
+    """
+    body = getattr(moc, "body", "") or ""
+    dinh_dang = getattr(moc, "body_dinh_dang", None)
+    if dinh_dang == DINH_DANG_HTML:
+        chuoi_thuan = van_ban_thuan(body)
+    else:
+        chuoi_thuan = " ".join(body.split())
+
+    dai_thuan = len(chuoi_thuan)
+    if dai_thuan >= 80:
+        return True
+
+    figures = getattr(moc, "figures", None)
+    if figures and isinstance(figures, list) and len(figures) > 0:
+        return True
+
+    loai = getattr(moc, "loai", None)
+    if loai and str(loai).strip() and dai_thuan >= 30:
+        return True
+
+    if "<img " in body or "<figure" in body:
+        return True
+
+    if hasattr(moc, "anhs"):
+        try:
+            if any(a.status == MocAnh.TrangThai.XAC_NHAN for a in moc.anhs.all()):
+                return True
+        except Exception:
+            pass
+
+    return False
 
 
 @dataclass

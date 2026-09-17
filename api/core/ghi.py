@@ -112,7 +112,7 @@ from django.utils import timezone
 from core.anh import AnhDaXuLy
 from core.anh_luu import an_anh, ghi_anh, hien_anh, khoa_moi, url_anh, xoa_anh_that
 from core.cay_binh_luan import cap_phat_path
-from core.doc_noi_dung import doc_duoc
+from core.doc_noi_dung import doc_duoc, la_moc_chat_luong
 from core.lam_sach_html import DINH_DANG_HTML, DINH_DANG_MARKDOWN, lam_sach, van_ban_thuan
 from core.models.binh_luan import Comment
 from core.models.dien_dan import Mach, Sub, slug_tu_title
@@ -302,11 +302,21 @@ def cap_nhat_dem_mach(mach: Mach) -> Mach:
     mach.last_activity_at = max(hoat_dong) if hoat_dong else mach.created_at
     mach.diem_bai_goc = _diem_bai_goc(mach)
 
-    # `last_content_at` đo thời điểm có nội dung chính chủ mới nhất (bài đăng hoặc mốc đọc được)
-    # Khoá sắp xếp của feed "Mới nhất" (chốt 2026-09-08)
-    moc_doc_duoc_moi = moc_doc_duoc.aggregate(Max("created_at"))["created_at__max"]
-    cac_moc_content = [t for t in (mach.published_at, moc_doc_duoc_moi) if t is not None]
-    mach.last_content_at = max(cac_moc_content) if cac_moc_content else mach.published_at
+    # `last_content_at` đo thời điểm có nội dung chính chủ mới nhất (bài đăng hoặc mốc đọc được ĐẠT CHUẨN)
+    # Khoá sắp xếp của feed "Mới nhất" (chốt 2026-09-08, chống spam bump 2026-09-17)
+    moc_chat_luong_moi = None
+    mocs_tiep_theo = (
+        moc_doc_duoc.filter(seq__gte=2)
+        .prefetch_related("anhs")
+        .order_by("-created_at")
+    )
+    for m in mocs_tiep_theo:
+        if la_moc_chat_luong(m):
+            moc_chat_luong_moi = m.created_at
+            break
+
+    cac_moc_content = [t for t in (mach.published_at, moc_chat_luong_moi) if t is not None]
+    mach.last_content_at = max(cac_moc_content) if cac_moc_content else (mach.published_at or mach.created_at)
 
     mach.save(
         update_fields=[
