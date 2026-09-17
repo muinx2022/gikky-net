@@ -215,7 +215,10 @@ def chuan_hoa_duong_dan(duong_dan: str) -> str:
     Trang chủ `"/"` là ngoại lệ: bỏ dấu `/` của nó thì còn chuỗi rỗng.
     """
     sach = duong_dan.split("?", 1)[0].split("#", 1)[0][:DAI_TOI_DA_DUONG_DAN]
-    return sach.rstrip("/") or "/"
+    sach = sach.rstrip("/") or "/"
+    if sach.startswith("/m-phien/"):
+        sach = "/m/" + sach[len("/m-phien/") :]
+    return sach
 
 
 #: Các mẫu đường dẫn scanner / bot rác / file script không thuộc site công khai của Gikky.
@@ -403,38 +406,72 @@ def dem_luot_xem(request, du_lieu: DemLuotXemIn):
         muoi_cua_ngay(ngay_vn()), du_lieu.ip, du_lieu.user_agent
     )
 
-    # Khử trùng lặp lượt xem cho bài viết: một khách (IP + UA) chỉ được tính 1 lượt xem
-    # cho cùng một bài viết trong cửa sổ CUA_SO_LUOT_XEM_MACH_PHUT (mặc định 24 giờ).
-    # F5 hoặc tải lại trang liên tục không làm tăng view_count.
-    if not la_bot and token_khach and (m_mach := re.match(r"^/m(?:-phien)?/(?:.*-)?(\d+)$", duong)):
-        mach_id = int(m_mach.group(1))
-        cua_so = timezone.now() - timedelta(minutes=settings.CUA_SO_LUOT_XEM_MACH_PHUT)
-        cac_duong = [duong, duong.replace("/m-phien/", "/m/"), duong.replace("/m/", "/m-phien/")]
-        da_xem = LuotXem.objects.filter(
+    # 1. Nhánh Bot: Luôn ghi nhận đầy đủ lượt cào vào LuotXem để đo lường bot truy cập.
+    # Không tăng view_count của bài viết (tránh bot thổi phồng view).
+    if la_bot:
+        LuotXem.objects.create(
+            duong_dan=duong,
+            la_bot=True,
+            ten_bot=ten,
+            khach=token_khach,
+            nguon=chuan_hoa_nguon(du_lieu.referer),
+            trinh_duyet="",
+            thiet_bi="",
+            da_dang_nhap=du_lieu.da_dang_nhap,
+            quoc_gia=chuan_hoa_quoc_gia(du_lieu.quoc_gia),
+            tu_khoa="",
+        )
+        return Status(200, DemLuotXemOut(da_dem=True))
+
+    # 2. Nhánh Người dùng: Khử trùng lặp khi F5, tải lại hoặc xem lại cùng một trang
+    # trong cửa sổ CUA_SO_LUOT_XEM_MACH_PHUT (mặc định 24 giờ / trong ngày).
+    cua_so = timezone.now() - timedelta(minutes=settings.CUA_SO_LUOT_XEM_MACH_PHUT)
+    cac_duong = [duong]
+    if duong.startswith("/m/"):
+        cac_duong.append(duong.replace("/m/", "/m-phien/", 1))
+    elif duong.startswith("/m-phien/"):
+        cac_duong.append(duong.replace("/m-phien/", "/m/", 1))
+
+    da_xem = (
+        LuotXem.objects.filter(
             luc__gte=cua_so,
             duong_dan__in=cac_duong,
             khach=token_khach,
             la_bot=False,
-        ).exists()
-        if not da_xem:
-            Mach.objects.filter(pk=mach_id).update(view_count=F("view_count") + 1)
+        )
+        .order_by("-luc")
+        .first()
+        if token_khach
+        else None
+    )
+
+    if da_xem:
+        # Khách/IP đã xem trang này trong cửa sổ: không tính thêm lượt xem
+        # (không tạo hàng LuotXem mới và không tăng Mach.view_count).
+        # Cập nhật `luc` và `da_dang_nhap` để phản ánh hoạt động mới nhất cho widget Online.
+        da_xem.luc = timezone.now()
+        if du_lieu.da_dang_nhap and not da_xem.da_dang_nhap:
+            da_xem.da_dang_nhap = True
+        da_xem.save(update_fields=["luc", "da_dang_nhap"])
+        return Status(200, DemLuotXemOut(da_dem=True))
+
+    # Lượt xem mới hợp lệ từ người dùng:
+    if m_mach := re.match(r"^/m(?:-phien)?/(?:.*-)?(\d+)$", duong):
+        mach_id = int(m_mach.group(1))
+        Mach.objects.filter(pk=mach_id).update(view_count=F("view_count") + 1)
 
     LuotXem.objects.create(
         duong_dan=duong,
-        la_bot=la_bot,
-        ten_bot=ten,
+        la_bot=False,
+        ten_bot="",
         khach=token_khach,
         nguon=chuan_hoa_nguon(du_lieu.referer),
-        trinh_duyet="" if la_bot else trinh_duyet(du_lieu.user_agent),
-        thiet_bi="" if la_bot else thiet_bi(du_lieu.user_agent),
-        # Ghi NGUYÊN cờ client gửi, không `and not la_bot`: một con bot mang cookie
-        # `sessionid` là một sự thật đáng thấy (crawler chạy bằng phiên của ai đó), và
-        # dập nó ở đây là bịa. Phía đọc mới là chỗ để dòng bot thành `—`.
+        trinh_duyet=trinh_duyet(du_lieu.user_agent),
+        thiet_bi=thiet_bi(du_lieu.user_agent),
+        # Ghi NGUYÊN cờ client gửi
         da_dang_nhap=du_lieu.da_dang_nhap,
         quoc_gia=chuan_hoa_quoc_gia(du_lieu.quoc_gia),
-        tu_khoa=""
-        if la_bot
-        else trich_xuat_tu_khoa(
+        tu_khoa=trich_xuat_tu_khoa(
             referer=du_lieu.referer,
             truy_van=du_lieu.truy_van,
             duong_dan=duong,

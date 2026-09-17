@@ -202,13 +202,18 @@ def test_dau_gach_cuoi_KHONG_de_ra_dong_thu_hai():
     thành hai. Không sai chức năng, chỉ sai số — và sai theo kiểu không ai nhìn ra, vì
     hai dòng trông như hai trang khác nhau. Lượt phản biện 2026-08-27 tìm ra.
     """
+    # Cùng một khách (cùng UA/IP) qua 3 biến thể -> chỉ sinh ĐÚNG 1 hàng LuotXem (khử trùng lặp F5/redirect)
     for d in ("/m/abc-1", "/m/abc-1/", "/m/abc-1//"):
-        assert goi({"duong_dan": d, "user_agent": "Chrome/131"}).status_code == 200
-    assert LuotXem.objects.filter(duong_dan="/m/abc-1").count() == 3
+        assert goi({"duong_dan": d, "user_agent": "Chrome/131", "ip": "1.1.1.1"}).status_code == 200
+    assert LuotXem.objects.filter(duong_dan="/m/abc-1").count() == 1
     assert LuotXem.objects.exclude(duong_dan="/m/abc-1").count() == 0
 
+    # Khách khác (IP khác) truy cập đường dẫn có dấu gạch cuối -> chuẩn hóa về /m/abc-1
+    assert goi({"duong_dan": "/m/abc-1/", "user_agent": "Chrome/131", "ip": "2.2.2.2"}).status_code == 200
+    assert LuotXem.objects.filter(duong_dan="/m/abc-1").count() == 2
+
     # Trang chủ là ngoại lệ: bỏ dấu `/` của nó thì còn chuỗi rỗng.
-    assert goi({"duong_dan": "/", "user_agent": "Chrome/131"}).status_code == 200
+    assert goi({"duong_dan": "/", "user_agent": "Chrome/131", "ip": "1.1.1.1"}).status_code == 200
     assert LuotXem.objects.filter(duong_dan="/").count() == 1
 
 
@@ -810,5 +815,73 @@ def test_TK3_bot_khong_luu_tu_khoa():
     hang = LuotXem.objects.get()
     assert hang.la_bot is True
     assert hang.tu_khoa == ""
+
+
+@pytest.mark.django_db
+@override_settings(DEM_LUOT_XEM_SECRET=SECRET)
+def test_f5_khong_tao_hang_luot_xem_moi_nhung_cap_nhat_luc():
+    """F5 trang bài viết không tạo hàng LuotXem mới nhưng cập nhật trường luc."""
+    r1 = goi({
+        "duong_dan": "/m/bai-viet-1",
+        "user_agent": "Mozilla/5.0 Chrome/131",
+        "ip": "1.1.1.1",
+    })
+    assert r1.status_code == 200
+    assert LuotXem.objects.count() == 1
+    hang_dau = LuotXem.objects.get()
+    luc_dau = hang_dau.luc
+
+    # F5 cùng bài viết
+    r2 = goi({
+        "duong_dan": "/m/bai-viet-1",
+        "user_agent": "Mozilla/5.0 Chrome/131",
+        "ip": "1.1.1.1",
+    })
+    assert r2.status_code == 200
+    assert LuotXem.objects.count() == 1
+    hang_dau.refresh_from_db()
+    assert hang_dau.luc >= luc_dau
+
+
+@pytest.mark.django_db
+@override_settings(DEM_LUOT_XEM_SECRET=SECRET)
+def test_revisit_sau_do_khong_tao_hang_luot_xem_moi():
+    """Người dùng xem bài A, sang bài B, rồi quay lại xem bài A -> không cộng dồn view."""
+    # Xem bài A
+    goi({"duong_dan": "/m/bai-a-1", "user_agent": "Mozilla/5.0 Chrome/131", "ip": "1.1.1.1"})
+    assert LuotXem.objects.count() == 1
+
+    # Xem bài B -> sinh hàng mới cho bài B
+    goi({"duong_dan": "/m/bai-b-2", "user_agent": "Mozilla/5.0 Chrome/131", "ip": "1.1.1.1"})
+    assert LuotXem.objects.count() == 2
+
+    # Quay lại xem bài A -> KHÔNG sinh hàng mới, vẫn giữ 2 hàng
+    goi({"duong_dan": "/m/bai-a-1", "user_agent": "Mozilla/5.0 Chrome/131", "ip": "1.1.1.1"})
+    assert LuotXem.objects.count() == 2
+    assert LuotXem.objects.filter(duong_dan="/m/bai-a-1").count() == 1
+    assert LuotXem.objects.filter(duong_dan="/m/bai-b-2").count() == 1
+
+
+@pytest.mark.django_db
+@override_settings(DEM_LUOT_XEM_SECRET=SECRET)
+def test_f5_trang_chu_khong_tang_luot_xem():
+    """F5 trang chủ nhiều lần chỉ ghi nhận đúng 1 lượt xem."""
+    for _ in range(5):
+        goi({"duong_dan": "/", "user_agent": "Mozilla/5.0 Chrome/131", "ip": "1.1.1.1"})
+    assert LuotXem.objects.filter(duong_dan="/").count() == 1
+
+
+@pytest.mark.django_db
+@override_settings(DEM_LUOT_XEM_SECRET=SECRET)
+def test_bot_van_ghi_day_du_moi_luot_xem():
+    """Bot cào nhiều lần vẫn ghi đủ từng hàng vào LuotXem để đo lường bot."""
+    for _ in range(3):
+        goi({
+            "duong_dan": "/m/bai-viet-1",
+            "user_agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+            "ip": "66.249.66.1",
+        })
+    assert LuotXem.objects.filter(duong_dan="/m/bai-viet-1", la_bot=True).count() == 3
+
 
 
