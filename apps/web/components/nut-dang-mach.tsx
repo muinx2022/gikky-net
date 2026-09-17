@@ -20,7 +20,11 @@ import { usePhien } from "./phien";
 export function NutDangMach() {
   const { toi, dangTai } = usePhien();
 
-  if (dangTai || !(toi?.dang_nhap ?? false)) return null;
+  if (dangTai) {
+    return <span className={css.cho_nut} aria-hidden />;
+  }
+
+  if (!(toi?.dang_nhap ?? false)) return null;
 
   return (
     <Link href="/dang-mach" prefetch={false} className={css.nut} data-testid="nut-dang-mach">

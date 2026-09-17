@@ -71,7 +71,6 @@ export function CongTacTheme() {
 
   const muc_tieu = mucTieuCongTac(chon, heToi);
 
-  const Hinh = muc_tieu === "toi" ? Moon : Sun;
   const nhan = muc_tieu === "toi" ? "Chuyển sang giao diện tối" : "Chuyển sang giao diện sáng";
 
   return (
@@ -86,7 +85,8 @@ export function CongTacTheme() {
       data-muc-tieu={muc_tieu}
       data-testid="cong-tac-theme"
     >
-      <Hinh className={css.hinh} size={16} strokeWidth={1.9} aria-hidden />
+      <Moon className={`${css.hinh} ${css.icon_trang}`} size={16} strokeWidth={1.9} aria-hidden />
+      <Sun className={`${css.hinh} ${css.icon_troi}`} size={16} strokeWidth={1.9} aria-hidden />
     </button>
   );
 }

@@ -3,6 +3,16 @@
   display: inline-flex;
 }
 
+.cho_chuong {
+  display: none;
+}
+
+:global(html[data-da-dang-nhap="1"]) .cho_chuong {
+  display: inline-block;
+  width: 32px;
+  height: 31px;
+}
+
 .nut {
   display: inline-flex;
   align-items: center;

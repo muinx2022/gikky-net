@@ -96,7 +96,11 @@ export function Chuong() {
     return () => document.removeEventListener("mousedown", ngoai);
   }, [mo]);
 
-  if (dangTai || !dang_nhap) return null;
+  if (dangTai) {
+    return <span className={css.cho_chuong} aria-hidden />;
+  }
+
+  if (!dang_nhap) return null;
 
   const docHet = async () => {
     const kq = await danhDauDaDoc({

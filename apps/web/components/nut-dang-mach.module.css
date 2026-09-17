@@ -24,6 +24,16 @@
   transform: scale(0.98);
 }
 
+.cho_nut {
+  display: none;
+}
+
+:global(html[data-da-dang-nhap="1"]) .cho_nut {
+  display: inline-block;
+  width: 92px;
+  height: 31px;
+}
+
 @media (max-width: 520px) {
   /* Trên màn hình hẹp giữ lại dấu ＋, bỏ chữ: thanh trên cùng đã có bốn thứ tranh chỗ,
      và cái nút này không được đẩy tên người dùng ra khỏi màn hình.

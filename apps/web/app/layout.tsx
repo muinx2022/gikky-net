@@ -9,6 +9,7 @@ import { PhienProvider } from "@/components/phien";
 import { ToastProvider } from "@/components/toast";
 import { SITE_ORIGIN } from "@/lib/site";
 import { nguonScriptKieuXem } from "@/lib/kieu-xem";
+import { nguonScriptPhien } from "@/lib/tai-khoan";
 import { nguonScriptTheme } from "@/lib/theme";
 
 import "./globals.css";
@@ -138,6 +139,9 @@ export default function RootLayout({
             nó đổi CHIỀU CAO của mọi thẻ, nên áp sau hydrate là cả feed nhảy dựng lên
             dưới con trỏ. Xem `lib/kieu-xem.ts`. */}
         <script dangerouslySetInnerHTML={{ __html: nguonScriptKieuXem() }} />
+        {/* Nhận diện phiên đăng nhập từ localStorage để CSS giữ chỗ cụm phải trước khi vẽ,
+            tránh giật và nháy bố cục khi F5. Xem `lib/tai-khoan.ts`. */}
+        <script dangerouslySetInnerHTML={{ __html: nguonScriptPhien() }} />
       </head>
       <body>
         {/* `PhienProvider` là client component, nhưng nó **không** làm layout thành

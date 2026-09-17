@@ -174,7 +174,33 @@ export async function dangNhap(
   await goi("/auth/login", { than: du_lieu });
 }
 
+export const KHOA_PHIEN = "gikky:phien";
+
+/** Xoá thông tin phiên lưu ở trình duyệt */
+export function xoaCachePhien(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(KHOA_PHIEN);
+    document.documentElement.removeAttribute("data-da-dang-nhap");
+  } catch {}
+}
+
+/** Lưu thông tin phiên xuống localStorage để dùng tức thì khi F5 */
+export function luuCachePhien(du_lieu: unknown): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(KHOA_PHIEN, JSON.stringify(du_lieu));
+    document.documentElement.setAttribute("data-da-dang-nhap", "1");
+  } catch {}
+}
+
+/** Script inline chạy trong `<head>` trước First Paint để đánh dấu phiên đã đăng nhập, chống giật bố cục */
+export function nguonScriptPhien(): string {
+  return `(function(){try{var p=localStorage.getItem("${KHOA_PHIEN}");if(p){var d=JSON.parse(p);if(d&&d.dang_nhap){document.documentElement.setAttribute("data-da-dang-nhap","1");}}}catch(e){}})();`;
+}
+
 export async function dangXuat(): Promise<void> {
+  xoaCachePhien();
   // allauth trả 401 cho `DELETE /auth/session` — đó là "phiên nay không còn xác thực",
   // tức là **đúng cái ta vừa xin**. Coi nó là lỗi thì nút đăng xuất luôn hiện lỗi đỏ
   // ngay sau khi làm xong việc của nó.

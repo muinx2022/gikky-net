@@ -21,6 +21,10 @@
   height: 26px;
 }
 
+:global(html[data-da-dang-nhap="1"]) .chua_biet {
+  width: 130px;
+}
+
 /* Từ 2026-08-26 đây là một `<button>` (mở modal đăng nhập), không còn là `<a>`. Bốn
    dòng reset dưới đây là chỗ khác biệt duy nhất — thiếu chúng thì nút mang nền xám,
    viền và font mặc định của user-agent, đứng cạnh nút "Đăng ký" trông như hai nút. */

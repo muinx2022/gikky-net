@@ -9,7 +9,12 @@ import {
   useState,
 } from "react";
 
-import { GOC_TRINH_DUYET } from "@/lib/tai-khoan";
+import {
+  GOC_TRINH_DUYET,
+  KHOA_PHIEN,
+  luuCachePhien,
+  xoaCachePhien,
+} from "@/lib/tai-khoan";
 
 /** Phiên đăng nhập, hỏi **một lần** ở trình duyệt rồi chia cho cả cây React.
  *
@@ -23,9 +28,9 @@ import { GOC_TRINH_DUYET } from "@/lib/tai-khoan";
  * cache**. Phase 3 bật ISR cho trang mạch; nếu hôm nay ta render tên người dùng ở server
  * thì mai kia cái tên ấy nằm trong bản cache và phục vụ cho người khác.
  *
- * Đánh đổi, nói thẳng: có một nhịp trang chưa biết mình là ai (`dang_tai = true`). UI phải
- * xử ca đó bằng cách **không vẽ gì** thay vì vẽ trạng thái khách rồi nhảy — xem
- * `ThanhTaiKhoan`.
+ * Để tránh giật bố cục khi F5: phiên đã lưu được đọc ngay từ `localStorage` khi mount
+ * (stale-while-revalidate), đồng thời script inline ở `<head>` (`nguonScriptPhien`) đã
+ * đánh dấu trước để CSS giữ chỗ đúng kích thước ngay từ First Paint.
  */
 
 type Phien = {
@@ -50,11 +55,28 @@ export function PhienProvider({ children }: { children: React.ReactNode }) {
     // vắng mặt ở đây chỉ có thể là hỏng mạng — và ca đó UI hiện như khách, không hiện lỗi:
     // thanh tài khoản không phải chỗ báo sự cố hạ tầng.
     const kq = await xemToi({ baseUrl: GOC_TRINH_DUYET, cache: "no-store" });
-    datToi(kq.data ?? null);
+    const data = kq.data ?? null;
+    datToi(data);
     datDangTai(false);
+    if (data && data.dang_nhap) {
+      luuCachePhien(data);
+    } else {
+      xoaCachePhien();
+    }
   }, []);
 
   useEffect(() => {
+    try {
+      const luu = window.localStorage.getItem(KHOA_PHIEN);
+      if (luu) {
+        const phien = JSON.parse(luu) as ToiOut;
+        if (phien && phien.dang_nhap) {
+          datToi(phien);
+          datDangTai(false);
+        }
+      }
+    } catch {}
+
     void taiLai();
   }, [taiLai]);
 
