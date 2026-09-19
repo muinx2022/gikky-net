@@ -136,6 +136,9 @@ const KHONG_DEM = [
   // trích, hay đóng sổ. Không chặn thì trên site sôi động nó leo lên top 3 của bảng
   // "xem nhiều nhất". Lượt phản biện 2026-08-27 tìm ra.
   /^\/lam-moi-cache(?:\/|$)/,
+  // Trang nhắn tin riêng — chặn để không lộ "ai đang nhắn cho ai" trên bảng thống kê 
+  // và modal online (P-20260904-2).
+  /^\/tin-nhan(?:\/|$)/,
   DUOI_TINH,
   ANH_APP_ROUTER,
   DUOI_SCRIPT_RAC,

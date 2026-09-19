@@ -57,6 +57,8 @@ export function useHanhDong(lamTuoi: () => Promise<void>) {
         // lại luật domain ("ẩn xong thì báo cáo có tự đóng không?") — việc của server,
         // PLAN nguyên tắc 10.
         await lamTuoi();
+      } catch (error) {
+        datLoi(moTaLoi(error));
       } finally {
         datDangChay(false);
       }

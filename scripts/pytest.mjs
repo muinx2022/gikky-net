@@ -10,7 +10,8 @@ import { spawnSync } from "node:child_process";
 
 import { apiDir, venvPython } from "./py.mjs";
 
-const ket_qua = spawnSync(venvPython(), ["-m", "pytest", ...process.argv.slice(2)], {
+const args = process.argv.slice(2).filter(a => a !== "--");
+const ket_qua = spawnSync(venvPython(), ["-m", "pytest", ...args], {
   cwd: apiDir,
   stdio: "inherit",
   env: {

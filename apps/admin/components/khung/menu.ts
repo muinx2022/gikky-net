@@ -9,7 +9,7 @@ import type { TenIcon } from "../icon";
  * 1. Breadcrumb ("KIỂM DUYỆT / Hàng đợi báo cáo") suy từ đây, nên nhãn nhóm và nhãn
  *    trang không thể lệch nhau giữa hai chỗ hiển thị.
  * 2. **Hàng rào chống nút chết đọc được file này.**
- *    `apps/web/e2e/don-vi/menu-quan-tri.spec.ts` phân tích `NHOM_MENU` rồi đòi mỗi
+ *    `apps/web/e2e/don-vi/quan-tri-giao-dien.spec.ts` phân tích `NHOM_MENU` rồi đòi mỗi
  *    `duong_dan` có một `page.tsx` tương ứng dưới `app/` trong `apps/admin`. Giao diện lượt
  *    này dựng theo một template dashboard có sẵn, và template ấy đầy mục
  *    (`E-commerce`, `Charts`, `Widget`, `Documentation`) **không tồn tại ở gikky** —

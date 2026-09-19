@@ -386,7 +386,9 @@ export default function TrangSuaMoc() {
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={a.url_thumb}
-                    alt={`ảnh ${a.id}`}
+                    width={a.w_thumb ?? undefined}
+                    height={a.h_thumb ?? undefined}
+                    alt={`Ảnh ${a.id}`}
                     className="h-20 w-full rounded object-cover"
                   />
                   <button

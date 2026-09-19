@@ -248,13 +248,9 @@ export function SoanThaoQuanTri({
         {nut("🔗", "Liên kết", editor.isActive("link"), datLink, "soan-link")}
 
         {/* `<label>` bọc `<input type=file>` ẩn — input file gốc không đổi được hình dạng,
-            còn label thì nhận đúng cú bấm lẫn bàn phím cho ô ẩn bên trong.
-
-            `opacity-50` gõ tay ở đây chứ không nhờ `disabled:opacity-50` của `.nut`: một
-            `<label>` không có thuộc tính `disabled`, nên biến thể ấy không bao giờ khớp —
-            và một nút trông y hệt lúc bấm được lẫn lúc không là nút mod bấm hoài. */}
+            còn label thì nhận đúng cú bấm lẫn bàn phím cho ô ẩn bên trong. */}
         <label
-          className={`nut nut-nho ${anh_khoa ? "opacity-50" : ""}`}
+          className="nut nut-nho"
           aria-disabled={anh_khoa}
           title={nhan_anh}
           data-testid="soan-anh"

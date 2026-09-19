@@ -239,16 +239,7 @@ def xu_ly_anhs(bai, author_username):
     if not isinstance(anhs, list):
         return ["Trường `anhs` phải là một mảng (list)."]
 
-    # Script chạy bằng `python -` chứ không qua `manage.py`, nên KHÔNG có ai gọi
-    # `django.setup()` hộ. Thiếu dòng này thì `core.models` vỡ ngay lúc import với
-    # `AppRegistryNotReady: Apps aren't loaded yet.` — và vì nó vỡ trong `xu_ly_anhs`,
-    # mã thoát là 1 chứ không phải 2, nên trông như lỗi mạng chứ không như lỗi bài.
-    # `django.setup()` tự thoát sớm nếu registry đã sẵn sàng, gọi lại vô hại.
     try:
-        import django
-
-        os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
-        django.setup()
         from core.anh import xu_ly_anh_tai_len
         from core.anh_luu import url_anh
         from core.anh_noi_dung import luu_anh_noi_dung
@@ -306,6 +297,17 @@ def xu_ly_anhs(bai, author_username):
 
 
 def main(argv=None):
+    # Script chạy bằng `python -` chứ không qua `manage.py`, nên KHÔNG có ai gọi
+    # `django.setup()` hộ. Thiếu dòng này thì `core.models` vỡ ngay lúc import với
+    # `AppRegistryNotReady: Apps aren't loaded yet.` — và vì nó vỡ trong `xu_ly_anhs`,
+    # mã thoát là 1 chứ không phải 2, nên trông như lỗi mạng chứ không như lỗi bài.
+    try:
+        import django
+        os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+        django.setup()
+    except ImportError:
+        pass  # Không chạy trên server Django thì thôi (chỉ test syntax)
+
     args = doc_hen(sys.argv[1:] if argv is None else argv)
     with open(DUONG_BAI, encoding="utf-8") as f:
         bai = json.load(f)

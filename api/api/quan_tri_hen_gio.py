@@ -207,6 +207,12 @@ def tao_mach_hen_gio(request, du_lieu: MachHenGioMoiIn):
     """
     _doi_co_mui_gio(du_lieu.published_at)
     kiem_occurred_at(du_lieu.occurred_at)
+    if not TAI_KHOAN_DANG_BAI:
+        return loi(
+            400,
+            DU_LIEU_KHONG_HOP_LE,
+            "Hệ thống không có tài khoản đội nào hợp lệ để đăng bài thay mặt (chưa tạo hoặc đã bị gán superuser).",
+        )
     if du_lieu.author not in TAI_KHOAN_DANG_BAI:
         return loi(
             400,

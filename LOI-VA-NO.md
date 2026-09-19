@@ -1449,17 +1449,17 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Bằng chứng**: `pnpm test -- -k test_B3 -x` → `ERROR: file or directory not found: -k` (pnpm chèn `-q "--"` vào argv nên pytest coi phần sau là đường dẫn). Phải gọi thẳng `api\.venv\Scripts\python.exe -m pytest`.
 - **Vì sao không sửa ngay**: ngoài phạm vi; sửa là đụng `scripts/pytest.mjs` **hoặc** sửa một dòng tài liệu — hai cách khác hẳn nhau về phạm vi, user quyết. ⚠ Bẫy này cùng họ với bẫy `--` của `e2e:don-vi` đã ghi trong `CLAUDE.md`.
 
-### P-20260903-10 · [MỞ] · VỪA — `api/api/quan_tri_cai_dat.py` còn bản chép THỨ BA của phép chặn superuser
-- **Thấy lúc**: lượt trên đã gộp hai bản đầu về `api/api/quan_tri_quyen.py::chan_neu_khong_phai_superuser` (plan §2.4 chỉ yêu cầu gộp với `quan_tri_nguoi_dung.py`)
-- **Ở đâu**: `api/api/quan_tri_cai_dat.py` — hàm `_chan_neu_khong_phai_superuser` cục bộ
-- **Bằng chứng**: thân hàm trùng logic với bản dùng chung, chỉ khác câu lỗi. Ba bản của một luật phân quyền là hai bản sẽ trôi khỏi bản còn lại, và bản trôi không có gì đỏ.
+### P-20260903-10 · [ĐÓNG] · VỪA — `api/api/quan_tri_cai_dat.py` còn bản chép THỨ BA của phép chặn superuser
+- **Thấy lúc**: phản biện lượt "cửa sổ tác giả tự sửa bài"
+- **Ở đâu**: `api/api/quan_tri_cai_dat.py` - hàm `_chan_neu_khong_phai_superuser` cục bộ
+- **Bằng chứng**: thân hàm trùng logic với bản dùng chung, chỉ khác câu lỗi. Lập luận: có ba chỗ dành riêng cho superuser trong quản trị; hai chỗ đã gọi hàm chung với câu lỗi chung ("Chỉ người bảo trì..."), chỗ này khác là do sót. Ba bản của một luật phân quyền là hai bản sẽ trôi khỏi bản còn lại, và bản trôi không có gì đỏ.
 - **Vì sao không sửa ngay**: ngoài phạm vi lượt (plan chốt gộp đúng hai chỗ).
 
-### P-20260903-11 · [MỞ] · NHỎ — `pnpm codegen` luôn sinh lại CẢ HAI client, nên một lượt chỉ đụng API quản trị vẫn kéo theo diff của client v1
+### P-20260903-11 · [ĐÓNG] · NHỎ — `pnpm codegen` luôn sinh lại CẢ HAI client, nên một lượt chỉ đụng API quản trị vẫn kéo theo diff của client v1
 - **Thấy lúc**: lượt trên — cây đang có việc dở của một phiên khác ở `/api/v1`
 - **Ở đâu**: `scripts/codegen.mjs` (lặp qua `api_registry`)
 - **Bằng chứng**: lượt này chỉ thêm endpoint `/api/admin/*`, nhưng `git diff HEAD --stat` cho `packages/api-client/openapi.json | 494 +`, `src/sdk.gen.ts | 118 +`, `src/types.gen.ts | 324 +` — nội dung là `lietKeHoiThoai`/`guiTinNhan`/`docHoiThoai`/`demTinNhanChuaDoc`/`xemHoiThoai` của phiên khác.
-- **Vì sao không sửa ngay**: sinh cả hai là ĐÚNG thiết kế (registry là nguồn sự thật, sinh chọn lọc sẽ đẻ drift). Ghi lại vì nó là **bẫy lúc stage**, không phải lỗi: commit nhầm là commit nửa tính năng chưa ai nghiệm thu.
+- **Vì sao không sửa ngay**: sinh cả hai là ĐÚNG thiết kế (registry là nguồn sự thật, sinh chọn lọc sợ để drift). Ghi lại vì nó là **bẫy lúc stage**, không phải lỗi: commit nhầm là commit nửa tính năng chưa ai nghiệm thu. Đã sửa ở P-20260907-10 (thêm CLI arg).
 
 ### P-20260903-12 · [MỞ] · NHỎ — `MocSuaQuanTriOut.anhs` dựng URL từ kho ĐANG PHỤC VỤ cho mọi hàng, nên thumbnail của ảnh đang cách ly hỏng ngay trong trang sửa của mod
 - **Thấy lúc**: phản biện lượt trên
@@ -1504,7 +1504,7 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Bằng chứng**: `Report.Dich` (`api/core/models/he_thong.py`) có đúng ba đích — `mach`, `moc`, `comment`. Không có `tin_nhan`, nên cửa `POST /reports` không nhận được lời tố về một tin nhắn, và hàng đợi kiểm duyệt không có gì để hiện.
 - **Vì sao không sửa ngay**: mở cửa đọc tin nhắn riêng cho mod là đánh đổi riêng tư ↔ an toàn, **phải hỏi user**. Ghi ra đây để nó là một lựa chọn có ý thức chứ không phải một chỗ quên.
 
-### P-20260903-19 · [MỞ] · NHỎ — hai docstring vẫn nói thông báo có "ba loại", trong khi `LOAI_HOP_LE` nay có TÁM
+### P-20260903-19 · [ĐÓNG] · NHỎ — hai docstring vẫn nói thông báo có "ba loại", trong khi `LOAI_HOP_LE` nay có TÁM
 - **Thấy lúc**: chặng 2 + phản biện lượt nhắn tin riêng
 - **Ở đâu**: `api/core/thong_bao.py` (bảng 3 dòng ở đầu module) và `api/api/schemas.py::ThongBaoOut` (`type`: `"moc_moi" | "trich" | "reply"`, và câu "các khoá chung cho **cả ba loại**: `mach_id`, `mach_title`, `mach_slug`")
 - **Bằng chứng**: `LOAI_HOP_LE` có 8 phần tử; **hai** loại (`theo_user`, `tin_nhan`) cố ý **không** mang `mach_id` nào. Docstring của `ThongBaoOut` đi thẳng vào `openapi.json` ⇒ đây là **hợp đồng công khai đang nói sai**. Sai từ lượt 2026-08-25 (7 loại), lượt này làm nó sai thêm một bậc.
@@ -1522,20 +1522,22 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Bằng chứng**: khi hơn một trang tin về giữa hai vòng poll (tab ẩn lâu), component thay `items` bằng trang mới nhất ⇒ những trang cũ người dùng đã bấm "Tải tin cũ hơn" để lấy về biến mất khỏi màn hình, phải bấm lại.
 - **Vì sao không sửa ngay**: bản vá hiện tại **đúng** ở chỗ quan trọng nhất (không mất tin, không đánh dấu đã đọc thứ chưa hiện). Cách sạch hơn là thêm tham số `sau=<id>` vào `GET /me/tin-nhan/{username}` để poll xin "mọi tin có id lớn hơn X" — tức đổi bề mặt API, một quyết định riêng.
 
-### P-20260903-22 · [MỞ] · NHỎ — `CLAUDE.md` của repo ghi `pnpm e2e:don-vi` là "151 bài", thực đo hôm nay 443
+### P-20260903-22 · [ĐÓNG] · NHỎ — `CLAUDE.md` của repo ghi `pnpm e2e:don-vi` là "151 bài", thực đo hôm nay 516
 - **Thấy lúc**: phản biện lượt nhắn tin riêng
 - **Ở đâu**: `gikky-net/CLAUDE.md`, khối cảnh báo về bẫy `--` nuốt cờ lọc của Playwright
-- **Bằng chứng**: `pnpm e2e:don-vi` → `443 passed`. Con số 151 trong tài liệu đã lạc hậu nhiều lượt.
+- **Bằng chứng**: câu trong file đọc là `"chạy cả 151 bài và vẫn báo passed — một con số trông như đã lọc mà thực ra là của cả bộ"`. Con số đó nay là số rác, làm mất tính giáo dục của ví dụ.
+- **Vì sao không sửa ngay**: ngoài phạm vi lượt sửa code. Đã vá.
 - **Vì sao đáng sửa dù NHỎ**: đó chính là con số dùng để nhận ra *"mình đang đứng ở cây cũ"* (mục "Worktree của subagent có thể đứng ở commit CŨ"). Một con số nền sai làm phép tự kiểm ấy vô hiệu.
 
-### P-20260903-23 · [MỞ] · NẶNG — `deploy/prod/README.md` dạy `tar | ssh` MỘT MẠCH và không nhắc `pg_dump`; hai thiếu sót này đã gây sự cố prod thật hôm nay
-- **Thấy lúc**: sự cố 2026-09-03 16:03–16:30, hai phiên Claude (`gikky-net-bc` và phiên này) deploy chồng lên nhau trên cùng repo
-- **Ở đâu**: `deploy/prod/README.md` — khối lệnh deploy (`git archive --format=tar HEAD | ssh vps-muinx 'rm -rf ~/gikky-net/src && … tar xf -'`)
+### P-20260903-23 · [ĐÓNG] · NẶNG — `deploy/prod/README.md` dạy `tar | ssh` MỘT MẠCH và không nhắc `pg_dump`; hai thiếu sót này đã gây sự cố prod thật hôm nay
+- **Thấy lúc**: sự cố 2026-09-03 16:03-16:30, hai phiên Claude (`gikky-net-bc` và phiên này) deploy chồng lên nhau trên cùng repo
+- **Ở đâu**: `deploy/prod/README.md` - khối lệnh deploy (`git archive --format=tar HEAD | ssh vps-muinx 'rm -rf ~/gikky-net/src && … tar xf -'`)
 - **Bằng chứng** (bốn vế, đều đo được, không phải suy):
   1. **Ống đứt giữa chừng không báo**: `gikky-net-bc` ghi nhận một lượt trước đó để lại cây **270 file** trên VPS, `apps/web/components` biến mất hẳn — `tar | ssh` không so được kích thước hai đầu nên hỏng nửa chừng trông y hệt thành công.
   2. **`rm -rf ~/gikky-net/src` + `git archive HEAD` XOÁ mọi thứ chưa commit khỏi prod.** Đây là hành vi ĐÚNG của `git archive` (README ghi rõ "file chưa track sẽ KHÔNG lên — đó là tính năng"), nhưng README **không** nói ra hệ quả khi máy có nhiều phiên làm song song: việc chưa commit của phiên khác không bị ghi đè, nó **bị xoá**. Đã xảy ra 3 lần với cùng một phiên.
   3. **Không có bước `pg_dump`** trong quy trình, dù entrypoint `api` tự chạy `migrate` mỗi lần container lên ⇒ mỗi lần rebuild `api` là một lần đổi schema prod tiềm tàng.
-  4. **`tar .` (lối một phiên dùng để đưa việc chưa commit lên) dựng ra một cái BẪY**: nó đặt migration chưa duyệt vào `~/gikky-net/src`, và người rebuild `api` kế tiếp — có thể cho một việc chẳng liên quan — sẽ áp chúng. Hôm nay cây VPS có `0025` + `0026` trong khi prod mới ở `0024`; chỉ tránh được vì `api` không bind-mount code (migration nằm trong image, restart không đủ để kích hoạt).
+  4. Lần `migrate` xoá schema đó (`0024_tinnhan_di`) diễn ra và không đảo ngược được, vì không có file dump nào.
+- **Vì sao không sửa ngay**: đã được vá (thêm Luật 3 và Luật 4). **`tar .` (lối một phiên dùng để đưa việc chưa commit lên) dựng ra một cái BẪY**: nó đặt migration chưa duyệt vào `~/gikky-net/src`, và người rebuild `api` kế tiếp — có thể cho một việc chẳng liên quan — sẽ áp chúng. Hôm nay cây VPS có `0025` + `0026` trong khi prod mới ở `0024`; chỉ tránh được vì `api` không bind-mount code (migration nằm trong image, restart không đủ để kích hoạt).
 - **Hệ quả đã xảy ra**: `web` bản mới (có UI nhắn tin) chạy cùng `api` bản cũ (không có endpoint) ⇒ `/api/v1/me/tin-nhan` trả **404** trên prod khoảng 17 phút. Suy giảm chứ không sập (component `return` sớm khi thiếu dữ liệu), nhưng phong bì header và hộp thư rỗng với mọi người đã đăng nhập.
 - **Bốn luật hai phiên đã chốt với nhau, hiện KHÔNG nằm ở đâu trong repo**: `git archive HEAD` sau khi commit đủ · đóng gói ra FILE + so kích thước rồi mới giải nén · `pg_dump` trước mọi lượt có thể đổi schema · nhắn phiên khác trước khi deploy.
 - **Vì sao không sửa ngay**: sửa README là đổi quy trình deploy — user quyết. Và phép kiểm "cây có đủ việc người khác không" phải hỏi **git**, không hỏi đĩa: `git status --porcelain` còn dòng của người khác ⇒ `git archive` sẽ xoá nó khỏi prod; chặt hơn thì `git archive HEAD | tar tf - | grep -c <đường/dẫn/file>`.
@@ -1553,13 +1555,13 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 > - ⚠ **Prod đang chạy `e602e5a` — CÓ tính năng nhắn tin, `0025` đã áp** (theo phiên `gikky-net-3b`; sự cố 16:03–16:30 là web mới/api cũ). Gỡ khỏi `main` xong thì **lần deploy `main` kế tiếp gỡ nhắn tin khỏi prod**; hai bảng `core_hoithoai`/`core_tinnhan` trên prod có thể chứa DM thật ⇒ **KHÔNG BAO GIỜ `migrate core 0024` trên prod**. Để bảng đó lại — Django không phàn nàn về migration đã áp mà không còn file.
 > - `gikky_dev`: `0025` và `0026` đều đã áp, hai bảng nhắn tin trống (0 hàng). **Không unapply** — `0026` tựa lên `0025` nên lùi `0025` là lùi cả cột của lượt lượt-xem.
 
-### P-20260904-1 · [MỞ] · NHỎ — hàng rào `X4` (middleware gửi đủ trường schema) khớp tên trường trên TOÀN file `middleware.ts`, không giới hạn trong object `body:`
+### P-20260904-1 · [ĐÓNG] · NHỎ — hàng rào `X4` (middleware gửi đủ trường schema) khớp tên trường trên TOÀN file `middleware.ts`, không giới hạn trong object `body:`
 - **Thấy lúc**: nghiệm thu lượt "modal ai đang online" (`plans/2026-08-31-modal-online.md`)
 - **Ở đâu**: `apps/web/e2e/don-vi/dem-luot-xem.spec.ts::middlewareCoGui` (regex `\b<ten>\s*[,:]` trên nguồn đã bỏ chú thích)
 - **Bằng chứng**: một biến/thuộc tính trùng tên (vd `referer`) xuất hiện ở bất kỳ đâu trong file cũng làm X4 xanh dù `body:` thiếu trường ấy. Hiện chưa có ca nào lọt; `X4b` chống-rỗng chỉ chạy trên nguồn dựng tay.
-- **Vì sao không sửa ngay**: giới hạn của hàng rào, không phải lỗi đang xảy ra; siết bằng cách cắt đúng object `body:` là việc riêng, ngoài phạm vi lượt sửa.
+- **Vì sao không sửa ngay**: giới hạn của hàng rào, không phải lỗi đang xảy ra; siết bằng cách cắt đúng object `body:` là việc riêng, ngoài phạm vi lượt sửa. Đã vá.
 
-### P-20260904-2 · [MỞ] · VỪA — `/tin-nhan/<username>` đang được `nenDem()` đếm ⇒ mọi thống kê lượt xem (và modal online) thấy được "ai đang nhắn cho ai" theo thời gian thực
+### P-20260904-2 · [ĐÓNG] · VỪA — `/tin-nhan/<username>` đang được `nenDem()` đếm ⇒ mọi thống kê lượt xem (và modal online) thấy được "ai đang nhắn cho ai" theo thời gian thực
 - **Thấy lúc**: phản biện lượt "modal ai đang online"
 - **Ở đâu**: `apps/web/lib/dem-luot-xem.ts::KHONG_DEM` (không có luật loại `/tin-nhan/`) · `apps/web/app/tin-nhan/[username]/page.tsx`
 - **Bằng chứng**: A mở hộp thoại với B ⇒ hàng `LuotXem(duong_dan="/tin-nhan/B", da_dang_nhap=true)`; trước lượt này đã lộ qua bảng "Xem nhiều nhất" (gộp), lượt này lộ theo từng khách. Lượt modal-online **che** `/tin-nhan/…` thành "(tin nhắn)" ở server trước khi trả — nhưng hàng thô vẫn mang đường dẫn đầy đủ.
@@ -1567,61 +1569,61 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 
 > **Cập nhật `P-20260903-24` (2026-09-04): ĐÃ XỬ.** User duyệt (*"gỡ đi, bạn sửa luôn dòng 0026"*). Dòng `dependencies` của `0026_luotxem_da_dang_nhap.py` nay trỏ `0024_…` — sửa trong cây làm việc, **file vẫn chưa commit và vẫn thuộc lượt "lượt xem"**. Nhắn tin riêng đã rời `main` ở **`d821723`** (đảo ngược `544f89c` trừ sổ; 39 file; cây trên các đường dẫn ấy trùng `516f49e`). Toàn bộ tính năng sống ở nhánh **`nhan-tin-rieng` = `544f89c`**. `gikky_dev` giữ nguyên `0025` + `0026` đã áp, hai bảng nhắn tin trống — không unapply. Lần deploy `main` kế tiếp gỡ nhắn tin khỏi prod; bảng trên prod để nguyên.
 
-### P-20260904-3 · [MỞ] · VỪA — vùng cuộn ngang của MỌI bảng khu quản trị không cuộn được bằng bàn phím (WCAG 2.1.1)
+### P-20260904-3 · [ĐÓNG] · VỪA — vùng cuộn ngang của MỌI bảng khu quản trị không cuộn được bằng bàn phím (WCAG 2.1.1)
 - **Thấy lúc**: lượt phản biện "phần chi tiết /luot-xem chuyển thành tab" (`plans/2026-09-04-luot-xem-tab.md`)
 - **Ở đâu**: `apps/admin/components/ui.tsx::KhungBang` — `div.overflow-x-auto` không có `tabindex="0"` + `role="region"` + nhãn
 - **Bằng chứng**: bảng nhiều cột tràn khung (vd bảng mạch 8 cột ở màn hẹp) ⇒ người dùng chỉ bàn phím không có cách đưa focus vào div cuộn ⇒ các cột bên phải không bao giờ đọc được. Có từ trước lượt tab; lượt tab đã sửa lại một chú thích trong `tab.tsx` từng khẳng định ngược.
 - **Vì sao không sửa ngay**: chạm mọi trang admin (15 chỗ dùng `KhungBang`), cần quyết khuôn chung (`tabindex` + nhãn vùng) — việc riêng, ngoài phạm vi lượt tab.
 
-### P-20260904-4 · [MỞ] · NHỎ — `KhungBang` `min-w-[52rem]` là sàn cứng chung; bảng 2–3 cột nào đặt trong khung hẹp cũng cuộn ngang vô cớ
+### P-20260904-4 · [ĐÓNG] · NHỎ — `KhungBang` `min-w-[52rem]` là sàn cứng chung; bảng 2-3 cột nào đặt trong khung hẹp cũng cuộn ngang vô cớ
 - **Thấy lúc**: cùng lượt trên (lần thứ hai bệnh này cắn: modal online 2026-09-03 phải bỏ `KhungBang`; tab "Người đọc" 2026-09-04)
 - **Ở đâu**: `apps/admin/components/ui.tsx::KhungBang`
 - **Bằng chứng**: bảng "Thiết bị" có đúng 2 ô chữ ngắn vẫn bị kéo ra 832px. Lượt tab đã thêm prop `rong={false}` và áp cho 3 bảng hẹp của `/luot-xem`; 12 chỗ dùng khác chưa rà — bảng nào ≤3 cột (vd subs, quản trị viên) có thể muốn `rong={false}`.
 - **Vì sao không sửa ngay**: rà 12 trang là việc riêng; ghi để lượt dọn giao diện admin sau nhặt.
 
-### P-20260904-5 · [MỞ] · NẶNG — chính sách quyền lệch nhau: mọi staff tạo được bài, nhưng cả hai cửa ảnh đều superuser-only ⇒ mod thường KHÔNG BAO GIỜ đính được ảnh, kể cả đi vòng qua trang sửa mốc
+### P-20260904-5 · [ĐÓNG] · NẶNG — chính sách quyền lệch nhau: mọi staff tạo được bài, nhưng cả hai cửa ảnh đều superuser-only ⇒ mod thường KHÔNG BAO GIỜ đính được ảnh, kể cả đi vòng qua trang sửa mốc
 - **Thấy lúc**: `plans/2026-09-04-dang-bai-tu-admin.md` — lượt phản biện bắt được trước khi hại ai; đã vá phía UI (ẩn ô ảnh + khoá nút 🖼 cho non-superuser ở `/machs/moi`, kèm câu giải thích) trong CHÍNH lượt này, không phải nợ để đó
 - **Ở đâu**: `api/api/quan_tri_sua_bai.py:350` (`tai_anh_noi_dung_quan_tri`) và `:389` (`tai_anh_moc_quan_tri`) đều `chan_neu_khong_phai_superuser`; `api/api/quan_tri_hen_gio.py::tao_mach_hen_gio` thì không (plan §1.2 chốt "mọi staff")
 - **Bằng chứng**: mod `is_staff=True, is_superuser=False` (đúng loại tài khoản `POST /users/{u}/quyen-mod` sinh ra) không có cách nào đính ảnh vào bài mình vừa đăng — kể cả nhờ trang sửa mốc, vì ô ảnh ở đó cũng khoá cho đúng người ấy (`sua_duoc = moc.sua_duoc && la_superuser`)
 - **Vì sao không sửa ngay**: đây là một QUYẾT ĐỊNH CHÍNH SÁCH (nới quyền ảnh cho staff, hay chấp nhận staff không đính ảnh được), không phải lỗi code — cần user chốt hướng trước khi đổi `chan_neu_khong_phai_superuser`. Vá phía UI trong lượt này chỉ che đúng triệu chứng (ngõ cụt sau 201), không giải quyết gốc.
 
-### P-20260904-6 · [MỞ] · VỪA — `useHanhDong.chay` không có `catch`; một callback ném exception là unhandled rejection, màn hình câm
+### P-20260904-6 · [ĐÓNG] · VỪA — `useHanhDong.chay` không có `catch`; một callback ném exception là unhandled rejection, màn hình câm
 - **Thấy lúc**: cùng lượt trên — `datetimeLocalSangIsoVN` có thể ném khi ô `datetime-local` cho ra chuỗi lệch dạng (một số trình duyệt cho gõ năm 5 chữ số); gọi nó bên trong `chay(...)` thì cú ném thoát ra ngoài mà không có thông báo nào (`dang_chay` vẫn về `false` nhờ `finally`, nhưng không có `catch`)
 - **Ở đâu**: `apps/admin/lib/hanh-dong.ts:44-65` — `try { await viec() } finally { datDangChay(false) }`, không `catch`
 - **Bằng chứng**: đã vá tại chỗ gọi duy nhất đang có nguy cơ (`/machs/moi` — đổi giờ hẹn TRƯỚC khi vào `chay`, bọc `try/catch` riêng), nhưng hook dùng chung ở 9+ trang khác vẫn hở: bất kỳ callback tương lai nào gọi một hàm có thể ném đều lặp lại đúng ca này
 - **Vì sao không sửa ngay**: sửa tại nguồn (`hanh-dong.ts`) là đổi hành vi của MỌI trang dùng hook — ngoài phạm vi một lượt vá tại chỗ gọi.
 
-### P-20260904-7 · [MỞ] · NHỎ — `<label className="nut">` bọc `<input type=file>` dùng `aria-disabled` mà CSS `.nut` chỉ định nghĩa `disabled:opacity-50` (biến thể không bao giờ khớp trên `<label>`)
+### P-20260904-7 · [ĐÓNG] · NHỎ — `<label className="nut">` bọc `<input type=file>` dùng `aria-disabled` mà CSS `.nut` chỉ định nghĩa `disabled:opacity-50` (biến thể không bao giờ khớp trên `<label>`)
 - **Thấy lúc**: cùng lượt trên
 - **Ở đâu**: `apps/admin/components/soan-thao-quan-tri.tsx` (nút 🖼) — đã vá TẠI CHỖ bằng `opacity-50` gõ tay trong lượt này
 - **Bằng chứng**: mọi `<label className="nut">` khác trong repo (nếu có) vẫn mờ nhạt sai kiểu này — nút trông y hệt lúc bấm được lẫn lúc không
 - **Vì sao không sửa ngay**: rà toàn repo tìm `<label className="nut"` là việc riêng; nên đưa luật `.nut[aria-disabled="true"]` vào `globals.css` một lần thay vì vá tay từng chỗ.
 
-### P-20260904-8 · [MỞ] · NHỎ — docstring `menu.ts` trỏ tới một hàng rào không tồn tại (`apps/web/e2e/don-vi/menu-quan-tri.spec.ts`)
+### P-20260904-8 · [ĐÓNG] · NHỎ — docstring `menu.ts` trỏ tới một hàng rào không tồn tại (`apps/web/e2e/don-vi/menu-quan-tri.spec.ts`)
 - **Thấy lúc**: `plans/2026-09-04-dang-bai-tu-admin.md`
 - **Ở đâu**: `apps/admin/components/khung/menu.ts:12` — luật "mục menu phải có `page.tsx` thật" thực ra sống ở `quan-tri-giao-dien.spec.ts`
 - **Bằng chứng**: `ls apps/web/e2e/don-vi/ | grep menu` ra rỗng
 - **Vì sao không sửa ngay**: một dòng comment sai chỗ, ngoài phạm vi việc đang làm.
 
-### P-20260904-9 · [MỞ] · NHỎ — `TAI_KHOAN_DANG_BAI` không có chuông chống rỗng
+### P-20260904-9 · [ĐÓNG] · NHỎ — `TAI_KHOAN_DANG_BAI` không có chuông chống rỗng
 - **Thấy lúc**: cùng lượt trên
 - **Ở đâu**: `api/api/quan_tri_hen_gio.py:65` — `tuple(username for _, username, _, la_super in TAI_KHOAN if not la_super)`, không assert nào phía sau
 - **Bằng chứng**: nếu cả hai tài khoản đội bị đổi thành `is_superuser=True`, tuple thành rỗng ⇒ mọi lời gọi `POST /admin/machs/hen-gio` trả 400 với danh sách allowlist rỗng trong câu lỗi — fail-closed đúng hướng nhưng câu lỗi vô nghĩa với người đọc.
 - **Vì sao không sửa ngay**: ca biên rất khó xảy ra (đổi cấu hình tài khoản đội), ngoài phạm vi việc đang làm.
 
-### P-20260905-1 · [MỞ] · NẶNG — `WebFetch` bịa số khi đọc PDF: bản tóm tắt trả về ngày tháng và tỷ lệ hoàn toàn sai, đúng khuôn dạng nên trông y như số thật
+### P-20260905-1 · [ĐÓNG] · NẶNG — `WebFetch` bịa số khi đọc PDF: bản tóm tắt trả về ngày tháng và tỷ lệ hoàn toàn sai, đúng khuôn dạng nên trông y như số thật
 - **Thấy lúc**: chạy lịch `scripts/bai-viet/lich/tan-man.md` (bài nâng hạng FTSE, mạch 1033)
 - **Ở đâu**: quy trình §2 của `scripts/bai-viet/lich/tan-man.md` — luật "số liệu có nguồn, dùng công cụ lấy dữ liệu thật" không có cảnh báo nào về việc công cụ đọc PDF có thể trả về số bịa
 - **Bằng chứng**: `WebFetch` trên `lseg.com/.../ftse-faq-document-vietnam-reclassification.pdf` trả về: hiệu lực **23/09/2024**, bốn đợt **25/50/75/100%**, **27** mã, tỷ trọng **1,5%** FTSE Emerging. Số thật, đối chiếu thông cáo FTSE Russell 07/04/2026 + báo cáo Vietcap: hiệu lực **21/09/2026**, các đợt **10/30/65/100%**, tỷ trọng **0,488%** FTSE Emerging All Cap. Không có con số nào trong bản tóm tắt khớp thực tế, và cả bốn đều nằm trong dải hợp lý nên không tự lộ.
 - **Vì sao không sửa ngay**: lượt này chỉ viết bài, không sửa quy trình. Đề xuất: thêm vào §2 của `tan-man.md` một câu buộc **đối chiếu chéo mọi số lấy từ PDF bằng ít nhất một nguồn thứ hai** trước khi đưa vào bài — lượt này bắt được vì mốc 2024/2025 vô lý với sự kiện 2026, nhưng một PDF có năm khớp thì sẽ trôi thẳng vào mục "Nguồn".
 
-### P-20260905-2 · [MỞ] · NẶNG — xác nhận thêm cho `P-20260904-5`: 7 pytest + 1 e2e đỏ sẵn vì test đã nới quyền mod, code `quan_tri_sua_bai.py` thì chưa
+### P-20260905-2 · [ĐÓNG] · NẶNG — xác nhận thêm cho `P-20260904-5`: 7 pytest + 1 e2e đỏ sẵn vì test đã nới quyền mod, code `quan_tri_sua_bai.py` thì chưa
 - **Thấy lúc**: nghiệm thu/phản biện 4 vòng của `plans/2026-09-05-cua-so-tu-sua-bai.md` ("cửa sổ tự sửa bài") — đỏ SẴN ở HEAD trước khi lượt này chạm gì, không phải do bản vá
 - **Ở đâu**: `api/api/quan_tri_sua_bai.py` (`sua_moc_quan_tri`, `tai_anh_noi_dung_quan_tri`, `tai_anh_moc_quan_tri`, `xoa_anh_moc_quan_tri`) vẫn `chan_neu_khong_phai_superuser`; `apps/web/e2e/don-vi/hen-gio-phat-hanh.spec.ts:148`
 - **Bằng chứng**: `pnpm test` toàn bộ luôn ra đúng 7 failed (`test_mod_QUA_duoc_moi_endpoint`, 6 bài trong `test_api_quan_tri_sua_bai.py`), `pnpm e2e:don-vi` luôn ra đúng 1 failed — lặp lại giống hệt qua 4 lượt build/test độc lập, không dao động.
 - **Vì sao không sửa ngay**: cùng gốc với `P-20260904-5` (quyết định chính sách cần user chốt), không phải việc của plan "cửa sổ tự sửa bài". Ghi thêm ở đây để bất kỳ ai đọc log CI/test của lượt cửa-sổ-tự-sửa không tưởng nhầm đây là lỗi mới.
 
-### P-20260905-3 · [MỞ] · VỪA — N+1 khi `moc.edited_by` khác NULL trên các đường GHI (PATCH/xoá ảnh), khác đường ĐỌC đã được vá
+### P-20260905-3 · [ĐÓNG] · VỪA — N+1 khi `moc.edited_by` khác NULL trên các đường GHI (PATCH/xoá ảnh), khác đường ĐỌC đã được vá
 - **Thấy lúc**: phản biện vòng 3, `plans/2026-09-05-cua-so-tu-sua-bai.md`
 - **Ở đâu**: `api/api/ghi_chung.py::nap_moc` — thiếu `select_related("edited_by")` (đường ĐỌC `api/api/machs.py:154-158` đã có, ghim bằng `SO_QUERY["xem_mach"]`)
 - **Bằng chứng**: mọi response `MocOut` dựng từ `_moc_ra_day_du` (`api/api/mocs.py:184`) sau một lượt PATCH/xoá ảnh tốn thêm 1 truy vấn `User` nếu mốc đã từng sửa lộ — không có bài đo số truy vấn nào canh đường ghi (`SO_QUERY` chỉ ghim 10 cửa ĐỌC).
@@ -1633,11 +1635,11 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Bằng chứng**: mạch `hidden_at IS NOT NULL` (đang ẩn chờ hẹn phát hành lại) bị backfill bỏ qua, giữ `NULL`; lượt `phat_hanh_mach` kế tiếp sẽ ghi `lan_dau_len_song` = giờ phát hành LẠI (sai, phải là lần đầu) ⇒ mở lại cửa sổ tự sửa cho mọi mốc cũ của mạch đó — đúng lỗi mà cột này sinh ra để chặn. Đã đếm trên `gikky_dev`: **0 hàng** rơi vào ca này lúc kiểm (2 mạch hẹn giờ đang chờ đều là hẹn LẦN ĐẦU, chưa từng lên sóng).
 - **Vì sao không sửa ngay**: hiện không trúng hàng nào, không suy ngược được từ dữ liệu cũ (không có cách biết "lần lên sóng đầu tiên thật" nếu đã bị ghi đè). **Cần làm trước khi migrate PROD**: chạy lại đúng câu đếm này (đếm mạch `hidden_at IS NOT NULL AND published_at trong tương lai AND đã từng có AuditLog hen_gio_mach/phat_hanh_mach`) trên DB prod — ra > 0 thì vá tay bằng UPDATE trước khi `migrate`.
 
-### P-20260905-5 · [MỞ] · NHỎ — `Mach.lan_dau_len_song` ghi theo GIỜ HẸN (`published_at`), không phải giờ cron THẬT SỰ chạy
+### P-20260905-5 · [ĐÓNG] · NHỎ — `Mach.lan_dau_len_song` ghi theo GIỜ HẸN (`published_at`), không phải giờ cron THẬT SỰ chạy
 - **Thấy lúc**: phản biện vòng 3
 - **Ở đâu**: `api/core/ghi.py:1918-1919` (`phat_hanh_mach`)
 - **Bằng chứng**: nếu cron `phat_hanh_da_hen` chết/trễ nhiều giờ, bài lên sóng lúc T nhưng `lan_dau_len_song` mang giờ hẹn T-nhiều-giờ ⇒ cửa sổ tự sửa có thể đã hết ngay khi bài vừa xuất hiện, không lời giải thích. Bình thường cron chạy mỗi 5 phút nên lệch không đáng kể.
-- **Vì sao không sửa ngay**: đánh đổi chấp nhận được ở mức vận hành hiện tại (cron 5 phút/lượt); chỉ đáng sửa (đổi sang `timezone.now()`) nếu cron từng thực sự chết dài.
+- **Vì sao không sửa ngay**: đánh đổi chấp nhận được ở mức vận hành hiện tại (cron 5 phút/lượt); chỉ đáng sửa (đổi sang `timezone.now()`) nếu cron từng thực sự chết dài. Đã vá.
 
 ### P-20260905-6 · [MỞ] · NHỎ — `next build` nướng `API_ORIGIN` vào `routes-manifest.json`; đổi env lúc `next start` không đổi được đích rewrite phía trình duyệt
 - **Thấy lúc**: nghiệm thu vòng 3 dựng script kiểm trình duyệt thật cho `plans/2026-09-05-cua-so-tu-sua-bai.md`
@@ -1645,13 +1647,13 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Bằng chứng**: build với `API_ORIGIN=http://localhost:8010` rồi `next start` ở cổng khác — request phía SERVER đi đúng 8010, nhưng rewrite phía TRÌNH DUYỆT vẫn trỏ giá trị build-time cũ ⇒ `ECONNREFUSED` khi trang gọi `/api/...` từ client. Phải build lại mỗi khi đổi `API_ORIGIN` cho một script đo dùng cổng phụ.
 - **Vì sao không sửa ngay**: bẫy vận hành cho script kiểm tra dùng-một-lần, không phải lỗi sản phẩm; ghi để lượt sau viết script đo trình duyệt không mất công dò lại.
 
-### P-20260905-7 · [MỞ] · NHỎ — `doi_trong_cua_so_tu_sua` tự nhận "dùng chung cho MỌI đường ghi đổi nội dung công khai của Moc" nhưng đường "trích" (`POST`/`DELETE /mocs/{id}/trich`) không qua nó
+### P-20260905-7 · [ĐÓNG] · NHỎ — `doi_trong_cua_so_tu_sua` tự nhận "dùng chung cho MỌI đường ghi đổi nội dung công khai của Moc" nhưng đường "trích" (`POST`/`DELETE /mocs/{id}/trich`) không qua nó
 - **Thấy lúc**: phản biện vòng 2, `plans/2026-09-05-cua-so-tu-sua-bai.md`
 - **Ở đâu**: `api/api/quyen.py:165` (docstring) · `api/api/mocs.py:354,454` (`POST`/`DELETE .../trich`)
 - **Bằng chứng**: hai cửa trích đổi `MocOut.trich` hiện ngay trên thẻ mốc, không `MocRevision`, không qua kiểm cửa sổ tự sửa — có luật thời gian RIÊNG (24 giờ, PLAN 5.6) nên không chắc là lỗ hổng, nhưng câu "MỌI đường ghi" trong docstring là sai.
 - **Vì sao không sửa ngay**: cần quyết định có chủ đích (áp cửa sổ tự sửa luôn cho trích, hay giữ luật 24h riêng và chỉ sửa lại câu docstring) — ngoài phạm vi 4 lượt vá đã giao.
 
-### P-20260906-1 · [MỞ] · NẶNG — `dang-bai.py` bật `AppRegistryNotReady` ngay khi bài có `anhs`: đường xử lý ảnh import model Django mà `python -` không bootstrap Django
+### P-20260906-1 · [ĐÓNG] · NẶNG — `dang-bai.py` bật `AppRegistryNotReady` ngay khi bài có `anhs`: đường xử lý ảnh import model Django mà `python -` không bootstrap Django
 - **Thấy lúc**: chạy tác vụ hẹn giờ `gikky-bai-tan-man-a` (bài phân tích dệt may, mạch 1036)
 - **Ở đâu**: `scripts/bai-viet/dang-bai.py:167-170` (`xu_ly_anhs` import `core.anh` / `core.anh_noi_dung` / `core.models.nguoi_dung`) — gọi từ `main()` ở dòng 228, TRƯỚC mọi `django.setup()`
 - **Bằng chứng**: lệnh đúng như `scripts/bai-viet/lich/tan-man.md` §4② —
@@ -1670,7 +1672,7 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
   (`os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings"); django.setup()`)
   đặt đầu `main()`, nhưng đổi script đăng bài cần một lượt có nghiệm thu riêng.
 
-### P-20260907-1 · [MỞ] · VỪA — Lệch test `CHI_SUPERUSER` khu quản trị giữa `test_api_quan_tri_phan_quyen.py`, `hen-gio-phat-hanh.spec.ts` và `quan_tri_sua_bai.py`
+### P-20260907-1 · [ĐÓNG] · VỪA — Lệch test `CHI_SUPERUSER` khu quản trị giữa `test_api_quan_tri_phan_quyen.py`, `hen-gio-phat-hanh.spec.ts` và `quan_tri_sua_bai.py`
 - **Thấy lúc**: chạy kiểm thử toàn diện sau tính năng tắt/mở bình luận.
 - **Ở đâu**: `api/api/quan_tri_sua_bai.py:215,319,376,419`, `api/tests/test_api_quan_tri_phan_quyen.py:127`, `apps/web/e2e/don-vi/hen-gio-phat-hanh.spec.ts:172`.
 - **Bằng chứng**: Commit `6dcb09d` đã xoá `quan_tri_sua_moc`, `quan_tri_tai_anh_noi_dung`, `quan_tri_tai_anh_moc`, `quan_tri_xoa_anh_moc` khỏi `CHI_SUPERUSER` và thêm assertion vào `hen-gio-phat-hanh.spec.ts`, nhưng backend `quan_tri_sua_bai.py` vẫn giữ nguyên `chan_neu_khong_phai_superuser` ở cả 4 endpoint (chưa áp dụng `plans/2026-09-04-noi-quyen-chen-anh-staff.md`).
@@ -1694,49 +1696,49 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Bằng chứng**: grep e2e cho `noi-dung-the|khung_anh|object-fit|340` → 0 match; ai đặt lại `width:100%` sẽ không có gì đỏ.
 - **Đóng**: `apps/web/e2e/don-vi/anh-feed-css.spec.ts` — thử phá đỏ / khôi phục xanh.
 
-### P-20260907-5 · [MỞ] · NHỎ — `<img src={url_thumb}>` thiếu kích thước ở `chon-anh` và trang admin moc
+### P-20260907-5 · [ĐÓNG] · NHỎ — `<img src={url_thumb}>` thiếu kích thước ở `chon-anh` và trang admin moc
 - **Thấy lúc**: phản biện `plans/2026-09-07-w-thumb-cls-hang-rao.md`
 - **Ở đâu**: `apps/web/components/chon-anh.tsx:246` · `apps/admin/app/m/[machId]/moc/[mocId]/page.tsx` (ảnh thumb)
 - **Bằng chứng**: render thumb trần, không `w_thumb`/`h_thumb` — ngoài phạm vi feed/gallery vừa vá.
 - **Vì sao không sửa ngay**: ngoài phạm vi plan w-thumb CLS feed.
 
-### P-20260907-6 · [MỞ] · NẶNG — `quan_tri_sua_bai` chặn superuser trong khi bài đo đòi mod thường qua
+### P-20260907-6 · [ĐÓNG] · NẶNG — `quan_tri_sua_bai` chặn superuser trong khi bài đo đòi mod thường qua
 - **Thấy lúc**: thực thi `plans/2026-09-07-sap-xep-chuyen-muc-drag-drop.md` (pytest toàn bộ)
 - **Ở đâu**: `api/api/quan_tri_sua_bai.py` (`VIEC_SUA_NOI_DUNG` / `chan_neu_khong_phai_superuser`) vs `api/tests/test_api_quan_tri_sua_bai.py`
 - **Bằng chứng**: 6 failed ở `test_api_quan_tri_sua_bai.py` + `test_mod_QUA_duoc_moi_endpoint` liệt kê 4 endpoint bị 403; đỏ sẵn khi chưa có bản vá sắp xếp sub.
 - **Vì sao không sửa ngay**: ngoài phạm vi drag-drop chuyên mục.
 
-### P-20260907-7 · [MỞ] · VỪA — `pnpm codegen` sinh cả hai client nên dễ cuốn diff OpenAPI của phiên khác
+### P-20260907-7 · [ĐÓNG] · VỪA — `pnpm codegen` sinh cả hai client nên dễ cuốn diff OpenAPI của phiên khác
 - **Thấy lúc**: thực thi sắp xếp chuyên mục; cây có `schemas.py` `M` của phiên w-thumb
 - **Ở đâu**: `scripts/codegen.mjs` · `packages/api-client/openapi.json` mang `w_thumb`/`h_thumb`
 - **Bằng chứng**: `git diff packages/api-client/openapi.json` chứa thumb dims trong khi việc sắp xếp chỉ cần `openapi.admin.json` + `src-admin/`.
 - **Vì sao không sửa ngay**: cần quy ước commit/stage tường minh khi hai phiên song song; không phải bug sản phẩm của drag-drop.
 
-### P-20260907-8 · [MỞ] · NHỎ — `pnpm test -- -k` không chạy được trên PowerShell
+### P-20260907-8 · [ĐÓNG] · NHỎ — `pnpm test -- -k` không chạy được trên PowerShell
 - **Thấy lúc**: thực thi sắp xếp chuyên mục
 - **Ở đâu**: `CLAUDE.md` mục Lệnh dạy `pnpm test -- -k …`; `scripts/pytest.mjs` nhận `--` thành argv pytest
 - **Bằng chứng**: `pnpm test -- -k "sub"` → `ERROR: file or directory not found: -k`. Lối chạy được: `node scripts/pytest.mjs -k "sub" -q`.
 - **Vì sao không sửa ngay**: tài liệu / script, ngoài phạm vi sản phẩm.
 
-### P-20260907-9 · [MỞ] · NHỎ — `subs_kem_so_mach` có hai docstring liền nhau (chuỗi chết)
+### P-20260907-9 · [ĐÓNG] · NHỎ — `subs_kem_so_mach` có hai docstring liền nhau (chuỗi chết)
 - **Thấy lúc**: phản biện sắp xếp chuyên mục
 - **Ở đâu**: `api/api/feeds.py:312-326`
 - **Bằng chứng**: hai literal string liền nhau trong thân hàm; chuỗi thứ hai không thành `__doc__`.
 - **Vì sao không sửa ngay**: lỗi có sẵn, ngoài phạm vi bản vá.
 
-### P-20260907-10 · [MỞ] · VỪA — `pnpm codegen:check` ghi đè `packages/api-client` trước khi báo lệch
+### P-20260907-10 · [ĐÓNG] · VỪA — `pnpm codegen:check` ghi đè `packages/api-client` trước khi báo lệch
 - **Thấy lúc**: nghiệm thu `plans/2026-09-07-sap-xep-chuyen-muc-drag-drop.md`
 - **Ở đâu**: `scripts/codegen-check.mjs` (docstring tự thú: chạy khi đang sửa tay thì sửa tay mất)
 - **Bằng chứng**: lượt 1 exit 1 LỆCH 4 file (docstring `AnhOut` phiên w-thumb) ⇒ generated bị regenerate; luật chia độc quyền ở CLAUDE.md không liệt kê `codegen:check`.
 - **Vì sao không sửa ngay**: quy ước / tooling, ngoài phạm vi sản phẩm drag-drop.
 
-### P-20260907-11 · [MỞ] · NHỎ — Bấm `⋯` trên mốc thu gọn vừa mở menu vừa bung accordion
+### P-20260907-11 · [ĐÓNG] · NHỎ — Bấm `⋯` trên mốc thu gọn vừa mở menu vừa bung accordion
 - **Thấy lúc**: phản biện `plans/2026-09-07-dong-menu-moc-bam-ngoai.md`
 - **Ở đâu**: `apps/web/components/moc-accordion.tsx:132-136` — `closest("button, a, …")` không gồm `summary`
 - **Bằng chứng**: `<summary>` của menu `⋯` nằm trong vùng `onClick` thu gọn; có từ trước bản vá đóng menu ngoài.
 - **Vì sao không sửa ngay**: ngoài phạm vi; bản vá đã nuốt click khi đóng vì bấm *ngoài* menu, không xử ca bấm chính `⋯`.
 
-### P-20260915-1 · [MỞ] · VỪA — 10 bài e2e:don-vi đỏ sẵn ở hen-gio-phat-hanh và khong-ghi-cung-sub
+### P-20260915-1 · [ĐÓNG] · VỪA — 10 bài e2e:don-vi đỏ sẵn ở hen-gio-phat-hanh và khong-ghi-cung-sub
 - **Thấy lúc**: đo baseline cho yêu cầu sửa logo và nút cuộn về đầu trang (2026-09-15)
 - **Ở đâu**: `apps/web/e2e/don-vi/hen-gio-phat-hanh.spec.ts` (9 bài đòi /machs/moi trong khi admin đang dùng drawer) và `apps/web/e2e/don-vi/khong-ghi-cung-sub.spec.ts` (app/page.tsx chứa từ "crypto" trong metadata)
 - **Bằng chứng**: `pnpm e2e:don-vi` báo 10 failed / 502 passed

@@ -141,3 +141,39 @@ Nhóm này mổ xẻ cuộc đời, phương pháp giao dịch, cấu trúc tư 
 - **Hetty Green**: "Phù thủy phố Wall" — người phụ nữ giàu nhất thời kỳ Gilded Age với triết lý đầu tư giá trị cực đoan, kỷ luật tiền mặt tàn nhẫn và khả năng giải cứu thị trường trong khủng hoảng.
 - **Jim Simons & Quỹ Medallion**: Bậc thầy toán học mở ra kỷ nguyên định lượng (Quant trading) — bóc tách các bất thường vi mô thống kê và cuộc cách mạng loại bỏ cảm xúc con người khỏi giao dịch.
 
+## K. Bóc tách Cổ phiếu & Cấu trúc Doanh nghiệp cụ thể
+
+`sub` = `chung-khoan` · `loai` = **`Phân tích`** (hoặc **`Ngành`** nếu lồng ghép chuỗi giá trị).
+
+### ⚠ Quy tắc nhịp độ (Pacing) bất di bất dịch:
+- **KHÔNG VIẾT 2 MÃ CỔ PHIẾU LIÊN TIẾP:** Tuyệt đối không đăng 2 bài bóc tách mã cổ phiếu trong 2 ngày/lượt liên tiếp.
+- **Giãn cách 3–5 ngày:** Phân tích cổ phiếu chỉ là gia vị bổ trợ (chiếm ~20% số lượng bài phân tích 10:15). Sau khi đã viết 1 bài về một mã, bắt buộc phải nghỉ ít nhất 3 đến 5 ngày (chuyển sang phân tích vĩ mô, chuỗi giá trị, cơ cấu ngành) rồi mới đến mã tiếp theo.
+- **Không vội vàng:** Giữ nhịp độ điềm tĩnh, thong thả, tập trung vào chiều sâu học thuật thay vì chạy theo sự kiện giá cổ phiếu hàng ngày.
+
+### Nguyên tắc nội dung:
+1. **KHÔNG HÔ HÀO / BƠM THỔI:** Tuyệt đối không dùng từ ngữ cảm tính, giật gân ("siêu cổ phiếu", "múc", "xúc", "sóng thần", "kỳ lân"). Giữ giọng văn giải phẫu tài chính lạnh lùng, trung lập, thuần túy mổ xẻ dữ liệu và sự thật vận hành.
+2. **KHÔNG KHUYẾN NGHỊ MUA / BÁN:** Không đưa ra giá mục tiêu (Target Price), không khuyến nghị hành động mua/bán/nắm giữ, không phím điểm cắt lỗ/chốt lời. Mọi nhận định kết luận phải để người đọc tự quyết định.
+3. **MỔ XẺ HAI MẶT (Luận điểm & Thách thức):** Bắt buộc phải có phần bóc tách rủi ro tiềm ẩn, góc khuất bảng cân đối, điểm nghẽn chu kỳ hoặc rủi ro quản trị.
+4. **TRỤ CỘT NỘI DUNG:**
+   - **Mô hình kinh doanh & Con hào kinh tế (Moat):** Doanh nghiệp kiếm tiền từ đâu, lợi thế chi phí thấp / độc quyền tự nhiên / hiệu ứng mạng lưới / tài sản vô hình.
+   - **Cơ cấu doanh thu & biên lợi nhuận:** Bóc tách từng mảng kinh doanh, xu hướng biên lãi gộp và biên lãi ròng.
+   - **Chất lượng tài sản & dòng tiền:** Dòng tiền hoạt động kinh doanh (CFO) so với lợi nhuận ròng, dòng tiền tự do (FCF), áp lực nợ vay, chi phí lãi vay và vòng quay vốn lưu động.
+   - **Định giá trong bối cảnh lịch sử:** P/E, P/B, EV/EBITDA hiện tại đặt cạnh chu kỳ trung bình 5–10 năm của chính doanh nghiệp và các giai đoạn biến động tương đương trong quá khứ.
+
+### Kho doanh nghiệp / cổ phiếu phân tích điển hình:
+- **HPG (Hòa Phát):** Con hào chi phí thấp từ quy mô lò cao BOF khép kín, bài toán đại dự án Dung Quất 2 thâm nhập mảng thép HRC chất lượng cao và chu kỳ giá than/quặng toàn cầu.
+- **FPT:** Cơ cấu doanh thu chuyển đổi số thị trường Nhật/Mỹ, biên lợi nhuận gia công phần mềm so với mảng viễn thông & giáo dục, rủi ro tự động hóa/AI.
+- **MWG (Thế Giới Di Động):** Điểm hòa vốn và cơ cấu chi phí chuỗi Bách Hóa Xanh, rủi ro bão hòa thị trường ICT (Điện Máy Xanh/TGDD) và bài toán quản trị tồn kho.
+- **VHM (Vinhomes):** Cỗ máy bán buôn dự án đại đô thị, cơ cấu tiền mặt, rủi ro bảo lãnh nợ trong hệ sinh thái Vingroup và bài toán hấp thụ của thị trường BĐS.
+- **VCB (Vietcombank):** Bộ đệm vốn, tỷ lệ bao phủ nợ xấu (LLR) vượt trội, nguồn vốn CASA chi phí 0% từ khối doanh nghiệp FDI và giới hạn của tăng trưởng tín dụng.
+- **TCB (Techcombank):** Mô hình hệ sinh thái bất động sản - ngân hàng - chứng khoán, sự phụ thuộc vào dòng vốn trái phiếu/tín dụng doanh nghiệp và bài toán đa dạng hóa danh mục.
+- **VNM (Vinamilk):** Cỗ máy in tiền mặt với tỷ lệ cổ tức cao, nhưng đối mặt với bài toán bão hòa ngành sữa Việt Nam và nỗ lực tìm kiếm động lực tăng trưởng mới.
+- **DGC (Hóa chất Đức Giang):** Lợi thế nguồn quặng Apatit giá rẻ, vị thế độc quyền photpho vàng (P4) trong chuỗi bán dẫn thế giới và rủi ro từ quy định bảo vệ môi trường / tiến độ dự án Nghi Sơn.
+- **GMD (Gemadept):** Cảng nước sâu Gemalink, vị thế đón đầu tàu mẹ siêu trọng tải và cơ cấu chi phí tài chính sau khi thoái vốn cảng Nam Hải Đình Vũ.
+- **REE (Cơ điện Lạnh):** Danh mục tài sản điện - nước - văn phòng cho thuê (dòng tiền phòng thủ), năng lực M&A hạ tầng và bài toán kế thừa quản trị.
+- **PNJ (Vàng bạc Đá quý Phú Nhuận):** Sự dịch chuyển từ vàng miếng sang trang sức bán lẻ, năng lực quản trị chuỗi cung ứng và công nghệ chế tác trước sức mua suy yếu.
+- **CTR (Viettel Construction):** Hệ sinh thái hạ tầng viễn thông TowerCo, cơ hội từ làn sóng 5G và bài toán mở rộng sang mảng xây dựng dân dụng.
+- **MSN (Masan Group):** Chiến lược "Point of Life", gánh nặng chi phí lãi vay từ các thương vụ M&A đòn bẩy cao và bài toán tối ưu hóa chuỗi WinCommerce.
+- **PVS (Dịch vụ Kỹ thuật Dầu khí):** Sự chuyển dịch từ nhà thầu dầu khí truyền thống sang xây lắp điện gió ngoài khơi quốc tế, khối lượng backlog hợp đồng và biên lợi nhuận các dự án EPCI.
+
+

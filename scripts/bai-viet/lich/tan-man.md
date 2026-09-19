@@ -9,6 +9,7 @@ Nhiệm vụ: Viết một bài tản mạn thị trường, góc nhìn vĩ mô 
 ## Hướng dẫn nội dung
 * **Chủ đề:** Chọn từ các nhóm F (Chip, Bán dẫn, AI, Hạ tầng điện), G (Thị trường Việt Nam, chuyện dài) hoặc các chủ đề tản mạn liên ngành trong `D:\Projects\gikky-net\scripts\bai-viet\chu-de.md`.
 * **Kiểm trùng:** Bắt buộc kiểm tra các bài gần nhất trên database qua SSH trước khi chọn chủ đề.
+* **Xác thực số liệu PDF:** Nếu dùng công cụ đọc dữ liệu (WebFetch) trên file PDF (như báo cáo, thông cáo), **BẮT BUỘC phải đối chiếu chéo mọi con số** bằng ít nhất một nguồn thứ hai trước khi đưa vào bài, vì công cụ đọc PDF có thể "bịa" số đúng khuôn dạng nhưng sai thực tế (VD: năm 2026 thành 2024).
 * **Chuyên mục (`sub`):** `vi-mo`, `quan-tri-von`, `crypto` hoặc `chung-khoan` tuỳ bối cảnh.
 * **Loại (`loai`):** `Tản mạn`.
 * **Giọng văn:** Nhẹ nhàng, chiêm nghiệm, góc nhìn cấu trúc dài hạn, không dự báo thị trường ngày mai, không khuyến nghị mua bán.

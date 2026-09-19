@@ -104,7 +104,7 @@ test("quét trúng apps/web và apps/admin (chống hàng rào rỗng)", () => {
  * Cả bốn đều build xanh, lint xanh, và ba trong bốn chỉ lộ ra trên production.
  */
 
-const TRANG_MOI = "app/machs/moi/page.tsx";
+const TRANG_MOI = "components/form-dang-bai.tsx";
 
 test("T2a — trang /machs/moi tồn tại và đọc được", () => {
   expect(() => doc(ADMIN, TRANG_MOI)).not.toThrow();
@@ -198,7 +198,7 @@ test("T2h mutant — trang /machs/moi phải THẬT SỰ chèn được ảnh (�
   // một nhánh điều kiện nào khác.
   const sach = doc(ADMIN, TRANG_MOI);
   expect(sach).toMatch(/data-testid="o-anh"/);
-  expect(sach).toMatch(/tieu_de="Ảnh đính kèm"/);
+  expect(sach).toMatch(/>Ảnh đính kèm</);
 });
 
 test("T2i — 201 rồi vẫn đọc da_hen_gio của server, không tin công tắc hen", () => {
@@ -208,7 +208,7 @@ test("T2i — 201 rồi vẫn đọc da_hen_gio của server, không tin công t
   // mod kịp đọc cảnh báo.
   expect(sach).toMatch(/da_len_ngay\s*=\s*hen\s*&&\s*!kq\.data\.da_hen_gio/);
   expect(sach).toMatch(/canh-bao-da-len-ngay/);
-  expect(sach).toMatch(/if\s*\(!da_len_ngay\)\s*router\.push\(/);
+  expect(sach).toMatch(/if\s*\(!da_len_ngay\s*&&\s*onThanhCong\)\s*\{\s*onThanhCong\(/);
   // Ô giờ có `min` (hàng rào lịch sự phía UI).
   expect(sach).toMatch(/min=\{bay_gio_vn\}/);
 });
@@ -260,8 +260,10 @@ test("T2d — TAC_GIA_DOI khớp đúng tập và đúng thứ tự với bảng
   expect(cua).toMatch(/for .*in TAI_KHOAN if not la_super/);
 });
 
-test("T2e — /machs có nút dẫn tới /machs/moi", () => {
-  expect(doc(ADMIN, "app/machs/page.tsx")).toContain('href="/machs/moi"');
+test("T2e — /machs có nút mở FormDangBai (ngăn kéo) thay vì dẫn /machs/moi", () => {
+  const sach = doc(ADMIN, "app/machs/page.tsx");
+  expect(sach).toContain("<FormDangBai");
+  expect(sach).toContain("datMoDangBai(true)");
 });
 
 test("T2f — /machs/moi KHÔNG được thêm vào menu (hai mục sáng cùng lúc)", () => {

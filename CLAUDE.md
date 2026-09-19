@@ -76,7 +76,7 @@ Chạy ở **gốc repo** trừ khi ghi khác.
 | Seed 21 mạch cho ca "hồ sơ bị cắt" | `node scripts/py.mjs seed_e2e` |
 
 ⚠ **`--` nuốt mất cờ lọc của Playwright.** `pnpm e2e:don-vi -g "X3"` lọc đúng (8 bài);
-`pnpm e2e:don-vi -- -g "X3"` chạy **cả 151 bài** và vẫn báo "passed" — một con số trông
+`pnpm e2e:don-vi -- -g "X3"` chạy **cả 516 bài** và vẫn báo "passed" — một con số trông
 như đã lọc mà thực ra là của cả bộ. Bẫy này có sức hút riêng vì bảng trên dạy đúng lối `--`
 cho pytest (`pnpm test -- -k health -x`), nên phản xạ chép sang e2e là sai.
 

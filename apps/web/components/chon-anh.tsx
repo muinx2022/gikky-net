@@ -249,7 +249,7 @@ export function AnhDaLuu({
               {dangGo === a.id ? "…" : "×"}
             </button>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={a.url_thumb} alt="" loading="lazy" />
+            <img src={a.url_thumb} width={a.w_thumb} height={a.h_thumb} alt="" loading="lazy" />
           </li>
         ))}
       </ul>

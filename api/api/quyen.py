@@ -170,12 +170,12 @@ def doi_mach_tuong_tac_duoc(mach) -> None:
 def doi_trong_cua_so_tu_sua(moc) -> None:
     """Ném 403 `het_cua_so_sua` nếu ĐÃ QUÁ cửa sổ tự sửa của tác giả (2026-09-05).
 
-    Dùng chung cho MỌI đường ghi có thể đổi nội dung công khai của một `Moc` sau khi
-    đăng — không chỉ `PATCH /mocs/{id}` mà cả hai cửa ảnh gallery
-    (`POST`/`DELETE /mocs/{id}/anh`, `api/anh.py`): thêm hay gỡ ảnh cũng thay đổi cái mà
-    người đọc thấy, mà không để lại `MocRevision`/`edited_at`/`edited_by` nào — đúng thứ
-    cửa sổ này sinh ra để chặn. Một phép kiểm chép ba lần là ba phép kiểm sẽ trôi khỏi
-    nhau ngay lần đổi công thức tiếp theo.
+    Dùng chung cho HẦU HẾT các đường ghi có thể đổi nội dung công khai của một `Moc` sau khi
+    đăng (trừ `POST`/`DELETE /mocs/{id}/trich` vì nó có luật 24h riêng) — không chỉ
+    `PATCH /mocs/{id}` mà cả hai cửa ảnh gallery (`POST`/`DELETE /mocs/{id}/anh`,
+    `api/anh.py`): thêm hay gỡ ảnh cũng thay đổi cái mà người đọc thấy, mà không để lại
+    `MocRevision`/`edited_at`/`edited_by` nào — đúng thứ cửa sổ này sinh ra để chặn.
+    Một phép kiểm chép ba lần là ba phép kiểm sẽ trôi khỏi nhau ngay lần đổi công thức tiếp theo.
 
     Đòi `moc.mach` đã nạp sẵn (mọi người gọi đều đi qua `api/ghi_chung.py::nap_moc`, có
     `select_related("mach")`) — hỏi thêm ở đây không phải một truy vấn mới.

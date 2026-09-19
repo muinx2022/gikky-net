@@ -17,7 +17,7 @@ import { fileURLToPath } from "node:url";
 import { runManageCapture } from "./py.mjs";
 
 export const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-export const clientDir = join(repoRoot, "packages", "api-client");
+export const clientDir = process.env.GIKKY_CLIENT_DIR || join(repoRoot, "packages", "api-client");
 
 /**
  * `v1` giữ NGUYÊN đường dẫn cũ (`openapi.json` + `src/`).

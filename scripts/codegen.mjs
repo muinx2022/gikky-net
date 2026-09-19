@@ -74,7 +74,13 @@ function normalize(files) {
 
 const ngan = (p) => relative(repoRoot, p).replaceAll("\\", "/");
 
-const khoas = danhSachApi();
+const khoasToanBo = danhSachApi();
+const args = process.argv.slice(2);
+const khoas = args.length > 0 ? khoasToanBo.filter((k) => args.includes(k)) : khoasToanBo;
+if (args.length > 0 && khoas.length === 0) {
+  console.error(`[codegen] Không khoá nào trong [${args.join(", ")}] khớp NINJA_APIS.`);
+  process.exit(1);
+}
 console.log(`[codegen] registry NINJA_APIS: ${khoas.join(", ")}`);
 
 const than = [];

@@ -1073,9 +1073,9 @@ class TheoMachOut(Schema):
 class ThongBaoOut(Schema):
     """Một dòng chuông — PLAN 5.8.
 
-    `payload` là **JSON tự do có chủ đích**: ba loại thông báo mang ba bộ trường khác nhau,
-    và ép chúng vào một schema chung sẽ ra một object mà 2/3 số trường luôn `null`. Các
-    khoá chung cho cả ba loại: `mach_id`, `mach_title`, `mach_slug` — đủ để render một
+    `payload` là **JSON tự do có chủ đích**: bảy loại thông báo mang bảy bộ trường khác nhau,
+    và ép chúng vào một schema chung sẽ ra một object mà 6/7 số trường luôn `null`. Các
+    khoá chung cho cả bảy loại: `mach_id`, `mach_title`, `mach_slug` — để đủ render một
     dòng có link mà **không phải join** sang bảng nào, điều kiện để chuông poll 60 giây
     một lần không thành một câu truy vấn nặng.
 
@@ -1083,7 +1083,7 @@ class ThongBaoOut(Schema):
     tiêu đề tại thời điểm báo. Đó là hành vi ĐÚNG cho một thông báo — nó kể lại một sự
     kiện đã xảy ra — không phải một chỗ dữ liệu trôi.
 
-    `type`: `"moc_moi"` | `"trich"` | `"reply"`.
+    `type`: `"moc_moi"` | `"trich"` | `"reply"` | `"theo_mach"` | `"theo_user"` | `"binh_luan"` | `"mach_moi"`.
     """
 
     id: int

@@ -1,12 +1,16 @@
 """Sinh `Notification` — PLAN 5.8, Phase 3.
 
-Ba nguồn thông báo, đúng ba dòng của PLAN 5.8:
+Bảy nguồn thông báo:
 
 | loại | ai nhận | gộp? |
 |---|---|---|
-| `moc_moi` | mọi follower của mạch | **có** — 1 hàng / mạch / ngày lịch VN |
-| `trich`   | tác giả bình luận được trích | không |
-| `reply`   | tác giả bình luận cha | không |
+| `moc_moi`   | mọi follower của mạch | **có** — 1 hàng / mạch / ngày lịch VN |
+| `trich`     | tác giả bình luận được trích | không |
+| `reply`     | tác giả bình luận cha | không |
+| `theo_mach` | người tạo mạch | không |
+| `theo_user` | người dùng được theo dõi | không |
+| `binh_luan` | mọi follower của mạch/mốc | không |
+| `mach_moi`  | mọi follower của tác giả | không |
 
 ## Hai ràng buộc lớn, đọc trước khi sửa
 

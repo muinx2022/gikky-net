@@ -21,14 +21,14 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "gikky.net — Nhật ký giao dịch chứng khoán, phân tích vĩ mô & quản trị vốn",
   description:
-    "Mạng xã hội nhật ký giao dịch chứng khoán, crypto, dữ liệu kinh tế vĩ mô và quản trị vốn. Ghi nhận nhận định theo thời gian thực minh bạch, lịch sử bất biến.",
+    "Mạng xã hội nhật ký giao dịch chứng khoán, tiền mã hoá, dữ liệu kinh tế vĩ mô và quản trị vốn. Ghi nhận nhận định theo thời gian thực minh bạch, lịch sử bất biến.",
   alternates: {
     canonical: urlTuyetDoi("/"),
   },
   openGraph: {
     title: "gikky.net — Nhật ký giao dịch chứng khoán, phân tích vĩ mô & quản trị vốn",
     description:
-      "Mạng xã hội nhật ký giao dịch chứng khoán, crypto, dữ liệu kinh tế vĩ mô và quản trị vốn. Ghi nhận nhận định theo thời gian thực minh bạch, lịch sử bất biến.",
+      "Mạng xã hội nhật ký giao dịch chứng khoán, tiền mã hoá, dữ liệu kinh tế vĩ mô và quản trị vốn. Ghi nhận nhận định theo thời gian thực minh bạch, lịch sử bất biến.",
     url: urlTuyetDoi("/"),
     siteName: "gikky.net",
     locale: "vi_VN",
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "gikky.net — Nhật ký giao dịch chứng khoán, phân tích vĩ mô & quản trị vốn",
     description:
-      "Mạng xã hội nhật ký giao dịch chứng khoán, crypto, dữ liệu kinh tế vĩ mô và quản trị vốn. Ghi nhận nhận định theo thời gian thực minh bạch, lịch sử bất biến.",
+      "Mạng xã hội nhật ký giao dịch chứng khoán, tiền mã hoá, dữ liệu kinh tế vĩ mô và quản trị vốn. Ghi nhận nhận định theo thời gian thực minh bạch, lịch sử bất biến.",
   },
 };
 

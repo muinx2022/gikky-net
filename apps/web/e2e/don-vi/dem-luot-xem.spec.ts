@@ -444,7 +444,9 @@ function truongCuaThanRequest(): string[] {
  * Nhận cả hai lối viết: `ten: gia_tri` và shorthand `ten,` (`duong_dan` đi lối thứ hai).
  */
 function middlewareCoGui(mw: string, ten: string): boolean {
-  return new RegExp(`\\b${ten}\\s*[,:]`).test(mw);
+  const match = mw.match(/body:\s*\{([\s\S]*?)\}/);
+  if (!match) return false;
+  return new RegExp(`\\b${ten}\\s*[,:]`).test(match[1]);
 }
 
 test("X4 — middleware GỬI ĐỦ mọi trường mà schema thân request khai", () => {

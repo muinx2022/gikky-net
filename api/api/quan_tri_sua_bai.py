@@ -14,7 +14,7 @@ tác giả** (`api/quyen.py::doi_chu_so_huu` cố ý không có nhánh staff), v
 
 ## Ba luật của file, đọc trước khi thêm endpoint thứ bảy
 
-1. **Ghi thì chỉ superuser** (`chan_neu_khong_phai_superuser`). Ẩn là *gỡ* — đảo ngược
+1. **Ghi thì mọi mod/staff** (đã nới quyền cho staff sửa nội dung). Ẩn là *gỡ* — đảo ngược
    được, chữ của người viết còn nguyên; sửa là *viết lại*. Hai việc không cùng một nấc
    quyền. Cửa ĐỌC (`GET /mocs/{id}`) thì mọi mod, như trang chi tiết mạch.
 2. **Handler làm đúng ba việc**: tra hàng, gọi xuống đường ghi, dựng response — cùng luật
@@ -220,8 +220,6 @@ def sua_moc_quan_tri(request, moc_id: int, du_lieu: SuaMocQuanTriIn):
     Gửi lên đúng thứ đang có ⇒ 200 `da_doi=false`, và **không** revision, **không** log:
     một cú bấm Lưu chẳng đổi gì không được đóng dấu "đã sửa" lên bài của người ta.
     """
-    if (chan := chan_neu_khong_phai_superuser(request, VIEC_SUA_NOI_DUNG)) is not None:
-        return chan
     moc = _nap_moc_quan_tri(moc_id)
     if moc is None:
         return khong_tim_thay("mốc")

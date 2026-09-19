@@ -1997,7 +1997,7 @@ def phat_hanh_mach(
     hơn nó tối đa 5 phút.
 
     ## `lan_dau_len_song` — đặt đúng MỘT LẦN, ở ĐÂY
-
+    
     Hàm này chạy cho cả "lần đầu bài hẹn giờ lên sóng" LẪN "phát hành lại sau khi bị rút
     xuống" (`hen_gio_mach` có thể hẹn lại một mạch ĐANG hiện) — hai ca trông giống hệt
     nhau ở bộ lọc `hidden_at__isnull=False, hidden_by__isnull=True`, nhưng
@@ -2005,8 +2005,8 @@ def phat_hanh_mach(
     đang `NULL` (lần đầu); lượt "phát hành lại" sau đó thấy cột đã có giá trị nên bỏ qua —
     nếu ghi lại mỗi lần thì mọi mốc cũ của mạch "sống lại" cửa sổ tự sửa mỗi lần admin
     rút bài xuống rồi hẹn phát hành lại (đúng lỗi mà `plans/2026-09-05-cua-so-tu-sua-
-    bai.md` mục 2 mô tả). Đọc SAU khi có thể đã đổi `published_at` ở trên (`dat_gio_phat_
-    hanh=True`) để lấy đúng giá trị CUỐI CÙNG, không phải giờ hẹn cũ.
+    bai.md` mục 2 mô tả). Ghi đúng `timezone.now()` (giờ THẬT SỰ lên sóng) thay vì
+    `published_at` (giờ hẹn), đề phòng cron trễ (P-20260905-5).
     """
     with transaction.atomic():
         hang = (
@@ -2024,7 +2024,7 @@ def phat_hanh_mach(
             cot.append("published_at")
         hang.hidden_at = None
         if hang.lan_dau_len_song is None:
-            hang.lan_dau_len_song = hang.published_at
+            hang.lan_dau_len_song = timezone.now()
             cot.append("lan_dau_len_song")
         hang.save(update_fields=cot)
         hang = cap_nhat_dem_mach(hang)

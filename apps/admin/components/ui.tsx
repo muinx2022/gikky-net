@@ -186,14 +186,16 @@ export function KhungBang({
   children,
   rong = true,
   className = "",
+  "aria-label": ariaLabel = "Bảng dữ liệu",
 }: {
   children: React.ReactNode;
-  /** `false` ⇒ không ép `min-w-[52rem]` — chỉ cho bảng ít cột đặt trong khung hẹp. */
+  /** `false` để không ép `min-w-[52rem]` — chỉ cho bảng ít cột đặt trong khung hẹp. */
   rong?: boolean;
   className?: string;
+  "aria-label"?: string;
 }) {
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={ariaLabel}>
       <table className={`w-full ${rong ? "min-w-[52rem]" : ""} ${className} border-collapse text-sm`}>
         {children}
       </table>

@@ -131,7 +131,7 @@ export function VoThuGonMoc({
         className={`${css.noi} ${css.thu_gon}`}
         onClick={(e) => {
           const target = e.target as HTMLElement;
-          if (target.closest("button, a, input, textarea")) return;
+          if (target.closest("button, a, input, textarea, summary")) return;
           moMoc(seq);
         }}
         title="Nhấp để mở rộng mốc này"

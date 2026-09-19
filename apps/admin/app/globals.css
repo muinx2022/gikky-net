@@ -151,7 +151,7 @@
     @apply inline-flex min-h-9 cursor-pointer items-center justify-center gap-1.5
       rounded-lg border border-vien bg-nen px-3 py-1.5 text-sm font-medium text-muc
       transition-colors hover:bg-nen-mo disabled:cursor-progress disabled:opacity-50
-      max-md:min-h-11;
+      aria-disabled:cursor-progress aria-disabled:opacity-50 max-md:min-h-11;
   }
 
   /* `hover:bg-nhan` KHÔNG thừa. `.nut` khai `hover:bg-nen-mo`, và `.nut:hover` (0,2,0)

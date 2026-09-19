@@ -86,23 +86,6 @@ def _ra(request) -> CaiDatGoogleOut:
     )
 
 
-def _chan_neu_khong_phai_superuser(request):
-    """`None` nếu được phép, ngược lại là response 403.
-
-    Trả response thay vì ném: hai đường ghi dưới đây đều phải trả đúng hình dạng
-    `{detail, code}` của PLAN mục 7, và một exception handler riêng cho đúng hai chỗ là
-    thêm một nhánh nữa để lệch.
-    """
-    if request.user.is_superuser:
-        return None
-    return loi(
-        403,
-        KHONG_DU_QUYEN,
-        "Chỉ superuser được đổi cấu hình đăng nhập. Ai đổi được OAuth client là đổi "
-        "được cửa đăng nhập của cả site.",
-    )
-
-
 @router.get(
     "/cai-dat/google",
     response={200: CaiDatGoogleOut, **TRA_LOI},
@@ -132,7 +115,7 @@ def luu_cai_dat_google(request, du_lieu: CaiDatGoogleIn):
     thì phải có: lưu một `client_id` không kèm secret là dựng một cấu hình chắc chắn hỏng
     lúc ai đó bấm nút, đúng thứ PLAN mục 4 cấm.
     """
-    if (chan := _chan_neu_khong_phai_superuser(request)) is not None:
+    if (chan := chan_neu_khong_phai_superuser(request, "đổi cấu hình OAuth")) is not None:
         return chan
 
     client_id = du_lieu.client_id.strip()
@@ -177,7 +160,7 @@ def xoa_cai_dat_google(request):
     **vẫn bật**. Response trả về nói ra điều đó (`bat`, `nguon`) thay vì để giao diện đoán
     — đoán sai ở đây làm người ta tưởng đã tắt một thứ vẫn đang chạy.
     """
-    if (chan := _chan_neu_khong_phai_superuser(request)) is not None:
+    if (chan := chan_neu_khong_phai_superuser(request, "đổi cấu hình OAuth")) is not None:
         return chan
 
     if xoa_google():

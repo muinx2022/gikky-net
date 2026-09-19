@@ -22,7 +22,8 @@
 
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readFileSync, readdirSync, statSync, cpSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 
 import {
@@ -55,10 +56,10 @@ const TEN_HOP_LE_KHONG_SINH_RA = new Set([
  * phép so hash lẫn khối mồ côi. Nay mọi tên không có trong registry đều bị khối MỒ CÔI
  * chặn TRƯỚC, và cái được băm là đúng tập registry đòi.
  */
-function goTheoDoi(hopLe) {
-  return readdirSync(clientDir)
+function goTheoDoi(hopLe, dir = clientDir) {
+  return readdirSync(dir)
     .filter((ten) => hopLe.has(ten))
-    .map((ten) => join(clientDir, ten));
+    .map((ten) => join(dir, ten));
 }
 
 function walk(duongDan) {
@@ -72,12 +73,14 @@ function walk(duongDan) {
  * Liệt kê LẠI thư mục mỗi lần gọi (không cache): lượt sinh có thể đẻ ra `src-<khoá>/` mới,
  * mà một danh sách chụp trước khi chạy thì không bao giờ nhìn thấy nó.
  */
-function bamCay(hopLe) {
+function bamCay(hopLe, dir = clientDir) {
   const bang = new Map();
-  for (const goc of goTheoDoi(hopLe)) {
+  for (const goc of goTheoDoi(hopLe, dir)) {
     for (const file of walk(goc)) {
       const hash = createHash("sha256").update(readFileSync(file)).digest("hex");
-      bang.set(relative(repoRoot, file).replace(/\\/g, "/"), hash);
+      // Dùng tên tương đối chuẩn "packages/api-client/..." để so khớp
+      const relPath = join("packages", "api-client", relative(dir, file)).replace(/\\/g, "/");
+      bang.set(relPath, hash);
     }
   }
   return bang;
@@ -116,14 +119,27 @@ if (truoc.size === 0) {
   process.exit(1);
 }
 
+const tam = join(tmpdir(), `gikky-codegen-check-${process.pid}`);
+rmSync(tam, { recursive: true, force: true });
+cpSync(clientDir, tam, { recursive: true });
+
 const chay = spawnSync(process.execPath, [join(repoRoot, "scripts", "codegen.mjs")], {
   cwd: repoRoot,
   stdio: "inherit",
+  env: { ...process.env, GIKKY_CLIENT_DIR: tam },
 });
-if (chay.error) throw chay.error;
-if (chay.status !== 0) process.exit(chay.status ?? 1);
 
-const sau = bamCay(hopLe);
+if (chay.error) {
+  rmSync(tam, { recursive: true, force: true });
+  throw chay.error;
+}
+if (chay.status !== 0) {
+  rmSync(tam, { recursive: true, force: true });
+  process.exit(chay.status ?? 1);
+}
+
+const sau = bamCay(hopLe, tam);
+rmSync(tam, { recursive: true, force: true });
 
 // Mỗi khoá registry phải để lại DẤU VẾT thật. Không có đoạn này thì một `codegen.mjs` lặp
 // hụt (bỏ qua khoá thứ hai) vẫn "khớp — N file không đổi" và exit 0: nó chỉ so cái đã sinh
