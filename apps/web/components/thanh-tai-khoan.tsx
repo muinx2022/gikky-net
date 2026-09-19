@@ -1,6 +1,6 @@
 "use client";
 
-import { ImageUp, KeyRound, LogOut, Settings, ShieldCheck, UserRound } from "lucide-react";
+import { ImageUp, KeyRound, LogOut, Monitor, Moon, Settings, ShieldCheck, Sun, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -10,6 +10,7 @@ import { dangXuat } from "@/lib/tai-khoan";
 import { duongDanHoSo } from "@/lib/url";
 
 import { Avatar } from "./avatar";
+import { useLuaChonTheme } from "./lua-chon-theme";
 import { useModalDangNhap } from "./modal-dang-nhap";
 import { usePhien } from "./phien";
 import css from "./thanh-tai-khoan.module.css";
@@ -31,6 +32,7 @@ export function ThanhTaiKhoan() {
   const hopRef = useRef<HTMLDivElement | null>(null);
   const [mo, datMo] = useState(false);
   const [dangThoat, datDangThoat] = useState(false);
+  const [chonTheme, doiTheme] = useLuaChonTheme();
 
   // Bấm ra ngoài hoặc phím Escape thì đóng menu tài khoản
   useEffect(() => {
@@ -115,6 +117,49 @@ export function ThanhTaiKhoan() {
       </button>
       {mo && (
         <div className={css.menu} role="menu" data-testid="menu-tai-khoan">
+          <div className={css.menu_header}>
+            <Avatar ten={toi.username ?? ""} hienThi={toi.display_name} url={toi.avatar_url} co={32} />
+            <div className={css.menu_user_info}>
+              <span className={css.menu_display_name}>{toi.display_name || `u/${toi.username}`}</span>
+              {toi.display_name && <span className={css.menu_username}>u/{toi.username}</span>}
+            </div>
+          </div>
+          <hr className={css.menu_divider} />
+          
+          <div className={css.menu_theme_group} role="group" aria-label="Giao diện">
+            <button
+              type="button"
+              role="menuitemradio"
+              aria-checked={chonTheme === "he"}
+              className={css.menu_theme_btn}
+              onClick={() => doiTheme("he")}
+            >
+              <Monitor size={15} strokeWidth={2} aria-hidden />
+              Theo hệ thống
+            </button>
+            <button
+              type="button"
+              role="menuitemradio"
+              aria-checked={chonTheme === "sang"}
+              className={css.menu_theme_btn}
+              onClick={() => doiTheme("sang")}
+            >
+              <Sun size={15} strokeWidth={2} aria-hidden />
+              Sáng
+            </button>
+            <button
+              type="button"
+              role="menuitemradio"
+              aria-checked={chonTheme === "toi"}
+              className={css.menu_theme_btn}
+              onClick={() => doiTheme("toi")}
+            >
+              <Moon size={15} strokeWidth={2} aria-hidden />
+              Tối
+            </button>
+          </div>
+          <hr className={css.menu_divider} />
+
           <Link href={duongDanHoSo(toi.username ?? "")} prefetch={false} role="menuitem" onClick={() => datMo(false)}>
             <UserRound size={15} strokeWidth={2} aria-hidden />
             Hồ sơ của tôi

@@ -104,6 +104,80 @@
   color: var(--accent);
 }
 
+.menu_header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  cursor: default !important;
+}
+
+.menu_header:hover {
+  background: none !important;
+  color: inherit !important;
+}
+
+.menu_user_info {
+  display: flex;
+  flex-direction: column;
+}
+
+.menu_display_name {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.menu_username {
+  font-size: 11px;
+  color: var(--ink-3);
+  font-family: var(--f-mono);
+}
+
+.menu_divider {
+  margin: 5px 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
+.menu_theme_group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.menu_theme_group > span {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-3);
+  padding: 5px 10px;
+  text-transform: uppercase;
+}
+
+.menu_theme_btn {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 10px;
+  border: 0;
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.menu_theme_btn:hover {
+  background: var(--inset);
+  color: var(--accent);
+}
+
+.menu_theme_btn[aria-pressed="true"] {
+  background: var(--inset);
+  color: var(--accent);
+  font-weight: 600;
+}
+
 /* KHÔNG hoàng thổ: --stamp đi theo allowlist từng selector suy từ PLAN 9.1
    (e2e/don-vi/mau-token.spec.ts), và "tài khoản chưa xác thực email" không có trong
    danh sách "thứ mang tính đóng dấu" của PLAN. Nét đứt là đủ để nó khác chữ thường. */
