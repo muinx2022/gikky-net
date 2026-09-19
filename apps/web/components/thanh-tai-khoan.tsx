@@ -125,40 +125,7 @@ export function ThanhTaiKhoan() {
             </div>
           </div>
           <hr className={css.menu_divider} />
-          
-          <div className={css.menu_theme_group} role="group" aria-label="Giao diện">
-            <button
-              type="button"
-              role="menuitemradio"
-              aria-checked={chonTheme === "he"}
-              className={css.menu_theme_btn}
-              onClick={() => doiTheme("he")}
-            >
-              <Monitor size={15} strokeWidth={2} aria-hidden />
-              Theo hệ thống
-            </button>
-            <button
-              type="button"
-              role="menuitemradio"
-              aria-checked={chonTheme === "sang"}
-              className={css.menu_theme_btn}
-              onClick={() => doiTheme("sang")}
-            >
-              <Sun size={15} strokeWidth={2} aria-hidden />
-              Sáng
-            </button>
-            <button
-              type="button"
-              role="menuitemradio"
-              aria-checked={chonTheme === "toi"}
-              className={css.menu_theme_btn}
-              onClick={() => doiTheme("toi")}
-            >
-              <Moon size={15} strokeWidth={2} aria-hidden />
-              Tối
-            </button>
-          </div>
-          <hr className={css.menu_divider} />
+
 
           <Link href={duongDanHoSo(toi.username ?? "")} prefetch={false} role="menuitem" onClick={() => datMo(false)}>
             <UserRound size={15} strokeWidth={2} aria-hidden />
@@ -192,6 +159,47 @@ export function ThanhTaiKhoan() {
             <KeyRound size={15} strokeWidth={2} aria-hidden />
             Đổi mật khẩu
           </Link>
+          <hr className={css.menu_divider} />
+          
+          <div className={css.menu_theme_row} role="group" aria-label="Giao diện">
+            <span>Giao diện</span>
+            <div className={css.menu_theme_icons}>
+              <button
+                type="button"
+                role="menuitemradio"
+                aria-checked={chonTheme === "he"}
+                className={css.menu_theme_icon_btn}
+                onClick={() => doiTheme("he")}
+                title="Theo hệ thống"
+                aria-label="Theo hệ thống"
+              >
+                <Monitor size={15} strokeWidth={2} aria-hidden />
+              </button>
+              <button
+                type="button"
+                role="menuitemradio"
+                aria-checked={chonTheme === "sang"}
+                className={css.menu_theme_icon_btn}
+                onClick={() => doiTheme("sang")}
+                title="Sáng"
+                aria-label="Sáng"
+              >
+                <Sun size={15} strokeWidth={2} aria-hidden />
+              </button>
+              <button
+                type="button"
+                role="menuitemradio"
+                aria-checked={chonTheme === "toi"}
+                className={css.menu_theme_icon_btn}
+                onClick={() => doiTheme("toi")}
+                title="Tối"
+                aria-label="Tối"
+              >
+                <Moon size={15} strokeWidth={2} aria-hidden />
+              </button>
+            </div>
+          </div>
+
           <button
             type="button"
             role="menuitem"

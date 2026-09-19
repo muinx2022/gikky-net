@@ -139,43 +139,40 @@
   border-top: 1px solid var(--line);
 }
 
-.menu_theme_group {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.menu_theme_group > span {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--ink-3);
-  padding: 5px 10px;
-  text-transform: uppercase;
-}
-
-.menu_theme_btn {
+.menu_theme_row {
   display: flex;
   align-items: center;
-  gap: 9px;
+  justify-content: space-between;
   padding: 7px 10px;
+  color: var(--ink-2);
+}
+
+.menu_theme_icons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.menu_theme_icon_btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
   border: 0;
   background: none;
-  color: var(--ink-2);
-  font: inherit;
-  border-radius: 6px;
+  color: var(--ink-3);
+  border-radius: 4px;
   cursor: pointer;
-  text-align: left;
 }
 
-.menu_theme_btn:hover {
+.menu_theme_icon_btn:hover {
   background: var(--inset);
   color: var(--accent);
 }
 
-.menu_theme_btn[aria-pressed="true"] {
+.menu_theme_icon_btn[aria-checked="true"] {
   background: var(--inset);
   color: var(--accent);
-  font-weight: 600;
 }
 
 /* KHÔNG hoàng thổ: --stamp đi theo allowlist từng selector suy từ PLAN 9.1
