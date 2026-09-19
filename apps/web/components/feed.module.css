@@ -190,6 +190,13 @@
   }
 }
 
+@media (max-width: 640px) {
+  /* Trên màn hình mobile (≤640px), nội dung của rail đã có trong Bottom Navigation Bar. */
+  .rail {
+    display: none !important;
+  }
+}
+
 :global(:root[data-kieu-xem="gon"]) .danh_sach {
   gap: 4px;
 }

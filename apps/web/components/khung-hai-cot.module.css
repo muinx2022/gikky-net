@@ -48,3 +48,12 @@
     overflow-y: visible;
   }
 }
+
+@media (max-width: 640px) {
+  /* Trên màn hình mobile (≤640px), nội dung của rail (chuyên mục, luật, giới thiệu)
+     đã được chuyển vào Bottom Navigation Bar và bottom drawer, nên ẩn rail để tránh trùng lặp. */
+  .rail {
+    display: none !important;
+  }
+}
+

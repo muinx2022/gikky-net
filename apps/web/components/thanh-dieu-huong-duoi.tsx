@@ -27,7 +27,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { docCacSubOTrinhDuyet } from "@/lib/api";
-import { DIEU_CAM } from "@/lib/phap-ly";
+import { DIEU_CAM, DISCLAIMER_CHAN_TRANG } from "@/lib/phap-ly";
 import { GIOI_THIEU } from "@/lib/site";
 import { dangXuat, GOC_TRINH_DUYET, headerGhi } from "@/lib/tai-khoan";
 import { duongDanHoSo, duongDanMach, duongDanSub } from "@/lib/url";
@@ -373,6 +373,10 @@ export function ThanhDieuHuongDuoi() {
             Đọc luật cộng đồng đầy đủ →
           </Link>
         </div>
+
+        <p className={css.disclaimer}>
+          {DISCLAIMER_CHAN_TRANG}
+        </p>
       </BottomDrawer>
 
       {/* Sheet Thông báo */}

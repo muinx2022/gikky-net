@@ -381,3 +381,12 @@
   color: var(--accent);
   font-weight: 600;
 }
+
+.disclaimer {
+  font-size: 11px;
+  color: var(--ink-3);
+  line-height: 1.5;
+  margin: 4px 0 0;
+  text-align: center;
+  padding: 0 4px;
+}
