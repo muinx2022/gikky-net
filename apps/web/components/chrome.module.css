@@ -1,7 +1,7 @@
 .chrome {
   position: sticky;
   top: 0;
-  z-index: 20;
+  z-index: 40;
   background: color-mix(in srgb, var(--surface) 92%, transparent);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--line);

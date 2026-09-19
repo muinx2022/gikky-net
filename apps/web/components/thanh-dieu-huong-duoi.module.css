@@ -19,64 +19,6 @@
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.04);
 }
 
-@media (min-width: 641px) and (max-width: 960px) {
-  /* Navigation Rail cho màn hình Foldable / Tablet (Mix Fold 3, Z Fold, iPad: 641px - 960px)
-   * Đặt ở bên phải màn hình để thuận tay phải, thu gọn chiều cao các nút để hiển thị đủ 5 mục không cần cuộn.
-   * Cố định vị trí không giật khi cuộn trang, chống nuốt touch gesture vuốt xem bài. */
-  .thanh {
-    top: var(--cao-chrome);
-    bottom: 0;
-    left: auto;
-    right: 0;
-    width: 60px;
-    height: auto;
-    padding: 8px 0;
-    flex-direction: column;
-    justify-content: flex-start;
-    gap: 4px;
-    border-top: none;
-    border-left: 1px solid var(--line);
-    border-right: none;
-    box-shadow: -1px 0 8px rgba(0, 0, 0, 0.03);
-    background: var(--surface);
-    overflow: hidden;
-    touch-action: pan-y;
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
-    will-change: transform;
-    z-index: 65;
-  }
-
-  .nut_tab {
-    flex: 0 0 auto;
-    width: 100%;
-    padding: 4px 0;
-    gap: 2px;
-    font-size: 9.5px;
-  }
-
-  .nut_dang_chinh {
-    width: 34px;
-    height: 34px;
-    margin: 2px 0;
-  }
-
-  .sheet_overlay {
-    right: 60px;
-  }
-
-  .sheet_hop {
-    width: 460px;
-    max-width: calc(100vw - 60px);
-    left: auto;
-    right: 60px;
-    border-top-left-radius: 16px;
-    border-top-right-radius: 0;
-    border-left: 1px solid var(--line);
-    border-right: none;
-    box-shadow: -8px -4px 28px rgba(0, 0, 0, 0.15);
-  }
-}
 
 @media (min-width: 961px) {
   .thanh,
@@ -448,4 +390,78 @@
   margin: 4px 0 0;
   text-align: center;
   padding: 0 4px;
+}
+
+/* ===========================================================================
+ * Navigation Rail & Sheet cho màn hình Foldable / Tablet (641px - 960px)
+ * Đặt ở cuối file để có độ ưu tiên cascade cao nhất, ghi đè toàn bộ base class.
+ * =========================================================================== */
+
+@media (min-width: 641px) and (max-width: 960px) {
+  /* Navigation Rail:
+   * - Đặt ở mép phải màn hình để thuận tay phải.
+   * - top: calc(var(--cao-chrome) + 12px) để nằm dưới header, không bao giờ đè lên header.
+   * - z-index: 18 (thấp hơn header 40) bảo đảm header luôn nổi lên trên.
+   * - bottom: auto và height: auto để rail chỉ cao vừa 5 nút (~220px), KHÔNG bị gắn
+   *   vào đáy màn hình -> Android address bar/bottom bar ẩn/hiện khi cuộn trang
+   *   sẽ KHÔNG BAO GIỜ làm giật hay nảy rail.
+   * - Mép phải màn hình từ y > 280px hoàn toàn trống, ngón cái vuốt đọc bài thoải mái.
+   * - touch-action: pan-y cho phép quẹt trúng rail vẫn cuộn trang mượt mà.
+   */
+  .thanh {
+    top: calc(var(--cao-chrome) + 12px);
+    bottom: auto;
+    left: auto;
+    right: 0;
+    width: 60px;
+    height: auto;
+    padding: 6px 0;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 4px;
+    border-top: 1px solid var(--line);
+    border-left: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    border-right: none;
+    border-radius: 12px 0 0 12px;
+    box-shadow: -2px 2px 10px rgba(0, 0, 0, 0.05);
+    background: var(--surface);
+    overflow: hidden;
+    touch-action: pan-y;
+    z-index: 18;
+  }
+
+  .nut_tab {
+    flex: 0 0 auto;
+    width: 100%;
+    padding: 4px 0;
+    gap: 2px;
+    font-size: 9.5px;
+  }
+
+  .nut_dang_chinh {
+    width: 34px;
+    height: 34px;
+    margin: 2px 0;
+  }
+
+  /* Overlay mờ: dừng trước 60px để không che thanh điều hướng */
+  .sheet_overlay {
+    right: 60px !important;
+  }
+
+  /* Popup (Chuyên mục, Thông báo, Cá nhân):
+   * Gắn sát bên phải, chạm khít vào thanh điều hướng (right: 60px).
+   * width: 460px, bo góc trên trái 16px, góc trên phải 0px. */
+  .sheet_hop {
+    width: 460px !important;
+    max-width: calc(100vw - 60px) !important;
+    left: auto !important;
+    right: 60px !important;
+    border-top-left-radius: 16px !important;
+    border-top-right-radius: 0 !important;
+    border-left: 1px solid var(--line) !important;
+    border-right: none !important;
+    box-shadow: -8px -4px 28px rgba(0, 0, 0, 0.15) !important;
+  }
 }
