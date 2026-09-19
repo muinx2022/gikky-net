@@ -13,6 +13,14 @@
   height: 31px;
 }
 
+@media (max-width: 640px) {
+  /* Thông báo đã có ở thanh Bottom Navigation Bar trên di động */
+  .khung,
+  .cho_chuong {
+    display: none !important;
+  }
+}
+
 .nut {
   display: inline-flex;
   align-items: center;

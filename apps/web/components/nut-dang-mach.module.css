@@ -34,6 +34,14 @@
   height: 31px;
 }
 
+@media (max-width: 640px) {
+  /* Nút Đăng bài đã có ở giữa thanh Bottom Navigation Bar trên di động */
+  .nut,
+  .cho_nut {
+    display: none !important;
+  }
+}
+
 @media (max-width: 520px) {
   /* Trên màn hình hẹp giữ lại dấu ＋, bỏ chữ: thanh trên cùng đã có bốn thứ tranh chỗ,
      và cái nút này không được đẩy tên người dùng ra khỏi màn hình.

@@ -196,6 +196,13 @@
    khả dụng. Ở khổ ấy `flex-wrap` của `chrome.module.css` ≤420 là lưới an toàn có chủ
    đích: cho xuống dòng còn hơn nén chữ. Đừng đọc khối này thành "một dòng ở mọi khổ". */
 @media (max-width: 640px) {
+  /* Tài khoản cá nhân và nút đăng nhập đã có ở thanh Bottom Navigation Bar trên di động */
+  .khung,
+  .khach,
+  .chua_biet {
+    display: none !important;
+  }
+
   .chua_xac_thuc {
     display: none;
   }
