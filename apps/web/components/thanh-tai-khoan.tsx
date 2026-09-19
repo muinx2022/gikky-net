@@ -199,7 +199,7 @@ export function ThanhTaiKhoan() {
               </button>
             </div>
           </div>
-
+          <hr className={css.menu_divider} />
           <button
             type="button"
             role="menuitem"
