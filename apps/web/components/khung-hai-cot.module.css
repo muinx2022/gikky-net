@@ -15,16 +15,25 @@
   min-width: 0;
 }
 
-@media (max-width: 900px) {
-  /* Dưới 900px rail xuống dưới nội dung — cùng mốc với `feed.module.css`. */
+@media (max-width: 900px) and (min-width: 641px) {
+  /* Màn hình tablet / điện thoại gập mở rộng (Mix Fold 3, Z Fold, iPad):
+     giữ 2 cột, thu gọn kích thước rail để vừa vặn */
   .khung {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) 256px;
+    gap: 16px;
+    padding: 16px 16px 34px;
   }
 }
 
 @media (max-width: 640px) {
+  /* Màn hình điện thoại (≤640px): 1 cột, ẩn rail (đã có trong Bottom Navigation Bar) */
   .khung {
+    grid-template-columns: minmax(0, 1fr);
     padding: 16px 15px 32px;
+  }
+
+  .rail {
+    display: none !important;
   }
 }
 
@@ -39,21 +48,4 @@
   scrollbar-gutter: stable;
 }
 
-@media (max-width: 900px) {
-  /* Dưới 900px rail xuống dưới nội dung — dính ở đó là vô nghĩa và `max-height` sẽ cắt
-     cụt chính nó. Tắt cả bốn, không chỉ `position`. */
-  .rail {
-    position: static;
-    max-height: none;
-    overflow-y: visible;
-  }
-}
-
-@media (max-width: 640px) {
-  /* Trên màn hình mobile (≤640px), nội dung của rail (chuyên mục, luật, giới thiệu)
-     đã được chuyển vào Bottom Navigation Bar và bottom drawer, nên ẩn rail để tránh trùng lặp. */
-  .rail {
-    display: none !important;
-  }
-}
 
