@@ -13,8 +13,8 @@
   height: 31px;
 }
 
-@media (max-width: 640px) {
-  /* Thông báo đã có ở thanh Bottom Navigation Bar trên di động */
+@media (max-width: 960px) {
+  /* Thông báo đã có ở Navigation Rail / Bottom Nav trên màn hình ≤960px */
   .khung,
   .cho_chuong {
     display: none !important;

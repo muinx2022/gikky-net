@@ -195,8 +195,8 @@
    ⚠ **320px thì vẫn KHÔNG lọt** — 64.6 (hiệu) + 10 (gap) + 219 (cụm phải) = 293.6 > 290
    khả dụng. Ở khổ ấy `flex-wrap` của `chrome.module.css` ≤420 là lưới an toàn có chủ
    đích: cho xuống dòng còn hơn nén chữ. Đừng đọc khối này thành "một dòng ở mọi khổ". */
-@media (max-width: 640px) {
-  /* Tài khoản cá nhân và nút đăng nhập đã có ở thanh Bottom Navigation Bar trên di động */
+@media (max-width: 960px) {
+  /* Tài khoản cá nhân và nút đăng nhập đã có ở Navigation Rail / Bottom Nav trên màn hình ≤960px */
   .khung,
   .khach,
   .chua_biet {

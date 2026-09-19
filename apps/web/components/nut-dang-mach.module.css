@@ -34,8 +34,8 @@
   height: 31px;
 }
 
-@media (max-width: 640px) {
-  /* Nút Đăng bài đã có ở giữa thanh Bottom Navigation Bar trên di động */
+@media (max-width: 960px) {
+  /* Nút Đăng bài đã có ở Navigation Rail / Bottom Nav trên màn hình ≤960px */
   .nut,
   .cho_nut {
     display: none !important;

@@ -9,7 +9,7 @@
   margin-top: auto;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 960px) {
   .cot {
     min-height: auto;
   }
