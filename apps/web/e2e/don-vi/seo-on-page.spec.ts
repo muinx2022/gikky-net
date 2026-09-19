@@ -58,7 +58,7 @@ test.describe("SEO On-page & Content Improvements", () => {
   });
 
   test("3. JSON-LD: bổ sung image, publisher, description và hỗ trợ schema phân loại", () => {
-    const machGia: MachChiTietOut = {
+    const machGia = {
       id: 999,
       slug: "phan-tich-vi-mo-2026",
       title: "Phân tích vĩ mô quý 3/2026: Tác động của chính sách tiền tệ",
@@ -106,7 +106,7 @@ test.describe("SEO On-page & Content Improvements", () => {
           ],
         },
       ],
-    };
+    } as unknown as MachChiTietOut;
 
     const ld = jsonLdMach(machGia);
 
