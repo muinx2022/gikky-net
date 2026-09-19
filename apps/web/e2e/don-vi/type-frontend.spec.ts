@@ -398,8 +398,7 @@ test("luật trên có quét trúng lời gọi THẬT ở MỌI cửa (không q
     "components/phien.tsx", // Phase 2
     "components/soan-thao.tsx",
     "components/tab-ho-so.tsx",
-    // B2 — cửa PER-USER duy nhất của trang mạch (`/machs/{id}/me` + `/seen`). Nó nằm
-    // trong danh sách này để mọi lượt thêm một chỗ đọc dữ liệu per-user đều phải qua diff.
+    "components/thanh-dieu-huong-duoi.tsx", // Bottom navigation bar di động — poll thông báo
     "components/trang-thai-toi.tsx",
     "components/trich.tsx", // B2 — trích / gỡ trích vào sổ
     // Phase 5 — hai cửa ảnh (`taiAnhMoc`, `xoaAnhMoc`). Đây là file DUY NHẤT của Phase 5

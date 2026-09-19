@@ -51,7 +51,7 @@
 @media (max-width: 640px) {
   .nut_ve_dau {
     right: 16px;
-    bottom: 20px;
+    bottom: calc(68px + env(safe-area-inset-bottom, 0px));
     width: 44px;
     height: 44px;
   }

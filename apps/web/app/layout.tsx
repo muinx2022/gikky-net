@@ -6,6 +6,7 @@ import { GoogleOneTap } from "@/components/google-one-tap";
 import { LightboxProvider } from "@/components/lightbox";
 import { ModalDangNhapProvider } from "@/components/modal-dang-nhap";
 import { PhienProvider } from "@/components/phien";
+import { ThanhDieuHuongDuoi } from "@/components/thanh-dieu-huong-duoi";
 import { ToastProvider } from "@/components/toast";
 import { SITE_ORIGIN } from "@/lib/site";
 import { nguonScriptKieuXem } from "@/lib/kieu-xem";
@@ -163,6 +164,7 @@ export default function RootLayout({
               <LightboxProvider>
                 <Chrome />
                 {children}
+                <ThanhDieuHuongDuoi />
               </LightboxProvider>
             </ModalDangNhapProvider>
           </ToastProvider>
