@@ -147,12 +147,27 @@
   to { transform: translateY(0); }
 }
 
+.vung_keo {
+  width: 100%;
+  padding: 4px 0 8px;
+  margin-top: -6px;
+  display: flex;
+  justify-content: center;
+  cursor: grab;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
 .thanh_keo {
-  width: 36px;
-  height: 4px;
+  width: 40px;
+  height: 5px;
   background: var(--line-2);
   border-radius: 999px;
-  margin: -6px auto 4px;
+  transition: background 0.15s ease;
+}
+
+.vung_keo:active .thanh_keo {
+  background: var(--ink-3);
 }
 
 .sheet_dau {

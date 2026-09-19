@@ -9,7 +9,6 @@ import {
 import {
   Bell,
   Compass,
-  FileText,
   ImageUp,
   KeyRound,
   LogOut,
@@ -25,7 +24,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { docCacSubOTrinhDuyet } from "@/lib/api";
 import { DIEU_CAM } from "@/lib/phap-ly";
@@ -40,6 +39,153 @@ import { usePhien } from "./phien";
 import css from "./thanh-dieu-huong-duoi.module.css";
 
 const NHIP_POLL_MS = 60_000;
+
+/** Khung Bottom Drawer hỗ trợ cử chỉ vuốt xuống để đóng (swipe down to dismiss) */
+function BottomDrawer({
+  mo,
+  onDong,
+  tieuDe,
+  children,
+  ariaLabel,
+  thaoTacDau,
+}: {
+  mo: boolean;
+  onDong: () => void;
+  tieuDe: string;
+  children: React.ReactNode;
+  ariaLabel?: string;
+  thaoTacDau?: React.ReactNode;
+}) {
+  const hopRef = useRef<HTMLDivElement>(null);
+  const [keoY, setKeoY] = useState(0);
+  const [dangKeo, setDangKeo] = useState(false);
+  const [dangDong, setDangDong] = useState(false);
+  const touchStartY = useRef(0);
+  const coTheKeo = useRef(false);
+
+  // Khóa cuộn body khi mở sheet
+  useEffect(() => {
+    if (mo) {
+      const cu = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = cu;
+      };
+    }
+  }, [mo]);
+
+  // Phím Escape để đóng
+  useEffect(() => {
+    if (!mo) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onDong();
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [mo, onDong]);
+
+  if (!mo && !dangDong) return null;
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const el = hopRef.current;
+    touchStartY.current = e.touches[0].clientY;
+    // Chỉ kích hoạt kéo đóng khi nội dung đang ở đỉnh (scrollTop <= 5)
+    coTheKeo.current = !el || el.scrollTop <= 5;
+    setDangKeo(false);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!coTheKeo.current) return;
+    const currentY = e.touches[0].clientY;
+    const deltaY = currentY - touchStartY.current;
+
+    // Chỉ phản hồi vuốt xuống
+    if (deltaY > 0) {
+      if (hopRef.current && hopRef.current.scrollTop > 5) {
+        coTheKeo.current = false;
+        return;
+      }
+      setDangKeo(true);
+      setKeoY(deltaY);
+    } else {
+      setKeoY(0);
+      setDangKeo(false);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (!coTheKeo.current) return;
+    if (keoY > 75) {
+      // Đã vuốt quá 75px -> trượt xuống đóng mượt mà
+      setDangDong(true);
+      setDangKeo(false);
+      setTimeout(() => {
+        setDangDong(false);
+        setKeoY(0);
+        onDong();
+      }, 200);
+    } else {
+      // Vuốt chưa đủ -> nảy lại vị trí cũ
+      setDangKeo(false);
+      setKeoY(0);
+    }
+  };
+
+  const styleHop: React.CSSProperties = {
+    transform: dangDong
+      ? "translateY(100%)"
+      : dangKeo
+      ? `translateY(${keoY}px)`
+      : "translateY(0)",
+    transition: dangKeo ? "none" : "transform 0.22s cubic-bezier(0.16, 1, 0.3, 1)",
+  };
+
+  const styleOverlay: React.CSSProperties = {
+    opacity: dangKeo ? Math.max(0, 1 - keoY / 280) : 1,
+    transition: dangKeo ? "none" : "opacity 0.2s ease",
+  };
+
+  return (
+    <>
+      <div
+        className={css.sheet_overlay}
+        style={styleOverlay}
+        onClick={onDong}
+        aria-hidden="true"
+      />
+      <div
+        ref={hopRef}
+        className={css.sheet_hop}
+        style={styleHop}
+        role="dialog"
+        aria-modal="true"
+        aria-label={ariaLabel ?? tieuDe}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        <div className={css.vung_keo}>
+          <div className={css.thanh_keo} />
+        </div>
+        <div className={css.sheet_dau}>
+          <h2 className={css.sheet_tieu_de}>{tieuDe}</h2>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            {thaoTacDau}
+            <button
+              type="button"
+              className={css.sheet_dong}
+              onClick={onDong}
+              aria-label="Đóng"
+            >
+              <X size={18} />
+            </button>
+          </div>
+        </div>
+        {children}
+      </div>
+    </>
+  );
+}
 
 export function ThanhDieuHuongDuoi() {
   const pathname = usePathname();
@@ -174,156 +320,131 @@ export function ThanhDieuHuongDuoi() {
 
   return (
     <>
-      {/* Overlay mờ khi mở bất kỳ sheet nào */}
-      {coSheetMo && (
-        <div
-          className={css.sheet_overlay}
-          onClick={dongHetSheet}
-          aria-hidden="true"
-        />
-      )}
-
       {/* Sheet Chuyên mục & Cộng đồng */}
-      {moSheetSub && (
-        <div className={css.sheet_hop} role="dialog" aria-modal="true" aria-label="Chuyên mục">
-          <div className={css.thanh_keo} />
-          <div className={css.sheet_dau}>
-            <h2 className={css.sheet_tieu_de}>Chuyên mục & Cộng đồng</h2>
-            <button type="button" className={css.sheet_dong} onClick={dongHetSheet} aria-label="Đóng">
-              <X size={18} />
-            </button>
-          </div>
-
-          <div className={css.khoi_phu}>
-            <h3 className={css.khoi_phu_tieu_de}>Về gikky.net</h3>
-            <p className={css.khoi_phu_than}>{GIOI_THIEU}</p>
-          </div>
-
-          <div>
-            <h3 className={css.khoi_phu_tieu_de}>Danh sách chuyên mục</h3>
-            <ul className={css.danh_sach_sub}>
-              {cacSub.map((s) => (
-                <li key={s.slug}>
-                  <Link
-                    href={duongDanSub(s.slug)}
-                    className={css.mot_sub}
-                    prefetch={false}
-                    onClick={dongHetSheet}
-                  >
-                    <span className={css.sub_slug}>s/{s.slug}</span>
-                    <span className={css.sub_ten}>{s.ten}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className={css.khoi_phu}>
-            <h3 className={css.khoi_phu_tieu_de}>Luật cộng đồng rút gọn</h3>
-            <ul className={css.gach_dau_dong}>
-              {DIEU_CAM.map((d) => (
-                <li key={d.tieu_de}>{d.tieu_de}</li>
-              ))}
-            </ul>
-            <Link
-              href="/luat"
-              className={css.link_dan}
-              prefetch={false}
-              onClick={dongHetSheet}
-            >
-              Đọc luật cộng đồng đầy đủ →
-            </Link>
-          </div>
+      <BottomDrawer
+        mo={moSheetSub}
+        onDong={() => setMoSheetSub(false)}
+        tieuDe="Chuyên mục & Cộng đồng"
+      >
+        <div className={css.khoi_phu}>
+          <h3 className={css.khoi_phu_tieu_de}>Về gikky.net</h3>
+          <p className={css.khoi_phu_than}>{GIOI_THIEU}</p>
         </div>
-      )}
+
+        <div>
+          <h3 className={css.khoi_phu_tieu_de}>Danh sách chuyên mục</h3>
+          <ul className={css.danh_sach_sub}>
+            {cacSub.map((s) => (
+              <li key={s.slug}>
+                <Link
+                  href={duongDanSub(s.slug)}
+                  className={css.mot_sub}
+                  prefetch={false}
+                  onClick={dongHetSheet}
+                >
+                  <span className={css.sub_slug}>s/{s.slug}</span>
+                  <span className={css.sub_ten}>{s.ten}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className={css.khoi_phu}>
+          <h3 className={css.khoi_phu_tieu_de}>Luật cộng đồng rút gọn</h3>
+          <ul className={css.gach_dau_dong}>
+            {DIEU_CAM.map((d) => (
+              <li key={d.tieu_de}>{d.tieu_de}</li>
+            ))}
+          </ul>
+          <Link
+            href="/luat"
+            className={css.link_dan}
+            prefetch={false}
+            onClick={dongHetSheet}
+          >
+            Đọc luật cộng đồng đầy đủ →
+          </Link>
+        </div>
+      </BottomDrawer>
 
       {/* Sheet Thông báo */}
-      {moSheetThongBao && (
-        <div className={css.sheet_hop} role="dialog" aria-modal="true" aria-label="Thông báo">
-          <div className={css.thanh_keo} />
-          <div className={css.sheet_dau}>
-            <h2 className={css.sheet_tieu_de}>Thông báo</h2>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              {soChuaDoc > 0 && (
-                <button
-                  type="button"
+      <BottomDrawer
+        mo={moSheetThongBao}
+        onDong={() => setMoSheetThongBao(false)}
+        tieuDe="Thông báo"
+        thaoTacDau={
+          soChuaDoc > 0 ? (
+            <button
+              type="button"
+              style={{
+                fontSize: "12px",
+                color: "var(--accent)",
+                background: "none",
+                border: 0,
+                cursor: "pointer",
+              }}
+              onClick={() => void docHetThongBao()}
+            >
+              Đọc hết
+            </button>
+          ) : undefined
+        }
+      >
+        {thongBaos.length === 0 ? (
+          <p style={{ fontSize: "13px", color: "var(--ink-3)", textAlign: "center", padding: "20px 0" }}>
+            Chưa có thông báo nào mới.
+          </p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {thongBaos.map((n) => {
+              const p = n.payload as Record<string, unknown>;
+              const slug = typeof p.mach_slug === "string" ? p.mach_slug : null;
+              const machId = typeof p.mach_id === "number" ? p.mach_id : null;
+              const tieuDe = typeof p.mach_title === "string" ? p.mach_title : "mạch";
+              return (
+                <div
+                  key={n.id}
                   style={{
-                    fontSize: "12px",
-                    color: "var(--accent)",
-                    background: "none",
-                    border: 0,
-                    cursor: "pointer",
+                    padding: "10px 12px",
+                    borderRadius: "8px",
+                    background: n.read_at ? "var(--surface)" : "var(--accent-soft)",
+                    border: "1px solid var(--line)",
+                    fontSize: "13px",
                   }}
-                  onClick={() => void docHetThongBao()}
                 >
-                  Đọc hết
-                </button>
-              )}
-              <button type="button" className={css.sheet_dong} onClick={dongHetSheet} aria-label="Đóng">
-                <X size={18} />
-              </button>
-            </div>
+                  {machId && slug ? (
+                    <Link
+                      href={duongDanMach(slug, machId)}
+                      style={{ color: "var(--ink)", textDecoration: "none" }}
+                      onClick={dongHetSheet}
+                    >
+                      {n.type === "mach_moi" && `Mạch mới: ${tieuDe}`}
+                      {n.type === "moc_moi" && `Mốc mới trên: ${tieuDe}`}
+                      {n.type === "binh_luan" && `Bình luận mới trên: ${tieuDe}`}
+                      {n.type === "reply" && `Có người phản hồi bạn trên: ${tieuDe}`}
+                      {n.type === "trich" && `Có người trích dẫn bạn trên: ${tieuDe}`}
+                      {n.type === "theo_mach" && `Có người theo dõi: ${tieuDe}`}
+                      {!["mach_moi", "moc_moi", "binh_luan", "reply", "trich", "theo_mach"].includes(n.type) &&
+                        `Thông báo về: ${tieuDe}`}
+                    </Link>
+                  ) : (
+                    <span style={{ color: "var(--ink)" }}>Thông báo mới</span>
+                  )}
+                </div>
+              );
+            })}
           </div>
-
-          {thongBaos.length === 0 ? (
-            <p style={{ fontSize: "13px", color: "var(--ink-3)", textAlign: "center", padding: "20px 0" }}>
-              Chưa có thông báo nào mới.
-            </p>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              {thongBaos.map((n) => {
-                const p = n.payload as Record<string, unknown>;
-                const slug = typeof p.mach_slug === "string" ? p.mach_slug : null;
-                const machId = typeof p.mach_id === "number" ? p.mach_id : null;
-                const tieuDe = typeof p.mach_title === "string" ? p.mach_title : "mạch";
-                return (
-                  <div
-                    key={n.id}
-                    style={{
-                      padding: "10px 12px",
-                      borderRadius: "8px",
-                      background: n.read_at ? "var(--surface)" : "var(--accent-soft)",
-                      border: "1px solid var(--line)",
-                      fontSize: "13px",
-                    }}
-                  >
-                    {machId && slug ? (
-                      <Link
-                        href={duongDanMach(slug, machId)}
-                        style={{ color: "var(--ink)", textDecoration: "none" }}
-                        onClick={dongHetSheet}
-                      >
-                        {n.type === "mach_moi" && `Mạch mới: ${tieuDe}`}
-                        {n.type === "moc_moi" && `Mốc mới trên: ${tieuDe}`}
-                        {n.type === "binh_luan" && `Bình luận mới trên: ${tieuDe}`}
-                        {n.type === "reply" && `Có người phản hồi bạn trên: ${tieuDe}`}
-                        {n.type === "trich" && `Có người trích dẫn bạn trên: ${tieuDe}`}
-                        {n.type === "theo_mach" && `Có người theo dõi: ${tieuDe}`}
-                        {!["mach_moi", "moc_moi", "binh_luan", "reply", "trich", "theo_mach"].includes(n.type) &&
-                          `Thông báo về: ${tieuDe}`}
-                      </Link>
-                    ) : (
-                      <span style={{ color: "var(--ink)" }}>Thông báo mới</span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
+        )}
+      </BottomDrawer>
 
       {/* Sheet Cá nhân & Cài đặt */}
-      {moSheetCaNhan && toi && (
-        <div className={css.sheet_hop} role="dialog" aria-modal="true" aria-label="Tài khoản cá nhân">
-          <div className={css.thanh_keo} />
-          <div className={css.sheet_dau}>
-            <h2 className={css.sheet_tieu_de}>Tài khoản</h2>
-            <button type="button" className={css.sheet_dong} onClick={dongHetSheet} aria-label="Đóng">
-              <X size={18} />
-            </button>
-          </div>
-
+      {toi && (
+        <BottomDrawer
+          mo={moSheetCaNhan}
+          onDong={() => setMoSheetCaNhan(false)}
+          tieuDe="Tài khoản"
+        >
           <div className={css.menu_user_info}>
             <Avatar ten={toi.username ?? ""} hienThi={toi.display_name} url={toi.avatar_url} co={36} />
             <div className={css.menu_names}>
@@ -360,33 +481,36 @@ export function ThanhDieuHuongDuoi() {
               Đổi mật khẩu
             </Link>
 
-            <div className={css.theme_row}>
+            <div className={css.theme_row} role="group" aria-label="Giao diện">
               <span>Giao diện</span>
               <div className={css.theme_icons}>
                 <button
                   type="button"
-                  aria-checked={chonTheme === "he"}
+                  aria-pressed={chonTheme === "he"}
                   className={css.theme_btn}
                   onClick={() => doiTheme("he")}
                   title="Theo hệ thống"
+                  aria-label="Theo hệ thống"
                 >
                   <Monitor size={16} strokeWidth={2} />
                 </button>
                 <button
                   type="button"
-                  aria-checked={chonTheme === "sang"}
+                  aria-pressed={chonTheme === "sang"}
                   className={css.theme_btn}
                   onClick={() => doiTheme("sang")}
                   title="Sáng"
+                  aria-label="Sáng"
                 >
                   <Sun size={16} strokeWidth={2} />
                 </button>
                 <button
                   type="button"
-                  aria-checked={chonTheme === "toi"}
+                  aria-pressed={chonTheme === "toi"}
                   className={css.theme_btn}
                   onClick={() => doiTheme("toi")}
                   title="Tối"
+                  aria-label="Tối"
                 >
                   <Moon size={16} strokeWidth={2} />
                 </button>
@@ -402,7 +526,7 @@ export function ThanhDieuHuongDuoi() {
               Đăng xuất
             </button>
           </div>
-        </div>
+        </BottomDrawer>
       )}
 
       {/* Thanh Bottom Navigation Bar cố định */}
@@ -479,3 +603,4 @@ export function ThanhDieuHuongDuoi() {
     </>
   );
 }
+
