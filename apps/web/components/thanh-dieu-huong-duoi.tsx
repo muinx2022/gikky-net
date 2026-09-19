@@ -63,30 +63,39 @@ function BottomDrawer({
   const touchStartY = useRef(0);
   const coTheKeo = useRef(false);
 
-  // Khóa cuộn body khi mở sheet
+  // Đóng mượt mà: trượt xuống 100% + fade mờ overlay, sau 220ms mới gọi onDong()
+  const dongMuot = useCallback(() => {
+    if (dangDong) return;
+    setDangDong(true);
+    setDangKeo(false);
+    setTimeout(() => {
+      onDong();
+    }, 220);
+  }, [dangDong, onDong]);
+
+  // Reset trạng thái sau khi đóng hẳn
   useEffect(() => {
-    if (mo) {
-      const cu = document.body.style.overflow;
-      document.body.style.overflow = "hidden";
-      return () => {
-        document.body.style.overflow = cu;
-      };
+    if (!mo) {
+      setDangDong(false);
+      setKeoY(0);
+      setDangKeo(false);
     }
   }, [mo]);
 
-  // Phím Escape để đóng
+  // Phím Escape để đóng mượt
   useEffect(() => {
     if (!mo) return;
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onDong();
+      if (e.key === "Escape") dongMuot();
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [mo, onDong]);
+  }, [mo, dongMuot]);
 
   if (!mo && !dangDong) return null;
 
   const handleTouchStart = (e: React.TouchEvent) => {
+    if (dangDong) return;
     const el = hopRef.current;
     touchStartY.current = e.touches[0].clientY;
     // Chỉ kích hoạt kéo đóng khi nội dung đang ở đỉnh (scrollTop <= 5)
@@ -95,7 +104,7 @@ function BottomDrawer({
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!coTheKeo.current) return;
+    if (!coTheKeo.current || dangDong) return;
     const currentY = e.touches[0].clientY;
     const deltaY = currentY - touchStartY.current;
 
@@ -114,16 +123,9 @@ function BottomDrawer({
   };
 
   const handleTouchEnd = () => {
-    if (!coTheKeo.current) return;
+    if (!coTheKeo.current || dangDong) return;
     if (keoY > 75) {
-      // Đã vuốt quá 75px -> trượt xuống đóng mượt mà
-      setDangDong(true);
-      setDangKeo(false);
-      setTimeout(() => {
-        setDangDong(false);
-        setKeoY(0);
-        onDong();
-      }, 200);
+      dongMuot();
     } else {
       // Vuốt chưa đủ -> nảy lại vị trí cũ
       setDangKeo(false);
@@ -131,18 +133,22 @@ function BottomDrawer({
     }
   };
 
+  const daDong = dangDong || !mo;
+
   const styleHop: React.CSSProperties = {
-    transform: dangDong
+    transform: daDong
       ? "translateY(100%)"
       : dangKeo
       ? `translateY(${keoY}px)`
       : "translateY(0)",
     transition: dangKeo ? "none" : "transform 0.22s cubic-bezier(0.16, 1, 0.3, 1)",
+    willChange: "transform",
   };
 
   const styleOverlay: React.CSSProperties = {
-    opacity: dangKeo ? Math.max(0, 1 - keoY / 280) : 1,
-    transition: dangKeo ? "none" : "opacity 0.2s ease",
+    opacity: daDong ? 0 : dangKeo ? Math.max(0, 1 - keoY / 280) : 1,
+    transition: dangKeo ? "none" : "opacity 0.22s ease",
+    willChange: "opacity",
   };
 
   return (
@@ -150,7 +156,8 @@ function BottomDrawer({
       <div
         className={css.sheet_overlay}
         style={styleOverlay}
-        onClick={onDong}
+        onClick={dongMuot}
+        onTouchMove={(e) => e.preventDefault()}
         aria-hidden="true"
       />
       <div
@@ -174,7 +181,7 @@ function BottomDrawer({
             <button
               type="button"
               className={css.sheet_dong}
-              onClick={onDong}
+              onClick={dongMuot}
               aria-label="Đóng"
             >
               <X size={18} />

@@ -114,6 +114,7 @@
   background: rgba(0, 0, 0, 0.5);
   z-index: 60;
   backdrop-filter: blur(2px);
+  touch-action: none;
   animation: fadeIn 0.2s ease-out;
 }
 
@@ -129,6 +130,8 @@
   border-top: 1px solid var(--line);
   z-index: 61;
   overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
   padding: 16px 16px calc(24px + env(safe-area-inset-bottom, 0px));
   box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.2);
   animation: truotLen 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -176,6 +179,7 @@
   justify-content: space-between;
   padding-bottom: 10px;
   border-bottom: 1px solid var(--line);
+  touch-action: none;
 }
 
 .sheet_tieu_de {
