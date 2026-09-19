@@ -20,39 +20,46 @@
 }
 
 @media (min-width: 641px) and (max-width: 960px) {
-  /* Navigation Rail cho màn hình Foldable / Tablet (Mix Fold 3, Z Fold, iPad: 641px - 960px) */
+  /* Navigation Rail cho màn hình Foldable / Tablet (Mix Fold 3, Z Fold, iPad: 641px - 960px)
+   * Đặt ở bên phải màn hình để thuận tay phải, thu gọn chiều cao các nút để hiển thị đủ 5 mục không cần cuộn. */
   .thanh {
     top: var(--cao-chrome);
     bottom: 0;
-    left: 0;
-    right: auto;
-    width: 64px;
-    height: calc(100vh - var(--cao-chrome));
-    padding-bottom: 0;
-    padding-top: 14px;
+    left: auto;
+    right: 0;
+    width: 60px;
+    height: auto;
+    max-height: calc(100dvh - var(--cao-chrome));
+    padding-bottom: 8px;
+    padding-top: 8px;
     flex-direction: column;
     justify-content: flex-start;
-    gap: 14px;
+    gap: 4px;
     border-top: none;
-    border-right: 1px solid var(--line);
-    box-shadow: 1px 0 8px rgba(0, 0, 0, 0.03);
+    border-left: 1px solid var(--line);
+    border-right: none;
+    box-shadow: -1px 0 8px rgba(0, 0, 0, 0.03);
     background: var(--surface);
+    overflow-y: auto;
   }
 
   .nut_tab {
     flex: 0 0 auto;
     width: 100%;
-    padding: 8px 0;
-    gap: 4px;
+    padding: 4px 0;
+    gap: 2px;
+    font-size: 9.5px;
   }
 
   .nut_dang_chinh {
-    margin-top: 0;
+    width: 34px;
+    height: 34px;
+    margin: 2px 0;
   }
 
   .sheet_hop {
     width: 480px;
-    left: calc(50% - 240px + 32px);
+    left: calc(50% - 240px - 30px);
     right: auto;
     border-radius: 16px 16px 0 0;
   }

@@ -48,6 +48,12 @@
   transform: translateY(0);
 }
 
+@media (min-width: 641px) and (max-width: 960px) {
+  .nut_ve_dau {
+    right: calc(60px + 16px);
+  }
+}
+
 @media (max-width: 640px) {
   .nut_ve_dau {
     right: 16px;

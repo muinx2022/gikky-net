@@ -151,13 +151,13 @@
 
 @media (max-width: 960px) and (min-width: 641px) {
   /* Tablet & Foldable (Mix Fold 3, Z Fold, iPad: 641px - 960px):
-     Dùng Navigation Rail dọc bên trái (64px). Feed chiếm trọn không gian đọc thoải mái,
-     ẩn cột phải cồng kềnh để tránh chia đôi màn hình. */
+     Dùng Navigation Rail dọc bên phải (60px). Feed chiếm trọn không gian đọc thoải mái,
+     chừa lề bên phải để không bị thanh điều hướng che. */
   .khung {
     grid-template-columns: minmax(0, 1fr);
     max-width: 760px;
     margin: 0 auto;
-    padding: 18px 20px 34px calc(64px + 20px);
+    padding: 18px calc(60px + 18px) 34px 18px;
   }
 
   .rail {
