@@ -21,7 +21,8 @@
 
 @media (min-width: 641px) and (max-width: 960px) {
   /* Navigation Rail cho màn hình Foldable / Tablet (Mix Fold 3, Z Fold, iPad: 641px - 960px)
-   * Đặt ở bên phải màn hình để thuận tay phải, thu gọn chiều cao các nút để hiển thị đủ 5 mục không cần cuộn. */
+   * Đặt ở bên phải màn hình để thuận tay phải, thu gọn chiều cao các nút để hiển thị đủ 5 mục không cần cuộn.
+   * Cố định vị trí không giật khi cuộn trang, chống nuốt touch gesture vuốt xem bài. */
   .thanh {
     top: var(--cao-chrome);
     bottom: 0;
@@ -29,9 +30,7 @@
     right: 0;
     width: 60px;
     height: auto;
-    max-height: calc(100dvh - var(--cao-chrome));
-    padding-bottom: 8px;
-    padding-top: 8px;
+    padding: 8px 0;
     flex-direction: column;
     justify-content: flex-start;
     gap: 4px;
@@ -40,7 +39,12 @@
     border-right: none;
     box-shadow: -1px 0 8px rgba(0, 0, 0, 0.03);
     background: var(--surface);
-    overflow-y: auto;
+    overflow: hidden;
+    touch-action: pan-y;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    will-change: transform;
+    z-index: 65;
   }
 
   .nut_tab {
@@ -57,11 +61,20 @@
     margin: 2px 0;
   }
 
+  .sheet_overlay {
+    right: 60px;
+  }
+
   .sheet_hop {
-    width: 480px;
-    left: calc(50% - 240px - 30px);
-    right: auto;
-    border-radius: 16px 16px 0 0;
+    width: 460px;
+    max-width: calc(100vw - 60px);
+    left: auto;
+    right: 60px;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 0;
+    border-left: 1px solid var(--line);
+    border-right: none;
+    box-shadow: -8px -4px 28px rgba(0, 0, 0, 0.15);
   }
 }
 
