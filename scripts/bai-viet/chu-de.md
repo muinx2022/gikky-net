@@ -83,7 +83,7 @@ Nhóm này là **tản mạn**: dài hơi, liên ngành, không bám một mã.
 - **[ĐÃ VIẾT - Mạch 1076]** **HBM**: vì sao một loại bộ nhớ hẹp lại thành nút thắt của cả một làn sóng.
 - Nhân lực kỹ thuật: khoảng cách giữa **tuyên bố** và **năng lực đào tạo**.
 - **Điện toán biên** và thiết bị: mảng nào của chuỗi cung ứng Việt Nam hưởng lợi thật.
-- AI làm giảm chi phí gì trong doanh nghiệp Việt — và **cái gì nó không giảm**.
+- **[ĐÃ VIẾT - Mạch 1131]** **AI làm giảm chi phí gì trong doanh nghiệp Việt** — và những rào cản vô hình nó không thể chạm tới.
 - **[ĐÃ VIẾT - Mạch 1092]** Chu kỳ vốn đầu tư của các hãng lớn: khi họ chi mạnh, tiền chảy qua những khâu nào.
 - **[ĐÃ VIẾT - Mạch 1125]** **Nước siêu tinh khiết (UPW)**: Cơn khát của ngành bán dẫn và điểm nghẽn tài nguyên tự nhiên đằng sau những con chip AI.
 
