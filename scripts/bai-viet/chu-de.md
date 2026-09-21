@@ -135,6 +135,7 @@ Nhóm này là **tản mạn**: dài hơi, liên ngành, không bám một mã.
 
 `sub` = `quan-tri-von` hoặc `tam-ly-giao-dich` · `loai` = **`Hồ sơ`** hoặc **`Nhân vật`**.
 
+- **[ĐÃ VIẾT - Mạch 1132]** **Archegos Capital & Bill Hwang**: Vụ sụp đổ 2021 làm bốc hơi 30 tỷ USD trong 48 giờ — đòn bẩy ngầm Total Return Swap (TRS), bẫy đa ngân hàng và thế tiến thoái lưỡng nan của tù nhân (Prisoner's Dilemma) trên phố Wall.
 - **[ĐÃ VIẾT - Mạch 1089]** **Jesse Livermore**: "Con gấu vĩ đại phố Wall" — từ cậu bé ghi bảng bucket shop đến tài sản 100 triệu USD năm 1929, hệ thống điểm xoay (Pivotal Points), 4 lần phá sản làm lại từ đầu và hồi kết bi kịch khi phá vỡ kỷ luật.
 - **[ĐÃ VIẾT - Mạch 1121]** **Nicolas Darvas**: Vũ công kiếm 2.000.000 USD từ chứng khoán — phát minh lý thuyết Hộp (Darvas Box), cách quản trị lệnh dời stop-loss tự động và nghệ thuật cách ly hoàn toàn với tiếng ồn phố Wall.
 - **Ed Seykota**: Người tiên phong mang máy tính vào phân tích kỹ thuật — hệ thống theo xu hướng thuần túy và triết lý tâm lý học sâu sắc: "Dù thắng hay thua, ai cũng nhận được từ thị trường chính xác thứ họ muốn".
