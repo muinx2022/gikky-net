@@ -58,7 +58,7 @@ trường** doanh nghiệp sống trong đó?* Doanh nghiệp ⇒ `chung-khoan`.
 
 ## D. Vàng, dầu, hàng hoá
 
-- Chênh lệch **giá vàng trong nước và thế giới** — cơ chế nào tạo ra nó, và nó nói gì.
+- **[ĐÃ VIẾT - Mạch 1128]** Chênh lệch **giá vàng trong nước và thế giới** — cơ chế nào tạo ra nó, và nó nói gì.
 - **[ĐÃ VIẾT - Mạch 1084]** Vàng và **lãi suất thực**: mối quan hệ thường được nhắc, hiếm khi được đo.
 - **[ĐÃ VIẾT - Mạch 1079]** **Dầu**: OPEC+, tồn kho Mỹ, và vì sao giá xăng trong nước lệch pha với Brent.
 - **[ĐÃ VIẾT - Mạch 1064]** Ngân hàng trung ương mua vàng — xu hướng nhiều năm, không phải tin một ngày.
