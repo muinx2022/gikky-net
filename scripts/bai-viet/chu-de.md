@@ -90,6 +90,7 @@ Nhóm này là **tản mạn**: dài hơi, liên ngành, không bám một mã.
 ## G. Thị trường Việt Nam, chuyện dài
 
 - **[ĐÃ VIẾT - Mạch 1081, 1033]** **Nâng hạng thị trường**: điều kiện kỹ thuật, và dòng vốn thụ động thực tế bao nhiêu.
+- **[ĐÃ VIẾT - Mạch 1130]** **Phiên hiệu lực FTSE**: Khi VN-Index lùi về dưới 1.800 điểm và bài học "bán sự thật" của dòng tiền tổ chức.
 - **Thanh khoản theo nhóm nhà đầu tư**: cá nhân, tổ chức, khối ngoại — ai thật sự đỡ giá.
 - **Hệ thống giao dịch mới**: nó đổi được gì và không đổi được gì.
 - **[ĐÃ VIẾT - Mạch 1108, 1021]** **Cổ tức tiền mặt** — nhóm doanh nghiệp trả đều, và vì sao ít người quan tâm.
