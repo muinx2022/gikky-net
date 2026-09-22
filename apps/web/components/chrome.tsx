@@ -3,6 +3,7 @@ import { Suspense } from "react";
 
 import { Chuong } from "./chuong";
 import css from "./chrome.module.css";
+import { CongTacTheme } from "./cong-tac-theme";
 import { LogoGikky } from "./logo";
 import { NutDangMach } from "./nut-dang-mach";
 import { OTimKiem } from "./o-tim-kiem";
@@ -71,6 +72,7 @@ export function Chrome() {
           <TimKiemMobile />
           <NutDangMach />
           <Chuong />
+          <CongTacTheme />
           <ThanhTaiKhoan />
         </div>
       </div>

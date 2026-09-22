@@ -1,0 +1,75 @@
+/* Nút hai trạng thái Sáng ⇄ Tối trên thanh header.
+   Khi bấm luôn đặt lựa chọn NGƯỢC với thứ đang hiện để mỗi cú bấm luôn đổi được
+   cái nhìn thấy được (không bao giờ no-op). */
+.khung {
+  display: inline-flex;
+  border: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: var(--ink-3);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.khung:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.khung:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.hinh {
+  pointer-events: none;
+}
+
+.icon_trang {
+  display: block;
+}
+
+.icon_troi {
+  display: none;
+}
+
+:global(html[data-theme="dark"]) .icon_trang {
+  display: none;
+}
+
+:global(html[data-theme="dark"]) .icon_troi {
+  display: block;
+}
+
+:global(html[data-theme="light"]) .icon_trang {
+  display: block;
+}
+
+:global(html[data-theme="light"]) .icon_troi {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :global(html:not([data-theme="light"])) .icon_trang {
+    display: none;
+  }
+  :global(html:not([data-theme="light"])) .icon_troi {
+    display: block;
+  }
+}
+
+/* Vùng bấm 44px trên màn hình cảm ứng theo luật của cụm phải header.
+   Nút icon cố định nở 32→44, bù ngang -4px mỗi phía để không làm lệch bố cục header. */
+@media (pointer: coarse) {
+  .khung {
+    width: 44px;
+    height: 44px;
+    margin-inline: -4px;
+  }
+}
