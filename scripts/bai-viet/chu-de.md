@@ -70,6 +70,7 @@ trường** doanh nghiệp sống trong đó?* Doanh nghiệp ⇒ `chung-khoan`.
 - **[ĐÃ VIẾT - Mạch 1053, 1016]** **Stablecoin**: dự trữ đứng sau, và rủi ro mà người dùng Việt Nam ít nhìn.
 - **[ĐÃ VIẾT - Mạch 1100]** **ETF giao ngay** đổi cấu trúc người mua như thế nào.
 - **[ĐÃ VIẾT - Mạch 1126]** **Cơ chế thanh lý nợ xấu trong DeFi**: Khi các đợt Margin Call tự động kích hoạt phản ứng dây chuyền trên chuỗi.
+- **[ĐÃ VIẾT - Mạch 1139]** **Ví ngủ đông thời Satoshi**: Khi những đồng Bitcoin cổ đại thức giấc — giải mã chỉ số Coin Days Destroyed (CDD), 3 kịch bản di chuyển ví và chu kỳ HODL Waves.
 - Khung pháp lý tài sản số ở Việt Nam — trạng thái hiện tại, không suy đoán.
 - Phí giao dịch và trượt giá: phần chi phí thật mà bảng giá không hiện.
 
