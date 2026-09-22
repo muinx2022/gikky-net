@@ -44,7 +44,7 @@ trường** doanh nghiệp sống trong đó?* Doanh nghiệp ⇒ `chung-khoan`.
 - **[ĐÃ VIẾT - Mạch 1068]** **PVN và họ dầu khí**: doanh thu bám giá Brent tới mức nào, và độ trễ bao lâu.
 - **[ĐÃ VIẾT - Mạch 1094]** Giá điện bán lẻ: một biến số mà **mọi ngành sản xuất** đều chịu, ít ai mô hình hoá.
 - **[ĐÃ VIẾT - Mạch 1124]** **Đầu tư công chạy nước rút cuối năm**: Áp lực giải ngân 700.000 tỷ, nút thắt vật liệu đắp nền và biên lãi mỏng của nhà thầu.
-- **Thủy điện tích năng** (Pumped Storage) và hệ thống lưu trữ pin BESS: giải pháp giải cứu điểm nghẽn năng lượng tái tạo.
+- **[ĐÃ VIẾT - Mạch 1138]** **Thủy điện tích năng** (Pumped Storage) và hệ thống lưu trữ pin BESS: giải pháp giải cứu điểm nghẽn năng lượng tái tạo.
 - **Quy hoạch Điện VIII** và nút thắt đường dây truyền tải 500kV mạch 3: bài toán giải tỏa công suất vùng duyên hải miền Trung.
 
 ## C. Ngân hàng & Tài chính hệ thống
