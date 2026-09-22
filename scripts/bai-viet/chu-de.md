@@ -106,7 +106,7 @@ Nhóm này là **tản mạn**: dài hơi, liên ngành, không bám một mã.
 - **[ĐÃ VIẾT - Mạch 1080, 1028]** **Hiệu ứng mỏ neo** vào giá mua: con số đó không có ý nghĩa gì với thị trường, nhưng có với người cầm.
 - **[ĐÃ VIẾT - Mạch 1024]** **Ảo tưởng kiểm soát**: giao dịch nhiều hơn không làm kết quả tốt hơn — bằng chứng từ dữ liệu tài khoản.
 - **[ĐÃ VIẾT - Mạch 1069]** **Ngụy biện chi phí chìm** trong một vị thế đang lỗ.
-- **Kể chuyện sau sự việc**: não dựng nhân quả cho một chuỗi ngẫu nhiên, và vì sao điều đó nguy hiểm.
+- **[ĐÃ VIẾT - Mạch 1135]** **Kể chuyện sau sự việc**: não dựng nhân quả cho một chuỗi ngẫu nhiên, và vì sao điều đó nguy hiểm.
 - **[ĐÃ VIẾT - Mạch 1123]** **Quá tự tin sau một chuỗi thắng** — chuỗi thắng dài bao nhiêu thì vẫn có thể là may.
 - **Đám đông và điểm đảo chiều**: khi nào thông tin từ số đông có giá trị, khi nào không.
 - **Nhật ký giao dịch**: thứ gì đáng ghi, thứ gì ghi vào chỉ để tự an ủi.
