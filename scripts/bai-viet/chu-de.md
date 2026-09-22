@@ -180,4 +180,15 @@ Nhóm này là **tản mạn**: dài hơi, liên ngành, không bám một mã.
 - **MSN (Masan Group):** Chiến lược "Point of Life", gánh nặng chi phí lãi vay từ các thương vụ M&A đòn bẩy cao và bài toán tối ưu hóa chuỗi WinCommerce.
 - **PVS (Dịch vụ Kỹ thuật Dầu khí):** Sự chuyển dịch từ nhà thầu dầu khí truyền thống sang xây lắp điện gió ngoài khơi quốc tế, khối lượng backlog hợp đồng và biên lợi nhuận các dự án EPCI.
 
+## L. Hỏi đáp & Giải mã Cơ chế thị trường (Nhập môn thực chiến)
 
+`sub` = `hoi-dap` · `loai` = **`Hỏi đáp`** hoặc **`Cơ chế`**.
+
+- **[ĐÃ VIẾT - Mạch 1137]** **Spread là gì?**: Bóc tách chi phí vô hình, cạm bẫy trượt giá (Slippage) và cơ chế Bid - Ask cho người mới.
+- **Ngày giao dịch không hưởng quyền (GDKHQ)**: Vì sao giá cổ phiếu bị điều chỉnh kỹ thuật giảm xuống tương ứng khi chia cổ tức tiền mặt hoặc cổ phiếu thưởng?
+- **Chu kỳ thanh toán T+2.5**: Cơ chế vận hành dòng tiền tại VSDC, vì sao bán thứ Sáu thì thứ Ba tiền mới về và chi phí cơ hội.
+- **Khớp lệnh định kỳ ATO và ATC**: Thuật toán xác định mức giá có khối lượng khớp lớn nhất và cách dòng tiền lớn tận dụng 15 phút quyết định.
+- **Bóc tách mọi chi phí thực tế khi giao dịch**: Phí môi giới, thuế TNCN 0,1%, phí lưu ký chứng khoán VSDC và lãi suất vay Margin.
+- **Cơ chế Call Margin và Force Sell**: Tỷ lệ an toàn (Rtt), cảnh báo ký quỹ và quy trình bán giải chấp của các công ty chứng khoán.
+- **Các loại lệnh thực chiến**: Khi nào nên dùng lệnh LO, MP, MTL, MOK và bẫy trượt giá ở các cổ phiếu thanh khoản thấp.
+- **Phái sinh VN30 và độ lệch Basis**: Hợp đồng tương lai vận hành thế nào, tỷ lệ ký quỹ ban đầu và rủi ro đòn bẩy cao.
