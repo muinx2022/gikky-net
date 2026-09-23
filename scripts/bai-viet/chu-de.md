@@ -50,7 +50,7 @@ trường** doanh nghiệp sống trong đó?* Doanh nghiệp ⇒ `chung-khoan`.
 ## C. Ngân hàng & Tài chính hệ thống
 
 - **[ĐÃ VIẾT - Mạch 1087]** **NIM** co lại: vì sao lãi suất huy động giảm mà biên vẫn mỏng.
-- **Nợ xấu và trích lập**: đọc thuyết minh thay vì đọc con số tiêu đề.
+- **[ĐÃ VIẾT - Mạch 1141]** **Nợ xấu và trích lập**: đọc thuyết minh thay vì đọc con số tiêu đề.
 - **Tín dụng bất động sản** — tỷ trọng thật trong danh mục các ngân hàng.
 - **[ĐÃ VIẾT - Mạch 1106]** **Trái phiếu doanh nghiệp**: ai đang cầm, và đáo hạn dồn vào lúc nào.
 - **[ĐÃ VIẾT - Mạch 1047]** **CASA** — vì sao chỉ số này quyết định ngân hàng nào sống khoẻ khi lãi suất đổi chiều.
