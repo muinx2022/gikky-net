@@ -124,6 +124,7 @@ export default function TrangChiTietMach() {
           </Link>
           <span>{mach.entry_count} mốc</span>
           <span>{mach.comment_count} bình luận</span>
+          <span data-testid="luot-xem-mach">{(mach.view_count ?? 0).toLocaleString("vi-VN")} lượt xem</span>
         </p>
       </div>
 

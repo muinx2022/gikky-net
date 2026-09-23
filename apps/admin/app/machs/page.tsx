@@ -410,7 +410,7 @@ function BangMach() {
         ) : ds.items.length === 0 ? (
           <KhoiRong co_bo_loc={co_bo_loc} chua_co="Chưa có bài viết nào." />
         ) : (
-          <KhungBang rong={false} className="min-w-[44rem]">
+          <KhungBang rong={false} className="min-w-[48rem]">
             <HangTieuDe
               cot={[
                 <ONhoChon
@@ -427,6 +427,7 @@ function BangMach() {
                 "Chuyên mục",
                 "Tác giả",
                 "Chỉ số",
+                "Lượt xem",
                 "Phát hành",
               ]}
             />
@@ -504,6 +505,14 @@ function BangMach() {
                         điểm
                       </span>
                     </div>
+                  </td>
+                  <td
+                    className="mono px-3 py-2.5 text-xs whitespace-nowrap text-muc-mo"
+                    data-testid={`luot-xem-mach-${m.id}`}
+                  >
+                    <span className="font-medium text-chu">
+                      {(m.view_count ?? 0).toLocaleString("vi-VN")}
+                    </span>
                   </td>
                   <td className="relative mono px-3 py-2.5 text-xs whitespace-nowrap text-muc-mo text-right">
                     <span className="hidden md:inline transition-opacity group-hover:opacity-0">

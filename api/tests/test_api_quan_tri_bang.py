@@ -394,3 +394,15 @@ def test_so_lieu_bang_dieu_khien_khop_bang_danh_sach(canh):
 
     assert tt == {"bi_an": 2, "bi_khoa": 1, "dong": 1, "mo": 1}
     assert sum(tt.values()) == Mach.objects.count() == 5
+
+
+def test_bang_mach_co_view_count(canh):
+    """Bảng bài viết quản trị phải hiển thị số lượt xem của bài."""
+    m = _mach(canh, "Mạch có view")
+    Mach.objects.filter(pk=m.pk).update(view_count=88)
+
+    items = canh["mod"].get("/api/admin/machs").json()["items"]
+    theo_title = {x["title"]: x for x in items}
+    assert "Mạch có view" in theo_title
+    assert theo_title["Mạch có view"]["view_count"] == 88
+

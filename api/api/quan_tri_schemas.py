@@ -375,6 +375,7 @@ class MachQuanTriOut(Schema):
     last_activity_at: datetime
     entry_count: int
     comment_count: int
+    view_count: int = 0
     da_bi_an: bool
     da_khoa: bool
     duong_dan_cong_khai: str
@@ -787,6 +788,7 @@ class MachDongOut(Schema):
     entry_count: int
     comment_count: int
     diem: int
+    view_count: int = 0
     da_bi_an: bool
     da_khoa: bool
     duong_dan_cong_khai: str

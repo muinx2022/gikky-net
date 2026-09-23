@@ -993,6 +993,10 @@ export type MachDongOut = {
      * Title
      */
     title: string;
+    /**
+     * View Count
+     */
+    view_count?: number;
 };
 
 /**
@@ -1128,6 +1132,10 @@ export type MachQuanTriOut = {
      * Title
      */
     title: string;
+    /**
+     * View Count
+     */
+    view_count?: number;
 };
 
 /**

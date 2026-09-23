@@ -8,174 +8,155 @@ const SCRATCH_DIR = path.resolve(__dirname);
 const SLIDES_DIR = path.join(SCRATCH_DIR, "slides");
 if (!fs.existsSync(SLIDES_DIR)) fs.mkdirSync(SLIDES_DIR, { recursive: true });
 
-// 1. YouTube 16:9 Slides Data
+// 1. YouTube 16:9 Slides
 const YT_SLIDES = [
   {
     id: "yt_slide_1",
-    badge: "BẪY TÂM LÝ KINH ĐIỂN",
-    badgeColor: "#ef4444",
-    title: "BẮT ĐÁY FIBONACCI 61.8%",
-    titleSub: "TỶ LỆ VÀNG HAY BẪY DAO RƠI?",
-    desc: "Vì sao 90% trader tin tưởng tuyệt đối vào Fibo 61.8% lại phải trả giá bằng việc bắt trúng lưỡi dao đang rơi?",
+    badge: "NGHỊCH LÝ GIÁ VÀNG",
+    badgeColor: "#fbbf24",
+    title: "CÙNG 37.5G VÀNG 24K",
+    titleSub: "SAO TRONG NƯỚC ĐẮT HƠN 20 TRIỆU?",
+    desc: "Dù đúc ở London, New York hay dập tại Hà Nội, vàng đều là 99.99% Au. Nhưng tại sao vàng miếng SJC lại có lúc đắt hơn tới 25% giá thế giới?",
     rightHtml: `
       <div class="stat-dual">
         <div class="stat-col win">
-          <div class="stat-num">1.0950</div>
-          <div class="stat-txt">ĐỈNH SÓNG TĂNG (+250 PIPS)</div>
-          <div class="stat-money text-emerald">Đà tăng hưng phấn cực độ</div>
+          <div class="stat-num text-cyan">~85 TRĐ</div>
+          <div class="stat-txt">GIÁ VÀNG QUỐC TẾ (QUY ĐỔI)</div>
+          <div class="stat-money text-cyan">London / New York ($4,350/oz)</div>
         </div>
         <div class="stat-col loss">
-          <div class="stat-num">1.0800</div>
-          <div class="stat-txt">FIBONACCI 61.8% (GOLDEN POCKET)</div>
-          <div class="stat-money text-rose">Đám đông ồ ạt nhảy vào bắt đáy!</div>
+          <div class="stat-num text-gold">~105 TRĐ</div>
+          <div class="stat-txt">GIÁ VÀNG MIẾNG SJC NỘI ĐỊA</div>
+          <div class="stat-money text-rose">Chênh lệch: +20 Triệu / lượng!</div>
         </div>
       </div>
       <div class="chart-panel">
-        <div class="chart-head">MÔ PHỎNG HÀNH VI GIÁ: THỦNG MỐC VÀNG</div>
-        <svg viewBox="0 0 620 220" class="chart-svg">
-          <!-- Background grid lines -->
-          <line x1="20" y1="40" x2="600" y2="40" stroke="#1f293d" stroke-dasharray="4"/>
-          <text x="540" y="35" fill="#64748b" font-size="13">Đỉnh 1.0950 (0.0%)</text>
+        <div class="chart-head">KHOẢNG CÁCH CHÊNH LỆCH KỶ LỤC (PREMIUM THỂ CHẾ)</div>
+        <svg viewBox="0 0 620 180" class="chart-svg">
+          <!-- World Gold Line -->
+          <path d="M 30,130 Q 180,120 320,105 T 580,95" fill="none" stroke="#38bdf8" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="580" cy="95" r="7" fill="#38bdf8"/>
+          <text x="500" y="80" fill="#38bdf8" font-size="14" font-weight="700">Vàng Thế Giới</text>
           
-          <line x1="20" y1="110" x2="600" y2="110" stroke="#f59e0b" stroke-dasharray="4" stroke-width="2"/>
-          <text x="500" y="105" fill="#fbbf24" font-size="14" font-weight="700">Fibo 61.8% (1.0796)</text>
+          <!-- SJC Domestic Line -->
+          <path d="M 30,100 Q 180,75 320,55 T 580,30" fill="none" stroke="#fbbf24" stroke-width="6" stroke-linecap="round"/>
+          <circle cx="580" cy="30" r="8" fill="#fbbf24"/>
+          <text x="490" y="20" fill="#fbbf24" font-size="16" font-weight="800">Vàng Miếng SJC</text>
           
-          <line x1="20" y1="155" x2="600" y2="155" stroke="#ef4444" stroke-dasharray="4" stroke-width="2"/>
-          <text x="520" y="150" fill="#f87171" font-size="13">Stop Loss 1.0750 (-1R)</text>
-          
-          <!-- Price Path -->
-          <!-- Wave UP -->
-          <path d="M 40,190 L 140,40" fill="none" stroke="#10b981" stroke-width="5" stroke-linecap="round"/>
-          <circle cx="140" cy="40" r="6" fill="#10b981"/>
-          
-          <!-- Pullback Down to 61.8% -->
-          <path d="M 140,40 L 260,110" fill="none" stroke="#f59e0b" stroke-width="4" stroke-linecap="round"/>
-          <circle cx="260" cy="110" r="7" fill="#fbbf24"/>
-          <text x="260" y="90" fill="#fbbf24" font-size="15" font-weight="800" text-anchor="middle">Chạm Fibo 61.8%</text>
-          <text x="260" y="132" fill="#38bdf8" font-size="14" font-weight="700" text-anchor="middle">Rút chân ảo -> BUY 1.0800</text>
-          
-          <!-- Crash Through -->
-          <path d="M 260,110 L 380,155 L 500,210" fill="none" stroke="#ef4444" stroke-width="6" stroke-linecap="round"/>
-          <circle cx="380" cy="155" r="8" fill="#ef4444"/>
-          <text x="385" y="175" fill="#ef4444" font-size="15" font-weight="800">Cắn SL 1.0750 (-1.0R)</text>
-          
-          <circle cx="500" cy="210" r="9" fill="#dc2626"/>
-          <text x="470" y="200" fill="#fca5a5" font-size="15" font-weight="900">Rơi tự do 1.0640 (-3.2R)</text>
+          <!-- Gap Bracket -->
+          <line x1="420" y1="42" x2="420" y2="100" stroke="#ef4444" stroke-width="3" stroke-dasharray="4"/>
+          <text x="430" y="75" fill="#f87171" font-size="16" font-weight="900">CHÊNH LỆCH 15 - 20 TRIỆU</text>
         </svg>
       </div>
       <div class="alert-box">
-        ⚠️ <b>NGHỊCH LÝ:</b> Fibonacci không phải tường thành bê tông. Bắt đáy không nến xác nhận = <b>ĐƯA TAY HỨNG DAO RƠI!</b>
+        💡 <b>SỰ THẬT:</b> Chi phí gia công dập một lượng vàng chỉ tốn vài chục nghìn đồng. Khoảng cách này đến từ <b>CẤU TRÚC THỂ CHẾ VÀ CHÍNH SÁCH NGOẠI HỐI!</b>
       </div>
     `
   },
   {
     id: "yt_slide_2",
-    badge: "BẢN CHẤT KỸ THUẬT & DÒNG TIỀN",
+    badge: "LỊCH SỬ NGHỊ ĐỊNH 24/2012",
     badgeColor: "#f59e0b",
-    title: "ĐIỀU CHỈNH TỰ NHIÊN",
-    titleSub: "HAY CÚ XẢ CỦA SMART MONEY?",
-    desc: "Mổ xẻ sự khác biệt sinh tử giữa nhịp Retracement lành mạnh và đợt xả hàng quy mô lớn.",
+    title: "CHIẾC BÌNH KÍN NGHỊ ĐỊNH 24",
+    titleSub: "CHỐNG VÀNG HÓA NHƯNG ĐÓNG BĂNG NGUỒN CUNG",
+    desc: "2008-2011: Nạn vàng hóa đe dọa tỷ giá và lạm phát -> Nghị định 24 ra đời cắt đứt tín dụng vàng và độc quyền vàng miếng SJC.",
     rightHtml: `
       <div class="cards-side-by-side">
         <div class="c-card good">
-          <div class="c-icon">🌱</div>
-          <div class="c-title">RETRACEMENT TỰ NHIÊN</div>
-          <div class="c-amount text-emerald">THANH KHOẢN CẠN KIỆT</div>
-          <div class="c-desc">Thân nến nhỏ dần, biên độ hẹp, phe bán cạn lực khi chạm vùng cản. Xuất hiện nến từ chối giá (Pin Bar).</div>
-          <div class="c-tag tag-green">AN TOÀN ĐỂ CHỜ MUA</div>
+          <div class="c-icon">🧊</div>
+          <div class="c-title">NGUỒN CUNG ĐÓNG BĂNG</div>
+          <div class="c-amount text-rose">0 LƯỢNG MỚI (14 NĂM)</div>
+          <div class="c-desc">Kể từ 2012, NHNN hầu như không cấp phép nhập vàng nguyên liệu để dập mới SJC. Vàng lưu thông chỉ luân chuyển lòng vòng.</div>
+          <div class="c-tag tag-red">CUNG CỐ ĐỊNH TUYỆT ĐỐI</div>
         </div>
         <div class="c-card bad">
-          <div class="c-icon">🩸</div>
-          <div class="c-title">CÚ XẢ SMART MONEY</div>
-          <div class="c-amount text-rose">MARUBOZU KHỔNG LỒ</div>
-          <div class="c-desc">Nến đỏ đặc dài liên tiếp, Volume đột biến, đâm xuyên qua Fibo 61.8% không có lực cản. Đám đông thành thanh khoản!</div>
-          <div class="c-tag tag-red">BẪY DAO RƠI CHÍ MẠNG</div>
+          <div class="c-icon">📈</div>
+          <div class="c-title">NHU CẦU TÍCH LŨY VÀNG</div>
+          <div class="c-amount text-gold">TĂNG GẤP 3 LẦN</div>
+          <div class="c-desc">Quy mô GDP tăng gấp 3, tầng lớp trung lưu nở rộ. Văn hóa tích trữ vàng hầm trú ẩn phòng ngừa rủi ro ăn sâu trong dân số.</div>
+          <div class="c-tag tag-green">CẦU TĂNG LIÊN TỤC</div>
         </div>
       </div>
       <div class="theory-box">
-        💡 <b>Bẫy Tâm Lý (Confirmation Bias):</b><br/>
-        Khi đã kỳ vọng giá tăng, não bộ trader chỉ chăm chú tìm tín hiệu tích cực mà phớt lờ hoàn toàn các cây nến đỏ xả hàng cực mạnh của phe bán!
+        ⚖️ <b>Quy luật Cung - Cầu trong bình kín:</b><br/>
+        Khi một tài sản có <b>cung cố định</b> đặt cạnh một <b>lực cầu tăng gấp ba</b> mà không có cơ chế bình thông nhau với thế giới, giá nội địa tất yếu bị kéo giãn cực đại!
       </div>
     `
   },
   {
     id: "yt_slide_3",
-    badge: "KỶ LUẬT QUẢN TRỊ RỦI RO",
+    badge: "BÀI TOÁN NGOẠI HỐI QUỐC GIA",
     badgeColor: "#06b6d4",
-    title: "KỶ LUẬT CẮT LỖ -1.0R",
-    titleSub: "BẢO VỆ 99% TÀI SẢN TRƯỚC SỤP ĐỔ",
-    desc: "Tại sao chấp nhận thua lỗ nhỏ là phẩm chất số 1 phân biệt Trader chuyên nghiệp với kẻ nghiệp dư?",
+    title: "VÌ SAO KHÔNG NHẬP VÀNG?",
+    titleSub: "TẤM KHIÊN DỰ TRỮ USD & AN NINH NĂNG LƯỢNG",
+    desc: "Tại sao Ngân hàng Nhà nước không mở toang quota nhập khẩu vàng định kỳ để kéo giá trong nước về sát thế giới?",
     rightHtml: `
       <div class="table-card">
-        <div class="t-head">SO SÁNH 2 LỰA CHỌN KHI GIÁ ĐÂM THỦNG 1.0750</div>
-        
-        <div class="t-row win">
-          <div class="t-left">
-            <span class="t-badge bg-cyan text-black">LỰA CHỌN A · CẮT LỖ -1.0R</span>
-            <span class="t-calc">Đóng lệnh kỷ luật tại 1.0750 (-50 pips)</span>
-          </div>
-          <div class="t-right text-emerald">MẤT 1% · BẢO VỆ 99% VỐN</div>
-        </div>
-        
+        <div class="t-head">BÀI TOÁN TIÊU TỐN NGOẠI TỆ (USD TIỀN MẶT) ĐỂ NHẬP VÀNG</div>
         <div class="t-row loss">
           <div class="t-left">
-            <span class="t-badge bg-rose text-white">LỰA CHỌN B · NỚI SL & GỒNG LỖ</span>
-            <span class="t-calc">Bình quân giá, gồng về đáy cũ 1.0640</span>
+            <span class="t-badge bg-rose text-white">1 TẤN VÀNG NGUYÊN LIỆU</span>
+            <span class="t-calc">Ở mức giá thế giới ~$4,350/oz</span>
           </div>
-          <div class="t-right text-rose">LỖ NẶNG -3.2R (-160 PIPS)</div>
+          <div class="t-right text-rose">TIÊU TỐN 140 TRIỆU USD</div>
         </div>
-        
+        <div class="t-row win">
+          <div class="t-left">
+            <span class="t-badge bg-cyan text-black">MỤC ĐÍCH SỐNG CÒN CỦA DỰ TRỮ USD</span>
+            <span class="t-calc">Nhập khẩu xăng dầu, máy móc, linh kiện & giữ giá VND</span>
+          </div>
+          <div class="t-right text-emerald">AN NINH NỀN KINH TẾ</div>
+        </div>
         <div class="t-divider"></div>
-        
         <div class="t-total">
-          <div class="tot-label">KẾT LUẬN QUẢN TRỊ VỐN:</div>
-          <div class="tot-val text-cyan">CẮT LỖ LÀ CHI PHÍ BẢO HIỂM RẺ NHẤT</div>
+          <div class="tot-label">ĐÁNH ĐỔI VĨ MÔ:</div>
+          <div class="tot-val text-cyan">BẢO VỆ TỶ GIÁ VND > HẠ GIÁ VÀNG TRONG KÉT</div>
         </div>
       </div>
       <div class="key-point">
-        🎯 <b>Tư duy xác suất:</b> Trong trading, một deal thua -1R là hoàn toàn bình thường. Kỷ luật cắt lỗ giúp tài khoản sống sót nguyên vẹn để đón các deal thắng +2.5R tiếp theo!
+        🛡️ <b>Tầm nhìn chiến lược:</b> Vàng nằm im trong két không tạo ra việc làm, không sinh ra GDP. Dành hàng tỷ USD nhập vàng sẽ làm suy yếu tấm khiên dự trữ ngoại hối của quốc gia!
       </div>
     `
   },
   {
     id: "yt_slide_4",
-    badge: "3 NGUYÊN TẮC THÉP THỰC CHIẾN",
-    badgeColor: "#10b981",
-    title: "BỘ QUY TẮC BẤT DI BẤT DỊCH",
-    titleSub: "KHÔNG BAO GIỜ BẮT DAO RƠI",
-    desc: "Khóa chặt hành vi bằng nhật ký giao dịch trước khi vào lệnh trên gikky.net",
+    badge: "CẢNH BÁO RỦI RO ĐẦU TƯ",
+    badgeColor: "#ef4444",
+    title: "RỦI RO ĐU ĐỈNH THỂ CHẾ",
+    titleSub: "KHOẢN CHÊNH LỆCH CÓ THỂ BỐC HƠI BẤT CỨ LÚC NÀO",
+    desc: "Mức chênh 15-20 triệu/lượng thực chất là một khoản Phí Bảo Hiểm Thể Chế (Regulatory Premium) đầy rủi ro bất đối xứng.",
     rightHtml: `
       <div class="mock-journal">
         <div class="j-top">
-          <span class="j-brand">GIKKY JOURNAL · 3 KHÔNG THỰC CHIẾN</span>
-          <span class="j-status">● QUY TẮC SỐNG CÒN</span>
+          <span class="j-brand">HỆ LỤY NGẦM & RỦI RO CHÍNH SÁCH</span>
+          <span class="j-status">● NGUY CƠ BỐC HƠI VỐN</span>
         </div>
         <div class="rule-list">
           <div class="r-item">
             <div class="r-num">1</div>
             <div class="r-content">
-              <b>KHÔNG MUA NẾU CHƯA CÓ NẾN XÁC NHẬN:</b><br/>
-              Fibo 61.8% chỉ là vùng quan sát. Bắt buộc phải có Pin Bar hoặc Bullish Engulfing đóng nến xác nhận đảo chiều mới vào lệnh!
+              <b>ÁP LỰC USD CHỢ ĐEN & BUÔN LẬU:</b><br/>
+              Chênh lệch 20% kích thích đầu cơ, các đường dây buôn lậu gom USD tiền mặt đẩy tỷ giá tự do tăng vọt, gây áp lực lên tỷ giá chính thức.
             </div>
           </div>
           <div class="r-item">
             <div class="r-num">2</div>
             <div class="r-content">
-              <b>TUYỆT ĐỐI KHÔNG NỚI STOP LOSS:</b><br/>
-              Vạch dừng lỗ là lằn ranh đỏ bảo vệ mạng sống. Khi giá đã chạm SL, nhận định ban đầu đã sai — rời cuộc chơi ngay!
+              <b>KỊCH BẢN SỬA ĐỔI NGHỊ ĐỊNH 24:</b><br/>
+              Nếu nhà nước xóa bỏ độc quyền SJC, cấp phép thêm thương hiệu chuẩn hoặc lập sàn vàng điện tử — lớp thặng dư 20 triệu sẽ bốc hơi nhanh chóng!
             </div>
           </div>
           <div class="r-item">
             <div class="r-num">3</div>
             <div class="r-content">
-              <b>CẤM BÌNH QUÂN GIÁ XUỐNG (AVERAGING DOWN):</b><br/>
-              Nhồi thêm lệnh vào một vị thế đang lỗ là con đường ngắn nhất dẫn tới cháy tài khoản hàng loạt.
+              <b>BẪY ĐU ĐỈNH KHI VÀNG THẾ GIỚI ĐI NGANG:</b><br/>
+              Dù giá thế giới không giảm, người mua vàng SJC ở vùng chênh lệch đỉnh vẫn có thể chịu khoản lỗ nặng khi thị trường thu hẹp khoảng cách.
             </div>
           </div>
         </div>
       </div>
       <div class="rule-box">
-        ✍️ <b>Kỷ luật thép:</b> Thà mua chậm hơn 10 pips có xác nhận, còn hơn đoán đúng đáy trên lý thuyết để rồi hứng trọn cú sập!
+        ⚠️ <b>Lời khuyên chuyên gia:</b> Mua vàng tích sản ở mức premium 20% là bạn đang đặt cược vào chính sách chứ không còn là đặt cược vào giá trị của vàng!
       </div>
     `
   },
@@ -183,9 +164,9 @@ const YT_SLIDES = [
     id: "yt_slide_5",
     badge: "NỀN TẢNG GIKKY.NET",
     badgeColor: "#ffffff",
-    title: "MINH BẠCH THỰC CHIẾN",
-    titleSub: "VÀ LỢI THẾ DÀI HẠN",
-    desc: "Nhật ký giao dịch thời gian thực & Phân tích chuyên sâu dành cho Trader Việt",
+    title: "MINH BẠCH VĨ MÔ",
+    titleSub: "NÂNG TẦM QUẢN TRỊ RỦI RO",
+    desc: "Bóc tách dòng tiền, giải mã chính sách và bài học đầu tư thực chiến dành riêng cho người Việt",
     rightHtml: `
       <div class="outro-card">
         <div class="outro-logo-row">
@@ -194,160 +175,147 @@ const YT_SLIDES = [
           </svg>
           <div class="outro-brand-text">
             <div class="ob-name">gikky.net</div>
-            <div class="ob-tag">NHẬT KÝ THỰC CHIẾN · THỊ TRƯỜNG · QUẢN TRỊ VỐN</div>
+            <div class="ob-tag">PHÂN TÍCH VĨ MÔ · THỊ TRƯỜNG · QUẢN TRỊ VỐN</div>
           </div>
         </div>
-        
         <div class="outro-features">
+          <div class="of-box">
+            <div class="of-icon">🏛️</div>
+            <div class="of-t">GIẢI MÃ CHÍNH SÁCH</div>
+            <div class="of-d">Hiểu rõ cơ chế lãi suất, tỷ giá OMO và vàng vĩ mô</div>
+          </div>
           <div class="of-box">
             <div class="of-icon">📊</div>
             <div class="of-t">THEO DÕI THỰC CHIẾN</div>
-            <div class="of-d">Mạch demo lệnh chi tiết: Vào lệnh, Quản trị, Đóng sổ</div>
+            <div class="of-d">Mạch lệnh demo thực tế: Vào lệnh, Quản trị, Đóng sổ</div>
           </div>
           <div class="of-box">
-            <div class="of-icon">🛡️</div>
-            <div class="of-t">QUẢN TRỊ RỦI RO</div>
-            <div class="of-d">Chuẩn hóa tỷ lệ R:R, Expected Value và kiểm soát tâm lý</div>
-          </div>
-          <div class="of-box">
-            <div class="of-icon">⚡</div>
-            <div class="of-t">CẬP NHẬT ĐỊNH KỲ</div>
-            <div class="of-d">Bản tin vĩ mô, phân tích ngành và bài học tâm lý mỗi ngày</div>
+            <div class="of-icon">🧠</div>
+            <div class="of-t">TÂM LÝ ĐẦU TƯ</div>
+            <div class="of-d">Kiểm soát bẫy cảm xúc và bảo vệ tài sản bền vững</div>
           </div>
         </div>
       </div>
       <div class="cta-banner">
-        🔔 <b>ĐĂNG KÝ KÊNH @gikky-net & BẬT THÔNG BÁO ĐỂ KHÔNG BỎ LỠ VIDEO MỚI!</b>
+        🔔 <b>ĐĂNG KÝ KÊNH @gikky-net & BẬT THÔNG BÁO ĐỂ ĐÓN XEM PHÂN TÍCH TIẾP THEO!</b>
       </div>
     `
   }
 ];
 
-// 2. TikTok / Shorts 9:16 Slides Data
+// 2. Shorts 9:16 Slides
 const SHORT_SLIDES = [
   {
     id: "short_slide_1",
-    badge: "BẪY GIAO DỊCH KINH ĐIỂN",
-    badgeColor: "#ef4444",
-    title: "BẮT ĐÁY FIBO 61.8%",
-    titleColor: "#f59e0b",
-    subtitle: "VÌ SAO 90% TRADER BỊ CHÁY VÍ?",
+    badge: "NGHỊCH LÝ GIÁ VÀNG",
+    badgeColor: "#fbbf24",
+    title: "CÙNG 37.5G VÀNG 24K",
+    titleColor: "#fbbf24",
+    subtitle: "SAO VIỆT NAM ĐẮT HƠN 20 TRIỆU?",
     subtitleColor: "#f87171",
     contentHtml: `
       <div class="s-stat-box">
         <div class="s-num-box win">
-          <div class="s-val">1.0950</div>
-          <div class="s-lbl">ĐỈNH SÓNG (+250 PIPS)</div>
+          <div class="s-val text-cyan">~85 TR</div>
+          <div class="s-lbl">VÀNG THẾ GIỚI (QUY ĐỔI)</div>
         </div>
         <div class="s-num-box loss">
-          <div class="s-val">1.0800</div>
-          <div class="s-lbl">FIBO 61.8% (GOLDEN POCKET)</div>
+          <div class="s-val text-gold">~105 TR</div>
+          <div class="s-lbl">VÀNG SJC TRONG NƯỚC</div>
         </div>
       </div>
-      
       <div class="s-chart-box">
         <div class="s-chart-head">
-          <span>HÀNH VI BẮT DAO RƠI</span>
-          <span class="s-badge-red">BẪY GIÁ</span>
+          <span>KHOẢNG CÁCH PHI LÝ</span>
+          <span class="s-badge-red">+20 TRIỆU/LƯỢNG</span>
         </div>
-        <svg viewBox="0 0 500 240" class="s-chart-svg">
-          <line x1="20" y1="40" x2="480" y2="40" stroke="#334155" stroke-dasharray="4"/>
-          <text x="380" y="35" fill="#64748b" font-size="14">Đỉnh 1.0950</text>
+        <svg viewBox="0 0 500 220" class="s-chart-svg">
+          <path d="M 20,150 Q 200,130 480,120" fill="none" stroke="#38bdf8" stroke-width="5" stroke-linecap="round"/>
+          <text x="400" y="105" fill="#38bdf8" font-size="16" font-weight="700">Vàng Thế Giới</text>
           
-          <line x1="20" y1="120" x2="480" y2="120" stroke="#f59e0b" stroke-dasharray="4" stroke-width="2"/>
-          <text x="350" y="115" fill="#fbbf24" font-size="15" font-weight="700">Fibo 61.8% (1.0800)</text>
+          <path d="M 20,90 Q 200,60 480,30" fill="none" stroke="#fbbf24" stroke-width="7" stroke-linecap="round"/>
+          <text x="380" y="20" fill="#fbbf24" font-size="18" font-weight="800">Vàng SJC</text>
           
-          <path d="M 40,200 L 130,40" fill="none" stroke="#10b981" stroke-width="5" stroke-linecap="round"/>
-          <path d="M 130,40 L 240,120" fill="none" stroke="#f59e0b" stroke-width="4" stroke-linecap="round"/>
-          <circle cx="240" cy="120" r="8" fill="#fbbf24"/>
-          <text x="240" y="100" fill="#fbbf24" font-size="16" font-weight="800" text-anchor="middle">BUY 1.0800</text>
-          
-          <!-- Crash -->
-          <path d="M 240,120 L 360,180 L 460,225" fill="none" stroke="#ef4444" stroke-width="6" stroke-linecap="round"/>
-          <circle cx="360" cy="180" r="9" fill="#ef4444"/>
-          <text x="370" y="175" fill="#ef4444" font-size="16" font-weight="800">SL: 1.0750 (-1R)</text>
-          <text x="400" y="215" fill="#f87171" font-size="16" font-weight="900">Rơi 1.0640 (-3.2R)</text>
+          <line x1="320" y1="45" x2="320" y2="125" stroke="#ef4444" stroke-width="4" stroke-dasharray="4"/>
+          <text x="335" y="90" fill="#ef4444" font-size="20" font-weight="900">+20% PREMIUM</text>
         </svg>
       </div>
-      
       <div class="s-quote">
-        "Đừng bao giờ vội vàng bắt đáy ở Fibo 61.8% nếu bạn chưa biết điều này!"
+        "Chi phí dập vàng chỉ vài chục nghìn. Vì sao người mua phải trả thặng dư tới 20 triệu?"
       </div>
     `
   },
   {
     id: "short_slide_2",
-    badge: "BẢN CHẤT DÒNG TIỀN",
+    badge: "CHIẾC BÌNH KÍN",
     badgeColor: "#f59e0b",
-    title: "CÚ XẢ SMART MONEY",
-    titleColor: "#ef4444",
-    subtitle: "KHI ĐÁM ĐÔNG THÀNH THANH KHOẢN",
-    subtitleColor: "#94a3b8",
+    title: "CUNG BỊ ĐÓNG BĂNG",
+    titleColor: "#f59e0b",
+    subtitle: "SUỐT 14 NĂM QUA CỦA NGHỊ ĐỊNH 24",
+    subtitleColor: "#cbd5e1",
     contentHtml: `
       <div class="s-card-stack">
-        <div class="s-card green">
-          <div class="sc-title">🌱 RETRACEMENT CHUẨN</div>
-          <div class="sc-body">Biên độ nến nhỏ, Volume cạn kiệt, phe bán suy yếu dần trước cản.</div>
-        </div>
         <div class="s-card red">
-          <div class="sc-title">🩸 CÚ XẢ DÒNG TIỀN LỚN</div>
-          <div class="sc-body">Nến Marubozu đỏ thân đặc, đâm thủng 61.8% cực kỳ dứt khoát với khối lượng lớn!</div>
+          <div class="sc-title">🧊 NGUỒN CUNG ĐÓNG BĂNG</div>
+          <div class="sc-body">Từ 2012, Nhà nước độc quyền SJC và hầu như không cấp phép nhập vàng nguyên liệu dập mới.</div>
+        </div>
+        <div class="s-card green">
+          <div class="sc-title">📈 NHU CẦU TĂNG GẤP 3</div>
+          <div class="sc-body">Kinh tế tăng trưởng, người dân tìm kiếm hầm trú ẩn an toàn đẩy sức cầu lên cao chót vót.</div>
         </div>
       </div>
       <div class="s-alert-box">
-        💡 <b>ẢO TƯỞNG:</b> Fibo không phải bức tường bê tông cốt thép! Mua không nến xác nhận = <b>BẮT DAO RƠI</b>.
+        ⚖️ <b>HỆ QUẢ:</b> Cung cố định + Cầu tăng vọt trong bình kín = Giá tất yếu bị thổi phồng kỷ lục!
       </div>
     `
   },
   {
     id: "short_slide_3",
-    badge: "KỶ LUẬT QUẢN TRỊ VỐN",
+    badge: "DỰ TRỮ NGOẠI HỐI",
     badgeColor: "#06b6d4",
-    title: "CẮT LỖ -1R CỨU MẠNG",
+    title: "TẠI SAO KHÔNG NHẬP VÀNG?",
     titleColor: "#38bdf8",
-    subtitle: "THAY VÌ ĂN CÚ ĐẤM -3.2R CHÁY VÍ",
-    subtitleColor: "#f87171",
+    subtitle: "BẢO VỆ AN NINH NGOẠI HỐI QUỐC GIA",
+    subtitleColor: "#94a3b8",
     contentHtml: `
       <div class="s-versus-table">
-        <div class="sv-col win">
-          <div class="sv-badge text-cyan">KỶ LUẬT THÉP</div>
-          <div class="sv-price">SL: 1.0750</div>
-          <div class="sv-loss text-emerald">-1.0R (-50 pips)</div>
-          <div class="sv-res">BẢO VỆ 99% VỐN!</div>
-        </div>
         <div class="sv-col loss">
-          <div class="sv-badge text-rose">GỒNG LỖ HY VỌNG</div>
-          <div class="sv-price">ĐÁY: 1.0640</div>
-          <div class="sv-loss text-rose">-3.2R (-160 pips)</div>
-          <div class="sv-res">CHÁY SẠCH VÍ!</div>
+          <div class="sv-badge text-rose">NHẬP 1 TẤN VÀNG</div>
+          <div class="sv-loss text-rose">140 TRIỆU $</div>
+          <div class="sv-res">TIỀN MẶT USD BỐC HƠI</div>
+        </div>
+        <div class="sv-col win">
+          <div class="sv-badge text-cyan">DỰ TRỮ QUỐC GIA</div>
+          <div class="sv-loss text-emerald">XĂNG DẦU</div>
+          <div class="sv-res">GIỮ ỔN ĐỊNH TỶ GIÁ VND</div>
         </div>
       </div>
       <div class="s-quote">
-        "Thua 1R là chi phí kinh doanh. Gồng lỗ là tự sát tài chính!"
+        "Vàng trong két không sinh ra GDP. Dành USD nhập vàng sẽ làm suy yếu tấm khiên tiền tệ quốc gia!"
       </div>
     `
   },
   {
     id: "short_slide_4",
-    badge: "BỘ QUY TẮC THỰC CHIẾN",
-    badgeColor: "#10b981",
-    title: "3 NGUYÊN TẮC THÉP",
-    titleColor: "#10b981",
-    subtitle: "SỐNG SÓT QUA MỌI CƠN SÓNG",
-    subtitleColor: "#f1f5f9",
+    badge: "RỦI RO ĐU ĐỈNH",
+    badgeColor: "#ef4444",
+    title: "THẶNG DƯ THỂ CHẾ",
+    titleColor: "#ef4444",
+    subtitle: "CẢNH BÁO RỦI RO BỐC HƠI 20 TRIỆU",
+    subtitleColor: "#fca5a5",
     contentHtml: `
       <div class="s-rules-list">
         <div class="s-rule-item">
           <span class="sr-badge">1</span>
-          <span class="sr-txt"><b>LUÔN CHỜ NẾN XÁC NHẬN:</b> Pin Bar hoặc Bullish Engulfing đảo chiều.</span>
+          <span class="sr-txt"><b>ĐÂY LÀ PHÍ ĐỘC QUYỀN:</b> Bạn đang trả 20 triệu cho tính pháp lý thương hiệu SJC.</span>
         </div>
         <div class="s-rule-item">
           <span class="sr-badge">2</span>
-          <span class="sr-txt"><b>CẤM NỚI STOP LOSS:</b> Vị thế sai phải chấp nhận cắt bỏ ngay lập tức.</span>
+          <span class="sr-txt"><b>NẾU SỬA NGHỊ ĐỊNH 24:</b> Xóa độc quyền SJC thì lớp chênh lệch này sẽ bốc hơi rất nhanh!</span>
         </div>
         <div class="s-rule-item">
           <span class="sr-badge">3</span>
-          <span class="sr-txt"><b>CẤM BÌNH QUÂN GIÁ:</b> Không bao giờ nhồi thêm lệnh khi đang gánh lỗ.</span>
+          <span class="sr-txt"><b>BẪY ĐU ĐỈNH:</b> Giá thế giới đi ngang, bạn vẫn có thể chịu lỗ nặng vì khoảng cách thu hẹp.</span>
         </div>
       </div>
     `
@@ -356,9 +324,9 @@ const SHORT_SLIDES = [
     id: "short_slide_5",
     badge: "GIKKY.NET",
     badgeColor: "#ffffff",
-    title: "RÈN LUYỆN KỶ LUẬT",
+    title: "GÓC NHÌN VĨ MÔ",
     titleColor: "#ffffff",
-    subtitle: "NHẬT KÝ LỆNH THỰC CHIẾN MINH BẠCH",
+    subtitle: "BÓC TÁCH DÒNG TIỀN VÀ QUẢN TRỊ RỦI RO",
     subtitleColor: "#38bdf8",
     contentHtml: `
       <div class="s-outro-wrap">
@@ -366,14 +334,14 @@ const SHORT_SLIDES = [
           <path d="${SVG_PATH_D}" fill="#ffffff" />
         </svg>
         <div class="s-brand-title">gikky.net</div>
-        <div class="s-brand-desc">Khám phá chuỗi nhật ký lệnh thực chiến & quản trị rủi ro</div>
+        <div class="s-brand-desc">Đọc bài phân tích chuyên sâu cơ chế giá vàng & vĩ mô tiền tệ</div>
         <div class="s-cta-btn">KHÁM PHÁ NGAY LINK BIO ➔</div>
       </div>
     `
   }
 ];
 
-// 3. YouTube Thumbnail HTML Template
+// 3. YouTube Thumbnail HTML
 function getThumbnailHtml() {
   return `
 <!DOCTYPE html>
@@ -384,7 +352,7 @@ function getThumbnailHtml() {
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       width: 1280px; height: 720px;
-      background: radial-gradient(circle at 75% 25%, #182238 0%, #080a0f 85%);
+      background: radial-gradient(circle at 75% 25%, #231c0c 0%, #080a0f 85%);
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
       color: #ffffff;
       position: relative;
@@ -400,19 +368,19 @@ function getThumbnailHtml() {
     }
     .left-side {
       position: relative; z-index: 2;
-      width: 740px; height: 100%;
+      width: 760px; height: 100%;
       padding: 60px 50px;
       display: flex; flex-direction: column; justify-content: space-between;
     }
     .brand-tag {
       display: inline-flex; align-items: center; gap: 12px;
-      background: rgba(239, 68, 68, 0.15);
-      border: 1px solid rgba(239, 68, 68, 0.4);
+      background: rgba(251, 191, 36, 0.15);
+      border: 1px solid rgba(251, 191, 36, 0.4);
       padding: 8px 18px; border-radius: 999px;
       width: fit-content;
     }
     .brand-tag svg { width: 22px; height: 22px; }
-    .brand-tag span { font-size: 16px; font-weight: 800; letter-spacing: 2px; color: #ef4444; }
+    .brand-tag span { font-size: 16px; font-weight: 800; letter-spacing: 2px; color: #fbbf24; }
     
     .title-group { margin-top: 15px; }
     .title-h1 {
@@ -420,9 +388,9 @@ function getThumbnailHtml() {
       letter-spacing: -1px; color: #ffffff; text-transform: uppercase;
       text-shadow: 0 4px 20px rgba(0,0,0,0.8);
     }
-    .title-hl {
-      color: #f59e0b;
-      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    .title-gold {
+      color: #fbbf24;
+      background: linear-gradient(135deg, #fef08a, #fbbf24, #d97706);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
     .title-red {
@@ -442,7 +410,7 @@ function getThumbnailHtml() {
       display: flex; align-items: center; gap: 20px;
       color: #94a3b8; font-size: 18px; font-weight: 700;
     }
-    .dot { width: 8px; height: 8px; background: #06b6d4; border-radius: 50%; }
+    .dot { width: 8px; height: 8px; background: #fbbf24; border-radius: 50%; }
 
     .right-side {
       position: relative; z-index: 2;
@@ -452,10 +420,10 @@ function getThumbnailHtml() {
     }
     .visual-card {
       width: 480px; height: 560px;
-      background: rgba(15, 23, 42, 0.75);
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(251, 191, 36, 0.3);
       border-radius: 24px;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.7);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.8);
       backdrop-filter: blur(16px);
       padding: 30px;
       display: flex; flex-direction: column; justify-content: space-between;
@@ -465,22 +433,30 @@ function getThumbnailHtml() {
       border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 16px;
     }
     .vc-label { font-size: 15px; font-weight: 800; letter-spacing: 1px; color: #94a3b8; }
-    .vc-tag { background: #ef4444; color: #ffffff; font-size: 13px; font-weight: 800; padding: 4px 10px; border-radius: 6px; }
+    .vc-tag { background: #fbbf24; color: #000; font-size: 13px; font-weight: 800; padding: 4px 10px; border-radius: 6px; }
     
     .vs-row { display: flex; gap: 15px; }
     .vs-box { flex: 1; padding: 18px 14px; border-radius: 14px; text-align: center; }
-    .vs-box.win { background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); }
-    .vs-box.loss { background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); }
+    .vs-box.world { background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); }
+    .vs-box.sjc { background: rgba(251, 191, 36, 0.12); border: 1px solid rgba(251, 191, 36, 0.3); }
     .vs-t { font-size: 13px; font-weight: 800; color: #94a3b8; margin-bottom: 6px; }
     .vs-v { font-size: 26px; font-weight: 900; }
-    .text-green { color: #10b981; }
-    .text-red { color: #ef4444; }
+    .text-blue { color: #38bdf8; }
+    .text-gold { color: #fbbf24; }
     
-    .chart-thumb { width: 100%; height: 210px; }
+    .gold-bar-box {
+      background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(217, 119, 6, 0.05));
+      border: 1px solid rgba(251, 191, 36, 0.4);
+      padding: 24px; border-radius: 16px; text-align: center;
+    }
+    .gb-icon { font-size: 48px; margin-bottom: 8px; }
+    .gb-txt { font-size: 18px; font-weight: 800; color: #ffffff; }
+    .gb-sub { font-size: 14px; color: #fbbf24; font-weight: 700; margin-top: 4px; }
+    
     .footer-stamp {
-      font-size: 15px; font-weight: 800; color: #38bdf8;
-      text-align: center; background: rgba(56, 189, 248, 0.1);
-      padding: 10px; border-radius: 10px; border: 1px solid rgba(56, 189, 248, 0.25);
+      font-size: 15px; font-weight: 800; color: #f87171;
+      text-align: center; background: rgba(239, 68, 68, 0.1);
+      padding: 10px; border-radius: 10px; border: 1px solid rgba(239, 68, 68, 0.25);
     }
   </style>
 </head>
@@ -489,65 +465,51 @@ function getThumbnailHtml() {
   
   <div class="left-side">
     <div class="brand-tag">
-      <svg viewBox="0 0 120 120"><path d="${SVG_PATH_D}" fill="#ef4444" /></svg>
-      <span>GIKKY THỰC CHIẾN · PHƯƠNG PHÁP</span>
+      <svg viewBox="0 0 120 120"><path d="${SVG_PATH_D}" fill="#fbbf24" /></svg>
+      <span>GIKKY VĨ MÔ & CHÍNH SÁCH TIỀN TỆ</span>
     </div>
     
     <div class="title-group">
-      <div class="title-h1">BẪY <span class="title-hl">FIBONACCI 61.8%</span></div>
-      <div class="title-h1">CÚ SẬP <span class="title-red">DAO RƠI</span></div>
-      <div class="subtitle-badge">CẮT LỖ -1R CỨU SỐNG 99% TÀI SẢN!</div>
+      <div class="title-h1">NGHỊCH LÝ <span class="title-gold">GIÁ VÀNG</span></div>
+      <div class="title-h1">CHÊNH LỆCH <span class="title-red">20 TRIỆU</span></div>
+      <div class="subtitle-badge">CƠ CHẾ TẠO RA VÀ AI CHỊU RỦI RO?</div>
     </div>
     
     <div class="bottom-bar">
       <span>gikky.net</span>
       <div class="dot"></div>
-      <span>Smart Money xả hàng</span>
+      <span>Nghị định 24</span>
       <div class="dot"></div>
-      <span>Quản trị vốn R:R</span>
+      <span>Dự trữ ngoại hối USD</span>
     </div>
   </div>
   
   <div class="right-side">
     <div class="visual-card">
       <div class="vc-head">
-        <span class="vc-label">MÔ PHỎNG LỆNH THỰC CHIẾN</span>
-        <span class="vc-tag">STOP LOSS -1R</span>
+        <span class="vc-label">BÓC TÁCH MẶT BẰNG GIÁ</span>
+        <span class="vc-tag">PREMIUM +20 TRIỆU</span>
       </div>
       
-      <svg viewBox="0 0 420 210" class="chart-thumb">
-        <line x1="10" y1="30" x2="410" y2="30" stroke="#334155" stroke-dasharray="4"/>
-        <text x="320" y="25" fill="#94a3b8" font-size="13">Đỉnh 1.0950</text>
-        
-        <line x1="10" y1="95" x2="410" y2="95" stroke="#f59e0b" stroke-dasharray="4" stroke-width="2"/>
-        <text x="290" y="90" fill="#fbbf24" font-size="14" font-weight="700">Fibo 61.8% (1.0800)</text>
-        
-        <line x1="10" y1="140" x2="410" y2="140" stroke="#ef4444" stroke-dasharray="4" stroke-width="2"/>
-        <text x="300" y="135" fill="#f87171" font-size="13">SL 1.0750 (-1R)</text>
-        
-        <path d="M 30,170 L 110,30" fill="none" stroke="#10b981" stroke-width="5" stroke-linecap="round"/>
-        <path d="M 110,30 L 210,95" fill="none" stroke="#f59e0b" stroke-width="4" stroke-linecap="round"/>
-        <circle cx="210" cy="95" r="7" fill="#fbbf24"/>
-        
-        <path d="M 210,95 L 300,140 L 390,195" fill="none" stroke="#ef4444" stroke-width="6" stroke-linecap="round"/>
-        <circle cx="300" cy="140" r="8" fill="#ef4444"/>
-        <circle cx="390" cy="195" r="9" fill="#dc2626"/>
-        <text x="280" y="190" fill="#fca5a5" font-size="14" font-weight="900">Sập 1.0640 (-3.2R)</text>
-      </svg>
+      <div class="gold-bar-box">
+        <div class="gb-icon">🪙</div>
+        <div class="gb-txt">CÙNG 37.5G VÀNG 24K (99.99% Au)</div>
+        <div class="gb-sub">TÀI SẢN ĐỒNG NHẤT TUYỆT ĐỐI TOÀN CẦU</div>
+      </div>
       
       <div class="vs-row">
-        <div class="vs-box win">
-          <div class="vs-t">CẮT LỖ KỶ LUẬT</div>
-          <div class="vs-v text-green">-1.0R</div>
+        <div class="vs-box world">
+          <div class="vs-t">VÀNG THẾ GIỚI</div>
+          <div class="vs-v text-blue">~85 TRĐ</div>
         </div>
-        <div class="vs-box loss">
-          <div class="vs-t">CỐ GỒNG LỖ</div>
-          <div class="vs-v text-red">-3.2R</div>
+        <div class="vs-box sjc">
+          <div class="vs-t">VÀNG SJC</div>
+          <div class="vs-v text-gold">~105 TRĐ</div>
         </div>
       </div>
       
       <div class="footer-stamp">
-        Mạch demo lệnh thời gian thực trên gikky.net
+        Bẫy rủi ro khi thay đổi thế độc quyền Nghị định 24
       </div>
     </div>
   </div>
@@ -556,7 +518,7 @@ function getThumbnailHtml() {
   `;
 }
 
-// 4. HTML Template for YouTube 16:9 Slides
+// 4. HTML Template for 16:9 Slides
 function getYoutubeSlideHtml(slide) {
   return `
 <!DOCTYPE html>
@@ -567,7 +529,7 @@ function getYoutubeSlideHtml(slide) {
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       width: 1920px; height: 1080px;
-      background: radial-gradient(circle at 75% 25%, #151d2f 0%, #080a0f 85%);
+      background: radial-gradient(circle at 75% 25%, #181c26 0%, #080a0f 85%);
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
       color: #ffffff;
       overflow: hidden;
@@ -591,18 +553,14 @@ function getYoutubeSlideHtml(slide) {
       border-bottom: 1px solid rgba(255,255,255,0.08);
       padding-bottom: 24px;
     }
-    .brand {
-      display: flex; align-items: center; gap: 16px;
-    }
+    .brand { display: flex; align-items: center; gap: 16px; }
     .brand svg { width: 42px; height: 42px; }
     .brand-title { font-size: 32px; font-weight: 800; letter-spacing: -0.5px; }
-    .brand-sub { font-size: 15px; font-weight: 700; color: #64748b; letter-spacing: 2px; }
+    .brand-sub { font-size: 15px; font-weight: 700; color: #fbbf24; letter-spacing: 2px; }
     .top-badge {
       font-size: 16px; font-weight: 800; letter-spacing: 2px;
-      padding: 10px 24px; border-radius: 999px;
-      border: 1px solid;
+      padding: 10px 24px; border-radius: 999px; border: 1px solid;
     }
-    
     main {
       flex: 1; display: flex; gap: 80px; align-items: center;
       padding: 30px 0;
@@ -612,12 +570,11 @@ function getYoutubeSlideHtml(slide) {
       font-size: 18px; font-weight: 800; letter-spacing: 2.5px; margin-bottom: 16px;
     }
     .slide-title {
-      font-size: 64px; font-weight: 900; line-height: 1.1;
-      letter-spacing: -1.5px; margin-bottom: 12px;
-      text-transform: uppercase;
+      font-size: 62px; font-weight: 900; line-height: 1.1;
+      letter-spacing: -1.5px; margin-bottom: 12px; text-transform: uppercase;
     }
     .slide-title-sub {
-      font-size: 40px; font-weight: 800; line-height: 1.2;
+      font-size: 38px; font-weight: 800; line-height: 1.2;
       color: #94a3b8; margin-bottom: 30px;
     }
     .slide-desc {
@@ -625,57 +582,50 @@ function getYoutubeSlideHtml(slide) {
       background: rgba(255,255,255,0.03);
       border-left: 4px solid; padding: 20px 24px; border-radius: 0 12px 12px 0;
     }
-
     .right-col {
       width: 820px;
-      background: rgba(15, 23, 42, 0.7);
+      background: rgba(15, 23, 42, 0.75);
       border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 28px;
-      padding: 36px;
+      border-radius: 28px; padding: 36px;
       box-shadow: 0 25px 60px rgba(0,0,0,0.6);
       backdrop-filter: blur(20px);
       display: flex; flex-direction: column; gap: 24px;
     }
-    
-    /* Utility inside right-col */
+
     .stat-dual { display: flex; gap: 20px; }
-    .stat-col {
-      flex: 1; padding: 22px; border-radius: 18px; text-align: center;
-    }
-    .stat-col.win { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); }
-    .stat-col.loss { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); }
+    .stat-col { flex: 1; padding: 22px; border-radius: 18px; text-align: center; }
+    .stat-col.win { background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); }
+    .stat-col.loss { background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); }
     .stat-num { font-size: 38px; font-weight: 900; }
     .stat-txt { font-size: 13px; font-weight: 800; letter-spacing: 1px; color: #94a3b8; margin-top: 4px; }
     .stat-money { font-size: 16px; font-weight: 700; margin-top: 8px; }
     .text-emerald { color: #10b981; }
     .text-rose { color: #ef4444; }
     .text-cyan { color: #38bdf8; }
+    .text-gold { color: #fbbf24; }
 
     .chart-panel {
-      background: rgba(8, 10, 15, 0.8);
-      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(8, 10, 15, 0.8); border: 1px solid rgba(255,255,255,0.08);
       border-radius: 18px; padding: 20px;
     }
     .chart-head { font-size: 14px; font-weight: 800; color: #94a3b8; letter-spacing: 1px; margin-bottom: 12px; }
-    .chart-svg { width: 100%; height: 210px; }
+    .chart-svg { width: 100%; height: 180px; }
     
     .alert-box {
-      background: rgba(239, 68, 68, 0.12);
-      border: 1px solid rgba(239, 68, 68, 0.3);
-      padding: 16px 20px; border-radius: 14px;
-      font-size: 17px; color: #fca5a5; line-height: 1.4;
+      background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3);
+      padding: 16px 20px; border-radius: 14px; font-size: 17px; color: #fef08a; line-height: 1.4;
     }
 
     .cards-side-by-side { display: flex; gap: 20px; }
     .c-card { flex: 1; padding: 24px; border-radius: 18px; display: flex; flex-direction: column; gap: 10px; }
-    .c-card.good { background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); }
-    .c-card.bad { background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); }
+    .c-card.good { background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); }
+    .c-card.bad { background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.25); }
     .c-icon { font-size: 32px; }
     .c-title { font-size: 16px; font-weight: 800; letter-spacing: 1px; }
     .c-amount { font-size: 22px; font-weight: 900; }
     .c-desc { font-size: 15px; color: #cbd5e1; line-height: 1.4; flex: 1; }
     .c-tag { font-size: 12px; font-weight: 800; padding: 6px 12px; border-radius: 6px; width: fit-content; }
-    .tag-green { background: #10b981; color: #000; }
+    .tag-green { background: #fbbf24; color: #000; }
     .tag-red { background: #ef4444; color: #fff; }
     
     .theory-box {
@@ -714,19 +664,19 @@ function getYoutubeSlideHtml(slide) {
     }
     .j-top { display: flex; justify-content: space-between; margin-bottom: 18px; font-size: 14px; font-weight: 800; }
     .j-brand { color: #38bdf8; letter-spacing: 1px; }
-    .j-status { color: #10b981; }
+    .j-status { color: #ef4444; }
     .rule-list { display: flex; flex-direction: column; gap: 14px; }
     .r-item { display: flex; gap: 16px; align-items: flex-start; }
     .r-num {
-      width: 32px; height: 32px; border-radius: 50%; background: #10b981; color: #000;
+      width: 32px; height: 32px; border-radius: 50%; background: #ef4444; color: #fff;
       display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 900;
       flex-shrink: 0;
     }
     .r-content { font-size: 16px; line-height: 1.4; color: #e2e8f0; }
     .r-content b { color: #ffffff; }
     .rule-box {
-      background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3);
-      padding: 16px 20px; border-radius: 14px; color: #a7f3d0; font-size: 16px; line-height: 1.4;
+      background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3);
+      padding: 16px 20px; border-radius: 14px; color: #fca5a5; font-size: 16px; line-height: 1.4;
     }
 
     .outro-card {
@@ -736,7 +686,7 @@ function getYoutubeSlideHtml(slide) {
     .outro-logo-row { display: flex; align-items: center; gap: 24px; }
     .outro-g-logo { width: 70px; height: 70px; }
     .ob-name { font-size: 36px; font-weight: 900; letter-spacing: -1px; }
-    .ob-tag { font-size: 14px; font-weight: 700; color: #38bdf8; letter-spacing: 2px; }
+    .ob-tag { font-size: 14px; font-weight: 700; color: #fbbf24; letter-spacing: 2px; }
     .outro-features { display: flex; gap: 16px; }
     .of-box {
       flex: 1; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
@@ -746,10 +696,10 @@ function getYoutubeSlideHtml(slide) {
     .of-t { font-size: 14px; font-weight: 800; color: #ffffff; margin-bottom: 4px; }
     .of-d { font-size: 12px; color: #94a3b8; line-height: 1.35; }
     .cta-banner {
-      background: linear-gradient(90deg, #2563eb, #38bdf8);
+      background: linear-gradient(90deg, #d97706, #fbbf24);
       padding: 18px 24px; border-radius: 16px; text-align: center;
-      font-size: 19px; font-weight: 800; color: #ffffff;
-      box-shadow: 0 10px 30px rgba(56, 189, 248, 0.4);
+      font-size: 19px; font-weight: 900; color: #000000;
+      box-shadow: 0 10px 30px rgba(251, 191, 36, 0.4);
     }
 
     footer {
@@ -758,7 +708,7 @@ function getYoutubeSlideHtml(slide) {
       font-size: 16px; font-weight: 700; color: #64748b;
     }
     .footer-left { display: flex; gap: 24px; }
-    .footer-right { color: #38bdf8; font-weight: 800; }
+    .footer-right { color: #fbbf24; font-weight: 800; }
   </style>
 </head>
 <body>
@@ -769,7 +719,7 @@ function getYoutubeSlideHtml(slide) {
         <svg viewBox="0 0 120 120"><path d="${SVG_PATH_D}" fill="#ffffff" /></svg>
         <div>
           <div class="brand-title">gikky.net</div>
-          <div class="brand-sub">NHẬT KÝ LỆNH THỰC CHIẾN · PHƯƠNG PHÁP GIAO DỊCH</div>
+          <div class="brand-sub">PHÂN TÍCH VĨ MÔ · CHÍNH SÁCH TIỀN TỆ & THỊ TRƯỜNG</div>
         </div>
       </div>
       <div class="top-badge" style="color: ${slide.badgeColor}; border-color: ${slide.badgeColor}; background: ${slide.badgeColor}15">
@@ -779,7 +729,7 @@ function getYoutubeSlideHtml(slide) {
 
     <main>
       <div class="left-col">
-        <div class="slide-badge-inline" style="color: ${slide.badgeColor}">[PHÂN TÍCH MẠCH DEMO]</div>
+        <div class="slide-badge-inline" style="color: ${slide.badgeColor}">[PHÂN TÍCH VĨ MÔ THỰC CHIẾN]</div>
         <div class="slide-title">${slide.title}</div>
         <div class="slide-title-sub">${slide.titleSub}</div>
         <div class="slide-desc" style="border-left-color: ${slide.badgeColor}">
@@ -794,11 +744,11 @@ function getYoutubeSlideHtml(slide) {
 
     <footer>
       <div class="footer-left">
-        <span>Gikky Trading Methodologies</span>
+        <span>Gikky Macroeconomics</span>
         <span>•</span>
-        <span>Quản trị vị thế & rủi ro R:R</span>
+        <span>Dự trữ ngoại hối USD & Tỷ giá</span>
         <span>•</span>
-        <span>Tâm lý giao dịch thực chiến</span>
+        <span>Quản trị rủi ro thể chế</span>
       </div>
       <div class="footer-right">
         @gikky-net
@@ -810,7 +760,7 @@ function getYoutubeSlideHtml(slide) {
   `;
 }
 
-// 5. HTML Template for TikTok / Shorts 9:16 Slides
+// 5. HTML Template for 9:16 Shorts
 function getShortSlideHtml(slide) {
   return `
 <!DOCTYPE html>
@@ -821,7 +771,7 @@ function getShortSlideHtml(slide) {
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       width: 1080px; height: 1920px;
-      background: radial-gradient(circle at 50% 20%, #151d30 0%, #06080c 80%);
+      background: radial-gradient(circle at 50% 20%, #1e1b12 0%, #06080c 80%);
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
       color: #ffffff;
       overflow: hidden;
@@ -840,16 +790,13 @@ function getShortSlideHtml(slide) {
       padding: 120px 70px 140px 70px;
       display: flex; flex-direction: column; justify-content: space-between;
     }
-    
     .s-top { display: flex; flex-direction: column; align-items: center; gap: 24px; text-align: center; }
     .s-brand { display: flex; align-items: center; gap: 14px; }
     .s-brand svg { width: 44px; height: 44px; }
     .s-brand span { font-size: 32px; font-weight: 900; letter-spacing: -0.5px; }
-    
     .s-badge {
       font-size: 18px; font-weight: 800; letter-spacing: 2px;
-      padding: 10px 24px; border-radius: 999px;
-      border: 1px solid;
+      padding: 10px 24px; border-radius: 999px; border: 1px solid;
     }
     .s-title {
       font-size: 68px; font-weight: 900; line-height: 1.1;
@@ -858,19 +805,20 @@ function getShortSlideHtml(slide) {
     .s-sub {
       font-size: 34px; font-weight: 800; line-height: 1.25; margin-top: 6px;
     }
-
     .s-mid {
       flex: 1; display: flex; flex-direction: column; justify-content: center;
       gap: 30px; margin: 30px 0;
     }
-
-    /* Styles inside s-mid */
     .s-stat-box { display: flex; gap: 20px; }
     .s-num-box { flex: 1; padding: 26px; border-radius: 20px; text-align: center; }
-    .s-num-box.win { background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); }
-    .s-num-box.loss { background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); }
+    .s-num-box.win { background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); }
+    .s-num-box.loss { background: rgba(251, 191, 36, 0.12); border: 1px solid rgba(251, 191, 36, 0.3); }
     .s-val { font-size: 50px; font-weight: 900; }
     .s-lbl { font-size: 16px; font-weight: 800; color: #94a3b8; margin-top: 8px; }
+    .text-cyan { color: #38bdf8; }
+    .text-gold { color: #fbbf24; }
+    .text-rose { color: #ef4444; }
+    .text-emerald { color: #10b981; }
 
     .s-chart-box {
       background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255,255,255,0.1);
@@ -878,17 +826,17 @@ function getShortSlideHtml(slide) {
     }
     .s-chart-head { display: flex; justify-content: space-between; font-size: 18px; font-weight: 800; color: #94a3b8; margin-bottom: 16px; }
     .s-badge-red { background: #ef4444; color: #fff; font-size: 14px; padding: 4px 12px; border-radius: 6px; }
-    .s-chart-svg { width: 100%; height: 260px; }
+    .s-chart-svg { width: 100%; height: 220px; }
 
     .s-quote {
-      background: rgba(255,255,255,0.04); border-left: 6px solid #f59e0b;
+      background: rgba(255,255,255,0.04); border-left: 6px solid #fbbf24;
       padding: 24px 28px; border-radius: 0 18px 18px 0;
-      font-size: 26px; font-weight: 700; line-height: 1.4; color: #f1f5f9;
+      font-size: 26px; font-weight: 700; line-height: 1.4; color: #fef08a;
     }
 
     .s-card-stack { display: flex; flex-direction: column; gap: 20px; }
     .s-card { padding: 30px; border-radius: 22px; }
-    .s-card.green { background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .s-card.green { background: rgba(251, 191, 36, 0.12); border: 1px solid rgba(251, 191, 36, 0.3); }
     .s-card.red { background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); }
     .sc-title { font-size: 26px; font-weight: 900; letter-spacing: 1px; margin-bottom: 12px; }
     .sc-body { font-size: 22px; line-height: 1.45; color: #e2e8f0; }
@@ -903,11 +851,8 @@ function getShortSlideHtml(slide) {
     .sv-col.loss { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.35); }
     .sv-badge { font-size: 16px; font-weight: 800; letter-spacing: 1px; }
     .sv-price { font-size: 26px; font-weight: 800; color: #94a3b8; }
-    .sv-loss { font-size: 42px; font-weight: 900; }
+    .sv-loss { font-size: 38px; font-weight: 900; }
     .sv-res { font-size: 18px; font-weight: 800; }
-    .text-cyan { color: #38bdf8; }
-    .text-emerald { color: #10b981; }
-    .text-rose { color: #ef4444; }
 
     .s-rules-list { display: flex; flex-direction: column; gap: 24px; }
     .s-rule-item {
@@ -916,7 +861,7 @@ function getShortSlideHtml(slide) {
       padding: 28px 24px; border-radius: 22px;
     }
     .sr-badge {
-      width: 52px; height: 52px; border-radius: 50%; background: #10b981; color: #000;
+      width: 52px; height: 52px; border-radius: 50%; background: #ef4444; color: #fff;
       display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 900;
       flex-shrink: 0;
     }
@@ -932,12 +877,11 @@ function getShortSlideHtml(slide) {
     .s-brand-title { font-size: 54px; font-weight: 900; letter-spacing: -1px; }
     .s-brand-desc { font-size: 24px; color: #94a3b8; max-width: 600px; line-height: 1.4; }
     .s-cta-btn {
-      background: linear-gradient(90deg, #2563eb, #38bdf8);
-      color: #ffffff; font-size: 24px; font-weight: 900;
+      background: linear-gradient(90deg, #d97706, #fbbf24);
+      color: #000000; font-size: 24px; font-weight: 900;
       padding: 20px 40px; border-radius: 999px;
-      letter-spacing: 1px; box-shadow: 0 10px 30px rgba(56, 189, 248, 0.4);
+      letter-spacing: 1px; box-shadow: 0 10px 30px rgba(251, 191, 36, 0.4);
     }
-
     .s-bottom {
       text-align: center; font-size: 22px; font-weight: 700; color: #64748b; letter-spacing: 1px;
     }
@@ -957,13 +901,11 @@ function getShortSlideHtml(slide) {
       <div class="s-title" style="color: ${slide.titleColor || '#ffffff'}">${slide.title}</div>
       <div class="s-sub" style="color: ${slide.subtitleColor || '#94a3b8'}">${slide.subtitle}</div>
     </div>
-
     <div class="s-mid">
       ${slide.contentHtml}
     </div>
-
     <div class="s-bottom">
-      Thực chiến thị trường · Phương pháp & Tâm lý
+      Phân tích Vĩ mô · Chính sách Tiền tệ & Quản trị Rủi ro
     </div>
   </div>
 </body>
@@ -971,13 +913,12 @@ function getShortSlideHtml(slide) {
   `;
 }
 
-// Main Execution
 async function main() {
   console.log("Khởi động Playwright Chromium headless...");
   const browser = await chromium.launch();
   const page = await browser.newPage();
 
-  // 1. Render YouTube 16:9 Slides (1920x1080)
+  // 1. Render YouTube 16:9 Slides
   console.log("\n=== 1. Render 5 Slides YouTube 16:9 ===");
   await page.setViewportSize({ width: 1920, height: 1080 });
   for (const s of YT_SLIDES) {
@@ -988,7 +929,7 @@ async function main() {
     console.log(` [YT] Rendered: ${s.id}.png`);
   }
 
-  // 2. Render TikTok / Shorts 9:16 Slides (1080x1920)
+  // 2. Render TikTok / Shorts 9:16 Slides
   console.log("\n=== 2. Render 5 Slides Shorts 9:16 ===");
   await page.setViewportSize({ width: 1080, height: 1920 });
   for (const s of SHORT_SLIDES) {
@@ -999,14 +940,14 @@ async function main() {
     console.log(` [Short] Rendered: ${s.id}.png`);
   }
 
-  // 3. Render YouTube Thumbnail (1280x720)
+  // 3. Render YouTube Thumbnail
   console.log("\n=== 3. Render YouTube Thumbnail 1280x720 ===");
   await page.setViewportSize({ width: 1280, height: 720 });
   const thumbHtml = getThumbnailHtml();
   await page.setContent(thumbHtml, { waitUntil: 'networkidle' });
-  const thumbOutPath = path.join(SLIDES_DIR, `youtube_thumbnail_fibo_trap.png`);
+  const thumbOutPath = path.join(SLIDES_DIR, `youtube_thumbnail_gia_vang_chenh_lech.png`);
   await page.screenshot({ path: thumbOutPath });
-  console.log(` [Thumb] Rendered: youtube_thumbnail_fibo_trap.png`);
+  console.log(` [Thumb] Rendered: youtube_thumbnail_gia_vang_chenh_lech.png`);
 
   await browser.close();
   console.log("\n==> Hoàn tất render toàn bộ ảnh đồ họa!");

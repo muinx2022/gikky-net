@@ -206,6 +206,7 @@ def xem_mach(request, mach_id: int):
         last_activity_at=mach.last_activity_at,
         entry_count=mach.entry_count,
         comment_count=mach.comment_count,
+        view_count=mach.view_count,
         da_bi_an=mach.hidden_at is not None,
         da_khoa=mach.locked_at is not None,
         duong_dan_cong_khai=duong_dan_mach(mach),

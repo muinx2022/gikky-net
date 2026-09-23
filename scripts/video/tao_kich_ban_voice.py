@@ -6,7 +6,6 @@ import edge_tts
 if sys.stdout.encoding != 'utf-8':
     sys.stdout.reconfigure(encoding='utf-8')
 
-
 SCRATCH_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMP_AUDIO_DIR = os.path.join(SCRATCH_DIR, "tam_audio")
 os.makedirs(TEMP_AUDIO_DIR, exist_ok=True)
@@ -19,47 +18,47 @@ PITCH = "-1Hz"
 YT_SEGMENTS = [
     {
         "id": "yt_scene_1",
-        "text": "Chào mừng anh em trader đã quay trở lại với Gikky. Trong phân tích kỹ thuật, Fibonacci 61.8% được mệnh danh là Tỷ Lệ Vàng của tự nhiên, nơi mà hàng triệu trader tin rằng giá nhất định sẽ bật tăng. Nhưng thực tế tàn khốc là: Đây cũng chính là cái bẫy chết người khiến vô số tài khoản bốc hơi chỉ sau một đêm. Tại sao một công cụ kinh điển lại biến thành cái bẫy dao rơi? Hãy cùng mổ xẻ ngay sau đây."
+        "text": "Chào mừng anh em đã quay trở lại với Gikky. Về mặt vật lý và hóa học, vàng là một trong những tài sản đồng nhất tuyệt đối nhất trên hành tinh. Dù được đúc thành thỏi tại Thụy Sĩ, London hay dập thành miếng tại Hà Nội, một lượng vàng 24K nguyên chất đều chứa đúng ba mươi bảy phẩy năm gram vàng tinh khiết chín mươi chín phẩy chín mươi chín phần trăm. Thế nhưng tại Việt Nam, có những thời điểm giá một lượng vàng miếng SJC đắt hơn giá vàng thế giới tới gần hai mươi triệu đồng, tương đương mức chênh lệch hơn hai mươi phần trăm. Tại sao lại có nghịch lý kỳ lạ này? Cơ chế nào tạo ra nó và ai là người chịu rủi ro sau cùng?"
     },
     {
         "id": "yt_scene_2",
-        "text": "Hãy nhìn vào nhịp giảm từ 1.0950 về 1.0800. Khi giá vừa chạm mốc 61.8%, một cây nến rút chân nhẹ xuất hiện, kích hoạt ngay tâm lý tham lam của các trader bắt đáy. Nhưng thay vì một nhịp điều chỉnh cạn kiệt thanh khoản, cây nến tiếp theo là một cây Marubozu giảm thân đặc với khối lượng đột biến. Dòng tiền thông minh không gom hàng ở đây, mà họ đang tận dụng sự ngây thơ của đám đông để xả hàng ồ ạt. Bắt đáy khi chưa có nến xác nhận thực chất chỉ là hành vi hứng một lưỡi dao đang rơi."
+        "text": "Để hiểu nguồn gốc của khoảng cách này, chúng ta phải quay ngược về giai đoạn 2008 đến 2011. Thời điểm đó, nền kinh tế đối mặt với nạn vàng hóa trầm trọng: Người dân dùng vàng mua bán bất động sản, các ngân hàng ồ ạt huy động vàng, và việc gom USD nhập vàng lậu khiến tỷ giá tiền đồng chao đảo, lạm phát vọt lên hai con số. Năm 2012, Nghị định 24 ra đời, mang lại thành công lịch sử: Nhà nước độc quyền sản xuất vàng miếng, chọn SJC làm thương hiệu quốc gia và cắt đứt hoàn toàn tín dụng vàng. Thế nhưng, nó cũng biến thị trường vàng miếng thành một chiếc bình kín. Hơn mười năm qua, nguồn cung vàng SJC gần như bị đóng băng, trong khi quy mô kinh tế và nhu cầu tích trữ của người dân đã tăng gấp ba lần."
     },
     {
         "id": "yt_scene_3",
-        "text": "Khi giá tiếp tục lao dốc và đâm thủng mốc cắt lỗ 1.0750, sự khác biệt giữa trader nghiệp dư và chuyên nghiệp bắt đầu lộ rõ. Kẻ nghiệp dư sẽ tiếc nuối, nới rộng Stop Loss, thậm chí nhồi thêm lệnh để bình quân giá xuống. Kết quả: Khi giá rơi tự do về 1.0640, họ phải gánh khoản lỗ lên tới âm 3.2R. Ngược lại, việc tuân thủ kỷ luật cắt lỗ dứt khoát tại âm 1.0R đã giúp chúng ta rời cuộc chơi với mức thiệt hại tối thiểu, bảo toàn nguyên vẹn 99% tài sản."
+        "text": "Nhiều người hỏi: Tại sao Ngân hàng Nhà nước không mở quota nhập khẩu vàng định kỳ để kéo giá trong nước về sát thế giới? Câu trả lời nằm ở bài toán sống còn: Dự trữ ngoại hối. Ở mức giá vàng thế giới hiện nay quanh bốn nghìn ba trăm đô một ounce, để nhập khẩu chỉ một tấn vàng, nền kinh tế phải tiêu tốn khoảng một trăm bốn mươi triệu đô la tiền mặt. Nếu mở toang nhập khẩu theo nhu cầu thị trường, hàng tỷ đô la dự trữ ngoại hối quý giá dùng để nhập khẩu xăng dầu, máy móc công nghiệp và bảo vệ tỷ giá tiền đồng sẽ bị chôn chặt thành những thỏi kim loại nằm bất động trong két sắt. Chấp nhận mức chênh lệch giá vàng chính là cái giá phải trả để bảo vệ tấm khiên ngoại hối quốc gia."
     },
     {
         "id": "yt_scene_4",
-        "text": "Để không bao giờ trở thành thanh khoản cho thị trường, hãy khắc ghi 3 nguyên tắc thép: Thứ nhất, Fibonacci chỉ là vùng hỗ trợ tiềm năng, không phải bức tường bê tông. Luôn đợi nến Price Action đảo chiều như Pin Bar hoặc Bullish Engulfing xác nhận trước khi vào lệnh. Thứ hai, tuyệt đối không bình quân giá một vị thế đang thua lỗ. Và thứ ba, ghi chép nhật ký lệnh trước khi nến chạy để loại bỏ hoàn toàn cảm xúc bốc đồng."
+        "text": "Tuy nhiên, khi chênh lệch bị kéo giãn quá mức, cơ chế thị trường sẽ tự tìm lối đi ngầm: Nạn xếp hàng đầu cơ bùng nổ, các đường dây buôn lậu vàng qua biên giới hoạt động rầm rộ, kéo theo nhu cầu gom USD chợ đen đẩy tỷ giá tự do tăng vọt. Đối với người mua, khoản chênh lệch mười lăm đến hai mươi triệu đồng mỗi lượng thực chất là một khoản phí bảo hiểm thể chế. Nếu trong tương lai, chính sách được sửa đổi theo hướng xóa bỏ thế độc quyền và cho phép nhiều thương hiệu tham gia dập vàng chuẩn, lớp thặng dư độc quyền này có thể bốc hơi rất nhanh. Người mua gom vàng ở vùng chênh lệch kỷ lục sẽ phải đối mặt với rủi ro đu đỉnh thể chế cực kỳ nặng nề."
     },
     {
         "id": "yt_scene_5",
-        "text": "Đó chính là cách chúng tôi rèn luyện kỷ luật và quản trị rủi ro mỗi ngày trên gikky chấm nét. Một nền tảng minh bạch ghi lại từng mốc vào lệnh, quản trị lệnh và đóng lệnh theo thời gian thực. Hãy truy cập ngay gikky chấm nét để khám phá các chuỗi lệnh thực chiến và nâng tầm tư duy giao dịch của bạn. Đừng quên bấm Đăng ký kênh và chuông thông báo để không bỏ lỡ những video tiếp theo nhé!"
+        "text": "Hiểu rõ bản chất các chính sách tiền tệ và cấu trúc thị trường là chìa khóa giúp bạn đưa ra những quyết định tài chính sáng suốt. Hãy truy cập ngay gikky chấm nét để đón đọc các bài viết phân tích vĩ mô, bóc tách dòng tiền và bài học quản trị rủi ro mỗi ngày. Đừng quên bấm Đăng ký kênh @gikky-net và bật chuông thông báo để không bỏ lỡ những video tiếp theo nhé!"
     }
 ]
 
-# TikTok / Shorts 9:16 Script (5 Scenes, fast & punchy)
+# TikTok / Shorts 9:16 Script (5 Scenes, punchy & fast)
 SHORT_SEGMENTS = [
     {
         "id": "short_scene_1",
-        "text": "Đừng bao giờ vội vàng bắt đáy ở Fibonacci 61.8% nếu bạn không muốn tài khoản bốc hơi trong tích tắc!"
+        "text": "Cùng là ba mươi bảy phẩy năm gram vàng 24K, tại sao vàng miếng ở Việt Nam có lúc đắt hơn thế giới tới hai mươi triệu đồng mỗi lượng?"
     },
     {
         "id": "short_scene_2",
-        "text": "Nhiều người lầm tưởng Fibo 61.8% là đáy cứng. Nhưng khi dòng tiền lớn xả hàng, một cây nến Marubozu đỏ quạch có thể đâm thủng vùng vàng này dễ như chém vào bùn."
+        "text": "Nguyên nhân cốt lõi là Nghị định 24 năm 2012 đã biến thị trường thành chiếc bình kín: Nhà nước độc quyền vàng SJC, nguồn cung bị đóng băng suốt mười bốn năm qua trong khi nhu cầu tích trữ tăng gấp ba lần."
     },
     {
         "id": "short_scene_3",
-        "text": "Sai lầm chết người là nới Stop Loss và bình quân giá xuống. Nhìn xem: Cắt lỗ kỷ luật chỉ mất đúng 1R, trong khi cố chấp gồng lệnh sẽ khiến bạn ăn trọn cú rơi âm 3.2R cháy sạch ví."
+        "text": "Sao không nhập khẩu vàng về bán? Vì nhập một tấn vàng tốn tới một trăm bốn mươi triệu đô tiền mặt! Nhà nước phải giữ dự trữ ngoại hối để nhập xăng dầu và giữ ổn định tỷ giá tiền đồng."
     },
     {
         "id": "short_scene_4",
-        "text": "Nhớ lấy: Luôn chờ nến đảo chiều xác nhận. Không có tín hiệu, tuyệt đối không thò tay bắt dao rơi!"
+        "text": "Khoản chênh lệch hai mươi triệu là phí độc quyền thể chế. Nếu chính sách sửa đổi bỏ độc quyền SJC, lớp thặng dư này sẽ bốc hơi trong tích tắc!"
     },
     {
         "id": "short_scene_5",
-        "text": "Theo dõi toàn bộ nhật ký lệnh thực chiến minh bạch tại gikky chấm nét. Link ở phần tiểu sử nhé!"
+        "text": "Đọc bài bóc tách chi tiết cơ chế giá vàng tại gikky chấm nét. Link ở phần tiểu sử nhé anh em!"
     }
 ]
 

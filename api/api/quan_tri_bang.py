@@ -162,6 +162,7 @@ def liet_ke_mach(
                 entry_count=m.entry_count,
                 comment_count=m.comment_count,
                 diem=m.diem_bai_goc,
+                view_count=m.view_count,
                 da_bi_an=m.hidden_at is not None,
                 da_khoa=m.locked_at is not None,
                 duong_dan_cong_khai=duong_dan_mach(m),

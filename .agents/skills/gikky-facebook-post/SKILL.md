@@ -3,7 +3,7 @@ name: gikky-facebook-post
 description: Đăng bài phân tích độc lập chuẩn phong cách Gikky lên Facebook Page Gikky.net — 10:00 và 22:00 hàng ngày
 ---
 
-Nhiệm vụ: Viết MỘT bài phân tích chuyên sâu độc lập (không phụ thuộc website gikky.net) và đăng lên Facebook Page `Gikky.net` (ID: `1294392997093699`) theo cấu trúc Long-form ngắn (~500 từ).
+Nhiệm vụ: Viết MỘT bài phân tích chuyên sâu độc lập (không phụ thuộc website gikky.net) và đăng lên Facebook Page `Gikky.net` (ID: `1294392997093699`) theo cấu trúc Long-form ngắn (chuẩn 450 – 480 từ).
 
 ## Các nhóm chủ đề trọng tâm (Luân phiên)
 Hệ thống luân phiên khai thác 7 nhóm chủ đề lớn theo DNA Gikky:
@@ -49,8 +49,8 @@ Hệ thống luân phiên khai thác 7 nhóm chủ đề lớn theo DNA Gikky:
 * **Slot 22:00 Tối (Khung giờ đêm muộn & Chiêm nghiệm):** Ưu tiên **Tâm lý giao dịch, Đọc sách kinh điển, Crypto On-chain, Hồ sơ thương vụ**.
 
 ## Quy chuẩn bài viết
-* **Độ dài:** 450 – 550 từ, chia đoạn thoáng đãng bằng thẻ `<hr>`, in đậm từ khóa quan trọng và gạch đầu dòng (`▪`).
-* **Phong cách:** Điềm tĩnh, khách quan, đào sâu cơ chế bản chất, tuyệt đối không phím hàng hay dùng từ mệnh lệnh ("hãy", "nên"). Kết bài bằng một câu hỏi mở tư duy (`question_for_crowd`).
+* **Độ dài:** Chuẩn **450 – 480 từ** (vừa vặn 1.5 - 2 phút đọc trên mobile, giữ trọn vẹn số liệu và cơ chế phân tích sâu, tuyệt đối tránh dàn trải trên 600 từ hoặc cụt lủn dưới 400 từ).
+* **Trình bày:** Chia đoạn ngắn (mỗi đoạn 2-3 câu), ngắt ý bằng gạch đầu dòng (`▪`), in đậm từ khóa đắt giá, kết thúc bằng một câu hỏi mở tư duy (`question_for_crowd`). Tuyệt đối không phím hàng, không ra lệnh ("hãy/nên").
 * **Hình ảnh & Watermark:**
   - **ĐÚNG 1 ẢNH DUY NHẤT** tỷ lệ 16:9 chất lượng cao tạo bằng `generate_image`.
   - Đăng bài ở định dạng Single Photo Post qua `scripts/facebook/poster.py`.
@@ -61,7 +61,18 @@ Chạy lệnh bằng Python từ gốc repo:
 ```powershell
 python scripts/facebook/poster.py --file "scripts/facebook/posts/bai_viet.txt" --image "scripts/facebook/images/anh.jpg"
 ```
-Hoặc đặt lịch hẹn giờ:
-```powershell
-python scripts/facebook/poster.py --file "..." --image "..." --schedule "YYYY-MM-DD HH:MM"
-```
+## Quản lý & Phản hồi bình luận
+- **Quét bình luận mới:**
+  ```powershell
+  python scripts/facebook/comments_manager.py --scan
+  ```
+- **Xem toàn bộ bình luận (cả đã trả lời):**
+  ```powershell
+  python scripts/facebook/comments_manager.py --scan --all
+  ```
+- **Trả lời bình luận trực tiếp:**
+  ```powershell
+  python scripts/facebook/comments_manager.py --reply "<comment_id>" -m "<nội dung>"
+  ```
+- **Cơ chế tự động hóa:** Chạy định kỳ mỗi 2 tiếng trong ngày (`task-460`: 08h, 10h, 12h, 14h, 16h, 18h, 20h, 22h). Hệ thống sẽ tự động quét, phân tích câu hỏi độc giả, tự sinh câu trả lời chuẩn DNA Gikky và xuất bản trả lời ngay lập tức, sau đó báo cáo kết quả cho người dùng.
+
