@@ -92,7 +92,7 @@ Nhóm này là **tản mạn**: dài hơi, liên ngành, không bám một mã.
 
 - **[ĐÃ VIẾT - Mạch 1081, 1033]** **Nâng hạng thị trường**: điều kiện kỹ thuật, và dòng vốn thụ động thực tế bao nhiêu.
 - **[ĐÃ VIẾT - Mạch 1130]** **Phiên hiệu lực FTSE**: Khi VN-Index lùi về dưới 1.800 điểm và bài học "bán sự thật" của dòng tiền tổ chức.
-- **[ĐÃ VIẾT - Mạch 1144]** **Thanh khoản teo tóp quanh mốc 1.800 điểm**: Sự thận trọng của dòng tiền và bài học "vùng trũng thông tin" cuối quý 3. `chung-khoan`
+- **[ĐÃ VIẾT - Mạch 1145]** **Thanh khoản teo tóp quanh mốc 1.800 điểm**: Sự thận trọng của dòng tiền và bài học "vùng trũng thông tin" cuối quý 3. `chung-khoan`
 - **Hệ thống giao dịch mới**: nó đổi được gì và không đổi được gì.
 - **[ĐÃ VIẾT - Mạch 1108, 1021]** **Cổ tức tiền mặt** — nhóm doanh nghiệp trả đều, và vì sao ít người quan tâm.
 - **[ĐÃ VIẾT - Mạch 1067]** Vòng đời một **doanh nghiệp niêm yết Việt Nam**: IPO, pha loãng, rồi im lặng.
