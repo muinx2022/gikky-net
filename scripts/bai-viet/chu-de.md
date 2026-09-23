@@ -113,6 +113,7 @@ Nhóm này là **tản mạn**: dài hơi, liên ngành, không bám một mã.
 - **Nhật ký giao dịch**: thứ gì đáng ghi, thứ gì ghi vào chỉ để tự an ủi.
 - **Cỡ lệnh** như một quyết định tâm lý chứ không phải quyết định toán học.
 - **[ĐÃ VIẾT - Mạch 1104]** **Nghỉ giao dịch**: chi phí của việc không làm gì, và vì sao nó khó chịu đựng.
+- **[ĐÃ VIẾT - Mạch 1148]** **Đọc sách**: *The Most Important Thing* (Howard Marks) — Bản chất của Tư duy cấp độ hai (Second-Level Thinking), nghịch lý để vượt trội và con lắc tâm lý thị trường.
 - **Đọc sách**: *Thinking, Fast and Slow* · *Fooled by Randomness* · *The Psychology of Money* · *Misbehaving*.
 
 ## I. Phương pháp giao dịch — nhịp 5–7 ngày một bài
