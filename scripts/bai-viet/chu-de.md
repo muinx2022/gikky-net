@@ -82,7 +82,7 @@ Nhóm này là **tản mạn**: dài hơi, liên ngành, không bám một mã.
 - **[ĐÃ VIẾT - Mạch 1063]** **Trung tâm dữ liệu ăn điện**: một cơn sốt phần mềm biến thành bài toán **hạ tầng điện** ra sao.
 - **[ĐÃ VIẾT - Mạch 1071]** **Đóng gói và kiểm định** — mắt xích Việt Nam thật sự đứng, thay vì mắt xích ai cũng nói.
 - **[ĐÃ VIẾT - Mạch 1076]** **HBM**: vì sao một loại bộ nhớ hẹp lại thành nút thắt của cả một làn sóng.
-- Nhân lực kỹ thuật: khoảng cách giữa **tuyên bố** và **năng lực đào tạo**.
+- **[ĐÃ VIẾT - Mạch 1147]** **Nhân lực kỹ thuật bán dẫn**: khoảng cách giữa **tuyên bố** và **năng lực đào tạo** thực tế của kỹ sư vi mạch Việt Nam.
 - **Điện toán biên** và thiết bị: mảng nào của chuỗi cung ứng Việt Nam hưởng lợi thật.
 - **[ĐÃ VIẾT - Mạch 1131]** **AI làm giảm chi phí gì trong doanh nghiệp Việt** — và những rào cản vô hình nó không thể chạm tới.
 - **[ĐÃ VIẾT - Mạch 1092]** Chu kỳ vốn đầu tư của các hãng lớn: khi họ chi mạnh, tiền chảy qua những khâu nào.
