@@ -123,7 +123,7 @@ Nhóm này là **tản mạn**: dài hơi, liên ngành, không bám một mã.
 - **[ĐÃ VIẾT - Mạch 1031]** **Turtle Traders**: thí nghiệm của Richard Dennis — cái được kiểm chứng và cái chỉ là giai thoại.
 - **[ĐÃ VIẾT - Mạch 1032]** **Trung bình động cắt nhau**: vì sao nó phổ biến, và nó giả định gì về thị trường.
 - **[ĐÃ VIẾT - Mạch 1113]** **Mean reversion** so với **momentum**: hai họ phương pháp đối nghịch, cùng tồn tại được vì sao.
-- **Breakout** và vấn đề tín hiệu giả: chi phí của việc sai nhiều lần liên tiếp.
+- **[ĐÃ VIẾT - Mạch 1143]** **Breakout** và vấn đề tín hiệu giả: chi phí của việc sai nhiều lần liên tiếp và nghệ thuật kiên nhẫn chờ retest.
 - **[ĐÃ VIẾT - Mạch 1129]** **Phân bổ theo biến động** (volatility targeting): ý tưởng gốc từ đâu.
 - **[ĐÃ VIẾT - Mạch 1112, 1074]** **Kelly criterion** và vì sao gần như không ai dùng nguyên bản.
 - **[ĐÃ VIẾT - Mạch 1095]** **Backtest**: overfitting, look-ahead bias, survivorship bias — ba cách một đường cong đẹp ra đời.
