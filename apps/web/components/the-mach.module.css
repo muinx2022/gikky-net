@@ -228,6 +228,10 @@
   cursor: default;
 }
 
+.mod_phai {
+  margin-left: auto;
+}
+
 
 /* ===========================================================================
  * Kiểu xem GỌN — `:root[data-kieu-xem="gon"]`, đặt bởi script inline trong `<head>`

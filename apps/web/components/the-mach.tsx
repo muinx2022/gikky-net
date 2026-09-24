@@ -188,10 +188,18 @@ export function TheMach({ mach }: { mach: MachTomTatOut }) {
               nên nó không phạm luật "không nút chết" của lượt giao diện. Đặt CUỐI hàng:
               lối vào khán đài mới là thao tác chính. */}
           <ChepLink duongDan={duongDanMach(mach.slug, mach.id)} nhan={mach.title} />
+          <span
+            className={css.luot_xem}
+            data-testid="the-mach-luot-xem"
+            title="Lượt xem bài viết"
+          >
+            <Eye size={13} strokeWidth={2} aria-hidden />
+            <span>{(mach.view_count ?? 0).toLocaleString("vi-VN")} lượt xem</span>
+          </span>
           {/* Công cụ mod ngay trên thẻ — user chốt 2026-08-24 ("vào chuyên mục thì ra
               phần chuyên mục với các action của mod"). Client component, trả `null` cho
               mọi người không phải staff, nên thẻ của người đọc thường **không đổi một
-              pixel nào**.
+              pixel nào**. Đẩy ra góc phải (mod_phai, margin-left: auto).
 
               Chỉ có "Ẩn", không có "Khoá": thẻ feed không biết mạch đang khoá hay không
               (`MachTomTatOut` không mang `locked`) — xem chú thích trong `HanhDongMod`.
@@ -201,15 +209,8 @@ export function TheMach({ mach }: { mach: MachTomTatOut }) {
             id={mach.id}
             dangAn={false}
             nhan={`mạch “${mach.title}”`}
+            className={css.mod_phai}
           />
-          <span
-            className={css.luot_xem}
-            data-testid="the-mach-luot-xem"
-            title="Lượt xem bài viết"
-          >
-            <Eye size={13} strokeWidth={2} aria-hidden />
-            <span>{(mach.view_count ?? 0).toLocaleString("vi-VN")} lượt xem</span>
-          </span>
         </div>
       </div>
     </li>
