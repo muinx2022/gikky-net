@@ -74,5 +74,5 @@ python scripts/facebook/poster.py --file "scripts/facebook/posts/bai_viet.txt" -
   ```powershell
   python scripts/facebook/comments_manager.py --reply "<comment_id>" -m "<nội dung>"
   ```
-- **Cơ chế tự động hóa:** Chạy định kỳ mỗi 2 tiếng trong ngày (`task-460`: 08h, 10h, 12h, 14h, 16h, 18h, 20h, 22h). Hệ thống sẽ tự động quét, phân tích câu hỏi độc giả, tự sinh câu trả lời chuẩn DNA Gikky và xuất bản trả lời ngay lập tức, sau đó báo cáo kết quả cho người dùng.
+- **Cơ chế tự động hóa:** Chạy định kỳ mỗi 2 tiếng trong ngày (`task-725`: 08h, 10h, 12h, 14h, 16h, 18h, 20h, 22h). Hệ thống sẽ tự động quét, phân tích câu hỏi độc giả, tự sinh câu trả lời chuẩn DNA Gikky và xuất bản trả lời ngay lập tức, sau đó báo cáo kết quả cho người dùng.
 

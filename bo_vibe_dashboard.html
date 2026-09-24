@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>B.O Vượt Đỉnh Dashboard (Kiểu PIT / SSB) - Gikky.net</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+    ::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.8); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, 1); }
+    .active-card {
+      border-color: #3b82f6 !important;
+      background: linear-gradient(135deg, rgba(30, 58, 138, 0.35), rgba(15, 23, 42, 0.7)) !important;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 antialiased p-3 md:p-6 min-h-screen font-sans">
+  <div class="max-w-[1750px] mx-auto space-y-4">
+    
+    <!-- Top Header -->
+    <header class="bg-slate-900/90 backdrop-blur border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="px-2.5 py-1 rounded-md bg-amber-500/20 text-amber-400 text-xs font-semibold uppercase tracking-wider border border-amber-500/30">
+            Market Structure & Price Action
+          </span>
+          <span class="px-2.5 py-1 rounded-md bg-blue-500/20 text-blue-400 text-xs font-semibold tracking-wider border border-blue-500/30">
+            Vol 20P &ge; 50,000 CP
+          </span>
+          <span class="px-2.5 py-1 rounded-md bg-emerald-500/20 text-emerald-400 text-xs font-semibold tracking-wider border border-emerald-500/30">
+            B.O Vượt Đỉnh Từ Trước (Kiểu PIT &amp; SSB)
+          </span>
+        </div>
+        <h1 class="text-xl md:text-2xl font-bold text-white mt-2 flex items-center gap-2">
+          🔥 Bộ Lọc Cổ Phiếu B.O Vượt Đỉnh Đã Xác Nhận (3 Sàn HOSE, HNX, UPCOM)
+        </h1>
+        <p class="text-sm text-slate-400 mt-1">
+          Lọc toàn bộ cổ phiếu đã bứt phá đỉnh kháng cự trung-dài hạn từ trước (kèm Vol bùng nổ), phân loại theo 3 trạng thái: 
+          <strong class="text-amber-400">Pullback Retest (Kiểu PIT/SSB)</strong>, 
+          <strong class="text-indigo-400">Tích lũy Nền 2 trên đỉnh</strong>, và 
+          <strong class="text-emerald-400">Tiếp diễn vượt đỉnh</strong>.
+        </p>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <a href="file:///d:/Projects/gikky-net/Tong_hop_co_phieu_3_san_theo_nganh_HTF.xlsx" 
+           class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold transition flex items-center gap-2 shadow-lg shadow-emerald-900/30">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.5L19 7.5V19a2 2 0 01-2 2z"/></svg>
+          Mở File Excel HTF &amp; B.O
+        </a>
+      </div>
+    </header>
+
+    <!-- Filter Pills & Search -->
+    <div class="bg-slate-900/60 border border-slate-800/80 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex flex-wrap items-center gap-2" id="filterContainer">
+        <button onclick="setFilter('all')" data-filter="all" class="filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 text-white transition shadow-sm">
+          Tất cả (37)
+        </button>
+        <button onclick="setFilter('pullback')" data-filter="pullback" class="filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-amber-400 hover:bg-slate-700 transition border border-amber-500/30">
+          🎯 Pullback Retest - Kiểu PIT/SSB (15)
+        </button>
+        <button onclick="setFilter('base')" data-filter="base" class="filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-indigo-400 hover:bg-slate-700 transition border border-indigo-500/30">
+          🛡️ Tích Lũy Nền 2 Trên Đỉnh (14)
+        </button>
+        <button onclick="setFilter('trend')" data-filter="trend" class="filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-emerald-400 hover:bg-slate-700 transition border border-emerald-500/30">
+          🚀 Tiếp Diễn Vượt Đỉnh (8)
+        </button>
+      </div>
+
+      <div class="flex items-center gap-2 w-full md:w-auto">
+        <div class="relative flex-1 md:w-64">
+          <input type="text" id="searchInput" placeholder="Tìm theo mã (ví dụ: PIT, SSB, VIC)..." 
+                 class="w-full bg-slate-800/80 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:border-blue-500 transition">
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Workspace Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      
+      <!-- Left Panel: Stock List Cards -->
+      <div class="lg:col-span-5 xl:col-span-4 space-y-2.5 max-h-[calc(100vh-250px)] overflow-y-auto pr-1" id="stockList">
+        <!-- Rendered by JS -->
+      </div>
+
+      <!-- Right Panel: Detailed Analysis & Key Levels -->
+      <div class="lg:col-span-7 xl:col-span-8 bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-2xl space-y-5 flex flex-col justify-between" id="detailPanel">
+        
+        <!-- Header Info -->
+        <div>
+          <div class="flex flex-wrap items-start justify-between gap-3 border-b border-slate-800 pb-4">
+            <div>
+              <div class="flex items-center gap-2.5">
+                <h2 class="text-3xl font-extrabold text-white tracking-tight" id="detailSymbol">SSB</h2>
+                <span class="px-2 py-0.5 rounded text-xs font-bold uppercase bg-slate-800 border border-slate-700 text-slate-300" id="detailExchange">HOSE</span>
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold" id="detailCategoryBadge">Pullback Retest</span>
+              </div>
+              <p class="text-sm font-medium text-slate-400 mt-1" id="detailName">Ngân hàng TMCP Đông Nam Á</p>
+              <p class="text-xs text-slate-500 mt-0.5" id="detailSector">Ngành: Ngân hàng</p>
+            </div>
+
+            <!-- Price & Peak Metrics -->
+            <div class="text-right">
+              <div class="text-3xl font-black text-white" id="detailPrice">22,450 đ</div>
+              <div class="text-xs font-semibold mt-0.5 flex items-center justify-end gap-2">
+                <span class="text-emerald-400" id="detailGain">+45.0% từ B.O</span>
+                <span class="text-rose-400" id="detailPullback">Pullback: -9.5%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Key Metrics Grid -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+            <div class="bg-slate-800/50 border border-slate-800 rounded-xl p-3">
+              <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block">Đỉnh Đạt Được</span>
+              <span class="text-base font-bold text-amber-400 mt-1 block" id="mPeakPrice">24,800 đ</span>
+              <span class="text-[10px] text-slate-400">Đỉnh cao nhất sau B.O</span>
+            </div>
+
+            <div class="bg-slate-800/50 border border-slate-800 rounded-xl p-3">
+              <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block">Ngày B.O Trước Đó</span>
+              <span class="text-base font-bold text-blue-400 mt-1 block" id="mBoDate">28/08/2026</span>
+              <span class="text-[10px] text-slate-400" id="mBoType">Đỉnh 6 Tháng (120P)</span>
+            </div>
+
+            <div class="bg-slate-800/50 border border-slate-800 rounded-xl p-3">
+              <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block">Hỗ Trợ Pivot / MA20</span>
+              <span class="text-base font-bold text-emerald-400 mt-1 block" id="mSupport">18,460 đ</span>
+              <span class="text-[10px] text-slate-400">Vùng đệm phòng thủ</span>
+            </div>
+
+            <div class="bg-slate-800/50 border border-slate-800 rounded-xl p-3">
+              <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block">Cắt Lỗ SL Đề Xuất</span>
+              <span class="text-base font-bold text-rose-400 mt-1 block" id="mStopLoss">18,500 đ</span>
+              <span class="text-[10px] text-slate-400">Quản trị rủi ro chặt</span>
+            </div>
+          </div>
+
+          <!-- Trading Plan & Logic Strategy Card -->
+          <div class="mt-5 bg-gradient-to-br from-slate-900 to-slate-800/90 border border-slate-700/80 rounded-xl p-4 shadow-lg">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 text-xs font-bold uppercase tracking-wider border border-blue-500/30">
+                Kế Hoạch Giao Dịch &amp; Điểm Vào Lệnh
+              </span>
+              <span class="text-xs text-slate-400 font-medium" id="mNextBoTrigger">Vùng B.O tiếp theo: &gt; 25.0k</span>
+            </div>
+            <p class="text-sm text-slate-200 leading-relaxed font-medium" id="mStrategyText">
+              <!-- Populated by JS -->
+            </p>
+          </div>
+
+          <!-- External Links -->
+          <div class="mt-4 flex flex-wrap items-center gap-3">
+            <a href="#" target="_blank" id="btnFireant" class="px-3.5 py-2 rounded-lg bg-orange-600/20 hover:bg-orange-600/30 text-orange-300 border border-orange-500/40 text-xs font-semibold transition flex items-center gap-1.5">
+              <span>Xem Biểu Đồ FireAnt</span>
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+            </a>
+            <a href="#" target="_blank" id="btnTradingview" class="px-3.5 py-2 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/40 text-xs font-semibold transition flex items-center gap-1.5">
+              <span>Xem Biểu Đồ TradingView</span>
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+            </a>
+            <span class="text-xs text-slate-400 ml-auto" id="mVolInfo">KL BQ 20P: 3,593,435 CP</span>
+          </div>
+
+        </div>
+
+        <!-- Technical Structure Guide Footer -->
+        <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-3 text-xs text-slate-400 flex flex-wrap items-center justify-between gap-2 mt-4">
+          <div>
+            <strong class="text-slate-200">Nguyên tắc giao dịch kiểu PIT / SSB:</strong>
+            <span>Đã vượt đỉnh từ trước &rarr; Kiên nhẫn chờ điểm xoay (Higher Low) cạn cung hoặc vượt dứt khoát đỉnh cao mới để vào lệnh, không đuổi lưng chừng.</span>
+          </div>
+          <span class="text-slate-500 font-mono">Gikky.net Market Intelligence</span>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const STOCKS = [{"symbol": "SSB", "exchange": "HOSE", "organ_name": "Ngân hàng TMCP Đông Nam Á", "sector": "Ngân hàng", "price": 22450.0, "peak": 24800.0, "gain_to_peak": 45.02923976608187, "pullback": -9.475806451612904, "first_bo_date": "28/08/2026", "first_bo_level": 16550.0, "first_bo_type": "Đỉnh 6 Tháng (120P)", "ma20": 18460.0, "ma50": 16693.0, "ma200": 14946.55, "vol20": 3593435, "sl": 15888.0, "next_bo": 24800.0, "has_cash": false, "has_stock": true, "cash_years": [], "stock_years": [2026, 2024, 2023, 2022, 2021], "fireant_url": "https://fireant.vn/ma-chung-khoan/SSB", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=HOSE%3ASSB", "category_group": "Pullback Retest (Kiểu PIT/SSB)"}, {"symbol": "PIT", "exchange": "HOSE", "organ_name": "CTCP Xuất nhập khẩu Petrolimex", "sector": "Bán lẻ", "price": 11000.0, "peak": 11900.0, "gain_to_peak": 39.83548766157462, "pullback": -7.563025210084033, "first_bo_date": "20/08/2026", "first_bo_level": 8250.0, "first_bo_type": "Đỉnh 3 Tháng (60P)", "ma20": 9178.0, "ma50": 8281.0, "ma200": 7526.9, "vol20": 179115, "sl": 7920.0, "next_bo": 11900.0, "has_cash": true, "has_stock": true, "cash_years": [2012, 2010], "stock_years": [2014, 2012], "fireant_url": "https://fireant.vn/ma-chung-khoan/PIT", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=HOSE%3APIT", "category_group": "Pullback Retest (Kiểu PIT/SSB)"}, {"symbol": "SVN", "exchange": "HNX", "organ_name": "CTCP Tập đoàn Vexilla Việt Nam", "sector": "Xây dựng và Vật liệu", "price": 4000.0, "peak": 4500.0, "gain_to_peak": 25.0, "pullback": -11.11111111111111, "first_bo_date": "13/08/2026", "first_bo_level": 3400.0, "first_bo_type": "Đỉnh 6 Tháng (120P)", "ma20": 3515.0, "ma50": 3134.0, "ma200": 2544.5, "vol20": 358030, "sl": 3264.0, "next_bo": 4500.0, "has_cash": false, "has_stock": false, "cash_years": [], "stock_years": [], "fireant_url": "https://fireant.vn/ma-chung-khoan/SVN", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=HNX%3ASVN", "category_group": "Pullback Retest (Kiểu PIT/SSB)"}, {"symbol": "TPC", "exchange": "HOSE", "organ_name": "CTCP Nhựa Tân Đại Hưng", "sector": "Hóa chất", "price": 12550.0, "peak": 13700.0, "gain_to_peak": 17.59656652360515, "pullback": -8.394160583941606, "first_bo_date": "03/09/2026", "first_bo_level": 11150.0, "first_bo_type": "Đỉnh 2 Tháng (40P)", "ma20": 11786.0, "ma50": 9808.2, "ma200": NaN, "vol20": 106475, "sl": 10704.0, "next_bo": 13700.0, "has_cash": true, "has_stock": false, "cash_years": [2022, 2021, 2020, 2019, 2017, 2016, 2015, 2014, 2013, 2011], "stock_years": [], "fireant_url": "https://fireant.vn/ma-chung-khoan/TPC", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=HOSE%3ATPC", "category_group": "Pullback Retest (Kiểu PIT/SSB)"}, {"symbol": "TDP", "exchange": "HOSE", "organ_name": "CTCP Thuận Đức", "sector": "Hàng & Dịch vụ Công nghiệp", "price": 28500.0, "peak": 31770.0, "gain_to_peak": 16.11842105263158, "pullback": -10.292728989612844, "first_bo_date": "13/08/2026", "first_bo_level": 27090.0, "first_bo_type": "Đỉnh 2 Tháng (40P)", "ma20": 29570.5, "ma50": 27504.4, "ma200": 26801.9, "vol20": 254455, "sl": 26006.399999999998, "next_bo": 31770.0, "has_cash": false, "has_stock": true, "cash_years": [], "stock_years": [2026, 2024, 2023, 2022, 2021, 2020, 2019], "fireant_url": "https://fireant.vn/ma-chung-khoan/TDP", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=HOSE%3ATDP", "category_group": "Pullback Retest (Kiểu PIT/SSB)"}, {"symbol": "VIC", "exchange": "HOSE", "organ_name": "Tập đoàn VINGROUP - CTCP", "sector": "Bất động sản", "price": 235000.0, "peak": 265000.0, "gain_to_peak": 15.217391304347828, "pullback": -11.320754716981133, "first_bo_date": "26/08/2026", "first_bo_level": 227300.0, "first_bo_type": "Đỉnh 2 Tháng (40P)", "ma20": 235960.0, "ma50": 222692.0, "ma200": 185988.75, "vol20": 6190880, "sl": 218208.0, "next_bo": 265000.0, "has_cash": true, "has_stock": true, "cash_years": [2014, 2011], "stock_years": [2025, 2021, 2018, 2016, 2015, 2014, 2013, 2012], "fireant_url": "https://fireant.vn/ma-chung-khoan/VIC", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=HOSE%3AVIC", "category_group": "Pullback Retest (Kiểu PIT/SSB)"}, {"symbol": "FRT", "exchange": "HOSE", "organ_name": "CTCP Bán lẻ Kỹ thuật số FPT", "sector": "Bán lẻ", "price": 130100.0, "peak": 151500.0, "gain_to_peak": 13.82419233658903, "pullback": -14.125412541254127, "first_bo_date": "03/08/2026", "first_bo_level": 127430.0, "first_bo_type": "Đỉnh 2 Tháng (40P)", "ma20": 138785.0, "ma50": 129948.0, "ma200": 137019.9, "vol20": 346925, "sl": 120993.0, "next_bo": 151500.0, "has_cash": true, "has_stock": true, "cash_years": [2023, 2022, 2020, 2019], "stock_years": [2026, 2025, 2023, 2022, 2019, 2018], "fireant_url": "https://fireant.vn/ma-chung-khoan/FRT", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=HOSE%3AFRT", "category_group": "Pullback Retest (Kiểu PIT/SSB)"}, {"symbol": "HVH", "exchange": "HOSE", "organ_name": "CTCP Đầu tư và Công nghệ HVC", "sector": "Xây dựng và Vật liệu", "price": 10550.0, "peak": 12000.0, "gain_to_peak": 12.676056338028168, "pullback": -12.083333333333334, "first_bo_date": "23/07/2026", "first_bo_level": 10500.0, "first_bo_type": "Đỉnh 2 Tháng (40P)", "ma20": 10905.0, "ma50": 10635.8, "ma200": 10997.8, "vol20": 322730, "sl": 9811.5, "next_bo": 12000.0, "has_cash": true, "has_stock": true, "cash_years": [2024, 2021, 2020], "stock_years": [2026, 2025, 2023, 2020], "fireant_url": "https://fireant.vn/ma-chung-khoan/HVH", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=HOSE%3AHVH", "category_group": "Pullback Retest (Kiểu PIT/SSB)"}, {"symbol": "CLI", "exchange": "UPCOM", "organ_name": "CTCP Tập đoàn CNCTech", "sector": "Tài nguyên Cơ bản", "price": 24200.0, "peak": 27280.0, "gain_to_peak": 11.711711711711711, "pullback": -11.29032258064516, "first_bo_date": "22/07/2026", "first_bo_level": 24330.0, "first_bo_type": "Đỉnh 2 Tháng (40P)", "ma20": 24624.0, "ma50": 24378.8, "ma200": NaN, "vol20": 130010, "sl": 22506.0, "next_bo": 27280.0, "has_cash": false, "has_stock": false, "cash_years": [], "stock_years": [], "fireant_url": "https://fireant.vn/ma-chung-khoan/CLI", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=UPCOM%3ACLI", "category_group": "Pullback Retest (Kiểu PIT/SSB)"}, {"symbol": "DXP", "exchange": "HNX", "organ_name": "CTCP Cảng Đoạn Xá", "sector": "Hàng & Dịch vụ Công nghiệp", "price": 13200.0, "peak": 15500.0, "gain_to_peak": 10.714285714285714, "pullback": -14.838709677419354, "first_bo_date": "30/07/2026", "first_bo_level": 13800.0, "first_bo_type": "Đỉnh 2 Tháng (40P)", "ma20": 13795.0, "ma50": 13750.0, "ma200": 12880.5, "vol20": 205900, "sl": 12276.0, "next_bo": 15500.0, "has_cash": true, "has_stock": true, "cash_years": [2025, 2024, 2023, 2015, 2014, 2013, 2010, 2009], "stock_years": [2023, 2017, 2016], "fireant_url": "https://fireant.vn/ma-chung-khoan/DXP", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=HNX%3ADXP", "category_group": "Pullback Retest (Kiểu PIT/SSB)"}, {"symbol": "PHP", "exchange": "UPCOM", "organ_name": "CTCP Cảng Hải Phòng", "sector": "Hàng & Dịch vụ Công nghiệp", "price": 44200.0, "peak": 49400.0, "gain_to_peak": 10.267857142857142, "pullback": -10.526315789473683, "first_bo_date": "17/08/2026", "first_bo_level": 43900.0, "first_bo_type": "Đỉnh 1 Năm (52W)", "ma20": 45520.0, "ma50": 41774.0, "ma200": 36434.75, "vol20": 218410, "sl": 41106.0, "next_bo": 49400.0, "has_cash": true, "has_stock": false, "cash_years": [2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015], "stock_years": [], "fireant_url": "https://fireant.vn/ma-chung-khoan/PHP", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=UPCOM%3APHP", "category_group": "Pullback Retest (Kiểu PIT/SSB)"}, {"symbol": "VNM", "exchange": "HOSE", "organ_name": "CTCP Sữa Việt Nam", "sector": "Thực phẩm và đồ uống", "price": 60300.0, "peak": 64400.00000000001, "gain_to_peak": 9.152542372881369, "pullback": -6.366459627329204, "first_bo_date": "17/07/2026", "first_bo_level": 57900.0, "first_bo_type": "Đỉnh 2 Tháng (40P)", "ma20": 61455.0, "ma50": 60248.0, "ma200": 60485.6, "vol20": 2960060, "sl": 55584.0, "next_bo": 64400.00000000001, "has_cash": true, "has_stock": true, "cash_years": [2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013, 2012, 2009, 2008, 2007], "stock_years": [2020, 2018, 2016, 2015, 2014, 2012, 2011], "fireant_url": "https://fireant.vn/ma-chung-khoan/VNM", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=HOSE%3AVNM", "category_group": "Pullback Retest (Kiểu PIT/SSB)"}, {"symbol": "MZG", "exchange": "HOSE", "organ_name": "CTCP Miza", "sector": "Tài nguyên Cơ bản", "price": 11850.0, "peak": 13150.0, "gain_to_peak": 8.23045267489712, "pullback": -9.885931558935361, "first_bo_date": "07/08/2026", "first_bo_level": 12090.0, "first_bo_type": "Đỉnh 3 Tháng (60P)", "ma20": 12410.0, "ma50": 12007.2, "ma200": 11069.7, "vol20": 608775, "sl": 11020.5, "next_bo": 13150.0, "has_cash": false, "has_stock": true, "cash_years": [], "stock_years": [2026, 2024], "fireant_url": "https://fireant.vn/ma-chung-khoan/MZG", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=HOSE%3AMZG", "category_group": "Pullback Retest (Kiểu PIT/SSB)"}, {"symbol": "PVG", "exchange": "HNX", "organ_name": "CTCP Kinh doanh LPG Việt Nam", "sector": "Điện, nước & xăng dầu khí đốt", "price": 6000.0, "peak": 6700.0, "gain_to_peak": 8.064516129032258, "pullback": -10.44776119402985, "first_bo_date": "11/09/2026", "first_bo_level": 6100.0, "first_bo_type": "Đỉnh 3 Tháng (60P)", "ma20": 5865.0, "ma50": 5744.0, "ma200": 6330.0, "vol20": 92505, "sl": 5580.0, "next_bo": 6700.0, "has_cash": true, "has_stock": true, "cash_years": [2023, 2022, 2019, 2016, 2014, 2013, 2011, 2010, 2009], "stock_years": [2024], "fireant_url": "https://fireant.vn/ma-chung-khoan/PVG", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=HNX%3APVG", "category_group": "Pullback Retest (Kiểu PIT/SSB)"}, {"symbol": "HCM", "exchange": "HOSE", "organ_name": "CTCP Chứng khoán Thành phố Hồ Chí Minh", "sector": "Dịch vụ tài chính", "price": 25000.0, "peak": 27350.0, "gain_to_peak": 7.677165354330709, "pullback": -8.592321755027422, "first_bo_date": "17/07/2026", "first_bo_level": 25260.0, "first_bo_type": "Đỉnh 2 Tháng (40P)", "ma20": 25852.5, "ma50": 25439.0, "ma200": 22405.45, "vol20": 3867145, "sl": 23250.0, "next_bo": 27350.0, "has_cash": true, "has_stock": true, "cash_years": [2026, 2025, 2024, 2023, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013, 2011, 2010, 2009], "stock_years": [2024, 2019, 2013], "fireant_url": "https://fireant.vn/ma-chung-khoan/HCM", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=HOSE%3AHCM", "category_group": "Pullback Retest (Kiểu PIT/SSB)"}, {"symbol": "HID", "exchange": "HOSE", "organ_name": "CTCP Halcom Việt Nam", "sector": "Xây dựng và Vật liệu", "price": 5730.0, "peak": 6040.0, "gain_to_peak": 39.4919168591224, "pullback": -5.132450331125828, "first_bo_date": "11/09/2026", "first_bo_level": 4059.9999999999995, "first_bo_type": "Đỉnh 2 Tháng (40P)", "ma20": 4100.0, "ma50": 3761.4, "ma200": 4927.55, "vol20": 792030, "sl": 3897.5999999999995, "next_bo": 6040.0, "has_cash": true, "has_stock": true, "cash_years": [2020, 2018], "stock_years": [2019, 2018, 2016], "fireant_url": "https://fireant.vn/ma-chung-khoan/HID", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=HOSE%3AHID", "category_group": "Tích Lũy Nền 2 Trên Đỉnh (High Base)"}, {"symbol": "PGC", "exchange": "HOSE", "organ_name": "Tổng Công ty Gas Petrolimex - CTCP", "sector": "Điện, nước & xăng dầu khí đốt", "price": 14400.0, "peak": 15150.0, "gain_to_peak": 14.772727272727273, "pullback": -4.9504950495049505, "first_bo_date": "03/08/2026", "first_bo_level": 12850.0, "first_bo_type": "Đỉnh 3 Tháng (60P)", "ma20": 13835.0, "ma50": 13005.0, "ma200": 12792.15, "vol20": 79265, "sl": 12336.0, "next_bo": 15150.0, "has_cash": true, "has_stock": true, "cash_years": [2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2015, 2014, 2011], "stock_years": [2015, 2013], "fireant_url": "https://fireant.vn/ma-chung-khoan/PGC", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=HOSE%3APGC", "category_group": "Tích Lũy Nền 2 Trên Đỉnh (High Base)"}, {"symbol": "VNB", "exchange": "UPCOM", "organ_name": "CTCP Sách Việt Nam", "sector": "Truyền thông", "price": 17100.0, "peak": 17900.0, "gain_to_peak": 14.743589743589745, "pullback": -4.4692737430167595, "first_bo_date": "09/09/2026", "first_bo_level": 14700.0, "first_bo_type": "Đỉnh 3 Tháng (60P)", "ma20": 14720.0, "ma50": 13840.0, "ma200": 15096.0, "vol20": 107955, "sl": 14112.0, "next_bo": 17900.0, "has_cash": false, "has_stock": false, "cash_years": [], "stock_years": [], "fireant_url": "https://fireant.vn/ma-chung-khoan/VNB", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=UPCOM%3AVNB", "category_group": "Tích Lũy Nền 2 Trên Đỉnh (High Base)"}, {"symbol": "DCL", "exchange": "HOSE", "organ_name": "CTCP Dược phẩm Cửu Long", "sector": "Y tế", "price": 43300.0, "peak": 44800.0, "gain_to_peak": 14.285714285714285, "pullback": -3.3482142857142856, "first_bo_date": "03/08/2026", "first_bo_level": 38500.0, "first_bo_type": "Đỉnh 2 Tháng (40P)", "ma20": 39200.0, "ma50": 38906.0, "ma200": 43561.75, "vol20": 1327640, "sl": 36960.0, "next_bo": 44800.0, "has_cash": true, "has_stock": true, "cash_years": [2018, 2014, 2010, 2009], "stock_years": [2016], "fireant_url": "https://fireant.vn/ma-chung-khoan/DCL", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=HOSE%3ADCL", "category_group": "Tích Lũy Nền 2 Trên Đỉnh (High Base)"}, {"symbol": "SBG", "exchange": "HOSE", "organ_name": "CTCP Tập đoàn Cơ khí Công nghệ cao Siba", "sector": "Hàng & Dịch vụ Công nghiệp", "price": 13850.0, "peak": 14550.0, "gain_to_peak": 13.229571984435799, "pullback": -4.810996563573884, "first_bo_date": "17/08/2026", "first_bo_level": 12830.0, "first_bo_type": "Đỉnh 6 Tháng (120P)", "ma20": 13900.0, "ma50": 12840.0, "ma200": 11492.6, "vol20": 352975, "sl": 12316.8, "next_bo": 14550.0, "has_cash": false, "has_stock": true, "cash_years": [], "stock_years": [2026, 2024], "fireant_url": "https://fireant.vn/ma-chung-khoan/SBG", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=HOSE%3ASBG", "category_group": "Tích Lũy Nền 2 Trên Đỉnh (High Base)"}, {"symbol": "CTF", "exchange": "HOSE", "organ_name": "CTCP City Auto", "sector": "Ô tô và phụ tùng", "price": 20850.0, "peak": 21400.0, "gain_to_peak": 12.928759894459102, "pullback": -2.570093457943925, "first_bo_date": "05/08/2026", "first_bo_level": 18500.0, "first_bo_type": "Đỉnh 3 Tháng (60P)", "ma20": 20855.0, "ma50": 19391.0, "ma200": 18869.25, "vol20": 312580, "sl": 17760.0, "next_bo": 21400.0, "has_cash": true, "has_stock": true, "cash_years": [2025, 2018, 2017], "stock_years": [2024, 2023, 2022, 2021, 2019], "fireant_url": "https://fireant.vn/ma-chung-khoan/CTF", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=HOSE%3ACTF", "category_group": "Tích Lũy Nền 2 Trên Đỉnh (High Base)"}, {"symbol": "GAS", "exchange": "HOSE", "organ_name": "Tổng Công ty Khí Việt Nam - CTCP", "sector": "Điện, nước & xăng dầu khí đốt", "price": 86100.0, "peak": 90380.0, "gain_to_peak": 11.387724919891545, "pullback": -4.735560964815225, "first_bo_date": "18/08/2026", "first_bo_level": 79780.0, "first_bo_type": "Đỉnh 2 Tháng (40P)", "ma20": 82999.0, "ma50": 76140.6, "ma200": 81709.25, "vol20": 1785470, "sl": 76588.8, "next_bo": 90380.0, "has_cash": true, "has_stock": true, "cash_years": [2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013], "stock_years": [2025, 2024, 2023], "fireant_url": "https://fireant.vn/ma-chung-khoan/GAS", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=HOSE%3AGAS", "category_group": "Tích Lũy Nền 2 Trên Đỉnh (High Base)"}, {"symbol": "PVT", "exchange": "HOSE", "organ_name": "Tổng Công ty cổ phần Vận tải Dầu khí", "sector": "Hàng & Dịch vụ Công nghiệp", "price": 23050.0, "peak": 23700.0, "gain_to_peak": 11.267605633802818, "pullback": -2.7426160337552745, "first_bo_date": "08/09/2026", "first_bo_level": 21000.0, "first_bo_type": "Đỉnh 3 Tháng (60P)", "ma20": 21310.0, "ma50": 19608.0, "ma200": 19648.85, "vol20": 5716615, "sl": 20160.0, "next_bo": 23700.0, "has_cash": true, "has_stock": true, "cash_years": [2024, 2023, 2021, 2020, 2019, 2017, 2016], "stock_years": [2026, 2025, 2024, 2020, 2016, 2014], "fireant_url": "https://fireant.vn/ma-chung-khoan/PVT", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=HOSE%3APVT", "category_group": "Tích Lũy Nền 2 Trên Đỉnh (High Base)"}, {"symbol": "DGW", "exchange": "HOSE", "organ_name": "CTCP Thế Giới Số", "sector": "Bán lẻ", "price": 45000.0, "peak": 47000.0, "gain_to_peak": 8.92236384704519, "pullback": -4.25531914893617, "first_bo_date": "13/08/2026", "first_bo_level": 42250.0, "first_bo_type": "Đỉnh 3 Tháng (60P)", "ma20": 43347.5, "ma50": 40237.0, "ma200": 42157.35, "vol20": 1939545, "sl": 40560.0, "next_bo": 47000.0, "has_cash": true, "has_stock": true, "cash_years": [2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015], "stock_years": [2024, 2022, 2021, 2016, 2015], "fireant_url": "https://fireant.vn/ma-chung-khoan/DGW", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=HOSE%3ADGW", "category_group": "Tích Lũy Nền 2 Trên Đỉnh (High Base)"}, {"symbol": "VPI", "exchange": "HOSE", "organ_name": "CTCP Phát triển Bất động sản Văn Phú", "sector": "Bất động sản", "price": 60200.0, "peak": 63400.0, "gain_to_peak": 8.803844173674275, "pullback": -5.047318611987381, "first_bo_date": "23/07/2026", "first_bo_level": 58000.0, "first_bo_type": "Đỉnh 1 Năm (52W)", "ma20": 60652.0, "ma50": 58295.2, "ma200": 54608.25, "vol20": 2188710, "sl": 55680.0, "next_bo": 63400.0, "has_cash": true, "has_stock": true, "cash_years": [2023, 2019, 2017], "stock_years": [2026, 2024, 2022, 2021, 2020], "fireant_url": "https://fireant.vn/ma-chung-khoan/VPI", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=HOSE%3AVPI", "category_group": "Tích Lũy Nền 2 Trên Đỉnh (High Base)"}, {"symbol": "TRC", "exchange": "HOSE", "organ_name": "CTCP Cao su Tây Ninh", "sector": "Hóa chất", "price": 21350.0, "peak": 22600.0, "gain_to_peak": 8.497359577532405, "pullback": -5.530973451327434, "first_bo_date": "12/08/2026", "first_bo_level": 20590.0, "first_bo_type": "Đỉnh 6 Tháng (120P)", "ma20": 21363.5, "ma50": 19980.6, "ma200": 18722.75, "vol20": 157635, "sl": 19766.399999999998, "next_bo": 22600.0, "has_cash": true, "has_stock": true, "cash_years": [2026, 2025, 2024, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013, 2012, 2009, 2008, 2007], "stock_years": [2026], "fireant_url": "https://fireant.vn/ma-chung-khoan/TRC", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=HOSE%3ATRC", "category_group": "Tích Lũy Nền 2 Trên Đỉnh (High Base)"}, {"symbol": "BAF", "exchange": "HOSE", "organ_name": "CTCP Nông nghiệp BAF Việt Nam", "sector": "Thực phẩm và đồ uống", "price": 32000.0, "peak": 33000.0, "gain_to_peak": 8.01963993453355, "pullback": -3.0303030303030303, "first_bo_date": "03/08/2026", "first_bo_level": 30450.0, "first_bo_type": "Đỉnh 3 Tháng (60P)", "ma20": 32252.5, "ma50": 31074.0, "ma200": 30180.55, "vol20": 1902520, "sl": 29232.0, "next_bo": 33000.0, "has_cash": true, "has_stock": true, "cash_years": [2022], "stock_years": [2026, 2024, 2022], "fireant_url": "https://fireant.vn/ma-chung-khoan/BAF", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=HOSE%3ABAF", "category_group": "Tích Lũy Nền 2 Trên Đỉnh (High Base)"}, {"symbol": "PVS", "exchange": "HNX", "organ_name": "Tổng Công ty cổ phần Dịch vụ Kỹ thuật Dầu khí Việt Nam", "sector": "Dầu khí", "price": 33300.0, "peak": 35300.0, "gain_to_peak": 7.229647630619684, "pullback": -5.6657223796034, "first_bo_date": "26/08/2026", "first_bo_level": 32670.0, "first_bo_type": "Đỉnh 2 Tháng (40P)", "ma20": 32450.0, "ma50": 30629.8, "ma200": 32227.8, "vol20": 3657170, "sl": 30969.0, "next_bo": 35300.0, "has_cash": true, "has_stock": true, "cash_years": [2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013, 2010, 2009], "stock_years": [2026, 2025, 2018, 2012], "fireant_url": "https://fireant.vn/ma-chung-khoan/PVS", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=HNX%3APVS", "category_group": "Tích Lũy Nền 2 Trên Đỉnh (High Base)"}, {"symbol": "NTP", "exchange": "HNX", "organ_name": "CTCP Nhựa Thiếu niên Tiền Phong", "sector": "Xây dựng và Vật liệu", "price": 52500.0, "peak": 55500.0, "gain_to_peak": 7.142857142857142, "pullback": -5.405405405405405, "first_bo_date": "13/08/2026", "first_bo_level": 51700.0, "first_bo_type": "Đỉnh 2 Tháng (40P)", "ma20": 51590.0, "ma50": 50050.0, "ma200": 50020.55, "vol20": 205505, "sl": 48825.0, "next_bo": 55500.0, "has_cash": true, "has_stock": true, "cash_years": [2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013, 2011, 2010, 2009], "stock_years": [2026, 2025, 2024, 2022, 2020, 2019, 2017, 2016, 2015, 2014], "fireant_url": "https://fireant.vn/ma-chung-khoan/NTP", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=HNX%3ANTP", "category_group": "Tích Lũy Nền 2 Trên Đỉnh (High Base)"}, {"symbol": "HII", "exchange": "HOSE", "organ_name": "CTCP An Tiến Industries", "sector": "Hóa chất", "price": 11300.0, "peak": 11500.0, "gain_to_peak": 87.90849673202614, "pullback": -1.7391304347826086, "first_bo_date": "24/07/2026", "first_bo_level": 6110.0, "first_bo_type": "Đỉnh 2 Tháng (40P)", "ma20": 9730.5, "ma50": 8171.8, "ma200": 6289.95, "vol20": 724695, "sl": 5865.599999999999, "next_bo": 11500.0, "has_cash": true, "has_stock": true, "cash_years": [2026, 2025, 2018, 2017], "stock_years": [2021, 2020], "fireant_url": "https://fireant.vn/ma-chung-khoan/HII", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=HOSE%3AHII", "category_group": "Tiếp Diễn Vượt Đỉnh (Trending / Fresh High)"}, {"symbol": "ASP", "exchange": "HOSE", "organ_name": "CTCP Tập đoàn Dầu khí An Pha", "sector": "Điện, nước & xăng dầu khí đốt", "price": 16100.000000000002, "peak": 16200.0, "gain_to_peak": 59.60591133004927, "pullback": -0.6172839506172727, "first_bo_date": "24/07/2026", "first_bo_level": 9970.0, "first_bo_type": "Đỉnh 1 Năm (52W)", "ma20": 14037.5, "ma50": 12066.0, "ma200": 7419.45, "vol20": 198945, "sl": 9571.199999999999, "next_bo": 16200.0, "has_cash": true, "has_stock": false, "cash_years": [2022, 2021, 2020, 2019, 2018, 2017, 2015, 2014, 2013, 2010, 2009], "stock_years": [], "fireant_url": "https://fireant.vn/ma-chung-khoan/ASP", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=HOSE%3AASP", "category_group": "Tiếp Diễn Vượt Đỉnh (Trending / Fresh High)"}, {"symbol": "HTN", "exchange": "HOSE", "organ_name": "CTCP Hưng Thịnh Incons", "sector": "Bất động sản", "price": 6850.0, "peak": 6940.0, "gain_to_peak": 39.63782696177062, "pullback": -1.2968299711815563, "first_bo_date": "10/08/2026", "first_bo_level": 4900.0, "first_bo_type": "Đỉnh 2 Tháng (40P)", "ma20": 6352.5, "ma50": 5378.8, "ma200": 5194.9, "vol20": 500075, "sl": 4704.0, "next_bo": 6940.0, "has_cash": true, "has_stock": true, "cash_years": [2022, 2020, 2019, 2018], "stock_years": [2026, 2021, 2019, 2018], "fireant_url": "https://fireant.vn/ma-chung-khoan/HTN", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=HOSE%3AHTN", "category_group": "Tiếp Diễn Vượt Đỉnh (Trending / Fresh High)"}, {"symbol": "MSR", "exchange": "UPCOM", "organ_name": "CTCP Masan High-Tech Materials", "sector": "Tài nguyên Cơ bản", "price": 51900.0, "peak": 52000.0, "gain_to_peak": 25.240847784200387, "pullback": -0.19230769230769232, "first_bo_date": "17/08/2026", "first_bo_level": 40930.0, "first_bo_type": "Đỉnh 3 Tháng (60P)", "ma20": 46107.5, "ma50": 40374.6, "ma200": 37745.1, "vol20": 1763185, "sl": 39292.799999999996, "next_bo": 52000.0, "has_cash": true, "has_stock": true, "cash_years": [2026], "stock_years": [2019, 2018], "fireant_url": "https://fireant.vn/ma-chung-khoan/MSR", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=UPCOM%3AMSR", "category_group": "Tiếp Diễn Vượt Đỉnh (Trending / Fresh High)"}, {"symbol": "APH", "exchange": "HOSE", "organ_name": "CTCP Tập đoàn An Phát Holdings", "sector": "Hàng & Dịch vụ Công nghiệp", "price": 7390.0, "peak": 7390.0, "gain_to_peak": 19.967532467532468, "pullback": 0.0, "first_bo_date": "11/08/2026", "first_bo_level": 5860.0, "first_bo_type": "Đỉnh 3 Tháng (60P)", "ma20": 6346.0, "ma50": 5926.4, "ma200": 5935.7, "vol20": 444750, "sl": 5625.599999999999, "next_bo": 7390.0, "has_cash": false, "has_stock": true, "cash_years": [], "stock_years": [2022], "fireant_url": "https://fireant.vn/ma-chung-khoan/APH", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=HOSE%3AAPH", "category_group": "Tiếp Diễn Vượt Đỉnh (Trending / Fresh High)"}, {"symbol": "HHP", "exchange": "HOSE", "organ_name": "CTCP HHP Global", "sector": "Tài nguyên Cơ bản", "price": 17400.0, "peak": 17400.0, "gain_to_peak": 12.987012987012985, "pullback": 0.0, "first_bo_date": "10/08/2026", "first_bo_level": 14690.0, "first_bo_type": "Đỉnh 1 Năm (52W)", "ma20": 16495.0, "ma50": 15168.0, "ma200": 13100.35, "vol20": 1074300, "sl": 14102.4, "next_bo": 17400.0, "has_cash": false, "has_stock": true, "cash_years": [], "stock_years": [2026, 2024, 2022, 2021, 2019], "fireant_url": "https://fireant.vn/ma-chung-khoan/HHP", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=HOSE%3AHHP", "category_group": "Tiếp Diễn Vượt Đỉnh (Trending / Fresh High)"}, {"symbol": "BSR", "exchange": "HOSE", "organ_name": "CTCP - Tổng Công ty Lọc hóa dầu Việt Nam", "sector": "Dầu khí", "price": 31550.0, "peak": 31850.0, "gain_to_peak": 11.75438596491228, "pullback": -0.9419152276295133, "first_bo_date": "14/09/2026", "first_bo_level": 28200.0, "first_bo_type": "Đỉnh 3 Tháng (60P)", "ma20": 27942.5, "ma50": 26287.4, "ma200": 24907.85, "vol20": 12226100, "sl": 27072.0, "next_bo": 31850.0, "has_cash": true, "has_stock": true, "cash_years": [2026, 2024, 2023, 2022], "stock_years": [2025], "fireant_url": "https://fireant.vn/ma-chung-khoan/BSR", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=HOSE%3ABSR", "category_group": "Tiếp Diễn Vượt Đỉnh (Trending / Fresh High)"}, {"symbol": "DRI", "exchange": "UPCOM", "organ_name": "CTCP Đầu tư Cao su Đắk Lắk", "sector": "Hóa chất", "price": 13890.0, "peak": 14170.0, "gain_to_peak": 7.838660578386605, "pullback": -1.9760056457304165, "first_bo_date": "21/08/2026", "first_bo_level": 12860.0, "first_bo_type": "Đỉnh 2 Tháng (40P)", "ma20": 13404.5, "ma50": 12691.6, "ma200": 12492.9, "vol20": 763510, "sl": 12345.6, "next_bo": 14170.0, "has_cash": true, "has_stock": false, "cash_years": [2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017], "stock_years": [], "fireant_url": "https://fireant.vn/ma-chung-khoan/DRI", "tradingview_url": "https://vn.tradingview.com/chart/?symbol=UPCOM%3ADRI", "category_group": "Tiếp Diễn Vượt Đỉnh (Trending / Fresh High)"}];
+
+    let currentFilter = 'all';
+    let currentSelected = STOCKS[0];
+
+    function renderList() {
+      const query = document.getElementById('searchInput').value.trim().toLowerCase();
+      const listEl = document.getElementById('stockList');
+      listEl.innerHTML = '';
+
+      const filtered = STOCKS.filter(s => {
+        // Filter category
+        if (currentFilter === 'pullback' && s.category_group !== 'Pullback Retest (Kiểu PIT/SSB)') return false;
+        if (currentFilter === 'base' && s.category_group !== 'Tích Lũy Nền 2 Trên Đỉnh (High Base)') return false;
+        if (currentFilter === 'trend' && s.category_group !== 'Tiếp Diễn Vượt Đỉnh (Trending / Fresh High)') return false;
+
+        // Search query
+        if (query) {
+          const matchSym = s.symbol.toLowerCase().includes(query);
+          const matchName = s.organ_name.toLowerCase().includes(query);
+          const matchSec = s.sector.toLowerCase().includes(query);
+          if (!matchSym && !matchName && !matchSec) return false;
+        }
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = '<div class="p-8 text-center text-slate-500 text-sm">Không tìm thấy mã phù hợp với điều kiện lọc.</div>';
+        return;
+      }
+
+      filtered.forEach(s => {
+        const isSelected = currentSelected && currentSelected.symbol === s.symbol;
+        const card = document.createElement('div');
+        card.className = `p-3.5 rounded-xl border transition cursor-pointer flex flex-col justify-between gap-2 ${
+          isSelected 
+            ? 'active-card shadow-lg shadow-blue-900/20' 
+            : 'bg-slate-900/70 hover:bg-slate-800/60 border-slate-800/80 hover:border-slate-700'
+        }`;
+
+        let badgeClass = 'bg-slate-800 text-slate-300 border-slate-700';
+        let badgeText = s.category_group.split(' (')[0];
+        if (s.category_group.includes('Pullback')) {
+          badgeClass = 'bg-amber-500/10 text-amber-400 border-amber-500/30';
+        } else if (s.category_group.includes('Tích Lũy')) {
+          badgeClass = 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30';
+        } else {
+          badgeClass = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
+        }
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="font-extrabold text-base text-white tracking-wide">${s.symbol}</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">${s.exchange}</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full border ${badgeClass} font-semibold">${badgeText}</span>
+            </div>
+            <div class="text-right font-black text-sm text-slate-100">
+              ${s.price.toLocaleString()} đ
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between text-xs text-slate-400 pt-1 border-t border-slate-800/60">
+            <span class="truncate max-w-[170px] text-slate-300 font-medium">${s.organ_name}</span>
+            <div class="flex items-center gap-2 shrink-0">
+              <span class="text-emerald-400 font-semibold">+${s.gain_to_peak.toFixed(1)}%</span>
+              <span class="${s.pullback <= -7 ? 'text-rose-400' : 'text-amber-400'} font-semibold">${s.pullback.toFixed(1)}%</span>
+            </div>
+          </div>
+        `;
+
+        card.onclick = () => {
+          currentSelected = s;
+          renderList();
+          renderDetail();
+        };
+
+        listEl.appendChild(card);
+      });
+
+      // Auto select first if selected was filtered out
+      if (!filtered.some(s => s.symbol === currentSelected.symbol)) {
+        currentSelected = filtered[0];
+        renderDetail();
+      }
+    }
+
+    function renderDetail() {
+      const s = currentSelected;
+      if (!s) return;
+
+      document.getElementById('detailSymbol').innerText = s.symbol;
+      document.getElementById('detailExchange').innerText = s.exchange;
+      document.getElementById('detailName').innerText = s.organ_name;
+      document.getElementById('detailSector').innerText = 'Nhóm Ngành: ' + s.sector;
+      document.getElementById('detailPrice').innerText = s.price.toLocaleString() + ' đ';
+      document.getElementById('detailGain').innerText = '+' + s.gain_to_peak.toFixed(1) + '% từ B.O';
+      document.getElementById('detailPullback').innerText = 'Pullback: ' + s.pullback.toFixed(1) + '%';
+      
+      const badgeEl = document.getElementById('detailCategoryBadge');
+      badgeEl.innerText = s.category_group;
+      if (s.category_group.includes('Pullback')) {
+        badgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/40';
+      } else if (s.category_group.includes('Tích Lũy')) {
+        badgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/20 text-indigo-400 border border-indigo-500/40';
+      } else {
+        badgeEl.className = 'px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
+      }
+
+      document.getElementById('mPeakPrice').innerText = s.peak.toLocaleString() + ' đ';
+      document.getElementById('mBoDate').innerText = s.first_bo_date;
+      document.getElementById('mBoType').innerText = s.first_bo_type + ' (' + s.first_bo_level.toLocaleString() + ' đ)';
+      document.getElementById('mSupport').innerText = s.ma20.toLocaleString() + ' đ';
+      document.getElementById('mStopLoss').innerText = s.sl.toLocaleString() + ' đ';
+      document.getElementById('mNextBoTrigger').innerText = 'Vùng B.O tiếp theo: > ' + s.next_bo.toLocaleString() + ' đ';
+      document.getElementById('mVolInfo').innerText = 'KL BQ 20P: ' + s.vol20.toLocaleString() + ' CP/phiên';
+
+      let strategy = '';
+      if (s.symbol === 'PIT') {
+        strategy = `Đã B.O vượt đỉnh 120 phiên (9,730 đ) tăng +39.8% lên 11,900 đ. Vừa xuất hiện 1 cây nến giảm sàn rũ bỏ về 11,000 đ. Vùng canh mua an toàn: quanh 10,000 - 10,200 đ (kiểm định lại đỉnh cũ) hoặc chờ bứt phá dứt khoát qua 12,000 đ; Quản trị rủi ro cắt lỗ nếu gãy 9,150 đ (MA20).`;
+      } else if (s.symbol === 'SSB') {
+        strategy = `Đã bứt phá vượt nền 16,550 đ lên đỉnh 24,800 đ (+45.0%), hiện đang pullback điều chỉnh -9.5% về vùng 22,450 đ (sáng nay test 21,100 đ). Kế hoạch: Chờ xuất hiện điểm xoay (Pivot) tạo đáy thứ 2 ở vùng 20,500 - 21,200 đ, hoặc chờ vượt hẳn 25,000 đ để nhồi lệnh với SL ngắn hơn; Cắt lỗ phòng vệ nếu gãy 18,500 đ (MA20).`;
+      } else if (s.symbol === 'TDP') {
+        strategy = `B.O vượt 27,090 đ lên đỉnh 31,770 đ (+16.1%), hiện đang điều chỉnh -10.3% retest MA20 (29,570 đ). Canh mở vị thế khi có nến đảo chiều rút chân tại vùng 28,000 - 28,500 đ, Stop Loss đặt tại 26,500 đ.`;
+      } else if (s.symbol === 'VIC') {
+        strategy = `Cổ phiếu trụ bứt phá vượt đỉnh 2 tháng lên 265,000 đ (+15.2%), hiện đang lùi về đúng hỗ trợ MA20 (235,900 đ). Nếu MA20 giữ vững và có lực cầu hấp thụ, mở vị thế lướt sóng retest; Cắt lỗ chặt tại 220,000 đ.`;
+      } else if (s.symbol === 'PHP') {
+        strategy = `Vượt đỉnh 52 tuần (+10.3%), sau đó lùi test lại đỉnh cũ 44,000 đ và MA20 (45,500 đ). Canh gom tích lũy quanh 43,500 - 44,200 đ, Stop Loss phòng vệ tại 41,500 đ.`;
+      } else if (s.symbol === 'PVT') {
+        strategy = `B.O vượt đỉnh 60 phiên (+11.3%), giữ nền 2 cực kỳ chặt chẽ quanh 23,000 đ (-2.7% từ đỉnh). Thích hợp mua tích lũy gom hàng quanh 22,800 - 23,100 đ, kỳ vọng nhịp 2 vượt 24,000 đ; Cắt lỗ nếu thủng 21,000 đ.`;
+      } else if (s.symbol === 'DGW') {
+        strategy = `B.O vượt đỉnh 3 tháng (+8.9%), giữ nền trên hỗ trợ MA20 (43,300 đ). Canh mua trong vùng nền 44,500 - 45,200 đ, mục tiêu hướng tới 50,000 đ, Stop Loss tại 42,000 đ.`;
+      } else if (s.symbol === 'BSR') {
+        strategy = `Bùng nổ vượt đỉnh 3 tháng (+11.8%), thanh khoản cực lớn đạt hơn 12.2 triệu CP/phiên, neo sát đỉnh 31,550 đ. Mua gia tăng khi vượt dứt khoát 32,000 đ hoặc canh gom khi rung lắc về 30,500 đ; Cắt lỗ tại 27,500 đ.`;
+      } else {
+        if (s.category_group.includes('Pullback')) {
+          strategy = `Đã bứt phá vượt ${s.first_bo_type} (+${s.gain_to_peak.toFixed(1)}%), đang chiết khấu lành mạnh ${s.pullback.toFixed(1)}% về gần MA20 (${s.ma20.toLocaleString()} đ). Chờ nến đảo chiều / điểm xoay tạo đáy Higher Low để vào lệnh, Stop Loss đặt tại ${s.sl.toLocaleString()} đ.`;
+        } else if (s.category_group.includes('Tích Lũy')) {
+          strategy = `B.O vượt đỉnh thành công, đang giữ nền 2 biên độ hẹp quanh đỉnh (${s.pullback.toFixed(1)}%). Thích hợp mua tích lũy trong nền giá hoặc mua điểm nổ vượt đỉnh ${s.next_bo.toLocaleString()} đ, Stop Loss tại ${s.sl.toLocaleString()} đ.`;
+        } else {
+          strategy = `Sức mạnh giá vượt trội, giao dịch sát đỉnh cao nhất (${s.pullback.toFixed(1)}%). Nắm giữ thuận xu hướng, chỉ mở mua mới khi có phiên bứt phá dứt khoát đỉnh ${s.next_bo.toLocaleString()} đ kèm khối lượng lớn.`;
+        }
+      }
+      document.getElementById('mStrategyText').innerText = strategy;
+
+      document.getElementById('btnFireant').href = s.fireant_url;
+      document.getElementById('btnTradingview').href = s.tradingview_url;
+    }
+
+    function setFilter(type) {
+      currentFilter = type;
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        if (btn.getAttribute('data-filter') === type) {
+          btn.className = 'filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 text-white transition shadow-sm';
+        } else {
+          btn.className = 'filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition border border-slate-700';
+        }
+      });
+      renderList();
+    }
+
+    document.getElementById('searchInput').addEventListener('input', () => {
+      renderList();
+    });
+
+    // Initialize
+    renderList();
+    renderDetail();
+  </script>
+</body>
+</html>

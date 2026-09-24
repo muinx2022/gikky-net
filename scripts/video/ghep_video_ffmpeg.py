@@ -89,22 +89,22 @@ def assemble_video(clips, out_filename):
 
 def main():
     print("==================================================")
-    print("GHÉP VIDEO CHỦ ĐỀ CHÊNH LỆCH GIÁ VÀNG CHO GIKKY.NET")
+    print("GHÉP VIDEO CHỦ ĐỀ BULL TRAP & CẮT LỖ -1R CHO GIKKY.NET")
     print("==================================================")
 
     # 1. Ghép YouTube 16:9 Video
     print("\n1. Render Video YouTube 16:9 Full HD (1920x1080)...")
     yt_clips = build_clips(YT_SCENES, 1920, 1080)
-    assemble_video(yt_clips, "gikky_youtube_gia_vang_chenh_lech_16x9.mp4")
+    assemble_video(yt_clips, "gikky_youtube_bull_trap_breakout_16x9.mp4")
 
     # 2. Ghép TikTok / Shorts 9:16 Video
     print("\n2. Render Video TikTok / Shorts 9:16 (1080x1920)...")
     short_clips = build_clips(SHORT_SCENES, 1080, 1920)
-    assemble_video(short_clips, "gikky_short_gia_vang_chenh_lech.mp4")
+    assemble_video(short_clips, "gikky_short_bull_trap_breakout.mp4")
 
     # 3. Copy Thumbnail vào apps/web/public/
-    thumb_src = os.path.join(SLIDES_DIR, "youtube_thumbnail_gia_vang_chenh_lech.png")
-    thumb_dst = os.path.join(PUBLIC_DIR, "youtube_thumbnail_gia_vang_chenh_lech.png")
+    thumb_src = os.path.join(SLIDES_DIR, "youtube_thumbnail_bull_trap_breakout.png")
+    thumb_dst = os.path.join(PUBLIC_DIR, "youtube_thumbnail_bull_trap_breakout.png")
     shutil.copyfile(thumb_src, thumb_dst)
     print(f"\n3. ĐÃ XUẤT THUMBNAIL: {thumb_dst}")
 

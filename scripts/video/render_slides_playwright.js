@@ -12,151 +12,229 @@ if (!fs.existsSync(SLIDES_DIR)) fs.mkdirSync(SLIDES_DIR, { recursive: true });
 const YT_SLIDES = [
   {
     id: "yt_slide_1",
-    badge: "NGHỊCH LÝ GIÁ VÀNG",
-    badgeColor: "#fbbf24",
-    title: "CÙNG 37.5G VÀNG 24K",
-    titleSub: "SAO TRONG NƯỚC ĐẮT HƠN 20 TRIỆU?",
-    desc: "Dù đúc ở London, New York hay dập tại Hà Nội, vàng đều là 99.99% Au. Nhưng tại sao vàng miếng SJC lại có lúc đắt hơn tới 25% giá thế giới?",
+    badge: "NHẬT KÝ THỰC CHIẾN #1154 · BREAKOUT TRADING",
+    badgeColor: "#10b981",
+    title: "BỨT PHÁ ĐỈNH 52.0",
+    titleSub: "SETUP SÁCH GIÁO KHOA & CẠM BẪY VOLUME",
+    desc: "Sau chuỗi phục hồi từ đáy 46.0, thị giá tiếp cận cản then chốt 52.0. Cây nến breakout xanh thân đặc xuất hiện kèm volume bùng nổ gấp đôi MA20. Kế hoạch mua theo đà bứt phá được kích hoạt ngay tại 52.5!",
     rightHtml: `
-      <div class="stat-dual">
-        <div class="stat-col win">
-          <div class="stat-num text-cyan">~85 TRĐ</div>
-          <div class="stat-txt">GIÁ VÀNG QUỐC TẾ (QUY ĐỔI)</div>
-          <div class="stat-money text-cyan">London / New York ($4,350/oz)</div>
-        </div>
-        <div class="stat-col loss">
-          <div class="stat-num text-gold">~105 TRĐ</div>
-          <div class="stat-txt">GIÁ VÀNG MIẾNG SJC NỘI ĐỊA</div>
-          <div class="stat-money text-rose">Chênh lệch: +20 Triệu / lượng!</div>
+      <div class="matrix-card">
+        <div class="m-head">THÔNG SỐ VỊ THẾ GIAO DỊCH (SETUP PLAN)</div>
+        <div class="m-grid">
+          <div class="m-box entry">
+            <div class="m-lbl">ĐIỂM VÀO (ENTRY)</div>
+            <div class="m-val text-cyan">52.500 đ</div>
+            <div class="m-sub">Mua đà bứt phá cản</div>
+          </div>
+          <div class="m-box sl">
+            <div class="m-lbl">DỪNG LỖ (STOP LOSS)</div>
+            <div class="m-val text-rose">50.500 đ</div>
+            <div class="m-sub">Rủi ro chuẩn -1R (2.0 giá)</div>
+          </div>
+          <div class="m-box tp">
+            <div class="m-lbl">CHỐT LỜI (TARGET)</div>
+            <div class="m-val text-emerald">57.500 đ</div>
+            <div class="m-sub">Kỳ vọng +2.5R (5.0 giá)</div>
+          </div>
+          <div class="m-box rr">
+            <div class="m-lbl">TỶ LỆ RÒ/LỜI (R:R)</div>
+            <div class="m-val text-gold">1 : 2.5</div>
+            <div class="m-sub">Tỷ lệ kỳ vọng chuẩn</div>
+          </div>
         </div>
       </div>
+
       <div class="chart-panel">
-        <div class="chart-head">KHOẢNG CÁCH CHÊNH LỆCH KỶ LỤC (PREMIUM THỂ CHẾ)</div>
-        <svg viewBox="0 0 620 180" class="chart-svg">
-          <!-- World Gold Line -->
-          <path d="M 30,130 Q 180,120 320,105 T 580,95" fill="none" stroke="#38bdf8" stroke-width="4" stroke-linecap="round"/>
-          <circle cx="580" cy="95" r="7" fill="#38bdf8"/>
-          <text x="500" y="80" fill="#38bdf8" font-size="14" font-weight="700">Vàng Thế Giới</text>
+        <div class="chart-head">MÔ HÌNH NẾN & THANH KHOẢN TẠI VÙNG ĐỈNH 52.0</div>
+        <svg viewBox="0 0 620 170" class="chart-svg">
+          <!-- Resistance Line 52.0 -->
+          <line x1="40" y1="80" x2="580" y2="80" stroke="#f59e0b" stroke-width="2" stroke-dasharray="6"/>
+          <text x="45" y="72" fill="#f59e0b" font-size="14" font-weight="800">KHÁNG CỰ 52.0 (CẢN CŨ)</text>
           
-          <!-- SJC Domestic Line -->
-          <path d="M 30,100 Q 180,75 320,55 T 580,30" fill="none" stroke="#fbbf24" stroke-width="6" stroke-linecap="round"/>
-          <circle cx="580" cy="30" r="8" fill="#fbbf24"/>
-          <text x="490" y="20" fill="#fbbf24" font-size="16" font-weight="800">Vàng Miếng SJC</text>
-          
-          <!-- Gap Bracket -->
-          <line x1="420" y1="42" x2="420" y2="100" stroke="#ef4444" stroke-width="3" stroke-dasharray="4"/>
-          <text x="430" y="75" fill="#f87171" font-size="16" font-weight="900">CHÊNH LỆCH 15 - 20 TRIỆU</text>
+          <!-- Candle 1: Hồi từ 46 -->
+          <line x1="120" y1="140" x2="120" y2="105" stroke="#10b981" stroke-width="2"/>
+          <rect x="110" y="115" width="20" height="20" fill="#10b981" rx="2"/>
+
+          <!-- Candle 2: Hồi tiếp -->
+          <line x1="200" y1="120" x2="200" y2="90" stroke="#10b981" stroke-width="2"/>
+          <rect x="190" y="95" width="20" height="20" fill="#10b981" rx="2"/>
+
+          <!-- Candle 3: Chạm cản 52.0 -->
+          <line x1="280" y1="100" x2="280" y2="78" stroke="#10b981" stroke-width="2"/>
+          <rect x="270" y="82" width="20" height="15" fill="#10b981" rx="2"/>
+
+          <!-- Candle 4: BREAKOUT NẾN XANH LỚN -->
+          <line x1="380" y1="85" x2="380" y2="45" stroke="#10b981" stroke-width="3"/>
+          <rect x="368" y="52" width="24" height="30" fill="#10b981" rx="2"/>
+          <text x="345" y="38" fill="#10b981" font-size="14" font-weight="900">BREAKOUT 52.5</text>
+
+          <!-- Volume Bars Below -->
+          <line x1="40" y1="135" x2="580" y2="135" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+          <rect x="112" y="145" width="16" height="18" fill="rgba(16, 185, 129, 0.4)"/>
+          <rect x="192" y="140" width="16" height="23" fill="rgba(16, 185, 129, 0.4)"/>
+          <rect x="272" y="142" width="16" height="21" fill="rgba(16, 185, 129, 0.4)"/>
+          <rect x="372" y="125" width="16" height="38" fill="#10b981"/>
+          <text x="400" y="145" fill="#10b981" font-size="13" font-weight="800">Vol x2.0 MA20</text>
         </svg>
       </div>
+
       <div class="alert-box">
-        💡 <b>SỰ THẬT:</b> Chi phí gia công dập một lượng vàng chỉ tốn vài chục nghìn đồng. Khoảng cách này đến từ <b>CẤU TRÚC THỂ CHẾ VÀ CHÍNH SÁCH NGOẠI HỐI!</b>
+        ⚠️ <b>CẢM BẪY NẰM Ở ĐÂU?</b> Nhịp hồi dốc đứng hình chữ V từ 46.0 lên 52.0 mà không có <b>nền tích lũy</b> hay biên độ co hẹp (VCP). Cú bứt phá tiềm ẩn nguy cơ là pha rướn kiệt sức!
       </div>
     `
   },
   {
     id: "yt_slide_2",
-    badge: "LỊCH SỬ NGHỊ ĐỊNH 24/2012",
+    badge: "GIẢI MÃ BẪY THANH KHOẢN (LIQUIDITY TRAP)",
     badgeColor: "#f59e0b",
-    title: "CHIẾC BÌNH KÍN NGHỊ ĐỊNH 24",
-    titleSub: "CHỐNG VÀNG HÓA NHƯNG ĐÓNG BĂNG NGUỒN CUNG",
-    desc: "2008-2011: Nạn vàng hóa đe dọa tỷ giá và lạm phát -> Nghị định 24 ra đời cắt đứt tín dụng vàng và độc quyền vàng miếng SJC.",
+    title: "LẬT MẶT TẠI 53.2",
+    titleSub: "SHOOTING STAR & BEARISH ENGULFING",
+    desc: "Cây nến tiếp theo rướn lên 53.2 nhưng lập tức bị xả ngược dữ dội, để lại bóng trên dài ngoẵng. Ngay sau đó, một nến đỏ đặc Bearish Engulfing nhấn chìm toàn bộ đà tăng và kéo giá sập sâu dưới 52.0!",
     rightHtml: `
-      <div class="cards-side-by-side">
-        <div class="c-card good">
-          <div class="c-icon">🧊</div>
-          <div class="c-title">NGUỒN CUNG ĐÓNG BĂNG</div>
-          <div class="c-amount text-rose">0 LƯỢNG MỚI (14 NĂM)</div>
-          <div class="c-desc">Kể từ 2012, NHNN hầu như không cấp phép nhập vàng nguyên liệu để dập mới SJC. Vàng lưu thông chỉ luân chuyển lòng vòng.</div>
-          <div class="c-tag tag-red">CUNG CỐ ĐỊNH TUYỆT ĐỐI</div>
+      <div class="dual-cards">
+        <div class="d-card fomo">
+          <div class="d-icon">🐑</div>
+          <div class="d-tag tag-fomo">GÓC NHÌN ĐÁM ĐÔNG FOMO</div>
+          <div class="d-title text-rose">TƯỞNG SMART MONEY ĐẨY GIÁ</div>
+          <div class="d-desc">Thấy vol nổ tung và vượt cản, đám đông ồ ạt mua đuổi ở 52.5 - 53.0 vì sợ lỡ sóng (FOMO), đẩy thị giá lên đỉnh chóp.</div>
         </div>
-        <div class="c-card bad">
-          <div class="c-icon">📈</div>
-          <div class="c-title">NHU CẦU TÍCH LŨY VÀNG</div>
-          <div class="c-amount text-gold">TĂNG GẤP 3 LẦN</div>
-          <div class="c-desc">Quy mô GDP tăng gấp 3, tầng lớp trung lưu nở rộ. Văn hóa tích trữ vàng hầm trú ẩn phòng ngừa rủi ro ăn sâu trong dân số.</div>
-          <div class="c-tag tag-green">CẦU TĂNG LIÊN TỤC</div>
+        <div class="d-card smart">
+          <div class="d-icon">🦈</div>
+          <div class="d-tag tag-smart">BẢN CHẤT DÒNG TIỀN LỚN</div>
+          <div class="d-title text-gold">SMART MONEY XẢ HÀNG ĐỐI ỨNG</div>
+          <div class="d-desc">Tạo thanh khoản rút lui (Exit Liquidity) tại vùng cản cứng để sang tay khối lượng lớn cổ phiếu cho người mua đuổi.</div>
         </div>
       </div>
+
+      <div class="chart-panel">
+        <div class="chart-head">HÀNH ĐỘNG GIÁ LẬT NGỬA: NẾN BẮN SAO & NẾN NHẤN CHÌM GIẢM</div>
+        <svg viewBox="0 0 620 160" class="chart-svg">
+          <!-- Resistance 52.0 -->
+          <line x1="40" y1="75" x2="580" y2="75" stroke="#f59e0b" stroke-width="2" stroke-dasharray="5"/>
+          <text x="45" y="68" fill="#f59e0b" font-size="13" font-weight="800">CẢN 52.0</text>
+
+          <!-- Breakout candle (earlier) -->
+          <line x1="160" y1="80" x2="160" y2="50" stroke="#10b981" stroke-width="2"/>
+          <rect x="150" y="55" width="20" height="25" fill="#10b981" rx="2"/>
+
+          <!-- Candle 2: Shooting Star at 53.2 -->
+          <line x1="280" y1="95" x2="280" y2="25" stroke="#ef4444" stroke-width="2"/>
+          <rect x="270" y="80" width="20" height="12" fill="#ef4444" rx="2"/>
+          <circle cx="280" cy="25" r="4" fill="#ef4444"/>
+          <text x="305" y="32" fill="#ef4444" font-size="14" font-weight="900">Shooting Star (Đỉnh 53.2)</text>
+
+          <!-- Candle 3: Bearish Engulfing Red Plunge -->
+          <line x1="420" y1="135" x2="420" y2="70" stroke="#ef4444" stroke-width="3"/>
+          <rect x="408" y="78" width="24" height="50" fill="#ef4444" rx="2"/>
+          <text x="445" y="105" fill="#ef4444" font-size="14" font-weight="900">Bearish Engulfing</text>
+          <text x="445" y="125" fill="#94a3b8" font-size="12">Sập thủng 52.0</text>
+        </svg>
+      </div>
+
       <div class="theory-box">
-        ⚖️ <b>Quy luật Cung - Cầu trong bình kín:</b><br/>
-        Khi một tài sản có <b>cung cố định</b> đặt cạnh một <b>lực cầu tăng gấp ba</b> mà không có cơ chế bình thông nhau với thế giới, giá nội địa tất yếu bị kéo giãn cực đại!
+        💡 <b>BẢN CHẤT BULL TRAP:</b> Một chiếc bẫy kích hoạt lệnh mua của đám đông và lệnh dừng lỗ của phe bán khống nhằm tạo lực mua đối ứng cho tay to chốt lời thoát hàng!
       </div>
     `
   },
   {
     id: "yt_slide_3",
-    badge: "BÀI TOÁN NGOẠI HỐI QUỐC GIA",
-    badgeColor: "#06b6d4",
-    title: "VÌ SAO KHÔNG NHẬP VÀNG?",
-    titleSub: "TẤM KHIÊN DỰ TRỮ USD & AN NINH NĂNG LƯỢNG",
-    desc: "Tại sao Ngân hàng Nhà nước không mở toang quota nhập khẩu vàng định kỳ để kéo giá trong nước về sát thế giới?",
+    badge: "QUẢN TRỊ RỦI RO & BẢO TOÀN VỐN",
+    badgeColor: "#ef4444",
+    title: "KỶ LUẬT 3 KHÔNG",
+    titleSub: "CẮT LỖ -1R CỨU SỐNG 99% TÀI SẢN",
+    desc: "Khi thị giá trượt dần về 51.2, khoản lỗ tạm tính chạm -0.65R. Tuân thủ tuyệt đối kỷ luật 3 KHÔNG. Khi giá đâm thủng 50.5, hệ thống tự động kích hoạt cắt lỗ -1R dứt khoát!",
     rightHtml: `
-      <div class="table-card">
-        <div class="t-head">BÀI TOÁN TIÊU TỐN NGOẠI TỆ (USD TIỀN MẶT) ĐỂ NHẬP VÀNG</div>
-        <div class="t-row loss">
-          <div class="t-left">
-            <span class="t-badge bg-rose text-white">1 TẤN VÀNG NGUYÊN LIỆU</span>
-            <span class="t-calc">Ở mức giá thế giới ~$4,350/oz</span>
+      <div class="rules-card">
+        <div class="rc-head">BỘ 3 NGUYÊN TẮC THÉP TRONG QUẢN TRỊ LỆNH</div>
+        <div class="rc-list">
+          <div class="rc-item">
+            <span class="rc-badge">1</span>
+            <div class="rc-txt"><b>KHÔNG nới rộng Stop Loss:</b> Điểm dừng lỗ là ranh giới sống còn được tính toán trước khi vào lệnh. Nới SL là bước đầu tiên của cháy tài khoản.</div>
           </div>
-          <div class="t-right text-rose">TIÊU TỐN 140 TRIỆU USD</div>
-        </div>
-        <div class="t-row win">
-          <div class="t-left">
-            <span class="t-badge bg-cyan text-black">MỤC ĐÍCH SỐNG CÒN CỦA DỰ TRỮ USD</span>
-            <span class="t-calc">Nhập khẩu xăng dầu, máy móc, linh kiện & giữ giá VND</span>
+          <div class="rc-item">
+            <span class="rc-badge">2</span>
+            <div class="rc-txt"><b>KHÔNG gồng lỗ vô căn cứ:</b> Thị trường không có nghĩa vụ phải quay lại đón bạn. Hy vọng không phải là một kế hoạch giao dịch.</div>
           </div>
-          <div class="t-right text-emerald">AN NINH NỀN KINH TẾ</div>
-        </div>
-        <div class="t-divider"></div>
-        <div class="t-total">
-          <div class="tot-label">ĐÁNH ĐỔI VĨ MÔ:</div>
-          <div class="tot-val text-cyan">BẢO VỆ TỶ GIÁ VND > HẠ GIÁ VÀNG TRONG KÉT</div>
+          <div class="rc-item">
+            <span class="rc-badge">3</span>
+            <div class="rc-txt"><b>KHÔNG nhồi lệnh bình quân giá xuống (DCA âm):</b> Sai lầm chồng chất sai lầm sẽ biến một khoản lỗ nhỏ thành thảm họa xóa sổ danh mục.</div>
+          </div>
         </div>
       </div>
-      <div class="key-point">
-        🛡️ <b>Tầm nhìn chiến lược:</b> Vàng nằm im trong két không tạo ra việc làm, không sinh ra GDP. Dành hàng tỷ USD nhập vàng sẽ làm suy yếu tấm khiên dự trữ ngoại hối của quốc gia!
+
+      <div class="comparison-card">
+        <div class="cc-row safe">
+          <div class="cc-left">
+            <div class="cc-title text-emerald">CẮT LỖ KỶ LUẬT TẠI 50.5 (-1R)</div>
+            <div class="cc-sub">Thoát đúng kế hoạch, mất -3.8% vị thế</div>
+          </div>
+          <div class="cc-val text-emerald">BẢO TOÀN 99% TỔNG TÀI SẢN</div>
+        </div>
+        <div class="cc-divider"></div>
+        <div class="cc-row danger">
+          <div class="cc-left">
+            <div class="cc-title text-rose">NẾU GỒNG LỖ KHI GIÁ VỀ 47.2</div>
+            <div class="cc-sub">Giá rơi tự do -10.1% từ đỉnh breakout</div>
+          </div>
+          <div class="cc-val text-rose">LỖ NẶNG -2.65R & TÊ LIỆT VỐN</div>
+        </div>
+      </div>
+
+      <div class="shield-box">
+        🛡️ <b>BỨC TƯỜNG LỬA -1R:</b> Cắt lỗ dứt khoát không bao giờ là thất bại — đó là tấm vé bảo hiểm giúp bạn sống sót qua mọi đợt thanh trừng của thị trường!
       </div>
     `
   },
   {
     id: "yt_slide_4",
-    badge: "CẢNH BÁO RỦI RO ĐẦU TƯ",
-    badgeColor: "#ef4444",
-    title: "RỦI RO ĐU ĐỈNH THỂ CHẾ",
-    titleSub: "KHOẢN CHÊNH LỆCH CÓ THỂ BỐC HƠI BẤT CỨ LÚC NÀO",
-    desc: "Mức chênh 15-20 triệu/lượng thực chất là một khoản Phí Bảo Hiểm Thể Chế (Regulatory Premium) đầy rủi ro bất đối xứng.",
+    badge: "TÂM LÝ GIAO DỊCH & TOÁN XÁC SUẤT",
+    badgeColor: "#38bdf8",
+    title: "BÀI HỌC VỀ VỊ THẾ",
+    titleSub: "CHI PHÍ VẬN HÀNH & KỲ VỌNG TOÁN HỌC",
+    desc: "Càng sợ bỏ lỡ cơ hội, trader càng dễ mua ở mức giá bất lợi nhất. Trong trading: Không làm gì cũng là một vị thế. Chờ nến ngày đóng cửa hoặc chờ nhịp retest kiểm định cản là bộ lọc an toàn nhất!",
     rightHtml: `
-      <div class="mock-journal">
-        <div class="j-top">
-          <span class="j-brand">HỆ LỤY NGẦM & RỦI RO CHÍNH SÁCH</span>
-          <span class="j-status">● NGUY CƠ BỐC HƠI VỐN</span>
+      <div class="contrast-panel">
+        <div class="cp-col bad">
+          <div class="cp-head text-rose">❌ BẪY TÂM LÝ FOMO MUA ĐUỔI</div>
+          <ul class="cp-list">
+            <li>Vội vã đu lệnh ngay trong phiên khi nến vừa nhú qua cản</li>
+            <li>Điểm cắt lỗ quá xa, tỷ lệ Risk:Reward bị bóp méo bất lợi</li>
+            <li>Trở thành thanh khoản rút lui (Exit Liquidity) cho dòng tiền lớn</li>
+          </ul>
         </div>
-        <div class="rule-list">
-          <div class="r-item">
-            <div class="r-num">1</div>
-            <div class="r-content">
-              <b>ÁP LỰC USD CHỢ ĐEN & BUÔN LẬU:</b><br/>
-              Chênh lệch 20% kích thích đầu cơ, các đường dây buôn lậu gom USD tiền mặt đẩy tỷ giá tự do tăng vọt, gây áp lực lên tỷ giá chính thức.
-            </div>
+        <div class="cp-col good">
+          <div class="cp-head text-cyan">✅ KIÊN NHẪN CHỜ RETEST CẢN</div>
+          <ul class="cp-list">
+            <li>Chờ nến ngày xác nhận đóng cửa vững chắc trên vùng cản 52.0</li>
+            <li>Đợi nhịp pullback kiểm tra lại cản cũ chuyển hóa thành hỗ trợ</li>
+            <li>Vào lệnh với điểm Stop Loss cực chặt, R:R tối ưu từ 1:3 trở lên</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="math-box">
+        <div class="mb-head">TƯ DUY KINH DOANH XÁC SUẤT (R:R VÀ WINRATE)</div>
+        <div class="mb-grid">
+          <div class="mb-item">
+            <div class="mb-t">CHI PHÍ VẬN HÀNH</div>
+            <div class="mb-v text-rose">-1.0 R</div>
+            <div class="mb-d">Mỗi lần sai, bạn chỉ mất cố định 1R</div>
           </div>
-          <div class="r-item">
-            <div class="r-num">2</div>
-            <div class="r-content">
-              <b>KỊCH BẢN SỬA ĐỔI NGHỊ ĐỊNH 24:</b><br/>
-              Nếu nhà nước xóa bỏ độc quyền SJC, cấp phép thêm thương hiệu chuẩn hoặc lập sàn vàng điện tử — lớp thặng dư 20 triệu sẽ bốc hơi nhanh chóng!
-            </div>
+          <div class="mb-item">
+            <div class="mb-t">LỢI NHUẬN MỤC TIÊU</div>
+            <div class="mb-v text-emerald">+2.5 R ~ +3.0 R</div>
+            <div class="mb-d">Mỗi lần đúng, bù đắp từ 2 đến 3 lệnh thua</div>
           </div>
-          <div class="r-item">
-            <div class="r-num">3</div>
-            <div class="r-content">
-              <b>BẪY ĐU ĐỈNH KHI VÀNG THẾ GIỚI ĐI NGANG:</b><br/>
-              Dù giá thế giới không giảm, người mua vàng SJC ở vùng chênh lệch đỉnh vẫn có thể chịu khoản lỗ nặng khi thị trường thu hẹp khoảng cách.
-            </div>
+          <div class="mb-item">
+            <div class="mb-t">TỶ LỆ THẮNG CẦN THIẾT</div>
+            <div class="mb-v text-gold">CHỈ CẦN 40%</div>
+            <div class="mb-d">Tài khoản vẫn tăng trưởng bền vững</div>
           </div>
         </div>
       </div>
-      <div class="rule-box">
-        ⚠️ <b>Lời khuyên chuyên gia:</b> Mua vàng tích sản ở mức premium 20% là bạn đang đặt cược vào chính sách chứ không còn là đặt cược vào giá trị của vàng!
+
+      <div class="mindset-note">
+        🧠 <b>GHI NHỚ CỐT LÕI:</b> Nghề trading không phải là nghề đoán đúng 100%, mà là nghề quản trị rủi ro khi sai và tối ưu lợi nhuận khi đúng!
       </div>
     `
   },
@@ -164,9 +242,9 @@ const YT_SLIDES = [
     id: "yt_slide_5",
     badge: "NỀN TẢNG GIKKY.NET",
     badgeColor: "#ffffff",
-    title: "MINH BẠCH VĨ MÔ",
-    titleSub: "NÂNG TẦM QUẢN TRỊ RỦI RO",
-    desc: "Bóc tách dòng tiền, giải mã chính sách và bài học đầu tư thực chiến dành riêng cho người Việt",
+    title: "MINH BẠCH NHẬT KÝ LỆNH",
+    titleSub: "NÂNG TẦM BẢN LĨNH GIAO DỊCH",
+    desc: "Toàn bộ diễn biến thương vụ, từ những deal thắng lớn cho tới bài học cắt lỗ chuẩn mực đều được cập nhật minh bạch, thời gian thực tại gikky.net",
     rightHtml: `
       <div class="outro-card">
         <div class="outro-logo-row">
@@ -175,29 +253,31 @@ const YT_SLIDES = [
           </svg>
           <div class="outro-brand-text">
             <div class="ob-name">gikky.net</div>
-            <div class="ob-tag">PHÂN TÍCH VĨ MÔ · THỊ TRƯỜNG · QUẢN TRỊ VỐN</div>
+            <div class="ob-tag">HỆ THỐNG NHẬT KÝ THỰC CHIẾN & PHÂN TÍCH VĨ MÔ</div>
           </div>
         </div>
+
         <div class="outro-features">
           <div class="of-box">
-            <div class="of-icon">🏛️</div>
-            <div class="of-t">GIẢI MÃ CHÍNH SÁCH</div>
-            <div class="of-d">Hiểu rõ cơ chế lãi suất, tỷ giá OMO và vàng vĩ mô</div>
-          </div>
-          <div class="of-box">
             <div class="of-icon">📊</div>
-            <div class="of-t">THEO DÕI THỰC CHIẾN</div>
-            <div class="of-d">Mạch lệnh demo thực tế: Vào lệnh, Quản trị, Đóng sổ</div>
+            <div class="of-t">NHẬT KÝ LỆNH REALTIME</div>
+            <div class="of-d">Minh bạch 100% Entry, Stop Loss, Trailing Stop và Take Profit</div>
           </div>
           <div class="of-box">
-            <div class="of-icon">🧠</div>
-            <div class="of-t">TÂM LÝ ĐẦU TƯ</div>
-            <div class="of-d">Kiểm soát bẫy cảm xúc và bảo vệ tài sản bền vững</div>
+            <div class="of-icon">🛡️</div>
+            <div class="of-t">QUẢN TRỊ VỐN KỶ LUẬT</div>
+            <div class="of-d">Chuẩn hóa rủi ro R:R, bảo toàn vốn và loại bỏ hoàn toàn cảm xúc</div>
+          </div>
+          <div class="of-box">
+            <div class="of-icon">🎯</div>
+            <div class="of-t">BÓC TÁCH SMART MONEY</div>
+            <div class="of-d">Giải mã bẫy thanh khoản, khối lượng và dòng tiền lớn trên thị trường</div>
           </div>
         </div>
       </div>
+
       <div class="cta-banner">
-        🔔 <b>ĐĂNG KÝ KÊNH @gikky-net & BẬT THÔNG BÁO ĐỂ ĐÓN XEM PHÂN TÍCH TIẾP THEO!</b>
+        🔔 <b>ĐĂNG KÝ KÊNH @gikky-net & BẬT THÔNG BÁO ĐỂ ĐÓN XEM NHỮNG VIDEO THỰC CHIẾN TIẾP THEO!</b>
       </div>
     `
   }
@@ -207,115 +287,162 @@ const YT_SLIDES = [
 const SHORT_SLIDES = [
   {
     id: "short_slide_1",
-    badge: "NGHỊCH LÝ GIÁ VÀNG",
-    badgeColor: "#fbbf24",
-    title: "CÙNG 37.5G VÀNG 24K",
-    titleColor: "#fbbf24",
-    subtitle: "SAO VIỆT NAM ĐẮT HƠN 20 TRIỆU?",
+    badge: "BẪY THANH KHOẢN (BULL TRAP)",
+    badgeColor: "#10b981",
+    title: "CÂY NẾN BREAKOUT 52.0",
+    titleColor: "#10b981",
+    subtitle: "ĐẸP NHƯ MƠ HAY CÚ LỪA KINH HOÀNG?",
     subtitleColor: "#f87171",
     contentHtml: `
-      <div class="s-stat-box">
-        <div class="s-num-box win">
-          <div class="s-val text-cyan">~85 TR</div>
-          <div class="s-lbl">VÀNG THẾ GIỚI (QUY ĐỔI)</div>
+      <div class="s-matrix">
+        <div class="sm-box entry">
+          <div class="sm-lbl">MUA ĐUỔI BREAKOUT</div>
+          <div class="sm-val text-cyan">52.500 đ</div>
         </div>
-        <div class="s-num-box loss">
-          <div class="s-val text-gold">~105 TR</div>
-          <div class="s-lbl">VÀNG SJC TRONG NƯỚC</div>
+        <div class="sm-box sl">
+          <div class="sm-lbl">STOP LOSS CHUẨN</div>
+          <div class="sm-val text-rose">50.500 đ (-1R)</div>
         </div>
       </div>
+
       <div class="s-chart-box">
         <div class="s-chart-head">
-          <span>KHOẢNG CÁCH PHI LÝ</span>
-          <span class="s-badge-red">+20 TRIỆU/LƯỢNG</span>
+          <span>VÙNG CẢN 52.0</span>
+          <span class="s-badge-green">VOL X2 MA20</span>
         </div>
         <svg viewBox="0 0 500 220" class="s-chart-svg">
-          <path d="M 20,150 Q 200,130 480,120" fill="none" stroke="#38bdf8" stroke-width="5" stroke-linecap="round"/>
-          <text x="400" y="105" fill="#38bdf8" font-size="16" font-weight="700">Vàng Thế Giới</text>
+          <!-- Cản 52.0 -->
+          <line x1="20" y1="100" x2="480" y2="100" stroke="#f59e0b" stroke-width="3" stroke-dasharray="6"/>
+          <text x="30" y="88" fill="#f59e0b" font-size="16" font-weight="800">KHÁNG CỰ 52.0</text>
           
-          <path d="M 20,90 Q 200,60 480,30" fill="none" stroke="#fbbf24" stroke-width="7" stroke-linecap="round"/>
-          <text x="380" y="20" fill="#fbbf24" font-size="18" font-weight="800">Vàng SJC</text>
-          
-          <line x1="320" y1="45" x2="320" y2="125" stroke="#ef4444" stroke-width="4" stroke-dasharray="4"/>
-          <text x="335" y="90" fill="#ef4444" font-size="20" font-weight="900">+20% PREMIUM</text>
+          <!-- Hồi đáy 46 -->
+          <line x1="80" y1="170" x2="80" y2="135" stroke="#10b981" stroke-width="3"/>
+          <rect x="70" y="145" width="20" height="20" fill="#10b981" rx="2"/>
+
+          <line x1="160" y1="150" x2="160" y2="115" stroke="#10b981" stroke-width="3"/>
+          <rect x="150" y="125" width="20" height="20" fill="#10b981" rx="2"/>
+
+          <!-- Nến bứt phá -->
+          <line x1="270" y1="110" x2="270" y2="55" stroke="#10b981" stroke-width="4"/>
+          <rect x="255" y="65" width="30" height="40" fill="#10b981" rx="3"/>
+          <text x="230" y="45" fill="#10b981" font-size="18" font-weight="900">BREAKOUT 52.5!</text>
+
+          <!-- Vol Bar -->
+          <rect x="258" y="165" width="24" height="45" fill="#10b981"/>
+          <text x="290" y="195" fill="#10b981" font-size="16" font-weight="800">Vol bùng nổ!</text>
         </svg>
       </div>
-      <div class="s-quote">
-        "Chi phí dập vàng chỉ vài chục nghìn. Vì sao người mua phải trả thặng dư tới 20 triệu?"
+
+      <div class="s-warn-box">
+        ⚠️ <b>NGUY HIỂM:</b> Nhịp tăng dốc đứng chữ V không hề có nền tích lũy. Cú bứt phá tiềm ẩn nguy cơ là pha rướn kiệt sức!
       </div>
     `
   },
   {
     id: "short_slide_2",
-    badge: "CHIẾC BÌNH KÍN",
+    badge: "LẬT MẶT TẠI ĐỈNH 53.2",
     badgeColor: "#f59e0b",
-    title: "CUNG BỊ ĐÓNG BĂNG",
-    titleColor: "#f59e0b",
-    subtitle: "SUỐT 14 NĂM QUA CỦA NGHỊ ĐỊNH 24",
-    subtitleColor: "#cbd5e1",
+    title: "CÚ LỪA SMART MONEY",
+    titleColor: "#fbbf24",
+    subtitle: "SHOOTING STAR & XẢ HÀNG ĐỐI ỨNG",
+    subtitleColor: "#f87171",
     contentHtml: `
-      <div class="s-card-stack">
-        <div class="s-card red">
-          <div class="sc-title">🧊 NGUỒN CUNG ĐÓNG BĂNG</div>
-          <div class="sc-body">Từ 2012, Nhà nước độc quyền SJC và hầu như không cấp phép nhập vàng nguyên liệu dập mới.</div>
+      <div class="s-split-box">
+        <div class="ss-item fomo">
+          <div class="ss-t text-rose">🐑 F0 FOMO MUA ĐUỔI</div>
+          <div class="ss-d">Tưởng tay to đánh bứt phá, vội vã đua lệnh ở 52.5 - 53.0</div>
         </div>
-        <div class="s-card green">
-          <div class="sc-title">📈 NHU CẦU TĂNG GẤP 3</div>
-          <div class="sc-body">Kinh tế tăng trưởng, người dân tìm kiếm hầm trú ẩn an toàn đẩy sức cầu lên cao chót vót.</div>
+        <div class="ss-item smart">
+          <div class="ss-t text-gold">🦈 SMART MONEY XẢ HÀNG</div>
+          <div class="ss-d">Tạo thanh khoản rút lui (Exit Liquidity) để thoát toàn bộ hàng</div>
         </div>
       </div>
-      <div class="s-alert-box">
-        ⚖️ <b>HỆ QUẢ:</b> Cung cố định + Cầu tăng vọt trong bình kín = Giá tất yếu bị thổi phồng kỷ lục!
+
+      <div class="s-chart-box">
+        <div class="s-chart-head">
+          <span>HÀNH ĐỘNG GIÁ</span>
+          <span class="s-badge-red">BẪY THANH KHOẢN</span>
+        </div>
+        <svg viewBox="0 0 500 220" class="s-chart-svg">
+          <!-- Cản 52.0 -->
+          <line x1="20" y1="90" x2="480" y2="90" stroke="#f59e0b" stroke-width="2" stroke-dasharray="5"/>
+          <text x="30" y="80" fill="#f59e0b" font-size="15" font-weight="700">CẢN 52.0</text>
+
+          <!-- Breakout nến 1 -->
+          <line x1="120" y1="100" x2="120" y2="65" stroke="#10b981" stroke-width="3"/>
+          <rect x="110" y="70" width="20" height="25" fill="#10b981" rx="2"/>
+
+          <!-- Shooting star -->
+          <line x1="240" y1="110" x2="240" y2="30" stroke="#ef4444" stroke-width="3"/>
+          <rect x="230" y="95" width="20" height="12" fill="#ef4444" rx="2"/>
+          <circle cx="240" cy="30" r="5" fill="#ef4444"/>
+          <text x="260" y="40" fill="#ef4444" font-size="16" font-weight="900">Bắn sao 53.2 (Rút râu)</text>
+
+          <!-- Nến đỏ nhấn chìm -->
+          <line x1="360" y1="175" x2="360" y2="90" stroke="#ef4444" stroke-width="4"/>
+          <rect x="345" y="95" width="30" height="70" fill="#ef4444" rx="2"/>
+          <text x="390" y="135" fill="#ef4444" font-size="18" font-weight="900">Bearish Engulfing!</text>
+        </svg>
+      </div>
+
+      <div class="s-warn-box">
+        💡 <b>SỰ THẬT:</b> Nến đỏ nhấn chìm nuốt gọn cây nến xanh, thị giá rơi thẳng tuột trở lại dưới 52.0!
       </div>
     `
   },
   {
     id: "short_slide_3",
-    badge: "DỰ TRỮ NGOẠI HỐI",
-    badgeColor: "#06b6d4",
-    title: "TẠI SAO KHÔNG NHẬP VÀNG?",
-    titleColor: "#38bdf8",
-    subtitle: "BẢO VỆ AN NINH NGOẠI HỐI QUỐC GIA",
-    subtitleColor: "#94a3b8",
+    badge: "KỶ LUẬT QUẢN TRỊ VỐN",
+    badgeColor: "#ef4444",
+    title: "CẮT LỖ CHUẨN -1R",
+    titleColor: "#f87171",
+    subtitle: "CỨU SỐNG 99% TỔNG TÀI SẢN",
+    subtitleColor: "#ffffff",
     contentHtml: `
-      <div class="s-versus-table">
-        <div class="sv-col loss">
-          <div class="sv-badge text-rose">NHẬP 1 TẤN VÀNG</div>
-          <div class="sv-loss text-rose">140 TRIỆU $</div>
-          <div class="sv-res">TIỀN MẶT USD BỐC HƠI</div>
+      <div class="s-compare-card">
+        <div class="sc-col safe">
+          <div class="sc-badge text-emerald">KỶ LUẬT THOÁT LỆNH</div>
+          <div class="sc-price">50.500 đ</div>
+          <div class="sc-loss text-emerald">-1.0 R</div>
+          <div class="sc-res">Mất đúng 3.8% vị thế<br/><b>Bảo toàn 99% vốn!</b></div>
         </div>
-        <div class="sv-col win">
-          <div class="sv-badge text-cyan">DỰ TRỮ QUỐC GIA</div>
-          <div class="sv-loss text-emerald">XĂNG DẦU</div>
-          <div class="sv-res">GIỮ ỔN ĐỊNH TỶ GIÁ VND</div>
+        <div class="sc-col danger">
+          <div class="sc-badge text-rose">NẾU GỒNG LỖ</div>
+          <div class="sc-price">47.200 đ</div>
+          <div class="sc-loss text-rose">-2.65 R</div>
+          <div class="sc-res">Sụt -10.1% từ đỉnh<br/><b>Tâm lý tê liệt hoàn toàn!</b></div>
         </div>
       </div>
-      <div class="s-quote">
-        "Vàng trong két không sinh ra GDP. Dành USD nhập vàng sẽ làm suy yếu tấm khiên tiền tệ quốc gia!"
+
+      <div class="s-rule-box">
+        <div class="srb-head">3 NGUYÊN TẮC THÉP:</div>
+        <div class="srb-item">❌ 1. KHÔNG nới rộng Stop Loss</div>
+        <div class="srb-item">❌ 2. KHÔNG gồng lỗ vô căn cứ</div>
+        <div class="srb-item">❌ 3. KHÔNG nhồi lệnh bình quân giá xuống (DCA âm)</div>
       </div>
     `
   },
   {
     id: "short_slide_4",
-    badge: "RỦI RO ĐU ĐỈNH",
-    badgeColor: "#ef4444",
-    title: "THẶNG DƯ THỂ CHẾ",
-    titleColor: "#ef4444",
-    subtitle: "CẢNH BÁO RỦI RO BỐC HƠI 20 TRIỆU",
-    subtitleColor: "#fca5a5",
+    badge: "TÂM LÝ & TOÁN XÁC SUẤT",
+    badgeColor: "#38bdf8",
+    title: "BÀI HỌC VÀNG CHO TRADER",
+    titleColor: "#38bdf8",
+    subtitle: "ĐỪNG LÀM THANH KHOẢN CHO TAY TO!",
+    subtitleColor: "#fbbf24",
     contentHtml: `
       <div class="s-rules-list">
         <div class="s-rule-item">
-          <span class="sr-badge">1</span>
-          <span class="sr-txt"><b>ĐÂY LÀ PHÍ ĐỘC QUYỀN:</b> Bạn đang trả 20 triệu cho tính pháp lý thương hiệu SJC.</span>
+          <div class="sr-badge">1</div>
+          <div class="sr-txt"><b>Không làm gì cũng là một vị thế:</b> Kiên nhẫn chờ nến ngày đóng cửa hoặc chờ nhịp retest kiểm định cản.</div>
         </div>
         <div class="s-rule-item">
-          <span class="sr-badge">2</span>
-          <span class="sr-txt"><b>NẾU SỬA NGHỊ ĐỊNH 24:</b> Xóa độc quyền SJC thì lớp chênh lệch này sẽ bốc hơi rất nhanh!</span>
+          <div class="sr-badge">2</div>
+          <div class="sr-txt"><b>Cắt lỗ -1R là chi phí vận hành:</b> Thua 1R là hoàn toàn bình thường trong nghề kinh doanh xác suất.</div>
         </div>
         <div class="s-rule-item">
-          <span class="sr-badge">3</span>
-          <span class="sr-txt"><b>BẪY ĐU ĐỈNH:</b> Giá thế giới đi ngang, bạn vẫn có thể chịu lỗ nặng vì khoảng cách thu hẹp.</span>
+          <div class="sr-badge">3</div>
+          <div class="sr-txt"><b>Tối ưu tỷ lệ Risk:Reward:</b> Chỉ cần Win Rate 40% với R:R 1:2.5, tài khoản vẫn tăng trưởng vượt bậc!</div>
         </div>
       </div>
     `
@@ -324,18 +451,22 @@ const SHORT_SLIDES = [
     id: "short_slide_5",
     badge: "GIKKY.NET",
     badgeColor: "#ffffff",
-    title: "GÓC NHÌN VĨ MÔ",
+    title: "NHẬT KÝ THỰC CHIẾN",
     titleColor: "#ffffff",
-    subtitle: "BÓC TÁCH DÒNG TIỀN VÀ QUẢN TRỊ RỦI RO",
-    subtitleColor: "#38bdf8",
+    subtitle: "MINH BẠCH - KỶ LUẬT - BẢN LĨNH",
+    subtitleColor: "#fbbf24",
     contentHtml: `
       <div class="s-outro-wrap">
         <svg viewBox="0 0 120 120" class="s-outro-logo">
-          <path d="${SVG_PATH_D}" fill="#ffffff" />
+          <path d="${SVG_PATH_D}" fill="#fbbf24" />
         </svg>
         <div class="s-brand-title">gikky.net</div>
-        <div class="s-brand-desc">Đọc bài phân tích chuyên sâu cơ chế giá vàng & vĩ mô tiền tệ</div>
-        <div class="s-cta-btn">KHÁM PHÁ NGAY LINK BIO ➔</div>
+        <div class="s-brand-desc">
+          Theo dõi toàn bộ mạch lệnh thực chiến realtime, quản trị vốn R:R và bài học thị trường mỗi ngày!
+        </div>
+        <div class="s-cta-btn">
+          XEM CHI TIẾT TẠI GIKKY.NET
+        </div>
       </div>
     `
   }
@@ -352,7 +483,7 @@ function getThumbnailHtml() {
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       width: 1280px; height: 720px;
-      background: radial-gradient(circle at 75% 25%, #231c0c 0%, #080a0f 85%);
+      background: radial-gradient(circle at 75% 25%, #251214 0%, #080a0f 85%);
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
       color: #ffffff;
       position: relative;
@@ -369,24 +500,24 @@ function getThumbnailHtml() {
     .left-side {
       position: relative; z-index: 2;
       width: 760px; height: 100%;
-      padding: 60px 50px;
+      padding: 55px 50px;
       display: flex; flex-direction: column; justify-content: space-between;
     }
     .brand-tag {
       display: inline-flex; align-items: center; gap: 12px;
-      background: rgba(251, 191, 36, 0.15);
-      border: 1px solid rgba(251, 191, 36, 0.4);
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.4);
       padding: 8px 18px; border-radius: 999px;
       width: fit-content;
     }
     .brand-tag svg { width: 22px; height: 22px; }
-    .brand-tag span { font-size: 16px; font-weight: 800; letter-spacing: 2px; color: #fbbf24; }
+    .brand-tag span { font-size: 16px; font-weight: 800; letter-spacing: 2px; color: #f87171; }
     
-    .title-group { margin-top: 15px; }
+    .title-group { margin-top: 10px; }
     .title-h1 {
-      font-size: 58px; font-weight: 900; line-height: 1.1;
+      font-size: 64px; font-weight: 900; line-height: 1.08;
       letter-spacing: -1px; color: #ffffff; text-transform: uppercase;
-      text-shadow: 0 4px 20px rgba(0,0,0,0.8);
+      text-shadow: 0 4px 25px rgba(0,0,0,0.9);
     }
     .title-gold {
       color: #fbbf24;
@@ -395,22 +526,22 @@ function getThumbnailHtml() {
     }
     .title-red {
       color: #ef4444;
-      background: linear-gradient(135deg, #f87171, #ef4444);
+      background: linear-gradient(135deg, #fca5a5, #ef4444, #b91c1c);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
     .subtitle-badge {
-      display: inline-block; margin-top: 20px;
+      display: inline-block; margin-top: 22px;
       background: #ef4444; color: #ffffff;
       font-size: 26px; font-weight: 900;
-      padding: 10px 22px; border-radius: 8px;
+      padding: 10px 24px; border-radius: 8px;
       letter-spacing: 1px;
-      box-shadow: 0 6px 25px rgba(239, 68, 68, 0.5);
+      box-shadow: 0 8px 30px rgba(239, 68, 68, 0.6);
     }
     .bottom-bar {
       display: flex; align-items: center; gap: 20px;
       color: #94a3b8; font-size: 18px; font-weight: 700;
     }
-    .dot { width: 8px; height: 8px; background: #fbbf24; border-radius: 50%; }
+    .dot { width: 8px; height: 8px; background: #ef4444; border-radius: 50%; }
 
     .right-side {
       position: relative; z-index: 2;
@@ -419,44 +550,43 @@ function getThumbnailHtml() {
       padding-right: 40px;
     }
     .visual-card {
-      width: 480px; height: 560px;
-      background: rgba(15, 23, 42, 0.8);
-      border: 1px solid rgba(251, 191, 36, 0.3);
+      width: 480px; height: 580px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(239, 68, 68, 0.35);
       border-radius: 24px;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+      box-shadow: 0 25px 60px rgba(0,0,0,0.85);
       backdrop-filter: blur(16px);
-      padding: 30px;
+      padding: 28px;
       display: flex; flex-direction: column; justify-content: space-between;
     }
     .vc-head {
       display: flex; justify-content: space-between; align-items: center;
-      border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 14px;
     }
-    .vc-label { font-size: 15px; font-weight: 800; letter-spacing: 1px; color: #94a3b8; }
-    .vc-tag { background: #fbbf24; color: #000; font-size: 13px; font-weight: 800; padding: 4px 10px; border-radius: 6px; }
+    .vc-label { font-size: 14px; font-weight: 800; letter-spacing: 1.5px; color: #94a3b8; }
+    .vc-tag { background: #ef4444; color: #fff; font-size: 13px; font-weight: 800; padding: 4px 10px; border-radius: 6px; }
     
-    .vs-row { display: flex; gap: 15px; }
-    .vs-box { flex: 1; padding: 18px 14px; border-radius: 14px; text-align: center; }
-    .vs-box.world { background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); }
-    .vs-box.sjc { background: rgba(251, 191, 36, 0.12); border: 1px solid rgba(251, 191, 36, 0.3); }
-    .vs-t { font-size: 13px; font-weight: 800; color: #94a3b8; margin-bottom: 6px; }
-    .vs-v { font-size: 26px; font-weight: 900; }
+    .chart-box-thumb {
+      background: rgba(8, 10, 15, 0.9);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px; padding: 18px;
+    }
+    .cb-svg { width: 100%; height: 210px; }
+
+    .vs-row { display: flex; gap: 14px; }
+    .vs-box { flex: 1; padding: 16px 12px; border-radius: 14px; text-align: center; }
+    .vs-box.entry { background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); }
+    .vs-box.sl { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); }
+    .vs-t { font-size: 12px; font-weight: 800; color: #94a3b8; margin-bottom: 4px; }
+    .vs-v { font-size: 24px; font-weight: 900; }
     .text-blue { color: #38bdf8; }
-    .text-gold { color: #fbbf24; }
-    
-    .gold-bar-box {
-      background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(217, 119, 6, 0.05));
-      border: 1px solid rgba(251, 191, 36, 0.4);
-      padding: 24px; border-radius: 16px; text-align: center;
-    }
-    .gb-icon { font-size: 48px; margin-bottom: 8px; }
-    .gb-txt { font-size: 18px; font-weight: 800; color: #ffffff; }
-    .gb-sub { font-size: 14px; color: #fbbf24; font-weight: 700; margin-top: 4px; }
+    .text-rose { color: #ef4444; }
+    .text-emerald { color: #10b981; }
     
     .footer-stamp {
-      font-size: 15px; font-weight: 800; color: #f87171;
-      text-align: center; background: rgba(239, 68, 68, 0.1);
-      padding: 10px; border-radius: 10px; border: 1px solid rgba(239, 68, 68, 0.25);
+      font-size: 16px; font-weight: 800; color: #10b981;
+      text-align: center; background: rgba(16, 185, 129, 0.12);
+      padding: 12px; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.35);
     }
   </style>
 </head>
@@ -465,51 +595,72 @@ function getThumbnailHtml() {
   
   <div class="left-side">
     <div class="brand-tag">
-      <svg viewBox="0 0 120 120"><path d="${SVG_PATH_D}" fill="#fbbf24" /></svg>
-      <span>GIKKY VĨ MÔ & CHÍNH SÁCH TIỀN TỆ</span>
+      <svg viewBox="0 0 120 120"><path d="${SVG_PATH_D}" fill="#f87171" /></svg>
+      <span>NHẬT KÝ THỰC CHIẾN · BREAKOUT TRADING</span>
     </div>
     
     <div class="title-group">
-      <div class="title-h1">NGHỊCH LÝ <span class="title-gold">GIÁ VÀNG</span></div>
-      <div class="title-h1">CHÊNH LỆCH <span class="title-red">20 TRIỆU</span></div>
-      <div class="subtitle-badge">CƠ CHẾ TẠO RA VÀ AI CHỊU RỦI RO?</div>
+      <div class="title-h1">BẪY ĐU ĐỈNH <span class="title-red">BULL TRAP</span></div>
+      <div class="title-h1">VÙNG CẢN <span class="title-gold">52.000 Đ</span></div>
+      <div class="subtitle-badge">CẮT LỖ -1R CỨU SỐNG 99% VỐN!</div>
     </div>
     
     <div class="bottom-bar">
       <span>gikky.net</span>
       <div class="dot"></div>
-      <span>Nghị định 24</span>
+      <span>Shooting Star 53.2</span>
       <div class="dot"></div>
-      <span>Dự trữ ngoại hối USD</span>
+      <span>Kỷ luật 3 KHÔNG</span>
     </div>
   </div>
   
   <div class="right-side">
     <div class="visual-card">
       <div class="vc-head">
-        <span class="vc-label">BÓC TÁCH MẶT BẰNG GIÁ</span>
-        <span class="vc-tag">PREMIUM +20 TRIỆU</span>
+        <span class="vc-label">BÓC TÁCH CÚ QUÉT THANH KHOẢN</span>
+        <span class="vc-tag">BẪY THANH KHOẢN</span>
       </div>
       
-      <div class="gold-bar-box">
-        <div class="gb-icon">🪙</div>
-        <div class="gb-txt">CÙNG 37.5G VÀNG 24K (99.99% Au)</div>
-        <div class="gb-sub">TÀI SẢN ĐỒNG NHẤT TUYỆT ĐỐI TOÀN CẦU</div>
+      <div class="chart-box-thumb">
+        <svg viewBox="0 0 400 200" class="cb-svg">
+          <!-- Cản 52.0 -->
+          <line x1="20" y1="80" x2="380" y2="80" stroke="#f59e0b" stroke-width="2" stroke-dasharray="5"/>
+          <text x="25" y="72" fill="#f59e0b" font-size="13" font-weight="800">CẢN 52.0</text>
+          
+          <!-- Nến 1: Breakout xanh -->
+          <line x1="100" y1="90" x2="100" y2="55" stroke="#10b981" stroke-width="2"/>
+          <rect x="90" y="60" width="20" height="25" fill="#10b981" rx="2"/>
+          
+          <!-- Nến 2: Shooting star rút râu tới 53.2 -->
+          <line x1="180" y1="105" x2="180" y2="25" stroke="#ef4444" stroke-width="3"/>
+          <rect x="170" y="90" width="20" height="12" fill="#ef4444" rx="2"/>
+          <circle cx="180" cy="25" r="5" fill="#ef4444"/>
+          <text x="195" y="32" fill="#ef4444" font-size="14" font-weight="900">Đỉnh 53.2</text>
+
+          <!-- Nến 3: Plunge red candle -->
+          <line x1="260" y1="165" x2="260" y2="85" stroke="#ef4444" stroke-width="3"/>
+          <rect x="250" y="92" width="20" height="60" fill="#ef4444" rx="2"/>
+
+          <!-- Mũi tên sập về 47.2 -->
+          <path d="M 285,130 L 340,165" fill="none" stroke="#ef4444" stroke-width="3" stroke-linecap="round"/>
+          <polygon points="340,165 330,158 335,172" fill="#ef4444"/>
+          <text x="300" y="185" fill="#ef4444" font-size="14" font-weight="900">SẬP 47.2</text>
+        </svg>
       </div>
-      
+
       <div class="vs-row">
-        <div class="vs-box world">
-          <div class="vs-t">VÀNG THẾ GIỚI</div>
-          <div class="vs-v text-blue">~85 TRĐ</div>
+        <div class="vs-box entry">
+          <div class="vs-t">ĐIỂM VÀO (ENTRY)</div>
+          <div class="vs-v text-blue">52.500 đ</div>
         </div>
-        <div class="vs-box sjc">
-          <div class="vs-t">VÀNG SJC</div>
-          <div class="vs-v text-gold">~105 TRĐ</div>
+        <div class="vs-box sl">
+          <div class="vs-t">CẮT LỖ (STOP LOSS)</div>
+          <div class="vs-v text-rose">50.500 đ (-1R)</div>
         </div>
       </div>
       
       <div class="footer-stamp">
-        Bẫy rủi ro khi thay đổi thế độc quyền Nghị định 24
+        🛡️ BỨC TƯỜNG LỬA BẢO VỆ 99% TÀI SẢN KHỎI CÚ SẬP -10%
       </div>
     </div>
   </div>
@@ -592,123 +743,138 @@ function getYoutubeSlideHtml(slide) {
       display: flex; flex-direction: column; gap: 24px;
     }
 
-    .stat-dual { display: flex; gap: 20px; }
-    .stat-col { flex: 1; padding: 22px; border-radius: 18px; text-align: center; }
-    .stat-col.win { background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); }
-    .stat-col.loss { background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); }
-    .stat-num { font-size: 38px; font-weight: 900; }
-    .stat-txt { font-size: 13px; font-weight: 800; letter-spacing: 1px; color: #94a3b8; margin-top: 4px; }
-    .stat-money { font-size: 16px; font-weight: 700; margin-top: 8px; }
+    /* Colors */
     .text-emerald { color: #10b981; }
     .text-rose { color: #ef4444; }
     .text-cyan { color: #38bdf8; }
     .text-gold { color: #fbbf24; }
 
+    /* Matrix Card */
+    .matrix-card {
+      background: rgba(8, 10, 15, 0.85); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px; padding: 22px;
+    }
+    .m-head { font-size: 14px; font-weight: 800; letter-spacing: 1.5px; color: #94a3b8; margin-bottom: 14px; }
+    .m-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .m-box { padding: 16px; border-radius: 14px; text-align: center; }
+    .m-box.entry { background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); }
+    .m-box.sl { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); }
+    .m-box.tp { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .m-box.rr { background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); }
+    .m-lbl { font-size: 12px; font-weight: 800; color: #94a3b8; }
+    .m-val { font-size: 26px; font-weight: 900; margin: 4px 0; }
+    .m-sub { font-size: 12px; color: #cbd5e1; }
+
+    /* Chart Panel */
     .chart-panel {
       background: rgba(8, 10, 15, 0.8); border: 1px solid rgba(255,255,255,0.08);
       border-radius: 18px; padding: 20px;
     }
-    .chart-head { font-size: 14px; font-weight: 800; color: #94a3b8; letter-spacing: 1px; margin-bottom: 12px; }
-    .chart-svg { width: 100%; height: 180px; }
-    
-    .alert-box {
-      background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3);
-      padding: 16px 20px; border-radius: 14px; font-size: 17px; color: #fef08a; line-height: 1.4;
-    }
+    .chart-head { font-size: 14px; font-weight: 800; color: #94a3b8; letter-spacing: 1px; margin-bottom: 10px; }
+    .chart-svg { width: 100%; height: 170px; }
 
-    .cards-side-by-side { display: flex; gap: 20px; }
-    .c-card { flex: 1; padding: 24px; border-radius: 18px; display: flex; flex-direction: column; gap: 10px; }
-    .c-card.good { background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); }
-    .c-card.bad { background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.25); }
-    .c-icon { font-size: 32px; }
-    .c-title { font-size: 16px; font-weight: 800; letter-spacing: 1px; }
-    .c-amount { font-size: 22px; font-weight: 900; }
-    .c-desc { font-size: 15px; color: #cbd5e1; line-height: 1.4; flex: 1; }
-    .c-tag { font-size: 12px; font-weight: 800; padding: 6px 12px; border-radius: 6px; width: fit-content; }
-    .tag-green { background: #fbbf24; color: #000; }
-    .tag-red { background: #ef4444; color: #fff; }
-    
-    .theory-box {
-      background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3);
-      padding: 18px 22px; border-radius: 14px; color: #fef08a; font-size: 16px; line-height: 1.45;
-    }
+    /* Dual Cards */
+    .dual-cards { display: flex; gap: 18px; }
+    .d-card { flex: 1; padding: 22px; border-radius: 18px; display: flex; flex-direction: column; gap: 10px; }
+    .d-card.fomo { background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); }
+    .d-card.smart { background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.25); }
+    .d-icon { font-size: 32px; }
+    .d-tag { font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 6px; width: fit-content; }
+    .tag-fomo { background: #ef4444; color: #fff; }
+    .tag-smart { background: #fbbf24; color: #000; }
+    .d-title { font-size: 17px; font-weight: 900; }
+    .d-desc { font-size: 14px; color: #cbd5e1; line-height: 1.4; }
 
-    .table-card {
+    /* Rules Card */
+    .rules-card {
       background: rgba(8, 10, 15, 0.85); border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 14px;
+      border-radius: 18px; padding: 22px;
     }
-    .t-head { font-size: 14px; font-weight: 800; color: #94a3b8; letter-spacing: 1px; }
-    .t-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-radius: 12px; }
-    .t-row.win { background: rgba(6, 182, 212, 0.08); border: 1px solid rgba(6, 182, 212, 0.2); }
-    .t-row.loss { background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); }
-    .t-left { display: flex; flex-direction: column; gap: 4px; }
-    .t-badge { font-size: 12px; font-weight: 800; padding: 4px 10px; border-radius: 6px; width: fit-content; }
-    .bg-cyan { background: #06b6d4; }
-    .bg-rose { background: #ef4444; }
-    .text-black { color: #000; }
-    .text-white { color: #fff; }
-    .t-calc { font-size: 14px; color: #94a3b8; }
-    .t-right { font-size: 20px; font-weight: 900; }
-    .t-divider { height: 1px; background: rgba(255,255,255,0.1); margin: 4px 0; }
-    .t-total { display: flex; justify-content: space-between; align-items: center; padding: 0 4px; }
-    .tot-label { font-size: 16px; font-weight: 800; color: #94a3b8; }
-    .tot-val { font-size: 20px; font-weight: 900; }
-    .key-point {
-      background: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.3);
-      padding: 16px 20px; border-radius: 14px; color: #bae6fd; font-size: 16px; line-height: 1.45;
+    .rc-head { font-size: 14px; font-weight: 800; color: #94a3b8; letter-spacing: 1.5px; margin-bottom: 14px; }
+    .rc-list { display: flex; flex-direction: column; gap: 12px; }
+    .rc-item { display: flex; gap: 14px; align-items: flex-start; }
+    .rc-badge {
+      width: 28px; height: 28px; border-radius: 50%; background: #ef4444; color: #fff;
+      display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 900; flex-shrink: 0;
     }
+    .rc-txt { font-size: 15px; color: #cbd5e1; line-height: 1.4; }
+    .rc-txt b { color: #fff; }
 
-    .mock-journal {
+    /* Comparison Card */
+    .comparison-card {
       background: rgba(8, 10, 15, 0.85); border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 18px; padding: 24px;
+      border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 12px;
     }
-    .j-top { display: flex; justify-content: space-between; margin-bottom: 18px; font-size: 14px; font-weight: 800; }
-    .j-brand { color: #38bdf8; letter-spacing: 1px; }
-    .j-status { color: #ef4444; }
-    .rule-list { display: flex; flex-direction: column; gap: 14px; }
-    .r-item { display: flex; gap: 16px; align-items: flex-start; }
-    .r-num {
-      width: 32px; height: 32px; border-radius: 50%; background: #ef4444; color: #fff;
-      display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 900;
-      flex-shrink: 0;
-    }
-    .r-content { font-size: 16px; line-height: 1.4; color: #e2e8f0; }
-    .r-content b { color: #ffffff; }
-    .rule-box {
-      background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3);
-      padding: 16px 20px; border-radius: 14px; color: #fca5a5; font-size: 16px; line-height: 1.4;
-    }
+    .cc-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-radius: 12px; }
+    .cc-row.safe { background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); }
+    .cc-row.danger { background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); }
+    .cc-left { display: flex; flex-direction: column; gap: 4px; }
+    .cc-title { font-size: 15px; font-weight: 800; }
+    .cc-sub { font-size: 13px; color: #94a3b8; }
+    .cc-val { font-size: 16px; font-weight: 900; }
+    .cc-divider { height: 1px; background: rgba(255,255,255,0.06); }
 
+    /* Contrast Panel (Slide 4) */
+    .contrast-panel { display: flex; gap: 16px; }
+    .cp-col { flex: 1; padding: 20px; border-radius: 18px; }
+    .cp-col.bad { background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); }
+    .cp-col.good { background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); }
+    .cp-head { font-size: 15px; font-weight: 900; margin-bottom: 12px; }
+    .cp-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .cp-list li { font-size: 13.5px; color: #cbd5e1; line-height: 1.4; position: relative; padding-left: 16px; }
+    .cp-list li::before { content: "•"; position: absolute; left: 0; color: inherit; }
+
+    /* Math Box (Slide 4) */
+    .math-box {
+      background: rgba(8, 10, 15, 0.85); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px; padding: 20px;
+    }
+    .mb-head { font-size: 13px; font-weight: 800; color: #94a3b8; letter-spacing: 1.5px; margin-bottom: 12px; }
+    .mb-grid { display: flex; gap: 14px; }
+    .mb-item { flex: 1; padding: 14px; border-radius: 12px; background: rgba(255,255,255,0.03); text-align: center; }
+    .mb-t { font-size: 11px; font-weight: 800; color: #94a3b8; }
+    .mb-v { font-size: 22px; font-weight: 900; margin: 6px 0; }
+    .mb-d { font-size: 12px; color: #cbd5e1; }
+
+    /* Alert / Shield / Mindset Boxes */
+    .alert-box, .theory-box, .shield-box, .mindset-note {
+      padding: 16px 20px; border-radius: 14px; font-size: 15.5px; line-height: 1.45;
+    }
+    .alert-box { background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); color: #fef08a; }
+    .theory-box { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); color: #fef08a; }
+    .shield-box { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #a7f3d0; }
+    .mindset-note { background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); color: #bae6fd; }
+
+    /* Outro Slide 5 */
     .outro-card {
-      background: rgba(8, 10, 15, 0.85); border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 20px; padding: 30px; display: flex; flex-direction: column; gap: 24px;
+      background: rgba(8, 10, 15, 0.9); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 22px; padding: 30px; display: flex; flex-direction: column; gap: 24px;
     }
-    .outro-logo-row { display: flex; align-items: center; gap: 24px; }
-    .outro-g-logo { width: 70px; height: 70px; }
-    .ob-name { font-size: 36px; font-weight: 900; letter-spacing: -1px; }
-    .ob-tag { font-size: 14px; font-weight: 700; color: #fbbf24; letter-spacing: 2px; }
-    .outro-features { display: flex; gap: 16px; }
+    .outro-logo-row { display: flex; align-items: center; gap: 20px; }
+    .outro-g-logo { width: 64px; height: 64px; }
+    .ob-name { font-size: 36px; font-weight: 900; letter-spacing: -0.5px; }
+    .ob-tag { font-size: 13px; font-weight: 800; color: #fbbf24; letter-spacing: 2px; }
+    .outro-features { display: flex; flex-direction: column; gap: 14px; }
     .of-box {
-      flex: 1; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
-      padding: 16px; border-radius: 14px; text-align: center;
+      display: flex; gap: 16px; align-items: center;
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+      padding: 16px 20px; border-radius: 14px;
     }
-    .of-icon { font-size: 28px; margin-bottom: 8px; }
-    .of-t { font-size: 14px; font-weight: 800; color: #ffffff; margin-bottom: 4px; }
-    .of-d { font-size: 12px; color: #94a3b8; line-height: 1.35; }
+    .of-icon { font-size: 28px; }
+    .of-t { font-size: 16px; font-weight: 800; color: #fff; margin-bottom: 2px; }
+    .of-d { font-size: 13.5px; color: #94a3b8; }
     .cta-banner {
-      background: linear-gradient(90deg, #d97706, #fbbf24);
-      padding: 18px 24px; border-radius: 16px; text-align: center;
-      font-size: 19px; font-weight: 900; color: #000000;
-      box-shadow: 0 10px 30px rgba(251, 191, 36, 0.4);
+      background: linear-gradient(90deg, rgba(239, 68, 68, 0.2), rgba(251, 191, 36, 0.2));
+      border: 1px solid rgba(251, 191, 36, 0.4);
+      padding: 16px 22px; border-radius: 14px; text-align: center;
+      color: #fbbf24; font-size: 15px; font-weight: 800; letter-spacing: 1px;
     }
 
     footer {
       display: flex; justify-content: space-between; align-items: center;
       border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px;
-      font-size: 16px; font-weight: 700; color: #64748b;
+      color: #64748b; font-size: 16px; font-weight: 700; letter-spacing: 1px;
     }
-    .footer-left { display: flex; gap: 24px; }
-    .footer-right { color: #fbbf24; font-weight: 800; }
   </style>
 </head>
 <body>
@@ -719,7 +885,7 @@ function getYoutubeSlideHtml(slide) {
         <svg viewBox="0 0 120 120"><path d="${SVG_PATH_D}" fill="#ffffff" /></svg>
         <div>
           <div class="brand-title">gikky.net</div>
-          <div class="brand-sub">PHÂN TÍCH VĨ MÔ · CHÍNH SÁCH TIỀN TỆ & THỊ TRƯỜNG</div>
+          <div class="brand-sub">HỆ THỐNG NHẬT KÝ LỆNH THỰC CHIẾN</div>
         </div>
       </div>
       <div class="top-badge" style="color: ${slide.badgeColor}; border-color: ${slide.badgeColor}; background: ${slide.badgeColor}15">
@@ -729,30 +895,21 @@ function getYoutubeSlideHtml(slide) {
 
     <main>
       <div class="left-col">
-        <div class="slide-badge-inline" style="color: ${slide.badgeColor}">[PHÂN TÍCH VĨ MÔ THỰC CHIẾN]</div>
+        <div class="slide-badge-inline" style="color: ${slide.badgeColor}">● BÓC TÁCH MẠCH LỆNH</div>
         <div class="slide-title">${slide.title}</div>
         <div class="slide-title-sub">${slide.titleSub}</div>
         <div class="slide-desc" style="border-left-color: ${slide.badgeColor}">
           ${slide.desc}
         </div>
       </div>
-      
       <div class="right-col">
         ${slide.rightHtml}
       </div>
     </main>
 
     <footer>
-      <div class="footer-left">
-        <span>Gikky Macroeconomics</span>
-        <span>•</span>
-        <span>Dự trữ ngoại hối USD & Tỷ giá</span>
-        <span>•</span>
-        <span>Quản trị rủi ro thể chế</span>
-      </div>
-      <div class="footer-right">
-        @gikky-net
-      </div>
+      <span>Phương pháp giao dịch · Quản trị rủi ro & Kỷ luật cắt lỗ</span>
+      <span>gikky.net/post/1154</span>
     </footer>
   </div>
 </body>
@@ -771,7 +928,7 @@ function getShortSlideHtml(slide) {
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       width: 1080px; height: 1920px;
-      background: radial-gradient(circle at 50% 20%, #1e1b12 0%, #06080c 80%);
+      background: radial-gradient(circle at 50% 25%, #181c26 0%, #080a0f 80%);
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
       color: #ffffff;
       overflow: hidden;
@@ -779,81 +936,101 @@ function getShortSlideHtml(slide) {
     }
     .grid-bg {
       position: absolute; inset: 0;
-      background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-                        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-      background-size: 50px 50px;
+      background-image: linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 60px 60px;
       z-index: 1;
     }
     .s-wrap {
       position: relative; z-index: 2;
       width: 100%; height: 100%;
-      padding: 120px 70px 140px 70px;
+      padding: 100px 70px;
       display: flex; flex-direction: column; justify-content: space-between;
     }
-    .s-top { display: flex; flex-direction: column; align-items: center; gap: 24px; text-align: center; }
-    .s-brand { display: flex; align-items: center; gap: 14px; }
-    .s-brand svg { width: 44px; height: 44px; }
-    .s-brand span { font-size: 32px; font-weight: 900; letter-spacing: -0.5px; }
+    .s-top { display: flex; flex-direction: column; align-items: center; text-align: center; }
+    .s-brand {
+      display: inline-flex; align-items: center; gap: 14px;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+      padding: 12px 28px; border-radius: 999px; margin-bottom: 40px;
+    }
+    .s-brand svg { width: 32px; height: 32px; }
+    .s-brand span { font-size: 24px; font-weight: 800; letter-spacing: 1px; }
+
     .s-badge {
-      font-size: 18px; font-weight: 800; letter-spacing: 2px;
-      padding: 10px 24px; border-radius: 999px; border: 1px solid;
+      font-size: 20px; font-weight: 800; letter-spacing: 2px;
+      padding: 10px 26px; border-radius: 999px; border: 1px solid; margin-bottom: 24px;
     }
     .s-title {
-      font-size: 68px; font-weight: 900; line-height: 1.1;
-      text-transform: uppercase; letter-spacing: -1px; margin-top: 8px;
+      font-size: 58px; font-weight: 900; line-height: 1.15;
+      letter-spacing: -1.5px; text-transform: uppercase; margin-bottom: 16px;
     }
     .s-sub {
-      font-size: 34px; font-weight: 800; line-height: 1.25; margin-top: 6px;
+      font-size: 32px; font-weight: 800; line-height: 1.25; margin-bottom: 30px;
     }
+
     .s-mid {
-      flex: 1; display: flex; flex-direction: column; justify-content: center;
-      gap: 30px; margin: 30px 0;
+      flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 30px;
+      margin: 40px 0;
     }
-    .s-stat-box { display: flex; gap: 20px; }
-    .s-num-box { flex: 1; padding: 26px; border-radius: 20px; text-align: center; }
-    .s-num-box.win { background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); }
-    .s-num-box.loss { background: rgba(251, 191, 36, 0.12); border: 1px solid rgba(251, 191, 36, 0.3); }
-    .s-val { font-size: 50px; font-weight: 900; }
-    .s-lbl { font-size: 16px; font-weight: 800; color: #94a3b8; margin-top: 8px; }
+
+    /* Colors */
+    .text-emerald { color: #10b981; }
+    .text-rose { color: #ef4444; }
     .text-cyan { color: #38bdf8; }
     .text-gold { color: #fbbf24; }
-    .text-rose { color: #ef4444; }
-    .text-emerald { color: #10b981; }
 
+    /* Matrix Shorts */
+    .s-matrix { display: flex; gap: 20px; }
+    .sm-box { flex: 1; padding: 26px 20px; border-radius: 20px; text-align: center; }
+    .sm-box.entry { background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.35); }
+    .sm-box.sl { background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); }
+    .sm-lbl { font-size: 16px; font-weight: 800; color: #94a3b8; }
+    .sm-val { font-size: 36px; font-weight: 900; margin-top: 8px; }
+
+    /* Chart Box Shorts */
     .s-chart-box {
       background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 24px; padding: 30px;
+      border-radius: 26px; padding: 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.6);
     }
-    .s-chart-head { display: flex; justify-content: space-between; font-size: 18px; font-weight: 800; color: #94a3b8; margin-bottom: 16px; }
-    .s-badge-red { background: #ef4444; color: #fff; font-size: 14px; padding: 4px 12px; border-radius: 6px; }
+    .s-chart-head {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 20px; font-weight: 800; color: #94a3b8; margin-bottom: 20px;
+    }
+    .s-badge-green { background: #10b981; color: #000; font-size: 16px; font-weight: 800; padding: 6px 14px; border-radius: 8px; }
+    .s-badge-red { background: #ef4444; color: #fff; font-size: 16px; font-weight: 800; padding: 6px 14px; border-radius: 8px; }
     .s-chart-svg { width: 100%; height: 220px; }
 
-    .s-quote {
-      background: rgba(255,255,255,0.04); border-left: 6px solid #fbbf24;
-      padding: 24px 28px; border-radius: 0 18px 18px 0;
-      font-size: 26px; font-weight: 700; line-height: 1.4; color: #fef08a;
+    .s-warn-box {
+      background: rgba(251, 191, 36, 0.12); border: 1px solid rgba(251, 191, 36, 0.35);
+      padding: 26px 30px; border-radius: 20px; font-size: 24px; color: #fef08a; line-height: 1.45; text-align: center;
     }
 
-    .s-card-stack { display: flex; flex-direction: column; gap: 20px; }
-    .s-card { padding: 30px; border-radius: 22px; }
-    .s-card.green { background: rgba(251, 191, 36, 0.12); border: 1px solid rgba(251, 191, 36, 0.3); }
-    .s-card.red { background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); }
-    .sc-title { font-size: 26px; font-weight: 900; letter-spacing: 1px; margin-bottom: 12px; }
-    .sc-body { font-size: 22px; line-height: 1.45; color: #e2e8f0; }
-    .s-alert-box {
-      background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35);
-      padding: 26px; border-radius: 20px; font-size: 23px; color: #fef08a; line-height: 1.45;
+    /* Split Box (Short 2) */
+    .s-split-box { display: flex; flex-direction: column; gap: 18px; }
+    .ss-item { padding: 24px; border-radius: 20px; }
+    .ss-item.fomo { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); }
+    .ss-item.smart { background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); }
+    .ss-t { font-size: 24px; font-weight: 900; margin-bottom: 8px; }
+    .ss-d { font-size: 20px; color: #cbd5e1; line-height: 1.4; }
+
+    /* Compare Card (Short 3) */
+    .s-compare-card { display: flex; gap: 20px; }
+    .sc-col { flex: 1; padding: 26px 18px; border-radius: 22px; text-align: center; display: flex; flex-direction: column; gap: 10px; }
+    .sc-col.safe { background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); }
+    .sc-col.danger { background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); }
+    .sc-badge { font-size: 16px; font-weight: 800; letter-spacing: 1px; }
+    .sc-price { font-size: 26px; font-weight: 800; color: #94a3b8; }
+    .sc-loss { font-size: 42px; font-weight: 900; }
+    .sc-res { font-size: 19px; line-height: 1.35; color: #cbd5e1; }
+
+    .s-rule-box {
+      background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255,255,255,0.1);
+      padding: 30px; border-radius: 22px; display: flex; flex-direction: column; gap: 14px;
     }
+    .srb-head { font-size: 20px; font-weight: 800; color: #fbbf24; letter-spacing: 1px; }
+    .srb-item { font-size: 22px; font-weight: 700; color: #cbd5e1; }
 
-    .s-versus-table { display: flex; gap: 20px; }
-    .sv-col { flex: 1; padding: 30px 20px; border-radius: 22px; text-align: center; display: flex; flex-direction: column; gap: 14px; }
-    .sv-col.win { background: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.35); }
-    .sv-col.loss { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.35); }
-    .sv-badge { font-size: 16px; font-weight: 800; letter-spacing: 1px; }
-    .sv-price { font-size: 26px; font-weight: 800; color: #94a3b8; }
-    .sv-loss { font-size: 38px; font-weight: 900; }
-    .sv-res { font-size: 18px; font-weight: 800; }
-
+    /* Rules List (Short 4) */
     .s-rules-list { display: flex; flex-direction: column; gap: 24px; }
     .s-rule-item {
       display: flex; gap: 20px; align-items: center;
@@ -861,13 +1038,14 @@ function getShortSlideHtml(slide) {
       padding: 28px 24px; border-radius: 22px;
     }
     .sr-badge {
-      width: 52px; height: 52px; border-radius: 50%; background: #ef4444; color: #fff;
+      width: 52px; height: 52px; border-radius: 50%; background: #38bdf8; color: #000;
       display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 900;
       flex-shrink: 0;
     }
     .sr-txt { font-size: 24px; line-height: 1.35; color: #cbd5e1; }
     .sr-txt b { color: #ffffff; }
 
+    /* Outro (Short 5) */
     .s-outro-wrap {
       display: flex; flex-direction: column; align-items: center; gap: 24px;
       background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255,255,255,0.1);
@@ -905,7 +1083,7 @@ function getShortSlideHtml(slide) {
       ${slide.contentHtml}
     </div>
     <div class="s-bottom">
-      Phân tích Vĩ mô · Chính sách Tiền tệ & Quản trị Rủi ro
+      Nhật ký thực chiến · Kỷ luật & Quản trị rủi ro
     </div>
   </div>
 </body>
@@ -945,9 +1123,9 @@ async function main() {
   await page.setViewportSize({ width: 1280, height: 720 });
   const thumbHtml = getThumbnailHtml();
   await page.setContent(thumbHtml, { waitUntil: 'networkidle' });
-  const thumbOutPath = path.join(SLIDES_DIR, `youtube_thumbnail_gia_vang_chenh_lech.png`);
+  const thumbOutPath = path.join(SLIDES_DIR, `youtube_thumbnail_bull_trap_breakout.png`);
   await page.screenshot({ path: thumbOutPath });
-  console.log(` [Thumb] Rendered: youtube_thumbnail_gia_vang_chenh_lech.png`);
+  console.log(` [Thumb] Rendered: youtube_thumbnail_bull_trap_breakout.png`);
 
   await browser.close();
   console.log("\n==> Hoàn tất render toàn bộ ảnh đồ họa!");

@@ -18,47 +18,47 @@ PITCH = "-1Hz"
 YT_SEGMENTS = [
     {
         "id": "yt_scene_1",
-        "text": "Chào mừng anh em đã quay trở lại với Gikky. Về mặt vật lý và hóa học, vàng là một trong những tài sản đồng nhất tuyệt đối nhất trên hành tinh. Dù được đúc thành thỏi tại Thụy Sĩ, London hay dập thành miếng tại Hà Nội, một lượng vàng 24K nguyên chất đều chứa đúng ba mươi bảy phẩy năm gram vàng tinh khiết chín mươi chín phẩy chín mươi chín phần trăm. Thế nhưng tại Việt Nam, có những thời điểm giá một lượng vàng miếng SJC đắt hơn giá vàng thế giới tới gần hai mươi triệu đồng, tương đương mức chênh lệch hơn hai mươi phần trăm. Tại sao lại có nghịch lý kỳ lạ này? Cơ chế nào tạo ra nó và ai là người chịu rủi ro sau cùng?"
+        "text": "Chào mừng anh em trader đã quay trở lại với Gikky. Trong giao dịch kỹ thuật, không có khoảnh khắc nào kích thích lòng tham tột độ bằng một cây nến xanh thân đặc bứt phá qua vùng đỉnh kháng cự với khối lượng bùng nổ. Tại vùng cản then chốt năm mươi hai nghìn đồng, sau chuỗi hồi phục từ đáy bốn mươi sáu, một cây nến breakout xuất hiện kèm thanh khoản gấp đôi trung bình hai mươi phiên. Kế hoạch mua theo đà bứt phá được kích hoạt ngay lập tức tại năm mươi hai phẩy năm, với điểm dừng lỗ đặt tại năm mươi phẩy năm, tương ứng rủi ro chuẩn một R, và mục tiêu lợi nhuận năm mươi bảy phẩy năm, tỷ lệ R:R một hai phẩy năm. Một setup tưởng như hoàn hảo theo sách giáo khoa, nhưng thực tế tàn khốc của thị trường đã bắt đầu giăng bẫy."
     },
     {
         "id": "yt_scene_2",
-        "text": "Để hiểu nguồn gốc của khoảng cách này, chúng ta phải quay ngược về giai đoạn 2008 đến 2011. Thời điểm đó, nền kinh tế đối mặt với nạn vàng hóa trầm trọng: Người dân dùng vàng mua bán bất động sản, các ngân hàng ồ ạt huy động vàng, và việc gom USD nhập vàng lậu khiến tỷ giá tiền đồng chao đảo, lạm phát vọt lên hai con số. Năm 2012, Nghị định 24 ra đời, mang lại thành công lịch sử: Nhà nước độc quyền sản xuất vàng miếng, chọn SJC làm thương hiệu quốc gia và cắt đứt hoàn toàn tín dụng vàng. Thế nhưng, nó cũng biến thị trường vàng miếng thành một chiếc bình kín. Hơn mười năm qua, nguồn cung vàng SJC gần như bị đóng băng, trong khi quy mô kinh tế và nhu cầu tích trữ của người dân đã tăng gấp ba lần."
+        "text": "Ngay sau khi khớp lệnh, cây nến tiếp theo rướn lên năm mươi ba phẩy hai nhưng lập tức bị xả ngược dữ dội, để lại bóng nến phía trên dài ngoẵng dạng Bắn sao Shooting Star. Liền sau đó, một cây nến đỏ đặc dài Bearish Engulfing xuất hiện, nhấn chìm toàn bộ đà tăng trước đó và kéo giá rơi tuột trở lại dưới năm mươi hai. Mổ xẻ nguyên nhân kỹ thuật, thất bại này bắt nguồn từ việc nhịp tăng trước đó dốc đứng hình chữ V mà không hề có nền tích lũy hay nhịp co hẹp biên độ VCP lành mạnh. Cú bứt phá thực chất là một pha rướn kiệt sức. Khối lượng bùng nổ không phải là lực gom hàng của dòng tiền thông minh, mà là các tay to đang đặt lệnh bán đối ứng khổng lồ để xả hàng cho đám đông mua đuổi FOMO."
     },
     {
         "id": "yt_scene_3",
-        "text": "Nhiều người hỏi: Tại sao Ngân hàng Nhà nước không mở quota nhập khẩu vàng định kỳ để kéo giá trong nước về sát thế giới? Câu trả lời nằm ở bài toán sống còn: Dự trữ ngoại hối. Ở mức giá vàng thế giới hiện nay quanh bốn nghìn ba trăm đô một ounce, để nhập khẩu chỉ một tấn vàng, nền kinh tế phải tiêu tốn khoảng một trăm bốn mươi triệu đô la tiền mặt. Nếu mở toang nhập khẩu theo nhu cầu thị trường, hàng tỷ đô la dự trữ ngoại hối quý giá dùng để nhập khẩu xăng dầu, máy móc công nghiệp và bảo vệ tỷ giá tiền đồng sẽ bị chôn chặt thành những thỏi kim loại nằm bất động trong két sắt. Chấp nhận mức chênh lệch giá vàng chính là cái giá phải trả để bảo vệ tấm khiên ngoại hối quốc gia."
+        "text": "Khi thị giá trượt dần về vùng năm mươi mốt phẩy hai, tài khoản chịu khoản lỗ tạm tính âm không phẩy sáu lăm R. Đây chính là thời điểm tâm lý trader bị thử thách khốc liệt nhất. Chúng tôi tuân thủ tuyệt đối ba nguyên tắc thép: Không nới rộng Stop Loss, không gồng lỗ vô căn cứ, và tuyệt đối không nhồi lệnh bình quân giá xuống. Khi lực cầu biến mất và giá đâm thủng năm mươi phẩy năm, hệ thống tự động kích hoạt cắt lỗ dứt khoát tại âm một R. Và hãy nhìn xem điều gì diễn ra sau đó: Thị trường rơi tự do không phanh qua năm mươi, bốn mươi chín và lao dốc về tận bốn mươi bảy phẩy hai, sụt giảm hơn mười phần trăm từ đỉnh. Khoản cắt lỗ âm một R đã hoàn thành xuất sắc sứ mệnh làm bức tường lửa, cứu sống chín mươi chín phần trăm tài sản của bạn."
     },
     {
         "id": "yt_scene_4",
-        "text": "Tuy nhiên, khi chênh lệch bị kéo giãn quá mức, cơ chế thị trường sẽ tự tìm lối đi ngầm: Nạn xếp hàng đầu cơ bùng nổ, các đường dây buôn lậu vàng qua biên giới hoạt động rầm rộ, kéo theo nhu cầu gom USD chợ đen đẩy tỷ giá tự do tăng vọt. Đối với người mua, khoản chênh lệch mười lăm đến hai mươi triệu đồng mỗi lượng thực chất là một khoản phí bảo hiểm thể chế. Nếu trong tương lai, chính sách được sửa đổi theo hướng xóa bỏ thế độc quyền và cho phép nhiều thương hiệu tham gia dập vàng chuẩn, lớp thặng dư độc quyền này có thể bốc hơi rất nhanh. Người mua gom vàng ở vùng chênh lệch kỷ lục sẽ phải đối mặt với rủi ro đu đỉnh thể chế cực kỳ nặng nề."
+        "text": "Nhìn lại trận đánh, bài học đắt giá nhất chính là cạm bẫy tâm lý sợ bỏ lỡ cơ hội. Càng sợ lỡ chuyến tàu, trader càng vội vã mua đuổi ở mức giá bất lợi nhất và trở thành thanh khoản rút lui cho kẻ khác. Trong trading, không làm gì cũng là một vị thế. Nếu kiên nhẫn chờ cây nến ngày đóng cửa hoặc chờ nhịp retest kiểm định cản, bạn đã hoàn toàn đứng ngoài cuộc thảm sát. Hãy nhớ rằng: Cắt lỗ âm một R không phải là thất bại, mà là chi phí vận hành bắt buộc của nghề kinh doanh xác suất. Nhờ cắt lỗ nhỏ, bạn bảo toàn trọn vẹn vốn liếng để bình thản nắm bắt các cơ hội thắng lớn phía trước."
     },
     {
         "id": "yt_scene_5",
-        "text": "Hiểu rõ bản chất các chính sách tiền tệ và cấu trúc thị trường là chìa khóa giúp bạn đưa ra những quyết định tài chính sáng suốt. Hãy truy cập ngay gikky chấm nét để đón đọc các bài viết phân tích vĩ mô, bóc tách dòng tiền và bài học quản trị rủi ro mỗi ngày. Đừng quên bấm Đăng ký kênh @gikky-net và bật chuông thông báo để không bỏ lỡ những video tiếp theo nhé!"
+        "text": "Đó chính là cách chúng tôi minh bạch hóa mọi thương vụ trên gikky chấm nét, từ những deal thắng lớn cho tới những bài học cắt lỗ kỷ luật. Hãy truy cập ngay gikky chấm nét để khám phá chuỗi nhật ký lệnh thực chiến thời gian thực và nâng tầm tư duy giao dịch của bạn. Đừng quên bấm Đăng ký kênh @gikky-net và bật chuông thông báo để không bỏ lỡ những video tiếp theo nhé!"
     }
 ]
 
-# TikTok / Shorts 9:16 Script (5 Scenes, punchy & fast)
+# TikTok / Shorts 9:16 Script (5 Scenes)
 SHORT_SEGMENTS = [
     {
         "id": "short_scene_1",
-        "text": "Cùng là ba mươi bảy phẩy năm gram vàng 24K, tại sao vàng miếng ở Việt Nam có lúc đắt hơn thế giới tới hai mươi triệu đồng mỗi lượng?"
+        "text": "Cây nến breakout vượt đỉnh đẹp như mơ này thực chất là một cái bẫy Bull Trap chết người!"
     },
     {
         "id": "short_scene_2",
-        "text": "Nguyên nhân cốt lõi là Nghị định 24 năm 2012 đã biến thị trường thành chiếc bình kín: Nhà nước độc quyền vàng SJC, nguồn cung bị đóng băng suốt mười bốn năm qua trong khi nhu cầu tích trữ tăng gấp ba lần."
+        "text": "Thấy nến xanh bùng nổ volume, đám đông ồ ạt mua đuổi ở năm mươi hai phẩy năm. Nhưng sự thật là Smart Money đang xả hàng đối ứng để phân phối đỉnh!"
     },
     {
         "id": "short_scene_3",
-        "text": "Sao không nhập khẩu vàng về bán? Vì nhập một tấn vàng tốn tới một trăm bốn mươi triệu đô tiền mặt! Nhà nước phải giữ dự trữ ngoại hối để nhập xăng dầu và giữ ổn định tỷ giá tiền đồng."
+        "text": "Nến Shooting Star xuất hiện, giá quay đầu lao dốc. Nhờ kỷ luật ba không, lệnh tự động cắt lỗ chuẩn một R tại năm mươi phẩy năm, trước khi giá sập thẳng về bốn mươi bảy phẩy hai."
     },
     {
         "id": "short_scene_4",
-        "text": "Khoản chênh lệch hai mươi triệu là phí độc quyền thể chế. Nếu chính sách sửa đổi bỏ độc quyền SJC, lớp thặng dư này sẽ bốc hơi trong tích tắc!"
+        "text": "Thà kiên nhẫn chờ retest kiểm định cản, còn hơn vội vã mua đuổi để rồi ôm khoản lỗ mười phần trăm!"
     },
     {
         "id": "short_scene_5",
-        "text": "Đọc bài bóc tách chi tiết cơ chế giá vàng tại gikky chấm nét. Link ở phần tiểu sử nhé anh em!"
+        "text": "Xem chi tiết toàn bộ mạch lệnh thực chiến minh bạch tại gikky chấm nét. Link ở bio nhé anh em!"
     }
 ]
 

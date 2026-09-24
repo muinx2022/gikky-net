@@ -1,0 +1,20 @@
+HỒ SƠ THƯƠNG VỤ: KHI CÁC NHÀ KHOA HỌC NOBEL ĐỐT CHÁY 4 TỶ USD VÌ MÔ HÌNH TOÁN HỌC
+
+Năm 1998, Long-Term Capital Management (LTCM) – quỹ đầu cơ quy tụ 2 nhà kinh tế học đoạt giải Nobel cùng dàn huyền thoại giao dịch Phố Wall – đứng trước nguy cơ vỡ nợ chỉ sau vài tuần. Sự việc buộc Fed phải triệu tập khẩn cấp 14 ngân hàng đầu tư lớn nhất Phố Wall để giải cứu, nhằm tránh một vụ sụp đổ tài chính dây chuyền.
+
+Đâu là vết nứt chí mạng đã đánh sập cỗ máy định lượng tinh vi nhất thời đại?
+
+▪ Đòn bẩy khổng lồ bù đắp biên lợi nhuận mỏng:
+Chiến lược cốt lõi của LTCM là ăn chênh lệch giá (arbitrage) trái phiếu. Về lý thuyết, khoảng lệch giữa trái phiếu mới và cũ cuối cùng sẽ hội tụ về 0. Do biên độ này chỉ vài điểm cơ bản, quỹ đã dùng đòn bẩy tài chính lên tới 25:1, thậm chí danh nghĩa phái sinh vượt 100:1. Khi đòn bẩy quá lớn, chỉ một biến động nghịch chiều 1% cũng đủ thổi bay toàn bộ vốn chủ sở hữu.
+
+▪ Ảo tưởng thanh khoản và sự thất bại của phân phối chuẩn:
+Mô hình rủi ro của LTCM dựa trên phân phối hình chuông (Gaussian), coi các cú sốc cực đoan (Fat-tail risks) gần như không thể xảy ra. Tuy nhiên, khi Nga tuyên bố vỡ nợ trái phiếu vào tháng 8/1998, thị trường toàn cầu hoảng loạn tháo chạy về nơi an toàn. Thay vì hội tụ, các mức chênh lệch lại giãn rộng kỷ lục. Thanh khoản biến mất trong chớp mắt: không một ai chịu mua lại những tài sản mà chính LTCM đang cần bán gấp.
+
+▪ Nhầm lẫn giữa rủi ro tính toán được và sự bất định:
+Sai lầm chí mạng của các giáo sư là tin rằng thị trường luôn vận động theo phương trình toán học. Dữ liệu lịch sử chỉ đúng trong trạng thái bình thường; khi khủng hoảng ập đến, hành vi con người hoàn toàn phi tuyến tính. Đúng như John Maynard Keynes từng cảnh báo: "Thị trường có thể duy trì sự phi lý lâu hơn bạn có thể duy trì khả năng thanh toán."
+
+Bài học từ LTCM là lời nhắc nhở kinh điển: Không một mô hình toán học nào có thể bảo vệ danh mục nếu nhà đầu tư bỏ quên rủi ro thanh khoản và buông lỏng đòn bẩy.
+
+Theo bạn, trong kỷ nguyên bùng nổ của các quỹ định lượng (Quant) và thuật toán AI hiện nay, rủi ro hệ thống kiểu LTCM đang giảm đi hay thực chất đang âm thầm tích tụ lớn hơn?
+
+#gikky #taichinh #quant #dautu #quanlyruiro #trading
