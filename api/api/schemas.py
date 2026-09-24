@@ -284,6 +284,8 @@ class MachTomTatOut(Schema):
     xem_truoc: XemTruocOut | None
     #: Thông tin mốc mới nhất (khi mạch có >= 2 mốc và mốc đọc được)
     moc_moi_nhat: MocMoiNhatTomTatOut | None = None
+    #: Tổng lượt xem bài viết
+    view_count: int = 0
 
 
 class SubChiTietOut(Schema):

@@ -134,6 +134,7 @@ def mach_tom_tat_ra(
         moc_1_id=moc_1_id,
         xem_truoc=xem_truoc,
         moc_moi_nhat=moc_moi_nhat,
+        view_count=getattr(mach, "view_count", 0),
     )
 
 

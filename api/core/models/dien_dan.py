@@ -10,9 +10,10 @@ from django.db import models
 from django.utils import timezone
 from django.utils.text import slugify
 
-#: Slug cắt 60 ký tự — URL là `/m/<slug>-<id>`, `id` mới là khoá (PLAN 5.9), slug chỉ
-#: để đọc. Vì vậy slug KHÔNG unique: hai mạch trùng tên vẫn ra hai URL khác nhau.
-DAI_SLUG_MACH = 60
+#: Slug cắt 160 ký tự — vừa vặn toàn bộ tiêu đề (DAI_TITLE = 160). URL là
+#: `/m/<slug>-<id>`, `id` mới là khoá (PLAN 5.9), slug chỉ để đọc. Vì vậy slug
+#: KHÔNG unique: hai mạch trùng tên vẫn ra hai URL khác nhau.
+DAI_SLUG_MACH = 160
 
 
 #: `slugify(..., allow_unicode=False)` bỏ dấu bằng NFKD + encode ASCII. Cách đó xử lý
@@ -29,10 +30,13 @@ def slug_tu_title(title: str) -> str:
     toàn ký tự bị slugify loại (vd chỉ có emoji) ra chuỗi rỗng — chấp nhận được, URL
     thành `/m/-1234`, và 1c redirect 301 về dạng chuẩn như mọi slug lệch khác.
     """
-    return (
-        slugify(title.translate(BANG_DOI_D), allow_unicode=False)[:DAI_SLUG_MACH]
-        .rstrip("-")
-    )
+    slug = slugify(title.translate(BANG_DOI_D), allow_unicode=False)
+    if len(slug) <= DAI_SLUG_MACH:
+        return slug
+    cat = slug[:DAI_SLUG_MACH]
+    if "-" in cat:
+        cat = cat.rsplit("-", 1)[0]
+    return cat.rstrip("-")
 
 
 class Sub(models.Model):

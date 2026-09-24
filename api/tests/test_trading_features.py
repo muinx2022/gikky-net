@@ -1,4 +1,4 @@
-﻿"""Test các tính năng trading: truong_phai, bai_hoc khi đóng sổ, và mạch riêng tư."""
+"""Test các tính năng trading: truong_phai, bai_hoc khi đóng sổ, và mạch riêng tư."""
 
 import pytest
 from core.ghi import tao_mach

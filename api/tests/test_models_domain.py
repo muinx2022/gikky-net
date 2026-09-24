@@ -141,13 +141,17 @@ def test_sequence_mach_bat_dau_tu_1000(sub, tac_gia):
         ("Đường dài mới biết ngựa hay", "duong-dai-moi-biet-ngua-hay"),
         ("Đóng sổ mạch HPG", "dong-so-mach-hpg"),
         ("Nhật ký lệnh HPG — vào 27.80", "nhat-ky-lenh-hpg-vao-2780"),
-        # Cắt 60 ký tự KHÔNG được để lại dấu "-" lủng lẳng cuối URL.
-        ("a" * 59 + " bcd", "a" * 59),
+        (
+            "HDB — Mua vì cấu trúc tích lũy trên nến tuần (W1) và kỳ vọng bứt phá đỉnh 30",
+            "hdb-mua-vi-cau-truc-tich-luy-tren-nen-tuan-w1-va-ky-vong-but-pha-dinh-30",
+        ),
+        # Cắt 160 ký tự KHÔNG được để lại dấu "-" lủng lẳng cuối URL và không cắt giữa từ.
+        ("a" * 159 + " bcd", "a" * 159),
     ],
 )
-def test_slug_bo_dau_va_cat_60(title, mong_doi):
+def test_slug_bo_dau_va_cat_160(title, mong_doi):
     assert slug_tu_title(title) == mong_doi
-    assert len(slug_tu_title(title)) <= 60
+    assert len(slug_tu_title(title)) <= 160
     assert not slug_tu_title(title).endswith("-")
 
 

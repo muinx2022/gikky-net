@@ -1,4 +1,5 @@
 import type { MachTomTatOut } from "@gikky/api-client";
+import { Eye } from "lucide-react";
 import Link from "next/link";
 
 import { CHU_NGUOI_DUNG } from "@/lib/chu-nguoi-dung";
@@ -201,6 +202,14 @@ export function TheMach({ mach }: { mach: MachTomTatOut }) {
             dangAn={false}
             nhan={`mạch “${mach.title}”`}
           />
+          <span
+            className={css.luot_xem}
+            data-testid="the-mach-luot-xem"
+            title="Lượt xem bài viết"
+          >
+            <Eye size={13} strokeWidth={2} aria-hidden />
+            <span>{(mach.view_count ?? 0).toLocaleString("vi-VN")} lượt xem</span>
+          </span>
         </div>
       </div>
     </li>

@@ -213,6 +213,21 @@
   background: var(--accent-soft);
 }
 
+.luot_xem {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--f-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-2);
+  background: var(--surface-2);
+  border-radius: 3px;
+  padding: 1px 7px;
+  cursor: default;
+}
+
 
 /* ===========================================================================
  * Kiểu xem GỌN — `:root[data-kieu-xem="gon"]`, đặt bởi script inline trong `<head>`

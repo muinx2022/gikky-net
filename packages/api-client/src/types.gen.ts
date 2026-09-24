@@ -1257,6 +1257,10 @@ export type MachTomTatOut = {
      * Truong Phai
      */
     truong_phai?: string | null;
+    /**
+     * View Count
+     */
+    view_count?: number;
     xem_truoc: XemTruocOut | null;
 };
 

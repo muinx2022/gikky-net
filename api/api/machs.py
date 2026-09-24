@@ -202,7 +202,7 @@ def mach_chi_tiet_ra(mach: Mach) -> MachChiTietOut:
     # cái trôi. Thẻ feed cần chúng vì nó KHÔNG có `mocs`.
     tom_tat = mach_tom_tat_ra(mach)
     return MachChiTietOut(
-        **tom_tat.model_dump(exclude={"diem", "moc_1_id"}),
+        **tom_tat.model_dump(exclude={"diem", "moc_1_id", "view_count"}),
         view_count=mach.view_count,
         closed_at=mach.closed_at,
         bai_hoc=mach.bai_hoc,
