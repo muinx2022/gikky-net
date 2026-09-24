@@ -34,7 +34,7 @@ trường** doanh nghiệp sống trong đó?* Doanh nghiệp ⇒ `chung-khoan`.
 - **[ĐÃ VIẾT - Mạch 1110, 1036]** **Dệt may và da giày**: đơn hàng theo mùa, và vì sao biên lợi nhuận mỏng đến vậy.
 - **[ĐÃ VIẾT - Mạch 1073]** **Gỗ và nội thất**: điều tra lẩn tránh thuế, quy tắc xuất xứ.
 - **[ĐÃ VIẾT - Mạch 1014]** **Thép**: thuế quan hai chiều — Mỹ, EU đánh vào, và thép giá rẻ nhập vào Việt Nam.
-- Đồng tiền yếu giúp xuất khẩu tới đâu, và **nó lấy lại của ai**.
+- **[ĐÃ VIẾT - Mạch 1151]** Đồng tiền yếu giúp xuất khẩu tới đâu, và **nó lấy lại của ai**.
 
 ## B. Năng lượng & Hạ tầng
 
