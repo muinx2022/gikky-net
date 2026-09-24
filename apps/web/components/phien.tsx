@@ -1,12 +1,10 @@
 "use client";
 
+import useSWR from "swr";
 import { xemToi, type ToiOut } from "@gikky/api-client";
 import {
   createContext,
-  useCallback,
   useContext,
-  useEffect,
-  useState,
 } from "react";
 
 import {
@@ -28,9 +26,15 @@ import {
  * cache**. Phase 3 bật ISR cho trang mạch; nếu hôm nay ta render tên người dùng ở server
  * thì mai kia cái tên ấy nằm trong bản cache và phục vụ cho người khác.
  *
- * Để tránh giật bố cục khi F5: phiên đã lưu được đọc ngay từ `localStorage` khi mount
- * (stale-while-revalidate), đồng thời script inline ở `<head>` (`nguonScriptPhien`) đã
- * đánh dấu trước để CSS giữ chỗ đúng kích thước ngay từ First Paint.
+ * ## Vì sao SWR thay vì `useEffect` + `useState`
+ *
+ * Bản cũ dùng `useEffect` fetch → `setState` — anti-pattern trong React hiện đại:
+ * - Không tự dedupe: hai component cùng gọi `taiLai()` = hai request.
+ * - Không revalidate khi focus / reconnect — tab ngủ xong vẫn giữ phiên cũ.
+ * - Không cache giữa các lần mount/unmount.
+ *
+ * SWR giải quyết cả ba mà không thêm boilerplate. `fallbackData` đọc từ `localStorage`
+ * để tránh giật bố cục khi F5 (stale-while-revalidate — đúng tên của thư viện).
  */
 
 type Phien = {
@@ -46,42 +50,61 @@ const NguCanh = createContext<Phien>({
   taiLai: async () => {},
 });
 
-export function PhienProvider({ children }: { children: React.ReactNode }) {
-  const [toi, datToi] = useState<ToiOut | null>(null);
-  const [dangTai, datDangTai] = useState(true);
+/** Khoá SWR — chuỗi bất kỳ, dùng nội bộ. */
+const KHOA_SWR = "phien:toi";
 
-  const taiLai = useCallback(async () => {
-    // `GET /me` không có đường 401: khách nhận 200 kèm `dang_nhap: false`. Nên `data`
-    // vắng mặt ở đây chỉ có thể là hỏng mạng — và ca đó UI hiện như khách, không hiện lỗi:
-    // thanh tài khoản không phải chỗ báo sự cố hạ tầng.
-    const kq = await xemToi({ baseUrl: GOC_TRINH_DUYET, cache: "no-store" });
-    const data = kq.data ?? null;
-    datToi(data);
-    datDangTai(false);
-    if (data && data.dang_nhap) {
-      luuCachePhien(data);
-    } else {
-      xoaCachePhien();
+/** Fetcher cho SWR — gọi `GET /me`, trả `ToiOut | null`. */
+async function fetchToi(): Promise<ToiOut | null> {
+  const kq = await xemToi({ baseUrl: GOC_TRINH_DUYET, cache: "no-store" });
+  return kq.data ?? null;
+}
+
+/** Đọc cache localStorage để làm `fallbackData` — tránh giật layout khi mount. */
+function docCacheBanDau(): ToiOut | undefined {
+  if (typeof window === "undefined") return undefined;
+  try {
+    const luu = window.localStorage.getItem(KHOA_PHIEN);
+    if (luu) {
+      const phien = JSON.parse(luu) as ToiOut;
+      if (phien?.dang_nhap) return phien;
     }
-  }, []);
+  } catch {}
+  return undefined;
+}
 
-  useEffect(() => {
-    try {
-      const luu = window.localStorage.getItem(KHOA_PHIEN);
-      if (luu) {
-        const phien = JSON.parse(luu) as ToiOut;
-        if (phien && phien.dang_nhap) {
-          datToi(phien);
-          datDangTai(false);
-        }
+export function PhienProvider({ children }: { children: React.ReactNode }) {
+  const { data, isLoading, mutate } = useSWR(KHOA_SWR, fetchToi, {
+    // Đọc từ localStorage ngay lập tức để tránh giật bố cục.
+    fallbackData: docCacheBanDau(),
+    // Tự hỏi lại khi tab được focus — phiên hết hạn ở tab ngủ sẽ được phát hiện.
+    revalidateOnFocus: true,
+    // Tự hỏi lại khi mạng nối lại — mất mạng rồi có lại không bị kẹt phiên cũ.
+    revalidateOnReconnect: true,
+    // Dedupe: hai component mount cùng lúc chỉ sinh MỘT request.
+    dedupingInterval: 5000,
+    // `GET /me` không bao giờ ném — khách nhận 200 kèm `dang_nhap: false`.
+    // SWR mặc định retry khi ném, nên tắt để không hỏi vòng vòng khi mạng chập chờn.
+    shouldRetryOnError: false,
+    onSuccess(data) {
+      if (data?.dang_nhap) {
+        luuCachePhien(data);
+      } else {
+        xoaCachePhien();
       }
-    } catch {}
+    },
+  });
 
-    void taiLai();
-  }, [taiLai]);
+  const toi = data ?? null;
+
+  const taiLai = async () => {
+    // `mutate()` không tham số = revalidate (gọi lại fetcher), trả Promise.
+    await mutate();
+  };
 
   return (
-    <NguCanh.Provider value={{ toi, dangTai, taiLai }}>{children}</NguCanh.Provider>
+    <NguCanh.Provider value={{ toi, dangTai: isLoading, taiLai }}>
+      {children}
+    </NguCanh.Provider>
   );
 }
 

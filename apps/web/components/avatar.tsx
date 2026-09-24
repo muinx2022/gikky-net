@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { chuCaiAvatar } from "@/lib/avatar";
 
 import css from "./avatar.module.css";
@@ -40,16 +41,17 @@ export function Avatar({
 
   if (url != null && url !== "") {
     return (
-      // Avatar là URL người dùng tải lên (kho ảnh của app), không phải asset build-time;
-      // `next/image` đòi khai domain trước và không thêm gì cho một ảnh ~32px đã đúng cỡ.
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
+      // `unoptimized` vì ảnh đã qua `core/anh.py` (resize + re-encode về cạnh tối đa, strip
+      // EXIF). Tối ưu lần hai chỉ tốn CPU Image Optimization API mà không cải thiện gì cho
+      // ảnh ~32px. `next/image` vẫn cho lazy loading và `srcset`/`sizes` mặc định.
+      <Image
         src={url}
         alt={hienThi || ten}
         className={css.anh}
         style={canh}
         width={co}
         height={co}
+        unoptimized
       />
     );
   }

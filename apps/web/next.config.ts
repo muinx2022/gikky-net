@@ -15,6 +15,19 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/**": ["./assets/font/*.ttf"],
   },
+  // Avatar và ảnh mốc do user tải lên — cần khai domain để `next/image` phục vụ được.
+  // Dev: ảnh đi qua rewrite `/media/*` → Django 8000 (same-origin).
+  // Prod: Caddy phục vụ `/media/*` thẳng từ đĩa (same-origin).
+  // ⇒ chỉ cần cho phép chính hostname của site; `remotePatterns` bỏ trống vì ảnh đều
+  // same-origin. `unoptimized` dùng ở component avatar vì ảnh đã qua `core/anh.py` (resize
+  // + re-encode), tối ưu lần hai chỉ tốn CPU mà không cải thiện gì.
+  images: {
+    // Cho phép same-origin mặc định, thêm hostname prod để SSR fetch được.
+    remotePatterns: [
+      { protocol: "https", hostname: "gikky.net" },
+      { protocol: "https", hostname: "*.gikky.net" },
+    ],
+  },
   async rewrites() {
     return [
       {
