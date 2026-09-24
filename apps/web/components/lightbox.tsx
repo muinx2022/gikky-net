@@ -47,38 +47,42 @@ export function LightboxProvider({ children }: { children: ReactNode }) {
   const [daMount, setDaMount] = useState(false);
 
   const dangMoRef = useRef(false);
-  const daPushHistoryRef = useRef(false);
-  const boQuaPopStateRef = useRef(false);
   const pathname = usePathname();
 
   useEffect(() => {
     setDaMount(true);
   }, []);
 
-  // Tự động đóng lightbox nếu người dùng chuyển sang route khác
-  useEffect(() => {
-    if (dangMoRef.current) {
-      dangMoRef.current = false;
-      daPushHistoryRef.current = false;
-      setDangMo(false);
-      setAnhHienTai(null);
-    }
-  }, [pathname]);
-
   const dongLightbox = useCallback(() => {
-    if (!dangMoRef.current) return;
     dangMoRef.current = false;
     setDangMo(false);
     setAnhHienTai(null);
-
-    // Nếu trước đó đã đẩy 1 history entry cho lightbox, gọi history.back()
-    // để dọn stack trình duyệt, đồng thời đánh dấu bỏ qua popstate kế tiếp
-    if (daPushHistoryRef.current && typeof window !== "undefined") {
-      daPushHistoryRef.current = false;
-      boQuaPopStateRef.current = true;
-      window.history.back();
+    if (typeof document !== "undefined") {
+      document.body.style.overflow = "";
     }
   }, []);
+
+  // Tự động đóng lightbox nếu người dùng chuyển sang route khác
+  useEffect(() => {
+    if (dangMoRef.current) {
+      dongLightbox();
+    }
+  }, [pathname, dongLightbox]);
+
+  // Lắng nghe sự kiện popstate (khi người dùng bấm Back trình duyệt hoặc vuốt back trên mobile):
+  // Đóng lightbox ngay lập tức và để trình duyệt lùi về trang trước tự nhiên
+  useEffect(() => {
+    const xuLyPopState = () => {
+      if (dangMoRef.current) {
+        dongLightbox();
+      }
+    };
+
+    window.addEventListener("popstate", xuLyPopState);
+    return () => {
+      window.removeEventListener("popstate", xuLyPopState);
+    };
+  }, [dongLightbox]);
 
   const moLightbox = useCallback(
     (src: string, options?: LightboxOption) => {
@@ -93,47 +97,11 @@ export function LightboxProvider({ children }: { children: ReactNode }) {
       setViTri(idx >= 0 ? idx : 0);
       setAnhHienTai(src);
       setAltHienTai(options?.alt ?? "");
-      setDangMo(true);
       dangMoRef.current = true;
-
-      // Đẩy 1 entry vào history để khi user bấm Back (trình duyệt hoặc cử chỉ vuốt),
-      // chỉ đóng lightbox trước thay vì lùi về trang trước ngay lập tức.
-      if (!daPushHistoryRef.current && typeof window !== "undefined") {
-        daPushHistoryRef.current = true;
-        try {
-          window.history.pushState(
-            { ...(window.history.state || {}), __gikkyLightbox: true },
-            "",
-            window.location.href,
-          );
-        } catch {
-          // Bỏ qua nếu môi trường không hỗ trợ pushState
-        }
-      }
+      setDangMo(true);
     },
     [],
   );
-
-  // Lắng nghe nút Back của trình duyệt (sự kiện popstate)
-  useEffect(() => {
-    const xuLyPopState = () => {
-      if (boQuaPopStateRef.current) {
-        boQuaPopStateRef.current = false;
-        return;
-      }
-      if (dangMoRef.current) {
-        dangMoRef.current = false;
-        daPushHistoryRef.current = false;
-        setDangMo(false);
-        setAnhHienTai(null);
-      }
-    };
-
-    window.addEventListener("popstate", xuLyPopState);
-    return () => {
-      window.removeEventListener("popstate", xuLyPopState);
-    };
-  }, []);
 
   const toiAnhTiep = useCallback(() => {
     if (danhSach.length <= 1) return;
