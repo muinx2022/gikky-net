@@ -94,7 +94,7 @@ Nhóm này là **tản mạn**: dài hơi, liên ngành, không bám một mã.
 - **[ĐÃ VIẾT - Mạch 1160]** **Non-prefunding (Thông tư 68/2024/TT-BTC)**: Bỏ ký quỹ 100% trước giao dịch cho khối ngoại, cơ chế bù trừ DVP và sự dịch chuyển rủi ro thanh toán sang các CTCK. `chung-khoan`
 - **[ĐÃ VIẾT - Mạch 1130]** **Phiên hiệu lực FTSE**: Khi VN-Index lùi về dưới 1.800 điểm và bài học "bán sự thật" của dòng tiền tổ chức.
 - **[ĐÃ VIẾT - Mạch 1145]** **Thanh khoản teo tóp quanh mốc 1.800 điểm**: Sự thận trọng của dòng tiền và bài học "vùng trũng thông tin" cuối quý 3. `chung-khoan`
-- **Hệ thống giao dịch mới**: nó đổi được gì và không đổi được gì.
+- **[ĐÃ VIẾT - Mạch 1161]** **Hệ thống giao dịch mới**: Nó đổi được gì (năng lực chịu tải, độ trễ mili-giây) và không đổi được gì (định giá doanh nghiệp, tâm lý F0, bất đối xứng công nghệ HFT). `chung-khoan`
 - **[ĐÃ VIẾT - Mạch 1108, 1021]** **Cổ tức tiền mặt** — nhóm doanh nghiệp trả đều, và vì sao ít người quan tâm.
 - **[ĐÃ VIẾT - Mạch 1067]** Vòng đời một **doanh nghiệp niêm yết Việt Nam**: IPO, pha loãng, rồi im lặng.
 - **[ĐÃ VIẾT - Mạch 1122]** **Cuộc chiến bán lẻ dược phẩm**: Long Châu vs An Khang vs Pharmacity và bài toán kinh tế học đơn vị.
