@@ -13,19 +13,19 @@ AUDIO_DIR = os.path.join(SCRATCH_DIR, "tam_audio")
 PUBLIC_DIR = r"d:\Projects\gikky-net\apps\web\public"
 
 YT_SCENES = [
-    {"slide": "yt_slide_1.png", "audio": "yt_scene_1.mp3", "clip": "yt_clip_1.mp4"},
-    {"slide": "yt_slide_2.png", "audio": "yt_scene_2.mp3", "clip": "yt_clip_2.mp4"},
-    {"slide": "yt_slide_3.png", "audio": "yt_scene_3.mp3", "clip": "yt_clip_3.mp4"},
-    {"slide": "yt_slide_4.png", "audio": "yt_scene_4.mp3", "clip": "yt_clip_4.mp4"},
-    {"slide": "yt_slide_5.png", "audio": "yt_scene_5.mp3", "clip": "yt_clip_5.mp4"}
+    {"slide": "yt_slide_1.png", "audio": "yt_scene_1.mp3", "clip": "yt_clip_wr_1.mp4"},
+    {"slide": "yt_slide_2.png", "audio": "yt_scene_2.mp3", "clip": "yt_clip_wr_2.mp4"},
+    {"slide": "yt_slide_3.png", "audio": "yt_scene_3.mp3", "clip": "yt_clip_wr_3.mp4"},
+    {"slide": "yt_slide_4.png", "audio": "yt_scene_4.mp3", "clip": "yt_clip_wr_4.mp4"},
+    {"slide": "yt_slide_5.png", "audio": "yt_scene_5.mp3", "clip": "yt_clip_wr_5.mp4"}
 ]
 
 SHORT_SCENES = [
-    {"slide": "short_slide_1.png", "audio": "short_scene_1.mp3", "clip": "short_clip_1.mp4"},
-    {"slide": "short_slide_2.png", "audio": "short_scene_2.mp3", "clip": "short_clip_2.mp4"},
-    {"slide": "short_slide_3.png", "audio": "short_scene_3.mp3", "clip": "short_clip_3.mp4"},
-    {"slide": "short_slide_4.png", "audio": "short_scene_4.mp3", "clip": "short_clip_4.mp4"},
-    {"slide": "short_slide_5.png", "audio": "short_scene_5.mp3", "clip": "short_clip_5.mp4"}
+    {"slide": "short_slide_1.png", "audio": "short_scene_1.mp3", "clip": "short_clip_wr_1.mp4"},
+    {"slide": "short_slide_2.png", "audio": "short_scene_2.mp3", "clip": "short_clip_wr_2.mp4"},
+    {"slide": "short_slide_3.png", "audio": "short_scene_3.mp3", "clip": "short_clip_wr_3.mp4"},
+    {"slide": "short_slide_4.png", "audio": "short_scene_4.mp3", "clip": "short_clip_wr_4.mp4"},
+    {"slide": "short_slide_5.png", "audio": "short_scene_5.mp3", "clip": "short_clip_wr_5.mp4"}
 ]
 
 def get_audio_duration(audio_path):
@@ -89,22 +89,22 @@ def assemble_video(clips, out_filename):
 
 def main():
     print("==================================================")
-    print("GHÉP VIDEO CƠ CHẾ KHỚP LỆNH ATO & ATC CHO GIKKY.NET")
+    print("GHÉP VIDEO NGHỊCH LÝ WIN RATE CHO GIKKY.NET")
     print("==================================================")
 
     # 1. Ghép YouTube 16:9 Video
     print("\n1. Render Video YouTube 16:9 Full HD (1920x1080)...")
     yt_clips = build_clips(YT_SCENES, 1920, 1080)
-    assemble_video(yt_clips, "gikky_youtube_co_che_atc_ato_16x9.mp4")
+    assemble_video(yt_clips, "gikky_youtube_nghich_ly_winrate_16x9.mp4")
 
     # 2. Ghép TikTok / Shorts 9:16 Video
     print("\n2. Render Video TikTok / Shorts 9:16 (1080x1920)...")
     short_clips = build_clips(SHORT_SCENES, 1080, 1920)
-    assemble_video(short_clips, "gikky_short_co_che_atc_ato.mp4")
+    assemble_video(short_clips, "gikky_short_nghich_ly_winrate.mp4")
 
     # 3. Copy Thumbnail vào apps/web/public/
-    thumb_src = os.path.join(SLIDES_DIR, "youtube_thumbnail_co_che_atc_ato.png")
-    thumb_dst = os.path.join(PUBLIC_DIR, "youtube_thumbnail_co_che_atc_ato.png")
+    thumb_src = os.path.join(SLIDES_DIR, "youtube_thumbnail_nghich_ly_winrate.png")
+    thumb_dst = os.path.join(PUBLIC_DIR, "youtube_thumbnail_nghich_ly_winrate.png")
     shutil.copyfile(thumb_src, thumb_dst)
     print(f"\n3. ĐÃ XUẤT THUMBNAIL: {thumb_dst}")
 

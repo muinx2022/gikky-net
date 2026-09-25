@@ -42,3 +42,11 @@ apps/web/playwright-report/
 
 # Quyền cục bộ của máy này (alias ssh vps-muinx, đường dẫn cá nhân) — không commit.
 .claude/settings.local.json
+
+# Tạm video & facebook
+scripts/video/tam_audio/
+scripts/video/slides/
+scripts/video/*.mp4
+scripts/video/*.txt
+scripts/facebook/.tam_anh/
+

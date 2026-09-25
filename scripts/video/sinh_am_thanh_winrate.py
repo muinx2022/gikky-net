@@ -1,26 +1,15 @@
-import asyncio
 import os
 import sys
+import asyncio
 import edge_tts
 
 if sys.stdout.encoding != 'utf-8':
     sys.stdout.reconfigure(encoding='utf-8')
 
-SCRATCH_DIR = os.path.dirname(os.path.abspath(__file__))
-TEMP_AUDIO_DIR = os.path.join(SCRATCH_DIR, "tam_audio")
-os.makedirs(TEMP_AUDIO_DIR, exist_ok=True)
-
 VOICE = "vi-VN-NamMinhNeural"
+TEMP_AUDIO_DIR = "scripts/video/tam_audio"
 
-YT_SEGMENTS = [
-    {
-        "id": "yt_scene_1",
-        "text": "Chào mừng anh em trader đã quay trở lại với Gikky. Phần lớn người mới tham gia thị trường tài chính đều mang một ảo tưởng chết người: Muốn kiếm được nhiều tiền, họ bắt buộc phải dự đoán đúng mọi đường đi của giá. Nỗi ám ảnh tìm kiếm chén thánh với tỷ lệ thắng tám mươi đến chín mươi phần trăm khiến trader rơi vào cái bẫy sợ sai: Vừa thấy nến nhú xanh lãi vài line là vội vã chốt non để tận hưởng cảm giác chiến thắng, nhưng khi giá đảo chiều đi ngược kỳ vọng thì cái tôi lại không chấp nhận sai và ôm lệnh gồng lỗ. Trong đầu tư chuyên nghiệp, tỷ lệ thắng thực chất chỉ là một nửa của bài toán sinh tồn."
-    },
-    {
-        "id": "yt_scene_2",
-        "text": "Hãy cùng nhìn vào bảng tính thực tế của một tài khoản có tỷ lệ thắng lên tới tám mươi phần trăm. Trong mười lệnh giao dịch, người này thắng tới tám lệnh. Vì sợ mất lãi, mỗi lệnh thắng anh ta chỉ chốt non một triệu đồng, thu về tổng cộng tám triệu. Nhưng ở hai lệnh còn lại, tâm lý cố chấp gồng lỗ khiến thị giá rơi tự do, mỗi lệnh lỗ nặng tới năm triệu đồng, tổng thiệt hại âm mười triệu. Lấy tám triệu tiền thắng trừ đi mười triệu tiền thua, tài khoản âm ròng hai triệu đồng! Tỷ lệ thắng cao ngất ngưởng tám mươi phần trăm thực chất chỉ là tấm bình phong che đậy một hệ thống có kỳ vọng toán học âm, sớm muộn cũng sẽ bị thị trường xóa sổ."
-    },
+YT_REMAINING = [
     {
         "id": "yt_scene_3",
         "text": "Ngược lại, đây là cách các nhà giao dịch chuyên nghiệp tạo dựng gia tài bền vững với tỷ lệ thắng chỉ vỏn vẹn bốn mươi phần trăm. Họ chấp nhận sai sáu lần trên mười lệnh giao dịch! Nhưng sự khác biệt sống còn nằm ở tỷ lệ Risk Reward một ba: Mỗi lần sai, họ kỷ luật cắt lỗ dứt khoát tại chuẩn âm một R, tức mất một triệu đồng, tổng cộng sáu lệnh thua mất sáu triệu. Nhưng ở bốn lệnh đúng, họ kiên nhẫn để lãi chạy tối đa chạm mốc ba R, thu về ba triệu mỗi lệnh, tổng cộng mười hai triệu đồng. Lấy mười hai triệu tiền thắng trừ sáu triệu tiền thua, tài khoản vẫn tăng trưởng dương sáu triệu đồng lợi nhuận ròng! Đúng ít hơn sai, tài khoản vẫn nhân đôi bền bỉ."
@@ -58,29 +47,24 @@ SHORT_SEGMENTS = [
     }
 ]
 
-async def process_one(seg, prefix):
-    out_file = os.path.join(TEMP_AUDIO_DIR, f"{seg['id']}.mp3")
-    for attempt in range(1, 4):
-        try:
-            c = edge_tts.Communicate(seg["text"], VOICE)
-            await c.save(out_file)
-            if os.path.exists(out_file) and os.path.getsize(out_file) > 1000:
-                print(f" [{prefix}] Sinh xong: {seg['id']}.mp3 ({os.path.getsize(out_file):,} bytes)")
-                return
-        except Exception as e:
-            print(f"   [{prefix}] Thử lần {attempt} thất bại: {e}")
-            await asyncio.sleep(2)
-    raise RuntimeError(f"Không thể sinh audio cho {seg['id']}")
-
-async def main():
-    print(f"Bắt đầu sinh âm thanh bằng giọng: {VOICE}...")
-    for seg in YT_SEGMENTS:
-        await process_one(seg, "YT")
-        await asyncio.sleep(0.5)
-    for seg in SHORT_SEGMENTS:
-        await process_one(seg, "Short")
-        await asyncio.sleep(0.5)
-    print(f"==> Hoàn tất toàn bộ 10 file audio tại: {TEMP_AUDIO_DIR}")
+async def run():
+    all_segs = YT_REMAINING + SHORT_SEGMENTS
+    for s in all_segs:
+        sid = s["id"]
+        out_f = os.path.join(TEMP_AUDIO_DIR, f"{sid}.mp3")
+        print(f"-> Đang sinh {sid}...")
+        for attempt in range(1, 4):
+            try:
+                c = edge_tts.Communicate(s["text"], VOICE)
+                await c.save(out_f)
+                if os.path.exists(out_f) and os.path.getsize(out_f) > 5000:
+                    print(f"   Xong {sid} ({os.path.getsize(out_f):,} bytes)")
+                    break
+            except Exception as e:
+                print(f"   Lỗi {sid} lần {attempt}: {e}")
+                await asyncio.sleep(2)
+        await asyncio.sleep(1.5)
+    print("==> HOÀN TẤT TOÀN BỘ AUDIO!")
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(run())
