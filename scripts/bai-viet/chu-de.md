@@ -54,7 +54,7 @@ trường** doanh nghiệp sống trong đó?* Doanh nghiệp ⇒ `chung-khoan`.
 - **[ĐÃ VIẾT - Mạch 1150]** **Tín dụng bất động sản**: tỷ trọng thật trong danh mục các ngân hàng và bài toán rủi ro tài sản thế chấp.
 - **[ĐÃ VIẾT - Mạch 1106]** **Trái phiếu doanh nghiệp**: ai đang cầm, và đáo hạn dồn vào lúc nào.
 - **[ĐÃ VIẾT - Mạch 1047]** **CASA** — vì sao chỉ số này quyết định ngân hàng nào sống khoẻ khi lãi suất đổi chiều.
-- **Basel III và bộ đệm vốn**: điều kiện ngầm cho tăng trưởng tín dụng.
+- **[ĐÃ VIẾT - Mạch 1158]** **Basel III và bộ đệm vốn**: điều kiện ngầm cho tăng trưởng tín dụng.
 
 ## D. Vàng, dầu, hàng hoá
 
@@ -91,6 +91,7 @@ Nhóm này là **tản mạn**: dài hơi, liên ngành, không bám một mã.
 ## G. Thị trường Việt Nam, chuyện dài
 
 - **[ĐÃ VIẾT - Mạch 1081, 1033]** **Nâng hạng thị trường**: điều kiện kỹ thuật, và dòng vốn thụ động thực tế bao nhiêu.
+- **[ĐÃ VIẾT - Mạch 1160]** **Non-prefunding (Thông tư 68/2024/TT-BTC)**: Bỏ ký quỹ 100% trước giao dịch cho khối ngoại, cơ chế bù trừ DVP và sự dịch chuyển rủi ro thanh toán sang các CTCK. `chung-khoan`
 - **[ĐÃ VIẾT - Mạch 1130]** **Phiên hiệu lực FTSE**: Khi VN-Index lùi về dưới 1.800 điểm và bài học "bán sự thật" của dòng tiền tổ chức.
 - **[ĐÃ VIẾT - Mạch 1145]** **Thanh khoản teo tóp quanh mốc 1.800 điểm**: Sự thận trọng của dòng tiền và bài học "vùng trũng thông tin" cuối quý 3. `chung-khoan`
 - **Hệ thống giao dịch mới**: nó đổi được gì và không đổi được gì.
@@ -189,7 +190,7 @@ Nhóm này là **tản mạn**: dài hơi, liên ngành, không bám một mã.
 - **[ĐÃ VIẾT - Mạch 1137]** **Spread là gì?**: Bóc tách chi phí vô hình, cạm bẫy trượt giá (Slippage) và cơ chế Bid - Ask cho người mới.
 - **[ĐÃ VIẾT - Mạch 1142]** **Ngày giao dịch không hưởng quyền (GDKHQ)**: Vì sao giá cổ phiếu bị điều chỉnh kỹ thuật giảm xuống tương ứng khi chia cổ tức tiền mặt hoặc cổ phiếu thưởng?
 - **Chu kỳ thanh toán T+2.5**: Cơ chế vận hành dòng tiền tại VSDC, vì sao bán thứ Sáu thì thứ Ba tiền mới về và chi phí cơ hội.
-- **Khớp lệnh định kỳ ATO và ATC**: Thuật toán xác định mức giá có khối lượng khớp lớn nhất và cách dòng tiền lớn tận dụng 15 phút quyết định.
+- **[ĐÃ VIẾT - Mạch 1159]** **Khớp lệnh định kỳ ATO và ATC**: Thuật toán xác định mức giá có khối lượng khớp lớn nhất và cách dòng tiền lớn tận dụng 15 phút quyết định.
 - **Bóc tách mọi chi phí thực tế khi giao dịch**: Phí môi giới, thuế TNCN 0,1%, phí lưu ký chứng khoán VSDC và lãi suất vay Margin.
 - **Cơ chế Call Margin và Force Sell**: Tỷ lệ an toàn (Rtt), cảnh báo ký quỹ và quy trình bán giải chấp của các công ty chứng khoán.
 - **Các loại lệnh thực chiến**: Khi nào nên dùng lệnh LO, MP, MTL, MOK và bẫy trượt giá ở các cổ phiếu thanh khoản thấp.
