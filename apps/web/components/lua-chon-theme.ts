@@ -8,6 +8,7 @@ import {
   apTheme,
   docLuaChon,
   luuLuaChon,
+  thuocTinhTheme,
   type LuaChonTheme,
 } from "@/lib/theme";
 
@@ -47,18 +48,27 @@ export function useLuaChonTheme(): [LuaChonTheme, (moi: LuaChonTheme) => void] {
   const [chon, datChon] = useState<LuaChonTheme>(THEME_MAC_DINH);
 
   useEffect(() => {
-    const doc = () => {
+    const goc = document.documentElement;
+
+    const docVaDongBo = () => {
       try {
-        datChon(docLuaChon(window.localStorage.getItem(KHOA_THEME)));
+        const daLuu = docLuaChon(window.localStorage.getItem(KHOA_THEME));
+        datChon(daLuu);
+        // Đảm bảo data-theme và colorScheme trên <html> luôn có mặt đúng với lựa chọn đã lưu,
+        // phòng trường hợp React hydration hoặc browser làm mất thuộc tính lúc tải.
+        const hienTai = goc.getAttribute("data-theme");
+        const mongMuon = thuocTinhTheme(daLuu);
+        if (hienTai !== mongMuon) {
+          apTheme(goc, daLuu);
+        }
       } catch {
         // Ném khi cookie bị chặn hoàn toàn — cùng lý do với `try` trong script inline.
         datChon(THEME_MAC_DINH);
       }
     };
-    doc();
+    docVaDongBo();
 
-    const goc = document.documentElement;
-    const canh = new MutationObserver(doc);
+    const canh = new MutationObserver(docVaDongBo);
     canh.observe(goc, { attributes: true, attributeFilter: ["data-theme"] });
     return () => canh.disconnect();
   }, []);

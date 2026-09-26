@@ -54,9 +54,11 @@ export const NHAN_THEME: Record<LuaChonTheme, string> = {
  * nó đang canh.
  */
 export function docLuaChon(tho: string | null): LuaChonTheme {
-  if (tho === "toi" || tho === "dark") return "toi";
-  if (tho === "sang" || tho === "light") return "sang";
-  if (tho === "he" || tho === "system") return "he";
+  if (!tho) return THEME_MAC_DINH;
+  const s = tho.replace(/^["']|["']$/g, "").trim();
+  if (s === "toi" || s === "dark") return "toi";
+  if (s === "sang" || s === "light") return "sang";
+  if (s === "he" || s === "system") return "he";
   return THEME_MAC_DINH;
 }
 
@@ -158,7 +160,8 @@ export function apTheme(goc: HTMLElement, chon: LuaChonTheme): void {
 export function nguonScriptTheme(): string {
   return (
     "(function(){try{" +
-    `var c=localStorage.getItem(${JSON.stringify(KHOA_THEME)});` +
+    `var raw=localStorage.getItem(${JSON.stringify(KHOA_THEME)});` +
+    'var c=raw?raw.replace(/^["\']|["\']$/g,"").trim():null;' +
     "var e=document.documentElement;" +
     'if(c==="toi"||c==="dark"){e.setAttribute("data-theme","dark");e.style.colorScheme="dark";}' +
     'else if(c==="sang"||c==="light"){e.setAttribute("data-theme","light");e.style.colorScheme="light";}' +
