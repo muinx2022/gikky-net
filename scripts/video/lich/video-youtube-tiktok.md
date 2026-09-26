@@ -43,14 +43,26 @@ Nhiệm vụ: Sản xuất định kỳ 2 video YouTube dài (16:9) và 2 video 
 * **Tối giản mật độ chữ (Minimal Text, Maximum Punch):** Không nhét các đoạn văn thuyết minh dài dòng lên slide (người xem đã nghe voiceover). Màn hình chỉ hiển thị các từ khóa đanh thép, con số nổi bật và nhãn so sánh trực diện.
 * **Đồ họa SVG nét đậm (Bold Graphic):** Đường nét biểu đồ có độ dày `stroke-width` từ $6\text{px}$ – $10\text{px}$, nhãn số trên biểu đồ $\ge 24\text{px}$ – $28\text{px}$.
 * **Màu sắc tương phản cực đại:** Nền tối Dark Obsidian (`#030712`), chữ trắng `#ffffff` kết hợp các điểm nhấn neon nổi bật (Cyan `#38bdf8`, Vàng Gold `#fbbf24`, Đỏ Rose `#ef4444`, Xanh Emerald `#10b981`).
+* **Đồ họa chuyển động 2D (Bắt buộc chuyển động, cấm ảnh tĩnh chết):**
+  - Không dùng ảnh tĩnh (`-tune stillimage`). Toàn bộ phân cảnh phải có chuyển động thị giác mượt mà (nến mọc, số liệu nhảy run-up, vạch mức kỹ thuật bắn ngang, thanh tiến trình chạy).
+  - Định vị thương hiệu: 100% **Financial Motion Graphics chuyên sâu**. Tuyệt đối không dùng nhân vật cartoon/mascot để giữ tính học thuật và uy tín tài chính.
+
+### 4. Quy Chuẩn Video Minh Họa Phương Pháp: Bar-by-Bar Replay Animation (Độc Quyền Gikky)
+Khi sản xuất video về mạch phương pháp thực chiến (Price Action, VSA, Wyckoff, MA...), bắt buộc áp dụng cơ chế **Tua nến 3 nhịp (Bar-by-Bar Replay)**:
+1. **Nhịp 1 — Thiết lập & Vào lệnh (Mốc 1):** Nến vẽ đến cây tín hiệu (Pinbar rút chân, nến nhấn chìm, breakout hỗ trợ/kháng cự) $\rightarrow$ **DỪNG LẠI (FREEZE)** $\rightarrow$ Radar quét khoanh vùng nến, bắn ra 3 vạch kỹ thuật (`Entry`, `Stop Loss -1R`, `Take Profit +3R`) kèm bảng tỷ lệ R:R.
+2. **Nhịp 2 — Diễn biến & Quản trị lệnh (Mốc 2):** Nến **VẼ TIẾP** $3$ – $5$ cây tiếp theo thể hiện nhịp tăng và retest giằng co $\rightarrow$ **DỪNG LẠI (FREEZE)** $\rightarrow$ Vạch Stop Loss màu đỏ tự động **trượt di chuyển lên mốc Break-Even (Hòa vốn BE)** $\rightarrow$ Kèm thông báo rủi ro về $0\%$.
+3. **Nhịp 3 — Chạm đích & Đóng lệnh (Mốc 3):** Nến **VẼ TIẾP ĐỢT CUỐI** bùng nổ chạm vạch Target $\rightarrow$ Vạch Target bừng sáng hào quang $\rightarrow$ Chốt sổ lợi nhuận $+3.0\text{R}$ và đúc kết bài học tâm lý thực chiến.
 
 ---
 
 ## 🛠️ Pipeline Tự Động Hóa (Automation Stack)
-* **TTS Engine:** `edge_tts` với giọng `vi-VN-NamMinhNeural` (Pitch `-1Hz`, Rate `-2%`).
-* **Visual Frame Engine:** Playwright Chromium headless render template HTML/CSS dark obsidian.
-* **Video Muxing:** `imageio_ffmpeg` render frame $\rightarrow$ video clips $\rightarrow$ concat MP4 (H.264/AAC).
+* **TTS Engine:** `edge_tts` với giọng `vi-VN-NamMinhNeural` (trầm ấm, đĩnh đạc).
+* **Motion Recording Engine:** Playwright Chromium headless quay video trực tiếp bằng `recordVideo: { size: { width, height } }` ghi nhận các chuyển động CSS/SVG animations thời gian thực $\rightarrow$ xuất video `.webm` mượt mà 25-30 FPS.
+* **Video Muxing & Encoding:** `imageio_ffmpeg` mã hóa H.264 / AAC 192k, chuẩn màu `yuv420p` cho tương thích hoàn hảo trên mọi thiết bị và nền tảng $\rightarrow$ xuất MP4.
 * **Thư mục xuất xưởng:** `d:\Projects\gikky-net\apps\web\public/`.
+* **Script tham chiếu chuẩn:**
+  - Mạch nến tua động: `scripts/video/render_mach_replay.cjs` & `scripts/video/ghep_video_mach.py`.
+  - Phân tích vĩ mô/toán học động: `scripts/video/render_motion_pro.cjs` & `scripts/video/ghep_video_motion_pro.py`.
 
 ---
 

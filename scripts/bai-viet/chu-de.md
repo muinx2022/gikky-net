@@ -63,6 +63,7 @@ trường** doanh nghiệp sống trong đó?* Doanh nghiệp ⇒ `chung-khoan`.
 - **[ĐÃ VIẾT - Mạch 1079]** **Dầu**: OPEC+, tồn kho Mỹ, và vì sao giá xăng trong nước lệch pha với Brent.
 - **[ĐÃ VIẾT - Mạch 1064]** Ngân hàng trung ương mua vàng — xu hướng nhiều năm, không phải tin một ngày.
 - **[ĐÃ VIẾT - Mạch 1051]** **Đồng** như một chỉ báo công nghiệp: nó thật sự dẫn trước cái gì?
+- **[ĐÃ VIẾT - Mạch 1166]** **Cà phê Robusta**: Cơn sốt giá kỷ lục, biến đổi khí hậu El Niño và nghịch lý chuỗi giá trị xuất khẩu hạt thô (vỡ hợp đồng kỳ hạn, 3% giá trị trong tách cà phê). `vi-mo`
 
 ## E. Tiền số & Tài sản số
 
