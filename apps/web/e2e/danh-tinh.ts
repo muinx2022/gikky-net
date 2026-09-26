@@ -92,6 +92,6 @@ export async function dungTaiKhoan(page: Page, tien_to: string) {
   await page.getByTestId("o-dinh_danh").fill(ai.email);
   await page.getByTestId("o-password").fill(MAT_KHAU);
   await page.getByTestId("form-gui").click();
-  await expect(page.getByTestId("nut-tai-khoan")).toContainText(`u/${ai.username}`);
+  await expect(page.getByTestId("nut-tai-khoan")).toContainText(ai.username);
   return ai;
 }

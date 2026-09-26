@@ -137,51 +137,51 @@ export function Feed({
 
         {cursorHong && <BaoCursorHong />}
 
-        {/* Hàng tab và nút đổi kiểu xem đi CHUNG một hàng, đúng chỗ Reddit đặt chúng:
-            cả hai đều nói về "danh sách này bày ra thế nào". `ChonKieuXem` tự đẩy mình
-            sang phải bằng `margin-left: auto`. */}
-        <div className={css.hang_dieu_khien}>
-          <nav className={css.tab} data-testid="tab-feed" aria-label="Sắp xếp feed">
-            {TAB_FEED.map((t) => {
-              const Hinh = ICON_TAB[t];
-              return (
+        {/* Thanh dính chứa tab feed và nút đổi kiểu xem, dính ngay dưới header khi cuộn */}
+        <div className={css.thanh_dinh}>
+          <div className={css.hang_dieu_khien}>
+            <nav className={css.tab} data-testid="tab-feed" aria-label="Sắp xếp feed">
+              {TAB_FEED.map((t) => {
+                const Hinh = ICON_TAB[t];
+                return (
+                  <Link
+                    key={t}
+                    href={hrefTab(t)}
+                    prefetch={false}
+                    className={
+                      t === tab ? `${css.mot_tab} ${css.tab_dang_chon}` : css.mot_tab
+                    }
+                    aria-current={t === tab ? "page" : undefined}
+                    data-testid={`tab-${t}`}
+                  >
+                    <Hinh size={15} strokeWidth={2} aria-hidden />
+                    {NHAN_TAB[t]}
+                  </Link>
+                );
+              })}
+            </nav>
+            <ChonKieuXem />
+          </div>
+
+          {tabCoKhoang(tab) && (
+            <nav className={css.khoang} data-testid="chon-khoang" aria-label="Khoảng thời gian">
+              {KHOANG_FEED.map((k) => (
                 <Link
-                  key={t}
-                  href={hrefTab(t)}
+                  key={k}
+                  href={hrefKhoang(k)}
                   prefetch={false}
                   className={
-                    t === tab ? `${css.mot_tab} ${css.tab_dang_chon}` : css.mot_tab
+                    k === khoang ? `${css.mot_khoang} ${css.khoang_dang_chon}` : css.mot_khoang
                   }
-                  aria-current={t === tab ? "page" : undefined}
-                  data-testid={`tab-${t}`}
+                  aria-current={k === khoang ? "true" : undefined}
+                  data-testid={`khoang-${k}`}
                 >
-                  <Hinh size={15} strokeWidth={2} aria-hidden />
-                  {NHAN_TAB[t]}
+                  {NHAN_KHOANG[k]}
                 </Link>
-              );
-            })}
-          </nav>
-          <ChonKieuXem />
+              ))}
+            </nav>
+          )}
         </div>
-
-        {tabCoKhoang(tab) && (
-          <nav className={css.khoang} data-testid="chon-khoang" aria-label="Khoảng thời gian">
-            {KHOANG_FEED.map((k) => (
-              <Link
-                key={k}
-                href={hrefKhoang(k)}
-                prefetch={false}
-                className={
-                  k === khoang ? `${css.mot_khoang} ${css.khoang_dang_chon}` : css.mot_khoang
-                }
-                aria-current={k === khoang ? "true" : undefined}
-                data-testid={`khoang-${k}`}
-              >
-                {NHAN_KHOANG[k]}
-              </Link>
-            ))}
-          </nav>
-        )}
 
         {truongPhai && (
           <div className={css.bo_loc_truong_phai} data-testid="bo-loc-truong-phai">

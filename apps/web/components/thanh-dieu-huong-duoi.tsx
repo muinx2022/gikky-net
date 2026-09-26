@@ -12,12 +12,9 @@ import {
   ImageUp,
   KeyRound,
   LogOut,
-  Monitor,
-  Moon,
   Plus,
   Settings,
   ShieldCheck,
-  Sun,
   Tag,
   UserRound,
   X,
@@ -33,7 +30,6 @@ import { dangXuat, GOC_TRINH_DUYET, headerGhi } from "@/lib/tai-khoan";
 import { duongDanHoSo, duongDanMach, duongDanSub } from "@/lib/url";
 
 import { Avatar } from "./avatar";
-import { useLuaChonTheme } from "./lua-chon-theme";
 import { useModalDangNhap } from "./modal-dang-nhap";
 import { usePhien } from "./phien";
 import css from "./thanh-dieu-huong-duoi.module.css";
@@ -199,7 +195,6 @@ export function ThanhDieuHuongDuoi() {
   const router = useRouter();
   const { toi } = usePhien();
   const { moModal } = useModalDangNhap();
-  const [chonTheme, doiTheme] = useLuaChonTheme();
 
   const dangNhap = toi?.dang_nhap === true;
 
@@ -491,45 +486,6 @@ export function ThanhDieuHuongDuoi() {
               <KeyRound size={16} strokeWidth={2} aria-hidden />
               Đổi mật khẩu
             </Link>
-
-            <div className={css.theme_row} role="group" aria-label="Giao diện">
-              <span>Giao diện</span>
-              <div className={css.theme_icons}>
-                <button
-                  type="button"
-                  role="menuitemradio"
-                  aria-checked={chonTheme === "he"}
-                  className={css.theme_btn}
-                  onClick={() => doiTheme("he")}
-                  title="Theo hệ thống"
-                  aria-label="Theo hệ thống"
-                >
-                  <Monitor size={16} strokeWidth={2} />
-                </button>
-                <button
-                  type="button"
-                  role="menuitemradio"
-                  aria-checked={chonTheme === "sang"}
-                  className={css.theme_btn}
-                  onClick={() => doiTheme("sang")}
-                  title="Sáng"
-                  aria-label="Sáng"
-                >
-                  <Sun size={16} strokeWidth={2} />
-                </button>
-                <button
-                  type="button"
-                  role="menuitemradio"
-                  aria-checked={chonTheme === "toi"}
-                  className={css.theme_btn}
-                  onClick={() => doiTheme("toi")}
-                  title="Tối"
-                  aria-label="Tối"
-                >
-                  <Moon size={16} strokeWidth={2} />
-                </button>
-              </div>
-            </div>
 
             <button
               type="button"

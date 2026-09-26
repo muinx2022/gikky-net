@@ -3,7 +3,6 @@ import Link from "next/link";
 import { DISCLAIMER_CHAN_TRANG } from "@/lib/phap-ly";
 
 import css from "./chan-trang.module.css";
-import { ChonGiaoDien } from "./chon-giao-dien";
 
 /** Footer disclaimer — PLAN 5.10. Nằm ở cột phải trang web. */
 export function ChanTrang() {
@@ -17,7 +16,6 @@ export function ChanTrang() {
           <Link href="/luat" prefetch={false}>Luật cộng đồng</Link>
           <Link href="/" prefetch={false}>Trang chủ</Link>
         </nav>
-        <ChonGiaoDien />
       </div>
     </footer>
   );

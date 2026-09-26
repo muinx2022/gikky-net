@@ -1,6 +1,6 @@
 "use client";
 
-import { ImageUp, KeyRound, LogOut, Monitor, Moon, Settings, ShieldCheck, Sun, UserRound } from "lucide-react";
+import { ImageUp, KeyRound, LogOut, Settings, ShieldCheck, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -10,7 +10,6 @@ import { dangXuat } from "@/lib/tai-khoan";
 import { duongDanHoSo } from "@/lib/url";
 
 import { Avatar } from "./avatar";
-import { useLuaChonTheme } from "./lua-chon-theme";
 import { useModalDangNhap } from "./modal-dang-nhap";
 import { usePhien } from "./phien";
 import css from "./thanh-tai-khoan.module.css";
@@ -32,7 +31,6 @@ export function ThanhTaiKhoan() {
   const hopRef = useRef<HTMLDivElement | null>(null);
   const [mo, datMo] = useState(false);
   const [dangThoat, datDangThoat] = useState(false);
-  const [chonTheme, doiTheme] = useLuaChonTheme();
 
   // Bấm ra ngoài hoặc phím Escape thì đóng menu tài khoản
   useEffect(() => {
@@ -159,46 +157,6 @@ export function ThanhTaiKhoan() {
             <KeyRound size={15} strokeWidth={2} aria-hidden />
             Đổi mật khẩu
           </Link>
-          <hr className={css.menu_divider} />
-          
-          <div className={css.menu_theme_row} role="group" aria-label="Giao diện">
-            <span>Giao diện</span>
-            <div className={css.menu_theme_icons}>
-              <button
-                type="button"
-                role="menuitemradio"
-                aria-checked={chonTheme === "he"}
-                className={css.menu_theme_icon_btn}
-                onClick={() => doiTheme("he")}
-                title="Theo hệ thống"
-                aria-label="Theo hệ thống"
-              >
-                <Monitor size={15} strokeWidth={2} aria-hidden />
-              </button>
-              <button
-                type="button"
-                role="menuitemradio"
-                aria-checked={chonTheme === "sang"}
-                className={css.menu_theme_icon_btn}
-                onClick={() => doiTheme("sang")}
-                title="Sáng"
-                aria-label="Sáng"
-              >
-                <Sun size={15} strokeWidth={2} aria-hidden />
-              </button>
-              <button
-                type="button"
-                role="menuitemradio"
-                aria-checked={chonTheme === "toi"}
-                className={css.menu_theme_icon_btn}
-                onClick={() => doiTheme("toi")}
-                title="Tối"
-                aria-label="Tối"
-              >
-                <Moon size={15} strokeWidth={2} aria-hidden />
-              </button>
-            </div>
-          </div>
           <hr className={css.menu_divider} />
           <button
             type="button"

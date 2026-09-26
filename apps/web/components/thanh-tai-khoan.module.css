@@ -140,42 +140,6 @@
   border-top: 1px solid var(--line);
 }
 
-.menu_theme_row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 7px 10px;
-  color: var(--ink-2);
-}
-
-.menu_theme_icons {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.menu_theme_icon_btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px;
-  border: 0;
-  background: none;
-  color: var(--ink-3);
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.menu_theme_icon_btn:hover {
-  background: var(--inset);
-  color: var(--accent);
-}
-
-.menu_theme_icon_btn[aria-checked="true"] {
-  background: var(--inset);
-  color: var(--accent);
-}
-
 /* KHÔNG hoàng thổ: --stamp đi theo allowlist từng selector suy từ PLAN 9.1
    (e2e/don-vi/mau-token.spec.ts), và "tài khoản chưa xác thực email" không có trong
    danh sách "thứ mang tính đóng dấu" của PLAN. Nét đứt là đủ để nó khác chữ thường. */

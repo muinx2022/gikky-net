@@ -348,41 +348,6 @@
   font-family: var(--f-mono);
 }
 
-.theme_row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 12px;
-  background: var(--surface);
-  border-radius: 8px;
-  font-size: 13px;
-  color: var(--ink-2);
-}
-
-.theme_icons {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.theme_btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 6px;
-  border: 0;
-  background: none;
-  color: var(--ink-3);
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.theme_btn[aria-checked="true"] {
-  background: var(--inset);
-  color: var(--accent);
-  font-weight: 600;
-}
-
 .disclaimer {
   font-size: 11px;
   color: var(--ink-3);

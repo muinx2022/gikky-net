@@ -30,25 +30,46 @@
   color: var(--ink-2);
 }
 
+/* Thanh dính chứa tab feed và nút đổi kiểu xem, dính ngay dưới header khi cuộn */
+.thanh_dinh {
+  position: sticky;
+  top: var(--cao-chrome);
+  z-index: 30;
+  background: color-mix(in srgb, var(--bg) 95%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 8px 0;
+  margin-bottom: 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 50%, transparent);
+}
+
 /* Hàng điều khiển: tab trái, nút đổi kiểu xem phải. */
 .hang_dieu_khien {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  justify-content: space-between;
   gap: 8px;
-  margin-bottom: 10px;
 }
 
 .tab {
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tab::-webkit-scrollbar {
+  display: none;
 }
 
 /* `inline-flex` + `align-items: center` để icon và chữ nằm cùng một trục — bản cũ không
    flex nên SVG rơi xuống baseline chữ, lệch lên trên. Không viền (user 2026-08-24): tab
    đang chọn nhận biết bằng NỀN, không bằng khung. */
 .mot_tab {
+  white-space: nowrap;
+  flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -76,7 +97,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-bottom: 14px;
+  margin-top: 8px;
   font-size: 12.5px;
 }
 
@@ -170,6 +191,11 @@
   .khung {
     grid-template-columns: minmax(0, 1fr);
     padding: 14px 12px 34px;
+  }
+
+  .thanh_dinh {
+    margin-inline: -12px;
+    padding-inline: 12px;
   }
 
   .rail {
