@@ -134,6 +134,7 @@ Nhóm này là **tản mạn**: dài hơi, liên ngành, không bám một mã.
 - **Chi phí giao dịch** ăn vào phương pháp tần suất cao như thế nào.
 - **Walk-forward analysis**: kiểm một phương pháp mà không tự lừa mình.
 - **[ĐÃ VIẾT - Mạch 1136]** **Mô hình Nêm giảm (Falling Wedge)**: [Nhật kí demo] Bứt phá nêm hội tụ, nhịp retest Pin Bar kiểm định cạnh trên, dời SL bảo toàn và chạm đích +2.8R.
+- **[ĐÃ VIẾT - Mạch 1165]** **Mô hình Cờ tăng giá (Bull Flag)**: [Nhật kí demo] Bứt phá kênh tích lũy hẹp, nhịp kiểm định dời SL và chạm đích +2.8R.
 - **[ĐÃ VIẾT - Mạch 1085]** **Phương pháp thất bại**: LTCM, và các hệ thống từng được ca ngợi rồi biến mất.
 - **[ĐÃ VIẾT - Mạch 1109]** **Barings Bank**: Nick Leeson và tài khoản giấu lỗ 88888.
 
