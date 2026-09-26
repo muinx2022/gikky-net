@@ -120,10 +120,10 @@ test.describe("T1c — hai control, MỘT trạng thái", () => {
   });
 });
 
-test.describe('T1b — "Theo hệ thống" và "Sáng" chọn lại được ở CHÂN TRANG, không cần đăng nhập', () => {
+test.describe('T1b — "Theo hệ thống" chọn lại được ở CHÂN TRANG, không cần đăng nhập', () => {
   test.use({ colorScheme: "light" });
 
-  test("chọn lại Theo hệ thống và Sáng ở chân trang", async ({
+  test("chọn lại Theo hệ thống ⇒ XOÁ lựa chọn, không ghi giá trị thứ ba", async ({
     page,
   }) => {
     /* Đây là **cái giá của nút hai trạng thái**, và nó phải có một bài đo riêng.
@@ -147,32 +147,19 @@ test.describe('T1b — "Theo hệ thống" và "Sáng" chọn lại được ở
     expect(await nenBody(page)).toBe(NEN_SANG);
     expect(
       await page.evaluate((k) => window.localStorage.getItem(k), KHOA_THEME),
-    ).toBe("he");
+      "khoá phải bị XOÁ, không phải ghi 'he' — một trạng thái, một cách biểu diễn",
+    ).toBeNull();
     expect(
       await page.evaluate(() => document.documentElement.hasAttribute("data-theme")),
       "data-theme phải VẮNG MẶT, nếu không @media dark không khớp nhánh nào",
     ).toBe(false);
-
-    // Chọn lại Sáng (mặc định) ⇒ xoá khoá
-    await page.getByTestId("chon-giao-dien-select").selectOption("sang");
-    expect(await nenBody(page)).toBe(NEN_SANG);
-    expect(
-      await page.evaluate((k) => window.localStorage.getItem(k), KHOA_THEME),
-      "khoá mặc định phải bị XOÁ",
-    ).toBeNull();
   });
 });
 
 test.describe('T1 — "Theo hệ thống" đi theo prefers-color-scheme THẬT', () => {
   test.use({ colorScheme: "dark" });
 
-  test("máy để tối, chưa chọn gì ⇒ trang sáng theo mặc định", async ({ page }) => {
-    await page.goto("/luat");
-    expect(await nenBody(page)).toBe(NEN_SANG);
-  });
-
-  test("máy để tối, chọn Theo hệ thống ⇒ trang tối", async ({ page }) => {
-    await daChon(page, KHOA_THEME, "he");
+  test("máy để tối, chưa chọn gì ⇒ trang tối", async ({ page }) => {
     await page.goto("/luat");
     expect(await nenBody(page)).toBe(NEN_TOI);
   });

@@ -64,14 +64,14 @@ export function useLuaChonTheme(): [LuaChonTheme, (moi: LuaChonTheme) => void] {
   }, []);
 
   const doi = useCallback((moi: LuaChonTheme) => {
-    datChon(moi);
-    apTheme(document.documentElement, moi);
     try {
       luuLuaChon(window.localStorage, moi);
     } catch {
       // Không lưu được thì lựa chọn chỉ sống trong tab này. Đúng, và không đáng một câu
       // báo lỗi trên thanh header hay ở chân trang.
     }
+    datChon(moi);
+    apTheme(document.documentElement, moi);
   }, []);
 
   return [chon, doi];

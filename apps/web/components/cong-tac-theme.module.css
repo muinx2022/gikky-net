@@ -31,36 +31,40 @@
   pointer-events: none;
 }
 
+/* Mặc định (giao diện sáng): hiện icon mặt trời */
 .icon_trang {
-  display: block;
+  display: none;
 }
 
 .icon_troi {
-  display: none;
+  display: block;
 }
 
+/* Khi giao diện tối (data-theme="dark"): hiện icon mặt trăng */
 :global(html[data-theme="dark"]) .icon_trang {
-  display: none;
+  display: block;
 }
 
 :global(html[data-theme="dark"]) .icon_troi {
-  display: block;
-}
-
-:global(html[data-theme="light"]) .icon_trang {
-  display: block;
-}
-
-:global(html[data-theme="light"]) .icon_troi {
   display: none;
 }
 
+/* Khi giao diện sáng (data-theme="light"): hiện icon mặt trời */
+:global(html[data-theme="light"]) .icon_trang {
+  display: none;
+}
+
+:global(html[data-theme="light"]) .icon_troi {
+  display: block;
+}
+
+/* Khi hệ điều hành để tối và chưa ép light (theo hệ thống): hiện icon mặt trăng */
 @media (prefers-color-scheme: dark) {
   :global(html:not([data-theme="light"])) .icon_trang {
-    display: none;
+    display: block;
   }
   :global(html:not([data-theme="light"])) .icon_troi {
-    display: block;
+    display: none;
   }
 }
 

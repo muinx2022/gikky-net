@@ -38,7 +38,7 @@ export const KHOA_THEME = "gikky:theme";
 export const CAC_THEME = ["he", "sang", "toi"] as const;
 export type LuaChonTheme = (typeof CAC_THEME)[number];
 
-export const THEME_MAC_DINH: LuaChonTheme = "sang";
+export const THEME_MAC_DINH: LuaChonTheme = "he";
 
 export const NHAN_THEME: Record<LuaChonTheme, string> = {
   he: "Theo hệ thống",
@@ -55,8 +55,8 @@ export const NHAN_THEME: Record<LuaChonTheme, string> = {
  */
 export function docLuaChon(tho: string | null): LuaChonTheme {
   if (tho === "toi" || tho === "dark") return "toi";
-  if (tho === "he" || tho === "system") return "he";
   if (tho === "sang" || tho === "light") return "sang";
+  if (tho === "he" || tho === "system") return "he";
   return THEME_MAC_DINH;
 }
 
@@ -161,8 +161,8 @@ export function nguonScriptTheme(): string {
     `var c=localStorage.getItem(${JSON.stringify(KHOA_THEME)});` +
     "var e=document.documentElement;" +
     'if(c==="toi"||c==="dark"){e.setAttribute("data-theme","dark");e.style.colorScheme="dark";}' +
-    'else if(c==="he"||c==="system"){e.removeAttribute("data-theme");e.style.colorScheme="light dark";}' +
-    'else{e.setAttribute("data-theme","light");e.style.colorScheme="light";}' +
+    'else if(c==="sang"||c==="light"){e.setAttribute("data-theme","light");e.style.colorScheme="light";}' +
+    'else{e.removeAttribute("data-theme");e.style.colorScheme="light dark";}' +
     "}catch(x){}})()"
   );
 }
