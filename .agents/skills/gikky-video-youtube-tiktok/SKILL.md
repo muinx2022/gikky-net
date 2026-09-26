@@ -14,4 +14,5 @@ Nhiệm vụ: Tự động sản xuất trọn gói 1 video dài YouTube 16:9 ($
 2. **Kịch bản & Giọng đọc:** Sử dụng giọng đọc `vi-VN-NamMinhNeural` đã tinh chỉnh (`rate="-2%", pitch="-1Hz"`). Tạo kịch bản 5 phân cảnh logic.
 3. **Đồ họa & Hoạt họa:** Dùng Playwright render 5 slide chuẩn Dark Obsidian Gikky (1920x1080 cho YouTube và 1080x1920 cho TikTok).
 4. **Ghép nối MP4:** Dùng FFmpeg ghép audio và slide thành video MP4 xuất bản vào `d:\Projects\gikky-net\apps\web\public/`.
-5. **Metadata & Xuất báo cáo:** Xuất thumbnail 1280x720. BẮT BUỘC in trực tiếp toàn bộ 3 tiêu đề CTR, mô tả video kèm Timestamps, tags cho YouTube, cùng Caption/Description và bộ 10 Hashtags cho TikTok/Shorts ngay trong nội dung phản hồi để người dùng copy đăng ngay lập tức.
+5. **Metadata:** Xuất thumbnail 1280x720. Cung cấp đầy đủ 3 tiêu đề CTR, mô tả video kèm Timestamps, tags cho YouTube, cùng Caption/Description và bộ 10 Hashtags cho TikTok/Shorts/Reels.
+6. **Tự động xuất bản Facebook Reel:** Chạy lệnh `python scripts/facebook/reels_publisher.py --video "apps/web/public/<short_video>.mp4" --caption "<caption_kem_hashtags>"` để xuất bản ngay lập tức video ngắn 9:16 lên Facebook Reels của Fanpage Gikky.net và in đường dẫn Reel trong báo cáo.
