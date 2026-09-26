@@ -34,7 +34,8 @@ test.describe("light", () => {
 
 test.describe("dark", () => {
   test.use({ colorScheme: "dark" });
-  test("nền tối + mực sáng", async ({ page }) => {
+  test("nền tối + mực sáng khi chọn theme tối", async ({ page }) => {
+    await page.addInitScript(() => window.localStorage.setItem("gikky:theme", "toi"));
     const hpg = await timMachTheoTitle(TITLE_HPG);
     await page.goto(duongDan(hpg));
     expect(await mau(page)).toEqual({ nen: NEN_TOI, muc: MUC_TOI });

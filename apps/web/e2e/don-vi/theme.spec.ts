@@ -77,18 +77,19 @@ test('"theo hệ thống" phải GỠ data-theme, không đặt một giá trị
   // Bảng token ở `globals.css` viết luật dark là `@media (prefers-color-scheme: dark)` +
   // `:root:not([data-theme="light"])`. Một `data-theme="he"` nằm đó không khớp nhánh nào
   // ⇒ trang mắc kẹt ở sáng ngay trên một máy đang để tối.
-  expect(thuocTinhTheme(THEME_MAC_DINH)).toBeNull();
-  const goc = chayScript(nguonScriptTheme(), { [KHOA_THEME]: THEME_MAC_DINH });
+  expect(thuocTinhTheme("he")).toBeNull();
+  const goc = chayScript(nguonScriptTheme(), { [KHOA_THEME]: "he" });
   expect(goc.thuoc.has("data-theme")).toBe(false);
   expect(goc.style.colorScheme).toBe("light dark");
 });
 
-test("localStorage rỗng hoặc RÁC ⇒ về mặc định, không ném", () => {
+test("localStorage rỗng hoặc RÁC ⇒ về mặc định (sáng), không ném", () => {
   expect(docLuaChon(null)).toBe(THEME_MAC_DINH);
   expect(docLuaChon("")).toBe(THEME_MAC_DINH);
-  expect(docLuaChon("dark")).toBe(THEME_MAC_DINH); // giá trị của một thư viện khác
+  expect(docLuaChon("dark")).toBe("toi"); // giá trị của một thư viện khác
   const goc = chayScript(nguonScriptTheme(), { [KHOA_THEME]: "rac" });
-  expect(goc.thuoc.has("data-theme")).toBe(false);
+  expect(goc.thuoc.get("data-theme")).toBe("light");
+  expect(goc.style.colorScheme).toBe("light");
 });
 
 test("script inline sống sót khi localStorage NÉM (cookie bị chặn hoàn toàn)", () => {
@@ -187,7 +188,7 @@ test("mucTieuCongTac: KHÔNG cấu hình nào cho ra một cú bấm vô hình",
   }
 });
 
-test("luuLuaChon: “theo hệ thống” XOÁ khoá, không ghi chuỗi thứ ba", () => {
+test("luuLuaChon: mặc định (Sáng) XOÁ khoá, các lựa chọn khác ghi đúng chuỗi", () => {
   // Một trạng thái, một cách biểu diễn. Hai control cùng gọi hàm này (nút header + ô chọn
   // ở `/cai-dat`), nên luật phải sống ở đúng một chỗ.
   const goi: string[] = [];
@@ -197,12 +198,12 @@ test("luuLuaChon: “theo hệ thống” XOÁ khoá, không ghi chuỗi thứ b
   };
 
   luuLuaChon(kho, "toi");
-  luuLuaChon(kho, "sang");
+  luuLuaChon(kho, "he");
   luuLuaChon(kho, THEME_MAC_DINH);
 
   expect(goi).toEqual([
     `set ${KHOA_THEME}=toi`,
-    `set ${KHOA_THEME}=sang`,
+    `set ${KHOA_THEME}=he`,
     `remove ${KHOA_THEME}`,
   ]);
 });

@@ -497,7 +497,8 @@ export function ThanhDieuHuongDuoi() {
               <div className={css.theme_icons}>
                 <button
                   type="button"
-                  aria-pressed={chonTheme === "he"}
+                  role="menuitemradio"
+                  aria-checked={chonTheme === "he"}
                   className={css.theme_btn}
                   onClick={() => doiTheme("he")}
                   title="Theo hệ thống"
@@ -507,7 +508,8 @@ export function ThanhDieuHuongDuoi() {
                 </button>
                 <button
                   type="button"
-                  aria-pressed={chonTheme === "sang"}
+                  role="menuitemradio"
+                  aria-checked={chonTheme === "sang"}
                   className={css.theme_btn}
                   onClick={() => doiTheme("sang")}
                   title="Sáng"
@@ -517,7 +519,8 @@ export function ThanhDieuHuongDuoi() {
                 </button>
                 <button
                   type="button"
-                  aria-pressed={chonTheme === "toi"}
+                  role="menuitemradio"
+                  aria-checked={chonTheme === "toi"}
                   className={css.theme_btn}
                   onClick={() => doiTheme("toi")}
                   title="Tối"
