@@ -178,7 +178,7 @@ Nhóm này là **tản mạn**: dài hơi, liên ngành, không bám một mã.
 - **VNM (Vinamilk):** Cỗ máy in tiền mặt với tỷ lệ cổ tức cao, nhưng đối mặt với bài toán bão hòa ngành sữa Việt Nam và nỗ lực tìm kiếm động lực tăng trưởng mới.
 - **[ĐÃ VIẾT - Mạch 1134]** **DGC (Hóa chất Đức Giang):** Lợi thế nguồn quặng Apatit giá rẻ, vị thế độc quyền photpho vàng (P4) trong chuỗi bán dẫn thế giới và rủi ro từ quy định bảo vệ môi trường / tiến độ dự án Nghi Sơn.
 - **GMD (Gemadept):** Cảng nước sâu Gemalink, vị thế đón đầu tàu mẹ siêu trọng tải và cơ cấu chi phí tài chính sau khi thoái vốn cảng Nam Hải Đình Vũ.
-- **REE (Cơ điện Lạnh):** Danh mục tài sản điện - nước - văn phòng cho thuê (dòng tiền phòng thủ), năng lực M&A hạ tầng và bài toán kế thừa quản trị.
+- **[ĐÃ VIẾT - Mạch 1163]** **REE (Cơ điện Lạnh):** Cỗ máy holding hạ tầng tiện ích (Điện - Nước - Văn phòng eTown), con hào cổ tức phòng thủ và bài toán chuyển giao thế hệ.
 - **PNJ (Vàng bạc Đá quý Phú Nhuận):** Sự dịch chuyển từ vàng miếng sang trang sức bán lẻ, năng lực quản trị chuỗi cung ứng và công nghệ chế tác trước sức mua suy yếu.
 - **CTR (Viettel Construction):** Hệ sinh thái hạ tầng viễn thông TowerCo, cơ hội từ làn sóng 5G và bài toán mở rộng sang mảng xây dựng dân dụng.
 - **MSN (Masan Group):** Chiến lược "Point of Life", gánh nặng chi phí lãi vay từ các thương vụ M&A đòn bẩy cao và bài toán tối ưu hóa chuỗi WinCommerce.
