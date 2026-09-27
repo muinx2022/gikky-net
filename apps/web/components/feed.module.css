@@ -80,6 +80,10 @@
   color: var(--ink-2);
 }
 
+.chu_tab {
+  display: inline;
+}
+
 .mot_tab:hover {
   background: var(--surface-2);
   color: var(--ink);
@@ -196,6 +200,18 @@
   .thanh_dinh {
     margin-inline: -12px;
     padding-inline: 12px;
+  }
+
+  /* Trên mobile: chỉ dùng icon, không dùng text để thanh dính gọn gàng, không bị tràn hay nén chữ */
+  .chu_tab {
+    display: none;
+  }
+
+  .mot_tab {
+    padding: 6px 11px;
+    min-width: 36px;
+    height: 34px;
+    justify-content: center;
   }
 
   .rail {

@@ -1,5 +1,6 @@
 "use client";
 
+import { LayoutList, Rows3, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import {
@@ -13,6 +14,11 @@ import {
 } from "@/lib/kieu-xem";
 
 import css from "./chon-kieu-xem.module.css";
+
+const ICON_KIEU_XEM: Readonly<Record<KieuXem, LucideIcon>> = {
+  the: LayoutList,
+  gon: Rows3,
+};
 
 /** Nút đổi kiểu xem feed — thẻ / gọn.
  *
@@ -48,18 +54,24 @@ export function ChonKieuXem() {
 
   return (
     <div className={css.khung} role="group" aria-label="Kiểu xem" data-testid="chon-kieu-xem">
-      {CAC_KIEU_XEM.map((k) => (
-        <button
-          key={k}
-          type="button"
-          className={k === kieu ? `${css.nut} ${css.dang_chon}` : css.nut}
-          aria-pressed={k === kieu}
-          onClick={() => doi(k)}
-          data-testid={`kieu-xem-${k}`}
-        >
-          {NHAN_KIEU_XEM[k]}
-        </button>
-      ))}
+      {CAC_KIEU_XEM.map((k) => {
+        const Hinh = ICON_KIEU_XEM[k];
+        return (
+          <button
+            key={k}
+            type="button"
+            className={k === kieu ? `${css.nut} ${css.dang_chon}` : css.nut}
+            aria-pressed={k === kieu}
+            onClick={() => doi(k)}
+            title={NHAN_KIEU_XEM[k]}
+            aria-label={NHAN_KIEU_XEM[k]}
+            data-testid={`kieu-xem-${k}`}
+          >
+            <Hinh size={14} strokeWidth={2} aria-hidden className={css.hinh} />
+            <span className={css.chu}>{NHAN_KIEU_XEM[k]}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }

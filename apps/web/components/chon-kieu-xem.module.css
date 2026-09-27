@@ -7,6 +7,10 @@
 }
 
 .nut {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   padding: 4px 10px;
   font-size: 12.5px;
   font-weight: 500;
@@ -31,9 +35,35 @@
   color: var(--accent);
 }
 
+.hinh {
+  display: none;
+}
+
+.chu {
+  display: inline;
+}
+
 @media (pointer: coarse) {
   .nut {
     min-height: 44px;
     padding: 0 14px;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Trên mobile: chỉ dùng icon, không dùng text */
+  .hinh {
+    display: inline-block;
+  }
+
+  .chu {
+    display: none;
+  }
+
+  .nut {
+    min-height: 34px !important;
+    height: 34px;
+    padding: 0 10px !important;
+    min-width: 36px;
   }
 }

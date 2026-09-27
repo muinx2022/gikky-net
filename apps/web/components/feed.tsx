@@ -152,10 +152,11 @@ export function Feed({
                       t === tab ? `${css.mot_tab} ${css.tab_dang_chon}` : css.mot_tab
                     }
                     aria-current={t === tab ? "page" : undefined}
+                    title={NHAN_TAB[t]}
                     data-testid={`tab-${t}`}
                   >
                     <Hinh size={15} strokeWidth={2} aria-hidden />
-                    {NHAN_TAB[t]}
+                    <span className={css.chu_tab}>{NHAN_TAB[t]}</span>
                   </Link>
                 );
               })}
