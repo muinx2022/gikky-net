@@ -57,7 +57,7 @@ from django.db.models import Count, Q
 from core.models.binh_luan import Comment
 from core.models.he_thong import Notification
 from core.models.moc import Moc
-from core.models.tuong_tac import Follow, TheoUser, Trich
+from core.models.tuong_tac import Follow, TheoSub, TheoUser, Trich
 from core.thoi_gian import TZ_VN, khoa_ngay_vn, ngay_vn
 
 logger = logging.getLogger(__name__)
@@ -411,11 +411,15 @@ def bao_mach_moi(mach) -> int:
     """
     if mach.hidden_at is not None:
         return 0
-    nguoi_nhan = list(
-        TheoUser.objects.filter(nguoi_duoc_theo_id=mach.author_id)
-        .order_by("nguoi_theo_id")
-        .values_list("nguoi_theo_id", flat=True)
+    nhan_theo_user = set(
+        TheoUser.objects.filter(nguoi_duoc_theo_id=mach.author_id).values_list(
+            "nguoi_theo_id", flat=True
+        )
     )
+    nhan_theo_sub = set(
+        TheoSub.objects.filter(sub_id=mach.sub_id).values_list("user_id", flat=True)
+    )
+    nguoi_nhan = sorted((nhan_theo_user | nhan_theo_sub) - {mach.author_id})
     if not nguoi_nhan:
         return 0
 

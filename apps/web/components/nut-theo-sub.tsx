@@ -112,7 +112,7 @@ export function NutTheoSub({ slug }: { slug: string }) {
       title={
         dangTheo
           ? "Bỏ theo dõi chuyên mục này"
-          : "Theo dõi — chuyên mục sẽ nằm trong hồ sơ của bạn"
+          : "Theo dõi — nhận thông báo khi có mạch mới"
       }
       data-testid="nut-theo-sub"
     >
