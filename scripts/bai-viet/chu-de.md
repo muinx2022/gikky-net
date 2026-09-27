@@ -46,6 +46,7 @@ trường** doanh nghiệp sống trong đó?* Doanh nghiệp ⇒ `chung-khoan`.
 - **[ĐÃ VIẾT - Mạch 1124]** **Đầu tư công chạy nước rút cuối năm**: Áp lực giải ngân 700.000 tỷ, nút thắt vật liệu đắp nền và biên lãi mỏng của nhà thầu.
 - **[ĐÃ VIẾT - Mạch 1138]** **Thủy điện tích năng** (Pumped Storage) và hệ thống lưu trữ pin BESS: giải pháp giải cứu điểm nghẽn năng lượng tái tạo.
 - **[ĐÃ VIẾT - Mạch 1146]** **Quy hoạch Điện VIII** và nút thắt đường dây truyền tải 500kV mạch 3: bài toán giải tỏa công suất vùng duyên hải miền Trung. `vi-mo`
+- **[ĐÃ VIẾT - Mạch 1171]** **Đường sắt tốc độ cao Bắc - Nam 350 km/h**: Bóc tách bài toán vốn 67 tỷ USD, cơ chế hoàn vốn quỹ đất TOD quanh 23 ga và bước nhảy vọt nội địa hóa vật liệu chế tạo. `vi-mo`
 
 ## C. Ngân hàng & Tài chính hệ thống
 
