@@ -136,7 +136,8 @@ Nhóm này là **tản mạn**: dài hơi, liên ngành, không bám một mã.
 - **[ĐÃ VIẾT - Mạch 1112, 1074]** **Kelly criterion** và vì sao gần như không ai dùng nguyên bản.
 - **[ĐÃ VIẾT - Mạch 1095]** **Backtest**: overfitting, look-ahead bias, survivorship bias — ba cách một đường cong đẹp ra đời.
 - **Chi phí giao dịch** ăn vào phương pháp tần suất cao như thế nào.
-- **Walk-forward analysis**: kiểm một phương pháp mà không tự lừa mình.
+- **[ĐÃ VIẾT - Mạch 1153]** **Walk-forward analysis**: kiểm một phương pháp mà không tự lừa mình bằng dữ liệu quá khứ.
+- **[ĐÃ VIẾT - Mạch 1170]** **Volume Profile**: Giải mã cấu trúc thanh khoản qua POC, Vùng giá trị (Value Area High/Low), HVN/LVN và cái bẫy mua Breakout. `quan-tri-von`
 - **[ĐÃ VIẾT - Mạch 1136]** **Mô hình Nêm giảm (Falling Wedge)**: [Nhật kí demo] Bứt phá nêm hội tụ, nhịp retest Pin Bar kiểm định cạnh trên, dời SL bảo toàn và chạm đích +2.8R.
 - **[ĐÃ VIẾT - Mạch 1165]** **Mô hình Cờ tăng giá (Bull Flag)**: [Nhật kí demo] Bứt phá kênh tích lũy hẹp, nhịp kiểm định dời SL và chạm đích +2.8R.
 - **[ĐÃ VIẾT - Mạch 1085]** **Phương pháp thất bại**: LTCM, và các hệ thống từng được ca ngợi rồi biến mất.
