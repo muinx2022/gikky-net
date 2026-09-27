@@ -149,6 +149,7 @@ Nhóm này là **tản mạn**: dài hơi, liên ngành, không bám một mã.
 
 `sub` = `quan-tri-von` hoặc `tam-ly-giao-dich` · `loai` = **`Hồ sơ`** hoặc **`Nhân vật`**.
 
+- **[ĐÃ VIẾT - Mạch 1173]** **Volkswagen Short Squeeze 2008**: Cú kẹp lịch sử biến Porsche thành thế lực thâu tóm, bẫy toán học 94.3% cổ phần khóa và bài học lỗ vô hạn khi bán khống. `quan-tri-von`
 - **[ĐÃ VIẾT - Mạch 1132]** **Archegos Capital & Bill Hwang**: Vụ sụp đổ 2021 làm bốc hơi 30 tỷ USD trong 48 giờ — đòn bẩy ngầm Total Return Swap (TRS), bẫy đa ngân hàng và thế tiến thoái lưỡng nan của tù nhân (Prisoner's Dilemma) trên phố Wall.
 - **[ĐÃ VIẾT - Mạch 1089]** **Jesse Livermore**: "Con gấu vĩ đại phố Wall" — từ cậu bé ghi bảng bucket shop đến tài sản 100 triệu USD năm 1929, hệ thống điểm xoay (Pivotal Points), 4 lần phá sản làm lại từ đầu và hồi kết bi kịch khi phá vỡ kỷ luật.
 - **[ĐÃ VIẾT - Mạch 1121]** **Nicolas Darvas**: Vũ công kiếm 2.000.000 USD từ chứng khoán — phát minh lý thuyết Hộp (Darvas Box), cách quản trị lệnh dời stop-loss tự động và nghệ thuật cách ly hoàn toàn với tiếng ồn phố Wall.
@@ -202,6 +203,6 @@ Nhóm này là **tản mạn**: dài hơi, liên ngành, không bám một mã.
 - **Chu kỳ thanh toán T+2.5**: Cơ chế vận hành dòng tiền tại VSDC, vì sao bán thứ Sáu thì thứ Ba tiền mới về và chi phí cơ hội.
 - **[ĐÃ VIẾT - Mạch 1159]** **Khớp lệnh định kỳ ATO và ATC**: Thuật toán xác định mức giá có khối lượng khớp lớn nhất và cách dòng tiền lớn tận dụng 15 phút quyết định.
 - **Bóc tách mọi chi phí thực tế khi giao dịch**: Phí môi giới, thuế TNCN 0,1%, phí lưu ký chứng khoán VSDC và lãi suất vay Margin.
-- **Cơ chế Call Margin và Force Sell**: Tỷ lệ an toàn (Rtt), cảnh báo ký quỹ và quy trình bán giải chấp của các công ty chứng khoán.
+- **[ĐÃ VIẾT - Mạch 1169]** **Cơ chế Call Margin và Force Sell**: Tỷ lệ an toàn (Rtt), cảnh báo ký quỹ và quy trình bán giải chấp của các công ty chứng khoán.
 - **Các loại lệnh thực chiến**: Khi nào nên dùng lệnh LO, MP, MTL, MOK và bẫy trượt giá ở các cổ phiếu thanh khoản thấp.
 - **Phái sinh VN30 và độ lệch Basis**: Hợp đồng tương lai vận hành thế nào, tỷ lệ ký quỹ ban đầu và rủi ro đòn bẩy cao.
