@@ -97,6 +97,17 @@ http://gikky.net {
 		import len_django
 	}
 
+	handle /api/mobile/* {
+		rate_limit {
+			zone dang_ky_mobile {
+				key {http.request.header.CF-Connecting-IP}
+				events 30
+				window 1h
+			}
+		}
+		import len_django
+	}
+
 	# Mọi đường GHI khác (tạo mạch, nối mốc, bình luận, vote, upload ảnh).
 	@ghi {
 		path /api/*

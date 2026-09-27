@@ -94,6 +94,15 @@ def dang_ky_mobile(request: HttpRequest) -> JsonResponse:
     except Exception:
         return JsonResponse({"ok": False, "error": "Dữ liệu gửi lên không đúng định dạng JSON."}, status=400)
 
+    # 1. Hạn mức đăng ký theo IP trong ngày lịch VN (PLAN mục 10)
+    from core.han_muc import dem_dang_ky_trong_ngay_vn, dia_chi_ip, tran_dang_ky_moi_ngay
+    ip = dia_chi_ip(request)
+    if dem_dang_ky_trong_ngay_vn(ip) >= tran_dang_ky_moi_ngay():
+        return JsonResponse(
+            {"ok": False, "error": "Địa chỉ mạng này đã vượt quá số lần đăng ký tài khoản cho phép trong ngày."},
+            status=429,
+        )
+
     email = (data.get("email") or "").strip().lower()
     username = (data.get("username") or "").strip()
     password = data.get("password") or ""
@@ -108,8 +117,13 @@ def dang_ky_mobile(request: HttpRequest) -> JsonResponse:
     if not re.match(r"^[a-zA-Z0-9_.-]+$", username):
         return JsonResponse({"ok": False, "error": "Tên đăng nhập không được chứa khoảng trắng hoặc ký tự đặc biệt."}, status=400)
 
-    if len(password) < 8:
-        return JsonResponse({"ok": False, "error": "Mật khẩu phải có ít nhất 8 ký tự."}, status=400)
+    # 2. Kiểm tra mật khẩu theo các validator của Django
+    from django.contrib.auth.password_validation import validate_password
+    from django.core.exceptions import ValidationError
+    try:
+        validate_password(password)
+    except ValidationError as e:
+        return JsonResponse({"ok": False, "error": "; ".join(e.messages)}, status=400)
 
     from core.models.nguoi_dung import User
     if User.objects.filter(username__iexact=username).exists():
@@ -120,8 +134,17 @@ def dang_ky_mobile(request: HttpRequest) -> JsonResponse:
 
     try:
         user = User.objects.create_user(username=username, email=email, password=password)
+        user.dang_ky_ip = ip
         user.display_name = username
         user.save()
+
+        # Tạo bản ghi EmailAddress của allauth để đồng bộ
+        from allauth.account.models import EmailAddress
+        EmailAddress.objects.get_or_create(
+            user=user,
+            email=email,
+            defaults={"primary": True, "verified": True},
+        )
 
         login(request, user, backend="django.contrib.auth.backends.ModelBackend")
         request.session.save()
@@ -275,7 +298,11 @@ def khoi_chay_google_mobile(request: HttpRequest) -> HttpResponse:
     if getattr(request, "user", None) and request.user.is_authenticated:
         logout(request)
 
-    redirect_uri = request.GET.get("redirect_uri", "gikky://auth/callback")
+    redirect_uri = (request.GET.get("redirect_uri") or "gikky://auth/callback").strip()
+    from core.allauth_adapter import la_mobile_redirect_hop_le
+    if not la_mobile_redirect_hop_le(redirect_uri):
+        return HttpResponseBadRequest("redirect_uri không hợp lệ hoặc không thuộc danh sách được phép.")
+
     request.session["mobile_redirect_uri"] = redirect_uri
     request.session.save()
 

@@ -54,6 +54,7 @@ except ImproperlyConfigured as loi:
 
 DEBUG = env("DEBUG")
 ALLOWED_HOSTS = env("ALLOWED_HOSTS")
+CHO_PHEP_EXPO_REDIRECT = env.bool("CHO_PHEP_EXPO_REDIRECT", default=DEBUG)
 
 #: Google OAuth — env là **NGUỒN DỰ PHÒNG**, nguồn chính là hàng `SocialApp` trong DB
 #: nhập qua khu quản trị (`/cai-dat`). Đổi 2026-08-24, xem

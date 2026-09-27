@@ -207,3 +207,42 @@ def test_on_authentication_error_redirects_to_mobile():
     resp = exc_info.value.response
     assert resp.status_code == 302
     assert resp["Location"].startswith("exp://192.168.1.222:8081/--/auth/callback?error=")
+
+
+@patch("core.cau_hinh_oauth.google_dang_bat", return_value=True)
+def test_mobile_google_start_chan_open_redirect(mock_google_bat):
+    """Chặn tham số redirect_uri nguy hiểm trỏ ra web ngoài hoặc javascript scheme."""
+    client = Client()
+    for doc in (
+        "https://attacker.com/steal",
+        "http://attacker.com/steal",
+        "javascript:alert(1)",
+        "//evil.com/leak",
+    ):
+        res = client.get(f"/api/mobile/google/start?redirect_uri={doc}")
+        assert res.status_code == 400
+
+
+def test_mobile_signup_chan_mat_khau_yeu():
+    """Chặn mật khẩu quá yếu hoặc đơn giản."""
+    client = Client()
+    res = client.post(
+        "/api/mobile/signup",
+        data=json.dumps({"username": "user_weak", "email": "weak@gikky.net", "password": "123"}),
+        content_type="application/json",
+    )
+    assert res.status_code == 400
+
+
+def test_mobile_signup_ghi_nhan_dang_ky_ip():
+    """Ghi nhận IP khi đăng ký qua mobile."""
+    client = Client()
+    res = client.post(
+        "/api/mobile/signup",
+        data=json.dumps({"username": "user_ip_check", "email": "ipcheck@gikky.net", "password": "Mat-Khau-Manh-999#"}),
+        content_type="application/json",
+        REMOTE_ADDR="198.51.100.42",
+    )
+    assert res.status_code == 200
+    u = User.objects.get(username="user_ip_check")
+    assert u.dang_ky_ip == "198.51.100.42"

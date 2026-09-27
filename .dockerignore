@@ -16,7 +16,9 @@ api/media
 api/media-an
 api/staticfiles
 api/.mail
-api/.env
+**/.env*
+*.env*
+.env*
 .pytest_cache
 **/__pycache__
 *.pyc

@@ -42,6 +42,19 @@ for scheme in ("exp", "exps", "gikky"):
         HttpResponseRedirectBase.allowed_schemes = list(HttpResponseRedirectBase.allowed_schemes) + [scheme]
 
 
+def la_mobile_redirect_hop_le(url: str | None) -> bool:
+    """Kiểm tra URL chuyển hướng cho mobile: chỉ cho phép custom scheme an toàn."""
+    if not url or not isinstance(url, str):
+        return False
+    url = url.strip()
+    if url.startswith("gikky://"):
+        return True
+    if getattr(settings, "CHO_PHEP_EXPO_REDIRECT", settings.DEBUG):
+        if url.startswith(("exp://", "exps://")):
+            return True
+    return False
+
+
 class AdapterTaiKhoan(DefaultAccountAdapter):
     """Khai ở `settings.ACCOUNT_ADAPTER`."""
 
@@ -148,7 +161,7 @@ class AdapterTaiKhoan(DefaultAccountAdapter):
     def get_login_redirect_url(self, request):
         """Chuyển hướng sau đăng nhập: hỗ trợ trả sessionid về app mobile nếu luồng khởi từ mobile."""
         mobile_redirect = request.session.pop("mobile_redirect_uri", None)
-        if mobile_redirect:
+        if mobile_redirect and la_mobile_redirect_hop_le(mobile_redirect):
             from django.middleware.csrf import get_token
             session_key = request.session.session_key or ""
             csrf_token = get_token(request) or ""
@@ -236,7 +249,11 @@ class AdapterMangXaHoi(DefaultSocialAccountAdapter):
         state_data = getattr(sociallogin, "state", None) or {}
         if isinstance(state_data, dict):
             mobile_redirect = state_data.get("data", {}).get("mobile_redirect_uri")
-            if mobile_redirect and not request.session.get("mobile_redirect_uri"):
+            if (
+                mobile_redirect
+                and la_mobile_redirect_hop_le(mobile_redirect)
+                and not request.session.get("mobile_redirect_uri")
+            ):
                 request.session["mobile_redirect_uri"] = mobile_redirect
                 request.session.save()
 
@@ -260,7 +277,7 @@ class AdapterMangXaHoi(DefaultSocialAccountAdapter):
     ):
         """Nếu luồng từ mobile bị lỗi (hết hạn, huỷ, v.v.), điều hướng về mobile app thay vì báo lỗi HTML/500."""
         mobile_redirect = request.session.pop("mobile_redirect_uri", None)
-        if mobile_redirect:
+        if mobile_redirect and la_mobile_redirect_hop_le(mobile_redirect):
             from allauth.core.exceptions import ImmediateHttpResponse
             from django.http import HttpResponseRedirect
 
