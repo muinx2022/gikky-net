@@ -86,10 +86,11 @@ Nhóm này là **tản mạn**: dài hơi, liên ngành, không bám một mã.
 - **[ĐÃ VIẾT - Mạch 1071]** **Đóng gói và kiểm định** — mắt xích Việt Nam thật sự đứng, thay vì mắt xích ai cũng nói.
 - **[ĐÃ VIẾT - Mạch 1076]** **HBM**: vì sao một loại bộ nhớ hẹp lại thành nút thắt của cả một làn sóng.
 - **[ĐÃ VIẾT - Mạch 1147]** **Nhân lực kỹ thuật bán dẫn**: khoảng cách giữa **tuyên bố** và **năng lực đào tạo** thực tế của kỹ sư vi mạch Việt Nam.
-- **Điện toán biên** và thiết bị: mảng nào của chuỗi cung ứng Việt Nam hưởng lợi thật.
+- **[ĐÃ VIẾT - Mạch 1155]** **Điện toán biên và Edge AI**: Khi trí tuệ nhân tạo rời đám mây, mắt xích nào của Việt Nam hưởng lợi thật. `vi-mo`
 - **[ĐÃ VIẾT - Mạch 1131]** **AI làm giảm chi phí gì trong doanh nghiệp Việt** — và những rào cản vô hình nó không thể chạm tới.
 - **[ĐÃ VIẾT - Mạch 1092]** Chu kỳ vốn đầu tư của các hãng lớn: khi họ chi mạnh, tiền chảy qua những khâu nào.
 - **[ĐÃ VIẾT - Mạch 1125]** **Nước siêu tinh khiết (UPW)**: Cơn khát của ngành bán dẫn và điểm nghẽn tài nguyên tự nhiên đằng sau những con chip AI.
+- **[ĐÃ VIẾT - Mạch 1172]** **Cỗ máy quang khắc EUV của ASML**: Yết hầu của ngành bán dẫn thế giới tại thị trấn Veldhoven, con hào công nghệ độc quyền và chiêm nghiệm về toàn cầu hóa. `vi-mo`
 
 ## G. Thị trường Việt Nam, chuyện dài
 
