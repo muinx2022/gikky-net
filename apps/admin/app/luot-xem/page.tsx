@@ -540,20 +540,36 @@ export default function TrangLuotXem() {
                         />
                       ) : (
                         <KhungBang>
-                          <HangTieuDe cot={["Từ khóa", "Lượt"]} />
+                          <HangTieuDe cot={["Từ khóa", "Nguồn", "Lượt"]} />
                           <tbody data-testid="bang-tu-khoa">
-                            {so_lieu.top_tu_khoa.map((t) => (
-                              <tr key={t.tu_khoa}>
-                                <td className="px-3 py-2.5 font-medium">{t.tu_khoa}</td>
-                                <td className="px-3 py-2.5 tabular-nums">{t.so_luot}</td>
-                              </tr>
-                            ))}
+                            {so_lieu.top_tu_khoa.map((t, idx) => {
+                              const la_an = t.tu_khoa === "(từ khóa ẩn)" || t.tu_khoa === "(ẩn)";
+                              return (
+                                <tr key={`${t.tu_khoa}-${t.nguon}-${idx}`}>
+                                  <td className="px-3 py-2.5">
+                                    {la_an ? (
+                                      <span className="italic text-muc-mo">(ẩn)</span>
+                                    ) : (
+                                      <span className="font-medium">{t.tu_khoa}</span>
+                                    )}
+                                  </td>
+                                  <td className="px-3 py-2.5 font-mono text-xs">
+                                    {t.nguon ? (
+                                      <span className="text-muc">{t.nguon}</span>
+                                    ) : (
+                                      <span className="font-sans text-muc-mo">(nội bộ)</span>
+                                    )}
+                                  </td>
+                                  <td className="px-3 py-2.5 tabular-nums">{t.so_luot}</td>
+                                </tr>
+                              );
+                            })}
                           </tbody>
                         </KhungBang>
                       )}
                       {so_lieu.so_tu_khoa_an > 0 && (
                         <p className="mt-3 text-xs text-muc-mo" data-testid="chu-tu-khoa-an">
-                          Ghi nhận thêm <strong>{so_lieu.so_tu_khoa_an}</strong> lượt từ các trang search nhưng bị ẩn từ khóa
+                          Ghi nhận <strong>{so_lieu.so_tu_khoa_an}</strong> lượt từ các trang search bị ẩn từ khóa
                           (do chính sách bảo mật Referrer-Policy của Google và các công cụ tìm kiếm).
                         </p>
                       )}

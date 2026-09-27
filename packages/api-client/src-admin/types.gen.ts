@@ -1929,9 +1929,13 @@ export type TopQuocGiaOut = {
 /**
  * TopTuKhoaOut
  *
- * Một dòng bảng "Từ khóa tìm kiếm". Chỉ hàng NGƯỜI và chỉ `tu_khoa != ""`.
+ * Một dòng bảng "Từ khóa tìm kiếm". Bao gồm từ khóa nội bộ và từ khóa/nguồn web search.
  */
 export type TopTuKhoaOut = {
+    /**
+     * Nguon
+     */
+    nguon?: string;
     /**
      * So Luot
      */

@@ -2551,8 +2551,13 @@
         "type": "object"
       },
       "TopTuKhoaOut": {
-        "description": "Một dòng bảng \"Từ khóa tìm kiếm\". Chỉ hàng NGƯỜI và chỉ `tu_khoa != \"\"`.",
+        "description": "Một dòng bảng \"Từ khóa tìm kiếm\". Bao gồm từ khóa nội bộ và từ khóa/nguồn web search.",
         "properties": {
+          "nguon": {
+            "default": "",
+            "title": "Nguon",
+            "type": "string"
+          },
           "so_luot": {
             "title": "So Luot",
             "type": "integer"

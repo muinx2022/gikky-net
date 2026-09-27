@@ -1374,13 +1374,15 @@ def test_top_tu_khoa_sap_xep_va_chi_tinh_nguoi(db, hom_nay):
     # Bot mang tu_khoa -> không được tính
     them(hom_nay, "/m/a-4", so=10, bot=True, ten="googlebot", tu_khoa="chung khoan")
     # Người không có tu_khoa
-    them(hom_nay, "/m/a-5", so=4, tu_khoa="", khach="4" * 32)
+    # Người đến từ Google bị ẩn từ khóa qua SSL -> hiện (từ khóa ẩn) với nguồn google.com
+    them(hom_nay, "/m/a-6", so=7, nguon="google.com", tu_khoa="", khach="5" * 32)
 
     js = goi("7").json()
     assert js["top_tu_khoa"] == [
-        {"tu_khoa": "chung khoan", "so_luot": 5},
-        {"tu_khoa": "co phieu vcb", "so_luot": 3},
-        {"tu_khoa": "phan tich vi mo", "so_luot": 3},
+        {"tu_khoa": "(từ khóa ẩn)", "nguon": "google.com", "so_luot": 7},
+        {"tu_khoa": "chung khoan", "nguon": "", "so_luot": 5},
+        {"tu_khoa": "co phieu vcb", "nguon": "", "so_luot": 3},
+        {"tu_khoa": "phan tich vi mo", "nguon": "", "so_luot": 3},
     ]
 
 

@@ -301,25 +301,47 @@ def _so_truc_tiep(ngay_dau: date) -> int:
 
 
 def _top_tu_khoa(ngay_dau: date) -> list[TopTuKhoaOut]:
-    """Top 20 từ khóa tìm kiếm khi người dùng vào từ các trang search.
+    """Top 20 từ khóa tìm kiếm khi người dùng vào từ các trang search hoặc tìm kiếm nội bộ.
 
-    Chỉ hàng NGƯỜI, và chỉ `tu_khoa != ""` hợp lệ. Sắp theo lượt giảm dần rồi theo từ khóa (tất định).
+    Gồm:
+    1. Các lượt có từ khóa hợp lệ (tu_khoa != "")
+    2. Các lượt đến từ công cụ tìm kiếm nhưng bị ẩn từ khóa qua SSL (tu_khoa == "" và la_trang_search(nguon))
+
+    Sắp theo lượt giảm dần rồi theo từ khóa và nguồn (tất định).
     """
-    hang = (
+    gop: dict[tuple[str, str], int] = {}
+
+    # 1. Hàng có từ khóa hợp lệ
+    hang_co_tk = (
         _nguoi_tu(ngay_dau)
         .exclude(tu_khoa="")
-        .values("tu_khoa")
+        .values("tu_khoa", "nguon")
         .annotate(_so=Count("pk"))
-        .order_by("-_so", "tu_khoa")
     )
-    ket_qua = []
-    for h in hang:
+    for h in hang_co_tk:
         chuan = chuan_hoa_tu_khoa(h["tu_khoa"])
         if chuan:
-            ket_qua.append(TopTuKhoaOut(tu_khoa=chuan, so_luot=h["_so"]))
-            if len(ket_qua) == SO_TOP:
-                break
-    return ket_qua
+            key = (chuan, h["nguon"])
+            gop[key] = gop.get(key, 0) + h["_so"]
+
+    # 2. Hàng đến từ các công cụ tìm kiếm nhưng từ khóa bị ẩn
+    hang_an = (
+        _nguoi_tu(ngay_dau)
+        .filter(tu_khoa="")
+        .exclude(nguon="")
+        .values("nguon")
+        .annotate(_so=Count("pk"))
+    )
+    for h in hang_an:
+        if la_trang_search(h["nguon"]):
+            key = ("(từ khóa ẩn)", h["nguon"])
+            gop[key] = gop.get(key, 0) + h["_so"]
+
+    xep = sorted(gop.items(), key=lambda x: (-x[1], x[0][0], x[0][1]))
+    return [
+        TopTuKhoaOut(tu_khoa=tk, nguon=ng, so_luot=so)
+        for (tk, ng), so in xep[:SO_TOP]
+    ]
 
 
 def _so_tu_khoa_an(ngay_dau: date) -> int:

@@ -25,7 +25,7 @@ TU_KHOA_RAC = re.compile(
 
 #: Bảng các công cụ tìm kiếm: (regex pattern của hostname, tuple các param từ khóa)
 BANG_CONG_CU_TIM_KIEM: list[tuple[re.Pattern[str], tuple[str, ...]]] = [
-    (re.compile(r"^(?:[a-z0-9-]+\.)?google\.[a-z.]{2,}$", re.I), ("q", "query", "as_q")),
+    (re.compile(r"^(?:(?:www|search|news|m|scholar)\.)?google\.[a-z.]{2,}$", re.I), ("q", "query", "as_q")),
     (re.compile(r"^(?:[a-z0-9-]+\.)?coccoc\.(?:com|vn)$", re.I), ("query", "q")),
     (re.compile(r"^(?:[a-z0-9-]+\.)?bing\.com$", re.I), ("q",)),
     (re.compile(r"^(?:[a-z0-9-]+\.)?yahoo\.[a-z.]+$", re.I), ("p", "q")),
