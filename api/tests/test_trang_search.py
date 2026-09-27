@@ -19,6 +19,26 @@ from core.trang_search import (
         ("  VI  INDEX  2026  ", "vi index 2026"),
         ("từ\nkhóa\trác", "từ khóa rác"),
         ("a" * 300, "a" * 200),
+        ("fpt", "fpt"),
+        ("hdb", "hdb"),
+        ("doctor+dong", "doctor dong"),
+        # Từ khóa quá ngắn (< 3 ký tự) do gõ dở hoặc nhầm
+        ("hd", ""),
+        ("fp", ""),
+        ("dỏ", ""),
+        ("a", ""),
+        ("ab", ""),
+        # Dò quét lỗ hổng bảo mật / Fuzzer / XSS payloads
+        ("'><asdf alt=\"\">-f3f3", ""),
+        (r"\047\076\074asdf alt=\042\042\076-f3f3", ""),
+        ("273e3c6173646620616c743d22223e2d663336633", ""),
+        ("%27%3e%3casdf%20alt%3d%22%22%3e-f3f3", ""),
+        ("'><asdf alt=3d\"\">-f3f3", ""),
+        (r"\x27\x3e\x3casdf alt=\x22\x22\x3e-f3f3", ""),
+        # Tên miền spam
+        ("caergw.cn", ""),
+        ("emdkj.cn", ""),
+        ("spam.xyz", ""),
     ],
 )
 def test_chuan_hoa_tu_khoa(raw, expected):

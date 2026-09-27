@@ -114,7 +114,7 @@ from ninja import Router
 from core.bot import NHOM_HOP_LE, nhom_bot
 from core.models.luot_xem import KhachNgay, LuotXem, TongNgay
 from core.thoi_gian import TZ_VN, ngay_vn
-from core.trang_search import la_trang_search
+from core.trang_search import chuan_hoa_tu_khoa, la_trang_search
 
 from api.loi import THAM_SO_KHONG_HOP_LE, LoiOut, loi
 from api.quan_tri_schemas import (
@@ -303,16 +303,23 @@ def _so_truc_tiep(ngay_dau: date) -> int:
 def _top_tu_khoa(ngay_dau: date) -> list[TopTuKhoaOut]:
     """Top 20 từ khóa tìm kiếm khi người dùng vào từ các trang search.
 
-    Chỉ hàng NGƯỜI, và chỉ `tu_khoa != ""`. Sắp theo lượt giảm dần rồi theo từ khóa (tất định).
+    Chỉ hàng NGƯỜI, và chỉ `tu_khoa != ""` hợp lệ. Sắp theo lượt giảm dần rồi theo từ khóa (tất định).
     """
     hang = (
         _nguoi_tu(ngay_dau)
         .exclude(tu_khoa="")
         .values("tu_khoa")
         .annotate(_so=Count("pk"))
-        .order_by("-_so", "tu_khoa")[:SO_TOP]
+        .order_by("-_so", "tu_khoa")
     )
-    return [TopTuKhoaOut(tu_khoa=h["tu_khoa"], so_luot=h["_so"]) for h in hang]
+    ket_qua = []
+    for h in hang:
+        chuan = chuan_hoa_tu_khoa(h["tu_khoa"])
+        if chuan:
+            ket_qua.append(TopTuKhoaOut(tu_khoa=chuan, so_luot=h["_so"]))
+            if len(ket_qua) == SO_TOP:
+                break
+    return ket_qua
 
 
 def _so_tu_khoa_an(ngay_dau: date) -> int:

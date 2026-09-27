@@ -531,7 +531,7 @@ export default function TrangLuotXem() {
 
                     <The
                       tieu_de="Từ khóa tìm kiếm"
-                      pham_vi="Top 20 từ khóa · người dùng vào từ các trang search"
+                      pham_vi="Top 20 từ khóa · tìm kiếm nội bộ & từ các trang search"
                     >
                       {so_lieu.top_tu_khoa.length === 0 ? (
                         <KhoiRong

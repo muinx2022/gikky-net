@@ -9,6 +9,19 @@ import re
 from urllib.parse import parse_qs, unquote_plus, urlsplit
 
 DAI_TOI_DA_TU_KHOA = 200
+DAI_TOI_THIEU_TU_KHOA = 3
+
+#: Các mẫu từ khóa rác / scanner / fuzzing / injection / spam
+TU_KHOA_RAC = re.compile(
+    r"[<>\"'\\{}\[\];=~^`]"  # Ký tự mã độc / HTML / SQL injection / fuzzer
+    r"|\\x[0-9a-f]{2}"  # Hex escape \x..
+    r"|\\[0-7]{3}"  # Octal escape \047..
+    r"|%(?:2[0-9a-f]|3[0-9a-f])"  # Residual percent-encoding (%27, %3e...)
+    r"|\b(?:script|onload|onerror|alert|alt=|src=|href=)\b"  # XSS keywords/attributes
+    r"|^(?=.*\d)(?=.*[a-f])[0-9a-f]{16,}$"  # Chuỗi hex hash scanner dài không khoảng trắng
+    r"|\.(?:cn|ru|xyz|top|tk|ga|cf|ml|gq|click|link)$",  # Tên miền spam
+    re.IGNORECASE,
+)
 
 #: Bảng các công cụ tìm kiếm: (regex pattern của hostname, tuple các param từ khóa)
 BANG_CONG_CU_TIM_KIEM: list[tuple[re.Pattern[str], tuple[str, ...]]] = [
@@ -34,14 +47,23 @@ THAM_SO_CHIEN_DICH = ("utm_term", "keyword", "tu_khoa")
 
 
 def chuan_hoa_tu_khoa(tu_khoa: str) -> str:
-    """Chuẩn hóa chuỗi từ khóa: unquote URL, bỏ khoảng trắng thừa, lowercase, cắt 200 ký tự."""
+    """Chuẩn hóa chuỗi từ khóa: unquote URL, bỏ khoảng trắng thừa, lowercase, cắt 200 ký tự.
+
+    Lọc bỏ các từ khóa quá ngắn (< 3 ký tự) hoặc chứa mã scanner/fuzzing/spam.
+    """
     if not tu_khoa:
         return ""
     giai_ma = unquote_plus(tu_khoa)
     # Bỏ các ký tự điều khiển (ASCII < 32)
     sach = "".join(c if ord(c) >= 32 else " " for c in giai_ma)
+    # Bỏ dấu nháy bọc ngoài nếu người dùng gõ tìm kiếm theo cụm
+    sach = sach.strip("\"' \t\r\n")
     # Gộp khoảng trắng liên tiếp
     gon = re.sub(r"\s+", " ", sach).strip().lower()
+    if len(gon) < DAI_TOI_THIEU_TU_KHOA:
+        return ""
+    if TU_KHOA_RAC.search(gon) or TU_KHOA_RAC.search(tu_khoa):
+        return ""
     return gon[:DAI_TOI_DA_TU_KHOA]
 
 
