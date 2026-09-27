@@ -1,0 +1,17 @@
+Khi tỷ giá USD/VND chịu sức ép tăng nóng, cụm từ “Ngân hàng Nhà nước phát hành tín phiếu hút tiền” thường lập tức trở thành tâm điểm bàn luận của giới đầu tư, kéo theo tâm lý e ngại. Tuy nhiên, nếu nhìn vào bản chất hệ thống ngân hàng, tín phiếu không phải là động thái đảo chiều sang thắt chặt tiền tệ, mà là một cỗ van kỹ thuật điều áp thanh khoản rất tinh tế.
+
+Về bản chất, áp lực tỷ giá bắt nguồn từ chênh lệch lãi suất (Interest Rate Differential). Khi lãi suất USD quốc tế neo cao trong khi thanh khoản tiền đồng dư thừa đẩy lãi suất VND liên ngân hàng xuống thấp, mức chênh lệch âm này kích hoạt động cơ kinh tế: các tổ chức tài chính vay VND giá rẻ đổi sang nắm giữ USD để hưởng lợi suất cao hơn hoặc phòng ngừa rủi ro.
+
+Để hóa giải áp lực này mà không làm suy giảm nguồn dự trữ ngoại hối, Ngân hàng Nhà nước sử dụng công cụ tín phiếu (SBV Bill) theo cơ chế ba bước:
+
+▪ Hút bớt thanh khoản dư thừa: Nhà điều hành phát hành tín phiếu ngắn hạn (kỳ hạn từ 14 đến 28 ngày) cho các ngân hàng thương mại, tạm thời rút bớt tiền đồng nhàn rỗi ra khỏi thị trường liên ngân hàng.
+
+▪ Nâng lãi suất VND liên ngân hàng: Khi nguồn cung tiền đồng thắt lại, lãi suất vay mượn qua đêm bật tăng. Điều này nhanh chóng thu hẹp khoảng cách lãi suất USD-VND, triệt tiêu động cơ vay tiền đồng để đầu cơ ngoại tệ.
+
+▪ Bảo toàn tấm đệm ngoại hối: So với việc bán USD trực tiếp — vốn làm suy giảm dự trữ quốc gia — tín phiếu là công cụ can thiệp gián tiếp linh hoạt, tự động hoàn trả thanh khoản cho hệ thống khi các lô tín phiếu đáo hạn.
+
+Nhiều nhà đầu tư thường đánh đồng việc phát hành tín phiếu với chính sách thắt chặt tiền tệ. Thực tế, dòng tiền bị hút về chỉ nằm ở thị trường liên ngân hàng để ổn định tỷ giá ngắn hạn, chứ không rút bớt nguồn vốn tín dụng phục vụ sản xuất kinh doanh của nền kinh tế thực.
+
+Khi áp lực ngoại tệ tạm lắng và các lô tín phiếu đáo hạn, dòng thanh khoản VND sẽ tự động quay trở lại hệ thống, giúp nhà điều hành giữ vững thế cân bằng giữa ổn định tỷ giá và hỗ trợ tăng trưởng kinh tế.
+
+Trong bối cảnh áp lực ngoại tệ đan xen, theo bạn, đâu là chỉ báo then chốt nhất để nhận diện thời điểm nhà điều hành sẽ chuyển từ phát hành tín phiếu sang can thiệp bán ngoại tệ trực tiếp?
