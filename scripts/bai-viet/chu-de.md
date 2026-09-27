@@ -101,6 +101,7 @@ Nhóm này là **tản mạn**: dài hơi, liên ngành, không bám một mã.
 - **[ĐÃ VIẾT - Mạch 1067]** Vòng đời một **doanh nghiệp niêm yết Việt Nam**: IPO, pha loãng, rồi im lặng.
 - **[ĐÃ VIẾT - Mạch 1122]** **Cuộc chiến bán lẻ dược phẩm**: Long Châu vs An Khang vs Pharmacity và bài toán kinh tế học đơn vị.
 - **[ĐÃ VIẾT - Mạch 1168]** **Bất động sản khu công nghiệp và FDI "China+1"**: Nghịch lý tỷ lệ lấp đầy kỷ lục, nút thắt quỹ đất sạch GPMB, hai mô hình hạch toán doanh thu và yêu cầu chuyển đổi KCN sinh thái RE100. `chung-khoan`
+- **[ĐÃ VIẾT - Mạch 1169]** **Cơ chế Call Margin và Force Sell**: Công thức tính tỷ lệ ký quỹ thực tế Rtt, quy trình bán giải chấp của CTCK và hiệu ứng tuyết lở chéo (Cross Force Sell). `hoi-dap`
 
 ## H. Tâm lý và kỷ luật — nhịp 3–5 ngày một bài
 
