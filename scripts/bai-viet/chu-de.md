@@ -74,7 +74,7 @@ trường** doanh nghiệp sống trong đó?* Doanh nghiệp ⇒ `chung-khoan`.
 - **[ĐÃ VIẾT - Mạch 1126]** **Cơ chế thanh lý nợ xấu trong DeFi**: Khi các đợt Margin Call tự động kích hoạt phản ứng dây chuyền trên chuỗi.
 - **[ĐÃ VIẾT - Mạch 1139]** **Ví ngủ đông thời Satoshi**: Khi những đồng Bitcoin cổ đại thức giấc — giải mã chỉ số Coin Days Destroyed (CDD), 3 kịch bản di chuyển ví và chu kỳ HODL Waves.
 - **[ĐÃ VIẾT - Mạch 1162]** **MVRV Z-Score và Realized Price**: Khi sổ cái on-chain vạch trần tâm lý và giá vốn thực của thị trường Bitcoin (bóc tách UTXO, phân vị Z-score, STH vs LTH Realized Price). `crypto`
-- Khung pháp lý tài sản số ở Việt Nam — trạng thái hiện tại, không suy đoán.
+- **[ĐÃ VIẾT - Mạch 1175]** **Khung pháp lý tài sản số tại Việt Nam**: Áp lực từ Danh sách Xám FATF, nghịch lý dòng tiền 100 tỷ USD và bài toán quản trị dòng vốn (Khuyến nghị 15, Quyết định 194/QĐ-TTg, NĐ 52/2024, cơ chế Sandbox và Luật CN Công nghệ số). `vi-mo`
 - Phí giao dịch và trượt giá: phần chi phí thật mà bảng giá không hiện.
 
 ## F. Chip, AI, RAM — và đường nó chạm vào các ngành
