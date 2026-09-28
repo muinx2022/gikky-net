@@ -91,6 +91,8 @@ Nhóm này là **tản mạn**: dài hơi, liên ngành, không bám một mã.
 - **[ĐÃ VIẾT - Mạch 1092]** Chu kỳ vốn đầu tư của các hãng lớn: khi họ chi mạnh, tiền chảy qua những khâu nào.
 - **[ĐÃ VIẾT - Mạch 1125]** **Nước siêu tinh khiết (UPW)**: Cơn khát của ngành bán dẫn và điểm nghẽn tài nguyên tự nhiên đằng sau những con chip AI.
 - **[ĐÃ VIẾT - Mạch 1172]** **Cỗ máy quang khắc EUV của ASML**: Yết hầu của ngành bán dẫn thế giới tại thị trấn Veldhoven, con hào công nghệ độc quyền và chiêm nghiệm về toàn cầu hóa. `vi-mo`
+- **[ĐÃ VIẾT - Mạch 1179]** **Cơn khát điện nền cho AI và sự phục hưng của năng lượng hạt nhân**: Khi Big Tech tìm về những lò phản ứng cũ (Microsoft Three Mile Island, Amazon Talen Susquehanna, bài toán điện nền baseload 24/7 và công nghệ SMR). `vi-mo`
+
 
 ## G. Thị trường Việt Nam, chuyện dài
 
