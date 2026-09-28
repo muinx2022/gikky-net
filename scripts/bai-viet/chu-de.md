@@ -117,7 +117,7 @@ Nhóm này là **tản mạn**: dài hơi, liên ngành, không bám một mã.
 - **[ĐÃ VIẾT - Mạch 1135]** **Kể chuyện sau sự việc**: não dựng nhân quả cho một chuỗi ngẫu nhiên, và vì sao điều đó nguy hiểm.
 - **[ĐÃ VIẾT - Mạch 1123]** **Quá tự tin sau một chuỗi thắng** — chuỗi thắng dài bao nhiêu thì vẫn có thể là may.
 - **Đám đông và điểm đảo chiều**: khi nào thông tin từ số đông có giá trị, khi nào không.
-- **Nhật ký giao dịch**: thứ gì đáng ghi, thứ gì ghi vào chỉ để tự an ủi.
+- **[ĐÃ VIẾT - Mạch 1177]** **Nhật ký giao dịch**: Thứ gì thực sự đáng ghi lại để sửa sai, và thứ gì ghi vào chỉ để tự an ủi sau mỗi cú thua (Outcome Bias, chỉ số MAE/MFE, phân loại lỗi hệ thống vs lỗi kỷ luật). `tam-ly-giao-dich`
 - **Cỡ lệnh** như một quyết định tâm lý chứ không phải quyết định toán học.
 - **[ĐÃ VIẾT - Mạch 1104]** **Nghỉ giao dịch**: chi phí của việc không làm gì, và vì sao nó khó chịu đựng.
 - **[ĐÃ VIẾT - Mạch 1148]** **Đọc sách**: *The Most Important Thing* (Howard Marks) — Bản chất của Tư duy cấp độ hai (Second-Level Thinking), nghịch lý để vượt trội và con lắc tâm lý thị trường.
