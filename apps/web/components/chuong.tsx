@@ -115,6 +115,19 @@ export function Chuong() {
     await nap();
   };
 
+  const docMot = async (id: number) => {
+    const kq = await danhDauDaDoc({
+      baseUrl: GOC_TRINH_DUYET,
+      headers: await headerGhi(),
+      body: { ids: [id] },
+    });
+    if (kq.data === undefined) return;
+    datSoChuaDoc(kq.data.so_chua_doc);
+    datItems((cu) =>
+      cu.map((tin) => (tin.id === id ? { ...tin, read_at: new Date().toISOString() } : tin))
+    );
+  };
+
   return (
     <div className={css.khung} ref={hopRef} data-testid="chuong">
       <button
@@ -159,7 +172,14 @@ export function Chuong() {
           ) : (
             <ul className={css.danh_sach} data-testid="chuong-danh-sach">
               {items.map((n) => (
-                <Dong key={n.id} tin={n} onDi={() => datMo(false)} />
+                <Dong
+                  key={n.id}
+                  tin={n}
+                  onDi={() => {
+                    datMo(false);
+                    if (n.read_at === null) void docMot(n.id);
+                  }}
+                />
               ))}
             </ul>
           )}
