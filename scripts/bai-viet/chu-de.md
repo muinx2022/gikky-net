@@ -129,6 +129,7 @@ Nhóm này là **tản mạn**: dài hơi, liên ngành, không bám một mã.
 - **[ĐÃ VIẾT - Mạch 1148]** **Đọc sách**: *The Most Important Thing* (Howard Marks) — Bản chất của Tư duy cấp độ hai (Second-Level Thinking), nghịch lý để vượt trội và con lắc tâm lý thị trường.
 - **[ĐÃ VIẾT - Mạch 1164]** **Kế toán tâm lý (Mental Accounting) & Hiệu ứng House Money**: Vì sao nhà đầu tư dễ dãi đánh bạc với tiền lãi và khắt khe với tiền gốc (Richard Thaler, tính khả hoán của tiền tệ). `tam-ly-giao-dich`
 - **[ĐÃ VIẾT - Mạch 1167]** **Đọc sách Morgan Housel**: *The Psychology of Money* — Nghịch lý giữa làm giàu và giữ tiền, cạm bẫy biết thế nào là đủ (Enough) và quyền kiểm soát thời gian. `tam-ly-giao-dich`
+- **[ĐÃ VIẾT - Mạch 1186]** **Nhật ký sau bàn phím: Cạm bẫy bình quân giá HPG**: Từ cú lướt sóng T+ đến chiếc bẫy Call Margin lúc 14:15 và bài học xương máu về kỷ luật cắt lỗ (Chu kỳ sập 2022 từ 46.5k về đáy 12.1k, bẫy chi phí chìm Sunk Cost Fallacy, hiệu ứng Đà điểu Ostrich Effect). `tam-ly-giao-dich`
 - **Đọc sách**: *Thinking, Fast and Slow* · *Misbehaving*.
 
 ## I. Phương pháp giao dịch — nhịp 5–7 ngày một bài
