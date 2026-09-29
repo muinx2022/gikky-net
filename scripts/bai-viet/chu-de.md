@@ -47,6 +47,8 @@ trường** doanh nghiệp sống trong đó?* Doanh nghiệp ⇒ `chung-khoan`.
 - **[ĐÃ VIẾT - Mạch 1138]** **Thủy điện tích năng** (Pumped Storage) và hệ thống lưu trữ pin BESS: giải pháp giải cứu điểm nghẽn năng lượng tái tạo.
 - **[ĐÃ VIẾT - Mạch 1146]** **Quy hoạch Điện VIII** và nút thắt đường dây truyền tải 500kV mạch 3: bài toán giải tỏa công suất vùng duyên hải miền Trung. `vi-mo`
 - **[ĐÃ VIẾT - Mạch 1171]** **Đường sắt tốc độ cao Bắc - Nam 350 km/h**: Bóc tách bài toán vốn 67 tỷ USD, cơ chế hoàn vốn quỹ đất TOD quanh 23 ga và bước nhảy vọt nội địa hóa vật liệu chế tạo. `vi-mo`
+- **[ĐÃ VIẾT - Mạch 1182]** **Đại dự án Khí — Điện Lô B — Ô Môn**: Giải phẫu chuỗi giá trị 12 tỷ USD, điểm nghẽn cơ chế PPA và bài toán an ninh năng lượng phía Nam (Thượng nguồn 107 tỷ m3 khí, trung nguồn đường ống 431 km, hạ nguồn cụm 4 nhà máy 3.810 MW, cơ chế chuyển ngang giá khí Pass-through và bao tiêu Qc). `vi-mo`
+
 
 ## C. Ngân hàng & Tài chính hệ thống
 
