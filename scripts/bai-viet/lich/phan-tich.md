@@ -18,10 +18,15 @@ Nhiệm vụ: Viết một bài phân tích chuyên sâu về kinh tế vĩ mô,
 * **Chuyên mục (`sub`):** `vi-mo` (đối với môi trường vĩ mô) hoặc `chung-khoan` (đối với ngành và cổ phiếu cụ thể).
 * **Loại (`loai`):** `Phân tích` hoặc `Ngành`.
 * **Giọng văn & Quy tắc phân tích cổ phiếu:**
-  - **Khách quan, trung lập:** Giữ giọng văn giải phẫu cấu trúc kinh tế và sự thật vận hành, ngôi thứ ba điềm tĩnh.
+  - **Khách quan, trung lập:** Giữ giọng văn khách quan về cấu trúc kinh tế và sự thật vận hành, ngôi thứ ba điềm tĩnh.
+  - **Đa dạng hóa vốn từ — Hạn chế lạm dụng "bóc tách", "giải phẫu":** Tuyệt đối không lặp lại máy móc hai từ này trong tiêu đề và bài viết. Thay thế linh hoạt theo ngữ cảnh:
+    + *Cơ chế, quy trình:* làm rõ cơ chế, đi vào bản chất, cắt nghĩa sự vận hành, lần theo quy trình, giải mã nguyên lý.
+    + *Báo cáo tài chính, dòng tiền:* soi vào bảng cân đối, lần theo dòng tiền, đọc sâu vào thuyết minh, kiểm đếm tài sản, rà soát từng tầng chi phí.
+    + *Sự kiện, tình huống:* lần giở hồ sơ, nhìn từ bên trong, chuỗi mắt xích đằng sau, truy vết nguyên nhân.
+    + *Chỉ số, dữ liệu:* đo lường mức độ, kiểm chứng qua dữ liệu, đối chiếu số liệu thực tế.
   - **Tuyệt đối KHÔNG hô hào / bơm thổi:** Cấm các từ ngữ cảm tính ("siêu cổ", "múc", "xúc", "kỳ lân", "vua ngành").
   - **Tuyệt đối KHÔNG khuyến nghị mua / bán:** Không đưa ra giá mục tiêu (Target Price), không khuyến nghị "mua/bán/nắm giữ", không phím điểm cắt lỗ/chốt lời. Mọi kết luận để người đọc tự quyết định.
-  - **Bắt buộc mổ xẻ hai mặt:** Luôn có phần bóc tách rủi ro tiềm ẩn, góc khuất nợ vay, rủi ro pha loãng hoặc điểm nghẽn chu kỳ của doanh nghiệp.
+  - **Bắt buộc nhìn nhận hai mặt:** Luôn có phần làm rõ rủi ro tiềm ẩn, góc khuất nợ vay, rủi ro pha loãng hoặc điểm nghẽn chu kỳ của doanh nghiệp.
 * **Ảnh minh hoạ:** 1–2 ảnh tỷ lệ 16:9 chất lượng cao chụp cảnh quan thực tế, chuỗi sản xuất, nhà máy, bến cảng, hạ tầng sinh động (dùng `generate_image`, tránh vẽ box chữ sơ đồ thô cứng). Khi chèn ảnh hoặc biểu đồ vào nội dung HTML, bắt buộc phải có thuộc tính `alt` mô tả đúng ngữ cảnh và từ khóa chính (VD: `<img src="..." alt="Tổ hợp luyện kim và chuỗi sản xuất thép cuộn cán nóng HRC">`).
 * **Dải số (`figures`):** 4–6 cặp `{label, value}`, mỗi ô ≤24 ký tự.
 * **Câu hỏi tương tác (`question_for_crowd`):** ≤200 ký tự, kết thúc bằng dấu `?`.

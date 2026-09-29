@@ -12,7 +12,11 @@ Nhiệm vụ: Viết một bài tản mạn thị trường, góc nhìn vĩ mô 
 * **Xác thực số liệu PDF:** Nếu dùng công cụ đọc dữ liệu (WebFetch) trên file PDF (như báo cáo, thông cáo), **BẮT BUỘC phải đối chiếu chéo mọi con số** bằng ít nhất một nguồn thứ hai trước khi đưa vào bài, vì công cụ đọc PDF có thể "bịa" số đúng khuôn dạng nhưng sai thực tế (VD: năm 2026 thành 2024).
 * **Chuyên mục (`sub`):** `vi-mo`, `quan-tri-von`, `crypto` hoặc `chung-khoan` tuỳ bối cảnh.
 * **Loại (`loai`):** `Tản mạn`.
-* **Giọng văn:** Nhẹ nhàng, chiêm nghiệm, góc nhìn cấu trúc dài hạn, không dự báo thị trường ngày mai, không khuyến nghị mua bán.
+* **Giọng văn — "Người quan sát đời thường & Tản văn chiêm nghiệm":**
+  - Nhẹ nhàng, ấm áp, đậm chất tản văn và suy ngẫm nhân sinh, kết nối quy luật tài chính với thói quen cuộc sống đời thường.
+  - Nhịp văn thư thả, giàu hình ảnh gợi mở, có khoảng lặng suy tưởng; tuyệt đối KHÔNG viết theo kiểu báo cáo phân tích khô khan, không lên lớp dạy đời.
+  - Tuyệt đối hạn chế sáo ngữ "bóc tách", "giải phẫu" — hãy dùng các cách diễn đạt tự nhiên (lần theo, nhìn vào, cảm nhận nhịp đập, đằng sau sự thật...).
+
 * **Ảnh minh hoạ:** 1–2 ảnh tỷ lệ 16:9 giàu tính nghệ thuật, chụp cảnh quan đêm, trung tâm dữ liệu, góc phố tài chính, nhà máy công nghệ cao (dùng `generate_image`).
 * **Dải số (`figures`):** 4–6 cặp `{label, value}`, mỗi ô ≤24 ký tự.
 * **Câu hỏi tương tác (`question_for_crowd`):** ≤200 ký tự, kết thúc bằng dấu `?`.

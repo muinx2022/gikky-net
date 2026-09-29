@@ -163,26 +163,27 @@ Nhóm này là **tản mạn**: dài hơi, liên ngành, không bám một mã.
 - **Paul Tudor Jones**: Huyền thoại bán khống Black Monday 1987 nhân ba tài khoản — nguyên tắc phòng thủ rủi ro bất đối xứng 5:1 và đường MA 200 ngày bảo vệ vốn.
 - **Bernard Baruch**: Nhà đầu cơ vượt qua Đại suy thoái 1929 — nghệ thuật biết điểm dừng, tín hiệu cậu bé đánh giày và nguyên tắc "không bao giờ cố mua ở đáy và bán ở đỉnh".
 - **Hetty Green**: "Phù thủy phố Wall" — người phụ nữ giàu nhất thời kỳ Gilded Age với triết lý đầu tư giá trị cực đoan, kỷ luật tiền mặt tàn nhẫn và khả năng giải cứu thị trường trong khủng hoảng.
-- **Jim Simons & Quỹ Medallion**: Bậc thầy toán học mở ra kỷ nguyên định lượng (Quant trading) — bóc tách các bất thường vi mô thống kê và cuộc cách mạng loại bỏ cảm xúc con người khỏi giao dịch.
+- **Jim Simons & Quỹ Medallion**: Bậc thầy toán học mở ra kỷ nguyên định lượng (Quant trading) — nhận diện các bất thường vi mô thống kê và cuộc cách mạng loại bỏ cảm xúc con người khỏi giao dịch.
 
-## K. Bóc tách Cổ phiếu & Cấu trúc Doanh nghiệp cụ thể
+## K. Đánh giá Cổ phiếu & Cấu trúc Doanh nghiệp cụ thể
 
 `sub` = `chung-khoan` · `loai` = **`Phân tích`** (hoặc **`Ngành`** nếu lồng ghép chuỗi giá trị).
 
 ### ⚠ Quy tắc nhịp độ (Pacing) bất di bất dịch:
-- **KHÔNG VIẾT 2 MÃ CỔ PHIẾU LIÊN TIẾP:** Tuyệt đối không đăng 2 bài bóc tách mã cổ phiếu trong 2 ngày/lượt liên tiếp.
+- **KHÔNG VIẾT 2 MÃ CỔ PHIẾU LIÊN TIẾP:** Tuyệt đối không đăng 2 bài phân tích mã cổ phiếu trong 2 ngày/lượt liên tiếp.
 - **Giãn cách 3–5 ngày:** Phân tích cổ phiếu chỉ là gia vị bổ trợ (chiếm ~20% số lượng bài phân tích 10:15). Sau khi đã viết 1 bài về một mã, bắt buộc phải nghỉ ít nhất 3 đến 5 ngày (chuyển sang phân tích vĩ mô, chuỗi giá trị, cơ cấu ngành) rồi mới đến mã tiếp theo.
 - **Không vội vàng:** Giữ nhịp độ điềm tĩnh, thong thả, tập trung vào chiều sâu học thuật thay vì chạy theo sự kiện giá cổ phiếu hàng ngày.
 
 ### Nguyên tắc nội dung:
-1. **KHÔNG HÔ HÀO / BƠM THỔI:** Tuyệt đối không dùng từ ngữ cảm tính, giật gân ("siêu cổ phiếu", "múc", "xúc", "sóng thần", "kỳ lân"). Giữ giọng văn giải phẫu tài chính lạnh lùng, trung lập, thuần túy mổ xẻ dữ liệu và sự thật vận hành.
+1. **KHÔNG HÔ HÀO / BƠM THỔI:** Tuyệt đối không dùng từ ngữ cảm tính, giật gân ("siêu cổ phiếu", "múc", "xúc", "sóng thần", "kỳ lân"). Giữ giọng văn phân tích tài chính khách quan, trung lập, thuần túy mổ xẻ dữ liệu và sự thật vận hành.
 2. **KHÔNG KHUYẾN NGHỊ MUA / BÁN:** Không đưa ra giá mục tiêu (Target Price), không khuyến nghị hành động mua/bán/nắm giữ, không phím điểm cắt lỗ/chốt lời. Mọi nhận định kết luận phải để người đọc tự quyết định.
-3. **MỔ XẺ HAI MẶT (Luận điểm & Thách thức):** Bắt buộc phải có phần bóc tách rủi ro tiềm ẩn, góc khuất bảng cân đối, điểm nghẽn chu kỳ hoặc rủi ro quản trị.
+3. **MỔ XẺ HAI MẶT (Luận điểm & Thách thức):** Bắt buộc phải có phần làm rõ rủi ro tiềm ẩn, góc khuất bảng cân đối, điểm nghẽn chu kỳ hoặc rủi ro quản trị.
 4. **TRỤ CỘT NỘI DUNG:**
    - **Mô hình kinh doanh & Con hào kinh tế (Moat):** Doanh nghiệp kiếm tiền từ đâu, lợi thế chi phí thấp / độc quyền tự nhiên / hiệu ứng mạng lưới / tài sản vô hình.
-   - **Cơ cấu doanh thu & biên lợi nhuận:** Bóc tách từng mảng kinh doanh, xu hướng biên lãi gộp và biên lãi ròng.
+   - **Cơ cấu doanh thu & biên lợi nhuận:** Phân tích cơ cấu từng mảng kinh doanh, xu hướng biên lãi gộp và biên lãi ròng.
    - **Chất lượng tài sản & dòng tiền:** Dòng tiền hoạt động kinh doanh (CFO) so với lợi nhuận ròng, dòng tiền tự do (FCF), áp lực nợ vay, chi phí lãi vay và vòng quay vốn lưu động.
    - **Định giá trong bối cảnh lịch sử:** P/E, P/B, EV/EBITDA hiện tại đặt cạnh chu kỳ trung bình 5–10 năm của chính doanh nghiệp và các giai đoạn biến động tương đương trong quá khứ.
+
 
 ### Kho doanh nghiệp / cổ phiếu phân tích điển hình:
 - **HPG (Hòa Phát):** Con hào chi phí thấp từ quy mô lò cao BOF khép kín, bài toán đại dự án Dung Quất 2 thâm nhập mảng thép HRC chất lượng cao và chu kỳ giá than/quặng toàn cầu.
@@ -204,11 +205,12 @@ Nhóm này là **tản mạn**: dài hơi, liên ngành, không bám một mã.
 
 `sub` = `hoi-dap` · `loai` = **`Hỏi đáp`** hoặc **`Cơ chế`**.
 
-- **[ĐÃ VIẾT - Mạch 1137]** **Spread là gì?**: Bóc tách chi phí vô hình, cạm bẫy trượt giá (Slippage) và cơ chế Bid - Ask cho người mới.
+- **[ĐÃ VIẾT - Mạch 1137]** **Spread là gì?**: Chi phí vô hình, cạm bẫy trượt giá (Slippage) và cơ chế Bid - Ask cho người mới.
 - **[ĐÃ VIẾT - Mạch 1142]** **Ngày giao dịch không hưởng quyền (GDKHQ)**: Vì sao giá cổ phiếu bị điều chỉnh kỹ thuật giảm xuống tương ứng khi chia cổ tức tiền mặt hoặc cổ phiếu thưởng?
 - **[ĐÃ VIẾT - Mạch 1176]** **Chu kỳ thanh toán T+2.5**: Cơ chế vận hành dòng tiền tại VSDC, vì sao bán thứ Sáu thì thứ Ba tiền mới về và cái bẫy phí ứng trước UTTB. `hoi-dap`
 - **[ĐÃ VIẾT - Mạch 1159]** **Khớp lệnh định kỳ ATO và ATC**: Thuật toán xác định mức giá có khối lượng khớp lớn nhất và cách dòng tiền lớn tận dụng 15 phút quyết định.
-- **Bóc tách mọi chi phí thực tế khi giao dịch**: Phí môi giới, thuế TNCN 0,1%, phí lưu ký chứng khoán VSDC và lãi suất vay Margin.
+- **Tính đúng mọi chi phí thực tế khi giao dịch**: Phí môi giới, thuế TNCN 0,1%, phí lưu ký chứng khoán VSDC và lãi suất vay Margin.
+
 - **[ĐÃ VIẾT - Mạch 1169]** **Cơ chế Call Margin và Force Sell**: Tỷ lệ an toàn (Rtt), cảnh báo ký quỹ và quy trình bán giải chấp của các công ty chứng khoán.
 - **Các loại lệnh thực chiến**: Khi nào nên dùng lệnh LO, MP, MTL, MOK và bẫy trượt giá ở các cổ phiếu thanh khoản thấp.
 - **Phái sinh VN30 và độ lệch Basis**: Hợp đồng tương lai vận hành thế nào, tỷ lệ ký quỹ ban đầu và rủi ro đòn bẩy cao.

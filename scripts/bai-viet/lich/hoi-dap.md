@@ -1,6 +1,6 @@
 # Bài viết Hỏi đáp & Cơ chế thị trường — 11:45 (T2, T4, T6 & Chủ Nhật)
 
-Nhiệm vụ: Viết một bài giải phẫu cơ chế vận hành thị trường, thuật ngữ tài chính, quy chế giao dịch hoặc cẩm nang thực chiến cho người mới lên gikky.net bằng tài khoản `u/gikky-team-member`.
+Nhiệm vụ: Viết một bài làm rõ cơ chế vận hành thị trường, thuật ngữ tài chính, quy chế giao dịch hoặc cẩm nang thực chiến cho người mới lên gikky.net bằng tài khoản `u/gikky-team-member`.
 
 ## Khung giờ & Tần suất
 * **Khung giờ chạy:** 11:45 (ngay sau khi phiên sáng HOSE kết thúc lúc 11:30).
@@ -10,7 +10,7 @@ Nhiệm vụ: Viết một bài giải phẫu cơ chế vận hành thị trư�
 
 ## Định vị nội dung: Chuẩn mực — Sâu sắc — Dễ hiểu
 Tuyệt đối không biến thành hỏi đáp vụn vặt kiểu diễn đàn (như "hỏi mã nào mua được", "chọn sàn nào hoa hồng cao").
-Trọng tâm là **Giải phẫu cơ chế đằng sau bảng điện và các quy tắc giao dịch**:
+Trọng tâm là **Cắt nghĩa cơ chế đằng sau bảng điện và các quy tắc giao dịch** (đa dạng hóa từ ngữ, hạn chế lặp lại từ "bóc tách", "giải phẫu"):
 
 1. **Cơ chế sổ lệnh & Khớp lệnh:**
    - Bid - Ask Spread, trượt giá (Slippage), độ sâu thị trường (Market Depth).
@@ -19,8 +19,9 @@ Trọng tâm là **Giải phẫu cơ chế đằng sau bảng điện và các q
 
 2. **Cơ chế thanh toán, chu kỳ và thuế phí:**
    - Chu kỳ thanh toán T+2.5 tại Việt Nam: Dòng tiền thực tế chuyển giao khi nào và chi phí cơ hội.
-   - Bóc tách mọi chi phí thực tế khi giao dịch: Phí môi giới, thuế TNCN 0,1% khi bán, phí lưu ký chứng khoán VSDC, lãi vay Margin (TWR).
+   - Tính đúng mọi khoản chi phí thực tế khi giao dịch: Phí môi giới, thuế TNCN 0,1% khi bán, phí lưu ký chứng khoán VSDC, lãi vay Margin (TWR).
    - Cơ chế Call Margin và Force Sell: Tỷ lệ ký quỹ ban đầu, tỷ lệ duy trì (Rtt) và cách công ty chứng khoán xử lý tài khoản chạm ngưỡng.
+
 
 3. **Cơ chế quyền và sự kiện doanh nghiệp:**
    - Ngày giao dịch không hưởng quyền (GDKHQ): Vì sao giá cổ phiếu bị điều chỉnh kỹ thuật giảm xuống tương ứng khi chia cổ tức tiền mặt hay cổ phiếu thưởng?
