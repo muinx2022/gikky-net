@@ -149,6 +149,7 @@ Nhóm này là **tản mạn**: dài hơi, liên ngành, không bám một mã.
 - **[ĐÃ VIẾT - Mạch 1183]** **Chỉ báo MACD (Moving Average Convergence Divergence)**: Giải mã cấu trúc động lượng, ảo tưởng giao cắt và nghệ thuật đọc sớm sự suy kiệt qua Histogram (Gerald Appel 1979, Thomas Aspray 1986, Zero Line, Whipsaw sideway, Histogram Divergence). `quan-tri-von`
 - **[ĐÃ VIẾT - Mạch 1136]** **Mô hình Nêm giảm (Falling Wedge)**: [Nhật kí demo] Bứt phá nêm hội tụ, nhịp retest Pin Bar kiểm định cạnh trên, dời SL bảo toàn và chạm đích +2.8R.
 - **[ĐÃ VIẾT - Mạch 1165]** **Mô hình Cờ tăng giá (Bull Flag)**: [Nhật kí demo] Bứt phá kênh tích lũy hẹp, nhịp kiểm định dời SL và chạm đích +2.8R.
+- **[ĐÃ VIẾT - Mạch 1185]** **Mô hình Hai đáy (Double Bottom) thất bại**: [Nhật kí demo] Bẫy phân kỳ ngược xu hướng, nến đỏ đảo chiều nhấn chìm và bài học kỷ luật cắt lỗ -1R. `quan-tri-von`
 - **[ĐÃ VIẾT - Mạch 1085]** **Phương pháp thất bại**: LTCM, và các hệ thống từng được ca ngợi rồi biến mất.
 - **[ĐÃ VIẾT - Mạch 1109]** **Barings Bank**: Nick Leeson và tài khoản giấu lỗ 88888.
 
