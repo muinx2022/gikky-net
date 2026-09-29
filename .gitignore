@@ -46,7 +46,11 @@ apps/web/playwright-report/
 # Tạm video & facebook
 scripts/video/tam_audio/
 scripts/video/slides/
+scripts/video/*_temp/
+scripts/video/*_audio/
 scripts/video/*.mp4
 scripts/video/*.txt
+scripts/video/*.png
 scripts/facebook/.tam_anh/
+
 
