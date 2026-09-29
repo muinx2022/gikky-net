@@ -346,13 +346,15 @@ export async function TrangMach({
                   {/* Công cụ mod của MẠCH: ẩn + khoá. `dangAn` luôn `false` — mạch bị ẩn
                       trả 404 ở cửa công khai nên không tới được đây; xem docstring
                       `HanhDongMod`. */}
-                  <HanhDongMod
-                    loai="mach"
-                    id={mach.id}
-                    dangAn={false}
-                    dangKhoa={mach.locked}
-                    nhan="mạch này"
-                  />
+                  <div className={css.mod_hang_rieng}>
+                    <HanhDongMod
+                      loai="mach"
+                      id={mach.id}
+                      dangAn={false}
+                      dangKhoa={mach.locked}
+                      nhan="mạch này"
+                    />
+                  </div>
                 </div>
               </div>
               {mach.rieng_tu && (

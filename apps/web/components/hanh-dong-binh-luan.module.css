@@ -7,8 +7,25 @@
 
 .hang {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+}
+
+.mod_hang_rieng {
+  display: inline-flex;
+}
+
+.mod_hang_rieng:empty {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .mod_hang_rieng {
+    display: flex;
+    width: 100%;
+    margin-top: 4px;
+  }
 }
 
 .nhe {

@@ -216,12 +216,14 @@ export function TheMoc({
           <HanhDongMoc moc={moc} />
           {/* Công cụ mod — chỉ mod thấy (`HanhDongMod`). Mốc bị ẩn vẫn ở lại trang dưới
               dạng bia mộ, nên đây là công tắc HAI CHIỀU. */}
-          <HanhDongMod
-            loai="moc"
-            id={moc.id}
-            dangAn={moc.trang_thai === "da_an"}
-            nhan={`mốc ${moc.seq}`}
-          />
+          <div className={css.mod_hang_rieng}>
+            <HanhDongMod
+              loai="moc"
+              id={moc.id}
+              dangAn={moc.trang_thai === "da_an"}
+              nhan={`mốc ${moc.seq}`}
+            />
+          </div>
         </div>
 
         {laMach && (

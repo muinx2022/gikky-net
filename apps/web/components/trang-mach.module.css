@@ -195,6 +195,14 @@
   flex-shrink: 0;
 }
 
+.mod_hang_rieng {
+  display: inline-flex;
+}
+
+.mod_hang_rieng:empty {
+  display: none;
+}
+
 /* Mặt BÃO: composer đứng giữa nhật ký và khán đài (wireframe 9.2). */
 .composer_bao {
   padding: 0 26px 18px;
@@ -236,6 +244,14 @@
   .cum_phai {
     width: 100%;
     justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .mod_hang_rieng {
+    display: flex;
+    width: 100%;
+    margin-top: 4px;
   }
 }
 

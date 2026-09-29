@@ -290,7 +290,7 @@ export function HanhDongBinhLuan({
             </div>
           </details>
         )}
-        {mod}
+        {mod && <div className={css.mod_hang_rieng}>{mod}</div>}
       </div>
 
       {loi !== null && (
