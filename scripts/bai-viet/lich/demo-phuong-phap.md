@@ -56,5 +56,7 @@ Nhiệm vụ: Tạo một mạch (thread) demo thực chiến mô phỏng chu tr
 * **Trường phái (`truong_phai`):** Đặt đúng tên trường phái (`Price Action`, `Breakout Trading`, `MA Crossover`, `VSA / Wyckoff`, `Harmonic Patterns`, `Bollinger Bands`...).
 * **Chuyên mục (`sub`):** `quan-tri-von`.
 * **Biểu đồ nến:** Sử dụng Python `matplotlib` dựng biểu đồ Dark Mode độ phân giải cao tỷ lệ 16:9, thể hiện rõ nến, vạch Entry, SL, TP, vùng hỗ trợ/kháng cự và chú thích mũi tên rõ ràng. Tự động gắn watermark `gikky.net` ở góc phải dưới của biểu đồ (hoặc thông qua script `dang-bai.py`).
+* **Bảo toàn font chữ UTF-8 (Bắt buộc):** Tuyệt đối KHÔNG dùng PowerShell pipe (`Get-Content ... | ssh ...`) để chạy script chứa chuỗi tiếng Việt vì sẽ làm hỏng dấu thành `?`. Bắt buộc dùng `scp` để chuyển file script / JSON nhị phân lên VPS, sau đó mới gọi python thực thi trên server.
+
 
 
