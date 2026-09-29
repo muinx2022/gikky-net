@@ -96,6 +96,7 @@ Nhóm này là **tản mạn**: dài hơi, liên ngành, không bám một mã.
 - **[ĐÃ VIẾT - Mạch 1125]** **Nước siêu tinh khiết (UPW)**: Cơn khát của ngành bán dẫn và điểm nghẽn tài nguyên tự nhiên đằng sau những con chip AI.
 - **[ĐÃ VIẾT - Mạch 1172]** **Cỗ máy quang khắc EUV của ASML**: Yết hầu của ngành bán dẫn thế giới tại thị trấn Veldhoven, con hào công nghệ độc quyền và chiêm nghiệm về toàn cầu hóa. `vi-mo`
 - **[ĐÃ VIẾT - Mạch 1179]** **Cơn khát điện nền cho AI và sự phục hưng của năng lượng hạt nhân**: Khi Big Tech tìm về những lò phản ứng cũ (Microsoft Three Mile Island, Amazon Talen Susquehanna, bài toán điện nền baseload 24/7 và công nghệ SMR). `vi-mo`
+- **[ĐÃ VIẾT - Mạch 1187]** **Nghịch lý hai cỗ máy Transformer**: Khi con chip AI tối tân phải chờ khối thép biến áp 3 năm để cắm điện (Kiến trúc Transformer của Deep Learning vs Máy biến áp điện lực thế kỷ 19, nút thắt lead time 3-4 năm, thép kỹ thuật điện GOES và lời tiên tri của Elon Musk). `vi-mo`
 
 
 ## G. Thị trường Việt Nam, chuyện dài
@@ -148,9 +149,9 @@ Nhóm này là **tản mạn**: dài hơi, liên ngành, không bám một mã.
 - **[ĐÃ VIẾT - Mạch 1153]** **Walk-forward analysis**: kiểm một phương pháp mà không tự lừa mình bằng dữ liệu quá khứ.
 - **[ĐÃ VIẾT - Mạch 1170]** **Volume Profile**: Giải mã cấu trúc thanh khoản qua POC, Vùng giá trị (Value Area High/Low), HVN/LVN và cái bẫy mua Breakout. `quan-tri-von`
 - **[ĐÃ VIẾT - Mạch 1183]** **Chỉ báo MACD (Moving Average Convergence Divergence)**: Giải mã cấu trúc động lượng, ảo tưởng giao cắt và nghệ thuật đọc sớm sự suy kiệt qua Histogram (Gerald Appel 1979, Thomas Aspray 1986, Zero Line, Whipsaw sideway, Histogram Divergence). `quan-tri-von`
-- **[ĐÃ VIẾT - Mạch 1136]** **Mô hình Nêm giảm (Falling Wedge)**: [Nhật kí demo] Bứt phá nêm hội tụ, nhịp retest Pin Bar kiểm định cạnh trên, dời SL bảo toàn và chạm đích +2.8R.
-- **[ĐÃ VIẾT - Mạch 1165]** **Mô hình Cờ tăng giá (Bull Flag)**: [Nhật kí demo] Bứt phá kênh tích lũy hẹp, nhịp kiểm định dời SL và chạm đích +2.8R.
-- **[ĐÃ VIẾT - Mạch 1185]** **Mô hình Hai đáy (Double Bottom) thất bại**: [Nhật kí demo] Bẫy phân kỳ ngược xu hướng, nến đỏ đảo chiều nhấn chìm và bài học kỷ luật cắt lỗ -1R. `quan-tri-von`
+- **[ĐÃ VIẾT - Mạch 1136]** **Mô hình Nêm giảm (Falling Wedge)**: Bứt phá nêm hội tụ, nhịp retest Pin Bar kiểm định cạnh trên, dời SL bảo toàn và chạm đích +2.8R.
+- **[ĐÃ VIẾT - Mạch 1165]** **Mô hình Cờ tăng giá (Bull Flag)**: Bứt phá kênh tích lũy hẹp, nhịp kiểm định dời SL và chạm đích +2.8R.
+- **[ĐÃ VIẾT - Mạch 1185]** **Mô hình Hai đáy (Double Bottom) thất bại**: Bẫy phân kỳ ngược xu hướng, nến đỏ đảo chiều nhấn chìm và bài học kỷ luật cắt lỗ -1R. `quan-tri-von`
 - **[ĐÃ VIẾT - Mạch 1085]** **Phương pháp thất bại**: LTCM, và các hệ thống từng được ca ngợi rồi biến mất.
 - **[ĐÃ VIẾT - Mạch 1109]** **Barings Bank**: Nick Leeson và tài khoản giấu lỗ 88888.
 

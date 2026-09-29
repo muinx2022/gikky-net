@@ -1,62 +1,42 @@
-# Mạch Demo Phương pháp Giao dịch — 16:45 cách ngày (Thứ Ba, Thứ Năm, Thứ Bảy)
+# Mạch Bài viết Phương pháp Giao dịch Thực chiến — 16:45 cách ngày (Thứ Ba, Thứ Năm, Thứ Bảy)
 
-Nhiệm vụ: Tạo một mạch (thread) demo thực chiến mô phỏng chu trình vào lệnh, quản trị lệnh và đóng lệnh theo một phương pháp giao dịch cụ thể lên gikky.net bằng tài khoản `u/gikky-team-member`.
+Nhiệm vụ: Viết bài phân tích chuyên sâu về một phương pháp/chiến lược giao dịch thực chiến cụ thể lên gikky.net bằng tài khoản `u/gikky-team-member`.
 
 ## Khung giờ & Tần suất
 * **Khung giờ chạy:** 16:45 Thứ Ba, Thứ Năm, Thứ Bảy (xen kẽ cách ngày với bài viết Thời sự).
-* **Tần suất:** Cách ngày 1 mạch (3 bài/tuần, mỗi mạch gồm 3 mốc thời gian hoàn chỉnh).
+* **Tần suất:** Cách ngày 1 bài (3 bài/tuần, mỗi bài có thể là 1 mạch đơn hoặc mạch chuỗi diễn biến thực tế kèm biểu đồ minh hoạ).
 
-## Nguyên tắc cốt lõi: Phản ánh thực tế (Có Thắng - Có Thua)
-* **Bắt buộc có deal THUA LỖ (Stop Loss):** Bất kỳ phương pháp kỹ thuật nào cũng có xác suất thất bại tùy thuộc vào bối cảnh thị trường (ví dụ: Trend-following thất bại khi thị trường đi ngang choppy, Breakout gặp bẫy Bull/Bear trap do cạn kiệt thanh khoản, v.v.). **Tuyệt đối không đăng toàn deal thắng.**
-* **Tỷ lệ luân phiên:** Duy trì tỷ lệ ~40% – 50% số mạch demo là các **deal dính Stop Loss kỷ luật (-1R)** xen kẽ với các deal đạt mục tiêu lợi nhuận (+2R, +3R).
-* **Mục tiêu giáo dục:** Chứng minh rằng sự sống còn của trader không nằm ở tỷ lệ thắng 100%, mà nằm ở kỷ luật chấp nhận thua lỗ nhỏ (-1R) để bảo vệ vốn khi thị trường chứng minh phương pháp bị sai.
+## Nguyên tắc cốt lõi: Viết trực tiếp về Phương pháp — Tuyệt đối KHÔNG dùng nhãn "[Nhật kí demo]"
+* **KHÔNG sử dụng tiền tố hoặc ghi chú `[Nhật kí demo]`, `[Demo]`, `[Nhật ký demo]`:** Đi thẳng vào bài viết phân tích phương pháp giao dịch một cách chuyên nghiệp, đĩnh đạc và thực chiến.
+* **Bắt buộc mổ xẻ cả trường hợp THẤT BẠI (Stop Loss):** Bất kỳ phương pháp kỹ thuật nào cũng có xác suất sai tùy thuộc vào bối cảnh thị trường (Trend-following thất bại khi thị trường đi ngang choppy, Breakout gặp bẫy Bull/Bear trap do cạn kiệt thanh khoản, v.v.). **Tuyệt đối không tô hồng phương pháp.**
+* **Tỷ lệ luân phiên:** Duy trì tỷ lệ ~40% – 50% số bài phân tích phương pháp đi sâu vào các **trường hợp setup thất bại (dính Stop Loss -1R)** xen kẽ với các bài phân tích các setup chuẩn mực đạt mục tiêu (+2R, +3R).
+* **Mục tiêu giáo dục:** Khẳng định sự sống còn của trader không nằm ở chén thánh hay tỷ lệ thắng 100%, mà nằm ở sự thấu hiểu cơ chế thị trường và kỷ luật chấp nhận thua lỗ nhỏ (-1R) để bảo vệ vốn.
 
-## Cấu trúc 3 mốc bắt buộc
+## Cấu trúc nội dung chuẩn mực
 
-> **Nguyên tắc phân bổ nội dung:** Mốc 1 và Mốc 2 viết **ngắn gọn, súc tích, khách quan** (thông số kỹ thuật, hành vi nến, hành động dời lệnh). **Dành toàn bộ cảm xúc, chiều sâu phân tích và mổ xẻ tâm lý cho Mốc 3 (Đóng sổ & Rút ra bài học).**
-
-### Kịch bản A: Kèo Thắng (Đạt mục tiêu TP)
-1. **Mốc 1 (Loại: `Vào lệnh`):**
-   - *Viết ngắn gọn, trực diện:* Nhận diện setup chuẩn (1–2 câu), thông số Entry, Stop Loss (-1R), Take Profit (≥2R–3R), tỷ lệ R:R.
-   - Biểu đồ minh hoạ Chart 1.
-2. **Mốc 2 (Loại: `Quản trị lệnh`):**
-   - *Viết ngắn gọn, kỷ luật:* Giá chạm lợi nhuận trung gian 1R hoặc cản ngắn, chốt 50% và dời SL về hoà vốn (Breakeven).
-   - Biểu đồ minh hoạ Chart 2.
-3. **Mốc 3 (Loại: `Đóng lệnh`):**
-   - *Đóng sổ & đầu tư chiều sâu cảm xúc, phân tích:* Giá hoàn tất mục tiêu, tổng kết lợi nhuận thực tế (+2.5R).
-   - **Bài học thực chiến & Tâm lý giao dịch (Bắt buộc):**
-     * *Có nên FOMO không?* Bài học tránh mua đuổi khi giá đã chạy xa; kiên định với kế hoạch.
-     * *Có nên kiên nhẫn chờ đợi không?* Giá trị của sự kiên nhẫn (chờ đúng nến xác nhận, chờ nhịp retest).
-     * *Tâm lý sau deal thắng:* Không tự mãn, không vội vàng tăng vol ở lệnh kế tiếp.
-   - Biểu đồ minh hoạ Chart 3.
-
-### Kịch bản B: Kèo Thua (Dính Stop Loss -1R & Mổ xẻ nguyên nhân)
-1. **Mốc 1 (Loại: `Vào lệnh`):**
-   - *Viết ngắn gọn, trực diện:* Setup nến vượt cản/bắt đáy, kế hoạch Entry, Stop Loss chuẩn (-1R) và TP kỳ vọng.
-   - Biểu đồ minh hoạ Chart 1.
-2. **Mốc 2 (Loại: `Quản trị lệnh` - Diễn biến bất lợi):**
-   - *Viết ngắn gọn, kỷ luật thép:* Tín hiệu bẫy giá đảo chiều (Bull Trap/Bear Trap), trạng thái lệnh chịu lỗ tạm tính. Nhấn mạnh 3 KHÔNG: Không gồng lỗ, không nới Stop Loss, không nhồi lệnh bình quân giá.
-   - Biểu đồ minh hoạ Chart 2.
-3. **Mốc 3 (Loại: `Đóng lệnh` - Cắn Stop Loss & Mổ xẻ sau lệnh):**
-   - *Đóng sổ & đầu tư toàn bộ cảm xúc, mổ xẻ tâm lý:* Giá chạm SL tự động (-1.0R), thị trường tiếp tục lao dốc sau đó.
-   - **Mổ xẻ nguyên nhân kỹ thuật (Post-mortem):** Khối lượng giả, bẫy thanh khoản, xung đột xu hướng lớn.
-   - **Bài học thực chiến & Tâm lý giao dịch (Bắt buộc):**
-     * *Có nên FOMO không?* Phân tích cái bẫy tâm lý sợ lỡ cơ hội khiến trader vội vã mua đuổi ngay đỉnh kháng cự, biến mình thành thanh khoản cho Smart Money xả hàng.
-     * *Có nên kiên nhẫn chờ đợi không?* Nếu kiên nhẫn chờ nến đóng cửa hoặc chờ nhịp retest kiểm định cản, trader đã hoàn toàn đứng ngoài và bảo vệ 100% vốn.
-     * *Kỷ luật cắt lỗ:* Việc dứt khoát chấp nhận mất 1R giúp bảo toàn 99% tài khoản, tránh cú rơi tự do hàng chục phần trăm sau đó.
-   - Biểu đồ minh hoạ Chart 3.
+1. **Bản chất & Nguyên lý hoạt động của phương pháp:**
+   - Cơ chế cung cầu đằng sau mô hình/chỉ báo là gì? Ai đang mua, ai đang bán và dòng tiền lớn (Smart Money) đang để lại dấu chân ở đâu?
+   - Bối cảnh thị trường thích hợp nhất (xu hướng mạnh, tích lũy cạn kiệt hay đảo chiều vùng cực đoan).
+2. **Thiết lập kế hoạch vào lệnh thực chiến (Trade Setup):**
+   - Điều kiện kích hoạt điểm vào (Entry): Nến xác nhận, khối lượng, nhịp kiểm định (Retest).
+   - Điểm dừng lỗ kỹ thuật (Stop Loss - SL): Đặt ở đâu để vừa an toàn vừa tối ưu rủi ro (-1R).
+   - Mục tiêu lợi nhuận (Take Profit - TP) và tỷ lệ R:R kỳ vọng (≥ 1:2.0 trở lên).
+3. **Phân tích diễn biến & Quản trị rủi ro:**
+   - Cách nhận diện sớm tín hiệu bẫy giá giả (False Breakout, Bull/Bear Trap) hoặc đà suy yếu động lượng.
+   - Nguyên tắc quản trị lệnh: Dời Stop Loss về hòa vốn khi giá chạy đúng, không nới lỗ, không bình quân giá xuống.
+4. **Mổ xẻ kết quả & Bài học cốt lõi:**
+   - Nếu setup thành công: Phân tích bài học kiên nhẫn gồng lãi, kỷ luật không chốt non và tâm lý không tự mãn.
+   - Nếu setup thất bại: Mổ xẻ nguyên nhân kỹ thuật (Post-mortem), bài học không FOMO, giá trị của việc dứt khoát cắt lỗ -1R để tránh thảm họa rơi tự do sau đó.
 
 ## Yêu cầu kỹ thuật & Định dạng trình bày
-* **Định dạng HTML bắt buộc (`body`):** Mọi nội dung mốc **bắt buộc viết bằng thẻ HTML chuẩn** (`<p>`, `<h3>`, `<h4>`, `<strong>`, `<em>`, `<ul><li>`, `<ol><li>`, `<hr>`).
-  - *Tuyệt đối KHÔNG dùng raw markdown trần* (vì trình duyệt web không tự chèn thẻ `<p>`, khiến bài viết bị dính liền thành một khối dài không xuống dòng).
-  - *Xuống dòng rõ ràng:* Chia nhỏ thành từng đoạn văn ngắn 2–3 câu trong cặp thẻ `<p>...</p>`, tạo khoảng thở thị giác dễ chịu.
-  - *In đậm (`<strong>`):* Bold đậm có chọn lọc các thuật ngữ then chốt, mốc giá, tỷ lệ R:R và bài học cốt lõi.
-* **Tiêu đề:** Bắt đầu bằng tiền tố `[Nhật kí demo] <Mô tả setup và kết quả (Đạt mục tiêu TP hoặc Dính Stop Loss)>` (≤160 ký tự).
-  - *Lưu ý quan trọng:* **KHÔNG lặp lại tên phương pháp trong tiêu đề** (ví dụ: viết `[Nhật kí demo] Mô hình Spring kiểm định đáy...`, KHÔNG viết `[Nhật kí demo] VSA: ...`), vì phương pháp đã được chọn riêng ở trường `truong_phai` và hiển thị thành badge trên giao diện.
+* **Định dạng HTML bắt buộc (`body`):** Viết bằng thẻ HTML chuẩn (`<p>`, `<h3>`, `<h4>`, `<strong>`, `<em>`, `<ul><li>`, `<ol><li>`, `<hr>`).
+  - *Xuống dòng rõ ràng:* Chia nhỏ thành từng đoạn văn ngắn 2–3 câu trong cặp thẻ `<p>...</p>`.
+  - *In đậm (`<strong>`):* Bold có chọn lọc các thuật ngữ then chốt, mốc giá, tỷ lệ R:R và bài học cốt lõi.
+* **Tiêu đề:** Trực diện, cuốn hút, nêu rõ tên setup/phương pháp và bài học thực chiến (≤160 ký tự).
+  - *Ví dụ chuẩn:* `Mô hình Hai đáy (Double Bottom) thất bại: Bẫy phân kỳ ngược xu hướng và bài học kỷ luật cắt lỗ -1R`
+  - *Ví dụ chuẩn:* `Chiến lược Dải Bollinger: Bắt nhịp bùng nổ sau thắt nút cổ chai (Squeeze) và kỹ thuật bám trend`
+  - *Tuyệt đối KHÔNG viết:* `[Nhật kí demo] Mô hình Hai đáy...`
 * **Trường phái (`truong_phai`):** Đặt đúng tên trường phái (`Price Action`, `Breakout Trading`, `MA Crossover`, `VSA / Wyckoff`, `Harmonic Patterns`, `Bollinger Bands`...).
 * **Chuyên mục (`sub`):** `quan-tri-von`.
-* **Biểu đồ nến:** Sử dụng Python `matplotlib` dựng biểu đồ Dark Mode độ phân giải cao tỷ lệ 16:9, thể hiện rõ nến, vạch Entry, SL, TP, vùng hỗ trợ/kháng cự và chú thích mũi tên rõ ràng. Tự động gắn watermark `gikky.net` ở góc phải dưới của biểu đồ (hoặc thông qua script `dang-bai.py`).
-* **Bảo toàn font chữ UTF-8 (Bắt buộc):** Tuyệt đối KHÔNG dùng PowerShell pipe (`Get-Content ... | ssh ...`) để chạy script chứa chuỗi tiếng Việt vì sẽ làm hỏng dấu thành `?`. Bắt buộc dùng `scp` để chuyển file script / JSON nhị phân lên VPS, sau đó mới gọi python thực thi trên server.
-
-
-
+* **Biểu đồ minh họa:** Sử dụng Python `matplotlib` dựng biểu đồ Dark Mode độ phân giải cao tỷ lệ 16:9, thể hiện rõ nến, vạch Entry, SL, TP, vùng hỗ trợ/kháng cự và chú thích mũi tên rõ ràng. Tự động gắn watermark `gikky.net` ở góc phải dưới của biểu đồ.
+* **Bảo toàn font chữ UTF-8:** Dùng `scp` chuyển file script / JSON lên VPS, sau đó thực thi qua python trong container api.

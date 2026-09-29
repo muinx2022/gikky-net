@@ -55,6 +55,15 @@ Trong giai đoạn đầu phát triển, các bài viết của Gikky thường 
   - Tuyệt đối trung lập, đanh thép, dùng bằng chứng dữ liệu để nói thay vì cảm tính.
 * **Thích hợp nhất:** Phân tích chuyên sâu cổ phiếu cụ thể (10:15), Báo cáo kết quả kinh doanh, Thời sự tài chính (16:45).
 
+### Phong cách 6: "Nhật ký sau bàn phím & Tự sự thực chiến" (The Raw Confessional / Trader's Memoir)
+* **Cảm hứng:** Hồi ký giao dịch, lời tự thú sau bàn phím (*Reminiscences of a Stock Operator*, nhật ký tài khoản, những cú ngã để đời).
+* **Đặc trưng:**
+  - **Ngôi thứ nhất ("Tôi"):** Tuyệt đối không dùng ngôi thứ ba xa cách ("trader thường rơi vào bẫy..."). Viết như một lời tự thú muộn màng, chân thực và không che giấu.
+  - **Diễn tả sống động phản ứng cơ thể và cảm xúc:** Ngón tay run rẩy trước nút Bán, tim đập thình thịch vào lồng ngực, cổ họng đắng ngắt, những đêm trằn trọc 2 giờ sáng với ánh màn hình điện thoại hắt lên gương mặt hốc hác, việc giấu nhẹm thua lỗ với người thân, sự cáu gắt vô cớ, và cảm giác tê dại, trống rỗng khi nhận tin nhắn giải chấp lúc 14:15.
+  - **Tuyệt đối KHÔNG dùng thẻ `<h2>` hoặc `<h3>` (Tránh sinh Mục lục):** Frontend của Gikky tự động trích xuất các thẻ `<h2>` và `<h3>` để tạo thành khối *"Mục lục nội dung"* ở đầu bài. Đối với thể loại tự sự, nhật ký giao dịch hay tản văn chiêm nghiệm, sự xuất hiện của một khối mục lục hành chính sẽ phá nát tính liền mạch, cảm xúc thân mật và không gian lắng đọng của câu chuyện. Thay vì dùng `<h2>`/`<h3>`, hãy sử dụng `<p><strong>...</strong></p>` kết hợp với `<hr>` để đánh dấu các chặng chuyển biến tâm lý và dòng thời gian!
+  - **Bài học rút ra hữu cơ, lắng đọng từ vết thương:** Không dùng gạch đầu dòng lý thuyết suông. Bài học phải là sự giác ngộ cay đắng đổi bằng mồ hôi nước mắt: *Thị trường không đánh bại bạn, kẻ đánh bại bạn là cái Tôi từ chối nhận sai; Cắt lỗ là mua chiếc vé bảo hiểm để giữ quyền được ngồi tiếp ở bàn chơi.*
+* **Thích hợp nhất:** Các bài viết tự sự "Nhật ký sau bàn phím", Góc nhìn tâm lý giao dịch, Chia sẻ kinh nghiệm thực chiến.
+
 ---
 
 ## 3. Bảng đối chiếu từ ngữ thay thế: Xóa bỏ lối mòn "Bóc tách" & "Giải phẫu"
@@ -79,7 +88,19 @@ Tuyệt đối **không** lặp lại liên tục từ "bóc tách" và "giải 
 | **10:15** | Bài phân tích Gikky.net | **Ký sự thực địa** hoặc **Thẩm định viên sắc sảo** | Đưa hơi thở thực địa/chuỗi cung ứng vào 80% bài; nếu soi cổ phiếu thì đi sâu vào dòng tiền và thuyết minh. |
 | **11:45** | Hỏi đáp & Cơ chế | **Người bạn đồng hành thực chiến** | Bình dân hóa thuật ngữ phức tạp, dùng ví dụ đời sống, giọng văn chân thành, dễ hiểu. |
 | **13:45** | Tâm lý giao dịch | **Người quan sát đời thường** | Giọng trầm ấm, tản văn, chạm vào cảm xúc và điểm mù tâm lý con người. |
-| **16:45** | Thời sự / Demo phương pháp | **Người bạn thực chiến** (nếu demo) / **Thẩm định viên** (thời sự) | Mạch lạc, trung thực về các lệnh thua, bám sát số liệu thực tế. |
+| **16:45** | Thời sự / Phương pháp thực chiến | **Người bạn thực chiến** (nếu phương pháp) / **Thẩm định viên** (thời sự) | Đi thẳng vào bài viết chuyên sâu về phương pháp, tuyệt đối không gắn nhãn [Nhật kí demo]. Mạch lạc, trung thực về các trường hợp thất bại (-1R), bám sát số liệu thực tế. |
 | **21:15** | Tản mạn đêm | **Người quan sát chiêm nghiệm** | Thư thả, triết lý, liên kết công nghệ với đời sống nhân sinh, giàu hình ảnh gợi mở. |
 | **22:00** | Facebook Post tối | **Người kể chuyện** hoặc **Người quan sát** | Lắng đọng, đúc kết bài học hành vi, đọc trong 1.5–2 phút thư giãn trước khi ngủ. |
 | **23:45** | Bài đêm muộn | **Người kể chuyện hậu trường** | Kịch tính, cinematic, hấp dẫn như một bộ phim tài liệu đêm muộn. |
+
+---
+
+## 5. Quy tắc cấm nhãn & tiền tố giả lập: Viết trực tiếp bài viết Phương pháp giao dịch
+
+* **Tuyệt đối KHÔNG sử dụng các tiền tố/nhãn ghi chú kiểu:**
+  - `[Nhật kí demo]`, `[Nhật ký demo]`, `[Demo lệnh]`, `[Mô phỏng]`...
+* **Yêu cầu khi viết về Phương pháp giao dịch:**
+  - Đi thẳng vào bài viết chuyên sâu về phương pháp kỹ thuật/chiến lược thực chiến (Price Action, Wyckoff, Breakout, Chỉ báo, Quản trị vốn).
+  - Tiêu đề đặt trực diện, đĩnh đạc, hấp dẫn và nêu bật bài học cốt lõi (Ví dụ: *Mô hình Hai đáy (Double Bottom) thất bại: Bẫy phân kỳ ngược xu hướng và bài học kỷ luật cắt lỗ -1R* hoặc *Chiến lược Dải Bollinger: Bắt nhịp bùng nổ sau thắt nút cổ chai (Squeeze) và kỹ thuật bám trend*).
+  - Trình bày đầy đủ: Bản chất cung cầu, điều kiện kích hoạt setup, cách lọc bẫy giả, quản trị rủi ro và các trường hợp thất bại thực tế để người đọc nhận diện và phòng ngừa. Không biến bài viết thành một cuốn sổ mô phỏng thiếu tính hệ thống.
+
