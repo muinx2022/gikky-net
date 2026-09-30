@@ -211,6 +211,7 @@ Nhóm này là **tản mạn**: dài hơi, liên ngành, không bám một mã.
 
 - **[ĐÃ VIẾT - Mạch 1137]** **Spread là gì?**: Chi phí vô hình, cạm bẫy trượt giá (Slippage) và cơ chế Bid - Ask cho người mới.
 - **[ĐÃ VIẾT - Mạch 1142]** **Ngày giao dịch không hưởng quyền (GDKHQ)**: Vì sao giá cổ phiếu bị điều chỉnh kỹ thuật giảm xuống tương ứng khi chia cổ tức tiền mặt hoặc cổ phiếu thưởng?
+- **[ĐÃ VIẾT - Mạch 1191]** **Quyền mua cổ phiếu phát hành thêm**: Giá phát hành ưu đãi 10.000 đ, công thức điều chỉnh giá ngày GDKHQ, rủi ro chôn vốn 2-3 tháng và kỹ thuật chuyển nhượng quyền mua tránh mất trắng. `hoi-dap`
 - **[ĐÃ VIẾT - Mạch 1176]** **Chu kỳ thanh toán T+2.5**: Cơ chế vận hành dòng tiền tại VSDC, vì sao bán thứ Sáu thì thứ Ba tiền mới về và cái bẫy phí ứng trước UTTB. `hoi-dap`
 - **[ĐÃ VIẾT - Mạch 1159]** **Khớp lệnh định kỳ ATO và ATC**: Thuật toán xác định mức giá có khối lượng khớp lớn nhất và cách dòng tiền lớn tận dụng 15 phút quyết định.
 - **Tính đúng mọi chi phí thực tế khi giao dịch**: Phí môi giới, thuế TNCN 0,1%, phí lưu ký chứng khoán VSDC và lãi suất vay Margin.
