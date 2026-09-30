@@ -194,7 +194,7 @@ Nhóm này là **tản mạn**: dài hơi, liên ngành, không bám một mã.
 - **FPT:** Cơ cấu doanh thu chuyển đổi số thị trường Nhật/Mỹ, biên lợi nhuận gia công phần mềm so với mảng viễn thông & giáo dục, rủi ro tự động hóa/AI.
 - **MWG (Thế Giới Di Động):** Điểm hòa vốn và cơ cấu chi phí chuỗi Bách Hóa Xanh, rủi ro bão hòa thị trường ICT (Điện Máy Xanh/TGDD) và bài toán quản trị tồn kho.
 - **VHM (Vinhomes):** Cỗ máy bán buôn dự án đại đô thị, cơ cấu tiền mặt, rủi ro bảo lãnh nợ trong hệ sinh thái Vingroup và bài toán hấp thụ của thị trường BĐS.
-- **VCB (Vietcombank):** Bộ đệm vốn, tỷ lệ bao phủ nợ xấu (LLR) vượt trội, nguồn vốn CASA chi phí 0% từ khối doanh nghiệp FDI và giới hạn của tăng trưởng tín dụng.
+- **[ĐÃ VIẾT - Mạch 1190]** **VCB (Vietcombank):** Bộ đệm vốn, tỷ lệ bao phủ nợ xấu (LLR) vượt trội, nguồn vốn CASA chi phí 0% từ khối doanh nghiệp FDI và giới hạn của tăng trưởng tín dụng.
 - **TCB (Techcombank):** Mô hình hệ sinh thái bất động sản - ngân hàng - chứng khoán, sự phụ thuộc vào dòng vốn trái phiếu/tín dụng doanh nghiệp và bài toán đa dạng hóa danh mục.
 - **VNM (Vinamilk):** Cỗ máy in tiền mặt với tỷ lệ cổ tức cao, nhưng đối mặt với bài toán bão hòa ngành sữa Việt Nam và nỗ lực tìm kiếm động lực tăng trưởng mới.
 - **[ĐÃ VIẾT - Mạch 1134]** **DGC (Hóa chất Đức Giang):** Lợi thế nguồn quặng Apatit giá rẻ, vị thế độc quyền photpho vàng (P4) trong chuỗi bán dẫn thế giới và rủi ro từ quy định bảo vệ môi trường / tiến độ dự án Nghi Sơn.
