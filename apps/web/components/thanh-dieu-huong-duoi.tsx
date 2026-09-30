@@ -24,10 +24,17 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { docCacSubOTrinhDuyet } from "@/lib/api";
+import { dauThoiGianServer } from "@/lib/dinh-dang";
 import { DIEU_CAM, DISCLAIMER_CHAN_TRANG } from "@/lib/phap-ly";
 import { GIOI_THIEU } from "@/lib/site";
 import { dangXuat, GOC_TRINH_DUYET, headerGhi } from "@/lib/tai-khoan";
-import { duongDanHoSo, duongDanMach, duongDanSub } from "@/lib/url";
+import {
+  cauThongBao,
+  dichThongBao,
+  SU_KIEN_THONG_BAO_DA_DOC,
+  type SuKienThongBaoDaDocDetail,
+} from "@/lib/thong-bao";
+import { duongDanHoSo, duongDanSub, tachSlugId } from "@/lib/url";
 
 import { Avatar } from "./avatar";
 import { useModalDangNhap } from "./modal-dang-nhap";
@@ -295,7 +302,90 @@ export function ThanhDieuHuongDuoi() {
     setMoSheetSub((x) => !x);
   };
 
-  const docHetThongBao = async () => {
+  // Đánh dấu 1 thông báo là đã đọc (lạc quan + gửi server)
+  const docMotThongBao = useCallback(async (id: number) => {
+    setThongBaos((cu) =>
+      cu.map((tin) =>
+        tin.id === id
+          ? { ...tin, read_at: tin.read_at ?? new Date().toISOString() }
+          : tin
+      )
+    );
+    setSoChuaDoc((cu) => Math.max(0, cu - 1));
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent(SU_KIEN_THONG_BAO_DA_DOC, {
+          detail: { ids: [id] },
+        })
+      );
+    }
+
+    try {
+      const kq = await danhDauDaDoc({
+        baseUrl: GOC_TRINH_DUYET,
+        headers: await headerGhi(),
+        body: { ids: [id] },
+      });
+      if (kq.data) {
+        setSoChuaDoc(kq.data.so_chua_doc);
+      }
+    } catch {
+      // bỏ qua lỗi mạng
+    }
+  }, []);
+
+  // Đánh dấu nhiều thông báo là đã đọc
+  const docNhieuThongBao = useCallback(async (ids: number[]) => {
+    if (ids.length === 0) return;
+    const tapIds = new Set(ids);
+
+    setThongBaos((cu) =>
+      cu.map((tin) =>
+        tapIds.has(tin.id)
+          ? { ...tin, read_at: tin.read_at ?? new Date().toISOString() }
+          : tin
+      )
+    );
+    setSoChuaDoc((cu) => Math.max(0, cu - ids.length));
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent(SU_KIEN_THONG_BAO_DA_DOC, {
+          detail: { ids },
+        })
+      );
+    }
+
+    try {
+      const kq = await danhDauDaDoc({
+        baseUrl: GOC_TRINH_DUYET,
+        headers: await headerGhi(),
+        body: { ids },
+      });
+      if (kq.data) {
+        setSoChuaDoc(kq.data.so_chua_doc);
+      }
+    } catch {
+      // bỏ qua lỗi
+    }
+  }, []);
+
+  // Đánh dấu tất cả thông báo là đã đọc
+  const docHetThongBao = useCallback(async () => {
+    setSoChuaDoc(0);
+    setThongBaos((cu) =>
+      cu.map((tin) => (tin.read_at ? tin : { ...tin, read_at: new Date().toISOString() }))
+    );
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent(SU_KIEN_THONG_BAO_DA_DOC, {
+          detail: { tatCa: true, soChuaDoc: 0 },
+        })
+      );
+    }
+
     try {
       const kq = await danhDauDaDoc({
         baseUrl: GOC_TRINH_DUYET,
@@ -304,12 +394,59 @@ export function ThanhDieuHuongDuoi() {
       });
       if (kq.data) {
         setSoChuaDoc(kq.data.so_chua_doc);
-        await napThongBao();
       }
     } catch {
       // bỏ qua
     }
-  };
+  }, []);
+
+  // Tự động đánh dấu đã đọc khi người dùng vào xem đúng mạch đó
+  useEffect(() => {
+    if (!dangNhap || thongBaos.length === 0) return;
+    if (!pathname.startsWith("/m/")) return;
+    const doan = pathname.slice(3).split("?")[0].split("#")[0];
+    const ketQua = tachSlugId(doan);
+    if (!ketQua) return;
+
+    const chuaDocCuaMach = thongBaos.filter((n) => {
+      if (n.read_at !== null) return false;
+      const p = n.payload as Record<string, unknown>;
+      return typeof p.mach_id === "number" && p.mach_id === ketQua.id;
+    });
+
+    if (chuaDocCuaMach.length > 0) {
+      void docNhieuThongBao(chuaDocCuaMach.map((n) => n.id));
+    }
+  }, [pathname, dangNhap, thongBaos, docNhieuThongBao]);
+
+  // Đồng bộ với Chuông header hoặc các tab khác khi có thông báo đã đọc
+  useEffect(() => {
+    const handleDaDoc = (e: Event) => {
+      const ce = e as CustomEvent<SuKienThongBaoDaDocDetail>;
+      if (ce.detail?.tatCa) {
+        setSoChuaDoc(0);
+        setThongBaos((cu) =>
+          cu.map((tin) => (tin.read_at ? tin : { ...tin, read_at: new Date().toISOString() }))
+        );
+      } else if (ce.detail?.ids && ce.detail.ids.length > 0) {
+        const tap = new Set(ce.detail.ids);
+        setThongBaos((cu) =>
+          cu.map((tin) =>
+            tap.has(tin.id)
+              ? { ...tin, read_at: tin.read_at ?? new Date().toISOString() }
+              : tin
+          )
+        );
+        if (typeof ce.detail.soChuaDoc === "number") {
+          setSoChuaDoc(ce.detail.soChuaDoc);
+        } else {
+          setSoChuaDoc((cu) => Math.max(0, cu - ce.detail!.ids!.length));
+        }
+      }
+    };
+    window.addEventListener(SU_KIEN_THONG_BAO_DA_DOC, handleDaDoc);
+    return () => window.removeEventListener(SU_KIEN_THONG_BAO_DA_DOC, handleDaDoc);
+  }, []);
 
   const xuLyDangXuat = async () => {
     dongHetSheet();
@@ -405,38 +542,74 @@ export function ThanhDieuHuongDuoi() {
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {thongBaos.map((n) => {
               const p = n.payload as Record<string, unknown>;
-              const slug = typeof p.mach_slug === "string" ? p.mach_slug : null;
-              const machId = typeof p.mach_id === "number" ? p.mach_id : null;
               const tieuDe = typeof p.mach_title === "string" ? p.mach_title : "mạch";
+              const dich = dichThongBao(n);
+              const chu = cauThongBao(n.type, p, tieuDe);
+              const chuaDoc = n.read_at === null;
+
+              const noiDung = (
+                <>
+                  <div
+                    style={{
+                      fontWeight: chuaDoc ? 600 : 400,
+                      lineHeight: 1.45,
+                      color: "var(--ink)",
+                    }}
+                  >
+                    {chu}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "11px",
+                      color: "var(--ink-3)",
+                      marginTop: "4px",
+                    }}
+                  >
+                    {dauThoiGianServer(n.created_at)}
+                  </div>
+                </>
+              );
+
+              const styleCard: React.CSSProperties = {
+                display: "block",
+                padding: "10px 12px",
+                borderRadius: "8px",
+                background: chuaDoc ? "var(--accent-soft)" : "var(--surface)",
+                border: "1px solid var(--line)",
+                fontSize: "13px",
+                textDecoration: "none",
+                transition: "background 0.15s ease",
+              };
+
+              if (dich !== null) {
+                return (
+                  <Link
+                    key={n.id}
+                    href={dich}
+                    style={styleCard}
+                    onClick={() => {
+                      dongHetSheet();
+                      if (chuaDoc) {
+                        void docMotThongBao(n.id);
+                      }
+                    }}
+                  >
+                    {noiDung}
+                  </Link>
+                );
+              }
+
               return (
                 <div
                   key={n.id}
-                  style={{
-                    padding: "10px 12px",
-                    borderRadius: "8px",
-                    background: n.read_at ? "var(--surface)" : "var(--accent-soft)",
-                    border: "1px solid var(--line)",
-                    fontSize: "13px",
+                  style={styleCard}
+                  onClick={() => {
+                    if (chuaDoc) {
+                      void docMotThongBao(n.id);
+                    }
                   }}
                 >
-                  {machId && slug ? (
-                    <Link
-                      href={duongDanMach(slug, machId)}
-                      style={{ color: "var(--ink)", textDecoration: "none" }}
-                      onClick={dongHetSheet}
-                    >
-                      {n.type === "mach_moi" && `Mạch mới: ${tieuDe}`}
-                      {n.type === "moc_moi" && `Mốc mới trên: ${tieuDe}`}
-                      {n.type === "binh_luan" && `Bình luận mới trên: ${tieuDe}`}
-                      {n.type === "reply" && `Có người phản hồi bạn trên: ${tieuDe}`}
-                      {n.type === "trich" && `Có người trích dẫn bạn trên: ${tieuDe}`}
-                      {n.type === "theo_mach" && `Có người theo dõi: ${tieuDe}`}
-                      {!["mach_moi", "moc_moi", "binh_luan", "reply", "trich", "theo_mach"].includes(n.type) &&
-                        `Thông báo về: ${tieuDe}`}
-                    </Link>
-                  ) : (
-                    <span style={{ color: "var(--ink)" }}>Thông báo mới</span>
-                  )}
+                  {noiDung}
                 </div>
               );
             })}

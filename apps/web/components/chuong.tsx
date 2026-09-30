@@ -21,6 +21,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { dauThoiGianServer } from "@/lib/dinh-dang";
 import { neoBinhLuan } from "@/lib/khan-dai";
 import { GOC_TRINH_DUYET, headerGhi } from "@/lib/tai-khoan";
+import {
+  SU_KIEN_THONG_BAO_DA_DOC,
+  type SuKienThongBaoDaDocDetail,
+} from "@/lib/thong-bao";
 import { duongDanMach } from "@/lib/url";
 
 import css from "./chuong.module.css";
@@ -96,6 +100,37 @@ export function Chuong() {
     return () => document.removeEventListener("mousedown", ngoai);
   }, [mo]);
 
+  // Đồng bộ với Bottom Navigation Bar hoặc các tab khác khi có thông báo đã đọc
+  useEffect(() => {
+    const handleDaDoc = (e: Event) => {
+      const ce = e as CustomEvent<SuKienThongBaoDaDocDetail>;
+      if (ce.detail?.tatCa) {
+        datSoChuaDoc(0);
+        datItems((cu) =>
+          cu.map((tin) =>
+            tin.read_at ? tin : { ...tin, read_at: new Date().toISOString() }
+          )
+        );
+      } else if (ce.detail?.ids && ce.detail.ids.length > 0) {
+        const tap = new Set(ce.detail.ids);
+        datItems((cu) =>
+          cu.map((tin) =>
+            tap.has(tin.id)
+              ? { ...tin, read_at: tin.read_at ?? new Date().toISOString() }
+              : tin
+          )
+        );
+        if (typeof ce.detail.soChuaDoc === "number") {
+          datSoChuaDoc(ce.detail.soChuaDoc);
+        } else {
+          datSoChuaDoc((cu) => Math.max(0, cu - ce.detail!.ids!.length));
+        }
+      }
+    };
+    window.addEventListener(SU_KIEN_THONG_BAO_DA_DOC, handleDaDoc);
+    return () => window.removeEventListener(SU_KIEN_THONG_BAO_DA_DOC, handleDaDoc);
+  }, []);
+
   if (dangTai) {
     return <span className={css.cho_chuong} aria-hidden />;
   }
@@ -103,6 +138,18 @@ export function Chuong() {
   if (!dang_nhap) return null;
 
   const docHet = async () => {
+    // Cập nhật lạc quan
+    datSoChuaDoc(0);
+    datItems((cu) =>
+      cu.map((tin) => (tin.read_at ? tin : { ...tin, read_at: new Date().toISOString() }))
+    );
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent(SU_KIEN_THONG_BAO_DA_DOC, {
+          detail: { tatCa: true, soChuaDoc: 0 },
+        })
+      );
+    }
     const kq = await danhDauDaDoc({
       baseUrl: GOC_TRINH_DUYET,
       headers: await headerGhi(),
@@ -116,6 +163,22 @@ export function Chuong() {
   };
 
   const docMot = async (id: number) => {
+    // Cập nhật lạc quan
+    datSoChuaDoc((cu) => Math.max(0, cu - 1));
+    datItems((cu) =>
+      cu.map((tin) =>
+        tin.id === id
+          ? { ...tin, read_at: tin.read_at ?? new Date().toISOString() }
+          : tin
+      )
+    );
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent(SU_KIEN_THONG_BAO_DA_DOC, {
+          detail: { ids: [id] },
+        })
+      );
+    }
     const kq = await danhDauDaDoc({
       baseUrl: GOC_TRINH_DUYET,
       headers: await headerGhi(),
@@ -123,9 +186,6 @@ export function Chuong() {
     });
     if (kq.data === undefined) return;
     datSoChuaDoc(kq.data.so_chua_doc);
-    datItems((cu) =>
-      cu.map((tin) => (tin.id === id ? { ...tin, read_at: new Date().toISOString() } : tin))
-    );
   };
 
   return (
