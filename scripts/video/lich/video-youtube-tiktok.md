@@ -66,9 +66,28 @@ Khi sản xuất video về mạch phương pháp thực chiến (Price Action, 
 
 ---
 
+## 🚀 Tự Động Xuất Bản Đa Kênh (Publishing Engine)
+1. **Facebook Reels (9:16):**
+   * Tự động đăng bằng Meta Graph API qua script:
+     ```bash
+     python scripts/facebook/reels_publisher.py --video "apps/web/public/<short_video>.mp4" --caption "<caption_kem_hashtags>"
+     ```
+2. **YouTube Video (16:9) & YouTube Shorts (9:16):**
+   * Tự động xuất bản bằng Google YouTube Data API v3 qua script:
+     ```bash
+     # Upload video dài 16:9 kèm thumbnail
+     python scripts/youtube/youtube_publisher.py --video "apps/web/public/<yt_video>.mp4" --title "<tiêu_đề>" --description "<mô_tả_seo>" --tags "<danh_sách_tags>" --thumbnail "apps/web/public/<thumbnail>.png"
+
+     # Upload video ngắn Shorts 9:16
+     python scripts/youtube/youtube_publisher.py --video "apps/web/public/<short_video>.mp4" --title "<tiêu_đề_shorts>" --description "<mô_tả>" --tags "<tags>" --is-short
+     ```
+   * Cần file `scripts/youtube/client_secrets.json` từ Google Cloud Console (chỉ cần cấp quyền 1 lần duy nhất bằng lệnh `python scripts/youtube/youtube_publisher.py --auth`).
+
+---
+
 ## 📋 Quy Định Bắt Buộc Về Báo Cáo Thành Phẩm (Title & Description)
 
-Sau khi video được tạo và xuất xưởng xong, Agent **BẮT BUỘC** phải in ra đầy đủ ngay trong nội dung báo cáo cho người dùng (để người dùng chỉ cần copy-paste đăng ngay mà không cần mở file):
+Sau khi video được tạo và xuất xưởng xong, Agent **BẮT BUỘC** phải in ra đầy đủ ngay trong nội dung báo cáo cho người dùng:
 
 1. **Phần YouTube (16:9):**
    * **Tiêu đề (Title):** Cung cấp 3 phương án giật hook CTR cao (A/B testing).
@@ -79,4 +98,5 @@ Sau khi video được tạo và xuất xưởng xong, Agent **BẮT BUỘC** ph
    * **Caption / Description:** Đoạn mô tả ngắn gọn (1–2 câu) giật hook tò mò.
    * **Bộ Hashtags:** 10 thẻ hashtags bắt xu hướng tài chính/chứng khoán.
    * **Bình luận ghim (Pinned Comment):** Câu kêu gọi hành động (CTA) kích thích độc giả thảo luận và truy cập `gikky.net`.
+
 
