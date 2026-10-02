@@ -53,4 +53,8 @@ scripts/video/*.txt
 scripts/video/*.png
 scripts/facebook/.tam_anh/
 
+# YouTube credentials & tokens
+scripts/youtube/client_secrets*.json
+scripts/youtube/token*.json
+
 
