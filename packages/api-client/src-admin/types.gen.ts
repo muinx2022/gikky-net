@@ -909,6 +909,10 @@ export type LuotXemOut = {
  */
 export type LuotXemTongOut = {
     /**
+     * So Hom Nay
+     */
+    so_hom_nay?: number;
+    /**
      * So Khach
      */
     so_khach: number;

@@ -204,6 +204,7 @@ def test_Q_tach_nguoi_va_bot_dung(du_lieu):
         "so_khach": 0,
         # Seed của `du_lieu` toàn `khach=""` (hàng trước 2026-08-30) ⇒ không ai "online".
         "so_online": 0,
+        "so_hom_nay": 4,
     }
     assert top(js, "/m/a-1") == {
         "duong_dan": "/m/a-1",
@@ -293,6 +294,7 @@ def test_T4_tat_ca_KHONG_cong_chong_ngay_co_o_ca_hai_nguon(du_lieu):
         "so_luot_bot": 9,
         "so_khach": 0,
         "so_online": 0,
+        "so_hom_nay": 4,
     }
 
 
@@ -342,6 +344,7 @@ def test_bang_rong_van_tra_200_va_toan_so_0(db):
         "so_luot_bot": 0,
         "so_khach": 0,
         "so_online": 0,
+        "so_hom_nay": 0,
     }
     assert len(js["chuoi_ngay"]) == 30
     assert js["top_duong_dan"] == []
@@ -1399,3 +1402,13 @@ def test_so_tu_khoa_an(db, hom_nay):
 
     js = goi("7").json()
     assert js["so_tu_khoa_an"] == 10  # 7 từ google + 3 từ bing
+
+
+def test_so_hom_nay_tong_luot_xem_trong_ngay(du_lieu, hom_nay):
+    """`so_hom_nay` luôn là tổng lượt xem trong ngày hôm nay (giờ VN), không đổi theo `?khoang=`."""
+    for k in ("7", "30", "90", "tat_ca"):
+        assert goi(k).json()["tong"]["so_hom_nay"] == 4
+
+    them(hom_nay, "/trang-moi", so=2)
+    assert goi("30").json()["tong"]["so_hom_nay"] == 6
+

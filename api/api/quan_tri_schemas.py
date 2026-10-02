@@ -880,6 +880,8 @@ class LuotXemTongOut(Schema):
     #: khỏi con số. Nhãn trên màn hình phải nói ra khoảng 5 phút ấy — nó là ô DUY NHẤT
     #: trong hàng KPI không đọc theo bộ chọn khoảng.
     so_online: int
+    #: Tổng lượt xem trong ngày hôm nay (giờ VN, người + bot). KHÔNG đổi theo `?khoang=`.
+    so_hom_nay: int = 0
 
 
 class LuotXemNgayOut(Schema):

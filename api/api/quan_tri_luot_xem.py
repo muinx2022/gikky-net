@@ -654,6 +654,8 @@ def luot_xem(request, response: HttpResponse, khoang: str = "30"):
     # `SO_O_TOI_DA` ô. Xem docstring module.
     tong_nguoi = sum(n for n, _ in theo_ngay.values())
     tong_bot = sum(b for _, b in theo_ngay.values())
+    hom_nay_nguoi, hom_nay_bot = theo_ngay.get(hom_nay, (0, 0))
+    so_hom_nay = hom_nay_nguoi + hom_nay_bot
     # Số khách cũng KHÔNG suy từ biểu đồ, cùng lý do. Ngày không đo được đóng góp 0, nên
     # con số này là một cận DƯỚI — không bao giờ thổi phồng.
     tong_khach = sum(v for v in khach.values() if v is not None)
@@ -669,6 +671,8 @@ def luot_xem(request, response: HttpResponse, khoang: str = "30"):
             so_khach=tong_khach,
             # KHÔNG phụ thuộc `khoang`: "online" là 5 phút gần nhất ở mọi lựa chọn.
             so_online=_dem_online(_moc_online()),
+            # KHÔNG phụ thuộc `khoang`: tổng lượt xem trong ngày hôm nay (giờ VN).
+            so_hom_nay=so_hom_nay,
         ),
         chuoi_ngay=_chuoi(theo_ngay, hom_nay, so_o, khach_cua),
         top_duong_dan=_top(gop),
