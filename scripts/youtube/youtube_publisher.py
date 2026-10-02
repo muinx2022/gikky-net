@@ -82,14 +82,14 @@ def lay_dich_vu_youtube():
                     f"❌ Thiếu file cấu hình OAuth 2.0: {CLIENT_SECRETS_FILE}\n"
                     f"👉 Hãy tải 'client_secrets.json' từ Google Cloud Console (APIs & Services -> Credentials -> OAuth Client ID) và đặt vào thư mục {DIR_GOC}"
                 )
-            print("🌐 Khởi động trình duyệt để xác thực cấp quyền YouTube lần đầu...")
+            print("🌐 Khởi động trình duyệt để xác thực cấp quyền YouTube lần đầu...", flush=True)
             flow = InstalledAppFlow.from_client_secrets_file(str(CLIENT_SECRETS_FILE), SCOPES)
-            creds = flow.run_local_server(port=0)
+            creds = flow.run_local_server(port=0, open_browser=True)
 
         # Lưu lại token để dùng vĩnh viễn trong các phiên chạy sau
         with open(TOKEN_FILE, "w", encoding="utf-8") as token_out:
             token_out.write(creds.to_json())
-        print(f"✅ Đã lưu phiên xác thực vào: {TOKEN_FILE}")
+        print(f"✅ Đã lưu phiên xác thực vào: {TOKEN_FILE}", flush=True)
 
     return build("youtube", "v3", credentials=creds)
 
