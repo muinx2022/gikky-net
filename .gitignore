@@ -57,4 +57,8 @@ scripts/facebook/.tam_anh/
 scripts/youtube/client_secrets*.json
 scripts/youtube/token*.json
 
+# TikTok sessions & cookies
+scripts/tiktok/*session*.json
+scripts/tiktok/*cookie*.json
+
 
