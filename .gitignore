@@ -60,5 +60,6 @@ scripts/youtube/token*.json
 # TikTok sessions & cookies
 scripts/tiktok/*session*.json
 scripts/tiktok/*cookie*.json
+scripts/tiktok/.chrome_profile/
 
 
