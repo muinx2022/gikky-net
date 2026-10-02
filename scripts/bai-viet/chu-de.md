@@ -48,6 +48,7 @@ trường** doanh nghiệp sống trong đó?* Doanh nghiệp ⇒ `chung-khoan`.
 - **[ĐÃ VIẾT - Mạch 1146]** **Quy hoạch Điện VIII** và nút thắt đường dây truyền tải 500kV mạch 3: bài toán giải tỏa công suất vùng duyên hải miền Trung. `vi-mo`
 - **[ĐÃ VIẾT - Mạch 1171]** **Đường sắt tốc độ cao Bắc - Nam 350 km/h**: Bóc tách bài toán vốn 67 tỷ USD, cơ chế hoàn vốn quỹ đất TOD quanh 23 ga và bước nhảy vọt nội địa hóa vật liệu chế tạo. `vi-mo`
 - **[ĐÃ VIẾT - Mạch 1182]** **Đại dự án Khí — Điện Lô B — Ô Môn**: Giải phẫu chuỗi giá trị 12 tỷ USD, điểm nghẽn cơ chế PPA và bài toán an ninh năng lượng phía Nam (Thượng nguồn 107 tỷ m3 khí, trung nguồn đường ống 431 km, hạ nguồn cụm 4 nhà máy 3.810 MW, cơ chế chuyển ngang giá khí Pass-through và bao tiêu Qc). `vi-mo`
+- **[ĐÃ VIẾT - Mạch 1197]** **Ngành Xi măng Việt Nam**: Bài toán dư cung 120 triệu tấn, công suất gấp đôi sức mua nội địa, cơ cấu chi phí than/điện 55-60%, chiếc bẫy xuất khẩu clinker thuế 10% và rào cản phát thải xanh CBAM. `vi-mo`
 
 
 ## C. Ngân hàng & Tài chính hệ thống
@@ -67,6 +68,8 @@ trường** doanh nghiệp sống trong đó?* Doanh nghiệp ⇒ `chung-khoan`.
 - **[ĐÃ VIẾT - Mạch 1064]** Ngân hàng trung ương mua vàng — xu hướng nhiều năm, không phải tin một ngày.
 - **[ĐÃ VIẾT - Mạch 1051]** **Đồng** như một chỉ báo công nghiệp: nó thật sự dẫn trước cái gì?
 - **[ĐÃ VIẾT - Mạch 1166]** **Cà phê Robusta**: Cơn sốt giá kỷ lục, biến đổi khí hậu El Niño và nghịch lý chuỗi giá trị xuất khẩu hạt thô (vỡ hợp đồng kỳ hạn, 3% giá trị trong tách cà phê). `vi-mo`
+- **[ĐÃ VIẾT - Mạch 1200]** **Đất hiếm và nghịch lý năng lượng xanh**: Khi 17 nguyên tố vô danh định hình cán cân quyền lực công nghệ toàn cầu (Nam châm vĩnh cửu NdFeB cho xe điện & tuabin gió, nghịch lý hóa chất môi trường, độc quyền tinh chế 90% của Trung Quốc, 22 triệu tấn trữ lượng Việt Nam và bài toán phân tách sâu). `vi-mo`
+- **[ĐÃ VIẾT - Mạch 1203]** **Ngành Phân bón Việt Nam và bài toán chuỗi giá trị**: Biến số giá khí đầu vào, rào cản hạn ngạch Trung Quốc và nút thắt 10 năm của Luật Thuế GTGT (Tỷ trọng khí 60-70% giá thành đạm urê, năng lực tự chủ 3 triệu tấn, 1.000-1.500 tỷ thuế GTGT đầu vào không được khấu trừ của Luật 71 và điểm uốn áp thuế 5%). `vi-mo`
 
 ## E. Tiền số & Tài sản số
 
@@ -78,6 +81,7 @@ trường** doanh nghiệp sống trong đó?* Doanh nghiệp ⇒ `chung-khoan`.
 - **[ĐÃ VIẾT - Mạch 1162]** **MVRV Z-Score và Realized Price**: Khi sổ cái on-chain vạch trần tâm lý và giá vốn thực của thị trường Bitcoin (bóc tách UTXO, phân vị Z-score, STH vs LTH Realized Price). `crypto`
 - **[ĐÃ VIẾT - Mạch 1175]** **Khung pháp lý tài sản số tại Việt Nam**: Áp lực từ Danh sách Xám FATF, nghịch lý dòng tiền 100 tỷ USD và bài toán quản trị dòng vốn (Khuyến nghị 15, Quyết định 194/QĐ-TTg, NĐ 52/2024, cơ chế Sandbox và Luật CN Công nghệ số). `vi-mo`
 - **[ĐÃ VIẾT - Mạch 1180]** **Chỉ số Puell Multiple và chi phí cận biên thợ đào**: Khi những đại công trường Bitcoin chuyển mình sang hạ tầng AI (Hashprice chạm đáy, vùng đầu hàng thợ đào Puell < 0.5, thương vụ Core Scientific $3.5B với CoreWeave). `crypto`
+- **[ĐÃ VIẾT - Mạch 1201]** **Hồ sơ thảm họa Terra Luna và cú sập 40 tỷ USD**: Giải mã cái bẫy toán học của đồng tiền ổn định thuật toán UST và phản ứng dây chuyền tử thần (Lãi suất Anchor 20%, Curve 3pool cạn thanh khoản, Arbitrage Mint-and-Burn và siêu lạm phát 6.500 tỷ LUNA). `crypto`
 - Phí giao dịch và trượt giá: phần chi phí thật mà bảng giá không hiện.
 
 
@@ -97,6 +101,7 @@ Nhóm này là **tản mạn**: dài hơi, liên ngành, không bám một mã.
 - **[ĐÃ VIẾT - Mạch 1172]** **Cỗ máy quang khắc EUV của ASML**: Yết hầu của ngành bán dẫn thế giới tại thị trấn Veldhoven, con hào công nghệ độc quyền và chiêm nghiệm về toàn cầu hóa. `vi-mo`
 - **[ĐÃ VIẾT - Mạch 1179]** **Cơn khát điện nền cho AI và sự phục hưng của năng lượng hạt nhân**: Khi Big Tech tìm về những lò phản ứng cũ (Microsoft Three Mile Island, Amazon Talen Susquehanna, bài toán điện nền baseload 24/7 và công nghệ SMR). `vi-mo`
 - **[ĐÃ VIẾT - Mạch 1187]** **Nghịch lý hai cỗ máy Transformer**: Khi con chip AI tối tân phải chờ khối thép biến áp 3 năm để cắm điện (Kiến trúc Transformer của Deep Learning vs Máy biến áp điện lực thế kỷ 19, nút thắt lead time 3-4 năm, thép kỹ thuật điện GOES và lời tiên tri của Elon Musk). `vi-mo`
+- **[ĐÃ VIẾT - Mạch 1194]** **Từ hạt cát thạch anh đến tấm Wafer**: Hành trình thanh lọc vật chất thành linh hồn của kỷ nguyên số (Độ tinh khiết 11 số 9 Eleven Nines, mỏ thạch anh độc quyền Spruce Pine, lò luyện hồ quang 1.900°C, phương pháp kéo đơn tinh thể Czochralski 1.425°C và chiêm nghiệm về sự thanh lọc). `vi-mo`
 
 
 ## G. Thị trường Việt Nam, chuyện dài
@@ -130,6 +135,7 @@ Nhóm này là **tản mạn**: dài hơi, liên ngành, không bám một mã.
 - **[ĐÃ VIẾT - Mạch 1164]** **Kế toán tâm lý (Mental Accounting) & Hiệu ứng House Money**: Vì sao nhà đầu tư dễ dãi đánh bạc với tiền lãi và khắt khe với tiền gốc (Richard Thaler, tính khả hoán của tiền tệ). `tam-ly-giao-dich`
 - **[ĐÃ VIẾT - Mạch 1167]** **Đọc sách Morgan Housel**: *The Psychology of Money* — Nghịch lý giữa làm giàu và giữ tiền, cạm bẫy biết thế nào là đủ (Enough) và quyền kiểm soát thời gian. `tam-ly-giao-dich`
 - **[ĐÃ VIẾT - Mạch 1186]** **Nhật ký sau bàn phím: Cạm bẫy bình quân giá HPG**: Từ cú lướt sóng T+ đến chiếc bẫy Call Margin lúc 14:15 và bài học xương máu về kỷ luật cắt lỗ (Chu kỳ sập 2022 từ 46.5k về đáy 12.1k, bẫy chi phí chìm Sunk Cost Fallacy, hiệu ứng Đà điểu Ostrich Effect). `tam-ly-giao-dich`
+- **[ĐÃ VIẾT - Mạch 1205]** **Thiên lệch hành động (Action Bias) và cơn ngứa tay của trader**: Khi ngồi yên trên đống tiền mặt là quyết định sinh lời lớn nhất (Nghiên cứu phạt đền của Michael Bar-Eli, 93.7% thủ môn bay người vô nghĩa, triết lý Sitting Tight của Jesse Livermore, Tiền mặt như một quyền chọn tối thượng). `tam-ly-giao-dich`
 - **Đọc sách**: *Thinking, Fast and Slow* · *Misbehaving*.
 
 ## I. Phương pháp giao dịch — nhịp 5–7 ngày một bài
@@ -151,6 +157,8 @@ Nhóm này là **tản mạn**: dài hơi, liên ngành, không bám một mã.
 - **[ĐÃ VIẾT - Mạch 1136]** **Mô hình Nêm giảm (Falling Wedge)**: Bứt phá nêm hội tụ, nhịp retest Pin Bar kiểm định cạnh trên, dời SL bảo toàn và chạm đích +2.8R.
 - **[ĐÃ VIẾT - Mạch 1165]** **Mô hình Cờ tăng giá (Bull Flag)**: Bứt phá kênh tích lũy hẹp, nhịp kiểm định dời SL và chạm đích +2.8R.
 - **[ĐÃ VIẾT - Mạch 1185]** **Mô hình Hai đáy (Double Bottom) thất bại**: Bẫy phân kỳ ngược xu hướng, nến đỏ đảo chiều nhấn chìm và bài học kỷ luật cắt lỗ -1R. `quan-tri-von`
+- **[ĐÃ VIẾT - Mạch 1198]** **Mô hình Cốc tay cầm (Cup and Handle)**: Giải mã cấu trúc gom hàng kinh điển của William O'Neil, bài toán rũ bỏ thanh khoản và chiếc bẫy cốc chữ V (Đáy U cạn kiệt Volume, tay cầm dốc xuống 8-12%, điểm mua Pivot Point bùng nổ khối lượng và kỷ luật cắt lỗ 7-8%). `quan-tri-von`
+- **[ĐÃ VIẾT - Mạch 1199]** **Mô hình Tam giác đối xứng (Symmetrical Triangle)**: Bắt nhịp bứt phá thuận xu hướng, kỹ thuật kiểm định cạnh nén và tối ưu tỷ lệ R:R 1:2.8 (Trạng thái nén Volatility Squeeze, co hẹp thanh khoản, Entry 42.50, SL 40.80, TP 47.30 và quy tắc dời Breakeven +1.5R). `quan-tri-von`
 - **[ĐÃ VIẾT - Mạch 1085]** **Phương pháp thất bại**: LTCM, và các hệ thống từng được ca ngợi rồi biến mất.
 - **[ĐÃ VIẾT - Mạch 1109]** **Barings Bank**: Nick Leeson và tài khoản giấu lỗ 88888.
 
@@ -162,7 +170,7 @@ Nhóm này là **tản mạn**: dài hơi, liên ngành, không bám một mã.
 - **[ĐÃ VIẾT - Mạch 1132]** **Archegos Capital & Bill Hwang**: Vụ sụp đổ 2021 làm bốc hơi 30 tỷ USD trong 48 giờ — đòn bẩy ngầm Total Return Swap (TRS), bẫy đa ngân hàng và thế tiến thoái lưỡng nan của tù nhân (Prisoner's Dilemma) trên phố Wall.
 - **[ĐÃ VIẾT - Mạch 1089]** **Jesse Livermore**: "Con gấu vĩ đại phố Wall" — từ cậu bé ghi bảng bucket shop đến tài sản 100 triệu USD năm 1929, hệ thống điểm xoay (Pivotal Points), 4 lần phá sản làm lại từ đầu và hồi kết bi kịch khi phá vỡ kỷ luật.
 - **[ĐÃ VIẾT - Mạch 1121]** **Nicolas Darvas**: Vũ công kiếm 2.000.000 USD từ chứng khoán — phát minh lý thuyết Hộp (Darvas Box), cách quản trị lệnh dời stop-loss tự động và nghệ thuật cách ly hoàn toàn với tiếng ồn phố Wall.
-- **Ed Seykota**: Người tiên phong mang máy tính vào phân tích kỹ thuật — hệ thống theo xu hướng thuần túy và triết lý tâm lý học sâu sắc: "Dù thắng hay thua, ai cũng nhận được từ thị trường chính xác thứ họ muốn".
+- **[ĐÃ VIẾT - Mạch 1195]** **Ed Seykota**: Người tiên phong mang máy tính vào phân tích kỹ thuật — hệ thống theo xu hướng thuần túy và triết lý tâm lý học sâu sắc: "Dù thắng hay thua, ai cũng nhận được từ thị trường chính xác thứ họ muốn" (IBM 360 thẻ đục lỗ, tài khoản 5.000$ lên 15M$, 3 quy tắc cắt lỗ sống còn, mỏ neo rủi ro 1% và cạm bẫy tiềm thức). `tam-ly-giao-dich`
 - **Paul Tudor Jones**: Huyền thoại bán khống Black Monday 1987 nhân ba tài khoản — nguyên tắc phòng thủ rủi ro bất đối xứng 5:1 và đường MA 200 ngày bảo vệ vốn.
 - **Bernard Baruch**: Nhà đầu cơ vượt qua Đại suy thoái 1929 — nghệ thuật biết điểm dừng, tín hiệu cậu bé đánh giày và nguyên tắc "không bao giờ cố mua ở đáy và bán ở đỉnh".
 - **Hetty Green**: "Phù thủy phố Wall" — người phụ nữ giàu nhất thời kỳ Gilded Age với triết lý đầu tư giá trị cực đoan, kỷ luật tiền mặt tàn nhẫn và khả năng giải cứu thị trường trong khủng hoảng.
@@ -216,5 +224,5 @@ Nhóm này là **tản mạn**: dài hơi, liên ngành, không bám một mã.
 - **Tính đúng mọi chi phí thực tế khi giao dịch**: Phí môi giới, thuế TNCN 0,1%, phí lưu ký chứng khoán VSDC và lãi suất vay Margin.
 
 - **[ĐÃ VIẾT - Mạch 1169]** **Cơ chế Call Margin và Force Sell**: Tỷ lệ an toàn (Rtt), cảnh báo ký quỹ và quy trình bán giải chấp của các công ty chứng khoán.
-- **Các loại lệnh thực chiến**: Khi nào nên dùng lệnh LO, MP, MTL, MOK và bẫy trượt giá ở các cổ phiếu thanh khoản thấp.
+- **[ĐÃ VIẾT - Mạch 1204]** **Các loại lệnh thực chiến**: Khi nào nên dùng lệnh LO, MP, MTL, MOK, MAK và cạm bẫy trượt giá ở các cổ phiếu thanh khoản thấp (Cơ chế quét nhiều tầng giá của MP, 3 biến thể trên HNX, rủi ro Unfilled vs rủi ro Slippage). `hoi-dap`
 - **Phái sinh VN30 và độ lệch Basis**: Hợp đồng tương lai vận hành thế nào, tỷ lệ ký quỹ ban đầu và rủi ro đòn bẩy cao.
