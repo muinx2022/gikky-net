@@ -49,6 +49,7 @@ trường** doanh nghiệp sống trong đó?* Doanh nghiệp ⇒ `chung-khoan`.
 - **[ĐÃ VIẾT - Mạch 1171]** **Đường sắt tốc độ cao Bắc - Nam 350 km/h**: Bóc tách bài toán vốn 67 tỷ USD, cơ chế hoàn vốn quỹ đất TOD quanh 23 ga và bước nhảy vọt nội địa hóa vật liệu chế tạo. `vi-mo`
 - **[ĐÃ VIẾT - Mạch 1182]** **Đại dự án Khí — Điện Lô B — Ô Môn**: Giải phẫu chuỗi giá trị 12 tỷ USD, điểm nghẽn cơ chế PPA và bài toán an ninh năng lượng phía Nam (Thượng nguồn 107 tỷ m3 khí, trung nguồn đường ống 431 km, hạ nguồn cụm 4 nhà máy 3.810 MW, cơ chế chuyển ngang giá khí Pass-through và bao tiêu Qc). `vi-mo`
 - **[ĐÃ VIẾT - Mạch 1197]** **Ngành Xi măng Việt Nam**: Bài toán dư cung 120 triệu tấn, công suất gấp đôi sức mua nội địa, cơ cấu chi phí than/điện 55-60%, chiếc bẫy xuất khẩu clinker thuế 10% và rào cản phát thải xanh CBAM. `vi-mo`
+- **[ĐÃ VIẾT - Mạch 1206]** **Cơ chế DPPA và cơn khát điện sạch RE100 của dòng vốn FDI**: Lối thoát cho năng lượng tái tạo hay nút thắt mới trên lưới điện? (Nghị định 80/2024/NĐ-CP, 2 mô hình đường dây riêng vs lưới quốc gia, hợp đồng chênh lệch CfD phái sinh, bài toán điện nền 50Hz và chi phí phụ trợ hệ thống). `vi-mo`
 
 
 ## C. Ngân hàng & Tài chính hệ thống
