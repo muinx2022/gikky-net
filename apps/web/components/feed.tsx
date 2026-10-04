@@ -18,6 +18,7 @@ import { ChonKieuXem } from "./chon-kieu-xem";
 import { CuonVoHan } from "./cuon-vo-han";
 import css from "./feed.module.css";
 import { NutVeDauTrang } from "./nut-ve-dau-trang";
+import { ThanhLocDinh } from "./thanh-loc-dinh";
 import { TheMach } from "./the-mach";
 
 /** Feed ba tab — PLAN 5.9 (Mới · Đang diễn ra) + plan con 1d §2.5.4 ("Nhiều điểm nhất").
@@ -137,8 +138,8 @@ export function Feed({
 
         {cursorHong && <BaoCursorHong />}
 
-        {/* Thanh dính chứa tab feed và nút đổi kiểu xem, dính ngay dưới header khi cuộn */}
-        <div className={css.thanh_dinh}>
+        {/* Thanh lọc feed bám dính đồng bộ với thanh điều hướng chính */}
+        <ThanhLocDinh>
           <div className={css.hang_dieu_khien}>
             <nav className={css.tab} data-testid="tab-feed" aria-label="Sắp xếp feed">
               {TAB_FEED.map((t) => {
@@ -182,7 +183,7 @@ export function Feed({
               ))}
             </nav>
           )}
-        </div>
+        </ThanhLocDinh>
 
         {truongPhai && (
           <div className={css.bo_loc_truong_phai} data-testid="bo-loc-truong-phai">

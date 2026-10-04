@@ -30,17 +30,30 @@
   color: var(--ink-2);
 }
 
-/* Thanh dính chứa tab feed và nút đổi kiểu xem, dính ngay dưới header khi cuộn */
+/* Khung giữ chỗ trong luồng tài liệu để không giật nội dung khi thanh lọc chuyển sang fixed */
+.khung_thanh_dinh {
+  position: relative;
+  width: 100%;
+}
+
+/* Thanh dính chứa tab feed và nút đổi kiểu xem:
+ * - Desktop (>960px): position: sticky; top: var(--cao-chrome) dính ngay dưới header.
+ * - Mobile & Tablet (≤960px):
+ *   + Khi chưa cuộn qua: nằm tự nhiên trong luồng feed.
+ *   + Khi cuộn xuống: trượt ẩn đồng bộ cùng thanh điều hướng chính.
+ *   + Khi cuộn lên: trượt xuống bám dính ở top: 46px ngay dưới thanh điều hướng chính.
+ */
 .thanh_dinh {
   position: sticky;
   top: var(--cao-chrome);
   z-index: 30;
-  background: color-mix(in srgb, var(--bg) 95%, transparent);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: color-mix(in srgb, var(--surface) 96%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   padding: 8px 0;
   margin-bottom: 12px;
-  border-bottom: 1px solid color-mix(in srgb, var(--line) 50%, transparent);
+  border-bottom: 1px solid var(--line);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
 }
 
 /* Hàng điều khiển: tab trái, nút đổi kiểu xem phải. */
@@ -174,6 +187,52 @@
   scrollbar-gutter: stable;
 }
 
+@media (min-width: 961px) {
+  .thanh_dinh {
+    position: sticky !important;
+    top: var(--cao-chrome) !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+}
+
+@media (max-width: 960px) {
+  .khung_thanh_dinh {
+    margin-bottom: 12px;
+  }
+
+  .thanh_dinh {
+    position: relative;
+    top: 0;
+    margin-bottom: 0;
+    z-index: 45;
+  }
+
+  /* Khi đã cuộn qua vị trí tự nhiên của thanh lọc */
+  .thanh_dinh.da_qua_dau {
+    position: fixed;
+    top: 46px;
+    left: 0;
+    right: 0;
+    width: 100%;
+    margin-inline: 0;
+    padding-inline: 0;
+  }
+
+  /* Khi cuộn xuống: trượt ẩn đồng bộ cùng thanh điều hướng chính */
+  :global(html[data-thanh-cuon="cuon_xuong"]) .thanh_dinh.da_qua_dau {
+    transform: translateY(calc(-100% - 46px));
+    pointer-events: none;
+    box-shadow: none;
+  }
+
+  /* Khi cuộn lên: trượt xuống bám dính ở top: 46px ngay dưới thanh điều hướng chính */
+  :global(html[data-thanh-cuon="cuon_len"]) .thanh_dinh.da_qua_dau {
+    transform: translateY(0);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+}
+
 @media (max-width: 960px) and (min-width: 641px) {
   /* Tablet & Foldable (641px - 960px): dùng chung thanh điều hướng trên giống mobile, padding 2 bên cân đối */
   .khung {
@@ -181,6 +240,13 @@
     max-width: 760px;
     margin: 0 auto;
     padding: 18px 20px 34px;
+  }
+
+  .thanh_dinh.da_qua_dau .hang_dieu_khien,
+  .thanh_dinh.da_qua_dau .khoang {
+    max-width: 760px;
+    margin: 0 auto;
+    padding-inline: 20px;
   }
 
   .rail {
@@ -195,8 +261,13 @@
     padding: 14px 12px 34px;
   }
 
-  .thanh_dinh {
+  .thanh_dinh:not(.da_qua_dau) {
     margin-inline: -12px;
+    padding-inline: 12px;
+  }
+
+  .thanh_dinh.da_qua_dau .hang_dieu_khien,
+  .thanh_dinh.da_qua_dau .khoang {
     padding-inline: 12px;
   }
 

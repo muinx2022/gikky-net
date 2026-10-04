@@ -229,12 +229,15 @@ export function ThanhDieuHuongDuoi() {
     setMoSheetThongBao(false);
     setMoSheetCaNhan(false);
     setTrangThai("dau_trang");
+    document.documentElement.dataset.thanhCuon = "dau_trang";
   }, [pathname]);
 
   const coSheetMo = moSheetSub || moSheetThongBao || moSheetCaNhan;
 
   // Xử lý tự động ẩn khi vuốt xuống, hiện sticky khi vuốt lên (giống cafef.vn)
   useEffect(() => {
+    document.documentElement.dataset.thanhCuon = trangThai;
+
     if (coSheetMo) {
       setTrangThai((cu) => (cu === "cuon_xuong" ? "cuon_len" : cu));
       return;
@@ -251,15 +254,19 @@ export function ThanhDieuHuongDuoi() {
         if (window.innerWidth <= 960) {
           if (currentY <= 60) {
             setTrangThai("dau_trang");
+            document.documentElement.dataset.thanhCuon = "dau_trang";
           } else if (diff > 8) {
             // Vuốt xuống -> tự động ẩn
             setTrangThai("cuon_xuong");
+            document.documentElement.dataset.thanhCuon = "cuon_xuong";
           } else if (diff < -8) {
             // Vuốt lên -> hiện sticky trên đầu page
             setTrangThai("cuon_len");
+            document.documentElement.dataset.thanhCuon = "cuon_len";
           }
         } else {
           setTrangThai("dau_trang");
+          document.documentElement.dataset.thanhCuon = "dau_trang";
         }
 
         lastScrollY.current = currentY;
@@ -269,7 +276,7 @@ export function ThanhDieuHuongDuoi() {
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [coSheetMo]);
+  }, [coSheetMo, trangThai]);
 
   // Nạp danh sách sub một lần
   useEffect(() => {

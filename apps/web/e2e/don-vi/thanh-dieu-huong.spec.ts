@@ -8,6 +8,10 @@ const CHROME_CSS = resolve(GOC, "components", "chrome.module.css");
 const THANH_TSX = resolve(GOC, "components", "thanh-dieu-huong-duoi.tsx");
 const THANH_CSS = resolve(GOC, "components", "thanh-dieu-huong-duoi.module.css");
 
+const FEED_TSX = resolve(GOC, "components", "feed.tsx");
+const FEED_CSS = resolve(GOC, "components", "feed.module.css");
+const THANH_LOC_TSX = resolve(GOC, "components", "thanh-loc-dinh.tsx");
+
 function boChuThichCss(css: string): string {
   return css.replace(/\/\*[\s\S]*?\*\//g, " ");
 }
@@ -31,6 +35,7 @@ test.describe("thanh dieu huong tren mobile va tablet (giong cafef)", () => {
     expect(tsx).toContain('trangThai === "dau_trang"');
     expect(tsx).toContain('setTrangThai("cuon_xuong")');
     expect(tsx).toContain('setTrangThai("cuon_len")');
+    expect(tsx).toContain('document.documentElement.dataset.thanhCuon');
   });
 
   test("thanh-dieu-huong-duoi.module.css: co khung giu cho va cac lop trang thai", () => {
@@ -39,5 +44,20 @@ test.describe("thanh dieu huong tren mobile va tablet (giong cafef)", () => {
     expect(css).toMatch(/\.cuon_xuong\s*\{[\s\S]*?transform:\s*translateY\(-100%\)/);
     expect(css).toMatch(/\.cuon_len\s*\{[\s\S]*?position:\s*fixed[\s\S]*?top:\s*0/);
     expect(css).toMatch(/@media\s*\(min-width:\s*961px\)[\s\S]*?\.thanh[\s\S]*?display:\s*none\s*!important/);
+  });
+
+  test("feed.tsx & thanh-loc-dinh.tsx: dong bo an/hien voi thanh dieu huong", () => {
+    const feed = readFileSync(FEED_TSX, "utf8");
+    expect(feed).toContain('import { ThanhLocDinh } from "./thanh-loc-dinh"');
+    expect(feed).toContain("<ThanhLocDinh>");
+
+    const thanhLoc = readFileSync(THANH_LOC_TSX, "utf8");
+    expect(thanhLoc).toContain('"use client"');
+    expect(thanhLoc).toContain("getBoundingClientRect");
+    expect(thanhLoc).toContain("daQuaDau");
+
+    const feedCss = boChuThichCss(readFileSync(FEED_CSS, "utf8"));
+    expect(feedCss).toMatch(/\.thanh_dinh\.da_qua_dau\s*\{[\s\S]*?position:\s*fixed[\s\S]*?top:\s*46px/);
+    expect(feedCss).toMatch(/html\[data-thanh-cuon="cuon_len"\][\s\S]*?\.thanh_dinh\.da_qua_dau[\s\S]*?transform:\s*translateY\(0\)/);
   });
 });
