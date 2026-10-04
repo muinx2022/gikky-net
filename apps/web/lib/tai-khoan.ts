@@ -190,7 +190,12 @@ export function luuCachePhien(du_lieu: unknown): void {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(KHOA_PHIEN, JSON.stringify(du_lieu));
-    document.documentElement.setAttribute("data-da-dang-nhap", "1");
+    const toi = du_lieu as { dang_nhap?: boolean } | null;
+    if (toi?.dang_nhap) {
+      document.documentElement.setAttribute("data-da-dang-nhap", "1");
+    } else {
+      document.documentElement.removeAttribute("data-da-dang-nhap");
+    }
   } catch {}
 }
 

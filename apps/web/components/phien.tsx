@@ -66,7 +66,9 @@ function docCacheBanDau(): ToiOut | undefined {
     const luu = window.localStorage.getItem(KHOA_PHIEN);
     if (luu) {
       const phien = JSON.parse(luu) as ToiOut;
-      if (phien?.dang_nhap) return phien;
+      if (phien && typeof phien === "object" && typeof phien.dang_nhap === "boolean") {
+        return phien;
+      }
     }
   } catch {}
   return undefined;
@@ -86,7 +88,7 @@ export function PhienProvider({ children }: { children: React.ReactNode }) {
     // SWR mặc định retry khi ném, nên tắt để không hỏi vòng vòng khi mạng chập chờn.
     shouldRetryOnError: false,
     onSuccess(data) {
-      if (data?.dang_nhap) {
+      if (data) {
         luuCachePhien(data);
       } else {
         xoaCachePhien();
