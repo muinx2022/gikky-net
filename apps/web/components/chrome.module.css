@@ -132,6 +132,13 @@
   }
 }
 
+@media (max-width: 960px) {
+  /* Trên mobile & tablet: header cuộn trôi tự nhiên cùng trang, nhường chỗ cho thanh điều hướng sticky khi vuốt lên */
+  .chrome {
+    position: relative;
+  }
+}
+
 @media (max-width: 420px) {
   /* Lưới không xuống dòng được. Xem mốc thứ ba trong chú thích `.trong`. */
   .trong {

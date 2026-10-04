@@ -210,17 +210,66 @@ export function ThanhDieuHuongDuoi() {
   const [moSheetThongBao, setMoSheetThongBao] = useState(false);
   const [moSheetCaNhan, setMoSheetCaNhan] = useState(false);
 
+  // Trạng thái hiển thị thanh điều hướng:
+  // "dau_trang": ở đầu trang, nằm tự nhiên dưới header
+  // "cuon_xuong": khi vuốt xuống thì tự động ẩn đi
+  // "cuon_len": khi vuốt lên thì hiển thị sticky trên đầu page (giống cafef.vn)
+  const [trangThai, setTrangThai] = useState<"dau_trang" | "cuon_len" | "cuon_xuong">("dau_trang");
+  const lastScrollY = useRef(0);
+  const ticking = useRef(false);
+
   // Dữ liệu sub và thông báo
   const [cacSub, setCacSub] = useState<readonly SubChiTietOut[]>([]);
   const [soChuaDoc, setSoChuaDoc] = useState(0);
   const [thongBaos, setThongBaos] = useState<readonly ThongBaoOut[]>([]);
 
-  // Đóng mọi sheet khi chuyển route
+  // Đóng mọi sheet và đưa thanh về đầu trang khi chuyển route
   useEffect(() => {
     setMoSheetSub(false);
     setMoSheetThongBao(false);
     setMoSheetCaNhan(false);
+    setTrangThai("dau_trang");
   }, [pathname]);
+
+  const coSheetMo = moSheetSub || moSheetThongBao || moSheetCaNhan;
+
+  // Xử lý tự động ẩn khi vuốt xuống, hiện sticky khi vuốt lên (giống cafef.vn)
+  useEffect(() => {
+    if (coSheetMo) {
+      setTrangThai((cu) => (cu === "cuon_xuong" ? "cuon_len" : cu));
+      return;
+    }
+
+    const handleScroll = () => {
+      if (ticking.current) return;
+      ticking.current = true;
+
+      window.requestAnimationFrame(() => {
+        const currentY = Math.max(0, window.scrollY);
+        const diff = currentY - lastScrollY.current;
+
+        if (window.innerWidth <= 960) {
+          if (currentY <= 60) {
+            setTrangThai("dau_trang");
+          } else if (diff > 8) {
+            // Vuốt xuống -> tự động ẩn
+            setTrangThai("cuon_xuong");
+          } else if (diff < -8) {
+            // Vuốt lên -> hiện sticky trên đầu page
+            setTrangThai("cuon_len");
+          }
+        } else {
+          setTrangThai("dau_trang");
+        }
+
+        lastScrollY.current = currentY;
+        ticking.current = false;
+      });
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [coSheetMo]);
 
   // Nạp danh sách sub một lần
   useEffect(() => {
@@ -455,7 +504,6 @@ export function ThanhDieuHuongDuoi() {
   };
 
   const laTrangChu = pathname === "/" || pathname === "";
-  const coSheetMo = moSheetSub || moSheetThongBao || moSheetCaNhan;
 
   return (
     <>
@@ -672,77 +720,88 @@ export function ThanhDieuHuongDuoi() {
         </BottomDrawer>
       )}
 
-      {/* Thanh Bottom Navigation Bar cố định */}
-      <nav className={css.thanh} aria-label="Điều hướng chính di động">
-        {/* Tab 1: Khám phá */}
-        <Link
-          href="/"
-          className={`${css.nut_tab} ${laTrangChu && !coSheetMo ? css.nut_tab_kich_hoat : ""}`}
-          onClick={dongHetSheet}
-          prefetch={false}
+      {/* Thanh điều hướng chính di động & tablet (≤960px) */}
+      <div className={css.khung_giu_cho}>
+        <nav
+          className={`${css.thanh} ${
+            trangThai === "dau_trang"
+              ? css.dau_trang
+              : trangThai === "cuon_xuong"
+              ? css.cuon_xuong
+              : css.cuon_len
+          }`}
+          aria-label="Điều hướng chính di động"
         >
-          <div className={css.icon_bao}>
-            <Compass size={20} strokeWidth={laTrangChu && !coSheetMo ? 2.2 : 1.8} />
-          </div>
-          <span>Khám phá</span>
-        </Link>
+          {/* Tab 1: Khám phá */}
+          <Link
+            href="/"
+            className={`${css.nut_tab} ${laTrangChu && !coSheetMo ? css.nut_tab_kich_hoat : ""}`}
+            onClick={dongHetSheet}
+            prefetch={false}
+          >
+            <div className={css.icon_bao}>
+              <Compass size={19} strokeWidth={laTrangChu && !coSheetMo ? 2.2 : 1.8} />
+            </div>
+            <span>Khám phá</span>
+          </Link>
 
-        {/* Tab 2: Chuyên mục */}
-        <button
-          type="button"
-          className={`${css.nut_tab} ${moSheetSub ? css.nut_tab_kich_hoat : ""}`}
-          onClick={handleChuyenMuc}
-          aria-expanded={moSheetSub}
-        >
-          <div className={css.icon_bao}>
-            <Tag size={20} strokeWidth={moSheetSub ? 2.2 : 1.8} />
-          </div>
-          <span>Chuyên mục</span>
-        </button>
+          {/* Tab 2: Chuyên mục */}
+          <button
+            type="button"
+            className={`${css.nut_tab} ${moSheetSub ? css.nut_tab_kich_hoat : ""}`}
+            onClick={handleChuyenMuc}
+            aria-expanded={moSheetSub}
+          >
+            <div className={css.icon_bao}>
+              <Tag size={19} strokeWidth={moSheetSub ? 2.2 : 1.8} />
+            </div>
+            <span>Chuyên mục</span>
+          </button>
 
-        {/* Tab 3: Đăng bài */}
-        <button
-          type="button"
-          className={css.nut_tab}
-          onClick={handleDangBai}
-          aria-label="Đăng mạch mới"
-        >
-          <div className={css.nut_dang_chinh}>
-            <Plus size={22} strokeWidth={2.5} />
-          </div>
-        </button>
+          {/* Tab 3: Đăng bài */}
+          <button
+            type="button"
+            className={css.nut_tab}
+            onClick={handleDangBai}
+            aria-label="Đăng mạch mới"
+          >
+            <div className={css.nut_dang_chinh}>
+              <Plus size={20} strokeWidth={2.5} />
+            </div>
+          </button>
 
-        {/* Tab 4: Thông báo */}
-        <button
-          type="button"
-          className={`${css.nut_tab} ${moSheetThongBao ? css.nut_tab_kich_hoat : ""}`}
-          onClick={handleThongBao}
-          aria-expanded={moSheetThongBao}
-        >
-          <div className={css.icon_bao}>
-            <Bell size={20} strokeWidth={moSheetThongBao ? 2.2 : 1.8} />
-            {soChuaDoc > 0 && <span className={css.cham_do}>{soChuaDoc}</span>}
-          </div>
-          <span>Thông báo</span>
-        </button>
+          {/* Tab 4: Thông báo */}
+          <button
+            type="button"
+            className={`${css.nut_tab} ${moSheetThongBao ? css.nut_tab_kich_hoat : ""}`}
+            onClick={handleThongBao}
+            aria-expanded={moSheetThongBao}
+          >
+            <div className={css.icon_bao}>
+              <Bell size={19} strokeWidth={moSheetThongBao ? 2.2 : 1.8} />
+              {soChuaDoc > 0 && <span className={css.cham_do}>{soChuaDoc}</span>}
+            </div>
+            <span>Thông báo</span>
+          </button>
 
-        {/* Tab 5: Cá nhân */}
-        <button
-          type="button"
-          className={`${css.nut_tab} ${moSheetCaNhan ? css.nut_tab_kich_hoat : ""}`}
-          onClick={handleCaNhan}
-          aria-expanded={moSheetCaNhan}
-        >
-          <div className={css.icon_bao}>
-            {dangNhap && toi ? (
-              <Avatar ten={toi.username ?? ""} hienThi={toi.display_name} url={toi.avatar_url} co={20} />
-            ) : (
-              <UserRound size={20} strokeWidth={moSheetCaNhan ? 2.2 : 1.8} />
-            )}
-          </div>
-          <span>{dangNhap ? "Cá nhân" : "Đăng nhập"}</span>
-        </button>
-      </nav>
+          {/* Tab 5: Cá nhân */}
+          <button
+            type="button"
+            className={`${css.nut_tab} ${moSheetCaNhan ? css.nut_tab_kich_hoat : ""}`}
+            onClick={handleCaNhan}
+            aria-expanded={moSheetCaNhan}
+          >
+            <div className={css.icon_bao}>
+              {dangNhap && toi ? (
+                <Avatar ten={toi.username ?? ""} hienThi={toi.display_name} url={toi.avatar_url} co={19} />
+              ) : (
+                <UserRound size={19} strokeWidth={moSheetCaNhan ? 2.2 : 1.8} />
+              )}
+            </div>
+            <span>{dangNhap ? "Cá nhân" : "Đăng nhập"}</span>
+          </button>
+        </nav>
+      </div>
     </>
   );
 }

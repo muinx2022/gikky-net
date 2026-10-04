@@ -165,8 +165,8 @@ export default function RootLayout({
             <ModalDangNhapProvider>
               <LightboxProvider>
                 <Chrome />
-                {children}
                 <ThanhDieuHuongDuoi />
+                {children}
               </LightboxProvider>
             </ModalDangNhapProvider>
           </ToastProvider>
