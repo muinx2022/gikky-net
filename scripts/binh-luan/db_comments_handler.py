@@ -19,9 +19,11 @@ import django
 django.setup()
 
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from django.utils.text import slugify
 from core.models import Comment, Mach
-from core.ghi import tao_binh_luan, DINH_DANG_MARKDOWN
+from core.ghi import tao_binh_luan, tu_upvote, DINH_DANG_MARKDOWN
+from core.thong_bao import bao_reply, bao_binh_luan
 
 User = get_user_model()
 GIKKY_USERNAMES = ["gikky-team-member", "gikky-team-news"]
@@ -108,14 +110,18 @@ def phan_hoi_binh_luan(comment_id: int, noi_dung: str, dinh_dang: str = DINH_DAN
             "message": f"Bình luận #{comment_id} đã được trả lời trước đó bằng reply #{da_reply.id}.",
         }
 
-    # Tạo bình luận phản hồi qua hàm chuẩn domain của core.ghi
-    reply = tao_binh_luan(
-        mach=parent_comment.mach,
-        author=gikky_member,
-        body=noi_dung.strip(),
-        parent=parent_comment,
-        dinh_dang=dinh_dang,
-    )
+    # Tạo bình luận phản hồi qua hàm chuẩn domain của core.ghi trong transaction
+    with transaction.atomic():
+        reply = tao_binh_luan(
+            mach=parent_comment.mach,
+            author=gikky_member,
+            body=noi_dung.strip(),
+            parent=parent_comment,
+            dinh_dang=dinh_dang,
+        )
+        tu_upvote(target=reply)
+        bao_reply(reply)
+        bao_binh_luan(reply)
 
     slug = slugify(parent_comment.mach.title, allow_unicode=True) or "bai-viet"
     mach_url = f"https://gikky.net/m/{slug}-{parent_comment.mach.id}"
