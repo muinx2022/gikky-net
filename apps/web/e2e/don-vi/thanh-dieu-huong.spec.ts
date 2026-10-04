@@ -57,6 +57,7 @@ test.describe("thanh dieu huong tren mobile va tablet (giong cafef)", () => {
     expect(thanhLoc).toContain("daQuaDau");
 
     const feedCss = boChuThichCss(readFileSync(FEED_CSS, "utf8"));
+    expect(feedCss).toMatch(/@media\s*\(max-width:\s*640px\)[\s\S]*?\.khung_thanh_dinh\s*\{[\s\S]*?display:\s*none\s*!important/);
     expect(feedCss).toMatch(/\.thanh_dinh\.da_qua_dau\s*\{[\s\S]*?position:\s*fixed[\s\S]*?top:\s*46px/);
     expect(feedCss).toMatch(/html\[data-thanh-cuon="cuon_len"\][\s\S]*?\.thanh_dinh\.da_qua_dau[\s\S]*?transform:\s*translateY\(0\)/);
   });
