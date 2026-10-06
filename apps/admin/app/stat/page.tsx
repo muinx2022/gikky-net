@@ -8,14 +8,19 @@ import { NhanTrangThai, The, TieuDeTrang } from "../../components/ui";
 const KHOA_LUU_URL = "gikky_looker_studio_url";
 const URL_MAC_DINH =
   process.env.NEXT_PUBLIC_LOOKER_STUDIO_URL ||
-  "https://lookerstudio.google.com/embed/reporting/b20e1326-1fb3-4d1a-bce8-2fba089856e5/page/KqcAG";
+  "https://datastudio.google.com/embed/reporting/b20e1326-1fb3-4d1a-bce8-2fba089856e5/page/KqcAG";
 
 function chuanHoaUrl(url: string): string {
   let s = url.trim();
+  if (s.includes("<iframe") && s.includes("src=")) {
+    const match = s.match(/src=["']([^"']+)["']/);
+    if (match?.[1]) {
+      s = match[1];
+    }
+  }
   if (s.includes("/reporting/") && !s.includes("/embed/")) {
     s = s.replace("/reporting/", "/embed/reporting/");
   }
-  s = s.replace("datastudio.google.com", "lookerstudio.google.com");
   return s;
 }
 
