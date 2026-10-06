@@ -6,6 +6,18 @@ import { Icon } from "../../components/icon";
 import { NhanTrangThai, The, TieuDeTrang } from "../../components/ui";
 
 const KHOA_LUU_URL = "gikky_looker_studio_url";
+const URL_MAC_DINH =
+  process.env.NEXT_PUBLIC_LOOKER_STUDIO_URL ||
+  "https://lookerstudio.google.com/embed/reporting/b20e1326-1fb3-4d1a-bce8-2fba089856e5/page/KqcAG";
+
+function chuanHoaUrl(url: string): string {
+  let s = url.trim();
+  if (s.includes("/reporting/") && !s.includes("/embed/")) {
+    s = s.replace("/reporting/", "/embed/reporting/");
+  }
+  s = s.replace("datastudio.google.com", "lookerstudio.google.com");
+  return s;
+}
 
 export default function TrangStat() {
   const [urlHienTai, datUrlHienTai] = useState<string>("");
@@ -16,10 +28,10 @@ export default function TrangStat() {
   const [daSanSang, datDaSanSang] = useState<boolean>(false);
 
   useEffect(() => {
-    // Đọc URL từ biến môi trường hoặc localStorage
-    const tuEnv = process.env.NEXT_PUBLIC_LOOKER_STUDIO_URL ?? "";
+    // Đọc URL từ biến môi trường, báo cáo mặc định hoặc localStorage
+    const tuEnv = URL_MAC_DINH;
     const tuStorage = typeof window !== "undefined" ? localStorage.getItem(KHOA_LUU_URL) : null;
-    const urlChon = tuStorage && tuStorage.trim() !== "" ? tuStorage.trim() : tuEnv.trim();
+    const urlChon = tuStorage && tuStorage.trim() !== "" ? chuanHoaUrl(tuStorage) : chuanHoaUrl(tuEnv);
     datUrlHienTai(urlChon);
     datUrlNhap(urlChon);
     datDaSanSang(true);
@@ -27,7 +39,7 @@ export default function TrangStat() {
 
   function xuLyLuu(e: React.FormEvent) {
     e.preventDefault();
-    const urlSach = urlNhap.trim();
+    const urlSach = chuanHoaUrl(urlNhap);
     if (typeof window !== "undefined") {
       if (urlSach === "") {
         localStorage.removeItem(KHOA_LUU_URL);
@@ -36,6 +48,7 @@ export default function TrangStat() {
       }
     }
     datUrlHienTai(urlSach);
+    datUrlNhap(urlSach);
     datDangChinhSua(false);
     datKhoaNap((k) => k + 1);
   }
