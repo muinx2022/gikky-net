@@ -271,7 +271,6 @@ export function CotChong({
             </div>
 
             <div className="border-t border-vien pt-1 text-[11px] leading-relaxed text-muc-mo">
-              <span>(</span>
               {dangHover.cacPhan.map((p, idx) => (
                 <span key={p.ten} className="inline-flex items-center gap-1">
                   <span
@@ -287,7 +286,6 @@ export function CotChong({
                   )}
                 </span>
               ))}
-              <span>)</span>
             </div>
           </div>
         </div>
