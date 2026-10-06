@@ -1,6 +1,9 @@
-import Link from "next/link";
+"use client";
 
-/** Biểu đồ vẽ tay bằng SVG — cột nhóm · vành khuyên · thanh tiến độ.
+import Link from "next/link";
+import { useState } from "react";
+
+/** Biểu đồ vẽ tay bằng SVG — cột nhóm · cột xếp chồng · vành khuyên · thanh tiến độ.
  *
  * ## Vì sao KHÔNG dùng thư viện biểu đồ
  *
@@ -38,6 +41,362 @@ const MAU_CHUOI = [
   "var(--color-chuoi-3)",
   "var(--color-chuoi-4)",
 ] as const;
+
+export type TrangThaiHoverCot =
+  | {
+      loai: "tong";
+      ngayIndex: number;
+      nhan: string;
+      tong: number;
+      cacPhan: { ten: string; mau: 1 | 2 | 3 | 4; giaTri: number }[];
+      x: number;
+      y: number;
+    }
+  | {
+      loai: "phan";
+      ngayIndex: number;
+      chuoiIndex: number;
+      nhan: string;
+      ten: string;
+      mau: 1 | 2 | 3 | 4;
+      giaTri: number;
+      tong: number;
+      x: number;
+      y: number;
+    };
+
+/** Biểu đồ cột xếp chồng (1 cột nhiều màu theo từng chuỗi).
+ *
+ * Di chuột vào phần nào: hiển thị số của phần đó.
+ * Di chuột lên phía trên của cột chính: hiển thị tổng của ngày hôm đó.
+ */
+export function CotChong({
+  nhan,
+  chuoi,
+  cao = 240,
+}: {
+  nhan: string[];
+  chuoi: ChuoiSo[];
+  cao?: number;
+}) {
+  const [dangHover, datDangHover] = useState<TrangThaiHoverCot | null>(null);
+
+  const rong = 720;
+  const le_trai = 34;
+  const le_duoi = 22;
+  const le_tren = 18;
+  const vung_rong = rong - le_trai;
+  const vung_cao = cao - le_duoi - le_tren;
+
+  const so_o = nhan.length;
+  const danhSachTong = nhan.map((_, i) =>
+    chuoi.reduce((s, c) => s + (c.gia_tri[i] ?? 0), 0),
+  );
+
+  const dinh = Math.max(1, ...danhSachTong);
+  const tran = buocDep(dinh);
+  const rong_o = vung_rong / Math.max(1, so_o);
+  const rong_cot =
+    so_o <= 10
+      ? Math.min(28, Math.max(4, rong_o * 0.45))
+      : so_o <= 35
+      ? Math.min(20, Math.max(4, rong_o - 6))
+      : Math.max(2, rong_o - 2);
+
+  const vach = [0, 0.5, 1].map((p) => Math.round(tran * p));
+  const day_y = le_tren + vung_cao;
+
+  return (
+    <div className="relative" onMouseLeave={() => datDangHover(null)}>
+      <svg
+        viewBox={`0 0 ${rong} ${cao}`}
+        className="h-auto w-full select-none"
+        role="img"
+        aria-label={`Biểu đồ cột xếp chồng: ${chuoi.map((c) => c.ten).join(", ")}`}
+      >
+        {vach.map((v) => {
+          const y = le_tren + vung_cao - (v / tran) * vung_cao;
+          return (
+            <g key={v}>
+              <line
+                x1={le_trai}
+                x2={rong}
+                y1={y}
+                y2={y}
+                stroke="var(--color-vien)"
+                strokeWidth={1}
+              />
+              <text
+                x={le_trai - 6}
+                y={y + 3}
+                textAnchor="end"
+                fontSize={10}
+                fill="var(--color-muc-mo)"
+              >
+                {v}
+              </text>
+            </g>
+          );
+        })}
+
+        {nhan.map((n, i) => {
+          const cot_x = le_trai + i * rong_o + (rong_o - rong_cot) / 2;
+          const x_tam = cot_x + rong_cot / 2;
+          const tong_ngay = danhSachTong[i];
+          const cacPhan = chuoi.map((c) => ({
+            ten: c.ten,
+            mau: c.mau,
+            giaTri: c.gia_tri[i] ?? 0,
+          }));
+
+          let h_tich_luy = 0;
+          const segments = chuoi.map((c, j) => {
+            const gt = c.gia_tri[i] ?? 0;
+            const h = (gt / tran) * vung_cao;
+            const y = day_y - h_tich_luy - h;
+            h_tich_luy += h;
+            return {
+              chuoi: c,
+              j,
+              gt,
+              h,
+              y,
+            };
+          });
+          const cot_y_top = day_y - h_tich_luy;
+          const rong_hover = Math.max(rong_cot + 6, Math.min(rong_o, 26));
+          const hover_x = cot_x - (rong_hover - rong_cot) / 2;
+          const laCotDangChon = dangHover?.ngayIndex === i;
+
+          return (
+            <g key={n}>
+              {/* Highlight toàn cột khi đang hover vào ngày này */}
+              {laCotDangChon && (
+                <rect
+                  x={cot_x - 3}
+                  y={le_tren}
+                  width={rong_cot + 6}
+                  height={vung_cao}
+                  fill="var(--color-nen-mo)"
+                  opacity={0.5}
+                  rx={2}
+                  pointerEvents="none"
+                />
+              )}
+
+              {/* Vùng phía trên cột chính: di chuột vào sẽ hiển thị tổng ngày */}
+              <rect
+                x={hover_x}
+                y={0}
+                width={rong_hover}
+                height={Math.max(16, cot_y_top)}
+                fill="transparent"
+                className="cursor-pointer"
+                data-cot-tong={n}
+                data-tong={tong_ngay}
+                onMouseEnter={() =>
+                  datDangHover({
+                    loai: "tong",
+                    ngayIndex: i,
+                    nhan: n,
+                    tong: tong_ngay,
+                    cacPhan,
+                    x: x_tam,
+                    y: cot_y_top,
+                  })
+                }
+                onMouseMove={() =>
+                  datDangHover({
+                    loai: "tong",
+                    ngayIndex: i,
+                    nhan: n,
+                    tong: tong_ngay,
+                    cacPhan,
+                    x: x_tam,
+                    y: cot_y_top,
+                  })
+                }
+              >
+                <title>{`${n} · Tổng: ${tong_ngay}`}</title>
+              </rect>
+
+              {/* Các phần xếp chồng (mỗi phần 1 màu) */}
+              {segments.map((seg) => {
+                const moPhan =
+                  laCotDangChon &&
+                  dangHover.loai === "phan" &&
+                  dangHover.chuoiIndex !== seg.j;
+
+                return (
+                  <rect
+                    key={seg.chuoi.ten}
+                    x={cot_x}
+                    y={seg.y}
+                    width={rong_cot}
+                    height={Math.max(seg.gt > 0 ? 1.5 : 0, seg.h)}
+                    rx={1}
+                    fill={MAU_CHUOI[seg.chuoi.mau - 1]}
+                    opacity={moPhan ? 0.35 : 1}
+                    className="cursor-pointer transition-opacity duration-75"
+                    data-chuoi={seg.chuoi.ten}
+                    data-nhan={n}
+                    data-gia-tri={seg.gt}
+                    onMouseEnter={() =>
+                      datDangHover({
+                        loai: "phan",
+                        ngayIndex: i,
+                        chuoiIndex: seg.j,
+                        nhan: n,
+                        ten: seg.chuoi.ten,
+                        mau: seg.chuoi.mau,
+                        giaTri: seg.gt,
+                        tong: tong_ngay,
+                        x: x_tam,
+                        y: seg.y,
+                      })
+                    }
+                    onMouseMove={() =>
+                      datDangHover({
+                        loai: "phan",
+                        ngayIndex: i,
+                        chuoiIndex: seg.j,
+                        nhan: n,
+                        ten: seg.chuoi.ten,
+                        mau: seg.chuoi.mau,
+                        giaTri: seg.gt,
+                        tong: tong_ngay,
+                        x: x_tam,
+                        y: seg.y,
+                      })
+                    }
+                  >
+                    <title>{`${n} · ${seg.chuoi.ten}: ${seg.gt}`}</title>
+                  </rect>
+                );
+              })}
+
+              {/* Số hiển thị ngay trên đỉnh cột khi hover */}
+              {laCotDangChon && (
+                <text
+                  x={x_tam}
+                  y={Math.max(le_tren - 4, cot_y_top - 4)}
+                  textAnchor="middle"
+                  fontSize={10}
+                  fontWeight={600}
+                  fill={
+                    dangHover.loai === "tong"
+                      ? "var(--color-muc)"
+                      : MAU_CHUOI[dangHover.mau - 1]
+                  }
+                  pointerEvents="none"
+                >
+                  {dangHover.loai === "tong"
+                    ? dangHover.tong.toLocaleString("vi-VN")
+                    : dangHover.giaTri.toLocaleString("vi-VN")}
+                </text>
+              )}
+
+              {/* Nhãn trục X */}
+              {i % Math.ceil(so_o / 8) === 0 && (
+                <text
+                  x={x_tam}
+                  y={cao - 6}
+                  textAnchor="middle"
+                  fontSize={10}
+                  fill={laCotDangChon ? "var(--color-muc)" : "var(--color-muc-mo)"}
+                  fontWeight={laCotDangChon ? 600 : 400}
+                >
+                  {n}
+                </text>
+              )}
+            </g>
+          );
+        })}
+      </svg>
+
+      {/* Tooltip hiển thị giá trị */}
+      {dangHover !== null && (
+        <div
+          className="pointer-events-none absolute z-20 min-w-36 rounded-lg border border-vien bg-nen p-2 text-xs shadow-lg transition-all duration-75"
+          style={{
+            left: `${(dangHover.x / rong) * 100}%`,
+            top: `${(Math.max(le_tren, dangHover.y) / cao) * 100}%`,
+            transform:
+              dangHover.x < 80
+                ? dangHover.y < 50
+                  ? "translate(0%, 12px)"
+                  : "translate(0%, -100%) translateY(-10px)"
+                : dangHover.x > rong - 80
+                ? dangHover.y < 50
+                  ? "translate(-100%, 12px)"
+                  : "translate(-100%, -100%) translateY(-10px)"
+                : dangHover.y < 50
+                ? "translate(-50%, 12px)"
+                : "translate(-50%, -100%) translateY(-10px)",
+          }}
+        >
+          <div className="mb-1 flex items-center justify-between gap-4 border-b border-vien pb-1 font-semibold text-muc">
+            <span>{dangHover.nhan}</span>
+            <span className="text-[11px] font-normal text-muc-mo">
+              {dangHover.loai === "tong" ? "Tổng ngày" : "Chi tiết phần"}
+            </span>
+          </div>
+
+          {dangHover.loai === "tong" ? (
+            <div className="space-y-1">
+              <div className="flex items-center justify-between gap-4 font-bold text-muc">
+                <span>Tổng cộng:</span>
+                <span className="font-mono text-sm">
+                  {dangHover.tong.toLocaleString("vi-VN")}
+                </span>
+              </div>
+              <div className="mt-1 space-y-0.5 border-t border-vien pt-1 text-[11px] text-muc-mo">
+                {dangHover.cacPhan.map((p) => (
+                  <div key={p.ten} className="flex items-center justify-between gap-3">
+                    <span className="flex items-center gap-1.5">
+                      <span
+                        className="size-2 shrink-0 rounded-full"
+                        style={{ backgroundColor: MAU_CHUOI[p.mau - 1] }}
+                      />
+                      <span>{p.ten}</span>
+                    </span>
+                    <span className="font-mono font-medium tabular-nums text-muc">
+                      {p.giaTri.toLocaleString("vi-VN")}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              <div className="flex items-center justify-between gap-4 font-semibold text-muc">
+                <span className="flex items-center gap-1.5">
+                  <span
+                    className="size-2.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: MAU_CHUOI[dangHover.mau - 1] }}
+                  />
+                  <span>{dangHover.ten}:</span>
+                </span>
+                <span className="font-mono text-sm tabular-nums">
+                  {dangHover.giaTri.toLocaleString("vi-VN")}
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-3 border-t border-vien pt-0.5 text-[11px] text-muc-mo">
+                <span>Tổng ngày:</span>
+                <span className="font-mono tabular-nums">
+                  {dangHover.tong.toLocaleString("vi-VN")}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      <ChuThich chuoi={chuoi} />
+      <BangSo nhan={nhan} chuoi={chuoi} />
+    </div>
+  );
+}
 
 /** Biểu đồ cột nhóm.
  *

@@ -9,7 +9,7 @@ import {
 } from "@gikky/api-client/admin";
 import { useCallback, useEffect, useState } from "react";
 
-import { CotNhom } from "../../components/bieu-do";
+import { CotChong } from "../../components/bieu-do";
 import { NganKeo } from "../../components/ngan-keo";
 import { KhungTab } from "../../components/tab";
 import {
@@ -241,11 +241,6 @@ export default function TrangLuotXem() {
     void napOnline();
   }, [napOnline]);
 
-  const homNay = so_lieu?.chuoi_ngay[so_lieu.chuoi_ngay.length - 1];
-  const tongHomNay =
-    so_lieu?.tong.so_hom_nay ??
-    (homNay ? homNay.so_luot_nguoi + homNay.so_luot_bot : 0);
-
   return (
     <>
       <TieuDeTrang
@@ -289,22 +284,17 @@ export default function TrangLuotXem() {
         </div>
       ) : (
         <div className="space-y-5">
-          {/* `2xl:grid-cols-7` (đổi 2026-10-02, từ 6): thêm ô "Hôm nay" (tổng lượt xem trong ngày).
-              Số cột ở đây phải bằng số ô, không phải một con số đẹp sẵn: thêm ô thứ tám thì đọc lại dòng này. */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7">
-            {/* Hai ô đầu là các con số "ngay lúc này" & "hôm nay" — chúng đứng trước những
-                con số tích luỹ theo khoảng, chứ không lẫn vào giữa chúng. Nhãn phụ bắt buộc:
-                đây là hai ô không đọc theo bộ chọn khoảng ở ngay trên. */}
+          {/* Sáu ô số KPI: Online, Tổng lượt xem, Lượt người, Khách, Lượt bot, Tỉ lệ bot. */}
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+            {/* Ô ĐẦU vì nó là con số "ngay lúc này" — nó đứng trước những con số tích
+                luỹ, chứ không lẫn vào giữa chúng. Nhãn phụ bắt buộc: đây là ô DUY NHẤT
+                của hàng này không đọc theo bộ chọn khoảng ở ngay trên, nên không nói ra
+                "5 phút gần nhất" là để mod đọc nó như "khách trong 30 ngày". */}
             <TheSo
               nhan="Online"
               so={so_lieu.tong.so_online}
               phu="5 phút gần nhất · bấm để xem"
               onBam={moOnline}
-            />
-            <TheSo
-              nhan="Hôm nay"
-              so={tongHomNay}
-              phu="tổng lượt xem trong ngày"
             />
             <TheSo nhan="Tổng lượt xem" so={so_lieu.tong.so_luot} />
             <TheSo nhan="Lượt người" so={so_lieu.tong.so_luot_nguoi} />
@@ -321,7 +311,7 @@ export default function TrangLuotXem() {
 
           <The tieu_de="Theo ngày" pham_vi={nhanKhoang(so_lieu.khoang)} className="p-4">
             <div className="mt-3">
-              <CotNhom
+              <CotChong
                 nhan={so_lieu.chuoi_ngay.map((o) => nhanNgay(o.ngay))}
                 chuoi={[
                   {
@@ -333,7 +323,7 @@ export default function TrangLuotXem() {
                     ten: "Khách",
                     mau: 2,
                     // ⚠ `null` = **không đo được**, vẽ 0 — và dòng chú ngay dưới nói ra.
-                    // Vẽ 0 chứ không bỏ ô: `CotNhom` đòi mọi chuỗi cùng độ dài với `nhan`,
+                    // Vẽ 0 chứ không bỏ ô: `CotChong` đòi mọi chuỗi cùng độ dài với `nhan`,
                     // và một biểu đồ âm thầm lệch ngày là đúng thứ hàm ấy từ chối làm.
                     gia_tri: so_lieu.chuoi_ngay.map((o) => o.so_khach ?? 0),
                   },
