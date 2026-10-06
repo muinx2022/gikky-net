@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 
 import { taoSlugNeo, xuLyMucLuc } from "../../lib/muc-luc";
 import { jsonLdMach } from "../../lib/json-ld";
+import { tomTat } from "../../components/trang-mach";
 import type { MachChiTietOut } from "@gikky/api-client";
 
 const WEB = resolve(__dirname, "../..");
@@ -57,58 +58,58 @@ test.describe("SEO On-page & Content Improvements", () => {
     expect(htmlMoi).toContain('<h2 id="1-gioi-thieu-phuong-phap-2">');
   });
 
-  test("3. JSON-LD: bổ sung image, publisher, description và hỗ trợ schema phân loại", () => {
-    const machGia = {
-      id: 999,
-      slug: "phan-tich-vi-mo-2026",
-      title: "Phân tích vĩ mô quý 3/2026: Tác động của chính sách tiền tệ",
-      sub: { slug: "vi-mo", ten: "Kinh tế vĩ mô", mo_ta: "Diễn đàn vĩ mô", so_mach: 10, created_at: "2026-01-01T00:00:00Z" },
-      author: { username: "chuyengia", display_name: "Chuyên Gia Vĩ Mô", avatar_url: null },
-      published_at: "2026-09-14T08:00:00+07:00",
-      last_entry_at: "2026-09-14T09:30:00+07:00",
-      entry_count: 1,
-      comment_count: 5,
-      view_count: 120,
-      locked: false,
-      rieng_tu: false,
-      status: "open",
-      tat_binh_luan: false,
-      mo_lai_den: null,
-      tran_moc_moi_ngay: 5,
-      spine: [],
-      mocs: [
-        {
-          id: 1001,
-          seq: 1,
-          loai: "Phân tích",
-          occurred_at: "2026-09-14T08:00:00+07:00",
-          created_at: "2026-09-14T07:50:00+07:00",
-          body: "<p>Nội dung phân tích chuyên sâu về thị trường tài chính và lãi suất ngân hàng trung ương.</p>",
-          body_dinh_dang: "html",
-          score: 15,
-          so_binh_luan: 5,
-          edit_count: 0,
-          trang_thai: "binh_thuong",
-          author: { username: "chuyengia", display_name: "Chuyên Gia Vĩ Mô", avatar_url: null },
-          figures: null,
-          anhs: [
-            {
-              id: 501,
-              url: "http://localhost:3000/media/anh/bieu-do-lai-suat.png",
-              url_thumb: "http://localhost:3000/media/anh/bieu-do-lai-suat_thumb.png",
-              w: 1200,
-              h: 630,
-              w_thumb: 300,
-              h_thumb: 150,
-              position: 0,
-              exif_taken_at: null,
-            },
-          ],
-        },
-      ],
-    } as unknown as MachChiTietOut;
+  const MACH_GIA = {
+    id: 999,
+    slug: "phan-tich-vi-mo-2026",
+    title: "Phân tích vĩ mô quý 3/2026: Tác động của chính sách tiền tệ",
+    sub: { slug: "vi-mo", ten: "Kinh tế vĩ mô", mo_ta: "Diễn đàn vĩ mô", so_mach: 10, created_at: "2026-01-01T00:00:00Z" },
+    author: { username: "chuyengia", display_name: "Chuyên Gia Vĩ Mô", avatar_url: null },
+    published_at: "2026-09-14T08:00:00+07:00",
+    last_entry_at: "2026-09-14T09:30:00+07:00",
+    entry_count: 1,
+    comment_count: 5,
+    view_count: 120,
+    locked: false,
+    rieng_tu: false,
+    status: "open",
+    tat_binh_luan: false,
+    mo_lai_den: null,
+    tran_moc_moi_ngay: 5,
+    spine: [],
+    mocs: [
+      {
+        id: 1001,
+        seq: 1,
+        loai: "Phân tích",
+        occurred_at: "2026-09-14T08:00:00+07:00",
+        created_at: "2026-09-14T07:50:00+07:00",
+        body: "<p>Nội dung phân tích chuyên sâu về thị trường tài chính và lãi suất ngân hàng trung ương.</p>",
+        body_dinh_dang: "html",
+        score: 15,
+        so_binh_luan: 5,
+        edit_count: 0,
+        trang_thai: "binh_thuong",
+        author: { username: "chuyengia", display_name: "Chuyên Gia Vĩ Mô", avatar_url: null },
+        figures: null,
+        anhs: [
+          {
+            id: 501,
+            url: "http://localhost:3000/media/anh/bieu-do-lai-suat.png",
+            url_thumb: "http://localhost:3000/media/anh/bieu-do-lai-suat_thumb.png",
+            w: 1200,
+            h: 630,
+            w_thumb: 300,
+            h_thumb: 150,
+            position: 0,
+            exif_taken_at: null,
+          },
+        ],
+      },
+    ],
+  } as unknown as MachChiTietOut;
 
-    const ld = jsonLdMach(machGia);
+  test("3. JSON-LD: bổ sung image, publisher, description và hỗ trợ schema phân loại", () => {
+    const ld = jsonLdMach(MACH_GIA);
 
     // Kiểm tra đa type Article + DiscussionForumPosting cho bài phân tích
     expect(ld["@type"]).toEqual(["Article", "DiscussionForumPosting"]);
@@ -125,8 +126,14 @@ test.describe("SEO On-page & Content Improvements", () => {
     expect(pub.name).toBe("gikky.net");
     expect((pub.logo as Record<string, unknown>).url).toContain("/icon.png");
 
-    // Kiểm tra description
+    // Kiểm tra description và các trường Rich Snippets cao cấp
     expect(ld.description).toContain("Nội dung phân tích chuyên sâu");
+    expect(ld.keywords).toContain("Kinh tế vĩ mô");
+    expect(ld.genre).toBe("Phân tích tài chính & đầu tư");
+    expect(typeof ld.wordCount).toBe("number");
+    expect((ld.wordCount as number)).toBeGreaterThan(0);
+    expect(ld.learningResourceType).toBe("Educational Article");
+    expect(ld.about).toBeDefined();
   });
 
   test("4. Image SEO: gallery-moc và noi-dung-the không còn thẻ img có alt rỗng", () => {
@@ -179,5 +186,27 @@ test.describe("SEO On-page & Content Improvements", () => {
     );
     expect(lightboxSrc).toContain("watermark_anh");
     expect(lightboxSrc).toContain("gikky.net");
+  });
+
+  test("7. Meta Description & Internal Links: tomTat loại bỏ tiền tố máy móc và trang-mach có khối BaiVietLienQuan", () => {
+    const moTa = tomTat(MACH_GIA);
+    expect(moTa).not.toMatch(/^\d+\s+mốc\s*·/);
+    expect(moTa).toContain("Nội dung phân tích chuyên sâu");
+    expect(moTa.length).toBeLessThanOrEqual(160);
+
+    const trangMachSrc = readFileSync(
+      resolve(WEB, "components/trang-mach.tsx"),
+      "utf8",
+    );
+    expect(trangMachSrc).toContain("BaiVietLienQuan");
+    expect(trangMachSrc).toContain("<BaiVietLienQuan");
+
+    const baiVietLienQuanSrc = readFileSync(
+      resolve(WEB, "components/bai-viet-lien-quan.tsx"),
+      "utf8",
+    );
+    expect(baiVietLienQuanSrc).toContain("Bài viết liên quan trong s/");
+    expect(baiVietLienQuanSrc).toContain("duongDanMach");
+    expect(baiVietLienQuanSrc).toContain("duongDanSub");
   });
 });

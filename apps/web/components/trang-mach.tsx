@@ -10,6 +10,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { Avatar } from "@/components/avatar";
 import { BaoCursorHong } from "@/components/bao-cursor-hong";
 import { ChanDongSo } from "@/components/chan-dong-so";
+import { BaiVietLienQuan } from "@/components/bai-viet-lien-quan";
 import { DaiGapBung } from "@/components/dai-gap";
 import { JsonLd } from "@/components/json-ld";
 import { KhanDai } from "@/components/khan-dai";
@@ -108,14 +109,22 @@ async function nap(slugId: string, doc: ChinhSachDoc) {
   return { mach, slugTrenUrl: tach.slug };
 }
 
-/** `<meta description>` theo mạch. Ưu tiên `ket_qua` vì đó là câu tóm tắt do chính tác
- * giả viết khi đóng sổ (PLAN 5.1); không có thì lấy đoạn đầu của mốc 1. */
+/** `<meta description>` theo mạch chuẩn SEO thu hút và tối ưu CTR tìm kiếm.
+ * Ưu tiên `ket_qua` (kết luận đóng sổ của tác giả) hoặc đoạn dẫn nhập đắt giá từ mốc 1.
+ * Cắt theo ranh giới từ (word boundary) trong khoảng 150-160 ký tự, loại bỏ tiền tố máy móc.
+ */
 export function tomTat(mach: MachChiTietOut): string {
-  const dau = mach.ket_qua ? `${mach.ket_qua} · ` : "";
-  const than = mach.mocs.find((m) => m.seq === 1)?.body ?? "";
-  const thuan = trichVanBanThuan(than);
-  const gon = thuan.slice(0, 150);
-  return `${dau}${mach.entry_count} mốc · ${gon}${thuan.length > 150 ? "…" : ""}`;
+  const nguon = (mach.ket_qua ? `${mach.ket_qua}. ` : "") +
+    (mach.mocs.find((m) => m.seq === 1)?.body ?? "");
+  const thuan = trichVanBanThuan(nguon).replace(/\s+/g, " ").trim();
+  if (!thuan) {
+    return `${mach.title} — Thảo luận và nhật ký phân tích tại s/${mach.sub.slug} trên gikky.net.`;
+  }
+  if (thuan.length <= 155) return thuan;
+  const cat = thuan.slice(0, 155);
+  const vitriKhoangTrang = cat.lastIndexOf(" ");
+  const chuoiGon = vitriKhoangTrang > 110 ? cat.slice(0, vitriKhoangTrang) : cat;
+  return `${chuoiGon}…`;
 }
 
 /** Metadata dùng chung cho cả hai biến thể route.
@@ -569,6 +578,14 @@ export async function TrangMach({
                 hienComposer={!la_bao}
               />
             )}
+
+            {/* Bài viết liên quan (Internal Links booster) — giúp lan toả PageRank và giữ chân người đọc */}
+            <BaiVietLienQuan
+              machHienTaiId={mach.id}
+              subSlug={mach.sub.slug}
+              subTen={mach.sub.ten}
+              truongPhai={mach.truong_phai}
+            />
           </article>
           </FormBinhLuanProvider>
         </TrangThaiToiProvider>

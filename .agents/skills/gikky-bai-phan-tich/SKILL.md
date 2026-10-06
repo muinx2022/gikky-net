@@ -10,4 +10,6 @@ Quy tắc: Tuyệt đối không hô hào, không khuyến nghị mua/bán, phâ
 Quy tắc nhịp độ (Pacing): Tuyệt đối KHÔNG viết 2 bài mã cổ phiếu liên tiếp. Mã cổ phiếu chỉ là gia vị bổ trợ (~20%); sau khi viết 1 mã, bắt buộc nghỉ ít nhất 3–5 ngày (tập trung vào vĩ mô và phân tích ngành) rồi mới đến mã tiếp theo.
 Kiểm trùng trước khi viết, tạo 1–2 ảnh minh hoạ thực tế sinh động tỷ lệ 16:9, đưa vào mảng `anhs` (base64) và xuất file `scripts/bai-viet/.tam/bai.json` để đăng bài.
 
+**Chiến lược liên kết nội bộ (Internal Links):** Chèn tự nhiên ít nhất 2–3 liên kết nội bộ trong bài (dạng thẻ `<a href="/s/..." title="...">từ khóa</a>` hoặc `/tim-kiem?q=...`) khi đề cập đến các chủ đề liên quan (ví dụ: liên kết tới sub `s/chung-khoan`, `s/kinh-te-vi-mo`, `s/tam-ly-giao-dich` hoặc các bài phân tích cùng ngành) để tối ưu hóa SEO On-page và giữ chân độc giả.
+
 

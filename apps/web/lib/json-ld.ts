@@ -28,14 +28,12 @@ export function jsonLdMach(mach: MachChiTietOut): Record<string, unknown> {
   const urlTrangChu = urlTuyetDoi("/");
 
   const loaiBanTin = ["Bản tin", "Thời sự", "Điểm tin"];
-  const loaiPhanTich = ["Phân tích", "Ngành", "Phương pháp"];
-
   const loaiMoc = moc_dau?.loai;
-  let loaiSchema: string | string[] = "DiscussionForumPosting";
+  // Mọi bài viết trên Gikky đều là nội dung bài viết giá trị (Article), riêng bản tin là NewsArticle.
+  // Đồng thời giữ DiscussionForumPosting cho các khía cạnh tương tác, bình luận.
+  let loaiSchema: string[] = ["Article", "DiscussionForumPosting"];
   if (loaiMoc && loaiBanTin.includes(loaiMoc)) {
     loaiSchema = ["NewsArticle", "DiscussionForumPosting"];
-  } else if (loaiMoc && loaiPhanTich.includes(loaiMoc)) {
-    loaiSchema = ["Article", "DiscussionForumPosting"];
   }
 
   const anhOg = urlTuyetDoi(`/m/${mach.slug}-${mach.id}/opengraph-image`);
@@ -43,12 +41,25 @@ export function jsonLdMach(mach: MachChiTietOut): Record<string, unknown> {
     ? [moc_dau.anhs[0].url, anhOg]
     : [anhOg];
 
+  // Từ khoá phong phú hỗ trợ Semantic SEO & Entity Search
+  const danhSachTuKhoa = [
+    mach.truong_phai ? `#${mach.truong_phai}` : null,
+    mach.sub.ten,
+    `s/${mach.sub.slug}`,
+    "giao dịch",
+    "phân tích kỹ thuật",
+    "đầu tư chứng khoán",
+  ].filter(Boolean) as string[];
+
   const du_lieu: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": loaiSchema,
     "@id": url,
     url,
-    mainEntityOfPage: url,
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": url,
+    },
     headline: mach.title,
     name: mach.title,
     image: dsAnh,
@@ -56,6 +67,15 @@ export function jsonLdMach(mach: MachChiTietOut): Record<string, unknown> {
     dateModified: mach.last_entry_at,
     inLanguage: "vi-VN",
     articleSection: mach.sub.ten,
+    keywords: danhSachTuKhoa.join(", "),
+    genre: "Phân tích tài chính & đầu tư",
+    learningResourceType: "Educational Article",
+    educationalLevel: "Intermediate",
+    about: {
+      "@type": "Thing",
+      name: mach.sub.ten,
+      description: `Chuyên mục ${mach.sub.ten} trên diễn đàn tài chính Gikky`,
+    },
     author: {
       "@type": "Person",
       name: mach.author.display_name || mach.author.username,
@@ -96,9 +116,13 @@ export function jsonLdMach(mach: MachChiTietOut): Record<string, unknown> {
   };
 
   if (moc_dau?.body) {
-    const vanBan = trichVanBanThuan(moc_dau.body);
+    const vanBan = trichVanBanThuan(moc_dau.body).replace(/\s+/g, " ").trim();
     du_lieu.articleBody = vanBan;
-    du_lieu.description = vanBan.length > 160 ? `${vanBan.slice(0, 157)}…` : vanBan;
+    if (vanBan) {
+      const soTu = vanBan.split(/\s+/).length;
+      du_lieu.wordCount = soTu;
+      du_lieu.description = vanBan.length > 155 ? `${vanBan.slice(0, 152)}…` : vanBan;
+    }
   }
 
   if (mach.comment_count > 0) {
