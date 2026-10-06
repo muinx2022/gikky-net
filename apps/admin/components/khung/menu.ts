@@ -49,6 +49,7 @@ export const NHOM_MENU: NhomMenu[] = [
       // Icon dùng lại `"hien"` (con mắt) thay vì thêm một tên mới vào `icon.tsx` — con
       // mắt đọc ra đúng nghĩa "lượt xem", và `icon.tsx` đang có phiên khác sửa dở.
       { duong_dan: "/luot-xem", nhan: "Lượt xem", icon: "hien" },
+      { duong_dan: "/stat", nhan: "Google Analytics", icon: "thong-ke" },
     ],
   },
   {

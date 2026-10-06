@@ -28,6 +28,7 @@ export type TenIcon =
   | "khoa"
   | "mo-khoa"
   | "cai-dat"
+  | "thong-ke"
   | "ty-gia"
   | "sua"
   | "xoa"
@@ -37,6 +38,11 @@ export type TenIcon =
   | "thu-quyen";
 
 const DUONG: Record<TenIcon, React.ReactNode> = {
+  "thong-ke": (
+    <>
+      <path d="M18 20V10M12 20V4M6 20v-6" />
+    </>
+  ),
   "bang-dieu-khien": (
     <>
       <rect x="3" y="3" width="7" height="8" rx="1.5" />
