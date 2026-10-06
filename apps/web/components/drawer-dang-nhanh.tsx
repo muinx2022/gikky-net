@@ -32,6 +32,7 @@ export type ThongTinMachHienTai = {
 
 type NguCanhDrawerDangNhanh = {
   moDrawer: () => void;
+  moDrawerNoiMoc: (mach: ThongTinMachHienTai) => void;
   dongDrawer: () => void;
   dangMo: boolean;
   dangMachHienTai: ThongTinMachHienTai | null;
@@ -40,6 +41,7 @@ type NguCanhDrawerDangNhanh = {
 
 const DrawerCtx = createContext<NguCanhDrawerDangNhanh>({
   moDrawer: () => {},
+  moDrawerNoiMoc: () => {},
   dongDrawer: () => {},
   dangMo: false,
   dangMachHienTai: null,
@@ -121,14 +123,30 @@ export function DrawerDangNhanhProvider({
       moModal();
       return;
     }
+    setDangMachHienTai(null);
     setDangMo(true);
     setLoi(null);
     setLanMo((c) => c + 1);
   }, [dangNhapRoi, moModal]);
 
+  const moDrawerNoiMoc = useCallback(
+    (mach: ThongTinMachHienTai) => {
+      if (!dangNhapRoi) {
+        moModal();
+        return;
+      }
+      setDangMachHienTai(mach);
+      setDangMo(true);
+      setLoi(null);
+      setLanMo((c) => c + 1);
+    },
+    [dangNhapRoi, moModal],
+  );
+
   const dongDrawer = useCallback(() => {
     setDangMo(false);
     setLoi(null);
+    setDangMachHienTai(null);
   }, []);
 
   const dangKyMachHienTai = useCallback((mach: ThongTinMachHienTai | null) => {
@@ -305,6 +323,7 @@ export function DrawerDangNhanhProvider({
     <DrawerCtx.Provider
       value={{
         moDrawer,
+        moDrawerNoiMoc,
         dongDrawer,
         dangMo,
         dangMachHienTai,

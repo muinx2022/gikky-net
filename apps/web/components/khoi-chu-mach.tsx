@@ -7,7 +7,7 @@ import {
   tatBinhLuanMach,
 } from "@gikky/api-client";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { MA_LOI, cauLoi, layDuLieu, LoiGhi } from "@/lib/ghi";
 import { GOC_TRINH_DUYET, headerGhi } from "@/lib/tai-khoan";
@@ -86,27 +86,13 @@ export function KhoiChuMach({
   riengTu?: boolean;
 }) {
   const { toi, dangTai } = usePhien();
-  const { dangKyMachHienTai, moDrawer } = useDrawerDangNhanh();
+  const { moDrawerNoiMoc } = useDrawerDangNhanh();
   const router = useRouter();
   const [mo, datMo] = useState<"khong" | "dong_so">("khong");
   const [ketQua, datKetQua] = useState("");
   const [baiHoc, datBaiHoc] = useState("");
   const [dangGui, datDangGui] = useState(false);
   const [loi, datLoi] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (toi?.username === chuMach && !khoa && !dong) {
-      dangKyMachHienTai({
-        machId,
-        tieuDeMach: tieuDe ?? "",
-        soMoc,
-        tranMocMoiNgay,
-      });
-      return () => {
-        dangKyMachHienTai(null);
-      };
-    }
-  }, [toi?.username, chuMach, khoa, dong, machId, tieuDe, soMoc, tranMocMoiNgay, dangKyMachHienTai]);
 
   if (dangTai) return null;
   // `toi === null` viết TƯỜNG MINH: TypeScript không thu hẹp `toi` qua `?.`, mà form
@@ -313,7 +299,14 @@ export function KhoiChuMach({
           <button
             type="button"
             className={css.chinh}
-            onClick={moDrawer}
+            onClick={() =>
+              moDrawerNoiMoc({
+                machId,
+                tieuDeMach: tieuDe ?? "",
+                soMoc,
+                tranMocMoiNgay,
+              })
+            }
             data-testid="nut-noi-moc"
           >
             ＋ Nối mốc

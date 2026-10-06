@@ -17,7 +17,7 @@ import { usePhien } from "./phien";
  */
 export function NutDangMach() {
   const { toi, dangTai } = usePhien();
-  const { moDrawer, dangMachHienTai } = useDrawerDangNhanh();
+  const { moDrawer } = useDrawerDangNhanh();
 
   if (dangTai) {
     return <span className={css.cho_nut} aria-hidden />;
@@ -31,10 +31,10 @@ export function NutDangMach() {
       onClick={moDrawer}
       className={css.nut}
       data-testid="nut-dang-mach"
-      aria-label={dangMachHienTai ? "Nối mốc vào bài này" : "Đăng bài nhanh"}
+      aria-label="Đăng bài nhanh"
     >
       <Plus size={15} strokeWidth={2.2} aria-hidden />
-      {dangMachHienTai ? "Nối mốc" : "Đăng bài"}
+      Đăng bài
     </button>
   );
 }
