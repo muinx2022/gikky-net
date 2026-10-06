@@ -524,6 +524,7 @@ export async function TrangMach({
                 mạch), nên ở đây không có phép kiểm nào — xem docstring của nó. */}
             <KhoiChuMach
               machId={mach.id}
+              tieuDe={mach.title}
               chuMach={mach.author.username}
               khoa={mach.locked}
               dong={mach.status === "closed"}

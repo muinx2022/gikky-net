@@ -20,7 +20,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { docCacSubOTrinhDuyet } from "@/lib/api";
@@ -37,6 +37,7 @@ import {
 import { duongDanHoSo, duongDanSub, tachSlugId } from "@/lib/url";
 
 import { Avatar } from "./avatar";
+import { useDrawerDangNhanh } from "./drawer-dang-nhanh";
 import { useModalDangNhap } from "./modal-dang-nhap";
 import { usePhien } from "./phien";
 import css from "./thanh-dieu-huong-duoi.module.css";
@@ -199,9 +200,9 @@ function BottomDrawer({
 
 export function ThanhDieuHuongDuoi() {
   const pathname = usePathname();
-  const router = useRouter();
   const { toi } = usePhien();
   const { moModal } = useModalDangNhap();
+  const { moDrawer } = useDrawerDangNhanh();
 
   const dangNhap = toi?.dang_nhap === true;
 
@@ -325,7 +326,7 @@ export function ThanhDieuHuongDuoi() {
     if (!dangNhap) {
       moModal();
     } else {
-      router.push("/dang-mach");
+      moDrawer();
     }
   };
 

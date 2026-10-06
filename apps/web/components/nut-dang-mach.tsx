@@ -1,17 +1,15 @@
 "use client";
 
 import { Plus } from "lucide-react";
-import Link from "next/link";
 
+import { useDrawerDangNhanh } from "./drawer-dang-nhanh";
 import css from "./nut-dang-mach.module.css";
 import { usePhien } from "./phien";
 
-/** Lối vào `/dang-mach` trên thanh trên cùng — cửa chính của vòng lặp lõi (PLAN mục 1).
+/** Lối vào trượt form đăng bài nhanh (kiểu Cloudflare) hoặc nối mốc nếu đang ở bài của mình.
  *
  * **Khách không thấy nút này**, và đó không phải sự keo kiệt: ngay cạnh nó đã có "Đăng
- * nhập" và "Đăng ký" (`ThanhTaiKhoan`), nên một lối thứ ba dẫn tới một trang chỉ nói "đăng
- * nhập đi" là thêm một vòng cho cùng một việc. Trang `/dang-mach` vẫn xử tử tế ca vào
- * thẳng bằng URL — nó hiện lời mời đăng nhập chứ không hiện form rỗng.
+ * nhập" và "Đăng ký" (`ThanhTaiKhoan`).
  *
  * **Trong lúc chưa biết mình là ai thì giữ chỗ, không vẽ nút** — cùng lý lẽ với
  * `ThanhTaiKhoan`: chớp một cái nút rồi rút nó đi là cú nhảy bố cục ngay chỗ mắt người ta
@@ -19,6 +17,7 @@ import { usePhien } from "./phien";
  */
 export function NutDangMach() {
   const { toi, dangTai } = usePhien();
+  const { moDrawer, dangMachHienTai } = useDrawerDangNhanh();
 
   if (dangTai) {
     return <span className={css.cho_nut} aria-hidden />;
@@ -27,9 +26,15 @@ export function NutDangMach() {
   if (!(toi?.dang_nhap ?? false)) return null;
 
   return (
-    <Link href="/dang-mach" prefetch={false} className={css.nut} data-testid="nut-dang-mach">
+    <button
+      type="button"
+      onClick={moDrawer}
+      className={css.nut}
+      data-testid="nut-dang-mach"
+      aria-label={dangMachHienTai ? "Nối mốc vào bài này" : "Đăng bài nhanh"}
+    >
       <Plus size={15} strokeWidth={2.2} aria-hidden />
-      Đăng bài
-    </Link>
+      {dangMachHienTai ? "Nối mốc" : "Đăng bài"}
+    </button>
   );
 }

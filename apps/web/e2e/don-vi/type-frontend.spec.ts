@@ -361,6 +361,7 @@ test("luật trên có quét trúng lời gọi THẬT ở MỌI cửa (không q
     // `/khu-mod` — `GET /me/subs-mod`, danh sách chuyên mục TÔI được phân công. ⚠ Đây là
     // danh sách PHÂN CÔNG, không phải danh sách QUYỀN: `ModSub` chưa cho thêm quyền gì.
     "components/danh-sach-sub-mod.tsx",
+    "components/drawer-dang-nhanh.tsx", // slide-over panel đăng nhanh và nối mốc
     "components/form-cai-dat.tsx", // giao diện — trang /cai-dat
     "components/form-dang-mach.tsx", // form ghi
     // Lượt HỒ SƠ + MOD + EDITOR (2026-08-24) — ba cửa mới, cả ba là client component,

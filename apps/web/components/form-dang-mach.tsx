@@ -2,7 +2,7 @@
 
 import { taoMach, type SubChiTietOut } from "@gikky/api-client";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { cauLoiTaiAnh, taiAnhLanLuot } from "@/lib/anh";
 import { cauLoi, layDuLieu, LoiGhi } from "@/lib/ghi";
@@ -47,6 +47,21 @@ export function FormDangMach({
   const [riengTu, datRiengTu] = useState(false);
   const [dangGui, datDangGui] = useState(false);
   const [loi, datLoi] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const draft = sessionStorage.getItem("gikky_draft_dang_mach");
+      if (draft) {
+        const parsed = JSON.parse(draft);
+        if (parsed.sub) datSub(parsed.sub);
+        if (parsed.title) datTitle(parsed.title);
+        if (parsed.body) datMoc((cu) => ({ ...cu, body: parsed.body }));
+        sessionStorage.removeItem("gikky_draft_dang_mach");
+      }
+    } catch {
+      // bỏ qua nếu lỗi JSON hoặc private mode
+    }
+  }, []);
 
   // Chưa biết mình là ai thì chưa vẽ form — cùng lý lẽ với `ThanhTaiKhoan` và `Composer`:
   // chớp một lời mời đăng nhập vào mặt người đang đăng nhập là một cú nhảy vô cớ.

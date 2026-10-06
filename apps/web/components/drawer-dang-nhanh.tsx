@@ -1,0 +1,500 @@
+"use client";
+
+import { noiMoc, taoMach, type SubChiTietOut } from "@gikky/api-client";
+import { ImagePlus, X } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
+import { cauLoiTaiAnh, KIEU_NHAN, taiAnhLanLuot } from "@/lib/anh";
+import { docCacSubOTrinhDuyet } from "@/lib/api";
+import { cauLoi, layDuLieu } from "@/lib/ghi";
+import { GOC_TRINH_DUYET, headerGhi } from "@/lib/tai-khoan";
+import { duongDanMach } from "@/lib/url";
+
+import css from "./drawer-dang-nhanh.module.css";
+import { useModalDangNhap } from "./modal-dang-nhap";
+import { usePhien } from "./phien";
+
+export type ThongTinMachHienTai = {
+  machId: number;
+  tieuDeMach: string;
+  soMoc: number;
+  tranMocMoiNgay?: number;
+};
+
+type NguCanhDrawerDangNhanh = {
+  moDrawer: () => void;
+  dongDrawer: () => void;
+  dangMo: boolean;
+  dangMachHienTai: ThongTinMachHienTai | null;
+  dangKyMachHienTai: (mach: ThongTinMachHienTai | null) => void;
+};
+
+const DrawerCtx = createContext<NguCanhDrawerDangNhanh>({
+  moDrawer: () => {},
+  dongDrawer: () => {},
+  dangMo: false,
+  dangMachHienTai: null,
+  dangKyMachHienTai: () => {},
+});
+
+export function useDrawerDangNhanh(): NguCanhDrawerDangNhanh {
+  return useContext(DrawerCtx);
+}
+
+export function DrawerDangNhanhProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const { toi } = usePhien();
+  const { moModal } = useModalDangNhap();
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const [dangMo, setDangMo] = useState(false);
+  const [dangMachHienTai, setDangMachHienTai] =
+    useState<ThongTinMachHienTai | null>(null);
+
+  // Form states
+  const [cacSub, setCacSub] = useState<readonly SubChiTietOut[]>([]);
+  const [subDangChon, setSubDangChon] = useState("");
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const [anhs, setAnhs] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [dangGui, setDangGui] = useState(false);
+  const [loi, setLoi] = useState<string | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const dangNhapRoi = toi?.dang_nhap === true;
+  const tranAnh = toi?.tran_anh_moi_moc ?? 10;
+
+  // Khi chuyển trang khác mà không phải /m/... thì reset đăng ký mạch hiện tại
+  useEffect(() => {
+    if (!pathname.startsWith("/m/")) {
+      setDangMachHienTai(null);
+    }
+  }, [pathname]);
+
+  // Nạp danh sách chuyên mục
+  useEffect(() => {
+    let vanCon = true;
+    docCacSubOTrinhDuyet()
+      .then((subs) => {
+        if (!vanCon) return;
+        setCacSub(subs);
+        if (subs.length > 0) {
+          const khop = pathname.match(/^\/s\/([^/?#]+)/);
+          const slugUrl = khop ? khop[1] : null;
+          if (slugUrl && subs.some((s) => s.slug === slugUrl)) {
+            setSubDangChon(slugUrl);
+          } else {
+            setSubDangChon((hienTai) =>
+              hienTai && subs.some((s) => s.slug === hienTai)
+                ? hienTai
+                : subs[0].slug,
+            );
+          }
+        }
+      })
+      .catch(() => {});
+    return () => {
+      vanCon = false;
+    };
+  }, [pathname, subDangChon]);
+
+  const moDrawer = useCallback(() => {
+    if (!dangNhapRoi) {
+      moModal();
+      return;
+    }
+    setDangMo(true);
+    setLoi(null);
+  }, [dangNhapRoi, moModal]);
+
+  const dongDrawer = useCallback(() => {
+    setDangMo(false);
+    setLoi(null);
+  }, []);
+
+  const dangKyMachHienTai = useCallback((mach: ThongTinMachHienTai | null) => {
+    setDangMachHienTai(mach);
+  }, []);
+
+  // Khoá cuộn body và lắng nghe phím Escape khi drawer mở
+  useEffect(() => {
+    if (!dangMo) return;
+    const scrollCu = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        dongDrawer();
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+
+    return () => {
+      document.body.style.overflow = scrollCu;
+      window.removeEventListener("keydown", handleKey);
+    };
+  }, [dangMo, dongDrawer]);
+
+  // Xử lý chọn ảnh
+  const xuLyChonFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const dsMoi: File[] = [];
+    const dsUrlMoi: string[] = [];
+
+    const conLai = tranAnh - anhs.length;
+    for (let i = 0; i < Math.min(files.length, conLai); i++) {
+      const f = files[i];
+      if (f.type.startsWith("image/")) {
+        dsMoi.push(f);
+        dsUrlMoi.push(URL.createObjectURL(f));
+      }
+    }
+
+    setAnhs((cu) => [...cu, ...dsMoi]);
+    setPreviewUrls((cu) => [...cu, ...dsUrlMoi]);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const xoaAnh = (index: number) => {
+    const url = previewUrls[index];
+    if (url) URL.revokeObjectURL(url);
+    setAnhs((cu) => cu.filter((_, i) => i !== index));
+    setPreviewUrls((cu) => cu.filter((_, i) => i !== index));
+  };
+
+  // Chuyển sang form đầy đủ /dang-mach
+  const chuyenSangDangChiTiet = () => {
+    try {
+      sessionStorage.setItem(
+        "gikky_draft_dang_mach",
+        JSON.stringify({
+          sub: subDangChon,
+          title: title.trim(),
+          body: body.trim(),
+        }),
+      );
+    } catch {
+      // bỏ qua nếu private mode
+    }
+    dongDrawer();
+    router.push(
+      `/dang-mach${subDangChon ? `?sub=${encodeURIComponent(subDangChon)}` : ""}`,
+    );
+  };
+
+  // Submit bài
+  const xuLyGui = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (dangGui) return;
+    setDangGui(true);
+    setLoi(null);
+
+    try {
+      if (dangMachHienTai) {
+        // Nối mốc vào bài hiện tại
+        if (body.trim() === "") {
+          throw new Error("Nội dung mốc không được để trống.");
+        }
+        const mocMoi = layDuLieu(
+          await noiMoc({
+            baseUrl: GOC_TRINH_DUYET,
+            headers: await headerGhi(),
+            path: { mach_id: dangMachHienTai.machId },
+            body: {
+              body: body.trim(),
+            },
+          }),
+          "Không nối mốc được.",
+        );
+
+        if (anhs.length > 0) {
+          const kqAnh = await taiAnhLanLuot(mocMoi.id, anhs);
+          const loiAnh = cauLoiTaiAnh(kqAnh);
+          if (loiAnh !== null) {
+            setLoi(`Mốc đã nối, nhưng ${loiAnh}`);
+            setDangGui(false);
+            return;
+          }
+        }
+
+        // Dọn form và reload trang để xem mốc mới
+        setBody("");
+        setAnhs([]);
+        setPreviewUrls([]);
+        dongDrawer();
+        window.location.reload();
+      } else {
+        // Tạo mạch mới
+        if (title.trim() === "" || body.trim() === "") {
+          throw new Error("Cần nhập tiêu đề và nội dung bài viết.");
+        }
+
+        const mach = layDuLieu(
+          await taoMach({
+            baseUrl: GOC_TRINH_DUYET,
+            headers: await headerGhi(),
+            body: {
+              sub: subDangChon,
+              title: title.trim(),
+              body: body.trim(),
+            },
+          }),
+          "Không đăng được bài.",
+        );
+
+        if (anhs.length > 0 && mach.mocs[0]) {
+          const kqAnh = await taiAnhLanLuot(mach.mocs[0].id, anhs);
+          const loiAnh = cauLoiTaiAnh(kqAnh);
+          if (loiAnh !== null) {
+            setLoi(`Bài đã đăng, nhưng ${loiAnh}`);
+            setDangGui(false);
+            return;
+          }
+        }
+
+        // Dọn form và chuyển hướng tới bài mới
+        setTitle("");
+        setBody("");
+        setAnhs([]);
+        setPreviewUrls([]);
+        dongDrawer();
+        window.location.assign(duongDanMach(mach.slug, mach.id));
+      }
+    } catch (e2) {
+      setLoi(cauLoi(e2, "Không gọi được máy chủ. Kiểm tra kết nối rồi thử lại."));
+      setDangGui(false);
+    }
+  };
+
+  const laNoiMoc = dangMachHienTai !== null;
+  const duDieuKien = laNoiMoc
+    ? body.trim() !== ""
+    : subDangChon !== "" && title.trim() !== "" && body.trim() !== "";
+
+  return (
+    <DrawerCtx.Provider
+      value={{
+        moDrawer,
+        dongDrawer,
+        dangMo,
+        dangMachHienTai,
+        dangKyMachHienTai,
+      }}
+    >
+      {children}
+
+      {/* Backdrop overlay mờ — bấm ra ngoài để ẩn */}
+      <div
+        className={`${css.overlay} ${dangMo ? css.overlay_hien : ""}`}
+        onClick={dongDrawer}
+        aria-hidden={!dangMo}
+      />
+
+      {/* Panel trượt từ bên phải (kiểu Cloudflare) */}
+      <aside
+        className={`${css.drawer} ${dangMo ? css.drawer_hien : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={laNoiMoc ? "Nối mốc nhanh" : "Đăng bài nhanh"}
+      >
+        <div className={css.dau}>
+          <div className={css.tieu_de_khu}>
+            <h2 className={css.tieu_de}>
+              {laNoiMoc
+                ? `Nối mốc ${dangMachHienTai.soMoc + 1}`
+                : "Đăng bài nhanh"}
+            </h2>
+            <p className={css.mo_ta}>
+              {laNoiMoc
+                ? `Vào bài: ${dangMachHienTai.tieuDeMach}${dangMachHienTai.tranMocMoiNgay ? ` (tối đa ${dangMachHienTai.tranMocMoiNgay} mốc/ngày)` : ""}`
+                : "Chia sẻ nhanh nhận định hoặc câu hỏi vào cộng đồng"}
+            </p>
+          </div>
+          <button
+            type="button"
+            className={css.nut_dong}
+            onClick={dongDrawer}
+            aria-label="Đóng bảng đăng nhanh"
+          >
+            <X size={20} strokeWidth={2} />
+          </button>
+        </div>
+
+        <form
+          onSubmit={xuLyGui}
+          className={css.than}
+          data-testid={laNoiMoc ? "form-noi-moc" : "form-dang-nhanh"}
+        >
+          {loi && (
+            <p className={css.loi} role="alert">
+              {loi}
+            </p>
+          )}
+
+          {!laNoiMoc && (
+            <>
+              {/* Chọn chuyên mục dạng chip */}
+              <div className={css.khoi_sub}>
+                <span className={css.nhan}>Chuyên mục</span>
+                <div className={css.danh_sach_sub}>
+                  {cacSub.map((s) => (
+                    <button
+                      key={s.slug}
+                      type="button"
+                      className={`${css.chip_sub} ${
+                        subDangChon === s.slug ? css.chip_sub_chon : ""
+                      }`}
+                      onClick={() => setSubDangChon(s.slug)}
+                    >
+                      s/{s.slug}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Tiêu đề bài viết */}
+              <div className={css.o}>
+                <span className={css.nhan}>Tiêu đề</span>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  maxLength={160}
+                  placeholder="Tiêu đề ngắn gọn nói rõ điều bạn muốn thảo luận"
+                  className={css.input}
+                  required
+                />
+              </div>
+            </>
+          )}
+
+          {/* Nội dung bài viết / mốc */}
+          <div className={css.o}>
+            <div className={css.hang_nhan}>
+              <span className={css.nhan}>
+                {laNoiMoc
+                  ? `Nội dung mốc ${dangMachHienTai.soMoc + 1}`
+                  : "Nội dung"}
+              </span>
+              <span className={css.dem_ky_tu}>
+                {body.length.toLocaleString("vi-VN")}/50.000
+              </span>
+            </div>
+            <textarea
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              rows={laNoiMoc ? 8 : 6}
+              placeholder={
+                laNoiMoc
+                  ? "Chuyện gì vừa xảy ra, và bạn định làm gì tiếp?"
+                  : "Chia sẻ nhận định, câu hỏi hoặc góc nhìn của bạn..."
+              }
+              className={css.textarea}
+              data-testid={laNoiMoc ? "noi-moc-body" : "dang-nhanh-body"}
+              required
+            />
+          </div>
+
+          {/* Chọn ảnh */}
+          <div className={css.khoi_anh}>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept={KIEU_NHAN}
+              multiple
+              onChange={xuLyChonFile}
+              style={{ display: "none" }}
+            />
+            <button
+              type="button"
+              className={css.nut_chon_anh}
+              onClick={() => fileInputRef.current?.click()}
+              disabled={anhs.length >= tranAnh}
+            >
+              <ImagePlus size={16} strokeWidth={2} />
+              <span>
+                Đính kèm ảnh {anhs.length > 0 && `(${anhs.length}/${tranAnh})`}
+              </span>
+            </button>
+
+            {previewUrls.length > 0 && (
+              <div className={css.danh_sach_anh}>
+                {previewUrls.map((url, idx) => (
+                  <div key={idx} className={css.the_anh_preview}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={url}
+                      alt={`Ảnh đính kèm ${idx + 1}`}
+                      className={css.anh_preview}
+                    />
+                    <button
+                      type="button"
+                      className={css.nut_xoa_anh}
+                      onClick={() => xoaAnh(idx)}
+                      aria-label="Xoá ảnh này"
+                    >
+                      <X size={13} strokeWidth={2.5} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </form>
+
+        <div className={css.chan}>
+          {laNoiMoc ? (
+            <button
+              type="button"
+              className={css.link_chi_tiet}
+              onClick={dongDrawer}
+              data-testid="noi-moc-huy"
+            >
+              Huỷ
+            </button>
+          ) : (
+            <button
+              type="button"
+              className={css.link_chi_tiet}
+              onClick={chuyenSangDangChiTiet}
+              data-testid="link-dang-chi-tiet"
+            >
+              Bạn muốn đăng chi tiết?
+            </button>
+          )}
+          <button
+            type="button"
+            className={css.nut_gui}
+            onClick={(e) => {
+              const form = (e.currentTarget.parentElement?.previousElementSibling as HTMLFormElement);
+              form?.requestSubmit();
+            }}
+            disabled={dangGui || !duDieuKien}
+            data-testid={laNoiMoc ? "noi-moc-gui" : "dang-nhanh-gui"}
+          >
+            {dangGui ? "Đang gửi…" : laNoiMoc ? "Nối mốc" : "Đăng bài"}
+          </button>
+        </div>
+      </aside>
+    </DrawerCtx.Provider>
+  );
+}

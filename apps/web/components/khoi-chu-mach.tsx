@@ -4,21 +4,18 @@ import {
   congKhaiMach,
   dongSoMach,
   moLaiMach,
-  noiMoc,
   tatBinhLuanMach,
 } from "@gikky/api-client";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-import { cauLoiTaiAnh, taiAnhLanLuot } from "@/lib/anh";
 import { MA_LOI, cauLoi, layDuLieu, LoiGhi } from "@/lib/ghi";
 import { GOC_TRINH_DUYET, headerGhi } from "@/lib/tai-khoan";
 import { conMoLaiDuoc, gioPhutVN } from "@/lib/vong-doi";
 
-import { ChonAnh } from "./chon-anh";
+import { useDrawerDangNhanh } from "./drawer-dang-nhanh";
 import css from "./khoi-chu-mach.module.css";
 import { usePhien } from "./phien";
-import { TruongMoc, mocRong, thanMoc, DAI_BODY_MOC, type NoiDungMoc } from "./truong-moc";
 
 /** Khu của chủ mạch trên trang mạch: **nối mốc** · **đóng sổ** · **mở lại** (PLAN 5.1).
  *
@@ -58,6 +55,7 @@ import { TruongMoc, mocRong, thanMoc, DAI_BODY_MOC, type NoiDungMoc } from "./tr
  */
 export function KhoiChuMach({
   machId,
+  tieuDe,
   chuMach,
   khoa,
   dong,
@@ -68,6 +66,8 @@ export function KhoiChuMach({
   riengTu = false,
 }: {
   machId: number;
+  /** Tiêu đề mạch để hiển thị trên drawer đăng nhanh / nối mốc. */
+  tieuDe?: string;
   /** `username` chủ mạch — so với `GET /me` để biết có phải mình không. */
   chuMach: string;
   /** Mod đã khoá mạch chưa (PLAN 5.10). */
@@ -86,14 +86,27 @@ export function KhoiChuMach({
   riengTu?: boolean;
 }) {
   const { toi, dangTai } = usePhien();
+  const { dangKyMachHienTai, moDrawer } = useDrawerDangNhanh();
   const router = useRouter();
-  const [mo, datMo] = useState<"khong" | "noi" | "dong_so">("khong");
-  const [moc, datMoc] = useState<NoiDungMoc>(mocRong);
-  const [anhs, datAnhs] = useState<File[]>([]);
+  const [mo, datMo] = useState<"khong" | "dong_so">("khong");
   const [ketQua, datKetQua] = useState("");
   const [baiHoc, datBaiHoc] = useState("");
   const [dangGui, datDangGui] = useState(false);
   const [loi, datLoi] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (toi?.username === chuMach && !khoa && !dong) {
+      dangKyMachHienTai({
+        machId,
+        tieuDeMach: tieuDe ?? "",
+        soMoc,
+        tranMocMoiNgay,
+      });
+      return () => {
+        dangKyMachHienTai(null);
+      };
+    }
+  }, [toi?.username, chuMach, khoa, dong, machId, tieuDe, soMoc, tranMocMoiNgay, dangKyMachHienTai]);
 
   if (dangTai) return null;
   // `toi === null` viết TƯỜNG MINH: TypeScript không thu hẹp `toi` qua `?.`, mà form
@@ -130,37 +143,6 @@ export function KhoiChuMach({
     } finally {
       datDangGui(false);
     }
-  };
-
-  const guiMoc = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    void chay(async () => {
-      if (moc.body.length > DAI_BODY_MOC) {
-        throw new LoiGhi(
-          400,
-          "",
-          `Nội dung mốc vượt quá ${DAI_BODY_MOC.toLocaleString("vi-VN")} ký tự (hiện có ${moc.body.length.toLocaleString("vi-VN")} ký tự). Vui lòng rút gọn trước khi lưu.`,
-        );
-      }
-      const moc_moi = layDuLieu(
-        await noiMoc({
-          baseUrl: GOC_TRINH_DUYET,
-          headers: await headerGhi(),
-          path: { mach_id: machId },
-          body: thanMoc(moc),
-        }),
-        "Không nối được mốc.",
-      );
-      // Ảnh lên SAU: cửa upload cần `id` của mốc, và `id` ấy vừa mới tồn tại. Một tấm
-      // hỏng không cuốn theo cái mốc đã ghi — ta ném câu lỗi lên để `chay()` hiện nó,
-      // nhưng chỉ sau khi đã dọn form, vì mốc thì đã vào sổ thật.
-      const cau =
-        anhs.length > 0 ? cauLoiTaiAnh(await taiAnhLanLuot(moc_moi.id, anhs)) : null;
-      datMoc(mocRong());
-      datAnhs([]);
-      datMo("khong");
-      if (cau !== null) throw new LoiGhi(0, "", `Mốc đã ghi, nhưng ${cau}`);
-    }, "Không nối được mốc. Kiểm tra kết nối rồi thử lại.");
   };
 
   const guiDongSo = (e: React.FormEvent<HTMLFormElement>) => {
@@ -274,57 +256,6 @@ export function KhoiChuMach({
           riengTu={riengTu}
           onCongKhai={guiCongKhai}
         />
-      ) : mo === "noi" ? (
-        <form onSubmit={guiMoc} data-testid="form-noi-moc">
-          <p className={css.cau}>
-            Mốc {soMoc + 1}. Tối đa {tranMocMoiNgay} mốc mỗi ngày cho một mạch — để nhật
-            ký là nhật ký, không phải dòng thời gian.
-          </p>
-          <TruongMoc
-            gia_tri={moc}
-            datGiaTri={datMoc}
-            tienTo="noi-moc"
-            nhanThan={`Nội dung mốc ${soMoc + 1}`}
-            goiYThan="Chuyện gì vừa xảy ra, và bạn định làm gì tiếp?"
-          />
-          <ChonAnh
-            files={anhs}
-            datFiles={datAnhs}
-            tran={toi.tran_anh_moi_moc}
-            tienTo="noi-moc"
-            dangGui={dangGui}
-            nhan={`Ảnh đính kèm mốc ${soMoc + 1}`}
-            moTa={`Ảnh đính kèm riêng cho mốc ${soMoc + 1}.`}
-          />
-          <div className={css.hang}>
-            <button
-              type="button"
-              className={css.nhe}
-              onClick={() => datMo("khong")}
-              data-testid="noi-moc-huy"
-            >
-              Huỷ
-            </button>
-            <button
-              type="submit"
-              className={css.chinh}
-              disabled={dangGui || moc.body.trim() === ""}
-              title={
-                dangGui
-                  ? "Đang gửi…"
-                  : moc.body.trim() === ""
-                    ? LY_DO_THAN_RONG
-                    : "Nối mốc"
-              }
-              aria-label={
-                moc.body.trim() === "" ? `Nối mốc — ${LY_DO_THAN_RONG}` : "Nối mốc"
-              }
-              data-testid="noi-moc-gui"
-            >
-              {dangGui ? "Đang nối…" : "Nối mốc"}
-            </button>
-          </div>
-        </form>
       ) : mo === "dong_so" ? (
         <form onSubmit={guiDongSo} data-testid="form-dong-so">
           <label className={css.o}>
@@ -382,7 +313,7 @@ export function KhoiChuMach({
           <button
             type="button"
             className={css.chinh}
-            onClick={() => datMo("noi")}
+            onClick={moDrawer}
             data-testid="nut-noi-moc"
           >
             ＋ Nối mốc
@@ -421,8 +352,6 @@ export function KhoiChuMach({
     </section>
   );
 }
-
-const LY_DO_THAN_RONG = "Mốc phải có nội dung";
 
 /** Mặt của một mạch đã đóng sổ: mở lại được thì có nút, hết hạn thì có một câu.
  *

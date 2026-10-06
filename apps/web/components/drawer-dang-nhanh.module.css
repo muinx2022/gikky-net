@@ -1,0 +1,339 @@
+/* Drawer trượt từ bên phải ra (kiểu Cloudflare slide-over panel) */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease;
+}
+
+.overlay_hien {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 500px;
+  max-width: 100vw;
+  background: var(--surface);
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -6px 0 28px rgba(0, 0, 0, 0.16);
+  transform: translateX(100%);
+  visibility: hidden;
+  transition: transform 0.26s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.26s;
+  box-sizing: border-box;
+}
+
+.drawer_hien {
+  transform: translateX(0);
+  visibility: visible;
+}
+
+.dau {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.tieu_de_khu {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tieu_de {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.mo_ta {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-3);
+  max-width: 380px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nut_dong {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--ink-2);
+  padding: 8px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.nut_dong:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.than {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.o {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.nhan {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.hang_nhan {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dem_ky_tu {
+  font-size: 11.5px;
+  color: var(--ink-3);
+  font-family: var(--f-mono);
+}
+
+.input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 14px;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.input:focus-visible {
+  outline: 1px solid var(--focus);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 140px;
+  line-height: 1.55;
+  box-sizing: border-box;
+}
+
+.textarea:focus-visible {
+  outline: 1px solid var(--focus);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.khoi_sub {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.danh_sach_sub {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chip_sub {
+  padding: 5px 12px;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--ink-2);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.chip_sub:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.chip_sub_chon {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+
+.khoi_anh {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.nut_chon_anh {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border: 1px dashed var(--line-2);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--ink-2);
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+  align-self: flex-start;
+}
+
+.nut_chon_anh:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.nut_chon_anh:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.danh_sach_anh {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.the_anh_preview {
+  position: relative;
+  width: 68px;
+  height: 68px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: var(--bg);
+}
+
+.anh_preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.nut_xoa_anh {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.65);
+  color: #ffffff;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s ease;
+}
+
+.nut_xoa_anh:hover {
+  background: rgba(0, 0, 0, 0.85);
+}
+
+.loi {
+  margin: 0;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--surface) 90%, #ef4444);
+  border: 1px solid #ef4444;
+  border-radius: 6px;
+  color: #b91c1c;
+  font-size: 13px;
+}
+
+.chan {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+  gap: 12px;
+}
+
+.link_chi_tiet {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-align: left;
+}
+
+.link_chi_tiet:hover {
+  opacity: 0.85;
+}
+
+.nut_gui {
+  padding: 9px 20px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+  white-space: nowrap;
+}
+
+.nut_gui:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.nut_gui:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 540px) {
+  .drawer {
+    width: 100vw;
+  }
+}

@@ -5,6 +5,7 @@ import { Chrome } from "@/components/chrome";
 import { GoogleAnalytics } from "@/components/google-analytics";
 import { GoogleOneTap } from "@/components/google-one-tap";
 import { KhoiPhucCuon } from "@/components/khoi-phuc-cuon";
+import { DrawerDangNhanhProvider } from "@/components/drawer-dang-nhanh";
 import { LightboxProvider } from "@/components/lightbox";
 import { ModalDangNhapProvider } from "@/components/modal-dang-nhap";
 import { PhienProvider } from "@/components/phien";
@@ -166,9 +167,11 @@ export default function RootLayout({
           <ToastProvider>
             <ModalDangNhapProvider>
               <LightboxProvider>
-                <Chrome />
-                <ThanhDieuHuongDuoi />
-                {children}
+                <DrawerDangNhanhProvider>
+                  <Chrome />
+                  <ThanhDieuHuongDuoi />
+                  {children}
+                </DrawerDangNhanhProvider>
               </LightboxProvider>
             </ModalDangNhapProvider>
           </ToastProvider>
