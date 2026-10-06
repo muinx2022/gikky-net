@@ -149,24 +149,17 @@
 }
 
 /* Hàng tiêu đề: chữ ký bên trái, nút "Theo mạch" đẩy sang phải. */
-/* **Header sub DÍNH** — plan giao diện §2.4.
+/* **Header sub — đặt tự nhiên trên trang, KHÔNG sticky** *(user chốt 2026-10-06)*.
  *
- * Trang mạch dài (mạch 21 mốc + khán đài trăm câu), và khi cuộn tới giữa khán đài thì
- * người đọc mất hai thứ cùng lúc: mình đang ở sub nào, và nút "Theo mạch". Dính hàng này
- * dưới thanh header trả lại cả hai mà không tốn thêm một pixel chiều cao nào lúc đứng yên.
- *
- * `top: var(--cao-chrome)` — không phải `0`: thanh `Chrome` cũng dính, nên `0` là hàng
- * này trượt xuống NẰM DƯỚI nó và biến mất.
- *
- * Lề âm để nó chạm hai mép thẻ: nếu không, phần nền mờ chỉ rộng bằng vùng chữ và nội dung
- * cuộn qua sẽ lộ ra ở hai bên. `border-radius` khớp với `.the` cho khỏi hở góc.
- *
- * ⚠ Đừng thêm `overflow: hidden` lên `.the` hay `.dau` — bất kỳ tổ tiên nào có `overflow`
- * khác `visible` là `sticky` chết im lặng (nó không lỗi, nó chỉ thôi dính). */
+ * Trước đây hàng này dùng `position: sticky; top: var(--cao-chrome)`.
+ * Khi xem trên mobile & tablet (<=960px), header cuộn trôi cùng trang và thanh điều hướng
+ * tự động ẩn khi cuộn xuống, hiện khi cuộn lên. Hàng này nếu dính sẽ trôi lơ lửng đè lên
+ * tiêu đề bài viết rồi biến mất khi hết thẻ bài.
+ * Do đó, đặt nó tự nhiên trên trang (position: relative / static), không sticky nữa.
+ */
 .hang_tren {
-  position: sticky;
-  top: var(--cao-chrome);
-  z-index: 5;
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
@@ -175,7 +168,6 @@
   margin: -24px -26px 0;
   padding: 10px 24px;
   background: color-mix(in srgb, var(--card) 92%, transparent);
-  backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--line);
   border-radius: 6px 6px 0 0;
 }
@@ -214,20 +206,22 @@
   }
 }
 
-@media (max-width: 640px) {
-  /* **Trên điện thoại hàng này KHÔNG dính**, và đó là quyết định chứ không phải bỏ sót.
-     Hai lý do, lý do thứ hai mới là lý do cứng:
-
-     1. màn hình cao 780px mà mất thêm 40px cố định cho một hàng phụ là đắt;
-     2. `top: var(--cao-chrome)` giả định thanh header cao ĐÚNG một dòng. Dưới 640px header
-        xuống dòng (xem `chrome.module.css`), nên hằng ấy hết đúng và hàng dính sẽ nằm lấp
-        dưới header. Một con số cứng cho một chiều cao co giãn là bẫy chờ sẵn — thà tắt hẳn
-        cơ chế ở dải mà nó không còn đúng.
-
-     Lề âm cũng phải về 0: `-26px` là lề của `padding` desktop, ở đây `.dau` chỉ có 16px và
-     phần thừa thò ra ngoài mép thẻ ⇒ trang cuộn ngang, đúng thứ T7 cấm. */
+@media (max-width: 960px) and (min-width: 641px) {
+  /* Tablet & Foldable (641px - 960px): đặt tự nhiên trên trang, không dính khi cuộn */
   .hang_tren {
     position: static;
+    top: auto;
+    backdrop-filter: none;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Trên điện thoại (≤640px): đặt tự nhiên trên trang, không dính, các nút bẻ dòng gọn gàng */
+  .hang_tren {
+    position: static;
+    top: auto;
     margin: 0;
     padding: 0;
     background: none;

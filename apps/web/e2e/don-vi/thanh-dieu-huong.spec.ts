@@ -10,6 +10,7 @@ const THANH_CSS = resolve(GOC, "components", "thanh-dieu-huong-duoi.module.css")
 
 const FEED_TSX = resolve(GOC, "components", "feed.tsx");
 const FEED_CSS = resolve(GOC, "components", "feed.module.css");
+const TRANG_MACH_CSS = resolve(GOC, "components", "trang-mach.module.css");
 
 function boChuThichCss(css: string): string {
   return css.replace(/\/\*[\s\S]*?\*\//g, " ");
@@ -54,5 +55,14 @@ test.describe("thanh dieu huong tren mobile va tablet (giong cafef)", () => {
     expect(feedCss).toMatch(/\.thanh_dinh\s*\{[\s\S]*?background:\s*color-mix\(in srgb, var\(--bg\) 95%, transparent\)/);
     // Trên mobile & tablet (<=960px): nằm tự nhiên trong luồng, không sticky
     expect(feedCss).toMatch(/@media\s*\(max-width:\s*960px\)[\s\S]*?\.thanh_dinh\s*\{[\s\S]*?position:\s*relative\s*!important/);
+  });
+
+  test("trang-mach.module.css: hang_tren dat tu nhien tren trang, khong sticky", () => {
+    const tmCss = boChuThichCss(readFileSync(TRANG_MACH_CSS, "utf8"));
+    // .hang_tren không được mang position: sticky
+    expect(tmCss).not.toMatch(/\.hang_tren\s*\{[\s\S]*?position:\s*sticky/);
+    // Trên tablet (max-width: 960px) và điện thoại (max-width: 640px) là position: static
+    expect(tmCss).toMatch(/@media\s*\(max-width:\s*960px\)[\s\S]*?\.hang_tren\s*\{[\s\S]*?position:\s*static/);
+    expect(tmCss).toMatch(/@media\s*\(max-width:\s*640px\)[\s\S]*?\.hang_tren\s*\{[\s\S]*?position:\s*static/);
   });
 });
