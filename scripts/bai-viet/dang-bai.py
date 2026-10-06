@@ -275,7 +275,20 @@ def xu_ly_anhs(bai, author_username):
             continue
 
         try:
-            raw_bytes = them_watermark(raw_bytes, text="gikky.net")
+            # Chỉ gắn watermark nếu ảnh chưa được đóng dấu trước đó (tránh lỗi 2 watermark chồng lên nhau)
+            da_co_wm = (
+                a.get("da_watermark") is True
+                or a.get("watermarked") is True
+                or a.get("gan_watermark") is False
+                or "_wm" in str(a.get("path", "")).lower()
+                or "_watermarked" in str(a.get("path", "")).lower()
+                or "_wm" in str(a.get("ten_tep", "")).lower()
+                or "_watermarked" in str(a.get("ten_tep", "")).lower()
+            )
+            if not da_co_wm:
+                raw_bytes = them_watermark(raw_bytes, text="gikky.net")
+            else:
+                print(f"Ảnh {i+1} đã được gắn watermark trước đó, bỏ qua không gắn đè lần 2.", file=sys.stderr)
             anh_xu_ly = xu_ly_anh_tai_len(raw_bytes)
             hang = luu_anh_noi_dung(user=tac_gia, anh=anh_xu_ly)
             url = url_anh(hang.khoa_luu_tru)

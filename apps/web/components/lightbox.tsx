@@ -240,10 +240,6 @@ export function LightboxProvider({ children }: { children: ReactNode }) {
                 <span>Mở ảnh gốc ↗</span>
               </a>
             </div>
-
-            <div className={css.watermark_man_hinh} aria-hidden="true">
-              <span>gikky.net</span>
-            </div>
           </div>,
           document.body,
         )}
