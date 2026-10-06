@@ -271,7 +271,7 @@ export function CotChong({
             </div>
 
             <div className="border-t border-vien pt-1 text-[11px] leading-relaxed text-muc-mo">
-              <span className="font-medium text-muc">Trong đó: </span>
+              <span>(</span>
               {dangHover.cacPhan.map((p, idx) => (
                 <span key={p.ten} className="inline-flex items-center gap-1">
                   <span
@@ -282,13 +282,12 @@ export function CotChong({
                   <span className="font-mono font-medium tabular-nums text-muc">
                     {p.giaTri.toLocaleString("vi-VN")}
                   </span>
-                  {idx < dangHover.cacPhan.length - 1 ? (
+                  {idx < dangHover.cacPhan.length - 1 && (
                     <span className="mr-1.5">,</span>
-                  ) : (
-                    <span>.</span>
                   )}
                 </span>
               ))}
+              <span>)</span>
             </div>
           </div>
         </div>
