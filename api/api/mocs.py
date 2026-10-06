@@ -49,15 +49,26 @@ logger = logging.getLogger(__name__)
 router = Router()
 
 
-def _moc_cua_mach_hien(moc_id: int) -> Moc | None:
-    """Mốc thuộc một mạch chưa bị mod ẩn. **Bia mộ vẫn trả về** — xem endpoint dưới."""
-    return (
+def _moc_cua_mach_hien(moc_id: int, user=None) -> Moc | None:
+    """Mốc thuộc một mạch chưa bị mod ẩn. **Bia mộ vẫn trả về** — xem endpoint dưới.
+    Mạch riêng tư (`rieng_tu=True`): chỉ tác giả hoặc staff xem được.
+    """
+    moc = (
         Moc.objects.filter(pk=moc_id, mach__hidden_at__isnull=True)
         # `author` cho `MocOut.author` (nợ `MOC-THIEU-AUTHOR`); `mach__author` cho phép
         # kiểm quyền của đường trích, vốn hỏi chủ MẠCH chứ không chủ mốc.
         .select_related("mach", "author", "mach__author")
         .first()
     )
+    if moc is None:
+        return None
+    if moc.mach.rieng_tu:
+        da_auth = user is not None and getattr(user, "is_authenticated", False)
+        la_tac_gia = da_auth and user.pk == moc.mach.author_id
+        la_staff = da_auth and getattr(user, "is_staff", False)
+        if not (la_tac_gia or la_staff):
+            return None
+    return moc
 
 
 @router.get(
@@ -111,7 +122,7 @@ def liet_ke_binh_luan_moc(request, moc_id: int):
     mốc), nhưng `question_for_crowd` khi đó là `null`: đó là nội dung của mốc, mà nội
     dung của bia mộ thì không trả ra.
     """
-    moc = _moc_cua_mach_hien(moc_id)
+    moc = _moc_cua_mach_hien(moc_id, user=request.user)
     if moc is None:
         return khong_tim_thay(f"mốc {moc_id}")
 
@@ -147,7 +158,7 @@ def liet_ke_ban_cu_moc(request, moc_id: int):
 
     Mốc chưa sửa lần nào trả `items: []`, không phải 404.
     """
-    moc = _moc_cua_mach_hien(moc_id)
+    moc = _moc_cua_mach_hien(moc_id, user=request.user)
     if moc is None or not doc_duoc(moc):
         return khong_tim_thay(f"mốc {moc_id}")
 

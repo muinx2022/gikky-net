@@ -188,25 +188,10 @@ test.describe("SEO On-page & Content Improvements", () => {
     expect(lightboxSrc).toContain("gikky.net");
   });
 
-  test("7. Meta Description & Internal Links: tomTat loại bỏ tiền tố máy móc và trang-mach có khối BaiVietLienQuan", () => {
+  test("7. Meta Description: tomTat loại bỏ tiền tố máy móc và tuân thủ giới hạn 160 ký tự", () => {
     const moTa = tomTat(MACH_GIA);
     expect(moTa).not.toMatch(/^\d+\s+mốc\s*·/);
     expect(moTa).toContain("Nội dung phân tích chuyên sâu");
     expect(moTa.length).toBeLessThanOrEqual(160);
-
-    const trangMachSrc = readFileSync(
-      resolve(WEB, "components/trang-mach.tsx"),
-      "utf8",
-    );
-    expect(trangMachSrc).toContain("BaiVietLienQuan");
-    expect(trangMachSrc).toContain("<BaiVietLienQuan");
-
-    const baiVietLienQuanSrc = readFileSync(
-      resolve(WEB, "components/bai-viet-lien-quan.tsx"),
-      "utf8",
-    );
-    expect(baiVietLienQuanSrc).toContain("Bài viết liên quan trong s/");
-    expect(baiVietLienQuanSrc).toContain("duongDanMach");
-    expect(baiVietLienQuanSrc).toContain("duongDanSub");
   });
 });

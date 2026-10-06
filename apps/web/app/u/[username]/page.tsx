@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 
 import { Avatar } from "@/components/avatar";
@@ -66,7 +67,10 @@ export default async function TrangHoSo({
   const { username } = await params;
   const username_giai_ma = decodeURIComponent(username);
   const tab = docTabHoSo((await searchParams).tab);
-  const ho_so = await docHoSo(username_giai_ma);
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get("sessionid")?.value;
+  const cookieHeader = sessionCookie ? `sessionid=${sessionCookie}` : undefined;
+  const ho_so = await docHoSo(username_giai_ma, 20, cookieHeader);
   if (ho_so === null) notFound();
 
   // Nợ 1b #6: hồ sơ CẮT ở `limit` và **không có cursor** — phần dôi ra không có đường

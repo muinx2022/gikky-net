@@ -56,6 +56,8 @@ export function FormDangMach({
         if (parsed.sub) datSub(parsed.sub);
         if (parsed.title) datTitle(parsed.title);
         if (parsed.body) datMoc((cu) => ({ ...cu, body: parsed.body }));
+        if (typeof parsed.tatBinhLuan === "boolean") datTatBinhLuan(parsed.tatBinhLuan);
+        if (typeof parsed.riengTu === "boolean") datRiengTu(parsed.riengTu);
         sessionStorage.removeItem("gikky_draft_dang_mach");
       }
     } catch {

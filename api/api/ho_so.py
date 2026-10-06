@@ -222,8 +222,22 @@ def liet_ke_mach_cua_user(
     if user is None:
         return khong_tim_thay(f"người dùng {username!r}")
 
+    qs = _mach_hien().filter(author=user)
+    la_toi = (
+        request.user is not None
+        and getattr(request.user, "is_authenticated", False)
+        and request.user.pk == user.pk
+    )
+    la_staff = (
+        request.user is not None
+        and getattr(request.user, "is_authenticated", False)
+        and getattr(request.user, "is_staff", False)
+    )
+    if not (la_toi or la_staff):
+        qs = qs.filter(rieng_tu=False)
+
     hang, con_nua, l = _cat_keyset(
-        _mach_hien().filter(author=user),
+        qs,
         cursor=cursor,
         limit=limit,
         truong="published_at",

@@ -96,6 +96,9 @@ def xem_ho_so(request, username: str, limit: int = SO_MACH_TREN_HO_SO):
         "hidden_at__isnull": True,
         "mach__hidden_at__isnull": True,
     }
+    doc_duoc_cong_khai = dict(doc_duoc)
+    if not (la_toi or la_staff):
+        doc_duoc_cong_khai["mach__rieng_tu"] = False
     return HoSoOut(
         username=user.username,
         display_name=user.display_name,
@@ -103,8 +106,8 @@ def xem_ho_so(request, username: str, limit: int = SO_MACH_TREN_HO_SO):
         avatar_url=url_thumb(user.avatar_khoa) if user.avatar_khoa else None,
         date_joined=user.date_joined,
         so_mach=mach_hien.count(),
-        so_moc=Moc.objects.filter(author=user, **doc_duoc).count(),
-        so_binh_luan=Comment.objects.filter(author=user, **doc_duoc).count(),
+        so_moc=Moc.objects.filter(author=user, **doc_duoc_cong_khai).count(),
+        so_binh_luan=Comment.objects.filter(author=user, **doc_duoc_cong_khai).count(),
         # `values(...).distinct().count()` chứ không phải `.count()` trần: đếm số HÀNG
         # `Trich` là đếm số LẦN được trích, và hai nick trích qua lại sẽ tự bơm chỉ số
         # cho nhau. `moc__mach__author` là người trích — chủ mạch nhận bình luận vào sổ.

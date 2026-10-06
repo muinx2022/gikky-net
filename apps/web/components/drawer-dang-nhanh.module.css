@@ -332,6 +332,35 @@
   cursor: not-allowed;
 }
 
+.khoi_tuy_chon {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--inset);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin-top: 4px;
+}
+
+.tuy_chon {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  color: var(--ink-2);
+  cursor: pointer;
+  user-select: none;
+}
+
+.tuy_chon input[type="checkbox"] {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
 @media (max-width: 540px) {
   .drawer {
     width: 100vw;

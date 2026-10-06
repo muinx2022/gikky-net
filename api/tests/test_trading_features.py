@@ -130,3 +130,49 @@ def test_dong_so_kem_bai_hoc_va_mo_lai(client, sub, tac_gia):
     assert data_reopen["status"] == "open"
     assert data_reopen["ket_qua"] is None
     assert data_reopen["bai_hoc"] is None
+
+
+def test_mach_rieng_tu_comments_va_ho_so(client, tac_gia, nguoi_a, mach_rieng_tu):
+    # 1. Khách / người lạ xem comments của mạch riêng tư -> 404
+    client.logout()
+    res = client.get(f"/api/v1/machs/{mach_rieng_tu.pk}/comments")
+    assert res.status_code == 404
+
+    client.force_login(nguoi_a)
+    res = client.get(f"/api/v1/machs/{mach_rieng_tu.pk}/comments")
+    assert res.status_code == 404
+
+    # 2. Tác giả xem comments của mạch riêng tư -> 200
+    client.force_login(tac_gia)
+    res = client.get(f"/api/v1/machs/{mach_rieng_tu.pk}/comments")
+    assert res.status_code == 200
+
+    # 3. Khách / người lạ xem hồ sơ tác giả -> so_mach = 0, so_moc = 0, machs = []
+    client.force_login(nguoi_a)
+    res = client.get(f"/api/v1/users/{tac_gia.username}")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["so_mach"] == 0
+    assert data["so_moc"] == 0
+    assert len(data["machs"]) == 0
+
+    # Khách / người lạ xem tab machs -> items = []
+    res_machs = client.get(f"/api/v1/users/{tac_gia.username}/machs")
+    assert res_machs.status_code == 200
+    assert len(res_machs.json()["items"]) == 0
+
+    # 4. Tác giả xem hồ sơ của chính mình -> so_mach = 1, so_moc = 1, machs có 1 bài
+    client.force_login(tac_gia)
+    res = client.get(f"/api/v1/users/{tac_gia.username}")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["so_mach"] == 1
+    assert data["so_moc"] == 1
+    assert len(data["machs"]) == 1
+    assert data["machs"][0]["id"] == mach_rieng_tu.pk
+
+    # Tác giả xem tab machs -> có bài riêng tư
+    res_machs = client.get(f"/api/v1/users/{tac_gia.username}/machs")
+    assert res_machs.status_code == 200
+    assert len(res_machs.json()["items"]) == 1
+

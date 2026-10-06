@@ -197,11 +197,16 @@ function cursorHopLe(cursor: string | undefined): string | null {
 export async function docMach(
   machId: number,
   doc: ChinhSachDoc,
+  cookieHeader?: string,
 ): Promise<MachChiTietOut | null> {
   const kq =
     doc === "isr"
       ? await xemMach({ ...CHUNG_ISR, path: { mach_id: machId } })
-      : await xemMach({ ...CHUNG, path: { mach_id: machId } });
+      : await xemMach({
+          ...CHUNG,
+          headers: cookieHeader ? { cookie: cookieHeader } : undefined,
+          path: { mach_id: machId },
+        });
   return lay(kq, `xem_mach(${machId})`);
 }
 
@@ -248,6 +253,7 @@ export async function docKhanDai(
   doc: ChinhSachDoc,
   trang: { offset?: number; cursor?: string } = {},
   limit = 50,
+  cookieHeader?: string,
 ): Promise<TrangCursor<KhanDaiOut | null>> {
   const la_hay_nhat = sort === "hay_nhat";
   const xin = cursorHopLe(trang.cursor);
@@ -262,7 +268,12 @@ export async function docKhanDai(
       cursor: la_hay_nhat ? null : cursor,
     };
     if (doc === "isr") return lietKeBinhLuanMach({ ...CHUNG_ISR, path, query });
-    return lietKeBinhLuanMach({ ...CHUNG, path, query });
+    return lietKeBinhLuanMach({
+      ...CHUNG,
+      headers: cookieHeader ? { cookie: cookieHeader } : undefined,
+      path,
+      query,
+    });
   };
   const viec = `liet_ke_binh_luan_mach(${machId}, ${sort})`;
 
@@ -311,18 +322,32 @@ export async function docCauDangDoc(
 export async function docNganKeo(
   mocId: number,
   doc: ChinhSachDoc,
+  cookieHeader?: string,
 ): Promise<NganKeoOut | null> {
   const path = { moc_id: mocId };
   const kq =
     doc === "isr"
       ? await lietKeBinhLuanMoc({ ...CHUNG_ISR, path })
-      : await lietKeBinhLuanMoc({ ...CHUNG, path });
+      : await lietKeBinhLuanMoc({
+          ...CHUNG,
+          headers: cookieHeader ? { cookie: cookieHeader } : undefined,
+          path,
+        });
   return lay(kq, `liet_ke_binh_luan_moc(${mocId})`);
 }
 
-export async function docHoSo(username: string, limit = 20): Promise<HoSoOut | null> {
+export async function docHoSo(
+  username: string,
+  limit = 20,
+  cookieHeader?: string,
+): Promise<HoSoOut | null> {
   return lay(
-    await xemHoSo({ ...CHUNG, path: { username: decodeURIComponent(username) }, query: { limit } }),
+    await xemHoSo({
+      ...CHUNG,
+      headers: cookieHeader ? { cookie: cookieHeader } : undefined,
+      path: { username: decodeURIComponent(username) },
+      query: { limit },
+    }),
     `xem_ho_so(${username})`,
   );
 }

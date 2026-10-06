@@ -454,7 +454,7 @@ def liet_ke_binh_luan_mach(
             "không nhận sort khác hay_nhat, không nhận offset/cursor/limit.",
         )
 
-    mach = _mach_hien(mach_id)
+    mach = _mach_hien(mach_id, user=request.user)
     if mach is None:
         return khong_tim_thay(f"mạch {mach_id}")
 

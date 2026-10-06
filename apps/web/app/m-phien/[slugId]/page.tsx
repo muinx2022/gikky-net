@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 
 import { TrangMach, metadataMach } from "@/components/trang-mach";
 
@@ -36,7 +37,10 @@ export async function generateMetadata({
 }: {
   params: Promise<ThamSo>;
 }): Promise<Metadata> {
-  return metadataMach((await params).slugId, "tuoi-song");
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get("sessionid")?.value;
+  const cookieHeader = sessionCookie ? `sessionid=${sessionCookie}` : undefined;
+  return metadataMach((await params).slugId, "tuoi-song", cookieHeader);
 }
 
 export default async function TrangMachCoPhien({
@@ -47,5 +51,15 @@ export default async function TrangMachCoPhien({
   searchParams: Promise<Query>;
 }) {
   const { slugId } = await params;
-  return <TrangMach slugId={slugId} q={await searchParams} doc="tuoi-song" />;
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get("sessionid")?.value;
+  const cookieHeader = sessionCookie ? `sessionid=${sessionCookie}` : undefined;
+  return (
+    <TrangMach
+      slugId={slugId}
+      q={await searchParams}
+      doc="tuoi-song"
+      cookieHeader={cookieHeader}
+    />
+  );
 }

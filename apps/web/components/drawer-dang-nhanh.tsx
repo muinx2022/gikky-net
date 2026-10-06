@@ -21,6 +21,7 @@ import { duongDanMach } from "@/lib/url";
 import css from "./drawer-dang-nhanh.module.css";
 import { useModalDangNhap } from "./modal-dang-nhap";
 import { usePhien } from "./phien";
+import { SoanThao } from "./soan-thao";
 
 export type ThongTinMachHienTai = {
   machId: number;
@@ -60,6 +61,7 @@ export function DrawerDangNhanhProvider({
   const router = useRouter();
 
   const [dangMo, setDangMo] = useState(false);
+  const [lanMo, setLanMo] = useState(0);
   const [dangMachHienTai, setDangMachHienTai] =
     useState<ThongTinMachHienTai | null>(null);
 
@@ -68,6 +70,8 @@ export function DrawerDangNhanhProvider({
   const [subDangChon, setSubDangChon] = useState("");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [tatBinhLuan, setTatBinhLuan] = useState(false);
+  const [riengTu, setRiengTu] = useState(false);
   const [anhs, setAnhs] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [dangGui, setDangGui] = useState(false);
@@ -119,6 +123,7 @@ export function DrawerDangNhanhProvider({
     }
     setDangMo(true);
     setLoi(null);
+    setLanMo((c) => c + 1);
   }, [dangNhapRoi, moModal]);
 
   const dongDrawer = useCallback(() => {
@@ -190,6 +195,8 @@ export function DrawerDangNhanhProvider({
           sub: subDangChon,
           title: title.trim(),
           body: body.trim(),
+          tatBinhLuan,
+          riengTu,
         }),
       );
     } catch {
@@ -256,6 +263,8 @@ export function DrawerDangNhanhProvider({
               sub: subDangChon,
               title: title.trim(),
               body: body.trim(),
+              tat_binh_luan: tatBinhLuan,
+              rieng_tu: riengTu,
             },
           }),
           "Không đăng được bài.",
@@ -276,6 +285,8 @@ export function DrawerDangNhanhProvider({
         setBody("");
         setAnhs([]);
         setPreviewUrls([]);
+        setTatBinhLuan(false);
+        setRiengTu(false);
         dongDrawer();
         window.location.assign(duongDanMach(mach.slug, mach.id));
       }
@@ -395,22 +406,22 @@ export function DrawerDangNhanhProvider({
                   ? `Nội dung mốc ${dangMachHienTai.soMoc + 1}`
                   : "Nội dung"}
               </span>
-              <span className={css.dem_ky_tu}>
-                {body.length.toLocaleString("vi-VN")}/50.000
-              </span>
+              {body.length > 0 && (
+                <span className={css.dem_ky_tu}>
+                  {body.length.toLocaleString("vi-VN")}/50.000 ký tự
+                </span>
+              )}
             </div>
-            <textarea
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              rows={laNoiMoc ? 8 : 6}
-              placeholder={
+            <SoanThao
+              key={laNoiMoc ? `moc-${dangMachHienTai.machId}` : `dang-nhanh-${lanMo}`}
+              giaTri={body}
+              datGiaTri={setBody}
+              moi={
                 laNoiMoc
                   ? "Chuyện gì vừa xảy ra, và bạn định làm gì tiếp?"
                   : "Chia sẻ nhận định, câu hỏi hoặc góc nhìn của bạn..."
               }
-              className={css.textarea}
-              data-testid={laNoiMoc ? "noi-moc-body" : "dang-nhanh-body"}
-              required
+              testId={laNoiMoc ? "noi-moc-body" : "dang-nhanh-body"}
             />
           </div>
 
@@ -459,6 +470,30 @@ export function DrawerDangNhanhProvider({
               </div>
             )}
           </div>
+
+          {!laNoiMoc && (
+            <div className={css.khoi_tuy_chon}>
+              <label className={css.tuy_chon}>
+                <input
+                  type="checkbox"
+                  checked={tatBinhLuan}
+                  onChange={(e) => setTatBinhLuan(e.target.checked)}
+                  data-testid="dang-nhanh-tat-binh-luan"
+                />
+                <span>Tắt bình luận cho bài viết này (có thể mở lại sau)</span>
+              </label>
+
+              <label className={css.tuy_chon}>
+                <input
+                  type="checkbox"
+                  checked={riengTu}
+                  onChange={(e) => setRiengTu(e.target.checked)}
+                  data-testid="dang-nhanh-rieng-tu"
+                />
+                <span>🔒 Nhật ký riêng tư (Chỉ mình tôi xem, có thể công khai sau)</span>
+              </label>
+            </div>
+          )}
         </form>
 
         <div className={css.chan}>

@@ -10,7 +10,6 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { Avatar } from "@/components/avatar";
 import { BaoCursorHong } from "@/components/bao-cursor-hong";
 import { ChanDongSo } from "@/components/chan-dong-so";
-import { BaiVietLienQuan } from "@/components/bai-viet-lien-quan";
 import { DaiGapBung } from "@/components/dai-gap";
 import { JsonLd } from "@/components/json-ld";
 import { KhanDai } from "@/components/khan-dai";
@@ -101,10 +100,10 @@ function motChuoi(v: string | string[] | undefined): string | undefined {
   return Array.isArray(v) ? v[0] : v;
 }
 
-async function nap(slugId: string, doc: ChinhSachDoc) {
+async function nap(slugId: string, doc: ChinhSachDoc, cookieHeader?: string) {
   const tach = tachSlugId(slugId);
   if (tach === null) notFound();
-  const mach = await docMach(tach.id, doc);
+  const mach = await docMach(tach.id, doc, cookieHeader);
   if (mach === null) notFound();
   return { mach, slugTrenUrl: tach.slug };
 }
@@ -133,8 +132,12 @@ export function tomTat(mach: MachChiTietOut): string {
  * Đó là URL công khai duy nhất; `/m-phien/` là đích của một rewrite nội bộ và
  * `app/robots.ts` cấm bot đi vào đó.
  */
-export async function metadataMach(slugId: string, doc: ChinhSachDoc) {
-  const { mach } = await nap(slugId, doc);
+export async function metadataMach(
+  slugId: string,
+  doc: ChinhSachDoc,
+  cookieHeader?: string,
+) {
+  const { mach } = await nap(slugId, doc, cookieHeader);
   const duong_dan = duongDanMach(mach.slug, mach.id);
   const mo_ta = tomTat(mach);
   const tac_gia = mach.author.display_name || mach.author.username;
@@ -164,12 +167,14 @@ export async function TrangMach({
   slugId,
   q,
   doc,
+  cookieHeader,
 }: {
   slugId: string;
   q: Query;
   doc: ChinhSachDoc;
+  cookieHeader?: string;
 }) {
-  const { mach, slugTrenUrl } = await nap(slugId, doc);
+  const { mach, slugTrenUrl } = await nap(slugId, doc, cookieHeader);
 
   // PLAN 5.9: `id` bền, slug đổi được ⇒ slug lệch thì redirect về dạng chuẩn, GIỮ NGUYÊN
   // `id`. Query string đi theo, nếu không thì người bấm link chia sẻ tới khán đài đang
@@ -217,7 +222,7 @@ export async function TrangMach({
   // như luôn có trích, và giữ nó cho `id_trong_trang` đủ nửa khán đài ở trang đầu.)
   const can_hay_nhat = dai.gap || co_trich || sort === "hay_nhat";
   const hay_nhat = can_hay_nhat
-    ? (await docKhanDai(mach.id, "hay_nhat", doc)).du_lieu
+    ? (await docKhanDai(mach.id, "hay_nhat", doc, {}, 50, cookieHeader)).du_lieu
     : null;
 
   // Trang khán đài ĐANG HIỆN — **luôn nạp** *(user chốt 2026-08-24)*.
@@ -238,7 +243,7 @@ export async function TrangMach({
   const trang_dang_xem: TrangCursor<KhanDaiOut | null> =
     sort === "hay_nhat" && offset === 0 && cursor === undefined && hay_nhat !== null
       ? { du_lieu: hay_nhat, cursorHong: false }
-      : await docKhanDai(mach.id, sort, doc, { offset, cursor });
+      : await docKhanDai(mach.id, sort, doc, { offset, cursor }, 50, cookieHeader);
   const khan_dai_trang = trang_dang_xem.du_lieu;
   const cursor_hong = trang_dang_xem.cursorHong || offset_hong;
 
@@ -266,7 +271,7 @@ export async function TrangMach({
   const lat_cat = new Map<number, NganKeoOut>();
   if (la_mach) {
     const ket_qua = await chayCoTran(mach.mocs, TRAN_NGAN_KEO, (m) =>
-      docNganKeo(m.id, doc),
+      docNganKeo(m.id, doc, cookieHeader),
     );
     mach.mocs.forEach((m, i) => {
       const k = ket_qua[i];
@@ -579,14 +584,6 @@ export async function TrangMach({
                 hienComposer={!la_bao}
               />
             )}
-
-            {/* Bài viết liên quan (Internal Links booster) — giúp lan toả PageRank và giữ chân người đọc */}
-            <BaiVietLienQuan
-              machHienTaiId={mach.id}
-              subSlug={mach.sub.slug}
-              subTen={mach.sub.ten}
-              truongPhai={mach.truong_phai}
-            />
           </article>
           </FormBinhLuanProvider>
         </TrangThaiToiProvider>

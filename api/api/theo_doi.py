@@ -78,7 +78,7 @@ def xem_mach_cua_toi(request, mach_id: int):
     CSRF bảo vệ, và luật "mọi operation không-GET phải có auth"
     (`tests/test_quyen_ghi.py`) vì thế không đụng tới nó.
     """
-    mach = _mach_hien(mach_id)
+    mach = _mach_hien(mach_id, user=request.user)
     if mach is None:
         return khong_tim_thay(f"mạch {mach_id}")
 
@@ -170,8 +170,9 @@ def _noi_dung_bi_che_cua_toi(user, mach) -> list[NoiDungCuaToiOut]:
     return ra
 
 
-def _mach_hien(mach_id: int):
+def _mach_hien(mach_id: int, user=None):
     """Mạch công khai theo `id`. Ẩn bởi mod ⇒ coi như không tồn tại (PLAN 5.10).
+    Mạch riêng tư (`rieng_tu=True`): chỉ tác giả hoặc staff xem được.
 
     Không dùng `api/machs.py::_mach_hien` (import chéo giữa hai router) và không
     `select_related` gì: endpoint này không render `sub`/`author`, nó chỉ cần bốn cột của
@@ -179,7 +180,16 @@ def _mach_hien(mach_id: int):
     """
     from core.models.dien_dan import Mach
 
-    return Mach.objects.filter(pk=mach_id, hidden_at__isnull=True).first()
+    mach = Mach.objects.filter(pk=mach_id, hidden_at__isnull=True).first()
+    if mach is None:
+        return None
+    if mach.rieng_tu:
+        da_auth = user is not None and getattr(user, "is_authenticated", False)
+        la_tac_gia = da_auth and user.pk == mach.author_id
+        la_staff = da_auth and getattr(user, "is_staff", False)
+        if not (la_tac_gia or la_staff):
+            return None
+    return mach
 
 
 def _khach(mat_thoi_gian, view_count: int = 0) -> MachCuaToiOut:
