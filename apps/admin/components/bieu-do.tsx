@@ -42,33 +42,19 @@ const MAU_CHUOI = [
   "var(--color-chuoi-4)",
 ] as const;
 
-export type TrangThaiHoverCot =
-  | {
-      loai: "tong";
-      ngayIndex: number;
-      nhan: string;
-      tong: number;
-      cacPhan: { ten: string; mau: 1 | 2 | 3 | 4; giaTri: number }[];
-      x: number;
-      y: number;
-    }
-  | {
-      loai: "phan";
-      ngayIndex: number;
-      chuoiIndex: number;
-      nhan: string;
-      ten: string;
-      mau: 1 | 2 | 3 | 4;
-      giaTri: number;
-      tong: number;
-      x: number;
-      y: number;
-    };
+export type TrangThaiHoverCot = {
+  ngayIndex: number;
+  nhan: string;
+  tong: number;
+  cacPhan: { ten: string; mau: 1 | 2 | 3 | 4; giaTri: number }[];
+  x: number;
+  y: number;
+};
 
 /** Biểu đồ cột xếp chồng (1 cột nhiều màu theo từng chuỗi).
  *
- * Di chuột vào phần nào: hiển thị số của phần đó.
- * Di chuột lên phía trên của cột chính: hiển thị tổng của ngày hôm đó.
+ * Di chuột vào cột của ngày nào: hiển thị hộp thông tin gộp gồm Ngày, Tổng và
+ * chi tiết Trong đó: Người, Khách, Bot.
  */
 export function CotChong({
   nhan,
@@ -140,7 +126,8 @@ export function CotChong({
         })}
 
         {nhan.map((n, i) => {
-          const cot_x = le_trai + i * rong_o + (rong_o - rong_cot) / 2;
+          const slot_x = le_trai + i * rong_o;
+          const cot_x = slot_x + (rong_o - rong_cot) / 2;
           const x_tam = cot_x + rong_cot / 2;
           const tong_ngay = danhSachTong[i];
           const cacPhan = chuoi.map((c) => ({
@@ -164,8 +151,6 @@ export function CotChong({
             };
           });
           const cot_y_top = day_y - h_tich_luy;
-          const rong_hover = Math.max(rong_cot + 6, Math.min(rong_o, 26));
-          const hover_x = cot_x - (rong_hover - rong_cot) / 2;
           const laCotDangChon = dangHover?.ngayIndex === i;
 
           return (
@@ -178,25 +163,42 @@ export function CotChong({
                   width={rong_cot + 6}
                   height={vung_cao}
                   fill="var(--color-nen-mo)"
-                  opacity={0.5}
+                  opacity={0.6}
                   rx={2}
                   pointerEvents="none"
                 />
               )}
 
-              {/* Vùng phía trên cột chính: di chuột vào sẽ hiển thị tổng ngày */}
+              {/* Các phần xếp chồng (mỗi phần 1 màu) */}
+              {segments.map((seg) => (
+                <rect
+                  key={seg.chuoi.ten}
+                  x={cot_x}
+                  y={seg.y}
+                  width={rong_cot}
+                  height={Math.max(seg.gt > 0 ? 1.5 : 0, seg.h)}
+                  rx={1}
+                  fill={MAU_CHUOI[seg.chuoi.mau - 1]}
+                  data-chuoi={seg.chuoi.ten}
+                  data-nhan={n}
+                  data-gia-tri={seg.gt}
+                >
+                  <title>{`${n} · ${seg.chuoi.ten}: ${seg.gt}`}</title>
+                </rect>
+              ))}
+
+              {/* Vùng tương tác toàn bộ cột: di chuột vào là show stat ngay */}
               <rect
-                x={hover_x}
+                x={slot_x}
                 y={0}
-                width={rong_hover}
-                height={Math.max(16, cot_y_top)}
+                width={rong_o}
+                height={cao - le_duoi}
                 fill="transparent"
                 className="cursor-pointer"
                 data-cot-tong={n}
                 data-tong={tong_ngay}
                 onMouseEnter={() =>
                   datDangHover({
-                    loai: "tong",
                     ngayIndex: i,
                     nhan: n,
                     tong: tong_ngay,
@@ -207,7 +209,6 @@ export function CotChong({
                 }
                 onMouseMove={() =>
                   datDangHover({
-                    loai: "tong",
                     ngayIndex: i,
                     nhan: n,
                     tong: tong_ngay,
@@ -217,65 +218,10 @@ export function CotChong({
                   })
                 }
               >
-                <title>{`${n} · Tổng: ${tong_ngay}`}</title>
+                <title>{`Ngày ${n} · Tổng: ${tong_ngay} (Trong đó: ${cacPhan.map((p) => `${p.ten}: ${p.giaTri}`).join(", ")})`}</title>
               </rect>
 
-              {/* Các phần xếp chồng (mỗi phần 1 màu) */}
-              {segments.map((seg) => {
-                const moPhan =
-                  laCotDangChon &&
-                  dangHover.loai === "phan" &&
-                  dangHover.chuoiIndex !== seg.j;
-
-                return (
-                  <rect
-                    key={seg.chuoi.ten}
-                    x={cot_x}
-                    y={seg.y}
-                    width={rong_cot}
-                    height={Math.max(seg.gt > 0 ? 1.5 : 0, seg.h)}
-                    rx={1}
-                    fill={MAU_CHUOI[seg.chuoi.mau - 1]}
-                    opacity={moPhan ? 0.35 : 1}
-                    className="cursor-pointer transition-opacity duration-75"
-                    data-chuoi={seg.chuoi.ten}
-                    data-nhan={n}
-                    data-gia-tri={seg.gt}
-                    onMouseEnter={() =>
-                      datDangHover({
-                        loai: "phan",
-                        ngayIndex: i,
-                        chuoiIndex: seg.j,
-                        nhan: n,
-                        ten: seg.chuoi.ten,
-                        mau: seg.chuoi.mau,
-                        giaTri: seg.gt,
-                        tong: tong_ngay,
-                        x: x_tam,
-                        y: seg.y,
-                      })
-                    }
-                    onMouseMove={() =>
-                      datDangHover({
-                        loai: "phan",
-                        ngayIndex: i,
-                        chuoiIndex: seg.j,
-                        nhan: n,
-                        ten: seg.chuoi.ten,
-                        mau: seg.chuoi.mau,
-                        giaTri: seg.gt,
-                        tong: tong_ngay,
-                        x: x_tam,
-                        y: seg.y,
-                      })
-                    }
-                  >
-                    <title>{`${n} · ${seg.chuoi.ten}: ${seg.gt}`}</title>
-                  </rect>
-                );
-              })}
-
-              {/* Số hiển thị ngay trên đỉnh cột khi hover */}
+              {/* Số tổng hiển thị ngay trên đỉnh cột khi hover */}
               {laCotDangChon && (
                 <text
                   x={x_tam}
@@ -283,16 +229,10 @@ export function CotChong({
                   textAnchor="middle"
                   fontSize={10}
                   fontWeight={600}
-                  fill={
-                    dangHover.loai === "tong"
-                      ? "var(--color-muc)"
-                      : MAU_CHUOI[dangHover.mau - 1]
-                  }
+                  fill="var(--color-muc)"
                   pointerEvents="none"
                 >
-                  {dangHover.loai === "tong"
-                    ? dangHover.tong.toLocaleString("vi-VN")
-                    : dangHover.giaTri.toLocaleString("vi-VN")}
+                  {dangHover.tong.toLocaleString("vi-VN")}
                 </text>
               )}
 
@@ -314,81 +254,60 @@ export function CotChong({
         })}
       </svg>
 
-      {/* Tooltip hiển thị giá trị */}
+      {/* Tooltip hiển thị giá trị gộp cả ngày */}
       {dangHover !== null && (
         <div
-          className="pointer-events-none absolute z-20 min-w-36 rounded-lg border border-vien bg-nen p-2 text-xs shadow-lg transition-all duration-75"
+          className="pointer-events-none absolute z-20 min-w-44 rounded-lg border border-vien bg-nen p-2.5 text-xs shadow-lg transition-all duration-75"
           style={{
             left: `${(dangHover.x / rong) * 100}%`,
             top: `${(Math.max(le_tren, dangHover.y) / cao) * 100}%`,
             transform:
-              dangHover.x < 80
-                ? dangHover.y < 50
+              dangHover.x < 90
+                ? dangHover.y < 60
                   ? "translate(0%, 12px)"
                   : "translate(0%, -100%) translateY(-10px)"
-                : dangHover.x > rong - 80
-                ? dangHover.y < 50
+                : dangHover.x > rong - 90
+                ? dangHover.y < 60
                   ? "translate(-100%, 12px)"
                   : "translate(-100%, -100%) translateY(-10px)"
-                : dangHover.y < 50
+                : dangHover.y < 60
                 ? "translate(-50%, 12px)"
                 : "translate(-50%, -100%) translateY(-10px)",
           }}
         >
-          <div className="mb-1 flex items-center justify-between gap-4 border-b border-vien pb-1 font-semibold text-muc">
-            <span>{dangHover.nhan}</span>
-            <span className="text-[11px] font-normal text-muc-mo">
-              {dangHover.loai === "tong" ? "Tổng ngày" : "Chi tiết phần"}
-            </span>
-          </div>
+          <div className="space-y-1.5">
+            <div className="border-b border-vien pb-1 font-semibold text-muc">
+              Ngày {dangHover.nhan}
+            </div>
 
-          {dangHover.loai === "tong" ? (
-            <div className="space-y-1">
-              <div className="flex items-center justify-between gap-4 font-bold text-muc">
-                <span>Tổng cộng:</span>
-                <span className="font-mono text-sm">
-                  {dangHover.tong.toLocaleString("vi-VN")}
-                </span>
-              </div>
-              <div className="mt-1 space-y-0.5 border-t border-vien pt-1 text-[11px] text-muc-mo">
-                {dangHover.cacPhan.map((p) => (
-                  <div key={p.ten} className="flex items-center justify-between gap-3">
-                    <span className="flex items-center gap-1.5">
-                      <span
-                        className="size-2 shrink-0 rounded-full"
-                        style={{ backgroundColor: MAU_CHUOI[p.mau - 1] }}
-                      />
-                      <span>{p.ten}</span>
-                    </span>
-                    <span className="font-mono font-medium tabular-nums text-muc">
-                      {p.giaTri.toLocaleString("vi-VN")}
-                    </span>
-                  </div>
-                ))}
-              </div>
+            <div className="flex items-center justify-between gap-4 font-bold text-muc">
+              <span>Tổng:</span>
+              <span className="font-mono text-sm tabular-nums">
+                {dangHover.tong.toLocaleString("vi-VN")}
+              </span>
             </div>
-          ) : (
-            <div className="space-y-1">
-              <div className="flex items-center justify-between gap-4 font-semibold text-muc">
-                <span className="flex items-center gap-1.5">
+
+            <div className="border-t border-vien pt-1 text-[11px] leading-relaxed text-muc-mo">
+              <span className="font-medium text-muc">Trong đó: </span>
+              {dangHover.cacPhan.map((p, idx) => (
+                <span key={p.ten} className="inline-flex items-center gap-1">
                   <span
-                    className="size-2.5 shrink-0 rounded-full"
-                    style={{ backgroundColor: MAU_CHUOI[dangHover.mau - 1] }}
+                    className="inline-block size-2 shrink-0 rounded-full"
+                    style={{ backgroundColor: MAU_CHUOI[p.mau - 1] }}
                   />
-                  <span>{dangHover.ten}:</span>
+                  <span className="text-muc">{p.ten}: </span>
+                  <span className="font-mono font-medium tabular-nums text-muc">
+                    {p.giaTri.toLocaleString("vi-VN")}
+                  </span>
+                  {idx < dangHover.cacPhan.length - 1 ? (
+                    <span className="mr-1.5">,</span>
+                  ) : (
+                    <span>.</span>
+                  )}
                 </span>
-                <span className="font-mono text-sm tabular-nums">
-                  {dangHover.giaTri.toLocaleString("vi-VN")}
-                </span>
-              </div>
-              <div className="flex items-center justify-between gap-3 border-t border-vien pt-0.5 text-[11px] text-muc-mo">
-                <span>Tổng ngày:</span>
-                <span className="font-mono tabular-nums">
-                  {dangHover.tong.toLocaleString("vi-VN")}
-                </span>
-              </div>
+              ))}
             </div>
-          )}
+          </div>
         </div>
       )}
 
