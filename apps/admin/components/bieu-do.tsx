@@ -217,24 +217,7 @@ export function CotChong({
                     y: cot_y_top,
                   })
                 }
-              >
-                <title>{`Ngày ${n} · Tổng: ${tong_ngay} (Trong đó: ${cacPhan.map((p) => `${p.ten}: ${p.giaTri}`).join(", ")})`}</title>
-              </rect>
-
-              {/* Số tổng hiển thị ngay trên đỉnh cột khi hover */}
-              {laCotDangChon && (
-                <text
-                  x={x_tam}
-                  y={Math.max(le_tren - 4, cot_y_top - 4)}
-                  textAnchor="middle"
-                  fontSize={10}
-                  fontWeight={600}
-                  fill="var(--color-muc)"
-                  pointerEvents="none"
-                >
-                  {dangHover.tong.toLocaleString("vi-VN")}
-                </text>
-              )}
+              />
 
               {/* Nhãn trục X */}
               {i % Math.ceil(so_o / 8) === 0 && (
