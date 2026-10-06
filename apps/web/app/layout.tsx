@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 
 import { Chrome } from "@/components/chrome";
+import { GoogleAnalytics } from "@/components/google-analytics";
 import { GoogleOneTap } from "@/components/google-one-tap";
 import { KhoiPhucCuon } from "@/components/khoi-phuc-cuon";
 import { LightboxProvider } from "@/components/lightbox";
@@ -161,6 +162,7 @@ export default function RootLayout({
         <PhienProvider>
           <KhoiPhucCuon />
           <GoogleOneTap />
+          <GoogleAnalytics />
           <ToastProvider>
             <ModalDangNhapProvider>
               <LightboxProvider>
