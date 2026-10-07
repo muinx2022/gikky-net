@@ -127,7 +127,7 @@ export function TruongMoc({
 
         <label className={css.o}>
           <span className={css.nhan}>
-            Loại mốc <span className={css.tuy_chon}>tuỳ chọn</span>
+            Tiêu đề / Loại mốc <span className={css.tuy_chon}>tuỳ chọn</span>
           </span>
           <input
             className={css.dong}
@@ -135,7 +135,7 @@ export function TruongMoc({
             value={gia_tri.loai}
             maxLength={20}
             onChange={(e) => dat("loai", e.target.value)}
-            placeholder="Tên ngắn cho loại mốc này"
+            placeholder="Tiêu đề ngắn hoặc loại mốc (tối đa 20 ký tự)"
             data-testid={`${tienTo}-loai`}
           />
         </label>

@@ -14,14 +14,23 @@ import {
 
 import { cauLoiTaiAnh, KIEU_NHAN, taiAnhLanLuot } from "@/lib/anh";
 import { docCacSubOTrinhDuyet } from "@/lib/api";
-import { cauLoi, layDuLieu } from "@/lib/ghi";
+import { MA_LOI, cauLoi, layDuLieu, LoiGhi } from "@/lib/ghi";
 import { GOC_TRINH_DUYET, headerGhi } from "@/lib/tai-khoan";
 import { duongDanMach } from "@/lib/url";
+import { gioPhutVN } from "@/lib/vong-doi";
 
+import { ChonAnh } from "./chon-anh";
 import css from "./drawer-dang-nhanh.module.css";
 import { useModalDangNhap } from "./modal-dang-nhap";
 import { usePhien } from "./phien";
 import { SoanThao } from "./soan-thao";
+import {
+  TruongMoc,
+  mocRong,
+  thanMoc,
+  DAI_BODY_MOC,
+  type NoiDungMoc,
+} from "./truong-moc";
 
 export type ThongTinMachHienTai = {
   machId: number;
@@ -67,7 +76,7 @@ export function DrawerDangNhanhProvider({
   const [dangMachHienTai, setDangMachHienTai] =
     useState<ThongTinMachHienTai | null>(null);
 
-  // Form states
+  // Form states - Tạo bài viết
   const [cacSub, setCacSub] = useState<readonly SubChiTietOut[]>([]);
   const [subDangChon, setSubDangChon] = useState("");
   const [title, setTitle] = useState("");
@@ -78,6 +87,10 @@ export function DrawerDangNhanhProvider({
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [dangGui, setDangGui] = useState(false);
   const [loi, setLoi] = useState<string | null>(null);
+
+  // Form states - Nối mốc
+  const [moc, setMoc] = useState<NoiDungMoc>(mocRong);
+  const [mocAnhs, setMocAnhs] = useState<File[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -136,6 +149,8 @@ export function DrawerDangNhanhProvider({
         return;
       }
       setDangMachHienTai(mach);
+      setMoc(mocRong());
+      setMocAnhs([]);
       setDangMo(true);
       setLoi(null);
       setLanMo((c) => c + 1);
@@ -147,6 +162,8 @@ export function DrawerDangNhanhProvider({
     setDangMo(false);
     setLoi(null);
     setDangMachHienTai(null);
+    setMoc(mocRong());
+    setMocAnhs([]);
   }, []);
 
   const dangKyMachHienTai = useCallback((mach: ThongTinMachHienTai | null) => {
@@ -236,23 +253,29 @@ export function DrawerDangNhanhProvider({
     try {
       if (dangMachHienTai) {
         // Nối mốc vào bài hiện tại
-        if (body.trim() === "") {
+        if (moc.body.trim() === "") {
           throw new Error("Nội dung mốc không được để trống.");
         }
+        if (moc.body.length > DAI_BODY_MOC) {
+          throw new LoiGhi(
+            400,
+            "",
+            `Nội dung mốc vượt quá ${DAI_BODY_MOC.toLocaleString("vi-VN")} ký tự (hiện có ${moc.body.length.toLocaleString("vi-VN")} ký tự). Vui lòng rút gọn trước khi lưu.`,
+          );
+        }
+
         const mocMoi = layDuLieu(
           await noiMoc({
             baseUrl: GOC_TRINH_DUYET,
             headers: await headerGhi(),
             path: { mach_id: dangMachHienTai.machId },
-            body: {
-              body: body.trim(),
-            },
+            body: thanMoc(moc),
           }),
           "Không nối mốc được.",
         );
 
-        if (anhs.length > 0) {
-          const kqAnh = await taiAnhLanLuot(mocMoi.id, anhs);
+        if (mocAnhs.length > 0) {
+          const kqAnh = await taiAnhLanLuot(mocMoi.id, mocAnhs);
           const loiAnh = cauLoiTaiAnh(kqAnh);
           if (loiAnh !== null) {
             setLoi(`Mốc đã nối, nhưng ${loiAnh}`);
@@ -262,9 +285,8 @@ export function DrawerDangNhanhProvider({
         }
 
         // Dọn form và reload trang để xem mốc mới
-        setBody("");
-        setAnhs([]);
-        setPreviewUrls([]);
+        setMoc(mocRong());
+        setMocAnhs([]);
         dongDrawer();
         window.location.reload();
       } else {
@@ -309,14 +331,20 @@ export function DrawerDangNhanhProvider({
         window.location.assign(duongDanMach(mach.slug, mach.id));
       }
     } catch (e2) {
-      setLoi(cauLoi(e2, "Không gọi được máy chủ. Kiểm tra kết nối rồi thử lại."));
+      const thoiGianCho =
+        e2 instanceof LoiGhi && e2.ma === MA_LOI.QUA_HAN_MUC_MOC && e2.thuLaiTu !== null
+          ? ` Viết tiếp được từ ${gioPhutVN(e2.thuLaiTu)}.`
+          : "";
+      setLoi(
+        cauLoi(e2, "Không gọi được máy chủ. Kiểm tra kết nối rồi thử lại.") + thoiGianCho,
+      );
       setDangGui(false);
     }
   };
 
   const laNoiMoc = dangMachHienTai !== null;
   const duDieuKien = laNoiMoc
-    ? body.trim() !== ""
+    ? moc.body.trim() !== "" && moc.body.length <= DAI_BODY_MOC
     : subDangChon !== "" && title.trim() !== "" && body.trim() !== "";
 
   return (
@@ -380,7 +408,27 @@ export function DrawerDangNhanhProvider({
             </p>
           )}
 
-          {!laNoiMoc && (
+          {laNoiMoc ? (
+            <>
+              <TruongMoc
+                key={`noi-moc-${dangMachHienTai.machId}-${lanMo}`}
+                gia_tri={moc}
+                datGiaTri={setMoc}
+                tienTo="noi-moc"
+                nhanThan={`Nội dung mốc ${dangMachHienTai.soMoc + 1}`}
+                goiYThan="Chuyện gì vừa xảy ra, và bạn định làm gì tiếp?"
+              />
+              <ChonAnh
+                files={mocAnhs}
+                datFiles={setMocAnhs}
+                tran={tranAnh}
+                tienTo="noi-moc"
+                dangGui={dangGui}
+                nhan={`Ảnh đính kèm mốc ${dangMachHienTai.soMoc + 1}`}
+                moTa={`Ảnh đính kèm riêng cho mốc ${dangMachHienTai.soMoc + 1}.`}
+              />
+            </>
+          ) : (
             <>
               {/* Chọn chuyên mục dạng chip */}
               <div className={css.khoi_sub}>
@@ -414,104 +462,94 @@ export function DrawerDangNhanhProvider({
                   required
                 />
               </div>
-            </>
-          )}
 
-          {/* Nội dung bài viết / mốc */}
-          <div className={css.o}>
-            <div className={css.hang_nhan}>
-              <span className={css.nhan}>
-                {laNoiMoc
-                  ? `Nội dung mốc ${dangMachHienTai.soMoc + 1}`
-                  : "Nội dung"}
-              </span>
-              {body.length > 0 && (
-                <span className={css.dem_ky_tu}>
-                  {body.length.toLocaleString("vi-VN")}/50.000 ký tự
-                </span>
-              )}
-            </div>
-            <SoanThao
-              key={laNoiMoc ? `moc-${dangMachHienTai.machId}` : `dang-nhanh-${lanMo}`}
-              giaTri={body}
-              datGiaTri={setBody}
-              moi={
-                laNoiMoc
-                  ? "Chuyện gì vừa xảy ra, và bạn định làm gì tiếp?"
-                  : "Chia sẻ nhận định, câu hỏi hoặc góc nhìn của bạn..."
-              }
-              testId={laNoiMoc ? "noi-moc-body" : "dang-nhanh-body"}
-            />
-          </div>
-
-          {/* Chọn ảnh */}
-          <div className={css.khoi_anh}>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept={KIEU_NHAN}
-              multiple
-              onChange={xuLyChonFile}
-              style={{ display: "none" }}
-            />
-            <button
-              type="button"
-              className={css.nut_chon_anh}
-              onClick={() => fileInputRef.current?.click()}
-              disabled={anhs.length >= tranAnh}
-            >
-              <ImagePlus size={16} strokeWidth={2} />
-              <span>
-                Đính kèm ảnh {anhs.length > 0 && `(${anhs.length}/${tranAnh})`}
-              </span>
-            </button>
-
-            {previewUrls.length > 0 && (
-              <div className={css.danh_sach_anh}>
-                {previewUrls.map((url, idx) => (
-                  <div key={idx} className={css.the_anh_preview}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={url}
-                      alt={`Ảnh đính kèm ${idx + 1}`}
-                      className={css.anh_preview}
-                    />
-                    <button
-                      type="button"
-                      className={css.nut_xoa_anh}
-                      onClick={() => xoaAnh(idx)}
-                      aria-label="Xoá ảnh này"
-                    >
-                      <X size={13} strokeWidth={2.5} />
-                    </button>
-                  </div>
-                ))}
+              {/* Nội dung bài viết */}
+              <div className={css.o}>
+                <div className={css.hang_nhan}>
+                  <span className={css.nhan}>Nội dung</span>
+                  {body.length > 0 && (
+                    <span className={css.dem_ky_tu}>
+                      {body.length.toLocaleString("vi-VN")}/50.000 ký tự
+                    </span>
+                  )}
+                </div>
+                <SoanThao
+                  key={`dang-nhanh-${lanMo}`}
+                  giaTri={body}
+                  datGiaTri={setBody}
+                  moi="Chia sẻ nhận định, câu hỏi hoặc góc nhìn của bạn..."
+                  testId="dang-nhanh-body"
+                />
               </div>
-            )}
-          </div>
 
-          {!laNoiMoc && (
-            <div className={css.khoi_tuy_chon}>
-              <label className={css.tuy_chon}>
+              {/* Chọn ảnh */}
+              <div className={css.khoi_anh}>
                 <input
-                  type="checkbox"
-                  checked={tatBinhLuan}
-                  onChange={(e) => setTatBinhLuan(e.target.checked)}
-                  data-testid="dang-nhanh-tat-binh-luan"
+                  ref={fileInputRef}
+                  type="file"
+                  accept={KIEU_NHAN}
+                  multiple
+                  onChange={xuLyChonFile}
+                  style={{ display: "none" }}
                 />
-                <span>Tắt bình luận cho bài viết này (có thể mở lại sau)</span>
-              </label>
+                <button
+                  type="button"
+                  className={css.nut_chon_anh}
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={anhs.length >= tranAnh}
+                >
+                  <ImagePlus size={16} strokeWidth={2} />
+                  <span>
+                    Đính kèm ảnh {anhs.length > 0 && `(${anhs.length}/${tranAnh})`}
+                  </span>
+                </button>
 
-              <label className={css.tuy_chon}>
-                <input
-                  type="checkbox"
-                  checked={riengTu}
-                  onChange={(e) => setRiengTu(e.target.checked)}
-                  data-testid="dang-nhanh-rieng-tu"
-                />
-                <span>🔒 Nhật ký riêng tư (Chỉ mình tôi xem, có thể công khai sau)</span>
-              </label>
-            </div>
+                {previewUrls.length > 0 && (
+                  <div className={css.danh_sach_anh}>
+                    {previewUrls.map((url, idx) => (
+                      <div key={idx} className={css.the_anh_preview}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={url}
+                          alt={`Ảnh đính kèm ${idx + 1}`}
+                          className={css.anh_preview}
+                        />
+                        <button
+                          type="button"
+                          className={css.nut_xoa_anh}
+                          onClick={() => xoaAnh(idx)}
+                          aria-label="Xoá ảnh này"
+                        >
+                          <X size={13} strokeWidth={2.5} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className={css.khoi_tuy_chon}>
+                <label className={css.tuy_chon}>
+                  <input
+                    type="checkbox"
+                    checked={tatBinhLuan}
+                    onChange={(e) => setTatBinhLuan(e.target.checked)}
+                    data-testid="dang-nhanh-tat-binh-luan"
+                  />
+                  <span>Tắt bình luận cho bài viết này (có thể mở lại sau)</span>
+                </label>
+
+                <label className={css.tuy_chon}>
+                  <input
+                    type="checkbox"
+                    checked={riengTu}
+                    onChange={(e) => setRiengTu(e.target.checked)}
+                    data-testid="dang-nhanh-rieng-tu"
+                  />
+                  <span>🔒 Nhật ký riêng tư (Chỉ mình tôi xem, có thể công khai sau)</span>
+                </label>
+              </div>
+            </>
           )}
         </form>
 
