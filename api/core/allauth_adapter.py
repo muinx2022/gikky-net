@@ -85,6 +85,22 @@ class AdapterTaiKhoan(DefaultAccountAdapter):
         user.dang_ky_ip = dia_chi_ip(request) or None
         return super().save_user(request, user, form, commit=commit)
 
+    def send_confirmation_mail(self, request, emailconfirmation, signup):
+        """Gửi mail xác thực tài khoản.
+
+        Nếu bước gửi thư xác thực ban đầu thất bại (ví dụ SMTP lỗi, hết quota),
+        cuốn sạch hàng User vừa tạo (P-20260827-5) để tránh để lại hàng User
+        chưa xác thực làm người dùng kẹt vĩnh viễn.
+        """
+        try:
+            super().send_confirmation_mail(request, emailconfirmation, signup)
+        except Exception:
+            if signup:
+                user = getattr(getattr(emailconfirmation, "email_address", None), "user", None)
+                if user is not None and getattr(user, "pk", None) is not None:
+                    user.delete()
+            raise
+
     def pre_login(self, request, user, **kwargs):
         """Cất tín hiệu "ghi nhớ đăng nhập" vào phiên trước khi luồng login đi tiếp.
 

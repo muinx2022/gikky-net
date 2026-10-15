@@ -554,6 +554,25 @@
         "title": "DatKhoaMachIn",
         "type": "object"
       },
+      "DatLuuTruMachIn": {
+        "description": "Body của `POST /machs/{id}/luu-tru`.",
+        "properties": {
+          "luu_tru": {
+            "title": "Luu Tru",
+            "type": "boolean"
+          },
+          "ly_do": {
+            "default": "",
+            "title": "Ly Do",
+            "type": "string"
+          }
+        },
+        "required": [
+          "luu_tru"
+        ],
+        "title": "DatLuuTruMachIn",
+        "type": "object"
+      },
       "DatMatKhauIn": {
         "description": "Body của `POST /admin/users/{username}/mat-khau`.\n\n`mat_khau: null` ⇒ **xoá mật khẩu** (`set_unusable_password`) — vế \"set pass rỗng\"\ncủa đơn hàng. Khác hẳn `SuaNguoiDungIn`, nơi `None` nghĩa là \"không đổi\": ở đây body\nchỉ có một trường và mục đích của lời gọi luôn là *đổi mật khẩu*, nên `null` không thể\nmang nghĩa \"không làm gì\".",
         "properties": {
@@ -1194,6 +1213,11 @@
             "title": "Da Khoa",
             "type": "boolean"
           },
+          "da_luu_tru": {
+            "default": false,
+            "title": "Da Luu Tru",
+            "type": "boolean"
+          },
           "diem": {
             "title": "Diem",
             "type": "integer"
@@ -1388,6 +1412,11 @@
           },
           "da_khoa": {
             "title": "Da Khoa",
+            "type": "boolean"
+          },
+          "da_luu_tru": {
+            "default": false,
+            "title": "Da Luu Tru",
             "type": "boolean"
           },
           "duong_dan_cong_khai": {
@@ -3712,7 +3741,8 @@
                 "dong",
                 "bi_khoa",
                 "bi_an",
-                "hen_gio"
+                "hen_gio",
+                "luu_tru"
               ],
               "title": "Trang Thai",
               "type": "string"
@@ -4203,6 +4233,84 @@
           }
         ],
         "summary": "Dat Khoa Mach Endpoint",
+        "tags": [
+          "quan-tri-kiem-duyet"
+        ]
+      }
+    },
+    "/api/admin/machs/{mach_id}/luu-tru": {
+      "post": {
+        "description": "Mod lưu trữ / bỏ lưu trữ một mạch (soft delete). Idempotent.",
+        "operationId": "quan_tri_dat_luu_tru_mach",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mach_id",
+            "required": true,
+            "schema": {
+              "title": "Mach Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatLuuTruMachIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KetQuaDoiTrangThaiOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Dat Luu Tru Mach Endpoint",
         "tags": [
           "quan-tri-kiem-duyet"
         ]

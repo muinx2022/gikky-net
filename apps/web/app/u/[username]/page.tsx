@@ -180,7 +180,7 @@ export default async function TrangHoSo({
       ) : laTabRieng(tab) ? (
         <DanhSachRieng
           username={ho_so.username}
-          tab={tab as "da-vote" | "dang-theo"}
+          tab={tab as "da-vote" | "dang-theo" | "luu-tru"}
         />
       ) : ho_so.machs.length === 0 ? (
         // X1 — **cửa anh em của W4, cách đó 8 dòng, cùng file.** W4 xoá một khẳng định

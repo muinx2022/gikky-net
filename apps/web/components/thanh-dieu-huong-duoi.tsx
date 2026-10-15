@@ -15,6 +15,7 @@ import {
   Plus,
   Settings,
   ShieldCheck,
+  Smartphone,
   Tag,
   UserRound,
   X,
@@ -38,6 +39,7 @@ import { duongDanHoSo, duongDanSub, tachSlugId } from "@/lib/url";
 
 import { Avatar } from "./avatar";
 import { useDrawerDangNhanh } from "./drawer-dang-nhanh";
+import { moModalCaiApp } from "./goi-y-cai-app";
 import { useModalDangNhap } from "./modal-dang-nhap";
 import { usePhien } from "./phien";
 import css from "./thanh-dieu-huong-duoi.module.css";
@@ -715,6 +717,17 @@ export function ThanhDieuHuongDuoi() {
               <KeyRound size={16} strokeWidth={2} aria-hidden />
               Đổi mật khẩu
             </Link>
+
+            <button
+              type="button"
+              onClick={() => {
+                dongHetSheet();
+                moModalCaiApp();
+              }}
+            >
+              <Smartphone size={16} strokeWidth={2} aria-hidden />
+              Cài đặt ứng dụng
+            </button>
 
             <button
               type="button"

@@ -3,6 +3,7 @@
 import {
   congKhaiMach,
   dongSoMach,
+  luuTruMach,
   moLaiMach,
   tatBinhLuanMach,
 } from "@gikky/api-client";
@@ -64,6 +65,7 @@ export function KhoiChuMach({
   tranMocMoiNgay,
   soMoc,
   riengTu = false,
+  daLuuTru = false,
 }: {
   machId: number;
   /** Tiêu đề mạch để hiển thị trên drawer đăng nhanh / nối mốc. */
@@ -84,6 +86,8 @@ export function KhoiChuMach({
   soMoc: number;
   /** `rieng_tu === true`: mạch chỉ mình tôi, có nút công khai. */
   riengTu?: boolean;
+  /** `da_luu_tru === true`: mạch đang ở trạng thái lưu trữ (soft delete). */
+  daLuuTru?: boolean;
 }) {
   const { toi, dangTai } = usePhien();
   const { moDrawerNoiMoc } = useDrawerDangNhanh();
@@ -222,6 +226,24 @@ export function KhoiChuMach({
     }, tat ? "Không tắt bình luận được. Kiểm tra kết nối rồi thử lại." : "Không mở bình luận được. Kiểm tra kết nối rồi thử lại.");
   };
 
+  const guiLuuTru = (luuTru: boolean) => {
+    const cauHoi = luuTru
+      ? "Lưu trữ mạch này?\n\nMạch sẽ được ẩn khỏi các feed công khai và chỉ xuất hiện trong tab Lưu trữ trong trang cá nhân của bạn."
+      : "Bỏ lưu trữ mạch này?\n\nMạch sẽ xuất hiện lại trên các feed công khai và trang cá nhân.";
+    if (!window.confirm(cauHoi)) return;
+    void chay(async () => {
+      layDuLieu(
+        await luuTruMach({
+          baseUrl: GOC_TRINH_DUYET,
+          headers: await headerGhi(),
+          path: { mach_id: machId },
+          body: { luu_tru: luuTru },
+        }),
+        luuTru ? "Không lưu trữ mạch được." : "Không bỏ lưu trữ được.",
+      );
+    }, luuTru ? "Không lưu trữ mạch được. Kiểm tra kết nối rồi thử lại." : "Không bỏ lưu trữ được. Kiểm tra kết nối rồi thử lại.");
+  };
+
   return (
     <section className={css.khoi} data-testid="khoi-chu-mach">
       <p className={css.nhan_khoi}>Sổ của bạn</p>
@@ -241,6 +263,8 @@ export function KhoiChuMach({
           onDoiBinhLuan={() => doiTrangThaiBinhLuan(!tatBinhLuan)}
           riengTu={riengTu}
           onCongKhai={guiCongKhai}
+          daLuuTru={daLuuTru}
+          onLuuTru={() => guiLuuTru(!daLuuTru)}
         />
       ) : mo === "dong_so" ? (
         <form onSubmit={guiDongSo} data-testid="form-dong-so">
@@ -340,6 +364,16 @@ export function KhoiChuMach({
               🔓 Công khai mạch
             </button>
           )}
+          <button
+            type="button"
+            className={css.nhe}
+            onClick={() => guiLuuTru(!daLuuTru)}
+            disabled={dangGui}
+            data-testid="nut-chu-mach-luu-tru"
+            title={daLuuTru ? "Bỏ lưu trữ mạch này" : "Lưu trữ mạch"}
+          >
+            {daLuuTru ? "📦 Bỏ lưu trữ" : "📦 Lưu trữ"}
+          </button>
         </div>
       )}
     </section>
@@ -359,6 +393,8 @@ function MatDong({
   onDoiBinhLuan,
   riengTu,
   onCongKhai,
+  daLuuTru,
+  onLuuTru,
 }: {
   moLaiDen: string | null;
   dangGui: boolean;
@@ -367,6 +403,8 @@ function MatDong({
   onDoiBinhLuan: () => void;
   riengTu?: boolean;
   onCongKhai?: () => void;
+  daLuuTru?: boolean;
+  onLuuTru?: () => void;
 }) {
   const han = moLaiDen === null ? null : gioPhutVN(moLaiDen);
   if (!conMoLaiDuoc(moLaiDen)) {
@@ -394,6 +432,17 @@ function MatDong({
               data-testid="nut-cong-khai-mach-dong"
             >
               🔓 Công khai mạch
+            </button>
+          )}
+          {onLuuTru && (
+            <button
+              type="button"
+              className={css.nhe}
+              onClick={onLuuTru}
+              disabled={dangGui}
+              data-testid="nut-chu-mach-luu-tru-dong"
+            >
+              {daLuuTru ? "📦 Bỏ lưu trữ" : "📦 Lưu trữ"}
             </button>
           )}
         </div>
@@ -434,6 +483,17 @@ function MatDong({
             data-testid="nut-cong-khai-mach-dong"
           >
             🔓 Công khai mạch
+          </button>
+        )}
+        {onLuuTru && (
+          <button
+            type="button"
+            className={css.nhe}
+            onClick={onLuuTru}
+            disabled={dangGui}
+            data-testid="nut-chu-mach-luu-tru-dong"
+          >
+            {daLuuTru ? "📦 Bỏ lưu trữ" : "📦 Lưu trữ"}
           </button>
         )}
       </div>

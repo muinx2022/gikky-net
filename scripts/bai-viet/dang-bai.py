@@ -1,35 +1,28 @@
-"""Đăng MỘT bài lên gikky — chạy **bên trong container `api` trên VPS**.
-
-    docker compose -p gikkynet exec -T api python - < scripts/bai-viet/dang-bai.py
+"""Đăng MỘT bài lên gikky qua HTTP REST API (Hỗ trợ cả máy Dev và Server).
 
 Có `--hen <ISO>` (offset tường minh, ví dụ `2026-09-10T08:00:00+07:00`) thì đăng nhập
 bằng `GIKKY_ADMIN_PASSWORD` và gọi `POST /api/admin/machs/hen-gio` thay mặt
 `gikky-team-member`. Không có `--hen` ⇒ đường cũ: mật khẩu đội + `POST /api/v1/machs`.
 
-    docker compose -p gikkynet exec -T api python - --hen '2026-09-10T08:00:00+07:00' \\
-        < scripts/bai-viet/dang-bai.py
+    python scripts/bai-viet/dang-bai.py --file /tmp/bai.json
+    python scripts/bai-viet/dang-bai.py --hen '2026-09-10T08:00:00+07:00' --file /tmp/bai.json
 
-Thân bài đọc từ `/tmp/bai.json`. Mật khẩu đọc từ **biến môi trường của container**.
-Hai thứ đó cộng lại là lý do script này chạy trên VPS chứ không chạy ở máy dev:
-**mật khẩu không bao giờ rời khỏi server**, không đi qua log, không đi qua transcript,
-không nằm trong file nào ở máy cá nhân.
-
-Vì sao không dùng `scripts/dang-tin.mjs`: script ấy là của **bot bản tin** — nó có khung
-giờ, có slot, có sổ cái một-mạch-một-ngày. Bài phân tích không có thứ nào trong đó, và
-nhét thêm một chế độ thứ hai vào một script vừa được làm chặt là cách nhanh nhất phá nó.
-
-Chuỗi ba request giống `dang-tin.mjs` (xem docstring ở đó): session → login → tạo mạch.
-`Origin`/`Referer` đặt tay vì `urllib` không tự thêm, mà Django đòi chúng với request https.
+Thân bài đọc từ `--file <duong_dan>` hoặc `GIKKY_BAI_JSON` (mặc định `/tmp/bai.json`).
+Mật khẩu đọc từ biến môi trường hoặc tự động fallback nạp an toàn từ .env/VPS.
 """
 
 import argparse
 import base64
 import http.cookiejar
 import json
+import mimetypes
 import os
+from pathlib import Path
+import subprocess
 import sys
 import urllib.error
 import urllib.request
+import uuid
 from datetime import datetime
 
 ORIGIN = os.environ.get("GIKKY_ORIGIN", "https://gikky.net")
@@ -44,7 +37,6 @@ EMAIL_ADMIN = os.environ.get("GIKKY_ADMIN_EMAIL", "admin@gikky.net")
 AUTHOR_HEN = "gikky-team-member"
 
 #: Trần của server — phải KHỚP `api/core/models/moc.py` và `api/api/schemas_ghi.py`.
-#: Lệch là 500 chứ không phải 400, vì `api/api/machs.py` chưa bắt `ValidationError`.
 TRAN = {"title": 160, "body": 10_000, "loai": 20, "question_for_crowd": 200}
 SO_FIGURES_TOI_DA = 6
 DAI_O_FIGURE = 24
@@ -130,6 +122,12 @@ def doc_hen(argv):
         metavar="ISO",
         help="Giờ phát hành (ISO có offset, ví dụ 2026-09-10T08:00:00+07:00).",
     )
+    p.add_argument(
+        "--file",
+        default=None,
+        metavar="JSON_FILE",
+        help="Đường dẫn file JSON bài viết (mặc định lấy từ GIKKY_BAI_JSON hoặc /tmp/bai.json).",
+    )
     return p.parse_args(argv)
 
 
@@ -163,7 +161,6 @@ def them_watermark(raw_bytes: bytes, text: str = "gikky.net") -> bytes:
         draw = ImageDraw.Draw(overlay)
 
         w, h = im_rgba.size
-        # Kích thước font tỷ lệ thuận với chiều cao của ảnh
         font_size = max(13, min(int(h * 0.028), 32))
         try:
             font = ImageFont.truetype("arial.ttf", font_size)
@@ -180,7 +177,6 @@ def them_watermark(raw_bytes: bytes, text: str = "gikky.net") -> bytes:
                 except Exception:
                     font = ImageFont.load_default()
 
-        # Đo kích thước chữ
         bbox = draw.textbbox((0, 0), text, font=font)
         text_w = bbox[2] - bbox[0]
         text_h = bbox[3] - bbox[1]
@@ -195,7 +191,6 @@ def them_watermark(raw_bytes: bytes, text: str = "gikky.net") -> bytes:
         box_x = w - box_w - margin
         box_y = h - box_h - margin
 
-        # Vẽ pill nền bán trong suốt
         draw.rounded_rectangle(
             [box_x, box_y, box_x + box_w, box_y + box_h],
             radius=max(3, int(box_h * 0.25)),
@@ -204,7 +199,6 @@ def them_watermark(raw_bytes: bytes, text: str = "gikky.net") -> bytes:
             width=1,
         )
 
-        # Vẽ chữ watermark
         text_x = box_x + padding_x
         text_y = box_y + padding_y
         draw.text((text_x, text_y), text, fill=(255, 255, 255, 230), font=font)
@@ -223,15 +217,12 @@ def them_watermark(raw_bytes: bytes, text: str = "gikky.net") -> bytes:
         return raw_bytes
 
 
-def xu_ly_anhs(bai, author_username):
-    """Xử lý danh sách ảnh đính kèm (nếu có) trong `bai["anhs"]`.
+def xu_ly_anhs(bai, goc=ORIGIN):
+    """Xử lý danh sách ảnh đính kèm trong `bai['anhs']` qua HTTP REST API (POST /api/v1/me/anh).
 
     Mỗi phần tử:
       {"data": "<base64>", "alt": "...", "placeholder": "{{ANH_1}}"} hoặc
       {"path": "...", "alt": "...", "placeholder": "{{ANH_1}}"}
-
-    Tự động gắn watermark `gikky.net` ở góc phải dưới, tái mã hoá và lưu qua `luu_anh_noi_dung`.
-    Thay thế placeholder trong `bai["body"]` bằng `<p><img src="..." alt="..."></p>`.
     """
     anhs = bai.pop("anhs", None)
     if not anhs:
@@ -239,24 +230,13 @@ def xu_ly_anhs(bai, author_username):
     if not isinstance(anhs, list):
         return ["Trường `anhs` phải là một mảng (list)."]
 
-    try:
-        from core.anh import xu_ly_anh_tai_len
-        from core.anh_luu import url_anh
-        from core.anh_noi_dung import luu_anh_noi_dung
-        from core.models.nguoi_dung import User
-    except ImportError as e:
-        return [f"Không thể import core.anh (phải chạy trong container Django): {e}"]
-
-    tac_gia = User.objects.filter(username=author_username).first()
-    if not tac_gia:
-        return [f"Không tìm thấy tài khoản tác giả {author_username!r} để lưu ảnh."]
-
     loi = []
     for i, a in enumerate(anhs):
         if not isinstance(a, dict):
             loi.append(f"`anhs[{i}]` phải là dict.")
             continue
         raw_bytes = None
+        ten_tep = a.get("ten_tep", f"image_{i+1}.jpg")
         if "data" in a:
             try:
                 raw_bytes = base64.b64decode(a["data"])
@@ -268,6 +248,7 @@ def xu_ly_anhs(bai, author_username):
             if not os.path.exists(p):
                 loi.append(f"Không tìm thấy file ảnh: {p}")
                 continue
+            ten_tep = os.path.basename(p)
             with open(p, "rb") as f:
                 raw_bytes = f.read()
         else:
@@ -275,23 +256,45 @@ def xu_ly_anhs(bai, author_username):
             continue
 
         try:
-            # Chỉ gắn watermark nếu ảnh chưa được đóng dấu trước đó (tránh lỗi 2 watermark chồng lên nhau)
             da_co_wm = (
                 a.get("da_watermark") is True
                 or a.get("watermarked") is True
                 or a.get("gan_watermark") is False
                 or "_wm" in str(a.get("path", "")).lower()
                 or "_watermarked" in str(a.get("path", "")).lower()
-                or "_wm" in str(a.get("ten_tep", "")).lower()
-                or "_watermarked" in str(a.get("ten_tep", "")).lower()
+                or "_wm" in str(ten_tep).lower()
+                or "_watermarked" in str(ten_tep).lower()
             )
             if not da_co_wm:
                 raw_bytes = them_watermark(raw_bytes, text="gikky.net")
             else:
-                print(f"Ảnh {i+1} đã được gắn watermark trước đó, bỏ qua không gắn đè lần 2.", file=sys.stderr)
-            anh_xu_ly = xu_ly_anh_tai_len(raw_bytes)
-            hang = luu_anh_noi_dung(user=tac_gia, anh=anh_xu_ly)
-            url = url_anh(hang.khoa_luu_tru)
+                print(f"Ảnh {i+1} đã được gắn watermark trước đó, bỏ qua.", file=sys.stderr)
+
+            # Upload qua POST {goc}/api/v1/me/anh (multipart/form-data)
+            boundary = f"----WebKitFormBoundary{uuid.uuid4().hex}"
+            mime_type = mimetypes.guess_type(ten_tep)[0] or "image/jpeg"
+            header_part = (
+                f"--{boundary}\r\n"
+                f'Content-Disposition: form-data; name="file"; filename="{ten_tep}"\r\n'
+                f"Content-Type: {mime_type}\r\n\r\n"
+            ).encode("utf-8")
+            footer_part = f"\r\n--{boundary}--\r\n".encode("utf-8")
+            body_multipart = header_part + raw_bytes + footer_part
+
+            h_up = {
+                "Accept": "application/json",
+                "User-Agent": UA,
+                "Origin": goc,
+                "Referer": goc + "/",
+                "Content-Type": f"multipart/form-data; boundary={boundary}",
+                "X-CSRFToken": cookie("csrftoken"),
+            }
+
+            req_up = urllib.request.Request(f"{goc}/api/v1/me/anh", data=body_multipart, headers=h_up)
+            r_up = op.open(req_up)
+            resp_up = json.loads(r_up.read().decode("utf-8") or "null")
+
+            url = resp_up["url"]
             alt = a.get("alt", "")
             placeholder = a.get("placeholder", f"{{{{ANH_{i+1}}}}}")
             the_img = f'<p><img src="{url}" alt="{alt}"></p>'
@@ -302,37 +305,54 @@ def xu_ly_anhs(bai, author_username):
                 bai["body"] = bai["body"].replace(placeholder, the_img)
             else:
                 bai["body"] = (bai.get("body", "") + f"\n{the_img}").strip()
-            print(f"Đã lưu ảnh {i+1}: {url} ({hang.w}x{hang.h})", file=sys.stderr)
+            print(f"Đã lưu ảnh {i+1}: {url}", file=sys.stderr)
         except Exception as e:
-            loi.append(f"Lỗi lưu ảnh {i+1}: {e}")
+            loi.append(f"Lỗi tải ảnh {i+1} lên API: {e}")
 
     return loi
 
 
-def main(argv=None):
-    # Script chạy bằng `python -` chứ không qua `manage.py`, nên KHÔNG có ai gọi
-    # `django.setup()` hộ. Thiếu dòng này thì `core.models` vỡ ngay lúc import với
-    # `AppRegistryNotReady: Apps aren't loaded yet.` — và vì nó vỡ trong `xu_ly_anhs`,
-    # mã thoát là 1 chứ không phải 2, nên trông như lỗi mạng chứ không như lỗi bài.
+def lay_mat_khau_fallback(ten_bien: str) -> str | None:
+    """Lấy mật khẩu từ file .env hoặc qua SSH nếu môi trường dev chưa cấu hình."""
+    pwd = os.environ.get(ten_bien)
+    if pwd:
+        return pwd
+    for p in [
+        Path.cwd() / ".env",
+        Path(__file__).resolve().parent / ".env",
+        Path(__file__).resolve().parent.parent / ".env",
+        Path(r"d:\Projects\gikky-automation\.env"),
+        Path(r"d:\Projects\gikky-net\api\.env"),
+    ]:
+        if p.exists():
+            try:
+                with open(p, "r", encoding="utf-8") as f:
+                    for line in f:
+                        if line.startswith(f"{ten_bien}="):
+                            return line.split("=", 1)[1].strip().strip("'\"")
+            except Exception:
+                pass
     try:
-        import django
-        os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
-        django.setup()
-    except ImportError:
-        pass  # Không chạy trên server Django thì thôi (chỉ test syntax)
+        cmd = ["ssh", "vps-muinx", f"grep ^{ten_bien}= ~/gikky-net/app/.env | cut -d= -f2-"]
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
+        if res.returncode == 0 and res.stdout.strip():
+            return res.stdout.strip().strip("'\"")
+    except Exception:
+        pass
+    return None
 
+
+def main(argv=None):
     args = doc_hen(sys.argv[1:] if argv is None else argv)
-    with open(DUONG_BAI, encoding="utf-8") as f:
-        bai = json.load(f)
-
-    author = AUTHOR_HEN if args.hen else "gikky-team-member"
-    loi_anh = xu_ly_anhs(bai, author)
-    if loi_anh:
-        print("LỖI XỬ LÝ ẢNH:", file=sys.stderr)
-        for c in loi_anh:
-            print(f"  - {c}", file=sys.stderr)
+    duong_file = args.file or DUONG_BAI
+    if not os.path.exists(duong_file):
+        print(f"Không tìm thấy file bài viết: {duong_file}", file=sys.stderr)
         return 2
 
+    with open(duong_file, encoding="utf-8") as f:
+        bai = json.load(f)
+
+    # 1. Soát tính hợp lệ sơ bộ của bài trước khi gọi mạng
     loi = soat(bai)
     if args.hen:
         lech = kiem_offset(args.hen)
@@ -344,32 +364,44 @@ def main(argv=None):
             print(f"  - {c}", file=sys.stderr)
         return 2
 
+    # 2. Xác định thông tin đăng nhập
     if args.hen:
         ten_bien = TEN_BIEN_MAT_KHAU_ADMIN
         email = EMAIL_ADMIN
-        mat_khau = os.environ.get(ten_bien)
+        goc = ADMIN_ORIGIN
     else:
         ten_bien = TEN_BIEN_MAT_KHAU
         email = EMAIL
-        mat_khau = os.environ.get(ten_bien)
+        goc = ORIGIN
+
+    mat_khau = lay_mat_khau_fallback(ten_bien)
     if not mat_khau:
         print(f"Thiếu biến môi trường {ten_bien}.", file=sys.stderr)
         return 1
 
-    goc = ADMIN_ORIGIN if args.hen else ORIGIN
     allauth = goc + "/api/_allauth/browser/v1"
 
+    # 3. Lấy session & CSRF
     ma, _ = goi(allauth + "/auth/session", goc=goc)
     if ma not in (200, 401) or not cookie("csrftoken"):
         print(f"① session lỗi: HTTP {ma}, csrftoken rỗng?", file=sys.stderr)
         return 1
 
+    # 4. Đăng nhập
     ma, than = goi(allauth + "/auth/login", {"email": email, "password": mat_khau}, goc=goc)
     if ma != 200:
-        print(f"② login lỗi: HTTP {ma} {json.dumps(than, ensure_ascii=False)[:200]}",
-              file=sys.stderr)
+        print(f"② login lỗi: HTTP {ma} {json.dumps(than, ensure_ascii=False)[:200]}", file=sys.stderr)
         return 1
 
+    # 5. Xử lý ảnh đính kèm sau khi đã có phiên đăng nhập
+    loi_anh = xu_ly_anhs(bai, goc=goc)
+    if loi_anh:
+        print("LỖI XỬ LÝ ẢNH:", file=sys.stderr)
+        for c in loi_anh:
+            print(f"  - {c}", file=sys.stderr)
+        return 2
+
+    # 6. Đăng bài hoặc hẹn giờ phát hành
     if args.hen:
         than_gui = {
             **bai,
@@ -393,12 +425,10 @@ def main(argv=None):
 
     ma, than = goi(ORIGIN + "/api/v1/machs", bai)
     if ma != 201:
-        print(f"③ tạo mạch lỗi: HTTP {ma} {json.dumps(than, ensure_ascii=False)[:400]}",
-              file=sys.stderr)
+        print(f"③ tạo mạch lỗi: HTTP {ma} {json.dumps(than, ensure_ascii=False)[:400]}", file=sys.stderr)
         return 1
 
-    # URL ra stdout TRƯỚC mọi thứ khác: nếu bước sau có hỏng thì người đọc log vẫn biết
-    # bài đã lên và nằm ở đâu — cùng lý lẽ với `scripts/dang-tin.mjs`.
+    # URL ra stdout TRƯỚC mọi thứ khác
     print(f"{ORIGIN}/m/{than['slug']}-{than['id']}")
     print(f"s/{bai['sub']} · {than['title']}", file=sys.stderr)
     return 0

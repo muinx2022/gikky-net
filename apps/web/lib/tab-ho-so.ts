@@ -13,6 +13,7 @@ export const TAB_HO_SO = [
   "dang-theo",
   "chuyen-muc",
   "nguoi",
+  "luu-tru",
 ] as const;
 export type TabHoSo = (typeof TAB_HO_SO)[number];
 
@@ -29,9 +30,10 @@ export const NHAN_TAB_HO_SO: Readonly<Record<TabHoSo, string>> = {
   // "Người" chứ không "Đang theo người": tab bên cạnh đã mang chữ "Đang theo" (mạch),
   // và năm nhãn phải còn nằm một hàng. Nghĩa đầy đủ nằm ở câu rỗng bên trong tab.
   nguoi: "Người",
+  "luu-tru": "Lưu trữ",
 };
 
-/** Bốn tab đọc `/me/*` — **chỉ có nghĩa trên hồ sơ của CHÍNH MÌNH**.
+/** Năm tab đọc `/me/*` — **chỉ có nghĩa trên hồ sơ của CHÍNH MÌNH**.
  *
  * Hiện chúng trên hồ sơ người khác là hứa một thứ API sẽ từ chối, và PLAN mục 4 chốt "một
  * cái nút vĩnh viễn không bấm được còn tệ hơn không có nút". Đây cũng là ranh giới riêng
@@ -42,6 +44,7 @@ export const TAB_RIENG: readonly TabHoSo[] = [
   "dang-theo",
   "chuyen-muc",
   "nguoi",
+  "luu-tru",
 ];
 
 export function laTabRieng(tab: TabHoSo): boolean {

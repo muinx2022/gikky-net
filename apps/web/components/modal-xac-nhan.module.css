@@ -1,0 +1,125 @@
+/* Modal xác nhận thao tác (confirm dialog).
+ * Tuân thủ token Gikky, không dùng token màu cấm trang trí (--gain, --loss, --stamp).
+ */
+
+.hop {
+  border: none;
+  background: none;
+  padding: 0;
+  max-width: min(440px, calc(100vw - 32px));
+  width: 100%;
+  color: var(--ink);
+}
+
+.hop::backdrop {
+  background: rgb(0 0 0 / 55%);
+}
+
+.trong {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius, 12px);
+  box-shadow: var(--shadow, 0 16px 32px rgb(0 0 0 / 0.15));
+  overflow: hidden;
+}
+
+.than {
+  padding: 24px 22px 20px;
+}
+
+.tieuDe {
+  margin: 0 0 12px;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ink);
+  padding-right: 28px;
+}
+
+.noiDung {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  margin-bottom: 22px;
+  white-space: pre-line;
+}
+
+.hangNut {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.nutHuy,
+.nutXacNhan {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 8px 16px;
+  border-radius: var(--radius, 8px);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, opacity 0.12s ease;
+}
+
+.nutHuy {
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.nutHuy:hover:not(:disabled) {
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+.nutXacNhan {
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+
+.nutXacNhan:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.nutHuy:disabled,
+.nutXacNhan:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.dong {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.dong:hover:not(:disabled) {
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+.dong:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

@@ -332,3 +332,11 @@ class BaoCaoMoiIn(Schema):
         "khac",
     ]
     ghi_chu: str = Field(default="", max_length=DAI_GHI_CHU_BAO_CAO)
+
+
+class LuuTruMachIn(Schema):
+    """Lưu trữ hoặc bỏ lưu trữ mạch (soft delete)."""
+
+    luu_tru: bool = True
+    ly_do: str = ""
+

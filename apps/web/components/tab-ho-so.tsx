@@ -3,6 +3,7 @@
 import {
   lietKeDaVote,
   lietKeDangTheo,
+  lietKeLuuTru,
   lietKeSubDangTheo,
   lietKeUserDangTheo,
   type MachTomTatOut,
@@ -10,6 +11,7 @@ import {
   type SubChiTietOut,
 } from "@gikky/api-client";
 import {
+  Archive,
   Bookmark,
   FileText,
   Layers,
@@ -42,6 +44,7 @@ const ICON_TAB: Readonly<Record<TabHoSo, LucideIcon>> = {
   "dang-theo": Bookmark,
   "chuyen-muc": Layers,
   nguoi: Users,
+  "luu-tru": Archive,
 };
 
 /** Thanh tab của trang hồ sơ.
@@ -105,7 +108,7 @@ export function DanhSachRieng({
   tab,
 }: {
   username: string;
-  tab: "da-vote" | "dang-theo";
+  tab: "da-vote" | "dang-theo" | "luu-tru";
 }) {
   const { toi, dangTai } = usePhien();
   const la_chu = toi?.dang_nhap === true && toi.username === username;
@@ -120,7 +123,7 @@ export function DanhSachRieng({
     datLoi(false);
     void (async () => {
       try {
-        // Hai lời gọi TRỰC TIẾP, không alias qua `const goi = … ? … : …`. Bản trước
+        // Ba lời gọi TRỰC TIẾP, không alias qua `const goi = … ? … : …`. Bản trước
         // viết đúng lối alias ấy và **hàng rào `e2e/don-vi/type-frontend.spec.ts`
         // (`GOI_QUA_BIEN`) đỏ vì nó** — hàng rào tìm callee theo TÊN để ép mọi lời gọi
         // kèm `baseUrl` (chống `client` singleton rò session), nên một cái tên đi qua
@@ -128,7 +131,9 @@ export function DanhSachRieng({
         const kq =
           tab === "da-vote"
             ? await lietKeDaVote({ baseUrl: GOC_TRINH_DUYET, cache: "no-store" })
-            : await lietKeDangTheo({ baseUrl: GOC_TRINH_DUYET, cache: "no-store" });
+            : tab === "dang-theo"
+              ? await lietKeDangTheo({ baseUrl: GOC_TRINH_DUYET, cache: "no-store" })
+              : await lietKeLuuTru({ baseUrl: GOC_TRINH_DUYET, cache: "no-store" });
         if (!con_song) return;
         if (kq.data === undefined) throw new Error("phản hồi rỗng");
         datItems(kq.data.items);
@@ -140,6 +145,19 @@ export function DanhSachRieng({
       con_song = false;
     };
   }, [la_chu, tab]);
+
+  useEffect(() => {
+    const xuLyLuuTru = (e: Event) => {
+      const ev = e as CustomEvent<{ machId: number; luuTru: boolean }>;
+      if (tab === "luu-tru" && !ev.detail?.luuTru) {
+        datItems((truoc) => (truoc ? truoc.filter((x) => x.id !== ev.detail.machId) : null));
+      }
+    };
+    window.addEventListener("gikky:mach-luu-tru", xuLyLuuTru);
+    return () => {
+      window.removeEventListener("gikky:mach-luu-tru", xuLyLuuTru);
+    };
+  }, [tab]);
 
   if (dangTai) return null;
   if (!la_chu) return <ChiChuHoSo />;
@@ -162,7 +180,9 @@ export function DanhSachRieng({
       <p className={css.rong} data-testid="tab-rieng-rong">
         {tab === "da-vote"
           ? "Bạn chưa bỏ phiếu cho mạch nào."
-          : "Bạn chưa theo mạch nào."}
+          : tab === "dang-theo"
+            ? "Bạn chưa theo mạch nào."
+            : "Bạn chưa lưu trữ mạch nào."}
       </p>
     );
   }

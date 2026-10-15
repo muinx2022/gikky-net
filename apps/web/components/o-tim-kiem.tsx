@@ -209,9 +209,6 @@ export function OTimKiem({ trongPanel = false, onDi }: Props) {
           guiDi();
         }}
       >
-        {/* `⌕` (U+2315) trước đây: nửa số font Windows không có glyph này nên nó ra ô
-            vuông rỗng. Icon vẽ bằng SVG thì mọi máy thấy như nhau. */}
-        <Search className={css.kinh} size={15} strokeWidth={2} aria-hidden />
         <input
           type="search"
           name="q"
@@ -235,6 +232,15 @@ export function OTimKiem({ trongPanel = false, onDi }: Props) {
           autoComplete="off"
           data-testid="o-tim-kiem"
         />
+        <button
+          type="submit"
+          className={css.nut_tim}
+          aria-label="Tìm kiếm"
+          title="Tìm kiếm"
+          data-testid="o-tim-kiem-nut"
+        >
+          <Search size={15} strokeWidth={2} aria-hidden />
+        </button>
       </form>
 
       {mo && goi_y.length > 0 && (

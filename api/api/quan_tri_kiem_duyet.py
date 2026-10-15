@@ -26,6 +26,7 @@ from core.ghi import (
     dat_an_mach,
     dat_an_moc,
     dat_khoa_mach,
+    dat_luu_tru_mach,
 )
 from core.models.binh_luan import Comment
 from core.models.dien_dan import Mach
@@ -37,6 +38,7 @@ from api.quan_tri_loc import dang_hen_gio
 from api.quan_tri_schemas import (
     DatAnIn,
     DatKhoaMachIn,
+    DatLuuTruMachIn,
     KetQuaDoiTrangThaiOut,
     MachQuanTriOut,
     MocQuanTriOut,
@@ -163,6 +165,24 @@ def dat_khoa_mach_endpoint(request, mach_id: int, du_lieu: DatKhoaMachIn):
     return KetQuaDoiTrangThaiOut(da_doi=da_doi, dang_bat=mach.locked_at is not None)
 
 
+@router.post(
+    "/machs/{int:mach_id}/luu-tru",
+    response=TRA_LOI_DOI,
+    operation_id="quan_tri_dat_luu_tru_mach",
+    tags=["quan-tri-kiem-duyet"],
+)
+def dat_luu_tru_mach_endpoint(request, mach_id: int, du_lieu: DatLuuTruMachIn):
+    """Mod lưu trữ / bỏ lưu trữ một mạch (soft delete). Idempotent."""
+    mach = Mach.objects.filter(pk=mach_id).first()
+    if mach is None:
+        return khong_tim_thay("mạch")
+    da_doi = dat_luu_tru_mach(
+        mach=mach, boi=request.user, luu_tru=du_lieu.luu_tru, ly_do=du_lieu.ly_do
+    )
+    lam_moi_mach(mach)
+    return KetQuaDoiTrangThaiOut(da_doi=da_doi, dang_bat=mach.archived_at is not None)
+
+
 @router.get(
     "/machs/{int:mach_id}",
     response={200: MachQuanTriOut, 401: LoiOut, 403: LoiOut, 404: LoiOut},
@@ -209,6 +229,7 @@ def xem_mach(request, mach_id: int):
         view_count=mach.view_count,
         da_bi_an=mach.hidden_at is not None,
         da_khoa=mach.locked_at is not None,
+        da_luu_tru=mach.archived_at is not None,
         duong_dan_cong_khai=duong_dan_mach(mach),
         mocs=[_moc_ra(m, mach) for m in mach.mocs.all()],
     )

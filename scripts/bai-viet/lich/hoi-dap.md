@@ -10,7 +10,7 @@ Nhiệm vụ: Viết một bài làm rõ cơ chế vận hành thị trường, 
 
 ## Định vị nội dung: Chuẩn mực — Sâu sắc — Dễ hiểu
 Tuyệt đối không biến thành hỏi đáp vụn vặt kiểu diễn đàn (như "hỏi mã nào mua được", "chọn sàn nào hoa hồng cao").
-Trọng tâm là **Cắt nghĩa cơ chế đằng sau bảng điện và các quy tắc giao dịch** (đa dạng hóa từ ngữ, hạn chế lặp lại từ "bóc tách", "giải phẫu"):
+Trọng tâm là **Cắt nghĩa cơ chế đằng sau bảng điện và các quy tắc giao dịch** (đa dạng hóa từ ngữ, **tuyệt đối hạn chế lặp sáo ngữ "Giải mã"**, "bóc tách", "giải phẫu" trong tiêu đề và nội dung; đặt tiêu đề tự nhiên, trực diện):
 
 1. **Cơ chế sổ lệnh & Khớp lệnh:**
    - Bid - Ask Spread, trượt giá (Slippage), độ sâu thị trường (Market Depth).
@@ -30,9 +30,10 @@ Trọng tâm là **Cắt nghĩa cơ chế đằng sau bảng điện và các qu
 
 ## Hướng dẫn kỹ thuật
 * **Kiểm trùng:** Luôn kiểm tra các bài đã viết trong database bằng `python scripts/bai-viet/kiem-trung.py` trước khi chọn chủ đề.
-* **Tiêu đề:** Đặt dạng câu hỏi thực tế hoặc làm rõ cơ chế, ví dụ: `Cơ chế điều chỉnh giá ngày GDKHQ: Vì sao cổ phiếu bị trừ tiền tương ứng trên bảng điện?` (≤160 ký tự).
+* **Tiêu đề:** Đặt dạng câu hỏi thực tế hoặc làm rõ cơ chế, ví dụ: `Cơ chế điều chỉnh giá ngày GDKHQ: Vì sao cổ phiếu bị trừ tiền tương ứng trên bảng điện?` (≤160 ký tự, tránh bắt đầu bằng "Giải mã...").
 * **Ảnh minh hoạ:** 1 ảnh tỷ lệ 16:9 chất lượng cao, đồ họa sắc nét, bảng biểu hoặc bối cảnh giao dịch tinh tế (dùng `generate_image`) và watermarked `gikky.net`.
 * **Dải số (`figures`):** 4–6 cặp `{label, value}`, mỗi ô ≤24 ký tự.
 * **Câu hỏi tương tác (`question_for_crowd`):** ≤200 ký tự, kết thúc bằng dấu `?`.
+* **Liên kết nội bộ (Internal Linking):** Bắt buộc chèn 2–4 liên kết chéo tự nhiên dạng đường dẫn tương đối `/m/<slug>-<id>` tới các bài viết liên quan đã xuất bản trên Gikky.net (quản trị vốn, phương pháp, tâm lý, cấu trúc lệnh). **TUYỆT ĐỐI KHÔNG DÙNG `target="_blank"`** để giữ nguyên tab hiện tại khi mở bài.
 * **Định dạng HTML bắt buộc (`body`):** Viết bằng thẻ HTML chuẩn (`<p>`, `<h3>`, `<strong>`, `<em>`, `<ul><li>`), chứa `{{ANH_1}}`.
 * **Xuất file:** `scripts/bai-viet/.tam/bai.json` và triển khai đăng bài qua VPS.

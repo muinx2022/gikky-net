@@ -402,6 +402,22 @@ export type DatKhoaMachIn = {
 };
 
 /**
+ * DatLuuTruMachIn
+ *
+ * Body của `POST /machs/{id}/luu-tru`.
+ */
+export type DatLuuTruMachIn = {
+    /**
+     * Luu Tru
+     */
+    luu_tru: boolean;
+    /**
+     * Ly Do
+     */
+    ly_do?: string;
+};
+
+/**
  * DatMatKhauIn
  *
  * Body của `POST /admin/users/{username}/mat-khau`.
@@ -961,6 +977,10 @@ export type MachDongOut = {
      */
     da_khoa: boolean;
     /**
+     * Da Luu Tru
+     */
+    da_luu_tru?: boolean;
+    /**
      * Diem
      */
     diem: number;
@@ -1091,6 +1111,10 @@ export type MachQuanTriOut = {
      * Da Khoa
      */
     da_khoa: boolean;
+    /**
+     * Da Luu Tru
+     */
+    da_luu_tru?: boolean;
     /**
      * Duong Dan Cong Khai
      */
@@ -2540,7 +2564,7 @@ export type QuanTriLietKeMachData = {
         /**
          * Trang Thai
          */
-        trang_thai?: 'tat_ca' | 'chua_go' | 'mo' | 'dong' | 'bi_khoa' | 'bi_an' | 'hen_gio';
+        trang_thai?: 'tat_ca' | 'chua_go' | 'mo' | 'dong' | 'bi_khoa' | 'bi_an' | 'hen_gio' | 'luu_tru';
         /**
          * Limit
          */
@@ -2779,6 +2803,44 @@ export type QuanTriDatKhoaMachResponses = {
 };
 
 export type QuanTriDatKhoaMachResponse = QuanTriDatKhoaMachResponses[keyof QuanTriDatKhoaMachResponses];
+
+export type QuanTriDatLuuTruMachData = {
+    body: DatLuuTruMachIn;
+    path: {
+        /**
+         * Mach Id
+         */
+        mach_id: number;
+    };
+    query?: never;
+    url: '/api/admin/machs/{mach_id}/luu-tru';
+};
+
+export type QuanTriDatLuuTruMachErrors = {
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type QuanTriDatLuuTruMachError = QuanTriDatLuuTruMachErrors[keyof QuanTriDatLuuTruMachErrors];
+
+export type QuanTriDatLuuTruMachResponses = {
+    /**
+     * OK
+     */
+    200: KetQuaDoiTrangThaiOut;
+};
+
+export type QuanTriDatLuuTruMachResponse = QuanTriDatLuuTruMachResponses[keyof QuanTriDatLuuTruMachResponses];
 
 export type QuanTriSuaTieuDeMachData = {
     body: SuaTieuDeMachIn;

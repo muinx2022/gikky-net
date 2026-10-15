@@ -39,4 +39,5 @@ Nhiệm vụ: Viết bài phân tích chuyên sâu về một phương pháp/chi
 * **Trường phái (`truong_phai`):** Đặt đúng tên trường phái (`Price Action`, `Breakout Trading`, `MA Crossover`, `VSA / Wyckoff`, `Harmonic Patterns`, `Bollinger Bands`...).
 * **Chuyên mục (`sub`):** `quan-tri-von`.
 * **Biểu đồ minh họa:** Sử dụng Python `matplotlib` dựng biểu đồ Dark Mode độ phân giải cao tỷ lệ 16:9, thể hiện rõ nến, vạch Entry, SL, TP, vùng hỗ trợ/kháng cự và chú thích mũi tên rõ ràng. Tự động gắn watermark `gikky.net` ở góc phải dưới của biểu đồ.
+* **Liên kết nội bộ (Internal Linking):** Bắt buộc chèn 2–4 liên kết chéo tự nhiên dạng đường dẫn tương đối `/m/<slug>-<id>` tới các bài viết liên quan đã xuất bản trên Gikky.net (các mô hình kỹ thuật khác, bài toán quản trị R:R, bẫy tâm lý giao dịch). **TUYỆT ĐỐI KHÔNG DÙNG `target="_blank"`** để giữ nguyên tab hiện tại khi mở bài viết.
 * **Bảo toàn font chữ UTF-8:** Dùng `scp` chuyển file script / JSON lên VPS, sau đó thực thi qua python trong container api.

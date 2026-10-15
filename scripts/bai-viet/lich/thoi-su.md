@@ -18,10 +18,11 @@ Nhiệm vụ: Viết một bài phân tích/bình luận chuyên sâu về vấn
   - `chung-khoan`: Thị trường chứng khoán Việt Nam, nhóm ngành, doanh nghiệp niêm yết.
   - `crypto`: Thị trường tiền số, pháp lý tài sản số.
 * **Loại (`loai`):** `Thời sự` hoặc `Phân tích`.
-* **Giọng văn:** Khách quan, trung lập, ngôi thứ ba, đi sâu mổ xẻ nguyên nhân và cơ chế tác động đằng sau các dòng tít thời sự. Tuyệt đối không suy đoán vô căn cứ, không giật gân, không khuyến nghị mua bán cổ phiếu.
+* **Giọng văn:** Khách quan, trung lập, ngôi thứ ba, đi sâu cắt nghĩa nguyên nhân và cơ chế tác động đằng sau các dòng tít thời sự. Tuyệt đối không suy đoán vô căn cứ, không giật gân, không khuyến nghị mua bán cổ phiếu. **HẠN CHẾ SÁO NGỮ:** Tuyệt đối tránh lạm dụng các từ ngữ rập khuôn như *"Giải mã"*, *"Con hào"*, *"Bóc tách"*, *"Giải phẫu"*, *"Cỗ máy"*. Hãy đặt tiêu đề và hành văn tự nhiên, trực diện.
 * **Ảnh minh hoạ:** 1–2 ảnh tỷ lệ 16:9 chụp không gian tài chính, nhà máy, bến cảng, phòng họp chính sách hoặc đồ họa trực quan sinh động (dùng `generate_image`, tránh vẽ box chữ sơ đồ thô cứng). Khi chèn vào HTML, ảnh bắt buộc phải có thuộc tính `alt` mô tả trực quan và chứa từ khóa sự kiện chính (VD: `<img src="..." alt="Diễn biến giao dịch thị trường chứng khoán và áp lực thanh khoản">`).
 * **Dải số (`figures`):** 4–6 cặp `{label, value}`, mỗi ô ≤24 ký tự tóm lược những số liệu mấu chốt của sự kiện thời sự.
 * **Câu hỏi tương tác (`question_for_crowd`):** ≤200 ký tự, kết thúc bằng dấu `?`.
+* **Liên kết nội bộ (Internal Linking):** Bắt buộc chèn 2–4 liên kết chéo tự nhiên dạng đường dẫn tương đối `/m/<slug>-<id>` tới các bài viết liên quan đã xuất bản trên Gikky.net (vĩ mô, ngành, cơ chế thanh toán, hồ sơ doanh nghiệp). **TUYỆT ĐỐI KHÔNG DÙNG `target="_blank"`** để giữ nguyên tab hiện tại khi mở bài viết.
 * **Định dạng HTML bắt buộc (`body`):** Bắt buộc viết bằng các thẻ HTML chuẩn (`<p>`, `<h3>`, `<h4>`, `<strong>`, `<em>`, `<ul><li>`, `<ol><li>`, `<hr>`). Tuyệt đối không dùng raw markdown trần để tránh dính liền text. Chia nhỏ bài viết thành các đoạn văn ngắn 2–3 câu (`<p>...</p>`) và in đậm (`<strong>`) có chọn lọc các số liệu và nhận định then chốt.
 
 ## Cách đăng bài

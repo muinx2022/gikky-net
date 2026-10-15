@@ -1701,6 +1701,8 @@ AUDIT_XOA_ANH_MOC = "xoa_anh_moc"
 #: `hidden_at` về NULL, cộng dòng lệnh in ra số bài.
 AUDIT_HEN_GIO_MACH = "hen_gio_mach"
 AUDIT_PHAT_HANH_MACH = "phat_hanh_mach"
+AUDIT_LUU_TRU_MACH = "luu_tru_mach"
+AUDIT_BO_LUU_TRU_MACH = "bo_luu_tru_mach"
 
 #: `AuditLog.target_type` — cột `varchar(16)`, giữ chuỗi ngắn.
 DICH_MOC = "moc"
@@ -1896,6 +1898,44 @@ def dat_khoa_mach(*, mach: Mach, boi, khoa: bool, ly_do: str = "") -> bool:
             ly_do=ly_do,
         )
     mach.refresh_from_db()
+    return True
+
+
+def dat_luu_tru_mach(*, mach: Mach, boi, luu_tru: bool, ly_do: str = "") -> bool:
+    """Tác giả hoặc mod Lưu trữ (soft delete) hoặc Bỏ lưu trữ mạch.
+
+    - luu_tru=True: Đặt `archived_at = timezone.now()`, `archived_by = boi`.
+      Mạch biến mất khỏi feed công khai và tab bài viết hồ sơ.
+    - luu_tru=False: Đặt `archived_at = None`, `archived_by = None`.
+      Mạch hiển thị lại bình thường.
+
+    Đồng bộ search index (`dong_bo_mach`) và làm mới cache.
+    Nếu boi là staff: ghi audit log.
+    Trả về True nếu trạng thái đã đổi, False nếu không đổi (idempotent).
+    """
+    with transaction.atomic():
+        hang = Mach.objects.select_for_update().get(pk=mach.pk)
+        dang_luu_tru = hang.archived_at is not None
+        if dang_luu_tru == luu_tru:
+            return False
+        if luu_tru:
+            hang.archived_at = timezone.now()
+            hang.archived_by = boi
+        else:
+            hang.archived_at = None
+            hang.archived_by = None
+        hang.save(update_fields=["archived_at", "archived_by"])
+        dong_bo_mach(hang)
+        if getattr(boi, "is_staff", False):
+            ghi_audit(
+                actor=boi,
+                action=AUDIT_LUU_TRU_MACH if luu_tru else AUDIT_BO_LUU_TRU_MACH,
+                target_type=DICH_MACH,
+                target_id=hang.pk,
+                ly_do=ly_do,
+            )
+    mach.refresh_from_db()
+    lam_moi_mach(mach)
     return True
 
 

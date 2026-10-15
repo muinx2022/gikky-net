@@ -75,6 +75,8 @@ pnpm db:sao-luu --thu-muc D:\sao-luu  # đổi chỗ ghi
 pnpm db:sao-luu --giu 14              # giữ 14 bản dump gần nhất (ảnh KHÔNG bị dọn)
 pnpm db:sao-luu --kiem                # chỉ kiểm điều kiện, KHÔNG dump
 pnpm db:sao-luu --khong-anh           # BỎ ảnh — bản sao lưu sẽ THIẾU, script cảnh báo
+pnpm db:sao-luu -- --cloud r2:gikky-backup   # đẩy lên Cloud qua rclone sau khi dump
+pnpm db:sao-luu -- --cloud r2:gikky-backup --giu-cloud 60  # giữ 60 ngày trên cloud
 ```
 
 Ra:
@@ -86,6 +88,15 @@ backup/
   media-an/                         # GƯƠNG của MEDIA_AN_ROOT
 ```
 
+Trên Cloud remote (`<remote>:<bucket/path>`):
+```
+<remote>:<bucket>/
+  db/
+    gikky-<db>-<dấu thời gian>.dump # lưu trữ các bản dump, dọn theo --giu-cloud (mặc định 30 ngày)
+  media/                            # bản sao lưu kho ảnh phục vụ
+  media-an/                         # bản sao lưu kho ảnh cách ly
+```
+
 ⚠ **`--giu` chỉ dọn file `.dump`, không đụng `media/`.** Đó là chủ đích: dump là ảnh chụp
 toàn bộ database tại một thời điểm nên bản cũ thay thế được, còn mỗi file ảnh là một dữ
 liệu riêng lẻ mà không bản nào khác chứa. Dọn gương theo số lượng là xoá ảnh thật.
@@ -94,12 +105,68 @@ Script đọc `DATABASE_URL` từ **`api/.env`** — cùng nguồn với `settin
 `process.env`: một script backup lấy DB ở chỗ khác với ứng dụng là script sẽ sao lưu nhầm
 database, im lặng, và chỉ lộ ra lúc phục hồi.
 
+Biến môi trường hỗ trợ sao lưu Cloud (trong `api/.env` hoặc process env):
+- `GIKKY_BACKUP_REMOTE`: Tên remote rclone và đường dẫn (ví dụ `r2:gikky-backup` hoặc `gdrive:backups/gikky`).
+- `GIKKY_BACKUP_CLOUD_DAYS`: Số ngày giữ bản dump trên cloud (mặc định `30`, `0` = không xoá).
+
 `pg_dump` không cần có trên PATH; script tự dò `C:\Program Files\PostgreSQL\17\bin`
 (xem `NOI_DO_PG_DUMP` trong `scripts/sao-luu-db.mjs`).
 
 Định dạng là **custom (`-Fc`)**, kèm `--no-owner --no-privileges`: phục hồi được vào một
 máy chưa có role `gikky`, và `pg_restore` chọn được từng bảng thay vì chạy tuốt một file
 SQL từ đầu đến cuối.
+
+## Đẩy bản sao lưu lên Đám mây (Cloud Backup qua `rclone`)
+
+> ⚠ **Bản sao lưu nằm cùng máy với database KHÔNG phải bản sao lưu.** Ổ cứng máy chủ hỏng
+> thì mất cả dữ liệu gốc lẫn bản sao lưu. Việc đẩy ra đám mây là bắt buộc đối với hệ thống
+> sản phẩm.
+
+Hệ thống sao lưu của gikky.net sử dụng **`rclone`** để đồng bộ lên Cloud Storage. `rclone`
+hỗ trợ hơn 70 nhà cung cấp đám mây:
+- **Cloudflare R2** (khuyến nghị): Miễn phí 10 GB dung lượng lưu trữ/tháng, 0đ phí truyền tải dữ liệu (Zero Egress Fees), tương thích chuẩn S3 API.
+- **Google Drive, Backblaze B2, AWS S3, Wasabi...**
+
+### 1. Cài đặt và cấu hình `rclone`
+1. Cài đặt `rclone`:
+   - Windows: `winget install Rclone.Rclone` hoặc tải từ [rclone.org](https://rclone.org/downloads/).
+   - Ubuntu/Debian: `sudo apt install rclone` hoặc `curl https://rclone.org/install.sh | sudo bash`.
+2. Tạo remote mới:
+   ```bash
+   rclone config
+   ```
+   Chọn `n` (New remote), đặt tên (ví dụ `r2`), chọn kiểu storage (ví dụ `s3` cho Cloudflare R2 / AWS S3), nhập Access Key, Secret Key và Endpoint.
+3. Kiểm tra kết nối:
+   ```bash
+   rclone lsd r2:
+   ```
+
+### 2. Sử dụng trên máy Dev
+- Truyền trực tiếp qua cờ dòng lệnh:
+  ```powershell
+  pnpm db:sao-luu -- --cloud r2:gikky-backup
+  ```
+- Hoặc cấu hình cố định trong `api/.env`:
+  ```env
+  GIKKY_BACKUP_REMOTE=r2:gikky-backup
+  GIKKY_BACKUP_CLOUD_DAYS=30
+  ```
+  Sau đó chỉ cần chạy `pnpm db:sao-luu`, script sẽ tự động đẩy lên Cloud sau khi tạo dump thành công.
+
+### 3. Sử dụng trên Production (`vps-muinx`)
+Trên máy chủ production, sao lưu toàn diện được thực hiện bằng script `deploy/prod/sao-luu-prod.sh`:
+- Cấu hình trong `~/gikky-net/app/.env`:
+  ```env
+  GIKKY_BACKUP_REMOTE=r2:gikky-backup
+  GIKKY_BACKUP_CLOUD_DAYS=30
+  GIKKY_BACKUP_KEEP_LOCAL=7
+  ```
+- Chạy thủ công hoặc qua crontab (xem mục Tự động hoá bên dưới):
+  ```bash
+  bash deploy/prod/sao-luu-prod.sh
+  ```
+- Tuỳ chọn `--require-cloud`: Thoát với mã lỗi `2` nếu chưa cấu hình `GIKKY_BACKUP_REMOTE` (phục vụ giám sát nghiêm ngặt).
+
 
 ## Phục hồi
 
@@ -163,31 +230,38 @@ tiếng ồn.
 
 ## Tự động hoá
 
-Chưa có scheduler nào chạy — máy dev không phải máy chủ. Trên prod chọn một trong hai:
+Chưa có scheduler nào chạy trên máy dev — máy dev không phải máy chủ.
 
-**Windows — Task Scheduler**
-
-```powershell
-$viec = New-ScheduledTaskAction -Execute "pnpm" `
-          -Argument "db:sao-luu --giu 14" -WorkingDirectory "C:\gikky-net"
-$luc  = New-ScheduledTaskTrigger -Daily -At 3am
-Register-ScheduledTask -TaskName "gikky-sao-luu" -Action $viec -Trigger $luc
+**Trên Production (`vps-muinx` — BẮT BUỘC):**
+Sử dụng script `deploy/prod/sao-luu-prod.sh` chạy qua cron hằng ngày lúc 04:10 sáng (xem `deploy/prod/README.md`):
+```bash
+crontab -e
+# 04:10 sáng giờ VN mỗi ngày — SAU gom_luot_xem (03:10) và reindex_tim_kiem (03:40)
+10 4 * * *  cd ~/gikky-net/src && bash deploy/prod/sao-luu-prod.sh >> ~/gikky-sao-luu.log 2>&1
 ```
 
-**Linux — cron**
+Script này tự động:
+1. `pg_dump` từ container postgres (kiểm tra `pg_restore --list` trước khi xác nhận).
+2. Sao chép 2 volume `gikkynet_media` và `gikkynet_mediaan`.
+3. Xoay vòng giữ 7 bản dump gần nhất trên đĩa VPS.
+4. Đẩy bản dump + 2 kho ảnh lên Cloud Storage (Cloudflare R2...) qua `rclone` và tự động xoá bản dump cloud quá 30 ngày.
 
-```cron
-0 3 * * *  cd /srv/gikky-net && pnpm db:sao-luu --giu 14 >> /var/log/gikky-sao-luu.log 2>&1
-```
+**Trên máy Dev (Windows Task Scheduler / Linux cron nếu cần):**
 
-⚠ **Bản sao lưu nằm cùng máy với database KHÔNG phải bản sao lưu.** Ổ hỏng thì mất cả
-hai. Bước còn thiếu là đẩy thư mục `backup/` sang một nơi khác (R2/S3/rsync) — nó nằm
-ngoài phạm vi Phase 6 vì chưa có tài khoản lưu trữ nào, và nó là **nợ có tên**, không
-phải chuyện đã xong.
+- Đồng bộ sao lưu Production từ `vps-muinx` về ổ cứng ngoài (`E:\gikky-backups\prod`):
+  Lệnh chạy thủ công:
+  ```powershell
+  pnpm db:sao-luu:o-e
+  # Hoặc
+  node scripts/sao-luu-ve-o-e.mjs
+  ```
+  Lịch tự động hàng ngày lúc 08:30 sáng trên Windows (Scheduled Task `GikkyBackupToDriveE`):
+  ```cmd
+  schtasks /Create /TN "GikkyBackupToDriveE" /TR "node d:\Projects\gikky-net\scripts\sao-luu-ve-o-e.mjs" /SC DAILY /ST 08:30 /F
+  ```
 
-Phase 5 làm món nợ này **nặng hơn**, không phải nhẹ đi: trước đây nội dung mất khi ổ hỏng
-là thứ gõ lại được; nay có ảnh, và một tấm ảnh chụp màn hình bảng giá lúc 9h35 sáng thì
-không ai gõ lại được.
+- Sao lưu cơ sở dữ liệu Dev local (`E:\gikky-backups\dev`):
+  Cấu hình `GIKKY_BACKUP_DIR=E:/gikky-backups/dev` trong `api/.env`, sau đó chạy `pnpm db:sao-luu`.
 
 ## Cái ĐÃ chạy thật, cái CHƯA
 
@@ -198,5 +272,8 @@ không ai gõ lại được.
 | Chép gương ảnh (`chepGuong`) | **đã đo bằng test**, chưa chạy trên kho ảnh thật — `apps/web/e2e/don-vi/sao-luu.spec.ts` (chép mới · bỏ qua bản đã có · chép đè khi cỡ lệch · nguồn chưa tồn tại) |
 | Phục hồi ẢNH rồi mở lại trang mạch | **chưa** — cần một vòng deploy thật, xem bước 4 |
 | Phục hồi TẠI CHỖ (`--clean --if-exists`) | **chưa** — không đè lên database nào của máy này |
-| Task Scheduler / cron | **chưa** — hai đoạn trên là mẫu, chưa đăng ký ở đâu |
-| Đẩy bản sao lưu ra khỏi máy | **chưa** — nợ có tên, xem trên |
+| Task Scheduler / cron trên Production (`vps-muinx`) | **đã đăng ký và chạy thật** — cron 04:10 hằng ngày với `deploy/prod/sao-luu-prod.sh` |
+| Đồng bộ tự động về ổ cứng ngoài `E:\gikky-backups` | **đã chạy thật** — 697 files, 86.65 MB (DB dump mới, 31 bản lịch sử, 664 file ảnh), kèm Windows Task `GikkyBackupToDriveE` 08:30 hằng ngày |
+| Đẩy bản sao lưu ra khỏi máy (Cloud Backup qua `rclone`) | **đã hoàn thành** — hỗ trợ cờ `--cloud` trong `scripts/sao-luu-db.mjs` và script `deploy/prod/sao-luu-prod.sh` cho production, đã phủ unit test đầy đủ trong `sao-luu.spec.ts` |
+
+

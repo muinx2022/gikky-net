@@ -6,6 +6,13 @@ __pycache__/
 .env
 .env.local
 .env.facebook
+.env.*
+!.env.example
+*.mp4
+*.webm
+*.mp3
+*.xlsx
+diff*.txt
 .pytest_cache/
 dist/
 *.log
@@ -63,3 +70,6 @@ scripts/tiktok/*cookie*.json
 scripts/tiktok/.chrome_profile/
 
 
+
+# Scripts tam
+scripts/binh-luan/.tam/

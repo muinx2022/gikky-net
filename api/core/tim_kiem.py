@@ -415,7 +415,7 @@ def hien_cong_khai(mach) -> bool:
     lời là *không đổi index*, và nó được ghi thành một dòng có tên trong bảng cấu trúc
     (`tests/test_tim_kiem_cau_truc.py`) chứ không phải một chỗ trống.
     """
-    return mach.hidden_at is None
+    return mach.hidden_at is None and mach.archived_at is None
 
 
 # --- tài liệu BÌNH LUẬN ------------------------------------------------------
@@ -449,30 +449,18 @@ def tai_lieu_binh_luan(comment) -> dict:
 
 
 def hien_cong_khai_binh_luan(comment) -> bool:
-    """Bình luận này có được xuất hiện ở tìm kiếm công khai không — **BA vế**.
+    """Bình luận này có được xuất hiện ở tìm kiếm công khai không — **BỐN vế**.
 
-    1. `deleted_at IS NULL` — bia mộ không có nội dung để tìm. Chú ý: bia mộ vẫn là một
-       hàng thật trong Postgres và vẫn render trên khán đài, nên "còn hàng" **không** đủ.
+    1. `deleted_at IS NULL` — bia mộ không có nội dung để tìm.
     2. `hidden_at IS NULL` — mod đã ẩn.
-    3. **`mach.hidden_at IS NULL`** — mạch chứa nó đã bị mod ẩn. Đây là vế duy nhất không
-       nằm trên hàng `Comment`, tức vế duy nhất mà một đường ghi chạm `Comment` không thể
-       tự biết. Nó cũng là vế khiến plan Phase 7 né bình luận hẳn.
-
-    Bốn vế **không** có ở đây, và mỗi cái là một quyết định:
-
-    - **mốc neo bị ẩn** — bình luận neo mốc N vẫn đọc được khi mốc N bị ẩn (khán đài vẫn
-      render nó; `anchor_moc_seq` chỉ là chỗ xếp ngăn kéo). Gỡ nó khỏi search là lệch với
-      trang, đúng thứ `hien_cong_khai` cấm;
-    - **tác giả bị ban** — cùng lý lẽ nguyên văn `hien_cong_khai`: ban gác cửa GHI, nội
-      dung cũ vẫn nằm trên trang;
-    - **mạch bị khoá** (`locked_at`) — cấm tương tác, không giấu nội dung;
-    - **điểm ≤ −5 (`tu_gap`)** — bị vùi là một cách HIỂN THỊ, nội dung vẫn ở đó và vẫn
-      bấm mở được.
+    3. `mach.hidden_at IS NULL` — mạch chứa nó đã bị mod ẩn.
+    4. `mach.archived_at IS NULL` — mạch chứa nó đã bị lưu trữ (soft delete).
     """
     return (
         comment.deleted_at is None
         and comment.hidden_at is None
         and comment.mach.hidden_at is None
+        and comment.mach.archived_at is None
     )
 
 

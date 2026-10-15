@@ -15,6 +15,7 @@
     "api:migrate": "node scripts/py.mjs migrate",
     "api:check": "node scripts/py.mjs check --database default",
     "db:sao-luu": "node scripts/sao-luu-db.mjs",
+    "db:sao-luu:o-e": "node scripts/sao-luu-ve-o-e.mjs",
     "digest": "node scripts/py.mjs gui_digest",
     "web:dev": "node scripts/web-dev.mjs",
     "admin:dev": "pnpm --filter @gikky/admin dev",
@@ -28,6 +29,7 @@
     "@hey-api/openapi-ts": "^0.99.0",
     "chrome-launcher": "^1.2.1",
     "lighthouse": "^13.4.1",
+    "playwright": "^1.64.0",
     "typescript": "^5.9.0"
   },
   "packageManager": "pnpm@10.34.5",

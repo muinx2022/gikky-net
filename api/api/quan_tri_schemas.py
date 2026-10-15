@@ -160,6 +160,13 @@ class DatKhoaMachIn(Schema):
     ly_do: str = ""
 
 
+class DatLuuTruMachIn(Schema):
+    """Body của `POST /machs/{id}/luu-tru`."""
+
+    luu_tru: bool
+    ly_do: str = ""
+
+
 class MocQuanTriOut(Schema):
     """Một mốc trong trang chi tiết của khu quản trị.
 
@@ -378,6 +385,7 @@ class MachQuanTriOut(Schema):
     view_count: int = 0
     da_bi_an: bool
     da_khoa: bool
+    da_luu_tru: bool = False
     duong_dan_cong_khai: str
     mocs: list[MocQuanTriOut]
 
@@ -747,7 +755,9 @@ class ThongKeOut(Schema):
 #:
 #: `hen_gio` (2026-09-03) = bài **đang chờ giờ hẹn**, một lát con của `bi_an`. Nhóm này
 #: là nhóm DUY NHẤT sắp **tăng dần theo `published_at`** — xem `liet_ke_mach`.
-LocMach = Literal["tat_ca", "chua_go", "mo", "dong", "bi_khoa", "bi_an", "hen_gio"]
+LocMach = Literal[
+    "tat_ca", "chua_go", "mo", "dong", "bi_khoa", "bi_an", "hen_gio", "luu_tru"
+]
 #: Bộ lọc của bảng bình luận. `hien` = còn sống và chưa bị ẩn.
 LocBinhLuan = Literal["tat_ca", "hien", "bi_an", "bia_mo"]
 #: Bộ lọc của bảng người dùng. `moi` = 7 ngày gần nhất.
@@ -791,6 +801,7 @@ class MachDongOut(Schema):
     view_count: int = 0
     da_bi_an: bool
     da_khoa: bool
+    da_luu_tru: bool = False
     duong_dan_cong_khai: str
 
 

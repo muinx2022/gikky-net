@@ -16,7 +16,7 @@ Mỗi ngày luân phiên một thể loại để giữ nhịp đọc phong phú
      - *Thương vụ & Sụp đổ:* LTCM 1998, Nick Leeson và Ngân hàng Barings, Volkswagen short squeeze 2008, Cú ngã Bill Hwang / Archegos 2021, George Soros và Thứ Tư đen tối 1992, Enron và Jim Chanos, Vụ đầu cơ Bạc của anh em nhà Hunt 1980, Sự sụp đổ của Lehman Brothers...
      - *Chân dung huyền thoại lịch sử:* Jesse Livermore (4 lần phá sản làm lại từ đầu và bi kịch kỷ luật), Nicolas Darvas (Lý thuyết Hộp Darvas và 2 triệu USD), Richard Dennis và thí nghiệm Turtle Traders, Ed Seykota (Tiên phong thuật toán xu hướng), Paul Tudor Jones (Cú short Black Monday 1987), Bernard Baruch (Nghệ thuật biết điểm dừng trước Đại suy thoái 1929)...
 
-2. **Ngày 2 — Giải mã Crypto & Dòng tiền On-Chain chuyên sâu:**
+2. **Ngày 2 — Dòng tiền Crypto & Dữ liệu On-Chain chuyên sâu:**
    * **Chuyên mục (sub):** `crypto`.
    * **Nhãn mốc (loai):** `On-chain` (hoặc `Tài sản số`).
    * **Chủ đề gợi ý:** Dòng tiền Bitcoin / ETH Spot ETF của các định chế phố Wall (BlackRock, Fidelity), Hoạt động di chuyển ví cá voi cổ xưa và áp lực thợ đào, Cơ chế thanh lý nợ xấu (Liquidation cascades) trong giao thức DeFi, Cấu trúc dự trữ Stablecoin và chiếc két T-Bills, Kinh tế học Token (Tokenomics) và bài toán lạm phát token...
@@ -30,10 +30,11 @@ Mỗi ngày luân phiên một thể loại để giữ nhịp đọc phong phú
 * **Giọng văn — "Người kể chuyện hậu trường" (The Investigative Storyteller):**
   - Mở đầu bằng một **bối cảnh cụ thể, một khoảnh khắc nghẹt thở, một cuộc đối thoại trong phòng kín hoặc một chi tiết con người sinh động**; không mở bài bằng định nghĩa lý thuyết khô khan.
   - Nhịp văn nhanh, cuốn hút, giàu tính điện ảnh (cinematic storytelling), lôi cuốn độc giả như đang xem một bộ phim tài liệu đêm muộn.
-  - Tuyệt đối hạn chế sáo ngữ "bóc tách", "giải phẫu" — hãy dùng các cách diễn đạt tự nhiên (lần giở hồ sơ, sự thật phía sau, chuỗi mắt xích ngầm, nhìn từ bên trong...).
+  - **HẠN CHẾ SÁO NGỮ RẬP KHUÔN:** Tuyệt đối tránh lạm dụng các từ ngữ sáo mòn như *"Giải mã"*, *"Con hào"*, *"Bóc tách"*, *"Giải phẫu"*, *"Cỗ máy"*. Hãy đặt tiêu đề và hành văn tự nhiên, trực diện, đa dạng hóa vốn từ theo [phong-cach-hanh-van.md](file:///D:/Projects/gikky-net/scripts/bai-viet/phong-cach-hanh-van.md).
 * **Kiểm trùng:** Luôn kiểm tra các bài gần nhất trên database qua SSH trước khi chọn chủ đề.
 * **Ảnh minh hoạ:** 1–2 ảnh tỷ lệ 16:9 giàu tính nghệ thuật/điện ảnh (dùng `generate_image`) đưa vào mảng `anhs` (base64) và đặt `{{ANH_1}}` trong `body`.
 * **Dải số (`figures`):** 4–6 cặp `{label, value}`, mỗi ô ≤24 ký tự.
 * **Câu hỏi tương tác (`question_for_crowd`):** ≤200 ký tự, kết thúc bằng dấu `?`.
-* **Định dạng HTML bắt buộc (`body`):** Dùng các thẻ HTML chuẩn (`<p>`, `<h3>`, `<strong>`, `<em>`, `<ul><li>`, `<hr>`). Tuyệt đối không dùng raw markdown trần.
-* **Xuất file:** `scripts/bai-viet/.tam/bai_dem_muon.json` và kích hoạt tạo bài.
+* **Liên kết nội bộ (Internal Linking):** Bắt buộc chèn 2–4 liên kết chéo tự nhiên dạng đường dẫn tương đối `/m/<slug>-<id>` tới các bài viết liên quan đã xuất bản trên Gikky.net (thương vụ, sách kinh điển, tâm lý, crypto, hồ sơ khủng hoảng). **TUYỆT ĐỐI KHÔNG DÙNG `target="_blank"`** để giữ nguyên tab hiện tại khi độc giả nhấn mở liên kết.
+* **Định dạng HTML bắt buộc (`body`):** Dùng các thẻ HTML chuẩn (`<p>`, `<h3>`, `<strong>`, `<em>`, `<ul><li>`, `<hr>`). Tuyệt đối không dùng raw markdown trần. Nếu là bài Tự sự / Tản văn / Hồi ký / Đọc sách chiêm nghiệm, **TUYỆT ĐỐI KHÔNG DÙNG THẺ `<h2>` HOẶC `<h3>`** để không sinh khối Mục lục trên frontend (thay bằng `<p><strong>...</strong></p>` và `<hr>`).
+* **Xuất file:** `scripts/bai-viet/.tam/bai.json` và kích hoạt tạo bài.

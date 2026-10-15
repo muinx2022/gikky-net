@@ -6,6 +6,7 @@ import { GoogleAnalytics } from "@/components/google-analytics";
 import { GoogleOneTap } from "@/components/google-one-tap";
 import { KhoiPhucCuon } from "@/components/khoi-phuc-cuon";
 import { DrawerDangNhanhProvider } from "@/components/drawer-dang-nhanh";
+import { GoiYCaiApp } from "@/components/goi-y-cai-app";
 import { LightboxProvider } from "@/components/lightbox";
 import { ModalDangNhapProvider } from "@/components/modal-dang-nhap";
 import { PhienProvider } from "@/components/phien";
@@ -99,6 +100,11 @@ export const metadata: Metadata = {
     ],
     apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "gikky",
+  },
 };
 
 export default function RootLayout({
@@ -170,6 +176,7 @@ export default function RootLayout({
                 <DrawerDangNhanhProvider>
                   <Chrome />
                   <ThanhDieuHuongDuoi />
+                  <GoiYCaiApp />
                   {children}
                 </DrawerDangNhanhProvider>
               </LightboxProvider>

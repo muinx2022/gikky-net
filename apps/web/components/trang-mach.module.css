@@ -23,7 +23,7 @@
 }
 
 .dau {
-  padding: 24px 26px 20px;
+  padding: 20px 26px 20px;
 }
 
 .sub {
@@ -136,7 +136,7 @@
   }
 
   .dau {
-    padding: 19px 16px 16px;
+    padding: 14px 16px 16px;
   }
 
   .nhat_ky {
@@ -149,13 +149,12 @@
 }
 
 /* Hàng tiêu đề: chữ ký bên trái, nút "Theo mạch" đẩy sang phải. */
-/* **Header sub — đặt tự nhiên trên trang, KHÔNG sticky** *(user chốt 2026-10-06)*.
+/* **Header sub/actions — sticky trên desktop, tự nhiên trên mobile & tablet** *(user chốt 2026-10-12)*.
  *
- * Trước đây hàng này dùng `position: sticky; top: var(--cao-chrome)`.
- * Khi xem trên mobile & tablet (<=960px), header cuộn trôi cùng trang và thanh điều hướng
- * tự động ẩn khi cuộn xuống, hiện khi cuộn lên. Hàng này nếu dính sẽ trôi lơ lửng đè lên
- * tiêu đề bài viết rồi biến mất khi hết thẻ bài.
- * Do đó, đặt nó tự nhiên trên trang (position: relative / static), không sticky nữa.
+ * Trên desktop (>960px): `position: sticky; top: var(--cao-chrome); z-index: 20;`
+ * để tiện thao tác theo dõi, chia sẻ, xuất case study khi đọc mạch dài.
+ * Trên mobile & tablet (<=960px): đặt tự nhiên trên trang (`position: static`),
+ * không dính khi cuộn để tránh trôi lơ lửng đè lên tiêu đề bài viết.
  */
 .hang_tren {
   position: relative;
@@ -165,11 +164,22 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin: -24px -26px 0;
+  margin: 0;
   padding: 10px 24px;
   background: color-mix(in srgb, var(--card) 92%, transparent);
   border-bottom: 1px solid var(--line);
   border-radius: 6px 6px 0 0;
+}
+
+@media (min-width: 961px) {
+  .hang_tren {
+    position: sticky;
+    top: var(--cao-chrome);
+    z-index: 20;
+    background: color-mix(in srgb, var(--card) 95%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
 }
 
 .cum_trai {
@@ -212,6 +222,7 @@
     position: static;
     top: auto;
     backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     flex-wrap: wrap;
     gap: 8px;
   }
@@ -223,10 +234,11 @@
     position: static;
     top: auto;
     margin: 0;
-    padding: 0;
+    padding: 14px 16px 10px;
     background: none;
     backdrop-filter: none;
-    border-bottom: none;
+    -webkit-backdrop-filter: none;
+    border-bottom: 1px solid var(--line-2);
     flex-wrap: wrap;
     gap: 8px;
   }

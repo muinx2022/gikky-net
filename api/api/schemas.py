@@ -286,6 +286,8 @@ class MachTomTatOut(Schema):
     moc_moi_nhat: MocMoiNhatTomTatOut | None = None
     #: Tổng lượt xem bài viết
     view_count: int = 0
+    #: Mạch đã lưu trữ (soft delete): True = đã lưu trữ, chỉ hiện trong tab Lưu trữ
+    da_luu_tru: bool = False
 
 
 class SubChiTietOut(Schema):
@@ -598,6 +600,8 @@ class MachChiTietOut(Schema):
     locked: bool
     #: Tác giả đã tắt tính năng bình luận cho mạch này chưa (plans/2026-09-07-tat-mo-binh-luan.md).
     tat_binh_luan: bool
+    #: Mạch đã lưu trữ (soft delete): True = đã lưu trữ, chỉ hiện trong tab Lưu trữ
+    da_luu_tru: bool = False
     #: Ngày VIẾT (bất biến) và ngày ĐĂNG. Web hiện `published_at`; `created_at` giữ lại
     #: vì nó là dấu server mà `MocRevision` và mọi phép đối chiếu dựa vào. Xem
     #: `MachTomTatOut`.
@@ -1135,3 +1139,12 @@ class TrichKetQuaOut(Schema):
     """
 
     moc: MocOut
+
+
+class KetQuaLuuTruMachOut(Schema):
+    """Kết quả lưu trữ hoặc bỏ lưu trữ mạch."""
+
+    id: int
+    da_luu_tru: bool
+    da_doi: bool = True
+

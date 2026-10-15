@@ -336,7 +336,6 @@ export async function TrangMach({
         <TrangThaiToiProvider key={mach.id} machId={mach.id}>
           <FormBinhLuanProvider>
             <article className={css.the} data-mat={mat} data-testid="the-mach">
-            <header className={css.dau}>
               <div className={css.hang_tren}>
                 <div className={css.cum_trai}>
                   <Link className={css.sub} href={duongDanSub(mach.sub.slug)} prefetch={false}>
@@ -371,11 +370,20 @@ export async function TrangMach({
                   </div>
                 </div>
               </div>
-              {mach.rieng_tu && (
+              <header className={css.dau}>
+                {mach.rieng_tu && (
                 <div className={css.banner_rieng_tu} data-testid="banner-rieng-tu">
                   <span>
                     🔒 Mạch riêng tư — chỉ bạn và quản trị viên nhìn thấy. Bạn có thể bấm
                     &quot;Công khai mạch&quot; ở khu chủ mạch bên dưới khi sẵn sàng.
+                  </span>
+                </div>
+              )}
+              {mach.da_luu_tru && (
+                <div className={css.banner_rieng_tu} data-testid="banner-da-luu-tru">
+                  <span>
+                    📦 Mạch đã được lưu trữ (soft delete) — không hiển thị ở feed công khai
+                    và danh sách bài viết chính.
                   </span>
                 </div>
               )}
@@ -538,6 +546,7 @@ export async function TrangMach({
               tranMocMoiNgay={mach.tran_moc_moi_ngay}
               soMoc={mach.entry_count}
               riengTu={mach.rieng_tu}
+              daLuuTru={mach.da_luu_tru ?? false}
             />
 
             {cursor_hong && <BaoCursorHong />}

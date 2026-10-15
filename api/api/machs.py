@@ -32,6 +32,7 @@ from core.ghi import (
     NGAY_MO_LAI,
     SO_MOC_TOI_DA_MOI_NGAY,
     cong_khai_mach,
+    dat_luu_tru_mach,
     dat_tat_binh_luan,
     dem_moc_trong_ngay_vn,
     dong_so,
@@ -92,8 +93,21 @@ from api.quyen import (
     doi_chu_so_huu,
     doi_mach_tuong_tac_duoc,
 )
-from api.schemas import BinhLuanOut, KhanDaiOut, MachChiTietOut, MocOut
-from api.schemas_ghi import BinhLuanMoiIn, DatTatBinhLuanIn, DongSoIn, MachMoiIn, MocMoiIn
+from api.schemas import (
+    BinhLuanOut,
+    KetQuaLuuTruMachOut,
+    KhanDaiOut,
+    MachChiTietOut,
+    MocOut,
+)
+from api.schemas_ghi import (
+    BinhLuanMoiIn,
+    DatTatBinhLuanIn,
+    DongSoIn,
+    LuuTruMachIn,
+    MachMoiIn,
+    MocMoiIn,
+)
 from api.trinh_bay import (
     dem_reaction_rong,
     han_mo_lai,
@@ -109,7 +123,8 @@ router = Router()
 
 def _mach_hien(mach_id: int, user=None):
     """Mạch theo `id`. Ẩn bởi mod ⇒ coi như không tồn tại (PLAN 5.10).
-    Mạch riêng tư (`rieng_tu=True`): chỉ tác giả hoặc staff xem được.
+    Mạch riêng tư (`rieng_tu=True`) hoặc mạch đã lưu trữ (`archived_at IS NOT NULL`):
+    chỉ tác giả hoặc staff xem được.
     """
     mach = (
         Mach.objects.filter(pk=mach_id, hidden_at__isnull=True)
@@ -118,10 +133,13 @@ def _mach_hien(mach_id: int, user=None):
     )
     if mach is None:
         return None
+    da_auth = user is not None and getattr(user, "is_authenticated", False)
+    la_tac_gia = da_auth and user.pk == mach.author_id
+    la_staff = da_auth and getattr(user, "is_staff", False)
     if mach.rieng_tu:
-        da_auth = user is not None and getattr(user, "is_authenticated", False)
-        la_tac_gia = da_auth and user.pk == mach.author_id
-        la_staff = da_auth and getattr(user, "is_staff", False)
+        if not (la_tac_gia or la_staff):
+            return None
+    if mach.archived_at is not None:
         if not (la_tac_gia or la_staff):
             return None
     return mach
@@ -900,6 +918,34 @@ def cong_khai_mach_api(request, mach_id: int):
         bao_mach_moi(mach)
         lam_moi_mach(mach)
     return mach_chi_tiet_ra(nap_mach(mach.pk))
+
+
+@router.post(
+    "/machs/{int:mach_id}/luu-tru",
+    response={200: KetQuaLuuTruMachOut, 401: LoiOut, 403: LoiOut, 404: LoiOut},
+    operation_id="luu_tru_mach",
+    description="Lưu trữ (soft delete) hoặc bỏ lưu trữ mạch. Quyền: tác giả hoặc staff.",
+    tags=["mach"],
+    auth=dang_nhap,
+)
+def luu_tru_mach_api(request, mach_id: int, du_lieu: LuuTruMachIn):
+    mach = nap_mach(mach_id)
+    la_tac_gia = request.user.pk == mach.author_id
+    la_staff = getattr(request.user, "is_staff", False)
+    if not (la_tac_gia or la_staff):
+        return doi_chu_so_huu(request.user, mach.author_id, "mạch")
+    da_doi = dat_luu_tru_mach(
+        mach=mach,
+        boi=request.user,
+        luu_tru=du_lieu.luu_tru,
+        ly_do=du_lieu.ly_do,
+    )
+    return KetQuaLuuTruMachOut(
+        id=mach.id,
+        da_luu_tru=mach.archived_at is not None,
+        da_doi=da_doi,
+    )
+
 
 
 @router.post(

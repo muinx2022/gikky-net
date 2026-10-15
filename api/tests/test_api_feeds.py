@@ -280,6 +280,8 @@ def test_the_feed_du_truong_cho_1c(client, seed):
         "rieng_tu",
         # Tổng lượt xem bài viết
         "view_count",
+        # Trạng thái lưu trữ (soft delete)
+        "da_luu_tru",
     }
     assert the["moc_1_id"] == Moc.objects.get(mach=seed, seq=1).pk
     assert the["ket_qua"] == "+18.2% · 163 ngày"

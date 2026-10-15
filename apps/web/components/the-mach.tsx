@@ -11,6 +11,7 @@ import { ChepLink } from "./chep-link";
 import { CotVote } from "./cot-vote";
 import { HanhDongMod } from "./hanh-dong-mod";
 import { NoiDungThe } from "./noi-dung-the";
+import { NutLuuTruMach } from "./nut-luu-tru-mach";
 import css from "./the-mach.module.css";
 
 /** Thẻ mạch trong feed và trong hồ sơ — plan con 1c §2.3, dựng lại theo vỏ Reddit ở 1d.
@@ -100,6 +101,15 @@ export function TheMach({ mach }: { mach: MachTomTatOut }) {
           )}
           {mach.status === "closed" && (
             <span className={css.dong_so}>đã đóng sổ</span>
+          )}
+          {mach.da_luu_tru && (
+            <span
+              className={css.dong_so}
+              data-testid="the-mach-da-luu-tru"
+              title="Mạch đã được lưu trữ (soft delete)"
+            >
+              📦 đã lưu trữ
+            </span>
           )}
           {mach.rieng_tu && (
             <span
@@ -196,6 +206,12 @@ export function TheMach({ mach }: { mach: MachTomTatOut }) {
             <Eye size={13} strokeWidth={2} aria-hidden />
             <span>{(mach.view_count ?? 0).toLocaleString("vi-VN")} lượt xem</span>
           </span>
+          <NutLuuTruMach
+            machId={mach.id}
+            tieuDe={mach.title}
+            tacGiaUsername={mach.author.username}
+            daLuuTruBanDau={mach.da_luu_tru ?? false}
+          />
           {/* Công cụ mod ngay trên thẻ — user chốt 2026-08-24 ("vào chuyên mục thì ra
               phần chuyên mục với các action của mod"). Client component, trả `null` cho
               mọi người không phải staff, nên thẻ của người đọc thường **không đổi một

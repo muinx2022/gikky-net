@@ -82,12 +82,14 @@ def _the_ra(trang) -> list:
 
 
 def _mach_hien(sub: str | None, truong_phai: str | None = None) -> QuerySet:
-    """Mạch được phép hiện ra API công khai, đã lọc `?sub=`, `?truong_phai=`, và loại trừ `rieng_tu=True`.
+    """Mạch được phép hiện ra API công khai, đã lọc `?sub=`, `?truong_phai=`, loại trừ `rieng_tu=True` và `archived_at`.
 
-    `hidden_at__isnull=True` và `rieng_tu=False` là bộ lọc bảo vệ của feed — mạch bị mod ẩn
-    hoặc mạch riêng tư không được xuất hiện ở bất kỳ feed công khai nào.
+    `hidden_at__isnull=True`, `rieng_tu=False` và `archived_at__isnull=True` là bộ lọc bảo vệ của feed — mạch bị mod ẩn,
+    mạch riêng tư hoặc mạch đã lưu trữ không được xuất hiện ở bất kỳ feed công khai nào.
     """
-    qs = Mach.objects.filter(hidden_at__isnull=True, rieng_tu=False).select_related("sub", "author")
+    qs = Mach.objects.filter(
+        hidden_at__isnull=True, rieng_tu=False, archived_at__isnull=True
+    ).select_related("sub", "author")
     if sub is not None:
         qs = qs.filter(sub__slug=sub)
     if truong_phai is not None:
@@ -318,7 +320,14 @@ def subs_kem_so_mach() -> QuerySet:
     hai màn hình cùng nói "12 mạch" / "9 mạch" mà không chỗ nào đỏ.
     """
     return Sub.objects.annotate(
-        so_mach_hien=Count("machs", filter=Q(machs__hidden_at__isnull=True, machs__rieng_tu=False))
+        so_mach_hien=Count(
+            "machs",
+            filter=Q(
+                machs__hidden_at__isnull=True,
+                machs__rieng_tu=False,
+                machs__archived_at__isnull=True,
+            ),
+        )
     )
 
 

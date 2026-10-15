@@ -37,7 +37,7 @@
 // tốn đĩa thuần tuý. Hệ quả cố ý: gương là **superset** — ảnh đã bị xoá khỏi máy chủ vẫn
 // nằm lại trong bản sao lưu, và đó là điều một bản sao lưu nên làm.
 
-import { spawnSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import {
   copyFileSync,
   existsSync,
@@ -212,16 +212,152 @@ export function donBanCu(thu_muc, db, giu) {
   return cu;
 }
 
+/** Chuẩn hoá tên remote rclone: kiểm tra định dạng <remote>:<bucket/path> và cắt dấu / cuối.
+ *
+ * `remote` bắt buộc phải có dấu `:` ở vị trí > 0 (không được rỗng, không được bắt đầu bằng `:`).
+ * Fail-closed: ném lỗi rõ ràng để người vận hành phát hiện ngay thay vì rclone hiểu nhầm
+ * thành đường dẫn thư mục cục bộ (rất nguy hiểm, có thể ghi đè nhầm đĩa).
+ */
+export function chuanHoaRemoteCloud(remote) {
+  if (!remote || typeof remote !== "string" || remote.trim() === "") {
+    throw new Error(
+      "Remote cloud rclone không được để trống. Cú pháp bắt buộc: <remote>:<bucket/path> (ví dụ: `r2:gikky-backup` hoặc `gdrive:backups/gikky`).",
+    );
+  }
+  const r = remote.trim();
+  const viTri = r.indexOf(":");
+  if (viTri <= 0) {
+    throw new Error(
+      `Remote cloud "${remote}" không hợp lệ. Cú pháp bắt buộc: <remote>:<bucket/path> (ví dụ: \`r2:gikky-backup\`). Tên remote không được rỗng và không được bắt đầu bằng ':'.`,
+    );
+  }
+  return r.replace(/\/+$/, "");
+}
+
+/** Dựng danh sách các bước lệnh rclone đồng bộ lên cloud.
+ *
+ * Hàm thuần (pure function) để test dễ dàng mà không cần cài rclone hoặc đụng mạng.
+ * Thứ tự các bước:
+ *   1. db: copy file dump DB vào <remote>/db
+ *   2. media: copy kho ảnh phục vụ vào <remote>/media
+ *   3. media-an: copy kho ảnh cách ly vào <remote>/media-an
+ *   4. don-cu: nếu giuCloudNgay > 0, xoá các file dump cũ (> giuCloudNgay) trên nhánh /db
+ */
+export function lenhRcloneCloud({
+  remote,
+  fileDump,
+  thuMucMedia,
+  thuMucMediaAn,
+  giuCloudNgay = 30,
+}) {
+  const dich = chuanHoaRemoteCloud(remote);
+  const buoc = [];
+
+  if (fileDump) {
+    buoc.push({
+      loai: "db",
+      moTa: `Đẩy bản dump DB lên cloud: ${dich}/db`,
+      args: ["copy", fileDump, `${dich}/db`],
+    });
+  }
+
+  if (thuMucMedia) {
+    buoc.push({
+      loai: "media",
+      moTa: `Chép kho ảnh phục vụ lên cloud: ${dich}/media`,
+      args: ["copy", thuMucMedia, `${dich}/media`],
+    });
+  }
+
+  if (thuMucMediaAn) {
+    buoc.push({
+      loai: "media-an",
+      moTa: `Chép kho ảnh cách ly lên cloud: ${dich}/media-an`,
+      args: ["copy", thuMucMediaAn, `${dich}/media-an`],
+    });
+  }
+
+  const soNgay = Number(giuCloudNgay);
+  if (soNgay > 0) {
+    buoc.push({
+      loai: "don-cu",
+      moTa: `Dọn các bản dump cũ trên cloud (> ${soNgay} ngày)`,
+      args: [
+        "delete",
+        `${dich}/db`,
+        "--min-age",
+        `${soNgay}d`,
+        "--include",
+        "gikky-*.dump*",
+      ],
+    });
+  }
+
+  return buoc;
+}
+
+/** Thực thi đẩy bản sao lưu lên cloud bằng rclone.
+ *
+ * Bỏ qua kho ảnh nếu thư mục nguồn chưa tồn tại trên đĩa (giống triết lý của `chepGuong`).
+ * Bắt lỗi ENOENT khi thiếu lệnh `rclone` và ném thông báo hướng dẫn cụ thể.
+ */
+export function dayLenCloud({
+  remote,
+  fileDump,
+  thuMucMedia,
+  thuMucMediaAn,
+  giuCloudNgay = 30,
+  rcloneBin = "rclone",
+}) {
+  const cacBuoc = lenhRcloneCloud({
+    remote,
+    fileDump,
+    thuMucMedia,
+    thuMucMediaAn,
+    giuCloudNgay,
+  });
+
+  for (const buoc of cacBuoc) {
+    if (buoc.loai === "media" && (!thuMucMedia || !existsSync(thuMucMedia))) {
+      console.log(`[sao-luu:cloud] ảnh: ${thuMucMedia ?? "(chưa cấu hình)"} chưa tồn tại — bỏ qua.`);
+      continue;
+    }
+    if (buoc.loai === "media-an" && (!thuMucMediaAn || !existsSync(thuMucMediaAn))) {
+      console.log(
+        `[sao-luu:cloud] ảnh ẩn: ${thuMucMediaAn ?? "(chưa cấu hình)"} chưa tồn tại — bỏ qua.`,
+      );
+      continue;
+    }
+
+    console.log(`[sao-luu:cloud] -> ${buoc.moTa}`);
+    try {
+      execFileSync(rcloneBin, buoc.args, { stdio: "inherit" });
+    } catch (err) {
+      if (err.code === "ENOENT") {
+        throw new Error(
+          `Không tìm thấy lệnh \`${rcloneBin}\`. Vui lòng cài rclone (https://rclone.org) và chạy \`rclone config\` để cấu hình remote trước.`,
+        );
+      }
+      throw err;
+    }
+  }
+}
+
 function docCo(argv) {
   const lay = (ten, mac_dinh) => {
     const i = argv.indexOf(ten);
     return i >= 0 && argv[i + 1] !== undefined ? argv[i + 1] : mac_dinh;
   };
+  const envRemote = process.env.GIKKY_BACKUP_REMOTE ?? docBien("GIKKY_BACKUP_REMOTE");
+  const envGiuCloud = process.env.GIKKY_BACKUP_CLOUD_DAYS ?? docBien("GIKKY_BACKUP_CLOUD_DAYS");
+  const envThuMuc = process.env.GIKKY_BACKUP_DIR ?? docBien("GIKKY_BACKUP_DIR") ?? join(GOC, "backup");
   return {
-    thuMuc: resolve(lay("--thu-muc", join(GOC, "backup"))),
+    thuMuc: resolve(lay("--thu-muc", envThuMuc)),
     giu: Number(lay("--giu", "7")),
     chiKiem: argv.includes("--kiem"),
     khongAnh: argv.includes("--khong-anh"),
+    remote: lay("--cloud", envRemote ?? null),
+    giuCloud: Number(lay("--giu-cloud", envGiuCloud ?? "30")),
   };
 }
 
@@ -229,6 +365,9 @@ function chay(argv) {
   const co = docCo(argv);
   if (!Number.isInteger(co.giu) || co.giu < 0) {
     throw new Error(`--giu phải là số nguyên ≥ 0, nhận ${JSON.stringify(co.giu)}`);
+  }
+  if (!Number.isInteger(co.giuCloud) || co.giuCloud < 0) {
+    throw new Error(`--giu-cloud phải là số nguyên ≥ 0, nhận ${JSON.stringify(co.giuCloud)}`);
   }
 
   const pg_dump = timPgDump();
@@ -240,6 +379,9 @@ function chay(argv) {
     const kho = thuMucAnh();
     console.log(`[sao-luu] ảnh:     ${kho.phucVu}${existsSync(kho.phucVu) ? "" : " (chưa có)"}`);
     console.log(`[sao-luu] ảnh ẩn:  ${kho.cachLy}${existsSync(kho.cachLy) ? "" : " (chưa có)"}`);
+    if (co.remote) {
+      console.log(`[sao-luu] cloud:   ${co.remote} (giữ ${co.giuCloud} ngày)`);
+    }
     console.log("[sao-luu] --kiem: điều kiện đủ, KHÔNG dump.");
     return 0;
   }
@@ -294,6 +436,17 @@ function chay(argv) {
       "[sao-luu] ⚠ --khong-anh: bản sao lưu này CHỈ CÓ DATABASE, KHÔNG có ảnh.\n"
         + "[sao-luu]   Phục hồi nó ra thì mọi hàng MocAnh còn nguyên và mọi ảnh gãy.",
     );
+    if (co.remote) {
+      console.log(`[sao-luu:cloud] Đẩy bản sao lưu database lên cloud: ${co.remote}`);
+      dayLenCloud({
+        remote: co.remote,
+        fileDump: ra,
+        thuMucMedia: null,
+        thuMucMediaAn: null,
+        giuCloudNgay: co.giuCloud,
+      });
+      console.log(`[sao-luu:cloud] Xong đẩy lên cloud: ${co.remote}`);
+    }
     return 0;
   }
   const kho = thuMucAnh();
@@ -312,6 +465,20 @@ function chay(argv) {
         + `${join(co.thuMuc, ten_dich)}`,
     );
   }
+
+  // --- Đẩy lên Cloud Storage qua rclone nếu có remote ---
+  if (co.remote) {
+    console.log(`[sao-luu:cloud] Đẩy bản sao lưu lên cloud: ${co.remote}`);
+    dayLenCloud({
+      remote: co.remote,
+      fileDump: ra,
+      thuMucMedia: kho.phucVu,
+      thuMucMediaAn: kho.cachLy,
+      giuCloudNgay: co.giuCloud,
+    });
+    console.log(`[sao-luu:cloud] Xong đẩy lên cloud: ${co.remote}`);
+  }
+
   return 0;
 }
 

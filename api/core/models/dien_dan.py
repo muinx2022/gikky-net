@@ -182,6 +182,17 @@ class Mach(models.Model):
     #: Tác giả có thể mở lại khi mạch không bị mod khoá (`locked_at IS NULL`).
     tat_binh_luan = models.BooleanField(default=False)
 
+    #: Mạch lưu trữ (soft delete): IS NOT NULL = bài bị ẩn khỏi feed công khai và tab bài viết,
+    #: chỉ tác giả và staff xem được trong tab Lưu trữ.
+    archived_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    archived_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+
     # --- Moderation (PLAN 5.10 · Phase 4 dùng) -------------------------------
     locked_at = models.DateTimeField(null=True, blank=True)
     hidden_at = models.DateTimeField(null=True, blank=True)

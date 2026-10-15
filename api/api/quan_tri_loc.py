@@ -95,6 +95,7 @@ def dang_hen_gio(mach) -> bool:
 
 LOC_MACH_DANH_SACH: dict[str, Q] = {
     **LOC_MACH,
-    "chua_go": Q(hidden_at__isnull=True),
+    "chua_go": Q(hidden_at__isnull=True, archived_at__isnull=True),
     "hen_gio": LOC_HEN_GIO,
+    "luu_tru": Q(archived_at__isnull=False),
 }

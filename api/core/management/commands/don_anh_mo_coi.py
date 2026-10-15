@@ -21,8 +21,11 @@ và ràng buộc đó là thứ giữ nó an toàn khi chạy trên máy đang p
 """
 
 from datetime import timedelta
+from pathlib import Path
 
-from django.core.management.base import BaseCommand
+from django.conf import settings
+from django.core.management.base import BaseCommand, CommandError
+from django.db import connection
 from django.utils import timezone
 
 from core.anh_luu import THU_MUC_ANH, THU_MUC_THUMB, kho_an, kho_hien
@@ -52,9 +55,31 @@ class Command(BaseCommand):
                 "`0` là bỏ hàng rào — chỉ dùng khi chắc chắn không có upload nào đang chạy."
             ),
         )
+        parser.add_argument(
+            "--cho-phep-db-nhap",
+            action="store_true",
+            help="Cho phép xoá thật ngay cả khi đang nối vào DB nháp/test (`e2e`, `test`).",
+        )
 
     def handle(self, *args, **tuy_chon):
         thu = tuy_chon["dry_run"]
+        cho_phep_db_nhap = tuy_chon.get("cho_phep_db_nhap", False)
+
+        if not thu and not cho_phep_db_nhap:
+            db_name = str(connection.settings_dict.get("NAME", "")).lower()
+            la_db_nhap = "e2e" in db_name or "test" in db_name
+            kho_anh_mac_dinh = (
+                Path(settings.MEDIA_ROOT).resolve()
+                == (Path(settings.BASE_DIR) / "media").resolve()
+            )
+            if la_db_nhap and kho_anh_mac_dinh:
+                raise CommandError(
+                    f"Từ chối chạy xoá thật khi đang kết nối vào DB nháp '{connection.settings_dict.get('NAME')}' "
+                    f"và dùng chung kho ảnh mặc định ({settings.MEDIA_ROOT}). "
+                    f"Hành động này có thể xoá mất ảnh của cơ sở dữ liệu thật! "
+                    f"Hãy dùng --dry-run để xem trước hoặc truyền --cho-phep-db-nhap nếu bạn chắc chắn."
+                )
+
         nguong = timezone.now() - timedelta(hours=tuy_chon["tuoi_toi_thieu"])
 
         # Khoá của MỌI hàng, kèm nơi hàng đó NÓI file đang nằm. Một khoá ở đúng kho của

@@ -3,6 +3,7 @@
 import {
   quanTriDatAnMach,
   quanTriDatKhoaMach,
+  quanTriDatLuuTruMach,
   quanTriLietKeMach,
   type MachDongOut,
   type QuanTriLietKeMachData,
@@ -71,6 +72,7 @@ const CHU_LOC: Record<LocTrangThai, string> = {
   bi_khoa: "Bị khoá",
   bi_an: "Bị ẩn",
   hen_gio: "Đã hẹn giờ",
+  luu_tru: "Đã lưu trữ",
 };
 
 export default function TrangMach() {
@@ -263,6 +265,43 @@ function BangMach() {
     });
   };
 
+  /** Lưu trữ / Bỏ lưu trữ tuần tự (soft delete). */
+  const luuTruHangLoat = (luu_tru: boolean) => {
+    datTomTat(null);
+    return chay(async () => {
+      const muc_tieu = locCanLam(
+        ds.items ?? [],
+        chon.da_chon,
+        (m) => m.da_luu_tru ?? false,
+        luu_tru,
+      );
+      let da_doi = 0;
+      let von_vay = 0;
+      const that_bai: number[] = [];
+      for (const id of muc_tieu) {
+        const { data, error } = await quanTriDatLuuTruMach({
+          baseUrl: GOC_API,
+          headers: headerGhi(),
+          path: { mach_id: id },
+          body: { luu_tru, ly_do: "" },
+        });
+        if (error === undefined) {
+          if (data?.da_doi === true) da_doi += 1;
+          else von_vay += 1;
+          continue;
+        }
+        if (maLoi(error) === MA_CHUA_DANG_NHAP) {
+          const bo_do = muc_tieu.length - da_doi - von_vay - that_bai.length;
+          datTomTat(tomTatHangLoat({ da_doi, von_vay, that_bai, bo_do }));
+          return { error };
+        }
+        that_bai.push(id);
+      }
+      datTomTat(tomTatHangLoat({ da_doi, von_vay, that_bai, bo_do: 0 }));
+      return {};
+    });
+  };
+
   const co_bo_loc =
     q !== "" || sub !== "" || tac_gia !== "" || trang_thai !== mac_dinh;
 
@@ -274,7 +313,9 @@ function BangMach() {
             ? "Hàng đợi bài viết trước, sắp theo giờ phát hành gần nhất trước."
             : trang_thai === "chua_go"
               ? "Đang xem bài CHƯA BỊ ẨN — gồm cả bài đã khoá và đã đóng sổ. Bài đã ẩn nằm ở bộ lọc bên dưới."
-              : "Mỗi bài là một “mạch”: bài gốc cộng các mốc tác giả nối thêm về sau."
+              : trang_thai === "luu_tru"
+                ? "Đang xem các bài viết đã được lưu trữ (soft delete)."
+                : "Mỗi bài là một “mạch”: bài gốc cộng các mốc tác giả nối thêm về sau."
         }
         // Nút, KHÔNG mục sidebar (`plans/2026-09-04-dang-bai-tu-admin.md` §1.3): `/machs`
         // khai `khop_tien_to`, nên một mục `/machs/moi` trong `NHOM_MENU` làm HAI mục sáng
@@ -403,6 +444,24 @@ function BangMach() {
           >
             Mở khoá
           </button>
+          <button
+            type="button"
+            className="nut nut-nho"
+            disabled={dang_chay}
+            onClick={() => void luuTruHangLoat(true)}
+            data-testid="nut-hl-luu-tru"
+          >
+            Lưu trữ
+          </button>
+          <button
+            type="button"
+            className="nut nut-nho"
+            disabled={dang_chay}
+            onClick={() => void luuTruHangLoat(false)}
+            data-testid="nut-hl-bo-luu-tru"
+          >
+            Bỏ lưu trữ
+          </button>
         </ThanhHangLoat>
 
         {ds.items === null ? (
@@ -457,6 +516,9 @@ function BangMach() {
                     <span className="mt-1 flex flex-wrap gap-1">
                       {m.da_hen_gio && (
                         <NhanTrangThai tone="chu-y">đã hẹn giờ</NhanTrangThai>
+                      )}
+                      {m.da_luu_tru && (
+                        <NhanTrangThai tone="chu-y">đã lưu trữ</NhanTrangThai>
                       )}
                       {m.da_bi_an && !m.da_hen_gio && (
                         <NhanTrangThai tone="xau">đã ẩn</NhanTrangThai>
@@ -578,6 +640,33 @@ function BangMach() {
                         >
                           <Icon
                             ten={m.da_khoa ? "mo-khoa" : "khoa"}
+                            className="size-4"
+                          />
+                        </button>
+                        <button
+                          type="button"
+                          className="nut nut-nho shrink-0 px-1.5"
+                          disabled={dang_chay}
+                          data-testid={`nut-luu-tru-${m.id}`}
+                          title={m.da_luu_tru ? "Bỏ lưu trữ" : "Lưu trữ"}
+                          aria-label={
+                            m.da_luu_tru
+                              ? `Bỏ lưu trữ: ${m.title}`
+                              : `Lưu trữ: ${m.title}`
+                          }
+                          onClick={() =>
+                            chay(() =>
+                              quanTriDatLuuTruMach({
+                                baseUrl: GOC_API,
+                                headers: headerGhi(),
+                                path: { mach_id: m.id },
+                                body: { luu_tru: !m.da_luu_tru, ly_do: "" },
+                              }),
+                            )
+                          }
+                        >
+                          <Icon
+                            ten={m.da_luu_tru ? "khoi-phuc" : "luu-tru"}
                             className="size-4"
                           />
                         </button>

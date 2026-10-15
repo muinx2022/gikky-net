@@ -1111,7 +1111,9 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Đề nghị**: nên sửa sớm. Đây là màn hình mà **mọi người dùng mới đều đi qua**, và khi nó
   hỏng thì nó hỏng đúng lúc người ta chưa có tài khoản để hỏi ai.
 
-### P-20260827-5 · [MỞ] · NẶNG — hết quota mail ⇒ tài khoản kẹt VĨNH VIỄN, không lối ra
+### P-20260827-5 · [ĐÓNG] · NẶNG — hết quota mail ⇒ tài khoản kẹt VĨNH VIỄN, không lối ra
+
+**ĐÓNG (2026-10-16).** Đã override `AdapterTaiKhoan.send_confirmation_mail`: khi `signup=True` và gửi mail thất bại (SMTP ném ngoại lệ), tự động xoá hàng `User` vừa tạo khỏi DB để người dùng không bị kẹt và có thể đăng ký lại khi SMTP phục hồi. Khi `signup=False` (gửi lại thư), giữ nguyên hàng `User`. Có test kiểm chứng tại `api/tests/test_dang_ky_loi_mail.py`.
 
 - **Thấy lúc**: tính sức chứa của gói Brevo free khi user hỏi "300 user/ngày thì sao", 2026-08-27
 - **Ở đâu**: đường đăng ký của allauth headless · `api/config/settings.py` (không có
@@ -1395,7 +1397,10 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Bằng chứng**: 1 failed/589 passed lượt 1 · 590/0 lượt 2 · 590/0 nghiệm thu, cùng `gikky_e2e`. Khác loài với L36 (đã đóng — nguyên nhân khác).
 - **Vì sao không sửa ngay**: cần tái hiện có chủ đích (chặn/làm chậm POST vote rồi reload) trước khi vá — vá mù kiểu `waitForResponse` dễ thành trang trí.
 
-### P-20260903-1 · [MỞ] · NẶNG — `tomTat` cắt 150 ký tự từ HTML THÔ của mốc 1 làm `meta description` + `og:description`: một thẻ `<a>` gần đầu bài nuốt trọn ngân sách mô tả bằng markup
+### P-20260903-1 · [ĐÓNG] · NẶNG — `tomTat` cắt 150 ký tự từ HTML THÔ của mốc 1 làm `meta description` + `og:description`: một thẻ `<a>` gần đầu bài nuốt trọn ngân sách mô tả bằng markup
+
+**ĐÓNG (2026-10-16).** Đã dùng `trichVanBanThuan(mocDau.body)` trong `apps/web/components/trang-mach.tsx` để gỡ sạch HTML entities và thẻ trước khi cắt độ dài mô tả meta. Có bài đo trong `apps/web/e2e/don-vi/van-ban.spec.ts`.
+
 - **Thấy lúc**: trả lời câu hỏi của user về "gắn preview chart + link TradingView cuối bài"
 - **Ở đâu**: `apps/web/components/trang-mach.tsx:104-109`
 - **Bằng chứng**: `than.replace(/\s+/g," ").trim().slice(0,150)` — không gỡ thẻ, mà `body` LUÔN là HTML (`api/core/ghi.py:447` ghi cứng `body_dinh_dang=DINH_DANG_HTML`). Mô phỏng đúng hàm đó với body đã `lam_sach`: `9 moc · <p>Xem <a href="https://www.tradingview.com/chart/?symbol=HOSE%3AFPT" target="_blank" rel="nofollow ugc noopener">FPT tren TradingView</a></p><p>Noi d…` — 0 chữ nội dung thật. Backend ĐÃ có lời giải cho đúng việc này: `van_ban_thuan` gọi trong `xem_truoc` (`api/api/trinh_bay.py:201-209`), docstring ghi rõ *"chuỗi này còn đi tiếp vào `meta description`"*. `grep -rn tomTat apps/web` ⇒ KHÔNG có bài đo nào.
@@ -1425,7 +1430,10 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Bằng chứng**: không có `a[href]::after{content:attr(href)}` hay tương đương; mà link trong `body` bị server ép `target="_blank"` (`api/core/lam_sach_html.py:89`) nên bản in mất luôn đích đến.
 - **Vì sao không sửa ngay**: ngoài phạm vi; giá trị thấp cho một site mobile-first — để đó.
 
-### P-20260903-6 · [MỞ] · NẶNG — `api/media/` là kho ảnh CHUNG cho cả `gikky_dev` (bài THẬT) lẫn `gikky_e2e`, nên `don_anh_mo_coi` chạy khi đang trỏ DB nháp sẽ XOÁ THẬT ảnh của bài thật
+### P-20260903-6 · [ĐÓNG] · NẶNG — `api/media/` là kho ảnh CHUNG cho cả `gikky_dev` (bài THẬT) lẫn `gikky_e2e`, nên `don_anh_mo_coi` chạy khi đang trỏ DB nháp sẽ XOÁ THẬT ảnh của bài thật
+
+**ĐÓNG (2026-10-16).** Thêm cờ `--cho-phep-db-nhap` vào `don_anh_mo_coi`. Đầu lệnh chặn xoá thật và ném `CommandError` nếu tên DB chứa `e2e` hoặc `test` VÀ `MEDIA_ROOT` đang trỏ vào kho ảnh mặc định của dev (`BASE_DIR / "media"`). Cho phép chạy với `--dry-run` hoặc khi có `--cho-phep-db-nhap`. Có bài đo ghim tại `api/tests/test_don_anh_mo_coi.py`.
+
 - **Thấy lúc**: lượt "sửa bài khu quản trị" (`plans/2026-09-03-sua-bai-khu-quan-tri.md`) — cả thực thi lẫn nghiệm thu đều phải dựng ảnh trong `gikky_e2e` và cùng thấy
 - **Ở đâu**: `api/config/settings.py` (`MEDIA_ROOT` mặc định `BASE_DIR / "media"`, không phụ thuộc DB) · `api/core/management/commands/don_anh_mo_coi.py`
 - **Bằng chứng**: lệnh dọn liệt kê file trên đĩa rồi trừ đi khoá của `MocAnh` / `AnhNoiDung` / `User.avatar_khoa` **của DB đang nối**. Trỏ `gikky_e2e` thì mọi khoá của `gikky_dev` vắng mặt ⇒ rơi vào nhánh "mồ côi". Lệnh **xoá thật khi không có cờ** (chỉ né file trẻ hơn 24 giờ), nên ảnh cũ của bài thật đi luôn. Không có cột nào trong khoá phân biệt hai DB.
@@ -1443,7 +1451,10 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Bằng chứng**: `dong_bo_kho_anh` chỉ lặp `MocAnh.objects.filter(moc=moc)`; không truy vấn nào chạm `AnhNoiDung` vì bảng ấy **cố ý không có FK về `Moc`**. Prod cho Caddy phục vụ `/media/*` thẳng từ đĩa (`deploy/prod/Caddyfile`), nên ẩn ở tầng API không giấu được URL.
 - **Vì sao không sửa ngay**: model ghi rõ đây là lựa chọn có chủ đích (không có đường đi ngược ảnh → mốc). Nhưng lượt này mở thêm bề mặt (mod nhúng ảnh vào bài người khác), nên vế "A9 chỉ đúng một nửa" đáng được nhìn lại một lượt riêng.
 
-### P-20260903-9 · [MỞ] · VỪA — `pnpm test -- <cờ>` KHÔNG truyền được cờ cho pytest, trong khi `CLAUDE.md` dạy đúng cú pháp đó
+### P-20260903-9 · [ĐÓNG] · VỪA — `pnpm test -- <cờ>` KHÔNG truyền được cờ cho pytest, trong khi `CLAUDE.md` dạy đúng cú pháp đó
+
+**ĐÓNG (2026-10-16).** `scripts/pytest.mjs` đã thêm lọc `.filter(a => a !== "--")` trước khi chuyển tiếp arguments vào pytest CLI, cho phép truyền cờ mượt mà từ `pnpm test -- <cờ>`.
+
 - **Thấy lúc**: nghiệm thu lượt trên, khi cần chạy riêng một bài
 - **Ở đâu**: `scripts/pytest.mjs` · `D:\Projects\gikky-net\CLAUDE.md` (bảng Lệnh, dòng `pnpm test -- -k health -x`)
 - **Bằng chứng**: `pnpm test -- -k test_B3 -x` → `ERROR: file or directory not found: -k` (pnpm chèn `-q "--"` vào argv nên pytest coi phần sau là đường dẫn). Phải gọi thẳng `api\.venv\Scripts\python.exe -m pytest`.

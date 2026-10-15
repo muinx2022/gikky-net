@@ -82,7 +82,9 @@ def xem_ho_so(request, username: str, limit: int = SO_MACH_TREN_HO_SO):
         and getattr(request.user, "is_authenticated", False)
         and getattr(request.user, "is_staff", False)
     )
-    mach_hien = Mach.objects.filter(author=user, hidden_at__isnull=True)
+    mach_hien = Mach.objects.filter(
+        author=user, hidden_at__isnull=True, archived_at__isnull=True
+    )
     if not (la_toi or la_staff):
         mach_hien = mach_hien.filter(rieng_tu=False)
     machs = list(
@@ -95,6 +97,7 @@ def xem_ho_so(request, username: str, limit: int = SO_MACH_TREN_HO_SO):
         "deleted_at__isnull": True,
         "hidden_at__isnull": True,
         "mach__hidden_at__isnull": True,
+        "mach__archived_at__isnull": True,
     }
     doc_duoc_cong_khai = dict(doc_duoc)
     if not (la_toi or la_staff):

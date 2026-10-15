@@ -40,6 +40,22 @@ type ModSaoLuu = {
     dich: string,
   ) => { chep: number; boQua: number; byte: number; thieu: boolean };
   thuMucAnh: () => { phucVu: string; cachLy: string };
+  chuanHoaRemoteCloud: (remote: string) => string;
+  lenhRcloneCloud: (tuyChon: {
+    remote: string;
+    fileDump?: string;
+    thuMucMedia?: string | null;
+    thuMucMediaAn?: string | null;
+    giuCloudNgay?: number;
+  }) => Array<{ loai?: string; moTa: string; args: string[] }>;
+  dayLenCloud: (tuyChon: {
+    remote: string;
+    fileDump?: string;
+    thuMucMedia?: string | null;
+    thuMucMediaAn?: string | null;
+    giuCloudNgay?: number;
+    rcloneBin?: string;
+  }) => void;
 };
 
 async function nap(): Promise<ModSaoLuu> {
@@ -214,3 +230,89 @@ test("thuMucAnh mặc định TRÙNG `config/settings.py` (hai bên lệch = sao
   expect(chuan(kho.cachLy).startsWith(`${chuan(kho.phucVu)}/`)).toBe(false);
   expect(chuan(kho.cachLy)).not.toBe(chuan(kho.phucVu));
 });
+
+test("chuanHoaRemoteCloud chuẩn hoá remote và fail-closed khi cú pháp sai", async () => {
+  const { chuanHoaRemoteCloud } = await nap();
+  // Hợp lệ: cắt bỏ dấu / thừa ở cuối
+  expect(chuanHoaRemoteCloud("r2:gikky-backup")).toBe("r2:gikky-backup");
+  expect(chuanHoaRemoteCloud("gdrive:folder/sub/")).toBe("gdrive:folder/sub");
+  expect(chuanHoaRemoteCloud("s3:bucket/backup///")).toBe("s3:bucket/backup");
+
+  // Fail-closed khi cú pháp sai hoặc thiếu remote
+  expect(() => chuanHoaRemoteCloud("")).toThrow(/không được để trống/);
+  expect(() => chuanHoaRemoteCloud("   ")).toThrow(/không được để trống/);
+  expect(() => chuanHoaRemoteCloud("khong-co-hai-cham")).toThrow(/không hợp lệ/);
+  expect(() => chuanHoaRemoteCloud(":bat-dau-bang-hai-cham")).toThrow(/không hợp lệ/);
+});
+
+test("lenhRcloneCloud sinh đúng thứ tự lệnh copy db, media, media-an và delete dọn bản cũ", async () => {
+  const { lenhRcloneCloud } = await nap();
+  const buoc = lenhRcloneCloud({
+    remote: "r2:gikky-backup/",
+    fileDump: "/backup/gikky-prod.dump",
+    thuMucMedia: "/api/media",
+    thuMucMediaAn: "/api/media-an",
+    giuCloudNgay: 30,
+  });
+
+  expect(buoc).toHaveLength(4);
+  expect(buoc[0]).toEqual({
+    loai: "db",
+    moTa: expect.stringContaining("r2:gikky-backup/db"),
+    args: ["copy", "/backup/gikky-prod.dump", "r2:gikky-backup/db"],
+  });
+  expect(buoc[1]).toEqual({
+    loai: "media",
+    moTa: expect.stringContaining("r2:gikky-backup/media"),
+    args: ["copy", "/api/media", "r2:gikky-backup/media"],
+  });
+  expect(buoc[2]).toEqual({
+    loai: "media-an",
+    moTa: expect.stringContaining("r2:gikky-backup/media-an"),
+    args: ["copy", "/api/media-an", "r2:gikky-backup/media-an"],
+  });
+  expect(buoc[3]).toEqual({
+    loai: "don-cu",
+    moTa: expect.stringContaining("30"),
+    args: [
+      "delete",
+      "r2:gikky-backup/db",
+      "--min-age",
+      "30d",
+      "--include",
+      "gikky-*.dump*",
+    ],
+  });
+});
+
+test("lenhRcloneCloud với giuCloudNgay = 0 KHÔNG sinh lệnh delete (0 = tắt dọn cũ)", async () => {
+  const { lenhRcloneCloud } = await nap();
+  const buoc = lenhRcloneCloud({
+    remote: "gdrive:backup",
+    fileDump: "/backup/gikky.dump",
+    thuMucMedia: "/media",
+    thuMucMediaAn: "/media-an",
+    giuCloudNgay: 0,
+  });
+
+  expect(buoc).toHaveLength(3);
+  expect(buoc.some((b) => b.loai === "don-cu")).toBe(false);
+  expect(buoc.some((b) => b.args[0] === "delete")).toBe(false);
+});
+
+test("deploy/prod/sao-luu-prod.sh tồn tại và có đủ hợp đồng sao lưu production", async () => {
+  const { existsSync, readFileSync } = await import("node:fs");
+  const duongDanScript = join(GOC, "deploy", "prod", "sao-luu-prod.sh");
+  expect(existsSync(duongDanScript)).toBe(true);
+
+  const noiDung = readFileSync(duongDanScript, "utf8");
+  // Kiểm tra bash fail-fast
+  expect(noiDung).toContain("set -euo pipefail");
+  // Kiểm tra tính toàn vẹn của dump trước khi hoàn tất
+  expect(noiDung).toContain("pg_restore --list");
+  // Kiểm tra nhánh đẩy lên rclone với biến GIKKY_BACKUP_REMOTE
+  expect(noiDung).toContain("GIKKY_BACKUP_REMOTE");
+  expect(noiDung).toContain("rclone copy");
+  expect(noiDung).toContain("rclone delete");
+});
+

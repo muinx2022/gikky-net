@@ -231,3 +231,23 @@ def test_anh_noi_dung_mat_hang_thi_LAI_la_mo_coi(kho_anh):
     don(tuoi_toi_thieu=0)
 
     assert file_trong(phuc_vu) == set()
+
+
+@pytest.mark.django_db
+def test_chan_xoa_that_khi_db_nhap_va_kho_anh_mac_dinh(settings):
+    """P-20260903-6: don_anh_mo_coi trên DB nháp ('test'/'e2e') với kho ảnh mặc định phải bị chặn."""
+    from django.core.management.base import CommandError
+
+    settings.MEDIA_ROOT = str(settings.BASE_DIR / "media")
+
+    # 1. Chạy xoá thật không có cờ cho phép -> Bị chặn với CommandError
+    with pytest.raises(CommandError, match="Từ chối chạy xoá thật khi đang kết nối vào DB nháp"):
+        don(tuoi_toi_thieu=0)
+
+    # 2. Truyền dry_run -> Cho phép xem trước bình thường
+    ra_dry = don(dry_run=True, tuoi_toi_thieu=0)
+    assert "[--dry-run]" in ra_dry
+
+    # 3. Truyền cho_phep_db_nhap -> Cho phép chạy tiếp
+    ra_that = don(cho_phep_db_nhap=True, tuoi_toi_thieu=0)
+    assert "mồ côi:" in ra_that

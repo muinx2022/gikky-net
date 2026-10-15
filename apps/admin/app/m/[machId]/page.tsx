@@ -5,6 +5,7 @@ import {
   quanTriDatAnMach,
   quanTriDatAnMoc,
   quanTriDatKhoaMach,
+  quanTriDatLuuTruMach,
   quanTriLietKeBinhLuan,
   quanTriSuaTieuDeMach,
   quanTriXemMach,
@@ -135,6 +136,9 @@ export default function TrangChiTietMach() {
           {mach.da_hen_gio && (
             <NhanTrangThai tone="chu-y">đã hẹn giờ</NhanTrangThai>
           )}
+          {mach.da_luu_tru && (
+            <NhanTrangThai tone="chu-y">mạch đang được lưu trữ</NhanTrangThai>
+          )}
           {mach.da_bi_an && !mach.da_hen_gio && (
             <NhanTrangThai tone="xau">mạch đang bị ẩn</NhanTrangThai>
           )}
@@ -146,7 +150,7 @@ export default function TrangChiTietMach() {
           {mach.status === "closed" && (
             <NhanTrangThai tone="nhan">đã đóng sổ</NhanTrangThai>
           )}
-          {!mach.da_bi_an && !mach.da_khoa && mach.status !== "closed" && (
+          {!mach.da_bi_an && !mach.da_khoa && !mach.da_luu_tru && mach.status !== "closed" && (
             <NhanTrangThai tone="tot">bình thường</NhanTrangThai>
           )}
         </div>
@@ -197,6 +201,24 @@ export default function TrangChiTietMach() {
             }
           >
             {mach.da_khoa ? "Mở khoá" : "Khoá mạch"}
+          </button>
+          <button
+            type="button"
+            className="nut"
+            disabled={dang_chay}
+            data-testid="nut-luu-tru-mach-chi-tiet"
+            onClick={() =>
+              chay(() =>
+                quanTriDatLuuTruMach({
+                  baseUrl: GOC_API,
+                  headers: headerGhi(),
+                  path: { mach_id },
+                  body: { luu_tru: !mach.da_luu_tru, ly_do: "" },
+                }),
+              )
+            }
+          >
+            {mach.da_luu_tru ? "Bỏ lưu trữ mạch" : "Lưu trữ mạch"}
           </button>
           {/* Sửa tiêu đề: **chỉ superuser**, và ẩn hẳn khi mạch đang bị khoá — server trả
               403 `mach_bi_khoa` ở đúng ca ấy, nên một nút bấm được mà chắc chắn hỏng là

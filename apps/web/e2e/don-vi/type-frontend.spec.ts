@@ -378,6 +378,7 @@ test("luật trên có quét trúng lời gọi THẬT ở MỌI cửa (không q
     "components/hanh-dong-moc.tsx", // form ghi
     "components/hanh-dong-mod.tsx",
     "components/khoi-chu-mach.tsx", // form ghi
+    "components/nut-luu-tru-mach.tsx", // nút lưu trữ mạch
     "components/nut-theo-mach.tsx", // B2 — theo / bỏ theo mạch
     // Theo dõi CHUYÊN MỤC (2026-08-24) — ba cửa mới, cả ba client:
     //   `nut-theo-sub`  `GET /subs/{slug}/me` + `POST`/`DELETE /subs/{slug}/theo`. Lượt

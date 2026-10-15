@@ -150,10 +150,8 @@ def test_chua_go_KHONG_lot_vao_vanh_khuyen(canh):
     from api.quan_tri_loc import LOC_MACH, LOC_MACH_DANH_SACH
 
     assert "chua_go" not in LOC_MACH
-    assert "chua_go" in LOC_MACH_DANH_SACH
-    # `hen_gio` (2026-09-03) là lát chồng lấn THỨ HAI — nó nằm lọt trong `bi_an` (bài hẹn
-    # giờ được lưu như bài đang ẩn). Cùng lý do với `chua_go`, nó phải ở ngoài vành khuyên.
-    assert set(LOC_MACH_DANH_SACH) - set(LOC_MACH) == {"chua_go", "hen_gio"}
+    # `hen_gio` (2026-09-03) và `luu_tru` (2026-10-09) là lát chồng lấn ngoài vành khuyên.
+    assert set(LOC_MACH_DANH_SACH) - set(LOC_MACH) == {"chua_go", "hen_gio", "luu_tru"}
 
     # Và chuông thật: vành khuyên trên bảng điều khiển vẫn đúng BỐN lát, không có
     # `chua_go`, và bốn lát ấy vẫn cộng đúng bằng tổng số mạch.

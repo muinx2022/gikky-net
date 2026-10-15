@@ -135,6 +135,7 @@ def mach_tom_tat_ra(
         xem_truoc=xem_truoc,
         moc_moi_nhat=moc_moi_nhat,
         view_count=getattr(mach, "view_count", 0),
+        da_luu_tru=getattr(mach, "archived_at", None) is not None,
     )
 
 

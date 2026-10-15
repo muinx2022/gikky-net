@@ -1,0 +1,43 @@
+.nut {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--f-mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-2);
+  background: var(--surface-2);
+  border: 1px solid transparent;
+  border-radius: 3px;
+  padding: 1px 7px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nut:hover:not(:disabled) {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.nut:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.da_luu_tru {
+  color: var(--ink-2);
+  border-color: var(--line-2);
+  background: var(--surface-1);
+}
+
+.da_luu_tru:hover:not(:disabled) {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+@media (pointer: coarse) {
+  .nut {
+    min-height: 44px;
+    padding: 0 12px;
+  }
+}

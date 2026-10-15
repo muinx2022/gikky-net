@@ -782,6 +782,26 @@ export type KetQuaDoiTrangThaiOut = {
 };
 
 /**
+ * KetQuaLuuTruMachOut
+ *
+ * Kết quả lưu trữ hoặc bỏ lưu trữ mạch.
+ */
+export type KetQuaLuuTruMachOut = {
+    /**
+     * Da Doi
+     */
+    da_doi?: boolean;
+    /**
+     * Da Luu Tru
+     */
+    da_luu_tru: boolean;
+    /**
+     * Id
+     */
+    id: number;
+};
+
+/**
  * KetQuaTronOut
  *
  * Một dòng kết quả tìm kiếm — **mạch HOẶC bình luận**, trộn chung một danh sách.
@@ -949,6 +969,22 @@ export type LoiThoiGianOut = {
 };
 
 /**
+ * LuuTruMachIn
+ *
+ * Lưu trữ hoặc bỏ lưu trữ mạch (soft delete).
+ */
+export type LuuTruMachIn = {
+    /**
+     * Luu Tru
+     */
+    luu_tru?: boolean;
+    /**
+     * Ly Do
+     */
+    ly_do?: string;
+};
+
+/**
  * MachChiTietOut
  *
  * Trang mạch: mạch + toàn bộ mốc + `face` server đã tính + spine (PLAN mục 7).
@@ -982,6 +1018,10 @@ export type MachChiTietOut = {
      * Created At
      */
     created_at: string;
+    /**
+     * Da Luu Tru
+     */
+    da_luu_tru?: boolean;
     /**
      * Entry Count
      */
@@ -1203,6 +1243,10 @@ export type MachTomTatOut = {
      * Created At
      */
     created_at: string;
+    /**
+     * Da Luu Tru
+     */
+    da_luu_tru?: boolean;
     /**
      * Diem
      */
@@ -2921,6 +2965,44 @@ export type TheoMachResponses = {
 
 export type TheoMachResponse = TheoMachResponses[keyof TheoMachResponses];
 
+export type LuuTruMachData = {
+    body: LuuTruMachIn;
+    path: {
+        /**
+         * Mach Id
+         */
+        mach_id: number;
+    };
+    query?: never;
+    url: '/api/v1/machs/{mach_id}/luu-tru';
+};
+
+export type LuuTruMachErrors = {
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type LuuTruMachError = LuuTruMachErrors[keyof LuuTruMachErrors];
+
+export type LuuTruMachResponses = {
+    /**
+     * OK
+     */
+    200: KetQuaLuuTruMachOut;
+};
+
+export type LuuTruMachResponse = LuuTruMachResponses[keyof LuuTruMachResponses];
+
 export type XemMachCuaToiData = {
     body?: never;
     path: {
@@ -3381,6 +3463,44 @@ export type LietKeUserDangTheoResponses = {
 };
 
 export type LietKeUserDangTheoResponse = LietKeUserDangTheoResponses[keyof LietKeUserDangTheoResponses];
+
+export type LietKeLuuTruData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/me/luu-tru';
+};
+
+export type LietKeLuuTruErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+};
+
+export type LietKeLuuTruError = LietKeLuuTruErrors[keyof LietKeLuuTruErrors];
+
+export type LietKeLuuTruResponses = {
+    /**
+     * OK
+     */
+    200: FeedOut;
+};
+
+export type LietKeLuuTruResponse = LietKeLuuTruResponses[keyof LietKeLuuTruResponses];
 
 export type LietKeSubDangTheoData = {
     body?: never;
@@ -4318,6 +4438,10 @@ export type LietKeMachCuaUserData = {
          * Limit
          */
         limit?: number;
+        /**
+         * Da Luu Tru
+         */
+        da_luu_tru?: boolean;
     };
     url: '/api/v1/users/{username}/machs';
 };

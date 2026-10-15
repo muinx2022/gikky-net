@@ -6,13 +6,14 @@ Tài liệu này là **kim chỉ nam hành văn** bắt buộc cho mọi bài vi
 
 ## 1. Vấn đề cốt lõi cần giải quyết
 
-Trong giai đoạn đầu phát triển, các bài viết của Gikky thường mắc phải hai căn bệnh cố hữu:
-1. **Lạm dụng sáo ngữ "bóc tách", "giải phẫu":** Hai cụm từ này xuất hiện lặp đi lặp lại ở hầu hết tiêu đề, mở bài và thân bài, biến thành một dạng khẩu hiệu máy móc, làm giảm tính tự nhiên và làm người đọc cảm thấy ngấy.
-2. **Đơn điệu một màu giọng (Monotone):** Các bài viết đều dùng chung một giọng điệu "báo cáo phân tích tài chính / kiểm toán lạnh lùng", cấu trúc rập khuôn (mở bài đặt vấn đề -> 3 ý kỹ thuật gạch đầu dòng -> kết luận chiêm nghiệm triết lý). Giọng văn này quá đậm chất kỹ thuật, khô cứng, thiếu tính sinh động, thiếu hơi thở của đời sống và thiếu tính kết nối cảm xúc với người đọc.
+Trong quá trình phát triển nội dung, các bài viết rất dễ mắc phải những căn bệnh cố hữu nếu không liên tục làm mới:
+1. **Lạm dụng sáo ngữ và từ ngữ rập khuôn ("Giải mã", "Con hào", "Bóc tách", "Giải phẫu", "Cỗ máy"):** Các cụm từ này nghe một vài lần thì thấy hay, nhưng bài nào cũng áp dụng sẽ biến thành công thức máy móc (template-itis), gây nhàm chán, tạo cảm giác giật tít rẻ tiền hoặc giọng văn AI rập khuôn.
+2. **Đơn điệu một màu giọng (Monotone):** Viết theo một khuôn mẫu phân tích khô khan, thiếu sự biến hóa giữa các thể loại (tản văn, phóng sự thực địa, hồ sơ cinematic hay tâm sự đồng hành).
 
 ---
 
 ## 2. Hệ thống 5 Giọng văn (Voice Archetypes) của Gikky
+
 
 Để nội dung luôn tươi mới và hấp dẫn độc giả, hệ thống bài viết phải linh hoạt luân chuyển giữa 5 phong cách hành văn:
 
@@ -66,17 +67,43 @@ Trong giai đoạn đầu phát triển, các bài viết của Gikky thường 
 
 ---
 
-## 3. Bảng đối chiếu từ ngữ thay thế: Xóa bỏ lối mòn "Bóc tách" & "Giải phẫu"
+## 3. Quy tắc loại bỏ lối mòn sáo ngữ ("Giải mã", "Con hào", "Bóc tách", "Giải phẫu", "Cỗ máy")
 
-Tuyệt đối **không** lặp lại liên tục từ "bóc tách" và "giải phẫu". Thay vào đó, hãy sử dụng linh hoạt các cụm từ giàu tính gợi hình theo từng ngữ cảnh:
+Nguyên tắc vàng: **"Nghe một vài lần thì thấy hay, nhưng bài nào cũng áp dụng thì trở nên sáo rỗng và ngấy."** Tuyệt đối không để các từ ngữ này trở thành phản xạ vô điều kiện trong tiêu đề và nội dung bài viết.
 
-| Ngữ cảnh muốn diễn đạt | Từ ngữ nên thay thế thay vì dùng "bóc tách / giải phẫu" |
+### A. Hạn chế từ "Giải mã"
+* **Bệnh cố hữu:** Tiêu đề nào cũng *Giải mã cỗ máy...*, *Giải mã công cụ...*, *Giải mã cơ chế...*, *Giải mã dòng tiền...*, *Giải mã chỉ số...*. Từ này lặp đi lặp lại tạo cảm giác giật tít rẻ tiền, màu mè và rập khuôn như AI tạo sinh.
+* **Cách khắc phục:**
+  - Đặt tiêu đề và mở bài trực diện, tự nhiên, nêu thẳng bản chất sự việc hoặc đặt câu hỏi gợi mở.
+  - Thay vì *"Giải mã cỗ máy Gemadept (GMD)..."* ➔ *"Gemadept (GMD) và bài toán đón sóng cảng nước sâu: Động lực Gemalink và áp lực dòng tiền sau thoái vốn"*.
+  - Thay vì *"Giải mã công cụ ghìm cương tỷ giá..."* ➔ *"Ngân hàng Nhà nước hút ròng qua tín phiếu: Công cụ ghìm cương tỷ giá và vì sao chứng khoán không nên hoảng loạn?"*.
+  - Thay vì *"Giải mã cơ chế Stop Order..."* ➔ *"Lệnh điều kiện trong thực chiến: Cơ chế Stop Order, trượt giá và rủi ro lệnh không khớp"*.
+  - **Từ ngữ thay thế linh hoạt:** *Làm rõ, Cắt nghĩa, Đi vào bản chất, Tìm hiểu ngọn ngành, Đằng sau, Vì sao, Nhìn vào, Câu chuyện của, Thực chất của...* hoặc đi thẳng vào tên chủ đề.
+
+### B. Hạn chế từ "Con hào" / "Con hào kinh tế"
+* **Bệnh cố hữu:** Phân tích doanh nghiệp nào cũng dùng chữ *"con hào"* (*con hào cảng nước sâu, con hào công nghệ độc quyền, con hào chi phí thấp, con hào cổ tức, con hào rào cản...*). Đây là cách dịch thô cứng từ "Economic Moat" của Warren Buffett, lạm dụng quá đà khiến bài viết trở nên cứng nhắc và nghèo nàn từ vựng.
+* **Cách khắc phục:** Gọi tên chính xác bản chất của lợi thế kinh doanh theo từng ngành nghề:
+  - Thay vì *"con hào chi phí thấp"* ➔ *Lợi thế quy mô, Lợi thế dẫn đầu về chi phí (Cost leadership), Tối ưu định phí*.
+  - Thay vì *"con hào cảng nước sâu"* ➔ *Vị thế đón tàu mẹ siêu trọng tải độc tôn, Rào cản địa lý tự nhiên khó sao chép*.
+  - Thay vì *"con hào công nghệ độc quyền"* ➔ *Bản quyền công nghệ, Rào cản kỹ thuật độc quyền, Bí quyết chế tạo*.
+  - Thay vì *"con hào cổ tức"* ➔ *Dòng tiền cổ tức tiền mặt đều đặn, Năng lực chi trả cổ tức bền vững*.
+  - Thay vì *"con hào rào cản"* ➔ *Rào cản gia nhập ngành (Barriers to entry), Chi phí chuyển đổi cao (Switching costs)*.
+  - **Từ ngữ thay thế phong phú:** *Lợi thế cạnh tranh cốt lõi, Điểm tựa chiến lược, Năng lực cạnh tranh bền vững, Vị thế thị trường, Bức tường phòng thủ kinh doanh.*
+
+### C. Hạn chế "Bóc tách", "Giải phẫu", "Cỗ máy", "Chiếc bẫy"
+* Thay vì lạm dụng *"cỗ máy"* (cỗ máy Gemadept, cỗ máy in tiền...) ➔ *doanh nghiệp, tổ hợp, đơn vị, hệ sinh thái, mô hình kinh doanh...*
+* Thay vì lạm dụng *"bóc tách / giải phẫu"* ➔ *soi chiếu, lần theo, đọc sâu, phân tích, làm rõ, nhìn nhận...*
+* Thay vì lạm dụng *"chiếc bẫy"* ở mọi tiêu đề ➔ *điểm nghẽn, rủi ro tiềm ẩn, nghịch lý, vùng trũng, nút thắt...*
+
+| Ngữ cảnh muốn diễn đạt | Từ ngữ nên sử dụng thay cho sáo ngữ cũ |
 | :--- | :--- |
-| **Khi nói về cơ chế, mô hình vận hành, thuật toán** | *Làm rõ cơ chế, cắt nghĩa sự vận hành, đi vào bản chất, giải mã nguyên lý, lần theo quy trình, nhìn vào bánh răng vận hành của, tìm hiểu ngọn ngành, phác họa cách thức.* |
-| **Khi xem xét báo cáo tài chính, dòng tiền, chi phí** | *Soi vào bảng cân đối, lần theo dòng tiền, đọc sâu vào thuyết minh, kiểm đếm tài sản, rà soát từng tầng chi phí, đánh giá thực chất nguồn thu, nhìn vào cấu trúc vốn, đối chiếu con số.* |
+| **Khi nói về cơ chế, mô hình vận hành, thuật toán** | *Làm rõ cơ chế, cắt nghĩa sự vận hành, đi vào bản chất, tìm hiểu ngọn ngành, lần theo quy trình, nhìn vào bánh răng vận hành của, phác họa cách thức.* (Tránh lặp "giải mã", "giải phẫu") |
+| **Khi nói về lợi thế cạnh tranh doanh nghiệp** | *Lợi thế quy mô, năng lực cốt lõi, vị thế thị trường, rào cản gia nhập ngành, sức mạnh định giá, chi phí chuyển đổi cao, điểm tựa chiến lược.* (Tránh lặp "con hào") |
+| **Khi xem xét báo cáo tài chính, dòng tiền, chi phí** | *Soi vào bảng cân đối, lần theo dòng tiền, đọc sâu vào thuyết minh, kiểm đếm tài sản, rà soát từng tầng chi phí, đánh giá thực chất nguồn thu, nhìn vào cấu trúc vốn, đối chiếu con số.* (Tránh lặp "bóc tách") |
 | **Khi phân tích sự kiện, tình huống, case study** | *Lần giở hồ sơ, nhìn từ bên trong, nhìn lại diễn biến, chuỗi mắt xích đằng sau, sự thật phía sau vụ việc, tái hiện kịch bản, truy vết nguyên nhân, câu chuyện đằng sau.* |
-| **Khi đọc số liệu, chỉ số kỹ thuật, dữ liệu on-chain** | *Đo lường mức độ, kiểm chứng qua dữ liệu, thấu thị qua con số, đọc tín hiệu từ, đối chiếu dữ liệu thực tế, giải nghĩa các tầng chỉ số.* |
-| **Khi phân tích rủi ro, hai mặt vấn đề** | *Nhìn nhận đa chiều, làm rõ điểm nghẽn, mặt trái của bức tranh, rào cản tiềm ẩn, chiếc bẫy vô hình, cái giá phải trả.* |
+| **Khi đọc số liệu, chỉ số kỹ thuật, dữ liệu on-chain** | *Đo lường mức độ, kiểm chứng qua dữ liệu, thấu thị qua con số, đọc tín hiệu từ, đối chiếu dữ liệu thực tế, làm sáng tỏ các tầng chỉ số.* |
+| **Khi phân tích rủi ro, hai mặt vấn đề** | *Nhìn nhận đa chiều, làm rõ điểm nghẽn, mặt trái của bức tranh, rào cản tiềm ẩn, rủi ro vô hình, cái giá phải trả, nút thắt chu kỳ.* |
+
 
 ---
 
@@ -103,4 +130,27 @@ Tuyệt đối **không** lặp lại liên tục từ "bóc tách" và "giải 
   - Đi thẳng vào bài viết chuyên sâu về phương pháp kỹ thuật/chiến lược thực chiến (Price Action, Wyckoff, Breakout, Chỉ báo, Quản trị vốn).
   - Tiêu đề đặt trực diện, đĩnh đạc, hấp dẫn và nêu bật bài học cốt lõi (Ví dụ: *Mô hình Hai đáy (Double Bottom) thất bại: Bẫy phân kỳ ngược xu hướng và bài học kỷ luật cắt lỗ -1R* hoặc *Chiến lược Dải Bollinger: Bắt nhịp bùng nổ sau thắt nút cổ chai (Squeeze) và kỹ thuật bám trend*).
   - Trình bày đầy đủ: Bản chất cung cầu, điều kiện kích hoạt setup, cách lọc bẫy giả, quản trị rủi ro và các trường hợp thất bại thực tế để người đọc nhận diện và phòng ngừa. Không biến bài viết thành một cuốn sổ mô phỏng thiếu tính hệ thống.
+
+---
+
+## 6. Chiến lược Liên kết Nội bộ (Internal Linking): Giữ chân độc giả & Mạng lưới tri thức Gikky
+
+**Mục tiêu:** Tạo mạng lưới liên kết chéo chặt chẽ giữa các bài viết trong hệ sinh thái Gikky.net, giúp độc giả đào sâu các mắt xích kiến thức liên đới, gia tăng thời gian lưu trang (time-on-site), giảm tỷ lệ thoát (bounce rate) và tối ưu hóa cấu trúc SEO cho toàn bộ website.
+
+### Quy tắc triển khai bắt buộc:
+1. **Nhận diện điểm chạm liên đới:** Khi soạn thảo bất kỳ bài viết nào (Vĩ mô, Phân tích ngành, Cổ phiếu cụ thể, Tâm lý giao dịch, Phương pháp thực chiến, Thời sự, Tản mạn, Đêm muộn), nếu nội dung nhắc tới hoặc bắc cầu sang một **khái niệm, sự kiện, doanh nghiệp, nhân vật, cuốn sách hoặc mô hình kỹ thuật** mà Gikky đã từng có bài viết chuyên sâu trước đó, **bắt buộc phải gắn thẻ liên kết nội bộ `<a href="...">`** trỏ tới bài viết đó.
+2. **Định dạng đường dẫn — BẮT BUỘC MỞ CÙNG TAB:**
+   - Dùng đường dẫn tương đối nội bộ: `/m/<slug>-<id>` hoặc `/m/<id>`.
+   - **TUYỆT ĐỐI KHÔNG DÙNG `target="_blank"`**: Giữ nguyên tab đang mở để người đọc tiếp tục hành trình đọc mượt mà, không bị bật sang tab mới làm phân mảnh trải nghiệm.
+3. **Quy chuẩn Anchor Text tự nhiên (Contextual Anchor):**
+   - Tuyệt đối **không** dùng anchor text trơ trọi như *"xem tại đây"*, *"bấm vào link này"*.
+   - Anchor text phải hòa nhập tự nhiên vào dòng chảy câu văn, chứa từ khóa chính xác của chủ đề được liên kết.
+   - *Ví dụ chuẩn:*
+     + *"Nguyên lý này tương đồng với bài học về <a href="/m/ky-vong-toan-hoc-expectancy-va-ty-le-risk-reward-vi-sao-win-rate-40-van-sinh-loi-lon-trong-khi-80-van-chay-tai-khoan-1224">Kỳ vọng toán học (Expectancy) và Tỷ lệ Risk/Reward</a>..."*
+     + *"Điều này giải thích vì sao <a href="/m/doc-sach-market-wizards-paul-tudor-jones-va-bai-hoc-sinh-tu-tu-black-monday-1987-khi-tu-duy-phong-thu-toi-thuong-cuu-vot-tai-khoan-1227">Paul Tudor Jones luôn tôn sùng đường MA 200 ngày trong thảm họa Black Monday 1987</a>..."*
+     + *"Tương tự như cú sốc trích lập hàng tồn kho trong <a href="/m/pnj-tai-sinh-sau-con-loc-thanh-tra-va-bai-toan-he-thong-khi-co-che-quan-tri-cu-khong-con-chua-noi-quy-mo-moi-1212">Hồ sơ khủng hoảng PNJ</a>..."*
+     + *"Khác với bẫy phá vỡ đường viền cổ trong <a href="/m/mo-hinh-vai-dau-vai-nguoc-inverse-head-and-shoulders-that-bai-chiec-bay-but-pha-duong-vien-co-va-bai-hoc-ky-luat-cat-lo-1r-1211">Mô hình Vai Đầu Vai Ngược thất bại</a>..."*
+4. **Mật độ tối ưu:** Mỗi bài viết nên lồng ghép khéo léo từ **2 đến 4 internal links** có liên quan trực tiếp, tránh spam dày đặc làm loãng sự tập trung của người đọc.
+5. **Cách tra cứu bài cũ:** Tra cứu nhanh danh mục bài đã viết trong [chu-de.md](file:///D:/Projects/gikky-net/scripts/bai-viet/chu-de.md) hoặc chạy script `python scripts/bai-viet/kiem-trung.py "<từ khóa>"` để lấy chính xác ID và slug mạch bài.
+
 

@@ -136,6 +136,20 @@ mỗi lần chạy, kể cả `"Đã phát hành 0 bài."` — không có dòng 
 gk exec api python manage.py shell -c "from datetime import timedelta; from django.utils import timezone; from core.models.dien_dan import Mach; n=Mach.objects.filter(hidden_at__isnull=False, hidden_by__isnull=True, published_at__lt=timezone.now()-timedelta(minutes=15)).count(); print(n)"
 ```
 
+### Việc chạy theo lịch: sao lưu DB + ảnh lên Cloud — **BẮT BUỘC**
+
+```bash
+crontab -e
+# 04:10 sáng giờ VN mỗi ngày — SAU gom_luot_xem (03:10) và reindex_tim_kiem (03:40).
+10 4 * * *  cd ~/gikky-net/src && bash deploy/prod/sao-luu-prod.sh >> ~/gikky-sao-luu.log 2>&1
+```
+
+Script này (`deploy/prod/sao-luu-prod.sh`):
+1. `pg_dump` từ container `postgres` của compose `gikkynet`, kiểm tra `pg_restore --list` trước khi chốt file dump.
+2. Sao chép 2 volume `gikkynet_media` và `gikkynet_mediaan` ra `~/gikky-net/backup/media` và `media-an`.
+3. Xoay vòng giữ 7 bản dump gần nhất cục bộ trên đĩa VPS.
+4. Đẩy bản dump + kho ảnh lên Cloud Storage (Cloudflare R2, Google Drive...) qua `rclone` và tự động xoá bản dump cloud quá 30 ngày (cần điền `GIKKY_BACKUP_REMOTE` vào `~/gikky-net/app/.env` và chạy `rclone config`).
+
 ## Deploy một bản mới
 
 Từ máy dev (Windows, **không có rsync** — dùng tar qua ssh).
@@ -346,8 +360,8 @@ trúc có tunnel, và nó chặn TRƯỚC khi request rời khỏi mạng Cloudf
   `plans/2026-08-31-luat-tinh-tro-lai.md`.
   **9 trang còn lại vẫn `force-dynamic` — cố ý:** chúng không mang hợp đồng đường thoát,
   và rail có danh sách chuyên mục trong HTML đầu tiên là thứ đáng giữ ở đó.
-- **Không có backup tự động** cho `gikkynet_pgdata` và `gikkynet_media`.
-  `docs/sao-luu-phuc-hoi.md` viết cho máy dev, chưa có bản cho stack này.
+- ~~**Không có backup tự động** cho `gikkynet_pgdata` và `gikkynet_media`.~~ **XONG 2026-10-15** —
+  Đã có `deploy/prod/sao-luu-prod.sh` hỗ trợ sao lưu toàn diện cả PostgreSQL lẫn 2 volume ảnh (`gikkynet_media`, `gikkynet_mediaan`), xoay vòng bản lưu cục bộ và đẩy lên Cloud Storage (Cloudflare R2, Google Drive...) qua `rclone`. Chỉ cần cấu hình `GIKKY_BACKUP_REMOTE` trong `~/gikky-net/app/.env` và thêm crontab chạy 04:10 sáng hằng ngày.
 - Ảnh không có giới hạn dung lượng đĩa tổng.
 - **CSDL đang rỗng** (0 mạch, 0 chuyên mục thật) — chỉ có 3 tài khoản đội ngũ.
   Muốn có nội dung mẫu: `gk exec api python manage.py seed_dev`. Đây là site CÔNG KHAI,

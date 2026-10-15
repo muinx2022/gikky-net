@@ -84,14 +84,16 @@ def _mach_hien() -> QuerySet:
     """Mạch được phép hiện ra cửa công khai — **một định nghĩa cho cả ba cửa**.
 
     Cùng điều kiện với `api/feeds.py::_mach_hien` và với `api/users.py::xem_ho_so`:
-    `hidden_at IS NULL` là bộ lọc bảo vệ duy nhất của `Mach`, và mạch bị mod ẩn không
-    được xuất hiện ở bất kỳ danh sách nào (PLAN 5.10).
+    `hidden_at IS NULL` và `archived_at IS NULL` là bộ lọc bảo vệ của `Mach`, và mạch bị mod ẩn
+    hoặc đã lưu trữ không được xuất hiện ở bất kỳ danh sách nào (PLAN 5.10).
 
     `select_related` ở đây chứ không ở từng chỗ gọi: `mach_tom_tat_ra` đọc `mach.sub` và
     `mach.author` cho **mỗi** thẻ, nên thiếu nó là N+1 hai lần trên mọi trang — và nó
     không đỏ ở đâu ngoài `tests/test_api_so_query.py`.
     """
-    return Mach.objects.filter(hidden_at__isnull=True).select_related("sub", "author")
+    return Mach.objects.filter(
+        hidden_at__isnull=True, archived_at__isnull=True
+    ).select_related("sub", "author")
 
 
 def _the_ra(machs) -> list:
@@ -197,6 +199,16 @@ _MO_TA_DANG_THEO = """Mạch **tôi đang theo**, mới theo trước — tab **
     `chua_dang_nhap`.
 """ + _TAI_LIEU_CHUNG
 
+_MO_TA_LUU_TRU = """Mạch **tôi đã lưu trữ** (soft delete), mới lưu trữ trước — tab **Lưu trữ**.
+
+    Sắp theo **thời điểm tôi lưu trữ** (`archived_at`). Mạch đã lưu trữ không xuất hiện trên feed
+    công khai, tìm kiếm hay tab Bài viết công khai của hồ sơ.
+
+    Chỉ chính chủ xem được danh sách này.
+    **Per-user tuyệt đối — `Cache-Control: no-store`** (PLAN 8.4 điểm 4). Khách nhận 401
+    `chua_dang_nhap`.
+""" + _TAI_LIEU_CHUNG
+
 
 @router.get(
     "/users/{username}/machs",
@@ -210,6 +222,7 @@ def liet_ke_mach_cua_user(
     username: str,
     cursor: str | None = None,
     limit: int = GIOI_HAN_MAC_DINH,
+    da_luu_tru: bool = False,
 ):
     """Xem `_MO_TA_MACH_CUA_USER` — mô tả công khai nằm ở `description=` của decorator."""
     if (l := kiem_gioi_han(limit)) is not None:
@@ -222,7 +235,6 @@ def liet_ke_mach_cua_user(
     if user is None:
         return khong_tim_thay(f"người dùng {username!r}")
 
-    qs = _mach_hien().filter(author=user)
     la_toi = (
         request.user is not None
         and getattr(request.user, "is_authenticated", False)
@@ -233,6 +245,24 @@ def liet_ke_mach_cua_user(
         and getattr(request.user, "is_authenticated", False)
         and getattr(request.user, "is_staff", False)
     )
+
+    if da_luu_tru:
+        if not (la_toi or la_staff):
+            return FeedOut(items=[], cursor_ke_tiep=None)
+        qs = Mach.objects.filter(
+            author=user,
+            hidden_at__isnull=True,
+            archived_at__isnull=False,
+        ).select_related("sub", "author")
+        hang, con_nua, l = _cat_keyset(
+            qs,
+            cursor=cursor,
+            limit=limit,
+            truong="archived_at",
+        )
+        return l if l is not None else _ra(hang, hang, con_nua, truong="archived_at")
+
+    qs = _mach_hien().filter(author=user)
     if not (la_toi or la_staff):
         qs = qs.filter(rieng_tu=False)
 
@@ -330,3 +360,41 @@ def liet_ke_dang_theo(
     if l is not None:
         return l
     return _ra(hang, [f.mach for f in hang], con_nua)
+
+
+@router.get(
+    "/me/luu-tru",
+    response=TRA_LOI_CUA_TOI,
+    operation_id="liet_ke_luu_tru",
+    description=_MO_TA_LUU_TRU,
+    tags=["tai-khoan"],
+    auth=dang_nhap,
+)
+def liet_ke_luu_tru(
+    request,
+    response: HttpResponse,
+    cursor: str | None = None,
+    limit: int = GIOI_HAN_MAC_DINH,
+):
+    """Xem `_MO_TA_LUU_TRU` — mô tả công khai nằm ở `description=` của decorator."""
+    response["Cache-Control"] = "no-store"
+
+    if (l := kiem_gioi_han(limit)) is not None:
+        return l
+
+    qs = Mach.objects.filter(
+        author=request.user,
+        hidden_at__isnull=True,
+        archived_at__isnull=False,
+    ).select_related("sub", "author")
+
+    hang, con_nua, l = _cat_keyset(
+        qs,
+        cursor=cursor,
+        limit=limit,
+        truong="archived_at",
+    )
+    if l is not None:
+        return l
+    return _ra(hang, hang, con_nua, truong="archived_at")
+
