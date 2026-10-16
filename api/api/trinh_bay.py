@@ -33,7 +33,7 @@ from core.lam_sach_html import _src_cua_site, van_ban_thuan
 from core.models.binh_luan import Comment
 from core.models.dien_dan import Mach
 from core.anh import kich_thuoc_thumb
-from core.anh_luu import url_anh, url_thumb
+from core.anh_luu import khoa_tu_src_anh, url_anh, url_thumb
 from core.models.moc import AnhNoiDung, Moc, MocAnh, MocRevision
 from core.models.tuong_tac import Reaction, Trich
 
@@ -237,7 +237,7 @@ def du_lieu_the(machs) -> dict[int, DuLieuThe]:
             srcs = _trich_anh_noi_dung(m.body)
             if srcs:
                 anh_nd_theo_moc[m.pk] = srcs
-                khoa = srcs[0].split("?")[0].rsplit("/", 1)[-1]
+                khoa = khoa_tu_src_anh(srcs[0])
                 if khoa:
                     khoas_can_tra.add(khoa)
 
@@ -282,7 +282,7 @@ def du_lieu_the(machs) -> dict[int, DuLieuThe]:
             so_anh = len(anh_gallery)
         elif m1.pk in anh_nd_theo_moc:
             srcs = anh_nd_theo_moc[m1.pk]
-            khoa = srcs[0].split("?")[0].rsplit("/", 1)[-1]
+            khoa = khoa_tu_src_anh(srcs[0])
             nd = anh_nd_map.get(khoa)
             w = nd.w if nd else None
             h = nd.h if nd else None

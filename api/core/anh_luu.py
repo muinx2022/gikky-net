@@ -44,6 +44,9 @@ import uuid
 
 from django.core.files.base import ContentFile
 from django.core.files.storage import storages
+from django.utils import timezone
+
+from core.thoi_gian import TZ_VN
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +69,9 @@ def kho_an():
 def khoa_moi(duoi: str) -> str:
     """Phép kiểm 6: tên file **ngẫu nhiên**, đuôi suy từ định dạng ĐÃ NHẬN DẠNG.
 
+    Phân cấp thư mục theo ngày lịch VN (yyyy/mm/dd/uuid.ext) để tránh dồn hàng chục
+    nghìn file vào cùng một thư mục phẳng, giúp việc duyệt, đọc và backup nhanh hơn.
+
     `uuid4` chứ không tên client gửi, và lý do không chỉ là traversal (`../../`):
 
     - tên client gửi làm lộ thông tin (`ket-qua-sinh-thiet-nguyen-van-a.jpg` nằm nguyên
@@ -78,7 +84,24 @@ def khoa_moi(duoi: str) -> str:
 
     `duoi` luôn đến từ `core/anh.py::DINH_DANG_CHO_PHEP`, không bao giờ từ request.
     """
-    return f"{uuid.uuid4().hex}{duoi}"
+    ngay = timezone.localtime(timezone.now(), TZ_VN)
+    tien_to = ngay.strftime("%Y/%m/%d")
+    return f"{tien_to}/{uuid.uuid4().hex}{duoi}"
+
+
+def khoa_tu_src_anh(src: str) -> str:
+    """Bóc `khoa_luu_tru` từ URL `<img src="/media/anh/...">` (hỗ trợ cả khoá phẳng cũ lẫn `yyyy/mm/dd/...`)."""
+    from django.conf import settings
+
+    sach = src.split("?", 1)[0].split("#", 1)[0].strip()
+    tien_to = f"{settings.MEDIA_URL.rstrip('/')}/{THU_MUC_ANH}/"
+    if sach.startswith(tien_to):
+        return sach[len(tien_to):].lstrip("/")
+    # Dự phòng nếu URL đầy đủ có domain hoặc khác tiền tố
+    marker = f"/{THU_MUC_ANH}/"
+    if marker in sach:
+        return sach.split(marker, 1)[1].lstrip("/")
+    return sach.rsplit("/", 1)[-1]
 
 
 def duong_dan_chinh(khoa: str) -> str:

@@ -258,10 +258,11 @@ def test_ten_file_client_gui_KHONG_bao_gio_cham_duong_dan(client, nguoi_a, moc_a
     phuc_vu, _ = kho_anh
     ten_file = file_trong(phuc_vu)
     assert not any("passwd" in t for t in ten_file), ten_file
-    assert "passwd" not in d["url"]
-    # uuid4 hex + đuôi.
+    # yyyy/mm/dd/ + uuid4 hex + đuôi.
+    import re
+
     khoa = MocAnh.objects.get(pk=d["id"]).khoa_luu_tru
-    assert len(khoa) == 32 + len(".jpg") and khoa.endswith(".jpg")
+    assert re.match(r"^\d{4}/\d{2}/\d{2}/[0-9a-f]{32}\.jpg$", khoa)
 
 
 # --- A3 (vế tuần tự): trần 10 ảnh ---------------------------------------------

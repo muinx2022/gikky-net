@@ -231,7 +231,15 @@ def file_trong(thu_muc) -> set[str]:
     """
     if not thu_muc.exists():
         return set()
-    return {p.name for p in thu_muc.rglob("*") if p.is_file()}
+    ket_qua: set[str] = set()
+    for p in thu_muc.rglob("*"):
+        if not p.is_file():
+            continue
+        rel_parts = p.relative_to(thu_muc).parts
+        # Bỏ phần tử đầu ('anh' hoặc 'anh-thumb') để lấy đúng khoa_luu_tru
+        khoa = "/".join(rel_parts[1:]) if len(rel_parts) > 1 else p.name
+        ket_qua.add(khoa)
+    return ket_qua
 
 
 def so_file(thu_muc) -> int:

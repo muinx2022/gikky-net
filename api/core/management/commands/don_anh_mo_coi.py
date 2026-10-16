@@ -115,11 +115,7 @@ class Command(BaseCommand):
             ("cách ly", kho_an(), hop_le_an),
         ):
             for thu_muc in (THU_MUC_ANH, THU_MUC_THUMB):
-                try:
-                    _, files = kho.listdir(thu_muc)
-                except (FileNotFoundError, OSError):
-                    continue
-                for ten in files:
+                for ten in _liet_ke_khoa_trong_kho(kho, thu_muc):
                     if ten in hop_le:
                         continue
                     duong_dan = f"{thu_muc}/{ten}"
@@ -167,3 +163,19 @@ def _con_moi(kho, duong_dan: str, nguong) -> bool:
         return kho.get_modified_time(duong_dan) > nguong
     except (NotImplementedError, OSError, AttributeError):
         return True
+
+
+def _liet_ke_khoa_trong_kho(kho, thu_muc_goc: str, tien_to: str = "") -> list[str]:
+    """Liệt kê đệ quy mọi khoá ảnh trong kho (hỗ trợ cả khoá phẳng và yyyy/mm/dd/...)."""
+    duong_dan_quet = f"{thu_muc_goc}/{tien_to}".rstrip("/") if tien_to else thu_muc_goc
+    try:
+        dirs, files = kho.listdir(duong_dan_quet)
+    except (FileNotFoundError, OSError):
+        return []
+    ket_qua: list[str] = []
+    for ten in files:
+        ket_qua.append(f"{tien_to}/{ten}" if tien_to else ten)
+    for d in dirs:
+        tien_to_con = f"{tien_to}/{d}" if tien_to else d
+        ket_qua.extend(_liet_ke_khoa_trong_kho(kho, thu_muc_goc, tien_to_con))
+    return ket_qua
