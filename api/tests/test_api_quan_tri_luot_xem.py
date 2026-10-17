@@ -53,13 +53,15 @@ def them(
     thiet_bi="",
     quoc_gia="",
     tu_khoa="",
+    da_dang_nhap=False,
+    gio=12,
 ):
     """`khach=""` và ba cột mới rỗng là mặc định **có chủ đích**: đó là hình dạng hàng ghi
     TRƯỚC 2026-08-30, và mọi bài đo cũ của file này chạy trên đúng hàng ấy."""
     for _ in range(so):
         LuotXem.objects.create(
             duong_dan=duong_dan,
-            luc=luc(ngay),
+            luc=luc(ngay, gio=gio),
             la_bot=bot,
             ten_bot=ten if bot else "",
             khach=khach,
@@ -68,6 +70,7 @@ def them(
             thiet_bi=thiet_bi,
             quoc_gia=quoc_gia,
             tu_khoa=tu_khoa,
+            da_dang_nhap=da_dang_nhap,
         )
 
 
@@ -1411,4 +1414,224 @@ def test_so_hom_nay_tong_luot_xem_trong_ngay(du_lieu, hom_nay):
 
     them(hom_nay, "/trang-moi", so=2)
     assert goi("30").json()["tong"]["so_hom_nay"] == 6
+
+
+# ===========================================================================
+# Nhóm PRO — các khối thống kê chuyên sâu (2026-10-17)
+# ===========================================================================
+
+
+def test_ky_truoc_tinh_dung_cho_7_va_30_ngay(db, hom_nay):
+    """`ky_truoc` tính đúng cho khoảng 7 và 30 ngày; trả `None` cho 90 ngày và toàn thời gian."""
+    # Kỳ hiện tại (7 ngày: hom_nay - 6 đến hom_nay):
+    them(hom_nay, "/trang-1", so=5, khach="1" * 32)
+    them(hom_nay - timedelta(days=2), "/trang-2", so=3, khach="2" * 32)
+    them(hom_nay - timedelta(days=2), "/trang-2", so=2, bot=True, ten="bingbot")
+
+    # Kỳ trước của 7 ngày (hom_nay - 13 đến hom_nay - 7):
+    them(hom_nay - timedelta(days=7), "/trang-1", so=4, khach="3" * 32)
+    them(hom_nay - timedelta(days=8), "/trang-2", so=6, khach="4" * 32)
+    them(hom_nay - timedelta(days=10), "/trang-3", so=1, bot=True, ten="googlebot")
+
+    # Ngày ngoài cả 2 kỳ (hom_nay - 14):
+    them(hom_nay - timedelta(days=14), "/trang-xa", so=10, khach="5" * 32)
+
+    # 1. Kiểm tra khoảng 7 ngày
+    js7 = goi("7").json()
+    assert js7["ky_truoc"] is not None
+    kt7 = js7["ky_truoc"]
+    assert kt7["so_luot"] == 11  # 4 + 6 + 1
+    assert kt7["so_luot_nguoi"] == 10  # 4 + 6
+    assert kt7["so_luot_bot"] == 1
+    assert kt7["so_khach"] == 2  # 3*32 và 4*32
+
+    # 2. Kiểm tra khoảng 30 ngày
+    # Thêm dữ liệu cho kỳ trước của 30 ngày (hom_nay - 59 đến hom_nay - 30):
+    them(hom_nay - timedelta(days=35), "/trang-kt30", so=20, khach="6" * 32)
+    them(hom_nay - timedelta(days=40), "/trang-kt30", so=5, bot=True)
+
+    js30 = goi("30").json()
+    assert js30["ky_truoc"] is not None
+    kt30 = js30["ky_truoc"]
+    assert kt30["so_luot"] == 25
+    assert kt30["so_luot_nguoi"] == 20
+    assert kt30["so_luot_bot"] == 5
+    assert kt30["so_khach"] == 1
+
+    # 3. Khoảng 90 ngày và tat_ca phải trả None
+    assert goi("90").json()["ky_truoc"] is None
+    assert goi("tat_ca").json()["ky_truoc"] is None
+
+
+def test_chi_so_doc_gia(db, hom_nay):
+    """`chi_so_doc_gia` tính đúng số lượt/khách đăng nhập, khách đọc sâu, và quốc gia ẩn."""
+    # Khách 1: xem 2 trang trong ngày hôm nay, đã đăng nhập
+    them(hom_nay, "/m/a-1", so=1, khach="u1" * 16, da_dang_nhap=True, quoc_gia="VN")
+    them(hom_nay, "/m/a-2", so=1, khach="u1" * 16, da_dang_nhap=True, quoc_gia="VN")
+
+    # Khách 2: xem 1 trang hôm nay, không đăng nhập, quoc_gia rỗng (ẩn)
+    them(hom_nay, "/m/b-1", so=1, khach="u2" * 16, da_dang_nhap=False, quoc_gia="")
+
+    # Khách 3: xem 1 trang hôm nay, có đăng nhập, quoc_gia SG
+    them(hom_nay, "/s/chung-khoan", so=1, khach="u3" * 16, da_dang_nhap=True, quoc_gia="SG")
+
+    # Bot: 1 lượt quoc_gia rỗng
+    them(hom_nay, "/s/crypto", so=1, bot=True, ten="googlebot", quoc_gia="")
+
+    js = goi("7").json()
+    cs = js["chi_so_doc_gia"]
+    # Tổng lượt đăng nhập: u1 (2 lượt) + u3 (1 lượt) = 3 lượt
+    assert cs["so_luot_dang_nhap"] == 3
+    # Khách đăng nhập theo ngày: u1 và u3 = 2 khách
+    assert cs["so_khach_dang_nhap"] == 2
+    # Khách đọc sâu (>= 2 lượt người trong ngày): u1 = 1 khách
+    assert cs["so_khach_doc_sau"] == 1
+    # Quốc gia ẩn: khách 2 (1) + bot (1) = 2
+    assert cs["so_quoc_gia_an"] == 2
+
+
+def test_theo_gio_du_24_khung_gio(db, hom_nay):
+    """`theo_gio` trả về đủ 24 khung giờ 0..23 với lượt người và lượt bot phân bổ chuẩn."""
+    # Đặt lượt vào các giờ VN khác nhau: 0h, 8h, 14h, 23h
+    them(hom_nay, "/", so=3, gio=0)
+    them(hom_nay, "/m/bai-1", so=5, gio=8)
+    them(hom_nay, "/m/bai-2", so=2, bot=True, gio=8)
+    them(hom_nay, "/s/tai-chinh", so=4, gio=14)
+    them(hom_nay, "/tim-kiem", so=1, gio=23)
+
+    js = goi("7").json()
+    theo_gio = js["theo_gio"]
+    assert len(theo_gio) == 24
+    for idx, o in enumerate(theo_gio):
+        assert o["gio"] == idx
+
+    # Giờ 0: 3 người, 0 bot
+    assert theo_gio[0]["so_luot_nguoi"] == 3
+    assert theo_gio[0]["so_luot_bot"] == 0
+
+    # Giờ 8: 5 người, 2 bot
+    assert theo_gio[8]["so_luot_nguoi"] == 5
+    assert theo_gio[8]["so_luot_bot"] == 2
+
+    # Giờ 14: 4 người, 0 bot
+    assert theo_gio[14]["so_luot_nguoi"] == 4
+    assert theo_gio[14]["so_luot_bot"] == 0
+
+    # Giờ 23: 1 người, 0 bot
+    assert theo_gio[23]["so_luot_nguoi"] == 1
+    assert theo_gio[23]["so_luot_bot"] == 0
+
+    # Giờ 1..7, 9..13, 15..22: 0 lượt
+    assert theo_gio[1]["so_luot_nguoi"] == 0
+    assert theo_gio[1]["so_luot_bot"] == 0
+
+
+def test_theo_khu_vuc_va_theo_kenh_nguon(db, hom_nay):
+    """Phân loại đúng các khu vực trang và các kênh nguồn truy cập."""
+    # 1. Khu vực:
+    them(hom_nay, "/", so=10)
+    them(hom_nay, "/", so=2, bot=True)
+    them(hom_nay, "/m/bai-viet-1", so=8)
+    them(hom_nay, "/s/chung-khoan", so=6)
+    them(hom_nay, "/u/chuyen-gia", so=4)
+    them(hom_nay, "/tim-kiem", so=3)
+    them(hom_nay, "/chinh-sach", so=1)  # khac
+
+    # 2. Kênh nguồn (chỉ người):
+    # Trực tiếp: nguon="" -> 10 lượt từ trang chủ + 8 từ bài viết = 18 lượt trực tiếp
+    # Tìm kiếm:
+    them(hom_nay, "/m/bai-viet-1", so=7, nguon="google.com")
+    them(hom_nay, "/m/bai-viet-1", so=3, nguon="bing.com")
+    # Mạng xã hội:
+    them(hom_nay, "/m/bai-viet-1", so=5, nguon="facebook.com")
+    them(hom_nay, "/m/bai-viet-1", so=2, nguon="t.co")
+    # Giới thiệu:
+    them(hom_nay, "/m/bai-viet-1", so=4, nguon="vnexpress.net")
+
+    js = goi("7").json()
+
+    # Kiểm tra theo_khu_vuc
+    kv_map = {kv["khu_vuc"]: kv for kv in js["theo_khu_vuc"]}
+    assert kv_map["trang_chu"]["so_luot_nguoi"] == 10
+    assert kv_map["trang_chu"]["so_luot_bot"] == 2
+    assert kv_map["trang_chu"]["so_luot"] == 12
+
+    # bai_viet: 8 trực tiếp + 7 google + 3 bing + 5 fb + 2 t.co + 4 vnexpress = 29
+    assert kv_map["bai_viet"]["so_luot_nguoi"] == 29
+    assert kv_map["chuyen_muc"]["so_luot"] == 6
+    assert kv_map["ho_so"]["so_luot"] == 4
+    assert kv_map["tim_kiem"]["so_luot"] == 3
+    assert kv_map["khac"]["so_luot"] == 1
+
+    # Kiểm tra theo_kenh_nguon
+    kenh_map = {k["kenh"]: k["so_luot"] for k in js["theo_kenh_nguon"]}
+    # Tìm kiếm: 7 + 3 = 10
+    assert kenh_map["tim_kiem"] == 10
+    # Mạng xã hội: 5 + 2 = 7
+    assert kenh_map["mang_xa_hoi"] == 7
+    # Giới thiệu: 4
+    assert kenh_map["gioi_thieu"] == 4
+    # Trực tiếp > 0
+    assert kenh_map["truc_tiep"] > 0
+
+
+def test_top_duong_dan_pro_map_tieu_de_sub_va_so_khach(db, hom_nay):
+    """`top_duong_dan_pro` map đúng Mach.title, Sub.ten, và đếm đúng số khách duy nhất."""
+    from core.models import Mach, Sub, User
+
+    user = User.objects.create_user(username="tac_gia_test", password="password123")
+    sub = Sub.objects.create(slug="co-phieu", ten="Cổ phiếu Việt Nam")
+    mach = Mach.objects.create(
+        sub=sub,
+        author=user,
+        title="Phân tích định giá VCB quý 3",
+        slug="phan-tich-dinh-gia-vcb-quy-3",
+    )
+
+    url_mach = f"/m/{mach.slug}-{mach.pk}"
+    url_sub = f"/s/{sub.slug}"
+    url_khong_ton_tai = "/m/bai-da-xoa-99999"
+
+    # Ghi nhận lượt xem:
+    # url_mach có 3 khách: k1, k2, k3
+    them(hom_nay, url_mach, so=2, khach="k1" * 16)
+    them(hom_nay, url_mach, so=1, khach="k2" * 16)
+    them(hom_nay, url_mach, so=3, khach="k3" * 16)
+    them(hom_nay, url_mach, so=2, bot=True)
+
+    # url_sub có 1 khách
+    them(hom_nay, url_sub, so=4, khach="k1" * 16)
+
+    # url_khong_ton_tai
+    them(hom_nay, url_khong_ton_tai, so=2, khach="k4" * 16)
+
+    js = goi("7").json()
+    top_pro = {p["duong_dan"]: p for p in js["top_duong_dan_pro"]}
+
+    # Kiểm tra bài viết có thật
+    assert url_mach in top_pro
+    p_mach = top_pro[url_mach]
+    assert p_mach["loai"] == "bai_viet"
+    assert p_mach["tieu_de"] == "Phân tích định giá VCB quý 3"
+    assert p_mach["mach_id"] == mach.pk
+    assert p_mach["sub_slug"] == "co-phieu"
+    assert p_mach["so_luot_nguoi"] == 6  # 2 + 1 + 3
+    assert p_mach["so_luot_bot"] == 2
+    assert p_mach["so_khach"] == 3  # k1, k2, k3
+
+    # Kiểm tra chuyên mục
+    assert url_sub in top_pro
+    p_sub = top_pro[url_sub]
+    assert p_sub["loai"] == "chuyen_muc"
+    assert p_sub["tieu_de"] == "Cổ phiếu Việt Nam"
+    assert p_sub["sub_slug"] == "co-phieu"
+    assert p_sub["so_khach"] == 1
+
+    # Kiểm tra bài không tồn tại -> fallback "Bài viết #99999"
+    assert url_khong_ton_tai in top_pro
+    p_xoa = top_pro[url_khong_ton_tai]
+    assert p_xoa["loai"] == "bai_viet"
+    assert p_xoa["tieu_de"] == "Bài viết #99999"
+    assert p_xoa["mach_id"] == 99999
+
 

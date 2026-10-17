@@ -33,6 +33,8 @@ export type ChuoiSo = {
   /** 1..4 — chỉ số của `--color-chuoi-N`. */
   mau: 1 | 2 | 3 | 4;
   gia_tri: number[];
+  /** Nếu true: không cộng vào tổng cột xếp chồng và chiều cao cột (dùng cho chỉ báo song song như Khách). */
+  khong_cong_tong?: boolean;
 };
 
 const MAU_CHUOI = [
@@ -75,8 +77,10 @@ export function CotChong({
   const vung_cao = cao - le_duoi - le_tren;
 
   const so_o = nhan.length;
+  const chuoiXepChong = chuoi.filter((c) => !c.khong_cong_tong);
+  const chuoiRieng = chuoi.filter((c) => c.khong_cong_tong);
   const danhSachTong = nhan.map((_, i) =>
-    chuoi.reduce((s, c) => s + (c.gia_tri[i] ?? 0), 0),
+    chuoiXepChong.reduce((s, c) => s + (c.gia_tri[i] ?? 0), 0),
   );
 
   const dinh = Math.max(1, ...danhSachTong);
@@ -137,7 +141,7 @@ export function CotChong({
           }));
 
           let h_tich_luy = 0;
-          const segments = chuoi.map((c, j) => {
+          const segments = chuoiXepChong.map((c, j) => {
             const gt = c.gia_tri[i] ?? 0;
             const h = (gt / tran) * vung_cao;
             const y = day_y - h_tich_luy - h;
@@ -152,6 +156,13 @@ export function CotChong({
           });
           const cot_y_top = day_y - h_tich_luy;
           const laCotDangChon = dangHover?.ngayIndex === i;
+
+          const chiBaoRieng = chuoiRieng.map((c) => {
+            const gt = c.gia_tri[i] ?? 0;
+            const h = (gt / tran) * vung_cao;
+            const y = day_y - h;
+            return { chuoi: c, gt, y };
+          });
 
           return (
             <g key={n}>
@@ -186,6 +197,25 @@ export function CotChong({
                   <title>{`${n} · ${seg.chuoi.ten}: ${seg.gt}`}</title>
                 </rect>
               ))}
+
+              {/* Chỉ báo cho chuỗi riêng (không cộng tổng, ví dụ vạch mức Khách) */}
+              {chiBaoRieng.map((cb) =>
+                cb.gt > 0 ? (
+                  <line
+                    key={cb.chuoi.ten}
+                    x1={cot_x - 1}
+                    x2={cot_x + rong_cot + 1}
+                    y1={cb.y}
+                    y2={cb.y}
+                    stroke={MAU_CHUOI[cb.chuoi.mau - 1]}
+                    strokeWidth={1.5}
+                    strokeDasharray="2 1"
+                    data-chuoi-rieng={cb.chuoi.ten}
+                  >
+                    <title>{`${n} · ${cb.chuoi.ten}: ${cb.gt}`}</title>
+                  </line>
+                ) : null,
+              )}
 
               {/* Vùng tương tác toàn bộ cột: di chuột vào là show stat ngay */}
               <rect

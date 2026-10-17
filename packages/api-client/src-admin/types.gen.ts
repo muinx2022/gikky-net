@@ -363,6 +363,30 @@ export type ChanDoanTimKiemOut = {
 };
 
 /**
+ * ChiSoDocGiaOut
+ *
+ * Các chỉ số chiều sâu và cơ cấu độc giả.
+ */
+export type ChiSoDocGiaOut = {
+    /**
+     * So Khach Dang Nhap
+     */
+    so_khach_dang_nhap: number;
+    /**
+     * So Khach Doc Sau
+     */
+    so_khach_doc_sau: number;
+    /**
+     * So Luot Dang Nhap
+     */
+    so_luot_dang_nhap: number;
+    /**
+     * So Quoc Gia An
+     */
+    so_quoc_gia_an: number;
+};
+
+/**
  * DatAnIn
  *
  * Body của mọi endpoint ẩn/gỡ ẩn.
@@ -569,6 +593,22 @@ export type HenGioMachIn = {
 };
 
 /**
+ * KenhNguonOut
+ *
+ * Phân bổ nguồn truy cập theo kênh dẫn.
+ */
+export type KenhNguonOut = {
+    /**
+     * Kenh
+     */
+    kenh: string;
+    /**
+     * So Luot
+     */
+    so_luot: number;
+};
+
+/**
  * KetQuaDoiTrangThaiOut
  *
  * Kết quả CHUNG của mọi hành động moderation bật/tắt một trạng thái.
@@ -767,6 +807,30 @@ export type KhachOnlineOut = {
 };
 
 /**
+ * KhuVucOut
+ *
+ * Lượt xem theo phân loại khu vực nội dung site.
+ */
+export type KhuVucOut = {
+    /**
+     * Khu Vuc
+     */
+    khu_vuc: string;
+    /**
+     * So Luot
+     */
+    so_luot: number;
+    /**
+     * So Luot Bot
+     */
+    so_luot_bot: number;
+    /**
+     * So Luot Nguoi
+     */
+    so_luot_nguoi: number;
+};
+
+/**
  * LoiOut
  *
  * `{detail, code}` — PLAN mục 7.
@@ -818,6 +882,50 @@ export type LoiThoiGianOut = {
 };
 
 /**
+ * LuotXemGioOut
+ *
+ * Phân bổ lượt xem theo khung giờ trong ngày.
+ */
+export type LuotXemGioOut = {
+    /**
+     * Gio
+     */
+    gio: number;
+    /**
+     * So Luot Bot
+     */
+    so_luot_bot: number;
+    /**
+     * So Luot Nguoi
+     */
+    so_luot_nguoi: number;
+};
+
+/**
+ * LuotXemKyTruocOut
+ *
+ * Số liệu kỳ trước liền kề để so sánh tăng trưởng.
+ */
+export type LuotXemKyTruocOut = {
+    /**
+     * So Khach
+     */
+    so_khach: number;
+    /**
+     * So Luot
+     */
+    so_luot: number;
+    /**
+     * So Luot Bot
+     */
+    so_luot_bot: number;
+    /**
+     * So Luot Nguoi
+     */
+    so_luot_nguoi: number;
+};
+
+/**
  * LuotXemNgayOut
  *
  * Một ô của biểu đồ cột. Ngày KHÔNG có lượt xem nào vẫn có mặt, với hai số 0.
@@ -847,6 +955,7 @@ export type LuotXemNgayOut = {
  * Toàn bộ số liệu của trang `/luot-xem` cho MỘT khoảng.
  */
 export type LuotXemOut = {
+    chi_so_doc_gia: ChiSoDocGiaOut;
     /**
      * Chi Tiet Chi 90 Ngay
      */
@@ -859,6 +968,7 @@ export type LuotXemOut = {
      * Khoang
      */
     khoang: string;
+    ky_truoc?: LuotXemKyTruocOut | null;
     /**
      * So Truc Tiep
      */
@@ -867,6 +977,18 @@ export type LuotXemOut = {
      * So Tu Khoa An
      */
     so_tu_khoa_an: number;
+    /**
+     * Theo Gio
+     */
+    theo_gio: Array<LuotXemGioOut>;
+    /**
+     * Theo Kenh Nguon
+     */
+    theo_kenh_nguon: Array<KenhNguonOut>;
+    /**
+     * Theo Khu Vuc
+     */
+    theo_khu_vuc: Array<KhuVucOut>;
     /**
      * Theo Nhom Bot
      */
@@ -884,6 +1006,10 @@ export type LuotXemOut = {
      * Top Duong Dan
      */
     top_duong_dan: Array<TopDuongDanOut>;
+    /**
+     * Top Duong Dan Pro
+     */
+    top_duong_dan_pro: Array<TopDuongDanProOut>;
     /**
      * Top Nguon
      */
@@ -1928,6 +2054,46 @@ export type TopDuongDanOut = {
      * So Luot Nguoi
      */
     so_luot_nguoi: number;
+};
+
+/**
+ * TopDuongDanProOut
+ *
+ * Thông tin chi tiết đường dẫn xem nhiều nhất kèm ngữ cảnh và số khách.
+ */
+export type TopDuongDanProOut = {
+    /**
+     * Duong Dan
+     */
+    duong_dan: string;
+    /**
+     * Loai
+     */
+    loai: string;
+    /**
+     * Mach Id
+     */
+    mach_id?: number | null;
+    /**
+     * So Khach
+     */
+    so_khach: number;
+    /**
+     * So Luot Bot
+     */
+    so_luot_bot: number;
+    /**
+     * So Luot Nguoi
+     */
+    so_luot_nguoi: number;
+    /**
+     * Sub Slug
+     */
+    sub_slug?: string;
+    /**
+     * Tieu De
+     */
+    tieu_de: string;
 };
 
 /**

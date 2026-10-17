@@ -149,6 +149,10 @@ class LuotXem(models.Model):
             # `gom_luot_xem`), rồi `GROUP BY duong_dan`. `luc` đứng đầu vì mọi câu đều
             # bắt đầu bằng nó — đảo thứ tự hai cột là index thành vô dụng cho phép lọc.
             models.Index(fields=["luc", "duong_dan"], name="luotxem_luc_duongdan"),
+            models.Index(
+                fields=["khach", "duong_dan", "-luc"],
+                name="luotxem_khach_duong_luc",
+            ),
         ]
 
     def __str__(self) -> str:  # pragma: no cover - chỉ để đọc trong shell/admin

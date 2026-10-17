@@ -7,9 +7,10 @@ import {
   type LuotXemOut,
   type OnlineOut,
 } from "@gikky/api-client/admin";
-import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-import { CotChong } from "../../components/bieu-do";
+import { CotChong, ThanhTienDo } from "../../components/bieu-do";
 import { NganKeo } from "../../components/ngan-keo";
 import { KhungTab } from "../../components/tab";
 import {
@@ -129,6 +130,37 @@ const NHAN_THIET_BI: Record<string, string> = {
   may_tinh: "Máy tính",
 };
 
+const NHAN_KHU_VUC: Record<string, string> = {
+  bai_viet: "Bài viết (/m/)",
+  trang_chu: "Trang chủ (/)",
+  chuyen_muc: "Chuyên mục (/s/)",
+  ho_so: "Hồ sơ (/u/)",
+  tim_kiem: "Tìm kiếm (/tim-kiem)",
+  khac: "Khác",
+};
+
+const NHAN_KENH: Record<string, string> = {
+  truc_tiep: "Trực tiếp / Nội bộ",
+  tim_kiem: "Công cụ tìm kiếm",
+  mang_xa_hoi: "Mạng xã hội & Tin nhắn",
+  gioi_thieu: "Website giới thiệu",
+};
+
+type GocNhinBieuDo = "tat_ca" | "nguoi" | "bot";
+const GOC_NHIN: { ma: GocNhinBieuDo; nhan: string }[] = [
+  { ma: "tat_ca", nhan: "Tất cả" },
+  { ma: "nguoi", nhan: "Chỉ người đọc" },
+  { ma: "bot", nhan: "Chỉ Bot" },
+];
+
+function tangTruongPhanTram(hienTai: number, kyTruoc: number | undefined): string | null {
+  if (kyTruoc === undefined || kyTruoc === 0) return null;
+  const pct = Math.round(((hienTai - kyTruoc) / kyTruoc) * 100);
+  if (pct > 0) return `+${pct}%`;
+  if (pct < 0) return `${pct}%`;
+  return "0%";
+}
+
 function nhanCua(bang: Record<string, string>, khoa: string): string {
   return bang[khoa] ?? khoa;
 }
@@ -153,41 +185,41 @@ function coQuocGia(ma: string): string {
 
 export default function TrangLuotXem() {
   const [khoang, datKhoang] = useState<string>("30");
+  const [gocNhin, datGocNhin] = useState<GocNhinBieuDo>("tat_ca");
   const [so_lieu, datSoLieu] = useState<LuotXemOut | null>(null);
   const [dang_tai, datDangTai] = useState(true);
   const [loi, datLoi] = useState<string | null>(null);
+  const lanGoiRef = useRef(0);
 
   // --- modal "ai đang online" (2026-08-31) ---
-  //
-  // Bốn state riêng, KHÔNG dùng chung với trang chính: endpoint khác, `no-store`, và
-  // nạp ở thời điểm khác. Nhập chúng vào `dang_tai`/`loi` của trang là một lượt mở modal
-  // hỏng sẽ hiện dải lỗi đỏ trên cả trang và làm sáu ô KPI nhấp nháy "Đang nạp…".
   const [mo_online, datMoOnline] = useState(false);
   const [online, datOnline] = useState<OnlineOut | null>(null);
   const [dang_tai_online, datDangTaiOnline] = useState(false);
   const [loi_online, datLoiOnline] = useState<string | null>(null);
-  //: Đồng hồ máy mod, ghi lúc số liệu VỀ. Không auto-refresh, nên không nói mốc là để
-  //: mod đọc một danh sách đã cũ vài chục phút như "ngay lúc này".
   const [luc_nap_online, datLucNapOnline] = useState<string | null>(null);
 
   const nap = useCallback(async (k: string) => {
+    const lanGoi = ++lanGoiRef.current;
     datDangTai(true);
     datLoi(null);
     try {
-      // Gọi THẲNG tên hàm, luôn kèm `baseUrl` — hai luật của
-      // `e2e/don-vi/type-admin.spec.ts`. `GOC_API` là chuỗi rỗng (same-origin), không
-      // phải "quên điền": cookie phiên chỉ đi kèm khi request cùng origin.
       const { data, error } = await quanTriLuotXem({
         baseUrl: GOC_API,
         cache: "no-store",
         query: { khoang: k },
       });
       if (error !== undefined) throw error;
-      datSoLieu(data ?? null);
+      if (lanGoi === lanGoiRef.current) {
+        datSoLieu(data ?? null);
+      }
     } catch (e) {
-      datLoi(moTaLoi(e));
+      if (lanGoi === lanGoiRef.current) {
+        datLoi(moTaLoi(e));
+      }
     } finally {
-      datDangTai(false);
+      if (lanGoi === lanGoiRef.current) {
+        datDangTai(false);
+      }
     }
   }, []);
 
@@ -284,88 +316,237 @@ export default function TrangLuotXem() {
         </div>
       ) : (
         <div className="space-y-5">
-          {/* Sáu ô số KPI: Online, Tổng lượt xem, Lượt người, Khách, Lượt bot, Tỉ lệ bot. */}
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-            {/* Ô ĐẦU vì nó là con số "ngay lúc này" — nó đứng trước những con số tích
-                luỹ, chứ không lẫn vào giữa chúng. Nhãn phụ bắt buộc: đây là ô DUY NHẤT
-                của hàng này không đọc theo bộ chọn khoảng ở ngay trên, nên không nói ra
-                "5 phút gần nhất" là để mod đọc nó như "khách trong 30 ngày". */}
-            <TheSo
-              nhan="Online"
-              so={so_lieu.tong.so_online}
-              phu="5 phút gần nhất · bấm để xem"
-              onBam={moOnline}
-            />
-            <TheSo nhan="Tổng lượt xem" so={so_lieu.tong.so_luot} />
-            <TheSo nhan="Lượt người" so={so_lieu.tong.so_luot_nguoi} />
-            <TheSo
-              nhan="Khách"
-              so={so_lieu.tong.so_khach}
-              // "≈" không phải khiêm tốn: đây là phép CỘNG THEO NGÀY, nên một người ghé
-              // ba ngày đếm là ba. Bỏ dấu ấy đi là để mod đọc nó như "số người dùng".
-              phu="≈, cộng theo ngày"
-            />
-            <TheSo nhan="Lượt bot" so={so_lieu.tong.so_luot_bot} />
-            <TheSo nhan="Tỉ lệ bot" so={phanTramBot(so_lieu)} la_phan_tram />
+          {/* Sáu ô số KPI chính: Online, Tổng lượt xem, Lượt người, Khách, Lượt bot, Tỉ lệ bot. */}
+          {(() => {
+            const soNgayKhoang =
+              khoang === "7"
+                ? 7
+                : khoang === "30"
+                ? 30
+                : khoang === "90"
+                ? 90
+                : Math.max(1, so_lieu.chuoi_ngay.length);
+            const tbNguoi = Math.round(so_lieu.tong.so_luot_nguoi / soNgayKhoang);
+            const tbBot = Math.round(so_lieu.tong.so_luot_bot / soNgayKhoang);
+            const ttTong = tangTruongPhanTram(so_lieu.tong.so_luot, so_lieu.ky_truoc?.so_luot);
+            const ttNguoi = tangTruongPhanTram(so_lieu.tong.so_luot_nguoi, so_lieu.ky_truoc?.so_luot_nguoi);
+            const ttKhach = tangTruongPhanTram(so_lieu.tong.so_khach, so_lieu.ky_truoc?.so_khach);
+            const ttBot = tangTruongPhanTram(so_lieu.tong.so_luot_bot, so_lieu.ky_truoc?.so_luot_bot);
+
+            return (
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+                <TheSo
+                  nhan="Online"
+                  so={so_lieu.tong.so_online}
+                  phu="5 phút gần nhất · bấm để xem"
+                  onBam={moOnline}
+                />
+                <TheSo
+                  nhan="Tổng lượt xem"
+                  so={so_lieu.tong.so_luot}
+                  phu={`Hôm nay: ${(so_lieu.tong.so_hom_nay ?? 0).toLocaleString("vi-VN")} lượt${
+                    ttTong ? ` · so kỳ trước: ${ttTong}` : ""
+                  }`}
+                />
+                <TheSo
+                  nhan="Lượt người"
+                  so={so_lieu.tong.so_luot_nguoi}
+                  phu={`TB: ${tbNguoi.toLocaleString("vi-VN")}/ngày${
+                    ttNguoi ? ` · so kỳ trước: ${ttNguoi}` : ""
+                  }`}
+                />
+                <TheSo
+                  nhan="Khách"
+                  so={so_lieu.tong.so_khach}
+                  phu={`≈, cộng theo ngày${ttKhach ? ` · so kỳ trước: ${ttKhach}` : ""}`}
+                />
+                <TheSo
+                  nhan="Lượt bot"
+                  so={so_lieu.tong.so_luot_bot}
+                  phu={`TB: ${tbBot.toLocaleString("vi-VN")}/ngày${
+                    ttBot ? ` · so kỳ trước: ${ttBot}` : ""
+                  }`}
+                />
+                <TheSo
+                  nhan="Tỉ lệ bot"
+                  so={phanTramBot(so_lieu)}
+                  la_phan_tram
+                  phu={`Người đọc: ${100 - phanTramBot(so_lieu)}%`}
+                />
+              </div>
+            );
+          })()}
+
+          {/* Dải 3 Thẻ Chỉ số Chuyên sâu (Pro Insights) */}
+          {(() => {
+            const soTrangMoiKhach =
+              so_lieu.tong.so_khach > 0
+                ? (so_lieu.tong.so_luot_nguoi / so_lieu.tong.so_khach).toFixed(1)
+                : "—";
+            const tiLeDangNhap =
+              so_lieu.tong.so_luot_nguoi > 0
+                ? Math.round((so_lieu.chi_so_doc_gia.so_luot_dang_nhap / so_lieu.tong.so_luot_nguoi) * 100)
+                : 0;
+            const gioCaoDiem =
+              so_lieu.theo_gio.length > 0
+                ? so_lieu.theo_gio.reduce(
+                    (max, cur) => (cur.so_luot_nguoi > max.so_luot_nguoi ? cur : max),
+                    so_lieu.theo_gio[0],
+                  )
+                : null;
+
+            return (
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="the p-4" data-testid="the-do-sau">
+                  <span className="block text-sm text-muc-mo">Độ sâu đọc trang</span>
+                  <span className="mt-1 block text-2xl font-semibold tabular-nums">
+                    {soTrangMoiKhach}{" "}
+                    <span className="text-sm font-normal text-muc-mo">trang/khách</span>
+                  </span>
+                  <span className="mt-0.5 block text-xs text-muc-mo">
+                    {so_lieu.chi_so_doc_gia.so_khach_doc_sau.toLocaleString("vi-VN")} khách đọc ≥ 2 trang trong ngày
+                  </span>
+                </div>
+
+                <div className="the p-4" data-testid="the-co-cau-doc-gia">
+                  <span className="block text-sm text-muc-mo">Cơ cấu độc giả (có phiên)</span>
+                  <span className="mt-1 block text-2xl font-semibold tabular-nums">
+                    {tiLeDangNhap}%{" "}
+                    <span className="text-sm font-normal text-muc-mo">lượt đọc</span>
+                  </span>
+                  <span className="mt-0.5 block text-xs text-muc-mo">
+                    {so_lieu.chi_so_doc_gia.so_khach_dang_nhap.toLocaleString("vi-VN")} khách mang cookie phiên
+                  </span>
+                </div>
+
+                <div className="the p-4" data-testid="the-gio-cao-diem">
+                  <span className="block text-sm text-muc-mo">Khung giờ cao điểm</span>
+                  <span className="mt-1 block text-2xl font-semibold tabular-nums">
+                    {gioCaoDiem
+                      ? `${gioCaoDiem.gio.toString().padStart(2, "0")}h – ${(gioCaoDiem.gio + 1)
+                          .toString()
+                          .padStart(2, "0")}h`
+                      : "—"}
+                  </span>
+                  <span className="mt-0.5 block text-xs text-muc-mo">
+                    {gioCaoDiem
+                      ? `${gioCaoDiem.so_luot_nguoi.toLocaleString("vi-VN")} lượt người đọc`
+                      : "Chưa ghi nhận"}
+                  </span>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Khu vực Biểu đồ: Theo ngày & Phân bổ 24 khung giờ */}
+          <div className="grid gap-5 xl:grid-cols-3">
+            <The
+              tieu_de="Theo ngày"
+              pham_vi={nhanKhoang(so_lieu.khoang)}
+              goc_phai={
+                <div className="flex gap-1" role="group" aria-label="Góc nhìn biểu đồ">
+                  {GOC_NHIN.map((g) => (
+                    <button
+                      key={g.ma}
+                      type="button"
+                      className={`nut nut-nho ${gocNhin === g.ma ? "nut-chinh" : ""}`}
+                      onClick={() => datGocNhin(g.ma)}
+                    >
+                      {g.nhan}
+                    </button>
+                  ))}
+                </div>
+              }
+              className="p-4 xl:col-span-2"
+            >
+              <div className="mt-3">
+                <CotChong
+                  nhan={so_lieu.chuoi_ngay.map((o) => nhanNgay(o.ngay))}
+                  chuoi={
+                    gocNhin === "tat_ca"
+                      ? [
+                          {
+                            ten: "Người",
+                            mau: 1,
+                            gia_tri: so_lieu.chuoi_ngay.map((o) => o.so_luot_nguoi),
+                          },
+                          {
+                            ten: "Khách",
+                            mau: 2,
+                            gia_tri: so_lieu.chuoi_ngay.map((o) => o.so_khach ?? 0),
+                            khong_cong_tong: true,
+                          },
+                          {
+                            ten: "Bot",
+                            mau: 4,
+                            gia_tri: so_lieu.chuoi_ngay.map((o) => o.so_luot_bot),
+                          },
+                        ]
+                      : gocNhin === "nguoi"
+                      ? [
+                          {
+                            ten: "Người",
+                            mau: 1,
+                            gia_tri: so_lieu.chuoi_ngay.map((o) => o.so_luot_nguoi),
+                          },
+                          {
+                            ten: "Khách",
+                            mau: 2,
+                            gia_tri: so_lieu.chuoi_ngay.map((o) => o.so_khach ?? 0),
+                            khong_cong_tong: true,
+                          },
+                        ]
+                      : [
+                          {
+                            ten: "Bot",
+                            mau: 4,
+                            gia_tri: so_lieu.chuoi_ngay.map((o) => o.so_luot_bot),
+                          },
+                        ]
+                  }
+                />
+              </div>
+              {so_lieu.chuoi_ngay.some((o) => o.so_khach === null) && (
+                <p className="mt-3 text-xs text-muc-mo" data-testid="chu-khach-chua-do">
+                  Cột <strong>Khách</strong> vẽ 0 ở những ngày <em>chưa đo được</em> — khách
+                  chỉ đếm được từ ngày bật cơ chế, và những ngày trước đó không lưu gì để dựng
+                  lại. Ngày <em>đo được mà không có ai</em> cũng vẽ 0 — biểu đồ không phân
+                  biệt được hai ca ấy, nên dòng chú này là chỗ duy nhất nói ra.
+                </p>
+              )}
+            </The>
+
+            <The
+              tieu_de="Khung giờ trong ngày"
+              pham_vi="00h – 23h (giờ VN)"
+              className="p-4"
+            >
+              <div className="mt-3">
+                <CotChong
+                  nhan={so_lieu.theo_gio.map((g) => `${g.gio.toString().padStart(2, "0")}h`)}
+                  chuoi={[
+                    {
+                      ten: "Người",
+                      mau: 1,
+                      gia_tri: so_lieu.theo_gio.map((g) => g.so_luot_nguoi),
+                    },
+                    {
+                      ten: "Bot",
+                      mau: 4,
+                      gia_tri: so_lieu.theo_gio.map((g) => g.so_luot_bot),
+                    },
+                  ]}
+                  cao={240}
+                />
+              </div>
+            </The>
           </div>
 
-          <The tieu_de="Theo ngày" pham_vi={nhanKhoang(so_lieu.khoang)} className="p-4">
-            <div className="mt-3">
-              <CotChong
-                nhan={so_lieu.chuoi_ngay.map((o) => nhanNgay(o.ngay))}
-                chuoi={[
-                  {
-                    ten: "Người",
-                    mau: 1,
-                    gia_tri: so_lieu.chuoi_ngay.map((o) => o.so_luot_nguoi),
-                  },
-                  {
-                    ten: "Khách",
-                    mau: 2,
-                    // ⚠ `null` = **không đo được**, vẽ 0 — và dòng chú ngay dưới nói ra.
-                    // Vẽ 0 chứ không bỏ ô: `CotChong` đòi mọi chuỗi cùng độ dài với `nhan`,
-                    // và một biểu đồ âm thầm lệch ngày là đúng thứ hàm ấy từ chối làm.
-                    gia_tri: so_lieu.chuoi_ngay.map((o) => o.so_khach ?? 0),
-                  },
-                  {
-                    ten: "Bot",
-                    mau: 4,
-                    gia_tri: so_lieu.chuoi_ngay.map((o) => o.so_luot_bot),
-                  },
-                ]}
-              />
-            </div>
-            {so_lieu.chuoi_ngay.some((o) => o.so_khach === null) && (
-              <p className="mt-3 text-xs text-muc-mo" data-testid="chu-khach-chua-do">
-                Cột <strong>Khách</strong> vẽ 0 ở những ngày <em>chưa đo được</em> — khách
-                chỉ đếm được từ ngày bật cơ chế, và những ngày trước đó không lưu gì để dựng
-                lại. Ngày <em>đo được mà không có ai</em> cũng vẽ 0 — biểu đồ không phân
-                biệt được hai ca ấy, nên dòng chú này là chỗ duy nhất nói ra.
-              </p>
-            )}
-          </The>
-
-          {/* Sáu bảng chi tiết ⇒ BỐN TAB (2026-09-04). Trước đó chúng nằm trong một lưới
-              2 cột: cao thấp so le nên mép dưới răng cưa, và hai cặp cùng chủ đề (Bot
-              theo nhóm / Top bot, Trình duyệt / Thiết bị) bị một bảng khác chen vào
-              giữa. Tab gom theo chủ đề mà **không bỏ một con số nào** — mọi `tbody` cũ,
-              mọi `KhoiRong` cũ vẫn còn, chỉ đổi chỗ đứng.
-
-              Bảng nào cũng full width nên `min-w-[52rem]` của `KhungBang` không còn ép
-              cuộn ngang ở màn rộng — đó là cái được thứ hai, không phải cái được chính. */}
+          {/* Sáu bảng chi tiết ⇒ BỐN TAB (2026-09-04). */}
           <KhungTab
             nhan_nhom="Chi tiết lượt xem"
             khoa_mac_dinh="noi_dung"
             chu={
-              /* Cờ này đứng GIỮA tablist và panel, không chôn ở cuối trang nữa: nó nói
-                 về chính mấy bảng ngay dưới nó, và ở chỗ cũ mod phải cuộn qua hết bảng
-                 mới đọc được cái giới hạn của bảng ấy.
-
-                 ⚠ Câu vẫn gọi ĐÍCH DANH bốn bảng, không rút gọn thành "các bảng dưới
-                 đây": ở `tat_ca` thì `top_duong_dan` gộp từ `TongNgay` nên nó KHÔNG bị
-                 cắt 90 ngày (xem `api/api/quan_tri_luot_xem.py`, nhánh `KHOANG_TAT_CA`).
-                 Rút gọn là biến một câu đúng thành một câu sai với đúng tab đang mở
-                 mặc định. */
               so_lieu.chi_tiet_chi_90_ngay ? (
                 <p className="text-sm text-muc-mo" data-testid="chu-chi-tiet-90-ngay">
                   Các bảng <strong>Nguồn · Từ khóa · Bot · Trình duyệt · Thiết bị · Quốc gia</strong> chỉ phủ{" "}
@@ -379,29 +560,107 @@ export default function TrangLuotXem() {
                 khoa: "noi_dung",
                 nhan: "Nội dung",
                 noi_dung: (
-                  <The tieu_de="Xem nhiều nhất" pham_vi="Top 20 đường dẫn">
-                    <KhungBang>
-                      <HangTieuDe cot={["Đường dẫn", "Người", "Bot", "Tổng"]} />
-                      <tbody data-testid="bang-duong-dan">
-                        {so_lieu.top_duong_dan.map((d) => (
-                          <tr key={d.duong_dan}>
-                            <td className="px-3 py-2.5 font-mono text-xs break-all">{d.duong_dan}</td>
-                            <td className="px-3 py-2.5 tabular-nums">{d.so_luot_nguoi}</td>
-                            <td className="px-3 py-2.5 tabular-nums text-muc-mo">{d.so_luot_bot}</td>
-                            <td className="px-3 py-2.5 tabular-nums font-semibold">
-                              {d.so_luot_nguoi + d.so_luot_bot}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </KhungBang>
-                    {so_lieu.top_duong_dan.length === 0 && (
-                      <KhoiRong
-                        co_bo_loc={false}
-                        chua_co="Chưa có lượt xem nào trong khoảng này."
-                      />
-                    )}
-                  </The>
+                  <div className="space-y-4">
+                    <The tieu_de="Khu vực nội dung" pham_vi="Lượt xem theo phân loại site">
+                      {so_lieu.theo_khu_vuc.length === 0 ? (
+                        <KhoiRong co_bo_loc={false} chua_co="Chưa ghi nhận khu vực nào." />
+                      ) : (
+                        <KhungBang>
+                          <HangTieuDe cot={["Khu vực", "Người", "Bot", "Tổng", "Tỉ trọng"]} />
+                          <tbody>
+                            {so_lieu.theo_khu_vuc.map((kv) => {
+                              const tongAll = so_lieu.tong.so_luot;
+                              const pt = tongAll > 0 ? (kv.so_luot / tongAll) * 100 : 0;
+                              return (
+                                <tr key={kv.khu_vuc}>
+                                  <td className="px-3 py-2.5 font-medium">
+                                    {NHAN_KHU_VUC[kv.khu_vuc] ?? kv.khu_vuc}
+                                  </td>
+                                  <td className="px-3 py-2.5 tabular-nums">
+                                    {kv.so_luot_nguoi.toLocaleString("vi-VN")}
+                                  </td>
+                                  <td className="px-3 py-2.5 tabular-nums text-muc-mo">
+                                    {kv.so_luot_bot.toLocaleString("vi-VN")}
+                                  </td>
+                                  <td className="px-3 py-2.5 tabular-nums font-semibold">
+                                    {kv.so_luot.toLocaleString("vi-VN")}
+                                  </td>
+                                  <td className="px-3 py-2.5">
+                                    <ThanhTienDo phan_tram={pt} mau={1} />
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </KhungBang>
+                      )}
+                    </The>
+
+                    <The tieu_de="Xem nhiều nhất" pham_vi="Top 20 đường dẫn">
+                      <KhungBang>
+                        <HangTieuDe
+                          cot={["Nội dung / Đường dẫn", "Người", "Khách", "Bot", "Tổng", "Tỉ trọng"]}
+                        />
+                        <tbody data-testid="bang-duong-dan">
+                          {so_lieu.top_duong_dan_pro.map((d) => {
+                            const tongTop = so_lieu.top_duong_dan_pro.reduce(
+                              (s, c) => s + (c.so_luot_nguoi + c.so_luot_bot),
+                              0,
+                            );
+                            const tongItem = d.so_luot_nguoi + d.so_luot_bot;
+                            const pt = tongTop > 0 ? (tongItem / tongTop) * 100 : 0;
+                            return (
+                              <tr key={d.duong_dan}>
+                                <td className="px-3 py-2.5">
+                                  <div className="flex flex-wrap items-center gap-1.5">
+                                    {d.sub_slug && (
+                                      <span className="rounded bg-nen-mo px-1.5 py-0.5 text-[11px] font-medium text-muc-mo">
+                                        s/{d.sub_slug}
+                                      </span>
+                                    )}
+                                    <span className="font-medium text-muc">{d.tieu_de}</span>
+                                    {d.mach_id !== null && (
+                                      <Link
+                                        href={`/m/${d.mach_id}`}
+                                        className="text-xs text-nhan hover:underline"
+                                        title="Mở trang quản trị mạch"
+                                      >
+                                        [Mạch #{d.mach_id}]
+                                      </Link>
+                                    )}
+                                  </div>
+                                  <div className="mt-0.5 font-mono text-xs text-muc-mo break-all">
+                                    {d.duong_dan}
+                                  </div>
+                                </td>
+                                <td className="px-3 py-2.5 tabular-nums">
+                                  {d.so_luot_nguoi.toLocaleString("vi-VN")}
+                                </td>
+                                <td className="px-3 py-2.5 tabular-nums text-muc">
+                                  {d.so_khach.toLocaleString("vi-VN")}
+                                </td>
+                                <td className="px-3 py-2.5 tabular-nums text-muc-mo">
+                                  {d.so_luot_bot.toLocaleString("vi-VN")}
+                                </td>
+                                <td className="px-3 py-2.5 tabular-nums font-semibold">
+                                  {tongItem.toLocaleString("vi-VN")}
+                                </td>
+                                <td className="px-3 py-2.5">
+                                  <ThanhTienDo phan_tram={pt} mau={1} />
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </KhungBang>
+                      {so_lieu.top_duong_dan_pro.length === 0 && (
+                        <KhoiRong
+                          co_bo_loc={false}
+                          chua_co="Chưa có lượt xem nào trong khoảng này."
+                        />
+                      )}
+                    </The>
+                  </div>
                 ),
               },
               {
@@ -416,7 +675,7 @@ export default function TrangLuotXem() {
                           {so_lieu.top_quoc_gia.map((q) => {
                             const co = coQuocGia(q.quoc_gia);
                             const tongCoQG = so_lieu.top_quoc_gia.reduce((acc, cur) => acc + cur.so_luot, 0);
-                            const tiLe = tongCoQG > 0 ? ((q.so_luot / tongCoQG) * 100).toFixed(1) + "%" : "—";
+                            const tiLePhanTram = tongCoQG > 0 ? (q.so_luot / tongCoQG) * 100 : 0;
                             return (
                               <tr key={q.quoc_gia}>
                                 <td className="px-3 py-2.5">
@@ -426,7 +685,9 @@ export default function TrangLuotXem() {
                                 <td className="px-3 py-2.5 tabular-nums">{q.so_luot_nguoi}</td>
                                 <td className="px-3 py-2.5 tabular-nums text-muc-mo">{q.so_luot_bot}</td>
                                 <td className="px-3 py-2.5 tabular-nums font-semibold">{q.so_luot}</td>
-                                <td className="px-3 py-2.5 tabular-nums text-muc-mo">{tiLe}</td>
+                                <td className="px-3 py-2.5">
+                                  <ThanhTienDo phan_tram={tiLePhanTram} mau={1} />
+                                </td>
                               </tr>
                             );
                           })}
@@ -437,6 +698,12 @@ export default function TrangLuotXem() {
                           co_bo_loc={false}
                           chua_co="Chưa ghi nhận quốc gia nào trong khoảng này (bắt đầu lưu từ 09/09/2026)."
                         />
+                      )}
+                      {so_lieu.chi_so_doc_gia.so_quoc_gia_an > 0 && (
+                        <p className="mt-3 text-xs text-muc-mo" data-testid="chu-quoc-gia-an">
+                          Ghi nhận <strong>{so_lieu.chi_so_doc_gia.so_quoc_gia_an.toLocaleString("vi-VN")}</strong> lượt
+                          chưa xác định quốc gia (do truy cập nội bộ hoặc không qua proxy Cloudflare).
+                        </p>
                       )}
                     </The>
 
@@ -495,10 +762,28 @@ export default function TrangLuotXem() {
                 nhan: "Nguồn truy cập",
                 noi_dung: (
                   <div className="space-y-4">
+                    <The tieu_de="Kênh thu hút độc giả" pham_vi="Phân loại theo đặc tính kênh dẫn">
+                      <div className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4">
+                        {so_lieu.theo_kenh_nguon.map((kn) => {
+                          const tongKenh = so_lieu.theo_kenh_nguon.reduce((s, c) => s + c.so_luot, 0);
+                          const pt = tongKenh > 0 ? Math.round((kn.so_luot / tongKenh) * 100) : 0;
+                          return (
+                            <div key={kn.kenh} className="rounded border border-vien bg-nen p-3">
+                              <span className="block text-xs text-muc-mo">{NHAN_KENH[kn.kenh] ?? kn.kenh}</span>
+                              <span className="mt-1 block text-lg font-semibold tabular-nums">
+                                {kn.so_luot.toLocaleString("vi-VN")}{" "}
+                                <span className="text-xs font-normal text-muc-mo">lượt</span>
+                              </span>
+                              <div className="mt-2">
+                                <ThanhTienDo phan_tram={pt} mau={1} />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </The>
+
                     <The tieu_de="Nguồn truy cập" pham_vi="Top 20 tên miền · chỉ lượt người">
-                      {/* Rỗng thật thì CHỈ khối rỗng — không kèm một bảng một dòng
-                          "(trực tiếp) 0" đứng cạnh câu "chưa có lượt nào": hai thứ ấy nói
-                          ngược nhau trên cùng một thẻ. Lượt phản biện 2026-08-30 tìm ra. */}
                       {so_lieu.top_nguon.length === 0 && so_lieu.so_truc_tiep === 0 ? (
                         <KhoiRong
                           co_bo_loc={false}
@@ -506,21 +791,41 @@ export default function TrangLuotXem() {
                         />
                       ) : (
                         <KhungBang>
-                          <HangTieuDe cot={["Nguồn", "Lượt"]} />
+                          <HangTieuDe cot={["Nguồn", "Lượt", "Tỉ trọng"]} />
                           <tbody data-testid="bang-nguon">
-                            {/* Dòng đầu LUÔN là phần trực tiếp/nội bộ: nó gần như luôn
-                                đông nhất, nhưng nó không phải một tên miền — trộn vào bảng
-                                là đẩy hết nguồn thật xuống dưới một cái nhãn rỗng. */}
-                            <tr>
-                              <td className="px-3 py-2.5 text-muc-mo">(trực tiếp / nội bộ)</td>
-                              <td className="px-3 py-2.5 tabular-nums">{so_lieu.so_truc_tiep}</td>
-                            </tr>
-                            {so_lieu.top_nguon.map((n) => (
-                              <tr key={n.nguon}>
-                                <td className="px-3 py-2.5 font-mono text-xs break-all">{n.nguon}</td>
-                                <td className="px-3 py-2.5 tabular-nums">{n.so_luot}</td>
-                              </tr>
-                            ))}
+                            {(() => {
+                              const tongNguon =
+                                so_lieu.so_truc_tiep +
+                                so_lieu.top_nguon.reduce((s, c) => s + c.so_luot, 0);
+                              const ptTrucTiep = tongNguon > 0 ? (so_lieu.so_truc_tiep / tongNguon) * 100 : 0;
+                              return (
+                                <>
+                                  <tr>
+                                    <td className="px-3 py-2.5 text-muc-mo">(trực tiếp / nội bộ)</td>
+                                    <td className="px-3 py-2.5 tabular-nums">
+                                      {so_lieu.so_truc_tiep.toLocaleString("vi-VN")}
+                                    </td>
+                                    <td className="px-3 py-2.5">
+                                      <ThanhTienDo phan_tram={ptTrucTiep} mau={1} />
+                                    </td>
+                                  </tr>
+                                  {so_lieu.top_nguon.map((n) => {
+                                    const pt = tongNguon > 0 ? (n.so_luot / tongNguon) * 100 : 0;
+                                    return (
+                                      <tr key={n.nguon}>
+                                        <td className="px-3 py-2.5 font-mono text-xs break-all">{n.nguon}</td>
+                                        <td className="px-3 py-2.5 tabular-nums">
+                                          {n.so_luot.toLocaleString("vi-VN")}
+                                        </td>
+                                        <td className="px-3 py-2.5">
+                                          <ThanhTienDo phan_tram={pt} mau={1} />
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </>
+                              );
+                            })()}
                           </tbody>
                         </KhungBang>
                       )}
@@ -537,30 +842,39 @@ export default function TrangLuotXem() {
                         />
                       ) : (
                         <KhungBang>
-                          <HangTieuDe cot={["Từ khóa", "Nguồn", "Lượt"]} />
+                          <HangTieuDe cot={["Từ khóa", "Nguồn", "Lượt", "Tỉ trọng"]} />
                           <tbody data-testid="bang-tu-khoa">
-                            {so_lieu.top_tu_khoa.map((t, idx) => {
-                              const la_an = t.tu_khoa === "(từ khóa ẩn)" || t.tu_khoa === "(ẩn)";
-                              return (
-                                <tr key={`${t.tu_khoa}-${t.nguon}-${idx}`}>
-                                  <td className="px-3 py-2.5">
-                                    {la_an ? (
-                                      <span className="italic text-muc-mo">(ẩn)</span>
-                                    ) : (
-                                      <span className="font-medium">{t.tu_khoa}</span>
-                                    )}
-                                  </td>
-                                  <td className="px-3 py-2.5 font-mono text-xs">
-                                    {t.nguon ? (
-                                      <span className="text-muc">{t.nguon}</span>
-                                    ) : (
-                                      <span className="font-sans text-muc-mo">(nội bộ)</span>
-                                    )}
-                                  </td>
-                                  <td className="px-3 py-2.5 tabular-nums">{t.so_luot}</td>
-                                </tr>
-                              );
-                            })}
+                            {(() => {
+                              const tongTK = so_lieu.top_tu_khoa.reduce((s, c) => s + c.so_luot, 0);
+                              return so_lieu.top_tu_khoa.map((t, idx) => {
+                                const la_an = t.tu_khoa === "(từ khóa ẩn)" || t.tu_khoa === "(ẩn)";
+                                const pt = tongTK > 0 ? (t.so_luot / tongTK) * 100 : 0;
+                                return (
+                                  <tr key={`${t.tu_khoa}-${t.nguon}-${idx}`}>
+                                    <td className="px-3 py-2.5">
+                                      {la_an ? (
+                                        <span className="italic text-muc-mo">(ẩn)</span>
+                                      ) : (
+                                        <span className="font-medium">{t.tu_khoa}</span>
+                                      )}
+                                    </td>
+                                    <td className="px-3 py-2.5 font-mono text-xs">
+                                      {t.nguon ? (
+                                        <span className="text-muc">{t.nguon}</span>
+                                      ) : (
+                                        <span className="font-sans text-muc-mo">(nội bộ)</span>
+                                      )}
+                                    </td>
+                                    <td className="px-3 py-2.5 tabular-nums">
+                                      {t.so_luot.toLocaleString("vi-VN")}
+                                    </td>
+                                    <td className="px-3 py-2.5">
+                                      <ThanhTienDo phan_tram={pt} mau={1} />
+                                    </td>
+                                  </tr>
+                                );
+                              });
+                            })()}
                           </tbody>
                         </KhungBang>
                       )}
@@ -577,21 +891,29 @@ export default function TrangLuotXem() {
               {
                 khoa: "bot",
                 nhan: "Bot",
-                /* HAI khối xếp DỌC trong một panel: "theo nhóm" là bản tóm tắt của chính
-                   danh sách ngay dưới nó, nên đọc cái này rồi đọc cái kia là một mạch.
-                   Ở lưới cũ chúng bị bảng "Trình duyệt" chen vào giữa. */
                 noi_dung: (
                   <div className="space-y-4">
                     <The tieu_de="Bot theo nhóm" pham_vi="Gộp từ toàn bộ lượt bot">
                       <KhungBang rong={false}>
-                        <HangTieuDe cot={["Nhóm", "Lượt"]} />
+                        <HangTieuDe cot={["Nhóm", "Lượt", "Tỉ trọng"]} />
                         <tbody data-testid="bang-nhom-bot">
-                          {so_lieu.theo_nhom_bot.map((n) => (
-                            <tr key={n.nhom}>
-                              <td className="px-3 py-2.5">{nhanCua(NHAN_NHOM_BOT, n.nhom)}</td>
-                              <td className="px-3 py-2.5 tabular-nums">{n.so_luot}</td>
-                            </tr>
-                          ))}
+                          {(() => {
+                            const tongNhom = so_lieu.theo_nhom_bot.reduce((s, c) => s + c.so_luot, 0);
+                            return so_lieu.theo_nhom_bot.map((n) => {
+                              const pt = tongNhom > 0 ? (n.so_luot / tongNhom) * 100 : 0;
+                              return (
+                                <tr key={n.nhom}>
+                                  <td className="px-3 py-2.5">{nhanCua(NHAN_NHOM_BOT, n.nhom)}</td>
+                                  <td className="px-3 py-2.5 tabular-nums">
+                                    {n.so_luot.toLocaleString("vi-VN")}
+                                  </td>
+                                  <td className="px-3 py-2.5">
+                                    <ThanhTienDo phan_tram={pt} mau={4} />
+                                  </td>
+                                </tr>
+                              );
+                            });
+                          })()}
                         </tbody>
                       </KhungBang>
                       {so_lieu.theo_nhom_bot.length === 0 && (
@@ -604,17 +926,28 @@ export default function TrangLuotXem() {
                       pham_vi="Top 20 theo User-Agent"
                     >
                       <KhungBang>
-                        <HangTieuDe cot={["Bot", "Nhóm", "Lượt"]} />
+                        <HangTieuDe cot={["Bot", "Nhóm", "Lượt", "Tỉ trọng"]} />
                         <tbody data-testid="bang-bot">
-                          {so_lieu.top_bot.map((b) => (
-                            <tr key={b.ten}>
-                              <td className="px-3 py-2.5 font-mono text-xs">{b.ten}</td>
-                              <td className="px-3 py-2.5 text-muc-mo">
-                                {nhanCua(NHAN_NHOM_BOT, b.nhom)}
-                              </td>
-                              <td className="px-3 py-2.5 tabular-nums">{b.so_luot}</td>
-                            </tr>
-                          ))}
+                          {(() => {
+                            const tongBot = so_lieu.top_bot.reduce((s, c) => s + c.so_luot, 0);
+                            return so_lieu.top_bot.map((b) => {
+                              const pt = tongBot > 0 ? (b.so_luot / tongBot) * 100 : 0;
+                              return (
+                                <tr key={b.ten}>
+                                  <td className="px-3 py-2.5 font-mono text-xs">{b.ten}</td>
+                                  <td className="px-3 py-2.5 text-muc-mo">
+                                    {nhanCua(NHAN_NHOM_BOT, b.nhom)}
+                                  </td>
+                                  <td className="px-3 py-2.5 tabular-nums">
+                                    {b.so_luot.toLocaleString("vi-VN")}
+                                  </td>
+                                  <td className="px-3 py-2.5">
+                                    <ThanhTienDo phan_tram={pt} mau={4} />
+                                  </td>
+                                </tr>
+                              );
+                            });
+                          })()}
                         </tbody>
                       </KhungBang>
                       {so_lieu.top_bot.length === 0 && (
@@ -627,21 +960,29 @@ export default function TrangLuotXem() {
               {
                 khoa: "nguoi_doc",
                 nhan: "Người đọc",
-                /* Hai bảng CẠNH NHAU: cả hai đọc từ đúng một chuỗi User-Agent và cả hai
-                   chỉ có hai cột, nên đặt cạnh nhau là so được ngay "Chrome/di động" với
-                   "Safari/di động". Dọc ở màn hẹp. */
                 noi_dung: (
                   <div className="grid gap-4 sm:grid-cols-2">
                     <The tieu_de="Trình duyệt" pham_vi="Chỉ lượt người · suy từ User-Agent">
                       <KhungBang rong={false}>
-                        <HangTieuDe cot={["Trình duyệt", "Lượt"]} />
+                        <HangTieuDe cot={["Trình duyệt", "Lượt", "Tỉ trọng"]} />
                         <tbody data-testid="bang-trinh-duyet">
-                          {so_lieu.trinh_duyet.map((t) => (
-                            <tr key={t.ten}>
-                              <td className="px-3 py-2.5">{nhanCua(NHAN_TRINH_DUYET, t.ten)}</td>
-                              <td className="px-3 py-2.5 tabular-nums">{t.so_luot}</td>
-                            </tr>
-                          ))}
+                          {(() => {
+                            const tongTD = so_lieu.trinh_duyet.reduce((s, c) => s + c.so_luot, 0);
+                            return so_lieu.trinh_duyet.map((t) => {
+                              const pt = tongTD > 0 ? (t.so_luot / tongTD) * 100 : 0;
+                              return (
+                                <tr key={t.ten}>
+                                  <td className="px-3 py-2.5">{nhanCua(NHAN_TRINH_DUYET, t.ten)}</td>
+                                  <td className="px-3 py-2.5 tabular-nums">
+                                    {t.so_luot.toLocaleString("vi-VN")}
+                                  </td>
+                                  <td className="px-3 py-2.5">
+                                    <ThanhTienDo phan_tram={pt} mau={1} />
+                                  </td>
+                                </tr>
+                              );
+                            });
+                          })()}
                         </tbody>
                       </KhungBang>
                       {so_lieu.trinh_duyet.length === 0 && (
@@ -654,14 +995,25 @@ export default function TrangLuotXem() {
 
                     <The tieu_de="Thiết bị" pham_vi="Chỉ lượt người · suy từ User-Agent">
                       <KhungBang rong={false}>
-                        <HangTieuDe cot={["Thiết bị", "Lượt"]} />
+                        <HangTieuDe cot={["Thiết bị", "Lượt", "Tỉ trọng"]} />
                         <tbody data-testid="bang-thiet-bi">
-                          {so_lieu.thiet_bi.map((t) => (
-                            <tr key={t.ten}>
-                              <td className="px-3 py-2.5">{nhanCua(NHAN_THIET_BI, t.ten)}</td>
-                              <td className="px-3 py-2.5 tabular-nums">{t.so_luot}</td>
-                            </tr>
-                          ))}
+                          {(() => {
+                            const tongTB = so_lieu.thiet_bi.reduce((s, c) => s + c.so_luot, 0);
+                            return so_lieu.thiet_bi.map((t) => {
+                              const pt = tongTB > 0 ? (t.so_luot / tongTB) * 100 : 0;
+                              return (
+                                <tr key={t.ten}>
+                                  <td className="px-3 py-2.5">{nhanCua(NHAN_THIET_BI, t.ten)}</td>
+                                  <td className="px-3 py-2.5 tabular-nums">
+                                    {t.so_luot.toLocaleString("vi-VN")}
+                                  </td>
+                                  <td className="px-3 py-2.5">
+                                    <ThanhTienDo phan_tram={pt} mau={1} />
+                                  </td>
+                                </tr>
+                              );
+                            });
+                          })()}
                         </tbody>
                       </KhungBang>
                       {so_lieu.thiet_bi.length === 0 && (
@@ -677,21 +1029,14 @@ export default function TrangLuotXem() {
             ]}
           />
 
-          {/* `<details>` ĐÓNG mặc định (2026-09-04). Bốn đoạn văn này là thứ chặn mod
-              đọc sai số liệu, nhưng chúng đọc như tài liệu chứ không như giao diện: mở
-              sẵn thì chúng chiếm nửa màn hình cuối trang và bị lướt qua từ lần thứ hai
-              trở đi. Đóng lại là mod CHỌN đọc, và cái nhãn "Cách đọc số liệu" nói ra là
-              có gì để đọc — chữ bên trong không đổi một câu nào. */}
+          {/* `<details>` ĐÓNG mặc định (2026-09-04). */}
           <details className="text-sm text-muc-mo" data-testid="chu-gioi-han">
             <summary className="cursor-pointer font-medium text-muc">
-              Cách đọc số liệu ({so_lieu.chi_tiet_chi_90_ngay ? "bốn" : "ba"} giới hạn)
+              Cách đọc số liệu ({so_lieu.chi_tiet_chi_90_ngay ? "năm" : "bốn"} giới hạn)
             </summary>
             <p className="mt-2">
-              {/* Đếm theo đúng số đoạn THẬT SỰ hiện ra: đoạn thứ tư chỉ có ở `tat_ca`.
-                  Ghi cứng "Bốn" là mod đếm được ba đoạn rồi đi tìm đoạn thứ tư không có —
-                  và sẽ tin là trang đang giấu mất một dòng. */}
               <strong>
-                {so_lieu.chi_tiet_chi_90_ngay ? "Bốn" : "Ba"} giới hạn của trang này.
+                {so_lieu.chi_tiet_chi_90_ngay ? "Năm" : "Bốn"} giới hạn của trang này.
               </strong>{" "}
               Một, nhận diện bot là{" "}
               <em>suy đoán</em> theo User-Agent: một trình duyệt thật đặt UA lạ sẽ bị tính
@@ -719,14 +1064,12 @@ export default function TrangLuotXem() {
               tính là hai — muối băm đổi theo ngày, và đó là cái giá của việc không có
               phiên đăng nhập để bám vào.
             </p>
-            {/* Đoạn thứ tư CHỈ còn một câu trỏ lên: bản đầy đủ của nó nay đứng ngay dưới
-                hàng tab, cạnh chính mấy bảng nó nói tới. Vẫn phải có một dòng ở đây, nếu
-                không thì bộ đếm "Bốn" ở trên đếm một đoạn không tồn tại — đúng cái bẫy mà
-                chú thích của bộ đếm ấy dựng ra để tránh. `data-testid` thì KHÔNG lặp lại:
-                `chu-chi-tiet-90-ngay` đi theo bản đầy đủ ở trên. */}
+            <p className="mt-2">
+              Bốn, <strong>khử trùng lặp trong 24 giờ</strong>: khi cùng một người đọc tải lại (F5) cùng một trang trong vòng 24 giờ, hệ thống chỉ tính một lượt xem duy nhất trên trang đó.
+            </p>
             {so_lieu.chi_tiet_chi_90_ngay && (
               <p className="mt-2">
-                Bốn, các bảng <strong>Nguồn · Từ khóa · Bot · Trình duyệt · Thiết bị · Quốc gia</strong> chỉ phủ{" "}
+                Năm, các bảng <strong>Nguồn · Từ khóa · Bot · Trình duyệt · Thiết bị · Quốc gia</strong> chỉ phủ{" "}
                 <strong>90 ngày gần nhất</strong> — nói đủ ở dòng chú ngay dưới hàng tab
                 phía trên.
               </p>

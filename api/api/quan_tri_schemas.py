@@ -981,6 +981,61 @@ class TopTuKhoaOut(Schema):
     so_luot: int
 
 
+class LuotXemKyTruocOut(Schema):
+    """Số liệu kỳ trước liền kề để so sánh tăng trưởng."""
+
+    so_luot: int
+    so_luot_nguoi: int
+    so_luot_bot: int
+    so_khach: int
+
+
+class ChiSoDocGiaOut(Schema):
+    """Các chỉ số chiều sâu và cơ cấu độc giả."""
+
+    so_luot_dang_nhap: int
+    so_khach_dang_nhap: int
+    so_khach_doc_sau: int
+    so_quoc_gia_an: int
+
+
+class LuotXemGioOut(Schema):
+    """Phân bổ lượt xem theo khung giờ trong ngày."""
+
+    gio: int
+    so_luot_nguoi: int
+    so_luot_bot: int
+
+
+class KhuVucOut(Schema):
+    """Lượt xem theo phân loại khu vực nội dung site."""
+
+    khu_vuc: str
+    so_luot_nguoi: int
+    so_luot_bot: int
+    so_luot: int
+
+
+class KenhNguonOut(Schema):
+    """Phân bổ nguồn truy cập theo kênh dẫn."""
+
+    kenh: str
+    so_luot: int
+
+
+class TopDuongDanProOut(Schema):
+    """Thông tin chi tiết đường dẫn xem nhiều nhất kèm ngữ cảnh và số khách."""
+
+    duong_dan: str
+    so_luot_nguoi: int
+    so_luot_bot: int
+    so_khach: int
+    loai: str
+    tieu_de: str
+    mach_id: int | None = None
+    sub_slug: str = ""
+
+
 class LuotXemOut(Schema):
     """Toàn bộ số liệu của trang `/luot-xem` cho MỘT khoảng."""
 
@@ -1017,6 +1072,12 @@ class LuotXemOut(Schema):
     #: không mang các chiều ấy. Màn hình **phải nói ra**; giấu đi là để mod đọc chúng như
     #: thể chúng phủ toàn thời gian.
     chi_tiet_chi_90_ngay: bool
+    ky_truoc: LuotXemKyTruocOut | None = None
+    chi_so_doc_gia: ChiSoDocGiaOut
+    theo_gio: list[LuotXemGioOut]
+    theo_khu_vuc: list[KhuVucOut]
+    theo_kenh_nguon: list[KenhNguonOut]
+    top_duong_dan_pro: list[TopDuongDanProOut]
 
 
 # --- Ai đang online (`/luot-xem/online`, 2026-08-31) -------------------------

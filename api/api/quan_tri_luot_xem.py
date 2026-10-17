@@ -104,21 +104,28 @@ con người" hứa là không xảy ra. Cùng lượt phản biện, hạng N�
 
 from collections.abc import Callable
 from datetime import date, datetime, time, timedelta
+import re
 
 from django.db.models import Count, Max, Q, Sum
-from django.db.models.functions import TruncDate
+from django.db.models.functions import ExtractHour, TruncDate
 from django.http import HttpResponse
 from django.utils import timezone
 from ninja import Router
 
 from core.bot import NHOM_HOP_LE, nhom_bot
+from core.models.dien_dan import Mach, Sub
 from core.models.luot_xem import KhachNgay, LuotXem, TongNgay
 from core.thoi_gian import TZ_VN, ngay_vn
 from core.trang_search import chuan_hoa_tu_khoa, la_trang_search
 
 from api.loi import THAM_SO_KHONG_HOP_LE, LoiOut, loi
 from api.quan_tri_schemas import (
+    ChiSoDocGiaOut,
+    KenhNguonOut,
+    KhuVucOut,
     KhachOnlineOut,
+    LuotXemGioOut,
+    LuotXemKyTruocOut,
     LuotXemNgayOut,
     LuotXemOut,
     LuotXemTongOut,
@@ -128,6 +135,7 @@ from api.quan_tri_schemas import (
     OnlineOut,
     TenBotOut,
     TopDuongDanOut,
+    TopDuongDanProOut,
     TopQuocGiaOut,
     TopTuKhoaOut,
 )
@@ -283,16 +291,94 @@ def _nguoi_tu(ngay_dau: date):
     return _tho_tu(ngay_dau).filter(la_bot=False)
 
 
-def _top_nguon(ngay_dau: date) -> list[NguonOut]:
-    """Top 20 tên miền dẫn người tới. Bỏ `""` — nó đi vào `_so_truc_tiep`."""
-    hang = (
+MANG_XA_HOI = (
+    "facebook.com",
+    "l.facebook.com",
+    "m.facebook.com",
+    "lm.facebook.com",
+    "fb.com",
+    "t.me",
+    "telegram.org",
+    "web.telegram.org",
+    "zalo.me",
+    "chat.zalo.me",
+    "x.com",
+    "twitter.com",
+    "t.co",
+    "threads.net",
+    "reddit.com",
+    "old.reddit.com",
+    "youtube.com",
+    "m.youtube.com",
+    "youtu.be",
+    "tiktok.com",
+    "linkedin.com",
+    "instagram.com",
+    "discord.com",
+)
+THU_TU_KENH = ("truc_tiep", "tim_kiem", "mang_xa_hoi", "gioi_thieu")
+THU_TU_KHU_VUC = ("bai_viet", "trang_chu", "chuyen_muc", "ho_so", "tim_kiem", "khac")
+
+RE_MACH = re.compile(r"^/m/(?:.*-)?(\d+)$")
+RE_SUB = re.compile(r"^/s/([^/]+)$")
+NHAN_TRANG_TINH = {
+    "/": "Trang chủ",
+    "/tim-kiem": "Tìm kiếm",
+    "/luat": "Nội quy",
+    "/dang-nhap": "Đăng nhập",
+    "/dang-ky": "Đăng ký",
+    "(lẻ tẻ)": "Các trang ít lượt (gộp)",
+}
+
+
+def _la_mxh(nguon: str) -> bool:
+    return nguon in MANG_XA_HOI or any(nguon.endswith("." + d) for d in MANG_XA_HOI)
+
+
+def _theo_kenh_nguon(
+    ngay_dau: date, so_truc_tiep: int
+) -> tuple[list[KenhNguonOut], list[NguonOut]]:
+    """Phân loại kênh thu hút độc giả và top 20 nguồn chỉ trong 1 truy vấn."""
+    hang = list(
         _nguoi_tu(ngay_dau)
         .exclude(nguon="")
         .values("nguon")
         .annotate(_so=Count("pk"))
-        .order_by("-_so", "nguon")[:SO_TOP]
+        .order_by("-_so", "nguon")
     )
-    return [NguonOut(nguon=h["nguon"], so_luot=h["_so"]) for h in hang]
+    top_nguon = [NguonOut(nguon=h["nguon"], so_luot=h["_so"]) for h in hang[:SO_TOP]]
+
+    so_tim_kiem = 0
+    so_mxh = 0
+    so_gioi_thieu = 0
+    for h in hang:
+        ng = h["nguon"]
+        so = h["_so"]
+        if la_trang_search(ng):
+            so_tim_kiem += so
+        elif _la_mxh(ng):
+            so_mxh += so
+        else:
+            so_gioi_thieu += so
+
+    kenh_map = {
+        "truc_tiep": so_truc_tiep,
+        "tim_kiem": so_tim_kiem,
+        "mang_xa_hoi": so_mxh,
+        "gioi_thieu": so_gioi_thieu,
+    }
+    ds_kenh = [
+        KenhNguonOut(kenh=k, so_luot=kenh_map[k])
+        for k in THU_TU_KENH
+        if kenh_map[k] > 0
+    ]
+    ds_kenh.sort(key=lambda x: (-x.so_luot, THU_TU_KENH.index(x.kenh)))
+    return ds_kenh, top_nguon
+
+
+def _top_nguon(ngay_dau: date) -> list[NguonOut]:
+    """Top 20 tên miền dẫn người tới. Bỏ `""` — nó đi vào `_so_truc_tiep`."""
+    return _theo_kenh_nguon(ngay_dau, 0)[1]
 
 
 def _so_truc_tiep(ngay_dau: date) -> int:
@@ -300,18 +386,10 @@ def _so_truc_tiep(ngay_dau: date) -> int:
     return _nguoi_tu(ngay_dau).filter(nguon="").count()
 
 
-def _top_tu_khoa(ngay_dau: date) -> list[TopTuKhoaOut]:
-    """Top 20 từ khóa tìm kiếm khi người dùng vào từ các trang search hoặc tìm kiếm nội bộ.
-
-    Gồm:
-    1. Các lượt có từ khóa hợp lệ (tu_khoa != "")
-    2. Các lượt đến từ công cụ tìm kiếm nhưng bị ẩn từ khóa qua SSL (tu_khoa == "" và la_trang_search(nguon))
-
-    Sắp theo lượt giảm dần rồi theo từ khóa và nguồn (tất định).
-    """
+def _thong_ke_tu_khoa(ngay_dau: date) -> tuple[list[TopTuKhoaOut], int]:
+    """Top 20 từ khóa tìm kiếm và số lượt từ khóa bị ẩn trong 1 lần duyệt."""
     gop: dict[tuple[str, str], int] = {}
 
-    # 1. Hàng có từ khóa hợp lệ
     hang_co_tk = (
         _nguoi_tu(ngay_dau)
         .exclude(tu_khoa="")
@@ -324,39 +402,34 @@ def _top_tu_khoa(ngay_dau: date) -> list[TopTuKhoaOut]:
             key = (chuan, h["nguon"])
             gop[key] = gop.get(key, 0) + h["_so"]
 
-    # 2. Hàng đến từ các công cụ tìm kiếm nhưng từ khóa bị ẩn
-    hang_an = (
+    hang_an = list(
         _nguoi_tu(ngay_dau)
         .filter(tu_khoa="")
         .exclude(nguon="")
         .values("nguon")
         .annotate(_so=Count("pk"))
     )
+    so_tu_khoa_an = sum(h["_so"] for h in hang_an if la_trang_search(h["nguon"]))
+
     for h in hang_an:
         if la_trang_search(h["nguon"]):
             key = ("(từ khóa ẩn)", h["nguon"])
             gop[key] = gop.get(key, 0) + h["_so"]
 
     xep = sorted(gop.items(), key=lambda x: (-x[1], x[0][0], x[0][1]))
-    return [
+    top_tu_khoa = [
         TopTuKhoaOut(tu_khoa=tk, nguon=ng, so_luot=so)
         for (tk, ng), so in xep[:SO_TOP]
     ]
+    return top_tu_khoa, so_tu_khoa_an
+
+
+def _top_tu_khoa(ngay_dau: date) -> list[TopTuKhoaOut]:
+    return _thong_ke_tu_khoa(ngay_dau)[0]
 
 
 def _so_tu_khoa_an(ngay_dau: date) -> int:
-    """Lượt người đến từ các trang search nhưng từ khóa bị ẩn / không gửi (tu_khoa="").
-
-    Ví dụ: Google qua SSL mặc định không gửi query param trong Referer.
-    """
-    cac_nguon = (
-        _nguoi_tu(ngay_dau)
-        .filter(tu_khoa="")
-        .exclude(nguon="")
-        .values("nguon")
-        .annotate(_so=Count("pk"))
-    )
-    return sum(h["_so"] for h in cac_nguon if la_trang_search(h["nguon"]))
+    return _thong_ke_tu_khoa(ngay_dau)[1]
 
 
 def _theo_cot(ngay_dau: date, cot: str) -> list[MucSoLuotOut]:
@@ -376,50 +449,272 @@ def _theo_cot(ngay_dau: date, cot: str) -> list[MucSoLuotOut]:
     return [MucSoLuotOut(ten=h[cot], so_luot=h["_so"]) for h in hang]
 
 
-def _top_quoc_gia(ngay_dau: date) -> list[TopQuocGiaOut]:
-    """Top 20 quốc gia có lượt truy cập nhiều nhất (người + bot), bỏ ô rỗng."""
+def _thong_ke_quoc_gia(
+    ngay_dau: date,
+) -> tuple[list[TopQuocGiaOut], list[MucSoLuotOut], list[MucSoLuotOut], int]:
+    """Thống kê quốc gia (tổng, người, bot và số ẩn) chỉ trong 1 câu GROUP BY."""
     hang = (
         _tho_tu(ngay_dau)
-        .exclude(quoc_gia="")
         .values("quoc_gia")
         .annotate(**_DEM_TACH)
         .order_by()
     )
-    xep = sorted(hang, key=lambda x: (-(x["_nguoi"] + x["_bot"]), x["quoc_gia"]))
-    return [
+    so_quoc_gia_an = 0
+    co_qg: list[tuple[str, int, int]] = []
+    for h in hang:
+        qg = h["quoc_gia"]
+        nguoi = h["_nguoi"]
+        bot = h["_bot"]
+        if qg == "":
+            so_quoc_gia_an += nguoi + bot
+        else:
+            co_qg.append((qg, nguoi, bot))
+
+    xep_tong = sorted(co_qg, key=lambda x: (-(x[1] + x[2]), x[0]))
+    top_quoc_gia = [
         TopQuocGiaOut(
-            quoc_gia=h["quoc_gia"],
-            so_luot_nguoi=h["_nguoi"],
-            so_luot_bot=h["_bot"],
-            so_luot=h["_nguoi"] + h["_bot"],
+            quoc_gia=q,
+            so_luot_nguoi=n,
+            so_luot_bot=b,
+            so_luot=n + b,
         )
-        for h in xep[:SO_TOP]
+        for q, n, b in xep_tong[:SO_TOP]
     ]
+
+    xep_nguoi = sorted([x for x in co_qg if x[1] > 0], key=lambda x: (-x[1], x[0]))
+    top_quoc_gia_nguoi = [
+        MucSoLuotOut(ten=q, so_luot=n) for q, n, _ in xep_nguoi[:SO_TOP]
+    ]
+
+    xep_bot = sorted([x for x in co_qg if x[2] > 0], key=lambda x: (-x[2], x[0]))
+    top_quoc_gia_bot = [
+        MucSoLuotOut(ten=q, so_luot=b) for q, _, b in xep_bot[:SO_TOP]
+    ]
+
+    return top_quoc_gia, top_quoc_gia_nguoi, top_quoc_gia_bot, so_quoc_gia_an
+
+
+def _top_quoc_gia(ngay_dau: date) -> list[TopQuocGiaOut]:
+    return _thong_ke_quoc_gia(ngay_dau)[0]
 
 
 def _top_quoc_gia_nguoi(ngay_dau: date) -> list[MucSoLuotOut]:
-    """Top 20 quốc gia của hàng NGƯỜI, bỏ ô rỗng (không rõ)."""
-    hang = (
-        _nguoi_tu(ngay_dau)
-        .exclude(quoc_gia="")
-        .values("quoc_gia")
-        .annotate(_so=Count("pk"))
-        .order_by("-_so", "quoc_gia")[:SO_TOP]
-    )
-    return [MucSoLuotOut(ten=h["quoc_gia"], so_luot=h["_so"]) for h in hang]
+    return _thong_ke_quoc_gia(ngay_dau)[1]
 
 
 def _top_quoc_gia_bot(ngay_dau: date) -> list[MucSoLuotOut]:
-    """Top 20 quốc gia xuất xứ của BOT, bỏ ô rỗng (không rõ)."""
+    return _thong_ke_quoc_gia(ngay_dau)[2]
+
+
+def _ky_truoc(khoang: str, hom_nay: date) -> LuotXemKyTruocOut | None:
+    """Số liệu kỳ trước liền kề cùng độ dài (chỉ hỗ trợ khoảng 7 và 30 ngày)."""
+    if khoang not in ("7", "30"):
+        return None
+    so_ngay = SO_NGAY_KHOANG[khoang]
+    ngay_cuoi_kt = hom_nay - timedelta(days=so_ngay)
+    ngay_dau_kt = ngay_cuoi_kt - timedelta(days=so_ngay - 1)
+    luc_dau = _nua_dem_vn(ngay_dau_kt)
+    luc_cuoi = _nua_dem_vn(ngay_cuoi_kt + timedelta(days=1))
+
+    qs = LuotXem.objects.filter(luc__gte=luc_dau, luc__lt=luc_cuoi)
+    agg = qs.aggregate(
+        nguoi=Count("pk", filter=Q(la_bot=False)),
+        bot=Count("pk", filter=Q(la_bot=True)),
+    )
+    so_nguoi = agg["nguoi"] or 0
+    so_bot = agg["bot"] or 0
+
+    hang_khach = (
+        qs.annotate(_ngay=TruncDate("luc", tzinfo=TZ_VN))
+        .values("_ngay")
+        .annotate(
+            _thieu=Count("pk", filter=Q(la_bot=False) & Q(khach="")),
+            _khach=Count("khach", distinct=True, filter=Q(la_bot=False) & ~Q(khach="")),
+        )
+        .order_by()
+    )
+    so_khach = sum(h["_khach"] for h in hang_khach if h["_thieu"] == 0)
+
+    return LuotXemKyTruocOut(
+        so_luot=so_nguoi + so_bot,
+        so_luot_nguoi=so_nguoi,
+        so_luot_bot=so_bot,
+        so_khach=so_khach,
+    )
+
+
+def _chi_so_doc_gia(ngay_dau: date, so_quoc_gia_an: int) -> ChiSoDocGiaOut:
+    """Các chỉ số chiều sâu và cơ cấu độc giả."""
+    qs_nguoi = _nguoi_tu(ngay_dau)
+    so_luot_dang_nhap = qs_nguoi.filter(da_dang_nhap=True).count()
+
+    hang_kdn = (
+        qs_nguoi.annotate(_ngay=TruncDate("luc", tzinfo=TZ_VN))
+        .values("_ngay")
+        .annotate(
+            _khach=Count(
+                "khach", distinct=True, filter=Q(da_dang_nhap=True) & ~Q(khach="")
+            )
+        )
+        .order_by()
+    )
+    so_khach_dang_nhap = sum(h["_khach"] for h in hang_kdn)
+
+    so_khach_doc_sau = (
+        qs_nguoi.exclude(khach="")
+        .annotate(_ngay=TruncDate("luc", tzinfo=TZ_VN))
+        .values("_ngay", "khach")
+        .annotate(_c=Count("pk"))
+        .filter(_c__gte=2)
+        .count()
+    )
+
+    return ChiSoDocGiaOut(
+        so_luot_dang_nhap=so_luot_dang_nhap,
+        so_khach_dang_nhap=so_khach_dang_nhap,
+        so_khach_doc_sau=so_khach_doc_sau,
+        so_quoc_gia_an=so_quoc_gia_an,
+    )
+
+
+def _theo_gio(ngay_dau: date) -> list[LuotXemGioOut]:
+    """Phân bổ 24 khung giờ trong ngày (giờ VN)."""
     hang = (
         _tho_tu(ngay_dau)
-        .filter(la_bot=True)
-        .exclude(quoc_gia="")
-        .values("quoc_gia")
-        .annotate(_so=Count("pk"))
-        .order_by("-_so", "quoc_gia")[:SO_TOP]
+        .annotate(_gio=ExtractHour("luc", tzinfo=TZ_VN))
+        .values("_gio")
+        .annotate(**_DEM_TACH)
+        .order_by()
     )
-    return [MucSoLuotOut(ten=h["quoc_gia"], so_luot=h["_so"]) for h in hang]
+    map_gio = {h["_gio"]: (h["_nguoi"], h["_bot"]) for h in hang}
+    return [
+        LuotXemGioOut(
+            gio=g,
+            so_luot_nguoi=map_gio.get(g, (0, 0))[0],
+            so_luot_bot=map_gio.get(g, (0, 0))[1],
+        )
+        for g in range(24)
+    ]
+
+
+def _phan_loai_duong_dan(d: str) -> str:
+    if d == "/":
+        return "trang_chu"
+    if d.startswith("/m/"):
+        return "bai_viet"
+    if d.startswith("/s/"):
+        return "chuyen_muc"
+    if d.startswith("/u/"):
+        return "ho_so"
+    if d == "/tim-kiem" or d.startswith("/tim-kiem/"):
+        return "tim_kiem"
+    return "khac"
+
+
+def _theo_khu_vuc(gop: dict[str, tuple[int, int]]) -> list[KhuVucOut]:
+    """Phân loại khu vực site từ dict tổng hợp đường dẫn (0 query DB)."""
+    dem: dict[str, list[int]] = {kv: [0, 0] for kv in THU_TU_KHU_VUC}
+    for d, (n, b) in gop.items():
+        kv = _phan_loai_duong_dan(d)
+        dem[kv][0] += n
+        dem[kv][1] += b
+
+    ket_qua = []
+    for kv in THU_TU_KHU_VUC:
+        n, b = dem[kv]
+        tong = n + b
+        if tong > 0:
+            ket_qua.append(
+                KhuVucOut(
+                    khu_vuc=kv,
+                    so_luot_nguoi=n,
+                    so_luot_bot=b,
+                    so_luot=tong,
+                )
+            )
+    ket_qua.sort(key=lambda x: (-x.so_luot, THU_TU_KHU_VUC.index(x.khu_vuc)))
+    return ket_qua
+
+
+def _top_duong_dan_pro(
+    top_20: list[TopDuongDanOut], ngay_dau_thong_ke: date
+) -> list[TopDuongDanProOut]:
+    """Làm giàu ngữ cảnh bài viết / chuyên mục và đếm khách duy nhất cho top đường dẫn."""
+    if not top_20:
+        return []
+
+    ds_dd = [d.duong_dan for d in top_20]
+    hang_khach = (
+        _tho_tu(ngay_dau_thong_ke)
+        .filter(duong_dan__in=ds_dd, la_bot=False)
+        .exclude(khach="")
+        .values("duong_dan")
+        .annotate(_khach=Count("khach", distinct=True))
+        .order_by()
+    )
+    map_khach = {h["duong_dan"]: h["_khach"] for h in hang_khach}
+
+    mach_ids: list[int] = []
+    sub_slugs: list[str] = []
+    for d in ds_dd:
+        m_mach = RE_MACH.match(d)
+        if m_mach:
+            mach_ids.append(int(m_mach.group(1)))
+        m_sub = RE_SUB.match(d)
+        if m_sub:
+            sub_slugs.append(m_sub.group(1))
+
+    mach_map: dict[int, tuple[str, str]] = {}
+    if mach_ids:
+        for m in (
+            Mach.objects.filter(pk__in=mach_ids)
+            .select_related("sub")
+            .values("id", "title", "sub__slug")
+        ):
+            mach_map[m["id"]] = (m["title"], m["sub__slug"] or "")
+
+    sub_map: dict[str, str] = {}
+    if sub_slugs:
+        for s in Sub.objects.filter(slug__in=sub_slugs).values("slug", "ten"):
+            sub_map[s["slug"]] = s["ten"]
+
+    res: list[TopDuongDanProOut] = []
+    for d in top_20:
+        loai = _phan_loai_duong_dan(d.duong_dan)
+        mach_id: int | None = None
+        sub_slug = ""
+        m_mach = RE_MACH.match(d.duong_dan)
+        m_sub = RE_SUB.match(d.duong_dan)
+
+        if m_mach:
+            mach_id = int(m_mach.group(1))
+            if mach_id in mach_map:
+                tieu_de, sub_slug = mach_map[mach_id]
+            else:
+                tieu_de = f"Bài viết #{mach_id}"
+        elif m_sub:
+            sub_slug = m_sub.group(1)
+            tieu_de = sub_map.get(sub_slug, f"Chuyên mục {sub_slug}")
+        elif d.duong_dan in NHAN_TRANG_TINH:
+            tieu_de = NHAN_TRANG_TINH[d.duong_dan]
+        elif d.duong_dan.startswith("/u/"):
+            tieu_de = f"Hồ sơ {d.duong_dan[3:]}"
+        else:
+            tieu_de = d.duong_dan
+
+        res.append(
+            TopDuongDanProOut(
+                duong_dan=d.duong_dan,
+                so_luot_nguoi=d.so_luot_nguoi,
+                so_luot_bot=d.so_luot_bot,
+                so_khach=map_khach.get(d.duong_dan, 0),
+                loai=loai,
+                tieu_de=tieu_de,
+                mach_id=mach_id,
+                sub_slug=sub_slug,
+            )
+        )
+    return res
 
 
 def _khach_tho(ngay_dau: date | None) -> dict[date, int | None]:
@@ -662,6 +957,25 @@ def luot_xem(request, response: HttpResponse, khoang: str = "30"):
 
     theo_ten_bot = _bot_theo_ten(ngay_dau_chi_tiet)
 
+    so_truc_tiep_val = _so_truc_tiep(ngay_dau_chi_tiet)
+    theo_kenh_nguon, top_nguon = _theo_kenh_nguon(ngay_dau_chi_tiet, so_truc_tiep_val)
+    top_tu_khoa, so_tu_khoa_an = _thong_ke_tu_khoa(ngay_dau_chi_tiet)
+    (
+        top_quoc_gia,
+        top_quoc_gia_nguoi,
+        top_quoc_gia_bot,
+        so_quoc_gia_an,
+    ) = _thong_ke_quoc_gia(ngay_dau_chi_tiet)
+    chi_so_doc_gia = _chi_so_doc_gia(ngay_dau_chi_tiet, so_quoc_gia_an)
+    theo_gio = _theo_gio(ngay_dau_chi_tiet)
+    theo_khu_vuc = _theo_khu_vuc(gop)
+    top_duong_dan = _top(gop)
+    top_duong_dan_pro = _top_duong_dan_pro(
+        top_duong_dan,
+        ngay_dau if khoang != KHOANG_TAT_CA else ngay_dau_chi_tiet,
+    )
+    ky_truoc = _ky_truoc(khoang, hom_nay)
+
     return LuotXemOut(
         khoang=khoang,
         tong=LuotXemTongOut(
@@ -675,19 +989,25 @@ def luot_xem(request, response: HttpResponse, khoang: str = "30"):
             so_hom_nay=so_hom_nay,
         ),
         chuoi_ngay=_chuoi(theo_ngay, hom_nay, so_o, khach_cua),
-        top_duong_dan=_top(gop),
-        top_quoc_gia=_top_quoc_gia(ngay_dau_chi_tiet),
+        top_duong_dan=top_duong_dan,
+        top_quoc_gia=top_quoc_gia,
         top_bot=_top_bot(theo_ten_bot),
         theo_nhom_bot=_theo_nhom_bot(theo_ten_bot),
-        top_nguon=_top_nguon(ngay_dau_chi_tiet),
-        so_truc_tiep=_so_truc_tiep(ngay_dau_chi_tiet),
-        top_tu_khoa=_top_tu_khoa(ngay_dau_chi_tiet),
-        so_tu_khoa_an=_so_tu_khoa_an(ngay_dau_chi_tiet),
+        top_nguon=top_nguon,
+        so_truc_tiep=so_truc_tiep_val,
+        top_tu_khoa=top_tu_khoa,
+        so_tu_khoa_an=so_tu_khoa_an,
         trinh_duyet=_theo_cot(ngay_dau_chi_tiet, "trinh_duyet"),
         thiet_bi=_theo_cot(ngay_dau_chi_tiet, "thiet_bi"),
-        top_quoc_gia_nguoi=_top_quoc_gia_nguoi(ngay_dau_chi_tiet),
-        top_quoc_gia_bot=_top_quoc_gia_bot(ngay_dau_chi_tiet),
+        top_quoc_gia_nguoi=top_quoc_gia_nguoi,
+        top_quoc_gia_bot=top_quoc_gia_bot,
         chi_tiet_chi_90_ngay=chi_tiet_chi_90_ngay,
+        ky_truoc=ky_truoc,
+        chi_so_doc_gia=chi_so_doc_gia,
+        theo_gio=theo_gio,
+        theo_khu_vuc=theo_khu_vuc,
+        theo_kenh_nguon=theo_kenh_nguon,
+        top_duong_dan_pro=top_duong_dan_pro,
     )
 
 

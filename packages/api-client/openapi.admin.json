@@ -516,6 +516,35 @@
         "title": "ChanDoanTimKiemOut",
         "type": "object"
       },
+      "ChiSoDocGiaOut": {
+        "description": "Các chỉ số chiều sâu và cơ cấu độc giả.",
+        "properties": {
+          "so_khach_dang_nhap": {
+            "title": "So Khach Dang Nhap",
+            "type": "integer"
+          },
+          "so_khach_doc_sau": {
+            "title": "So Khach Doc Sau",
+            "type": "integer"
+          },
+          "so_luot_dang_nhap": {
+            "title": "So Luot Dang Nhap",
+            "type": "integer"
+          },
+          "so_quoc_gia_an": {
+            "title": "So Quoc Gia An",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "so_luot_dang_nhap",
+          "so_khach_dang_nhap",
+          "so_khach_doc_sau",
+          "so_quoc_gia_an"
+        ],
+        "title": "ChiSoDocGiaOut",
+        "type": "object"
+      },
       "DatAnIn": {
         "description": "Body của mọi endpoint ẩn/gỡ ẩn.\n\n**Một endpoint đặt-trạng-thái thay vì hai endpoint `hide`/`unhide`** — hai chiều nhận\ncùng bộ đầu vào, nên tách ra chỉ nhân đôi số chỗ phải kiểm quyền. Và nó **idempotent**:\ngửi `an=true` hai lần cho ra cùng một trạng thái.",
         "properties": {
@@ -740,6 +769,25 @@
         "title": "HenGioMachIn",
         "type": "object"
       },
+      "KenhNguonOut": {
+        "description": "Phân bổ nguồn truy cập theo kênh dẫn.",
+        "properties": {
+          "kenh": {
+            "title": "Kenh",
+            "type": "string"
+          },
+          "so_luot": {
+            "title": "So Luot",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "kenh",
+          "so_luot"
+        ],
+        "title": "KenhNguonOut",
+        "type": "object"
+      },
       "KetQuaDoiTrangThaiOut": {
         "description": "Kết quả CHUNG của mọi hành động moderation bật/tắt một trạng thái.\n\nHai trường, và cả hai đều cần:\n\n- `da_doi` — hành động này có đổi gì không. Bấm \"ẩn\" lần thứ hai trả `false`, và đó\n  **không** phải lỗi: `core/ghi.py` cố ý không reset `hidden_at` (mất mốc thời gian\n  moderation thật) và không đẻ dòng `AuditLog` thứ hai. UI đọc trường này để không\n  báo \"đã ẩn xong\" cho một cú bấm chẳng làm gì;\n- `dang_bat` — trạng thái SAU khi gọi. Đây là thứ UI vẽ, và nó đúng ở cả hai nhánh\n  của `da_doi` — nên hai mod bấm cùng lúc vẫn thấy cùng một màn hình.",
         "properties": {
@@ -948,6 +996,35 @@
         "title": "KhachOnlineOut",
         "type": "object"
       },
+      "KhuVucOut": {
+        "description": "Lượt xem theo phân loại khu vực nội dung site.",
+        "properties": {
+          "khu_vuc": {
+            "title": "Khu Vuc",
+            "type": "string"
+          },
+          "so_luot": {
+            "title": "So Luot",
+            "type": "integer"
+          },
+          "so_luot_bot": {
+            "title": "So Luot Bot",
+            "type": "integer"
+          },
+          "so_luot_nguoi": {
+            "title": "So Luot Nguoi",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "khu_vuc",
+          "so_luot_nguoi",
+          "so_luot_bot",
+          "so_luot"
+        ],
+        "title": "KhuVucOut",
+        "type": "object"
+      },
       "LoiOut": {
         "description": "`{detail, code}` — PLAN mục 7.",
         "properties": {
@@ -992,6 +1069,59 @@
         "title": "LoiThoiGianOut",
         "type": "object"
       },
+      "LuotXemGioOut": {
+        "description": "Phân bổ lượt xem theo khung giờ trong ngày.",
+        "properties": {
+          "gio": {
+            "title": "Gio",
+            "type": "integer"
+          },
+          "so_luot_bot": {
+            "title": "So Luot Bot",
+            "type": "integer"
+          },
+          "so_luot_nguoi": {
+            "title": "So Luot Nguoi",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "gio",
+          "so_luot_nguoi",
+          "so_luot_bot"
+        ],
+        "title": "LuotXemGioOut",
+        "type": "object"
+      },
+      "LuotXemKyTruocOut": {
+        "description": "Số liệu kỳ trước liền kề để so sánh tăng trưởng.",
+        "properties": {
+          "so_khach": {
+            "title": "So Khach",
+            "type": "integer"
+          },
+          "so_luot": {
+            "title": "So Luot",
+            "type": "integer"
+          },
+          "so_luot_bot": {
+            "title": "So Luot Bot",
+            "type": "integer"
+          },
+          "so_luot_nguoi": {
+            "title": "So Luot Nguoi",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "so_luot",
+          "so_luot_nguoi",
+          "so_luot_bot",
+          "so_khach"
+        ],
+        "title": "LuotXemKyTruocOut",
+        "type": "object"
+      },
       "LuotXemNgayOut": {
         "description": "Một ô của biểu đồ cột. Ngày KHÔNG có lượt xem nào vẫn có mặt, với hai số 0.",
         "properties": {
@@ -1032,6 +1162,9 @@
       "LuotXemOut": {
         "description": "Toàn bộ số liệu của trang `/luot-xem` cho MỘT khoảng.",
         "properties": {
+          "chi_so_doc_gia": {
+            "$ref": "#/components/schemas/ChiSoDocGiaOut"
+          },
           "chi_tiet_chi_90_ngay": {
             "title": "Chi Tiet Chi 90 Ngay",
             "type": "boolean"
@@ -1047,6 +1180,16 @@
             "title": "Khoang",
             "type": "string"
           },
+          "ky_truoc": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LuotXemKyTruocOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "so_truc_tiep": {
             "title": "So Truc Tiep",
             "type": "integer"
@@ -1054,6 +1197,27 @@
           "so_tu_khoa_an": {
             "title": "So Tu Khoa An",
             "type": "integer"
+          },
+          "theo_gio": {
+            "items": {
+              "$ref": "#/components/schemas/LuotXemGioOut"
+            },
+            "title": "Theo Gio",
+            "type": "array"
+          },
+          "theo_kenh_nguon": {
+            "items": {
+              "$ref": "#/components/schemas/KenhNguonOut"
+            },
+            "title": "Theo Kenh Nguon",
+            "type": "array"
+          },
+          "theo_khu_vuc": {
+            "items": {
+              "$ref": "#/components/schemas/KhuVucOut"
+            },
+            "title": "Theo Khu Vuc",
+            "type": "array"
           },
           "theo_nhom_bot": {
             "items": {
@@ -1084,6 +1248,13 @@
               "$ref": "#/components/schemas/TopDuongDanOut"
             },
             "title": "Top Duong Dan",
+            "type": "array"
+          },
+          "top_duong_dan_pro": {
+            "items": {
+              "$ref": "#/components/schemas/TopDuongDanProOut"
+            },
+            "title": "Top Duong Dan Pro",
             "type": "array"
           },
           "top_nguon": {
@@ -1145,7 +1316,12 @@
           "thiet_bi",
           "top_quoc_gia_nguoi",
           "top_quoc_gia_bot",
-          "chi_tiet_chi_90_ngay"
+          "chi_tiet_chi_90_ngay",
+          "chi_so_doc_gia",
+          "theo_gio",
+          "theo_khu_vuc",
+          "theo_kenh_nguon",
+          "top_duong_dan_pro"
         ],
         "title": "LuotXemOut",
         "type": "object"
@@ -2553,6 +2729,61 @@
           "so_luot_bot"
         ],
         "title": "TopDuongDanOut",
+        "type": "object"
+      },
+      "TopDuongDanProOut": {
+        "description": "Thông tin chi tiết đường dẫn xem nhiều nhất kèm ngữ cảnh và số khách.",
+        "properties": {
+          "duong_dan": {
+            "title": "Duong Dan",
+            "type": "string"
+          },
+          "loai": {
+            "title": "Loai",
+            "type": "string"
+          },
+          "mach_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mach Id"
+          },
+          "so_khach": {
+            "title": "So Khach",
+            "type": "integer"
+          },
+          "so_luot_bot": {
+            "title": "So Luot Bot",
+            "type": "integer"
+          },
+          "so_luot_nguoi": {
+            "title": "So Luot Nguoi",
+            "type": "integer"
+          },
+          "sub_slug": {
+            "default": "",
+            "title": "Sub Slug",
+            "type": "string"
+          },
+          "tieu_de": {
+            "title": "Tieu De",
+            "type": "string"
+          }
+        },
+        "required": [
+          "duong_dan",
+          "so_luot_nguoi",
+          "so_luot_bot",
+          "so_khach",
+          "loai",
+          "tieu_de"
+        ],
+        "title": "TopDuongDanProOut",
         "type": "object"
       },
       "TopQuocGiaOut": {
