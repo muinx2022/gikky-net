@@ -379,6 +379,8 @@ export default function TrangLuotXem() {
 
           {/* Dải 3 Thẻ Chỉ số Chuyên sâu (Pro Insights) */}
           {(() => {
+            const soNgayGio =
+              so_lieu.khoang === "7" ? 7 : so_lieu.khoang === "30" ? 30 : 90;
             const soTrangMoiKhach =
               so_lieu.tong.so_khach > 0
                 ? (so_lieu.tong.so_luot_nguoi / so_lieu.tong.so_khach).toFixed(1)
@@ -423,14 +425,14 @@ export default function TrangLuotXem() {
                   <span className="block text-sm text-muc-mo">Khung giờ cao điểm</span>
                   <span className="mt-1 block text-2xl font-semibold tabular-nums">
                     {gioCaoDiem
-                      ? `${gioCaoDiem.gio.toString().padStart(2, "0")}h – ${(gioCaoDiem.gio + 1)
+                      ? `${gioCaoDiem.gio.toString().padStart(2, "0")}:00 – ${(gioCaoDiem.gio + 1)
                           .toString()
-                          .padStart(2, "0")}h`
+                          .padStart(2, "0")}:00`
                       : "—"}
                   </span>
                   <span className="mt-0.5 block text-xs text-muc-mo">
                     {gioCaoDiem
-                      ? `${gioCaoDiem.so_luot_nguoi.toLocaleString("vi-VN")} lượt người đọc`
+                      ? `TB ${Math.max(1, Math.round(gioCaoDiem.so_luot_nguoi / soNgayGio)).toLocaleString("vi-VN")} lượt người/ngày · Tổng ${gioCaoDiem.so_luot_nguoi.toLocaleString("vi-VN")} lượt (${soNgayGio} ngày)`
                       : "Chưa ghi nhận"}
                   </span>
                 </div>
@@ -516,30 +518,98 @@ export default function TrangLuotXem() {
               )}
             </The>
 
-            <The
-              tieu_de="Khung giờ trong ngày"
-              pham_vi="00h – 23h (giờ VN)"
-              className="p-4"
-            >
-              <div className="mt-3">
-                <CotChong
-                  nhan={so_lieu.theo_gio.map((g) => `${g.gio.toString().padStart(2, "0")}h`)}
-                  chuoi={[
-                    {
-                      ten: "Người",
-                      mau: 1,
-                      gia_tri: so_lieu.theo_gio.map((g) => g.so_luot_nguoi),
-                    },
-                    {
-                      ten: "Bot",
-                      mau: 4,
-                      gia_tri: so_lieu.theo_gio.map((g) => g.so_luot_bot),
-                    },
-                  ]}
-                  cao={240}
-                />
-              </div>
-            </The>
+            {(() => {
+              const soNgayGio =
+                so_lieu.khoang === "7" ? 7 : so_lieu.khoang === "30" ? 30 : 90;
+
+              const gioCaoDiem =
+                so_lieu.theo_gio.length > 0
+                  ? so_lieu.theo_gio.reduce(
+                      (max, cur) => (cur.so_luot_nguoi > max.so_luot_nguoi ? cur : max),
+                      so_lieu.theo_gio[0],
+                    )
+                  : null;
+
+              const tbTheoGio = so_lieu.theo_gio.map((g) => ({
+                tbNguoi:
+                  g.so_luot_nguoi > 0
+                    ? Math.max(1, Math.round(g.so_luot_nguoi / soNgayGio))
+                    : 0,
+                tbBot:
+                  g.so_luot_bot > 0
+                    ? Math.max(1, Math.round(g.so_luot_bot / soNgayGio))
+                    : 0,
+              }));
+
+              return (
+                <The
+                  tieu_de="Trung bình theo khung giờ"
+                  pham_vi={`00:00 – 23:59 (giờ VN · TB/ngày trong ${soNgayGio} ngày)`}
+                  goc_phai={
+                    gioCaoDiem && gioCaoDiem.so_luot_nguoi > 0 ? (
+                      <span className="inline-flex items-center rounded-md border border-vien bg-nen-phu px-2 py-0.5 text-xs text-muc-mo">
+                        Cao điểm: {gioCaoDiem.gio.toString().padStart(2, "0")}:00 –{" "}
+                        {(gioCaoDiem.gio + 1).toString().padStart(2, "0")}:00
+                      </span>
+                    ) : undefined
+                  }
+                  className="p-4"
+                >
+                  <div className="mt-3">
+                    <CotChong
+                      nhan={so_lieu.theo_gio.map(
+                        (g) => `${g.gio.toString().padStart(2, "0")}:00`,
+                      )}
+                      nhan_tong="TB / ngày:"
+                      nhan_tooltip={so_lieu.theo_gio.map(
+                        (g) =>
+                          `Khung giờ ${g.gio.toString().padStart(2, "0")}:00 – ${g.gio
+                            .toString()
+                            .padStart(2, "0")}:59`,
+                      )}
+                      phu_tooltip={so_lieu.theo_gio.map((g) => {
+                        const tongKy = g.so_luot_nguoi + g.so_luot_bot;
+                        return `Tích luỹ ${soNgayGio} ngày: ${tongKy.toLocaleString("vi-VN")} lượt (Người: ${g.so_luot_nguoi.toLocaleString("vi-VN")} · Bot: ${g.so_luot_bot.toLocaleString("vi-VN")})`;
+                      })}
+                      chuoi={
+                        gocNhin === "tat_ca"
+                          ? [
+                              {
+                                ten: "Người",
+                                mau: 1,
+                                gia_tri: tbTheoGio.map((t) => t.tbNguoi),
+                              },
+                              {
+                                ten: "Bot",
+                                mau: 4,
+                                gia_tri: tbTheoGio.map((t) => t.tbBot),
+                              },
+                            ]
+                          : gocNhin === "nguoi"
+                          ? [
+                              {
+                                ten: "Người",
+                                mau: 1,
+                                gia_tri: tbTheoGio.map((t) => t.tbNguoi),
+                              },
+                            ]
+                          : [
+                              {
+                                ten: "Bot",
+                                mau: 4,
+                                gia_tri: tbTheoGio.map((t) => t.tbBot),
+                              },
+                            ]
+                      }
+                      cao={240}
+                    />
+                  </div>
+                  <p className="mt-3 text-xs text-muc-mo">
+                    Chiều cao cột thể hiện số lượt xem trung bình mỗi ngày trong từng khung giờ (tính trên {soNgayGio} ngày gần nhất). Di chuột vào từng cột để xem cả mức trung bình/ngày lẫn tổng tích luỹ cả kỳ.
+                  </p>
+                </The>
+              );
+            })()}
           </div>
 
           {/* Sáu bảng chi tiết ⇒ BỐN TAB (2026-09-04). */}

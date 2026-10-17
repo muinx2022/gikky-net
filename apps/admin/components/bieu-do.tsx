@@ -51,6 +51,7 @@ export type TrangThaiHoverCot = {
   cacPhan: { ten: string; mau: 1 | 2 | 3 | 4; giaTri: number }[];
   x: number;
   y: number;
+  phu?: string;
 };
 
 /** Biểu đồ cột xếp chồng (1 cột nhiều màu theo từng chuỗi).
@@ -62,10 +63,16 @@ export function CotChong({
   nhan,
   chuoi,
   cao = 240,
+  nhan_tooltip,
+  nhan_tong = "Tổng:",
+  phu_tooltip,
 }: {
   nhan: string[];
   chuoi: ChuoiSo[];
   cao?: number;
+  nhan_tooltip?: string[];
+  nhan_tong?: string;
+  phu_tooltip?: string[];
 }) {
   const [dangHover, datDangHover] = useState<TrangThaiHoverCot | null>(null);
 
@@ -235,6 +242,7 @@ export function CotChong({
                     cacPhan,
                     x: x_tam,
                     y: cot_y_top,
+                    phu: phu_tooltip?.[i],
                   })
                 }
                 onMouseMove={() =>
@@ -245,6 +253,7 @@ export function CotChong({
                     cacPhan,
                     x: x_tam,
                     y: cot_y_top,
+                    phu: phu_tooltip?.[i],
                   })
                 }
               />
@@ -290,11 +299,13 @@ export function CotChong({
         >
           <div className="space-y-1.5">
             <div className="border-b border-vien pb-1 font-semibold text-muc">
-              Ngày {dangHover.nhan}
+              {nhan_tooltip
+                ? nhan_tooltip[dangHover.ngayIndex] ?? dangHover.nhan
+                : `Ngày ${dangHover.nhan}`}
             </div>
 
             <div className="flex items-center justify-between gap-4 font-bold text-muc">
-              <span>Tổng:</span>
+              <span>{nhan_tong}</span>
               <span className="font-mono text-sm tabular-nums">
                 {dangHover.tong.toLocaleString("vi-VN")}
               </span>
@@ -317,6 +328,12 @@ export function CotChong({
                 </span>
               ))}
             </div>
+
+            {dangHover.phu && (
+              <div className="border-t border-vien pt-1 text-[11px] leading-relaxed text-muc-mo">
+                {dangHover.phu}
+              </div>
+            )}
           </div>
         </div>
       )}
