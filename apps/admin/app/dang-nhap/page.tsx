@@ -1,10 +1,11 @@
 "use client";
 
+import { quanTriToi } from "@gikky/api-client/admin";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Icon } from "../../components/icon";
-import { baoDamCsrf, GOC_ALLAUTH } from "../../lib/api";
+import { baoDamCsrf, GOC_ALLAUTH, GOC_API, thoatPhien } from "../../lib/api";
 import { taoThongTinDangNhap } from "../../lib/dang-nhap";
 import { duongDanQuayLai } from "../../lib/quay-lai";
 import { useTieuDeTrang } from "../../lib/tieu-de";
@@ -93,11 +94,43 @@ export default function TrangDangNhap() {
   // đặt tiêu đề tab.
   useTieuDeTrang("Đăng nhập");
 
+  useEffect(() => {
+    let biHuy = false;
+    async function kiemTraPhien() {
+      try {
+        const { data, error } = await quanTriToi({
+          baseUrl: GOC_API,
+          cache: "no-store",
+        });
+        if (!biHuy && data && !error) {
+          const tiep = new URLSearchParams(window.location.search).get("tiep");
+          window.location.replace(duongDanQuayLai(tiep));
+        }
+      } catch {
+        // nuốt lỗi mạng khi kiểm tra phiên nền
+      }
+    }
+    void kiemTraPhien();
+
+    function onPageShow(e: PageTransitionEvent) {
+      if (e.persisted) {
+        void kiemTraPhien();
+      }
+    }
+    window.addEventListener("pageshow", onPageShow);
+    return () => {
+      biHuy = true;
+      window.removeEventListener("pageshow", onPageShow);
+    };
+  }, []);
+
   async function gui(e: React.FormEvent) {
     e.preventDefault();
     setDangGui(true);
     setKetQua(null);
     try {
+      const tiep = new URLSearchParams(window.location.search).get("tiep");
+      const thongTin = taoThongTinDangNhap(dinh_danh, matKhau);
       const r = await fetch(DUONG_DANG_NHAP_ALLAUTH, {
         method: "POST",
         credentials: "same-origin",
@@ -106,23 +139,44 @@ export default function TrangDangNhap() {
           "X-CSRFToken": await baoDamCsrf(),
           [HEADER_GHI_NHO]: ghiNho ? "1" : "0",
         },
-        body: JSON.stringify(taoThongTinDangNhap(dinh_danh, matKhau)),
+        body: JSON.stringify(thongTin),
       });
       if (r.ok) {
-        // `window.location` chứ không phải `router.push`: cả khu quản trị treo trên
-        // `GET /api/admin/me` gọi một lần lúc mount (`CongQuanTri`), và một điều hướng
-        // client-side giữ nguyên cây React đã mount với kết quả 401 cũ trong state.
-        //
-        // `?tiep=` là chỗ cổng quản trị ghi lại trang người dùng đang đứng lúc bị đẩy ra
-        // (xem `components/cong-quan-tri.tsx`). Nó đi qua `duongDanQuayLai` **bắt buộc** —
-        // đó là dữ liệu trên URL, tức do người ngoài đặt được; docstring `lib/quay-lai.ts`
-        // kể vì sao nhận thẳng là một open redirect mang thương hiệu gikky.
-        //
-        // Đọc `window.location.search` thay vì `useSearchParams()`: giá trị chỉ cần đúng
-        // một lần, ngay tại đây, và `useSearchParams()` đổi lại bằng việc bắt cả cây phải
-        // có `<Suspense>` bao ngoài.
-        const tiep = new URLSearchParams(window.location.search).get("tiep");
-        window.location.href = duongDanQuayLai(tiep);
+        window.location.replace(duongDanQuayLai(tiep));
+        return;
+      }
+      if (r.status === 409) {
+        // 409 "Bạn đang đăng nhập rồi": kiểm tra xem đã là staff chưa
+        const toi = await quanTriToi({
+          baseUrl: GOC_API,
+          cache: "no-store",
+        });
+        if (toi.data && !toi.error) {
+          window.location.replace(duongDanQuayLai(tiep));
+          return;
+        }
+        // Chưa phải staff (phiên cũ của user thường): thoát phiên cũ và thử lại
+        await thoatPhien();
+        const r2 = await fetch(DUONG_DANG_NHAP_ALLAUTH, {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": await baoDamCsrf(),
+            [HEADER_GHI_NHO]: ghiNho ? "1" : "0",
+          },
+          body: JSON.stringify(thongTin),
+        });
+        if (r2.ok) {
+          window.location.replace(duongDanQuayLai(tiep));
+          return;
+        }
+        const than2: unknown = await r2.json().catch(() => null);
+        setKetQua(
+          thongDiepAllauth(than2) ??
+            MAC_DINH[r2.status] ??
+            `Đăng nhập thất bại (HTTP ${r2.status}).`,
+        );
         return;
       }
       const than: unknown = await r.json().catch(() => null);

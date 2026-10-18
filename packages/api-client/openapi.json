@@ -622,6 +622,11 @@
       "DemLuotXemIn": {
         "description": "Thân request. Năm trường, và **bốn trường sau đều có mặc định**.\n\n⚠ **Backward-compatible là BẮT BUỘC, không phải lịch sự.** Deploy không nguyên tử:\ntrong cửa sổ giữa lúc Django mới lên và lúc `apps/web` mới lên, prod đang chạy\nmiddleware CŨ gửi đúng hai trường `{duong_dan, user_agent}`. Bắt buộc `ip`/`referer`\nlà mọi lượt xem trong cửa sổ ấy trả 422 và biến mất — im lặng, vì middleware\n`.catch(() => {})` mọi lỗi. `tests/test_api_dem_luot_xem.py` ghim đúng ca này.",
         "properties": {
+          "chi_ghi_bot": {
+            "default": false,
+            "title": "Chi Ghi Bot",
+            "type": "boolean"
+          },
           "da_dang_nhap": {
             "default": false,
             "title": "Da Dang Nhap",

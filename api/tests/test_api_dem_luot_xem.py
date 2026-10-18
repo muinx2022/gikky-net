@@ -884,4 +884,105 @@ def test_bot_van_ghi_day_du_moi_luot_xem():
     assert LuotXem.objects.filter(duong_dan="/m/bai-viet-1", la_bot=True).count() == 3
 
 
+@pytest.mark.django_db
+@override_settings(DEM_LUOT_XEM_SECRET=SECRET)
+def test_chi_ghi_bot_voi_bot_that_ghi_nhan_luot_xem():
+    """Với chi_ghi_bot=True, bot thật vẫn được ghi nhận vào LuotXem."""
+    r = goi({
+        "duong_dan": "/m/bai-viet-1",
+        "user_agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+        "ip": "66.249.66.1",
+        "chi_ghi_bot": True,
+    })
+    assert r.status_code == 200
+    assert r.json() == {"da_dem": True}
+    assert LuotXem.objects.filter(duong_dan="/m/bai-viet-1", la_bot=True).count() == 1
+
+
+@pytest.mark.django_db
+@override_settings(DEM_LUOT_XEM_SECRET=SECRET)
+def test_chi_ghi_bot_voi_nguoi_dung_that_bo_qua_khong_ghi():
+    """Với chi_ghi_bot=True, client không phải bot nhận diện được sẽ bị bỏ qua (chờ beacon)."""
+    r = goi({
+        "duong_dan": "/m/bai-viet-1",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131",
+        "ip": "1.2.3.4",
+        "chi_ghi_bot": True,
+    })
+    assert r.status_code == 200
+    assert r.json() == {"da_dem": False}
+    assert LuotXem.objects.count() == 0
+
+
+@pytest.mark.django_db
+@override_settings(DEM_LUOT_XEM_SECRET=SECRET)
+def test_beacon_nguoi_dung_that_ghi_nhan_luot_xem():
+    """Với chi_ghi_bot=False (từ beacon client), người dùng thật được ghi nhận bình thường."""
+    r = goi({
+        "duong_dan": "/m/bai-viet-1",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131",
+        "ip": "1.2.3.4",
+        "chi_ghi_bot": False,
+    })
+    assert r.status_code == 200
+    assert r.json() == {"da_dem": True}
+    assert LuotXem.objects.filter(duong_dan="/m/bai-viet-1", la_bot=False).count() == 1
+
+
+@pytest.mark.django_db
+@override_settings(DEM_LUOT_XEM_SECRET=SECRET)
+def test_khu_trung_lap_theo_mach_id_khi_doi_slug():
+    """Khi bài viết đổi slug, lượt xem cùng mach_id trong cửa sổ không bị tính đúp."""
+    from core.models import Mach, Sub, User
+
+    user = User.objects.create_user(username="author_slug_test", password="password123")
+    sub = Sub.objects.create(slug="tin-tuc-test", ten="Tin tức test")
+    mach = Mach.objects.create(
+        sub=sub,
+        author=user,
+        title="Tiêu đề cũ bài viết",
+        slug="tieu-de-cu-bai-viet",
+    )
+    url_cu = f"/m/{mach.slug}-{mach.pk}"
+
+    # Lần 1: Xem bài ở URL cũ
+    r1 = goi({
+        "duong_dan": url_cu,
+        "user_agent": "Mozilla/5.0 Chrome/131",
+        "ip": "10.0.0.1",
+        "chi_ghi_bot": False,
+    })
+    assert r1.status_code == 200
+    assert r1.json() == {"da_dem": True}
+    assert LuotXem.objects.count() == 1
+    mach.refresh_from_db()
+    assert mach.view_count == 1
+
+    # Đổi slug của mạch (ví dụ sửa tiêu đề)
+    mach.slug = "tieu-de-moi-da-sua"
+    mach.title = "Tiêu đề mới đã sửa"
+    mach.save(update_fields=["slug", "title"])
+    url_moi = f"/m/{mach.slug}-{mach.pk}"
+
+    # Lần 2: Người dùng xem ở URL mới trong cùng cửa sổ
+    r2 = goi({
+        "duong_dan": url_moi,
+        "user_agent": "Mozilla/5.0 Chrome/131",
+        "ip": "10.0.0.1",
+        "chi_ghi_bot": False,
+    })
+    assert r2.status_code == 200
+    assert r2.json() == {"da_dem": True}
+
+    # Không sinh thêm hàng LuotXem mới, view_count không tăng thêm
+    assert LuotXem.objects.count() == 1
+    mach.refresh_from_db()
+    assert mach.view_count == 1
+
+    # Đường dẫn trong LuotXem được cập nhật sang URL mới
+    hang = LuotXem.objects.get()
+    assert hang.duong_dan == url_moi
+
+
+
 

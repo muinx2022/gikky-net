@@ -4,13 +4,18 @@ import { demLuotXem } from "@gikky/api-client";
 
 import { API_ORIGIN } from "@/lib/api";
 import {
+  DUONG_DAN_BEACON_CLIENT,
   HEADER_SECRET,
+  duongDanBeacon,
   ipKhach,
+  laBeaconClient,
   nenDem,
   nenDemRequest,
   nenRewrite,
   quocGiaKhach,
+  refererBeacon,
   secretDem,
+  truyVanBeacon,
 } from "@/lib/dem-luot-xem";
 
 /** Middleware của site công khai — **hai việc**, và chúng cố ý không dính vào nhau.
@@ -97,6 +102,7 @@ export const TIEN_TO_PHIEN = "/m-phien";
 
 export function middleware(req: NextRequest, event: NextFetchEvent) {
   const duong_dan = req.nextUrl.pathname;
+  const la_beacon = laBeaconClient(req);
 
   // MỘT phép đọc cookie cho CẢ HAI việc của middleware. Nhánh rewrite đã cần nó từ
   // trước; ô "Online" chỉ chuyển tiếp đúng cái bit ấy sang Django (2026-08-31), không
@@ -105,8 +111,20 @@ export function middleware(req: NextRequest, event: NextFetchEvent) {
   // "đã đăng nhập" trên modal và nhánh dynamic của trang mạch nói ngược nhau.
   const co_cookie_phien = req.cookies.has(COOKIE_PHIEN);
 
+  const duong_dan_dem = la_beacon ? duongDanBeacon(req) : duong_dan;
+  const referer_dem = la_beacon
+    ? refererBeacon(req)
+    : (req.headers.get("referer") ?? "");
+  const truy_van_dem = la_beacon
+    ? truyVanBeacon(req)
+    : (req.nextUrl.search ?? "");
+
   const secret = secretDem();
-  if (secret !== "" && nenDemRequest(req) && nenDem(duong_dan)) {
+  const hop_le = la_beacon
+    ? nenDem(duong_dan_dem)
+    : (nenDemRequest(req) && nenDem(duong_dan));
+
+  if (secret !== "" && hop_le) {
     // KHÔNG `await` — xem docstring. `waitUntil` giữ tiến trình sống cho lời gọi, còn
     // response thì đi ngay.
     event.waitUntil(
@@ -117,7 +135,7 @@ export function middleware(req: NextRequest, event: NextFetchEvent) {
           // `pathname` thôi — **không** query string. Django cắt lần nữa ở đầu bên kia
           // (`chuan_hoa_duong_dan`), nhưng gửi sạch từ đây là để secret không bao giờ
           // đi cạnh một chuỗi có `?` trong log của bất kỳ tầng nào.
-          duong_dan,
+          duong_dan: duong_dan_dem,
           // User-Agent được **gửi để phân loại** (`api/core/bot.py`) và **không được
           // lưu**. Phân loại ở Django vì bảng bot cần một chỗ duy nhất và cần `pytest`
           // chấm được; edge runtime thì không.
@@ -125,10 +143,8 @@ export function middleware(req: NextRequest, event: NextFetchEvent) {
           // IP: **chỉ transit** — Django băm nó với muối của ngày rồi vứt, không có cột
           // nào nhận nó. Xem `ipKhach` và `api/api/dem_luot_xem.py::hash_khach`.
           ip: ipKhach(req),
-          // Referer thô: Django giữ **đúng tên miền** (`chuan_hoa_nguon`). Gửi cả URL từ
-          // đây là có chủ đích — phép cắt sống ở một chỗ, cùng chỗ với danh sách host của
-          // site, thay vì hai bản có thể lệch.
-          referer: req.headers.get("referer") ?? "",
+          // referer: req.headers.get("referer") ?? ""
+          referer: referer_dem,
           // ⚠ Nghĩa CHÍNH XÁC: *request có mang cookie tên `sessionid`*. **Không**
           // validate — edge runtime không có DB, đúng đánh đổi mà nhánh rewrite ngay
           // dưới đã chấp nhận từ trước. Hệ quả: cookie hết hạn vẫn đếm là "đã đăng
@@ -141,10 +157,18 @@ export function middleware(req: NextRequest, event: NextFetchEvent) {
           // Mã quốc gia ISO 3166-1 alpha-2 từ header CF-IPCountry của Cloudflare.
           quoc_gia: quocGiaKhach(req),
           // Query string của URL đích (ví dụ "?q=..." hoặc "?utm_term=...")
-          truy_van: req.nextUrl.search ?? "",
+          truy_van: truy_van_dem,
+          // Cờ lọc bot ở server middleware Next.js: với request thông thường chỉ ghi bot,
+          // chờ beacon client xác nhận người đọc thật.
+          chi_ghi_bot: !la_beacon,
         },
       }).catch(() => {}),
     );
+  }
+
+  // Mọi request tới đường dẫn beacon đều kết thúc ngay tại middleware với HTTP 204 No Content
+  if (duong_dan === DUONG_DAN_BEACON_CLIENT || la_beacon) {
+    return new NextResponse(null, { status: 204 });
   }
 
   if (!nenRewrite(duong_dan, co_cookie_phien)) return NextResponse.next();

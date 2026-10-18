@@ -37,6 +37,12 @@
  */
 export const HEADER_SECRET = "X-Dem-Luot-Xem-Secret";
 
+/** Đường dẫn endpoint nhận tín hiệu beacon từ Client JS. */
+export const DUONG_DAN_BEACON_CLIENT = "/_gk/luot-xem";
+
+/** Header đánh dấu request beacon từ trình duyệt thật. */
+export const HEADER_BEACON_CLIENT = "x-gk-beacon";
+
 /** Trang mạch **một đoạn**: `/m/<slug>-<id>`, không có đường con.
  *
  * `[^/]+` là toàn bộ điểm của biểu thức này. `/m/abc-1/opengraph-image` có dấu `/` thứ
@@ -139,6 +145,8 @@ const KHONG_DEM = [
   // Trang nhắn tin riêng — chặn để không lộ "ai đang nhắn cho ai" trên bảng thống kê 
   // và modal online (P-20260904-2).
   /^\/tin-nhan(?:\/|$)/,
+  // Endpoint beacon của client JS — không đếm chính nó là lượt xem trang
+  /^\/_gk(?:\/|$)/,
   DUOI_TINH,
   ANH_APP_ROUTER,
   DUOI_SCRIPT_RAC,
@@ -338,4 +346,47 @@ export function nenDemRequest(req: {
   if (laPriorityPrefetch(req.headers.get("priority"))) return false;
 
   return true;
+}
+
+/** Nhận diện request có phải là beacon gửi từ Client JS hay không.
+ * Đòi hỏi ĐỒNG THỜI cả đường dẫn beacon VÀ header beacon, cùng kiểm tra sec-fetch-site.
+ */
+export function laBeaconClient(req: {
+  nextUrl?: { pathname: string };
+  headers: { get(ten: string): string | null };
+}): boolean {
+  if (req.nextUrl?.pathname !== DUONG_DAN_BEACON_CLIENT) return false;
+  if (req.headers.get(HEADER_BEACON_CLIENT) !== "1") return false;
+  const site = req.headers.get("sec-fetch-site");
+  if (site !== null && site !== "same-origin") return false;
+  return true;
+}
+
+/** Trích xuất đường dẫn thực tế mà beacon đang báo cáo. */
+export function duongDanBeacon(req: {
+  nextUrl: { searchParams: { get(ten: string): string | null } };
+  headers: { get(ten: string): string | null };
+}): string {
+  const d = req.nextUrl.searchParams.get("d") ?? req.headers.get("x-duong-dan");
+  return d && d.startsWith("/") ? d : "/";
+}
+
+/** Trích xuất referer thực tế mà beacon đang báo cáo. */
+export function refererBeacon(req: {
+  nextUrl: { searchParams: { get(ten: string): string | null } };
+  headers: { get(ten: string): string | null };
+}): string {
+  return (
+    req.nextUrl.searchParams.get("r") ??
+    req.headers.get("x-referer") ??
+    (req.headers.get("referer") ?? "")
+  );
+}
+
+/** Trích xuất query string thực tế mà beacon đang báo cáo. */
+export function truyVanBeacon(req: {
+  nextUrl: { searchParams: { get(ten: string): string | null } };
+  headers: { get(ten: string): string | null };
+}): string {
+  return req.nextUrl.searchParams.get("q") ?? req.headers.get("x-truy-van") ?? "";
 }

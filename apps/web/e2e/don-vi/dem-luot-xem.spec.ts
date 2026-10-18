@@ -3,13 +3,19 @@ import { resolve } from "node:path";
 import { expect, test } from "@playwright/test";
 
 import {
+  DUONG_DAN_BEACON_CLIENT,
   DUONG_DAN_MACH,
+  HEADER_BEACON_CLIENT,
   HEADER_SECRET,
+  duongDanBeacon,
   ipKhach,
+  laBeaconClient,
   nenDem,
   nenDemRequest,
   nenRewrite,
   quocGiaKhach,
+  refererBeacon,
+  truyVanBeacon,
 } from "../../lib/dem-luot-xem";
 import { COOKIE_PHIEN, TIEN_TO_PHIEN } from "../../middleware";
 import { boChuThich, quetNguon } from "./quet";
@@ -512,3 +518,84 @@ test("X7 — quocGiaKhach đọc đúng header cf-ipcountry, chuẩn hóa hoa v�
 test("X8 — Django nhận `quoc_gia` là trường CÓ MẶC ĐỊNH (deploy lệch)", () => {
   expect(doc("api/api/dem_luot_xem.py")).toMatch(/^\s{4}quoc_gia: str = ""$/m);
 });
+
+test("X9 — Django nhận `chi_ghi_bot` là trường CÓ MẶC ĐỊNH (deploy lệch)", () => {
+  expect(doc("api/api/dem_luot_xem.py")).toMatch(/^\s{4}chi_ghi_bot: bool = False$/m);
+});
+
+test("X10 — `DUONG_DAN_BEACON_CLIENT` nằm trong `KHONG_DEM`", () => {
+  expect(nenDem(DUONG_DAN_BEACON_CLIENT)).toBe(false);
+});
+
+test("X11 — `laBeaconClient` đòi ĐỒNG THỜI cả đường beacon và header beacon", () => {
+  // Đầy đủ đường dẫn + header hợp lệ: true
+  expect(
+    laBeaconClient({
+      nextUrl: { pathname: DUONG_DAN_BEACON_CLIENT },
+      headers: { get: (t: string) => (t === HEADER_BEACON_CLIENT ? "1" : null) },
+    }),
+  ).toBe(true);
+
+  // Cùng origin với sec-fetch-site: true
+  expect(
+    laBeaconClient({
+      nextUrl: { pathname: DUONG_DAN_BEACON_CLIENT },
+      headers: {
+        get: (t: string) =>
+          t === HEADER_BEACON_CLIENT ? "1" : t === "sec-fetch-site" ? "same-origin" : null,
+      },
+    }),
+  ).toBe(true);
+
+  // Cross-site: false
+  expect(
+    laBeaconClient({
+      nextUrl: { pathname: DUONG_DAN_BEACON_CLIENT },
+      headers: {
+        get: (t: string) =>
+          t === HEADER_BEACON_CLIENT ? "1" : t === "sec-fetch-site" ? "cross-site" : null,
+      },
+    }),
+  ).toBe(false);
+
+  // Chỉ có đường dẫn mà thiếu header: false
+  expect(
+    laBeaconClient({
+      nextUrl: { pathname: DUONG_DAN_BEACON_CLIENT },
+      headers: { get: () => null },
+    }),
+  ).toBe(false);
+
+  // Chỉ có header mà sai đường dẫn: false
+  expect(
+    laBeaconClient({
+      nextUrl: { pathname: "/m/abc-1" },
+      headers: { get: (t: string) => (t === HEADER_BEACON_CLIENT ? "1" : null) },
+    }),
+  ).toBe(false);
+
+  // Không có gì: false
+  expect(
+    laBeaconClient({
+      nextUrl: { pathname: "/m/abc-1" },
+      headers: { get: () => null },
+    }),
+  ).toBe(false);
+});
+
+test("X12 — duongDanBeacon, refererBeacon, truyVanBeacon trích đúng dữ liệu", () => {
+  const req = {
+    nextUrl: {
+      searchParams: {
+        get: (t: string) =>
+          t === "d" ? "/m/bai-viet-1" : t === "r" ? "https://google.com" : t === "q" ? "?s=test" : null,
+      },
+    },
+    headers: { get: () => null },
+  };
+
+  expect(duongDanBeacon(req)).toBe("/m/bai-viet-1");
+  expect(refererBeacon(req)).toBe("https://google.com");
+  expect(truyVanBeacon(req)).toBe("?s=test");
+});
+

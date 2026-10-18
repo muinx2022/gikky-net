@@ -510,6 +510,10 @@ export type DatTatBinhLuanIn = {
  */
 export type DemLuotXemIn = {
     /**
+     * Chi Ghi Bot
+     */
+    chi_ghi_bot?: boolean;
+    /**
      * Da Dang Nhap
      */
     da_dang_nhap?: boolean;

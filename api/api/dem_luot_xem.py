@@ -70,7 +70,7 @@ from datetime import date, timedelta
 from urllib.parse import urlsplit
 
 from django.conf import settings
-from django.db.models import F
+from django.db.models import F, Q
 from django.utils import timezone
 from ninja import Router, Schema, Status
 from ninja.security import APIKeyHeader
@@ -177,6 +177,9 @@ class DemLuotXemIn(Schema):
     quoc_gia: str = ""
     #: Query string của request (ví dụ "?q=..." hoặc "?utm_term=..."). Mặc định rỗng.
     truy_van: str = ""
+    #: Cờ chỉ ghi nhận nếu là bot (dành cho Next.js server middleware).
+    #: Khi True và request không phải bot, bỏ qua không ghi để đợi Client JS Beacon.
+    chi_ghi_bot: bool = False
 
 
 class DemLuotXemOut(Schema):
@@ -423,8 +426,14 @@ def dem_luot_xem(request, du_lieu: DemLuotXemIn):
         )
         return Status(200, DemLuotXemOut(da_dem=True))
 
+    # Nếu chỉ định chỉ ghi bot (từ server middleware của Next.js cho trang thông thường),
+    # client không phải bot nhận diện được thì bỏ qua không ghi — chờ Client JS Beacon.
+    if du_lieu.chi_ghi_bot:
+        return Status(200, DemLuotXemOut(da_dem=False))
+
     # 2. Nhánh Người dùng: Khử trùng lặp khi F5, tải lại hoặc xem lại cùng một trang
     # trong cửa sổ CUA_SO_LUOT_XEM_MACH_PHUT (mặc định 24 giờ / trong ngày).
+    # Khử trùng lặp theo `mach_id` khi bài viết đổi slug.
     cua_so = timezone.now() - timedelta(minutes=settings.CUA_SO_LUOT_XEM_MACH_PHUT)
     cac_duong = [duong]
     if duong.startswith("/m/"):
@@ -432,10 +441,22 @@ def dem_luot_xem(request, du_lieu: DemLuotXemIn):
     elif duong.startswith("/m-phien/"):
         cac_duong.append(duong.replace("/m-phien/", "/m/", 1))
 
+    m_mach = re.match(r"^/m(?:-phien)?/(?:.*-)?(\d+)$", duong)
+    if m_mach:
+        mach_id = int(m_mach.group(1))
+        bo_loc_duong = (
+            Q(duong_dan__startswith="/m/", duong_dan__endswith=f"-{mach_id}")
+            | Q(duong_dan__startswith="/m-phien/", duong_dan__endswith=f"-{mach_id}")
+            | Q(duong_dan__in=[f"/m/{mach_id}", f"/m-phien/{mach_id}"])
+        )
+    else:
+        mach_id = None
+        bo_loc_duong = Q(duong_dan__in=cac_duong)
+
     da_xem = (
         LuotXem.objects.filter(
+            bo_loc_duong,
             luc__gte=cua_so,
-            duong_dan__in=cac_duong,
             khach=token_khach,
             la_bot=False,
         )
@@ -450,14 +471,18 @@ def dem_luot_xem(request, du_lieu: DemLuotXemIn):
         # (không tạo hàng LuotXem mới và không tăng Mach.view_count).
         # Cập nhật `luc` và `da_dang_nhap` để phản ánh hoạt động mới nhất cho widget Online.
         da_xem.luc = timezone.now()
+        truong_cap_nhat = ["luc"]
+        if da_xem.duong_dan != duong:
+            da_xem.duong_dan = duong
+            truong_cap_nhat.append("duong_dan")
         if du_lieu.da_dang_nhap and not da_xem.da_dang_nhap:
             da_xem.da_dang_nhap = True
-        da_xem.save(update_fields=["luc", "da_dang_nhap"])
+            truong_cap_nhat.append("da_dang_nhap")
+        da_xem.save(update_fields=truong_cap_nhat)
         return Status(200, DemLuotXemOut(da_dem=True))
 
     # Lượt xem mới hợp lệ từ người dùng:
-    if m_mach := re.match(r"^/m(?:-phien)?/(?:.*-)?(\d+)$", duong):
-        mach_id = int(m_mach.group(1))
+    if mach_id is not None:
         Mach.objects.filter(pk=mach_id).update(view_count=F("view_count") + 1)
 
     LuotXem.objects.create(
