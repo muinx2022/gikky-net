@@ -32,4 +32,20 @@ test.describe("chu-ky-binh-luan", () => {
     const css = doc("components/trang-mach.module.css");
     expect(css).toContain(".link_binh_luan");
   });
+
+  test("trang-mach su dung NutChiaSeMach", () => {
+    const tsx = doc("components/trang-mach.tsx");
+    expect(tsx).toMatch(/<NutChiaSeMach\s+duongDan=\{co_ban\}\s+tieuDe=\{mach\.title\}\s*\/>/);
+  });
+
+  test("nut-chia-se-mach co day du cac kenh chia se va dong khi bam ngoai", () => {
+    const tsx = doc("components/nut-chia-se-mach.tsx");
+    expect(tsx).toContain("useDongDetailsKhiBamNgoai");
+    expect(tsx).toContain('data-testid="nut-chia-se-mach"');
+    expect(tsx).toContain('data-testid="chia-se-chep-link"');
+    expect(tsx).toContain('data-testid="chia-se-facebook"');
+    expect(tsx).toContain('data-testid="chia-se-x"');
+    expect(tsx).toContain('data-testid="chia-se-zalo"');
+    expect(tsx).toContain('data-testid="chia-se-telegram"');
+  });
 });

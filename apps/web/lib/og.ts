@@ -1,3 +1,4 @@
+import { Buffer } from "node:buffer";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
@@ -125,6 +126,8 @@ export type DuLieuOg = {
   soOSpine: number;
   /** Mạch đã đóng sổ ⇒ vẽ nhãn "ĐÃ ĐÓNG SỔ". */
   dongSo: boolean;
+  /** Data URL `data:image/jpeg;base64,...` hoặc `data:image/png;base64,...` của ảnh minh họa mạch. */
+  anhSrc?: string | null;
 };
 
 /** Số ô spine tối đa vẽ ra. Mạch 40 mốc mà vẽ 40 ô thì mỗi ô còn 2px — hết là spine, chỉ
@@ -216,4 +219,132 @@ export function ogMach(mach: {
     soOSpine: mach.entry_count >= 2 ? Math.min(mach.entry_count, TRAN_O_SPINE) : 0,
     dongSo: mach.status === "closed",
   };
+}
+
+const RE_IMG_SRC = /<img\b[^>]*\bsrc=["']([^"']+)["']/i;
+
+export function laSrcAnhHopLe(src: string): boolean {
+  const sach = src.trim();
+  if (!sach || sach.includes("..")) return false;
+  if (sach.startsWith("/media/")) return true;
+  try {
+    const u = new URL(sach);
+    return u.pathname.startsWith("/media/") && !u.pathname.includes("..");
+  } catch {
+    return false;
+  }
+}
+
+export function trichUrlAnhMach(mach: {
+  mocs?: readonly {
+    seq?: number;
+    trang_thai?: string;
+    body?: string | null;
+    anhs?: readonly { url: string }[] | null;
+  }[];
+}): string | null {
+  if (!mach.mocs || mach.mocs.length === 0) return null;
+  const sap_xep = [...mach.mocs].sort((a, b) => (a.seq ?? 999) - (b.seq ?? 999));
+  for (const m of sap_xep) {
+    if (m.trang_thai && m.trang_thai !== "binh_thuong") continue;
+    if (m.anhs && m.anhs.length > 0 && m.anhs[0]?.url) {
+      return m.anhs[0].url;
+    }
+    if (m.body) {
+      const khop = RE_IMG_SRC.exec(m.body);
+      if (khop && khop[1] && laSrcAnhHopLe(khop[1])) {
+        return khop[1].trim();
+      }
+    }
+  }
+  return null;
+}
+
+export function bufSangDataUrlOg(buf: Uint8Array): string | null {
+  // JPEG: FF D8 FF
+  if (buf.length > 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) {
+    return `data:image/jpeg;base64,${Buffer.from(buf).toString("base64")}`;
+  }
+  // PNG: 89 50 4E 47
+  if (
+    buf.length > 8 &&
+    buf[0] === 0x89 &&
+    buf[1] === 0x50 &&
+    buf[2] === 0x4e &&
+    buf[3] === 0x47
+  ) {
+    return `data:image/png;base64,${Buffer.from(buf).toString("base64")}`;
+  }
+  return null;
+}
+
+export async function taiAnhOgDataUrl(src: string): Promise<string | null> {
+  const sach = src.trim();
+  if (!sach || sach.includes("..")) return null;
+
+  let pathname = "";
+  if (sach.startsWith("/media/")) {
+    pathname = sach.split("?")[0].split("#")[0];
+  } else {
+    try {
+      const u = new URL(sach);
+      pathname = u.pathname;
+    } catch {
+      return null;
+    }
+  }
+
+  if (!pathname.startsWith("/media/") || pathname.includes("..")) {
+    return null;
+  }
+
+  const apiOrigin = process.env.API_ORIGIN ?? "http://localhost:8000";
+  const siteOrigin = process.env.SITE_ORIGIN ?? "http://localhost:3000";
+
+  let hostCaddy = "localhost:3000";
+  try {
+    hostCaddy = new URL(siteOrigin).host;
+  } catch {
+    // fallback default
+  }
+
+  const ungVien: { url: string; headers: Record<string, string> }[] = [
+    {
+      url: `${apiOrigin.replace(/\/$/, "")}${pathname}`,
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; GikkyOG/1.0)" },
+    },
+    {
+      url: `http://caddy${pathname}`,
+      headers: {
+        Host: hostCaddy,
+        "User-Agent": "Mozilla/5.0 (compatible; GikkyOG/1.0)",
+      },
+    },
+    {
+      url: new URL(pathname, siteOrigin).toString(),
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      },
+    },
+  ];
+
+  for (const { url, headers } of ungVien) {
+    try {
+      const res = await fetch(url, {
+        headers,
+        signal: AbortSignal.timeout(3500),
+      });
+      if (res.ok) {
+        const bytes = new Uint8Array(await res.arrayBuffer());
+        const dataUrl = bufSangDataUrlOg(bytes);
+        if (dataUrl !== null) {
+          return dataUrl;
+        }
+      }
+    } catch {
+      // Thử ứng viên kế tiếp
+    }
+  }
+
+  return null;
 }

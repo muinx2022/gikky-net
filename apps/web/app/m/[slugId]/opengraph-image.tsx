@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { OgThe } from "@/components/og-the";
 import { docMach } from "@/lib/api";
-import { KHUNG_OG, KIEU_OG, docMatChu, ogMach } from "@/lib/og";
+import { KHUNG_OG, KIEU_OG, docMatChu, ogMach, taiAnhOgDataUrl, trichUrlAnhMach } from "@/lib/og";
 import { tachSlugId } from "@/lib/url";
 
 /** Ảnh OG của một mạch — PLAN mục 10 Phase 6: *"OG card tự sinh mỗi mạch (title +
@@ -37,7 +37,9 @@ export default async function AnhOgMach({
   const mach = await docMach(tach.id, "isr");
   if (mach === null) notFound();
 
-  return new ImageResponse(<OgThe du_lieu={ogMach(mach)} />, {
+  const anh_url = trichUrlAnhMach(mach);
+  const anhSrc = anh_url ? await taiAnhOgDataUrl(anh_url) : null;
+  return new ImageResponse(<OgThe du_lieu={{ ...ogMach(mach), anhSrc }} />, {
     ...size,
     fonts: await docMatChu(),
   });

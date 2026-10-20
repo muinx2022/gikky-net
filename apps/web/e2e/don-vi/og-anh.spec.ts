@@ -12,12 +12,15 @@ import {
   THU_MUC_FONT,
   TOKEN_CUA_MAU,
   TRAN_O_SPINE,
+  bufSangDataUrlOg,
   catChu,
   docMatChu,
   ghepDongPhu,
+  laSrcAnhHopLe,
   ogMach,
   ogSub,
   ogTrangChu,
+  trichUrlAnhMach,
 } from "../../lib/og";
 import { boChuThich } from "./quet";
 import { coGlyph, laTtf } from "./ttf";
@@ -103,6 +106,62 @@ test("ogSub và ogTrangChu đều có tiêu đề không rỗng", () => {
   expect(sub.tieuDe).toBe("Crypto");
   expect(sub.dongPhu).toContain("12 mạch");
   expect(ogTrangChu().tieuDe.length).toBeGreaterThan(10);
+});
+
+test("trichUrlAnhMach trích ảnh từ anhs hoặc thẻ img trong body", () => {
+  const mach1 = {
+    mocs: [
+      { seq: 2, anhs: [{ url: "/media/anh2.jpg" }] },
+      { seq: 1, anhs: [{ url: "/media/anh1.jpg" }] },
+    ],
+  };
+  expect(trichUrlAnhMach(mach1)).toBe("/media/anh1.jpg");
+
+  const mach2 = {
+    mocs: [
+      { seq: 1, body: '<p>Nội dung</p><img src="/media/bai-viet/chart.png" alt="" />' },
+    ],
+  };
+  expect(trichUrlAnhMach(mach2)).toBe("/media/bai-viet/chart.png");
+
+  const mach3 = {
+    mocs: [
+      { seq: 1, trang_thai: "an", anhs: [{ url: "/media/an.jpg" }] },
+      { seq: 2, trang_thai: "binh_thuong", anhs: [{ url: "/media/hien.jpg" }] },
+    ],
+  };
+  expect(trichUrlAnhMach(mach3)).toBe("/media/hien.jpg");
+
+  const mach4 = {
+    mocs: [
+      { seq: 1, body: '<img src="https://evil.com/hacker.png" />' },
+      { seq: 2, body: '<img src="/media/../etc/passwd" />' },
+    ],
+  };
+  expect(trichUrlAnhMach(mach4)).toBeNull();
+});
+
+test("laSrcAnhHopLe kiểm tra chính xác src hợp lệ", () => {
+  expect(laSrcAnhHopLe("/media/anh.jpg")).toBe(true);
+  expect(laSrcAnhHopLe("http://localhost:3000/media/anh.png")).toBe(true);
+  expect(laSrcAnhHopLe("/media/../bi-mat.png")).toBe(false);
+  expect(laSrcAnhHopLe("https://ngoai.com/media/anh.jpg")).toBe(true);
+  expect(laSrcAnhHopLe("https://ngoai.com/anh.jpg")).toBe(false);
+  expect(laSrcAnhHopLe("")).toBe(false);
+});
+
+test("bufSangDataUrlOg nhận JPEG/PNG và từ chối WebP hoặc rác", () => {
+  const jpegHeader = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]);
+  const pngHeader = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00]);
+  const webpHeader = new Uint8Array([
+    0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50,
+  ]);
+  const rac = new Uint8Array([0x01, 0x02, 0x03]);
+
+  expect(bufSangDataUrlOg(jpegHeader)?.startsWith("data:image/jpeg;base64,")).toBe(true);
+  expect(bufSangDataUrlOg(pngHeader)?.startsWith("data:image/png;base64,")).toBe(true);
+  expect(bufSangDataUrlOg(webpHeader)).toBeNull();
+  expect(bufSangDataUrlOg(rac)).toBeNull();
 });
 
 /* ---- Lớp 1b: bảng màu không được trôi khỏi globals.css --------------------- */
@@ -227,6 +286,15 @@ test("cùng dữ liệu ⇒ cùng byte (nếu không, ba bài trên nghiệm đ�
   const a = await ve(ogMach(MACH_MAU));
   const b = await ve(ogMach(MACH_MAU));
   expect(a.equals(b)).toBe(true);
+});
+
+test("TRUYỀN anhSrc (PNG minh hoạ) ⇒ ảnh sinh ra KHÁC với khi không có ảnh", async () => {
+  const anh1x1 =
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+  const goc = await ve(ogMach(MACH_MAU));
+  const coAnh = await ve({ ...ogMach(MACH_MAU), anhSrc: anh1x1 });
+  expect(goc.equals(coAnh)).toBe(false);
+  expect(coAnh.subarray(0, 8).toString("hex")).toBe(CHU_KY_PNG);
 });
 
 /* ---- Lớp 4: ba route phải TRUYỀN font vào ImageResponse -------------------- */

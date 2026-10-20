@@ -26,6 +26,7 @@ import { NutTheoMach } from "@/components/nut-theo-mach";
 import { FormBinhLuanProvider } from "@/components/form-binh-luan-ngu-canh";
 import { ChuKyLuotXem } from "@/components/chu-ky-luot-xem";
 import { NutCuonBinhLuan } from "@/components/nut-cuon-binh-luan";
+import { NutChiaSeMach } from "@/components/nut-chia-se-mach";
 import { TheMoc } from "@/components/the-moc";
 
 import { TrangThaiToiProvider } from "@/components/trang-thai-toi";
@@ -439,6 +440,10 @@ export async function TrangMach({
                   ·
                 </span>
                 <NutCuonBinhLuan soBinhLuan={mach.comment_count} />
+                <span className={css.cham} aria-hidden>
+                  ·
+                </span>
+                <NutChiaSeMach duongDan={co_ban} tieuDe={mach.title} />
                 {/* Báo cáo cả BÀI — user chốt 2026-08-25. Trước đó chỉ báo cáo được mốc
                     và bình luận, nên một bài vi phạm ngay từ tiêu đề (hoặc vi phạm ở tổng
                     thể) thì người đọc phải chọn bừa một mốc, và mod nhận báo cáo trỏ sai

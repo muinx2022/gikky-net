@@ -1,5 +1,6 @@
 import type { MachChiTietOut } from "@gikky/api-client";
 
+import { trichUrlAnhMach } from "./og";
 import { urlTuyetDoi } from "./site";
 import { duongDanHoSo, duongDanMach, duongDanSub } from "./url";
 import { trichVanBanThuan } from "./van-ban";
@@ -37,9 +38,13 @@ export function jsonLdMach(mach: MachChiTietOut): Record<string, unknown> {
   }
 
   const anhOg = urlTuyetDoi(`/m/${mach.slug}-${mach.id}/opengraph-image`);
-  const dsAnh = moc_dau?.anhs && moc_dau.anhs.length > 0
-    ? [moc_dau.anhs[0].url, anhOg]
-    : [anhOg];
+  let dsAnh: string[];
+  if (moc_dau?.anhs && moc_dau.anhs.length > 0) {
+    dsAnh = [moc_dau.anhs[0].url, anhOg];
+  } else {
+    const anh_nhung = trichUrlAnhMach(mach);
+    dsAnh = anh_nhung ? [urlTuyetDoi(anh_nhung), anhOg] : [anhOg];
+  }
 
   // Từ khoá phong phú hỗ trợ Semantic SEO & Entity Search
   const danhSachTuKhoa = [
