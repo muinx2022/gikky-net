@@ -207,7 +207,12 @@
   top: calc(var(--cao-chrome) + 14px);
   max-height: calc(100vh - var(--cao-chrome) - 28px);
   overflow-y: auto;
-  scrollbar-gutter: stable;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.rail::-webkit-scrollbar {
+  display: none;
 }
 
 @media (min-width: 961px) {

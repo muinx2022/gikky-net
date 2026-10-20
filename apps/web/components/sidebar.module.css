@@ -1,7 +1,7 @@
 .cot {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 12px;
   min-height: calc(100vh - var(--cao-chrome) - 34px);
 }
 
@@ -24,14 +24,14 @@
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: 6px;
-  padding: 0 18px 16px;
+  padding: 0 14px 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 
 .tieu_de {
   position: relative;
-  margin: 0 -18px 14px;
-  padding: 13px 18px;
+  margin: 0 -14px 10px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--line);
   font-family: var(--f-ui);
   font-size: 14px;
@@ -89,26 +89,28 @@
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 4px;
+  gap: 2px;
 }
 
 .mot_sub,
 .link_chuyen_muc {
   display: flex;
   align-items: baseline;
-  gap: 8px;
-  padding: 8px 10px;
-  border-radius: 6px;
+  gap: 6px;
+  padding: 4px 6px;
+  margin: 0 -6px;
+  border-radius: 5px;
   color: var(--ink-2);
   font-weight: 500;
-  transition: background 0.15s ease, color 0.15s ease, padding-left 0.15s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .mot_sub:hover,
 .link_chuyen_muc:hover {
   background: var(--inset);
   color: var(--accent);
-  padding-left: 12px;
 }
 
 .dang_xem {
@@ -128,11 +130,17 @@
 .slug {
   font-size: 12px;
   color: var(--accent);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .ten_sub {
   font-size: 12.5px;
   color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .danh_sach_bai_moi,
@@ -142,29 +150,22 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 4px;
 }
 
 .muc_bai_moi,
 .muc_moi {
   margin: 0;
-  padding: 0 0 10px 0;
-  border-bottom: 1px dashed var(--line);
-}
-
-.muc_bai_moi:last-child,
-.muc_moi:last-child {
-  padding-bottom: 0;
-  border-bottom: none;
+  padding: 0;
 }
 
 .link_bai_moi {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 6px 8px;
-  margin: 0 -8px;
-  border-radius: 6px;
+  gap: 2px;
+  padding: 5px 6px;
+  margin: 0 -6px;
+  border-radius: 5px;
   text-decoration: none;
   color: inherit;
   transition: background 0.12s ease;
