@@ -131,6 +131,35 @@ export function TrangThaiToiProvider({
     };
   }, [machId, taiLai]);
 
+  useEffect(() => {
+    let con_song = true;
+    const dongBoLuotXem = () => {
+      void (async () => {
+        try {
+          const kq = await xemMachCuaToi({
+            baseUrl: GOC_TRINH_DUYET,
+            cache: "no-store",
+            path: { mach_id: machId },
+          });
+          const moi = kq.data?.view_count;
+          if (!con_song || moi === undefined) return;
+          datTrangThai((cu) =>
+            cu === null
+              ? cu
+              : { ...cu, view_count: Math.max(cu.view_count, moi) },
+          );
+        } catch {
+          // Bỏ qua lỗi mạng khi đồng bộ phụ
+        }
+      })();
+    };
+    window.addEventListener("gikky:da-dem-luot-xem", dongBoLuotXem);
+    return () => {
+      con_song = false;
+      window.removeEventListener("gikky:da-dem-luot-xem", dongBoLuotXem);
+    };
+  }, [machId]);
+
   const phieuCua = useCallback(
     (dich: DichVote): -1 | 0 | 1 => {
       const v = trangThai?.my_votes.find(

@@ -68,6 +68,8 @@ export function DemLuotXemClient() {
 
     const url = `${DUONG_DAN_BEACON_CLIENT}?${params.toString()}`;
 
+    let timerId: ReturnType<typeof setTimeout> | undefined;
+
     try {
       fetch(url, {
         method: "GET",
@@ -75,10 +77,28 @@ export function DemLuotXemClient() {
         keepalive: true,
         cache: "no-store",
         credentials: "same-origin",
-      }).catch(() => {});
+      })
+        .then(() => {
+          if (typeof window !== "undefined") {
+            timerId = setTimeout(() => {
+              window.dispatchEvent(
+                new CustomEvent("gikky:da-dem-luot-xem", {
+                  detail: { duongDan },
+                }),
+              );
+            }, 200);
+          }
+        })
+        .catch(() => {});
     } catch {
       // Nuốt lỗi mạng phía client
     }
+
+    return () => {
+      if (timerId) {
+        clearTimeout(timerId);
+      }
+    };
   }, [duongDan]);
 
   return null;

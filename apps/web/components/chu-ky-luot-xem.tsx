@@ -13,7 +13,7 @@ export function ChuKyLuotXem({
   // Nếu server trả 0 (do bài mới mở hoặc kẹt cache ISR), hiển thị tối thiểu 1 view
   // vì người dùng đang trực tiếp đọc bài viết này.
   // Khi /me nạp xong (live từ DB không cache), đồng bộ số live mới nhất.
-  const count = trangThai?.view_count ?? Math.max(1, initialCount);
+  const count = Math.max(1, initialCount, trangThai?.view_count ?? 0);
 
   return (
     <span
