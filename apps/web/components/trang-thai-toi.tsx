@@ -146,7 +146,7 @@ export function TrangThaiToiProvider({
           datTrangThai((cu) =>
             cu === null
               ? cu
-              : { ...cu, view_count: Math.max(cu.view_count, moi) },
+              : { ...cu, view_count: Math.max(cu.view_count ?? 0, moi) },
           );
         } catch {
           // Bỏ qua lỗi mạng khi đồng bộ phụ
