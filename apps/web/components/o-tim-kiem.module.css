@@ -15,20 +15,21 @@
   align-items: center;
   gap: 6px;
   padding: 4px 6px 4px 14px;
-  border: 1px solid var(--line-2);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 999px;
-  background: var(--inset);
+  background: rgba(255, 255, 255, 0.11);
+  color: #ffffff;
   /* Co được nhưng không biến mất: thanh trên cùng có bốn thứ tranh chỗ, và ô này phải
      nhường trước tên người dùng chứ không đẩy ai ra khỏi màn hình. */
   flex: 0 1 260px;
   min-width: 0;
-  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .o:focus-within {
-  border-color: var(--accent);
-  background: var(--surface);
-  box-shadow: 0 0 0 2px var(--accent-soft);
+  border-color: var(--brand);
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 0 0 3px rgba(250, 99, 66, 0.22);
 }
 
 .nut_tim {
@@ -41,18 +42,18 @@
   border: none;
   border-radius: 999px;
   background: transparent;
-  color: var(--ink-2);
+  color: rgba(255, 255, 255, 0.75);
   cursor: pointer;
   transition: background 0.12s ease, color 0.12s ease;
 }
 
 .nut_tim:hover {
-  background: var(--surface-2);
-  color: var(--accent);
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
 }
 
 .nut_tim:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--brand);
   outline-offset: 1px;
 }
 
@@ -61,14 +62,29 @@
   min-width: 0;
   border: 0;
   background: transparent;
-  color: var(--ink);
+  color: #ffffff;
   font: inherit;
   font-size: 13px;
   outline: none;
 }
 
 .nhap::placeholder {
-  color: var(--ink-3);
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.kinh {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.phim {
+  color: rgba(255, 255, 255, 0.72);
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.xoa {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
 }
 
 /* Chrome/Safari vẽ một dấu ✕ riêng cho `type=search`, lệch hẳn khỏi ngôn ngữ thị giác
@@ -81,6 +97,7 @@
 
 /* `z-index` phải cao hơn `.chrome` (20): dropdown xổ RA NGOÀI header, và header là thứ
    duy nhất trên đường của nó. */
+.so,
 .xo {
   position: absolute;
   top: calc(100% + 6px);
@@ -88,10 +105,11 @@
   right: 0;
   z-index: 30;
   overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 10px;
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
   background: var(--surface);
-  box-shadow: 0 8px 24px rgb(0 0 0 / 12%);
+  color: var(--ink);
+  box-shadow: 0 12px 32px rgba(15, 18, 34, 0.22);
 }
 
 .danh_sach {
@@ -203,6 +221,21 @@
      một trong bốn con số mà hàng rào so. */
   .o.trong_panel {
     display: flex;
+    background: var(--surface);
+    border-color: var(--line-2);
+    color: var(--ink);
+  }
+
+  .trong_panel .nhap {
+    color: var(--ink);
+  }
+
+  .trong_panel .nhap::placeholder {
+    color: var(--ink-3);
+  }
+
+  .trong_panel .nut_tim {
+    color: var(--ink-2);
   }
 
   /* Trong panel, hộp bọc hiện lại và chiếm hết bề ngang — không còn rãnh lưới nào để bám.

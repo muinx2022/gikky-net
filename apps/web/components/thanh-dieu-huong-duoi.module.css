@@ -85,7 +85,7 @@
 }
 
 .nut_tab_kich_hoat {
-  color: var(--accent) !important;
+  color: var(--brand) !important;
   font-weight: 600;
 }
 
@@ -103,9 +103,9 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: var(--accent);
-  color: var(--on-accent);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  background: var(--brand);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(250, 99, 66, 0.35);
   margin: 0;
   transition: transform 0.15s ease, filter 0.15s ease;
 }

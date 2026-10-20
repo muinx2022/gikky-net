@@ -2,10 +2,11 @@
   position: sticky;
   top: 0;
   z-index: 40;
-  background: color-mix(in srgb, var(--surface) 92%, transparent);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--line);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  background: var(--topbar);
+  color: #ffffff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+  backdrop-filter: none;
 }
 
 /* Thanh trên cùng chạy **HẾT BỀ NGANG màn hình** — user chốt 2026-08-24: hiệu sát mép
@@ -57,13 +58,13 @@
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1;
-  color: var(--ink);
+  color: #ffffff;
   transition: color 0.15s ease;
   text-decoration: none;
 }
 
 .hieu:hover {
-  color: var(--accent);
+  color: var(--brand);
 }
 
 .hieu::after {
@@ -72,10 +73,10 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--brand);
   margin-left: 5px;
   vertical-align: middle;
-  box-shadow: 0 0 6px var(--accent);
+  box-shadow: 0 0 6px var(--brand);
 }
 
 /* Chỗ giữ của ô tìm kiếm trong lúc `Suspense` chưa xong — cùng kích thước với `.o` của

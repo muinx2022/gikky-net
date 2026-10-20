@@ -4,10 +4,10 @@
 .khung {
   max-width: 1060px;
   margin: 0 auto;
-  padding: 22px 22px 40px;
+  padding: 20px 18px 56px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 288px;
-  gap: 22px;
+  gap: 20px;
   align-items: start;
 }
 

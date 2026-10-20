@@ -16,7 +16,7 @@
   display: block;
   width: 24px;
   height: 24px;
-  color: var(--ink);
+  color: inherit;
   transition: color 0.15s ease;
 }
 
@@ -27,4 +27,21 @@
   letter-spacing: inherit;
   color: inherit;
   transition: color 0.15s ease;
+}
+
+.logo {
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 19px;
+  letter-spacing: -0.02em;
+}
+
+.cham {
+  color: var(--brand);
+  font-weight: 800;
+}
+
+.phu {
+  color: rgba(255, 255, 255, 0.72);
+  border-left-color: rgba(255, 255, 255, 0.2);
 }

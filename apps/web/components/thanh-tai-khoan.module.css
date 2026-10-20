@@ -34,24 +34,28 @@
   background: none;
   font: inherit;
   cursor: pointer;
-  color: var(--ink-3);
+  color: rgba(255, 255, 255, 0.85);
+  transition: color 0.15s ease;
 }
 
 .lien_ket:hover {
-  color: var(--accent);
+  color: #ffffff;
 }
 
 .nut_chinh {
-  padding: 5px 12px;
+  padding: 5px 14px;
   border-radius: 999px;
-  background: var(--accent);
-  color: var(--on-accent);
+  background: var(--brand);
+  color: #ffffff;
   font-weight: 600;
   line-height: 1.2;
+  box-shadow: 0 2px 6px rgba(250, 99, 66, 0.35);
+  transition: filter 0.15s ease;
 }
 
 .nut_chinh:hover {
   filter: brightness(1.08);
+  color: #ffffff;
 }
 
 .ten {
@@ -60,17 +64,19 @@
   gap: 7px;
   font-family: var(--f-mono);
   font-size: 13px;
-  color: var(--ink-2);
-  background: none;
-  border: 1px solid var(--line);
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 999px;
   padding: 3px 11px 3px 4px;
   cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .ten:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.32);
+  color: #ffffff;
 }
 
 .menu {
@@ -80,12 +86,13 @@
   min-width: 168px;
   display: flex;
   flex-direction: column;
-  background: var(--bg);
-  border: 1px solid var(--line);
+  background: var(--surface);
+  border: 1px solid var(--line-2);
   border-radius: 8px;
   padding: 5px;
-  box-shadow: 0 8px 24px rgb(0 0 0 / 12%);
+  box-shadow: 0 10px 28px rgba(15, 18, 34, 0.2);
   z-index: 30;
+  color: var(--ink);
 }
 
 .menu > * {

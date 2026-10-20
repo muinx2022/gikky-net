@@ -11,10 +11,10 @@ import { TITLE_HPG, duongDan, timMachTheoTitle } from "./du-lieu";
  * sai chỗ vẫn nằm nguyên trong file mà không bao giờ khớp.
  */
 
-const NEN_SANG = "rgb(241, 242, 245)"; // #F1F2F5
-const NEN_TOI = "rgb(14, 17, 22)"; //     #0E1116
-const MUC_SANG = "rgb(20, 22, 27)"; //    #14161B
-const MUC_TOI = "rgb(231, 234, 240)"; //  #E7EAF0
+const NEN_SANG = "rgb(237, 242, 246)"; // #edf2f6
+const NEN_TOI = "rgb(14, 17, 22)"; //     #0e1116
+const MUC_SANG = "rgb(43, 45, 60)"; //    #2b2d3c
+const MUC_TOI = "rgb(232, 236, 244)"; //  #e8ecf4
 
 async function mau(page: import("@playwright/test").Page) {
   return page.evaluate(() => {

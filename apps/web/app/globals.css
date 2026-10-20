@@ -44,36 +44,27 @@
  */
 
 :root {
-  --bg: #f1f2f5;
+  --bg: #edf2f6;
   --surface: #ffffff;
-  --surface-2: #e7e9ee;
-  --inset: #f7f8fa;
-  /* Nền THẺ — chỉ chênh nhẹ so với nền trang (user 2026-08-24: "card chỉ chênh 1 chút so
-     với bg"). Bảng token không có màu nào nằm giữa `--bg` và `--surface-2`, nên trộn hai
-     cái đã có thay vì thêm một mã hex mới (giữ nguyên 8 màu của PLAN 9.1). Định nghĩa MỘT
-     lần: nó tham chiếu `--bg`/`--surface-2`, mà `color-mix` giải ở lúc DÙNG, nên tự đổi
-     theo theme tối — không cần khai lại trong khối dark. */
-  --card: color-mix(in srgb, var(--bg) 62%, var(--surface-2));
-  --ink: #14161b;
-  --ink-2: #535a67;
-  /* Đậm thêm một nấc 2026-08-26: #686F7D → #646B79.
-     Trang mạch đổi nền thẻ sang `--card` (user chốt cùng ngày), mà `--card` TỐI HƠN
-     `--surface` ở theme sáng ⇒ mực nhạt nhất tụt từ 5.05:1 xuống **4.37:1**, dưới AA cho
-     chữ nhỏ. Feed đã dính lỗi này từ 2026-08-24 mà không ai thấy: bảng cặp đo của
-     `tuong-phan.spec.ts` chưa có `--card` (nó bỏ qua mọi token không phải mã hex, mà
-     `--card` là một `color-mix`). Lượt này thêm `--card` vào bảng đo rồi mới sửa số.
-     #646B79 cho 4.64:1 trên `--card`, 5.36:1 trên `--surface`, 4.78:1 trên `--bg`. */
-  --ink-3: #646b79;
-  --line: #dbdee5;
-  --line-2: #c7cbd4;
-  --accent: #3a46a8;
-  --accent-soft: #e4e6f6;
+  --surface-2: #e2e8f0;
+  --inset: #f6f8fb;
+  /* Nền THẺ — chỉ chênh nhẹ so với nền trang */
+  --card: color-mix(in srgb, var(--surface) 100%, var(--surface-2));
+  --ink: #2b2d3c;
+  --ink-2: #4b4d63;
+  --ink-3: #5b6075;
+  --line: #e6ecf5;
+  --line-2: #d3dae6;
+  --accent: #c53c1b;
+  --accent-soft: #fdede8;
   --on-accent: #ffffff;
-  --stamp: #b07a2b;
-  --stamp-soft: #f5ebda;
+  --brand: #fa6342;
+  --topbar: #30305b;
   --gain: #1c7a4f;
   --loss: #b33a2b;
-  --focus: #3a46a8;
+  --stamp: #b07a2b;
+  --stamp-soft: #f5ebda;
+  --focus: #c53c1b;
 
   /* Đổi 2026-08-23: cả hai vai về IBM Plex Sans (mặt chữ của Reddit) — xem chú thích
      đầy đủ ở `app/layout.tsx`. `--f-display` GIỮ LẠI như một vai riêng dù nay trùng họ
@@ -97,43 +88,47 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #0e1116;
-    --surface: #161a21;
-    --surface-2: #1e232c;
-    --inset: #12161c;
-    --ink: #e7eaf0;
-    --ink-2: #a3aab8;
-    --ink-3: #7a8292;
-    --line: #272d38;
-    --line-2: #39414f;
-    --accent: #8b99f2;
-    --accent-soft: #20263c;
+    --surface: #161b24;
+    --surface-2: #1f2633;
+    --inset: #12161f;
+    --ink: #e8ecf4;
+    --ink-2: #b4bdd0;
+    --ink-3: #8c96ab;
+    --line: #232b3a;
+    --line-2: #313c52;
+    --accent: #ff8568;
+    --accent-soft: #2b1815;
     --on-accent: #0e1116;
-    --stamp: #d8a455;
-    --stamp-soft: #2a2318;
+    --brand: #ff785a;
+    --topbar: #1c1d36;
     --gain: #43be83;
     --loss: #e4776a;
-    --focus: #8b99f2;
+    --stamp: #d8a455;
+    --stamp-soft: #2a2318;
+    --focus: #ff8568;
   }
 }
 
 :root[data-theme="dark"] {
   --bg: #0e1116;
-  --surface: #161a21;
-  --surface-2: #1e232c;
-  --inset: #12161c;
-  --ink: #e7eaf0;
-  --ink-2: #a3aab8;
-  --ink-3: #7a8292;
-  --line: #272d38;
-  --line-2: #39414f;
-  --accent: #8b99f2;
-  --accent-soft: #20263c;
+  --surface: #161b24;
+  --surface-2: #1f2633;
+  --inset: #12161f;
+  --ink: #e8ecf4;
+  --ink-2: #b4bdd0;
+  --ink-3: #8c96ab;
+  --line: #232b3a;
+  --line-2: #313c52;
+  --accent: #ff8568;
+  --accent-soft: #2b1815;
   --on-accent: #0e1116;
-  --stamp: #d8a455;
-  --stamp-soft: #2a2318;
+  --brand: #ff785a;
+  --topbar: #1c1d36;
   --gain: #43be83;
   --loss: #e4776a;
-  --focus: #8b99f2;
+  --stamp: #d8a455;
+  --stamp-soft: #2a2318;
+  --focus: #ff8568;
 }
 
 *,

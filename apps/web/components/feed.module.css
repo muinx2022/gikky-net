@@ -4,10 +4,10 @@
 .khung {
   max-width: 1060px;
   margin: 0 auto;
-  padding: 22px 22px 40px;
+  padding: 20px 18px 56px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 288px;
-  gap: 22px;
+  gap: 20px;
   align-items: start;
 }
 
@@ -46,6 +46,27 @@
   border-bottom: 1px solid color-mix(in srgb, var(--line) 50%, transparent);
 }
 
+.dau_feed {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 12px 18px;
+  position: relative;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  margin-bottom: 4px;
+}
+
+.dau_feed::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 14px;
+  bottom: 14px;
+  width: 3px;
+  background: var(--brand);
+  border-radius: 0 2px 2px 0;
+}
+
 /* Hàng điều khiển: tab trái, nút đổi kiểu xem phải. */
 .hang_dieu_khien {
   display: flex;
@@ -54,48 +75,60 @@
   gap: 8px;
 }
 
-.tab {
+.tab,
+.tab_sap_xep {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
+  background: var(--inset);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px;
   overflow-x: auto;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
 }
 
-.tab::-webkit-scrollbar {
+.tab::-webkit-scrollbar,
+.tab_sap_xep::-webkit-scrollbar {
   display: none;
 }
 
 /* `inline-flex` + `align-items: center` để icon và chữ nằm cùng một trục — bản cũ không
-   flex nên SVG rơi xuống baseline chữ, lệch lên trên. Không viền (user 2026-08-24): tab
-   đang chọn nhận biết bằng NỀN, không bằng khung. */
-.mot_tab {
+   flex nên SVG rơi xuống baseline chữ, lệch lên trên. */
+.mot_tab,
+.o_chon {
   white-space: nowrap;
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   border-radius: 999px;
-  padding: 6px 13px;
-  font-size: 13px;
+  padding: 5px 13px;
+  font-size: 12.5px;
   font-weight: 500;
   color: var(--ink-2);
+  transition: all 0.15s ease;
 }
 
 .chu_tab {
   display: inline;
 }
 
-.mot_tab:hover {
+.mot_tab:hover,
+.o_chon:hover {
   background: var(--surface-2);
   color: var(--ink);
 }
 
 .tab_dang_chon,
-.tab_dang_chon:hover {
-  background: var(--accent-soft);
-  color: var(--accent);
+.tab_dang_chon:hover,
+.dang_chon,
+.dang_chon:hover {
+  background: var(--brand);
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 2px 5px rgba(250, 99, 66, 0.28);
 }
 
 /* Hàng khoảng thời gian là hàng PHỤ của tab — nhạt hơn, không viền, để không đọc thành
@@ -152,7 +185,7 @@
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 11px;
+  gap: 14px;
 }
 
 .rong {

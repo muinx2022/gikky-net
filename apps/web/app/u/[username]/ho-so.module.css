@@ -4,12 +4,38 @@
   padding: 26px 22px 40px;
 }
 
-/* Hàng đầu hồ sơ: avatar lớn + (tên · username). Avatar 64px nên căn giữa theo trục dọc
-   với khối hai dòng chữ bên cạnh. */
-.dau_ho_so {
+/* Hàng đầu hồ sơ: avatar lớn + (tên · username) kiểu Pitnik profile card. */
+.dau_ho_so,
+.dau {
   display: flex;
   align-items: center;
   gap: 16px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 22px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.dau_ho_so::before,
+.dau::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--topbar) 0%, var(--brand) 100%);
+}
+
+.avatar {
+  background: var(--topbar);
+  color: #ffffff;
+  border: 3px solid var(--surface);
+  box-shadow: 0 2px 8px rgba(48, 48, 91, 0.18);
+  border-radius: 50%;
 }
 
 /* Nút "Sửa hồ sơ" đẩy sang phải, tách khỏi cụm avatar + tên. */

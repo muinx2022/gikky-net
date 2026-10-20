@@ -1,10 +1,14 @@
-/* Thanh tab hồ sơ — cùng hình dạng với tab feed (`feed.module.css#.mot_tab`): pill, không
-   viền, tab đang chọn nhận biết bằng NỀN. Hai chỗ cùng một ngôn ngữ thị giác. */
-.thanh {
+/* Thanh tab hồ sơ kiểu Pitnik */
+.thanh,
+.thanh_tab {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin: 18px 0 12px;
+  margin: 18px 0 16px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 14px;
 }
 
 .tab {
@@ -12,10 +16,11 @@
   align-items: center;
   gap: 6px;
   border-radius: 999px;
-  padding: 6px 13px;
+  padding: 6px 14px;
   font-size: 13px;
   font-weight: 500;
   color: var(--ink-2);
+  transition: all 0.15s ease;
 }
 
 .tab:hover {
@@ -25,8 +30,10 @@
 
 .dang_chon,
 .dang_chon:hover {
-  background: var(--accent-soft);
-  color: var(--accent);
+  background: var(--brand);
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 2px 5px rgba(250, 99, 66, 0.28);
 }
 
 .danh_sach {

@@ -3,21 +3,40 @@
 
    ⚠ Không `--stamp`, không `--gain`/`--loss` (PLAN 9.1 giao hai hệ ấy cho việc khác). */
 
-.khoi {
+.khoi,
+.khung {
   margin: 18px 0 6px;
   padding: 14px 16px 12px;
   border: 1px solid var(--line);
   border-radius: 6px;
-  background: var(--inset);
+  background: var(--card);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  position: relative;
 }
 
-.nhan_khoi {
+.nhan_khoi,
+.dau {
   margin: 0 0 10px;
+  padding-left: 10px;
+  position: relative;
   font-family: var(--f-mono);
   font-size: 10.5px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-3);
+}
+
+.nhan_khoi::before,
+.dau::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 12px;
+  background: var(--brand);
+  border-radius: 0 2px 2px 0;
 }
 
 .cau {

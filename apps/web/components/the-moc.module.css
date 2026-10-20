@@ -27,19 +27,23 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  /* Nền = nền THẺ, không phải `--surface`: vòng tròn này đục lỗ trên đường ray (`.ray`),
-     nó phải trùng màu tấm thẻ đang nằm dưới. Thẻ đổi sang `--card` ngày 2026-08-26
-     (`trang-mach.module.css#.the`) nên dòng này đi theo — để `--surface` là một đĩa trắng
-     nổi lên giữa thẻ ở theme sáng. */
-  background: var(--card);
-  border: 2px solid var(--line);
+  background: var(--surface);
+  border: 2px solid var(--brand);
   display: grid;
   place-items: center;
   font-family: var(--f-mono);
   font-variant-numeric: tabular-nums;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--ink-2);
+}
+
+.moc {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 16px 18px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 
 /* Cột vote + thân, đúng bố cục Reddit. `min-width: 0` ở CẢ HAI tầng: thiếu nó thì một

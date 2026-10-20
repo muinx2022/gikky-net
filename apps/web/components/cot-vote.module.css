@@ -1,44 +1,50 @@
-/* Cột vote trái — bố cục Reddit. Hẹp, cao bằng hai dòng đầu của thẻ, không giãn theo
- * thân bài: nó là một cái mép, không phải một cột nội dung. */
+/* Cột vote trái — phong cách Pitnik / Reddit */
 .cot {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1px;
-  padding-top: 1px;
-  width: 30px;
-  flex: 0 0 30px;
+  background: var(--inset);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 4px 2px;
+  width: 38px;
+  flex: 0 0 38px;
+  gap: 2px;
+  align-self: flex-start;
   user-select: none;
 }
 
-.mui_ten {
+.mui_ten,
+.nut {
   font-size: 11px;
   line-height: 1;
   padding: 2px 0;
-  width: 100%;
+  width: 28px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   color: var(--ink-3);
   background: none;
   border: 0;
-  border-radius: 3px;
+  border-radius: 6px;
   cursor: pointer;
+  transition: all 0.15s ease;
 }
 
-.mui_ten:hover:not(:disabled) {
+.mui_ten:hover:not(:disabled),
+.nut:hover {
   color: var(--accent);
   background: var(--accent-soft);
 }
 
-/* Mũi tên ĐANG là phiếu của tôi. Dùng `--accent` chứ không phải xanh/đỏ lãi lỗ: PLAN
- * 9.1 cấm hai màu ấy ngoài con số lãi/lỗ, và một cái nút đang được chọn không phải là
- * một con số lãi lỗ. */
-.chon {
-  color: var(--accent);
+.chon,
+.da_vote {
+  color: var(--brand);
   background: var(--accent-soft);
 }
 
 .mui_ten:disabled {
-  /* Con trỏ "không cho phép" là nửa còn lại của lời giải thích: `title` chỉ hiện sau khi
-   * đứng yên một lúc, còn cái này thấy ngay lúc rê tới. */
   cursor: not-allowed;
 }
 
@@ -53,24 +59,24 @@
   font-family: var(--f-mono);
   font-variant-numeric: tabular-nums;
   font-size: 12.5px;
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.2;
   color: var(--ink-2);
 }
 
-
-/* Biến thể NGANG cho bình luận — xem CotVote prop `nam_ngang`. Cùng component, khác
-   trục: khán đài dày nên một cột dọc cho mỗi dòng ăn hết bề ngang trên mobile. */
+/* Biến thể NGANG cho bình luận — xem CotVote prop `nam_ngang` */
 .ngang {
   flex-direction: row;
   align-items: center;
   gap: 3px;
   width: auto;
   flex: 0 0 auto;
-  padding-top: 0;
+  padding: 2px 4px;
 }
 
-.ngang .mui_ten {
+.ngang .mui_ten,
+.ngang .nut {
   width: auto;
+  height: auto;
   padding: 2px 5px;
 }

@@ -3,27 +3,28 @@
    cái nhìn thấy được (không bao giờ no-op). */
 .khung {
   display: inline-flex;
-  border: 0;
+  border: 1px solid rgba(255, 255, 255, 0.16);
   padding: 0;
-  background: none;
+  background: rgba(255, 255, 255, 0.1);
   font: inherit;
   cursor: pointer;
   align-items: center;
   justify-content: center;
   width: 32px;
   height: 32px;
-  border-radius: 8px;
-  color: var(--ink-3);
-  transition: background 0.15s ease, color 0.15s ease;
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.9);
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
 .khung:hover {
-  background: var(--surface-2);
-  color: var(--ink);
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.28);
+  color: #ffffff;
 }
 
 .khung:focus-visible {
-  outline: 2px solid var(--focus);
+  outline: 2px solid var(--brand);
   outline-offset: 2px;
 }
 

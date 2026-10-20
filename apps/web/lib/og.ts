@@ -35,18 +35,13 @@ export const KIEU_OG = "image/png";
  * `app/globals.css`. Chỉ có bản SÁNG ("nền giấy lạnh" của PLAN 9.1): ảnh OG là một tệp
  * PNG tĩnh, nó không biết theme của người xem. */
 export const MAU_OG = {
-  nen: "#f1f2f5",
+  nen: "#edf2f6",
   the: "#ffffff",
-  muc: "#14161b",
-  muc_2: "#535a67",
-  // Theo `--ink-3` — đổi 2026-08-23 cùng lượt vá tương phản (`#868D9B` cho 3.33:1 trên
-  // nền trắng, dưới AA cho chữ nhỏ), rồi `#686F7D` → `#646B79` ngày 2026-08-26 khi trang
-  // mạch chuyển nền thẻ sang `--card` (tối hơn `--surface`). Bản sao này KHÔNG tự đổi theo
-  // `globals.css`; thứ bắt nó đổi là `e2e/don-vi/og-anh.spec.ts`, và nó đã đỏ đúng lúc —
-  // cả hai lần.
-  muc_3: "#646b79",
-  vach: "#c7cbd4",
-  nhan: "#3a46a8",
+  muc: "#2b2d3c",
+  muc_2: "#4b4d63",
+  muc_3: "#5b6075",
+  vach: "#d3dae6",
+  nhan: "#c53c1b",
 } as const;
 
 /** `MAU_OG` ↔ token trong `app/globals.css`. Bài đo dùng bảng này để so hai bên; thêm một

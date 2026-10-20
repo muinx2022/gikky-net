@@ -6,14 +6,27 @@
    canh giữa theo chiều dọc thì cái nút TRÔI theo độ dài đoạn văn — cùng một nút, ba trang
    chuyên mục, ba độ cao khác nhau. Neo nó lên đỉnh là chỗ đứng cố định. */
 .dau {
-  background: var(--surface);
+  background: var(--card);
   border: 1px solid var(--line);
   border-radius: 6px;
-  padding: 14px 16px;
+  padding: 18px 20px;
   margin-bottom: 14px;
+  position: relative;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
   display: flex;
   align-items: flex-start;
   gap: 14px;
+}
+
+.dau::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 16px;
+  bottom: 16px;
+  width: 3px;
+  background: var(--brand);
+  border-radius: 0 2px 2px 0;
 }
 
 /* `min-width: 0` là vế bắt buộc của một flex item chứa chữ: thiếu nó thì `min-width:
