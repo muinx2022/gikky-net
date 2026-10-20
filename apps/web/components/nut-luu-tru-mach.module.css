@@ -34,10 +34,3 @@
   background: var(--surface-2);
   color: var(--ink);
 }
-
-@media (pointer: coarse) {
-  .nut {
-    min-height: 44px;
-    padding: 0 12px;
-  }
-}

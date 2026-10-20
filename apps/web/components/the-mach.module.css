@@ -233,10 +233,12 @@
 }
 
 @media (max-width: 640px) {
+  .chan {
+    gap: 6px;
+  }
+
   .mod_phai {
-    flex-basis: 100%;
     margin-left: 0;
-    margin-top: 4px;
     width: fit-content;
   }
 }
