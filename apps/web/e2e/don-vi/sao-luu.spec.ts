@@ -1,4 +1,4 @@
-import { mkdtempSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { expect, test } from "@playwright/test";
@@ -315,4 +315,122 @@ test("deploy/prod/sao-luu-prod.sh tồn tại và có đủ hợp đồng sao l�
   expect(noiDung).toContain("rclone copy");
   expect(noiDung).toContain("rclone delete");
 });
+
+// --- Đồng bộ về ổ E (sao-luu-ve-o-e.mjs): gikky.net + other-stacks ---
+
+type ModSaoLuuVeOE = {
+  docCo: (argv?: string[]) => {
+    dich: string;
+    dichKhac: string;
+    host: string;
+    giu: number;
+    chiKeo: boolean;
+    khongAnh: boolean;
+    chiGikky: boolean;
+  };
+  donBanCuTheoDuoi: (thuMuc: string, duoi: string, giu: number) => string[];
+  donBanCu: (thuMuc: string, giu: number) => string[];
+  tachDongKichThuocFile: (out: string) => Array<{ duongDan: string; kichThuoc: number }>;
+  thongKeThuMuc: (dir: string) => { soLuong: number; tongByte: number };
+};
+
+async function napSaoLuuVeOE(): Promise<ModSaoLuuVeOE> {
+  const url = new URL(`file:///${join(GOC, "scripts", "sao-luu-ve-o-e.mjs").replaceAll("\\", "/")}`);
+  return (await import(url.href)) as ModSaoLuuVeOE;
+}
+
+test("docCo trong sao-luu-ve-o-e.mjs phân tích đúng các cờ và tính đúng dichKhac mặc định", async () => {
+  const { docCo } = await napSaoLuuVeOE();
+  const macDinh = docCo([]);
+  expect(macDinh.host).toBe("vps-muinx");
+  expect(macDinh.giu).toBe(30);
+  expect(macDinh.chiKeo).toBe(false);
+  expect(macDinh.khongAnh).toBe(false);
+  expect(macDinh.chiGikky).toBe(false);
+  expect(macDinh.dich.replaceAll("\\", "/")).toMatch(/\/prod$/);
+  expect(macDinh.dichKhac.replaceAll("\\", "/")).toMatch(/\/other-stacks$/);
+
+  const custom = docCo([
+    "--dich",
+    resolve("D:/backups/prod"),
+    "--dich-khac",
+    resolve("D:/backups/all-other"),
+    "--host",
+    "backup-server",
+    "--giu",
+    "10",
+    "--chi-keo",
+    "--khong-anh",
+    "--chi-gikky",
+  ]);
+  expect(custom.dich).toBe(resolve("D:/backups/prod"));
+  expect(custom.dichKhac).toBe(resolve("D:/backups/all-other"));
+  expect(custom.host).toBe("backup-server");
+  expect(custom.giu).toBe(10);
+  expect(custom.chiKeo).toBe(true);
+  expect(custom.khongAnh).toBe(true);
+  expect(custom.chiGikky).toBe(true);
+
+  // Khi không truyền --dich-khac, mặc định là thư mục other-stacks cùng cấp với thư mục cha của dich
+  const suyTuDich = docCo(["--dich", resolve("D:/gikky-root/prod")]);
+  expect(suyTuDich.dichKhac).toBe(resolve("D:/gikky-root/other-stacks"));
+});
+
+test("donBanCuTheoDuoi giữ đúng N bản mới nhất theo đuôi và không xoá file khác đuôi", async () => {
+  const { donBanCuTheoDuoi } = await napSaoLuuVeOE();
+  const thuMuc = mkdtempSync(join(tmpdir(), "gikky-test-don-duoi-"));
+  const dat = (t: string) => writeFileSync(join(thuMuc, t), "x");
+
+  dat("hoctienganh_data-2026-08-01.db.gz");
+  dat("hoctienganh_data-2026-08-02.db.gz");
+  dat("hoctienganh_data-2026-08-03.db.gz");
+  dat("shopee-2026-08-01.sql.gz");
+  dat("bdslink-2026-08-01.tar.gz");
+  dat("note.txt");
+
+  const daXoa = donBanCuTheoDuoi(thuMuc, ".db.gz", 2);
+  expect(daXoa).toEqual(["hoctienganh_data-2026-08-01.db.gz"]);
+
+  const conLai = readdirSync(thuMuc).sort();
+  expect(conLai).toEqual([
+    "bdslink-2026-08-01.tar.gz",
+    "hoctienganh_data-2026-08-02.db.gz",
+    "hoctienganh_data-2026-08-03.db.gz",
+    "note.txt",
+    "shopee-2026-08-01.sql.gz",
+  ]);
+
+  // giu = 0 thì không xoá gì (0 = tắt dọn)
+  expect(donBanCuTheoDuoi(thuMuc, ".sql.gz", 0)).toEqual([]);
+  expect(existsSync(join(thuMuc, "shopee-2026-08-01.sql.gz"))).toBe(true);
+});
+
+test("tachDongKichThuocFile tách đúng output find -printf '%s %p\\n' kể cả đường dẫn có khoảng trắng", async () => {
+  const { tachDongKichThuocFile } = await napSaoLuuVeOE();
+  const rawOutput = [
+    "1048576 /home/muinx/backups/hoctienganh_data-2026-08-01.db.gz",
+    "20971520 /var/lib/shopee-hub/backups/pg/shopee-2026-08-01.sql.gz",
+    "5242880 /home/muinx/backups/other-stacks/bdslink du lieu-2026.tar.gz",
+    "",
+    "   ",
+    "khong-hop-le-thieu-space",
+  ].join("\n");
+
+  const danhSach = tachDongKichThuocFile(rawOutput);
+  expect(danhSach).toEqual([
+    {
+      duongDan: "/home/muinx/backups/hoctienganh_data-2026-08-01.db.gz",
+      kichThuoc: 1048576,
+    },
+    {
+      duongDan: "/var/lib/shopee-hub/backups/pg/shopee-2026-08-01.sql.gz",
+      kichThuoc: 20971520,
+    },
+    {
+      duongDan: "/home/muinx/backups/other-stacks/bdslink du lieu-2026.tar.gz",
+      kichThuoc: 5242880,
+    },
+  ]);
+});
+
 

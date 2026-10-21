@@ -18,8 +18,7 @@
  * không phải `margin` ở đây — để `.the` ghép được vào bất kỳ danh sách nào (feed, hồ sơ)
  * mà không mang sẵn lề. */
 .the {
-  display: flex;
-  gap: 12px;
+  display: block;
   padding: 16px 8px;
   background: transparent;
   border: 0;
@@ -87,13 +86,13 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   font-family: var(--f-ui);
   font-size: 12.5px;
-  color: var(--ink-3);
+  color: var(--ink-2);
   border-top: 0;
   padding-top: 0;
-  margin-top: 8px;
+  margin-top: 10px;
 }
 
 .cum_tac_gia {
@@ -143,22 +142,19 @@
 .hanh_dong {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  height: 32px;
   font-family: var(--f-ui);
   font-variant-numeric: tabular-nums;
   font-size: 12.5px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--ink-2);
-  background: transparent;
+  background: var(--inset);
   border: 0;
   border-radius: 999px;
-  padding: 4px 10px;
+  padding: 0 12px;
+  text-decoration: none;
   transition: background 0.15s ease, color 0.15s ease;
-}
-
-.nut_binh_luan:first-child,
-.hanh_dong:first-child {
-  margin-left: -10px;
 }
 
 .nut_binh_luan:hover,

@@ -136,10 +136,10 @@ export function Feed({
       </div>
       <main className={css.chinh}>
         {header ?? (
-          <>
+          <div className={css.dau_feed}>
             <h1 className={css.tieu_de}>{tieuDe}</h1>
             <p className={css.lede}>{lede}</p>
-          </>
+          </div>
         )}
 
         {cursorHong && <BaoCursorHong />}

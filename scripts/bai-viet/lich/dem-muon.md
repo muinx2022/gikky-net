@@ -32,6 +32,7 @@ Mỗi ngày luân phiên một thể loại để giữ nhịp đọc phong phú
   - Nhịp văn nhanh, cuốn hút, giàu tính điện ảnh (cinematic storytelling), lôi cuốn độc giả như đang xem một bộ phim tài liệu đêm muộn.
   - **HẠN CHẾ SÁO NGỮ RẬP KHUÔN:** Tuyệt đối tránh lạm dụng các từ ngữ sáo mòn như *"Giải mã"*, *"Con hào"*, *"Bóc tách"*, *"Giải phẫu"*, *"Cỗ máy"*. Hãy đặt tiêu đề và hành văn tự nhiên, trực diện, đa dạng hóa vốn từ theo [phong-cach-hanh-van.md](file:///D:/Projects/gikky-net/scripts/bai-viet/phong-cach-hanh-van.md).
 * **Kiểm trùng:** Luôn kiểm tra các bài gần nhất trên database qua SSH trước khi chọn chủ đề.
+* **Tự động bồi đắp kho chủ đề (`chu-de.md`):** Sau khi đăng bài và đánh dấu `[ĐÃ VIẾT - Mạch <id> - <ngày/tháng>]` vào `chu-de.md`, nếu nhóm chủ đề vừa chọn còn **dưới 5 chủ đề chưa viết**, bắt buộc phải biên soạn và bổ sung ngay **5–10 chủ đề mới** vào nhóm đó để kho chủ đề không bao giờ bị cạn.
 * **Ảnh minh hoạ:** 1–2 ảnh tỷ lệ 16:9 giàu tính nghệ thuật/điện ảnh (dùng `generate_image`) đưa vào mảng `anhs` (base64) và đặt `{{ANH_1}}` trong `body`.
 * **Dải số (`figures`):** 4–6 cặp `{label, value}`, mỗi ô ≤24 ký tự.
 * **Câu hỏi tương tác (`question_for_crowd`):** ≤200 ký tự, kết thúc bằng dấu `?`.

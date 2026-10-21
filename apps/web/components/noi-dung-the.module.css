@@ -15,24 +15,23 @@
 .khung_anh {
   position: relative;
   display: block;
-  /* Ôm ảnh hẹp hơn card — không kéo viền full bề ngang thẻ. */
-  width: fit-content;
+  width: 100%;
   max-width: 100%;
   margin-bottom: 0;
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 10px;
-  /* Trần cao 350px: ảnh cao hơn bị cắt bởi overflow (phần trên giữ lại). Không ép tỉ lệ
-     cố định — ảnh dọc (ảnh chụp màn hình) không bị kéo 16:9. */
-  max-height: 350px;
+  border-radius: 12px;
+  max-height: 420px;
+  background: var(--inset);
 }
 
 .anh {
   display: block;
-  /* Không `width: 100%`: ảnh hẹp hơn card giữ kích thước gốc; chỉ co khi rộng hơn card. */
+  width: 100%;
   max-width: 100%;
-  width: auto;
   height: auto;
+  max-height: 420px;
+  object-fit: cover;
   background: var(--surface-2, var(--surface));
 }
 

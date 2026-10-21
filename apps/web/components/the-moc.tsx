@@ -90,12 +90,6 @@ export function TheMoc({
           là `null`, vì API từ chối phiếu vào nội dung đã gỡ (409 `noi_dung_da_go`) và một
           mũi tên bấm được để nhận lỗi là một cái bẫy. */}
       <div className={css.trong}>
-        <CotVote
-          diem={moc.score}
-          nhan={`mốc ${moc.seq}`}
-          cai_gi="moc"
-          dich={hien ? { loai: "moc", id: moc.id } : null}
-        />
         <VoThuGonMoc seq={moc.seq} laMach={laMach}>
         <div className={css.dau}>
           <span className={css.khi} data-testid="moc-occurred-at">
@@ -201,6 +195,13 @@ export function TheMoc({
         {hien && <HangReaction mocId={moc.id} dem={moc.reactions} />}
 
         <div className={css.chan}>
+          <CotVote
+            diem={moc.score}
+            nhan={`mốc ${moc.seq}`}
+            cai_gi="moc"
+            nam_ngang
+            dich={hien ? { loai: "moc", id: moc.id } : null}
+          />
           {laMach && (
             <NutNganKeo
               seq={moc.seq}

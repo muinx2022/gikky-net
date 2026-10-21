@@ -11,6 +11,7 @@ Nhiệm vụ: Viết một bài lý thuyết chuyên sâu về phương pháp k�
   - **Nhóm H (Tâm lý và kỷ luật):** Thiên lệch xác nhận, ác cảm thua lỗ, ngụy biện chi phí chìm, tâm lý giữ lệnh, điểm mù cảm xúc (`loai`: `Tâm lý` hoặc `Đọc sách`).
   - **Nhóm I (Phương pháp giao dịch):** Chỉ báo kỹ thuật (RSI, MACD, Bollinger Bands, Moving Average), hệ thống theo xu hướng, quy tắc quản trị rủi ro (`loai`: `Phương pháp`).
 * **Kiểm trùng:** Kiểm tra số ngày kể từ bài gần nhất của từng nhóm để giữ nhịp luân phiên đều đặn.
+* **Tự động bồi đắp kho chủ đề (`chu-de.md`):** Sau khi đăng bài và đánh dấu `[ĐÃ VIẾT - Mạch <id> - <ngày/tháng>]` vào `chu-de.md`, nếu nhóm chủ đề vừa chọn còn **dưới 5 chủ đề chưa viết**, bắt buộc phải biên soạn và bổ sung ngay **5–10 chủ đề mới** vào nhóm đó để kho chủ đề không bao giờ bị cạn.
 * **Chuyên mục (`sub`):**
   - Bài về **Tâm lý, kỷ luật, đọc sách hành vi** (Nhóm H): Đăng vào `tam-ly-giao-dich` (Tâm lý giao dịch).
   - Bài về **Phương pháp kỹ thuật, hệ thống quản trị rủi ro** (Nhóm I): Đăng vào `quan-tri-von` (Quản trị vốn).

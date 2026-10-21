@@ -233,6 +233,7 @@ tiếng ồn.
 Chưa có scheduler nào chạy trên máy dev — máy dev không phải máy chủ.
 
 **Trên Production (`vps-muinx` — BẮT BUỘC):**
+VPS `vps-muinx` đã chuyển sang máy chủ vật lý riêng (`192.168.1.184:2222`, hostname `ubuntu-server`), múi giờ hệ thống `Asia/Ho_Chi_Minh`.
 Sử dụng script `deploy/prod/sao-luu-prod.sh` chạy qua cron hằng ngày lúc 04:10 sáng (xem `deploy/prod/README.md`):
 ```bash
 crontab -e
@@ -248,16 +249,25 @@ Script này tự động:
 
 **Trên máy Dev (Windows Task Scheduler / Linux cron nếu cần):**
 
-- Đồng bộ sao lưu Production từ `vps-muinx` về ổ cứng ngoài (`E:\gikky-backups\prod`):
+- Đồng bộ sao lưu Production từ `vps-muinx` về ổ cứng ngoài (`E:\gikky-backups`):
+  Script `scripts/sao-luu-ve-o-e.mjs` đồng bộ cả **gikky.net** (`E:\gikky-backups\prod`: `db/`, `db-lich-su/`, `media/`, `media-an/`) lẫn **các stack khác trên VPS** (`E:\gikky-backups\other-stacks`: `hoc-tieng-anh`, `shopee-pg`, `bdslink`, `trekky`).
+
   Lệnh chạy thủ công:
   ```powershell
   pnpm db:sao-luu:o-e
   # Hoặc
-  node scripts/sao-luu-ve-o-e.mjs
+  node scripts/sao-luu-ve-o-e.mjs                  # Đồng bộ toàn bộ (gikky.net + other-stacks)
+  node scripts/sao-luu-ve-o-e.mjs --chi-gikky      # Chỉ đồng bộ riêng gikky.net
+  node scripts/sao-luu-ve-o-e.mjs --chi-keo        # Chỉ kéo các bản sao lưu hiện có, không tạo snapshot mới
   ```
   Lịch tự động hàng ngày lúc 08:30 sáng trên Windows (Scheduled Task `GikkyBackupToDriveE`):
-  ```cmd
-  schtasks /Create /TN "GikkyBackupToDriveE" /TR "node d:\Projects\gikky-net\scripts\sao-luu-ve-o-e.mjs" /SC DAILY /ST 08:30 /F
+  Task đã cấu hình `StartWhenAvailable = true` để tự động chạy bù nếu người dùng mở máy tính muộn sau 08:30 sáng.
+  ```powershell
+  # Đăng ký hoặc cập nhật task có hỗ trợ chạy bù khi lỡ hẹn:
+  $action = New-ScheduledTaskAction -Execute "node" -Argument "d:\Projects\gikky-net\scripts\sao-luu-ve-o-e.mjs"
+  $trigger = New-ScheduledTaskTrigger -Daily -At 08:30AM
+  $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+  Register-ScheduledTask -TaskName "GikkyBackupToDriveE" -Action $action -Trigger $trigger -Settings $settings -Force
   ```
 
 - Sao lưu cơ sở dữ liệu Dev local (`E:\gikky-backups\dev`):
@@ -272,8 +282,9 @@ Script này tự động:
 | Chép gương ảnh (`chepGuong`) | **đã đo bằng test**, chưa chạy trên kho ảnh thật — `apps/web/e2e/don-vi/sao-luu.spec.ts` (chép mới · bỏ qua bản đã có · chép đè khi cỡ lệch · nguồn chưa tồn tại) |
 | Phục hồi ẢNH rồi mở lại trang mạch | **chưa** — cần một vòng deploy thật, xem bước 4 |
 | Phục hồi TẠI CHỖ (`--clean --if-exists`) | **chưa** — không đè lên database nào của máy này |
-| Task Scheduler / cron trên Production (`vps-muinx`) | **đã đăng ký và chạy thật** — cron 04:10 hằng ngày với `deploy/prod/sao-luu-prod.sh` |
-| Đồng bộ tự động về ổ cứng ngoài `E:\gikky-backups` | **đã chạy thật** — 697 files, 86.65 MB (DB dump mới, 31 bản lịch sử, 664 file ảnh), kèm Windows Task `GikkyBackupToDriveE` 08:30 hằng ngày |
+| Task Scheduler / cron trên Production (`vps-muinx`) | **đã đăng ký và chạy thật** — VPS máy riêng (`192.168.1.184:2222`, `ubuntu-server`, múi giờ `Asia/Ho_Chi_Minh`), cron 04:10 hằng ngày với `deploy/prod/sao-luu-prod.sh` |
+| Đồng bộ tự động về ổ cứng ngoài `E:\gikky-backups` | **đã chạy thật** — đồng bộ cả `gikky.net` (`prod/`) và các stack khác (`other-stacks/`: `hoc-tieng-anh`, `shopee-pg`, `bdslink`, `trekky`), hỗ trợ cờ `--chi-gikky`, kèm Windows Task `GikkyBackupToDriveE` 08:30 hằng ngày (bật `StartWhenAvailable` tự chạy bù nếu mở máy muộn) |
 | Đẩy bản sao lưu ra khỏi máy (Cloud Backup qua `rclone`) | **đã hoàn thành** — hỗ trợ cờ `--cloud` trong `scripts/sao-luu-db.mjs` và script `deploy/prod/sao-luu-prod.sh` cho production, đã phủ unit test đầy đủ trong `sao-luu.spec.ts` |
+
 
 

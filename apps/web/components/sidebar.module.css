@@ -2,11 +2,10 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  min-height: calc(100vh - var(--cao-chrome) - 34px);
 }
 
 .cot :global([data-testid="chan-trang"]) {
-  margin-top: auto;
+  margin-top: 8px;
 }
 
 @media (max-width: 960px) {

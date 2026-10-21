@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { dongSoMachSub } from "@/lib/dinh-dang";
 import { DIEU_CAM } from "@/lib/phap-ly";
-import { duongDanMach, duongDanSub } from "@/lib/url";
+import { duongDanMach } from "@/lib/url";
 
 import { ChanTrang } from "./chan-trang";
 import css from "./sidebar.module.css";
@@ -49,6 +49,7 @@ export function Sidebar({
   /** Tiêu đề khối bài mới: "Bài mới nhất" hoặc "Cùng chuyên mục" (khi ở trang mạch). */
   tieuDeBaiMoi?: string;
 }) {
+  void cacSub;
   return (
     <aside className={css.cot} data-testid="sidebar">
       {sub != null ? (
@@ -90,22 +91,6 @@ export function Sidebar({
           Đọc luật cộng đồng →
         </Link>
       </section>
-
-      {cacSub.length > 0 && (
-        <section className={css.khoi} data-testid="sidebar-cac-sub">
-          <h2 className={css.tieu_de}>Chuyên mục</h2>
-          <ul className={css.danh_sach_sub}>
-            {cacSub.map((s) => (
-              <li key={s.slug}>
-                <Link className={css.mot_sub} href={duongDanSub(s.slug)} prefetch={false}>
-                  <span className={`${css.slug} mono`}>s/{s.slug}</span>
-                  <span className={css.ten_sub}>{s.ten}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
 
       {baiMoi && baiMoi.length > 0 && (
         <section className={css.khoi} data-testid="sidebar-bai-moi">

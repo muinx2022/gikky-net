@@ -25,6 +25,15 @@ import urllib.request
 import uuid
 from datetime import datetime
 
+if sys.platform == "win32":
+    try:
+        if sys.stdout and hasattr(sys.stdout, "reconfigure"):
+            sys.stdout.reconfigure(encoding="utf-8")
+        if sys.stderr and hasattr(sys.stderr, "reconfigure"):
+            sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
 ORIGIN = os.environ.get("GIKKY_ORIGIN", "https://gikky.net")
 ADMIN_ORIGIN = os.environ.get("GIKKY_ADMIN_ORIGIN", "https://admin.gikky.net")
 ALLAUTH = ORIGIN + "/api/_allauth/browser/v1"
@@ -40,7 +49,7 @@ AUTHOR_HEN = "gikky-team-member"
 TRAN = {"title": 160, "body": 10_000, "loai": 20, "question_for_crowd": 200}
 SO_FIGURES_TOI_DA = 6
 DAI_O_FIGURE = 24
-TRUONG_CHO_PHEP = {"sub", "title", "body", "loai", "question_for_crowd", "figures", "anhs"}
+TRUONG_CHO_PHEP = {"sub", "title", "body", "loai", "question_for_crowd", "figures", "anhs", "occurred_at"}
 
 jar = http.cookiejar.CookieJar()
 op = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
@@ -78,12 +87,13 @@ def goi(duong, than=None, goc=ORIGIN):
             return e.code, {"_raw": vb[:400]}
 
 
-def soat(bai):
+def soat(bai, la_noi_moc=False):
     """Soát TRƯỚC khi gọi mạng. Vượt trần `figures` ⇒ server trả **500**, không phải 400."""
     loi = []
     if not isinstance(bai, dict):
         return ["Thân bài phải là object JSON."]
-    for ten in ("sub", "title", "body", "loai"):
+    cac_truong_bat_buoc = ("body", "loai") if la_noi_moc else ("sub", "title", "body", "loai")
+    for ten in cac_truong_bat_buoc:
         v = bai.get(ten)
         if not isinstance(v, str) or not v.strip():
             loi.append(f"Thiếu `{ten}` (chuỗi, không rỗng).")
@@ -110,7 +120,7 @@ def soat(bai):
                         loi.append(f"`figures[{i}].{k}` phải là chuỗi ≤{DAI_O_FIGURE}.")
     for ten in bai:
         if ten not in TRUONG_CHO_PHEP:
-            loi.append(f"Trường `{ten}` không có trong hợp đồng POST /machs.")
+            loi.append(f"Trường `{ten}` không có trong hợp đồng POST /machs hoặc /mocs.")
     return loi
 
 
@@ -121,6 +131,13 @@ def doc_hen(argv):
         default=None,
         metavar="ISO",
         help="Giờ phát hành (ISO có offset, ví dụ 2026-09-10T08:00:00+07:00).",
+    )
+    p.add_argument(
+        "--noi-moc",
+        type=int,
+        default=None,
+        metavar="MACH_ID",
+        help="ID mạch đã có để nối thêm mốc mới (POST /api/v1/machs/{mach_id}/mocs).",
     )
     p.add_argument(
         "--file",
@@ -329,7 +346,9 @@ def lay_mat_khau_fallback(ten_bien: str) -> str | None:
                 with open(p, "r", encoding="utf-8") as f:
                     for line in f:
                         if line.startswith(f"{ten_bien}="):
-                            return line.split("=", 1)[1].strip().strip("'\"")
+                            val = line.split("=", 1)[1].strip().strip("'\"")
+                            if val:
+                                return val
             except Exception:
                 pass
     try:
@@ -353,7 +372,9 @@ def main(argv=None):
         bai = json.load(f)
 
     # 1. Soát tính hợp lệ sơ bộ của bài trước khi gọi mạng
-    loi = soat(bai)
+    loi = soat(bai, la_noi_moc=bool(args.noi_moc))
+    if args.hen and args.noi_moc:
+        loi.append("Chưa hỗ trợ hẹn giờ cho mốc nối tiếp (--noi-moc không đi cùng --hen).")
     if args.hen:
         lech = kiem_offset(args.hen)
         if lech:
@@ -401,7 +422,23 @@ def main(argv=None):
             print(f"  - {c}", file=sys.stderr)
         return 2
 
-    # 6. Đăng bài hoặc hẹn giờ phát hành
+    # 6. Đăng bài hoặc hẹn giờ phát hành hoặc nối mốc
+    if args.noi_moc:
+        truong_hop_le_moc = {"body", "occurred_at", "loai", "question_for_crowd", "figures"}
+        than_moc = {k: v for k, v in bai.items() if k in truong_hop_le_moc and v is not None}
+        ma, than = goi(f"{ORIGIN}/api/v1/machs/{args.noi_moc}/mocs", than_moc, goc=ORIGIN)
+        if ma != 201:
+            print(f"③ nối mốc lỗi: HTTP {ma} {json.dumps(than, ensure_ascii=False)[:400]}", file=sys.stderr)
+            return 1
+        mach_slug = than.get("mach_slug") or "mach"
+        moc_id = than.get("id", "")
+        print(f"{ORIGIN}/m/{mach_slug}-{args.noi_moc}#moc-{moc_id}")
+        print(
+            f"Nối mốc thành công vào mạch {args.noi_moc} · mốc seq={than.get('seq', '')} id={moc_id}",
+            file=sys.stderr,
+        )
+        return 0
+
     if args.hen:
         than_gui = {
             **bai,

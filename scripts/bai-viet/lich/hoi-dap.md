@@ -30,6 +30,7 @@ Trọng tâm là **Cắt nghĩa cơ chế đằng sau bảng điện và các qu
 
 ## Hướng dẫn kỹ thuật
 * **Kiểm trùng:** Luôn kiểm tra các bài đã viết trong database bằng `python scripts/bai-viet/kiem-trung.py` trước khi chọn chủ đề.
+* **Tự động bồi đắp kho chủ đề (`chu-de.md`):** Sau khi đăng bài và đánh dấu `[ĐÃ VIẾT - Mạch <id> - <ngày/tháng>]` vào `chu-de.md`, nếu nhóm chủ đề vừa chọn còn **dưới 5 chủ đề chưa viết**, bắt buộc phải biên soạn và bổ sung ngay **5–10 chủ đề mới** vào nhóm đó để kho chủ đề không bao giờ bị cạn.
 * **Tiêu đề:** Đặt dạng câu hỏi thực tế hoặc làm rõ cơ chế, ví dụ: `Cơ chế điều chỉnh giá ngày GDKHQ: Vì sao cổ phiếu bị trừ tiền tương ứng trên bảng điện?` (≤160 ký tự, tránh bắt đầu bằng "Giải mã...").
 * **Ảnh minh hoạ:** 1 ảnh tỷ lệ 16:9 chất lượng cao, đồ họa sắc nét, bảng biểu hoặc bối cảnh giao dịch tinh tế (dùng `generate_image`) và watermarked `gikky.net`.
 * **Dải số (`figures`):** 4–6 cặp `{label, value}`, mỗi ô ≤24 ký tự.

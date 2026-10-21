@@ -1,10 +1,12 @@
 // Đồng bộ bản sao lưu PostgreSQL và kho ảnh từ vps-muinx về ổ cứng E:
+// Hỗ trợ đồng bộ cả gikky.net lẫn các stack khác (hoc-tieng-anh, shopee-pg, bdslink, trekky).
 //
 // Cách dùng:
-//   node scripts/sao-luu-ve-o-e.mjs                   # Chụp dump mới trên VPS rồi kéo về E:\gikky-backups\prod
+//   node scripts/sao-luu-ve-o-e.mjs                   # Chụp dump mới trên VPS rồi kéo về E:\gikky-backups
 //   node scripts/sao-luu-ve-o-e.mjs --chi-keo        # Chỉ kéo các file hiện có trên VPS (không chụp mới)
 //   node scripts/sao-luu-ve-o-e.mjs --giu 45         # Giữ 45 bản dump gần nhất trong db/
-//   node scripts/sao-luu-ve-o-e.mjs --khong-anh      # Bỏ qua kéo ảnh, chỉ kéo database
+//   node scripts/sao-luu-ve-o-e.mjs --khong-anh      # Bỏ qua kéo ảnh gikky, chỉ kéo database
+//   node scripts/sao-luu-ve-o-e.mjs --chi-gikky      # Chỉ sao lưu gikky.net, bỏ qua các stack khác
 //   pnpm db:sao-luu:o-e
 
 import { execFileSync, spawn } from "node:child_process";
@@ -15,22 +17,27 @@ import {
   statSync,
   unlinkSync,
 } from "node:fs";
-import { basename, join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-function docCo(argv) {
+export function docCo(argv = process.argv.slice(2)) {
   const lay = (ten, mac_dinh) => {
     const i = argv.indexOf(ten);
     return i >= 0 && argv[i + 1] !== undefined ? argv[i + 1] : mac_dinh;
   };
 
   const macDinhDich = process.env.GIKKY_LOCAL_BACKUP_DIR ?? "E:\\gikky-backups\\prod";
+  const dich = resolve(lay("--dich", macDinhDich));
+  const macDinhDichKhac = join(dirname(dich), "other-stacks");
 
   return {
-    dich: resolve(lay("--dich", macDinhDich)),
+    dich,
+    dichKhac: resolve(lay("--dich-khac", macDinhDichKhac)),
     host: lay("--host", "vps-muinx"),
     giu: Number(lay("--giu", "30")),
     chiKeo: argv.includes("--chi-keo") || argv.includes("--pull-only"),
     khongAnh: argv.includes("--khong-anh"),
+    chiGikky: argv.includes("--chi-gikky"),
   };
 }
 
@@ -93,34 +100,38 @@ function keoDanhSachFile(host, danhSachTuVPS, thuMucDich, nhan = "file") {
   return { soMoi, soBoQua, byteMoi };
 }
 
-function layDanhSachFileTuVPS(host, lenhFind) {
+export function tachDongKichThuocFile(out) {
+  const ketQua = [];
+  for (const dong of out.split("\n")) {
+    const trimmed = dong.trim();
+    if (!trimmed) continue;
+    const spaceIdx = trimmed.indexOf(" ");
+    if (spaceIdx <= 0) continue;
+    const kichThuoc = Number(trimmed.slice(0, spaceIdx));
+    const duongDan = trimmed.slice(spaceIdx + 1).trim();
+    if (!Number.isNaN(kichThuoc) && duongDan) {
+      ketQua.push({ duongDan, kichThuoc });
+    }
+  }
+  return ketQua;
+}
+
+export function layDanhSachFileTuVPS(host, lenhFind) {
   try {
     const out = chayLenh("ssh", [host, lenhFind]);
-    const ketQua = [];
-    for (const dong of out.split("\n")) {
-      const trimmed = dong.trim();
-      if (!trimmed) continue;
-      const spaceIdx = trimmed.indexOf(" ");
-      if (spaceIdx <= 0) continue;
-      const kichThuoc = Number(trimmed.slice(0, spaceIdx));
-      const duongDan = trimmed.slice(spaceIdx + 1);
-      if (!Number.isNaN(kichThuoc) && duongDan) {
-        ketQua.push({ duongDan, kichThuoc });
-      }
-    }
-    return ketQua;
+    return tachDongKichThuocFile(out);
   } catch (err) {
     console.warn(`[o-e] Không lấy được danh sách file từ VPS: ${err.message}`);
     return [];
   }
 }
 
-function donBanCu(thuMuc, giu) {
+export function donBanCuTheoDuoi(thuMuc, duoi, giu) {
   if (giu <= 0) return [];
   if (!existsSync(thuMuc)) return [];
 
   const danhSach = readdirSync(thuMuc)
-    .filter((t) => t.endsWith(".dump"))
+    .filter((t) => t.endsWith(duoi))
     .sort()
     .reverse()
     .slice(giu);
@@ -131,7 +142,11 @@ function donBanCu(thuMuc, giu) {
   return danhSach;
 }
 
-function thongKeThuMuc(dir) {
+export function donBanCu(thuMuc, giu) {
+  return donBanCuTheoDuoi(thuMuc, ".dump", giu);
+}
+
+export function thongKeThuMuc(dir) {
   if (!existsSync(dir)) return { soLuong: 0, tongByte: 0 };
   let soLuong = 0;
   let tongByte = 0;
@@ -150,6 +165,116 @@ function thongKeThuMuc(dir) {
   return { soLuong, tongByte };
 }
 
+export async function dongBoStackKhac(co) {
+  console.log("\n================================================================================");
+  console.log("ĐỒNG BỘ CÁC STACK KHÁC TRÊN VPS VỀ Ổ E:");
+  console.log(`Đích lưu trữ:   ${co.dichKhac}`);
+  console.log(`Máy chủ VPS:    ${co.host}`);
+  console.log("================================================================================");
+
+  const tmHocTiengAnh = join(co.dichKhac, "hoc-tieng-anh");
+  const tmShopee = join(co.dichKhac, "shopee-pg");
+  const tmBdslink = join(co.dichKhac, "bdslink");
+  const tmTrekky = join(co.dichKhac, "trekky");
+
+  mkdirSync(tmHocTiengAnh, { recursive: true });
+  mkdirSync(tmShopee, { recursive: true });
+  mkdirSync(tmBdslink, { recursive: true });
+  mkdirSync(tmTrekky, { recursive: true });
+
+  // 1. hoc-tieng-anh (sqlite backups)
+  console.log("\n[o-e:other] 1. Kiểm tra backup hoc-tieng-anh (~/backups/hoctienganh_data-*.db.gz)...");
+  const dsHta = layDanhSachFileTuVPS(
+    co.host,
+    "find ~/backups -maxdepth 1 -type f -name 'hoctienganh_data-*.db.gz' -printf '%s %p\\n' 2>/dev/null || true",
+  );
+  const kqHta = keoDanhSachFile(co.host, dsHta, tmHocTiengAnh, "hoc-tieng-anh");
+  console.log(
+    `[o-e:other] hoc-tieng-anh: ${kqHta.soMoi} file mới tải về (${(kqHta.byteMoi / 1024 / 1024).toFixed(2)} MB), `
+      + `${kqHta.soBoQua} file đã có sẵn.`,
+  );
+  if (co.giu > 0) {
+    const daXoaHta = donBanCuTheoDuoi(tmHocTiengAnh, ".db.gz", co.giu);
+    if (daXoaHta.length > 0) {
+      console.log(`[o-e:other] Xoay vòng hoc-tieng-anh (giữ ${co.giu}): Đã xoá ${daXoaHta.length} bản cũ: ${daXoaHta.join(", ")}`);
+    }
+  }
+
+  // 2. shopee-pg (PostgreSQL dumps)
+  console.log("\n[o-e:other] 2. Kiểm tra backup shopee-pg (/var/lib/shopee-hub/backups/pg/shopee-*.sql.gz)...");
+  const dsShopee = layDanhSachFileTuVPS(
+    co.host,
+    "find /var/lib/shopee-hub/backups/pg -maxdepth 1 -type f -name 'shopee-*.sql.gz' -printf '%s %p\\n' 2>/dev/null || true",
+  );
+  const kqShopee = keoDanhSachFile(co.host, dsShopee, tmShopee, "shopee-pg");
+  console.log(
+    `[o-e:other] shopee-pg: ${kqShopee.soMoi} file mới tải về (${(kqShopee.byteMoi / 1024 / 1024).toFixed(2)} MB), `
+      + `${kqShopee.soBoQua} file đã có sẵn.`,
+  );
+  if (co.giu > 0) {
+    const daXoaShopee = donBanCuTheoDuoi(tmShopee, ".sql.gz", co.giu);
+    if (daXoaShopee.length > 0) {
+      console.log(`[o-e:other] Xoay vòng shopee-pg (giữ ${co.giu}): Đã xoá ${daXoaShopee.length} bản cũ: ${daXoaShopee.join(", ")}`);
+    }
+  }
+
+  // 3. bdslink & trekky: Snapshot docker volumes (nếu không có --chi-keo)
+  if (!co.chiKeo) {
+    console.log(`\n[o-e:other] 3. Tạo snapshot docker volume cho bdslink & trekky trên ${co.host}...`);
+    try {
+      const lenhSnapshot = [
+        "mkdir -p ~/backups/other-stacks",
+        "TS=$(date +%Y-%m-%dT%H-%M-%S)",
+        'docker run --rm -v bdslink_sqlite_data:/sqlite:ro -v bdslink_media_data:/media:ro -v "$HOME/backups/other-stacks":/out alpine tar -czf "/out/bdslink-${TS}.tar.gz" /sqlite /media',
+        "(cd ~/backups/other-stacks && ls -t bdslink-*.tar.gz 2>/dev/null | tail -n +8 | xargs -r rm -f || true)",
+        'docker run --rm -v trekky_data:/trekky:ro -v "$HOME/backups/other-stacks":/out alpine tar -czf "/out/trekky-${TS}.tar.gz" /trekky',
+        "(cd ~/backups/other-stacks && ls -t trekky-*.tar.gz 2>/dev/null | tail -n +8 | xargs -r rm -f || true)",
+      ].join(" && ");
+      chayLenh("ssh", [co.host, lenhSnapshot], { stdio: "inherit" });
+    } catch (err) {
+      console.warn(`[o-e:other] Cảnh báo khi tạo snapshot bdslink/trekky trên VPS: ${err.message}`);
+    }
+  } else {
+    console.log("\n[o-e:other] 3. Cờ --chi-keo: Bỏ qua tạo snapshot mới, kéo bản sao lưu hiện có.");
+  }
+
+  // Kéo bdslink
+  console.log("\n[o-e:other] 3a. Kéo bản snapshot bdslink...");
+  const dsBdslink = layDanhSachFileTuVPS(
+    co.host,
+    "find ~/backups/other-stacks ~/backups -maxdepth 1 -type f -name 'bdslink-*.tar.gz' -printf '%s %p\\n' 2>/dev/null || true",
+  );
+  const kqBdslink = keoDanhSachFile(co.host, dsBdslink, tmBdslink, "bdslink");
+  console.log(
+    `[o-e:other] bdslink: ${kqBdslink.soMoi} file mới tải về (${(kqBdslink.byteMoi / 1024 / 1024).toFixed(2)} MB), `
+      + `${kqBdslink.soBoQua} file đã có sẵn.`,
+  );
+  if (co.giu > 0) {
+    const daXoaBdslink = donBanCuTheoDuoi(tmBdslink, ".tar.gz", co.giu);
+    if (daXoaBdslink.length > 0) {
+      console.log(`[o-e:other] Xoay vòng bdslink (giữ ${co.giu}): Đã xoá ${daXoaBdslink.length} bản cũ: ${daXoaBdslink.join(", ")}`);
+    }
+  }
+
+  // Kéo trekky
+  console.log("\n[o-e:other] 3b. Kéo bản snapshot trekky...");
+  const dsTrekky = layDanhSachFileTuVPS(
+    co.host,
+    "find ~/backups/other-stacks ~/backups -maxdepth 1 -type f -name 'trekky-*.tar.gz' -printf '%s %p\\n' 2>/dev/null || true",
+  );
+  const kqTrekky = keoDanhSachFile(co.host, dsTrekky, tmTrekky, "trekky");
+  console.log(
+    `[o-e:other] trekky: ${kqTrekky.soMoi} file mới tải về (${(kqTrekky.byteMoi / 1024 / 1024).toFixed(2)} MB), `
+      + `${kqTrekky.soBoQua} file đã có sẵn.`,
+  );
+  if (co.giu > 0) {
+    const daXoaTrekky = donBanCuTheoDuoi(tmTrekky, ".tar.gz", co.giu);
+    if (daXoaTrekky.length > 0) {
+      console.log(`[o-e:other] Xoay vòng trekky (giữ ${co.giu}): Đã xoá ${daXoaTrekky.length} bản cũ: ${daXoaTrekky.join(", ")}`);
+    }
+  }
+}
+
 async function main() {
   const co = docCo(process.argv.slice(2));
   console.log("================================================================================");
@@ -157,6 +282,7 @@ async function main() {
   console.log(`Đích lưu trữ:   ${co.dich}`);
   console.log(`Máy chủ VPS:    ${co.host}`);
   console.log(`Giữ bản dump:   ${co.giu} bản gần nhất`);
+  console.log(`Chỉ gikky:      ${co.chiGikky ? "BẬT (không sao lưu stack khác)" : "TẮT (sao lưu cả các stack khác)"}`);
   console.log("================================================================================");
 
   const tmDb = join(co.dich, "db");
@@ -223,6 +349,13 @@ async function main() {
     }
   }
 
+  // Đồng bộ các stack khác (hoc-tieng-anh, shopee-pg, bdslink, trekky) nếu không có --chi-gikky
+  if (!co.chiGikky) {
+    await dongBoStackKhac(co);
+  } else {
+    console.log("\n[o-e] Cờ --chi-gikky được bật: Bỏ qua đồng bộ các stack khác trên VPS.");
+  }
+
   // Bước 6: Thống kê tổng kết
   const tkDb = thongKeThuMuc(tmDb);
   const tkLichSu = thongKeThuMuc(tmLichSu);
@@ -231,17 +364,46 @@ async function main() {
 
   console.log("\n================================================================================");
   console.log("BÁO CÁO TỔNG KẾT SAO LƯU TRÊN Ổ E:");
-  console.log(`- Thư mục gốc:    ${co.dich}`);
-  console.log(`- DB Dump mới:    ${tkDb.soLuong} file (${(tkDb.tongByte / 1024 / 1024).toFixed(2)} MB) tại ${tmDb}`);
-  console.log(`- DB Lịch sử:     ${tkLichSu.soLuong} file (${(tkLichSu.tongByte / 1024 / 1024).toFixed(2)} MB) tại ${tmLichSu}`);
-  console.log(`- Kho ảnh media:  ${tkMedia.soLuong} file (${(tkMedia.tongByte / 1024 / 1024).toFixed(2)} MB) tại ${tmMedia}`);
-  console.log(`- Kho ảnh ẩn:     ${tkMediaAn.soLuong} file (${(tkMediaAn.tongByte / 1024 / 1024).toFixed(2)} MB) tại ${tmMediaAn}`);
-  const tongByteTatCa = tkDb.tongByte + tkLichSu.tongByte + tkMedia.tongByte + tkMediaAn.tongByte;
+  console.log(`[gikky.net] — Thư mục: ${co.dich}`);
+  console.log(`  - DB Dump mới:    ${tkDb.soLuong} file (${(tkDb.tongByte / 1024 / 1024).toFixed(2)} MB) tại ${tmDb}`);
+  console.log(`  - DB Lịch sử:     ${tkLichSu.soLuong} file (${(tkLichSu.tongByte / 1024 / 1024).toFixed(2)} MB) tại ${tmLichSu}`);
+  console.log(`  - Kho ảnh media:  ${tkMedia.soLuong} file (${(tkMedia.tongByte / 1024 / 1024).toFixed(2)} MB) tại ${tmMedia}`);
+  console.log(`  - Kho ảnh ẩn:     ${tkMediaAn.soLuong} file (${(tkMediaAn.tongByte / 1024 / 1024).toFixed(2)} MB) tại ${tmMediaAn}`);
+  const tongByteGikky = tkDb.tongByte + tkLichSu.tongByte + tkMedia.tongByte + tkMediaAn.tongByte;
+  console.log(`  -> Tổng gikky.net: ${(tongByteGikky / 1024 / 1024).toFixed(2)} MB`);
+
+  let tongByteKhac = 0;
+  if (!co.chiGikky) {
+    const tmHocTiengAnh = join(co.dichKhac, "hoc-tieng-anh");
+    const tmShopee = join(co.dichKhac, "shopee-pg");
+    const tmBdslink = join(co.dichKhac, "bdslink");
+    const tmTrekky = join(co.dichKhac, "trekky");
+
+    const tkHta = thongKeThuMuc(tmHocTiengAnh);
+    const tkShopee = thongKeThuMuc(tmShopee);
+    const tkBdslink = thongKeThuMuc(tmBdslink);
+    const tkTrekky = thongKeThuMuc(tmTrekky);
+
+    tongByteKhac = tkHta.tongByte + tkShopee.tongByte + tkBdslink.tongByte + tkTrekky.tongByte;
+
+    console.log(`\n[other-stacks] — Thư mục: ${co.dichKhac}`);
+    console.log(`  - hoc-tieng-anh:  ${tkHta.soLuong} file (${(tkHta.tongByte / 1024 / 1024).toFixed(2)} MB) tại ${tmHocTiengAnh}`);
+    console.log(`  - shopee-pg:      ${tkShopee.soLuong} file (${(tkShopee.tongByte / 1024 / 1024).toFixed(2)} MB) tại ${tmShopee}`);
+    console.log(`  - bdslink:        ${tkBdslink.soLuong} file (${(tkBdslink.tongByte / 1024 / 1024).toFixed(2)} MB) tại ${tmBdslink}`);
+    console.log(`  - trekky:         ${tkTrekky.soLuong} file (${(tkTrekky.tongByte / 1024 / 1024).toFixed(2)} MB) tại ${tmTrekky}`);
+    console.log(`  -> Tổng các stack khác: ${(tongByteKhac / 1024 / 1024).toFixed(2)} MB`);
+  }
+
+  const tongByteTatCa = tongByteGikky + tongByteKhac;
+  console.log("\n--------------------------------------------------------------------------------");
   console.log(`-> TỔNG DUNG LƯỢNG SAO LƯU AN TOÀN TRÊN Ổ E: ${(tongByteTatCa / 1024 / 1024).toFixed(2)} MB`);
   console.log("================================================================================");
 }
 
-main().catch((err) => {
-  console.error(`[o-e] THẤT BẠI: ${err.message}`);
-  process.exit(1);
-});
+const goiThang = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (goiThang) {
+  main().catch((err) => {
+    console.error(`[o-e] THẤT BẠI: ${err.message}`);
+    process.exit(1);
+  });
+}

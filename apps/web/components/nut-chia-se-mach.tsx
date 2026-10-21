@@ -9,6 +9,7 @@ import css from "./nut-chia-se-mach.module.css";
 interface NutChiaSeMachProps {
   duongDan: string;
   tieuDe: string;
+  kieu?: "menu" | "pill";
 }
 
 type TrangThai = "chua" | "da_chep" | "da_chep_zalo";
@@ -39,7 +40,7 @@ async function chepVaoBoNhoTam(chuoi: string): Promise<boolean> {
   }
 }
 
-export function NutChiaSeMach({ duongDan, tieuDe }: NutChiaSeMachProps) {
+export function NutChiaSeMach({ duongDan, tieuDe, kieu = "menu" }: NutChiaSeMachProps) {
   const hopRef = useRef<HTMLDetailsElement | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [trangThai, setTrangThai] = useState<TrangThai>("chua");
@@ -118,8 +119,10 @@ export function NutChiaSeMach({ duongDan, tieuDe }: NutChiaSeMachProps) {
     );
   };
 
+  const iconSize = kieu === "pill" ? 15 : 16;
+
   return (
-    <details ref={hopRef} className={css.menu}>
+    <details ref={hopRef} className={kieu === "pill" ? `${css.menu} ${css.menu_pill}` : css.menu}>
       <summary
         className={css.nut}
         data-testid="nut-chia-se-mach"
@@ -127,9 +130,9 @@ export function NutChiaSeMach({ duongDan, tieuDe }: NutChiaSeMachProps) {
         aria-label="Chia sẻ bài viết"
       >
         {trangThai === "chua" ? (
-          <Share2 size={16} strokeWidth={2} aria-hidden />
+          <Share2 size={iconSize} strokeWidth={2} aria-hidden />
         ) : (
-          <Check size={16} strokeWidth={2} aria-hidden />
+          <Check size={iconSize} strokeWidth={2} aria-hidden />
         )}
         <span>
           {trangThai === "da_chep"

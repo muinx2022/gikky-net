@@ -1,4 +1,5 @@
 import type { MachTomTatOut } from "@gikky/api-client";
+import { GitCommitHorizontal, MessageCircle } from "lucide-react";
 import Link from "next/link";
 
 import { CHU_NGUOI_DUNG } from "@/lib/chu-nguoi-dung";
@@ -8,6 +9,7 @@ import { duongDanHoSo, duongDanMach, duongDanSub } from "@/lib/url";
 import { Avatar } from "./avatar";
 import { CotVote } from "./cot-vote";
 import { NoiDungThe } from "./noi-dung-the";
+import { NutChiaSeMach } from "./nut-chia-se-mach";
 import css from "./the-mach.module.css";
 
 /** Thẻ mạch trong feed và trong hồ sơ — plan con 1c §2.3, dựng lại theo vỏ Reddit ở 1d.
@@ -31,12 +33,6 @@ import css from "./the-mach.module.css";
 export function TheMach({ mach }: { mach: MachTomTatOut }) {
   return (
     <li className={css.the} data-testid="the-mach" data-mach-id={mach.id}>
-      <CotVote
-        diem={mach.diem}
-        nhan={mach.title}
-        cai_gi="mach"
-        dich={mach.moc_1_id === null ? null : { loai: "moc", id: mach.moc_1_id }}
-      />
       <div className={css.than}>
         <div className={css.dau}>
           {/* Bốn nút mang dấu `CHU_NGUOI_DUNG` trong thẻ này (Y3): slug sub, tên tác giả,
@@ -122,6 +118,48 @@ export function TheMach({ mach }: { mach: MachTomTatOut }) {
             tieu_de={mach.title}
           />
         )}
+
+        <div className={css.chan}>
+          <CotVote
+            diem={mach.diem}
+            nhan={mach.title}
+            cai_gi="mach"
+            nam_ngang
+            dich={mach.moc_1_id === null ? null : { loai: "moc", id: mach.moc_1_id }}
+          />
+
+          <Link
+            href={
+              mach.entry_count > 1
+                ? `${duongDanMach(mach.slug, mach.id)}#moc-${mach.entry_count}`
+                : duongDanMach(mach.slug, mach.id)
+            }
+            prefetch={false}
+            className={css.nut_binh_luan}
+            data-testid="the-mach-so-moc"
+            title="Số mốc ghi nhận trong mạch"
+          >
+            <GitCommitHorizontal size={15} strokeWidth={2} aria-hidden />
+            <span>{mach.entry_count} mốc</span>
+          </Link>
+
+          <Link
+            href={`${duongDanMach(mach.slug, mach.id)}#khan-dai`}
+            prefetch={false}
+            className={css.nut_binh_luan}
+            data-testid="the-mach-so-binh-luan"
+            title="Bình luận"
+          >
+            <MessageCircle size={15} strokeWidth={2} aria-hidden />
+            <span>{mach.comment_count}</span>
+          </Link>
+
+          <NutChiaSeMach
+            duongDan={duongDanMach(mach.slug, mach.id)}
+            tieuDe={mach.title}
+            kieu="pill"
+          />
+        </div>
       </div>
     </li>
   );

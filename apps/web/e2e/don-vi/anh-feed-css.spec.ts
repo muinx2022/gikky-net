@@ -43,37 +43,28 @@ function cacKhoiAnh(css: string): string[] {
 }
 
 test.describe("anh-feed-css", () => {
-  test("anh feed khong ep ngang va khung tran 350", () => {
+  test("anh feed rong 100% va khung tran 420", () => {
     const css = boChuThichCss(readFileSync(CSS, "utf8"));
     const khois = cacKhoiAnh(css);
     expect(khois.length, "phải có ít nhất một rule chứa `.anh`").toBeGreaterThan(0);
 
-    for (const anh of khois) {
-      // Không dùng `\bwidth` — nó khớp cả `max-width: 100%`.
-      expect(anh, ".anh không được width: 100%").not.toMatch(
-        /(?<![\w-])width\s*:\s*100%/,
-      );
-      expect(anh, ".anh không được object-fit: cover").not.toMatch(
-        /\bobject-fit\s*:\s*cover\b/,
-      );
-    }
-
     const anhChinh = khois[0];
     expect(anhChinh).toMatch(/\bmax-width\s*:\s*100%/);
+    expect(anhChinh).toMatch(/\bwidth\s*:\s*100%/);
 
     const khungM = css.match(/(?:^|\n)\.khung_anh\s*\{([^}]*)\}/);
     expect(khungM, "phải có rule `.khung_anh { … }`").not.toBeNull();
     const khung = khungM![1];
-    expect(khung).toMatch(/\bmax-height\s*:\s*350px\b/);
+    expect(khung).toMatch(/\bwidth\s*:\s*100%/);
+    expect(khung).toMatch(/\bmax-height\s*:\s*420px\b/);
     expect(khung).toMatch(/\boverflow\s*:\s*hidden\b/);
     expect(khung).toMatch(/\bmax-width\s*:\s*100%/);
   });
 
-  test("jsx dung phanTramChieuRongAnh cho khung anh va w_thumb/h_thumb chong CLS", () => {
+  test("jsx dung w_thumb/h_thumb chong CLS", () => {
     const src = boChuThichTs(readFileSync(TSX, "utf8"));
     expect(src).toMatch(/w_thumb/);
     expect(src).toMatch(/h_thumb/);
-    expect(src).toMatch(/phanTramChieuRongAnh/);
     // Không gắn width thuộc tính từ ảnh chính khi src là thumb.
     expect(src).not.toMatch(/width=\{xem_truoc\.anh\.w\b/);
     expect(src).not.toMatch(/height=\{xem_truoc\.anh\.h\b/);

@@ -408,9 +408,10 @@ class GikkyClient:
             raise RuntimeError(f"Lấy bình luận mạch #{mach_id} thất bại (HTTP {ma})")
         return res
 
-    def lay_binh_luan_moc(self, moc_id: int) -> dict:
+    def lay_binh_luan_moc(self, moc_id: int, sort: str = "moi_nhat", limit: int = 50) -> dict:
         """Lấy danh sách bình luận neo vào mốc (GET /api/v1/mocs/{moc_id}/comments)."""
-        url = f"{self.origin}/api/v1/mocs/{moc_id}/comments"
+        params = urllib.parse.urlencode({"sort": sort, "limit": limit})
+        url = f"{self.origin}/api/v1/mocs/{moc_id}/comments?{params}"
         ma, res = self._yeu_cau("GET", url)
         if ma != 200:
             raise RuntimeError(f"Lấy bình luận mốc #{moc_id} thất bại (HTTP {ma})")
@@ -484,7 +485,7 @@ class GikkyClient:
 
                 # 3. Duyệt đệ quy cây threads
                 def _duyet_thread(node: dict):
-                    if node.get("trang_thai") == "hien":
+                    if node.get("trang_thai") in ("binh_thuong", "hien", None):
                         author_un = node.get("author", {}).get("username", "")
                         # Chỉ xét bình luận của độc giả bên ngoài
                         if author_un and author_un not in he_thong_authors:
