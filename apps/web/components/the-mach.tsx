@@ -7,7 +7,7 @@ import { ngayCuaThoiDiem } from "@/lib/dinh-dang";
 import { duongDanHoSo, duongDanKhanDai, duongDanMach, duongDanSub } from "@/lib/url";
 
 import { Avatar } from "./avatar";
-import { ChepLink } from "./chep-link";
+import { NutChiaSeMach } from "./nut-chia-se-mach";
 import { CotVote } from "./cot-vote";
 import { HanhDongMod } from "./hanh-dong-mod";
 import { NoiDungThe } from "./noi-dung-the";
@@ -197,7 +197,7 @@ export function TheMach({ mach }: { mach: MachTomTatOut }) {
           {/* Thao tác thứ hai của thanh, chạy trọn ở trình duyệt — không cần endpoint,
               nên nó không phạm luật "không nút chết" của lượt giao diện. Đặt CUỐI hàng:
               lối vào khán đài mới là thao tác chính. */}
-          <ChepLink duongDan={duongDanMach(mach.slug, mach.id)} nhan={mach.title} />
+          <NutChiaSeMach duongDan={duongDanMach(mach.slug, mach.id)} tieuDe={mach.title} />
           <span
             className={css.luot_xem}
             data-testid="the-mach-luot-xem"
