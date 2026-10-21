@@ -3,15 +3,24 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
+  ArrowLeftRight,
   BookOpen,
+  Brain,
+  CircleHelp,
+  Coins,
+  Compass,
   Flame,
   Home,
+  Landmark,
   Mail,
-  Plus,
+  Newspaper,
   Radio,
   Settings,
+  ShieldCheck,
+  TrendingUp,
   UserPlus,
   UserRound,
+  type LucideIcon,
 } from "lucide-react";
 import type { SubChiTietOut } from "@gikky/api-client";
 
@@ -48,6 +57,38 @@ function LogoGoogle() {
       />
     </svg>
   );
+}
+
+function layPhongCachSub(slug: string): {
+  Icon: LucideIcon;
+  nen: string;
+  chu: string;
+} {
+  if (slug.startsWith("tin-tuc")) {
+    return { Icon: Newspaper, nen: "rgba(37, 99, 235, 0.12)", chu: "#2563eb" };
+  }
+  if (slug.startsWith("chung-")) {
+    return { Icon: TrendingUp, nen: "rgba(5, 150, 105, 0.12)", chu: "#059669" };
+  }
+  if (slug.startsWith("vi-mo")) {
+    return { Icon: Landmark, nen: "rgba(79, 70, 229, 0.12)", chu: "#4f46e5" };
+  }
+  if (slug.startsWith("quan-tri")) {
+    return { Icon: ShieldCheck, nen: "rgba(217, 119, 6, 0.12)", chu: "#d97706" };
+  }
+  if (slug.startsWith("tam-ly")) {
+    return { Icon: Brain, nen: "rgba(225, 29, 72, 0.12)", chu: "#e11d48" };
+  }
+  if (slug.startsWith("ngoai-hoi")) {
+    return { Icon: ArrowLeftRight, nen: "rgba(8, 145, 178, 0.12)", chu: "#0891b2" };
+  }
+  if (slug.startsWith("cryp")) {
+    return { Icon: Coins, nen: "rgba(234, 88, 12, 0.14)", chu: "#ea580c" };
+  }
+  if (slug.startsWith("hoi-dap")) {
+    return { Icon: CircleHelp, nen: "rgba(147, 51, 234, 0.12)", chu: "#9333ea" };
+  }
+  return { Icon: Compass, nen: "var(--accent-soft)", chu: "var(--accent)" };
 }
 
 export function CotTrai({
@@ -139,12 +180,6 @@ export function CotTrai({
           <Flame size={18} aria-hidden="true" />
           <span>Nhiều điểm nhất</span>
         </Link>
-        {dangNhap && (
-          <Link href="/dang-mach" prefetch={false} className={css.muc_nav}>
-            <Plus size={18} aria-hidden="true" />
-            <span>Tạo mạch mới</span>
-          </Link>
-        )}
       </nav>
 
       {/* Nhóm chuyên mục */}
@@ -153,20 +188,30 @@ export function CotTrai({
           <hr className={css.vach} />
           <div className={css.nhom}>
             <p className={css.tieu_de_nhom}>CHUYÊN MỤC</p>
-            {cacSub.map((s) => (
-              <Link
-                key={s.slug}
-                href={duongDanSub(s.slug)}
-                prefetch={false}
-                className={css.muc_nav}
-                title={s.ten}
-              >
-                <span className={css.icon_sub} aria-hidden="true">
-                  {s.slug.slice(0, 1)}
-                </span>
-                <span>s/{s.slug}</span>
-              </Link>
-            ))}
+            {cacSub.map((s) => {
+              const { Icon, nen, chu } = layPhongCachSub(s.slug);
+              return (
+                <Link
+                  key={s.slug}
+                  href={duongDanSub(s.slug)}
+                  prefetch={false}
+                  className={css.muc_sub}
+                  title={`${s.ten} (s/${s.slug})`}
+                >
+                  <span
+                    className={css.icon_sub}
+                    style={{ background: nen, color: chu }}
+                    aria-hidden="true"
+                  >
+                    <Icon size={17} strokeWidth={2} />
+                  </span>
+                  <span className={css.chu_sub}>
+                    <span className={css.ten_sub}>{s.ten}</span>
+                    <span className={css.slug_sub}>s/{s.slug}</span>
+                  </span>
+                </Link>
+              );
+            })}
           </div>
         </>
       )}
