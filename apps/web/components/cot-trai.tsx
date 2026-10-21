@@ -9,12 +9,9 @@ import {
   CircleHelp,
   Coins,
   Compass,
-  Flame,
-  Home,
   Landmark,
   Mail,
   Newspaper,
-  Radio,
   Settings,
   ShieldCheck,
   TrendingUp,
@@ -114,7 +111,7 @@ export function CotTrai({
       {laKhach && (
         <div className={css.khoi_tham_gia} data-testid="cot-trai-khach">
           <h2 className={css.tieu_de_tham_gia}>
-            Tham gia không gian chân thực nhất trên internet
+            Tham gia Gikky.net
           </h2>
           <div className={css.danh_sach_nut}>
             {toi?.google_bat === true && (
@@ -133,7 +130,7 @@ export function CotTrai({
                   data-testid="cot-trai-nut-google"
                 >
                   <LogoGoogle />
-                  <span>Tiếp tục với dịch vụ bằng Google</span>
+                  <span>Tiếp tục với Google</span>
                 </button>
               </form>
             )}
@@ -166,26 +163,10 @@ export function CotTrai({
         </div>
       )}
 
-      {/* Nhóm điều hướng chính */}
-      <nav className={css.nhom} aria-label="Điều hướng chính">
-        <Link href="/" prefetch={false} className={css.muc_nav}>
-          <Home size={18} aria-hidden="true" />
-          <span>Trang chủ</span>
-        </Link>
-        <Link href="/?tab=dang-dien-ra" prefetch={false} className={css.muc_nav}>
-          <Radio size={18} aria-hidden="true" />
-          <span>Đang diễn ra</span>
-        </Link>
-        <Link href="/?tab=nhieu-diem" prefetch={false} className={css.muc_nav}>
-          <Flame size={18} aria-hidden="true" />
-          <span>Nhiều điểm nhất</span>
-        </Link>
-      </nav>
-
       {/* Nhóm chuyên mục */}
       {cacSub && cacSub.length > 0 && (
         <>
-          <hr className={css.vach} />
+          {laKhach && <hr className={css.vach} />}
           <div className={css.nhom}>
             <p className={css.tieu_de_nhom}>CHUYÊN MỤC</p>
             {cacSub.map((s) => {

@@ -149,9 +149,10 @@ export function TheMach({ mach }: { mach: MachTomTatOut }) {
             className={css.nut_binh_luan}
             data-testid="the-mach-so-binh-luan"
             title="Bình luận"
+            aria-label={mach.comment_count > 0 ? `${mach.comment_count} bình luận` : "Bình luận"}
           >
             <MessageCircle size={15} strokeWidth={2} aria-hidden />
-            <span>{mach.comment_count}</span>
+            {mach.comment_count > 0 && <span>{mach.comment_count}</span>}
           </Link>
 
           <NutChiaSeMach

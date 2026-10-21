@@ -57,13 +57,9 @@ test.describe("thanh dieu huong tren mobile va tablet (giong cafef)", () => {
     expect(feedCss).toMatch(/@media\s*\(max-width:\s*960px\)[\s\S]*?\.thanh_dinh\s*\{[\s\S]*?position:\s*relative\s*!important/);
   });
 
-  test("trang-mach.module.css: hang_tren sticky tren desktop, dat tu nhien tren mobile va tablet", () => {
+  test("trang-mach.module.css: hang_tren khong sticky, cuon tu nhien tren moi man hinh", () => {
     const tmCss = boChuThichCss(readFileSync(TRANG_MACH_CSS, "utf8"));
-    // Trên desktop (min-width: 961px): sticky dưới chrome
-    expect(tmCss).toMatch(/@media\s*\(min-width:\s*961px\)[\s\S]*?\.hang_tren\s*\{[\s\S]*?position:\s*sticky/);
-    expect(tmCss).toMatch(/@media\s*\(min-width:\s*961px\)[\s\S]*?\.hang_tren\s*\{[\s\S]*?top:\s*var\(--cao-chrome\)/);
-    // Trên tablet (max-width: 960px) và điện thoại (max-width: 640px) là position: static
-    expect(tmCss).toMatch(/@media\s*\(max-width:\s*960px\)[\s\S]*?\.hang_tren\s*\{[\s\S]*?position:\s*static/);
-    expect(tmCss).toMatch(/@media\s*\(max-width:\s*640px\)[\s\S]*?\.hang_tren\s*\{[\s\S]*?position:\s*static/);
+    expect(tmCss).not.toMatch(/\.hang_tren\s*\{[^}]*position:\s*sticky/);
+    expect(tmCss).not.toMatch(/@media\s*\(min-width:\s*961px\)[\s\S]*?\.hang_tren\s*\{[\s\S]*?position:\s*sticky/);
   });
 });
