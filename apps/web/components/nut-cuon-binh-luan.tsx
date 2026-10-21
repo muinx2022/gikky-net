@@ -1,5 +1,7 @@
 "use client";
 
+import { MessageSquare } from "lucide-react";
+
 import css from "./trang-mach.module.css";
 
 /** Cuộn nhanh mượt mà (~380ms) với easing easeOutQuart */
@@ -43,6 +45,8 @@ function cuonNhanhXuong(el: HTMLElement) {
 /** Nút "Bình luận" / "N Bình luận" trên hàng chữ ký bài viết, click cuộn nhanh xuống khán đài */
 export function NutCuonBinhLuan({ soBinhLuan }: { soBinhLuan: number }) {
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const details = e.currentTarget.closest("details");
+    if (details) details.open = false;
     const el = document.getElementById("khan-dai");
     if (el) {
       e.preventDefault();
@@ -61,7 +65,8 @@ export function NutCuonBinhLuan({ soBinhLuan }: { soBinhLuan: number }) {
       data-testid="chu-ky-so-binh-luan"
       title="Cuộn xuống phần bình luận"
     >
-      {soBinhLuan >= 1 ? `${soBinhLuan} Bình luận` : "Bình luận"}
+      <MessageSquare size={16} strokeWidth={2} aria-hidden />
+      <span>{soBinhLuan >= 1 ? `${soBinhLuan} Bình luận` : "Bình luận"}</span>
     </a>
   );
 }

@@ -18,10 +18,10 @@
   /* Ôm ảnh hẹp hơn card — không kéo viền full bề ngang thẻ. */
   width: fit-content;
   max-width: 100%;
-  margin-bottom: 6px;
+  margin-bottom: 0;
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 5px;
+  border-radius: 10px;
   /* Trần cao 350px: ảnh cao hơn bị cắt bởi overflow (phần trên giữ lại). Không ép tỉ lệ
      cố định — ảnh dọc (ảnh chụp màn hình) không bị kéo 16:9. */
   max-height: 350px;

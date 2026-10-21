@@ -48,8 +48,8 @@ export function NutBaoCaoMach({ machId, tieuDe }: { machId: number; tieuDe: stri
           title="Báo cáo bài này vi phạm luật cộng đồng"
           data-testid="nut-bao-cao-mach"
         >
-          <Flag size={13} strokeWidth={2} aria-hidden />
-          Báo cáo
+          <Flag size={16} strokeWidth={2} aria-hidden />
+          <span>Báo cáo</span>
         </button>
       )}
       {mo && (

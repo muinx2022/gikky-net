@@ -1,6 +1,7 @@
 "use client";
 
 import { boTheoMach, theoMach } from "@gikky/api-client";
+import { Bell, BellRing } from "lucide-react";
 import { useState } from "react";
 
 import { cauLoi, layDuLieu } from "@/lib/ghi";
@@ -95,7 +96,12 @@ export function NutTheoMach() {
         }
         data-testid="nut-theo-mach"
       >
-        {dang_theo ? "✓ Đang theo" : "＋ Theo mạch"}
+        {dang_theo ? (
+          <BellRing size={16} strokeWidth={2} aria-hidden />
+        ) : (
+          <Bell size={16} strokeWidth={2} aria-hidden />
+        )}
+        <span>{dang_theo ? "Đang theo dõi mạch" : "Theo dõi mạch"}</span>
       </button>
       {loi !== null && (
         <span className={css.loi} role="alert" data-testid="theo-mach-loi">

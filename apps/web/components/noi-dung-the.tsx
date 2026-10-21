@@ -101,9 +101,9 @@ export function NoiDungThe({
         </span>
       )}
 
-      {xem_truoc.trich !== "" && (
+      {!co_anh && xem_truoc.trich !== "" && (
         <span
-          className={co_anh ? `${css.trich} ${css.trich_mot_dong}` : css.trich}
+          className={css.trich}
           data-testid="the-mach-trich"
           {...CHU_NGUOI_DUNG}
         >

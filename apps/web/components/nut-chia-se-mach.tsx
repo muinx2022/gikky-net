@@ -127,9 +127,9 @@ export function NutChiaSeMach({ duongDan, tieuDe }: NutChiaSeMachProps) {
         aria-label="Chia sẻ bài viết"
       >
         {trangThai === "chua" ? (
-          <Share2 size={13} strokeWidth={2} aria-hidden />
+          <Share2 size={16} strokeWidth={2} aria-hidden />
         ) : (
-          <Check size={13} strokeWidth={2} aria-hidden />
+          <Check size={16} strokeWidth={2} aria-hidden />
         )}
         <span>
           {trangThai === "da_chep"
