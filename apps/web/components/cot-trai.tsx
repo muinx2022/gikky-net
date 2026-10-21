@@ -23,6 +23,7 @@ import type { SubChiTietOut } from "@gikky/api-client";
 
 import { useModalDangNhap } from "@/components/modal-dang-nhap";
 import { usePhien } from "@/components/phien";
+import { docCacSubOTrinhDuyet } from "@/lib/api";
 import { baoDamCsrf } from "@/lib/tai-khoan";
 import { duongDanHoSo, duongDanSub } from "@/lib/url";
 import css from "./cot-trai.module.css";
@@ -96,15 +97,33 @@ export function CotTrai({
   const { toi, dangTai } = usePhien();
   const { moModal } = useModalDangNhap();
   const [csrf, datCsrf] = useState("");
+  const [subTuTrinhDuyet, datSubTuTrinhDuyet] = useState<readonly SubChiTietOut[]>([]);
 
   const dangNhap = toi?.dang_nhap === true;
   const laKhach = !dangTai && !dangNhap;
+
+  useEffect(() => {
+    if (cacSub && cacSub.length > 0) return;
+    let vanCon = true;
+    docCacSubOTrinhDuyet()
+      .then((ds) => {
+        if (vanCon && ds && ds.length > 0) {
+          datSubTuTrinhDuyet(ds);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      vanCon = false;
+    };
+  }, [cacSub]);
 
   useEffect(() => {
     if (toi?.google_bat === true) {
       void baoDamCsrf().then(datCsrf);
     }
   }, [toi?.google_bat]);
+
+  const danhSachSub = cacSub && cacSub.length > 0 ? cacSub : subTuTrinhDuyet;
 
   return (
     <aside className={css.cot_trai} aria-label="Cột điều hướng">
@@ -164,12 +183,12 @@ export function CotTrai({
       )}
 
       {/* Nhóm chuyên mục */}
-      {cacSub && cacSub.length > 0 && (
+      {danhSachSub.length > 0 && (
         <>
           {laKhach && <hr className={css.vach} />}
           <div className={css.nhom}>
             <p className={css.tieu_de_nhom}>CHUYÊN MỤC</p>
-            {cacSub.map((s) => {
+            {danhSachSub.map((s) => {
               const { Icon, nen, chu } = layPhongCachSub(s.slug);
               return (
                 <Link
@@ -198,7 +217,7 @@ export function CotTrai({
       )}
 
       {/* Nhóm tài nguyên */}
-      <hr className={css.vach} />
+      {(laKhach || danhSachSub.length > 0) && <hr className={css.vach} />}
       <div className={css.nhom}>
         <p className={css.tieu_de_nhom}>TÀI NGUYÊN</p>
         <Link href="/luat" prefetch={false} className={css.muc_nav}>
