@@ -3,11 +3,10 @@ import Link from "next/link";
 
 import { CHU_NGUOI_DUNG } from "@/lib/chu-nguoi-dung";
 import { ngayCuaThoiDiem } from "@/lib/dinh-dang";
-import { duongDanHoSo, duongDanKhanDai, duongDanMach, duongDanSub } from "@/lib/url";
+import { duongDanHoSo, duongDanMach, duongDanSub } from "@/lib/url";
 
 import { Avatar } from "./avatar";
 import { CotVote } from "./cot-vote";
-import { HanhDongMod } from "./hanh-dong-mod";
 import { NoiDungThe } from "./noi-dung-the";
 import css from "./the-mach.module.css";
 
@@ -123,77 +122,6 @@ export function TheMach({ mach }: { mach: MachTomTatOut }) {
             tieu_de={mach.title}
           />
         )}
-
-        <div className={css.chan}>
-          {mach.entry_count >= 2 && (
-            <span className={css.dem} data-testid="the-mach-so-moc">
-              {mach.entry_count} mốc
-            </span>
-          )}
-          {mach.entry_count >= 2 && mach.moc_moi_nhat && (
-            <Link
-              className={css.chip_moc_moi}
-              href={`${duongDanMach(mach.slug, mach.id)}#moc-${mach.moc_moi_nhat.seq}`}
-              prefetch={false}
-              data-testid="the-mach-moc-moi"
-              title={`Xem mốc ${mach.moc_moi_nhat.seq}`}
-            >
-              <span className={css.chip_icon} aria-hidden>
-                ⚡
-              </span>
-              <span>
-                Mốc {mach.moc_moi_nhat.seq}
-                {mach.moc_moi_nhat.loai ? `: ${mach.moc_moi_nhat.loai}` : ""}
-              </span>
-            </Link>
-          )}
-          {mach.comment_count >= 1 && (
-            <Link
-              className={css.nut_binh_luan}
-              href={duongDanKhanDai(mach.slug, mach.id)}
-              prefetch={false}
-              data-testid="the-mach-so-binh-luan"
-            >
-              💬 {mach.comment_count} bình luận
-            </Link>
-          )}
-          {mach.ket_qua !== null && (
-            <span
-              className={css.ket_qua}
-              data-testid="the-mach-ket-qua"
-              {...CHU_NGUOI_DUNG}
-            >
-              {mach.ket_qua}
-            </span>
-          )}
-          {mach.truong_phai && (
-            <Link
-              href={`/?truong_phai=${encodeURIComponent(mach.truong_phai)}`}
-              className={css.truong_phai}
-              data-testid="the-mach-truong-phai"
-              title={`Lọc theo trường phái ${mach.truong_phai}`}
-              prefetch={false}
-              {...CHU_NGUOI_DUNG}
-            >
-              #{mach.truong_phai}
-            </Link>
-          )}
-          {/* Công cụ mod ngay trên thẻ — user chốt 2026-08-24 ("vào chuyên mục thì ra
-              phần chuyên mục với các action của mod"). Client component, trả `null` cho
-              mọi người không phải staff, nên thẻ của người đọc thường **không đổi một
-              pixel nào**. Đẩy ra góc phải (mod_phai, margin-left: auto).
-
-              Chỉ có "Ẩn", không có "Khoá": thẻ feed không biết mạch đang khoá hay không
-              (`MachTomTatOut` không mang `locked`) — xem chú thích trong `HanhDongMod`.
-              `dangAn` luôn `false` vì mạch bị ẩn không lọt vào feed. */}
-          <HanhDongMod
-            loai="mach"
-            id={mach.id}
-            dangAn={false}
-            nhan={`mạch “${mach.title}”`}
-            className={css.mod_phai}
-          />
-        </div>
       </div>
     </li>
   );

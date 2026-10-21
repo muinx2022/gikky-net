@@ -155,7 +155,7 @@ export function CotTrai({
             <p className={css.tieu_de_nhom}>CHUYÊN MỤC</p>
             {cacSub.map((s) => (
               <Link
-                key={s.id}
+                key={s.slug}
                 href={duongDanSub(s.slug)}
                 prefetch={false}
                 className={css.muc_nav}
