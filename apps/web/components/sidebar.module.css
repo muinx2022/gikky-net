@@ -21,36 +21,24 @@
 
 /* Kiểu .widget của Pitnik */
 .khoi {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 0 14px 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  background: var(--inset);
+  border: 0;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: none;
 }
 
 .tieu_de {
   position: relative;
-  margin: 0 -14px 10px;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--line);
   font-family: var(--f-ui);
-  font-size: 14px;
-  font-weight: 600;
-  text-transform: none;
-  letter-spacing: 0;
-  color: var(--ink);
-}
-
-.tieu_de::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 3px;
-  height: 16px;
-  background: var(--brand);
-  border-radius: 0 2px 2px 0;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+  margin: 0 0 10px;
+  padding: 0;
+  border-bottom: 0;
 }
 
 .than {
@@ -60,10 +48,16 @@
   color: var(--ink-2);
 }
 
-.so {
+.so,
+.so_lieu {
   margin: 8px 0 0;
+  font-family: var(--f-ui);
   font-size: 12px;
   color: var(--ink-3);
+}
+
+.khuon_mau {
+  font-family: var(--f-ui);
 }
 
 .gach_dau_dong {

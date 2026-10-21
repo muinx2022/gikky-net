@@ -1,5 +1,4 @@
 import type { MachTomTatOut } from "@gikky/api-client";
-import { Eye } from "lucide-react";
 import Link from "next/link";
 
 import { CHU_NGUOI_DUNG } from "@/lib/chu-nguoi-dung";
@@ -11,7 +10,6 @@ import { NutChiaSeMach } from "./nut-chia-se-mach";
 import { CotVote } from "./cot-vote";
 import { HanhDongMod } from "./hanh-dong-mod";
 import { NoiDungThe } from "./noi-dung-the";
-import { NutLuuTruMach } from "./nut-luu-tru-mach";
 import css from "./the-mach.module.css";
 
 /** Thẻ mạch trong feed và trong hồ sơ — plan con 1c §2.3, dựng lại theo vỏ Reddit ở 1d.
@@ -86,19 +84,6 @@ export function TheMach({ mach }: { mach: MachTomTatOut }) {
             ·
           </span>
           <span className={css.khi}>{ngayCuaThoiDiem(mach.published_at)}</span>
-          {mach.entry_count >= 2 && mach.moc_moi_nhat && (
-            <>
-              <span className={css.cham} aria-hidden>
-                ·
-              </span>
-              <span
-                className={css.khi_cap_nhat}
-                title={`Mốc ${mach.moc_moi_nhat.seq} ngày ${ngayCuaThoiDiem(mach.moc_moi_nhat.created_at)}`}
-              >
-                nối mốc {ngayCuaThoiDiem(mach.moc_moi_nhat.created_at)}
-              </span>
-            </>
-          )}
           {mach.status === "closed" && (
             <span className={css.dong_so}>đã đóng sổ</span>
           )}
@@ -119,18 +104,6 @@ export function TheMach({ mach }: { mach: MachTomTatOut }) {
             >
               🔒 riêng tư
             </span>
-          )}
-          {mach.truong_phai && (
-            <Link
-              href={`/?truong_phai=${encodeURIComponent(mach.truong_phai)}`}
-              className={css.truong_phai}
-              data-testid="the-mach-truong-phai"
-              title={`Lọc theo trường phái ${mach.truong_phai}`}
-              prefetch={false}
-              {...CHU_NGUOI_DUNG}
-            >
-              #{mach.truong_phai}
-            </Link>
           )}
         </div>
 
@@ -198,20 +171,18 @@ export function TheMach({ mach }: { mach: MachTomTatOut }) {
               nên nó không phạm luật "không nút chết" của lượt giao diện. Đặt CUỐI hàng:
               lối vào khán đài mới là thao tác chính. */}
           <NutChiaSeMach duongDan={duongDanMach(mach.slug, mach.id)} tieuDe={mach.title} />
-          <span
-            className={css.luot_xem}
-            data-testid="the-mach-luot-xem"
-            title="Lượt xem bài viết"
-          >
-            <Eye size={13} strokeWidth={2} aria-hidden />
-            <span>{(mach.view_count ?? 0).toLocaleString("vi-VN")} lượt xem</span>
-          </span>
-          <NutLuuTruMach
-            machId={mach.id}
-            tieuDe={mach.title}
-            tacGiaUsername={mach.author.username}
-            daLuuTruBanDau={mach.da_luu_tru ?? false}
-          />
+          {mach.truong_phai && (
+            <Link
+              href={`/?truong_phai=${encodeURIComponent(mach.truong_phai)}`}
+              className={css.truong_phai}
+              data-testid="the-mach-truong-phai"
+              title={`Lọc theo trường phái ${mach.truong_phai}`}
+              prefetch={false}
+              {...CHU_NGUOI_DUNG}
+            >
+              #{mach.truong_phai}
+            </Link>
+          )}
           {/* Công cụ mod ngay trên thẻ — user chốt 2026-08-24 ("vào chuyên mục thì ra
               phần chuyên mục với các action của mod"). Client component, trả `null` cho
               mọi người không phải staff, nên thẻ của người đọc thường **không đổi một

@@ -39,11 +39,14 @@
 }
 
 .moc {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 16px 18px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  display: flex;
+  gap: 14px;
+  padding: 20px 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  box-shadow: none;
 }
 
 /* Cột vote + thân, đúng bố cục Reddit. `min-width: 0` ở CẢ HAI tầng: thiếu nó thì một
@@ -66,6 +69,8 @@
   align-items: baseline;
   gap: 9px;
   padding-bottom: 7px;
+  font-family: var(--f-ui);
+  font-size: 12.5px;
 }
 
 .khi {

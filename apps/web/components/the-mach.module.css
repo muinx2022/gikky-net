@@ -20,17 +20,17 @@
 .the {
   display: flex;
   gap: 12px;
-  padding: 16px 18px 12px 12px;
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  padding: 16px 8px;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  box-shadow: none;
+  transition: background-color 0.15s ease;
 }
 
 .the:hover {
-  border-color: var(--line-2);
-  box-shadow: 0 4px 14px rgba(48, 48, 91, 0.06);
+  background: var(--inset);
 }
 
 .than {
@@ -43,31 +43,39 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
-  line-height: 1.45;
+  font-family: var(--f-ui);
+  font-size: 12.5px;
+  line-height: 1.4;
   color: var(--ink-3);
 }
 
 .sub,
 .chuyen_muc {
-  font-family: var(--f-mono);
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--accent);
-  background: var(--accent-soft);
-  padding: 2px 8px;
-  border-radius: 999px;
+  font-family: var(--f-ui);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
   letter-spacing: 0.02em;
 }
 
+.sub:hover,
+.chuyen_muc:hover {
+  color: var(--brand);
+  background: transparent;
+  text-decoration: underline;
+}
+
 .tieu_de {
-  font-family: var(--f-display);
-  font-size: 16.5px;
-  line-height: 1.4;
+  font-family: var(--f-sans);
+  font-size: clamp(17px, 1.8vw, 19.5px);
   font-weight: 600;
-  letter-spacing: -0.01em;
-  margin: 4px 0 6px;
+  line-height: 1.4;
+  letter-spacing: 0;
   color: var(--ink);
+  margin: 4px 0 6px;
 }
 
 .tieu_de a:hover,
@@ -80,11 +88,12 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-family: var(--f-ui);
+  font-size: 12.5px;
   color: var(--ink-3);
-  border-top: 1px solid var(--line);
-  padding-top: 10px;
-  margin-top: 6px;
+  border-top: 0;
+  padding-top: 0;
+  margin-top: 8px;
 }
 
 .cum_tac_gia {
@@ -100,9 +109,17 @@
   text-decoration: none;
 }
 
-.ai {
+.ai,
+.tac_gia {
   color: var(--ink-2);
   font-weight: 500;
+  text-decoration: none;
+}
+
+.ai:hover,
+.tac_gia:hover {
+  color: var(--ink);
+  text-decoration: underline;
 }
 
 .cham {
@@ -110,13 +127,14 @@
 }
 
 .dem {
-  font-family: var(--f-mono);
+  font-family: var(--f-ui);
   font-variant-numeric: tabular-nums;
+  font-size: 12px;
   color: var(--ink-2);
   font-weight: 500;
   background: var(--surface-2);
-  border-radius: 3px;
-  padding: 0 6px;
+  border-radius: 999px;
+  padding: 2px 8px;
 }
 
 /* `💬 N` là lối vào khán đài, nên nó phải TRÔNG như bấm được — trên Reddit đây là chỗ
@@ -126,21 +144,27 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-family: var(--f-mono);
+  font-family: var(--f-ui);
   font-variant-numeric: tabular-nums;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 500;
   color: var(--ink-2);
-  background: var(--surface-2);
+  background: transparent;
+  border: 0;
   border-radius: 999px;
   padding: 4px 10px;
   transition: background 0.15s ease, color 0.15s ease;
 }
 
+.nut_binh_luan:first-child,
+.hanh_dong:first-child {
+  margin-left: -10px;
+}
+
 .nut_binh_luan:hover,
 .hanh_dong:hover {
-  background: var(--inset);
-  color: var(--accent);
+  background: var(--surface-2);
+  color: var(--ink);
 }
 
 .khi {
@@ -158,14 +182,14 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-family: var(--f-mono);
-  font-size: 11.5px;
+  font-family: var(--f-ui);
+  font-size: 12px;
   font-weight: 500;
   color: var(--accent);
   background: var(--surface-2);
   border: 1px solid var(--line-2);
-  border-radius: 3px;
-  padding: 0 6px;
+  border-radius: 999px;
+  padding: 2px 8px;
   text-decoration: none;
   transition: background 0.15s ease, border-color 0.15s ease;
 }
@@ -214,18 +238,21 @@
 }
 
 .truong_phai {
-  font-family: var(--f-mono);
-  font-size: 11px;
-  color: var(--accent);
-  background: var(--surface-2);
-  border: 1px solid var(--line-2);
-  border-radius: 3px;
-  padding: 0 5px;
+  margin-left: auto;
+  font-family: var(--f-ui);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-3);
+  background: var(--inset);
+  border: 0;
+  border-radius: 999px;
+  padding: 2px 10px;
   text-decoration: none;
 }
 
 .truong_phai:hover {
-  background: var(--accent-soft);
+  background: var(--surface-2);
+  color: var(--ink);
 }
 
 .luot_xem {

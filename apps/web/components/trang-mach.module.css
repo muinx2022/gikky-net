@@ -17,31 +17,25 @@
  * — nó tô nền thẻ để che đường kẻ). Chỗ nào còn `--surface` sẽ hiện ra thành một mảng sáng
  * lệch màu ngay giữa thẻ. */
 .the {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 8px 0 24px;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .dau {
-  padding: 20px 26px 20px;
+  padding: 12px 0 16px;
   position: relative;
-}
-
-.dau::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 20px;
-  height: 28px;
-  width: 3px;
-  background: var(--brand);
-  border-radius: 0 2px 2px 0;
 }
 
 .sub,
 .chuyen_muc {
-  font-family: var(--f-mono);
+  font-family: var(--f-ui);
   font-size: 11.5px;
   font-weight: 600;
   color: var(--accent);
@@ -75,6 +69,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 9px;
+  font-family: var(--f-ui);
   font-size: 13px;
   color: var(--ink-3);
 }
@@ -135,11 +130,11 @@
 .nhat_ky {
   list-style: none;
   margin: 0;
-  padding: 0 26px 4px;
+  padding: 0 0 4px;
 }
 
 .khoa {
-  margin: 0 26px 16px;
+  margin: 0 0 16px;
   padding: 9px 13px;
   border: 1px solid var(--line-2);
   border-radius: 5px;
@@ -154,15 +149,15 @@
   }
 
   .dau {
-    padding: 14px 16px 16px;
+    padding: 12px 0 14px;
   }
 
   .nhat_ky {
-    padding: 0 16px 4px;
+    padding: 0 0 4px;
   }
 
   .khoa {
-    margin: 0 16px 14px;
+    margin: 0 0 14px;
   }
 }
 
@@ -183,10 +178,10 @@
   justify-content: space-between;
   gap: 10px;
   margin: 0;
-  padding: 10px 24px;
-  background: color-mix(in srgb, var(--card) 92%, transparent);
+  padding: 6px 0;
+  background: color-mix(in srgb, var(--bg) 94%, transparent);
   border-bottom: 1px solid var(--line);
-  border-radius: 6px 6px 0 0;
+  border-radius: 0;
 }
 
 @media (min-width: 961px) {
@@ -194,7 +189,7 @@
     position: sticky;
     top: var(--cao-chrome);
     z-index: 20;
-    background: color-mix(in srgb, var(--card) 95%, transparent);
+    background: color-mix(in srgb, var(--bg) 95%, transparent);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
   }
@@ -225,12 +220,12 @@
 
 /* Mặt BÃO: composer đứng giữa nhật ký và khán đài (wireframe 9.2). */
 .composer_bao {
-  padding: 0 26px 18px;
+  padding: 0 0 18px;
 }
 
 @media (max-width: 640px) {
   .composer_bao {
-    padding: 0 16px 16px;
+    padding: 0 0 16px;
   }
 }
 
@@ -252,7 +247,7 @@
     position: static;
     top: auto;
     margin: 0;
-    padding: 14px 16px 10px;
+    padding: 10px 0;
     background: none;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
@@ -282,7 +277,7 @@
 /* Dòng "đang xem mặt BÃO — xem mặt CẶN" (L21). Cùng kiểu dáng với `loi-moi-doi-mat` ở
    chiều ngược lại: hai lối đi ngang vai nhau thì phải trông ngang vai nhau. */
 .doi_mat {
-  margin: 0 26px 14px;
+  margin: 0 0 14px;
   font-size: 12.5px;
   color: var(--ink-3);
 }
@@ -303,12 +298,12 @@
 
 @media (max-width: 640px) {
   .doi_mat {
-    margin: 0 16px 12px;
+    margin: 0 0 12px;
   }
 }
 
 .truong_phai {
-  font-family: var(--f-mono);
+  font-family: var(--f-ui);
   font-size: 11px;
   color: var(--accent);
   background: var(--surface-2);

@@ -24,13 +24,11 @@ import { MocAccordionProvider } from "@/components/moc-accordion";
 import { NganKeoProvider } from "@/components/ngan-keo";
 import { NutTheoMach } from "@/components/nut-theo-mach";
 import { FormBinhLuanProvider } from "@/components/form-binh-luan-ngu-canh";
-import { ChuKyLuotXem } from "@/components/chu-ky-luot-xem";
 import { NutCuonBinhLuan } from "@/components/nut-cuon-binh-luan";
 import { NutChiaSeMach } from "@/components/nut-chia-se-mach";
 import { TheMoc } from "@/components/the-moc";
 
 import { TrangThaiToiProvider } from "@/components/trang-thai-toi";
-import { XuatCaseStudy } from "@/components/xuat-case-study";
 import {
   docCauDangDoc,
   docKhanDai,
@@ -356,7 +354,6 @@ export async function TrangMach({
                 </div>
                 <div className={css.cum_phai}>
                   <NutTheoMach />
-                  <XuatCaseStudy mach={mach} />
                   {/* Công cụ mod của MẠCH: ẩn + khoá. `dangAn` luôn `false` — mạch bị ẩn
                       trả 404 ở cửa công khai nên không tới được đây; xem docstring
                       `HanhDongMod`. */}
@@ -429,13 +426,6 @@ export async function TrangMach({
                     </span>
                   </>
                 )}
-                <span className={css.cham} aria-hidden>
-                  ·
-                </span>
-                <ChuKyLuotXem
-                  initialCount={mach.view_count ?? 0}
-                  className={css.dem}
-                />
                 <span className={css.cham} aria-hidden>
                   ·
                 </span>

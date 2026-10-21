@@ -1,12 +1,11 @@
 .khu,
 .khung {
-  border-top: 1px solid var(--line);
-  margin-top: 14px;
-  padding: 0 18px 18px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--card);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  margin-top: 24px;
+  padding: 16px 0 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
   scroll-margin-top: calc(var(--cao-chrome) + 14px);
 }
 
@@ -15,22 +14,10 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 11px;
-  margin: 0 -18px 14px;
-  padding: 13px 18px;
+  margin: 0 0 14px;
+  padding: 12px 0;
   border-bottom: 1px solid var(--line);
   position: relative;
-}
-
-.dau::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 3px;
-  height: 16px;
-  background: var(--brand);
-  border-radius: 0 2px 2px 0;
 }
 
 .dau h2 {
@@ -169,6 +156,6 @@
 
 @media (max-width: 640px) {
   .khu {
-    padding: 18px 16px 22px;
+    padding: 16px 0 22px;
   }
 }

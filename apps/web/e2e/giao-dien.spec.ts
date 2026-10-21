@@ -15,7 +15,7 @@ import { TITLE_HPG, duongDan, timMachTheoTitle } from "./du-lieu";
  * không, có cuộn ngang không, focus có nhìn thấy không.
  */
 
-const NEN_SANG = "rgb(237, 242, 246)"; // #edf2f6
+const NEN_SANG = "rgb(255, 255, 255)"; // #ffffff
 const NEN_TOI = "rgb(14, 17, 22)"; //    #0e1116
 
 async function nenBody(page: Page): Promise<string> {

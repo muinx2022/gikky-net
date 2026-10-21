@@ -50,7 +50,7 @@
  */
 
 :root {
-  --bg: #edf2f6;
+  --bg: #ffffff;
   --surface: #ffffff;
   --surface-2: #e2e8f0;
   --inset: #f6f8fb;
@@ -80,6 +80,7 @@
      ra lần nữa thì chỉ phải sửa đúng một dòng thay vì đi tìm khắp 30 file CSS Module. */
   --f-display: var(--font-plex-sans), "Segoe UI", system-ui, sans-serif;
   --f-ui: var(--font-plex-sans), "Segoe UI", system-ui, sans-serif;
+  --f-sans: var(--font-plex-sans), "Segoe UI", system-ui, sans-serif;
   --f-mono: var(--font-ibm-plex-mono), ui-monospace, "Cascadia Mono", Consolas, monospace;
 
   --rail: 34px;
