@@ -13,9 +13,15 @@
  *                      `e2e/don-vi/mau-token.spec.ts` giữ một allowlist theo từng SELECTOR.
  *
  * `--on-accent` là màu chữ **đặt trên nền `--accent`**. Nó phải là token chứ không phải
- * `#fff` gõ cứng: `--accent` đảo sắc giữa hai theme (#3A46A8 tối ← → #8B99F2 sáng), nên
+ * `#fff` gõ cứng: `--accent` đảo sắc giữa hai theme (#1F5FD1 sáng ← → #6EA8FF tối), nên
  * một màu chữ cố định thì một trong hai theme sai. Badge CHỦ MẠCH từng là mã hex cứng duy
  * nhất lọt ra ngoài hệ token, và ở dark nó cho tương phản ≈2.65:1 (WCAG AA đòi 4.5:1).
+ *
+ * Header navy + nhấn xanh dương từ 2026-10-21 (PLAN 9.1): đỏ trùng nghĩa LỖ, tím trùng
+ * nghĩa GIÁ TRẦN trên bảng giá VN. `--brand` chỉ còn MỘT vai — **nền đặc** của nút/badge,
+ * chữ đặt lên là `--on-brand`. Ở tối không mã xanh nào vừa đủ đậm cho chữ trắng vừa đủ
+ * sáng làm chữ trên `--surface`/`--topbar`, nên chữ/icon/viền màu nhấn dùng `--accent`
+ * (trên nền sáng của thẻ) hoặc `--topbar-accent` (trên header).
  *
  * light/dark: `prefers-color-scheme` + `[data-theme]` ghi đè. **Từ 2026-08-23 lựa chọn
  * ĐƯỢC LƯU** — một script inline trong `<head>` đọc `localStorage` và đặt `data-theme`
@@ -55,16 +61,18 @@
   --ink-3: #5b6075;
   --line: #e6ecf5;
   --line-2: #d3dae6;
-  --accent: #c53c1b;
-  --accent-soft: #fdede8;
+  --accent: #1f5fd1;
+  --accent-soft: #e8f0fc;
   --on-accent: #ffffff;
-  --brand: #fa6342;
-  --topbar: #30305b;
+  --brand: #1f5fd1;
+  --on-brand: #ffffff;
+  --topbar: #0f1e33;
+  --topbar-accent: #6ea8ff;
   --gain: #1c7a4f;
   --loss: #b33a2b;
   --stamp: #b07a2b;
   --stamp-soft: #f5ebda;
-  --focus: #c53c1b;
+  --focus: #1f5fd1;
 
   /* Đổi 2026-08-23: cả hai vai về IBM Plex Sans (mặt chữ của Reddit) — xem chú thích
      đầy đủ ở `app/layout.tsx`. `--f-display` GIỮ LẠI như một vai riêng dù nay trùng họ
@@ -96,16 +104,18 @@
     --ink-3: #8c96ab;
     --line: #232b3a;
     --line-2: #313c52;
-    --accent: #ff8568;
-    --accent-soft: #2b1815;
+    --accent: #6ea8ff;
+    --accent-soft: #14223a;
     --on-accent: #0e1116;
-    --brand: #ff785a;
-    --topbar: #1c1d36;
+    --brand: #2563eb;
+    --on-brand: #ffffff;
+    --topbar: #0b1524;
+    --topbar-accent: #6ea8ff;
     --gain: #43be83;
     --loss: #e4776a;
     --stamp: #d8a455;
     --stamp-soft: #2a2318;
-    --focus: #ff8568;
+    --focus: #6ea8ff;
   }
 }
 
@@ -119,16 +129,18 @@
   --ink-3: #8c96ab;
   --line: #232b3a;
   --line-2: #313c52;
-  --accent: #ff8568;
-  --accent-soft: #2b1815;
+  --accent: #6ea8ff;
+  --accent-soft: #14223a;
   --on-accent: #0e1116;
-  --brand: #ff785a;
-  --topbar: #1c1d36;
+  --brand: #2563eb;
+  --on-brand: #ffffff;
+  --topbar: #0b1524;
+  --topbar-accent: #6ea8ff;
   --gain: #43be83;
   --loss: #e4776a;
   --stamp: #d8a455;
   --stamp-soft: #2a2318;
-  --focus: #ff8568;
+  --focus: #6ea8ff;
 }
 
 *,

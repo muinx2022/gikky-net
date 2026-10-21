@@ -144,9 +144,35 @@ const CAP: readonly { chu: string; nen: string; nguong: number; o_dau: string }[
   { chu: "--focus", nen: "--card", nguong: AA_PHI_CHU, o_dau: "vòng focus trên nền thẻ" },
   { chu: "--stamp", nen: "--card", nguong: AA_PHI_CHU, o_dau: "con dấu trên nền thẻ — MIỄN TRỪ L43" },
   { chu: "--accent", nen: "--bg", nguong: AA_CHU_THUONG, o_dau: "link trên nền trang" },
-  { chu: "--accent", nen: "--surface", nguong: AA_CHU_THUONG, o_dau: "link trên thẻ" },
-  { chu: "--accent", nen: "--accent-soft", nguong: AA_CHU_THUONG, o_dau: "tab đang chọn" },
+  {
+    chu: "--accent",
+    nen: "--surface",
+    nguong: AA_CHU_THUONG,
+    o_dau: "link trên thẻ · tab đang chọn của thanh điều hướng dưới",
+  },
+  {
+    chu: "--accent",
+    nen: "--accent-soft",
+    nguong: AA_CHU_THUONG,
+    o_dau: "tab đang chọn · mũi tên vote đã bấm",
+  },
   { chu: "--on-accent", nen: "--accent", nguong: AA_CHU_THUONG, o_dau: "badge CHỦ MẠCH · nút Gửi" },
+  // ===== `--brand` chỉ còn là NỀN ĐẶC (2026-10-21) =====
+  // Chữ trên nó là `--on-brand`; chữ/icon/viền màu nhấn đi bằng `--accent` (nền sáng của
+  // thẻ) hoặc `--topbar-accent` (header). Ở tối `--brand` làm chữ trên `--surface` chỉ
+  // ≈3.3:1 — lý do tách vai, nên không có cặp `--brand` làm chữ nào ở đây.
+  {
+    chu: "--on-brand",
+    nen: "--brand",
+    nguong: AA_CHU_THUONG,
+    o_dau: 'nút "Đăng mạch" · nút "+" · tab sắp xếp đang chọn · số chuông',
+  },
+  {
+    chu: "--topbar-accent",
+    nen: "--topbar",
+    nguong: AA_CHU_THUONG,
+    o_dau: "hiệu gikky khi hover · chấm sau hiệu gikky · vòng focus/viền ô tìm trên header",
+  },
   // ⚠⚠ **HOÀNG THỔ SÁNG CHƯA ĐẠT AA CHO CHỮ NHỎ — và ngưỡng dưới đây là một MIỄN TRỪ có
   // ghi tên, không phải một kết luận "đã đạt".** Đọc hết đoạn này trước khi tin con số.
   //

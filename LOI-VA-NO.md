@@ -1754,3 +1754,15 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Ở đâu**: `apps/web/e2e/don-vi/hen-gio-phat-hanh.spec.ts` (9 bài đòi /machs/moi trong khi admin đang dùng drawer) và `apps/web/e2e/don-vi/khong-ghi-cung-sub.spec.ts` (app/page.tsx chứa từ "crypto" trong metadata)
 - **Bằng chứng**: `pnpm e2e:don-vi` báo 10 failed / 502 passed
 - **Vì sao không sửa ngay**: ngoài phạm vi việc đang làm (sửa logo và nút cuộn feed).
+
+### P-20261021-1 · [MỞ] · NHỎ — `/luat` còn fallback cam gõ cứng trong `var(--accent-soft, rgba(234, 88, 12, 0.1))`
+- **Thấy lúc**: đổi tone header + nhấn sang navy/xanh dương (`plans/2026-10-21-doi-mau-header-nhan.md`)
+- **Ở đâu**: `apps/web/app/luat/luat.module.css:23,150`
+- **Bằng chứng**: grep thấy ở cả hai dòng; không hiển thị vì token luôn được khai, nhưng là mã cam lạc tone mới và lọt ngoài hệ token.
+- **Vì sao không sửa ngay**: ngoài danh sách file của plan đổi màu.
+
+### P-20261021-2 · [MỞ] · NHỎ — `logo.module.css` có ba lớp chết `.logo`/`.cham`/`.phu`, và docstring `LogoGikky` ghi sai màu logo
+- **Thấy lúc**: đổi tone header + nhấn (cùng plan trên)
+- **Ở đâu**: `apps/web/components/logo.module.css:32-47`; `apps/web/components/logo.tsx:9-10`
+- **Bằng chứng**: `LogoGikky` chỉ dùng `khung_hieu`/`bieu_tuong`/`svg_g`/`chu_hieu`; docstring nói `#14161b`/`#e7eaf0` trong khi logo kế thừa `#ffffff` từ `.hieu` trên header.
+- **Vì sao không sửa ngay**: dọn code chết + sửa chữ, ngoài phạm vi đổi màu.

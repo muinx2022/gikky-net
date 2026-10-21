@@ -953,8 +953,9 @@ Chuẩn thẩm mỹ: **`docs/mockup-tham-khao.html` trong repo** (mở bằng tr
 kiểm tra file đã nằm đó). Lưu ý: file này là mockup bố cục CŨ (trước khi chốt hai mặt) —
 chỉ dùng làm chuẩn **màu / chữ / chất liệu**, KHÔNG dùng làm chuẩn layout; layout theo 9.2.
 
-- Nền giấy lạnh `#F1F2F5` / tối `#0E1116`; mực `#14161B` / `#E7EAF0`; nhấn xanh mực `#3A46A8`
-  / `#8B99F2`; **hoàng thổ `#B07A2B` / `#D8A455` dành riêng cho những gì mang tính "đóng dấu"**:
+- Nền giấy lạnh `#F1F2F5` / tối `#0E1116`; mực `#14161B` / `#E7EAF0`; header navy `#0F1E33`
+  / `#0B1524`; nhấn xanh dương `#1F5FD1` / `#6EA8FF` *(đổi 2026-10-21: nhấn cam-đỏ và header
+  tím của bản redesign đụng nghĩa trên bảng giá — đỏ là lỗ, tím là giá trần)*; **hoàng thổ `#B07A2B` / `#D8A455` dành riêng cho những gì mang tính "đóng dấu"**:
   vạch mới, "đã sửa", trích vào sổ, số mốc chưa xem trên spine, **nhãn "ĐÃ ĐÓNG SỔ" trên
   thẻ feed, nhãn "DRAFT" của `/luat`, chỉ số "Được trích ×N" trên hồ sơ** *(ba cái sau chốt
   2026-08-22)*. **Danh sách này là NGUỒN của allowlist trong `e2e/don-vi/mau-token.spec.ts`** —

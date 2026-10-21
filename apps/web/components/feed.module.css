@@ -126,9 +126,9 @@
 .dang_chon,
 .dang_chon:hover {
   background: var(--brand);
-  color: #ffffff;
+  color: var(--on-brand);
   font-weight: 600;
-  box-shadow: 0 2px 5px rgba(250, 99, 66, 0.28);
+  box-shadow: 0 2px 5px color-mix(in srgb, var(--brand) 28%, transparent);
 }
 
 /* Hàng khoảng thời gian là hàng PHỤ của tab — nhạt hơn, không viền, để không đọc thành

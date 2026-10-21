@@ -37,7 +37,7 @@
 }
 
 .cham {
-  color: var(--brand);
+  color: var(--topbar-accent);
   font-weight: 800;
 }
 

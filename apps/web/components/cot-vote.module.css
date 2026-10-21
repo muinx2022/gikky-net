@@ -40,7 +40,7 @@
 
 .chon,
 .da_vote {
-  color: var(--brand);
+  color: var(--accent);
   background: var(--accent-soft);
 }
 

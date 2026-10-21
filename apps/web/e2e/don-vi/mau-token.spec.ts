@@ -268,8 +268,13 @@ export function bamMuc91(plan: string): string {
 //    CŨ với bản MỚI — ra **đúng 7 mục, giống nhau từng ký tự**: câu liệt kê "đóng dấu"
 //    không bị chạm, nên allowlist hoàng thổ không phải sửa dòng nào;
 // 3. RỒI mới dán băm mới vào đây.
+//
+// **Đổi 2026-10-21** (header navy + nhấn xanh dương). Cùng ba bước: sửa PLAN 9.1 — **chỉ
+// vế màu nhấn/header** của gạch đầu dòng màu, câu liệt kê "đóng dấu" không chạm; đọc lại
+// `STAMP_THEO_MUC` / `CHUA_TOI_PHASE` và đối chiếu `docMucDongDau` bản CŨ với bản MỚI —
+// **đúng 7 mục, giống nhau từng ký tự**, allowlist không phải sửa dòng nào; rồi mới dán băm.
 const BAM_MUC_91 =
-  "633b0106a858ff71a7a17841dd9b5acb1b030bd9a6fef6f2766793cb4bd80e4c";
+  "f41a215bad130aa1dcd4d0c59961710d90fef6b95e91e318c68c592b634b482f";
 
 const PLAN_THAT = readFileSync(resolve(GOC, "PLAN.md"), "utf8");
 const MUC_PLAN = docMucDongDau(PLAN_THAT);

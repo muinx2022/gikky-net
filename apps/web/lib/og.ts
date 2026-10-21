@@ -41,7 +41,7 @@ export const MAU_OG = {
   muc_2: "#4b4d63",
   muc_3: "#5b6075",
   vach: "#d3dae6",
-  nhan: "#c53c1b",
+  nhan: "#1f5fd1",
 } as const;
 
 /** `MAU_OG` ↔ token trong `app/globals.css`. Bài đo dùng bảng này để so hai bên; thêm một

@@ -22,7 +22,7 @@ test.describe("goi-y-cai-app (PWA Web App)", () => {
     expect(m.display).toBe("standalone");
     expect(m.start_url).toBe("/");
     expect(m.background_color).toBe("#f1f2f5");
-    expect(m.theme_color).toBe("#3a46a8");
+    expect(m.theme_color).toBe("#0f1e33");
 
     const sizes = m.icons?.map((icon) => icon.sizes);
     expect(sizes).toContain("32x32");

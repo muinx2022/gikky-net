@@ -64,7 +64,7 @@
 }
 
 .hieu:hover {
-  color: var(--brand);
+  color: var(--topbar-accent);
 }
 
 .hieu::after {
@@ -73,10 +73,10 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--brand);
+  background: var(--topbar-accent);
   margin-left: 5px;
   vertical-align: middle;
-  box-shadow: 0 0 6px var(--brand);
+  box-shadow: 0 0 6px var(--topbar-accent);
 }
 
 /* Chỗ giữ của ô tìm kiếm trong lúc `Suspense` chưa xong — cùng kích thước với `.o` của
