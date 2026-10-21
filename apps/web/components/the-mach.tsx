@@ -8,6 +8,7 @@ import { duongDanHoSo, duongDanMach, duongDanSub } from "@/lib/url";
 
 import { Avatar } from "./avatar";
 import { CotVote } from "./cot-vote";
+import { HanhDongMod } from "./hanh-dong-mod";
 import { NoiDungThe } from "./noi-dung-the";
 import { NutChiaSeMach } from "./nut-chia-se-mach";
 import css from "./the-mach.module.css";
@@ -158,6 +159,14 @@ export function TheMach({ mach }: { mach: MachTomTatOut }) {
           <NutChiaSeMach
             duongDan={duongDanMach(mach.slug, mach.id)}
             tieuDe={mach.title}
+            kieu="pill"
+          />
+
+          <HanhDongMod
+            loai="mach"
+            id={mach.id}
+            dangAn={false}
+            nhan={`mạch “${mach.title}”`}
             kieu="pill"
           />
         </div>

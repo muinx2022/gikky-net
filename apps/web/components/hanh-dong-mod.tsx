@@ -47,6 +47,7 @@ export function HanhDongMod({
   dangKhoa,
   nhan,
   className,
+  kieu = "mac-dinh",
 }: {
   loai: "mach" | "moc" | "binh-luan";
   id: number;
@@ -64,6 +65,7 @@ export function HanhDongMod({
   /** Tên gọi trong câu hỏi lý do — "mốc 3", "bình luận này"… */
   nhan: string;
   className?: string;
+  kieu?: "mac-dinh" | "pill";
 }) {
   const { toi } = usePhien();
   const router = useRouter();
@@ -125,7 +127,7 @@ export function HanhDongMod({
 
   return (
     <span
-      className={`${css.khung}${className ? ` ${className}` : ""}`}
+      className={`${css.khung}${kieu === "pill" ? ` ${css.khung_pill}` : ""}${className ? ` ${className}` : ""}`}
       data-testid={`hanh-dong-mod-${loai}`}
     >
       <ShieldCheck className={css.dau} size={13} strokeWidth={2} aria-hidden />
