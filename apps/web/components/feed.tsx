@@ -1,4 +1,4 @@
-import type { FeedOut } from "@gikky/api-client";
+import type { FeedOut, SubChiTietOut } from "@gikky/api-client";
 import { Clock, Flame, Radio, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 
@@ -15,6 +15,7 @@ import {
 
 import { BaoCursorHong } from "./bao-cursor-hong";
 import { ChonKieuXem } from "./chon-kieu-xem";
+import { CotTrai } from "./cot-trai";
 import { CuonVoHan } from "./cuon-vo-han";
 import css from "./feed.module.css";
 import { NutVeDauTrang } from "./nut-ve-dau-trang";
@@ -97,6 +98,7 @@ export function Feed({
   sidebar,
   header,
   truongPhai,
+  cacSub,
 }: {
   feed: FeedOut;
   tab: TabFeed;
@@ -113,6 +115,8 @@ export function Feed({
   sidebar: React.ReactNode;
   /** Bộ lọc trường phái giao dịch trên feed (nếu có). */
   truongPhai?: string;
+  /** Danh sách chuyên mục cho cột trái */
+  cacSub?: readonly SubChiTietOut[];
 } & DauTrang) {
   /** `?khoang=` đi kèm MỌI tab, nhưng chỉ khi khác mặc định: URL sạch thì link chia sẻ
    * đọc được, và `?khoang=tat_ca` không nói thêm gì so với việc thiếu nó.
@@ -127,6 +131,9 @@ export function Feed({
 
   return (
     <div className={css.khung}>
+      <div className={css.rail_trai}>
+        <CotTrai cacSub={cacSub} />
+      </div>
       <main className={css.chinh}>
         {header ?? (
           <>

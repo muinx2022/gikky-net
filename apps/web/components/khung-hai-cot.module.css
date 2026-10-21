@@ -2,13 +2,28 @@
    riêng vì `Feed` nhận `sidebar` làm prop). Lệch một con số là cột nội dung nhảy ngang
    đúng cái lỗi mà khung này sinh ra để diệt — xem docstring `khung-hai-cot.tsx`. */
 .khung {
-  max-width: 1060px;
+  max-width: 1340px;
   margin: 0 auto;
-  padding: 20px 18px 56px;
+  padding: 16px 20px 56px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 288px;
-  gap: 20px;
+  grid-template-columns: 240px minmax(0, 1fr) 288px;
+  gap: 24px;
   align-items: start;
+}
+
+.rail_trai {
+  position: sticky;
+  top: calc(var(--cao-chrome) + 14px);
+  max-height: calc(100vh - var(--cao-chrome) - 28px);
+  overflow-y: auto;
+  padding-right: 14px;
+  border-right: 1px solid var(--line);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.rail_trai::-webkit-scrollbar {
+  display: none;
 }
 
 .chinh {
@@ -24,6 +39,7 @@
     padding: 18px 20px 32px;
   }
 
+  .rail_trai,
   .rail {
     display: none !important;
   }
@@ -36,6 +52,7 @@
     padding: 16px 15px 32px;
   }
 
+  .rail_trai,
   .rail {
     display: none !important;
   }

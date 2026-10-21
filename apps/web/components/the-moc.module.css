@@ -73,6 +73,10 @@
   font-size: 12.5px;
 }
 
+.hang_don .dau:not(:has([data-testid="da-sua-boi"])) {
+  display: none;
+}
+
 .khi {
   font-family: var(--f-mono);
   font-variant-numeric: tabular-nums;
@@ -106,7 +110,8 @@
 .than {
   margin: 0;
   color: var(--ink);
-  font-size: 14.5px;
+  font-size: 14px;
+  line-height: 21px;
 }
 
 .than p {

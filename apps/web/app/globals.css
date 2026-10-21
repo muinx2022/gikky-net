@@ -78,10 +78,10 @@
      đầy đủ ở `app/layout.tsx`. `--f-display` GIỮ LẠI như một vai riêng dù nay trùng họ
      với `--f-ui`: nó đánh dấu "đây là chỗ tiêu đề", và ngày nào muốn tách hai mặt chữ
      ra lần nữa thì chỉ phải sửa đúng một dòng thay vì đi tìm khắp 30 file CSS Module. */
-  --f-display: var(--font-plex-sans), "Segoe UI", system-ui, sans-serif;
-  --f-ui: var(--font-plex-sans), "Segoe UI", system-ui, sans-serif;
-  --f-sans: var(--font-plex-sans), "Segoe UI", system-ui, sans-serif;
-  --f-mono: var(--font-ibm-plex-mono), ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --f-display: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+  --f-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+  --f-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+  --f-mono: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
 
   --rail: 34px;
   --gutter: 18px;
@@ -162,9 +162,10 @@ body {
   background: var(--bg);
   color: var(--ink);
   font-family: var(--f-ui);
-  font-size: 15px;
-  line-height: 1.6;
+  font-size: 14px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 button {
@@ -194,7 +195,7 @@ a:hover {
 /* Mọi timestamp + con số đi bằng mono, `tabular-nums` — PLAN 9.1 "mốc phải trông như
  * biên lai". Lớp tiện dụng dùng chung, không thuộc module nào. */
 .mono {
-  font-family: var(--f-mono);
+  font-family: var(--f-ui);
   font-variant-numeric: tabular-nums;
 }
 

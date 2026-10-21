@@ -6,7 +6,6 @@ import { ngayCuaThoiDiem } from "@/lib/dinh-dang";
 import { duongDanHoSo, duongDanKhanDai, duongDanMach, duongDanSub } from "@/lib/url";
 
 import { Avatar } from "./avatar";
-import { NutChiaSeMach } from "./nut-chia-se-mach";
 import { CotVote } from "./cot-vote";
 import { HanhDongMod } from "./hanh-dong-mod";
 import { NoiDungThe } from "./noi-dung-the";
@@ -167,10 +166,6 @@ export function TheMach({ mach }: { mach: MachTomTatOut }) {
               {mach.ket_qua}
             </span>
           )}
-          {/* Thao tác thứ hai của thanh, chạy trọn ở trình duyệt — không cần endpoint,
-              nên nó không phạm luật "không nút chết" của lượt giao diện. Đặt CUỐI hàng:
-              lối vào khán đài mới là thao tác chính. */}
-          <NutChiaSeMach duongDan={duongDanMach(mach.slug, mach.id)} tieuDe={mach.title} />
           {mach.truong_phai && (
             <Link
               href={`/?truong_phai=${encodeURIComponent(mach.truong_phai)}`}

@@ -1,5 +1,6 @@
 import { docCacSub, docFeed, docFeedSub } from "@/lib/api";
 
+import { CotTrai } from "./cot-trai";
 import css from "./khung-hai-cot.module.css";
 import { Sidebar } from "./sidebar";
 
@@ -54,6 +55,9 @@ export async function KhungHaiCot({
 
   return (
     <div className={css.khung}>
+      <div className={css.rail_trai}>
+        <CotTrai cacSub={cac_sub} />
+      </div>
       <main className={css.chinh}>{children}</main>
       {/* Lớp bọc `sticky` — cùng vai với `feed.module.css#.rail`. Không có nó thì rail
           dính ở trang chủ mà KHÔNG dính ở các trang khác, tức lại một kiểu "nhảy nhót"

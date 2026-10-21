@@ -1,5 +1,6 @@
 import { GIOI_THIEU } from "@/lib/site";
 
+import { CotTrai } from "./cot-trai";
 import css from "./khung-hai-cot.module.css";
 import { Sidebar } from "./sidebar";
 
@@ -39,6 +40,9 @@ import { Sidebar } from "./sidebar";
 export function KhungHaiCotTinh({ children }: { children: React.ReactNode }) {
   return (
     <div className={css.khung}>
+      <div className={css.rail_trai}>
+        <CotTrai cacSub={[]} />
+      </div>
       <main className={css.chinh}>{children}</main>
       {/* Lớp bọc `sticky` — cùng vai với `khung-hai-cot.tsx`; giữ nguyên để rail dính
           giống hệt các trang khác, tức không "nhảy nhót" theo chiều dọc. */}

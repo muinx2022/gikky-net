@@ -70,10 +70,10 @@
 
 .tieu_de {
   font-family: var(--f-sans);
-  font-size: clamp(17px, 1.8vw, 19.5px);
+  font-size: 18px;
   font-weight: 600;
-  line-height: 1.4;
-  letter-spacing: 0;
+  line-height: 24px;
+  letter-spacing: -0.01em;
   color: var(--ink);
   margin: 4px 0 6px;
 }

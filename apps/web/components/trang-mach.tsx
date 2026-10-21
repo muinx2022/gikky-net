@@ -24,6 +24,7 @@ import { MocAccordionProvider } from "@/components/moc-accordion";
 import { NganKeoProvider } from "@/components/ngan-keo";
 import { NutTheoMach } from "@/components/nut-theo-mach";
 import { FormBinhLuanProvider } from "@/components/form-binh-luan-ngu-canh";
+import { MenuMach } from "@/components/menu-mach";
 import { NutCuonBinhLuan } from "@/components/nut-cuon-binh-luan";
 import { NutChiaSeMach } from "@/components/nut-chia-se-mach";
 import { TheMoc } from "@/components/the-moc";
@@ -337,57 +338,6 @@ export async function TrangMach({
             <article className={css.the} data-mat={mat} data-testid="the-mach">
               <div className={css.hang_tren}>
                 <div className={css.cum_trai}>
-                  <Link className={css.sub} href={duongDanSub(mach.sub.slug)} prefetch={false}>
-                    s/{mach.sub.slug}
-                  </Link>
-                  {mach.truong_phai && (
-                    <Link
-                      href={`/?truong_phai=${encodeURIComponent(mach.truong_phai)}`}
-                      className={css.truong_phai}
-                      data-testid="mach-truong-phai"
-                      title={`Trường phái ${mach.truong_phai}`}
-                      prefetch={false}
-                    >
-                      #{mach.truong_phai}
-                    </Link>
-                  )}
-                </div>
-                <div className={css.cum_phai}>
-                  <NutTheoMach />
-                  {/* Công cụ mod của MẠCH: ẩn + khoá. `dangAn` luôn `false` — mạch bị ẩn
-                      trả 404 ở cửa công khai nên không tới được đây; xem docstring
-                      `HanhDongMod`. */}
-                  <div className={css.mod_hang_rieng}>
-                    <HanhDongMod
-                      loai="mach"
-                      id={mach.id}
-                      dangAn={false}
-                      dangKhoa={mach.locked}
-                      nhan="mạch này"
-                    />
-                  </div>
-                </div>
-              </div>
-              <header className={css.dau}>
-                {mach.rieng_tu && (
-                <div className={css.banner_rieng_tu} data-testid="banner-rieng-tu">
-                  <span>
-                    🔒 Mạch riêng tư — chỉ bạn và quản trị viên nhìn thấy. Bạn có thể bấm
-                    &quot;Công khai mạch&quot; ở khu chủ mạch bên dưới khi sẵn sàng.
-                  </span>
-                </div>
-              )}
-              {mach.da_luu_tru && (
-                <div className={css.banner_rieng_tu} data-testid="banner-da-luu-tru">
-                  <span>
-                    📦 Mạch đã được lưu trữ (soft delete) — không hiển thị ở feed công khai
-                    và danh sách bài viết chính.
-                  </span>
-                </div>
-              )}
-              <h1 className={css.tieu_de}>{mach.title}</h1>
-              <div className={css.chu_ky}>
-                <span className={css.cum_tac_gia}>
                   <Link
                     className={css.ai_avatar}
                     href={duongDanHoSo(mach.author.username)}
@@ -399,49 +349,85 @@ export async function TrangMach({
                       ten={mach.author.username}
                       hienThi={mach.author.display_name}
                       url={mach.author.avatar_url}
-                      co={20}
+                      co={34}
                     />
                   </Link>
-                  <Link
-                    className={css.ai}
-                    href={duongDanHoSo(mach.author.username)}
-                    title={`u/${mach.author.username}`}
-                    prefetch={false}
-                    {...CHU_NGUOI_DUNG}
-                  >
-                    {mach.author.display_name || `u/${mach.author.username}`}
-                  </Link>
-                </span>
-                <span className={css.cham} aria-hidden>
-                  ·
-                </span>
-                <span className="mono">mở ngày {ngayCuaThoiDiem(mach.published_at)}</span>
-                {la_mach && (
-                  <>
-                    <span className={css.cham} aria-hidden>
-                      ·
-                    </span>
-                    <span className={css.dem} data-testid="chu-ky-so-moc">
-                      {mach.entry_count} mốc
-                    </span>
-                  </>
-                )}
-                <span className={css.cham} aria-hidden>
-                  ·
-                </span>
-                <NutCuonBinhLuan soBinhLuan={mach.comment_count} />
-                <span className={css.cham} aria-hidden>
-                  ·
-                </span>
-                <NutChiaSeMach duongDan={co_ban} tieuDe={mach.title} />
-                {/* Báo cáo cả BÀI — user chốt 2026-08-25. Trước đó chỉ báo cáo được mốc
-                    và bình luận, nên một bài vi phạm ngay từ tiêu đề (hoặc vi phạm ở tổng
-                    thể) thì người đọc phải chọn bừa một mốc, và mod nhận báo cáo trỏ sai
-                    chỗ. Đặt CUỐI hàng chữ ký: nó là thao tác hiếm, không được tranh chỗ
-                    với tên tác giả và ngày mở. */}
-                <NutBaoCaoMach machId={mach.id} tieuDe={mach.title} />
+                  <div className={css.meta_trai}>
+                    <div className={css.dong_user}>
+                      <Link
+                        className={css.ai}
+                        href={duongDanHoSo(mach.author.username)}
+                        title={`u/${mach.author.username}`}
+                        prefetch={false}
+                        {...CHU_NGUOI_DUNG}
+                      >
+                        u/{mach.author.username}
+                      </Link>
+                      <span className={css.cham} aria-hidden>
+                        -
+                      </span>
+                      <span className={css.khi}>{ngayCuaThoiDiem(mach.published_at)}</span>
+                    </div>
+                    <div className={css.dong_sub}>
+                      <Link className={css.sub} href={duongDanSub(mach.sub.slug)} prefetch={false}>
+                        s/{mach.sub.slug}
+                      </Link>
+                      {mach.truong_phai && (
+                        <Link
+                          href={`/?truong_phai=${encodeURIComponent(mach.truong_phai)}`}
+                          className={css.truong_phai}
+                          data-testid="mach-truong-phai"
+                          title={`Trường phái ${mach.truong_phai}`}
+                          prefetch={false}
+                        >
+                          #{mach.truong_phai}
+                        </Link>
+                      )}
+                      {la_mach && (
+                        <span className={css.dem} data-testid="chu-ky-so-moc">
+                          {mach.entry_count} mốc
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className={css.cum_phai}>
+                  <MenuMach>
+                    <NutTheoMach />
+                    <NutChiaSeMach duongDan={co_ban} tieuDe={mach.title} />
+                    <NutCuonBinhLuan soBinhLuan={mach.comment_count} />
+                    <NutBaoCaoMach machId={mach.id} tieuDe={mach.title} />
+                    <div className={css.mod_hang_rieng}>
+                      <HanhDongMod
+                        loai="mach"
+                        id={mach.id}
+                        dangAn={false}
+                        dangKhoa={mach.locked}
+                        nhan="mạch này"
+                      />
+                    </div>
+                  </MenuMach>
+                </div>
               </div>
-            </header>
+              <header className={css.dau}>
+                {mach.rieng_tu && (
+                  <div className={css.banner_rieng_tu} data-testid="banner-rieng-tu">
+                    <span>
+                      🔒 Mạch riêng tư — chỉ bạn và quản trị viên nhìn thấy. Bạn có thể bấm
+                      &quot;Công khai mạch&quot; ở khu chủ mạch bên dưới khi sẵn sàng.
+                    </span>
+                  </div>
+                )}
+                {mach.da_luu_tru && (
+                  <div className={css.banner_rieng_tu} data-testid="banner-da-luu-tru">
+                    <span>
+                      📦 Mạch đã được lưu trữ (soft delete) — không hiển thị ở feed công khai
+                      và danh sách bài viết chính.
+                    </span>
+                  </div>
+                )}
+                <h1 className={css.tieu_de}>{mach.title}</h1>
+              </header>
 
             {mach.locked && (
               <p className={css.khoa}>Mạch bị khoá: đọc được, không tương tác được.</p>

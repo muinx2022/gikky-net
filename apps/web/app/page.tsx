@@ -126,6 +126,7 @@ async function FeedDaNap({
         tieuDe="Nhật ký giao dịch chứng khoán & Luận điểm thị trường"
         lede="Ghi nhận nhận định trước khi có kết quả. Mọi mốc đều lưu vết thời gian thực và lịch sử minh bạch."
         sidebar={<Sidebar gioiThieu={GIOI_THIEU} cacSub={cac_sub} />}
+        cacSub={cac_sub}
       />
     </>
   );
