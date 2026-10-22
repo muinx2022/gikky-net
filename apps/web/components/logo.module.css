@@ -1,7 +1,7 @@
 .khung_hieu {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   line-height: 1;
 }
 
@@ -9,14 +9,18 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: var(--brand);
+  color: var(--on-brand);
   flex-shrink: 0;
-  color: var(--brand);
 }
 
 .svg_g {
   display: block;
-  width: 24px;
-  height: 24px;
+  width: 18px;
+  height: 18px;
   color: inherit;
   transition: color 0.15s ease;
 }

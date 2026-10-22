@@ -2,10 +2,10 @@
   position: sticky;
   top: 0;
   z-index: 40;
-  background: color-mix(in srgb, var(--accent-soft) 65%, var(--surface-2));
+  background: var(--bg);
   color: var(--ink);
-  border-bottom: 1px solid var(--line-2);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  border-bottom: 1px solid var(--line);
+  box-shadow: none;
   backdrop-filter: none;
 }
 

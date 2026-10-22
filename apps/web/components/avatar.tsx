@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { chuCaiAvatar } from "@/lib/avatar";
+import { UserRound } from "lucide-react";
 
 import css from "./avatar.module.css";
 
@@ -59,11 +59,11 @@ export function Avatar({
   return (
     <span
       className={css.chu}
-      style={{ ...canh, fontSize: Math.round(co * 0.44) }}
+      style={canh}
       aria-hidden
       data-testid="avatar-chu"
     >
-      {chuCaiAvatar(hienThi || ten)}
+      <UserRound size={Math.max(11, Math.round(co * 0.58))} strokeWidth={2} aria-hidden />
     </span>
   );
 }

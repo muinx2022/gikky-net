@@ -16,9 +16,9 @@
   gap: 6px;
   height: 38px;
   padding: 0 8px 0 14px;
-  border: 1px solid var(--line-2);
+  border: 1px solid transparent;
   border-radius: 999px;
-  background: var(--surface);
+  background: color-mix(in srgb, var(--surface-2) 75%, var(--inset));
   color: var(--ink);
   flex: 0 1 260px;
   min-width: 0;
@@ -26,8 +26,7 @@
 }
 
 .o:hover {
-  border-color: var(--accent);
-  background: var(--surface);
+  background: var(--surface-2);
 }
 
 .o:focus-within {
