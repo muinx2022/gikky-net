@@ -209,6 +209,24 @@ def test_on_authentication_error_redirects_to_mobile():
     assert resp["Location"].startswith("exp://192.168.1.222:8081/--/auth/callback?error=")
 
 
+def test_pre_social_login_state_data_is_none():
+    from core.allauth_adapter import AdapterMangXaHoi
+    from django.test import RequestFactory
+    from django.contrib.sessions.backends.db import SessionStore
+
+    rf = RequestFactory()
+    req = rf.get("/api/_allauth/google/login/callback/")
+    req.session = SessionStore()
+
+    sociallogin = MagicMock()
+    sociallogin.state = {"data": None}
+    sociallogin.user = None
+
+    adapter = AdapterMangXaHoi()
+    # Không được raise AttributeError khi state["data"] is None
+    adapter.pre_social_login(req, sociallogin)
+
+
 @patch("core.cau_hinh_oauth.google_dang_bat", return_value=True)
 def test_mobile_google_start_chan_open_redirect(mock_google_bat):
     """Chặn tham số redirect_uri nguy hiểm trỏ ra web ngoài hoặc javascript scheme."""

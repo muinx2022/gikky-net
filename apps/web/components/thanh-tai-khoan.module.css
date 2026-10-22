@@ -35,7 +35,7 @@
   padding: 0 14px;
   border: 0;
   border-radius: 999px;
-  background: var(--inset);
+  background: transparent;
   font-family: var(--f-ui);
   font-size: 13.5px;
   font-weight: 600;
@@ -45,7 +45,7 @@
 }
 
 .lien_ket:hover {
-  background: var(--surface-2);
+  background: var(--inset);
   color: var(--ink);
 }
 
@@ -54,20 +54,21 @@
   align-items: center;
   height: 36px;
   padding: 0 14px;
+  border: 0;
   border-radius: 999px;
-  background: var(--brand);
-  color: var(--on-brand);
+  background: var(--ink);
+  color: #ffffff;
   font-family: var(--f-ui);
   font-size: 13.5px;
   font-weight: 600;
   line-height: 1.2;
   box-shadow: none;
-  transition: filter 0.15s ease;
+  transition: background 0.15s ease, opacity 0.15s ease;
 }
 
 .nut_chinh:hover {
-  filter: brightness(1.06);
-  color: var(--on-brand);
+  background: var(--ink-2);
+  color: #ffffff;
 }
 
 .ten {

@@ -264,14 +264,16 @@ class AdapterMangXaHoi(DefaultSocialAccountAdapter):
         # Khôi phục mobile_redirect_uri từ state data nếu session bị flush
         state_data = getattr(sociallogin, "state", None) or {}
         if isinstance(state_data, dict):
-            mobile_redirect = state_data.get("data", {}).get("mobile_redirect_uri")
-            if (
-                mobile_redirect
-                and la_mobile_redirect_hop_le(mobile_redirect)
-                and not request.session.get("mobile_redirect_uri")
-            ):
-                request.session["mobile_redirect_uri"] = mobile_redirect
-                request.session.save()
+            extra_data = state_data.get("data")
+            if isinstance(extra_data, dict):
+                mobile_redirect = extra_data.get("mobile_redirect_uri")
+                if (
+                    mobile_redirect
+                    and la_mobile_redirect_hop_le(mobile_redirect)
+                    and not request.session.get("mobile_redirect_uri")
+                ):
+                    request.session["mobile_redirect_uri"] = mobile_redirect
+                    request.session.save()
 
         super().pre_social_login(request, sociallogin)
 
