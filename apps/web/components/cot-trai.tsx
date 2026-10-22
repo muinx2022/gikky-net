@@ -182,64 +182,66 @@ export function CotTrai({
         </div>
       )}
 
-      {/* Nhóm chuyên mục */}
-      {danhSachSub.length > 0 && (
-        <>
-          {laKhach && <hr className={css.vach} />}
-          <div className={css.nhom}>
-            <p className={css.tieu_de_nhom}>CHUYÊN MỤC</p>
-            {danhSachSub.map((s) => {
-              const { Icon, nen, chu } = layPhongCachSub(s.slug);
-              return (
-                <Link
-                  key={s.slug}
-                  href={duongDanSub(s.slug)}
-                  prefetch={false}
-                  className={css.muc_sub}
-                  title={`${s.ten} (s/${s.slug})`}
-                >
-                  <span
-                    className={css.icon_sub}
-                    style={{ background: nen, color: chu }}
-                    aria-hidden="true"
-                  >
-                    <Icon size={17} strokeWidth={2} />
-                  </span>
-                  <span className={css.chu_sub}>
-                    <span className={css.ten_sub}>{s.ten}</span>
-                    <span className={css.slug_sub}>s/{s.slug}</span>
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-        </>
-      )}
-
-      {/* Nhóm tài nguyên */}
-      {(laKhach || danhSachSub.length > 0) && <hr className={css.vach} />}
-      <div className={css.nhom}>
-        <p className={css.tieu_de_nhom}>TÀI NGUYÊN</p>
-        <Link href="/luat" prefetch={false} className={css.muc_nav}>
-          <BookOpen size={18} aria-hidden="true" />
-          <span>Luật cộng đồng</span>
-        </Link>
-        {dangNhap && (
+      <div className={css.danh_sach_cuon}>
+        {/* Nhóm chuyên mục */}
+        {danhSachSub.length > 0 && (
           <>
-            <Link
-              href={duongDanHoSo(toi.username ?? "")}
-              prefetch={false}
-              className={css.muc_nav}
-            >
-              <UserRound size={18} aria-hidden="true" />
-              <span>Hồ sơ của tôi</span>
-            </Link>
-            <Link href="/cai-dat" prefetch={false} className={css.muc_nav}>
-              <Settings size={18} aria-hidden="true" />
-              <span>Cài đặt</span>
-            </Link>
+            {laKhach && <hr className={css.vach} />}
+            <div className={css.nhom}>
+              <p className={css.tieu_de_nhom}>CHUYÊN MỤC</p>
+              {danhSachSub.map((s) => {
+                const { Icon, nen, chu } = layPhongCachSub(s.slug);
+                return (
+                  <Link
+                    key={s.slug}
+                    href={duongDanSub(s.slug)}
+                    prefetch={false}
+                    className={css.muc_sub}
+                    title={`${s.ten} (s/${s.slug})`}
+                  >
+                    <span
+                      className={css.icon_sub}
+                      style={{ background: nen, color: chu }}
+                      aria-hidden="true"
+                    >
+                      <Icon size={17} strokeWidth={2} />
+                    </span>
+                    <span className={css.chu_sub}>
+                      <span className={css.ten_sub}>{s.ten}</span>
+                      <span className={css.slug_sub}>s/{s.slug}</span>
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
           </>
         )}
+
+        {/* Nhóm tài nguyên */}
+        {(laKhach || danhSachSub.length > 0) && <hr className={css.vach} />}
+        <div className={css.nhom}>
+          <p className={css.tieu_de_nhom}>TÀI NGUYÊN</p>
+          <Link href="/luat" prefetch={false} className={css.muc_nav}>
+            <BookOpen size={18} aria-hidden="true" />
+            <span>Luật cộng đồng</span>
+          </Link>
+          {dangNhap && (
+            <>
+              <Link
+                href={duongDanHoSo(toi.username ?? "")}
+                prefetch={false}
+                className={css.muc_nav}
+              >
+                <UserRound size={18} aria-hidden="true" />
+                <span>Hồ sơ của tôi</span>
+              </Link>
+              <Link href="/cai-dat" prefetch={false} className={css.muc_nav}>
+                <Settings size={18} aria-hidden="true" />
+                <span>Cài đặt</span>
+              </Link>
+            </>
+          )}
+        </div>
       </div>
     </aside>
   );
