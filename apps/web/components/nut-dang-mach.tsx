@@ -32,9 +32,9 @@ export function NutDangMach() {
       className={css.nut}
       data-testid="nut-dang-mach"
       aria-label="Đăng bài nhanh"
+      title="Đăng bài nhanh"
     >
-      <Plus size={15} strokeWidth={2.2} aria-hidden />
-      Đăng bài
+      <Plus size={18} strokeWidth={2} aria-hidden />
     </button>
   );
 }
