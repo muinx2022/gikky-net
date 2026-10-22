@@ -1,23 +1,24 @@
 .nut {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 6px 14px;
-  border: 1px solid transparent;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px;
+  border: 0;
   border-radius: 999px;
-  background: var(--brand);
-  color: var(--on-brand);
-  font-size: 13px;
+  background: var(--inset);
+  color: var(--ink);
+  font-family: var(--f-ui);
+  font-size: 13.5px;
   font-weight: 600;
   white-space: nowrap;
-  box-shadow: 0 2px 6px color-mix(in srgb, var(--brand) 35%, transparent);
-  transition: filter 0.15s ease, transform 0.15s ease;
+  box-shadow: none;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
 }
 
 .nut:hover {
-  filter: brightness(1.08);
-  border-color: transparent;
-  color: var(--on-brand);
+  background: var(--surface-2);
+  color: var(--ink);
 }
 
 .nut:active {
@@ -31,7 +32,7 @@
 :global(html[data-da-dang-nhap="1"]) .cho_nut {
   display: inline-block;
   width: 92px;
-  height: 31px;
+  height: 36px;
 }
 
 @media (max-width: 960px) {

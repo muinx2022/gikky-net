@@ -29,54 +29,67 @@
    dòng reset dưới đây là chỗ khác biệt duy nhất — thiếu chúng thì nút mang nền xám,
    viền và font mặc định của user-agent, đứng cạnh nút "Đăng ký" trông như hai nút. */
 .lien_ket {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 14px;
   border: 0;
-  padding: 0;
-  background: none;
-  font: inherit;
+  border-radius: 999px;
+  background: var(--inset);
+  font-family: var(--f-ui);
+  font-size: 13.5px;
+  font-weight: 600;
   cursor: pointer;
-  color: rgba(255, 255, 255, 0.85);
-  transition: color 0.15s ease;
+  color: var(--ink);
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .lien_ket:hover {
-  color: #ffffff;
+  background: var(--surface-2);
+  color: var(--ink);
 }
 
 .nut_chinh {
-  padding: 5px 14px;
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 14px;
   border-radius: 999px;
   background: var(--brand);
   color: var(--on-brand);
+  font-family: var(--f-ui);
+  font-size: 13.5px;
   font-weight: 600;
   line-height: 1.2;
-  box-shadow: 0 2px 6px color-mix(in srgb, var(--brand) 35%, transparent);
+  box-shadow: none;
   transition: filter 0.15s ease;
 }
 
 .nut_chinh:hover {
-  filter: brightness(1.08);
+  filter: brightness(1.06);
   color: var(--on-brand);
 }
 
 .ten {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  font-family: var(--f-mono);
-  font-size: 13px;
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  gap: 8px;
+  height: 36px;
+  font-family: var(--f-ui);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--inset);
+  border: 0;
   border-radius: 999px;
-  padding: 3px 11px 3px 4px;
+  padding: 0 12px 0 6px;
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .ten:hover {
-  background: rgba(255, 255, 255, 0.18);
-  border-color: rgba(255, 255, 255, 0.32);
-  color: #ffffff;
+  background: var(--surface-2);
+  color: var(--ink);
 }
 
 .menu {

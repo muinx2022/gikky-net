@@ -201,7 +201,7 @@ export function Chuong() {
         onClick={() => datMo((x) => !x)}
         data-testid="nut-chuong"
       >
-        <span aria-hidden>🔔</span>
+        <Bell size={18} strokeWidth={2} aria-hidden />
         {/* Nguyên tắc 9: không có gì thì KHÔNG in số 0. */}
         {soChuaDoc > 0 && (
           <span className={css.cham} data-testid="chuong-so-chua-doc">

@@ -9,8 +9,8 @@
 
 :global(html[data-da-dang-nhap="1"]) .cho_chuong {
   display: inline-block;
-  width: 32px;
-  height: 31px;
+  width: 36px;
+  height: 36px;
 }
 
 @media (max-width: 960px) {
@@ -24,22 +24,24 @@
 .nut {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
+  min-width: 36px;
+  height: 36px;
   font-size: 15px;
   line-height: 1;
-  padding: 6px 8px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  padding: 0 9px;
+  border: 0;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.9);
+  background: var(--inset);
+  color: var(--ink-2);
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .nut:hover {
-  border-color: rgba(255, 255, 255, 0.28);
-  background: rgba(255, 255, 255, 0.2);
-  color: #ffffff;
+  background: var(--surface-2);
+  color: var(--ink);
 }
 
 /* Vùng bấm 44px trên màn hình cảm ứng — thêm 2026-08-31 (P-20260831-2: nút này là nút
@@ -82,7 +84,7 @@
   border-radius: 999px;
   background: var(--brand);
   color: var(--on-brand);
-  border: 2px solid var(--topbar);
+  border: 2px solid var(--bg);
 }
 
 .hop {

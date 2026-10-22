@@ -2,10 +2,10 @@
   position: sticky;
   top: 0;
   z-index: 40;
-  background: var(--topbar);
-  color: #ffffff;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+  background: var(--bg);
+  color: var(--ink);
+  border-bottom: 1px solid var(--line);
+  box-shadow: none;
   backdrop-filter: none;
 }
 
@@ -54,17 +54,17 @@
   display: inline-flex;
   align-items: center;
   font-family: var(--f-display);
-  font-size: 23px;
+  font-size: 22px;
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1;
-  color: #ffffff;
+  color: var(--ink);
   transition: color 0.15s ease;
   text-decoration: none;
 }
 
 .hieu:hover {
-  color: var(--topbar-accent);
+  color: var(--accent);
 }
 
 .hieu::after {
@@ -73,10 +73,9 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--topbar-accent);
+  background: var(--brand);
   margin-left: 5px;
   vertical-align: middle;
-  box-shadow: 0 0 6px var(--topbar-accent);
 }
 
 /* Chỗ giữ của ô tìm kiếm trong lúc `Suspense` chưa xong — cùng kích thước với `.o` của
@@ -86,7 +85,7 @@
 .cho_o_tim {
   flex: 0 1 260px;
   min-width: 0;
-  height: 31px;
+  height: 38px;
 }
 
 /* Góc phải: nút "Đăng bài" + thanh tài khoản. Xem chú thích trong `chrome.tsx` để biết vì
