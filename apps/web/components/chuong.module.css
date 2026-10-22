@@ -31,17 +31,18 @@
   font-size: 15px;
   line-height: 1;
   padding: 0 9px;
-  border: 0;
+  border: 1px solid var(--line-2);
   border-radius: 999px;
-  background: var(--inset);
+  background: var(--surface);
   color: var(--ink-2);
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
 .nut:hover {
-  background: var(--surface-2);
-  color: var(--ink);
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 /* Vùng bấm 44px trên màn hình cảm ứng — thêm 2026-08-31 (P-20260831-2: nút này là nút
