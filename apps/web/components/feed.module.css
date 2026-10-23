@@ -6,7 +6,7 @@
   margin: 0 auto;
   padding: 0 24px 56px;
   display: grid;
-  grid-template-columns: 248px minmax(0, 700px) 300px;
+  grid-template-columns: 226px minmax(0, 700px) 300px;
   justify-content: space-between;
   gap: 28px;
   align-items: start;
@@ -18,7 +18,7 @@
   height: calc(100vh - var(--cao-chrome));
   max-height: calc(100vh - var(--cao-chrome));
   overflow: hidden;
-  padding: 16px 16px 16px 0;
+  padding: 16px 14px 16px 0;
   border-right: 1px solid var(--line);
   display: flex;
   flex-direction: column;
