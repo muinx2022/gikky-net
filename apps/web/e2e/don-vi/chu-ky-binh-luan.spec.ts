@@ -40,7 +40,9 @@ test.describe("chu-ky-binh-luan", () => {
 
   test("nut-chia-se-mach co day du cac kenh chia se va dong khi bam ngoai", () => {
     const tsx = doc("components/nut-chia-se-mach.tsx");
-    expect(tsx).toContain("useDongDetailsKhiBamNgoai");
+    expect(tsx).toContain("createPortal");
+    expect(tsx).toContain('role="dialog"');
+    expect(tsx).toContain('data-testid="modal-chia-se-mach"');
     expect(tsx).toContain('data-testid="nut-chia-se-mach"');
     expect(tsx).toContain('data-testid="chia-se-chep-link"');
     expect(tsx).toContain('data-testid="chia-se-facebook"');

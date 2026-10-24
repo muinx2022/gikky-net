@@ -1,4 +1,4 @@
-.menu {
+.khung {
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -6,7 +6,6 @@
 }
 
 .nut {
-  list-style: none;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -24,63 +23,18 @@
   transition: background-color 0.12s ease, color 0.12s ease;
 }
 
-.nut::-webkit-details-marker {
-  display: none;
-}
-
-.nut:hover,
-.menu[open] > .nut {
+.nut:hover {
   background: var(--inset);
   color: var(--ink);
 }
 
-.hop {
-  position: static;
-  min-width: 0;
-  width: 100%;
-  margin: 2px 0 4px;
-  padding: 4px 0 4px 14px;
-  border: 0;
-  border-left: 2px solid var(--line);
-  border-radius: 0;
-  box-shadow: none;
-  background: transparent;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.muc {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  text-align: left;
-  padding: 7px 10px;
-  border: 0;
-  border-radius: 6px;
-  background: none;
-  color: var(--ink-2);
-  font-family: var(--f-sans);
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background-color 0.12s ease, color 0.12s ease;
-}
-
-.muc:hover {
-  background: var(--inset);
-  color: var(--ink);
-}
-
-.menu_pill {
+.khung_pill {
   width: auto;
   display: inline-flex;
   flex-direction: row;
 }
 
-.menu_pill > .nut {
+.khung_pill > .nut {
   width: auto;
   height: 32px;
   padding: 0 12px;
@@ -92,29 +46,220 @@
   font-weight: 600;
 }
 
-.menu_pill > .nut:hover,
-.menu_pill[open] > .nut {
+.khung_pill > .nut:hover {
   background: var(--surface-2);
   color: var(--ink);
 }
 
-.menu_pill > .hop {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  z-index: 40;
-  min-width: 176px;
-  width: max-content;
-  margin: 0;
-  padding: 6px;
+.nen_modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(15, 23, 42, 0.48);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: hien_nen 0.16s ease-out;
+}
+
+.hop_modal {
+  width: 100%;
+  max-width: 440px;
   background: var(--surface);
+  color: var(--ink);
+  border-radius: 16px;
   border: 1px solid var(--line);
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12), 0 2px 6px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 20px 48px rgba(15, 23, 42, 0.22);
+  overflow: hidden;
+  animation: hien_hop 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dau_modal {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 12px 44px;
+  border-bottom: 1px solid var(--line);
+}
+
+.tieu_de_modal {
+  font-family: var(--f-sans);
+  font-size: 15.5px;
+  font-weight: 600;
+  color: var(--ink);
+  text-align: center;
+}
+
+.nut_dong {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.nut_dong:hover {
+  background: var(--inset);
+  color: var(--ink);
+}
+
+.than_modal {
+  padding: 22px 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.hang_kenh {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px 6px;
+  align-items: start;
+}
+
+.o_kenh {
+  border: 0;
+  background: transparent;
+  padding: 4px 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: var(--ink);
+  font-family: var(--f-sans);
+  transition: transform 0.12s ease, opacity 0.12s ease;
+}
+
+.o_kenh:hover {
+  transform: translateY(-2px);
+}
+
+.o_kenh:active {
+  transform: scale(0.95);
+}
+
+.vong_tron {
+  width: 50px;
+  height: 50px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.mau_messenger {
+  background: #0084ff;
+}
+
+.mau_zalo {
+  background: #0068ff;
+}
+
+.bong_zalo {
+  background: #ffffff;
+  color: #0068ff;
+  font-family: var(--f-sans);
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  padding: 5px 6px;
+  border-radius: 999px;
+  line-height: 1;
+}
+
+.mau_facebook {
+  background: #1877f2;
+}
+
+.mau_telegram {
+  background: #26a5e4;
+}
+
+.mau_x {
+  background: #0f1419;
+}
+
+.vong_vien {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line-2);
+}
+
+.o_kenh:hover .vong_vien {
+  background: var(--inset);
+}
+
+.nhan_kenh {
+  font-size: 12px;
+  line-height: 1.25;
+  color: var(--ink-2);
+  text-align: center;
+  word-break: break-word;
+  max-width: 74px;
+}
+
+@media (max-width: 640px) {
+  .nen_modal {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .hop_modal {
+    max-width: 100%;
+    border-radius: 18px 18px 0 0;
+    border-bottom: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    animation: truot_len 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+@keyframes hien_nen {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes hien_hop {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes truot_len {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
 }
 
 @media print {
-  .menu {
+  .khung {
     display: none !important;
   }
 }
