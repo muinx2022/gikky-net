@@ -194,4 +194,14 @@ test.describe("SEO On-page & Content Improvements", () => {
     expect(moTa).toContain("Nội dung phân tích chuyên sâu");
     expect(moTa.length).toBeLessThanOrEqual(160);
   });
+
+  test("8. metadataMach: gắn ảnh bài viết từ trichUrlAnhMach vào openGraph và twitter images", () => {
+    const trangMachSrc = readFileSync(
+      resolve(WEB, "components/trang-mach.tsx"),
+      "utf8",
+    );
+    expect(trangMachSrc).toContain("trichUrlAnhMach");
+    expect(trangMachSrc).toMatch(/images:\s*ds_anh_og/);
+    expect(trangMachSrc).toMatch(/images:\s*ds_anh_twitter/);
+  });
 });

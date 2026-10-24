@@ -57,6 +57,7 @@ import {
 } from "@/lib/khan-dai";
 import { docView, matDeRender } from "@/lib/mat";
 import { chonMoiBung, idDaTrich } from "@/lib/moi-bung";
+import { trichUrlAnhMach } from "@/lib/og";
 import { urlTuyetDoi } from "@/lib/site";
 import { TRAN_NGAN_KEO, chayCoTran } from "@/lib/song-song";
 import { duongDanHoSo, duongDanMach, duongDanSub, tachSlugId } from "@/lib/url";
@@ -141,6 +142,32 @@ export async function metadataMach(
   const duong_dan = duongDanMach(mach.slug, mach.id);
   const mo_ta = tomTat(mach);
   const tac_gia = mach.author.display_name || mach.author.username;
+  const anh_bai_viet = trichUrlAnhMach(mach);
+  const anh_dau = mach.mocs.find((m) => m.seq === 1)?.anhs?.[0];
+  const url_anh_og = urlTuyetDoi(`${duong_dan}/opengraph-image`);
+  const ds_anh_og = anh_bai_viet
+    ? [
+        {
+          url: urlTuyetDoi(anh_bai_viet),
+          ...(anh_dau?.w && anh_dau?.h
+            ? { width: anh_dau.w, height: anh_dau.h }
+            : {}),
+          alt: mach.title,
+        },
+      ]
+    : [
+        {
+          url: url_anh_og,
+          width: 1200,
+          height: 630,
+          alt: mach.title,
+          type: "image/png",
+        },
+      ];
+  const ds_anh_twitter = anh_bai_viet
+    ? [urlTuyetDoi(anh_bai_viet)]
+    : [url_anh_og];
+
   return {
     title: mach.title,
     description: mo_ta,
@@ -154,11 +181,13 @@ export async function metadataMach(
       modifiedTime: mach.last_entry_at,
       authors: [tac_gia],
       section: mach.sub.ten,
+      images: ds_anh_og,
     },
     twitter: {
       card: "summary_large_image" as const,
       title: mach.title,
       description: mo_ta,
+      images: ds_anh_twitter,
     },
   };
 }

@@ -47,6 +47,7 @@ test.describe("chu-ky-binh-luan", () => {
     expect(tsx).toContain('data-testid="chia-se-x"');
     expect(tsx).toContain('data-testid="chia-se-zalo"');
     expect(tsx).toContain('data-testid="chia-se-telegram"');
+    expect(tsx).toContain("zalo://");
   });
 
   test("the-mach su dung NutChiaSeMach dang pill va khong con ChepLink cu", () => {

@@ -106,7 +106,14 @@ export function NutChiaSeMach({ duongDan, tieuDe, kieu = "menu" }: NutChiaSeMach
     timerRef.current = setTimeout(() => {
       setTrangThai("chua");
     }, 2200);
-    window.open("https://chat.zalo.me/", "_blank", "noopener,noreferrer");
+    const laThietBiDiDong =
+      typeof navigator !== "undefined" &&
+      /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (laThietBiDiDong) {
+      window.location.href = "zalo://";
+    } else {
+      window.open("https://chat.zalo.me/", "_blank", "noopener,noreferrer");
+    }
   };
 
   const xuLyTelegram = () => {
