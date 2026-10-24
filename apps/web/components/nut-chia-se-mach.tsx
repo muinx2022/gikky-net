@@ -99,6 +99,26 @@ export function NutChiaSeMach({ duongDan, tieuDe, kieu = "menu" }: NutChiaSeMach
 
   const xuLyZalo = async () => {
     const url = layUrlDayDu();
+    const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
+    const laAndroid = /Android/i.test(ua);
+    const laIOS =
+      /iPhone|iPad|iPod/i.test(ua) ||
+      (typeof navigator !== "undefined" &&
+        navigator.platform === "MacIntel" &&
+        navigator.maxTouchPoints > 1);
+
+    if (laAndroid) {
+      dongMenu();
+      window.location.href = `intent://zaloapp.com/#Intent;action=android.intent.action.SEND;type=text/plain;S.android.intent.extra.SUBJECT=;S.android.intent.extra.TEXT=${encodeURIComponent(url)};B.hidePostFeed=false;B.backToSource=true;end`;
+      return;
+    }
+
+    if (laIOS) {
+      dongMenu();
+      window.location.href = `zaloshareext://shareext?url=${encodeURIComponent(url)}&type=8&version=1`;
+      return;
+    }
+
     await chepVaoBoNhoTam(url);
     dongMenu();
     setTrangThai("da_chep_zalo");
@@ -106,14 +126,7 @@ export function NutChiaSeMach({ duongDan, tieuDe, kieu = "menu" }: NutChiaSeMach
     timerRef.current = setTimeout(() => {
       setTrangThai("chua");
     }, 2200);
-    const laThietBiDiDong =
-      typeof navigator !== "undefined" &&
-      /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    if (laThietBiDiDong) {
-      window.location.href = "zalo://";
-    } else {
-      window.open("https://chat.zalo.me/", "_blank", "noopener,noreferrer");
-    }
+    window.open("https://chat.zalo.me/", "_blank", "noopener,noreferrer");
   };
 
   const xuLyTelegram = () => {
