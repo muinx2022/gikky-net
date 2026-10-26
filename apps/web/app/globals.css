@@ -88,10 +88,10 @@
   --khung: 860px;
 
   /* Chiều cao THẬT của thanh header dính (`components/chrome.module.css`: padding 11px ×
-   * 2 + dòng cao 23px + viền 1px ≈ 57px). Ba chỗ cần đúng con số này — rail dính, header
+   * 2 + ô tìm cao 38px + viền 1px = 61px). Ba chỗ cần đúng con số này — rail dính, header
    * sub dính, và `scroll-margin-top` của deep-link — nên nó là token chứ không phải một
    * số gõ ba lần rồi lệch ở chỗ thứ ba. */
-  --cao-chrome: 57px;
+  --cao-chrome: 61px;
 }
 
 @media (prefers-color-scheme: dark) {

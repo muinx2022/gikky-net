@@ -10,7 +10,9 @@ const THANH_CSS = resolve(GOC, "components", "thanh-dieu-huong-duoi.module.css")
 
 const FEED_TSX = resolve(GOC, "components", "feed.tsx");
 const FEED_CSS = resolve(GOC, "components", "feed.module.css");
+const KHUNG_HAI_COT_CSS = resolve(GOC, "components", "khung-hai-cot.module.css");
 const TRANG_MACH_CSS = resolve(GOC, "components", "trang-mach.module.css");
+const GLOBALS_CSS = resolve(GOC, "app", "globals.css");
 
 function boChuThichCss(css: string): string {
   return css.replace(/\/\*[\s\S]*?\*\//g, " ");
@@ -61,5 +63,23 @@ test.describe("thanh dieu huong tren mobile va tablet (giong cafef)", () => {
     const tmCss = boChuThichCss(readFileSync(TRANG_MACH_CSS, "utf8"));
     expect(tmCss).not.toMatch(/\.hang_tren\s*\{[^}]*position:\s*sticky/);
     expect(tmCss).not.toMatch(/@media\s*\(min-width:\s*961px\)[\s\S]*?\.hang_tren\s*\{[\s\S]*?position:\s*sticky/);
+  });
+
+  test("khung-hai-cot.module.css & feed.module.css: .khung desktop co padding 0 24px (khong dat padding-bottom day rail_trai), .chinh dat padding 16px 0 56px", () => {
+    const khungCss = boChuThichCss(readFileSync(KHUNG_HAI_COT_CSS, "utf8"));
+    const feedCss = boChuThichCss(readFileSync(FEED_CSS, "utf8"));
+
+    for (const css of [khungCss, feedCss]) {
+      // .khung desktop không đặt padding-bottom để tránh đẩy .rail_trai khi cuộn tới cuối bài
+      expect(css).toMatch(/\.khung\s*\{[\s\S]*?padding:\s*0 24px;/);
+      expect(css).not.toMatch(/\.khung\s*\{[\s\S]*?padding:\s*0 24px 56px;/);
+      // .chinh desktop nhận padding-bottom 56px
+      expect(css).toMatch(/\.chinh\s*\{[\s\S]*?padding:\s*16px 0 56px;/);
+    }
+  });
+
+  test("globals.css: --cao-chrome duoc cap nhat khop chieu cao that cua chrome tren desktop (61px)", () => {
+    const globalsCss = boChuThichCss(readFileSync(GLOBALS_CSS, "utf8"));
+    expect(globalsCss).toMatch(/--cao-chrome:\s*61px;/);
   });
 });

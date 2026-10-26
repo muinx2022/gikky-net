@@ -4,7 +4,7 @@
 .khung {
   max-width: 1380px;
   margin: 0 auto;
-  padding: 0 24px 56px;
+  padding: 0 24px;
   display: grid;
   grid-template-columns: 226px minmax(0, 700px) 300px;
   justify-content: space-between;
@@ -27,7 +27,7 @@
 .chinh {
   min-width: 0;
   width: 100%;
-  padding-top: 16px;
+  padding: 16px 0 56px;
 }
 
 @media (max-width: 960px) and (min-width: 641px) {
@@ -40,7 +40,7 @@
   }
 
   .chinh {
-    padding-top: 0;
+    padding: 0;
   }
 
   .rail_trai,
@@ -57,7 +57,7 @@
   }
 
   .chinh {
-    padding-top: 0;
+    padding: 0;
   }
 
   .rail_trai,
@@ -73,7 +73,7 @@
   position: sticky;
   top: var(--cao-chrome);
   max-height: calc(100vh - var(--cao-chrome));
-  padding-top: 16px;
+  padding: 16px 0 32px;
   overflow-y: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
