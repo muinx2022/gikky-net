@@ -38,8 +38,9 @@
   border-radius: 50%;
 }
 
-/* Nút "Sửa hồ sơ" đẩy sang phải, tách khỏi cụm avatar + tên. */
-.dau_ho_so > a {
+/* Nút "Sửa hồ sơ" hoặc "Theo dõi" đẩy sang phải, tách khỏi cụm avatar + tên. */
+.dau_ho_so > a,
+.dau_ho_so > button {
   margin-left: auto;
 }
 

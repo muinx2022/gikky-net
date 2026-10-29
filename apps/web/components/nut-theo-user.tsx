@@ -30,8 +30,8 @@ import { useToast } from "./toast";
  * gì hơn, vì hôm nay nó **không** kéo bài của người ấy lên feed của mình.
  *
  * Dùng chung CSS với `nut-theo-sub.module.css`: hai nút cùng ngữ pháp thị giác (nền
- * `--accent` khi chưa theo = lời mời; viền mảnh khi đã theo = trạng thái), và hai bộ CSS
- * giống nhau là hai bộ sẽ lệch.
+ * `--inset` phẳng khi chưa theo; nền `--accent-soft` khi đã theo = trạng thái), và hai
+ * bộ CSS giống nhau là hai bộ sẽ lệch.
  */
 export function NutTheoUser({ username }: { username: string }) {
   const { toi, dangTai: dangTaiPhien } = usePhien();

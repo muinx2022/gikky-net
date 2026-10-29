@@ -1,22 +1,36 @@
-/* Nút chính của header chuyên mục: nền `--accent` khi CHƯA theo (mời gọi), viền mảnh khi
-   ĐÃ theo (trạng thái, không mời gọi nữa). Cùng ngữ pháp với `nut-theo-mach.module.css`. */
+/* Nút theo dõi trên header chuyên mục (/s/<slug>) và hồ sơ (/u/<username>):
+   Phẳng (flat surface token), đồng bộ với các pill hành động trên trang.
+   Chưa theo: nền `--inset` + viền `--line-2` + chữ `--ink`.
+   Đang theo: nền `--accent-soft` + chữ `--accent`. */
 .nut {
+  flex-shrink: 0;
+  white-space: nowrap;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 7px 15px;
-  border: 1px solid var(--accent);
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--line-2);
   border-radius: 999px;
-  background: var(--accent);
-  color: var(--on-accent);
-  font: inherit;
-  font-size: 13.5px;
+  background: var(--inset);
+  color: var(--ink);
+  font-family: var(--f-ui);
+  font-size: 13px;
   font-weight: 600;
+  box-shadow: none;
   cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
 }
 
 .nut:hover:not(:disabled) {
-  filter: brightness(1.08);
+  background: var(--surface-2);
+  border-color: var(--line-2);
+  color: var(--ink);
+}
+
+.nut:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .nut:disabled {
@@ -25,34 +39,42 @@
 }
 
 .dang_theo {
-  background: none;
-  border-color: var(--line-2);
-  color: var(--ink-2);
-  font-weight: 500;
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 25%, transparent);
+  color: var(--accent);
+  font-weight: 600;
 }
 
 .dang_theo:hover:not(:disabled) {
-  filter: none;
-  border-color: var(--accent);
-  color: var(--accent);
+  background: var(--surface-2);
+  border-color: var(--line-2);
+  color: var(--ink);
 }
 
-/* Nút "Hủy" trong danh sách hồ sơ: phụ, không tranh trọng lượng với tên chuyên mục. */
+/* Nút "Hủy" trong danh sách hồ sơ: phụ, phẳng, không tranh trọng lượng với tên chuyên mục. */
 .nut_go {
   flex: none;
-  padding: 6px 13px;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 12px;
   border: 1px solid var(--line-2);
   border-radius: 999px;
-  background: none;
-  color: var(--ink-3);
-  font: inherit;
-  font-size: 13px;
+  background: var(--inset);
+  color: var(--ink-2);
+  font-family: var(--f-ui);
+  font-size: 12.5px;
+  font-weight: 600;
   cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .nut_go:hover:not(:disabled) {
-  border-color: var(--accent);
-  color: var(--accent);
+  background: var(--surface-2);
+  border-color: var(--line-2);
+  color: var(--ink);
 }
 
 .nut_go:disabled {
