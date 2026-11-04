@@ -121,6 +121,16 @@
   margin-bottom: 0;
 }
 
+/* Lớp ngoài là cái bị kẹp (`max-height` trên `[data-testid^=than-moc-]`).
+ * Lớp trong không kẹp — accordion đo `offsetHeight` của nó sau khi lớp ngoài đã cắt. */
+.than_boc {
+  min-width: 0;
+}
+
+.than_do {
+  min-width: 0;
+}
+
 .figures {
   display: flex;
   flex-wrap: wrap;
@@ -195,57 +205,36 @@
   color: var(--ink-3);
 }
 
-/* === Thu gọn / Mở rộng mốc (Accordion) === */
+/* === Thu gọn mốc (seq > 1) ===
+ * Kẹp chỉ thân chữ. Dải số, câu mồi, reaction, chân thẻ vẫn hiện.
+ * Ảnh / snapshot / trích ẩn bằng CSS, không gỡ khỏi DOM.
+ * Ngưỡng 72px khớp `NGUONG_THAN_PX` trong `moc-accordion.tsx`. */
 
 .thu_gon {
-  position: relative;
-  cursor: pointer;
-  border-radius: 6px;
-  padding: 4px 8px 6px;
-  margin: -4px -8px 0;
-  transition: background-color 0.15s ease;
+  min-width: 0;
 }
 
-.thu_gon:hover {
-  background-color: var(--hover);
-}
-
-.than_thu_gon {
-  max-height: 145px;
+.kep_than :global([data-testid^="than-moc-"]) {
+  max-height: 72px;
   overflow: hidden;
-  position: relative;
-  -webkit-mask-image: linear-gradient(to bottom, black 70px, transparent 145px);
-  mask-image: linear-gradient(to bottom, black 70px, transparent 145px);
+  -webkit-mask-image: linear-gradient(to bottom, black 48px, transparent 72px);
+  mask-image: linear-gradient(to bottom, black 48px, transparent 72px);
 }
 
-/* Ẩn các khối tương tác/nặng khi mốc đang thu gọn */
-.than_thu_gon .figures,
-.than_thu_gon .cau_moi,
-.than_thu_gon .chan,
-.than_thu_gon :global([data-testid="hang-reaction"]),
-.than_thu_gon :global([data-testid="gallery-moc"]),
-.than_thu_gon :global([data-testid^="trich-moc-"]),
-.than_thu_gon :global([data-testid^="lat-cat-"]),
-.than_thu_gon :global([data-testid^="ngan-keo-"]) {
-  display: none !important;
+.thu_gon :global([data-testid^="gallery-moc-"]),
+.thu_gon :global([data-testid="tradingview-snapshots"]),
+.thu_gon :global([data-testid^="trich-moc-"]) {
+  display: none;
 }
 
+/* Nút nằm trong luồng, không phủ lên thẻ — bấm vote / link không mở mốc. */
 .phu_mo_thu_gon {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 52px;
   display: flex;
-  align-items: flex-end;
-  justify-content: flex-start;
-  padding: 0 8px 6px;
-  background: linear-gradient(to bottom, transparent, var(--card) 85%);
-  pointer-events: none;
+  align-items: center;
+  margin-top: 10px;
 }
 
 .nut_mo_moc {
-  pointer-events: auto;
   display: inline-flex;
   align-items: center;
   gap: 5px;

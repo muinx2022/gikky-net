@@ -47,7 +47,15 @@ type Props = {
   idTrongTrangKhanDai: ReadonlySet<number>;
   /** Ngày ĐĂNG của mạch. Mốc 1 hiện cái này thay `moc.created_at` (giờ soạn). */
   publishedAtMach: string;
+  /** Mốc 1 đã đưa `figures` lên biên lai đầu bài — không lặp dải số trong thẻ. */
+  anFigures: boolean;
 };
+
+function tieuDeChamRay(seq: number, loai: string | null): string {
+  const sach = (loai ?? "").trim();
+  if (sach === "") return `Mốc ${seq}`;
+  return sach;
+}
 
 /** Một thẻ mốc trên nhật ký — chất liệu "sổ nghiêm" của PLAN 9.1: viền cứng, mono, dải
  * `figures`. Đối lập cố ý với khán đài xuề xoà bên dưới. */
@@ -60,12 +68,15 @@ export function TheMoc({
   duongDanTrich,
   idTrongTrangKhanDai,
   publishedAtMach,
+  anFigures,
 }: Props) {
   const hien = moc.trang_thai === "binh_thuong";
   // Ngăn kéo có HÀNG nào không — kể cả bia mộ. Đây là câu hỏi đúng cho cả cái nút lẫn
   // câu mồi; `so_binh_luan > 0` là câu hỏi khác và nó nói dối ở mốc chỉ còn bia mộ.
   const co_hang = nganKeo !== null && nganKeo.threads.length > 0;
   const tvSnapshots = hien && moc.body ? timTradingViewSnapshots(moc.body) : [];
+  const coPhanAn =
+    hien && (moc.anhs.length > 0 || tvSnapshots.length > 0 || moc.trich !== null);
 
   return (
     <li
@@ -80,7 +91,9 @@ export function TheMoc({
     >
       {laMach && (
         <div className={css.ray}>
-          <span className={css.dot}>{moc.seq}</span>
+          <span className={css.dot} title={tieuDeChamRay(moc.seq, moc.loai)}>
+            {moc.seq}
+          </span>
         </div>
       )}
       {/* Cột vote bên trái thân mốc — plan con 1d §2.5.6, **sống từ Phase 2** (PLAN 5.7:
@@ -90,7 +103,12 @@ export function TheMoc({
           là `null`, vì API từ chối phiếu vào nội dung đã gỡ (409 `noi_dung_da_go`) và một
           mũi tên bấm được để nhận lỗi là một cái bẫy. */}
       <div className={css.trong}>
-        <VoThuGonMoc seq={moc.seq} laMach={laMach}>
+        <VoThuGonMoc
+          seq={moc.seq}
+          laMach={laMach}
+          laBiaMo={!hien}
+          coPhanAn={coPhanAn}
+        >
         <div className={css.dau}>
           <span className={css.khi} data-testid="moc-occurred-at">
             {ngayDayDu(moc.occurred_at)}
@@ -131,14 +149,7 @@ export function TheMoc({
 
         {hien ? (
           <>
-            <ThanHtml
-              body={moc.body ?? ""}
-              dinhDang={moc.body_dinh_dang}
-              className={css.than}
-              coMucLuc={moc.seq === 1}
-            />
-
-            {moc.figures !== null && moc.figures.length > 0 && (
+            {!anFigures && moc.figures !== null && moc.figures.length > 0 && (
               <>
                 <dl className={css.figures} data-testid="figures">
                   {moc.figures.map((f, i) => (
@@ -154,9 +165,20 @@ export function TheMoc({
               </>
             )}
 
-            {/* Ảnh đứng SAU con số, TRƯỚC khối trích: thứ tự đọc là chữ → số → ảnh →
-                câu được trích. Nguyên tắc 9 — `GalleryMoc` tự trả `null` khi không có
-                ảnh, nên không có khung rỗng nào ở đây. */}
+            {/* Thân chữ là phần duy nhất bị kẹp khi thu. Lớp trong giữ chiều cao thật. */}
+            <div className={css.than_boc} data-testid={`than-moc-${moc.seq}`}>
+              <div className={css.than_do}>
+                <ThanHtml
+                  body={moc.body ?? ""}
+                  dinhDang={moc.body_dinh_dang}
+                  className={css.than}
+                  coMucLuc={moc.seq === 1}
+                />
+              </div>
+            </div>
+
+            {/* Ảnh đứng SAU số và thân chữ, TRƯỚC khối trích. Nguyên tắc 9 —
+                `GalleryMoc` tự trả `null` khi không có ảnh, nên không có khung rỗng. */}
             <GalleryMoc anhs={moc.anhs} seq={moc.seq} />
 
             {tvSnapshots.length > 0 && (

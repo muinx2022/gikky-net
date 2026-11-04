@@ -3,6 +3,7 @@
 import type { SpineOut } from "@gikky/api-client";
 import { Fragment, useRef, useState } from "react";
 
+import { nhanOSpine } from "@/lib/bien-lai-dau";
 import { nhanDaiGap, tinhDaiGapBao, trongDaiGap } from "@/lib/dai-gap";
 import { mocDauChuaXem, oChuaXem } from "@/lib/vach-moi";
 
@@ -68,9 +69,12 @@ import { useTrangThaiToi } from "./trang-thai-toi";
  */
 export function MatBao({
   spine,
+  loaiMoc,
   tatCaMoc,
 }: {
   spine: readonly SpineOut[];
+  /** Loại từng mốc. `SpineOut` không có `loai` — lấy từ `mach.mocs`, không thêm trường API. */
+  loaiMoc: readonly { seq: number; loai: string | null }[];
   /** Cả nhật ký theo `seq` tăng dần, đã render ở server.
    *
    * **Một nguồn duy nhất cho cả hai đầu.** Tới 2026-08-24 còn có thêm prop `mocMoiNhat`
@@ -101,6 +105,7 @@ export function MatBao({
   // phải một lời quảng cáo như dải gập của mặt CẶN. (`SpineOut` CÓ mang `so_binh_luan`
   // nếu ngày nào đó đổi ý: đây là lựa chọn sản phẩm, không phải giới hạn kỹ thuật.)
   const nhan_gap = nhanDaiGap(dai, 0, false);
+  const loaiTheoSeq = new Map(loaiMoc.map((m) => [m.seq, m.loai]));
 
   /** Bấm một số trên spine: bung cả mạch rồi cuộn tới đúng thẻ — PLAN 5.5 "bấm số → peek
    * mốc". Cuộn phải đợi React vẽ xong thẻ, nên nó đi sau một `requestAnimationFrame`;
@@ -125,6 +130,8 @@ export function MatBao({
         <ol className={css.day}>
           {spine.map((o) => {
             const chua_xem = oChuaXem(o.seq, moc_dau_chua_xem);
+            const loai = loaiTheoSeq.get(o.seq) ?? null;
+            const loaiSach = (loai ?? "").trim();
             return (
               <li key={o.seq} className={css.o}>
                 <button
@@ -133,9 +140,8 @@ export function MatBao({
                   onClick={() => nhayToiMoc(o.seq)}
                   data-testid={`spine-o-${o.seq}`}
                   data-chua-xem={chua_xem ? "1" : "0"}
-                  aria-label={
-                    chua_xem ? `Mốc ${o.seq} — chưa xem` : `Mốc ${o.seq}`
-                  }
+                  aria-label={nhanOSpine(o.seq, loai, chua_xem)}
+                  title={loaiSach === "" ? undefined : loaiSach}
                 >
                   {o.seq}
                 </button>

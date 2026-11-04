@@ -9,6 +9,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 
 import { Avatar } from "@/components/avatar";
 import { BaoCursorHong } from "@/components/bao-cursor-hong";
+import { BienLaiDauBai } from "@/components/bien-lai-dau";
 import { ChanDongSo } from "@/components/chan-dong-so";
 import { DaiGapBung } from "@/components/dai-gap";
 import { JsonLd } from "@/components/json-ld";
@@ -38,6 +39,7 @@ import {
   type ChinhSachDoc,
   type TrangCursor,
 } from "@/lib/api";
+import { figuresMocDau } from "@/lib/bien-lai-dau";
 import { CHU_NGUOI_DUNG } from "@/lib/chu-nguoi-dung";
 import { nenHienSoDem } from "@/lib/dem";
 import {
@@ -321,6 +323,9 @@ export async function TrangMach({
   const duong_dan_trich = `${co_ban}?khan_dai=1&sort=hay_nhat`;
   const id_trong_trang = idTrongTrangGop(hay_nhat?.threads ?? null, lat_cat.values());
 
+  // Một kết quả cho ô dưới tiêu đề và cho `anFigures` — hai lần gọi là hai chỗ trôi.
+  const figuresDau = figuresMocDau(mach.mocs);
+
   const the_moc = (seq: number) => {
     const m = mach.mocs.find((x) => x.seq === seq);
     if (m === undefined) return null;
@@ -335,6 +340,7 @@ export async function TrangMach({
         duongDanTrich={duong_dan_trich}
         idTrongTrangKhanDai={id_trong_trang}
         publishedAtMach={mach.published_at}
+        anFigures={m.seq === 1 && figuresDau.length > 0}
       />
     );
   };
@@ -456,6 +462,7 @@ export async function TrangMach({
                   </div>
                 )}
                 <h1 className={css.tieu_de}>{mach.title}</h1>
+                <BienLaiDauBai figures={figuresDau} />
               </header>
 
             {mach.locked && (
@@ -503,6 +510,7 @@ export async function TrangMach({
                   // tự gọi: cả hai đầu đều lấy từ `tatCaMoc`, không có nguồn thứ hai.
                   <MatBao
                     spine={mach.spine}
+                    loaiMoc={mach.mocs.map((m) => ({ seq: m.seq, loai: m.loai }))}
                     tatCaMoc={mach.mocs.map((m) => ({ seq: m.seq, the: the_moc(m.seq) }))}
                   />
                 ) : (

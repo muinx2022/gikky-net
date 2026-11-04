@@ -1766,3 +1766,9 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Ở đâu**: `apps/web/components/logo.module.css:32-47`; `apps/web/components/logo.tsx:9-10`
 - **Bằng chứng**: `LogoGikky` chỉ dùng `khung_hieu`/`bieu_tuong`/`svg_g`/`chu_hieu`; docstring nói `#14161b`/`#e7eaf0` trong khi logo kế thừa `#ffffff` từ `.hieu` trên header.
 - **Vì sao không sửa ngay**: dọn code chết + sửa chữ, ngoài phạm vi đổi màu.
+
+### P-20261104-1 · [MỞ] · NHỎ — nhánh cắt figures còn 6 cặp ở client chỉ chặn payload giả
+- **Thấy lúc**: làm biên lai đầu bài (`plans/2026-11-04-bien-lai-dau-bai-va-moc.md`)
+- **Ở đâu**: `api/core/models/moc.py` — `SO_FIGURES_TOI_DA = 6`, `kiem_figures` ném `ValidationError` khi quá 6
+- **Bằng chứng**: API đã từ chối figures quá 6 cặp lúc ghi. Hàm `figuresMocDau` vẫn `slice(0, 6)` để bài đơn vị có ca 7→6; dữ liệu thật không đi tới nhánh đó.
+- **Vì sao không sửa ngay**: trần client là lưới phòng thủ, không phải lỗi. Bỏ nó thì bài đo "7 cặp → còn 6" mất chỗ đứng.
