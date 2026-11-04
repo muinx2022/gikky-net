@@ -7,6 +7,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  type MouseEvent,
   type ReactNode,
 } from "react";
 
@@ -184,8 +185,23 @@ export function VoThuGonMoc({
     ? `${css.noi} ${css.dang_mo}`
     : `${css.noi} ${css.thu_gon}${daDo && thanTran ? ` ${css.kep_than}` : ""}`;
 
+  const moKhiBamThan = (e: MouseEvent<HTMLDivElement>) => {
+    if (dangMo) return;
+    const target = e.target;
+    if (!(target instanceof Element)) return;
+    // Vote, link, ngăn kéo, menu là nút riêng. Bấm chúng không được bung mốc.
+    if (
+      target.closest(
+        "button, a, input, textarea, select, summary, label, [data-testid^='ngan-keo-'], [data-testid^='composer']",
+      )
+    ) {
+      return;
+    }
+    moMoc(seq);
+  };
+
   return (
-    <div ref={hopRef} className={lop}>
+    <div ref={hopRef} className={lop} onClick={moKhiBamThan}>
       {children}
       {hienNut && !dangMo && (
         <div className={css.phu_mo_thu_gon}>

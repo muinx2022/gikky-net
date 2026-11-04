@@ -110,7 +110,10 @@ Nút:
 - Nút là `<button type="button">`, nhãn `Xem thêm` / `Thu gọn`,
   `aria-expanded`, `data-testid={"nut-mo-moc-" + seq}` khi thu và
   `data-testid={"nut-thu-gon-moc-" + seq}` khi mở.
-- **Bỏ** `onClick` trên cả mặt thẻ. Bấm link, vote, ngăn kéo không được mở mốc.
+- Bấm **thân** mốc đang thu (chữ, ngày, chip, dải số) thì mở mốc. Bấm vote, link,
+  ô soạn, nội dung ngăn kéo thì không. Nút «Xem thêm» / «Thu gọn» vẫn còn. Lượt đầu
+  bỏ hết `onClick` trên thẻ — người đọc bấm chữ không thấy gì mở, nên trả lại cú bấm
+  trên thân.
 - Bia mộ không accordion: giữ dòng `[mốc đã xoá]` / `[mốc đã bị ẩn]`.
 
 Đo tràn ở client (`useLayoutEffect` + `ResizeObserver` trên

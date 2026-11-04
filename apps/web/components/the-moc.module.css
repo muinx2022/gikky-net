@@ -212,6 +212,7 @@
 
 .thu_gon {
   min-width: 0;
+  cursor: pointer;
 }
 
 .kep_than :global([data-testid^="than-moc-"]) {
