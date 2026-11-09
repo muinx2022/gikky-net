@@ -115,13 +115,23 @@ def thuc_hien_action(action: str, data: dict, client: GikkyClient = None) -> dic
             "status_mach": res_dong.get("status", "CLOSED"),
         }
 
+    elif action == "mo_lai_mach":
+        mach_id = data["mach_id"]
+        res_mo = client.mo_lai_mach(mach_id)
+        return {
+            "status": "success",
+            "action": "mo_lai_mach",
+            "mach_id": mach_id,
+            "status_mach": res_mo.get("status", "OPEN"),
+        }
+
     else:
         raise ValueError(f"Action không hợp lệ: {action}")
 
 
 def runner():
     parser = argparse.ArgumentParser(description="Bot Trader Gikky Runner (HTTP API)")
-    parser.add_argument("--action", choices=["tao_mach", "them_moc", "dong_mach"], required=True)
+    parser.add_argument("--action", choices=["tao_mach", "them_moc", "dong_mach", "mo_lai_mach"], required=True)
     parser.add_argument("--payload", default="/tmp/bot_trader_payload.json")
     args = parser.parse_args()
 

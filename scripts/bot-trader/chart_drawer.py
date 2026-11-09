@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
-"""Vẽ biểu đồ kỹ thuật Daily Chart chuẩn Dark Obsidian cho Bot Trader."""
+"""Vẽ biểu đồ kỹ thuật Dark Obsidian cho Bot Trader trên Gikky.net.
+Hỗ trợ cả Daily Chart (Cổ phiếu VN) và H4 Chart (Quốc tế: FX, Hàng hóa, Năng lượng)
+với hiển thị trực quan riêng biệt cho 5 phương pháp kỹ thuật:
+- ICHIMOKU: Tenkan-sen, Kijun-sen, Senkou Span A/B và tô màu Mây Kumo (fill_between)
+- MA_CROSS / MA30_50_PULLBACK: EMA 20, MA 30, MA 50, MA 200
+- BB_SQUEEZE: Bollinger Bands (Upper, Middle, Lower) và MA 50
+- PA_MA200: MA 20, MA 50, MA 200
+"""
 
 import os
 from datetime import datetime
@@ -9,8 +16,9 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import mplfinance as mpf
 import pandas as pd
+import numpy as np
 
-from scanner import lay_du_lieu_co_cache
+from scanner import lay_du_lieu_co_cache, lay_du_lieu_h4_yahoo, tinh_toan_chi_bao_ky_thuat
 
 DATA_DIR = Path(__file__).resolve().parent / "data"
 CHARTS_DIR = DATA_DIR / "charts"
@@ -25,29 +33,53 @@ def ve_bieu_do_bot_trader(
     take_profit: float,
     pyramid_trigger: float = None,
     end_date: str = None,
-    setup_name: str = "Price Action & MA 200"
+    setup_name: str = "Price Action & MA 200",
+    strategy_id: str = "PA_MA200",
+    direction: str = "LONG",
+    timeframe: str = "D1",
+    decimals: int = 2,
+    df_data: pd.DataFrame = None,
+    yf_ticker: str = None
 ) -> str:
-    """Vẽ và xuất ảnh biểu đồ nến ngày kèm MA 200 và các đường vị thế giao dịch."""
+    """Vẽ và xuất ảnh biểu đồ nến chuẩn Dark Obsidian kèm các mốc vị thế giao dịch."""
+    clean_sym = symbol.replace("/", "_")
     if not end_date:
         end_date = datetime.now().strftime("%Y-%m-%d")
 
-    df = lay_du_lieu_co_cache(symbol, end_date)
-    if df is None:
-        raise ValueError(f"Không thể lấy dữ liệu cho mã {symbol}")
+    # 1. Chuẩn bị DataFrame
+    if df_data is not None and len(df_data) >= 50:
+        df = df_data.copy()
+    elif timeframe == "H4":
+        ticker = yf_ticker if yf_ticker else clean_sym
+        df = lay_du_lieu_h4_yahoo(ticker, symbol)
+        if df is None:
+            raise ValueError(f"Không thể lấy dữ liệu H4 cho {symbol} ({ticker})")
+    else:
+        df = lay_du_lieu_co_cache(symbol, end_date)
+        if df is None:
+            raise ValueError(f"Không thể lấy dữ liệu D1 cho {symbol}")
+
+    # Đảm bảo các chỉ báo đã được tính toán
+    if "ma200" not in [c.lower() for c in df.columns]:
+        df = tinh_toan_chi_bao_ky_thuat(df)
 
     df_plot = df.copy()
-    df_plot.columns = [c.capitalize() for c in df_plot.columns]
-    if "Time" in df_plot.columns:
-        df_plot["Time"] = pd.to_datetime(df_plot["Time"])
-        df_plot.set_index("Time", inplace=True)
+    # Chuẩn hóa tên cột cho mplfinance (Date/Time, Open, High, Low, Close, Volume)
+    col_map = {}
+    for c in df_plot.columns:
+        cl = c.lower()
+        if cl in ("time", "date"):
+            col_map[c] = "Date"
+        elif cl in ("open", "high", "low", "close", "volume"):
+            col_map[c] = cl.capitalize()
+    df_plot.rename(columns=col_map, inplace=True)
 
-    # Tính các đường MA
-    df_plot["MA200"] = df_plot["Close"].rolling(200).mean()
-    df_plot["MA50"] = df_plot["Close"].rolling(50).mean()
-    df_plot["MA20"] = df_plot["Close"].rolling(20).mean()
+    if "Date" in df_plot.columns:
+        df_plot["Date"] = pd.to_datetime(df_plot["Date"])
+        df_plot.set_index("Date", inplace=True)
 
-    # Cắt 100 nến gần nhất để hiển thị trực quan, rõ ràng
-    df_slice = df_plot.iloc[-100:].copy()
+    # Cắt 80 nến gần nhất để hiển thị trực quan, rõ ràng
+    df_slice = df_plot.iloc[-80:].copy()
 
     # Style Gikky Dark Obsidian
     mc = mpf.make_marketcolors(
@@ -67,31 +99,68 @@ def ve_bieu_do_bot_trader(
         y_on_right=True
     )
 
-    addplots = [
-        mpf.make_addplot(df_slice['MA200'], color='#f59e0b', width=2.2),  # MA 200 Vàng cam nổi bật
-        mpf.make_addplot(df_slice['MA50'], color='#3b82f6', width=1.2),   # MA 50 Xanh dương
-        mpf.make_addplot(df_slice['MA20'], color='#a855f7', width=1.0, linestyle='--') # MA 20 Tím
-    ]
+    # 2. Xây dựng addplot theo từng phương pháp
+    addplots = []
+    strat = strategy_id.upper()
 
+    if strat == "ICHIMOKU":
+        if "tenkan" in df_slice.columns and "kijun" in df_slice.columns:
+            addplots.append(mpf.make_addplot(df_slice["tenkan"], color="#ef4444", width=1.5))
+            addplots.append(mpf.make_addplot(df_slice["kijun"], color="#3b82f6", width=1.8))
+        if "span_a" in df_slice.columns and "span_b" in df_slice.columns:
+            # Thêm đường viền Mây Kumo
+            addplots.append(mpf.make_addplot(df_slice["span_a"], color="#10b981", width=1.0, linestyle="--"))
+            addplots.append(mpf.make_addplot(df_slice["span_b"], color="#f43f5e", width=1.0, linestyle="--"))
+
+    elif strat in ("MA_CROSS", "MA30_50_PULLBACK"):
+        if "ma30" in df_slice.columns:
+            addplots.append(mpf.make_addplot(df_slice["ma30"], color="#fbbf24", width=1.8))  # MA 30 Vàng
+        if "ma50" in df_slice.columns:
+            addplots.append(mpf.make_addplot(df_slice["ma50"], color="#3b82f6", width=1.6))  # MA 50 Xanh
+        if "ema20" in df_slice.columns:
+            addplots.append(mpf.make_addplot(df_slice["ema20"], color="#a855f7", width=1.1, linestyle="--"))  # EMA 20 Tím
+        if "ma200" in df_slice.columns:
+            addplots.append(mpf.make_addplot(df_slice["ma200"], color="#f97316", width=2.0))  # MA 200 Cam
+
+    elif strat == "BB_SQUEEZE":
+        if "bb_upper" in df_slice.columns:
+            addplots.append(mpf.make_addplot(df_slice["bb_upper"], color="#38bdf8", width=1.4))
+            addplots.append(mpf.make_addplot(df_slice["bb_mid"], color="#fbbf24", width=1.2, linestyle="--"))
+            addplots.append(mpf.make_addplot(df_slice["bb_lower"], color="#38bdf8", width=1.4))
+        if "ma50" in df_slice.columns:
+            addplots.append(mpf.make_addplot(df_slice["ma50"], color="#3b82f6", width=1.5))
+
+    else:  # PA_MA200 và mặc định
+        if "ma200" in df_slice.columns:
+            addplots.append(mpf.make_addplot(df_slice["ma200"], color="#f59e0b", width=2.2))
+        if "ma50" in df_slice.columns:
+            addplots.append(mpf.make_addplot(df_slice["ma50"], color="#3b82f6", width=1.2))
+        if "ma20" in df_slice.columns:
+            addplots.append(mpf.make_addplot(df_slice["ma20"], color="#a855f7", width=1.0, linestyle="--"))
+
+    # 3. Các đường ngang mốc vị thế (TP, Entry, SL, Nhồi lệnh)
     hlines = [take_profit, entry_price, stop_loss]
-    hcolors = ['#10b981', '#fbbf24', '#f43f5e']
-    hstyles = ['--', '-', '-.']
+    hcolors = ["#10b981", "#fbbf24", "#f43f5e"]
+    hstyles = ["--", "-", "-."]
     hwidths = [1.8, 1.8, 1.8]
 
     if pyramid_trigger:
-        hlines.insert(1, pyramid_trigger)
-        hcolors.insert(1, '#38bdf8')
-        hstyles.insert(1, ':')
-        hwidths.insert(1, 1.5)
+        hlines.append(pyramid_trigger)
+        hcolors.append("#38bdf8")
+        hstyles.append(":")
+        hwidths.append(1.5)
 
-    chart_path = CHARTS_DIR / f"chart_{symbol}_{end_date}.png"
+    # Kiểm tra Volume
+    has_volume = bool("Volume" in df_slice.columns and df_slice["Volume"].sum() > 0)
+
+    chart_file = CHARTS_DIR / f"chart_{clean_sym}_{timeframe}_{end_date}.png"
 
     fig, axlist = mpf.plot(
         df_slice,
-        type='candle',
+        type="candle",
         style=s,
-        addplot=addplots,
-        volume=True,
+        addplot=addplots if addplots else None,
+        volume=has_volume,
         figsize=(14, 8),
         hlines=dict(
             hlines=hlines,
@@ -103,44 +172,68 @@ def ve_bieu_do_bot_trader(
     )
 
     ax_main = axlist[0]
+
+    # Tô màu Mây Kumo nếu phương pháp là ICHIMOKU
+    if strat == "ICHIMOKU" and "span_a" in df_slice.columns and "span_b" in df_slice.columns:
+        x_indices = np.arange(len(df_slice))
+        sa = df_slice["span_a"].values
+        sb = df_slice["span_b"].values
+        ax_main.fill_between(x_indices, sa, sb, where=(sa >= sb), color="#10b981", alpha=0.18, interpolate=True)
+        ax_main.fill_between(x_indices, sa, sb, where=(sa < sb), color="#ef4444", alpha=0.18, interpolate=True)
+
+    # Tiêu đề
+    tf_label = "H4 Chart" if timeframe == "H4" else "Daily Chart"
+    dir_str = "LONG (Mua)" if direction == "LONG" else "SHORT (Bán khống)"
     ax_main.set_title(
-        f"{symbol} / {exchange} — Daily Chart ({setup_name})",
+        f"{symbol} ({exchange}) — {tf_label} [{dir_str}] ({setup_name})",
         color="#f8fafc",
         fontsize=15,
-        fontweight='bold',
+        fontweight="bold",
         pad=15
     )
 
     # Watermark
     ax_main.text(
-        0.98, 0.04, 'gikky.net · Bot Trader',
+        0.98, 0.04, "gikky.net · Bot Trader",
         transform=ax_main.transAxes,
-        color='#94a3b8', fontsize=11, fontweight='bold',
-        ha='right', va='bottom', alpha=0.7
+        color="#94a3b8", fontsize=11, fontweight="bold",
+        ha="right", va="bottom", alpha=0.7
     )
 
-    # Chú thích các mốc giá
-    risk_pct = ((entry_price - stop_loss) / entry_price) * 100
-    reward_pct = ((take_profit - entry_price) / entry_price) * 100
+    # Chú thích các mốc giá theo decimals
+    if direction == "LONG":
+        risk_pct = ((entry_price - stop_loss) / entry_price) * 100
+        reward_pct = ((take_profit - entry_price) / entry_price) * 100
+    else:
+        risk_pct = ((stop_loss - entry_price) / entry_price) * 100
+        reward_pct = ((entry_price - take_profit) / entry_price) * 100
     rr = reward_pct / risk_pct if risk_pct > 0 else 0
 
-    ax_main.text(0.02, 0.95, f'Take Profit (TP): {take_profit} (+{reward_pct:.1f}% / {rr:.1f}R)', transform=ax_main.transAxes, color='#10b981', fontsize=10, fontweight='bold')
+    ax_main.text(0.02, 0.95, f"Take Profit (TP): {take_profit:.{decimals}f} (+{reward_pct:.1f}% / {rr:.1f}R)", transform=ax_main.transAxes, color="#10b981", fontsize=10, fontweight="bold")
     if pyramid_trigger:
-        ax_main.text(0.02, 0.90, f'Nhồi lệnh: {pyramid_trigger} (Vượt cản)', transform=ax_main.transAxes, color='#38bdf8', fontsize=10, fontweight='bold')
-        ax_main.text(0.02, 0.85, f'Entry (Mua): {entry_price}', transform=ax_main.transAxes, color='#fbbf24', fontsize=10, fontweight='bold')
-        ax_main.text(0.02, 0.80, f'Stop Loss (SL): {stop_loss} (-{risk_pct:.1f}%)', transform=ax_main.transAxes, color='#f43f5e', fontsize=10, fontweight='bold')
-        ax_main.text(0.02, 0.75, f'Đường MA 200 ngày (Vàng)', transform=ax_main.transAxes, color='#f59e0b', fontsize=10)
+        ax_main.text(0.02, 0.90, f"Nhồi lệnh: {pyramid_trigger:.{decimals}f} (Gia tăng vị thế)", transform=ax_main.transAxes, color="#38bdf8", fontsize=10, fontweight="bold")
+        ax_main.text(0.02, 0.85, f"Entry ({dir_str}): {entry_price:.{decimals}f}", transform=ax_main.transAxes, color="#fbbf24", fontsize=10, fontweight="bold")
+        ax_main.text(0.02, 0.80, f"Stop Loss (SL): {stop_loss:.{decimals}f} (-{risk_pct:.1f}%)", transform=ax_main.transAxes, color="#f43f5e", fontsize=10, fontweight="bold")
     else:
-        ax_main.text(0.02, 0.90, f'Entry (Mua): {entry_price}', transform=ax_main.transAxes, color='#fbbf24', fontsize=10, fontweight='bold')
-        ax_main.text(0.02, 0.85, f'Stop Loss (SL): {stop_loss} (-{risk_pct:.1f}%)', transform=ax_main.transAxes, color='#f43f5e', fontsize=10, fontweight='bold')
-        ax_main.text(0.02, 0.80, f'Đường MA 200 ngày (Vàng)', transform=ax_main.transAxes, color='#f59e0b', fontsize=10)
+        ax_main.text(0.02, 0.90, f"Entry ({dir_str}): {entry_price:.{decimals}f}", transform=ax_main.transAxes, color="#fbbf24", fontsize=10, fontweight="bold")
+        ax_main.text(0.02, 0.85, f"Stop Loss (SL): {stop_loss:.{decimals}f} (-{risk_pct:.1f}%)", transform=ax_main.transAxes, color="#f43f5e", fontsize=10, fontweight="bold")
 
-    fig.savefig(chart_path, dpi=150, bbox_inches='tight')
+    # Chú giải kỹ thuật
+    if strat == "ICHIMOKU":
+        ax_main.text(0.02, 0.75, "Tenkan-sen (Đỏ) | Kijun-sen (Xanh) | Mây Kumo", transform=ax_main.transAxes, color="#94a3b8", fontsize=10)
+    elif strat in ("MA_CROSS", "MA30_50_PULLBACK"):
+        ax_main.text(0.02, 0.75, "EMA 20 (Tím) | MA 30 (Vàng) | MA 50 (Xanh) | MA 200 (Cam)", transform=ax_main.transAxes, color="#94a3b8", fontsize=10)
+    elif strat == "BB_SQUEEZE":
+        ax_main.text(0.02, 0.75, "Dải Bollinger Bands (20, 2) | MA 50 (Xanh)", transform=ax_main.transAxes, color="#94a3b8", fontsize=10)
+    else:
+        ax_main.text(0.02, 0.75, "Đường MA 200 ngày (Vàng) | MA 50 (Xanh)", transform=ax_main.transAxes, color="#f59e0b", fontsize=10)
+
+    fig.savefig(chart_file, dpi=150, bbox_inches="tight")
     plt.close(fig)
 
-    return str(chart_path)
+    return str(chart_file)
 
 
 if __name__ == "__main__":
-    p = ve_bieu_do_bot_trader("HDB", "HOSE", 28.05, 27.08, 30.38, 29.20, None, "Bullish Pin Bar trên MA 200")
+    p = ve_bieu_do_bot_trader("GBP/USD", "Forex", 1.3391, 1.3359, 1.3470, 1.3415, None, "Bứt phá Mây Kumo", strategy_id="ICHIMOKU", direction="LONG", timeframe="H4", decimals=4, yf_ticker="GBPUSD=X")
     print(f"Đã xuất biểu đồ tại: {p}")

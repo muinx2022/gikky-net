@@ -73,3 +73,8 @@ scripts/tiktok/.chrome_profile/
 
 # Scripts tam
 scripts/binh-luan/.tam/
+
+# Bot trader cache & charts
+scripts/bot-trader/data/cache/
+scripts/bot-trader/data/charts/
+

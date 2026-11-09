@@ -16,15 +16,21 @@ Mỗi ngày luân phiên một thể loại để giữ nhịp đọc phong phú
      - *Thương vụ & Sụp đổ:* LTCM 1998, Nick Leeson và Ngân hàng Barings, Volkswagen short squeeze 2008, Cú ngã Bill Hwang / Archegos 2021, George Soros và Thứ Tư đen tối 1992, Enron và Jim Chanos, Vụ đầu cơ Bạc của anh em nhà Hunt 1980, Sự sụp đổ của Lehman Brothers...
      - *Chân dung huyền thoại lịch sử:* Jesse Livermore (4 lần phá sản làm lại từ đầu và bi kịch kỷ luật), Nicolas Darvas (Lý thuyết Hộp Darvas và 2 triệu USD), Richard Dennis và thí nghiệm Turtle Traders, Ed Seykota (Tiên phong thuật toán xu hướng), Paul Tudor Jones (Cú short Black Monday 1987), Bernard Baruch (Nghệ thuật biết điểm dừng trước Đại suy thoái 1929)...
 
-2. **Ngày 2 — Dòng tiền Crypto & Dữ liệu On-Chain chuyên sâu:**
-   * **Chuyên mục (sub):** `crypto`.
-   * **Nhãn mốc (loai):** `On-chain` (hoặc `Tài sản số`).
-   * **Chủ đề gợi ý:** Dòng tiền Bitcoin / ETH Spot ETF của các định chế phố Wall (BlackRock, Fidelity), Hoạt động di chuyển ví cá voi cổ xưa và áp lực thợ đào, Cơ chế thanh lý nợ xấu (Liquidation cascades) trong giao thức DeFi, Cấu trúc dự trữ Stablecoin và chiếc két T-Bills, Kinh tế học Token (Tokenomics) và bài toán lạm phát token...
+2. **Ngày 2 — Dòng tiền Crypto, On-Chain & Thị trường Ngoại hối Quốc tế:**
+   * **Chuyên mục (sub):** `crypto` hoặc `ngoai-hoi`.
+   * **Nhãn mốc (loai):** `On-chain` (đối với Crypto) hoặc `Phân tích` / `Hồ sơ` / `Cơ chế` (đối với Ngoại hối).
+   * **Chủ đề gợi ý:**
+     - *Tiền số & On-chain (`sub: "crypto"`):* Dòng tiền Bitcoin / ETH Spot ETF của BlackRock/Fidelity, Hoạt động di chuyển ví cá voi cổ xưa và áp lực thợ đào, Cơ chế thanh lý nợ xấu (Liquidation cascades) trong giao thức DeFi, Cấu trúc dự trữ Stablecoin và chiếc két T-Bills, Cấu trúc Tokenomics FDV cao lưu hành nhỏ, RWA trái phiếu kho bạc trên chuỗi...
+     - *Ngoại hối & Tiền tệ (`sub: "ngoai-hoi"`):* Thương vụ Yen Carry Trade và rủi ro đảo chiều dòng vốn, Cú sốc SNB tháo chốt EUR/CHF 2015, Khủng hoảng Baht Thái 1997, Hệ thống Eurodollar và dòng tiền đô la ngoài lãnh thổ Mỹ, Hiệp định Plaza Accord 1985, Lý thuyết Nụ cười Đô la (Dollar Smile), Cơ chế điều hành tỷ giá USD/VND và biên độ $\pm 5\%$...
 
 3. **Ngày 3 — Đọc sách kinh điển & Bản ghi chép (Memo) của các bậc thầy:**
    * **Chuyên mục (sub):** `tam-ly-giao-dich` hoặc `quan-tri-von`.
    * **Nhãn mốc (loai):** `Đọc sách`.
    * **Chủ đề gợi ý:** *Reminiscences of a Stock Operator* (Jesse Livermore), *Fooled by Randomness* và *Antifragile* (Nassim Taleb), *The Psychology of Money* (Morgan Housel), Các bản Memo bất hủ của Howard Marks (Tư duy cấp độ hai, Chu kỳ con lắc tâm lý), Những bức thư gửi cổ đông của Warren Buffett & Charlie Munger...
+
+### Lịch trình cụ thể khung đêm muộn 23:45:
+* **21/10/2026 (23:45):** Xuất bản bài chuyên sâu về **Tiền số (`sub: "crypto"`, Mục E)**.
+* **Tiếp tục luân phiên đều đặn:** Xen kẽ nhịp nhàng giữa `crypto` (Dòng tiền On-chain / Tài sản số), `ngoai-hoi` (Thương vụ & Khủng hoảng tiền tệ quốc tế) và `quan-tri-von` / `tam-ly-giao-dich` (Hồ sơ thương vụ / Đọc sách kinh điển).
 
 ## Hướng dẫn kỹ thuật & Giọng văn
 * **Giọng văn — "Người kể chuyện hậu trường" (The Investigative Storyteller):**

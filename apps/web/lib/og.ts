@@ -1,4 +1,5 @@
 import { Buffer } from "node:buffer";
+import { readFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
@@ -147,6 +148,26 @@ export function ghepDongPhu(manh: readonly (string | null | undefined)[]): strin
 
 export const TRAN_TIEU_DE_OG = 96;
 
+let anhTrangChuCache: string | null = null;
+
+export function layAnhTrangChuDataUrl(): string | null {
+  if (anhTrangChuCache) return anhTrangChuCache;
+  const cacDuongDan = [
+    join(process.cwd(), "public", "og-trang-chu.jpg"),
+    join(process.cwd(), "apps", "web", "public", "og-trang-chu.jpg"),
+  ];
+  for (const p of cacDuongDan) {
+    try {
+      const buf = readFileSync(p);
+      anhTrangChuCache = bufSangDataUrlOg(buf);
+      if (anhTrangChuCache) return anhTrangChuCache;
+    } catch {
+      // Thử đường dẫn kế tiếp nếu chưa tìm thấy
+    }
+  }
+  return null;
+}
+
 export function ogTrangChu(): DuLieuOg {
   return {
     nhan: "gikky.net",
@@ -157,6 +178,7 @@ export function ogTrangChu(): DuLieuOg {
     ]),
     soOSpine: 0,
     dongSo: false,
+    anhSrc: layAnhTrangChuDataUrl(),
   };
 }
 

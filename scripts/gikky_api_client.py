@@ -357,6 +357,14 @@ class GikkyClient:
             raise RuntimeError(f"Đóng sổ mạch #{mach_id} thất bại (HTTP {ma}): {json.dumps(res, ensure_ascii=False)}")
         return res
 
+    def mo_lai_mach(self, mach_id: int) -> dict:
+        """Mở lại mạch đã đóng sổ (POST /api/v1/machs/{mach_id}/reopen)."""
+        url = f"{self.origin}/api/v1/machs/{mach_id}/reopen"
+        ma, res = self._yeu_cau("POST", url, json_body={})
+        if ma != 200:
+            raise RuntimeError(f"Mở lại mạch #{mach_id} thất bại (HTTP {ma}): {json.dumps(res, ensure_ascii=False)}")
+        return res
+
     def sua_moc(self, moc_id: int, payload: dict) -> dict:
         """Chỉnh sửa mốc (PATCH /api/v1/mocs/{moc_id})."""
         truong_hop_le = {"body", "occurred_at", "loai", "question_for_crowd", "figures"}
