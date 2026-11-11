@@ -961,3 +961,27 @@ thật là hợp lệ; bình luận giả hoặc nick ảo thì không (luật c
 Đo dev.gikky.net 2026-11-11: 3 cột ghép cứng 6 slug (`lib/nhom-bai-viet.ts`) ⇒ bài `ngoai-hoi` (3/50) không bao giờ
 lên trang chủ. User chọn phương án C (dải "Mới đăng" mọi chuyên mục + giá sách chủ đề) và yêu cầu admin chọn được
 chuyên mục nào lên trang chủ, tối đa 4. Plan: `plans/2026-11-11-bai-viet-trang-chu-gia-sach.md`.
+
+---
+
+## Việc 14 · Thống nhất giao diện toàn site theo homepage v2 — ĐÃ LẬP PLAN, CHỜ USER DUYỆT
+
+**Yêu cầu (user, 2026-11-11, sau khi xem dev.gikky.net):** khối chủ đề và cột phải trên `/` "vẫn không ổn";
+`/?tab=moi&loai_mach=nhat_ky` "trình bày khác hẳn home"; `/s/quan-tri-von` "vẫn là phần cũ, không khớp cái đang làm";
+"lên kế hoạch cho toàn bộ các sửa đổi".
+
+**Nguyên nhân gốc:** `app/page.tsx` rẽ nhánh — URL có tham số feed thì chạy `Feed` + `TheMach` cũ, `/` trần chạy
+`TrangChuV2` + `TheNhatKy`; `/s/*` luôn là `Feed` cũ. Plan homepage v2 cố ý giữ feed cũ nguyên DOM, nên nay có hai giao diện.
+
+**Plan:** `plans/2026-11-11-thong-nhat-giao-dien-toan-site.md` — 5 đợt (A khối chủ đề + tên hiển thị · B thẻ thống nhất ·
+C dải điều khiển + trang lọc + `/s/*` · D hồ sơ + tìm kiếm · E cột phải). Chưa chạy.
+
+**Còn mở (mục 8 của plan):** áp thẻ mới cho hồ sơ / tìm kiếm; bỏ nút Thẻ/Gọn; bỏ tiền tố `u/`; khối "Chủ đề tuần này"
+trên rail mọi trang; ba bình luận 14:50 ngày 11/11 ở chủ đề 1484 (dev) giữ hay xoá.
+
+### Việc 13 — bổ sung (user, 2026-11-11): giá sách GIỮ 3 bài mỗi chuyên mục
+
+User thấy giá sách (4 chuyên mục × 3 tiêu đề dài) rối mắt, muốn còn 1 bài mỗi chuyên mục. Đo dev: làm vậy thì link `/m/`
+duy nhất trên `/` giảm 21 → 13, dưới ngưỡng ≥ 19 (`trang-chu-giao-dien-moi.spec.ts:649`). **User chốt:** "trước mắt tạm
+chấp nhận rối mắt thế đã để kéo bot, còn khi có người vào thì sẽ tính sau" ⇒ KHÔNG đổi, giữ ngưỡng 19. Xét lại khi có
+người dùng thật vào trang chủ.
