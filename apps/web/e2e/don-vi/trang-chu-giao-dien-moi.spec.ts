@@ -14,7 +14,13 @@ import {
 } from "../../lib/chu-de";
 import { cacOLenh, NHAN_CHIEU_LENH } from "../../lib/lenh";
 import { LoiGhi } from "../../lib/ghi";
-import { cauLoiGuiLenh, lenhFormRong, lenhTuForm } from "../../lib/lenh-form";
+import {
+  cauLoiGuiLenh,
+  lenhFormRong,
+  lenhFormTuBanNhap,
+  lenhTuForm,
+} from "../../lib/lenh-form";
+import { nenMoNganKeo, type CuBamLoiVao } from "../../lib/loi-vao-nhat-ky";
 import {
   NHOM_BAI_VIET,
   SO_BAI_MOI_NHOM,
@@ -351,6 +357,7 @@ test("màu: thẻ nhật ký, khối chủ đề, thư viện KHÔNG dùng --gai
     "components/khoi-thao-luan.module.css",
     "components/khoi-bai-viet.module.css",
     "components/trang-chu-v2.module.css",
+    "components/khoi-lenh.module.css",
   ]) {
     const css = doc(f).replace(/\/\*[\s\S]*?\*\//g, "");
     expect(css, f).not.toMatch(/--(gain|loss|stamp)/);
@@ -380,4 +387,76 @@ test("trang chủ không còn danh sách chủ đề trước: khối chủ đ�
   // Chuỗi đường dẫn `"/chu-de"` (không tính `import … "@/lib/chu-de"`: trước dấu `/` là `lib`).
   expect(tsx).not.toMatch(/["'`]\/chu-de/);
   expect(tsx).not.toContain("Các chủ đề trước");
+});
+
+/* ------------------------------------------------- lối vào ghi nhật ký → ngăn kéo -- */
+
+const BAM_THUONG: CuBamLoiVao = {
+  dangTai: false,
+  dangNhap: true,
+  button: 0,
+  ctrlKey: false,
+  metaKey: false,
+  shiftKey: false,
+  altKey: false,
+  daChan: false,
+};
+
+test("lối vào ghi nhật ký: chỉ mở ngăn kéo khi ĐÃ đăng nhập và là cú bấm trái thường", () => {
+  expect(nenMoNganKeo(BAM_THUONG)).toBe(true);
+  // Khách ⇒ link chạy tới /dang-mach (có lời mời đăng nhập + đăng ký, đủ hơn modal).
+  expect(nenMoNganKeo({ ...BAM_THUONG, dangNhap: false })).toBe(false);
+  // Phiên chưa tải xong ⇒ chưa biết là ai ⇒ không đoán.
+  expect(nenMoNganKeo({ ...BAM_THUONG, dangTai: true })).toBe(false);
+  // Muốn tab / cửa sổ mới tới đúng URL ⇒ không cướp.
+  for (const k of ["ctrlKey", "metaKey", "shiftKey", "altKey"] as const) {
+    expect(nenMoNganKeo({ ...BAM_THUONG, [k]: true }), k).toBe(false);
+  }
+  expect(nenMoNganKeo({ ...BAM_THUONG, button: 1 }), "chuột giữa").toBe(false);
+  expect(nenMoNganKeo({ ...BAM_THUONG, button: 2 }), "chuột phải").toBe(false);
+  // Đã có người chặn trước ta thì ta không chặn thêm / không mở thêm.
+  expect(nenMoNganKeo({ ...BAM_THUONG, daChan: true })).toBe(false);
+});
+
+test("trang-chu-v2 vẫn là server component; cả 4 lối vào ghi nhật ký đi qua LoiVaoNhatKy", () => {
+  const tsx = doc("components/trang-chu-v2.tsx").replace(/\/\*[\s\S]*?\*\//g, "");
+  expect(tsx, "không biến cả trang thành client").not.toMatch(/^\s*["']use client["']/);
+  expect(tsx.match(/<LoiVaoNhatKy\b/g)?.length).toBe(4);
+  // Không còn <Link> nào tự trỏ /dang-mach: đường vòng quanh ngăn kéo.
+  expect(tsx).not.toContain('href="/dang-mach"');
+  // Component client vẽ <a href="/dang-mach"> thật ⇒ HTML thô không đổi (SEO).
+  const lien = doc("components/loi-vao-nhat-ky.tsx").replace(/\/\*[\s\S]*?\*\//g, "");
+  expect(lien).toMatch(/^\s*["']use client["']/);
+  expect(lien).toContain('href="/dang-mach"');
+  expect(lien).toContain("nenMoNganKeo");
+});
+
+test("bản nháp chuyển từ ngăn kéo sang /dang-mach: chỉ nhận lệnh đúng hình dạng", () => {
+  const day_du = { chieu: "ban", ma: "HPG", giaVao: "27.8", sl: "28.5", tp: "", nhoi: "" };
+  expect(lenhFormTuBanNhap(day_du)).toEqual(day_du);
+  expect(lenhFormTuBanNhap(undefined)).toBeNull();
+  expect(lenhFormTuBanNhap(null)).toBeNull();
+  expect(lenhFormTuBanNhap("mua")).toBeNull();
+  expect(lenhFormTuBanNhap({ ...day_du, chieu: "long" })).toBeNull();
+  expect(lenhFormTuBanNhap({ ...day_du, giaVao: 27.8 })).toBeNull();
+  expect(lenhFormTuBanNhap({ ...day_du, nhoi: undefined })).toBeNull();
+});
+
+test("ngăn kéo dùng CHUNG khối lệnh và luật kiểm với /dang-mach; nối mốc không có lệnh", () => {
+  const nganKeo = doc("components/drawer-dang-nhanh.tsx").replace(/\/\*[\s\S]*?\*\//g, "");
+  const trang = doc("components/form-dang-mach.tsx").replace(/\/\*[\s\S]*?\*\//g, "");
+  for (const [ten, ma] of [["ngăn kéo", nganKeo], ["form trang", trang]] as const) {
+    expect(ma, ten).toContain('from "./khoi-lenh"');
+    expect(ma, ten).toContain("lenhTuForm(");
+    expect(ma, ten).toContain("cauLoiGuiLenh(");
+  }
+  // Hai nơi PHẢI khác tiền tố testid (ngăn kéo có mặt trong DOM của mọi trang, kể cả /dang-mach).
+  expect(trang).toContain('tienTo="dang-mach"');
+  expect(nganKeo).toContain('tienTo="dang-nhanh"');
+  // `lenh` chỉ nằm ở nhánh TẠO mạch, không ở nhánh nối mốc (lệnh ghi một lần lúc tạo mạch).
+  const bat_dau = nganKeo.indexOf("if (dangMachHienTai) {");
+  const noi_moc = nganKeo.slice(bat_dau, nganKeo.indexOf("} else {", bat_dau));
+  expect(noi_moc.length, "tìm đúng nhánh nối mốc").toBeGreaterThan(200);
+  expect(noi_moc).not.toMatch(/\blenh/);
+  expect(nganKeo.slice(nganKeo.indexOf("} else {", bat_dau))).toMatch(/lenh_gui !== null \? \{ lenh: lenh_gui \}/);
 });

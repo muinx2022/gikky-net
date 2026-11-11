@@ -1,0 +1,110 @@
+/* Khối "Lệnh (tuỳ chọn)" dùng chung cho `/dang-mach` (`form-dang-mach.tsx`) và ngăn kéo đăng
+   nhanh (`drawer-dang-nhanh.tsx`). Chỉ token có sẵn. Mặc định là kiểu TRANG (khớp từng điểm ảnh
+   với khối cũ nằm trong `form-dang-mach.module.css`); `.ngan_keo` đổi nhãn/ô nhập cho khớp các ô
+   khác của ngăn kéo (nhãn 13px đậm, ô bo 6px). */
+
+.lenh {
+  margin-bottom: 14px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--inset);
+}
+
+.lenh_tom_tat {
+  padding: 10px 12px;
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lenh_than {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 14px;
+  padding: 4px 12px 12px;
+}
+
+.lenh_chieu {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 18px;
+  margin: 0 0 12px;
+  padding: 0;
+  border: 0;
+}
+
+.lenh_chieu legend {
+  padding: 0;
+  margin-bottom: 5px;
+}
+
+.lenh_radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.o_lenh {
+  display: block;
+  margin-bottom: 12px;
+}
+
+.nhan {
+  display: block;
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-bottom: 5px;
+}
+
+.dong {
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+}
+
+.dong:focus-visible {
+  outline: 1px solid var(--focus);
+  outline-offset: -1px;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.lenh_nhac {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--ink-3);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+/* Ngăn kéo: các ô khác dùng `box-sizing: border-box`, nhãn 13px/600/--ink-2, ô bo 6px. */
+.ngan_keo {
+  margin-bottom: 0;
+}
+
+.ngan_keo .nhan {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.ngan_keo .dong {
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 640px) {
+  .lenh_than {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

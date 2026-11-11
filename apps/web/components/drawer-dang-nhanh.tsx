@@ -1,6 +1,6 @@
 "use client";
 
-import { noiMoc, taoMach, type SubChiTietOut } from "@gikky/api-client";
+import { noiMoc, taoMach, type LenhIn, type SubChiTietOut } from "@gikky/api-client";
 import { ImagePlus, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -14,13 +14,15 @@ import {
 
 import { cauLoiTaiAnh, KIEU_NHAN, taiAnhLanLuot } from "@/lib/anh";
 import { docCacSubOTrinhDuyet } from "@/lib/api";
-import { MA_LOI, cauLoi, layDuLieu, LoiGhi } from "@/lib/ghi";
+import { MA_LOI, layDuLieu, LoiGhi } from "@/lib/ghi";
+import { cauLoiGuiLenh, lenhFormRong, lenhTuForm, type LenhForm } from "@/lib/lenh-form";
 import { GOC_TRINH_DUYET, headerGhi } from "@/lib/tai-khoan";
 import { duongDanMach } from "@/lib/url";
 import { gioPhutVN } from "@/lib/vong-doi";
 
 import { ChonAnh } from "./chon-anh";
 import css from "./drawer-dang-nhanh.module.css";
+import { KhoiLenh } from "./khoi-lenh";
 import { useModalDangNhap } from "./modal-dang-nhap";
 import { usePhien } from "./phien";
 import { SoanThao } from "./soan-thao";
@@ -83,6 +85,7 @@ export function DrawerDangNhanhProvider({
   const [body, setBody] = useState("");
   const [tatBinhLuan, setTatBinhLuan] = useState(false);
   const [riengTu, setRiengTu] = useState(false);
+  const [lenh, setLenh] = useState<LenhForm>(lenhFormRong);
   const [anhs, setAnhs] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [dangGui, setDangGui] = useState(false);
@@ -95,6 +98,9 @@ export function DrawerDangNhanhProvider({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const dangNhapRoi = toi?.dang_nhap === true;
+  // Cùng luật với `form-dang-mach.tsx`: tài khoản của đội mặc định đăng `bai_viet`, mà
+  // `bai_viet` bị server từ chối khi kèm `lenh` ⇒ với họ khối lệnh không vẽ và không gửi.
+  const choPhepLenh = toi?.la_tai_khoan_doi === false;
   const tranAnh = toi?.tran_anh_moi_moc ?? 10;
 
   // Khi chuyển trang khác mà không phải /m/... thì reset đăng ký mạch hiện tại
@@ -223,6 +229,9 @@ export function DrawerDangNhanhProvider({
 
   // Chuyển sang form đầy đủ /dang-mach
   const chuyenSangDangChiTiet = () => {
+    // Lệnh đã gõ dở đi theo sang `/dang-mach` (chỉ khi có ô nào được điền).
+    const kq_lenh = lenhTuForm(lenh);
+    const co_lenh = choPhepLenh && (kq_lenh.lenh !== null || kq_lenh.loi !== null);
     try {
       sessionStorage.setItem(
         "gikky_draft_dang_mach",
@@ -232,6 +241,7 @@ export function DrawerDangNhanhProvider({
           body: body.trim(),
           tatBinhLuan,
           riengTu,
+          ...(co_lenh ? { lenh } : {}),
         }),
       );
     } catch {
@@ -295,6 +305,15 @@ export function DrawerDangNhanhProvider({
           throw new Error("Cần nhập tiêu đề và nội dung bài viết.");
         }
 
+        // Lệnh có cấu trúc: kiểm hình dạng TRƯỚC khi gọi mạng, bằng cùng `lenhTuForm` với
+        // `/dang-mach` (không tự đổi dấu phẩy); thứ tự SL/vào/TP do SERVER kiểm.
+        let lenh_gui: LenhIn | null = null;
+        if (choPhepLenh) {
+          const ket_qua_lenh = lenhTuForm(lenh);
+          if (ket_qua_lenh.loi !== null) throw new LoiGhi(400, "", ket_qua_lenh.loi);
+          lenh_gui = ket_qua_lenh.lenh;
+        }
+
         const mach = layDuLieu(
           await taoMach({
             baseUrl: GOC_TRINH_DUYET,
@@ -305,6 +324,7 @@ export function DrawerDangNhanhProvider({
               body: body.trim(),
               tat_binh_luan: tatBinhLuan,
               rieng_tu: riengTu,
+              ...(lenh_gui !== null ? { lenh: lenh_gui } : {}),
             },
           }),
           "Không đăng được bài.",
@@ -327,6 +347,7 @@ export function DrawerDangNhanhProvider({
         setPreviewUrls([]);
         setTatBinhLuan(false);
         setRiengTu(false);
+        setLenh(lenhFormRong);
         dongDrawer();
         window.location.assign(duongDanMach(mach.slug, mach.id));
       }
@@ -335,8 +356,14 @@ export function DrawerDangNhanhProvider({
         e2 instanceof LoiGhi && e2.ma === MA_LOI.QUA_HAN_MUC_MOC && e2.thuLaiTu !== null
           ? ` Viết tiếp được từ ${gioPhutVN(e2.thuLaiTu)}.`
           : "";
+      // `cauLoiGuiLenh` thay câu pydantic tiếng Anh của `lenh` bằng một câu tiếng Việt; với bài
+      // không kèm lệnh nó giữ nguyên câu của server như `cauLoi`.
       setLoi(
-        cauLoi(e2, "Không gọi được máy chủ. Kiểm tra kết nối rồi thử lại.") + thoiGianCho,
+        cauLoiGuiLenh(
+          e2,
+          "Không gọi được máy chủ. Kiểm tra kết nối rồi thử lại.",
+          choPhepLenh && dangMachHienTai === null && lenhTuForm(lenh).lenh !== null,
+        ) + thoiGianCho,
       );
       setDangGui(false);
     }
@@ -462,6 +489,19 @@ export function DrawerDangNhanhProvider({
                   required
                 />
               </div>
+
+              {/* Lệnh có cấu trúc (tuỳ chọn, gấp mặc định) — CHỈ khi tạo mạch mới: lệnh ghi một
+                  lần lúc tạo, nên chế độ nối mốc ở nhánh trên không có khối này. Ẩn với tài khoản
+                  của đội (xem `choPhepLenh`). */}
+              {choPhepLenh && (
+                <KhoiLenh
+                  gia_tri={lenh}
+                  datGiaTri={setLenh}
+                  dangGui={dangGui}
+                  tienTo="dang-nhanh"
+                  kieu="ngan-keo"
+                />
+              )}
 
               {/* Nội dung bài viết */}
               <div className={css.o}>

@@ -4,10 +4,12 @@ import { resolve } from "node:path";
 import type { FeedOut, MachTomTatOut } from "@gikky/api-client";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
+import { dungTaiKhoan } from "./danh-tinh";
 import {
   NK_BOT,
   NK_DONG,
   NK_THUONG,
+  TIEN_TO_NHAT_KY_W,
   donNhatKyW,
   donThuVien,
   dungNhatKyW,
@@ -693,6 +695,147 @@ test.describe("W7/G7 — mobile 390px", () => {
     const cuon = await chips.evaluate((e) => ({ sw: e.scrollWidth, cw: e.clientWidth, ov: getComputedStyle(e).overflowX }));
     expect(cuon.ov).toBe("auto");
     expect(cuon.sw, "chip nhiều hơn bề rộng ⇒ cuộn ngang trong chính hàng chip").toBeGreaterThan(cuon.cw);
+  });
+});
+
+/* ============================================================ W8 · lối vào ghi nhật ký → ngăn kéo */
+
+/** Cả bốn lối vào ghi nhật ký của trang chủ là `<a href="/dang-mach">` (`LoiVaoNhatKy`): khách và
+ * bot đi tới `/dang-mach`, người đã đăng nhập bấm trái thường thì mở NGĂN KÉO đăng nhanh — cái
+ * mà nút "+" ở header vẫn mở. Tài khoản tạm mang tiền tố `e2e_w_` nên `donNhatKyW` (đầu và cuối
+ * file) dọn luôn cả mạch nó đăng. */
+test.describe("W8 — lối vào ghi nhật ký mở ngăn kéo đăng nhanh (người đăng nhập) / đi /dang-mach (khách)", () => {
+  const TIEN_TO_TAI_KHOAN_NGAN_KEO = `${TIEN_TO_NHAT_KY_W}ngk`;
+  const LOI_VAO = ["nhat-ky-o-soan", "nut-mo-nhat-ky", "nut-ghi-nhat-ky-di-dong"] as const;
+
+  test("(c) HTML thô của `/` vẫn có href=\"/dang-mach\" ở mọi lối vào (SEO không đổi)", async ({
+    request,
+  }) => {
+    const html = await (await request.get("/")).text();
+    const the_a = html.match(/<a\b[^>]*>/g) ?? [];
+    for (const id of LOI_VAO) {
+      const the = the_a.find((t) => t.includes(`data-testid="${id}"`));
+      expect(the, `lối vào ${id} phải là <a> trong HTML thô`).toBeDefined();
+      expect(the, id).toContain('href="/dang-mach"');
+    }
+  });
+
+  test("(a) khách bấm 'Mở nhật ký' thì tới /dang-mach, ngăn kéo không mở", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto("/");
+    await page.getByTestId("nut-mo-nhat-ky").click();
+    await expect(page).toHaveURL(/\/dang-mach$/);
+    await expect(page.getByTestId("form-dang-nhanh")).toBeHidden();
+    // Trang /dang-mach có lời mời đăng nhập cho khách.
+    await expect(page.getByTestId("dang-mach-khach")).toBeVisible();
+  });
+
+  test("(b) người đã đăng nhập bấm ô soạn nhanh / 'Mở nhật ký' → ngăn kéo mở, URL vẫn là `/`", async ({
+    page,
+    context,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await dungTaiKhoan(page, TIEN_TO_TAI_KHOAN_NGAN_KEO);
+    await page.goto("/");
+    // Nút "+" ở header chỉ hiện khi phiên đã tải và là người đăng nhập ⇒ cũng là tín hiệu đã hydrate.
+    await expect(page.getByTestId("nut-dang-mach")).toBeVisible();
+    const duong_dan = () => new URL(page.url()).pathname;
+
+    for (const id of ["nhat-ky-o-soan", "nut-mo-nhat-ky"] as const) {
+      await page.getByTestId(id).click();
+      await expect(page.getByTestId("form-dang-nhanh"), id).toBeVisible();
+      expect(duong_dan(), `${id}: không rời trang`).toBe("/");
+      await page.keyboard.press("Escape");
+      await expect(page.getByTestId("form-dang-nhanh")).toBeHidden();
+    }
+
+    // Phím bổ trợ: ctrl+click là "mở tab mới tới đúng URL", đừng cướp.
+    const [tab_moi] = await Promise.all([
+      context.waitForEvent("page"),
+      page.getByTestId("nut-mo-nhat-ky").click({ modifiers: ["Control"] }),
+    ]);
+    // Tab mới khởi đầu ở about:blank: chờ nó thật sự tới đích rồi mới đọc URL.
+    await tab_moi.waitForURL(/\/dang-mach$/);
+    expect(new URL(tab_moi.url()).pathname).toBe("/dang-mach");
+    await tab_moi.close();
+    await expect(page.getByTestId("form-dang-nhanh")).toBeHidden();
+    expect(duong_dan()).toBe("/");
+  });
+
+  test("(b') mobile: nút 'Ghi nhật ký' dính đáy cũng mở ngăn kéo", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await dungTaiKhoan(page, TIEN_TO_TAI_KHOAN_NGAN_KEO);
+    await page.goto("/");
+    await expect(page.getByTestId("nut-ghi-nhat-ky-di-dong")).toBeVisible();
+    // Nút "+" ở header bị ẩn bằng CSS ở 390px nhưng vẫn được vẽ KHI VÀ CHỈ KHI phiên đã tải và là
+    // người đăng nhập ⇒ `toBeAttached` là tín hiệu "đã hydrate + biết mình là ai" cho cả mobile.
+    await expect(page.getByTestId("nut-dang-mach")).toBeAttached();
+    await page.getByTestId("nut-ghi-nhat-ky-di-dong").click();
+    await expect(page.getByTestId("form-dang-nhanh")).toBeVisible();
+    expect(new URL(page.url()).pathname).toBe("/");
+  });
+
+  test("(d) đăng từ ngăn kéo kèm lệnh → mạch có `lenh` (qua API); lệnh sai bị chặn bằng tiếng Việt; nối mốc không có khối lệnh", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await dungTaiKhoan(page, TIEN_TO_TAI_KHOAN_NGAN_KEO);
+    await page.goto("/");
+    await expect(page.getByTestId("nut-dang-mach")).toBeVisible();
+    await page.getByTestId("nhat-ky-o-soan").click();
+    const form = page.getByTestId("form-dang-nhanh");
+    await expect(form).toBeVisible();
+
+    const tieu_de = `W8 Ngăn kéo kèm lệnh ${Date.now()}`;
+    await page.getByRole("button", { name: "s/chung-khoan", exact: true }).click();
+    await form.getByPlaceholder("Tiêu đề ngắn gọn", { exact: false }).fill(tieu_de);
+    await page.getByTestId("dang-nhanh-body").fill("Mạch tạo từ ngăn kéo, có lệnh có cấu trúc.");
+    // Riêng tư: không chen vào feed công khai của các bài đo khác.
+    await page.getByTestId("dang-nhanh-rieng-tu").check();
+
+    // Khối lệnh GẬP mặc định.
+    const khoi = page.getByTestId("dang-nhanh-lenh");
+    await expect(khoi).toBeVisible();
+    expect(await khoi.evaluate((e) => (e as HTMLDetailsElement).open)).toBe(false);
+    await khoi.locator("summary").click();
+    await page.getByTestId("dang-nhanh-lenh-ma").fill("wngk");
+
+    // Lệnh sai (MUA mà SL ≥ giá vào): chặn ở client, tiếng Việt, KHÔNG tạo mạch.
+    await page.getByTestId("dang-nhanh-lenh-gia-vao").fill("27.5");
+    await page.getByTestId("dang-nhanh-lenh-sl").fill("28");
+    await page.getByTestId("dang-nhanh-gui").click();
+    await expect(form.getByRole("alert")).toHaveText("Lệnh MUA: SL phải thấp hơn giá vào.");
+    expect(new URL(page.url()).pathname).toBe("/");
+    // Dấu phẩy thập phân: lỗi, KHÔNG tự đổi thành dấu chấm.
+    await page.getByTestId("dang-nhanh-lenh-sl").fill("26,5");
+    await page.getByTestId("dang-nhanh-gui").click();
+    await expect(form.getByRole("alert")).toHaveText("Dùng dấu chấm cho phần thập phân (vd 27.5).");
+
+    // Sửa đúng rồi đăng.
+    await page.getByTestId("dang-nhanh-lenh-sl").fill("26.5");
+    await page.getByTestId("dang-nhanh-lenh-tp").fill("30.25");
+    await page.getByTestId("dang-nhanh-gui").click();
+    await page.waitForURL(/\/m\/[^/]+-\d+$/, { timeout: 30_000 });
+    const id = Number(new URL(page.url()).pathname.match(/-(\d+)$/)![1]);
+
+    const r = await page.request.get(`/api/v1/machs/${id}`);
+    expect(r.ok()).toBe(true);
+    const mach = (await r.json()) as { title: string; loai_mach: string; lenh: unknown };
+    expect(mach.title).toBe(tieu_de);
+    expect(mach.loai_mach).toBe("nhat_ky");
+    // Server IN HOA mã; số giữ nguyên chuỗi thập phân.
+    expect(mach.lenh).toMatchObject({
+      chieu: "mua",
+      ma: "WNGK",
+      gia_vao: "27.5",
+      sl: "26.5",
+      tp: "30.25",
+    });
+
+    // Nối mốc cũng đi qua ngăn kéo — nhưng lệnh chỉ đặt lúc tạo mạch ⇒ KHÔNG có khối lệnh.
+    await page.getByTestId("nut-noi-moc").click();
+    await expect(page.getByTestId("form-noi-moc")).toBeVisible();
+    await expect(page.getByTestId("dang-nhanh-lenh")).toHaveCount(0);
   });
 });
 

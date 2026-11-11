@@ -36,6 +36,25 @@ export const lenhFormRong: LenhForm = {
   nhoi: "",
 };
 
+/** Đọc lại `LenhForm` từ thứ lấy ra khỏi `sessionStorage` (bản nháp chuyển từ ngăn kéo đăng nhanh
+ * sang `/dang-mach`). Dữ liệu ở đó là THỨ NGOÀI — có thể hỏng, cũ, hoặc thiếu trường — nên chỉ
+ * nhận đúng hình dạng (`chieu` mua/ban + năm ô chuỗi), còn lại `null` (form giữ lệnh trống). */
+export function lenhFormTuBanNhap(x: unknown): LenhForm | null {
+  if (typeof x !== "object" || x === null) return null;
+  const o = x as Record<string, unknown>;
+  if (o.chieu !== "mua" && o.chieu !== "ban") return null;
+  if (
+    typeof o.ma !== "string" ||
+    typeof o.giaVao !== "string" ||
+    typeof o.sl !== "string" ||
+    typeof o.tp !== "string" ||
+    typeof o.nhoi !== "string"
+  ) {
+    return null;
+  }
+  return { chieu: o.chieu, ma: o.ma, giaVao: o.giaVao, sl: o.sl, tp: o.tp, nhoi: o.nhoi };
+}
+
 const SO_DUONG = /^\d+(\.\d+)?$/;
 const SO_LE_TOI_DA = 8;
 const SO_NGUYEN_TOI_DA = 12;

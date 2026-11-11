@@ -7,6 +7,7 @@ import { tomTatChanKhoi } from "@/lib/chan-khoi-nhat-ky";
 import { Avatar } from "./avatar";
 import feedCss from "./feed.module.css";
 import { KhoiThaoLuan } from "./khoi-thao-luan";
+import { LoiVaoNhatKy } from "./loi-vao-nhat-ky";
 import { TheNhatKy } from "./the-nhat-ky";
 import css from "./trang-chu-v2.module.css";
 
@@ -99,28 +100,19 @@ export function TrangChuV2({
           </Link>
         </header>
 
-        {/* Ô soạn nhanh (desktop): bấm là đi `/dang-mach` — một LINK, không phải form mới.
+        {/* Ô soạn nhanh (desktop): một LINK tới `/dang-mach` — không phải form mới. Người đã đăng
+            nhập bấm vào thì mở NGĂN KÉO đăng nhanh (`LoiVaoNhatKy`); HTML vẫn là `<a href>`.
             Riêng tư → công khai là MỘT CHIỀU, và mốc đã ghi sửa được nhưng để lại dấu vết
             (GHI-CHU việc 7): nên câu phụ chỉ hứa đúng chừng ấy — và KHÔNG gợi ý riêng tư là mặc định (form `/dang-mach` mặc định công khai). */}
         <div className={css.soan_nhanh} data-testid="nhat-ky-soan-nhanh">
-          <Link
-            className={css.o_soan}
-            href="/dang-mach"
-            prefetch={false}
-            data-testid="nhat-ky-o-soan"
-          >
+          <LoiVaoNhatKy className={css.o_soan} data-testid="nhat-ky-o-soan">
             Bạn vừa quyết định gì?
-          </Link>
+          </LoiVaoNhatKy>
           <div className={css.soan_dong}>
             <span className={css.goi_y}>Có thể ghi riêng tư, công khai khi bạn muốn.</span>
-            <Link
-              className={css.nut_mo}
-              href="/dang-mach"
-              prefetch={false}
-              data-testid="nut-mo-nhat-ky"
-            >
+            <LoiVaoNhatKy className={css.nut_mo} data-testid="nut-mo-nhat-ky">
               Mở nhật ký
-            </Link>
+            </LoiVaoNhatKy>
           </div>
         </div>
 
@@ -142,9 +134,7 @@ export function TrangChuV2({
         {hien.length === 0 ? (
           <p className={feedCss.rong} data-testid="nhat-ky-rong">
             Chưa có nhật ký công khai nào —{" "}
-            <Link className={css.loi_moi} href="/dang-mach" prefetch={false}>
-              mở nhật ký đầu tiên
-            </Link>
+            <LoiVaoNhatKy className={css.loi_moi}>mở nhật ký đầu tiên</LoiVaoNhatKy>
           </p>
         ) : (
           <ul className={css.danh_sach} data-testid="feed-nhat-ky">
@@ -190,15 +180,10 @@ export function TrangChuV2({
         {/* Mobile: nút dính đáy thay cho ô soạn nhanh. `sticky` trong chính khối, nên nó tự
             nhả khi cuộn qua hết khối nhật ký. */}
         <div className={css.dinh_day}>
-          <Link
-            className={css.nut_ghi}
-            href="/dang-mach"
-            prefetch={false}
-            data-testid="nut-ghi-nhat-ky-di-dong"
-          >
+          <LoiVaoNhatKy className={css.nut_ghi} data-testid="nut-ghi-nhat-ky-di-dong">
             <Plus size={16} strokeWidth={2.4} aria-hidden />
             Ghi nhật ký
-          </Link>
+          </LoiVaoNhatKy>
         </div>
       </section>
     </>

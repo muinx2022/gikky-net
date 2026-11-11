@@ -6,12 +6,19 @@ import { useEffect, useState } from "react";
 
 import { cauLoiTaiAnh, taiAnhLanLuot } from "@/lib/anh";
 import { layDuLieu, LoiGhi } from "@/lib/ghi";
-import { cauLoiGuiLenh, lenhFormRong, lenhTuForm, type LenhForm } from "@/lib/lenh-form";
+import {
+  cauLoiGuiLenh,
+  lenhFormRong,
+  lenhFormTuBanNhap,
+  lenhTuForm,
+  type LenhForm,
+} from "@/lib/lenh-form";
 import { GOC_TRINH_DUYET, headerGhi } from "@/lib/tai-khoan";
 import { duongDanMach } from "@/lib/url";
 
 import { ChonAnh } from "./chon-anh";
 import css from "./form-dang-mach.module.css";
+import { KhoiLenh } from "./khoi-lenh";
 import { useModalDangNhap } from "./modal-dang-nhap";
 import { usePhien } from "./phien";
 import { TruongMoc, mocRong, thanMoc, DAI_BODY_MOC, type NoiDungMoc } from "./truong-moc";
@@ -47,6 +54,7 @@ export function FormDangMach({
   const [truongPhai, datTruongPhai] = useState("");
   const [riengTu, datRiengTu] = useState(false);
   const [lenh, datLenh] = useState<LenhForm>(lenhFormRong);
+  const [lenhTuNhap, datLenhTuNhap] = useState(false);
   const [dangGui, datDangGui] = useState(false);
   const [loi, datLoi] = useState<string | null>(null);
 
@@ -60,6 +68,12 @@ export function FormDangMach({
         if (parsed.body) datMoc((cu) => ({ ...cu, body: parsed.body }));
         if (typeof parsed.tatBinhLuan === "boolean") datTatBinhLuan(parsed.tatBinhLuan);
         if (typeof parsed.riengTu === "boolean") datRiengTu(parsed.riengTu);
+        // Lệnh đã gõ dở ở ngăn kéo đăng nhanh đi theo sang đây (không mất khi "đăng chi tiết").
+        const lenh_nhap = lenhFormTuBanNhap(parsed.lenh);
+        if (lenh_nhap !== null) {
+          datLenh(lenh_nhap);
+          datLenhTuNhap(true);
+        }
         sessionStorage.removeItem("gikky_draft_dang_mach");
       }
     } catch {
@@ -265,7 +279,15 @@ export function FormDangMach({
           luôn đăng `nhat_ky`, còn tài khoản của đội gikky mặc định ra `bai_viet` (server
           phân giải theo tác giả) và `bai_viet` bị server từ chối kèm `lenh`, nên với họ khối
           này không vẽ. Gấp mặc định; bỏ trống = đăng không có dải lệnh như trước. */}
-      {!toi.la_tai_khoan_doi && <KhoiLenh gia_tri={lenh} datGiaTri={datLenh} dangGui={dangGui} />}
+      {!toi.la_tai_khoan_doi && (
+        <KhoiLenh
+          gia_tri={lenh}
+          datGiaTri={datLenh}
+          dangGui={dangGui}
+          tienTo="dang-mach"
+          moSan={lenhTuNhap}
+        />
+      )}
 
       <TruongMoc
         gia_tri={moc}
@@ -327,81 +349,3 @@ export function FormDangMach({
 
 /** Lý do nút Đăng bài còn tắt. Một câu, nói đúng cái đang thiếu. */
 const LY_DO_THIEU = "Cần chuyên mục, tiêu đề và nội dung mốc 1";
-
-/** Khối "Lệnh (tuỳ chọn)" — gấp mặc định. Chiều MUA/BÁN + mã + giá vào là bộ ba bắt buộc NẾU
- * khai lệnh; SL / TP / giá nhồi tuỳ chọn. Thẻ nhật ký trên trang chủ vẽ dải lệnh từ đây.
- *
- * Lệnh là biên lai: gửi lúc đăng và KHÔNG sửa được sau đó (thay đổi kể qua mốc) — dòng nhắc
- * dưới cùng nói thẳng điều này để người ta không điền vội. */
-function KhoiLenh({
-  gia_tri,
-  datGiaTri,
-  dangGui,
-}: {
-  gia_tri: LenhForm;
-  datGiaTri: (l: LenhForm) => void;
-  dangGui: boolean;
-}) {
-  const doi = (k: keyof LenhForm) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    datGiaTri({ ...gia_tri, [k]: e.target.value });
-  const o = (k: "giaVao" | "sl" | "tp" | "nhoi", nhan: string, id: string) => (
-    <label className={css.o_lenh}>
-      <span className={css.nhan}>{nhan}</span>
-      <input
-        className={css.dong}
-        type="text"
-        inputMode="decimal"
-        autoComplete="off"
-        value={gia_tri[k]}
-        onChange={doi(k)}
-        disabled={dangGui}
-        data-testid={`dang-mach-lenh-${id}`}
-      />
-    </label>
-  );
-  return (
-    <details className={css.lenh} data-testid="dang-mach-lenh">
-      <summary className={css.lenh_tom_tat}>Lệnh (tuỳ chọn)</summary>
-      <div className={css.lenh_than}>
-        <fieldset className={css.lenh_chieu} disabled={dangGui}>
-          <legend className={css.nhan}>Chiều lệnh</legend>
-          {(["mua", "ban"] as const).map((c) => (
-            <label key={c} className={css.lenh_radio}>
-              <input
-                type="radio"
-                name="dang-mach-lenh-chieu"
-                checked={gia_tri.chieu === c}
-                onChange={() => datGiaTri({ ...gia_tri, chieu: c })}
-                data-testid={`dang-mach-lenh-chieu-${c}`}
-              />
-              <span>{c === "mua" ? "MUA" : "BÁN"}</span>
-            </label>
-          ))}
-        </fieldset>
-        <label className={css.o_lenh}>
-          <span className={css.nhan}>Mã</span>
-          <input
-            className={css.dong}
-            type="text"
-            maxLength={20}
-            autoCapitalize="characters"
-            autoComplete="off"
-            value={gia_tri.ma}
-            onChange={doi("ma")}
-            disabled={dangGui}
-            placeholder="HPG, USD/JPY…"
-            data-testid="dang-mach-lenh-ma"
-          />
-        </label>
-        {o("giaVao", "Giá vào (Entry)", "gia-vao")}
-        {o("sl", "Cắt lỗ (SL)", "sl")}
-        {o("tp", "Chốt lời (TP)", "tp")}
-        {o("nhoi", "Giá nhồi", "nhoi")}
-        <p className={css.lenh_nhac}>
-          MUA: SL &lt; giá vào &lt; TP. BÁN: TP &lt; giá vào &lt; SL. Lệnh ghi một lần lúc đăng và
-          không sửa được — thay đổi về sau kể bằng mốc mới.
-        </p>
-      </div>
-    </details>
-  );
-}
