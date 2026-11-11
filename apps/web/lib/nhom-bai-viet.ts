@@ -1,76 +1,50 @@
-import type { MachTomTatOut } from "@gikky/api-client";
+import type { MachTomTatOut, SubChiTietOut } from "@gikky/api-client";
 
-/** Section "Bài viết" của trang chủ — kiểu THƯ VIỆN kiến thức: ba cột theo nhóm chuyên mục +
- * một dải bản tin (plan `2026-11-11-homepage-v2-giao-dien-moi.md` §3.3).
+/** Khối "Bài viết" của trang chủ: một dải "Mới đăng" + "giá sách" do admin chọn + một dải bản
+ * tin (plan `2026-11-11-bai-viet-trang-chu-gia-sach.md`, thay cho bản ghép cứng 6 slug của
+ * `2026-11-11-homepage-v2-giao-dien-moi.md` §3.3).
  *
- * Mọi quyết định "bài nào vào cột nào" sống ở đây, trong hàm THUẦN, để đo được không cần mạng
- * (`e2e/don-vi/trang-chu-giao-dien-moi.spec.ts`) và để đổi nhóm chỉ là sửa MỘT hằng.
- */
-
-export type NhomBaiViet = {
-  /** Khoá ổn định cho `data-testid` / React key — không in ra. */
-  khoa: string;
-  /** Tiêu đề cột. */
-  ten: string;
-  /** Slug các chuyên mục thuộc nhóm. Bài của sub ngoài danh sách này không vào cột nào. */
-  subs: readonly string[];
-  /** Slug chuyên mục mà "Xem thêm →" của cột dẫn tới. */
-  xemThem: string;
-};
-
-/** Ba nhóm — **hằng cấu hình, đặt cạnh logic, dễ đổi** (user có thể đổi nhóm; hỏi nếu thấy
- * bất hợp lý với dữ liệu thật). `tin-tuc` cố ý KHÔNG vào cột: nó là dải bản tin bên dưới.
+ * Mọi quyết định "bài nào vào đâu" sống ở đây, trong hàm THUẦN, để đo được không cần mạng
+ * (`e2e/don-vi/bai-viet-trang-chu.spec.ts`).
  *
- * Slug là chuỗi, KHÔNG phải danh sách sub đóng: chuyên mục chưa tồn tại trên môi trường này
- * (vd `tam-ly-giao-dich` ở DB dev) chỉ làm cột ít bài đi — không lỗi. Nhãn hiển thị của chip
- * lấy từ `GET /subs` (`ten`), nên web không giữ bản sao tên chuyên mục nào. */
-export const NHOM_BAI_VIET: readonly NhomBaiViet[] = [
-  {
-    khoa: "co-che-thi-truong",
-    ten: "Cơ chế thị trường",
-    subs: ["hoi-dap", "chung-khoan"],
-    xemThem: "hoi-dap",
-  },
-  {
-    khoa: "vi-mo-doanh-nghiep",
-    ten: "Vĩ mô & doanh nghiệp",
-    subs: ["vi-mo", "crypto"],
-    xemThem: "vi-mo",
-  },
-  {
-    khoa: "quan-tri-von-tam-ly",
-    ten: "Quản trị vốn & tâm lý",
-    subs: ["quan-tri-von", "tam-ly-giao-dich"],
-    xemThem: "quan-tri-von",
-  },
-];
+ * **Không còn slug nào gõ cứng ngoài `SUB_BAN_TIN`.** Chuyên mục nào lên giá sách là dữ liệu
+ * (`Sub.vi_tri_trang_chu`, admin đặt ở `/subs`), đọc từ `GET /subs` — web không giữ danh sách. */
 
-/** Chuyên mục của dải "Bản tin thị trường". */
+/** Chuyên mục của dải "Bản tin thị trường". Dải Mới đăng loại nó ra (nó có dải riêng). */
 export const SUB_BAN_TIN = "tin-tuc";
 
-/** Số bài tải về MỘT lần rồi chia nhóm ở web (không thêm API). 50 = trần `limit` của feed. */
+/** Số bài tải về MỘT lần cho dải Mới đăng + bản tin. 50 = trần `limit` của feed. */
 export const SO_BAI_VIET_TAI = 50;
-/** Số bài mỗi cột. Plan: 3; tăng lên 4 NẾU đo thực tế link `/m/` trên `/` rơi dưới 19. */
-export const SO_BAI_MOI_NHOM = 3;
+/** Số bài ở dải "Mới đăng" (mọi chuyên mục trừ `SUB_BAN_TIN`). */
+export const SO_MOI_DANG = 3;
+/** Số bài mỗi cột giá sách (chỉ tiêu đề + ngày). */
+export const SO_BAI_MOI_GIA = 3;
 /** Số bản tin trong dải (plan: 2–3). */
 export const SO_BAN_TIN = 3;
+/** Số bài xin cho MỖI giá: đủ để sau khi bỏ bài đã ở dải Mới đăng (tối đa `SO_MOI_DANG`) vẫn
+ * còn `SO_BAI_MOI_GIA`. Lời gọi riêng theo sub nên sub đăng chậm vẫn có bài, không phụ thuộc
+ * cửa sổ `SO_BAI_VIET_TAI` của feed chung. */
+export const SO_BAI_TAI_MOI_GIA = SO_BAI_MOI_GIA + SO_MOI_DANG;
 
-export type CotThuVien = NhomBaiViet & { baiViet: MachTomTatOut[] };
+/** Một giá sách: sub + các bài `bai_viet` mới nhất của riêng nó (mới → cũ, như API trả). */
+export type GiaSachTho = {
+  sub: Pick<SubChiTietOut, "slug" | "ten">;
+  items: readonly MachTomTatOut[];
+};
 
-/** Chia `items` (đã mới → cũ, như API trả) vào các nhóm: mỗi nhóm giữ `SO_BAI_MOI_NHOM` bài
- * ĐẦU thuộc sub của nó. Nhóm không có bài nào ⇒ bị bỏ (ẩn cột, không khung rỗng). Một bài chỉ
- * vào một nhóm (nhóm đầu tiên khai sub của nó). Không đột biến `items`. */
-export function chiaNhomBaiViet(
+/** Giá sách đã dựng xong, sẵn để vẽ cột. */
+export type GiaSach = {
+  sub: Pick<SubChiTietOut, "slug" | "ten">;
+  baiViet: MachTomTatOut[];
+};
+
+/** `toiDa` bài `bai_viet` mới nhất thuộc MỌI chuyên mục trừ `SUB_BAN_TIN`. Không đột biến
+ * `items`. */
+export function chonMoiDang(
   items: readonly MachTomTatOut[],
-  nhom: readonly NhomBaiViet[] = NHOM_BAI_VIET,
-  toiDaMoiNhom: number = SO_BAI_MOI_NHOM,
-): CotThuVien[] {
-  const cot: CotThuVien[] = nhom.map((n) => ({ ...n, baiViet: [] }));
-  for (const m of items) {
-    const c = cot.find((n) => n.subs.includes(m.sub.slug));
-    if (c !== undefined && c.baiViet.length < toiDaMoiNhom) c.baiViet.push(m);
-  }
-  return cot.filter((c) => c.baiViet.length > 0);
+  toiDa: number = SO_MOI_DANG,
+): MachTomTatOut[] {
+  return items.filter((m) => m.sub.slug !== SUB_BAN_TIN).slice(0, toiDa);
 }
 
 /** `SO_BAN_TIN` bản tin mới nhất (bài của `SUB_BAN_TIN`) trong `items`. */
@@ -81,8 +55,35 @@ export function chonBanTin(
   return items.filter((m) => m.sub.slug === SUB_BAN_TIN).slice(0, toiDa);
 }
 
-/** Slug các chuyên mục để dựng chip: mọi sub khai trong nhóm (đúng thứ tự khai, bỏ trùng).
- * `tin-tuc` không có chip — nó có dải riêng. */
-export function slugChipChuyenMuc(nhom: readonly NhomBaiViet[] = NHOM_BAI_VIET): string[] {
-  return [...new Set(nhom.flatMap((n) => n.subs))];
+/** Tập id các bài ĐÃ hiện ở các dải khác (Mới đăng, Bản tin…), để giá sách bỏ trùng. Gộp cả bản
+ * tin vì admin có thể chọn `tin-tuc` làm một giá — nếu không, 3 bài của giá ấy trùng đúng dải
+ * Bản tin ngay bên dưới. */
+export function idDaHien(...cac_dai: readonly (readonly MachTomTatOut[])[]): Set<number> {
+  return new Set(cac_dai.flatMap((d) => d.map((m) => m.id)));
+}
+
+/** Các sub admin đã chọn lên trang chủ (`vi_tri_trang_chu != null`), theo vị trí tăng dần.
+ * Không đột biến `cac_sub`. */
+export function subLenTrangChu<T extends Pick<SubChiTietOut, "vi_tri_trang_chu">>(
+  cac_sub: readonly T[],
+): T[] {
+  return cac_sub
+    .filter((s) => s.vi_tri_trang_chu !== null && s.vi_tri_trang_chu !== undefined)
+    .sort((a, b) => (a.vi_tri_trang_chu as number) - (b.vi_tri_trang_chu as number));
+}
+
+/** Dựng các cột giá sách từ `gia` (đã đúng thứ tự vị trí): bỏ bài có id trong `daHien` (đã ở
+ * dải Mới đăng), cắt `toiDa` bài đầu, và BỎ giá không còn bài nào (ẩn cột, không khung rỗng).
+ * Giữ thứ tự `gia` và thứ tự bài trong từng giá. Không đột biến đầu vào. */
+export function dungGiaSach(
+  gia: readonly GiaSachTho[],
+  daHien: ReadonlySet<number>,
+  toiDa: number = SO_BAI_MOI_GIA,
+): GiaSach[] {
+  return gia
+    .map((g) => ({
+      sub: g.sub,
+      baiViet: g.items.filter((m) => !daHien.has(m.id)).slice(0, toiDa),
+    }))
+    .filter((g) => g.baiViet.length > 0);
 }

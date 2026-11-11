@@ -1873,6 +1873,10 @@ export type SubChiTietOut = {
      * Ten
      */
     ten: string;
+    /**
+     * Vi Tri Trang Chu
+     */
+    vi_tri_trang_chu: number | null;
 };
 
 /**

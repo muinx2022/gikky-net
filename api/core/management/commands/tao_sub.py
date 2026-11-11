@@ -77,9 +77,9 @@ class Command(BaseCommand):
                 f"Slug {slug!r} phải viết thường và dùng gạch NGANG, không gạch dưới "
                 f"— ý bạn là {slug.lower().replace('_', '-')!r}?"
             )
-        # Khớp `SLUG_CAM` ở `api/quan_tri_sub.py` — path tĩnh `/subs/thu-tu` nuốt
-        # PATCH/DELETE của chuyên mục cùng slug.
-        if slug == "thu-tu":
+        # Khớp `SLUG_CAM` ở `api/quan_tri_sub.py` — path tĩnh `/subs/thu-tu` và
+        # `/subs/trang-chu` nuốt PATCH/DELETE của chuyên mục cùng slug.
+        if slug in ("thu-tu", "trang-chu"):
             raise CommandError(
                 f"Slug {slug!r} dành cho đường quản trị — chọn slug khác."
             )

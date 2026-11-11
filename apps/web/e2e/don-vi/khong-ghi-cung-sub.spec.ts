@@ -46,13 +46,12 @@ const MA_SAN_PHAM = quetNguon(WEB, /\.(tsx?|mjs)$/).filter(
  * đo "giấy miễn trừ không có dòng chết" ở dưới sẽ bắt ngay một dòng thừa.
  */
 const CHUA_CHUYEN_DUOC: Readonly<Record<string, string>> = {
-  // 2026-11-11 (plan `2026-11-11-homepage-v2-giao-dien-moi.md` §3.3). Đây KHÔNG phải danh sách
-  // sub để vẽ sidebar/sitemap (chỗ B10 sinh ra để cấm) mà là CẤU HÌNH BIÊN TẬP: "bài của sub nào
-  // vào cột nào của thư viện kiến thức" — một quyết định nội dung của user, không suy ra được từ
-  // `GET /subs`. Nó đã được khai là hằng riêng, một file riêng (`NHOM_BAI_VIET`), dễ đổi. Sub
-  // chưa tồn tại chỉ làm cột ít bài đi; nhãn chip lấy từ `GET /subs`, không từ file này.
-  "lib/nhom-bai-viet.ts":
-    "nhóm chuyên mục của section Bài viết trang chủ là cấu hình biên tập, không phải danh sách sub",
+  // 2026-11-11 (plan `2026-11-11-bai-viet-trang-chu-gia-sach.md`): giấy miễn trừ cho
+  // `lib/nhom-bai-viet.ts` ĐÃ GỠ. File ấy từng gõ cứng 6 slug (`NHOM_BAI_VIET`, cấu hình biên
+  // tập "sub nào vào cột nào"); nay chuyên mục lên trang chủ là dữ liệu (`Sub.vi_tri_trang_chu`,
+  // admin đặt ở `/subs`, đọc qua `GET /subs`), nên file chỉ còn `tin-tuc` và không chứa slug
+  // nào của `SLUG_SEED`. Bài "giấy miễn trừ không có dòng chết" bên dưới sẽ bắt ngay nếu ai
+  // thêm lại một dòng cho file này mà nó không gõ cứng gì.
 };
 
 test("bộ file quét được không rỗng và có đúng hai chỗ từng ghi cứng", () => {

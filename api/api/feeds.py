@@ -430,6 +430,7 @@ def _sub_ra(sub: Sub) -> SubChiTietOut:
         mo_ta=sub.mo_ta,
         so_mach=sub.so_mach_hien,
         created_at=sub.created_at,
+        vi_tri_trang_chu=sub.vi_tri_trang_chu,
     )
 
 

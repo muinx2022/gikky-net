@@ -61,6 +61,7 @@ const GOI_Y_ACTION = [
   "sua_sub",
   "xoa_sub",
   "dat_thu_tu_sub",
+  "dat_trang_chu_sub",
   "sua_cai_dat_google",
   "xoa_cai_dat_google",
   "tao_user",

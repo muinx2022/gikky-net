@@ -1757,6 +1757,11 @@ AUDIT_XOA_SUB = "xoa_sub"
 #: mang trọn thứ tự mới nên dựng lại được trạng thái trước/sau từ hai dòng liên tiếp.
 #: `target_id` là `None` — đích của nó là *cả bảng*, không một hàng nào.
 AUDIT_DAT_THU_TU_SUB = "dat_thu_tu_sub"
+#: Chọn chuyên mục lên giá sách trang chủ (2026-11-11,
+#: `plans/2026-11-11-bai-viet-trang-chu-gia-sach.md`). Cùng khuôn `AUDIT_DAT_THU_TU_SUB`:
+#: MỘT dòng cho cả lượt đặt, `target_id=None`; `meta.truoc` / `meta.sau` mang danh sách slug
+#: theo thứ tự vị trí trước và sau. Không đổi gì ⇒ không ghi.
+AUDIT_DAT_TRANG_CHU_SUB = "dat_trang_chu_sub"
 #: Phân công quyền — PLAN 5.10 đòi ghi sổ mọi hành động mod, và đây là hành động mà
 #: câu hỏi "ai cho người này làm mod chuyên mục" chỉ trả lời được qua nhật ký.
 #: Cài đặt hệ thống. `target_id` là `None` — cài đặt không phải một hàng có khoá chính,

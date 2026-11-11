@@ -471,6 +471,9 @@ class SubQuanTriOut(Schema):
     #: sidebar chỉ cần thứ tự của mảng API trả về, còn bảng quản trị cần con số thật để
     #: người sửa đối chiếu khi một lượt kéo trông như không ăn.
     thu_tu: int
+    #: Vị trí trên giá sách khối "Bài viết" ở trang chủ (2026-11-11): `None` = không lên
+    #: trang chủ, `1..4` = cột thứ mấy. Đặt qua `PUT /admin/subs/trang-chu`.
+    vi_tri_trang_chu: int | None
 
 
 class TaoSubIn(Schema):
@@ -490,6 +493,18 @@ class SapXepSubIn(Schema):
     Cái giá là ghi đè mù — hai mod cùng kéo thì người bấm sau thắng. Chấp nhận được ở đây
     (khác hẳn danh sách mod, xem `api/quan_tri_sub.py`): thứ tự là một thuộc tính của cả
     bảng chứ không phải dữ liệu ai đó vừa nhập, và không có hàng nào biến mất.
+    """
+
+    slugs: list[str]
+
+
+class DatTrangChuSubIn(Schema):
+    """Body của `PUT /admin/subs/trang-chu` — **toàn bộ** danh sách sub lên giá sách.
+
+    Phần tử 0 → vị trí 1, … Dài 0..4 (rỗng = gỡ hết), không trùng, mỗi slug phải tồn tại;
+    vi phạm ⇒ 400 và không ghi gì. Cùng triết lý `SapXepSubIn`: ghi cả cột, không có phép
+    dời lẻ — hai lượt dời gửi gần nhau sẽ suy trên hai ảnh chụp khác nhau của cùng bảng.
+    Khác `SapXepSubIn` ở chỗ danh sách này là TẬP CON của bảng, không phải hoán vị.
     """
 
     slugs: list[str]

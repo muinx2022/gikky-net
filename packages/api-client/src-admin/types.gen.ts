@@ -459,6 +459,23 @@ export type DatMatKhauIn = {
 };
 
 /**
+ * DatTrangChuSubIn
+ *
+ * Body của `PUT /admin/subs/trang-chu` — **toàn bộ** danh sách sub lên giá sách.
+ *
+ * Phần tử 0 → vị trí 1, … Dài 0..4 (rỗng = gỡ hết), không trùng, mỗi slug phải tồn tại;
+ * vi phạm ⇒ 400 và không ghi gì. Cùng triết lý `SapXepSubIn`: ghi cả cột, không có phép
+ * dời lẻ — hai lượt dời gửi gần nhau sẽ suy trên hai ảnh chụp khác nhau của cùng bảng.
+ * Khác `SapXepSubIn` ở chỗ danh sách này là TẬP CON của bảng, không phải hoán vị.
+ */
+export type DatTrangChuSubIn = {
+    /**
+     * Slugs
+     */
+    slugs: Array<string>;
+};
+
+/**
  * DemTheoNgayOut
  *
  * Một ô của biểu đồ 30 ngày. `ngay` là **ngày lịch Việt Nam**, không phải UTC.
@@ -1908,6 +1925,10 @@ export type SubQuanTriOut = {
      * Thu Tu
      */
     thu_tu: number;
+    /**
+     * Vi Tri Trang Chu
+     */
+    vi_tri_trang_chu: number | null;
 };
 
 /**
@@ -3548,6 +3569,45 @@ export type QuanTriDatThuTuSubResponses = {
 };
 
 export type QuanTriDatThuTuSubResponse = QuanTriDatThuTuSubResponses[keyof QuanTriDatThuTuSubResponses];
+
+export type QuanTriDatTrangChuSubData = {
+    body: DatTrangChuSubIn;
+    path?: never;
+    query?: never;
+    url: '/api/admin/subs/trang-chu';
+};
+
+export type QuanTriDatTrangChuSubErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Conflict
+     */
+    409: LoiOut;
+};
+
+export type QuanTriDatTrangChuSubError = QuanTriDatTrangChuSubErrors[keyof QuanTriDatTrangChuSubErrors];
+
+export type QuanTriDatTrangChuSubResponses = {
+    /**
+     * Response
+     *
+     * OK
+     */
+    200: Array<SubQuanTriOut>;
+};
+
+export type QuanTriDatTrangChuSubResponse = QuanTriDatTrangChuSubResponses[keyof QuanTriDatTrangChuSubResponses];
 
 export type QuanTriXoaSubData = {
     body?: never;

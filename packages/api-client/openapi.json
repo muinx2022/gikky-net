@@ -2614,6 +2614,17 @@
           "ten": {
             "title": "Ten",
             "type": "string"
+          },
+          "vi_tri_trang_chu": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vi Tri Trang Chu"
           }
         },
         "required": [
@@ -2621,7 +2632,8 @@
           "ten",
           "mo_ta",
           "so_mach",
-          "created_at"
+          "created_at",
+          "vi_tri_trang_chu"
         ],
         "title": "SubChiTietOut",
         "type": "object"

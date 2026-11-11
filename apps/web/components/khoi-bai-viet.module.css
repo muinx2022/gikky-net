@@ -84,10 +84,21 @@
   text-decoration: underline;
 }
 
-/* --- ba cột theo nhóm chuyên mục ------------------------------------------------------- */
-.luoi {
+/* --- dải "Mới đăng": ba bài mới nhất, mọi chuyên mục trừ bản tin ---------------------------- */
+.ds_moi_dang {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: 36px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* --- giá sách: mỗi chuyên mục admin chọn là một cột (tối đa 4) -------------------------------
+ * Số cột theo số giá còn bài (`--so-gia`, do tsx đặt), nên 2–3 giá chia đều chiều ngang. */
+.gia_luoi {
+  display: grid;
+  grid-template-columns: repeat(var(--so-gia, 4), minmax(0, 1fr));
   gap: 36px;
 }
 
@@ -119,7 +130,7 @@
   font-size: 12px;
 }
 
-.ds {
+.gia_ds {
   margin: 0;
   padding: 0;
   list-style: none;
@@ -127,6 +138,51 @@
 
 .muc_goc {
   border-bottom: 1px solid var(--line);
+}
+
+/* Bài trên giá sách: chỉ tiêu đề + ngày. Cả hàng là vùng bấm như `.muc`. */
+.gia_muc_goc {
+  border-bottom: 1px solid var(--line);
+}
+
+.gia_muc {
+  position: relative;
+  padding: 12px 0;
+}
+
+.gia_muc:hover .gia_tieu_de a {
+  color: var(--accent);
+}
+
+.gia_tieu_de {
+  margin: 0;
+  display: -webkit-box;
+  overflow: hidden;
+  font-family: var(--f-ui);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.gia_tieu_de a {
+  color: var(--ink);
+}
+
+.gia_tieu_de a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.gia_ngay {
+  display: block;
+  margin-top: 4px;
+  color: var(--ink-3);
+  font-family: var(--f-ui);
+  font-size: 11.5px;
 }
 
 /* Cả hàng là vùng bấm: `::after` của link tiêu đề phủ `.muc` (position: relative). */
@@ -139,16 +195,6 @@
 
 .muc:hover .tieu_de a {
   color: var(--accent);
-}
-
-.so {
-  flex: none;
-  width: 22px;
-  padding-top: 2px;
-  color: var(--ink-3);
-  font-family: var(--f-mono);
-  font-size: 13px;
-  font-weight: 600;
 }
 
 .than {
@@ -284,11 +330,15 @@
   display: none;
 }
 
-/* --- tablet (≤ 1000px): một cột ------------------------------------------------------- */
+/* --- tablet (≤ 1000px): Mới đăng một cột, giá sách hai cột ----------------------------------- */
 @media (max-width: 1000px) {
-  .luoi {
+  .ds_moi_dang {
     grid-template-columns: minmax(0, 1fr);
-    gap: 28px;
+  }
+
+  .gia_luoi {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 28px 36px;
   }
 }
 
@@ -336,10 +386,17 @@
     min-height: 44px;
   }
 
-  /* Mobile: mỗi nhóm 2 bài dạng hàng; bài thứ 3 vẫn nằm trong HTML (bot / đủ link `/m/`). */
-  .muc_goc:nth-child(n + 3) {
+  /* Mobile: giá sách một cột, mỗi giá 2 bài; bài thứ 3 vẫn nằm trong HTML (bot / đủ link
+   * `/m/`). Dải Mới đăng giữ cả 3 bài — đó là phần đầu của khối. */
+  .gia_luoi {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+
+  .gia_muc_goc:nth-child(n + 3) {
     display: none;
   }
+
 
   .muc {
     gap: 12px;

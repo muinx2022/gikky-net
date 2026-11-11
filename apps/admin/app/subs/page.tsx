@@ -2,6 +2,7 @@
 
 import {
   quanTriDatThuTuSub,
+  quanTriDatTrangChuSub,
   quanTriGanModSub,
   quanTriGoModSub,
   quanTriLietKeSub,
@@ -53,7 +54,17 @@ import { duongDanCongKhai } from "../../lib/url";
  * Mỗi cú thả gửi **cả** danh sách slug lên `PUT /subs/thu-tu`, không gửi một phép dời —
  * xem `api/quan_tri_schemas.py::SapXepSubIn`. Không phân trang là điều kiện để làm được
  * thế: trang 2 nghĩa là client không còn cầm đủ tập slug để gửi một hoán vị đầy đủ.
+ *
+ * ## Chuyên mục lên trang chủ (2026-11-11)
+ *
+ * Khối đầu trang chọn tối đa `SO_VI_TRI_TRANG_CHU` chuyên mục cho "giá sách" của khối Bài
+ * viết ở trang chủ (`Sub.vi_tri_trang_chu`). Cũng ghi **cả danh sách** một lần
+ * (`PUT /subs/trang-chu`): ô trống ở giữa thì dồn lên, 400 của server hiện ở đầu trang.
+ * Con số 4 là của server (CHECK ở DB); bản ở đây chỉ để vẽ đủ số ô, sai thì server từ chối.
  */
+/** Số ô "Vị trí n" — khớp `api/api/quan_tri_sub.py::SO_SUB_TRANG_CHU_TOI_DA`. */
+const SO_VI_TRI_TRANG_CHU = 4;
+
 export default function TrangSub() {
   const [subs, datSubs] = useState<SubQuanTriOut[] | null>(null);
   const [loi, datLoi] = useState<string | null>(null);
@@ -80,6 +91,21 @@ export default function TrangSub() {
    * gộp chúng lại là mất chính cặp (nguồn, đích) mà phép chèn cần. */
   const [keo, datKeo] = useState<string | null>(null);
   const [tren, datTren] = useState<string | null>(null);
+
+  /** Các ô "Vị trí 1..4" ĐANG SỬA (slug, `""` = trống), hoặc `null` = chưa sửa gì — lúc ấy ô
+   * đọc thẳng từ `subs`. Không giữ bản sao ngay từ đầu: hai nguồn sự thật, và cái sai sẽ là
+   * cái đang hiện (cùng lý lẽ `KhoiMod`). */
+  const [o_trang_chu_sua, datOTrangChuSua] = useState<string[] | null>(null);
+  // Suy ra lúc render (không `useEffect` sửa state): slug không còn trong `subs` — vd vừa xoá
+  // sub đó, `nap()` làm mới danh sách — hiện thành ô trống, nên ô không kẹt một slug đã chết
+  // và "Lưu" không ăn 400 "slugs không tồn tại" mãi.
+  const o_trang_chu = (
+    o_trang_chu_sua ??
+    Array.from({ length: SO_VI_TRI_TRANG_CHU }, (_, i) => {
+      const x = subs?.find((s) => s.vi_tri_trang_chu === i + 1);
+      return x === undefined ? "" : x.slug;
+    })
+  ).map((slug) => (slug === "" || subs?.some((s) => s.slug === slug) ? slug : ""));
 
   const dong = useCallback(() => datDangMo(null), []);
   const dongMod = useCallback(() => datMoMod(null), []);
@@ -198,6 +224,19 @@ export default function TrangSub() {
     ghiThuTu(moi);
   };
 
+  /** Gửi các ô không trống theo thứ tự (ô trống giữa chừng dồn lên). Chỉ bỏ bản đang sửa
+   * khi server ĐÃ nhận: lỗi 400 thì giữ nguyên các ô để mod sửa tiếp, không mất lựa chọn. */
+  const luuTrangChu = () =>
+    chay(async () => {
+      const ket_qua = await quanTriDatTrangChuSub({
+        baseUrl: GOC_API,
+        headers: headerGhi(),
+        body: { slugs: o_trang_chu.filter((x) => x !== "") },
+      });
+      if (ket_qua.error === undefined) datOTrangChuSua(null);
+      return ket_qua;
+    });
+
   return (
     <>
       <TieuDeTrang
@@ -213,6 +252,67 @@ export default function TrangSub() {
         }
       />
       <HienLoi loi={loi_hanh_dong ?? loi} het_phien={het_phien} />
+
+      {subs !== null && (
+        <The
+          tieu_de={`Chuyên mục trên trang chủ (tối đa ${SO_VI_TRI_TRANG_CHU})`}
+          className="mb-4"
+        >
+          <form
+            className="space-y-3 px-4 pb-4 pt-3"
+            data-testid="khoi-trang-chu"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void luuTrangChu();
+            }}
+          >
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {o_trang_chu.map((gia_tri, i) => (
+                <label key={i} className="block text-sm">
+                  <span className="mb-1 block text-muc-mo">Vị trí {i + 1}</span>
+                  <select
+                    className="o-nhap cursor-pointer"
+                    value={gia_tri}
+                    disabled={dang_chay}
+                    onChange={(e) => {
+                      const moi = [...o_trang_chu];
+                      moi[i] = e.target.value;
+                      datOTrangChuSua(moi);
+                    }}
+                    data-testid={`o-trang-chu-${i + 1}`}
+                  >
+                    <option value="">— trống —</option>
+                    {subs.map((s) => (
+                      <option
+                        key={s.slug}
+                        value={s.slug}
+                        // Đã chọn ở ô khác thì ô này không cho chọn nó (server cũng từ chối trùng).
+                        disabled={s.slug !== gia_tri && o_trang_chu.includes(s.slug)}
+                      >
+                        {s.ten} (s/{s.slug})
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="submit"
+                className="nut nut-chinh"
+                disabled={dang_chay}
+                data-testid="nut-luu-trang-chu"
+              >
+                Lưu
+              </button>
+              <p className="text-xs text-muc-mo">
+                <span className="mono">tin-tuc</span> đã có dải Bản tin riêng ở trang chủ. Ô
+                trống giữa chừng sẽ được dồn lên.
+              </p>
+            </div>
+          </form>
+        </The>
+      )}
 
       <The>
         {subs === null ? (
@@ -564,6 +664,11 @@ function DongSub({
         <Link href={`/machs?sub=${s.slug}`} className="text-nhan hover:underline">
           s/{s.slug}
         </Link>
+        {s.vi_tri_trang_chu !== null && (
+          <div className="mt-1" data-testid={`nhan-trang-chu-${s.slug}`}>
+            <NhanTrangThai>Trang chủ #{s.vi_tri_trang_chu}</NhanTrangThai>
+          </div>
+        )}
       </td>
       <td className="px-3 py-2.5">{s.ten}</td>
       <td className="max-w-md px-3 py-2.5 text-muc-mo">{s.mo_ta || "—"}</td>

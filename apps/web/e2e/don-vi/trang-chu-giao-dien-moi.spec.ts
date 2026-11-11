@@ -21,13 +21,7 @@ import {
   lenhTuForm,
 } from "../../lib/lenh-form";
 import { nenMoNganKeo, type CuBamLoiVao } from "../../lib/loi-vao-nhat-ky";
-import {
-  NHOM_BAI_VIET,
-  SO_BAI_MOI_NHOM,
-  chiaNhomBaiViet,
-  chonBanTin,
-  slugChipChuyenMuc,
-} from "../../lib/nhom-bai-viet";
+import { chonBanTin } from "../../lib/nhom-bai-viet";
 
 /** Hàm THUẦN của trang chủ giao diện mới (plan `2026-11-11-homepage-v2-giao-dien-moi.md`).
  * Không mạng, không DB, không cổng — chạy được song song với bất cứ thứ gì (`pnpm e2e:don-vi`).
@@ -243,42 +237,6 @@ function bai(id: number, sub: string): MachTomTatOut {
   return { id, sub: { slug: sub, ten: sub }, title: `Bài ${id}` } as MachTomTatOut;
 }
 
-test("ba nhóm theo hằng cấu hình: sub nào vào cột nào, tin-tuc KHÔNG vào cột", () => {
-  expect(NHOM_BAI_VIET.map((n) => n.subs)).toEqual([
-    ["hoi-dap", "chung-khoan"],
-    ["vi-mo", "crypto"],
-    ["quan-tri-von", "tam-ly-giao-dich"],
-  ]);
-  expect(NHOM_BAI_VIET.flatMap((n) => n.subs)).not.toContain("tin-tuc");
-  expect(SO_BAI_MOI_NHOM).toBe(3);
-});
-
-test("chia nhóm: mỗi cột tối đa 3 bài ĐẦU (mới nhất) của sub thuộc nhóm; giữ thứ tự feed", () => {
-  const items = [
-    bai(1, "chung-khoan"),
-    bai(2, "tin-tuc"),
-    bai(3, "hoi-dap"),
-    bai(4, "vi-mo"),
-    bai(5, "chung-khoan"),
-    bai(6, "chung-khoan"), // bài thứ 4 của nhóm 1 ⇒ rớt
-    bai(7, "crypto"),
-    bai(8, "sub-la"), // sub ngoài mọi nhóm ⇒ không vào cột nào
-  ];
-  const cot = chiaNhomBaiViet(items);
-  expect(cot.map((c) => c.baiViet.map((m) => m.id))).toEqual([
-    [1, 3, 5],
-    [4, 7],
-  ]);
-  // Nhóm 3 rỗng ⇒ bị bỏ (ẩn cột), không phải cột rỗng.
-  expect(cot).toHaveLength(2);
-  expect(cot.map((c) => c.xemThem)).toEqual(["hoi-dap", "vi-mo"]);
-});
-
-test("chia nhóm: không bài nào thuộc nhóm ⇒ không cột (section có thể ẩn hẳn)", () => {
-  expect(chiaNhomBaiViet([bai(1, "tin-tuc")])).toEqual([]);
-  expect(chiaNhomBaiViet([])).toEqual([]);
-});
-
 test("bản tin: chỉ bài của tin-tuc, mới nhất trước, tối đa 3", () => {
   const items = [
     bai(1, "tin-tuc"),
@@ -290,17 +248,6 @@ test("bản tin: chỉ bài của tin-tuc, mới nhất trước, tối đa 3", 
   expect(chonBanTin(items).map((m) => m.id)).toEqual([1, 3, 4]);
   expect(chonBanTin(items, 2).map((m) => m.id)).toEqual([1, 3]);
   expect(chonBanTin([bai(9, "vi-mo")])).toEqual([]);
-});
-
-test("chip chuyên mục: mọi sub của các nhóm theo thứ tự khai, không trùng, không có tin-tuc", () => {
-  expect(slugChipChuyenMuc()).toEqual([
-    "hoi-dap",
-    "chung-khoan",
-    "vi-mo",
-    "crypto",
-    "quan-tri-von",
-    "tam-ly-giao-dich",
-  ]);
 });
 
 /* ---------------------------------------------------------------- chân khối nhật ký -- */

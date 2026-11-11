@@ -25,6 +25,7 @@ from ninja import Router, Status
 
 from core.ghi import (
     AUDIT_DAT_THU_TU_SUB,
+    AUDIT_DAT_TRANG_CHU_SUB,
     AUDIT_GAN_MOD_SUB,
     AUDIT_GO_MOD_SUB,
     AUDIT_SUA_SUB,
@@ -39,6 +40,7 @@ from core.tim_kiem import dong_bo_theo_sub
 
 from api.loi import THAM_SO_KHONG_HOP_LE, XUNG_DOT, LoiOut, khong_tim_thay, loi
 from api.quan_tri_schemas import (
+    DatTrangChuSubIn,
     GanModSubIn,
     KetQuaXoaSubOut,
     SapXepSubIn,
@@ -57,7 +59,11 @@ DAI_SLUG_TOI_DA = 40
 
 #: Segment path tĩnh dưới `/subs/…` — tạo sub cùng slug thì `PATCH`/`DELETE /subs/{slug}`
 #: bị route tĩnh nuốt (405 text thô). Bổ sung khi thêm path tĩnh mới cùng namespace.
-SLUG_CAM = frozenset({"thu-tu"})
+SLUG_CAM = frozenset({"thu-tu", "trang-chu"})
+
+#: Số cột tối đa của giá sách trang chủ. Khớp `CheckConstraint` `sub_vi_tri_trang_chu_1_den_4`
+#: trên `Sub` — DB là chỗ ép thật, hằng này để trả 400 đọc được trước khi chạm DB.
+SO_SUB_TRANG_CHU_TOI_DA = 4
 
 
 def _co_so_mach():
@@ -85,6 +91,7 @@ def _ra(sub: Sub) -> SubQuanTriOut:
         created_at=sub.created_at,
         so_mach=getattr(sub, "_so_mach", 0),
         thu_tu=sub.thu_tu,
+        vi_tri_trang_chu=sub.vi_tri_trang_chu,
         # Sắp theo username để hai lượt gọi liên tiếp không đổi thứ tự cột trên bảng.
         # `sorted` trong Python chứ không `order_by`: `prefetch_related` đã nạp sẵn,
         # thêm `order_by` ở đây là ném bộ nhớ đệm đi và bắn lại một truy vấn mỗi hàng.
@@ -243,6 +250,102 @@ def dat_thu_tu_sub(request, du_lieu: SapXepSubIn):
             target_id=None,
             slugs=gui,
         )
+
+    return [_ra(s) for s in _co_so_mach().order_by("thu_tu", "slug")]
+
+
+# ⚠ Route TĨNH `/subs/trang-chu` — cùng lý do và cùng chỗ đứng với `/subs/thu-tu` ở trên:
+# khai TRƯỚC mọi `/subs/{slug}`, và `"trang-chu"` nằm trong `SLUG_CAM`.
+@router.put(
+    "/subs/trang-chu",
+    response={
+        200: list[SubQuanTriOut],
+        400: LoiOut,
+        401: LoiOut,
+        403: LoiOut,
+        409: LoiOut,
+    },
+    operation_id="quan_tri_dat_trang_chu_sub",
+    tags=["quan-tri-sub"],
+)
+def dat_trang_chu_sub(request, du_lieu: DatTrangChuSubIn):
+    """Chọn chuyên mục lên giá sách trang chủ — `slugs[0]` → vị trí 1, … Trả cả bảng sub.
+
+    `slugs` là **toàn bộ** danh sách (0..4 phần tử, rỗng = gỡ hết). >4, trùng, hoặc slug
+    không tồn tại ⇒ 400 và không ghi gì. Không đổi gì so với hiện tại ⇒ 200, không ghi
+    `AuditLog` (luật `da_doi`, xem `core/ghi.py`).
+
+    Hai bước ghi: mọi hàng đang có vị trí về `NULL` TRƯỚC, rồi mới gán `1..n`. Gán thẳng
+    sẽ vỡ `UNIQUE (vi_tri_trang_chu)` giữa chừng khi hoán đổi hai sub (Postgres kiểm
+    unique không-hoãn theo từng hàng, không phải cuối câu lệnh).
+
+    **Khoá**: `select_for_update` CẢ bảng `Sub` theo `pk` — không theo thứ tự payload, cùng
+    lý lẽ `dat_thu_tu_sub` — rồi mới đọc trạng thái hiện tại. Không khoá một phần: tập hàng
+    sẽ bị ghi (mọi hàng đang giữ vị trí, kể cả do lượt khác chưa commit) chỉ biết được SAU
+    khi đã khoá. Bảng `Sub` không nằm trong chuỗi `Comment/Moc → Mach → MocAnh` và không
+    đường nào khoá `Sub` rồi mới xin các bảng đó, nên không sinh cạnh khoá mới.
+
+    409 `xung_dot` nếu vẫn vỡ ràng buộc DB (lưới an toàn, không phải đường chính).
+    """
+    gui = du_lieu.slugs
+    if len(gui) > SO_SUB_TRANG_CHU_TOI_DA:
+        return loi(
+            400,
+            THAM_SO_KHONG_HOP_LE,
+            f"Tối đa {SO_SUB_TRANG_CHU_TOI_DA} chuyên mục lên trang chủ — nhận {len(gui)}.",
+        )
+    if len(set(gui)) != len(gui):
+        trung = sorted({s for s in gui if gui.count(s) > 1})
+        return loi(400, THAM_SO_KHONG_HOP_LE, f"slugs lặp: {', '.join(trung)}.")
+
+    try:
+        with transaction.atomic():
+            # Khoá CẢ bảng theo `pk` (như `dat_thu_tu_sub`), rồi MỚI đọc `truoc` từ các hàng
+            # vừa khoá. Khoá một phần (hàng đang có vị trí + hàng trong payload) hở: lượt
+            # khác đang giữ [x, y] chưa commit thì hàng x, y chưa có vị trí trong ảnh chụp
+            # của ta ⇒ ta không khoá chúng, không thấy chúng, rồi gán vị trí 1 trùng với x
+            # (IntegrityError ⇒ 500) hoặc coi "đã rỗng" mà không gỡ gì. Bảng vài chục hàng
+            # nên khoá trọn là rẻ.
+            dang_co = list(Sub.objects.select_for_update().order_by("pk"))
+            theo_slug = {s.slug: s for s in dang_co}
+            khong_co = sorted(set(gui) - set(theo_slug))
+            if khong_co:
+                return loi(
+                    400,
+                    THAM_SO_KHONG_HOP_LE,
+                    f"slugs không tồn tại: {', '.join(khong_co)}.",
+                )
+
+            truoc = [
+                s.slug
+                for s in sorted(
+                    (s for s in dang_co if s.vi_tri_trang_chu is not None),
+                    key=lambda s: s.vi_tri_trang_chu,
+                )
+            ]
+            if truoc != gui:
+                Sub.objects.filter(
+                    pk__in=[s.pk for s in dang_co if s.vi_tri_trang_chu is not None]
+                ).update(vi_tri_trang_chu=None)
+                moi = []
+                for vi_tri, slug in enumerate(gui, start=1):
+                    theo_slug[slug].vi_tri_trang_chu = vi_tri
+                    moi.append(theo_slug[slug])
+                Sub.objects.bulk_update(moi, ["vi_tri_trang_chu"])
+                # MỘT dòng cho cả lượt đặt — xem `core/ghi.py::AUDIT_DAT_TRANG_CHU_SUB`.
+                ghi_audit(
+                    actor=request.user,
+                    action=AUDIT_DAT_TRANG_CHU_SUB,
+                    target_type=DICH_SUB,
+                    target_id=None,
+                    truoc=truoc,
+                    sau=gui,
+                )
+    except IntegrityError:
+        # Lưới an toàn: hàng rào thật là khoá bảng ở trên; nếu một đường ghi nào khác vẫn làm
+        # vỡ UNIQUE/CHECK thì trả 409 đọc được thay vì 500. `XUNG_DOT` là mã xung đột sẵn có
+        # của repo (`api/loi.py`).
+        return loi(409, XUNG_DOT, "Giá sách trang chủ vừa bị người khác đổi — tải lại rồi lưu lại.")
 
     return [_ra(s) for s in _co_so_mach().order_by("thu_tu", "slug")]
 

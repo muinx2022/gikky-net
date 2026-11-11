@@ -19,7 +19,7 @@ def test_tra_du_truong_cua_header(client, seed):
     # do không liên quan — đúng chuyện vừa xảy ra khi bộ chuyên mục nở từ 2 lên 10.
     mau = next(s for s in SUBS if s["slug"] == "chung-khoan")
     d = lay(client, "/api/v1/subs/chung-khoan")
-    assert set(d) == {"slug", "ten", "mo_ta", "so_mach", "created_at"}
+    assert set(d) == {"slug", "ten", "mo_ta", "so_mach", "created_at", "vi_tri_trang_chu"}
     assert d["ten"] == mau["ten"]
     assert d["mo_ta"] == mau["mo_ta"]
     assert d["so_mach"] == Mach.objects.filter(sub__slug="chung-khoan").count()
@@ -104,7 +104,7 @@ def test_liet_ke_tra_dung_bo_truong_cua_header(client, seed):
     d = lay(client, "/api/v1/subs")
     assert d, "seed phải có sub"
     for s in d:
-        assert set(s) == {"slug", "ten", "mo_ta", "so_mach", "created_at"}
+        assert set(s) == {"slug", "ten", "mo_ta", "so_mach", "created_at", "vi_tri_trang_chu"}
 
 
 def test_liet_ke_va_xem_sub_noi_CUNG_mot_con_so(client, seed, tac_gia):

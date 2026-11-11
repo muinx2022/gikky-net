@@ -54,11 +54,28 @@ class Sub(models.Model):
     #: thì thứ tự của nhóm ấy là thứ tự tuỳ ý của Postgres — tức sidebar đổi chỗ giữa hai
     #: lần tải mà không ai đổi gì.
     thu_tu = models.PositiveIntegerField(default=0)
+    #: Vị trí trên giá sách của khối "Bài viết" ở trang chủ
+    #: (`plans/2026-11-11-bai-viet-trang-chu-gia-sach.md`). `NULL` = không lên trang chủ;
+    #: `1..4` = cột thứ mấy. **"Tối đa 4" do DB ép**, không chỉ form: `CHECK` giữ dải 1..4
+    #: và `UNIQUE` giữ mỗi vị trí một sub — Postgres coi các `NULL` là khác nhau nên nhiều
+    #: sub không lên trang chủ vẫn hợp lệ. Đổi chỗ phải đi qua `PUT /admin/subs/trang-chu`
+    #: (đặt mọi hàng về `NULL` trước rồi gán lại) vì hai phép gán lẻ giẫm unique giữa chừng.
+    vi_tri_trang_chu = models.PositiveSmallIntegerField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now, editable=False)
 
     class Meta:
         verbose_name = "sub"
         verbose_name_plural = "subs"
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(vi_tri_trang_chu__isnull=True)
+                | models.Q(vi_tri_trang_chu__gte=1, vi_tri_trang_chu__lte=4),
+                name="sub_vi_tri_trang_chu_1_den_4",
+            ),
+            models.UniqueConstraint(
+                fields=["vi_tri_trang_chu"], name="sub_vi_tri_trang_chu_duy_nhat"
+            ),
+        ]
 
     def __str__(self) -> str:
         return f"s/{self.slug}"

@@ -215,6 +215,7 @@ def liet_ke_sub_toi_lam_mod(request, response: HttpResponse):
             mo_ta=s.mo_ta,
             so_mach=s.so_mach_hien,
             created_at=s.created_at,
+            vi_tri_trang_chu=s.vi_tri_trang_chu,
         )
         for s in subs_kem_so_mach().filter(slug__in=slug_cua_toi).order_by("slug")
     ]

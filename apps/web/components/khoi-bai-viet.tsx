@@ -1,30 +1,32 @@
+import type { CSSProperties } from "react";
+
 import type { MachTomTatOut, SubChiTietOut } from "@gikky/api-client";
 import Link from "next/link";
 
 import { CHU_NGUOI_DUNG } from "@/lib/chu-nguoi-dung";
 import { ngayNganCuaThoiDiem } from "@/lib/dinh-dang";
 import {
-  chiaNhomBaiViet,
   chonBanTin,
-  slugChipChuyenMuc,
+  chonMoiDang,
+  dungGiaSach,
+  idDaHien,
+  subLenTrangChu,
   SUB_BAN_TIN,
+  type GiaSachTho,
 } from "@/lib/nhom-bai-viet";
 import { duongDanMach, duongDanSub } from "@/lib/url";
 
 import css from "./khoi-bai-viet.module.css";
 
-/** Một mục đánh số của cột. Trích 2 dòng là `xem_truoc.trich` (chữ thuần server đã cắt); CSS
- * kẹp. */
-function MucBaiViet({ mach, so }: { mach: MachTomTatOut; so: number }) {
+/** Một bài của dải "Mới đăng": tiêu đề + trích 2 dòng (`xem_truoc.trich`, chữ thuần server đã
+ * cắt; CSS kẹp) + chip TÊN chuyên mục + ngày, thumbnail bên phải. */
+function MucBaiViet({ mach, tenSub }: { mach: MachTomTatOut; tenSub: string }) {
   const href = duongDanMach(mach.slug, mach.id);
   const anh = mach.xem_truoc?.anh ?? null;
   const trich = mach.xem_truoc?.trich ?? "";
   return (
     <li className={css.muc_goc}>
-      <article className={css.muc} data-testid="bai-viet-muc" data-mach-id={mach.id}>
-        <span className={css.so} aria-hidden="true">
-          {String(so).padStart(2, "0")}
-        </span>
+      <article className={css.muc} data-testid="bai-viet-moi-dang-muc" data-mach-id={mach.id}>
         <div className={css.than}>
           <h4 className={css.tieu_de}>
             <Link href={href} prefetch={false} {...CHU_NGUOI_DUNG}>
@@ -38,7 +40,7 @@ function MucBaiViet({ mach, so }: { mach: MachTomTatOut; so: number }) {
           )}
           <div className={css.meta}>
             <span className={css.nhan} {...CHU_NGUOI_DUNG}>
-              s/{mach.sub.slug}
+              {tenSub}
             </span>
             <time dateTime={mach.published_at}>{ngayNganCuaThoiDiem(mach.published_at)}</time>
           </div>
@@ -71,36 +73,59 @@ function MucBaiViet({ mach, so }: { mach: MachTomTatOut; so: number }) {
   );
 }
 
-/** Section "Bài viết" của trang chủ — kiểu THƯ VIỆN kiến thức, nằm CUỐI trang và trải hết chiều
- * ngang (ra ngoài khung hai cột, dưới cả rail) *(plan `2026-11-11-homepage-v2-giao-dien-moi.md`
- * §3.3; user: "phần bài viết cũng cần vì dính SEO… nhưng nhìn giống các trang tin quá")*.
+/** Một bài trên giá sách: CHỈ tiêu đề + ngày (không ảnh, không trích). */
+function MucGia({ mach }: { mach: MachTomTatOut }) {
+  return (
+    <li className={css.gia_muc_goc}>
+      <article className={css.gia_muc} data-testid="bai-viet-gia-muc" data-mach-id={mach.id}>
+        <h4 className={css.gia_tieu_de}>
+          <Link href={duongDanMach(mach.slug, mach.id)} prefetch={false} {...CHU_NGUOI_DUNG}>
+            {mach.title}
+          </Link>
+        </h4>
+        <time className={css.gia_ngay} dateTime={mach.published_at}>
+          {ngayNganCuaThoiDiem(mach.published_at)}
+        </time>
+      </article>
+    </li>
+  );
+}
+
+/** Section "Bài viết" của trang chủ, nằm CUỐI trang và trải hết chiều ngang (ra ngoài khung hai
+ * cột, dưới cả rail) *(plan `2026-11-11-bai-viet-trang-chu-gia-sach.md`)*. Từ trên xuống:
  *
- * `bai_viet` là MỘT lời gọi `docFeed("moi", { limit: 50, loai_mach: "bai_viet" })`; việc chia
- * cột là của `lib/nhom-bai-viet.ts` (hàm thuần, nhóm là hằng cấu hình): ba cột theo nhóm chuyên
- * mục, mỗi cột tối đa `SO_BAI_MOI_NHOM` bài đánh số, rồi dải "Bản tin thị trường" gồm bài mới
- * nhất của `s/tin-tuc`. **Nhóm rỗng ⇒ ẩn cột; không còn gì để bày ⇒ ẩn cả section** (không
- * khung rỗng).
+ * 1. Header + chip: chip là các chuyên mục admin đã chọn lên trang chủ (`vi_tri_trang_chu`).
+ * 2. **Mới đăng**: `SO_MOI_DANG` bài `bai_viet` mới nhất của MỌI chuyên mục trừ `tin-tuc`, kèm
+ *    thumbnail + chip tên chuyên mục — nên chuyên mục không được chọn vẫn lên trang chủ.
+ * 3. **Giá sách**: mỗi chuyên mục được chọn là một cột (tiêu đề = `sub.ten`), `SO_BAI_MOI_GIA`
+ *    bài chỉ tiêu đề + ngày, KHÔNG trùng bài đã ở Mới đăng. `gia` do trang chủ tải riêng từng
+ *    sub (`docFeedSub`) nên sub đăng chậm vẫn có bài. Cột rỗng ⇒ ẩn.
+ * 4. Dải "Bản tin thị trường": bài mới nhất của `s/tin-tuc`.
  *
- * Mọi bài là `<article>` có `<a href>` thật ở tiêu đề (heading), ngày trong `<time datetime>`.
- * Chip chuyên mục lấy NHÃN từ `GET /subs` (`cac_sub`) — web không giữ bản sao tên chuyên mục;
- * chuyên mục chưa tồn tại thì không có chip. HTML như nhau cho mọi UA.
+ * Việc chọn bài là của `lib/nhom-bai-viet.ts` (hàm thuần). **Cả ba phần rỗng ⇒ ẩn cả section**
+ * (không khung rỗng). Mọi bài là `<article>` có `<a href>` thật ở tiêu đề (heading), ngày trong
+ * `<time datetime>`. Web không giữ bản sao tên hay slug chuyên mục nào ngoài `tin-tuc`. HTML như
+ * nhau cho mọi UA.
  *
  * Gallery lật ảnh kiểu Reddit của homepage v2 bản đầu (`gallery-bai-viet.tsx`) không còn được
- * dùng ở đây: thư viện chỉ có MỘT thumbnail nhỏ mỗi bài. */
+ * dùng ở đây: dải Mới đăng chỉ có MỘT thumbnail nhỏ mỗi bài. */
 export function KhoiBaiViet({
   bai_viet,
   cac_sub,
+  gia,
 }: {
   bai_viet: readonly MachTomTatOut[];
   cac_sub: readonly SubChiTietOut[];
+  gia: readonly GiaSachTho[];
 }) {
-  const cot = chiaNhomBaiViet(bai_viet);
+  const moi_dang = chonMoiDang(bai_viet);
   const ban_tin = chonBanTin(bai_viet);
-  if (cot.length === 0 && ban_tin.length === 0) return null;
+  const cot = dungGiaSach(gia, idDaHien(moi_dang, ban_tin));
+  if (moi_dang.length === 0 && cot.length === 0 && ban_tin.length === 0) return null;
 
   const hrefTatCa = "/?tab=moi&loai_mach=bai_viet";
   const ten_sub = new Map(cac_sub.map((s) => [s.slug, s.ten]));
-  const chip = slugChipChuyenMuc().filter((slug) => ten_sub.has(slug));
+  const chip = subLenTrangChu(cac_sub);
 
   return (
     <section className={css.khoi} data-testid="khoi-bai-viet" aria-labelledby="tieu-khoi-bai-viet">
@@ -115,15 +140,15 @@ export function KhoiBaiViet({
             </p>
           </div>
           <nav className={css.chips} aria-label="Chuyên mục bài viết" data-testid="bai-viet-chips">
-            {chip.map((slug) => (
+            {chip.map((s) => (
               <Link
-                key={slug}
+                key={s.slug}
                 className={css.chip}
-                href={duongDanSub(slug)}
+                href={duongDanSub(s.slug)}
                 prefetch={false}
-                data-testid={`bai-viet-chip-${slug}`}
+                data-testid={`bai-viet-chip-${s.slug}`}
               >
-                {ten_sub.get(slug)}
+                {s.ten}
               </Link>
             ))}
             <Link
@@ -137,24 +162,53 @@ export function KhoiBaiViet({
           </nav>
         </header>
 
+        {moi_dang.length > 0 && (
+          <div className={css.moi_dang} data-testid="bai-viet-moi-dang">
+            <div className={css.lib_t}>
+              <h3 className={css.ten_nhom}>Mới đăng</h3>
+            </div>
+            <ol className={css.ds_moi_dang}>
+              {moi_dang.map((m) => (
+                <MucBaiViet
+                  key={m.id}
+                  mach={m}
+                  tenSub={ten_sub.get(m.sub.slug) ?? `s/${m.sub.slug}`}
+                />
+              ))}
+            </ol>
+          </div>
+        )}
+
         {cot.length > 0 && (
-          <div className={css.luoi}>
+          <div
+            className={css.gia_luoi}
+            // Số cột = số giá còn bài (≤ 4): giá ít hơn 4 thì chia đều chiều ngang, không chừa
+            // ô trống. Biến CSS để media query ở tablet/mobile ghi đè được (style inline thì không).
+            style={{ "--so-gia": cot.length } as CSSProperties}
+          >
             {cot.map((c) => (
-              <div key={c.khoa} className={css.cot} data-testid="bai-viet-nhom" data-nhom={c.khoa}>
+              <div
+                key={c.sub.slug}
+                className={css.cot}
+                data-testid="bai-viet-gia"
+                data-sub={c.sub.slug}
+              >
                 <div className={css.lib_t}>
-                  <h3 className={css.ten_nhom}>{c.ten}</h3>
+                  <h3 className={css.ten_nhom} {...CHU_NGUOI_DUNG}>
+                    {c.sub.ten}
+                  </h3>
                   <Link
                     className={css.xem_them}
-                    href={duongDanSub(c.xemThem)}
+                    href={duongDanSub(c.sub.slug)}
                     prefetch={false}
-                    data-testid="bai-viet-nhom-xem-them"
+                    data-testid="bai-viet-gia-xem-them"
                   >
                     Xem thêm →
                   </Link>
                 </div>
-                <ol className={css.ds}>
-                  {c.baiViet.map((m, i) => (
-                    <MucBaiViet key={m.id} mach={m} so={i + 1} />
+                <ol className={css.gia_ds}>
+                  {c.baiViet.map((m) => (
+                    <MucGia key={m.id} mach={m} />
                   ))}
                 </ol>
               </div>

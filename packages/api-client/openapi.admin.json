@@ -620,6 +620,23 @@
         "title": "DatMatKhauIn",
         "type": "object"
       },
+      "DatTrangChuSubIn": {
+        "description": "Body của `PUT /admin/subs/trang-chu` — **toàn bộ** danh sách sub lên giá sách.\n\nPhần tử 0 → vị trí 1, … Dài 0..4 (rỗng = gỡ hết), không trùng, mỗi slug phải tồn tại;\nvi phạm ⇒ 400 và không ghi gì. Cùng triết lý `SapXepSubIn`: ghi cả cột, không có phép\ndời lẻ — hai lượt dời gửi gần nhau sẽ suy trên hai ảnh chụp khác nhau của cùng bảng.\nKhác `SapXepSubIn` ở chỗ danh sách này là TẬP CON của bảng, không phải hoán vị.",
+        "properties": {
+          "slugs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Slugs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "slugs"
+        ],
+        "title": "DatTrangChuSubIn",
+        "type": "object"
+      },
       "DemTheoNgayOut": {
         "description": "Một ô của biểu đồ 30 ngày. `ngay` là **ngày lịch Việt Nam**, không phải UTC.",
         "properties": {
@@ -2534,6 +2551,17 @@
           "thu_tu": {
             "title": "Thu Tu",
             "type": "integer"
+          },
+          "vi_tri_trang_chu": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vi Tri Trang Chu"
           }
         },
         "required": [
@@ -2543,7 +2571,8 @@
           "created_at",
           "so_mach",
           "mods",
-          "thu_tu"
+          "thu_tu",
+          "vi_tri_trang_chu"
         ],
         "title": "SubQuanTriOut",
         "type": "object"
@@ -5648,6 +5677,88 @@
           }
         ],
         "summary": "Dat Thu Tu Sub",
+        "tags": [
+          "quan-tri-sub"
+        ]
+      }
+    },
+    "/api/admin/subs/trang-chu": {
+      "put": {
+        "description": "Chọn chuyên mục lên giá sách trang chủ — `slugs[0]` → vị trí 1, … Trả cả bảng sub.\n\n`slugs` là **toàn bộ** danh sách (0..4 phần tử, rỗng = gỡ hết). >4, trùng, hoặc slug\nkhông tồn tại ⇒ 400 và không ghi gì. Không đổi gì so với hiện tại ⇒ 200, không ghi\n`AuditLog` (luật `da_doi`, xem `core/ghi.py`).\n\nHai bước ghi: mọi hàng đang có vị trí về `NULL` TRƯỚC, rồi mới gán `1..n`. Gán thẳng\nsẽ vỡ `UNIQUE (vi_tri_trang_chu)` giữa chừng khi hoán đổi hai sub (Postgres kiểm\nunique không-hoãn theo từng hàng, không phải cuối câu lệnh).\n\n**Khoá**: `select_for_update` CẢ bảng `Sub` theo `pk` — không theo thứ tự payload, cùng\nlý lẽ `dat_thu_tu_sub` — rồi mới đọc trạng thái hiện tại. Không khoá một phần: tập hàng\nsẽ bị ghi (mọi hàng đang giữ vị trí, kể cả do lượt khác chưa commit) chỉ biết được SAU\nkhi đã khoá. Bảng `Sub` không nằm trong chuỗi `Comment/Moc → Mach → MocAnh` và không\nđường nào khoá `Sub` rồi mới xin các bảng đó, nên không sinh cạnh khoá mới.\n\n409 `xung_dot` nếu vẫn vỡ ràng buộc DB (lưới an toàn, không phải đường chính).",
+        "operationId": "quan_tri_dat_trang_chu_sub",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatTrangChuSubIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SubQuanTriOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Dat Trang Chu Sub",
         "tags": [
           "quan-tri-sub"
         ]

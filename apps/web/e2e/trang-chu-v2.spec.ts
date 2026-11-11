@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 import type { FeedOut, MachTomTatOut, SubChiTietOut } from "@gikky/api-client";
 import { expect, test, type Page } from "@playwright/test";
 
-import { donThuVien, dungThuVien } from "./thu-vien";
+import { SUB_GIA_SACH, donThuVien, dungThuVien } from "./thu-vien";
 
 /** Homepage v2 (plan `plans/2026-11-10-homepage-v2.md`) — chạy trên BẢN BUILD thật.
  *
@@ -287,8 +287,12 @@ test.describe("B — các khối của trang chủ v2", () => {
 
     const nhat_ky = await page.getByTestId("khoi-nhat-ky").getByTestId("the-mach").count();
     const chu_de = await page.getByTestId("khoi-thao-luan").getByTestId("chu-de-the").count();
-    const muc = await page.getByTestId("khoi-bai-viet").getByTestId("bai-viet-muc").count();
-    const cot = await page.getByTestId("khoi-bai-viet").getByTestId("bai-viet-nhom").count();
+    const moi_dang = await page
+      .getByTestId("khoi-bai-viet")
+      .getByTestId("bai-viet-moi-dang-muc")
+      .count();
+    const muc_gia = await page.getByTestId("khoi-bai-viet").getByTestId("bai-viet-gia-muc").count();
+    const cot = await page.getByTestId("khoi-bai-viet").getByTestId("bai-viet-gia").count();
     expect(nhat_ky).toBeGreaterThan(0);
     expect(nhat_ky).toBeLessThanOrEqual(8);
     // Số thẻ = min(8, số tác giả) — không phải min(8, số bài).
@@ -296,10 +300,14 @@ test.describe("B — các khối của trang chủ v2", () => {
     // Seed có 3 chủ đề nhưng trang chủ chỉ hiện MỘT (mới nhất) — bài đo không rỗng vì có 3.
     expect((await api<FeedOut>("/api/v1/feeds/moi?loai_mach=thao_luan&limit=50")).items.length).toBe(3);
     expect(chu_de, "chỉ MỘT chủ đề mới nhất").toBe(1);
-    // Giao diện mới: thư viện = 3 cột × tối đa 3 bài. `beforeAll` cấp file dựng 3+3+3 bài trong
-    // các sub nhóm ⇒ ĐÚNG 3 cột, mỗi cột đầy 3 (bài đo không rỗng).
-    expect(cot, "ba nhóm").toBe(3);
-    expect(muc, "3 cột × 3 bài").toBe(9);
+    // Khối Bài viết = dải Mới đăng (đúng 3) + giá sách (mỗi sub được chọn một cột, ≤ 3 bài).
+    // `beforeAll` cấp file đặt 3 sub lên giá sách và dựng đủ bài ⇒ ĐÚNG 3 cột (bài đo không rỗng);
+    // số bài từng cột phụ thuộc phần trùng với Mới đăng nên chỉ chặn hai đầu — con số chính xác
+    // được so với API ở bài B1 kế tiếp.
+    expect(moi_dang, "dải Mới đăng").toBe(3);
+    expect(cot, "ba giá sách").toBe(3);
+    expect(muc_gia).toBeGreaterThanOrEqual(3);
+    expect(muc_gia).toBeLessThanOrEqual(9);
   });
 
   test("B1 — mỗi khối mang ĐÚNG loại mạch của nó (khớp API)", async ({ page }) => {
@@ -313,27 +321,43 @@ test.describe("B — các khối của trang chủ v2", () => {
     // với API và vẫn là mảng ĐÚNG THỨ TỰ; chỉ nguồn kỳ vọng đổi.
     expect(await idsTrenTrang(page, "the-mach")).toEqual(await idsNhatKyMoiTacGia());
     expect(await idsTrenTrang(page, "chu-de-the")).toEqual(await ids("thao_luan", 1));
-    // Bài viết: thư viện chia 50 bài mới nhất theo NHÓM sub, mỗi cột 3 bài đầu. Kỳ vọng viết lại
-    // ĐỘC LẬP ở đây (không import `chiaNhomBaiViet`) từ chính feed API — mỗi cột ĐÚNG thứ tự feed.
+    // Bài viết: kỳ vọng viết lại ĐỘC LẬP ở đây (không import `lib/nhom-bai-viet`) từ chính API.
+    //  · Mới đăng = 3 bài đầu của `/feeds/moi` trừ tin-tuc, mọi sub;
+    //  · giá sách = mỗi sub có `vi_tri_trang_chu` (theo vị trí) một cột: 3 bài đầu của feed RIÊNG
+    //    sub ấy trừ bài đã ở Mới đăng; cột rỗng ẩn.
     const moi = await api<FeedOut>("/api/v1/feeds/moi?loai_mach=bai_viet&limit=50");
-    const nhom: ReadonlyArray<readonly string[]> = [
-      ["hoi-dap", "chung-khoan"],
-      ["vi-mo", "crypto"],
-      ["quan-tri-von", "tam-ly-giao-dich"],
-    ];
-    const mong = nhom.map((subs) =>
-      moi.items.filter((m) => subs.includes(m.sub.slug)).slice(0, 3).map((m) => m.id),
-    );
-    const co = await page
-      .getByTestId("bai-viet-nhom")
-      .evaluateAll((cols) =>
-        cols.map((c) =>
-          [...c.querySelectorAll('[data-testid="bai-viet-muc"]')].map((e) =>
-            Number((e as HTMLElement).dataset.machId),
-          ),
-        ),
+    const moi_dang_mong = moi.items.filter((m) => m.sub.slug !== "tin-tuc").slice(0, 3);
+    expect(
+      await page
+        .getByTestId("bai-viet-moi-dang-muc")
+        .evaluateAll((ls) => ls.map((l) => Number((l as HTMLElement).dataset.machId))),
+    ).toEqual(moi_dang_mong.map((m) => m.id));
+    const cac_sub = await api<SubChiTietOut[]>("/api/v1/subs");
+    const chon = cac_sub
+      .filter((s) => s.vi_tri_trang_chu !== null)
+      .sort((a, b) => a.vi_tri_trang_chu! - b.vi_tri_trang_chu!);
+    expect(chon.map((s) => s.slug), "seed tạm đặt ba sub lên giá sách").toEqual(SUB_GIA_SACH);
+    const da_hien = new Set(moi_dang_mong.map((m) => m.id));
+    const gia_mong: { slug: string; ids: number[] }[] = [];
+    for (const s of chon) {
+      const f = await api<FeedOut>(
+        `/api/v1/feeds/moi?sub=${s.slug}&loai_mach=bai_viet&limit=6`,
       );
-    expect(co).toEqual(mong);
+      const ids = f.items.filter((m) => !da_hien.has(m.id)).slice(0, 3).map((m) => m.id);
+      if (ids.length > 0) gia_mong.push({ slug: s.slug, ids });
+    }
+    const co = await page.getByTestId("bai-viet-gia").evaluateAll((cols) =>
+      cols.map((c) => ({
+        slug: (c as HTMLElement).dataset.sub!,
+        ids: [...c.querySelectorAll('[data-testid="bai-viet-gia-muc"]')].map((e) =>
+          Number((e as HTMLElement).dataset.machId),
+        ),
+      })),
+    );
+    expect(co).toEqual(gia_mong);
+    // Ca đo được "giá không trùng dải": giá quan-tri-von mất đúng bài mới nhất vào Mới đăng.
+    const tat_ca_gia = co.flatMap((c) => c.ids);
+    for (const id of da_hien) expect(tat_ca_gia, `bài ${id} trùng dải Mới đăng`).not.toContain(id);
     // Dải bản tin: 3 bài mới nhất của `tin-tuc`.
     expect(
       await page
@@ -786,7 +810,7 @@ test.describe.serial("O — tiêu đề dài liền nhau không làm trang cuộ
         "from core.ghi import tao_mach",
         "from core.models import Mach, Sub",
         `goc = Mach.objects.get(title__startswith=${JSON.stringify(TD_MO)})`,
-        // Bài viết dài phải vào một sub CỦA NHÓM thư viện (`hoi-dap`) thì mới hiện ở `/`
+        // Bài viết dài vào `hoi-dap` (một sub thật; bài mới nhất nên lên dải Mới đăng của `/`)
         // (sub `e2e-thu-nghiem` của chủ đề không thuộc nhóm nào); chủ đề thì ở sub của chủ đề.
         "for loai in (Mach.LoaiMach.THAO_LUAN, Mach.LoaiMach.BAI_VIET):",
         "    tao_mach(sub=goc.sub if loai == Mach.LoaiMach.THAO_LUAN else Sub.objects.get(slug='hoi-dap'),",

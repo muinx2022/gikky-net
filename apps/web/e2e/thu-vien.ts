@@ -1,34 +1,43 @@
 import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
 
-/** Dữ liệu TẠM cho section "Bài viết" kiểu thư viện của trang chủ (plan
- * `2026-11-11-homepage-v2-giao-dien-moi.md` §3.3), dùng chung cho `trang-chu-v2.spec.ts` và
+/** Dữ liệu TẠM cho khối "Bài viết" của trang chủ (plans `2026-11-11-homepage-v2-giao-dien-moi.md`
+ * §3.3 và `2026-11-11-bai-viet-trang-chu-gia-sach.md`), dùng chung cho `trang-chu-v2.spec.ts` và
  * `trang-chu-giao-dien-moi.spec.ts`.
  *
- * Section chia bài theo SUB của chúng (`lib/nhom-bai-viet.ts`), mà 43 bài viết của `seed_e2e`
- * đều nằm trong sub riêng `e2e-thu-nghiem` — sub ấy không thuộc nhóm nào ⇒ section ẩn hẳn và mọi
- * bài đo "thứ tự ba khối", "đếm link `/m/`" đo RỖNG. Gắn chúng vào sub thật của `seed_dev` thì
- * `seed_dev --reset` ăn `ProtectedError` (vá A3). Nên bài đo TỰ DỰNG vài bài viết MỚI NHẤT trong
- * các sub nhóm và XOÁ SẠCH sau (cùng khuôn nhóm U / O của `trang-chu-v2.spec.ts`): gọi
- * `donThuVien()` rồi `dungThuVien()` ở `beforeAll`, `donThuVien()` ở `afterAll` — dọn cả ở đầu
- * để một lần chạy trước bị ngắt giữa chừng không để lại rác.
+ * Khối gồm dải "Mới đăng" (mọi sub trừ tin-tuc) + "giá sách" (các sub admin chọn, `Sub.
+ * vi_tri_trang_chu`) + dải bản tin. 43 bài viết của `seed_e2e` đều nằm trong sub riêng
+ * `e2e-thu-nghiem` và không sub nào được chọn lên trang chủ ⇒ khối rỗng và mọi bài đo "thứ tự ba
+ * khối", "đếm link `/m/`" đo RỖNG. Gắn chúng vào sub thật của `seed_dev` thì `seed_dev --reset`
+ * ăn `ProtectedError` (vá A3). Nên bài đo TỰ DỰNG vài bài viết MỚI NHẤT trong các sub thật, ĐẶT
+ * `vi_tri_trang_chu` cho ba sub và XOÁ SẠCH sau (cùng khuôn nhóm U / O của `trang-chu-v2.spec.ts`):
+ * gọi `donThuVien()` rồi `dungThuVien()` ở `beforeAll`, `donThuVien()` ở `afterAll` — dọn cả ở
+ * đầu để một lần chạy trước bị ngắt giữa chừng không để lại rác.
  *
- * Phân bố: nhóm 1 = hoi-dap ×2 + chung-khoan ×1; nhóm 2 = vi-mo ×2 + crypto ×1; nhóm 3 =
- * quan-tri-von ×3; dải bản tin = tin-tuc ×3. Bài MỚI NHẤT của hoi-dap có một ảnh gallery thật
- * (đo nhánh `<img>`); các bài còn lại không ảnh (đo ô thay thế). */
+ * Phân bố (tạo theo thứ tự này, cũ → mới): hoi-dap ×3, vi-mo ×3, quan-tri-von ×3, chung-khoan ×1,
+ * crypto ×1, tin-tuc ×3. Giá sách = hoi-dap #1, vi-mo #2, quan-tri-von #3; **chung-khoan và
+ * crypto KHÔNG được chọn** nhưng bài của chúng là hai trong ba bài mới nhất ⇒ lên dải Mới đăng
+ * (đo "sub không chọn vẫn lên trang chủ"); bài mới nhất của quan-tri-von cũng ở Mới đăng ⇒ giá
+ * quan-tri-von chỉ còn 2 bài (đo "giá không trùng dải"). Bài của chung-khoan có một ảnh gallery
+ * thật (đo nhánh `<img>`, nằm trong Mới đăng); các bài còn lại không ảnh (đo ô thay thế).
+ *
+ * `donThuVien` đặt `vi_tri_trang_chu = NULL` cho ba sub trên: DB e2e không có vị trí nào khác. */
 
 const GOC = resolve(__dirname, "..", "..", "..");
 
 export const TIEN_TO_THU_VIEN = "Thư viện e2e —";
 
 export const BAI_THU_VIEN: ReadonlyArray<readonly [string, number]> = [
-  ["hoi-dap", 2],
-  ["chung-khoan", 1],
-  ["vi-mo", 2],
-  ["crypto", 1],
+  ["hoi-dap", 3],
+  ["vi-mo", 3],
   ["quan-tri-von", 3],
+  ["chung-khoan", 1],
+  ["crypto", 1],
   ["tin-tuc", 3],
 ];
+
+/** Sub được đặt lên giá sách, theo vị trí 1..3. */
+export const SUB_GIA_SACH: readonly string[] = ["hoi-dap", "vi-mo", "quan-tri-von"];
 
 /** Chạy một đoạn Python trong Django shell của `gikky_e2e` (DATABASE_URL kế thừa từ lệnh chạy
  * e2e — KHÔNG đặt ở đây), trả stdout. */
@@ -43,10 +52,11 @@ export function donThuVien(): void {
   py(
     [
       "from core.ghi import xoa_anh_moc",
-      "from core.models import Mach, MocAnh",
+      "from core.models import Mach, MocAnh, Sub",
       `loc = Mach.objects.filter(title__startswith=${JSON.stringify(TIEN_TO_THU_VIEN)})`,
       "for a in MocAnh.objects.filter(moc__mach__in=loc): xoa_anh_moc(anh=a)",
       "loc.delete()",
+      `Sub.objects.filter(slug__in=${JSON.stringify(SUB_GIA_SACH)}).update(vi_tri_trang_chu=None)`,
       "",
     ].join("\n"),
   );
@@ -67,8 +77,12 @@ export function dungThuVien(): void {
       `            title=${JSON.stringify(TIEN_TO_THU_VIEN + " ")} + slug + ' ' + str(i + 1),`,
       "            body='Nội dung thư viện của bộ e2e, đủ dài để có đoạn trích hai dòng.',",
       "            occurred_at=None, loai=None)",
-      "        if slug == 'hoi-dap' and i == so - 1:",
+      "        if slug == 'chung-khoan' and i == so - 1:",
       "            them_anh_moc(moc=Moc.objects.get(mach=m, seq=1), anh=xu_ly_anh_tai_len(_png_seed(800, 600, 3)))",
+      // Đặt vị trí giá sách: về NULL hết trước rồi gán 1..n (UNIQUE không cho hai sub cùng vị trí).
+      `ds = ${JSON.stringify(SUB_GIA_SACH)}`,
+      "Sub.objects.filter(vi_tri_trang_chu__isnull=False).update(vi_tri_trang_chu=None)",
+      "for vt, slug in enumerate(ds, start=1): Sub.objects.filter(slug=slug).update(vi_tri_trang_chu=vt)",
       "",
     ].join("\n"),
   );

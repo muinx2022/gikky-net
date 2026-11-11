@@ -357,6 +357,9 @@ class SubChiTietOut(Schema):
     mo_ta: str
     so_mach: int
     created_at: datetime
+    #: Vị trí trên giá sách khối "Bài viết" ở trang chủ (2026-11-11): `None` = không lên
+    #: trang chủ, `1..4` = cột thứ mấy. Admin đặt ở `/subs`; web chỉ đọc.
+    vi_tri_trang_chu: int | None
 
 
 class FeedOut(Schema):

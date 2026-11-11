@@ -227,6 +227,13 @@ def bang_endpoint(dl: dict) -> list[tuple[str, str, str, BodyEndpoint]]:
                 )
             },
         ),
+        # Body tĩnh `[]` (gỡ hết): hợp lệ ở mọi thời điểm, không phụ thuộc slug nào còn sống.
+        (
+            "quan_tri_dat_trang_chu_sub",
+            "put",
+            "/api/admin/subs/trang-chu",
+            {"slugs": []},
+        ),
         (
             "quan_tri_gan_mod_sub",
             "post",

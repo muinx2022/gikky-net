@@ -11,6 +11,7 @@ import {
   docBinhLuanGoc,
   docCacSub,
   docFeed,
+  docFeedSub,
   docKhoang,
   docLoaiMach,
   docNhatKyMoiTacGia,
@@ -23,7 +24,7 @@ import {
 } from "@/lib/api";
 import { chonChuDeNoi } from "@/lib/chu-de";
 import { jsonLdWebSite } from "@/lib/json-ld";
-import { SO_BAI_VIET_TAI } from "@/lib/nhom-bai-viet";
+import { SO_BAI_TAI_MOI_GIA, SO_BAI_VIET_TAI, subLenTrangChu } from "@/lib/nhom-bai-viet";
 import { GIOI_THIEU, urlTuyetDoi } from "@/lib/site";
 
 // Xem ghi chú ở `app/m/[slugId]/page.tsx`: cơ chế cache của PLAN 8.4 là việc của Phase 3.
@@ -147,9 +148,14 @@ export default async function TrangChu({
  * - Chủ đề + quan điểm nổi bật: lời gọi bình luận cần `id` của chủ đề được chọn
  *   (`chonChuDeNoi`), nên nó nối đuôi lời gọi chủ đề BÊN TRONG một phần tử của `Promise.all`
  *   — vẫn song song với các lời gọi khác, không thêm một vòng chờ ở ngoài.
- * - Bài viết: MỘT lời gọi `SO_BAI_VIET_TAI` bài, chia nhóm ở web (`lib/nhom-bai-viet.ts`). */
+ * - Bài viết: MỘT lời gọi `SO_BAI_VIET_TAI` bài cho dải Mới đăng + bản tin (chọn ở web,
+ *   `lib/nhom-bai-viet.ts`), và MỖI giá sách một lời gọi riêng `docFeedSub` — sub nào lên giá
+ *   là dữ liệu (`vi_tri_trang_chu` trong `GET /subs`, admin đặt), nên các lời gọi ấy phải chờ
+ *   danh sách sub: chúng nối đuôi `docCacSub()` BÊN TRONG một phần tử của `Promise.all` (cùng
+ *   mẫu chủ đề + quan điểm). Gọi theo từng sub (không lọc từ cửa sổ 50 bài) để sub đăng chậm
+ *   vẫn có bài. `null` (404, sub vừa bị xoá) ⇒ giá rỗng ⇒ ẩn. */
 async function TrangChuMoi() {
-  const [nhat_ky, chu_de_va_quan_diem, bai_viet, cac_sub] = await Promise.all([
+  const [nhat_ky, chu_de_va_quan_diem, bai_viet, sub_va_gia] = await Promise.all([
     docNhatKyMoiTacGia(SO_NHAT_KY_TAI),
     docFeed("moi", { limit: SO_CHU_DE_TAI, loai_mach: "thao_luan" }).then(async (chu_de) => {
       const [chon] = chonChuDeNoi(chu_de.du_lieu.items);
@@ -159,8 +165,20 @@ async function TrangChuMoi() {
       };
     }),
     docFeed("moi", { limit: SO_BAI_VIET_TAI, loai_mach: "bai_viet" }),
-    docCacSub(),
+    docCacSub().then(async (cac_sub) => ({
+      cac_sub,
+      gia: await Promise.all(
+        subLenTrangChu(cac_sub).map(async (sub) => {
+          const trang = await docFeedSub(sub.slug, "moi", {
+            limit: SO_BAI_TAI_MOI_GIA,
+            loai_mach: "bai_viet",
+          });
+          return { sub, items: trang.du_lieu?.items ?? [] };
+        }),
+      ),
+    })),
   ]);
+  const { cac_sub, gia } = sub_va_gia;
 
   return (
     <>
@@ -187,7 +205,7 @@ async function TrangChuMoi() {
             bayGio={new Date()}
           />
         </VoKhungHaiCot>
-        <KhoiBaiViet bai_viet={bai_viet.du_lieu.items} cac_sub={cac_sub} />
+        <KhoiBaiViet bai_viet={bai_viet.du_lieu.items} cac_sub={cac_sub} gia={gia} />
       </div>
       <NutVeDauTrang />
     </>
