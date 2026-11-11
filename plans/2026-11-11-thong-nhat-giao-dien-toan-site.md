@@ -87,8 +87,15 @@ Nơi dùng: `/` (khối nhật ký), `/?…`, `/s/*`, cuộn vô hạn, hồ sơ
 **Bỏ nút Thẻ/Gọn** (`ChonKieuXem`, `lib/kieu-xem.ts`, script trong `layout.tsx`): thẻ mới đã là dạng gọn (ảnh nhỏ,
 trích 3 dòng), giữ nút là giữ hai bộ CSS cho một việc.
 
-**Ngày trên thẻ** (mục 2.4-11): thẻ in ngày đăng như cũ; khi `entry_count > 1` và `last_entry_at` khác ngày với
-`published_at` thì thêm "· nối mốc dd/mm". `MachTomTatOut` đã có `last_entry_at` — thợ kiểm, không thêm trường API.
+**Ngày trên thẻ** (mục 2.4-11): thẻ in ngày đăng như cũ; khi `entry_count > 1` và mốc mới nhất rơi vào ngày (giờ VN)
+SAU ngày đăng thì thêm "· nối mốc dd/mm". *(Sửa sau đợt B, 2026-11-11: nguồn là `moc_moi_nhat.created_at`, KHÔNG phải
+`last_entry_at` — `last_entry_at` đo cả mốc bị ẩn / bia mộ, in nó là lộ ngày của mốc người xem không đọc được. Chỉ in khi
+ngày mốc LỚN HƠN ngày đăng, vì `published_at` bị dời về sau khi mạch riêng tư chuyển công khai hoặc phát hành lại.)*
+
+**Quyết định bổ sung sau đợt B (2026-11-11):** giữ huy hiệu "+N ảnh" trên ảnh nhỏ; nút "Theo dõi" tác giả ở chân thẻ dùng
+kho chung theo username (`lib/kho-theo-user.ts`: mỗi tác giả một lời gọi, chỉ hỏi khi nút lọt khung nhìn), thẻ của chính
+chủ trang hồ sơ không có nút; testid con giữ bộ `the-nhat-ky-*` (đổi tên là việc riêng). **Còn mở:** watermark `gikky.net`
+trên ảnh nhỏ của thẻ (thẻ cũ có từ `b812cac`, thẻ mới không) — chờ user.
 
 ### 4.2 Một dải điều khiển cho mọi feed (`/?…` và `/s/*`)
 Ba hàng, từ trên xuống, URL không đổi:
@@ -166,7 +173,7 @@ A và E độc lập với B–D. B phải xong trước C và D. Không chạy 
 |---|---|
 | T1 | `/`, `/?tab=moi&loai_mach=nhat_ky`, `/s/<sub>`, `/u/<x>`, tìm kiếm: mọi thẻ cùng một component, cùng cấu trúc DOM (đo bằng tập testid con của thẻ). |
 | T2 | Từ home bấm "Đang mở" / "Đã đóng sổ": trang đích có hàng Trạng thái với đúng mục ấy mang `aria-current`. |
-| T3 | Mọi URL feed cũ trả **cùng tập `data-mach-id`, cùng thứ tự** như trước đợt B (đo trước/sau trên `gikky_e2e`); link `cursor` còn trong HTML; `<head>` của `/` và `/s/*` không đổi byte. |
+| T3 | Mọi URL feed cũ trả **cùng tập `data-mach-id`, cùng thứ tự** như trước đợt B (đo trước/sau trên `gikky_e2e`); link `cursor` còn trong HTML; `<title>`, meta, canonical, JSON-LD của `/` và `/s/*` không đổi byte (script inline của nút Thẻ/Gọn bị gỡ khỏi `<head>` là thay đổi duy nhất được phép — mục 4.1). |
 | T4 | `/s/<sub>`: mô tả và dòng số mạch mỗi thứ xuất hiện đúng một lần trên trang. |
 | T5 | Khối chủ đề: không còn `▲ 0`; hai nút có `href` khác nhau, nút "Viết" đưa tới ô soạn; tên là link hồ sơ. |
 | T6 | Trang mạch chủ đề 1484 trên dev: không còn `**` / `- ` thô, dấu nháy đúng — **sửa tay qua "Sửa bài" ở khu quản trị, việc của user / phiên chính, không phải của thợ**. *(Sửa 2026-11-11 sau đợt A: thợ + nghiệm thu xác nhận repo không có lỗi đường đăng — `api/core/ghi.py:543` luôn ghi `html`, `MocMoiIn`/`MachMoiIn` không nhận `body_dinh_dang`, form admin là Tiptap. Markdown đi vào do người / script ngoài repo gửi sai hợp đồng. Bỏ yêu cầu "bài đo ở đường đăng"; có chặn body trông như markdown hay không là quyết định riêng, đã ghi sổ.)* |
