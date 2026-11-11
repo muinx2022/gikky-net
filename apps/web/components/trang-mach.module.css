@@ -270,6 +270,8 @@
 /* Mặt BÃO: composer đứng giữa nhật ký và khán đài (wireframe 9.2). */
 .composer_bao {
   padding: 0 0 18px;
+  /* `id` đích của "Viết quan điểm của bạn" (`ID_O_SOAN_BINH_LUAN`): chừa chỗ cho thanh trên cùng. */
+  scroll-margin-top: calc(var(--cao-chrome) + 14px);
 }
 
 @media (max-width: 640px) {

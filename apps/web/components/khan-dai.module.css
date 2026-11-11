@@ -9,6 +9,12 @@
   scroll-margin-top: calc(var(--cao-chrome) + 14px);
 }
 
+/* Cái bọc ô soạn, mang `id` đích của "Viết quan điểm của bạn" (`lib/khan-dai.ts::ID_O_SOAN_BINH_LUAN`):
+ * chừa chỗ cho thanh trên cùng khi trình duyệt cuộn tới neo. */
+.o_soan {
+  scroll-margin-top: calc(var(--cao-chrome) + 14px);
+}
+
 .dau {
   display: flex;
   flex-wrap: wrap;

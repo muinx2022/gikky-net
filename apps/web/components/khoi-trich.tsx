@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { ngayNganCuaThoiDiem } from "@/lib/dinh-dang";
 import { neoBinhLuan, trangThaiDeepLink } from "@/lib/khan-dai";
+import { tenHienThi } from "@/lib/ten-hien-thi";
 import { duongDanHoSo } from "@/lib/url";
 
 import css from "./khoi-trich.module.css";
@@ -57,7 +58,7 @@ export function KhoiTrich({
           href={duongDanHoSo(trich.author.username)}
           title={`u/${trich.author.username}`}
         >
-          {trich.author.display_name || `u/${trich.author.username}`}
+          {tenHienThi(trich.author)}
         </Link>
         <span className={css.dau_thoi_gian} data-testid="trich-viet">
           viết {ngayNganCuaThoiDiem(trich.comment_created_at)}

@@ -1,4 +1,4 @@
-import { SORT_MAC_DINH } from "@/lib/khan-dai";
+import { ID_O_SOAN_BINH_LUAN, SORT_MAC_DINH } from "@/lib/khan-dai";
 
 /** URL của sản phẩm — PLAN 5.9. Một chỗ dựng, một chỗ đọc.
  *
@@ -49,6 +49,13 @@ export function duongDanMach(slug: string, id: number): string {
  */
 export function duongDanKhanDai(slug: string, id: number): string {
   return `${duongDanMach(slug, id)}?khan_dai=1&sort=${SORT_MAC_DINH}#khan-dai`;
+}
+
+/** `/m/<slug>-<id>` cuộn tới **ô soạn bình luận** (`#viet-binh-luan`), khán đài đã bung như
+ * `duongDanKhanDai`. Khác `duongDanKhanDai` ĐÚNG ở phần neo: "Xem tất cả quan điểm" dẫn tới danh
+ * sách, "Viết quan điểm của bạn" dẫn tới chỗ viết — hai nút cùng một `href` là một nút thừa. */
+export function duongDanVietBinhLuan(slug: string, id: number): string {
+  return `${duongDanMach(slug, id)}?khan_dai=1&sort=${SORT_MAC_DINH}#${ID_O_SOAN_BINH_LUAN}`;
 }
 
 export function duongDanSub(slug: string): string {

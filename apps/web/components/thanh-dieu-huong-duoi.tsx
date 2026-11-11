@@ -29,6 +29,7 @@ import { dauThoiGianServer } from "@/lib/dinh-dang";
 import { DIEU_CAM, DISCLAIMER_CHAN_TRANG } from "@/lib/phap-ly";
 import { GIOI_THIEU } from "@/lib/site";
 import { dangXuat, GOC_TRINH_DUYET, headerGhi } from "@/lib/tai-khoan";
+import { tenHienThi } from "@/lib/ten-hien-thi";
 import {
   cauThongBao,
   dichThongBao,
@@ -685,7 +686,7 @@ export function ThanhDieuHuongDuoi() {
           <div className={css.menu_user_info}>
             <Avatar ten={toi.username ?? ""} hienThi={toi.display_name} url={toi.avatar_url} co={36} />
             <div className={css.menu_names}>
-              <span className={css.menu_display_name}>{toi.display_name || `u/${toi.username}`}</span>
+              <span className={css.menu_display_name}>{tenHienThi(toi)}</span>
               {toi.display_name && <span className={css.menu_username}>u/{toi.username}</span>}
             </div>
           </div>

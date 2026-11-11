@@ -42,7 +42,15 @@ test.describe("M1 — luồng tài khoản chạy thật, qua hộp thư thật"
     await page.goto("/luat");
     // `toContainText`: nút tài khoản render chữ cái avatar TRƯỚC tên (`Lu/ai_do`) từ
     // `ec47572`, nên khớp chính xác không còn đúng — cùng lý do với `e2e/danh-tinh.ts`.
-    await expect(page.getByTestId("nut-tai-khoan")).toContainText(`u/${ai.username}`);
+    // Chữ hiển thị phải BẰNG ĐÚNG username, không `u/`: `GET /me` trả
+    // `display_name = user.display_name or user.username` (`api/api/toi.py:56`) nên với người đang
+    // đăng nhập `display_name` không bao giờ rỗng — tài khoản chưa đặt tên hiển thị nhận chính
+    // `username` trần. `toHaveText` (khớp nguyên văn) trên span tên, không `toContainText`: bản
+    // `toContainText` cũ vẫn xanh khi chữ quay lại `u/ai_do`. Tiền tố `u/` chỉ ở `title`.
+    const nut = page.getByTestId("nut-tai-khoan");
+    const ten_nut = nut.locator("[data-chu-nguoi-dung]");
+    await expect(ten_nut).toHaveText(ai.username);
+    await expect(ten_nut).toHaveAttribute("title", `u/${ai.username}`);
 
     await page.getByTestId("nut-tai-khoan").click();
     await page.getByTestId("nut-dang-xuat").click();

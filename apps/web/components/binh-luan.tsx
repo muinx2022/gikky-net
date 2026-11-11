@@ -4,6 +4,7 @@ import Link from "next/link";
 import { CHU_NGUOI_DUNG } from "@/lib/chu-nguoi-dung";
 import { dauThoiGianServer, diemCoDau } from "@/lib/dinh-dang";
 import { neoBinhLuan } from "@/lib/khan-dai";
+import { tenHienThi } from "@/lib/ten-hien-thi";
 import { duongDanHoSo } from "@/lib/url";
 
 import { Avatar } from "./avatar";
@@ -69,7 +70,7 @@ export function DanhSachBinhLuan({
 function tomTatNhanh(nut: BinhLuanOut): string {
   const ai =
     nut.trang_thai === "binh_thuong"
-      ? `u/${nut.author?.username ?? ""}`
+      ? tenHienThi(nut.author, "u/")
       : nut.trang_thai === "da_xoa"
         ? "[bình luận đã xoá]"
         : "[bình luận đã bị ẩn]";
@@ -166,7 +167,7 @@ function NoiDung({ nut }: { nut: BinhLuanOut }) {
             prefetch={false}
             {...CHU_NGUOI_DUNG}
           >
-            {nut.author?.display_name || `u/${nut.author?.username ?? ""}`}
+            {tenHienThi(nut.author, "u/")}
           </Link>
         </span>
         {nut.la_chu_mach && <span className={css.chu_mach}>CHỦ MẠCH</span>}

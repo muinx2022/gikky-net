@@ -279,7 +279,12 @@ test.describe("T6/T7 — bàn phím, focus, và mobile", () => {
      * Plus/Pro Max) · 640 (mép của khối 640) · 768 (641–860, vẫn chưa có ô tìm).
      */
     const ai = await dungTaiKhoan(page, "t7b");
-    const chu_ten = `u/${ai.username}`;
+    // `username` trần: `GET /me` trả `display_name = user.display_name or user.username`
+    // (`api/api/toi.py:56`), nên người đang đăng nhập luôn có `display_name` và tài khoản chưa đặt
+    // tên nhận chính `username` — không `u/` (plan thống nhất giao diện §4.6; tiền tố chỉ còn ở
+    // `title`). Regex accessible name bên dưới khớp cả `u/ai_do`, nên span tên còn được kiểm
+    // NGUYÊN VĂN ở bước 3.
+    const chu_ten = ai.username;
 
     for (const rong of [360, 430, 640, 768]) {
       // Đặt khung nhìn TRƯỚC khi tải: đo sau một `goto` ở khổ khác là đo một bố cục đã
@@ -325,6 +330,9 @@ test.describe("T6/T7 — bàn phím, focus, và mobile", () => {
       //    thứ hai không phải phần thừa — nó là thứ chặn một cú "vá" bằng cách giấu tên
       //    người dùng ở mọi khổ màn hình.
       const chu = nut.locator(`[${TEN_DAU_CHU_NGUOI_DUNG}]`);
+      await expect(chu, `${rong}px: chữ tên phải BẰNG ĐÚNG username (không \`u/\`)`).toHaveText(
+        chu_ten,
+      );
       const hop_chu = await chu.boundingBox();
       expect(
         hop_chu,

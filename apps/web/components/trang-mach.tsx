@@ -53,6 +53,7 @@ import { diemCoDau, ngayCuaThoiDiem } from "@/lib/dinh-dang";
 import { jsonLdMach } from "@/lib/json-ld";
 import {
   HIEN_KHOI_DANG_CHU_Y,
+  ID_O_SOAN_BINH_LUAN,
   docSort,
   idTrongTrangGop,
   type SortKhanDai,
@@ -602,7 +603,11 @@ export async function TrangMach({
                 hỏi `entry_count`. Post thường không có ngăn kéo (PLAN 5.1), nên một câu
                 neo mốc 1 viết từ đây sẽ không hiện ở bất kỳ đâu. */}
             {la_bao && (
-              <div className={css.composer_bao} data-testid="composer-mat-bao">
+              <div
+                className={css.composer_bao}
+                id={ID_O_SOAN_BINH_LUAN}
+                data-testid="composer-mat-bao"
+              >
                 <Composer neoDoiDuoc={la_mach} />
               </div>
             )}

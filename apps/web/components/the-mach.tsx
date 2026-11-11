@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CHU_NGUOI_DUNG } from "@/lib/chu-nguoi-dung";
 import { ngayCuaThoiDiem } from "@/lib/dinh-dang";
 import { NHAN_NGAN_LOAI_MACH } from "@/lib/loc-loai-mach";
+import { tenHienThi } from "@/lib/ten-hien-thi";
 import { duongDanHoSo, duongDanMach, duongDanSub } from "@/lib/url";
 
 import { Avatar } from "./avatar";
@@ -93,7 +94,7 @@ export function TheMach({
               title={`u/${mach.author.username}`}
               {...CHU_NGUOI_DUNG}
             >
-              {mach.author.display_name || `u/${mach.author.username}`}
+              {tenHienThi(mach.author)}
             </Link>
           </span>
           <span className={css.cham} aria-hidden>

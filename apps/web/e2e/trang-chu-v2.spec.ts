@@ -636,11 +636,17 @@ test.describe.serial("B2/B7 — khối Chủ đề là MỘT thẻ nổi, nhãn 
     const vao = the.getByTestId("chu-de-vao");
     await expect(vao).toHaveText(dang_mo ? "Vào thảo luận" : "Xem lại thảo luận");
     await expect(vao).toHaveAttribute("href", `/m/${m.slug}-${m.id}`);
-    // Nút phụ: tới khán đài của CHÍNH chủ đề này.
+    // Nút phụ: tới Ô SOẠN bình luận của CHÍNH chủ đề này — khác `href` với "Xem tất cả quan điểm"
+    // (đợt A, plan thống nhất giao diện §4.5: trước đó hai nút cùng trỏ `#khan-dai`).
     const viet = the.getByTestId("chu-de-viet");
     await expect(viet).toHaveText("Viết quan điểm của bạn");
     expect(await viet.getAttribute("href")).toContain(`/m/${m.slug}-${m.id}?`);
-    expect(await viet.getAttribute("href")).toContain("#khan-dai");
+    expect(await viet.getAttribute("href")).toMatch(/#viet-binh-luan$/);
+    // Đích của nút có THẬT trong HTML SERVER của trang mạch (không phải chỉ sau hydrate): ô soạn
+    // là client component trả null tới khi biết phiên, nên `id` nằm trên cái bọc.
+    const href_viet = (await viet.getAttribute("href"))!;
+    const html_mach = await (await page.request.get(href_viet.split("#")[0])).text();
+    expect(html_mach.match(/id="viet-binh-luan"/g) ?? [], "đúng MỘT phần tử đích").toHaveLength(1);
     // Khoảng tuần = thứ Hai–Chủ nhật (giờ VN) của `published_at`.
     await expect(the.getByTestId("chu-de-tuan")).toHaveText(khoangTuanMong(m.published_at));
     // "Chủ đề tuần này" chỉ khi hôm nay nằm trong tuần ấy; không thì "gần nhất".
@@ -650,12 +656,22 @@ test.describe.serial("B2/B7 — khối Chủ đề là MỘT thẻ nổi, nhãn 
 
     // Quan điểm nổi bật: bình luận GỐC điểm cao nhất, tối đa 3, từ chính API khán đài; không có
     // bình luận ⇒ ẩn cả nửa phải.
+    // Có điểm dương ⇒ "Quan điểm nổi bật" (điểm cao nhất trước); toàn điểm 0 ⇒ "Quan điểm mới"
+    // (mới viết nhất trước, không in điểm) — đúng `lib/chu-de.ts::chonQuanDiem`.
     const bl = await api<{
-      threads: { id: number; depth: number; trang_thai: string; score: number }[];
+      threads: { id: number; depth: number; trang_thai: string; score: number; created_at: string }[];
     }>(`/api/v1/machs/${m.id}/comments?sort=hay_nhat&limit=50`);
-    const mong_qd = bl.threads
-      .filter((b) => b.depth === 1 && b.trang_thai === "binh_thuong" && b.score >= 0)
-      .sort((a, b) => b.score - a.score)
+    const ung_vien = bl.threads.filter(
+      (b) => b.depth === 1 && b.trang_thai === "binh_thuong" && b.score >= 0,
+    );
+    const noi_bat = ung_vien.some((b) => b.score > 0);
+    const mong_qd = (
+      noi_bat
+        ? [...ung_vien].sort((a, b) => b.score - a.score)
+        : [...ung_vien].sort(
+            (a, b) => Date.parse(b.created_at) - Date.parse(a.created_at) || b.id - a.id,
+          )
+    )
       .slice(0, 3)
       .map((b) => b.id);
     const co_qd = await the
@@ -666,9 +682,23 @@ test.describe.serial("B2/B7 — khối Chủ đề là MỘT thẻ nổi, nhãn 
       await expect(the.getByTestId("quan-diem-noi-bat")).toHaveCount(0);
     } else {
       await expect(the.getByTestId("quan-diem-noi-bat").getByRole("heading", { level: 3 })).toHaveText(
-        "Quan điểm nổi bật",
+        noi_bat ? "Quan điểm nổi bật" : "Quan điểm mới",
       );
       await expect(the.getByTestId("quan-diem-tat-ca")).toHaveText("Xem tất cả quan điểm →");
+      // Hai nút KHÁC href: một tới ô soạn, một tới danh sách.
+      expect(await the.getByTestId("quan-diem-tat-ca").getAttribute("href")).toMatch(/#khan-dai$/);
+      expect(await viet.getAttribute("href")).not.toBe(
+        await the.getByTestId("quan-diem-tat-ca").getAttribute("href"),
+      );
+      // Không còn `▲ 0` ở bất kỳ quan điểm nào; tên là link hồ sơ.
+      for (const diem of await the.locator('[data-testid="quan-diem"] [title="Điểm của bình luận"]').allTextContents()) {
+        expect(diem, "điểm 0 không được in").not.toMatch(/^▲\s*0$/);
+      }
+      for (const href of await the
+        .getByTestId("quan-diem-ten")
+        .evaluateAll((l) => l.map((e) => e.getAttribute("href")))) {
+        expect(href).toMatch(/^\/u\//);
+      }
     }
 
     // Luật đếm: dưới 4 bình luận không phô số; từ 4 trở lên "💬 N".

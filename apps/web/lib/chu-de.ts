@@ -166,6 +166,51 @@ export function chonQuanDiemNoiBat<T extends CoDiemBinhLuan>(
     .slice(0, toiDa);
 }
 
+export type QuanDiemChon<T> = {
+  /** `noi_bat`: có ít nhất một bình luận điểm > 0, sắp theo điểm. `moi`: toàn điểm 0 (chưa ai
+   * bỏ phiếu), sắp mới nhất trước và KHÔNG in điểm. */
+  kieu: "noi_bat" | "moi";
+  muc: T[];
+};
+
+/** Mới viết trước: `created_at` giảm dần, hoà (hoặc mốc không đọc được) thì `id` giảm dần. Mốc
+ * hỏng xếp CUỐI — cùng luật `sapMoiXuatBanTruoc`, vì hàm này cũng chạy trên trang chủ. */
+function sapBinhLuanMoiTruoc<T extends { id: number; created_at: string }>(ds: readonly T[]): T[] {
+  const ms = (b: T) => {
+    const t = Date.parse(b.created_at);
+    return Number.isNaN(t) ? Number.NEGATIVE_INFINITY : t;
+  };
+  return [...ds].sort((a, b) => {
+    const lech = ms(b) - ms(a);
+    return lech !== 0 && !Number.isNaN(lech) ? lech : b.id - a.id;
+  });
+}
+
+/** Chọn quan điểm cho khối chủ đề trên `/` *(plan `2026-11-11-thong-nhat-giao-dien-toan-site.md`
+ * §4.5)*. Cùng tập ứng viên với `chonQuanDiemNoiBat` (gốc · đọc được · điểm ≥ 0), từ HAI nguồn:
+ *
+ * - `nguonHayNhat` (`sort=hay_nhat`): có ít nhất một bình luận điểm > 0 trong đó ⇒ `noi_bat`,
+ *   điểm cao nhất trước, tối đa `toiDa`;
+ * - không có (cả ba cùng `▲ 0`: chưa ai bỏ phiếu) ⇒ `moi`, lấy từ `nguonMoiNhat`
+ *   (`sort=moi_nhat`), mới viết nhất trước. KHÔNG lấy từ nguồn `hay_nhat`: khi chưa ai bỏ phiếu
+ *   nó trả 50 bình luận CŨ NHẤT (hoà điểm ⇒ `created_at` tăng dần), nên chủ đề hơn 50 bình luận
+ *   gốc sẽ gắn nhãn "mới" lên bình luận cũ. Một khối tự xưng "nổi bật" mà xếp theo thứ tự API
+ *   của những bình luận hoà điểm 0 cũng là lời nói quá, và con số `▲ 0` là phô sự im lặng.
+ *
+ * Không đột biến `ds`. Rỗng ⇒ `{ kieu: "moi", muc: [] }` (khối ẩn phần phải). */
+export function chonQuanDiem<T extends CoDiemBinhLuan & { created_at: string }>(
+  nguonHayNhat: readonly T[],
+  nguonMoiNhat: readonly T[],
+  toiDa: number,
+): QuanDiemChon<T> {
+  const doc_duoc = (b: T) => b.depth === 1 && b.trang_thai === "binh_thuong" && b.score >= 0;
+  const hay_nhat = nguonHayNhat.filter(doc_duoc);
+  if (hay_nhat.some((b) => b.score > 0)) {
+    return { kieu: "noi_bat", muc: chonQuanDiemNoiBat(hay_nhat, toiDa) };
+  }
+  return { kieu: "moi", muc: sapBinhLuanMoiTruoc(nguonMoiNhat.filter(doc_duoc)).slice(0, toiDa) };
+}
+
 /** Số ký tự tối đa của đoạn trích một quan điểm. CSS kẹp 3 dòng; cắt ở đây để HTML không mang
  * nguyên bình luận dài nghìn chữ chỉ để rồi bị `line-clamp` giấu đi. */
 const DAI_TRICH_QUAN_DIEM = 240;

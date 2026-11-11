@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { CHU_NGUOI_DUNG } from "@/lib/chu-nguoi-dung";
 import { dangXuat } from "@/lib/tai-khoan";
+import { tenHienThi } from "@/lib/ten-hien-thi";
 import { duongDanHoSo } from "@/lib/url";
 
 import { Avatar } from "./avatar";
@@ -110,7 +111,7 @@ export function ThanhTaiKhoan() {
           title={toi.username ? `u/${toi.username}` : undefined}
           {...CHU_NGUOI_DUNG}
         >
-          {toi.display_name || `u/${toi.username}`}
+          {tenHienThi(toi)}
         </span>
       </button>
       {mo && (
@@ -118,7 +119,7 @@ export function ThanhTaiKhoan() {
           <div className={css.menu_header}>
             <Avatar ten={toi.username ?? ""} hienThi={toi.display_name} url={toi.avatar_url} co={32} />
             <div className={css.menu_user_info}>
-              <span className={css.menu_display_name}>{toi.display_name || `u/${toi.username}`}</span>
+              <span className={css.menu_display_name}>{tenHienThi(toi)}</span>
               {toi.display_name && <span className={css.menu_username}>u/{toi.username}</span>}
             </div>
           </div>

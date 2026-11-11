@@ -230,3 +230,12 @@ export function nenRenderCauDangDoc(tap: KhanDaiOut | null): tap is KhanDaiOut {
 export function neoBinhLuan(commentId: number): string {
   return `bl-${commentId}`;
 }
+
+/** `id` HTML của Ô SOẠN bình luận gốc trên trang mạch — đích của nút "Viết quan điểm của bạn"
+ * ở khối chủ đề trang chủ (`duongDanVietBinhLuan` ở `lib/url.ts`). Một chỗ khai, ba chỗ dùng
+ * (hai bọc ô soạn ở `trang-mach.tsx`/`khan-dai.tsx`, một dựng link), nên đổi tên là một dòng.
+ *
+ * Phần tử mang `id` là một `<div>` BỌC ngoài `Composer`, không phải chính `Composer`: ô soạn là
+ * client component và trả `null` tới khi `usePhien` biết người xem là ai, nên HTML server chỉ có
+ * cái bọc — `#viet-binh-luan` phải tồn tại ở HTML server để trình duyệt cuộn tới được. */
+export const ID_O_SOAN_BINH_LUAN = "viet-binh-luan";

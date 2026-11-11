@@ -51,6 +51,7 @@ export function TrangChuV2({
   lede,
   chuDe,
   quanDiemGoc,
+  quanDiemMoi,
   nhatKy,
   bayGio,
 }: {
@@ -59,6 +60,8 @@ export function TrangChuV2({
   chuDe: FeedOut;
   /** Bình luận gốc của chủ đề được chọn (`docBinhLuanGoc`); rỗng nếu chưa có / không có chủ đề. */
   quanDiemGoc: readonly BinhLuanOut[];
+  /** Bình luận gốc MỚI NHẤT của cùng chủ đề (`docBinhLuanGocMoiNhat`) — nguồn của "Quan điểm mới". */
+  quanDiemMoi: readonly BinhLuanOut[];
   /** Mỗi tác giả một bài, tối đa `SO_NHAT_KY_TAI` (API lọc sẵn); `cursor_ke_tiep` luôn `null`. */
   nhatKy: FeedOut;
   bayGio: Date;
@@ -73,7 +76,12 @@ export function TrangChuV2({
       <p className={css.gioi_thieu_lede}>{lede}</p>
 
       {/* Chủ đề đứng ĐẦU và là tiêu điểm; ẩn hẳn khi chưa có chủ đề nào. */}
-      <KhoiThaoLuan chu_de={chuDe.items} binh_luan_goc={quanDiemGoc} bay_gio={bayGio} />
+      <KhoiThaoLuan
+        chu_de={chuDe.items}
+        binh_luan_goc={quanDiemGoc}
+        binh_luan_moi={quanDiemMoi}
+        bay_gio={bayGio}
+      />
 
       <section
         className={css.khoi}

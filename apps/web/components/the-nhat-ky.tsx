@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CHU_NGUOI_DUNG } from "@/lib/chu-nguoi-dung";
 import { ngayCuaThoiDiem } from "@/lib/dinh-dang";
 import { NHAN_CHIEU_LENH, cacOLenh } from "@/lib/lenh";
+import { tenHienThi } from "@/lib/ten-hien-thi";
 import { duongDanHoSo, duongDanMach, duongDanSub } from "@/lib/url";
 
 import { Avatar } from "./avatar";
@@ -52,7 +53,7 @@ export function TheNhatKy({ mach }: { mach: MachTomTatOut }) {
   const lenh = mach.lenh ?? null;
   const anh = mach.xem_truoc?.anh ?? null;
   const trich = mach.xem_truoc?.trich ?? "";
-  const ten = mach.author.display_name || `u/${mach.author.username}`;
+  const ten = tenHienThi(mach.author);
 
   return (
     <li className={css.the} data-testid="the-mach" data-kieu="nhat-ky-moi" data-mach-id={mach.id}>

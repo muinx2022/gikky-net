@@ -243,6 +243,12 @@
   font-size: 13px;
 }
 
+.quan_diem_avatar {
+  display: inline-flex;
+  flex: none;
+  align-self: flex-start;
+}
+
 .quan_diem_ten {
   min-width: 0;
   overflow: hidden;
@@ -250,6 +256,10 @@
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+a.quan_diem_ten:hover {
+  text-decoration: underline;
 }
 
 .quan_diem_diem {

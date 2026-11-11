@@ -9,6 +9,7 @@ import { Sidebar } from "@/components/sidebar";
 import { SO_CHU_DE_TAI, SO_NHAT_KY_TAI, TrangChuV2 } from "@/components/trang-chu-v2";
 import {
   docBinhLuanGoc,
+  docBinhLuanGocMoiNhat,
   docCacSub,
   docFeed,
   docFeedSub,
@@ -159,10 +160,13 @@ async function TrangChuMoi() {
     docNhatKyMoiTacGia(SO_NHAT_KY_TAI),
     docFeed("moi", { limit: SO_CHU_DE_TAI, loai_mach: "thao_luan" }).then(async (chu_de) => {
       const [chon] = chonChuDeNoi(chu_de.du_lieu.items);
-      return {
-        chu_de: chu_de.du_lieu,
-        binh_luan_goc: chon === undefined ? [] : await docBinhLuanGoc(chon.id),
-      };
+      // Hai nguồn song song (không thêm vòng chờ): `hay_nhat` quyết "nổi bật", `moi_nhat` nuôi
+      // "mới" — xem `lib/chu-de.ts::chonQuanDiem`.
+      const [binh_luan_goc, binh_luan_moi] =
+        chon === undefined
+          ? [[], []]
+          : await Promise.all([docBinhLuanGoc(chon.id), docBinhLuanGocMoiNhat(chon.id)]);
+      return { chu_de: chu_de.du_lieu, binh_luan_goc, binh_luan_moi };
     }),
     docFeed("moi", { limit: SO_BAI_VIET_TAI, loai_mach: "bai_viet" }),
     docCacSub().then(async (cac_sub) => ({
@@ -201,6 +205,7 @@ async function TrangChuMoi() {
             lede={LEDE}
             chuDe={chu_de_va_quan_diem.chu_de}
             quanDiemGoc={chu_de_va_quan_diem.binh_luan_goc}
+            quanDiemMoi={chu_de_va_quan_diem.binh_luan_moi}
             nhatKy={nhat_ky}
             bayGio={new Date()}
           />

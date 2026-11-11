@@ -4,6 +4,7 @@ import Link from "next/link";
 import { CHU_NGUOI_DUNG } from "@/lib/chu-nguoi-dung";
 import { ngayCuaThoiDiem } from "@/lib/dinh-dang";
 import { neoBinhLuan } from "@/lib/khan-dai";
+import { tenHienThi } from "@/lib/ten-hien-thi";
 import { tachDam } from "@/lib/tim-kiem";
 import { duongDanHoSo, duongDanMach, duongDanSub } from "@/lib/url";
 
@@ -91,7 +92,7 @@ function DongMach({ ket_qua }: { ket_qua: KetQuaTronOut }) {
           prefetch={false}
           {...CHU_NGUOI_DUNG}
         >
-          {m.author.display_name || `u/${m.author.username}`}
+          {tenHienThi(m.author)}
         </Link>
         <span className={css.cham} aria-hidden>
           ·

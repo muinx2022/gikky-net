@@ -2,6 +2,7 @@ import type { KhanDaiOut } from "@gikky/api-client";
 import Link from "next/link";
 
 import {
+  ID_O_SOAN_BINH_LUAN,
   NHAN_SORT,
   SAU_KHAN_DAI,
   SORT_KHAN_DAI,
@@ -175,6 +176,14 @@ export function KhanDai({
   /** Mặt BÃO tắt cờ này: composer của nó nằm ngoài khu, TRÊN cả tiêu đề. */
   hienComposer?: boolean;
 }) {
+  // Đích của "Viết quan điểm của bạn" ở trang chủ (`duongDanVietBinhLuan`). `id` nằm trên cái BỌC
+  // chứ không trên `Composer`: ô soạn trả `null` tới khi biết phiên, nên HTML server chỉ có cái
+  // bọc — xem `ID_O_SOAN_BINH_LUAN`. Dựng một lần, dùng ở cả hai nhánh bên dưới.
+  const oSoan = (
+    <div id={ID_O_SOAN_BINH_LUAN} className={css.o_soan} data-testid="o-soan-binh-luan">
+      <Composer neoDoiDuoc={neoDoiDuoc} />
+    </div>
+  );
   if (khanDai.tong_thread === 0) {
     return (
       <section className={css.khu} id="khan-dai" data-testid="khan-dai">
@@ -203,7 +212,7 @@ export function KhanDai({
         <p className={css.mot_dong_moi} data-testid="khan-dai-mot-dong-moi">
           Chưa có bình luận chung nào — mời bạn nêu ý kiến.
         </p>
-        {hienComposer && <Composer neoDoiDuoc={neoDoiDuoc} />}
+        {hienComposer && oSoan}
       </section>
     );
   }
@@ -221,7 +230,7 @@ export function KhanDai({
 
       {/* Ô nhập NGAY DƯỚI tiêu đề (user chốt 2026-08-26) — xem docstring. Trước cả khối
           "Đáng chú ý": khối ấy là một phép LỌC của danh sách, nó thuộc về danh sách. */}
-      {hienComposer && <Composer neoDoiDuoc={neoDoiDuoc} />}
+      {hienComposer && oSoan}
 
       {/* TRÊN CÙNG của DANH SÁCH, trước cả thanh sort — PLAN 5.5 chốt đúng vị trí
           này. Đặt nó dưới cây là để cái nhãn trên nút vẫn hứa suông. */}
