@@ -138,7 +138,7 @@ test.describe("W1/G1 — thứ tự: dòng giới thiệu → Chủ đề tuần
     await expect(h1).toHaveText("Nhật ký giao dịch chứng khoán & Luận điểm thị trường");
     const co = async (l: Locator) => parseFloat(await l.evaluate((e) => getComputedStyle(e).fontSize));
     const h2 = page.getByTestId("khoi-thao-luan").getByRole("heading", { level: 2 });
-    expect(await co(h1)).toBeLessThanOrEqual(18);
+    expect(await co(h1)).toBeLessThanOrEqual(24);
     expect(await co(h2), "câu hỏi chủ đề ~30px desktop").toBeGreaterThanOrEqual(28);
     // Lede là <p> đầu tiên sau <h1>.
     const lede = await h1.evaluate((e) => {

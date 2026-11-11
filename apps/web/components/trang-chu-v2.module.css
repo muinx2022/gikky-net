@@ -2,20 +2,26 @@
  * `2026-11-11-homepage-v2-giao-dien-moi.md`). Chỉ token đã có; không màu mới. Chủ đề tuần và
  * section Bài viết có CSS riêng (`khoi-thao-luan.module.css`, `khoi-bai-viet.module.css`). */
 
-/* --- dòng giới thiệu (h1 + lede, chữ GIỮ NGUYÊN — chỉ nhỏ đi) --------------------------- */
+/* --- dòng giới thiệu (h1 + lede, chữ GIỮ NGUYÊN — h1 22px, ≤ 960px còn 19px) ------------ */
 .gioi_thieu_h1 {
-  margin: 0 0 2px;
+  margin: 0 0 4px;
   font-family: var(--f-ui);
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 22px;
+  font-weight: 700;
   line-height: 1.35;
-  color: var(--ink-2);
+  color: var(--ink);
 }
 
 .gioi_thieu_lede {
   margin: 0 0 14px;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--ink-3);
+}
+
+@media (max-width: 960px) {
+  .gioi_thieu_h1 {
+    font-size: 19px;
+  }
 }
 
 /* --- khối nhật ký --------------------------------------------------------------------- */
