@@ -115,14 +115,16 @@ test.describe("A7 — thẻ feed có cột vote, mũi tên disabled kèm lý do"
     }
   });
 
-  test("`💬 N` là LINK thật dẫn vào khán đài đang mở", async ({ page }) => {
+  test("nút bình luận ('N bình luận' / 'Bình luận') là LINK thật dẫn vào khán đài đang mở", async ({ page }) => {
     await page.goto("/?tab=moi");
+    // Thẻ thống nhất (đợt B): testid `the-nhat-ky-so-binh-luan`, chữ "N bình luận" (không emoji,
+    // không còn tên `the-mach-so-binh-luan` của thẻ feed cũ).
     const nut = page
       .locator(`[data-mach-id="${hpg.id}"]`)
-      .getByTestId("the-mach-so-binh-luan");
-    await expect(nut).toHaveText(`💬 ${hpg.comment_count} bình luận`);
+      .getByTestId("the-nhat-ky-so-binh-luan");
+    await expect(nut).toHaveText(hpg.comment_count > 0 ? `${hpg.comment_count} bình luận` : "Bình luận");
     await nut.click();
-    await expect(page).toHaveURL(new RegExp(`/m/.*-${hpg.id}\\?khan_dai=1`));
+    await expect(page).toHaveURL(new RegExp(`/m/.*-${hpg.id}#khan-dai`));
     await expect(page.getByTestId("khan-dai")).toBeVisible();
   });
 

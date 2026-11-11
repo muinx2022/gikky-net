@@ -4,20 +4,19 @@ import { expect, test } from "@playwright/test";
 
 /**
  * Hàng rào CSS + JSX ảnh thẻ feed — `plans/2026-09-07-anh-feed-khong-ep-ngang.md` +
- * `plans/2026-09-07-w-thumb-cls-hang-rao.md` (P-20260907-4).
+ * `plans/2026-09-07-w-thumb-cls-hang-rao.md` (P-20260907-4), chuyển sang thẻ thống nhất ở
+ * đợt B của `plans/2026-11-11-thong-nhat-giao-dien-toan-site.md`.
  *
- * Đọc nguồn, không cần server. Canh cả CSS module lẫn JSX: quyền quyết `width` sau
- * bản vá CLS nằm ở inline style (`noi-dung-the.tsx`), nên chỉ quét `.module.css` là mù.
+ * Trước đợt B ảnh feed là khối to hết chiều ngang (`noi-dung-the.*`, max-height 420px, chống CLS
+ * bằng inline style). Nay thẻ mạch dùng MỘT ảnh nhỏ bên phải trong khung CỐ ĐỊNH
+ * (`the-mach.module.css#.anh_o`, 168×104 / mobile 76×76) — chống CLS bằng chính khung cố định
+ * ấy cộng `width`/`height` thuộc tính từ `w_thumb`/`h_thumb`. Hai bài đầu canh đúng hai điều đó.
+ *
+ * Đọc nguồn, không cần server.
  */
 
-const CSS = resolve(
-  __dirname,
-  "..",
-  "..",
-  "components",
-  "noi-dung-the.module.css",
-);
-const TSX = resolve(__dirname, "..", "..", "components", "noi-dung-the.tsx");
+const CSS = resolve(__dirname, "..", "..", "components", "the-mach.module.css");
+const TSX = resolve(__dirname, "..", "..", "components", "the-mach.tsx");
 
 /** Bỏ chú thích CSS `/* … *\/` để chuỗi trong comment không làm bài xanh giả. */
 function boChuThichCss(css: string): string {
@@ -43,22 +42,25 @@ function cacKhoiAnh(css: string): string[] {
 }
 
 test.describe("anh-feed-css", () => {
-  test("anh feed rong 100% va khung tran 420", () => {
+  test("anh feed nam trong khung co dinh 168x104 (mobile 76x76), anh lap day khung", () => {
     const css = boChuThichCss(readFileSync(CSS, "utf8"));
     const khois = cacKhoiAnh(css);
     expect(khois.length, "phải có ít nhất một rule chứa `.anh`").toBeGreaterThan(0);
 
-    const anhChinh = khois[0];
-    expect(anhChinh).toMatch(/\bmax-width\s*:\s*100%/);
-    expect(anhChinh).toMatch(/\bwidth\s*:\s*100%/);
+    const anh = khois[0];
+    expect(anh).toMatch(/\bwidth\s*:\s*100%/);
+    expect(anh).toMatch(/\bheight\s*:\s*100%/);
+    expect(anh).toMatch(/\bobject-fit\s*:\s*cover\b/);
 
-    const khungM = css.match(/(?:^|\n)\.khung_anh\s*\{([^}]*)\}/);
-    expect(khungM, "phải có rule `.khung_anh { … }`").not.toBeNull();
-    const khung = khungM![1];
-    expect(khung).toMatch(/\bwidth\s*:\s*100%/);
-    expect(khung).toMatch(/\bmax-height\s*:\s*420px\b/);
-    expect(khung).toMatch(/\boverflow\s*:\s*hidden\b/);
-    expect(khung).toMatch(/\bmax-width\s*:\s*100%/);
+    // Khung `.anh_o` có hai rule: desktop (ngoài @media) và mobile (trong @media). Không có
+    // khung kích thước cố định thì ảnh nạp xong đẩy chữ — đúng bệnh CLS mà bài này canh.
+    const khungs = [...css.matchAll(/\.anh_o\s*\{([^}]*)\}/g)].map((m) => m[1]);
+    expect(khungs.length, "phải có rule desktop VÀ rule mobile của `.anh_o`").toBe(2);
+    expect(khungs[0]).toMatch(/\bwidth\s*:\s*168px/);
+    expect(khungs[0]).toMatch(/\bheight\s*:\s*104px/);
+    expect(khungs[0]).toMatch(/\boverflow\s*:\s*hidden\b/);
+    expect(khungs[1]).toMatch(/\bwidth\s*:\s*76px/);
+    expect(khungs[1]).toMatch(/\bheight\s*:\s*76px/);
   });
 
   test("jsx dung w_thumb/h_thumb chong CLS", () => {
@@ -66,8 +68,8 @@ test.describe("anh-feed-css", () => {
     expect(src).toMatch(/w_thumb/);
     expect(src).toMatch(/h_thumb/);
     // Không gắn width thuộc tính từ ảnh chính khi src là thumb.
-    expect(src).not.toMatch(/width=\{xem_truoc\.anh\.w\b/);
-    expect(src).not.toMatch(/height=\{xem_truoc\.anh\.h\b/);
+    expect(src).not.toMatch(/width=\{anh\.w\b/);
+    expect(src).not.toMatch(/height=\{anh\.h\b/);
   });
 
   test("phanTramChieuRongAnh phan bo ngau nhien on dinh trong khoang 72% - 92%", () => {

@@ -1,214 +1,148 @@
-/* Thẻ feed kiểu Reddit: cột vote trái + thân dày đặc.
+/* Thẻ mạch DUY NHẤT của mọi danh sách (plan `2026-11-11-thong-nhat-giao-dien-toan-site.md` §4.1):
+ * hình dạng của thẻ nhật ký trang chủ cũ — hộp có viền, avatar + tên ở hàng đầu, trích 3 dòng,
+ * ảnh nhỏ bên phải, chân thẻ. Chỉ token đã có trong `app/globals.css`.
  *
- * Mật độ là chủ đích (PLAN 9.1 — "mật độ là oxy của tán gẫu"): một màn hình điện thoại
- * phải chứa được nhiều thẻ, nếu không feed đọc như một tờ rơi. Padding và khoảng cách ở
- * đây đã nén so với bản 1c; tiêu đề vẫn giữ mặt chữ Newsreader vì nó là chỗ duy nhất của
- * thẻ được phép nghiêm.
- */
-/* **Thẻ RỜI, có khoảng cách, KHÔNG viền, nền đậm hơn trang một bậc** *(user chốt
- * 2026-08-24 — đảo lại lối "một khung + kẻ tóc" của buổi sáng cùng ngày, vì các thẻ
- * "dính sát nhau quá").*
+ * ⚠ `mau-token.spec.ts` khoá `--stamp` theo TỪNG selector và chỉ cho `.dong_so` của file NÀY
+ * (nhãn "ĐÃ ĐÓNG SỔ" của PLAN 9.1); `--gain`/`--loss` chỉ cho `con-so.module.css`. Đừng thêm
+ * selector nào dùng ba token đó ở đây, và đừng đổi tên / xoá `.dong_so`. Chip "Đã đóng sổ" /
+ * "Đã đóng" mang class `.dong_so`; màu MUA/BÁN/SL/TP của dải lệnh lấy từ `con-so.module.css`.
  *
- * Nền là `--surface-2`, **không** phải `--surface` (trắng): user muốn thẻ đậm hơn nền
- * trang (`--bg`) một chút chứ không nổi trắng lên. `--surface-2` cho đúng một bậc lệch ở
- * cả hai theme — tối hơn nền ở sáng, sáng hơn nền ở tối (độ nổi quen thuộc của "tấm thẻ").
- * Cả hai token đều đã trong 8 màu của PLAN 9.1, không thêm mã mới.
- *
- * Khoảng cách giữa thẻ do `gap` của hộp danh sách lo (xem `feed.module.css#.danh_sach`),
- * không phải `margin` ở đây — để `.the` ghép được vào bất kỳ danh sách nào (feed, hồ sơ)
- * mà không mang sẵn lề. */
+ * Khoảng cách giữa các thẻ do `gap` của hộp danh sách lo (`feed.module.css#.danh_sach`,
+ * `tab-ho-so.module.css#.danh_sach`, `ho-so.module.css#.danh_sach`, `trang-chu-v2.module.css#.danh_sach`),
+ * không phải `margin` ở đây — để `.the` ghép được vào bất kỳ danh sách nào. */
 .the {
-  display: block;
-  padding: 16px 8px;
-  background: transparent;
-  border: 0;
-  border-bottom: 1px solid var(--line);
-  border-radius: 0;
-  box-shadow: none;
-  transition: background-color 0.15s ease;
-}
-
-.the:hover {
-  background: var(--inset);
-}
-
-.than {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   min-width: 0;
-  flex: 1;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  list-style: none;
 }
 
+/* --- hàng đầu --------------------------------------------------------------------- */
 .dau {
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.avatar {
+  display: inline-flex;
+  flex: none;
+}
+
+.avatar_bot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--ink-2);
+}
+
+.ai_va_khi {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.dong_ten {
+  display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
   font-family: var(--f-ui);
-  font-size: 12.5px;
-  line-height: 1.4;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.ten {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ten:hover {
+  text-decoration: underline;
+}
+
+.nhan_bot {
+  flex: none;
+  padding: 0 5px;
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  color: var(--ink-2);
+  font-family: var(--f-ui);
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.khi_va_sub {
+  font-family: var(--f-ui);
+  font-size: 11.5px;
   color: var(--ink-3);
 }
 
-.sub,
-.chuyen_muc {
-  font-family: var(--f-ui);
-  font-size: 12px;
+.sub {
   font-weight: 700;
-  color: var(--ink);
-  background: transparent;
-  padding: 0;
-  border-radius: 0;
-  letter-spacing: 0.02em;
+  color: var(--ink-2);
 }
 
-.sub:hover,
-.chuyen_muc:hover {
-  color: var(--brand);
-  background: transparent;
+.sub:hover {
   text-decoration: underline;
 }
 
-.tieu_de {
-  font-family: var(--f-sans);
-  font-size: 18px;
-  font-weight: 600;
-  line-height: 24px;
-  letter-spacing: -0.01em;
-  color: var(--ink);
-  margin: 4px 0 6px;
-}
-
-.tieu_de a:hover,
-.link_chinh:hover {
-  color: var(--accent);
-}
-
-.chan {
+/* Nhóm bên phải hàng đầu: nhãn loại · lưu trữ · riêng tư · chip trạng thái. Có thể có tới bốn
+ * mục (trang chuyên mục + chủ riêng tư/đã lưu trữ) nên cho xuống dòng thay vì chen tên. */
+.dau_phai {
   display: flex;
   flex-wrap: wrap;
+  flex: 0 1 auto;
+  min-width: 0;
   align-items: center;
-  gap: 8px;
-  font-family: var(--f-ui);
-  font-size: 12.5px;
-  color: var(--ink-2);
-  border-top: 0;
-  padding-top: 0;
-  margin-top: 10px;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-left: auto;
 }
 
-.cum_tac_gia {
+.chip {
   display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.ai_avatar {
-  display: inline-flex;
-  align-items: center;
-  border-radius: 50%;
-  text-decoration: none;
-}
-
-.ai,
-.tac_gia {
-  color: var(--ink-2);
-  font-weight: 500;
-  text-decoration: none;
-}
-
-.ai:hover,
-.tac_gia:hover {
-  color: var(--ink);
-  text-decoration: underline;
-}
-
-.cham {
-  color: var(--line-2);
-}
-
-.dem {
-  font-family: var(--f-ui);
-  font-variant-numeric: tabular-nums;
-  font-size: 12px;
-  color: var(--ink-2);
-  font-weight: 500;
-  background: var(--surface-2);
-  border-radius: 999px;
-  padding: 2px 8px;
-}
-
-/* `💬 N` là lối vào khán đài, nên nó phải TRÔNG như bấm được — trên Reddit đây là chỗ
- * người ta bấm nhiều nhất của một thẻ. */
-.nut_binh_luan,
-.hanh_dong {
-  display: inline-flex;
+  flex: none;
   align-items: center;
   gap: 6px;
-  height: 32px;
-  font-family: var(--f-ui);
-  font-variant-numeric: tabular-nums;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--ink-2);
-  background: var(--inset);
-  border: 0;
+  white-space: nowrap;
+}
+
+/* "Đang mở": xanh dương nhấn — KHÔNG `--gain` (khoá cho con số lãi/lỗ). Chip "Đã đóng sổ" /
+ * "Đã đóng" mượn hẳn `.dong_so` bên dưới, nên không có rule nào ở đây cho nó. */
+.chip_mo {
+  height: 24px;
+  padding: 0 9px;
   border-radius: 999px;
-  padding: 0 12px;
-  text-decoration: none;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-
-.nut_binh_luan:hover,
-.hanh_dong:hover {
-  background: var(--surface-2);
-  color: var(--ink);
-}
-
-.khi {
-  font-family: var(--f-mono);
-  font-variant-numeric: tabular-nums;
-}
-
-.khi_cap_nhat {
-  font-family: var(--f-mono);
-  font-variant-numeric: tabular-nums;
-  color: var(--accent);
-}
-
-.chip_moc_moi {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-family: var(--f-ui);
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--accent);
-  background: var(--surface-2);
-  border: 1px solid var(--line-2);
-  border-radius: 999px;
-  padding: 2px 8px;
-  text-decoration: none;
-  transition: background 0.15s ease, border-color 0.15s ease;
-}
-
-.chip_moc_moi:hover {
   background: var(--accent-soft);
-  border-color: var(--accent);
   color: var(--accent);
+  font-family: var(--f-ui);
+  font-size: 11.5px;
+  font-weight: 600;
 }
 
-.chip_icon {
-  font-size: 11px;
-  line-height: 1;
-}
-
-.ket_qua {
-  font-family: var(--f-mono);
-  font-variant-numeric: tabular-nums;
-  font-size: 12px;
-  color: var(--ink-2);
-  border: 1px solid var(--line-2);
-  border-radius: 3px;
-  padding: 0 6px;
+.chip_mo::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
 }
 
 .dong_so {
@@ -247,85 +181,239 @@
   padding: 0 5px;
 }
 
-.truong_phai {
-  margin-left: auto;
+/* --- tiêu đề ---------------------------------------------------------------------- */
+.tieu_de {
+  margin: 0;
   font-family: var(--f-ui);
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--ink-3);
-  background: var(--inset);
-  border: 0;
-  border-radius: 999px;
-  padding: 2px 10px;
-  text-decoration: none;
+  font-size: 16.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
-.truong_phai:hover {
-  background: var(--surface-2);
+.tieu_de a {
   color: var(--ink);
 }
 
-.luot_xem {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-family: var(--f-mono);
-  font-variant-numeric: tabular-nums;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--ink-2);
-  background: var(--surface-2);
-  border-radius: 3px;
-  padding: 1px 7px;
-  cursor: default;
+.tieu_de a:hover {
+  color: var(--accent);
 }
 
-.mod_phai {
+/* --- dải lệnh ---------------------------------------------------------------------- */
+/* Các ô cách nhau 1px bằng `gap` + nền `--line` của khung — không cần tính viền phải/dưới
+ * cho từng ô khi dải xuống dòng. */
+.lenh {
+  display: flex;
+  flex-wrap: wrap;
+  align-self: flex-start;
+  max-width: 100%;
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--line);
+  font-family: var(--f-mono);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.o_lenh {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 6px 11px;
+  background: var(--inset);
+  color: var(--ink);
+}
+
+.nhan_o {
+  font-family: var(--f-ui);
+  font-size: 10.5px;
+  font-style: normal;
+  color: var(--ink-3);
+}
+
+.chieu {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 4px;
+  font-family: var(--f-ui);
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.ma {
+  overflow-wrap: anywhere;
+}
+
+/* --- đoạn trích + ảnh nhỏ ---------------------------------------------------------- */
+.than {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  min-width: 0;
+}
+
+.trich {
+  display: -webkit-box;
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+/* Khung CỐ ĐỊNH 168×104 (mobile 76×76): ảnh nạp xong không đẩy chữ — CLS = 0. */
+.anh_o {
+  position: relative;
+  display: block;
+  flex: none;
+  width: 168px;
+  height: 104px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-2);
+}
+
+.anh {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Huy hiệu "+N" góc dưới-phải ảnh nhỏ. Chỉ token có sẵn: nền = `--ink` pha 72% (đảo theo theme),
+ * chữ = `--surface`. */
+.them_anh {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 72%, transparent);
+  color: var(--surface);
+  font-family: var(--f-mono);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.6;
+  pointer-events: none;
+}
+
+/* --- chân thẻ ---------------------------------------------------------------------- */
+.chan {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.chan_vote {
+  display: inline-flex;
+}
+
+.nut_chan {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 6px;
+  color: var(--ink-2);
+  font-family: var(--f-ui);
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+.nut_chan:hover {
+  background: var(--inset);
+  color: var(--ink);
+}
+
+.nut_chan:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.chan_phai {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
   margin-left: auto;
 }
 
+.theo_user {
+  display: inline-flex;
+}
+
+/* --- mobile (≤ 640px) -------------------------------------------------------------- */
 @media (max-width: 640px) {
+  .the {
+    padding: 14px;
+  }
+
+  .tieu_de {
+    font-size: 15.5px;
+  }
+
+  /* Dải lệnh thành lưới ô xếp chồng nhãn / số, mỗi ô ≥ 76px. */
+  .lenh {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(76px, 1fr));
+    align-self: stretch;
+    font-size: 12.5px;
+  }
+
+  .o_lenh {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 6px 9px;
+  }
+
+  .anh_o {
+    width: 76px;
+    height: 76px;
+  }
+
+  .than {
+    gap: 12px;
+  }
+
+  /* Vùng bấm ≥ 44px (G7). Hàng chân thẻ dùng margin âm để không phình thẻ thêm. */
   .chan {
-    gap: 6px;
+    gap: 0;
+    padding-top: 0;
+    margin: 0 -8px -8px;
   }
 
-  .mod_phai {
-    margin-left: 0;
-    width: fit-content;
+  .nut_chan,
+  .chan_vote button,
+  .chan_phai button {
+    min-width: 44px;
+    min-height: 44px;
+    justify-content: center;
   }
-}
 
+  .nut_chan {
+    height: 44px;
+  }
 
-/* ===========================================================================
- * Kiểu xem GỌN — `:root[data-kieu-xem="gon"]`, đặt bởi script inline trong `<head>`
- * ===========================================================================
- *
- * Đây là "mật độ", biến thứ hai mà plan giao diện mượn của Reddit sau bố cục. Nó nén
- * padding, hạ cỡ tiêu đề và bỏ khoảng thở giữa các dòng meta — **không** giấu thông tin
- * nào. Ẩn bớt trường ở chế độ gọn là dựng hai phiên bản của cùng một thẻ, và người ta sẽ
- * đổi qua đổi lại để đọc cho đủ.
- *
- * `:global(:root[...])` là bắt buộc: CSS Modules băm mọi tên lớp cục bộ, mà `:root` là
- * phần tử `<html>` nằm ngoài mọi component. Selector con (`.the`) vẫn được băm bình
- * thường, nên luật này vẫn chỉ chạm đúng thẻ mạch.
- */
-:global(:root[data-kieu-xem="gon"]) .the {
-  padding: 5px 10px 5px 6px;
-  border-radius: 4px;
-}
-
-:global(:root[data-kieu-xem="gon"]) .tieu_de {
-  font-size: 15px;
-  line-height: 1.25;
-  margin: 1px 0 3px;
-}
-
-:global(:root[data-kieu-xem="gon"]) .dau {
-  font-size: 11.5px;
-  gap: 5px;
-}
-
-:global(:root[data-kieu-xem="gon"]) .chan {
-  gap: 6px;
-  font-size: 12px;
+  /* Chỗ chật: không có "Theo dõi" trên thẻ ở mobile; vẫn theo dõi được ở hồ sơ. */
+  .theo_user {
+    display: none;
+  }
 }

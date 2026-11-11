@@ -171,7 +171,6 @@ test("không còn chỗ nào trong components/ chép tay `display_name || `u/${�
     "khoi-trich",
     "thanh-tai-khoan",
     "the-mach",
-    "the-nhat-ky",
     "thanh-dieu-huong-duoi",
   ]) {
     expect(doc(`components/${f}.tsx`), f).toContain("tenHienThi(");

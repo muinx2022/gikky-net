@@ -21,7 +21,7 @@
   color: var(--loss);
 }
 
-/* Dải lệnh của thẻ nhật ký trang chủ (`components/the-nhat-ky.tsx`, plan
+/* Dải lệnh của thẻ nhật ký trang chủ (`components/the-mach.tsx`, plan
  * `2026-11-11-homepage-v2-giao-dien-moi.md` §3.2). Nằm ở ĐÂY vì đây là file DUY NHẤT (cùng
  * `form-tai-khoan` và `ti-le-rr`) mà `mau-token.spec.ts` cho dùng `--gain`/`--loss`: TP và SL
  * là con số lãi/lỗ kế hoạch; chip MUA/BÁN theo cùng cặp màu. Entry, Nhồi, R:R KHÔNG tô màu

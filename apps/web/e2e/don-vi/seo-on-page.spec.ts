@@ -137,18 +137,20 @@ test.describe("SEO On-page & Content Improvements", () => {
     expect(ld.about).toBeDefined();
   });
 
-  test("4. Image SEO: gallery-moc và noi-dung-the không còn thẻ img có alt rỗng", () => {
+  test("4. Image SEO: gallery-moc và the-mach không còn thẻ img có alt rỗng", () => {
     const gallerySrc = readFileSync(
       resolve(WEB, "components/gallery-moc.tsx"),
       "utf8",
     );
     expect(gallerySrc).not.toContain('alt=""');
 
+    // `noi-dung-the.tsx` đã bị gỡ ở đợt B (thẻ thống nhất): ảnh thumb của feed nay nằm ở `the-mach.tsx`.
     const theSrc = readFileSync(
-      resolve(WEB, "components/noi-dung-the.tsx"),
+      resolve(WEB, "components/the-mach.tsx"),
       "utf8",
     );
     expect(theSrc).not.toContain('alt=""');
+    expect(theSrc, "ảnh thumb của thẻ phải có alt thật").toContain("Ảnh minh họa:");
   });
 
   test("5. Title & H1 trang chủ chứa từ khóa mục tiêu (chứng khoán, vĩ mô, quản trị vốn)", () => {
@@ -159,7 +161,7 @@ test.describe("SEO On-page & Content Improvements", () => {
     expect(pageSrc).toContain("Nhật ký giao dịch chứng khoán & Luận điểm thị trường");
   });
 
-  test("6. Watermark gikky.net hiện diện trên gallery thumb, feed preview thumb, nội dung bài viết và lightbox", () => {
+  test("6. Watermark gikky.net hiện diện trên gallery thumb, nội dung bài viết và lightbox", () => {
     const gallerySrc = readFileSync(
       resolve(WEB, "components/gallery-moc.tsx"),
       "utf8",
@@ -167,12 +169,9 @@ test.describe("SEO On-page & Content Improvements", () => {
     expect(gallerySrc).toContain("gikky.net");
     expect(gallerySrc).toContain("watermark");
 
-    const theSrc = readFileSync(
-      resolve(WEB, "components/noi-dung-the.tsx"),
-      "utf8",
-    );
-    expect(theSrc).toContain("gikky.net");
-    expect(theSrc).toContain("watermark");
+    // Ảnh thumb 168×104 trên thẻ mạch (feed / hồ sơ) KHÔNG có watermark — bản to hết chiều ngang
+    // của `NoiDungThe` (nơi từng có watermark) đã bị gỡ ở đợt B. Xem báo cáo đợt B, mục "người dùng
+    // thấy khác đi".
 
     const thanHtmlSrc = readFileSync(
       resolve(WEB, "components/than-html.tsx"),

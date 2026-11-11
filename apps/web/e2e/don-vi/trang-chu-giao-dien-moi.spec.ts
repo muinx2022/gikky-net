@@ -298,9 +298,11 @@ test("trang_thai chỉ gửi lên API ở tab nhận nó: moi/nhieu-diem có, da
 
 /* ------------------------------------------------------------------------- hàng rào -- */
 
-test("màu: thẻ nhật ký, khối chủ đề, thư viện KHÔNG dùng --gain/--loss/--stamp (khoá theo file)", () => {
+test("màu: khối chủ đề, thư viện KHÔNG dùng --gain/--loss/--stamp (khoá theo file)", () => {
+  // `the-nhat-ky.module.css` đã gộp vào `the-mach.module.css` ở đợt B (thẻ thống nhất). File mới
+  // CÓ `--stamp` (`.dong_so`, PLAN 9.1) nên không thể khoá theo file như các file này — nó được khoá
+  // theo selector ở `mau-token.spec.ts`, và bài kế dưới khoá phần còn lại bằng cách đọc nguồn.
   for (const f of [
-    "components/the-nhat-ky.module.css",
     "components/khoi-thao-luan.module.css",
     "components/khoi-bai-viet.module.css",
     "components/trang-chu-v2.module.css",
@@ -315,16 +317,26 @@ test("màu: thẻ nhật ký, khối chủ đề, thư viện KHÔNG dùng --gai
 test("màu MUA/BÁN/SL/TP nằm trong con-so.module.css (file duy nhất được dùng --gain/--loss)", () => {
   const css = doc("components/con-so.module.css").replace(/\/\*[\s\S]*?\*\//g, "");
   for (const lop of [".mua", ".ban", ".gia_tp", ".gia_sl"]) expect(css).toContain(lop);
-  const tsx = doc("components/the-nhat-ky.tsx");
+  const tsx = doc("components/the-mach.tsx");
   expect(tsx).toContain("conSo.mua");
   expect(tsx).toContain("conSo.gia_tp");
-  expect(tsx, "chip Đã đóng sổ mượn selector có sẵn, không tô --stamp ở file mới").toContain(
-    "theMach.dong_so",
+  expect(tsx, "chip Đã đóng sổ dùng `.dong_so` (selector duy nhất được khoá --stamp)").toContain(
+    "css.dong_so",
   );
 });
 
+test("the-mach.module.css: --stamp CHỈ ở `.dong_so`, không --gain/--loss, không mã hex", () => {
+  // Phần "khoá theo file" của thẻ nhật ký cũ, nay áp cho file thẻ thống nhất: `.dong_so` là
+  // selector duy nhất mà `mau-token.spec.ts` cho dùng --stamp; mọi rule khác phải sạch.
+  const css = doc("components/the-mach.module.css").replace(/\/\*[\s\S]*?\*\//g, "");
+  expect(css, "không mã hex").not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
+  expect(css, "không --gain/--loss").not.toMatch(/--(gain|loss)/);
+  const khoi = [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)].filter((m) => /--stamp/.test(m[2]));
+  expect(khoi.map((m) => m[1].trim()), "chỉ `.dong_so` dùng --stamp").toEqual([".dong_so"]);
+});
+
 test("thẻ nhật ký KHÔNG parse tiêu đề để suy ra lệnh: dải chỉ đọc mach.lenh", () => {
-  const tsx = doc("components/the-nhat-ky.tsx").replace(/\/\*[\s\S]*?\*\//g, "");
+  const tsx = doc("components/the-mach.tsx").replace(/\/\*[\s\S]*?\*\//g, "");
   expect(tsx).toContain("mach.lenh");
   expect(tsx).not.toMatch(/mach\.title\.(match|split|replace|includes|startsWith)|\.test\(\s*mach\.title/);
 });

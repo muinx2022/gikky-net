@@ -32,7 +32,7 @@ import { TheMach } from "./the-mach";
  *
  * ## Vì sao dùng lại `TheMach` chứ không viết bản thứ hai
  *
- * `TheMach` (và `NoiDungThe`, `Avatar` bên trong) là component THUẦN — không async, không
+ * `TheMach` (và `Avatar` bên trong) là component THUẦN — không async, không
  * API server-only — nên import được vào cây client y nguyên. Một bản thẻ feed thứ hai
  * "cho client" là hai nguồn sự thật cho cùng một cái thẻ, và bản ít người đọc hơn sẽ lệch
  * ở lần sửa sau. Trang 1 vẫn render ở SERVER bằng chính component này.
@@ -150,7 +150,7 @@ export function CuonVoHan({
   return (
     <>
       {them.length > 0 && (
-        <ul className={css.danh_sach} data-testid="feed-them">
+        <ul className={`${css.danh_sach} ${css.danh_sach_them}`} data-testid="feed-them">
           {them.map((m) => (
             <TheMach key={m.id} mach={m} hienNhanLoai={sub !== undefined} />
           ))}

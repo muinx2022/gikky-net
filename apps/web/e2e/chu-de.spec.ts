@@ -438,9 +438,11 @@ test.describe("K6 — trang mạch: chữ theo loại mạch", () => {
     await page.goto("/?tab=moi&loai_mach=thao_luan");
     const the_chu_de = page.locator(`[data-testid="the-mach"][data-mach-id="${tk!.id}"]`);
     await expect(the_chu_de).toHaveCount(1);
+    // Từ đợt B (thẻ thống nhất) nhãn là CHIP "Đã đóng" (viết hoa đầu chữ, `the-nhat-ky-trang-thai`)
+    // chứ không còn là nhãn chữ thường `đã đóng`.
+    await expect(the_chu_de.getByTestId("the-nhat-ky-trang-thai")).toHaveText("Đã đóng");
     const chu_chu_de = await chuNgoaiTieuDe(the_chu_de);
-    expect(chu_chu_de).toContain("đã đóng");
-    expect(chu_chu_de, "chữ 'sổ' là của nhật ký").not.toContain("đã đóng sổ");
+    expect(chu_chu_de, "chữ 'sổ' là của nhật ký").not.toMatch(/đóng sổ/i);
 
     const nk = await api<FeedOut>("/api/v1/feeds/moi?loai_mach=nhat_ky&limit=20");
     const dong = nk.items.find((m) => m.status === "closed");
@@ -448,7 +450,7 @@ test.describe("K6 — trang mạch: chữ theo loại mạch", () => {
     await page.goto("/?tab=moi&loai_mach=nhat_ky");
     const the_nhat_ky = page.locator(`[data-testid="the-mach"][data-mach-id="${dong!.id}"]`);
     await expect(the_nhat_ky).toHaveCount(1);
-    expect(await chuNgoaiTieuDe(the_nhat_ky)).toContain("đã đóng sổ");
+    await expect(the_nhat_ky.getByTestId("the-nhat-ky-trang-thai")).toHaveText("Đã đóng sổ");
   });
 
   test("bài viết: không có link '← Chủ đề thảo luận'", async ({ page }) => {

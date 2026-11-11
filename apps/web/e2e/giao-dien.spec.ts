@@ -1,7 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { TEN_DAU_CHU_NGUOI_DUNG } from "../lib/chu-nguoi-dung";
-import { KHOA_KIEU_XEM } from "../lib/kieu-xem";
 import { KHOA_THEME } from "../lib/theme";
 import { dungTaiKhoan } from "./danh-tinh";
 import { TITLE_HPG, duongDan, timMachTheoTitle } from "./du-lieu";
@@ -162,6 +161,8 @@ test.describe("T3 — theme KHÔNG đi qua HTML đã cache", () => {
     const the_html = /<html[^>]*>/.exec(html_khach);
     expect(the_html, "phải cắt được thẻ <html>").not.toBeNull();
     expect(the_html?.[0], "server KHÔNG được đặt data-theme").not.toContain("data-theme");
+    // Nút Thẻ/Gọn (`data-kieu-xem`) đã bị gỡ ở đợt B của plan thống nhất giao diện — thuộc tính
+    // ấy không được mọc lại trên `<html>` do server trả.
     expect(the_html?.[0]).not.toContain("data-kieu-xem");
 
     // Vế thứ hai: một người mang sẵn cookie theme nhận về **đúng cùng một cái thẻ `<html>`**.
@@ -171,41 +172,6 @@ test.describe("T3 — theme KHÔNG đi qua HTML đã cache", () => {
     const the_html_2 = /<html[^>]*>/.exec(await mang_cookie.text());
     expect(the_html_2?.[0], "cookie theme KHÔNG được đổi HTML của server").toBe(
       the_html?.[0],
-    );
-  });
-});
-
-test.describe("T4 — hai kiểu xem feed, nhớ lựa chọn", () => {
-  test("đổi sang Gọn ⇒ thẻ THẤP hơn, và F5 vẫn Gọn", async ({ page }) => {
-    await page.goto("/?tab=moi");
-    const the = page.getByTestId("the-mach").first();
-    await expect(the).toBeVisible();
-    const cao_the = (await the.boundingBox())?.height ?? 0;
-    expect(cao_the).toBeGreaterThan(0);
-
-    await page.getByTestId("kieu-xem-gon").click();
-    // Chờ thuộc tính lên `<html>` TRƯỚC khi đo: `boundingBox` ép layout, nhưng nó không
-    // chờ React commit xong — đo sớm một nhịp là ra chiều cao của kiểu cũ.
-    await expect(page.locator("html")).toHaveAttribute("data-kieu-xem", "gon");
-    const cao_gon = (await the.boundingBox())?.height ?? 0;
-    // Đo CHIỀU CAO THẬT chứ không đọc lại tên lớp: một `data-kieu-xem` đặt đúng mà CSS
-    // không khớp selector nào vẫn làm mọi phép kiểm dựa trên thuộc tính xanh.
-    expect(cao_gon, "kiểu Gọn phải nén thật, không chỉ đổi một thuộc tính").toBeLessThan(
-      cao_the,
-    );
-
-    await page.reload();
-    await expect(page.getByTestId("the-mach").first()).toBeVisible();
-    expect(
-      await page.evaluate(() => document.documentElement.getAttribute("data-kieu-xem")),
-      "lựa chọn sống qua F5",
-    ).toBe("gon");
-    expect(
-      await page.evaluate((k) => window.localStorage.getItem(k), KHOA_KIEU_XEM),
-    ).toBe("gon");
-    await expect(page.getByTestId("kieu-xem-gon")).toHaveAttribute(
-      "aria-pressed",
-      "true",
     );
   });
 });

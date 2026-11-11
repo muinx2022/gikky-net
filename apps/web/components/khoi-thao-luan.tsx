@@ -49,7 +49,7 @@ export const SO_QUAN_DIEM_NOI_BAT = 3;
  * - phải: quan điểm — bình luận GỐC (`chonQuanDiem`). Có ít nhất một bình luận điểm > 0 ⇒
  *   "Quan điểm nổi bật", điểm cao nhất trước; toàn điểm 0 ⇒ "Quan điểm mới", mới nhất trước và
  *   KHÔNG in điểm. Chỉ in `▲ N` cho bình luận có N ≠ 0. Tên + avatar là link hồ sơ (cùng kiểu
- *   `TheNhatKy`). Chưa có bình luận nào ⇒ **ẩn cả nửa phải**, nửa trái chiếm hết (không khung
+ *   `TheMach`). Chưa có bình luận nào ⇒ **ẩn cả nửa phải**, nửa trái chiếm hết (không khung
  *   rỗng);
  * - hai nút khác `href`: "Viết quan điểm của bạn" tới Ô SOẠN (`duongDanVietBinhLuan`), "Xem tất
  *   cả quan điểm →" tới danh sách (`duongDanKhanDai`).

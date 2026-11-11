@@ -74,6 +74,42 @@ export function ngayNganCuaThoiDiem(iso: string): string {
   return `${p.day}/${p.month}`;
 }
 
+/** `nối mốc 12/11` — dòng phụ cạnh ngày đăng trên thẻ mạch, hoặc `null` (không in gì).
+ *
+ * Feed "Mới" sắp theo `last_content_at`, còn thẻ in `published_at` ⇒ một mạch đăng 03/11 mà
+ * vừa nối mốc hôm nay đứng trên mạch đăng 10/11, và dãy ngày trông lộn xộn. Dòng này cho thấy
+ * ngày nối: **mạch có ≥ 2 mốc và mốc mới nhất rơi vào NGÀY (giờ VN) LỚN HƠN ngày đăng**.
+ *
+ * "Lớn hơn" chứ không phải "khác": `published_at` có thể bị dời VỀ SAU mốc (`cong_khai_mach`
+ * đặt lại khi mạch riêng tư được công khai; hẹn giờ / phát hành lại) — mạch viết riêng tư
+ * 05/11, nối mốc 08/11, công khai 11/11 có mốc cuối TRƯỚC ngày đăng, và "11/11 · nối mốc
+ * 08/11" là một dòng vô nghĩa. Ca ấy không in gì.
+ *
+ * `mocMoiNhatIso` là `MachTomTatOut.moc_moi_nhat.created_at`, KHÔNG phải `last_entry_at`:
+ * `last_entry_at` đo cả mốc bị mod ẩn / bia mộ (docstring `MachTomTatOut`), in nó lên thẻ
+ * công khai là phô ngày của một mốc người xem không đọc được. `moc_moi_nhat` chỉ có khi mốc
+ * ở `seq == entry_count` (mốc CUỐI) ĐỌC ĐƯỢC và đạt chuẩn chất lượng (`la_moc_chat_luong`;
+ * `api/api/trinh_bay.py`). Giới hạn cần biết: nếu mốc cuối cụt lủn ("UP") hoặc bị ẩn thì
+ * KHÔNG dòng nào, kể cả khi mốc ngay trước nó đạt chuẩn; và đây không phải khoá sắp xếp của feed
+ * (`last_content_at` xét mọi mốc đạt chuẩn, không riêng mốc cuối) — dòng này là gợi ý ngày nối
+ * gần nhất, không hứa giải thích mọi thứ tự trong feed.
+ *
+ * So NGÀY theo giờ VN, không so chuỗi ISO: 23:30 UTC ngày 10 là 06:30 ngày 11 ở VN.
+ */
+export function nhanNoiMoc(
+  publishedAtIso: string,
+  mocMoiNhatIso: string | null | undefined,
+  soMoc: number,
+): string | null {
+  if (soMoc <= 1 || mocMoiNhatIso === null || mocMoiNhatIso === undefined) return null;
+  const a = phan(NGAY_VN, publishedAtIso);
+  const b = phan(NGAY_VN, mocMoiNhatIso);
+  // `YYYYMMDD` so sánh được theo chuỗi (cùng độ dài, số 0 đứng đầu).
+  const so = (p: Record<string, string>) => `${p.year}${p.month}${p.day}`;
+  if (so(b) <= so(a)) return null;
+  return `nối mốc ${b.day}/${b.month}`;
+}
+
 /** Dòng `12 mạch · lập 04/03/2026` dưới tên một chuyên mục — **một chỗ dựng, hai chỗ
  * đọc** (header `/s/<sub>` và sidebar).
  *

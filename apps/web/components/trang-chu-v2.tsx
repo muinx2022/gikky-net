@@ -8,7 +8,7 @@ import { Avatar } from "./avatar";
 import feedCss from "./feed.module.css";
 import { KhoiThaoLuan } from "./khoi-thao-luan";
 import { LoiVaoNhatKy } from "./loi-vao-nhat-ky";
-import { TheNhatKy } from "./the-nhat-ky";
+import { TheMach } from "./the-mach";
 import css from "./trang-chu-v2.module.css";
 
 /** Số mục của từng khối — một nguồn cho cả `app/page.tsx` (gọi API với `limit`) lẫn các bài đo.
@@ -147,7 +147,7 @@ export function TrangChuV2({
         ) : (
           <ul className={css.danh_sach} data-testid="feed-nhat-ky">
             {hien.map((m) => (
-              <TheNhatKy key={m.id} mach={m} />
+              <TheMach key={m.id} mach={m} capHeading={3} />
             ))}
           </ul>
         )}

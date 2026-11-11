@@ -248,10 +248,9 @@ test.describe("N — nguồn", () => {
     expect(p.items.$ref).toBe("#/components/schemas/AnhOut");
   });
 
-  test("N6 — TheMach / NoiDungThe / GalleryMoc KHÔNG bị đụng: không biết gì về anh_khac / lib mới / gallery bài viết", () => {
+  test("N6 — TheMach / GalleryMoc KHÔNG bị đụng: không biết gì về anh_khac / lib mới / gallery bài viết", () => {
+    // `noi-dung-the.*` đã bị gỡ ở đợt B (thẻ thống nhất) nên không còn trong danh sách.
     for (const f of [
-      "apps/web/components/noi-dung-the.tsx",
-      "apps/web/components/noi-dung-the.module.css",
       "apps/web/components/the-mach.tsx",
       "apps/web/components/gallery-moc.tsx",
       "apps/web/components/gallery-moc.module.css",

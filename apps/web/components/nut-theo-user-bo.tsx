@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { GOC_TRINH_DUYET, headerGhi } from "@/lib/tai-khoan";
 
+import { dongBoTheoUser } from "./nut-theo-user";
 import css from "./nut-theo-sub.module.css";
 import { useToast } from "./toast";
 
@@ -42,6 +43,9 @@ export function NutBoTheoUser({
       // hồ sơ: ở đó hoàn lại là đổi một chữ, còn ở đây là chèn lại một dòng vào giữa
       // danh sách — người dùng thấy dòng biến mất rồi nhảy về chỗ cũ.
       onBoXong();
+      // Kho dùng chung của `NutTheoUser`: nút "Theo dõi" trên thẻ / hồ sơ của người này phải
+      // biết ngay là đã bỏ, không đợi tải lại trang.
+      dongBoTheoUser(username, false);
       bao(`Đã bỏ theo dõi u/${username}.`);
     } catch {
       bao("Không bỏ theo dõi được. Thử lại sau ít giây.");

@@ -14,18 +14,11 @@ import {
   themeDangDung,
   thuocTinhTheme,
 } from "../../lib/theme";
-import {
-  CAC_KIEU_XEM,
-  KHOA_KIEU_XEM,
-  KIEU_XEM_MAC_DINH,
-  docKieuXem,
-  nguonScriptKieuXem,
-} from "../../lib/kieu-xem";
 import { boChuThich } from "./quet";
 
 const WEB = resolve(__dirname, "..", "..");
 
-/** Công tắc theme + kiểu xem — phần đo được **không cần trình duyệt**.
+/** Công tắc theme — phần đo được **không cần trình duyệt**.
  *
  * Nửa còn lại (không FOUC, không server-render, lựa chọn sống qua reload) đo bằng
  * Playwright thật ở `e2e/sang-toi.spec.ts`. Chia đôi vì hai nửa trả lời hai câu khác nhau:
@@ -110,18 +103,6 @@ test("script inline sống sót khi localStorage NÉM (cookie bị chặn hoàn 
 
 test("script inline đọc ĐÚNG khoá đã khai (đổi hằng mà quên script ⇒ đỏ)", () => {
   expect(nguonScriptTheme()).toContain(JSON.stringify(KHOA_THEME));
-  expect(nguonScriptKieuXem()).toContain(JSON.stringify(KHOA_KIEU_XEM));
-  // Hai khoá phải KHÁC nhau — một khoá dùng cho hai lựa chọn là đổi theme thì mất kiểu xem.
-  expect(KHOA_THEME).not.toBe(KHOA_KIEU_XEM);
-});
-
-test("kiểu xem: script inline khớp hàm, và mặc định GỠ thuộc tính", () => {
-  for (const kieu of CAC_KIEU_XEM) {
-    const goc = chayScript(nguonScriptKieuXem(), { [KHOA_KIEU_XEM]: kieu });
-    if (kieu === KIEU_XEM_MAC_DINH) expect(goc.thuoc.has("data-kieu-xem")).toBe(false);
-    else expect(goc.thuoc.get("data-kieu-xem")).toBe(kieu);
-  }
-  expect(docKieuXem("rac")).toBe(KIEU_XEM_MAC_DINH);
 });
 
 test("T3 — layout NHÚNG script vào <head>, không phải cuối <body>", () => {
@@ -131,12 +112,9 @@ test("T3 — layout NHÚNG script vào <head>, không phải cuối <body>", () 
   const dau_head = nguon.indexOf("<head>");
   const cuoi_head = nguon.indexOf("</head>");
   const tai_script = nguon.indexOf("nguonScriptTheme()");
-  const tai_kieu = nguon.indexOf("nguonScriptKieuXem()");
   expect(dau_head, "layout phải có <head> tường minh").toBeGreaterThan(-1);
   expect(tai_script).toBeGreaterThan(dau_head);
   expect(tai_script).toBeLessThan(cuoi_head);
-  expect(tai_kieu).toBeGreaterThan(dau_head);
-  expect(tai_kieu).toBeLessThan(cuoi_head);
 });
 
 test("T3 — KHÔNG chỗ nào đọc theme từ cookie hay từ phía server", () => {
@@ -144,14 +122,8 @@ test("T3 — KHÔNG chỗ nào đọc theme từ cookie hay từ phía server", 
   // nhất có thể mở nó là ai đó đọc `cookies()` rồi đặt `data-theme` ở server. Ở đây ghim
   // rằng khoá theme **chỉ** xuất hiện cạnh `localStorage`, không cạnh `cookie`.
   const theme = boChuThich(readFileSync(resolve(WEB, "lib/theme.ts"), "utf8"));
-  const kieu = boChuThich(readFileSync(resolve(WEB, "lib/kieu-xem.ts"), "utf8"));
   const layout = boChuThich(readFileSync(resolve(WEB, "app/layout.tsx"), "utf8"));
-  for (const [ten, nguon] of [
-    ["lib/theme.ts", theme],
-    ["lib/kieu-xem.ts", kieu],
-  ] as const) {
-    expect(nguon, `${ten} không được nhắc tới cookie`).not.toMatch(/\bcookies?\b/i);
-  }
+  expect(theme, "lib/theme.ts không được nhắc tới cookie").not.toMatch(/\bcookies?\b/i);
   expect(layout, "layout không được đọc cookies()").not.toMatch(/\bcookies\s*\(/);
   expect(theme).toContain("localStorage");
 });

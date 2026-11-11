@@ -189,7 +189,9 @@ export function DanhSachRieng({
   return (
     <ul className={css.danh_sach} data-testid="tab-rieng-danh-sach">
       {items.map((m) => (
-        <TheMach key={m.id} mach={m} />
+        // Thẻ của CHÍNH chủ trang (tab Lưu trữ) khỏi nút "Theo dõi"; thẻ của người khác (Đã vote, Đang
+        // theo) vẫn cần nó.
+        <TheMach key={m.id} mach={m} anTheoDoi={m.author.username === username} />
       ))}
     </ul>
   );

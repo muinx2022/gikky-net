@@ -48,7 +48,7 @@ function MucBaiViet({ mach, tenSub }: { mach: MachTomTatOut; tenSub: string }) {
         {/* Ảnh minh hoạ của bài (mốc 1) — khung CỐ ĐỊNH 104×72 (mobile 88×66), nên ảnh nạp xong
             không đẩy chữ (CLS = 0). Bài không ảnh ⇒ ô `--surface-2`. `aria-hidden`: nó chỉ minh
             hoạ cho đúng tiêu đề bên cạnh; `alt` ở lại cho bot (HTML thô). `next/image` cố ý
-            KHÔNG dùng — server đã sinh thumbnail lúc upload (cùng lý lẽ `NoiDungThe`). */}
+            KHÔNG dùng — server đã sinh thumbnail lúc upload (cùng lý lẽ ở `TheMach`). */}
         <span
           className={css.thumb}
           aria-hidden="true"

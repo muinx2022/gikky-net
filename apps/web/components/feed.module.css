@@ -13,7 +13,7 @@
   color: var(--ink-2);
 }
 
-/* Thanh tab feed và nút đổi kiểu xem:
+/* Thanh tab feed:
  * - Desktop (>960px): position: sticky; top: var(--cao-chrome) dính ngay dưới header.
  * - Mobile & Tablet (≤960px): nằm tự nhiên trong luồng trang, không sticky khi vuốt lên.
  */
@@ -41,7 +41,7 @@
   border: 0;
 }
 
-/* Hàng điều khiển: tab trái, nút đổi kiểu xem phải. */
+/* Hàng điều khiển: dải tab sắp xếp. */
 .hang_dieu_khien {
   display: flex;
   align-items: center;
@@ -194,14 +194,23 @@
   background: var(--accent-soft);
 }
 
-/* Danh sách thẻ RỜI, cách nhau bằng `gap` — không còn khung bọc chung (user thấy các
-   thẻ dính sát nhau quá, 2026-08-24). Mỗi `.the` tự mang nền + bo góc. */
+/* Danh sách thẻ RỜI, cách nhau bằng `gap` (14px — cùng khoảng với khối nhật ký của `/`, xem
+   `trang-chu-v2.module.css#.danh_sach`). Mỗi thẻ (`the-mach.module.css#.the`) tự mang nền, viền
+   và bo góc. */
 .danh_sach {
+  --khoang-the: 14px;
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 0;
+  gap: var(--khoang-the);
+}
+
+/* Danh sách NỐI THÊM của cuộn vô hạn (`CuonVoHan`) là một `<ul>` ANH EM của danh sách trang 1,
+   không phải con của nó, nên `gap` của từng `ul` không phủ chỗ nối: thẻ cuối trang 1 và thẻ đầu
+   trang 2 dính nhau (viền chồng). Margin trên đúng bằng khoảng cách giữa hai thẻ — cùng biến. */
+.danh_sach_them {
+  margin-top: var(--khoang-the);
 }
 
 .rong {
@@ -258,10 +267,6 @@
     height: 34px;
     justify-content: center;
   }
-}
-
-:global(:root[data-kieu-xem="gon"]) .danh_sach {
-  gap: 0;
 }
 
 /* Dòng "hết bài" ở cuối feed — thay chỗ nút "xem thêm" khi không còn trang nào

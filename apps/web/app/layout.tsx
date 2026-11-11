@@ -14,7 +14,6 @@ import { PhienProvider } from "@/components/phien";
 import { ThanhDieuHuongDuoi } from "@/components/thanh-dieu-huong-duoi";
 import { ToastProvider } from "@/components/toast";
 import { SITE_ORIGIN } from "@/lib/site";
-import { nguonScriptKieuXem } from "@/lib/kieu-xem";
 import { nguonScriptPhien } from "@/lib/tai-khoan";
 import { nguonScriptTheme } from "@/lib/theme";
 
@@ -146,10 +145,6 @@ export default function RootLayout({
             chuỗi ký tự. Thứ khác nhau giữa hai người là `localStorage` của họ. Đó là điều
             kiện để trang mạch còn cache được bằng ISR (PLAN 8.4). */}
         <script dangerouslySetInnerHTML={{ __html: nguonScriptTheme() }} />
-        {/* Kiểu xem feed (thẻ/gọn) đi cùng cơ chế và cùng lý do, chỉ nặng hơn một bậc:
-            nó đổi CHIỀU CAO của mọi thẻ, nên áp sau hydrate là cả feed nhảy dựng lên
-            dưới con trỏ. Xem `lib/kieu-xem.ts`. */}
-        <script dangerouslySetInnerHTML={{ __html: nguonScriptKieuXem() }} />
         {/* Nhận diện phiên đăng nhập từ localStorage để CSS giữ chỗ cụm phải trước khi vẽ,
             tránh giật và nháy bố cục khi F5. Xem `lib/tai-khoan.ts`. */}
         <script dangerouslySetInnerHTML={{ __html: nguonScriptPhien() }} />

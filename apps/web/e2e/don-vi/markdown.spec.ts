@@ -166,8 +166,8 @@ test("KHÔNG file nào ở apps/web dùng `dangerouslySetInnerHTML`", () => {
   //    theo đường thô — `lib/json-ld.ts` dựng object rồi `JSON.stringify`, nên nội dung đi
   //    qua phép escape của JSON.
   // 2. `app/layout.tsx`, script inline của công tắc theme (lượt giao diện, 2026-08-23).
-  //    Chuỗi nó chèn là **HẰNG BIÊN DỊCH**: `lib/theme.ts::nguonScriptTheme()` và
-  //    `lib/kieu-xem.ts::nguonScriptKieuXem()` ghép từ hằng của chính module, không có một
+  //    Chuỗi nó chèn là **HẰNG BIÊN DỊCH**: `lib/theme.ts::nguonScriptTheme()` ghép từ
+  //    hằng của chính module (script kiểu xem Thẻ/Gọn đã bị gỡ ở đợt B), không có một
   //    đường nào cho dữ liệu bên ngoài đi vào. Không dùng được `next/script` thay: mọi
   //    `strategy` của nó đều chạy SAU lần vẽ đầu, tức không tránh được cú nháy sai theme —
   //    mà tránh cú nháy ấy là toàn bộ lý do script tồn tại.

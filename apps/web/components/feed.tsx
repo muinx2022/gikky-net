@@ -20,7 +20,6 @@ import {
 import { TEN_THUONG_LOAI_MACH, hrefChipLoai } from "@/lib/loc-loai-mach";
 
 import { BaoCursorHong } from "./bao-cursor-hong";
-import { ChonKieuXem } from "./chon-kieu-xem";
 import { CuonVoHan } from "./cuon-vo-han";
 import css from "./feed.module.css";
 import { VoKhungHaiCot } from "./khung-hai-cot-vo";
@@ -184,7 +183,7 @@ export function Feed({
         />
       )}
 
-      {/* Thanh tab feed và nút đổi kiểu xem */}
+      {/* Thanh tab feed */}
       <div className={css.thanh_dinh}>
         <div className={css.hang_dieu_khien}>
           <nav className={css.tab} data-testid="tab-feed" aria-label="Sắp xếp feed">
@@ -208,7 +207,6 @@ export function Feed({
               );
             })}
           </nav>
-          <ChonKieuXem />
         </div>
 
         {tabCoKhoang(tab) && (

@@ -196,7 +196,8 @@ export default async function TrangHoSo({
       ) : (
         <ul className={css.danh_sach}>
           {ho_so.machs.map((m) => (
-            <TheMach key={m.id} mach={m} />
+            // Mọi thẻ ở đây là của chủ trang: nút "Theo dõi" đã ở header.
+            <TheMach key={m.id} mach={m} anTheoDoi />
           ))}
         </ul>
       )}
