@@ -953,3 +953,11 @@ thật là hợp lệ; bình luận giả hoặc nick ảo thì không (luật c
 
 **Còn mở:** có làm không; đặt nút "Đặt câu hỏi" ở đâu; "xem tất cả câu hỏi" đi tới đâu (đề xuất: feed lọc
 `/?tab=moi&loai_mach=cau_hoi`, mỗi câu hỏi vẫn là trang `/m/` index được); mobile app làm sau.
+
+---
+
+## Việc 13 · Khối "Bài viết" trang chủ bỏ sót chuyên mục — ĐÃ CHỌN phương án C + admin chọn ≤4 chuyên mục; ĐÃ GỘP v2 (b02fd65), chưa deploy
+
+Đo dev.gikky.net 2026-11-11: 3 cột ghép cứng 6 slug (`lib/nhom-bai-viet.ts`) ⇒ bài `ngoai-hoi` (3/50) không bao giờ
+lên trang chủ. User chọn phương án C (dải "Mới đăng" mọi chuyên mục + giá sách chủ đề) và yêu cầu admin chọn được
+chuyên mục nào lên trang chủ, tối đa 4. Plan: `plans/2026-11-11-bai-viet-trang-chu-gia-sach.md`.
