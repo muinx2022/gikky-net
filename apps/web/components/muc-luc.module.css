@@ -64,7 +64,12 @@
 }
 
 .so {
-  font-family: var(--font-ibm-plex-mono);
+  font-family: var(--f-mono, monospace);
   font-size: 0.78rem;
   color: var(--chu-mo);
+  flex-shrink: 0;
+}
+
+.chu {
+  flex: 1;
 }

@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { taoSlugNeo, xuLyMucLuc } from "../../lib/muc-luc";
+import { chuanHoaMucLuc } from "../../components/muc-luc";
 import { jsonLdMach } from "../../lib/json-ld";
 import { tomTat } from "../../components/trang-mach";
 import type { MachChiTietOut } from "@gikky/api-client";
@@ -203,5 +204,80 @@ test.describe("SEO On-page & Content Improvements", () => {
     expect(trangMachSrc).toContain("trichUrlAnhMach");
     expect(trangMachSrc).toMatch(/images:\s*ds_anh_og/);
     expect(trangMachSrc).toMatch(/images:\s*ds_anh_twitter/);
+  });
+
+  test("9. chuanHoaMucLuc: bóc tách tiền tố số của tác giả và sinh số phân cấp chuẩn xác", () => {
+    // TH1: Bài viết có tác giả tự đánh số (như bài 1483)
+    const ds1483 = [
+      { id: "1-cu-soc-ngay-gdkhq", tieuDe: "1. Cú sốc ngày GDKHQ", cap: 2 as const },
+      { id: "2-cong-thuc-dieu-chinh-gia", tieuDe: "2. Công thức điều chỉnh giá", cap: 2 as const },
+      { id: "2-1-dieu-chinh-khi-tra-co-tuc-tien-mat", tieuDe: "2.1. Điều chỉnh khi trả cổ tức bằng tiền mặt", cap: 3 as const },
+      { id: "2-2-dieu-chinh-khi-tra-co-tuc-co-phieu", tieuDe: "2.2. Điều chỉnh khi trả cổ tức bằng cổ phiếu", cap: 3 as const },
+      { id: "3-nghich-ly-thue-5", tieuDe: "3. Nghịch lý thuế 5%", cap: 2 as const },
+      { id: "4-hieu-ung-tam-ly", tieuDe: "4. Hiệu ứng tâm lý", cap: 2 as const },
+    ];
+
+    const kq1 = chuanHoaMucLuc(ds1483);
+    expect(kq1).toHaveLength(6);
+    expect(kq1[0]).toMatchObject({ so: "1.", tieuDeHienThi: "Cú sốc ngày GDKHQ" });
+    expect(kq1[1]).toMatchObject({ so: "2.", tieuDeHienThi: "Công thức điều chỉnh giá" });
+    expect(kq1[2]).toMatchObject({ so: "2.1.", tieuDeHienThi: "Điều chỉnh khi trả cổ tức bằng tiền mặt" });
+    expect(kq1[3]).toMatchObject({ so: "2.2.", tieuDeHienThi: "Điều chỉnh khi trả cổ tức bằng cổ phiếu" });
+    expect(kq1[4]).toMatchObject({ so: "3.", tieuDeHienThi: "Nghịch lý thuế 5%" });
+    expect(kq1[5]).toMatchObject({ so: "4.", tieuDeHienThi: "Hiệu ứng tâm lý" });
+
+    // Tiền tố không có dấu chấm cuối (ví dụ "1", "1.1") vẫn được chuẩn hoá thành "1.", "1.1."
+    const dsThieuCham = [
+      { id: "1-tong-quan", tieuDe: "1 Tổng quan", cap: 2 as const },
+      { id: "1-1-chi-tiet", tieuDe: "1.1 Chi tiết", cap: 3 as const },
+    ];
+    const kqThieuCham = chuanHoaMucLuc(dsThieuCham);
+    expect(kqThieuCham[0].so).toBe("1.");
+    expect(kqThieuCham[0].tieuDeHienThi).toBe("Tổng quan");
+    expect(kqThieuCham[1].so).toBe("1.1.");
+    expect(kqThieuCham[1].tieuDeHienThi).toBe("Chi tiết");
+
+    // Tiền tố dạng ngoặc đơn hoặc số La Mã / chữ cái
+    const dsDacBiet = [
+      { id: "1-mo-dau", tieuDe: "1) Mở đầu", cap: 2 as const },
+      { id: "i-tong-quan", tieuDe: "I. Tổng quan", cap: 2 as const },
+      { id: "a-buoc-mot", tieuDe: "A. Bước một", cap: 3 as const },
+    ];
+    const kqDacBiet = chuanHoaMucLuc(dsDacBiet);
+    expect(kqDacBiet[0].so).toBe("1)");
+    expect(kqDacBiet[1].so).toBe("I.");
+    expect(kqDacBiet[2].so).toBe("A.");
+
+    // TH2: Bài viết hỗn hợp (như bài 1482: H2 có số, H3 không có số, Kết luận không số)
+    const ds1482 = [
+      { id: "1-co-cau-danh-muc", tieuDe: "1. Cơ cấu danh mục", cap: 2 as const },
+      { id: "ty-trong-co-phieu", tieuDe: "Tỷ trọng cổ phiếu", cap: 3 as const },
+      { id: "2-chien-luoc-giai-ngan", tieuDe: "2. Chiến lược giải ngân", cap: 2 as const },
+      { id: "nguyen-tac-quan-tri", tieuDe: "Nguyên tắc quản trị rủi ro", cap: 3 as const },
+      { id: "ket-luan", tieuDe: "Kết luận và khuyến nghị", cap: 2 as const },
+    ];
+    const kq2 = chuanHoaMucLuc(ds1482);
+    expect(kq2[0]).toMatchObject({ so: "1.", tieuDeHienThi: "Cơ cấu danh mục" });
+    expect(kq2[1]).toMatchObject({ so: undefined, tieuDeHienThi: "Tỷ trọng cổ phiếu" });
+    expect(kq2[2]).toMatchObject({ so: "2.", tieuDeHienThi: "Chiến lược giải ngân" });
+    expect(kq2[3]).toMatchObject({ so: undefined, tieuDeHienThi: "Nguyên tắc quản trị rủi ro" });
+    expect(kq2[4]).toMatchObject({ so: undefined, tieuDeHienThi: "Kết luận và khuyến nghị" });
+
+    // TH3: Bài viết không đánh số (như bản tin thị trường) -> tự sinh số phân cấp
+    const dsBanTin = [
+      { id: "tong-quan", tieuDe: "Tổng quan thị trường", cap: 2 as const },
+      { id: "dien-bien-vnindex", tieuDe: "Diễn biến VN-Index", cap: 3 as const },
+      { id: "thanh-khoan", tieuDe: "Thanh khoản khớp lệnh", cap: 3 as const },
+      { id: "khoi-ngoai", tieuDe: "Dòng tiền khối ngoại", cap: 2 as const },
+      { id: "top-mua-rong", tieuDe: "Top mua ròng", cap: 3 as const },
+      { id: "khuyen-nghi", tieuDe: "Khuyến nghị hành động", cap: 2 as const },
+    ];
+    const kq3 = chuanHoaMucLuc(dsBanTin);
+    expect(kq3[0]).toMatchObject({ so: "1.", tieuDeHienThi: "Tổng quan thị trường" });
+    expect(kq3[1]).toMatchObject({ so: "1.1.", tieuDeHienThi: "Diễn biến VN-Index" });
+    expect(kq3[2]).toMatchObject({ so: "1.2.", tieuDeHienThi: "Thanh khoản khớp lệnh" });
+    expect(kq3[3]).toMatchObject({ so: "2.", tieuDeHienThi: "Dòng tiền khối ngoại" });
+    expect(kq3[4]).toMatchObject({ so: "2.1.", tieuDeHienThi: "Top mua ròng" });
+    expect(kq3[5]).toMatchObject({ so: "3.", tieuDeHienThi: "Khuyến nghị hành động" });
   });
 });
