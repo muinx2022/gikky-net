@@ -17,6 +17,7 @@ gọi đặt được.
 """
 
 from datetime import date
+from decimal import Decimal
 from typing import Literal
 
 from ninja import Schema
@@ -79,17 +80,52 @@ class MocMoiIn(Schema):
     figures: list[FigureIn] | None = None
 
 
+#: Hợp đồng API của `Mach.loai_mach` — `Literal` để `openapi.json` ra `enum` và `?loai_mach=`
+#: sai giá trị bị chặn 422. Nguồn thật là `core.models.dien_dan.LoaiMach`; test
+#: `test_loai_mach.py` ghim hai tập bằng nhau.
+LoaiMachIn = Literal["nhat_ky", "bai_viet", "thao_luan"]
+
+
+#: Chiều của lệnh có cấu trúc — nguồn thật là `core.models.dien_dan.LenhChieu`
+#: (`test_lenh.py` ghim hai tập bằng nhau). `Literal` để `openapi.json` ra `enum`.
+LenhChieuIn = Literal["mua", "ban"]
+
+
+class LenhIn(Schema):
+    """Lệnh có cấu trúc của nhật ký — `MachMoiIn.lenh` (`plans/2026-11-11-homepage-v2-giao-dien-moi.md` §6.1).
+
+    Schema chỉ chặn HÌNH DẠNG (kiểu, độ dài, số dương, vừa cột `Decimal(20, 8)`). Luật miền —
+    MUA ⇒ `sl < vào < tp`, BÁN ⇒ `tp < vào < sl`, chỉ nhận cho nhật ký — nằm ở
+    `core/lenh.py::kiem_lenh` và `core/ghi.py::tao_mach`, nơi mọi cửa ghi đi qua. `ma` gửi
+    kiểu nào cũng được, server lưu IN HOA. Số gửi dạng chuỗi hoặc số đều nhận; nên gửi chuỗi
+    để không mất độ chính xác khi đi qua `float` của JSON.
+    """
+
+    chieu: LenhChieuIn
+    ma: str = Field(min_length=1, max_length=20, pattern=r"^[A-Za-z0-9._/-]+$")
+    gia_vao: Decimal = Field(gt=0, max_digits=20, decimal_places=8)
+    sl: Decimal | None = Field(default=None, gt=0, max_digits=20, decimal_places=8)
+    tp: Decimal | None = Field(default=None, gt=0, max_digits=20, decimal_places=8)
+    nhoi: Decimal | None = Field(default=None, gt=0, max_digits=20, decimal_places=8)
+
+
 class MachMoiIn(MocMoiIn):
     """Đăng bài — `POST /machs`. Bài gốc **chính là mốc 1**, nên nó kế thừa `MocMoiIn`.
 
     Không có trường `body` trên `Mach` (PLAN 5.1): `body` ở đây là thân của mốc 1.
-    """
 
+    `loai_mach` (KHÔNG phải `loai` — đó là chip của mốc): không gửi ⇒ server phân giải theo
+    tác giả; người thường gửi `bai_viet` hoặc `thao_luan` ⇒ 403. Xem `api/machs.py::tao_mach_api`.
+    """
     sub: str = Field(min_length=1, max_length=40, description="slug của chuyên mục")
     title: str = Field(min_length=1, max_length=DAI_TITLE)
     tat_binh_luan: bool = False
     truong_phai: str | None = Field(default=None, max_length=DAI_TRUONG_PHAI)
     rieng_tu: bool = False
+    loai_mach: LoaiMachIn | None = None
+    #: Lệnh có cấu trúc — chỉ cho `nhat_ky`; loại khác gửi `lenh` ⇒ 400 `du_lieu_khong_hop_le`.
+    #: Bất biến sau khi đăng: không có endpoint sửa.
+    lenh: LenhIn | None = None
 
 
 class MocSuaIn(Schema):

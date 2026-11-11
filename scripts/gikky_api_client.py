@@ -314,11 +314,13 @@ class GikkyClient:
             "body",
             "occurred_at",
             "loai",
+            "loai_mach",
             "question_for_crowd",
             "figures",
             "truong_phai",
             "rieng_tu",
             "tat_binh_luan",
+            "lenh",
         }
         body_clean = {k: v for k, v in payload.items() if k in truong_hop_le and v is not None}
         url = f"{self.origin}/api/v1/machs"

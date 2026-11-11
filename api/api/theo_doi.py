@@ -180,11 +180,12 @@ def _mach_hien(mach_id: int, user=None):
     """
     from core.models.dien_dan import Mach
 
+    # Chạm `user` (session) TRƯỚC truy vấn, vô điều kiện — xem `api/machs.py::_mach_hien`.
+    da_auth = user is not None and getattr(user, "is_authenticated", False)
     mach = Mach.objects.filter(pk=mach_id, hidden_at__isnull=True).first()
     if mach is None:
         return None
     if mach.rieng_tu:
-        da_auth = user is not None and getattr(user, "is_authenticated", False)
         la_tac_gia = da_auth and user.pk == mach.author_id
         la_staff = da_auth and getattr(user, "is_staff", False)
         if not (la_tac_gia or la_staff):
@@ -261,7 +262,7 @@ def danh_dau_da_xem(request, mach_id: int, du_lieu: DaXemIn):
 
     Mạch bị mod **khoá** vẫn gọi được — xem docstring module.
     """
-    mach = nap_mach(mach_id)
+    mach = nap_mach(mach_id, user=request.user)
     theo = dat_da_xem(user=request.user, mach=mach, entry_seq=du_lieu.entry_seq)
     return DaXemOut(
         following=theo is not None,
@@ -292,7 +293,7 @@ def theo_mach(request, mach_id: int):
 
     Mạch bị mod **khoá** vẫn theo được — xem docstring module.
     """
-    mach = nap_mach(mach_id)
+    mach = nap_mach(mach_id, user=request.user)
     theo = dat_follow(user=request.user, mach=mach)
     # Báo cho CHỦ MẠCH. Idempotent ở cả hai tầng: `dat_follow` không dựng hàng thứ hai,
     # và `bao_theo_mach` gộp theo ngày mỗi mạch — nên bấm theo/bỏ/theo lại trong một ngày
@@ -324,6 +325,6 @@ def bo_theo_mach(request, mach_id: int):
     Mạch bị mod **khoá** vẫn bỏ theo được, và cửa này là lý do chính của quyết định ấy —
     xem docstring module.
     """
-    mach = nap_mach(mach_id)
+    mach = nap_mach(mach_id, user=request.user)
     bo_follow(user=request.user, mach=mach)
     return TheoMachOut(mach_id=mach.pk, following=False, last_seen_entry_seq=0)

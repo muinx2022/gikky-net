@@ -20,3 +20,27 @@
 .lo {
   color: var(--loss);
 }
+
+/* Dải lệnh của thẻ nhật ký trang chủ (`components/the-nhat-ky.tsx`, plan
+ * `2026-11-11-homepage-v2-giao-dien-moi.md` §3.2). Nằm ở ĐÂY vì đây là file DUY NHẤT (cùng
+ * `form-tai-khoan` và `ti-le-rr`) mà `mau-token.spec.ts` cho dùng `--gain`/`--loss`: TP và SL
+ * là con số lãi/lỗ kế hoạch; chip MUA/BÁN theo cùng cặp màu. Entry, Nhồi, R:R KHÔNG tô màu
+ * (`--stamp` bị khoá theo từng selector — Entry không phải "con dấu"). Nền chip trộn 12% màu
+ * vào `--surface` (cùng kiểu `--card`), không hex mới. */
+.mua {
+  color: var(--gain);
+  background: color-mix(in srgb, var(--gain) 12%, var(--surface));
+}
+
+.ban {
+  color: var(--loss);
+  background: color-mix(in srgb, var(--loss) 12%, var(--surface));
+}
+
+.gia_tp {
+  color: var(--gain);
+}
+
+.gia_sl {
+  color: var(--loss);
+}

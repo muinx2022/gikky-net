@@ -32,6 +32,7 @@ from core.ghi import SO_ANH_TOI_DA_MOI_MOC, QuaNhieuAnh, them_anh_moc, xoa_anh_m
 from core.han_muc import dem_anh_noi_dung_trong_ngay_vn, tran_anh_noi_dung_moi_ngay
 from core.models.moc import MocAnh
 from core.revalidate import lam_moi_mach
+from core.rieng_tu import mach_xem_duoc
 from core.thoi_gian import nua_dem_vn_ke_tiep
 
 from api.anh_chung import doi_khong_qua_nang, xu_ly_hoac_loi_http
@@ -96,7 +97,7 @@ def tai_anh_moc(request, moc_id: int, file: UploadedFile = File(...)):
     hình dạng lỗi thứ hai, PLAN mục 7 chỉ có `{detail, code}`), hoặc phải huỷ cả lượt vì
     một tấm sai. UI gửi tuần tự và báo lỗi từng tấm — xem `apps/web/lib/anh.ts`.
     """
-    moc = nap_moc(moc_id)
+    moc = nap_moc(moc_id, user=request.user)
     doi_chu_so_huu(request.user, moc.author_id, "mốc")
     doi_mach_tuong_tac_duoc(moc.mach)
     doi_con_song(moc, "Mốc")
@@ -152,7 +153,9 @@ def xoa_anh_moc_api(request, anh_id: int):
         .select_related("moc", "moc__mach")
         .first()
     )
-    if anh is None:
+    # Cửa này tự nạp `MocAnh` (không qua `nap_moc`) nên tự áp luật mạch riêng tư: người không
+    # được xem mạch nhận 404 như id không tồn tại, TRƯỚC `doi_chu_so_huu` (403 là cái dò id).
+    if anh is None or not mach_xem_duoc(anh.moc.mach, request.user):
         raise LoiGhi(404, KHONG_TIM_THAY, f"Không tìm thấy ảnh {anh_id}.")
     doi_chu_so_huu(request.user, anh.moc.author_id, "mốc")
     doi_mach_tuong_tac_duoc(anh.moc.mach)

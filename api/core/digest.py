@@ -31,6 +31,7 @@ from django.db import models
 from django.db.models import QuerySet
 
 from core.models import Mach, Moc, User
+from core.rieng_tu import loc_cong_khai
 from core.thoi_gian import TZ_VN
 
 #: Thứ Bảy — `datetime.weekday()` đếm từ 0 = thứ Hai.
@@ -103,9 +104,15 @@ def nguoi_nhan_digest() -> list[NguoiNhan]:
     theo_user: dict[int, list[int]] = {}
     nguoi: dict[int, User] = {}
     hang = (
-        Follow.objects.filter(
-            user__nhan_digest=True,
-            user__is_active=True,
+        # `loc_cong_khai`: digest là EMAIL, không có "người xem" — mạch riêng tư bị loại hẳn,
+        # kể cả với tác giả hay staff đang theo (tiêu đề lệnh có thể chứa Entry/SL/TP). Rào
+        # này cần vì `Follow` của người lạ trên mạch về sau thành riêng tư vẫn còn trong DB.
+        loc_cong_khai(
+            Follow.objects.filter(
+                user__nhan_digest=True,
+                user__is_active=True,
+            ),
+            tien_to="mach__",
         )
         .exclude(user__email="")
         .exclude(mach__author_id=models.F("user_id"))
@@ -139,18 +146,24 @@ def _mocs_moi(mach_ids, tu_luc: datetime, den_luc: datetime) -> QuerySet[Moc]:
     - `deleted_at`/`hidden_at` trên `Moc`: bia mộ và mốc bị mod ẩn không phải "diễn biến"
       — gửi email báo có mốc mới rồi người ta bấm vào thấy `[đã xoá]` là tệ hơn im lặng;
     - `mach__hidden_at`: mạch bị mod ẩn thì không có gì để báo;
+    - `mach__rieng_tu`: mạch riêng tư không bao giờ vào email (thân thư in tiêu đề mạch);
     - `created_at` (dấu thời gian **server**, bất biến) chứ không `occurred_at`: mốc nhập
       lùi ngày là chuyện bình thường (PLAN nguyên tắc 3), và lọc theo ngày người dùng đặt
       sẽ vừa bỏ sót mốc mới vừa lôi lại mốc cũ.
     """
     return (
-        Moc.objects.filter(
-            mach_id__in=list(mach_ids),
-            created_at__gte=tu_luc,
-            created_at__lt=den_luc,
-            deleted_at__isnull=True,
-            hidden_at__isnull=True,
-            mach__hidden_at__isnull=True,
+        # `loc_cong_khai` (`mach__rieng_tu=False`): lớp thứ hai — `mach_ids` do người gọi
+        # truyền vào, và thân email in `m.mach.title`; mạch riêng tư không được lọt vào.
+        loc_cong_khai(
+            Moc.objects.filter(
+                mach_id__in=list(mach_ids),
+                created_at__gte=tu_luc,
+                created_at__lt=den_luc,
+                deleted_at__isnull=True,
+                hidden_at__isnull=True,
+                mach__hidden_at__isnull=True,
+            ),
+            tien_to="mach__",
         )
         .select_related("mach", "mach__sub")
         .order_by("mach_id", "seq")

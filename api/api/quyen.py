@@ -74,6 +74,9 @@ DU_LIEU_KHONG_HOP_LE = "du_lieu_khong_hop_le"
 #: docstring hàm đó) — `plans/2026-09-05-cua-so-tu-sua-bai.md`. 403. Chỉ superuser sửa
 #: tiếp được, qua `PATCH /admin/mocs/{id}` (không giới hạn thời gian).
 HET_CUA_SO_SUA = "het_cua_so_sua"
+#: Người dùng thường gửi `loai_mach = "bai_viet"` — loại này chỉ dành cho tài khoản đội
+#: (`User.la_tai_khoan_doi`). 403; `POST /machs` không tạo `Mach` nào.
+LOAI_MACH_KHONG_DUOC_PHEP = "loai_mach_khong_duoc_phep"
 #: Đã hết số lần đổi tên hiển thị cho phép (tối đa 2 lần). 400.
 HET_LUOT_DOI_TEN = "het_luot_doi_ten"
 
@@ -154,6 +157,38 @@ def doi_chu_so_huu(user, chu_id: int, cai_gi: str) -> None:
     """
     if user.pk != chu_id:
         raise LoiGhi(403, KHONG_PHAI_CHU, f"Bạn không phải chủ {cai_gi} này.")
+
+
+def duoc_chon_loai_mach(user, loai: str | None) -> bool:
+    """`user` có được ĐẶT `Mach.loai_mach = loai` không (`plans/2026-11-10-truong-loai-mach.md` mục 8.1).
+
+    - `None` / `nhat_ky` — ai cũng được (`None` = để server phân giải theo tác giả);
+    - `bai_viet` — CHỈ tài khoản có cờ `la_tai_khoan_doi`;
+    - `thao_luan` — tài khoản có cờ HOẶC `is_staff` (mod).
+
+    Một mod KHÔNG có cờ gửi `bai_viet` ⇒ `False`: `is_staff` là quyền quản trị, không phải
+    quyền đăng bài thay gikky. "Mod" ở đây chỉ là `is_staff`, không gồm `ModSub`.
+    """
+    if loai in (None, "nhat_ky"):
+        return True
+    if getattr(user, "la_tai_khoan_doi", False):
+        return True
+    return loai == "thao_luan" and bool(getattr(user, "is_staff", False))
+
+
+def doi_nguoi_dong_so_duoc(user, mach) -> None:
+    """Ai được đóng / mở lại sổ của `mach` (mục 8.2, thu hẹp ở mục 9.3). Ném 403 `khong_phai_chu`.
+
+    Mạch `thao_luan` là của gikky chung, không của riêng người bấm tạo ⇒ tác giả HOẶC
+    `is_staff`. **KHÔNG** gồm tài khoản chỉ có cờ `la_tai_khoan_doi`: `gikky-team-member` là
+    tài khoản pipeline AI cầm được, nên không trao thêm quyền đóng chủ đề của người khác.
+    Mọi loại mạch khác: vẫn CHỈ tác giả (`doi_chu_so_huu`), không có nhánh "trừ khi là staff"
+    — xem docstring của nó. Mod đóng / mở lại chủ đề của người khác để lại `AuditLog`
+    (`core/ghi.py::dong_so` / `mo_lai`, tham số `boi`).
+    """
+    if mach.loai_mach == "thao_luan" and getattr(user, "is_staff", False):
+        return
+    doi_chu_so_huu(user, mach.author_id, "mạch")
 
 
 def doi_mach_tuong_tac_duoc(mach) -> None:

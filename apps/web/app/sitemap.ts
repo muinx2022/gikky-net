@@ -25,6 +25,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const trang: MetadataRoute.Sitemap = [
     { url: urlTuyetDoi("/"), changeFrequency: "hourly", priority: 1 },
     { url: urlTuyetDoi("/luat"), changeFrequency: "monthly", priority: 0.3 },
+    // Kho chủ đề thảo luận (homepage v2 §3.8). Từng chủ đề vốn đã nằm trong sitemap qua vòng
+    // feed không lọc bên dưới; dòng này chỉ thêm cái kho.
+    { url: urlTuyetDoi("/chu-de"), changeFrequency: "daily", priority: 0.5 },
     ...cac_sub.map((s) => ({
       url: urlTuyetDoi(duongDanSub(s.slug)),
       changeFrequency: "hourly" as const,

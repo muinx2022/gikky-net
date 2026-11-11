@@ -370,6 +370,18 @@ export async function TrangMach({
             vẫn là server component. */}
         <TrangThaiToiProvider key={mach.id} machId={mach.id}>
           <FormBinhLuanProvider>
+            {/* Chủ đề thảo luận không phải một cuốn sổ của ai: lối về kho `/chu-de` đứng
+                TRÊN CÙNG (plan homepage-v2 §3.8). Nhật ký / bài viết không có link này. */}
+            {mach.loai_mach === "thao_luan" && (
+              <Link
+                className={css.ve_chu_de}
+                href="/chu-de"
+                prefetch={false}
+                data-testid="ve-chu-de"
+              >
+                ← Chủ đề thảo luận
+              </Link>
+            )}
             <article className={css.the} data-mat={mat} data-testid="the-mach">
               <div className={css.hang_tren}>
                 <div className={css.cum_trai}>
@@ -565,6 +577,7 @@ export async function TrangMach({
               soMoc={mach.entry_count}
               riengTu={mach.rieng_tu}
               daLuuTru={mach.da_luu_tru ?? false}
+              laChuDe={mach.loai_mach === "thao_luan"}
             />
 
             {cursor_hong && <BaoCursorHong />}

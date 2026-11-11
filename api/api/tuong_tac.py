@@ -15,6 +15,7 @@ from core.ghi import dat_reaction, dat_vote
 from core.models.binh_luan import Comment
 from core.models.moc import Moc
 from core.models.tuong_tac import Reaction, Vote
+from core.rieng_tu import loc_xem_duoc
 
 from api.ghi_chung import doi_con_song, nap_moc
 from api.loi import KHONG_TIM_THAY, LoiOut
@@ -63,15 +64,26 @@ def dat_vote_api(request, du_lieu: VoteIn):
         )
 
     la_moc = du_lieu.target_type == Vote.Loai.MOC
+    # `loc_xem_duoc` ngay chỗ tải đích (không đi qua `nap_*` vì cửa này đích là mốc HOẶC bình
+    # luận theo `target_type`): mạch riêng tư của người khác ⇒ `dich is None` ⇒ cùng 404 với
+    # id không tồn tại, và không có dòng nào chạm `dat_vote`.
     if la_moc:
         dich = (
-            Moc.objects.filter(pk=du_lieu.target_id, mach__hidden_at__isnull=True)
+            loc_xem_duoc(
+                Moc.objects.filter(pk=du_lieu.target_id, mach__hidden_at__isnull=True),
+                request.user,
+                tien_to="mach__",
+            )
             .select_related("mach")
             .first()
         )
     else:
         dich = (
-            Comment.objects.filter(pk=du_lieu.target_id, mach__hidden_at__isnull=True)
+            loc_xem_duoc(
+                Comment.objects.filter(pk=du_lieu.target_id, mach__hidden_at__isnull=True),
+                request.user,
+                tien_to="mach__",
+            )
             .select_related("mach")
             .first()
         )
@@ -124,7 +136,7 @@ def dat_reaction_api(request, moc_id: int, du_lieu: ReactionIn):
     Lưu khoá không dấu (`len`/`xuong`/…) chứ không lưu emoji — đổi bộ icon sau này không
     phải migrate dữ liệu.
     """
-    moc = nap_moc(moc_id)
+    moc = nap_moc(moc_id, user=request.user)
     doi_mach_tuong_tac_duoc(moc.mach)
     doi_con_song(moc, "Mốc")
     try:

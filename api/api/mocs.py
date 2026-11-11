@@ -53,6 +53,9 @@ def _moc_cua_mach_hien(moc_id: int, user=None) -> Moc | None:
     """Mốc thuộc một mạch chưa bị mod ẩn. **Bia mộ vẫn trả về** — xem endpoint dưới.
     Mạch riêng tư (`rieng_tu=True`): chỉ tác giả hoặc staff xem được.
     """
+    # Chạm `user` (session) TRƯỚC truy vấn, vô điều kiện — xem `api/machs.py::_mach_hien`:
+    # `Vary: Cookie` chỉ xuất hiện khi session bị đọc, nên đọc có điều kiện là dò được id.
+    da_auth = user is not None and getattr(user, "is_authenticated", False)
     moc = (
         Moc.objects.filter(pk=moc_id, mach__hidden_at__isnull=True)
         # `author` cho `MocOut.author` (nợ `MOC-THIEU-AUTHOR`); `mach__author` cho phép
@@ -63,7 +66,6 @@ def _moc_cua_mach_hien(moc_id: int, user=None) -> Moc | None:
     if moc is None:
         return None
     if moc.mach.rieng_tu:
-        da_auth = user is not None and getattr(user, "is_authenticated", False)
         la_tac_gia = da_auth and user.pk == moc.mach.author_id
         la_staff = da_auth and getattr(user, "is_staff", False)
         if not (la_tac_gia or la_staff):
@@ -253,7 +255,7 @@ def sua_moc_api(request, moc_id: int, du_lieu: MocSuaIn):
     vẫn còn tự sửa được (< cửa sổ tự sửa), miễn là cửa sổ tự sửa lớn hơn cửa sổ im lặng —
     đúng trường hợp mặc định (60 > 15).
     """
-    moc = nap_moc(moc_id)
+    moc = nap_moc(moc_id, user=request.user)
     doi_chu_so_huu(request.user, moc.author_id, "mốc")
     doi_mach_tuong_tac_duoc(moc.mach)
     doi_con_song(moc, "Mốc")
@@ -304,7 +306,7 @@ def xoa_moc_api(request, moc_id: int):
     **có** làm `comment_count`/`last_activity_at` đổi (chúng đo *nội dung đọc được*) —
     PLAN mục 6, luật đếm 4 cột.
     """
-    moc = nap_moc(moc_id)
+    moc = nap_moc(moc_id, user=request.user)
     doi_chu_so_huu(request.user, moc.author_id, "mốc")
     doi_mach_tuong_tac_duoc(moc.mach)
     doi_con_song(moc, "Mốc")
@@ -394,7 +396,7 @@ def trich_vao_so_api(request, moc_id: int, du_lieu: TrichIn):
 
     Người được trích nhận thông báo (PLAN 5.6 dòng cuối), sinh **trong cùng transaction**.
     """
-    moc = nap_moc(moc_id)
+    moc = nap_moc(moc_id, user=request.user)
     doi_chu_so_huu(request.user, moc.mach.author_id, "mạch")
     doi_mach_tuong_tac_duoc(moc.mach)
     doi_con_song(moc, "Mốc")
@@ -487,7 +489,7 @@ def go_trich_api(request, moc_id: int):
     một lượt gỡ thành công và một lượt gỡ vào chỗ trống là hai chuyện khác nhau, và cái
     thứ hai gần như luôn nghĩa là UI đang hiển thị một trạng thái cũ.
     """
-    moc = nap_moc(moc_id)
+    moc = nap_moc(moc_id, user=request.user)
     doi_chu_so_huu(request.user, moc.mach.author_id, "mạch")
     doi_mach_tuong_tac_duoc(moc.mach)
 

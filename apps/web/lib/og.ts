@@ -120,8 +120,10 @@ export type DuLieuOg = {
   dongPhu: string;
   /** Số ô trên spine (0 = không vẽ spine). */
   soOSpine: number;
-  /** Mạch đã đóng sổ ⇒ vẽ nhãn "ĐÃ ĐÓNG SỔ". */
+  /** Mạch đã đóng sổ ⇒ vẽ nhãn "ĐÃ ĐÓNG SỔ" (chủ đề thảo luận: "ĐÃ ĐÓNG", xem `nhanDongSo`). */
   dongSo: boolean;
+  /** Chữ của nhãn khi `dongSo`; bỏ trống ⇒ "ĐÃ ĐÓNG SỔ". Chỉ chủ đề thảo luận đổi nó. */
+  nhanDongSo?: string;
   /** Data URL `data:image/jpeg;base64,...` hoặc `data:image/png;base64,...` của ảnh minh họa mạch. */
   anhSrc?: string | null;
 };
@@ -224,6 +226,7 @@ export function ogMach(mach: {
   entry_count: number;
   sub: { slug: string; ten: string };
   author: { username: string };
+  loai_mach?: string;
 }): DuLieuOg {
   return {
     nhan: ghepDongPhu([`s/${mach.sub.slug}`, catChu(mach.sub.ten, 40)]),
@@ -235,6 +238,7 @@ export function ogMach(mach: {
     ]),
     soOSpine: mach.entry_count >= 2 ? Math.min(mach.entry_count, TRAN_O_SPINE) : 0,
     dongSo: mach.status === "closed",
+    ...(mach.loai_mach === "thao_luan" ? { nhanDongSo: "ĐÃ ĐÓNG" } : {}),
   };
 }
 

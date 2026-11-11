@@ -40,6 +40,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 from core.models.binh_luan import Comment
 from core.models.dien_dan import Mach
+from core.rieng_tu import loc_cong_khai
 from core.tim_kiem import (
     CAC_INDEX,
     TEN_INDEX,
@@ -212,7 +213,7 @@ class Command(BaseCommand):
         """Tập id CÔNG KHAI của mỗi index, chụp một lần ở đầu `_go_ma`."""
         return {
             TEN_INDEX: set(
-                Mach.objects.filter(hidden_at__isnull=True).values_list(
+                loc_cong_khai(Mach.objects.filter(hidden_at__isnull=True)).values_list(
                     "pk", flat=True
                 )
             ),
@@ -230,8 +231,8 @@ class Command(BaseCommand):
         """
         if index == TEN_INDEX:
             van_hien = set(
-                Mach.objects.filter(
-                    pk__in=ung_vien, hidden_at__isnull=True
+                loc_cong_khai(
+                    Mach.objects.filter(pk__in=ung_vien, hidden_at__isnull=True)
                 ).values_list("pk", flat=True)
             )
         else:
@@ -244,7 +245,7 @@ class Command(BaseCommand):
 
 
 def _binh_luan_cong_khai():
-    """Bình luận được phép nằm trong index — **ba vế**, cùng bộ với
+    """Bình luận được phép nằm trong index — **ba vế SQL** (+ mạch công khai), cùng bộ với
     `core/tim_kiem.py::hien_cong_khai_binh_luan` và với `api/tim_kiem.py::
     _binh_luan_hien_theo_id`.
 
@@ -252,8 +253,11 @@ def _binh_luan_cong_khai():
     (trang mất kết quả, không ai biết vì sao) hoặc đẩy lại thứ vừa bị ẩn (hoàn tác công
     việc kiểm duyệt, hằng đêm, im lặng).
     """
-    return Comment.objects.filter(
-        deleted_at__isnull=True,
-        hidden_at__isnull=True,
-        mach__hidden_at__isnull=True,
+    return loc_cong_khai(
+        Comment.objects.filter(
+            deleted_at__isnull=True,
+            hidden_at__isnull=True,
+            mach__hidden_at__isnull=True,
+        ),
+        tien_to="mach__",
     ).select_related("author")

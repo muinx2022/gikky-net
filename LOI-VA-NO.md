@@ -1773,8 +1773,220 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Bằng chứng**: API đã từ chối figures quá 6 cặp lúc ghi. Hàm `figuresMocDau` vẫn `slice(0, 6)` để bài đơn vị có ca 7→6; dữ liệu thật không đi tới nhánh đó.
 - **Vì sao không sửa ngay**: trần client là lưới phòng thủ, không phải lỗi. Bỏ nó thì bài đo "7 cặp → còn 6" mất chỗ đứng.
 
-### P-20261109-1 · [MỞ] · NẶNG — Bot Trader báo PnL chỉ của chân ĐẦU, bỏ chân nhồi; nhãn "Free-risk / hòa vốn" sai về số học
+### P-20261109-1 · [MỞ] · VỪA — Bot Trader báo PnL chỉ của chân ĐẦU, bỏ chân nhồi; nhãn "Free-risk / hòa vốn" sai về số học
 - **Thấy lúc**: đánh giá gikky.net dưới góc nhìn trader người dùng (không có plan; chỉ đọc).
+- **Bối cảnh (user chỉnh lại cùng ngày)**: Bot Trader KHÔNG phải sản phẩm khoe thành tích; nó là demo minh hoạ cách vào lệnh, đặt SL/TP, thuận theo thị trường. Vì vậy mức đã hạ NẶNG → VỪA: tác hại chính không phải "số đẹp hơn thực", mà là (a) bài dạy sai khái niệm "Free-risk/hòa vốn" sau khi nhồi, (b) con số "Kết quả PnL" gắn nhãn như kết quả cả vị thế nhưng chỉ là chân đầu.
 - **Ở đâu**: `scripts/bot-trader/eod_checker.py:446` (`loss_pct = (exit_price - entry) / entry`), `:490` (`profit_pct` cùng khuôn), `:436`/`:562` (`pnl_pct` tạm tính). `entry` luôn là giá vào ĐẦU; không nhánh nào đã đọc có giá nhồi hay trọng số 50/50. Các nhánh SHORT và nhánh theo ngày (`:227`) cùng khuôn nhưng chưa đọc từng dòng `loss_pct`/`profit_pct`.
 - **Bằng chứng**: mạch https://gikky.net/m/mua-usdjpy-tai-15788-entry-15788-sl-15725-tp-15939-nhoi-15838-1423 — mốc 1 vào 157.88 (50%), mốc 2 nhồi 158.38 (50% còn lại, "SL hòa vốn 157.88, Free-risk Trade"), mốc 3 thoát 157.77. Trang báo **−0,07%** ("Cắt lỗ −0,1%"). Chân 1: −0,07%; chân 2: (157.77−158.38)/158.38 = **−0,39%**; bình quân theo vị thế mục tiêu ≈ **−0,23%**, gấp ~3 lần số đã đăng. Với LONG, giá nhồi luôn > giá vào nên r2 < r1 với mọi giá thoát ⇒ số báo **luôn lệch về phía có lợi cho bot**, cả lệnh thua (lỗ bị báo nhỏ) lẫn lệnh thắng (lãi bị báo lớn). "Free-risk" cũng sai: dời SL về giá vào chân 1 thì nếu dính SL chân 2 vẫn lỗ (nhồi − vào)/2 trên vị thế; hòa vốn thật là giá vốn bình quân.
 - **Vì sao không sửa ngay**: ngoài phạm vi (việc đang làm chỉ là đánh giá, không sửa code). Sửa còn đụng quyết định chưa chốt: các mạch đã đóng đã đăng lên prod và mốc là append-only (PLAN nguyên tắc 2), nên số cũ phải đính chính bằng mốc mới hoặc nhãn "đã sửa", không đổi im lặng. Chưa đếm có bao nhiêu mạch bị ảnh hưởng (mọi mạch đã nhồi trước khi đóng).
+
+### P-20261109-2 · [MỞ] · VỪA — username của tài khoản `muinx2022@gmail.com` là một địa chỉ email, lộ qua API công khai và URL hồ sơ
+- **Thấy lúc**: rà bình luận hiện có trên các mạch của bot (việc 3 trong `GHI-CHU.md`).
+- **Ở đâu**: dữ liệu prod, không phải một dòng code. `GET /api/v1/users/muinx2022@gmail.com` trả 200 với `username: "muinx2022@gmail.com"`; mọi bình luận của tài khoản này trả `author.username` là chính địa chỉ đó (ví dụ bình luận gốc trên mạch 1280). Tài khoản tạo 2026-08-27, có 4 mạch, 7 mốc, 9 bình luận.
+- **Bằng chứng**: đọc qua API công khai ngày 2026-11-09. Với tài khoản Google MỚI thì không còn lộ: `api/core/allauth_adapter.py:120–175` lấy **tiền tố** email làm username (`api/tests/test_google_username.py`). Nên đây là dữ liệu cũ, không phải lỗi đang tái diễn qua đường Google.
+- **Chưa kiểm**: form đăng ký bằng email (`api/config/settings.py:292` có `username*`) có chặn ký tự `@` trong username không. Nếu không chặn, ai gõ email vào ô đó cũng tự lộ công khai. Đây là việc cần kiểm trước khi mời thành viên thật.
+- **Vì sao không sửa ngay**: ngoài phạm vi (việc đang làm là rà tương tác giả). Đổi username của tài khoản đang dùng làm đổi URL hồ sơ nên là quyết định của chủ tài khoản.
+
+### P-20261109-3 · [ĐÃ VÁ TRONG CÂY LÀM VIỆC — chưa commit, chưa deploy] · NẶNG — mạch riêng tư (`rieng_tu`) lọt vào tìm kiếm ngay khi tác giả nối mốc hoặc đóng sổ; và người lạ có thể bình luận vào đó
+- **Thấy lúc**: khảo sát việc 1 của `GHI-CHU.md` (niêm phong lệnh Bot Trader). Phát hiện sản phẩm đã có mạch riêng tư từ commit `14cbac1` (2026-09-08) rồi kiểm các đường rò của nó.
+- **Ở đâu / bằng chứng** (**đọc code, CHƯA dựng lại bằng test hay trên prod**):
+  1. **Tìm kiếm.** `api/core/tim_kiem.py:418`: `hien_cong_khai(mach)` = `hidden_at is None and archived_at is None`, không có `rieng_tu`. `tao_mach` bỏ `dong_bo_mach` cho mạch riêng tư (`api/core/ghi.py:422`), nhưng mọi đường ghi sau đó gọi lại nó, và nó sẽ **upsert**: nối mốc `ghi.py:505`, đóng sổ `:1302`, mở lại `:1321`, cùng các đường ghi khác ở `:975`, `:1005`. Lớp lọc thứ hai lúc đọc, `api/api/tim_kiem.py:186` (`_mach_hien_theo_id`), cũng chỉ `hidden_at__isnull=True` (còn không lọc `archived_at`, lệch với `hien_cong_khai`). Chỉ mục bình luận `core/tim_kiem.py:451–464` cùng khuôn. ⇒ tiêu đề, thân mốc và `ket_qua` của mạch riêng tư có thể hiện trong kết quả tìm kiếm của mọi người. Prod có Meilisearch (`P-20260827-2`).
+  2. **Ghi bình luận.** `api/api/machs.py:789`: `viet_binh_luan` đi qua `nap_mach` (chỉ `hidden_at`) và `doi_mach_tuong_tac_duoc`, không kiểm `rieng_tu`. Id mạch là số nguyên liên tiếp (vd 1451), nên người đã đăng nhập mà đoán được id có thể thả bình luận vào nhật ký riêng của người khác. **Chưa kiểm** các cửa ghi khác: vote và reaction trên mốc, trích vào sổ.
+  3. **Test hiện có**: `api/tests/test_trading_features.py` phủ feed, GET chi tiết, GET bình luận, hồ sơ. **Không** phủ tìm kiếm, và không phủ POST bình luận.
+- **Vì sao không sửa ngay**: ngoài phạm vi (việc đang làm là ghi chép và khảo sát). **Nhưng nó chặn việc 1**: dùng `rieng_tu` cho Bot Trader khi chưa vá thì lệnh đang mở lọt vào tìm kiếm ở lần nối mốc đầu tiên. Nó cũng đang ảnh hưởng mọi người dùng đã tích "Riêng tư" ở form đăng bài. Chưa biết prod hiện có mạch riêng tư nào không.
+- **Bổ sung cùng ngày** (khảo sát rộng hơn khi lập plan vá; vẫn **chỉ đọc code**): lỗi không dừng ở tìm kiếm và bình luận. Các cửa `POST /machs/{id}/follow` (`api/api/theo_doi.py:295`), `…/seen` (`:264`), `POST /votes` (`api/api/tuong_tac.py:68,74`), `POST /mocs/{id}/reactions` (`:127`) và `POST /reports` (`api/api/bao_cao.py:49–59`) đều nạp đích chỉ bằng `hidden_at`. **Nặng nhất:** người lạ theo dõi được mạch riêng tư, rồi `bao_moc_moi` gửi họ payload có `mach_title` (`api/core/thong_bao.py:122–124`); tiêu đề lệnh của Bot Trader chứa đủ Entry/SL/TP. Mọi cửa chỉ-tác-giả đi qua `nap_mach`/`nap_moc` trả **403** cho người lạ thay vì 404 nên dò được id nào là mạch riêng tư; `ho_so._mach_hien()` (`/me/da-vote`, `/me/dang-theo`) không lọc `rieng_tu`. Plan vá: `plans/2026-11-09-va-ro-mach-rieng-tu.md`.
+- **Kết quả (2026-11-09, chặng 5):** cả 9 đường rò đều **dựng lại được bằng test chạy thật** rồi vá. Hai lượt nghiệm thu độc lập trên bản `HEAD 748f95f` sạch (`git worktree`, DB test cô lập): tập 17 test đỏ của bản vá **trùng khít** `HEAD`, nên không hồi quy; lượt hai chấm **ĐẠT 9/9**. Phản biện tìm thêm 8 điểm, đã sửa trong vòng sửa V1–V7 (header `Vary: Cookie` dò id, `published_at` khi công khai, `atomic` khi công khai, chuông của staff, digest, `duoc_trich`, bài đo cấu trúc). **CHƯA commit, CHƯA deploy, CHƯA `reindex_tim_kiem` trên prod, CHƯA chạy ba câu SQL ở mục 8 của plan** — nên chưa biết lỗi đã bị khai thác chưa. Chi tiết và các chỗ lệch plan: mục 10 của `plans/2026-11-09-va-ro-mach-rieng-tu.md`.
+
+### P-20261109-4 · [MỞ] · VỪA — mạch ĐÃ LƯU TRỮ (`archived_at`) vẫn nhận bình luận, theo dõi, vote từ người lạ; lớp lọc thứ hai của tìm kiếm cũng không lọc nó
+- **Thấy lúc**: lập plan vá `P-20261109-3`.
+- **Ở đâu**: `api/api/tim_kiem.py:185–187` (`_mach_hien_theo_id`: chỉ `hidden_at__isnull=True`) so với `api/core/tim_kiem.py:418` (`hien_cong_khai`: `hidden_at is None and archived_at is None`). Docstring của `_mach_hien_theo_id` tự nói hai chỗ này phải khớp nhau.
+- **Bằng chứng** (đọc code, chưa dựng lại): (1) `api/api/ghi_chung.py:32` (`nap_mach`) chỉ lọc `hidden_at`, nên mọi cửa đi qua nó — bình luận `machs.py:789`, theo dõi `theo_doi.py:295`, nối mốc, vote, reaction — **không** chặn mạch đã lưu trữ; chỉ cửa `GET /machs/{id}` (`machs.py:142`) mới chặn. (2) Lớp lọc thứ hai của tìm kiếm thiếu `archived_at`; mạch đã lưu trữ mà còn sót trong chỉ mục thì không có gì chặn. Mức: người lạ ghi được vào nội dung mà tác giả đã gỡ; chưa thấy đường lộ nội dung đã gỡ qua cửa đọc. Cùng họ với `P-20261109-3`. Ngữ cảnh: việc 7 của `GHI-CHU.md` (công khai → riêng tư).
+- **Vì sao không sửa ngay**: ngoài phạm vi plan vá rò riêng tư; plan ghi nó vào mục NGOÀI PHẠM VI.
+
+### P-20261109-5 · [ĐÃ VÁ TRONG CÂY LÀM VIỆC (V5) — chưa commit, chưa deploy] · VỪA — email digest vẫn gửi **tiêu đề mạch riêng tư** cho người lạ còn `Follow` cũ
+- **Thấy lúc**: chặng 2 của `plans/2026-11-09-va-ro-mach-rieng-tu.md` (chuyên viên nêu ở NGOÀI PHẠM VI; phiên chính đọc code xác nhận).
+- **Ở đâu**: `api/core/digest.py:106–112` (`nguoi_nhan_digest`: chỉ `.exclude(mach__hidden_at__isnull=False)` và loại tác giả), `:152–153` (`_mocs_moi`: chỉ `mach__hidden_at__isnull=True`), `:232` (`dung_digest` ghi `• {m.mach.title}` vào thân email).
+- **Bằng chứng** (đọc code, chưa dựng lại): người dùng bật `nhan_digest` mà có `Follow` trên một mạch riêng tư thì nhận email có tiêu đề mạch đó. Đây là kênh **ngoài web**, nên rào 404 ở các cửa API không chạm tới. Mức VỪA chứ chưa NẶNG vì phải có sẵn một `Follow` tạo ra nhờ lỗ hổng `P-20261109-3`; sau bản vá không tạo mới được. Câu SQL số 1 ở mục 8 của plan cho biết có hàng nào không. Tiêu đề lệnh của Bot Trader chứa đủ Entry/SL/TP.
+- **Vì sao không sửa ngay**: ngoài danh sách cửa của plan vá (plan chỉ liệt kê bảy hàm `bao_*`). Đề nghị đưa vào vòng sửa tiếp của chặng 2: thêm `loc_cong_khai`/`rieng_tu=False` ở hai truy vấn trên và một bài đo.
+
+### P-20261109-6 · [MỞ] · VỪA (nghi ngờ, chưa dựng lại) — thông báo đã gửi **trước** bản vá vẫn nằm trong DB và người nhận vẫn đọc được `mach_title`
+- **Thấy lúc**: cùng nguồn với `P-20261109-5`.
+- **Ở đâu**: `api/api/thong_bao.py:88` (`liet_ke_thong_bao`: `Notification.objects.filter(user=request.user)`) trả `payload=n.payload` (`:102`) không lọc theo trạng thái mạch. `payload` chép sẵn `mach_title`, `mach_slug` (`api/core/thong_bao.py::_tom_tat_mach`).
+- **Bằng chứng**: đọc code. Bản vá chặn việc **gửi** thông báo mới, không gỡ hàng cũ. Có hàng nào hay không phụ thuộc lỗ hổng `P-20261109-3` đã bị khai thác chưa; câu SQL số 2 ở mục 8 của plan trả lời.
+- **Vì sao không sửa ngay**: chưa biết có hàng nào. Nếu SQL ra hàng thì cách sửa là một lệnh dọn dữ liệu một lần (xoá thông báo của người không phải tác giả trỏ vào mạch riêng tư), hoặc lọc ở `liet_ke_thong_bao`; chọn sau khi có số liệu.
+
+### P-20261109-7 · [MỞ] · VỪA — 12 test đỏ có sẵn trên `main`: bảng endpoint chưa cập nhật cho `luu-tru`, cửa sổ tự sửa lệch, và xoá bình luận chỉ còn cho staff mà test vẫn mong tác giả xoá được
+- **Thấy lúc**: hai lượt nghiệm thu của `plans/2026-11-09-va-ro-mach-rieng-tu.md`. Mỗi lượt dựng một bản `HEAD 748f95f` sạch bằng `git worktree`, chạy toàn bộ `pytest` và so với bản vá: tập đỏ **trùng khít**, nên đây **không** do bản vá.
+- **Ở đâu / bằng chứng** (đã chạy thật, hai lần):
+  - **5 test bảng chưa theo kịp `luu-tru`:** `test_api_mach::test_khong_co_truong_nao_phu_thuoc_nguoi_xem` (`da_luu_tru` thừa), `test_api_quan_tri_phan_quyen::test_bang_nay_phu_het_moi_endpoint_cua_api_admin` (`quan_tri_dat_luu_tru_mach` chưa có trong `tests/_quan_tri.py`), `test_operation_id::test_du_endpoint_cua_plan_muc_7`, `test_quyen_ghi::test_bang_cua_ghi_phu_du_api_v1`, `test_tim_kiem_cau_truc::test_moi_ham_ghi_deu_duoc_phan_loai` (`dat_luu_tru_mach` chưa phân loại). Liên quan `P-20261109-4` và việc 7 của `GHI-CHU.md` (số phận của `luu-tru`).
+  - **2 test cửa sổ tự sửa:** `test_cua_so_tu_sua_bai` C4 (`PATCH /api/admin/mocs/N` trả 200, test mong 403) và C13 (`sua_duoc_den` lệch đúng 60,0098 giây).
+  - **5 test xoá bình luận bằng người không phải staff:** `test_dua_ghi_500::test_L08`, `::test_L17`, `test_han_muc::test_shadow_limit_dem_ca_BIA_MO`, `test_trich_ghi::test_binh_luan_da_trich_thi_xoa_MEM_chu_khong_500`, `test_revalidate::…[xoa-binh-luan]`. Ở `HEAD`, `DELETE /comments/{id}` chỉ cho staff (`api/api/binh_luan.py:67–84`, 403 `khong_phai_admin`, docstring "CHỈ Admin/Staff mới có quyền xoá bình luận"), trong khi `PLAN.md` mục 5.3 nói tác giả tự xoá được. Hoặc test cũ, hoặc hành vi này là thay đổi chưa được ghi vào plan: cần user phân định.
+- **Vì sao không sửa ngay**: ngoài phạm vi plan vá rò. Mỗi nhóm cần quyết định riêng; nhóm thứ ba là câu hỏi sản phẩm (tác giả có được xoá bình luận của chính mình không).
+
+### P-20261109-8 · [MỞ] · VỪA — cây bình luận chạy 17 truy vấn thay vì 3: đọc bảng `core_cauhinhbientap` lặp lại theo từng bình luận
+- **Thấy lúc**: cùng nguồn `P-20261109-7`. 5 test `tests/test_api_so_query.py` (`khan_dai_ba_sort` ×3, `ngan_keo`, `them_binh_luan_KHONG_lam_tang_so_query`) báo 17 truy vấn (một bài 5) thay vì 3, **cùng con số ở `HEAD` sạch và ở bản vá**.
+- **Ở đâu**: nghiệm thu đọc `-vv` của `test_ngan_keo` trên `HEAD` và thấy truy vấn tới `core_cauhinhbientap` lặp lại theo từng bình luận. Nghi nguyên nhân: tính `sua_duoc_den` cho từng bình luận gọi `doc_phut_tu_sua_binh_luan()` (số phút cấu hình lưu trong DB, `core/cau_hinh.py`) mà không đọc một lần cho cả trang.
+- **Bằng chứng**: đọc `-vv` của một test; **chưa** profile và chưa kiểm là chính chỗ này. Với trang có nhiều bình luận, số truy vấn tăng theo số bình luận ⇒ chậm dần ở đúng chỗ đông người dùng nhất.
+- **Vì sao không sửa ngay**: ngoài phạm vi. Đây là lỗi **hiệu năng ở code sản xuất**, không chỉ nợ test: đáng làm sớm hơn các mục chỉ sửa test trong `P-20261109-7`.
+
+### P-20261109-9 · [MỞ] · NHỎ — các dư thừa và hệ quả nhỏ còn lại sau bản vá rò mạch riêng tư
+- **Thấy lúc**: nghiệm thu và phản biện của `plans/2026-11-09-va-ro-mach-rieng-tu.md`. Mỗi ý là một việc nhỏ, chưa ai cần gấp.
+- **Danh sách** (đều chỉ đọc code hoặc đã nêu trong báo cáo, không phải lỗi đang gây hại):
+  1. Người từng theo dõi một mạch mà mạch đó là riêng tư không tự `DELETE /machs/{id}/follow` được (404, vì cửa đi qua `nap_mach`), và hàng `Follow` nằm lại. Mở cửa này sẽ lại tạo ra cái dò id (200 so với 404), nên **giữ nguyên**; cách đúng là một lệnh dọn `Follow` của người không phải tác giả trên mạch riêng tư, sau khi chạy SQL số 1 ở mục 8 của plan.
+  2. `api/api/ho_so.py:~270` còn `qs.filter(rieng_tu=False)` dư sau khi `_mach_hien` đã lọc `rieng_tu`.
+  3. `api/core/management/commands/reindex_tim_kiem.py:247–263`: đối soát bình luận không lọc `mach__archived_at`, còn `hien_cong_khai_binh_luan` (`core/tim_kiem.py:470–477`) thì có. Cùng họ `P-20261109-4`.
+  4. Mọi lần ghi vào mạch riêng tư (nối mốc, đóng sổ) vẫn gọi Meilisearch hai lần vô ích (`DELETE` tài liệu mạch và `documents/delete` theo `mach_id`) trong `on_commit` (`api/core/tim_kiem.py:534–561`). Ảnh hưởng độ trễ, không ảnh hưởng đúng sai.
+  5. Ảnh của mốc thuộc mạch riêng tư nằm trong kho công khai: `MocAnh`/`AnhNoiDung` chỉ vào kho cách ly khi mod ẩn hoặc xoá, không xét `rieng_tu` (`api/core/anh_luu.py`, `deploy/Caddyfile:148–153`); chỉ tên file `uuid4` bảo vệ, URL ảnh chỉ lộ ở các cửa đã chặn. Mở rộng `P-20260903-8`.
+  6. `api/api/ho_so.py` chèn `from core.rieng_tu import loc_xem_duoc` lệch thứ tự alphabet; repo không có linter nên không đỏ.
+  7. Bài đo cấu trúc (`api/tests/test_rieng_tu_cau_truc.py:48`) dò theo tên tham số khớp `(mach|moc|comment|anh)_id|target_id`; một route thật với tham số tên khác (`entry_id`, `id`, `slug` trỏ vào mạch) không bị bắt (nghiệm thu lượt hai thêm route `GET /machs-zz/{int:entry_id}` vào bản sao: vẫn xanh). Hiện chưa có route nào như vậy.
+  8. `test_v4_staff_duoc_tru_chuong_…` (`api/tests/test_rieng_tu_vong2.py:194`) không tự bắt được việc bỏ rào `bao_duoc_trich`/`bao_reply` ở nhánh người lạ; các rào đó do `test_rieng_tu_ro` giữ, nên bộ test vẫn bắt, chỉ thiếu độ phủ riêng cho V4.
+- **Vì sao không sửa ngay**: ngoài phạm vi plan vá rò, và không cái nào gây hại hiện tại.
+
+### P-20261109-7 · [MỞ] · VỪA — bộ pytest của `main` không xanh: 17 test đỏ NGAY TẠI `HEAD`, không do thay đổi dở nào
+- **Thấy lúc**: chặng 3 (nghiệm thu) của `plans/2026-11-09-doi-username-email.md`; thợ code báo 17 test đỏ, nghiệm thu chạy lại độc lập.
+- **Ở đâu** (theo cụm):
+  - **5 test cấu trúc chưa biết tính năng lưu trữ mạch:** `tests/test_api_mach.py::test_khong_co_truong_nao_phu_thuoc_nguoi_xem` (thừa trường `da_luu_tru`), `tests/test_api_quan_tri_phan_quyen.py::test_bang_nay_phu_het_moi_endpoint_cua_api_admin` (thiếu `quan_tri_dat_luu_tru_mach`), `tests/test_tim_kiem_cau_truc.py::test_moi_ham_ghi_deu_duoc_phan_loai` (`dat_luu_tru_mach` chưa trong `BANG_DONG_BO`), `tests/test_operation_id.py`, `tests/test_quyen_ghi.py`. Hàm `dat_luu_tru_mach` (`api/core/ghi.py:1904`) và endpoint `quan_tri_dat_luu_tru_mach` (`api/api/quan_tri_kiem_duyet.py:171`) đã có ở `HEAD`, bảng test thì chưa.
+  - **5 test xoá bình luận:** `test_dua_ghi_500.py` (L08, L17), `test_han_muc.py::test_shadow_limit_dem_ca_BIA_MO`, `test_trich_ghi.py`, `test_revalidate.py[xoa-binh-luan]` vẫn mong người thường xoá được bình luận, trong khi `DELETE /comments/{id}` trả 403 `khong_phai_admin` với người không phải staff. Luật đó vào ở commit `37a970e` (2026-09-11, "luat quan ly binh luan moi").
+  - **5 test đếm truy vấn** `tests/test_api_so_query.py`: 17 truy vấn thay vì 3, 5 thay vì 3. Nguyên nhân chưa điều tra.
+  - **2 test cửa sổ tự sửa** `tests/test_cua_so_tu_sua_bai.py` C4 (`PATCH /api/admin/mocs` trả 200, mong 403) và C13 (lệch đúng 60 giây).
+- **Bằng chứng**: nghiệm thu dựng bản `git archive HEAD api` ra thư mục tạm (không phải worktree, không chạm cây chung), chạy đúng các file chứa 17 test: đỏ y hệt như ở cây làm việc. Việc "đỏ ở `HEAD`" đã CHẠY THẬT; việc quy từng cụm cho một commit cụ thể là đọc tĩnh bằng `git show HEAD:…`. Không test nào trong 17 do hai file `doi_username`.
+- **Vì sao không sửa ngay**: ngoài phạm vi plan đổi username. Mức VỪA chứ chưa NẶNG vì không có lỗi chạy thật được xác nhận ở đây; nhưng một bộ test đỏ sẵn làm mất khả năng phát hiện lỗi mới. Việc cần làm: cập nhật các bảng test cho khớp tính năng đã có, và quyết định luật xoá bình luận chỉ-staff là chủ đích hay chưa.
+
+### P-20261109-8 · [MỞ] · NHỎ (nghi ngờ, chưa kiểm dữ liệu prod) — email của tài khoản `muinx2022@gmail.com` còn nằm ở vài chỗ phụ mà lệnh `doi_username` không dọn
+- **Thấy lúc**: chặng 4 (phản biện) của `plans/2026-11-09-doi-username-email.md`.
+- **Ở đâu**: (1) bảng thống kê lượt xem: `apps/web/lib/dem-luot-xem.ts:162-165` cho `/u/<username>` vào danh sách đếm và `api/core/models/luot_xem.py:66` ghi đường dẫn, nên có thể có hàng `LuotXem.duong_dan = "/u/muinx2022@gmail.com"` (staff đọc được); (2) `django_admin_log.object_repr` lưu `str(user)` = email nếu từng sửa user qua Django admin (`api/core/models/nguoi_dung.py:110`); (3) `AuditLog.meta["tac_gia"]` (`api/core/ghi.py:2139`), nhật ký append-only, plan đã quyết để nguyên; (4) comment sai ở `apps/web/lib/dang-nhap.ts:15` ("username của gikky không chứa `@`") — dữ liệu prod đã phản bác.
+- **Bằng chứng**: đọc code; chưa truy vấn prod. Chỉ staff đọc được ba chỗ đầu, nên mức NHỎ.
+- **Vì sao không sửa ngay**: ngoài phạm vi plan đổi username. Sau khi đổi, chạy một truy vấn đếm trên prod trước khi quyết có dọn hay không.
+
+### P-20261109-9 · [MỞ] · NHỎ — hai đường ghi chỉ mục tìm kiếm xử lý lỗi Meilisearch TRÁI NGƯỢC nhau: một nuốt, một ném SAU khi DB đã commit
+- **Thấy lúc**: chặng 3–4 của plan nói trên.
+- **Ở đâu**: `api/core/tim_kiem.py:562-570` (`_dong_bo_ngay` nuốt `MeiliHong`, chỉ log) so với `:656` (`dong_bo_binh_luan_theo_mach` đăng ký `on_commit` không bọc `try`, nên `MeiliHong` thoát ra khỏi `atomic()` sau commit và người gọi thấy traceback dù dữ liệu đã đổi).
+- **Bằng chứng**: phản biện dựng lại bằng test thăm dò chặn index `binh_luan` (khoá thiếu quyền, đúng kịch bản `P-20260827-2`): lệnh ném `MeiliHong … HTTP 403` trong khi `username` đã đổi; chặn index `mach` thì lệnh im lặng mà tác giả trong index vẫn là tên cũ.
+- **Vì sao không sửa ngay**: `core/tim_kiem.py` đang được agent mạch riêng tư sửa dở. Lệnh `doi_username` tự phòng ở phía nó; còn gốc rễ (hai đường, hai luật lỗi) cần quyết định riêng.
+
+### P-20261109-10 · [MỞ] · NHỎ — `core/revalidate.py` chỉ phù hợp tiến trình web sống lâu: lời gọi chạy trên luồng `daemon=True` không ai chờ
+- **Thấy lúc**: chặng 4 của plan nói trên.
+- **Ở đâu**: `api/core/revalidate.py:120-132` (`_gui_nen`), kèm `_gui` nuốt mọi lỗi (`:135`). Theo nghiệm thu, `api/core/management/commands/don_rac_e2e.py:162` cũng đi đường này (phiên chính chưa tự kiểm dòng đó).
+- **Bằng chứng**: phản biện gọi đúng `_gui_nen` 9 lần rồi cho tiến trình thoát: 5 lần chạy, mỗi lần chỉ 3–7 trên 9 lời gọi tới nơi (script `real_gui.py` trong scratchpad của phản biện). Với tiến trình web thì không sao; với lệnh quản trị thoát ngay thì rơi lời gọi, và không có gì báo.
+- **Vì sao không sửa ngay**: `doi_username` tự đợi các luồng trong phạm vi của nó. Sửa gốc (cho `_gui_nen` một cách chờ hoặc một đường đồng bộ cho lệnh quản trị) đụng đường ghi của cả site, nên cần plan riêng.
+
+### P-20261109-11 · [MỞ] · NHỎ — `suc_khoe()` chỉ gọi `/health` nên không phân biệt "Meilisearch sống" với "khoá ghi được vào từng index"
+- **Thấy lúc**: chặng 4 (phản biện) và chặng 2 sửa lỗi của `plans/2026-11-09-doi-username-email.md`.
+- **Ở đâu**: `api/core/tim_kiem.py:876` (`suc_khoe`).
+- **Bằng chứng**: phản biện chặn riêng index `mach` bằng test thăm dò (khoá hẹp quyền, đúng kịch bản `P-20260827-2`): `suc_khoe()` vẫn trả `True`, mọi bước kiểm "Meilisearch sống" đều qua, còn ghi vào index thì bị từ chối. Lệnh `doi_username` tự chữa phía nó bằng cách đọc ngược chỉ mục; mọi nơi khác dùng `suc_khoe()` làm cổng vẫn bị.
+- **Vì sao không sửa ngay**: `core/tim_kiem.py` đang được agent mạch riêng tư sửa dở; thêm kiểm quyền theo từng index là một quyết định riêng (`reindex_tim_kiem` đã có cách của nó).
+
+### P-20261110-1 · [MỞ] · NHỎ (nghi ngờ) — `test_me_subs_moi_theo_dung_truoc` đỏ khi chạy cả bộ, xanh khi chạy riêng
+- **Thấy lúc**: nghiệm thu và phản biện `plans/2026-11-10-truong-loai-mach.md`, hai lượt độc lập.
+- **Ở đâu**: `api/tests/test_api_theo_sub.py::test_me_subs_moi_theo_dung_truoc`.
+- **Bằng chứng**: chặng code ghi test đỏ ở nền, xanh ở lượt sau; nghiệm thu chạy cả bộ thì không thấy nó trong 17 test đỏ; phản biện chạy cả bộ thấy nó đỏ, chạy riêng thì xanh. Nghi phụ thuộc thứ tự chạy hoặc đồng hồ. Chưa dựng được nguyên nhân.
+- **Vì sao không sửa ngay**: không thuộc `loai_mach`; chưa có tái hiện ổn định.
+- *(Các test đỏ khác của lượt này — lưu trữ mạch, xoá bình luận, đếm truy vấn khán đài, cửa sổ tự sửa bài — đã có ở `P-20261109-7` và `P-20261109-8`; không ghi lại.)*
+
+### P-20261110-2 · [MỞ] · NHỎ (tiềm ẩn) — nhiều nơi hiển thị `ket_qua` / `bai_hoc` mà không kiểm mạch đã đóng; chỉ an toàn nhờ `mo_lai` xoá hai trường
+- **Thấy lúc**: vòng sửa 1 của `plans/2026-11-10-truong-loai-mach.md` (việc 2 bị dừng).
+- **Ở đâu**: `apps/web/lib/og.ts:232` (`ogMach`), `apps/web/lib/rss.ts:140` (`moTaMuc`), `apps/web/components/trang-mach.tsx:119` (`tomTat`), `apps/web/components/xuat-case-study.tsx:46,48`, `apps/mobile/app/mach/[id].tsx:735`. Chỗ đúng: `apps/web/components/chan-dong-so.tsx` (chỉ hiện khi đã đóng).
+- **Bằng chứng**: grep của `opus-dev`; chưa dựng được ca hỏng vì `core/ghi.py::mo_lai` đặt hai trường về `NULL` nên mạch đang mở không bao giờ mang chúng.
+- **Vì sao không sửa ngay**: không có lỗi hiển thị hôm nay. Sẽ thành lỗi thật khi ai đó muốn giữ tổng kết lúc mở lại (vd chủ đề thảo luận) hoặc khi có đường ghi `ket_qua` mà không đóng sổ.
+
+### P-20261110-3 · [MỞ] · NHỎ — `POST /machs` bắt `ValidationError` rộng hơn luật `thao_luan` + riêng tư: đổi 500 thành 400 mà không có test, và comment sai
+- **Thấy lúc**: nghiệm thu lần hai của `plans/2026-11-10-truong-loai-mach.md` (phiên chính đã tự đọc `machs.py:628-647` xác nhận).
+- **Ở đâu**: `api/api/machs.py:644-647` (`except LoiModel`), `api/core/ghi.py:456-466` (`_body_sach_khong_rong`, `kiem_figures`).
+- **Bằng chứng**: `try` bao cả `tao_mach` → `them_moc`, nên thân bài chỉ gồm thẻ HTML bị chặn hoặc `figures` sai nay trả 400 `du_lieu_khong_hop_le` thay vì 500 (đúng hướng). Chưa có test endpoint ghim hành vi mới; `test_body_rong_sau_sanitize.py` chỉ gọi thẳng `tao_mach`. Comment "chưa có gì để rollback" chỉ đúng cho riêng luật `thao_luan` + riêng tư (lỗi từ `them_moc` ném SAU INSERT `Mach`, rollback nhờ `atomic()` bao ngoài).
+- **Vì sao không sửa ngay**: không sai hành vi; chỉ thiếu test và comment sai. Sửa gọn: thêm test endpoint cho hai ca và sửa comment.
+
+### P-20261110-4 · [MỞ] · VỪA (SEO) — trang chủ `/` và `/luat` KHÔNG khai `<link rel="alternate" type="application/rss+xml">`, dù `app/layout.tsx` khai nó
+- **Thấy lúc**: Đợt A của `plans/2026-11-10-homepage-v2.md`, khi chụp nền HTML trước khi sửa và khi bộ e2e nền đỏ bài `seo-va-trang.spec.ts:367`.
+- **Ở đâu**: `apps/web/app/layout.tsx:77` (khai `alternates.types`) bị `apps/web/app/page.tsx` (`metadata.alternates = { canonical }`) **ghi đè nguyên khối** — metadata của Next gộp nông, `alternates` của trang thay hẳn `alternates` của layout.
+- **Bằng chứng (ĐÃ DỰNG)**: HTML nền của `/` có 0 lần `rss+xml`, `/luat` có 0 lần; `/s/chung-khoan` có 2 lần (trang sub tự khai feed riêng). `e2e\seo-va-trang.spec.ts:367` đỏ ở nền với "element(s) not found". Hậu quả: trình đọc RSS và công cụ tự dò không thấy `/feed.xml` từ trang chủ.
+- **Vì sao không sửa ngay**: ngoài phạm vi homepage v2 (plan cấm đổi `<head>` của `/` và có spec ghim từng byte). Sửa là **cộng** một dòng `types` vào `alternates` ở `app/page.tsx` (và `app/luat/page.tsx`) rồi cập nhật spec `seo-trang-chu.spec.ts`; cần user đồng ý vì nó đổi `<head>` của trang bot vào nhiều nhất.
+
+### P-20261110-5 · [MỞ] · VỪA — bộ e2e `pnpm e2e` có 25 bài đỏ có sẵn ở nền, nhiều bài đo thứ sản phẩm đã đổi có chủ ý
+- **Thấy lúc**: Đợt A của `plans/2026-11-10-homepage-v2.md` (bộ đầy đủ, `CI=1`, DB `gikky_e2e`: 727 bài, 693 pass, 25 đỏ, 1 skip, 8 không chạy). Sau Đợt A còn 23 đỏ (hai bài sidebar xanh nhờ code mới), không bài đỏ mới.
+- **Ở đâu / bằng chứng** (log `e2e-nen.log` trong scratchpad của Đợt A): `seo-va-trang.spec.ts:78` JSON-LD nay là `["Article","DiscussionForumPosting"]` chứ không phải chuỗi; `:144` `/luat` không còn `data-testid="nhan-draft"`; `:367` xem `P-20261110-4`; `mach-can.spec.ts` ×7 (khối trích, bia mộ, nguyên tắc 9, deep-link) ; `binh-luan-chung.spec.ts` ×3 (deep-link `#bl-N`); `form-ghi.spec.ts` ×2, `tai-khoan-va-ghi.spec.ts` ×3, `phase-3.spec.ts:173`, `giao-dien.spec.ts:420`, `sang-toi.spec.ts:43`, `vo-reddit.spec.ts` A7, A8 (`/s/<sub>`), A10.
+- **Vì sao không sửa ngay**: không thuộc homepage v2, và nhiều bài cần quyết định "sản phẩm hay bài đo sai" từng cái. Hệ quả cần biết: với 25 bài đỏ nền, một hồi quy thật có thể ẩn trong số đỏ; mọi lượt về sau chỉ chấm được "đỏ sau ⊆ đỏ nền". Cùng họ với `P-20261109-7` (pytest).
+- *Bổ sung 2026-11-10 (Đợt B):* thêm `binh-luan-chung.spec.ts:122` (deep-link `#bl-23` không vào viewport) vào tập đỏ; nghiệm thu chạy riêng 3 lần ra đỏ / xanh / đỏ trên cùng một bản build ⇒ **flaky**, không phải đỏ cố định.
+
+### P-20261110-6 · [MỞ] · NHỎ — nút "Đăng ký" ở header, theme tối: chữ trắng trên nền sáng, tương phản không đạt
+- **Thấy lúc**: nghiệm thu (ảnh) và phản biện (đo) của `plans/2026-11-10-homepage-v2.md`.
+- **Ở đâu**: `apps/web/components/thanh-tai-khoan.module.css` (`.nut_chinh`).
+- **Bằng chứng (ĐÃ ĐO)**: `getComputedStyle` trên `/`, `/luat`, `/s/chung-khoan`, `/chu-de` ở theme tối đều cho chữ `rgb(255,255,255)` trên nền `rgb(232,236,244)`. Không do homepage v2 (không file nào của lượt đó đụng lớp này); có sẵn trên toàn site.
+- **Vì sao không sửa ngay**: ngoài phạm vi; `mau-token.spec.ts` ghim màu theo selector nên sửa phải qua hàng rào PLAN 9.1.
+
+### P-20261110-7 · [MỞ] · NHỎ — vài mép của khu quản trị thiếu khi có loại `thao_luan` / `/chu-de`
+- **Thấy lúc**: nghiệm thu và phản biện homepage v2.
+- **Ở đâu / bằng chứng**: (a) `api/api/quan_tri_luot_xem.py:323` (`NHAN_TRANG_TINH`) chưa có nhãn cho `/chu-de` nên thống kê lượt xem xếp nó vào nhóm "khác"; (b) form đăng bài admin mặc định tác giả `gikky-team-member` (`apps/admin/lib/tac-gia-doi.ts`); nếu user đó không tồn tại (DB nháp) thì `api/api/quan_tri_hen_gio.py:222-224` trả 404 mà form không hiện lỗi dễ hiểu — nghiệm thu phải tạo user tạm mới đăng được; (c) `pnpm lighthouse` (`scripts/lighthouse-seo.mjs`) chỉ đo một trang mạch cố định, không đo `/`.
+- **Vì sao không sửa ngay**: không ảnh hưởng người dùng ở prod (có user đội); (c) cần quyết định đo trang nào.
+
+### P-20261110-8 · [MỞ] · NHỎ — chữ "đã đóng sổ" còn lại cho chủ đề thảo luận ở vài chỗ ngoài danh sách vòng sửa homepage v2
+- **Thấy lúc**: vòng sửa 1 của `plans/2026-11-10-homepage-v2.md` (báo cáo `opus-dev`).
+- **Ở đâu**: `apps/web/components/ket-qua-tim-kiem.tsx:105` (kết quả tìm kiếm ghi "đã đóng sổ" cho chủ đề); `<meta description>` của trang mạch đã đóng bị `ket_qua` chèn lên đầu (phản biện thấy "5 bình luận. Nội dung…"); thẻ mạch trong feed `/s/<sub>` đã đổi "đã đóng" ở vòng sửa này, nhưng chip khác (nếu còn) chưa rà.
+- **Bằng chứng**: grep chữ + đo HTML `/s/*`; chưa dựng ca người dùng nhìn thấy trên prod (chưa có chủ đề nào).
+- **Vì sao không sửa ngay**: không có chủ đề nào trên prod; sửa khi chủ đề đầu tiên được tạo hoặc khi rà nhãn toàn site.
+
+### P-20261110-9 · [MỞ] · VỪA — thẻ chủ đề trên `/` vẫn ghi "Đang mở · Vào thảo luận →" khi mod đã KHOÁ chủ đề
+- **Thấy lúc**: phản biện lần hai của `plans/2026-11-10-homepage-v2.md`.
+- **Ở đâu**: `apps/web/components/khoi-thao-luan.tsx` (`dang_mo = status !== "closed"`); `MachTomTatOut` không mang `locked_at`. Admin (`apps/admin/lib/canh-bao-chu-de.ts`) lại coi chủ đề khoá là KHÔNG mở ⇒ hai nơi nói hai điều khác nhau.
+- **Bằng chứng (ĐÃ TÁI HIỆN)**: chủ đề tạm làm mới nhất, đặt `locked_at`, `curl /` ⇒ "Chủ đề đang thảo luận / Đang mở / Vào thảo luận →", trong khi trang mạch cấm bình luận.
+- **Vì sao không sửa ngay**: cần thêm cờ khoá vào thẻ feed (đổi schema API, codegen, nhiều test ghim tập khoá). Hiếm (khoá chủ đề là hành động kiểm duyệt).
+
+### P-20261110-10 · [MỞ] · NHỎ — mấy mép còn lại của khối chủ đề và cảnh báo admin (phản biện lần hai)
+- **Ở đâu / bằng chứng (ĐÃ TÁI HIỆN bằng hàm thuần hoặc đo)**: (a) `apps/admin/lib/canh-bao-chu-de.ts` hỏi `limit=5` rồi lọc chủ đề lưu trữ ở client: 5 chủ đề `mo` mới nhất đều lưu trữ ⇒ bỏ sót chủ đề mở thứ 6; `bi_cat` cộng cả chủ đề lưu trữ chưa nạp vào "và N chủ đề khác"; (b) chủ đề hẹn giờ không cảnh báo nhưng khi tới giờ nó thay chủ đề vừa tạo mà không ai được báo; (c) `apps/web/components/khung-trang-chu.module.css`: ngưỡng rail dính `min-height: 1060px` gắn cứng vào chiều cao rail 995px (13 chuyên mục × 28,7px); thêm một chuyên mục là ở viewport 1060–1084px rail dính nhưng đáy bị cắt; trên màn 1080p thường (viewport ≈ 950px) rail không bao giờ dính; (d) chữ thân HTML của `/` giảm so với nền (5674 → 4691 ký tự, −17%; 1279 → 937 từ, −27%) vì hàng bài viết gọn không có `xem_truoc` — chờ user quyết (đã hỏi); (e) bài đo "form THẬT" của cảnh báo admin (`canh-bao-chu-de.spec.ts:155`, `loai-mach-quan-tri.spec.ts:61`) chỉ là regex trên mã nguồn.
+- **Vì sao không sửa ngay**: hiếm hoặc chờ quyết định; (e) được bù bằng lần chạy thật V3-3 (script ngoài repo).
+
+### P-20261110-12 · [MỞ] · NHỎ — các mép còn lại của hai cột toàn web và xem trước ảnh (phản biện gộp, 2026-11-10)
+- **Ở đâu / bằng chứng (ĐÃ TÁI HIỆN hoặc đo)**: (a) khối "Tham gia Gikky.net" của khách nằm ở rail của chính `/dang-nhap`, `/dang-ky`, `/quen-mat-khau` — nút "Tiếp tục với email" mở modal đăng nhập thứ hai ngay trên trang đã có form (đo 2 ô password); `callback_url="/"` của form Google giữ y bản `CotTrai` cũ (không phải hồi quy) · `apps/web/components/khoi-khach.tsx`; (b) `loading="lazy"` ở khối Bài viết vô tác dụng trên màn thường (1280×900: khối ở y=1658 nhưng cả 18 ảnh vẫn tải ngay do ngưỡng nạp trước của Chromium) và, ở viewport rất cao (1920×2400), ảnh đầu của khối là phần tử LCP bị lazy (LCP 268ms trên localhost nên chưa hại) · `apps/web/components/khoi-bai-viet.tsx:70`; (c) nhánh ảnh nhúng của `du_lieu_the` không lọc theo bản ghi `AnhNoiDung` (không cờ cách ly; thiếu bản ghi vẫn phát URL `id=0`) — có từ trước, nay nhân ra 3 ảnh · `api/api/trinh_bay.py`; (d) `seed_e2e` và e2e ghi ảnh vào `api/media` dùng chung với dev; tên uuid nên không trùng ảnh thật, nhưng `don_anh_mo_coi` chạy nhầm trên DB dev sẽ xoá ảnh seed sau 24 giờ (NGHI NGỜ, chưa dựng ca) · `api/config/settings.py:204`; (e) chưa kiểm: trùng danh sách chuyên mục giữa rail và sheet "Chuyên mục & Cộng đồng" ở thanh dưới mobile; các trang cần đăng nhập (`/cai-dat`, `/sua-ho-so`, `/khu-mod`) chỉ được đo gián tiếp.
+- **Vì sao không sửa ngay**: không chặn gì; (a) là quyết định sản phẩm (ẩn khối khách ở trang auth?), chưa hỏi user; các việc phản biện coi là VỪA đã được giao sửa (a11y của link xem trước, ảnh nhúng trùng src) và bài đo B5b yếu.
+
+### P-20261110-13 · [MỞ] · NHỎ — mép sau vòng sửa a11y của hàng Bài viết (2026-11-10)
+- **Ở đâu / bằng chứng**: (a) `::after` của link tiêu đề phủ cả `.hang` nên không bôi đen được chữ trích / meta bằng chuột (ĐÃ THẤY ở cấu trúc CSS, chưa đo bằng tay) · `apps/web/components/khoi-bai-viet.module.css`; (b) bài A11Y đầu của `bai-viet-xem-truoc.spec.ts` dùng `ariaSnapshot().toContain(trich.slice(0,40))` — vỡ nếu seed đặt dấu `"` hoặc `:` trong 40 ký tự đầu vì YAML thoát ký tự (NGHI NGỜ, seed hiện tại xanh); (c) `seo-va-trang.spec.ts:148` (`nhan-draft` không thấy trên `/luat`) đỏ cả ở bản gốc, chưa rõ có nằm trong `P-20261110-5` không; `:367` là mục thiếu RSS alternate = `P-20261110-4`.
+- **Vì sao không sửa ngay**: không chặn gì, ngoài phạm vi vòng sửa.
+
+### P-20261110-14 · [MỞ] · NHỎ — mép còn lại sau gallery kiểu Reddit (`plans/2026-11-10-gallery-kieu-reddit.md`)
+- **Ở đâu / bằng chứng**: (a) `tai-khoan-va-ghi.spec.ts:232` ("vote SỐNG", "Expected +83, Received +82" sau reload) đỏ 2/2 ở lượt nghiệm thu nhưng xanh 6/6 + trong e2e đầy đủ ở lượt sửa; không dính code gallery; **NGHI NGỜ** hai tiến trình e2e cùng vote lên mốc 9 của HPG trên `gikky_e2e` — đừng chạy hai bộ e2e cùng lúc; (b) Bingbot nhận HTML của `/` khác trình duyệt 348 byte (một `<div hidden><!--$--><!--/$--></div>` đầu `<body>`), do Next xử lý bot streaming metadata, không phải bản vá; `S3` chỉ so trình duyệt với Googlebot nên không thấy · build `/`; (c) hằng `SO_ANH_TOI_DA_MOI_MOC` (`api/core/ghi.py:132`) và `SO_ANH_XEM_TRUOC` (`api/api/schemas.py`) đều 10 nhưng độc lập, chưa có test ép bằng nhau; tăng trần gallery lên 12 thì xem trước vẫn cắt ở 10; (d) `dung-seed.ts` chạy `seed_e2e` không `--reset` nên DB e2e dựng từ seed cũ giữ hàng ≤ 10 ảnh cũ (chỉ hàng 12 ảnh được xử lý riêng) · `apps/web/e2e/dung-seed.ts`; (e) `_dung_anh_bai_viet` không bọc `transaction` ⇒ lỗi giữa chừng để ảnh nhúng mồ côi · `api/core/management/commands/seed_e2e.py`; (f) `test-results/` ở gốc repo không có trong `.gitignore` (chỉ `apps/web/test-results/` được ignore) ⇒ hiện `?? test-results/` sau mỗi bộ e2e; (g) `api/media` của `gikky_e2e` có ~128 file mồ côi tích luỹ (`don_anh_mo_coi --dry-run`), không dính khoá DB đang dùng; (h) hàng rào mỏng: bỏ `scroll-snap-stop` / `overscroll-behavior-x` không bài e2e nào đỏ (chỉ bài đọc nguồn); vuốt chạm thật chưa kiểm trên thiết bị.
+- **Vì sao không sửa ngay**: không chặn gì và không thuộc phạm vi gallery; (a) cần chạy bài khi không có tiến trình e2e khác để phân biệt hai giả thuyết.
+
+### P-20261110-11 · [MỞ] · NHỎ (nghi ngờ) — payload RSC của `/s/[sub]` không tất định khi nhiều request đồng thời
+- **Thấy lúc**: nghiệm thu chip lọc loại của `plans/2026-11-10-chuyen-muc-loc-loai.md`.
+- **Ở đâu / bằng chứng (ĐÃ ĐO, chưa dựng bản nền để chứng minh có sẵn từ trước)**: so byte HTML `/s/*` giữa hai UA: tuần tự lệch 1–2/24 cặp, đồng thời lệch 17/24 (`/s/e2e-thu-nghiem`), 19/24 (`/s/chung-khoan`), 8/24 (`/s/e2e-sub-rong`); phần ngoài các chunk RSC giống nhau, chỉ thứ tự / cách gộp chunk đổi. `/`, `/?tab=moi`, `/u/…`, `/m/…` lệch 0/24. Bài đo `chuyen-muc-loc-loai.spec.ts:273` (so byte) đỏ trong lượt e2e đầy đủ vì thế; đã được sửa sang so SEO + tập link.
+- **Vì sao không sửa ngay**: không có hại cho người đọc hay bot (nội dung và link giống nhau); chỉ làm nhiễu bài đo nào cần byte-giống. Nguyên nhân gốc chưa tìm.
+
+### P-20261111-1 · [MỞ] · NHỎ — mép còn lại sau khối "Nhật ký mới" mỗi tác giả một bài (`plans/2026-11-11-nhat-ky-moi-moi-tac-gia-mot-bai.md`)
+- **Ở đâu / bằng chứng**: (a) `don_rac_e2e` chỉ ẩn mạch (`hidden_at`), không xoá hàng ⇒ rác kiểu "mạch của tài khoản tạm trong sub `PROTECT`" vẫn chặn `Sub.delete()`; đã chạy thật: rác → `don_rac_e2e` → `seed_e2e --reset` ném `ProtectedError`; mới vá riêng cho sub e2e ở `seed_e2e._xoa` · `api/core/management/commands/don_rac_e2e.py`; (b) `DISTINCT ON (author_id)` của `/feeds/nhat-ky-moi-tac-gia` đọc mọi nhật ký hiện được mỗi lượt vào `/`, chi phí tăng tuyến tính (7,8 ms với 425 hàng, chưa đo quy mô lớn) · `api/api/feeds.py:391`; (c) `vo-reddit.spec.ts` A7/B4 (:75-98, :341) phụ thuộc thứ tự chạy: spec chạy trước thêm mạch đẩy HPG khỏi trang 1 `/?tab=moi`; chạy riêng chỉ đỏ 118 + 548 như nền; (d) `scripts/codegen.mjs` gặp `OSError [Errno 22]` ngắt quãng khi hai phiên cùng codegen; (e) chưa có e2e cho trạng thái `nhat-ky-rong` của `/`; (f) `gikky_e2e` tích luỹ ~976 nhật ký từ các lượt e2e; (g) `api/core/migrations/0046_lenh_co_cau_truc_va_la_bot.py:32` (phiên khác) từng có lỗi cú pháp chặn toàn bộ pytest, đã tự khỏi.
+- **Vì sao không sửa ngay**: ngoài phạm vi khối nhật ký; (a) đụng lệnh dọn rác dùng chung; (b) chưa có số đo ở quy mô thật.
+
+### P-20261111-2 · [MỞ] · NHỎ — hai điểm lệch thấy khi phản biện endpoint nhật ký mỗi tác giả
+- **Ở đâu / bằng chứng**: (a) dải chân khối "Nhật ký mới" ghi "+n nhật ký từ n người khác" (đếm theo TÁC GIẢ) nhưng link sang feed không lọc `/?tab=moi&loai_mach=nhat_ky` (đếm theo BÀI) · `apps/web/components/trang-chu-v2.tsx` (khối chân) + `apps/web/lib/chan-khoi-nhat-ky.ts`; (b) `gikky_dev` thiếu cột `core_user.la_bot` (migration 0046 của nhánh v2 chưa áp) — server trỏ `gikky_dev` sẽ lỗi `column does not exist`; KHÔNG tự migrate (dữ liệu thật, cần user quyết); (c) `DISTINCT ON` của `/feeds/nhat-ky-moi-tac-gia` đo 335 ms ở 200k hàng / 2000 tác giả (bảng tạm trên `gikky_e2e`), 0,8 ms ở 1k hàng; `/` là `force-dynamic` không cache — hướng xử lý khi tới ngưỡng: cache vài chục giây hoặc bảng "bài mới nhất của tác giả".
+- **Vì sao không sửa ngay**: (a) thuộc phần chân khối của phiên "Homepage v2 giao diện mới"; (b) cần user quyết; (c) còn xa ngưỡng.
+
+### P-20261111-3 · [MỞ] · VỪA (nghi ngờ) — `DELETE /comments/{id}` trả 403 `khong_phai_admin` cho cả TÁC GIẢ bình luận
+- **Ở đâu / bằng chứng**: `api/api/binh_luan.py` (+ `api/api/quyen.py`) · `test_dua_ghi_500.py::test_L08` nhận `{"code":"khong_phai_admin"}`; kéo đỏ `test_L17`, `test_shadow_limit_dem_ca_BIA_MO`, `test_trich_ghi::…xoa_MEM…`, `test_revalidate[xoa-binh-luan]`, e2e `tai-khoan-va-ghi` "tự xoá được". Chưa rõ siết quyền có chủ ý hay lỗi (thấy khi nghiệm thu lượt homepage v2 giao diện mới).
+- **Vì sao không sửa ngay**: thay đổi của lượt khác trong working tree v2; cần user/lượt kia xác nhận ý định.
+
+### P-20261111-4 · [MỞ] · VỪA — bảng đo chưa theo kịp các lượt "lưu trữ mạch" và "cửa sổ tự sửa" (12 pytest đỏ)
+- **Ở đâu / bằng chứng**: `test_operation_id` (`/me/luu-tru`, `/machs/{id}/luu-tru`), `test_quyen_ghi`, `test_api_quan_tri_phan_quyen`, `test_tim_kiem_cau_truc`, `test_api_mach::test_khong_co_truong_nao_phu_thuoc_nguoi_xem` (dư `da_luu_tru`); `test_api_so_query` ×5 thừa 2 truy vấn `core_cauhinhbientap`; `test_cua_so_tu_sua_bai` C4 (PATCH admin 200 thay 403), C13 (lệch 60 s).
+- **Vì sao không sửa ngay**: thuộc các lượt khác chưa commit.
+
+### P-20261111-5 · [MỞ] · VỪA — `<link rel="alternate">` RSS biến mất khỏi `/`
+- **Ở đâu / bằng chứng**: `apps/web/app/page.tsx` khai `alternates:{canonical}` ghi đè khối `alternates` của `apps/web/app/layout.tsx:70-77`; `seo-va-trang.spec.ts:367` đỏ; `git show HEAD:apps/web/app/page.tsx` đã có `alternates` ⇒ có từ trước lượt homepage v2 giao diện mới.
+- **Vì sao không sửa ngay**: ngoài phạm vi; sửa phải giữ canonical + `seo-trang-chu.spec.ts` từng byte.
+
+### P-20261111-6 · [MỞ] · VỪA — tìm kiếm lớp lọc thứ hai không lọc `archived_at`
+- **Ở đâu / bằng chứng**: `api/api/tim_kiem.py:187-189`, `:216-223` (`_mach_hien_theo_id`, `_binh_luan_hien_theo_id`) thiếu `archived_at__isnull`, docstring nói phải khớp `feeds._mach_hien`; hiện chỉ cờ chỉ mục chặn mạch đã lưu trữ.
+- **Vì sao không sửa ngay**: thuộc lượt lưu trữ mạch.
+
+### P-20261111-7 · [MỞ] · NHỎ — e2e cũ lệch chữ/luồng so với giao diện của các lượt khác (~20 bài đỏ nền)
+- **Ở đâu / bằng chứng**: `form-ghi` B1/B2 (`nut-dang-mach` nay mở `drawer-dang-nhanh`); `vo-reddit.spec.ts:123` A7 mong "💬 26 bình luận", `TheMach` vẽ icon + số; `phase-3` P3 "Theo dõi mạch" (kéo 8 bài did-not-run); `tai-khoan-va-ghi` (`u/…`, vote 97/98); `mach-can` V4/V8/V15, `binh-luan-chung`; `seo-va-trang` V10 (`/luat` thiếu `nhan-draft`), V11 (JSON-LD `["Article","DiscussionForumPosting"]`); `giao-dien` T8; `sang-toi`. Log: e2e nghiệm thu 2026-11-11 (934 xanh / 23 đỏ trên `gikky_e2e`).
+- **Vì sao không sửa ngay**: không thuộc lượt homepage v2 giao diện mới.
+
+### P-20261111-8 · [MỞ] · NHỎ — migration 0045 `print` tiếng Việt nổ `UnicodeEncodeError` khi stdout bị pipe trên Windows (cp1252)
+- **Ở đâu / bằng chứng**: `api/core/migrations/0045_loai_mach.py:47,55`; `python -c "print('…bật…')" | cat` ⇒ `UnicodeEncodeError`. Prod Linux UTF-8 không dính. (0046 đã sửa cùng lỗi trong lượt homepage v2.)
+- **Vì sao không sửa ngay**: migration của lượt `loai_mach`.
+
+### P-20261111-9 · [MỞ] · Ý TƯỞNG chờ user — hai nút chọn phe trong khối chủ đề tuần
+- **Ở đâu / bằng chứng**: mockup `docs/thiet-ke/homepage-v2/trang-chu-desktop.html` ("Ưu tiên quản trị rủi ro" / "Canh nhịp chỉnh để gom hàng"); plan `2026-11-11-homepage-v2-giao-dien-moi.md` §3.1 loại ra.
+- **Vì sao không sửa ngay**: cần mô hình dữ liệu "lựa chọn quan điểm" chưa có; user quyết có làm không.
+
+### P-20261111-10 · [MỞ] · NHỎ — mép còn lại sau lượt homepage v2 giao diện mới + lệnh có cấu trúc
+- **Ở đâu / bằng chứng**: (a) `scripts/bot-trader/soan_va_dang.py::_dung_lenh` trả `None` không log (lệnh rơi im lặng) và không tự kiểm giá > 0 (SL làm tròn "0.00" ⇒ server 400 ⇒ bot mất cả bài); (b) trang `/m/…` chưa hiển thị `lenh`; `apps/web/lib/ti-le-rr.ts` tính R:R từ `figures` song song với `rr` server; (c) code chết: `components/gallery-bai-viet.tsx`(+css), `chonThumb`/`tyLeKhungGallery` trong `lib/xem-truoc-anh.ts`, `e2e/bai-viet-xem-truoc.spec.ts.cu`; (d) bot vẫn đăng công khai (payload không `rieng_tu`) ⇒ lệnh lộ từ lúc vào lệnh — hiện trạng của GHI-CHU Việc 1; (e) chủ đề đăng tối Chủ nhật cho tuần sau bị tính vào tuần cũ (khoảng tuần theo `published_at`).
+- **Vì sao không sửa ngay**: (a) file bot đang được phiên khác sửa; còn lại ngoài phạm vi trang chủ.

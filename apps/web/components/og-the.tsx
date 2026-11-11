@@ -73,7 +73,7 @@ export function OgThe({ du_lieu }: { du_lieu: DuLieuOg }) {
             >
               <LogoVector size={30} />
               <span>{du_lieu.nhan}</span>
-              {du_lieu.dongSo && <NhanDongSo />}
+              {du_lieu.dongSo && <NhanDongSo chu={du_lieu.nhanDongSo} />}
             </div>
 
             <div
@@ -194,7 +194,7 @@ export function OgThe({ du_lieu }: { du_lieu: DuLieuOg }) {
               >
                 <LogoVector size={26} />
                 <span>{du_lieu.nhan}</span>
-                {du_lieu.dongSo && <NhanDongSo thuGon />}
+                {du_lieu.dongSo && <NhanDongSo thuGon chu={du_lieu.nhanDongSo} />}
               </div>
 
               <div
@@ -322,7 +322,7 @@ export function OgThe({ du_lieu }: { du_lieu: DuLieuOg }) {
  * `e2e/don-vi/mau-token.spec.ts` chặn ở mọi file ngoài `app/globals.css`. Xem docstring
  * `lib/og.ts` — đây là ghi nhận một khoản nợ thẩm mỹ có tên, không phải một chỗ quên màu.
  */
-function NhanDongSo({ thuGon = false }: { thuGon?: boolean }) {
+function NhanDongSo({ thuGon = false, chu = "ĐÃ ĐÓNG SỔ" }: { thuGon?: boolean; chu?: string }) {
   return (
     <div
       style={{
@@ -335,7 +335,7 @@ function NhanDongSo({ thuGon = false }: { thuGon?: boolean }) {
         letterSpacing: thuGon ? 1 : 2,
       }}
     >
-      ĐÃ ĐÓNG SỔ
+      {chu}
     </div>
   );
 }

@@ -1415,6 +1415,15 @@
             "title": "Last Activity At",
             "type": "string"
           },
+          "loai_mach": {
+            "enum": [
+              "nhat_ky",
+              "bai_viet",
+              "thao_luan"
+            ],
+            "title": "Loai Mach",
+            "type": "string"
+          },
           "published_at": {
             "format": "date-time",
             "title": "Published At",
@@ -1446,6 +1455,7 @@
           "title",
           "sub_slug",
           "tac_gia",
+          "loai_mach",
           "status",
           "created_at",
           "published_at",
@@ -1462,7 +1472,7 @@
         "type": "object"
       },
       "MachHenGioMoiIn": {
-        "description": "Đăng bài thay mặt tài khoản đội — `POST /admin/machs/hen-gio` (2026-09-03).\n\nKế thừa `MocMoiIn` đúng như `MachMoiIn` của cửa công khai: bài gốc *chính là* mốc 1,\nnên `body`/`occurred_at`/`loai`/`question_for_crowd`/`figures` là của mốc ấy.\n\nHai trường thêm là hai trường khu quản trị:\n\n- `author` — username, **phải nằm trong allowlist tài khoản đội**\n  (`api/quan_tri_hen_gio.py::TAI_KHOAN_DANG_BAI`). Ngoài danh sách ⇒ 400;\n- `published_at` — tương lai thì bài nằm chờ; `null` hoặc quá khứ thì lên ngay.\n  Cùng luật múi giờ với `HenGioMachIn`.",
+        "description": "Đăng bài thay mặt tài khoản đội — `POST /admin/machs/hen-gio` (2026-09-03).\n\nKế thừa `MocMoiIn` đúng như `MachMoiIn` của cửa công khai: bài gốc *chính là* mốc 1,\nnên `body`/`occurred_at`/`loai`/`question_for_crowd`/`figures` là của mốc ấy.\n\nHai trường thêm là hai trường khu quản trị:\n\n- `author` — username, **phải nằm trong allowlist tài khoản đội**\n  (`api/quan_tri_hen_gio.py::TAI_KHOAN_DANG_BAI`). Ngoài danh sách ⇒ 400;\n- `published_at` — tương lai thì bài nằm chờ; `null` hoặc quá khứ thì lên ngay.\n  Cùng luật múi giờ với `HenGioMachIn`.\n\nVà `loai_mach` (tuỳ chọn, 3 giá trị): bỏ ⇒ phân giải theo tác giả như cửa công khai\n(`core/ghi.py::tao_mach`). Cửa này chỉ staff gọi được nên KHÔNG áp cổng \"người thường\"\ncủa `POST /machs` — đây là lối tạo chủ đề `thao_luan`.",
         "properties": {
           "author": {
             "description": "username của tài khoản đội",
@@ -1502,6 +1512,22 @@
               }
             ],
             "title": "Loai"
+          },
+          "loai_mach": {
+            "anyOf": [
+              {
+                "enum": [
+                  "nhat_ky",
+                  "bai_viet",
+                  "thao_luan"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Loai Mach"
           },
           "occurred_at": {
             "anyOf": [
@@ -2055,6 +2081,11 @@
           "display_name": {
             "title": "Display Name",
             "type": "string"
+          },
+          "la_bot": {
+            "default": false,
+            "title": "La Bot",
+            "type": "boolean"
           },
           "username": {
             "title": "Username",
@@ -3914,7 +3945,7 @@
     },
     "/api/admin/machs": {
       "get": {
-        "description": "Bảng mạch cho mod, mới nhất trước, cursor keyset `(created_at, id)`.\n\n`?q=` khớp **một phần, không phân biệt hoa thường** trên tiêu đề. Cố ý không dùng\nMeilisearch ở đây: đây là bảng quản trị, nó phải thấy **cả mạch đã bị ẩn** — mà mạch\nẩn thì bị gỡ khỏi index đúng theo thiết kế của Phase 7. Dùng search ở đây là dựng một\nbảng quản trị mù đúng với thứ cần quản trị nhất.\n\n`?trang_thai=` chia **bốn nhóm LOẠI TRỪ NHAU** — `ẩn → khoá → đã đóng sổ → đang mở`,\nxét từ trên xuống (`api/quan_tri_loc.py`). Nghĩa là **`mo` KHÔNG bao gồm bài đã bị\nẩn**, dù một bài bị ẩn vẫn \"đang mở\" trên trục `status`. Mặc định `tat_ca` gồm tất,\nkể cả bài đã gỡ — mod phải thấy để gỡ ẩn.\n\n⚠ **`trang_thai=hen_gio` đảo CHIỀU sắp xếp** (2026-09-03): bài chờ giờ hẹn sắp theo\n`published_at` **tăng dần** — cái sắp lên trước đứng đầu. Mọi nhóm khác giữ nguyên\n`created_at` giảm dần.\n\nKhông phải khẩu vị: danh sách này là một hàng đợi việc sắp xảy ra, và một hàng đợi\nxếp ngược thì bài lên trong 10 phút nữa nằm ở trang cuối. Cursor keyset đi theo đúng\nkhoá sắp ấy — hai nửa lệch nhau là trang 2 trùng/sót hàng.",
+        "description": "Bảng mạch cho mod, mới nhất trước, cursor keyset `(created_at, id)`.\n\n`?q=` khớp **một phần, không phân biệt hoa thường** trên tiêu đề. Cố ý không dùng\nMeilisearch ở đây: đây là bảng quản trị, nó phải thấy **cả mạch đã bị ẩn** — mà mạch\nẩn thì bị gỡ khỏi index đúng theo thiết kế của Phase 7. Dùng search ở đây là dựng một\nbảng quản trị mù đúng với thứ cần quản trị nhất.\n\n`?trang_thai=` chia **bốn nhóm LOẠI TRỪ NHAU** — `ẩn → khoá → đã đóng sổ → đang mở`,\nxét từ trên xuống (`api/quan_tri_loc.py`). Nghĩa là **`mo` KHÔNG bao gồm bài đã bị\nẩn**, dù một bài bị ẩn vẫn \"đang mở\" trên trục `status`. Mặc định `tat_ca` gồm tất,\nkể cả bài đã gỡ — mod phải thấy để gỡ ẩn.\n\n⚠ **`trang_thai=hen_gio` đảo CHIỀU sắp xếp** (2026-09-03): bài chờ giờ hẹn sắp theo\n`published_at` **tăng dần** — cái sắp lên trước đứng đầu. Mọi nhóm khác giữ nguyên\n`created_at` giảm dần.\n\n`?loai_mach=` (tuỳ chọn, `nhat_ky|bai_viet|thao_luan`; giá trị lạ ⇒ 400\n`tham_so_khong_hop_le`) lọc theo loại mạch và **kết hợp được** với `trang_thai`. Không\ntruyền ⇒ mọi loại, như trước. Form đăng bài của khu quản trị dùng\n`?loai_mach=thao_luan&trang_thai=mo` để biết \"đang có chủ đề nào đang mở\" trước khi tạo\nchủ đề thứ hai — nên \"đang mở\" ở đây là nhóm `mo` (loại ẩn, khoá, **và bài chờ giờ\nhẹn**), không phải `chua_go`. Nhóm `mo` không loại bài đã lưu trữ; hàng có `da_luu_tru`\nđể bên gọi tự loại.\n\nKhông phải khẩu vị: danh sách này là một hàng đợi việc sắp xảy ra, và một hàng đợi\nxếp ngược thì bài lên trong 10 phút nữa nằm ở trang cuối. Cursor keyset đi theo đúng\nkhoá sắp ấy — hai nửa lệch nhau là trang 2 trùng/sót hàng.",
         "operationId": "quan_tri_liet_ke_mach",
         "parameters": [
           {
@@ -3977,6 +4008,27 @@
               ],
               "title": "Trang Thai",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "loai_mach",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "nhat_ky",
+                    "bai_viet",
+                    "thao_luan"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Loai Mach"
             }
           },
           {

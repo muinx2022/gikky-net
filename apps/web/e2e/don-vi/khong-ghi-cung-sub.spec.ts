@@ -45,7 +45,15 @@ const MA_SAN_PHAM = quetNguon(WEB, /\.(tsx?|mjs)$/).filter(
  * Giữ bảng lại chứ không xoá kiểu miễn trừ: nó là chỗ dòng tiếp theo phải đi qua, và bài
  * đo "giấy miễn trừ không có dòng chết" ở dưới sẽ bắt ngay một dòng thừa.
  */
-const CHUA_CHUYEN_DUOC: Readonly<Record<string, string>> = {};
+const CHUA_CHUYEN_DUOC: Readonly<Record<string, string>> = {
+  // 2026-11-11 (plan `2026-11-11-homepage-v2-giao-dien-moi.md` §3.3). Đây KHÔNG phải danh sách
+  // sub để vẽ sidebar/sitemap (chỗ B10 sinh ra để cấm) mà là CẤU HÌNH BIÊN TẬP: "bài của sub nào
+  // vào cột nào của thư viện kiến thức" — một quyết định nội dung của user, không suy ra được từ
+  // `GET /subs`. Nó đã được khai là hằng riêng, một file riêng (`NHOM_BAI_VIET`), dễ đổi. Sub
+  // chưa tồn tại chỉ làm cột ít bài đi; nhãn chip lấy từ `GET /subs`, không từ file này.
+  "lib/nhom-bai-viet.ts":
+    "nhóm chuyên mục của section Bài viết trang chủ là cấu hình biên tập, không phải danh sách sub",
+};
 
 test("bộ file quét được không rỗng và có đúng hai chỗ từng ghi cứng", () => {
   const ten = MA_SAN_PHAM.map((f) => f.ten);

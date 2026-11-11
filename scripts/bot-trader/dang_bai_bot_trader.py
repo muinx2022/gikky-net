@@ -56,9 +56,13 @@ def thuc_hien_action(action: str, data: dict, client: GikkyClient = None) -> dic
             "sub": data.get("sub", "chung-khoan"),
             "title": data["title"],
             "body": body_final,
-            "loai": data.get("loai", "Chiến lược"),
+            "loai": data.get("loai", "Vào lệnh"),
+            "loai_mach": data.get("loai_mach", "nhat_ky"),
             "question_for_crowd": data.get("question_for_crowd"),
             "figures": data.get("figures"),
+            # Lệnh có cấu trúc (chiều/mã/giá vào/SL/TP/nhồi) cho thẻ nhật ký trang chủ; payload
+            # không có khoá `lenh` thì bỏ qua (client lọc giá trị None).
+            "lenh": data.get("lenh"),
         }
         res_mach = client.tao_mach(payload_tao)
 

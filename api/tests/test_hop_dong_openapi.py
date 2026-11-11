@@ -212,13 +212,26 @@ CO_Y_DUNG_MA_MAC_DINH: dict[str, str] = {
         "còn), nên đổi mã của nó là breaking change; `khoang` sinh ra sau `Literal` nên "
         "chưa bao giờ hứa mã nào khác. Xem `test_api_feed_top.py::test_khoang_la_tra_400`."
     ),
+    "loai_mach": (
+        "Bộ lọc `?loai_mach=` của hai feed (plans/2026-11-10-truong-loai-mach.md). Cùng "
+        "lý lẽ với `khoang`: tham số sinh ra sau `Literal`, chưa từng có nhánh kiểm tay "
+        "nào trả mã riêng, nên giá trị lạ trả 400 `tham_so_khong_hop_le` là hợp đồng "
+        "ngay từ đầu — không có client cũ nào chờ một mã khác. Ghim bằng "
+        "`test_loai_mach.py::test_8_9_loai_mach_la_bi_chan_400_tham_so_khong_hop_le`."
+    ),
     "trang_thai": (
         "Bộ lọc hàng đợi báo cáo của khu quản trị (`GET /api/admin/reports`, Phase 4). "
         "Cấp mã riêng ở `MA_LOI_THEO_THAM_SO` sẽ áp cho CẢ `api_v1`: bảng đó là bảng "
         "dùng chung của `dang_ky_xu_ly_loi`, và một tham số chỉ tồn tại sau hàng rào "
         "staff không có lý do chiếm một mã trong hợp đồng CÔNG KHAI. Người gọi endpoint "
         "này là `apps/admin` do chính repo viết, nên `tham_so_khong_hop_le` là đủ — và "
-        "docstring của endpoint nói đúng thế."
+        "docstring của endpoint nói đúng thế. "
+        "2026-11-11: `GET /feeds/moi?trang_thai=open|closed` (tab Đang mở / Đã đóng sổ của "
+        "khối nhật ký trang chủ, plans/2026-11-11-homepage-v2-giao-dien-moi.md §6.3) dùng "
+        "CÙNG tên và CÙNG lý lẽ: tham số sinh ra sau `Literal`, chưa từng có nhánh kiểm tay "
+        "trả mã riêng, nên giá trị lạ trả 400 `tham_so_khong_hop_le` là hợp đồng ngay từ "
+        "đầu. Đổi sang mã riêng sẽ áp cho CẢ `api_v1` qua bảng dùng chung. Ghim bằng "
+        "`test_feed_trang_thai.py::test_gia_tri_la_bi_chan_400_tham_so_khong_hop_le`."
     ),
 }
 

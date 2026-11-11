@@ -238,6 +238,7 @@ def tao_mach_hen_gio(request, du_lieu: MachHenGioMoiIn):
             question_for_crowd=du_lieu.question_for_crowd,
             figures=figures_ra_dict(du_lieu.figures),
             published_at=du_lieu.published_at,
+            loai_mach=du_lieu.loai_mach,
         )
         # Cùng chỗ, cùng lý do với `api/machs.py::tao_mach_api` (PLAN 5.7): `0` trên cột
         # vote phải nghĩa là "đã có người dìm", không phải "chưa ai đụng". Bài hẹn đang

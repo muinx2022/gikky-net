@@ -147,6 +147,12 @@ KHOA_CHO_PHEP = {
     # mạch
     "id", "slug", "title", "sub", "author", "status", "closed_at", "ket_qua",
     "bai_hoc", "truong_phai", "rieng_tu",
+    # 2026-11-10: nhật ký / bài viết — thuộc tính của HÀNG, không phụ thuộc người xem.
+    "loai_mach",
+    # 2026-11-11: lệnh có cấu trúc của nhật ký (thuộc tính của HÀNG `Mach`, không phải của
+    # người xem; seed HPG không khai lệnh nên chỉ khoá `lenh` hiện, các khoá con thì không) và
+    # cờ `la_bot` của tác giả (cột của `User`, cùng loại với `avatar_url`).
+    "lenh", "la_bot",
     "locked", "tat_binh_luan", "created_at", "last_entry_at", "last_activity_at", "entry_count",
     "comment_count", "view_count", "face", "mocs", "spine",
     # Ngày ĐĂNG (hẹn giờ, 2026-09-03). Cache được như `created_at`: nó là thuộc tính của

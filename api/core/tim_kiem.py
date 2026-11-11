@@ -64,6 +64,7 @@ from django.conf import settings
 from django.db import transaction
 
 from core.lam_sach_html import van_ban_thuan
+from core.rieng_tu import mach_xem_duoc
 
 logger = logging.getLogger(__name__)
 
@@ -403,8 +404,8 @@ def tai_lieu(mach) -> dict:
 def hien_cong_khai(mach) -> bool:
     """Mạch này có được xuất hiện ở danh sách công khai không.
 
-    **Cùng một luật với `api/feeds.py::_mach_hien`** (`hidden_at__isnull=True`), và đó là
-    chủ đích: search là một danh sách công khai như feed, nên hai chỗ lệch nhau nghĩa là
+    **Cùng một luật với `api/feeds.py::_mach_hien`** (`hidden_at__isnull=True`, và nay cả
+    `rieng_tu=False`), và đó là chủ đích: search là một danh sách công khai như feed, nên hai chỗ lệch nhau nghĩa là
     một bài hoặc rò ra ở search sau khi biến khỏi feed, hoặc mất khỏi search dù feed vẫn
     có. Cả hai đều là lỗi, và không cái nào tự đỏ.
 
@@ -415,7 +416,16 @@ def hien_cong_khai(mach) -> bool:
     lời là *không đổi index*, và nó được ghi thành một dòng có tên trong bảng cấu trúc
     (`tests/test_tim_kiem_cau_truc.py`) chứ không phải một chỗ trống.
     """
-    return mach.hidden_at is None and mach.archived_at is None
+    return (
+        mach.hidden_at is None
+        and mach.archived_at is None
+        # Mạch riêng tư KHÔNG BAO GIỜ vào chỉ mục (tìm kiếm là danh sách công khai, không có
+        # người xem — kể cả tác giả). `mach_xem_duoc(mach, None)` là luật duy nhất của
+        # `core/rieng_tu.py`: "không ai xem" thì chỉ mạch công khai qua được. `tao_mach` vẫn bỏ
+        # `dong_bo_mach` cho mạch riêng tư nhưng đó là tối ưu, KHÔNG phải rào — nối mốc, bình
+        # luận, đóng sổ… đều gọi lại `dong_bo_mach` và nó sẽ upsert nếu hàm này không chặn.
+        and mach_xem_duoc(mach, None)
+    )
 
 
 # --- tài liệu BÌNH LUẬN ------------------------------------------------------
@@ -449,18 +459,21 @@ def tai_lieu_binh_luan(comment) -> dict:
 
 
 def hien_cong_khai_binh_luan(comment) -> bool:
-    """Bình luận này có được xuất hiện ở tìm kiếm công khai không — **BỐN vế**.
+    """Bình luận này có được xuất hiện ở tìm kiếm công khai không — **NĂM vế**.
 
     1. `deleted_at IS NULL` — bia mộ không có nội dung để tìm.
     2. `hidden_at IS NULL` — mod đã ẩn.
     3. `mach.hidden_at IS NULL` — mạch chứa nó đã bị mod ẩn.
     4. `mach.archived_at IS NULL` — mạch chứa nó đã bị lưu trữ (soft delete).
+    5. mạch chứa nó là công khai (`core/rieng_tu.py`) — bình luận trong mạch riêng tư không
+       bao giờ vào chỉ mục, kể cả bình luận của chính tác giả.
     """
     return (
         comment.deleted_at is None
         and comment.hidden_at is None
         and comment.mach.hidden_at is None
         and comment.mach.archived_at is None
+        and mach_xem_duoc(comment.mach, None)
     )
 
 

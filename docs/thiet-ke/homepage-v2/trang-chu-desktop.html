@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gikky — Trang chủ (desktop)</title>
+<!-- Ban thiet ke tinh (mockup), xuat tu canvas Design 2026-11-11. Mau o day la mau mockup: khi code phai map sang token co san trong apps/web/app/globals.css. -->
+<style>
+body{margin:0;background:#F6F7F9}
+a{color:#1D4ED8;text-decoration:none}a:hover{color:#1E40AF}
+.num{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
+.nav a{color:#475467;font-size:13.5px;font-weight:500;height:56px;display:inline-flex;align-items:center;border-bottom:2px solid transparent}
+.nav a.on{color:#0F172A;border-bottom-color:#2563EB}
+.tk{display:inline-flex;gap:8px;align-items:center;font-size:12px;color:#475467;white-space:nowrap}
+.tk b{color:#0F172A;font-weight:500}
+.up{color:#067647}.dn{color:#B42318}
+.panel{background:#FFFFFF;border:1px solid #E4E7EC;border-radius:12px}
+.side-h{margin:0 0 10px;font-size:11.5px;font-weight:600;letter-spacing:.06em;color:#667085;text-transform:uppercase}
+.av{width:34px;height:34px;border-radius:50%;flex:none;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+.stance{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:14px 16px;border-radius:10px;background:#F9FAFB;border:1px solid #D0D5DD;color:#0F172A;font:inherit;text-align:left;cursor:pointer}
+.stance:hover{border-color:#2563EB;background:#EFF4FF}
+.stance b{font-size:14.5px;font-weight:600}
+.stance span{font-size:12px;color:#667085}
+.rp{display:flex;gap:10px;padding:12px 0;border-top:1px solid #EAECF0}
+.rp:first-of-type{border-top:0;padding-top:0}
+.rp p{margin:3px 0 0;font-size:13px;color:#475467;line-height:1.55;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.tab{height:40px;padding:0 2px;background:none;border:0;border-bottom:2px solid transparent;color:#667085;font:inherit;font-size:13.5px;font-weight:500;cursor:pointer}
+.tab.on{color:#0F172A;border-bottom-color:#0F172A}
+.pc{background:#fff;border:1px solid #E4E7EC;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.pc-h{display:flex;align-items:center;gap:10px}
+.who{display:flex;flex-direction:column;line-height:1.3;min-width:0}
+.who b{font-size:13.5px;font-weight:600}
+.who span{font-size:11.5px;color:#667085}
+.st{margin-left:auto;display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:999px;font-size:11.5px;font-weight:600;white-space:nowrap}
+.st i{width:6px;height:6px;border-radius:50%;display:inline-block}
+.open{background:#EFF4FF;color:#1D4ED8}.open i{background:#2563EB}
+.closed{background:#FEF6E7;color:#93370D}.closed i{background:#DC6803}
+.pc-t{font-size:16.5px;font-weight:600;line-height:1.4;color:#0F172A}
+.tix{display:inline-flex;align-items:stretch;flex-wrap:wrap;border:1px solid #E4E7EC;border-radius:8px;overflow:hidden;font-size:12.5px;align-self:flex-start;background:#F9FAFB}
+.tix>span{display:flex;align-items:center;gap:6px;padding:6px 11px;border-right:1px solid #E4E7EC}
+.tix>span:last-child{border-right:0}
+.tix em{font-style:normal;font-size:10.5px;color:#667085;font-family:Inter,-apple-system,sans-serif}
+.side{display:inline-flex;align-items:center;justify-content:center;height:20px;padding:0 7px;border-radius:4px;font-size:10.5px;font-weight:700}
+.buy{background:#DCFAE6;color:#067647}.sell{background:#FEE4E2;color:#B42318}
+.sl{color:#B42318}.tp{color:#067647}.en{color:#B54708}.dca{color:#1D4ED8}
+.body{display:flex;gap:16px;align-items:flex-start}
+.body p{margin:0;flex:1;min-width:0;font-size:13.5px;color:#475467;line-height:1.6;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.thumb{flex:none;width:168px;height:104px;border-radius:8px;background:#F2F4F7;border:1px solid #E4E7EC}
+.ft{display:flex;align-items:center;gap:4px;font-size:12.5px;color:#667085;padding-top:8px;border-top:1px solid #EAECF0}
+.fb{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border-radius:6px;background:none;border:0;color:#475467;font:inherit;font-size:12.5px;cursor:pointer}
+.fb:hover{background:#F2F4F7;color:#0F172A}
+.bot{font-size:10.5px;font-weight:600;color:#475467;border:1px solid #D0D5DD;border-radius:4px;padding:0 5px;margin-left:4px}
+.cat{display:flex;justify-content:space-between;padding:7px 0;font-size:13px;border-top:1px solid #EAECF0;color:#1D4ED8}
+.cat:first-of-type{border-top:0}
+.cat span{color:#667085}
+.chip{display:inline-flex;align-items:center;height:30px;padding:0 12px;border-radius:999px;border:1px solid #D0D5DD;color:#344054;font-size:12.5px;background:#fff}
+.ar{display:flex;flex-direction:column;gap:8px;color:#0F172A}
+.ar:hover h3{color:#1D4ED8}
+.ar-img{aspect-ratio:16/9;border-radius:8px;background:#EAECF0}
+.ar h3{margin:0;font-size:15px;font-weight:600;line-height:1.45;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.ar p{margin:0;font-size:13px;color:#475467;line-height:1.55;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ar-m{display:flex;gap:6px;font-size:11.5px;color:#667085}
+.ar-m b{color:#1D4ED8;font-weight:600}
+.lib-t{display:flex;align-items:baseline;justify-content:space-between;padding-bottom:10px;border-bottom:2px solid #0F172A}
+.lib-t h3{margin:0;font-size:15px;font-weight:700}
+.lib-t a{font-size:12px}
+.li{display:flex;gap:14px;padding:16px 0;border-bottom:1px solid #EAECF0;color:#0F172A}
+.li:hover h4{color:#1D4ED8}
+.li-th{flex:none;width:104px;height:72px;border-radius:8px;background:#EAECF0;object-fit:cover}
+.li-n{flex:none;width:22px;font-size:13px;font-weight:600;color:#98A2B3;font-family:'JetBrains Mono',ui-monospace,monospace;padding-top:2px}
+.li h4{margin:0;font-size:15px;font-weight:600;line-height:1.45;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.li p{margin:5px 0 0;font-size:13px;color:#475467;line-height:1.55;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.li-m{display:flex;gap:6px;margin-top:6px;font-size:11.5px;color:#667085}
+.tag{display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:4px;background:#F2F4F7;color:#344054;font-weight:600;font-size:10.5px}
+@media (max-width:1000px){.grid3,.hero,.lib{grid-template-columns:1fr !important}.stances{grid-template-columns:1fr !important}.navs{display:none !important}.thumb{width:96px;height:64px}}
+</style>
+</head>
+<body>
+<div style="width: 100%; min-height: 2620px; background: #F6F7F9; color: #0F172A; font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; font-size: 14px; line-height: 1.5">
+
+<header style="border-bottom: 1px solid #E4E7EC; background: #FFFFFF">
+<div style="max-width: 1240px; margin: 0 auto; padding: 0 24px; height: 56px; display: flex; align-items: center; gap: 28px">
+<a href="/" style="display: flex; align-items: center; gap: 8px; color: #0F172A; font-weight: 700; font-size: 19px">
+<span style="width: 28px; height: 28px; border-radius: 50%; background: #2563EB; display: inline-flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 4a8 8 0 1 0 8 8"></path><path d="M12 8a4 4 0 1 0 4 4"></path></svg></span>gikky</a>
+<nav class="nav navs" aria-label="Chính" style="display: flex; gap: 22px">
+<a href="/" class="on">Trang chủ</a><a href="#">Thảo luận</a><a href="#">Nhật ký</a><a href="#">Bài viết</a><a href="#">Chuyên mục</a>
+</nav>
+<span style="flex: 1"></span>
+<label style="display: flex; align-items: center; gap: 8px; width: 260px; height: 36px; padding: 0 12px; border-radius: 8px; background: #F2F4F7; border: 1px solid #E4E7EC; color: #667085">
+<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+<input type="search" aria-label="Tìm mã, người dùng, bài viết" placeholder="Tìm mã, người dùng, bài viết…" style="flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: #0F172A; font: inherit; font-size: 13px">
+</label>
+<a href="#" style="color: #0F172A; font-weight: 500; font-size: 13.5px">Đăng nhập</a>
+<a href="#" style="display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 8px; background: #2563EB; color: #fff; font-weight: 600; font-size: 13.5px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Ghi nhật ký</a>
+</div>
+</header>
+
+<div style="border-bottom: 1px solid #E4E7EC; background: #FCFCFD">
+<div style="max-width: 1240px; margin: 0 auto; padding: 0 24px; height: 36px; display: flex; align-items: center; gap: 28px; overflow-x: auto">
+<span style="font-size: 11px; color: #667085; letter-spacing: .06em">CHỐT PHIÊN 11/11</span>
+<span class="tk">Dow Jones <b class="num">52.231,89</b><span class="num up">+0,86%</span></span>
+<span class="tk">Nasdaq <span class="num dn">−1,21%</span></span>
+<span class="tk">Brent <b class="num">92,06</b> USD</span>
+</div>
+</div>
+
+<section aria-labelledby="topic" style="max-width: 1240px; margin: 0 auto; padding: 28px 24px 4px; box-sizing: border-box">
+<div class="panel hero" style="padding: 28px; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 36px; border-top: 3px solid #2563EB">
+<div style="display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 12px">
+<span style="font-weight: 700; letter-spacing: .08em; color: #1D4ED8">CHỦ ĐỀ TUẦN NÀY</span>
+<span style="color: #667085">09/11 – 15/11 · s/chung-khoan</span>
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px; border-radius: 999px; background: #DCFAE6; color: #067647; font-weight: 600"><i style="width: 6px; height: 6px; border-radius: 50%; background: #17B26A; display: inline-block"></i>Đang mở · còn 4 ngày</span>
+</div>
+<h1 id="topic" style="margin: 0; font-size: 32px; font-weight: 700; line-height: 1.25; letter-spacing: -.015em">VN-Index giằng co vùng 1.250 điểm: Bạn đang ưu tiên quản trị rủi ro hay canh nhịp chỉnh để gom hàng?</h1>
+<p style="margin: 0; font-size: 14px; color: #475467">[Bối cảnh ngắn của chủ đề.] Chọn quan điểm, viết lý do và gắn nhật ký của bạn. Chủ đề đóng cuối Chủ nhật 15/11, tuần sau mở chủ đề mới.</p>
+<div class="stances" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+<button class="stance"><b>Ưu tiên quản trị rủi ro</b><span>[số] quan điểm · [số] nhật ký</span></button>
+<button class="stance"><b>Canh nhịp chỉnh để gom hàng</b><span>[số] quan điểm · [số] nhật ký</span></button>
+</div>
+<div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+<a href="#" style="display: inline-flex; align-items: center; height: 40px; padding: 0 18px; border-radius: 8px; background: #0F172A; color: #fff; font-weight: 600; font-size: 13.5px">Vào thảo luận</a>
+<a href="#" style="display: inline-flex; align-items: center; height: 40px; padding: 0 16px; border-radius: 8px; border: 1px solid #D0D5DD; background: #fff; color: #0F172A; font-weight: 500; font-size: 13.5px">Viết quan điểm của bạn</a>
+<span style="margin-left: auto; font-size: 12.5px; color: #667085">[số] người tham gia</span>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; padding-left: 36px; border-left: 1px solid #EAECF0">
+<h2 class="side-h" style="margin-bottom: 14px">Quan điểm nổi bật</h2>
+<div class="rp"><span class="av" style="background: #FEF0C7; color: #93370D">A</span><div style="min-width: 0"><div style="font-size: 13px"><b>User A</b> <span style="color: #667085">· Quản trị rủi ro · ▲ [n]</span></div><p>[Trích quan điểm của user — lý do, tỷ trọng đang giữ, mức sẽ hạ tỷ trọng…]</p></div></div>
+<div class="rp"><span class="av" style="background: #D1E0FF; color: #1D4ED8">B</span><div style="min-width: 0"><div style="font-size: 13px"><b>User B</b> <span style="color: #667085">· Gom hàng · ▲ [n] · có nhật ký</span></div><p>[Trích quan điểm của user — vùng giá định gom, điều kiện xác nhận, kế hoạch nếu sai…]</p></div></div>
+<div class="rp"><span class="av" style="background: #DCFAE6; color: #067647">C</span><div style="min-width: 0"><div style="font-size: 13px"><b>User C</b> <span style="color: #667085">· Quản trị rủi ro · ▲ [n]</span></div><p>[Trích quan điểm của user…]</p></div></div>
+<a href="#" style="margin-top: auto; padding-top: 12px; border-top: 1px solid #EAECF0; font-size: 12.5px">Xem tất cả quan điểm →</a>
+</div>
+</div>
+</section>
+
+<div class="grid3" style="max-width: 1240px; margin: 0 auto; padding: 28px 24px; display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px">
+
+<main style="display: flex; flex-direction: column; gap: 14px; min-width: 0">
+<div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 12px">
+<div>
+<h2 style="margin: 0; font-size: 22px; font-weight: 700">Nhật ký mới</h2>
+<p style="margin: 2px 0 0; color: #475467; font-size: 13px">Mỗi người ghi quyết định của mình trước khi có kết quả. Mọi mốc mang dấu thời gian máy chủ.</p>
+</div>
+<a href="#" style="font-size: 13px; white-space: nowrap">Tất cả nhật ký →</a>
+</div>
+
+<div class="panel" style="padding: 14px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: center; gap: 10px">
+<span class="av" style="background: #F2F4F7; color: #667085">?</span>
+<input aria-label="Ghi nhật ký mới" placeholder="Bạn vừa quyết định gì? Ví dụ: Vào HPG vì…" style="flex: 1; height: 40px; padding: 0 14px; border-radius: 8px; background: #F9FAFB; border: 1px solid #D0D5DD; color: #0F172A; font: inherit; font-size: 13.5px; outline: none">
+</div>
+<div style="display: flex; gap: 8px; padding-left: 44px; flex-wrap: wrap">
+<button class="fb" style="border: 1px solid #D0D5DD">Thêm Entry · SL · TP</button>
+<button class="fb" style="border: 1px solid #D0D5DD">Luận điểm</button>
+<button class="fb" style="border: 1px solid #D0D5DD">Ảnh biểu đồ</button>
+<span style="flex: 1"></span>
+<span style="font-size: 12px; color: #667085; align-self: center">Riêng tư · công khai khi bạn muốn</span>
+</div>
+</div>
+
+<div role="tablist" style="display: flex; gap: 22px; border-bottom: 1px solid #E4E7EC">
+<button class="tab on" role="tab" aria-selected="true">Mới nhất</button>
+<button class="tab" role="tab" aria-selected="false">Đang mở</button>
+<button class="tab" role="tab" aria-selected="false">Đã đóng sổ</button>
+<button class="tab" role="tab" aria-selected="false">Đang theo dõi</button>
+<span style="flex: 1"></span>
+<select aria-label="Thị trường" style="align-self: center; height: 30px; background: #fff; border: 1px solid #D0D5DD; border-radius: 6px; color: #0F172A; font: inherit; font-size: 12.5px; padding: 0 8px"><option>Mọi thị trường</option><option>Chứng khoán VN</option><option>Ngoại hối</option><option>Crypto</option></select>
+</div>
+
+<article class="pc">
+<div class="pc-h"><span class="av" style="background: #FEF0C7; color: #93370D">A</span><div class="who"><b>User A</b><span>[thời gian] · s/chung-khoan</span></div><span class="st open"><i></i>Đang mở</span></div>
+<a href="#" class="pc-t">Quyết định vào HPG vì [mục tiêu của user]</a>
+<div class="tix"><span><span class="side buy">MUA</span><b>HPG</b></span><span><em>Kiểu</em>Luận điểm trung hạn</span><span><em>Mục tiêu</em>[mục tiêu]</span></div>
+<div class="body"><p>[Phần chi tiết User A viết về HPG — bối cảnh, lý do vào, điều kiện sai thì thoát, kế hoạch nắm giữ… Nội dung dài được cắt ở 3 dòng.]</p></div>
+<div class="ft"><button class="fb" aria-label="Ủng hộ">▲</button><b style="color: #0F172A">0</b><button class="fb" aria-label="Phản đối">▼</button><button class="fb">1 mốc</button><button class="fb">Bình luận</button><span style="flex: 1"></span><button class="fb">Theo dõi</button><button class="fb">Chia sẻ</button></div>
+</article>
+
+<article class="pc">
+<div class="pc-h"><span class="av" style="background: #D1E0FF; color: #1D4ED8">B</span><div class="who"><b>User B</b><span>[thời gian] · s/ngoai-hoi</span></div><span class="st open"><i></i>Đang mở</span></div>
+<a href="#" class="pc-t">Mua USD/JPY tại [giá vào]</a>
+<div class="tix num"><span><span class="side buy">MUA</span><b>USD/JPY</b></span><span><em>Entry</em><b class="en">[giá]</b></span><span><em>SL</em><b class="sl">[giá]</b></span><span><em>TP</em><b class="tp">[giá]</b></span><span><em>R:R</em>[tự tính]</span></div>
+<div class="body"><p>[Phần chi tiết User B viết về điểm mua bán — vì sao vào ở vùng này, đặt SL ở đâu và vì sao, TP theo cấu trúc nào, sẽ làm gì nếu giá đi ngược…]</p><div class="thumb" role="img" aria-label="Ảnh biểu đồ user đính kèm"></div></div>
+<div class="ft"><button class="fb" aria-label="Ủng hộ">▲</button><b style="color: #0F172A">0</b><button class="fb" aria-label="Phản đối">▼</button><button class="fb">1 mốc</button><button class="fb">Bình luận</button><span style="flex: 1"></span><button class="fb">Theo dõi</button><button class="fb">Chia sẻ</button></div>
+</article>
+
+<article class="pc">
+<div class="pc-h"><span class="av" style="background: #EAECF0; color: #344054"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="8" width="14" height="11" rx="2"></rect><path d="M12 4v4M9 13h.01M15 13h.01"></path></svg></span><div class="who"><b>Bot Trader<span class="bot">BOT · DEMO</span></b><span>10/11/2026 · s/ngoai-hoi</span></div><span class="st closed"><i></i>Đã đóng sổ</span></div>
+<a href="#" class="pc-t">Bán USD/CHF tại 0.8187</a>
+<div class="tix num"><span><span class="side sell">BÁN</span><b>USD/CHF</b></span><span><em>Entry</em><b class="en">0.8187</b></span><span><em>SL</em><b class="sl">0.8223</b></span><span><em>TP</em><b class="tp">0.8100</b></span><span><em>Nhồi</em><b class="dca">0.8158</b></span><span><em>R:R</em>2.4</span></div>
+<div class="body"><p>H4 · Ichimoku Bearish — Thủng mây Kumo và từ chối Kijun. Lệnh do bot ghi theo thời gian thực trên tài khoản demo, minh hoạ phương pháp.</p><div class="thumb" role="img" aria-label="Biểu đồ H4 USD/CHF"></div></div>
+<div class="ft"><button class="fb" aria-label="Ủng hộ">▲</button><b style="color: #0F172A">+1</b><button class="fb" aria-label="Phản đối">▼</button><button class="fb">2 mốc</button><button class="fb">Bình luận</button><span style="flex: 1"></span><button class="fb">Theo dõi</button><button class="fb">Chia sẻ</button></div>
+</article>
+
+<article class="pc">
+<div class="pc-h"><span class="av" style="background: #EAECF0; color: #344054"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="8" width="14" height="11" rx="2"></rect><path d="M12 4v4M9 13h.01M15 13h.01"></path></svg></span><div class="who"><b>Bot Trader<span class="bot">BOT · DEMO</span></b><span>09/11/2026 · s/chung-khoan</span></div><span class="st open"><i></i>Đang mở</span></div>
+<a href="#" class="pc-t">Mua CEO tại 12.20</a>
+<div class="tix num"><span><span class="side buy">MUA</span><b>CEO</b></span><span><em>Entry</em><b class="en">12.20</b></span><span><em>SL</em><b class="sl">11.71</b></span><span><em>TP</em><b class="tp">13.37</b></span><span><em>Nhồi</em><b class="dca">12.69</b></span><span><em>R:R</em>2.4</span></div>
+<div class="body"><p>HNX · Daily · Ichimoku Bullish — Bứt phá và kiểm định mây Kumo.</p><div class="thumb" role="img" aria-label="Biểu đồ ngày CEO"></div></div>
+<div class="ft"><button class="fb" aria-label="Ủng hộ">▲</button><b style="color: #0F172A">+1</b><button class="fb" aria-label="Phản đối">▼</button><button class="fb">2 mốc</button><button class="fb">1 bình luận</button><span style="flex: 1"></span><button class="fb">Theo dõi</button><button class="fb">Chia sẻ</button></div>
+</article>
+
+<a href="#" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; background: #EFF4FF; color: #0F172A">
+<span style="display: flex" aria-hidden="true"><span class="av" style="width: 26px; height: 26px; font-size: 11px; background: #FEF0C7; color: #93370D; border: 2px solid #EFF4FF">A</span><span class="av" style="width: 26px; height: 26px; font-size: 11px; background: #D1E0FF; color: #1D4ED8; border: 2px solid #EFF4FF; margin-left: -8px">B</span><span class="av" style="width: 26px; height: 26px; font-size: 11px; background: #DCFAE6; color: #067647; border: 2px solid #EFF4FF; margin-left: -8px">C</span></span>
+<span style="font-size: 13.5px"><b>+[n] nhật ký</b> <span style="color: #475467">từ [n] người trong tuần này</span></span>
+<span style="margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: #1D4ED8">Xem tất cả<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></span>
+</a>
+</main>
+
+<aside style="display: flex; flex-direction: column; gap: 16px">
+<section class="panel" style="padding: 16px; display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-size: 15px; font-weight: 600">Bắt đầu nhật ký của bạn</h2>
+<p style="margin: 0; font-size: 12.5px; color: #475467">Ghi riêng tư, công khai khi bạn muốn.</p>
+<button style="display: flex; align-items: center; justify-content: center; gap: 8px; height: 38px; border-radius: 8px; background: #fff; border: 1px solid #D0D5DD; color: #0F172A; font: inherit; font-size: 13px; font-weight: 600"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M22 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.6a4.8 4.8 0 0 1-2.1 3.1v2.6h3.4c2-1.8 3.1-4.5 3.1-7.5z"></path><path fill="#34A853" d="M12 22c2.8 0 5.2-.9 6.9-2.5l-3.4-2.6c-.9.6-2.1 1-3.5 1-2.7 0-5-1.8-5.8-4.3H2.7v2.7A10 10 0 0 0 12 22z"></path><path fill="#FBBC05" d="M6.2 13.6a6 6 0 0 1 0-3.8V7.1H2.7a10 10 0 0 0 0 9.2z"></path><path fill="#EA4335" d="M12 5.9c1.5 0 2.9.5 4 1.5l3-3A10 10 0 0 0 2.7 7.1l3.5 2.7C7 7.7 9.3 5.9 12 5.9z"></path></svg>Tiếp tục với Google</button>
+<button style="height: 38px; border-radius: 8px; background: #0F172A; border: 0; color: #fff; font: inherit; font-size: 13px; font-weight: 500">Tiếp tục với email</button>
+</section>
+
+<section class="panel" style="padding: 16px">
+<h2 class="side-h">Chuyên mục</h2>
+<a href="/s/tin-tuc" class="cat">s/tin-tuc<span>Tin tức</span></a>
+<a href="/s/chung-khoan" class="cat">s/chung-khoan<span>Chứng khoán VN</span></a>
+<a href="/s/vi-mo" class="cat">s/vi-mo<span>Vĩ mô &amp; lãi suất</span></a>
+<a href="/s/quan-tri-von" class="cat">s/quan-tri-von<span>Quản trị vốn</span></a>
+<a href="/s/tam-ly-giao-dich" class="cat">s/tam-ly-giao-dich<span>Tâm lý giao dịch</span></a>
+<a href="/s/ngoai-hoi" class="cat">s/ngoai-hoi<span>Ngoại hối &amp; FX</span></a>
+<a href="/s/crypto" class="cat">s/crypto<span>Tiền số</span></a>
+<a href="/s/hoi-dap" class="cat">s/hoi-dap<span>Hỏi đáp &amp; Cơ chế</span></a>
+</section>
+
+<section class="panel" style="padding: 16px">
+<h2 class="side-h">Luật rút gọn</h2>
+<ul style="margin: 0; padding-left: 16px; font-size: 12.5px; color: #344054; display: flex; flex-direction: column; gap: 5px">
+<li>Cấm hô hào mua/bán kiểu phím hàng</li><li>Cấm cam kết lợi nhuận</li><li>Cấm mời chào uỷ thác, room VIP trả phí</li><li>Cấm link nhóm kín trong bài</li>
+</ul>
+</section>
+</aside>
+</div>
+
+<section aria-labelledby="articles" style="background: #FFFFFF; border-top: 1px solid #E4E7EC; border-bottom: 1px solid #E4E7EC">
+<div style="max-width: 1240px; margin: 0 auto; padding: 36px 24px 40px; box-sizing: border-box; display: flex; flex-direction: column; gap: 22px">
+<div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding-bottom: 14px; border-bottom: 1px solid #EAECF0">
+<div>
+<h2 id="articles" style="margin: 0; font-size: 22px; font-weight: 700">Bài viết</h2>
+<p style="margin: 2px 0 0; font-size: 13px; color: #475467">Kiến thức nền cho người giao dịch nghiêm túc — đọc một lần, dùng lâu dài.</p>
+</div>
+<nav aria-label="Chuyên mục bài viết" style="display: flex; gap: 6px; flex-wrap: wrap">
+<a href="/s/chung-khoan" class="chip">Chứng khoán</a><a href="/s/vi-mo" class="chip">Vĩ mô</a><a href="/s/quan-tri-von" class="chip">Quản trị vốn</a><a href="/s/hoi-dap" class="chip">Hỏi đáp &amp; Cơ chế</a><a href="/s/crypto" class="chip">Tiền số</a>
+<a href="#" style="display: inline-flex; align-items: center; height: 30px; padding: 0 6px; font-size: 12.5px">Tất cả bài viết →</a>
+</nav>
+</div>
+
+<div class="lib" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 36px">
+<div>
+<div class="lib-t"><h3>Cơ chế thị trường</h3><a href="/s/hoi-dap">Xem thêm →</a></div>
+<article><a href="#" class="li"><span class="li-n">01</span><div style="min-width: 0; flex: 1"><h4>Cơ Chế Điều Chỉnh Giá Tham Chiếu Ngày GDKHQ: Vì Sao Nhận Cổ Tức Bị Trừ Tiền Và Nghịch Lý Thuế 5%</h4><p>Thấy doanh nghiệp công bố trả cổ tức tiền mặt 20%, nhiều người đinh ninh tài khoản sẽ có thêm tiền mà thị giá giữ nguyên…</p><div class="li-m"><span class="tag">Hỏi đáp</span><time datetime="2026-11-11">11/11</time></div></div><div class="li-th" role="img" aria-label="Ảnh bài viết"></div></a></article>
+<article><a href="#" class="li"><span class="li-n">02</span><div style="min-width: 0"><h4>Cơ chế Giao dịch Ký quỹ T+0 và Day Trading: Khác biệt gì so với chu kỳ T+2.5?</h4><p>Giao dịch trong ngày luôn là cơ chế được mong đợi nhất trong lộ trình hiện đại hóa thị trường…</p><div class="li-m"><span class="tag">Hỏi đáp</span><time datetime="2026-11-10">10/11</time></div></div><div class="li-th" role="img" aria-label="Ảnh bài viết"></div></a></article>
+<article><a href="#" class="li"><span class="li-n">03</span><div style="min-width: 0"><h4>Cơ chế Quỹ mở Cổ phiếu tại Việt Nam và Nghịch lý Dòng tiền Rút ròng theo Chu kỳ</h4><p>Khi áp lực thanh khoản buộc giám đốc quỹ bán cổ phiếu tốt ở vùng đáy…</p><div class="li-m"><span class="tag">s/chung-khoan</span><time datetime="2026-11-10">10/11</time></div></div><div class="li-th" role="img" aria-label="Ảnh bài viết"></div></a></article>
+</div>
+<div>
+<div class="lib-t"><h3>Vĩ mô &amp; doanh nghiệp</h3><a href="/s/vi-mo">Xem thêm →</a></div>
+<article><a href="#" class="li"><span class="li-n">01</span><div style="min-width: 0; flex: 1"><h4>Sandbox Cho Trung Tâm Tài Chính Quốc Tế (IFC) Tại TP.HCM Và Đà Nẵng: Bài Học Thể Chế Từ DIFC Dubai</h4><p>Bài toán cốt lõi không nằm ở số lượng ưu đãi mà ở thiết kế thể chế và tự do hóa vốn có kiểm soát…</p><div class="li-m"><span class="tag">s/vi-mo</span><time datetime="2026-11-11">11/11</time></div></div><div class="li-th" role="img" aria-label="Ảnh bài viết"></div></a></article>
+<article><a href="#" class="li"><span class="li-n">02</span><div style="min-width: 0"><h4>VEA (VEAM): Nghịch lý công ty mẹ và bài toán dòng tiền cổ tức nghìn tỷ từ các liên doanh</h4><p>Phần lớn tổng công ty nhà nước sau cổ phần hóa đối mặt với bài toán tối ưu vốn…</p><div class="li-m"><span class="tag">s/chung-khoan</span><time datetime="2026-11-10">10/11</time></div></div><div class="li-th" role="img" aria-label="Ảnh bài viết"></div></a></article>
+<article><a href="#" class="li"><span class="li-n">03</span><div style="min-width: 0"><h4>Mã hóa Tài sản Thực (RWA): Khi Phố Wall đưa Trái phiếu Kho bạc Mỹ lên On-chain</h4><p>Cuộc cách mạng thanh toán tức thì 24/7 và điều nó thay đổi với dòng vốn…</p><div class="li-m"><span class="tag">s/crypto</span><time datetime="2026-11-10">10/11</time></div></div><div class="li-th" role="img" aria-label="Ảnh bài viết"></div></a></article>
+</div>
+<div>
+<div class="lib-t"><h3>Quản trị vốn &amp; tâm lý</h3><a href="/s/quan-tri-von">Xem thêm →</a></div>
+<article><a href="#" class="li"><span class="li-n">01</span><div style="min-width: 0; flex: 1"><h4>When Genius Failed: Vụ Sụp Đổ Của Quỹ LTCM Năm 1998 Và Nghịch Lý Đòn Bẩy Triệt Tiêu Trí Tuệ Phố Wall</h4><p>Đêm 23/9/1998, tại trụ sở Fed New York, một cuộc hội kiến khẩn cấp chưa từng có tiền lệ…</p><div class="li-m"><span class="tag">Đọc sách</span><time datetime="2026-11-11">11/11</time></div></div><div class="li-th" role="img" aria-label="Ảnh bài viết"></div></a></article>
+<article><a href="#" class="li"><span class="li-n">02</span><div style="min-width: 0"><h4>Kỹ thuật Đóng tàu Polynesia và Nghệ thuật Đọc Sóng Ngầm Không Dùng La bàn</h4><p>Khi hoa tiêu cảm nhận nhịp đập vô hình thay vì bị đánh lừa bởi tiếng ồn bề mặt…</p><div class="li-m"><span class="tag">s/quan-tri-von</span><time datetime="2026-11-10">10/11</time></div></div><div class="li-th" role="img" aria-label="Ảnh bài viết"></div></a></article>
+<a href="/s/tam-ly-giao-dich" class="li" style="color: #1D4ED8; font-size: 13px; font-weight: 500; border-bottom: 0">Chuyên mục Tâm lý giao dịch →</a>
+</div>
+</div>
+
+<div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 12px 16px; border-radius: 10px; background: #F9FAFB; border: 1px solid #EAECF0; font-size: 13px">
+<span style="font-size: 11px; font-weight: 700; letter-spacing: .06em; color: #667085">BẢN TIN THỊ TRƯỜNG</span>
+<a href="#" style="color: #0F172A"><time datetime="2026-11-11" style="color: #667085">11/11</time> · Dow Jones 52.231 điểm, Nasdaq −1,21%, Brent 92,06 USD</a>
+<a href="#" style="color: #0F172A"><time datetime="2026-11-10" style="color: #667085">10/11</time> · Dow Jones tăng 1.104 điểm, S&amp;P 500 +2,35%</a>
+<a href="/s/tin-tuc" style="margin-left: auto; font-size: 12.5px">Tất cả bản tin →</a>
+</div>
+</div>
+</section>
+
+<footer style="max-width: 1240px; margin: 0 auto; padding: 24px; font-size: 12px; color: #667085; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap">
+<span>Nội dung do người dùng đăng, không phải khuyến nghị đầu tư. gikky không phải công ty chứng khoán, không môi giới, không nhận uỷ thác.</span>
+<span style="display: flex; gap: 14px"><a href="#" style="color: #475467">Luật cộng đồng</a><a href="/" style="color: #475467">Trang chủ</a></span>
+</footer>
+</div>
+</body>
+</html>

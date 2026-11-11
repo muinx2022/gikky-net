@@ -1,4 +1,4 @@
-import type { FeedOut, SubChiTietOut } from "@gikky/api-client";
+import type { FeedOut } from "@gikky/api-client";
 import { Clock, Flame, Radio, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 
@@ -6,18 +6,25 @@ import {
   KHOANG_FEED,
   KHOANG_MAC_DINH,
   NHAN_KHOANG,
+  NHAN_LOAI_MACH,
   NHAN_TAB,
+  NHAN_TRANG_THAI_FEED,
   TAB_FEED,
   tabCoKhoang,
+  trangThaiGuiLenApi,
   type KhoangFeed,
+  type LoaiMach,
   type TabFeed,
+  type TrangThaiFeed,
 } from "@/lib/api";
+import { TEN_THUONG_LOAI_MACH, hrefChipLoai } from "@/lib/loc-loai-mach";
 
 import { BaoCursorHong } from "./bao-cursor-hong";
 import { ChonKieuXem } from "./chon-kieu-xem";
-import { CotTrai } from "./cot-trai";
 import { CuonVoHan } from "./cuon-vo-han";
 import css from "./feed.module.css";
+import { VoKhungHaiCot } from "./khung-hai-cot-vo";
+import { LocLoaiMach } from "./loc-loai-mach";
 import { NutVeDauTrang } from "./nut-ve-dau-trang";
 import { TheMach } from "./the-mach";
 
@@ -98,7 +105,8 @@ export function Feed({
   sidebar,
   header,
   truongPhai,
-  cacSub,
+  loaiMach,
+  trangThai: trangThaiTho,
 }: {
   feed: FeedOut;
   tab: TabFeed;
@@ -111,13 +119,20 @@ export function Feed({
   sub?: string;
   /** `?cursor=` không dùng được ⇒ đang hiện trang đầu. Xem `lib/api.ts::TrangCursor`. */
   cursorHong?: boolean;
-  /** Cột phải. Bắt buộc có mặt — cả hai trang feed đều dựng nó. */
+  /** Cột phải (duy nhất). Bắt buộc có mặt — cả hai trang feed đều dựng nó. */
   sidebar: React.ReactNode;
   /** Bộ lọc trường phái giao dịch trên feed (nếu có). */
   truongPhai?: string;
-  /** Danh sách chuyên mục cho cột trái */
-  cacSub?: readonly SubChiTietOut[];
+  /** Lọc theo loại mạch (`?loai_mach=`); vắng = mọi loại. Đi xuyên qua href của tab/khoảng,
+   * chip "bỏ lọc" và `CuonVoHan` đúng như `truongPhai` — xem docstring `lib/api.ts::LoaiMach`. */
+  loaiMach?: LoaiMach;
+  /** Lọc theo trạng thái sổ (`?trang_thai=open|closed`, plan giao diện mới §6.3): tab "Đang mở"
+   * / "Đã đóng sổ" của khối nhật ký trang chủ trỏ vào đây. Đi xuyên qua href của tab/khoảng,
+   * chip "Bỏ lọc" và `CuonVoHan` đúng như `loaiMach`. Ở tab "Đang diễn ra" (vốn chỉ gồm mạch
+   * mở, API không nhận tham số này) nó bị bỏ — xem `trangThaiGuiLenApi`. */
+  trangThai?: TrangThaiFeed;
 } & DauTrang) {
+  const trangThai = trangThaiGuiLenApi(tab, trangThaiTho);
   /** `?khoang=` đi kèm MỌI tab, nhưng chỉ khi khác mặc định: URL sạch thì link chia sẻ
    * đọc được, và `?khoang=tat_ca` không nói thêm gì so với việc thiếu nó.
    *
@@ -126,132 +141,209 @@ export function Feed({
    * đóng ở `lib/api.ts`, không đóng bằng cách xoá tham số khỏi URL. */
   const duoi = (k: KhoangFeed) => (k !== KHOANG_MAC_DINH ? `&khoang=${k}` : "");
   const duoiTruongPhai = truongPhai ? `&truong_phai=${encodeURIComponent(truongPhai)}` : "";
-  const hrefTab = (t: TabFeed) => `${coBan}?tab=${t}${duoi(khoang)}${duoiTruongPhai}`;
-  const hrefKhoang = (k: KhoangFeed) => `${coBan}?tab=${tab}${duoi(k)}${duoiTruongPhai}`;
+  const duoiLoaiMach = loaiMach ? `&loai_mach=${loaiMach}` : "";
+  /** `?trang_thai=` đi theo tab ĐÍCH: tab "Đang diễn ra" không nhận nó (xem
+   * `trangThaiGuiLenApi`), nên href của tab ấy bỏ nó thay vì mang một bộ lọc nói dối. */
+  const duoiTrangThai = (t: TabFeed) => {
+    const tt = trangThaiGuiLenApi(t, trangThaiTho);
+    return tt ? `&trang_thai=${tt}` : "";
+  };
+  const hrefTab = (t: TabFeed) =>
+    `${coBan}?tab=${t}${duoi(khoang)}${duoiTruongPhai}${duoiLoaiMach}${duoiTrangThai(t)}`;
+  const hrefKhoang = (k: KhoangFeed) =>
+    `${coBan}?tab=${tab}${duoi(k)}${duoiTruongPhai}${duoiLoaiMach}${duoiTrangThai(tab)}`;
 
-  return (
-    <div className={css.khung}>
-      <div className={css.rail_trai}>
-        <CotTrai cacSub={cacSub} />
-      </div>
-      <main className={css.chinh}>
-        {header ?? (
-          <>
-            <h1 className={css.tieu_de}>{tieuDe}</h1>
-            <p className={css.lede}>{lede}</p>
-          </>
-        )}
+  /** Trang sub rỗng CHỈ vì bộ lọc loại (không phải vì trường phái hay khoảng thời gian, hai
+   * thứ này có câu riêng): nói đúng loại nào trống và chỉ lối về "Tất cả". */
+  const rongDoLocLoai =
+    sub !== undefined &&
+    loaiMach !== undefined &&
+    !truongPhai &&
+    !(tabCoKhoang(tab) && khoang !== KHOANG_MAC_DINH);
 
-        {cursorHong && <BaoCursorHong />}
+  const noiDung = (
+    <>
+      {header ?? (
+        <>
+          <h1 className={css.tieu_de}>{tieuDe}</h1>
+          <p className={css.lede}>{lede}</p>
+        </>
+      )}
 
-        {/* Thanh tab feed và nút đổi kiểu xem */}
-        <div className={css.thanh_dinh}>
-          <div className={css.hang_dieu_khien}>
-            <nav className={css.tab} data-testid="tab-feed" aria-label="Sắp xếp feed">
-              {TAB_FEED.map((t) => {
-                const Hinh = ICON_TAB[t];
-                return (
-                  <Link
-                    key={t}
-                    href={hrefTab(t)}
-                    prefetch={false}
-                    className={
-                      t === tab ? `${css.mot_tab} ${css.tab_dang_chon}` : css.mot_tab
-                    }
-                    aria-current={t === tab ? "page" : undefined}
-                    title={NHAN_TAB[t]}
-                    data-testid={`tab-${t}`}
-                  >
-                    <Hinh size={15} strokeWidth={2} aria-hidden />
-                    <span className={css.chu_tab}>{NHAN_TAB[t]}</span>
-                  </Link>
-                );
-              })}
-            </nav>
-            <ChonKieuXem />
-          </div>
+      {cursorHong && <BaoCursorHong />}
 
-          {tabCoKhoang(tab) && (
-            <nav className={css.khoang} data-testid="chon-khoang" aria-label="Khoảng thời gian">
-              {KHOANG_FEED.map((k) => (
-                <Link
-                  key={k}
-                  href={hrefKhoang(k)}
-                  prefetch={false}
-                  className={
-                    k === khoang ? `${css.mot_khoang} ${css.khoang_dang_chon}` : css.mot_khoang
-                  }
-                  aria-current={k === khoang ? "true" : undefined}
-                  data-testid={`khoang-${k}`}
-                >
-                  {NHAN_KHOANG[k]}
-                </Link>
-              ))}
-            </nav>
-          )}
-        </div>
-
-        {truongPhai && (
-          <div className={css.bo_loc_truong_phai} data-testid="bo-loc-truong-phai">
-            <span>
-              Trường phái: <strong>#{truongPhai}</strong>
-            </span>
-            <Link
-              href={`${coBan}?tab=${tab}${duoi(khoang)}`}
-              className={css.xoa_bo_loc}
-              title="Bỏ lọc trường phái"
-              prefetch={false}
-            >
-              ✕ Bỏ lọc
-            </Link>
-          </div>
-        )}
-
-        {feed.items.length === 0 ? (
-          <p className={css.rong} data-testid="feed-rong">
-            {truongPhai
-              ? `Chưa có mạch nào thuộc trường phái #${truongPhai}.`
-              : tabCoKhoang(tab) && khoang !== KHOANG_MAC_DINH
-                ? "Chưa có bài nào trong khoảng này."
-                : "Chưa có bài nào ở đây."}
-          </p>
-        ) : (
-          <ul className={css.danh_sach} data-testid="feed">
-            {feed.items.map((m) => (
-              <TheMach key={m.id} mach={m} />
-            ))}
-          </ul>
-        )}
-
-        {/* Cuộn vô hạn — nhưng cái `<a href="…cursor=…">` VẪN Ở TRONG HTML server-render:
-            `CuonVoHan` render đúng cái link ấy rồi mới phủ `IntersectionObserver` lên
-            trên. Bot bò được hết feed, người tắt JS vẫn bấm được, fetch lỗi thì lùi về
-            đúng hành vi cũ. Xem docstring `cuon-vo-han.tsx`. */}
-        <CuonVoHan
-          cursorDau={feed.cursor_ke_tiep}
-          href={
-            feed.cursor_ke_tiep === null
-              ? hrefTab(tab)
-              : `${hrefTab(tab)}&cursor=${encodeURIComponent(feed.cursor_ke_tiep)}`
-          }
+      {/* Trang chuyên mục (`/s/<sub>`) lẫn cả ba loại mạch: hàng chip lọc loại đứng ngay dưới
+          header, trên thanh tab. Chỉ nhánh có `sub` dựng nó — `/` giữ nguyên DOM. */}
+      {sub !== undefined && (
+        <LocLoaiMach
+          coBan={coBan}
           tab={tab}
           khoang={khoang}
-          sub={sub}
           truongPhai={truongPhai}
+          loaiMach={loaiMach}
         />
-      </main>
+      )}
 
-      {/* Rail phải DÍNH khi cuộn — plan giao diện §2.2.
-          Bọc thêm một lớp thay vì đặt `position: sticky` lên chính `<Sidebar>`: hai trang
-          feed truyền hai component khác nhau vào đây, và một luật bố cục thuộc về chỗ
-          BỐ TRÍ chứ không thuộc về thứ được bố trí.
+      {/* Thanh tab feed và nút đổi kiểu xem */}
+      <div className={css.thanh_dinh}>
+        <div className={css.hang_dieu_khien}>
+          <nav className={css.tab} data-testid="tab-feed" aria-label="Sắp xếp feed">
+            {TAB_FEED.map((t) => {
+              const Hinh = ICON_TAB[t];
+              return (
+                <Link
+                  key={t}
+                  href={hrefTab(t)}
+                  prefetch={false}
+                  className={
+                    t === tab ? `${css.mot_tab} ${css.tab_dang_chon}` : css.mot_tab
+                  }
+                  aria-current={t === tab ? "page" : undefined}
+                  title={NHAN_TAB[t]}
+                  data-testid={`tab-${t}`}
+                >
+                  <Hinh size={15} strokeWidth={2} aria-hidden />
+                  <span className={css.chu_tab}>{NHAN_TAB[t]}</span>
+                </Link>
+              );
+            })}
+          </nav>
+          <ChonKieuXem />
+        </div>
 
-          ⚠ `<div>` chứ không `<aside>` *(sửa 2026-08-24)*: chú thích cũ ở đây nói
-          `<Sidebar>` là "một `<div>`" — nay nó **đã là `<aside>`** (`sidebar.tsx`), nên
-          bọc thêm một `<aside>` là hai landmark lồng nhau cho cùng một khối. Lớp bọc này
-          chỉ còn làm đúng việc của nó: `position: sticky`. */}
-      <div className={css.rail}>{sidebar}</div>
+        {tabCoKhoang(tab) && (
+          <nav className={css.khoang} data-testid="chon-khoang" aria-label="Khoảng thời gian">
+            {KHOANG_FEED.map((k) => (
+              <Link
+                key={k}
+                href={hrefKhoang(k)}
+                prefetch={false}
+                className={
+                  k === khoang ? `${css.mot_khoang} ${css.khoang_dang_chon}` : css.mot_khoang
+                }
+                aria-current={k === khoang ? "true" : undefined}
+                data-testid={`khoang-${k}`}
+              >
+                {NHAN_KHOANG[k]}
+              </Link>
+            ))}
+          </nav>
+        )}
+      </div>
+
+      {truongPhai && (
+        <div className={css.bo_loc_truong_phai} data-testid="bo-loc-truong-phai">
+          <span>
+            Trường phái: <strong>#{truongPhai}</strong>
+          </span>
+          <Link
+            href={`${coBan}?tab=${tab}${duoi(khoang)}${duoiLoaiMach}${duoiTrangThai(tab)}`}
+            className={css.xoa_bo_loc}
+            title="Bỏ lọc trường phái"
+            prefetch={false}
+          >
+            ✕ Bỏ lọc
+          </Link>
+        </div>
+      )}
+
+      {/* Chip loại mạch — cùng khuôn với chip trường phái ngay trên. "Bỏ lọc" giữ nguyên
+          trường phái (nếu có): bỏ MỘT bộ lọc thì không được kéo theo bộ lọc kia.
+          Trên trang sub (`sub` có mặt) hàng chip `LocLoaiMach` ở trên đã thay nó — hiện cả hai
+          là một bộ lọc được báo hai lần. */}
+      {loaiMach && sub === undefined && (
+        <div className={css.bo_loc_truong_phai} data-testid="bo-loc-loai-mach">
+          <span>
+            Loại: <strong>{NHAN_LOAI_MACH[loaiMach]}</strong>
+          </span>
+          <Link
+            href={`${coBan}?tab=${tab}${duoi(khoang)}${duoiTruongPhai}${duoiTrangThai(tab)}`}
+            className={css.xoa_bo_loc}
+            title="Bỏ lọc loại"
+            prefetch={false}
+          >
+            ✕ Bỏ lọc
+          </Link>
+        </div>
+      )}
+
+      {/* Chip trạng thái sổ — cùng khuôn với hai chip trên, và cũng chỉ ở `/` (trang sub chưa
+          nhận `?trang_thai=`). "Bỏ lọc" giữ nguyên hai bộ lọc kia. */}
+      {trangThai && sub === undefined && (
+        <div className={css.bo_loc_truong_phai} data-testid="bo-loc-trang-thai">
+          <span>
+            Trạng thái: <strong>{NHAN_TRANG_THAI_FEED[trangThai]}</strong>
+          </span>
+          <Link
+            href={`${coBan}?tab=${tab}${duoi(khoang)}${duoiTruongPhai}${duoiLoaiMach}`}
+            className={css.xoa_bo_loc}
+            title="Bỏ lọc trạng thái"
+            prefetch={false}
+          >
+            ✕ Bỏ lọc
+          </Link>
+        </div>
+      )}
+
+      {feed.items.length === 0 ? (
+        <p className={css.rong} data-testid="feed-rong">
+          {truongPhai
+            ? `Chưa có mạch nào thuộc trường phái #${truongPhai}.`
+            : tabCoKhoang(tab) && khoang !== KHOANG_MAC_DINH
+              ? "Chưa có bài nào trong khoảng này."
+              : rongDoLocLoai && loaiMach
+                ? `Chưa có ${TEN_THUONG_LOAI_MACH[loaiMach]} nào trong chuyên mục này.`
+                : "Chưa có bài nào ở đây."}
+          {rongDoLocLoai && (
+            <>
+              {" "}
+              <Link
+                href={hrefChipLoai(coBan, { tab, khoang, truongPhai }, undefined)}
+                prefetch={false}
+                className={css.xoa_bo_loc}
+                data-testid="feed-rong-ve-tat-ca"
+              >
+                Xem tất cả
+              </Link>
+            </>
+          )}
+        </p>
+      ) : (
+        <ul className={css.danh_sach} data-testid="feed">
+          {feed.items.map((m) => (
+            <TheMach key={m.id} mach={m} hienNhanLoai={sub !== undefined} />
+          ))}
+        </ul>
+      )}
+
+      {/* Cuộn vô hạn — nhưng cái `<a href="…cursor=…">` VẪN Ở TRONG HTML server-render:
+          `CuonVoHan` render đúng cái link ấy rồi mới phủ `IntersectionObserver` lên
+          trên. Bot bò được hết feed, người tắt JS vẫn bấm được, fetch lỗi thì lùi về
+          đúng hành vi cũ. Xem docstring `cuon-vo-han.tsx`. */}
+      <CuonVoHan
+        cursorDau={feed.cursor_ke_tiep}
+        href={
+          feed.cursor_ke_tiep === null
+            ? hrefTab(tab)
+            : `${hrefTab(tab)}&cursor=${encodeURIComponent(feed.cursor_ke_tiep)}`
+        }
+        tab={tab}
+        khoang={khoang}
+        sub={sub}
+        truongPhai={truongPhai}
+        loaiMach={loaiMach}
+        trangThai={trangThai}
+      />
+    </>
+  );
+
+  // Một khung hai cột cho cả web (nội dung + rail phải): `VoKhungHaiCot` lo lưới, thẻ `<main>`
+  // và lớp bọc rail — `/`, `/?tab=…` và `/s/<sub>` cùng một lưới với mọi trang khác, nên cột
+  // nội dung không nhảy ngang khi điều hướng giữa chúng.
+  return (
+    <>
+      <VoKhungHaiCot sidebar={sidebar}>{noiDung}</VoKhungHaiCot>
       <NutVeDauTrang />
-    </div>
+    </>
   );
 }

@@ -1,0 +1,126 @@
+name: gikkynet-dev
+
+services:
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: gikky
+      POSTGRES_USER: gikky
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?thiếu POSTGRES_PASSWORD trong file env}
+    volumes:
+      - pgdata_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gikky -d gikky"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  meili:
+    image: getmeili/meilisearch:v1.51.0
+    restart: unless-stopped
+    environment:
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:?thiếu MEILI_MASTER_KEY trong file env}
+      MEILI_ENV: development
+      MEILI_NO_ANALYTICS: "true"
+    volumes:
+      - meilidata_dev:/meili_data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:7700/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  api:
+    build:
+      context: ../..
+      dockerfile: deploy/prod/api.Dockerfile
+    restart: unless-stopped
+    environment:
+      SECRET_KEY: ${SECRET_KEY:?thiếu SECRET_KEY trong file env}
+      DEBUG: "False"
+      ALLOWED_HOSTS: dev.gikky.net,api,localhost,127.0.0.1
+      ADMIN_HOSTS: dev.gikky.net
+      DATABASE_URL: postgres://gikky:${POSTGRES_PASSWORD}@postgres:5432/gikky
+      FRONTEND_ORIGIN: ${SITE_ORIGIN:-https://dev.gikky.net}
+      SITE_ORIGIN: ${SITE_ORIGIN:-https://dev.gikky.net}
+      CSRF_TRUSTED_ORIGINS: https://dev.gikky.net
+      SESSION_COOKIE_DOMAIN: .gikky.net
+      CSRF_COOKIE_DOMAIN: .gikky.net
+      EMAIL_URL: ${EMAIL_URL:-}
+      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-gikky <no-reply@gikky.net>}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      REVALIDATE_URL: http://web:3000/lam-moi-cache
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET:?thiếu REVALIDATE_SECRET trong file env}
+      DEM_LUOT_XEM_SECRET: ${DEM_LUOT_XEM_SECRET:?thiếu DEM_LUOT_XEM_SECRET trong file env}
+      MEILI_URL: http://meili:7700
+      MEILI_KEY: ${MEILI_KEY:-}
+      MEDIA_ROOT: /var/lib/gikky/media
+      MEDIA_AN_ROOT: /var/lib/gikky/media-an
+      TIN_X_FORWARDED_FOR: "True"
+      GIKKY_ADMIN_PASSWORD: ${GIKKY_ADMIN_PASSWORD:-}
+      GIKKY_TEAM_NEWS_PASSWORD: ${GIKKY_TEAM_NEWS_PASSWORD:-}
+      GIKKY_TEAM_MEMBER_PASSWORD: ${GIKKY_TEAM_MEMBER_PASSWORD:-}
+      GIKKY_TEAM_EMAIL_DOMAIN: ${GIKKY_TEAM_EMAIL_DOMAIN:-gikky.net}
+    volumes:
+      - media_dev:/var/lib/gikky/media
+      - mediaan_dev:/var/lib/gikky/media-an
+      - static_dev:/app/staticfiles
+    depends_on:
+      postgres:
+        condition: service_healthy
+      meili:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/api/v1/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  web:
+    build:
+      context: ../..
+      dockerfile: deploy/prod/node.Dockerfile
+      target: web
+      args:
+        DEM_LUOT_XEM_SECRET: ${DEM_LUOT_XEM_SECRET:?thiếu DEM_LUOT_XEM_SECRET trong file env}
+        API_ORIGIN: http://api:8000
+        SITE_ORIGIN: ${SITE_ORIGIN:-https://dev.gikky.net}
+    restart: unless-stopped
+    environment:
+      API_ORIGIN: http://api:8000
+      SITE_ORIGIN: ${SITE_ORIGIN:-https://dev.gikky.net}
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET:?thiếu REVALIDATE_SECRET trong file env}
+      DEM_LUOT_XEM_SECRET: ${DEM_LUOT_XEM_SECRET:?thiếu DEM_LUOT_XEM_SECRET trong file env}
+      NODE_ENV: production
+    depends_on:
+      api:
+        condition: service_started
+
+  caddy:
+    build:
+      context: ../..
+      dockerfile: deploy/dev/caddy.Dockerfile
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8092:80"
+    volumes:
+      - media_dev:/var/lib/gikky/media:ro
+      - static_dev:/srv/static:ro
+      - caddydata_dev:/data
+      - caddyconfig_dev:/config
+    depends_on:
+      - web
+      - api
+
+volumes:
+  pgdata_dev:
+  meilidata_dev:
+  media_dev:
+  mediaan_dev:
+  static_dev:
+  caddydata_dev:
+  caddyconfig_dev:

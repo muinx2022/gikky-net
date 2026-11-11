@@ -38,7 +38,7 @@ def sua_binh_luan_api(request, comment_id: int, du_lieu: BinhLuanSuaIn):
     **Quyền: Tác giả bình luận trong thời gian cho phép hoặc staff.**
     Sau `doc_phut_tu_sua_binh_luan()` phút kể từ `created_at`, người dùng thường bị chặn 403 `het_cua_so_sua`.
     """
-    c = nap_binh_luan(comment_id)
+    c = nap_binh_luan(comment_id, user=request.user)
     if not request.user.is_staff:
         doi_chu_so_huu(request.user, c.author_id, "bình luận")
         phut_tu_sua = doc_phut_tu_sua_binh_luan()
@@ -81,7 +81,7 @@ def xoa_binh_luan_api(request, comment_id: int):
             "khong_phai_admin",
             "Chỉ quản trị viên mới có quyền xoá bình luận.",
         )
-    c = nap_binh_luan(comment_id)
+    c = nap_binh_luan(comment_id, user=request.user)
     doi_con_song(c, "Bình luận")
     mach = c.mach
     xoa_that = xoa_binh_luan(comment=c)
@@ -103,7 +103,7 @@ def an_binh_luan_api(request, comment_id: int, du_lieu: AnBinhLuanIn):
     - Hướng 2: Tác giả CHỈ được ẩn bình luận khi CHƯA có ai phản hồi (c.replies không có).
       Nếu đã có thảo luận con, chặn ẩn để tránh làm mất ngữ cảnh.
     """
-    c = nap_binh_luan(comment_id)
+    c = nap_binh_luan(comment_id, user=request.user)
     if c.deleted_at is not None:
         raise LoiGhi(409, "da_xoa", "Bình luận đã bị xoá.")
     if not request.user.is_staff:

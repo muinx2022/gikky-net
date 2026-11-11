@@ -1,0 +1,341 @@
+/* Khối "Chủ đề tuần" của trang chủ (TIÊU ĐIỂM) + chip trạng thái dùng chung với kho `/chu-de`
+ * (`kho-chu-de.tsx` import `.chip`, `.chip_mo`, `.chip_dong` từ đây — đừng đổi tên/diện mạo
+ * ba lớp đó mà không sửa kho). Chỉ token đã có; không `--gain`/`--loss`/`--stamp` (khoá theo
+ * file/selector ở `e2e/don-vi/mau-token.spec.ts`). */
+
+/* --- chip: dùng ở khối này VÀ ở `/chu-de` -------------------------------------------- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.chip_mo {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.chip_dong {
+  color: var(--ink-3);
+  background: var(--surface-2);
+}
+
+/* --- khối --------------------------------------------------------------------------- */
+.khoi {
+  margin: 0 0 20px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--accent);
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.hai_nua {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 28px;
+}
+
+.mot_nua {
+  display: block;
+}
+
+.trai {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  min-width: 0;
+}
+
+.dau {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  font-family: var(--f-ui);
+  font-size: 12px;
+}
+
+.nhan {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.tuan {
+  color: var(--ink-3);
+}
+
+.sub {
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+.sub:hover {
+  text-decoration: underline;
+}
+
+/* --- câu hỏi: h2 cỡ lớn -------------------------------------------------------------- */
+.cau_hoi {
+  margin: 0;
+  font-family: var(--f-display);
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  /* Tiêu đề do người gõ có thể là một chuỗi không dấu cách: không cho nó đẩy khối rộng ra. */
+  overflow-wrap: anywhere;
+}
+
+.cau_hoi a {
+  color: inherit;
+}
+
+.cau_hoi a:hover {
+  color: var(--accent);
+}
+
+.boi_canh {
+  margin: 0;
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.ket_qua {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+
+.ket_qua_nhan {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* --- hai nút ------------------------------------------------------------------------- */
+.hanh_dong {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.nut_chinh,
+.nut_phu {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 8px;
+  font-family: var(--f-ui);
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.nut_chinh {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.nut_chinh:hover {
+  background: var(--ink-2);
+  color: var(--bg);
+}
+
+.nut_phu {
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.nut_phu:hover {
+  background: var(--inset);
+}
+
+.nut_chinh:focus-visible,
+.nut_phu:focus-visible,
+.so_binh_luan:focus-visible,
+.xem_tat_ca:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.so_binh_luan {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 4px;
+  font-family: var(--f-ui);
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+.so_binh_luan:hover {
+  color: var(--accent);
+}
+
+/* --- nửa phải: quan điểm nổi bật ---------------------------------------------------- */
+.phai {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding-left: 28px;
+  border-left: 1px solid var(--line);
+}
+
+.tieu_phai {
+  margin: 0 0 14px;
+  font-family: var(--f-ui);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.ds_quan_diem {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.quan_diem {
+  display: flex;
+  gap: 10px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+
+.quan_diem:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.quan_diem_than {
+  min-width: 0;
+  flex: 1;
+}
+
+.quan_diem_dong {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--f-ui);
+  font-size: 13px;
+}
+
+.quan_diem_ten {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quan_diem_diem {
+  flex: none;
+  color: var(--ink-3);
+  font-family: var(--f-mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.quan_diem_trich {
+  margin: 3px 0 0;
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.xem_tat_ca {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-family: var(--f-ui);
+  font-size: 12.5px;
+  color: var(--accent);
+}
+
+.xem_tat_ca:hover {
+  text-decoration: underline;
+}
+
+/* --- tablet / mobile (≤ 960px): một cột, nửa phải xuống dưới nửa trái ------------------ */
+@media (max-width: 960px) {
+  .hai_nua {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+
+  .phai {
+    padding-left: 0;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+    border-left: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .khoi {
+    padding: 18px 16px 20px;
+    border-radius: 10px;
+  }
+
+  .cau_hoi {
+    font-size: 22px;
+    line-height: 1.3;
+  }
+
+  /* Vùng bấm ≥ 44px (G7); hai nút xếp chồng, rộng hết khối. */
+  .hanh_dong {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .nut_chinh,
+  .nut_phu {
+    height: 46px;
+  }
+
+  .so_binh_luan {
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  /* Mobile chỉ HIỆN một quan điểm (plan §3.1); cả ba vẫn nằm trong HTML. */
+  .quan_diem:nth-child(n + 2) {
+    display: none;
+  }
+
+  .xem_tat_ca {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+  }
+}

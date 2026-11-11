@@ -8,6 +8,13 @@ vẫn ghi được thì nội dung mới chảy vào một mạch không ai đ�
 Cả bốn hàm **ném** `LoiGhi` chứ không trả về `None`: chúng được gọi từ giữa thân handler,
 và một `return` ở đó thì người viết endpoint phải nhớ kiểm — nhớ được bảy lần, quên lần
 thứ tám.
+
+**Luật thứ năm: mạch riêng tư** (`core/rieng_tu.py`, plan 2026-11-09). `nap_mach`,
+`nap_moc`, `nap_binh_luan` nhận `user` **bắt buộc, đặt tên, không mặc định**: quên truyền là
+`TypeError` lúc chạy test chứ không phải một cửa im lặng mở cho người lạ. Người không được
+xem mạch riêng tư nhận đúng 404 `khong_tim_thay` — cùng mã, cùng chữ với id không tồn tại —
+**trước** mọi phép kiểm quyền chủ (`doi_chu_so_huu`). Thứ tự ấy là cả ý nghĩa: để 403 đi
+trước thì người lạ phân biệt được "mạch riêng tư" với "mạch không có", tức dò được id.
 """
 
 from datetime import date
@@ -16,34 +23,39 @@ from core.doc_noi_dung import doc_duoc
 from core.models.binh_luan import Comment
 from core.models.dien_dan import Mach
 from core.models.moc import Moc
+from core.rieng_tu import mach_xem_duoc
 from core.thoi_gian import ngay_vn
 
 from api.loi import KHONG_TIM_THAY
 from api.quyen import DU_LIEU_KHONG_HOP_LE, NOI_DUNG_DA_GO, LoiGhi
 
 
-def nap_mach(mach_id: int) -> Mach:
+def nap_mach(mach_id: int, *, user) -> Mach:
     """Mạch công khai theo `id`, hoặc 404. Ẩn bởi mod ⇒ **coi như không tồn tại**.
 
     Một mã cho cả "không có" lẫn "đã bị ẩn" (`khong_tim_thay`) là cố ý và nó khớp đúng
     `api/loi.py`: tách ra là kể cho người lạ biết chính xác thứ vừa bị gỡ có tồn tại.
+
+    Mạch riêng tư mà `user` không phải tác giả / staff ⇒ cùng 404, cùng chữ.
     """
     mach = (
         Mach.objects.filter(pk=mach_id, hidden_at__isnull=True)
         .select_related("sub", "author")
         .first()
     )
-    if mach is None:
+    if mach is None or not mach_xem_duoc(mach, user):
         raise LoiGhi(404, KHONG_TIM_THAY, f"Không tìm thấy mạch {mach_id}.")
     return mach
 
 
-def nap_moc(moc_id: int) -> Moc:
+def nap_moc(moc_id: int, *, user) -> Moc:
     """Mốc thuộc một mạch chưa bị ẩn, hoặc 404. **Bia mộ vẫn trả về** — xem `doi_con_song`.
 
     Trả cả bia mộ vì hai chuyện khác nhau: "mốc này không tồn tại" (404) và "mốc này đã
     bị gỡ nên không sửa được nữa" (409). Gộp chúng thành 404 là nói với chính tác giả
     rằng mốc họ vừa xoá chưa từng có.
+
+    Mốc của mạch riêng tư mà `user` không được xem ⇒ 404, kể cả khi mốc là bia mộ.
     """
     moc = (
         Moc.objects.filter(pk=moc_id, mach__hidden_at__isnull=True)
@@ -51,19 +63,23 @@ def nap_moc(moc_id: int) -> Moc:
         .select_related("mach", "mach__sub", "mach__author", "author", "edited_by")
         .first()
     )
-    if moc is None:
+    if moc is None or not mach_xem_duoc(moc.mach, user):
         raise LoiGhi(404, KHONG_TIM_THAY, f"Không tìm thấy mốc {moc_id}.")
     return moc
 
 
-def nap_binh_luan(comment_id: int) -> Comment:
-    """Bình luận thuộc một mạch chưa bị ẩn, hoặc 404. Bia mộ vẫn trả về (xem `nap_moc`)."""
+def nap_binh_luan(comment_id: int, *, user) -> Comment:
+    """Bình luận thuộc một mạch chưa bị ẩn, hoặc 404. Bia mộ vẫn trả về (xem `nap_moc`).
+
+    Mạch riêng tư mà `user` không được xem ⇒ 404 (kể cả người từng bình luận ở đó trước
+    khi luật này có — họ không còn xem / sửa / ẩn được bình luận cũ của mình).
+    """
     c = (
         Comment.objects.filter(pk=comment_id, mach__hidden_at__isnull=True)
         .select_related("mach", "author")
         .first()
     )
-    if c is None:
+    if c is None or not mach_xem_duoc(c.mach, user):
         raise LoiGhi(404, KHONG_TIM_THAY, f"Không tìm thấy bình luận {comment_id}.")
     return c
 

@@ -161,7 +161,8 @@ const KHONG_DEM = [
  * - Diễn đàn con `/s/<subSlug>`
  * - Hồ sơ người dùng `/u/<username>` (và các trang con dưới `/u/`)
  * - Các trang tĩnh: cai-dat, chan-doan, dang-ky, dang-mach, dang-nhap, doi-mat-khau,
- *   khu-mod, luat, quen-mat-khau, sua-ho-so, tim-kiem.
+ *   khu-mod, luat, quen-mat-khau, sua-ho-so, tim-kiem;
+ *   `chu-de` — kho chủ đề thảo luận (homepage v2, 2026-11-10).
  *
  * Mọi đường dẫn lạ không khớp cấu trúc trên (vd bot scan gõ URL linh tinh) đều bị loại.
  */
@@ -170,7 +171,7 @@ export const DUONG_DAN_HOP_LE = [
   /^\/(?:m|m-phien)\/[^/]+\/?$/,
   /^\/s\/[^/]+\/?$/,
   /^\/u\/[^/]+(?:\/[^/]+)*\/?$/,
-  /^\/(?:cai-dat|chan-doan|dang-ky|dang-mach|dang-nhap|doi-mat-khau|khu-mod|luat|quen-mat-khau|sua-ho-so|tim-kiem)\/?$/,
+  /^\/(?:cai-dat|chan-doan|chu-de|dang-ky|dang-mach|dang-nhap|doi-mat-khau|khu-mod|luat|quen-mat-khau|sua-ho-so|tim-kiem)\/?$/,
 ];
 
 /** Có đếm đường dẫn này không. Chỉ nhận `pathname`, **không** nhận query string. */

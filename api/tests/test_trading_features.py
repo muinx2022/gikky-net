@@ -44,10 +44,11 @@ def test_mach_rieng_tu_an_khoi_feed_va_nguoi_ngoai_404(client, sub, tac_gia, ngu
 
 
 def test_cong_khai_mach_rieng_tu(client, tac_gia, nguoi_a, mach_rieng_tu):
-    # Người khác không thể công khai -> 403
+    # Người khác không thể công khai -> 404 (không phải 403: mạch riêng tư không được lộ
+    # là có tồn tại — plans/2026-11-09-va-ro-mach-rieng-tu.md, D2)
     client.force_login(nguoi_a)
     res = client.post(f"/api/v1/machs/{mach_rieng_tu.pk}/cong-khai")
-    assert res.status_code == 403
+    assert res.status_code == 404
 
     # Tác giả công khai -> 200
     client.force_login(tac_gia)

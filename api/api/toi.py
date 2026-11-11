@@ -60,6 +60,7 @@ def xem_toi(request):
             user=user, verified=True
         ).exists(),
         la_staff=bool(user.is_staff),
+        la_tai_khoan_doi=bool(user.la_tai_khoan_doi),
         google_bat=google_dang_bat(request),
         google_client_id=client_id_google(request) or None,
         nhan_digest=bool(user.nhan_digest),
@@ -155,6 +156,7 @@ def _khach(request) -> ToiOut:
         email=None,
         email_da_xac_thuc=False,
         la_staff=False,
+        la_tai_khoan_doi=False,
         google_bat=google_dang_bat(request),
         google_client_id=client_id_google(request) or None,
         nhan_digest=False,

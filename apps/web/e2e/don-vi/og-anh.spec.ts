@@ -318,3 +318,23 @@ test("mọi route ảnh OG đều truyền `fonts` và khai đủ size/contentTy
     expect(sach, `${ten} thiếu export alt`).toMatch(/export const alt\b/);
   }
 });
+
+/* ---- Nhãn đóng của CHỦ ĐỀ thảo luận: "ĐÃ ĐÓNG", không phải "ĐÃ ĐÓNG SỔ" ---------------- */
+
+test("nhãn thẻ OG: chủ đề thảo luận đã đóng ⇒ 'ĐÃ ĐÓNG'; nhật ký / bài viết giữ nguyên chữ cũ", () => {
+  expect(ogMach({ ...MACH_MAU, loai_mach: "thao_luan" }).nhanDongSo).toBe("ĐÃ ĐÓNG");
+  // Không gửi `loai_mach` (đường cũ) và hai loại còn lại: KHÔNG có `nhanDongSo` ⇒ "ĐÃ ĐÓNG SỔ".
+  expect(ogMach(MACH_MAU).nhanDongSo).toBeUndefined();
+  expect(ogMach({ ...MACH_MAU, loai_mach: "nhat_ky" }).nhanDongSo).toBeUndefined();
+  expect(ogMach({ ...MACH_MAU, loai_mach: "bai_viet" }).nhanDongSo).toBeUndefined();
+  // Cờ đóng không đổi: chủ đề đang mở vẫn không vẽ nhãn nào.
+  expect(ogMach({ ...MACH_MAU, status: "open", loai_mach: "thao_luan" }).dongSo).toBe(false);
+});
+
+test("ĐỔI LOẠI MẠCH sang chủ đề ⇒ ảnh phải KHÁC (nhãn thật sự đổi chữ khi vẽ)", async () => {
+  const nhat_ky = await ve(ogMach({ ...MACH_MAU, loai_mach: "nhat_ky" }));
+  const chu_de = await ve(ogMach({ ...MACH_MAU, loai_mach: "thao_luan" }));
+  expect(nhat_ky.equals(chu_de)).toBe(false);
+  // Không gửi `loai_mach` = nhật ký: cùng byte với nhật ký tường minh.
+  expect((await ve(ogMach(MACH_MAU))).equals(nhat_ky)).toBe(true);
+});

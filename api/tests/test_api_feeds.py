@@ -278,10 +278,14 @@ def test_the_feed_du_truong_cho_1c(client, seed):
         # Trading features: trường phái và trạng thái riêng tư
         "truong_phai",
         "rieng_tu",
+        # 2026-11-10: nhật ký / bài viết (`plans/2026-11-10-truong-loai-mach.md`)
+        "loai_mach",
         # Tổng lượt xem bài viết
         "view_count",
         # Trạng thái lưu trữ (soft delete)
         "da_luu_tru",
+        # 2026-11-11: lệnh có cấu trúc của nhật ký (`plans/2026-11-11-homepage-v2-giao-dien-moi.md` §6.1)
+        "lenh",
     }
     assert the["moc_1_id"] == Moc.objects.get(mach=seed, seq=1).pk
     assert the["ket_qua"] == "+18.2% · 163 ngày"

@@ -1,0 +1,108 @@
+/* Kho chủ đề thảo luận `/chu-de`: danh sách theo tuần, mỗi chủ đề một hàng gọn. Chỉ token đã
+ * có; không màu mới. Chip "Đang mở" / "Đã đóng" dùng lại lớp của `khoi-thao-luan.module.css`
+ * (cùng một chip ở trang chủ và ở kho), nên file này không khai lại chúng. Đường kẻ chân và
+ * rê chuột theo khuôn `khoi-bai-viet.module.css#.hang` để hai danh sách đọc như cùng một trang. */
+.tuan {
+  margin-top: 28px;
+}
+
+.tuan:first-of-type {
+  margin-top: 20px;
+}
+
+.tieu_tuan {
+  margin: 0 0 4px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+  font-family: var(--f-ui);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.danh_sach {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.hang {
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--line);
+  transition: background-color 0.15s ease;
+}
+
+.hang:hover {
+  background: var(--inset);
+}
+
+.dau {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--f-ui);
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--ink-3);
+}
+
+.sub {
+  /* Vùng bấm ≥ 24px (Lighthouse `target-size`): link inline cao ~15px là mục tiêu quá nhỏ. */
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  font-weight: 700;
+  color: var(--ink-2);
+  letter-spacing: 0.02em;
+}
+
+.sub:hover {
+  color: var(--brand);
+  text-decoration: underline;
+}
+
+.tieu_de {
+  margin: 2px 0 0;
+  font-family: var(--f-sans);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 21px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  /* Tiêu đề do người gõ có thể là một chuỗi không dấu cách: không cho nó tràn ngang. */
+  overflow-wrap: anywhere;
+}
+
+.tieu_de a:hover {
+  color: var(--accent);
+}
+
+/* Dòng tổng kết của chủ đề đã đóng: `ket_qua` (≤ 40 ký tự). */
+.tong_ket {
+  margin: 4px 0 0;
+  font-family: var(--f-ui);
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+
+.tong_ket_nhan {
+  font-weight: 700;
+  color: var(--ink-3);
+}
+
+.ve_dau {
+  display: inline-block;
+  margin-top: 8px;
+  font-family: var(--f-ui);
+  font-size: 13px;
+  color: var(--accent);
+}
+
+.ve_dau:hover {
+  text-decoration: underline;
+}

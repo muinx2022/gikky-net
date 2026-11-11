@@ -22,6 +22,7 @@ from core.thoi_gian import KHOANG_TAT_CA, KhoangThoiGian, moc_khoang_vn
 from api.loi import (
     CURSOR_KHONG_HOP_LE,
     SUB_KHONG_TON_TAI,
+    THAM_SO_KHONG_HOP_LE,
     LoiOut,
     khong_tim_thay,
     loi,
@@ -38,6 +39,7 @@ from api.phan_trang import (
     ma_hoa_cursor_so,
 )
 from api.schemas import FeedOut, SubChiTietOut
+from api.schemas_ghi import LoaiMachIn
 from api.trinh_bay import DuLieuThe, du_lieu_the, mach_tom_tat_ra
 
 router = Router()
@@ -58,6 +60,12 @@ SORT_TU_NHIEN, SORT_NHIEU_DIEM = SORT_FEED_HOP_LE
 #: Khoá keyset của sort Top. Cặp `(điểm, id)` chứ không mình điểm — điểm trùng nhau là
 #: chuyện thường (mọi mạch chưa ai vote đều `0`).
 TRUONG_DIEM = "diem_bai_goc"
+
+#: `?trang_thai=` của `/feeds/moi` (`plans/2026-11-11-homepage-v2-giao-dien-moi.md` §6.3): lọc
+#: theo trạng thái sổ của mạch. **`Literal` là nguồn** (→ `enum` trong `openapi.json`, giá trị
+#: lạ bị schema chặn 422); giá trị chính là `TrangThaiMach` ("open" | "closed") — test
+#: `test_feed_trang_thai.py` ghim hai tập bằng nhau. Vắng = không lọc (hành vi cũ nguyên vẹn).
+TrangThaiFeed = Literal["open", "closed"]
 
 
 def _the_ra(trang) -> list:
@@ -81,8 +89,13 @@ def _the_ra(trang) -> list:
     ]
 
 
-def _mach_hien(sub: str | None, truong_phai: str | None = None) -> QuerySet:
-    """Mạch được phép hiện ra API công khai, đã lọc `?sub=`, `?truong_phai=`, loại trừ `rieng_tu=True` và `archived_at`.
+def _mach_hien(
+    sub: str | None,
+    truong_phai: str | None = None,
+    loai_mach: LoaiMachIn | None = None,
+    trang_thai: TrangThaiFeed | None = None,
+) -> QuerySet:
+    """Mạch được phép hiện ra API công khai, đã lọc `?sub=`, `?truong_phai=`, `?loai_mach=`, `?trang_thai=`, loại trừ `rieng_tu=True` và `archived_at`.
 
     `hidden_at__isnull=True`, `rieng_tu=False` và `archived_at__isnull=True` là bộ lọc bảo vệ của feed — mạch bị mod ẩn,
     mạch riêng tư hoặc mạch đã lưu trữ không được xuất hiện ở bất kỳ feed công khai nào.
@@ -94,6 +107,10 @@ def _mach_hien(sub: str | None, truong_phai: str | None = None) -> QuerySet:
         qs = qs.filter(sub__slug=sub)
     if truong_phai is not None:
         qs = qs.filter(truong_phai=truong_phai)
+    if loai_mach is not None:
+        qs = qs.filter(loai_mach=loai_mach)
+    if trang_thai is not None:
+        qs = qs.filter(status=trang_thai)
     return qs
 
 
@@ -231,6 +248,9 @@ _MO_TA_FEED_MOI = """Feed **Mới**: mọi bài, mới đăng trước (`publish
     Mạch đã đóng sổ **vẫn xuất hiện** — feed này sắp theo lúc bài LÊN SÓNG, không theo
     trạng thái sổ.
 
+    `?trang_thai=open|closed` lọc theo trạng thái sổ của mạch (đang mở / đã đóng sổ); vắng
+    = cả hai. Giá trị khác bị chặn 422. Chỉ feed này nhận tham số đó.
+
     `published_at` chứ không `created_at`: bài hẹn giờ được soạn trước rồi phát hành sau,
     và thứ tự người đọc thấy phải là thứ tự bài xuất hiện. Hai cột đều có trong
     `MachTomTatOut` — `created_at` là ngày viết, `published_at` là ngày đăng.
@@ -260,6 +280,8 @@ def feed_moi(
     request,
     sub: str | None = None,
     truong_phai: str | None = None,
+    loai_mach: LoaiMachIn | None = None,
+    trang_thai: TrangThaiFeed | None = None,
     sort: SortFeed = SORT_TU_NHIEN,
     khoang: KhoangThoiGian = KHOANG_TAT_CA,
     cursor: str | None = None,
@@ -271,7 +293,15 @@ def feed_moi(
     if (l := _kiem_sub(sub)) is not None:
         return l
     ket_qua, l = _phuc_vu(
-        _loc_khoang(_mach_hien(sub, truong_phai=truong_phai), khoang),
+        _loc_khoang(
+            _mach_hien(
+                sub,
+                truong_phai=truong_phai,
+                loai_mach=loai_mach,
+                trang_thai=trang_thai,
+            ),
+            khoang,
+        ),
         truong="last_content_at",
         sort=sort,
         cursor=cursor,
@@ -291,6 +321,7 @@ def feed_dang_dien_ra(
     request,
     sub: str | None = None,
     truong_phai: str | None = None,
+    loai_mach: LoaiMachIn | None = None,
     sort: SortFeed = SORT_TU_NHIEN,
     khoang: KhoangThoiGian = KHOANG_TAT_CA,
     cursor: str | None = None,
@@ -302,13 +333,73 @@ def feed_dang_dien_ra(
     if (l := _kiem_sub(sub)) is not None:
         return l
     ket_qua, l = _phuc_vu(
-        _loc_khoang(_mach_hien(sub, truong_phai=truong_phai).filter(status=TrangThaiMach.MO), khoang),
+        _loc_khoang(
+            _mach_hien(sub, truong_phai=truong_phai, loai_mach=loai_mach).filter(
+                status=TrangThaiMach.MO
+            ),
+            khoang,
+        ),
         truong="last_discussion_at",
         sort=sort,
         cursor=cursor,
         limit=limit,
     )
     return l if l is not None else ket_qua
+
+
+#: `GET /feeds/nhat-ky-moi-tac-gia`: số thẻ mặc định và trần. Trần 20 (không phải 50 của
+#: `kiem_gioi_han`) vì endpoint này phục vụ MỘT khối trang chủ, không phải cuộn vô hạn.
+GIOI_HAN_NHAT_KY_MOI_TAC_GIA_MAC_DINH = 8
+GIOI_HAN_NHAT_KY_MOI_TAC_GIA_TOI_DA = 20
+
+_MO_TA_NHAT_KY_MOI_TAC_GIA = """Khối **"Nhật ký mới"** của trang chủ: MỖI tác giả một bài.
+
+    Trong các mạch `nhat_ky` mà feed công khai được phép hiện (cùng bộ lọc với `/feeds/moi`:
+    không ẩn, không riêng tư, không lưu trữ, không hẹn giờ chưa tới hạn), lấy **bài có
+    `published_at` lớn nhất của mỗi tác giả**, rồi xếp các bài đó theo `published_at` giảm
+    dần và cắt ở `?limit=` (1..20, mặc định 8).
+
+    Chọn theo `published_at` — ngày bài LÊN SÓNG — chứ không theo `last_content_at` như
+    `/feeds/moi`: nối mốc vào một bài cũ làm `last_content_at` của nó nhảy lên, và khối này
+    sẽ hiện bài đăng từ ba tháng trước thay vì bài mới đăng hôm qua của cùng tác giả.
+
+    Không có cursor: `cursor_ke_tiep` luôn `null`. Muốn xem hết nhật ký thì dùng
+    `/feeds/moi?loai_mach=nhat_ky`, feed đó KHÔNG lọc theo tác giả.
+"""
+
+
+@router.get(
+    "/feeds/nhat-ky-moi-tac-gia",
+    response={200: FeedOut, 400: LoiOut},
+    operation_id="liet_ke_nhat_ky_moi_tac_gia",
+    description=_MO_TA_NHAT_KY_MOI_TAC_GIA,
+    tags=["feed"],
+)
+def feed_nhat_ky_moi_tac_gia(
+    request, limit: int = GIOI_HAN_NHAT_KY_MOI_TAC_GIA_MAC_DINH
+):
+    """Xem `_MO_TA_NHAT_KY_MOI_TAC_GIA` — mô tả công khai nằm ở `description=`."""
+    if not 1 <= limit <= GIOI_HAN_NHAT_KY_MOI_TAC_GIA_TOI_DA:
+        return loi(
+            400,
+            THAM_SO_KHONG_HOP_LE,
+            f"limit phải nằm trong 1..{GIOI_HAN_NHAT_KY_MOI_TAC_GIA_TOI_DA}, nhận {limit}.",
+        )
+    # MỘT truy vấn cho tập id: `DISTINCT ON (author_id)` giữ hàng đầu của mỗi tác giả theo
+    # `(published_at, id)` giảm dần — dùng index `mach_author_published`. Bộ lọc "hiện được"
+    # là `_mach_hien`, KHÔNG chép lại: luật che đổi ở đó thì khối này đổi theo.
+    moi_nhat = (
+        _mach_hien(None, loai_mach="nhat_ky")
+        .order_by("author_id", "-published_at", "-pk")
+        .distinct("author_id")
+        .values("pk")
+    )
+    trang = list(
+        Mach.objects.filter(pk__in=moi_nhat)
+        .select_related("sub", "author")
+        .order_by("-published_at", "-pk")[:limit]
+    )
+    return FeedOut(items=_the_ra(trang), cursor_ke_tiep=None)
 
 
 def subs_kem_so_mach() -> QuerySet:

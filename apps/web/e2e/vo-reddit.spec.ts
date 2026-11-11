@@ -182,11 +182,37 @@ test.describe("A8 — trang sub có header + sidebar", () => {
     // đứng — khác hẳn mũi tên vote, thứ SẼ sống ở Phase 2.
     for (const url of ["/", "/s/chung-khoan", "/s/crypto"]) {
       await page.goto(url);
-      const than = (await page.locator("body").innerText()).toLowerCase();
+      // Khối khách ("Tham gia Gikky.net", `data-testid="khoi-khach"`) là lời mời ĐĂNG KÝ
+      // tài khoản, không phải nút tham gia chuyên mục — và nó nằm ở rail phải, hiện sau
+      // ~200ms nên đọc cả `body` ngay sau `goto` là đua (đỏ 1/10 lần). Loại nó khỏi văn
+      // bản được kiểm; mọi chỗ khác vẫn cấm chữ "tham gia".
+      const than = (
+        await page.evaluate(() => {
+          const khach = [
+            ...document.querySelectorAll<HTMLElement>('[data-testid="khoi-khach"]'),
+          ];
+          const cu = khach.map((e) => e.style.display);
+          khach.forEach((e) => (e.style.display = "none"));
+          try {
+            return document.body.innerText;
+          } finally {
+            khach.forEach((e, i) => (e.style.display = cu[i]));
+          }
+        })
+      ).toLowerCase();
       expect(than, `${url} có chữ "tham gia"`).not.toContain("tham gia");
       expect(than, `${url} có chữ "subscribe"`).not.toContain("subscribe");
       await expect(
         page.getByRole("button", { name: /tham gia|theo dõi sub|subscribe/i }),
+        url,
+      ).toHaveCount(0);
+      // Theo phần tử: không nút / link nào mang chữ "Tham gia" nằm NGOÀI khối khách.
+      await expect(
+        page
+          .locator(
+            'a:not([data-testid="khoi-khach"] *), button:not([data-testid="khoi-khach"] *), [role="button"]:not([data-testid="khoi-khach"] *)',
+          )
+          .filter({ hasText: /tham gia/i }),
         url,
       ).toHaveCount(0);
     }
@@ -212,7 +238,7 @@ test.describe("A9 — tab 'Nhiều điểm nhất' + chọn khoảng, đổi qua
       "seed cho Top và Mới cùng thứ tự ⇒ bài đo này không phân biệt được gì",
     ).not.toEqual(moi.items.map((m) => m.id));
 
-    await page.goto("/");
+    await page.goto("/?tab=moi");
     await expect(page.getByTestId("tab-moi")).toHaveAttribute("aria-current", "page");
     await page.getByTestId("tab-nhieu-diem").click();
     await expect(page).toHaveURL(/tab=nhieu-diem/);

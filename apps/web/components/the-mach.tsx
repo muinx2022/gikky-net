@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { CHU_NGUOI_DUNG } from "@/lib/chu-nguoi-dung";
 import { ngayCuaThoiDiem } from "@/lib/dinh-dang";
+import { NHAN_NGAN_LOAI_MACH } from "@/lib/loc-loai-mach";
 import { duongDanHoSo, duongDanMach, duongDanSub } from "@/lib/url";
 
 import { Avatar } from "./avatar";
@@ -31,11 +32,31 @@ import css from "./the-mach.module.css";
  * `entry_count` chỉ hiện khi ≥ 2: một mốc thì nó chưa phải mạch (PLAN 5.1), và "1 mốc"
  * là con số duy nhất nó có thể có.
  */
-export function TheMach({ mach }: { mach: MachTomTatOut }) {
+export function TheMach({
+  mach,
+  capHeading = 2,
+  hienNhanLoai = false,
+}: {
+  mach: MachTomTatOut;
+  /** Cấp heading của tiêu đề thẻ. Mặc định 2 (mọi chỗ cũ: feed, hồ sơ — DOM không đổi một
+   * byte); trang chủ v2 truyền 3 vì thẻ nằm dưới `<h2>Nhật ký mới</h2>` của khối. */
+  capHeading?: 2 | 3;
+  /** Hiện nhãn loại ("Nhật ký" / "Bài viết" / "Chủ đề") ở đầu dòng meta. Mặc định `false` —
+   * chỉ trang chuyên mục `/s/<sub>` bật nó (chuyên mục lẫn cả ba loại nên thẻ phải tự nói
+   * mình thuộc loại nào). Mọi chỗ khác (hồ sơ, tìm kiếm, `/?tab=…`, khối Nhật ký của `/`)
+   * để mặc định ⇒ DOM không đổi một byte. */
+  hienNhanLoai?: boolean;
+}) {
+  const Heading = capHeading === 3 ? "h3" : "h2";
   return (
     <li className={css.the} data-testid="the-mach" data-mach-id={mach.id}>
       <div className={css.than}>
         <div className={css.dau}>
+          {hienNhanLoai && (
+            <span className={css.nhan_loai} data-testid="nhan-loai">
+              {NHAN_NGAN_LOAI_MACH[mach.loai_mach]}
+            </span>
+          )}
           {/* Bốn nút mang dấu `CHU_NGUOI_DUNG` trong thẻ này (Y3): slug sub, tên tác giả,
               tiêu đề, kết quả — bốn chuỗi do người dùng gõ. Phần còn lại ("mốc", "bình
               luận", "đã đóng sổ") là chữ của ứng dụng và ở lại trong phép quét. */}
@@ -80,7 +101,10 @@ export function TheMach({ mach }: { mach: MachTomTatOut }) {
           </span>
           <span className={css.khi}>{ngayCuaThoiDiem(mach.published_at)}</span>
           {mach.status === "closed" && (
-            <span className={css.dong_so}>đã đóng sổ</span>
+            // Chủ đề không phải một cuốn sổ: chữ "sổ" là của nhật ký.
+            <span className={css.dong_so}>
+              {mach.loai_mach === "thao_luan" ? "đã đóng" : "đã đóng sổ"}
+            </span>
           )}
           {mach.da_luu_tru && (
             <span
@@ -102,11 +126,11 @@ export function TheMach({ mach }: { mach: MachTomTatOut }) {
           )}
         </div>
 
-        <h2 className={css.tieu_de}>
+        <Heading className={css.tieu_de}>
           <Link href={duongDanMach(mach.slug, mach.id)} prefetch={false} {...CHU_NGUOI_DUNG}>
             {mach.title}
           </Link>
-        </h2>
+        </Heading>
 
         {/* Nội dung xem trước lấy từ MỐC 1 — ảnh gallery trước, chữ sau (2026-08-23).
             `null` khi mốc 1 là bia mộ hoặc bị mod ẩn: thẻ khi đó về đúng hình dạng cũ

@@ -1127,6 +1127,10 @@ export type MachDongOut = {
      */
     last_activity_at: string;
     /**
+     * Loai Mach
+     */
+    loai_mach: 'nhat_ky' | 'bai_viet' | 'thao_luan';
+    /**
      * Published At
      */
     published_at: string;
@@ -1163,6 +1167,10 @@ export type MachDongOut = {
  * (`api/quan_tri_hen_gio.py::TAI_KHOAN_DANG_BAI`). Ngoài danh sách ⇒ 400;
  * - `published_at` — tương lai thì bài nằm chờ; `null` hoặc quá khứ thì lên ngay.
  * Cùng luật múi giờ với `HenGioMachIn`.
+ *
+ * Và `loai_mach` (tuỳ chọn, 3 giá trị): bỏ ⇒ phân giải theo tác giả như cửa công khai
+ * (`core/ghi.py::tao_mach`). Cửa này chỉ staff gọi được nên KHÔNG áp cổng "người thường"
+ * của `POST /machs` — đây là lối tạo chủ đề `thao_luan`.
  */
 export type MachHenGioMoiIn = {
     /**
@@ -1183,6 +1191,10 @@ export type MachHenGioMoiIn = {
      * Loai
      */
     loai?: string | null;
+    /**
+     * Loai Mach
+     */
+    loai_mach?: 'nhat_ky' | 'bai_viet' | 'thao_luan' | null;
     /**
      * Occurred At
      */
@@ -1563,6 +1575,10 @@ export type NguoiDungTomTatOut = {
      * Display Name
      */
     display_name: string;
+    /**
+     * La Bot
+     */
+    la_bot?: boolean;
     /**
      * Username
      */
@@ -2731,6 +2747,10 @@ export type QuanTriLietKeMachData = {
          * Trang Thai
          */
         trang_thai?: 'tat_ca' | 'chua_go' | 'mo' | 'dong' | 'bi_khoa' | 'bi_an' | 'hen_gio' | 'luu_tru';
+        /**
+         * Loai Mach
+         */
+        loai_mach?: 'nhat_ky' | 'bai_viet' | 'thao_luan' | null;
         /**
          * Limit
          */

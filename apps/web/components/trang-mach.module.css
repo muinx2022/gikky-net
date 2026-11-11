@@ -183,6 +183,22 @@
   background: var(--inset);
 }
 
+/* Link "← Chủ đề thảo luận" trên đầu trang mạch của chủ đề (homepage v2 §3.8). Cùng kiểu
+ * link `--accent` nhỏ của `.doi_mat a`; vùng bấm ≥ 24px (Lighthouse `target-size`). */
+.ve_chu_de {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  margin: 0 0 6px;
+  font-family: var(--f-ui);
+  font-size: 12.5px;
+  color: var(--accent);
+}
+
+.ve_chu_de:hover {
+  text-decoration: underline;
+}
+
 @media (max-width: 640px) {
   .khung {
     padding: 16px 12px 34px;

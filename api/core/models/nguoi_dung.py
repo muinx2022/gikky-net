@@ -49,6 +49,21 @@ class User(AbstractUser):
     #: `core.avatar.xoa_avatar(user=...)` là đủ cả hai vế.
     avatar_khoa = models.CharField(max_length=64, blank=True, default="")
 
+    #: Tài khoản của đội gikky (`gikky-team-news`, `gikky-team-member`): cờ cho phép đăng
+    #: mạch loại `bai_viet` và đặt `bai_viet` làm mặc định (`core/ghi.py::tao_mach`).
+    #:
+    #: ⚠ KHÁC `is_staff`: `is_staff` là quyền vào khu quản trị và chỉ đi cùng
+    #: `is_superuser`; hai tài khoản đăng bài là người dùng thường (`is_staff=False`) nên
+    #: không dùng `is_staff` làm cổng được. Đây là bề mặt đặc quyền — chỉ bật bằng
+    #: migration `0045` / `manage.py tao_tai_khoan_doi`; KHÔNG endpoint nào đặt nó.
+    la_tai_khoan_doi = models.BooleanField(default=False)
+
+    #: Tài khoản BOT demo (`bot-trader`): web vẽ nhãn "BOT · DEMO" cạnh tên theo cờ này, không
+    #: so `username` (`plans/2026-11-11-homepage-v2-giao-dien-moi.md` §6.2). Cùng khuôn
+    #: `la_tai_khoan_doi`: đặc quyền hiển thị, chỉ bật bằng migration `0046` — KHÔNG endpoint
+    #: nào đặt nó (`PATCH /toi` và hồ sơ không có trường này).
+    la_bot = models.BooleanField(default=False)
+
     # --- Thông báo (PLAN 5.8 · Phase 3) --------------------------------------
     #: Nhận email digest tuần hay không. **`default=False` là bắt buộc, không phải một
     #: lựa chọn thẩm mỹ:** PLAN 5.8 chốt digest là *"tuỳ chọn **opt-in**"*, và `True` mặc

@@ -177,7 +177,7 @@ test.describe("T3 — theme KHÔNG đi qua HTML đã cache", () => {
 
 test.describe("T4 — hai kiểu xem feed, nhớ lựa chọn", () => {
   test("đổi sang Gọn ⇒ thẻ THẤP hơn, và F5 vẫn Gọn", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/?tab=moi");
     const the = page.getByTestId("the-mach").first();
     await expect(the).toBeVisible();
     const cao_the = (await the.boundingBox())?.height ?? 0;

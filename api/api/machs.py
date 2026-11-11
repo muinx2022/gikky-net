@@ -50,6 +50,7 @@ from core.han_muc import (
     tran_binh_luan_moi_gio,
     tran_mach_moi_ngay,
 )
+from core.lenh import Lenh
 from core.mat import tinh_mat_theo_thoi_gian
 from core.models.dien_dan import Mach, Sub
 from core.models.moc import Moc, MocAnh
@@ -83,6 +84,7 @@ from api.quyen import (
     BINH_LUAN_DA_TAT,
     DU_LIEU_KHONG_HOP_LE,
     HET_HAN_MO_LAI,
+    LOAI_MACH_KHONG_DUOC_PHEP,
     MACH_DA_DONG,
     MACH_DANG_MO,
     QUA_HAN_MUC_BINH_LUAN,
@@ -92,6 +94,8 @@ from api.quyen import (
     dang_nhap,
     doi_chu_so_huu,
     doi_mach_tuong_tac_duoc,
+    doi_nguoi_dong_so_duoc,
+    duoc_chon_loai_mach,
 )
 from api.schemas import (
     BinhLuanOut,
@@ -104,6 +108,7 @@ from api.schemas_ghi import (
     BinhLuanMoiIn,
     DatTatBinhLuanIn,
     DongSoIn,
+    LenhIn,
     LuuTruMachIn,
     MachMoiIn,
     MocMoiIn,
@@ -126,6 +131,10 @@ def _mach_hien(mach_id: int, user=None):
     Mạch riêng tư (`rieng_tu=True`) hoặc mạch đã lưu trữ (`archived_at IS NOT NULL`):
     chỉ tác giả hoặc staff xem được.
     """
+    # Chạm `user` (tức session) TRƯỚC khi truy vấn, vô điều kiện: `SessionMiddleware` chỉ thêm
+    # `Vary: Cookie` khi session bị đọc. Đọc nó sau `if mach is None` thì id riêng tư có
+    # `Vary` còn id không tồn tại thì không — một cái dò id qua header.
+    da_auth = user is not None and getattr(user, "is_authenticated", False)
     mach = (
         Mach.objects.filter(pk=mach_id, hidden_at__isnull=True)
         .select_related("sub", "author")
@@ -133,7 +142,6 @@ def _mach_hien(mach_id: int, user=None):
     )
     if mach is None:
         return None
-    da_auth = user is not None and getattr(user, "is_authenticated", False)
     la_tac_gia = da_auth and user.pk == mach.author_id
     la_staff = da_auth and getattr(user, "is_staff", False)
     if mach.rieng_tu:
@@ -556,6 +564,20 @@ def figures_ra_dict(figures) -> list[dict] | None:
     return [{"label": f.label, "value": f.value} for f in figures]
 
 
+def lenh_vao(lenh: LenhIn | None) -> Lenh | None:
+    """Schema vào → `core.lenh.Lenh` (luật miền do `tao_mach` kiểm, không phải ở đây)."""
+    if lenh is None:
+        return None
+    return Lenh(
+        chieu=lenh.chieu,
+        ma=lenh.ma,
+        gia_vao=lenh.gia_vao,
+        sl=lenh.sl,
+        tp=lenh.tp,
+        nhoi=lenh.nhoi,
+    )
+
+
 @router.post(
     "/machs",
     response={
@@ -587,8 +609,23 @@ def tao_mach_api(request, du_lieu: MachMoiIn):
     `settings.HAN_MUC_MACH_MOI_USER_NGAY`) ⇒ 429 `qua_han_muc_mach` kèm `thu_lai_tu` =
     nửa đêm giờ VN kế tiếp. Ranh giới là nửa đêm VN, không phải 24 giờ trượt — cùng luật
     với hạn mức mốc, xem `core/han_muc.py`.
+
+    **`loai_mach`** (`nhat_ky` | `bai_viet` | `thao_luan`; KHÔNG phải `loai` — đó là chip
+    của mốc): không gửi ⇒ `core/ghi.py::tao_mach` phân giải theo tác giả (tài khoản đội
+    `la_tai_khoan_doi` → `bai_viet`, còn lại → `nhat_ky`; `thao_luan` không bao giờ là
+    mặc định). Cổng ở `api/quyen.py::duoc_chon_loai_mach`: `bai_viet` chỉ tài khoản có cờ;
+    `thao_luan` tài khoản có cờ hoặc `is_staff`; người không đủ quyền ⇒ 403
+    `loai_mach_khong_duoc_phep` — không bỏ qua im lặng, và không có `Mach` nào được tạo.
+    Giá trị ngoài ba loại ⇒ 400 `tham_so_khong_hop_le` (schema chặn).
     """
     kiem_occurred_at(du_lieu.occurred_at)
+    if not duoc_chon_loai_mach(request.user, du_lieu.loai_mach):
+        raise LoiGhi(
+            403,
+            LOAI_MACH_KHONG_DUOC_PHEP,
+            "Loại \"bài viết\" chỉ dành cho tài khoản của gikky; "
+            "\"chủ đề thảo luận\" dành cho tài khoản của gikky và mod.",
+        )
     sub = Sub.objects.filter(slug=du_lieu.sub).first()
     if sub is None:
         raise LoiGhi(404, SUB_KHONG_TON_TAI, f"Không có chuyên mục {du_lieu.sub!r}.")
@@ -605,19 +642,26 @@ def tao_mach_api(request, du_lieu: MachMoiIn):
         )
 
     with transaction.atomic():
-        mach, moc = tao_mach(
-            sub=sub,
-            author=request.user,
-            title=du_lieu.title.strip(),
-            body=du_lieu.body,
-            occurred_at=du_lieu.occurred_at,
-            loai=du_lieu.loai,
-            question_for_crowd=du_lieu.question_for_crowd,
-            figures=figures_ra_dict(du_lieu.figures),
-            tat_binh_luan=du_lieu.tat_binh_luan,
-            truong_phai=du_lieu.truong_phai,
-            rieng_tu=du_lieu.rieng_tu,
-        )
+        try:
+            mach, moc = tao_mach(
+                sub=sub,
+                author=request.user,
+                title=du_lieu.title.strip(),
+                body=du_lieu.body,
+                occurred_at=du_lieu.occurred_at,
+                loai=du_lieu.loai,
+                question_for_crowd=du_lieu.question_for_crowd,
+                figures=figures_ra_dict(du_lieu.figures),
+                tat_binh_luan=du_lieu.tat_binh_luan,
+                truong_phai=du_lieu.truong_phai,
+                rieng_tu=du_lieu.rieng_tu,
+                loai_mach=du_lieu.loai_mach,
+                lenh=lenh_vao(du_lieu.lenh),
+            )
+        except LoiModel as e:
+            # `tao_mach` kiểm luật miền TRƯỚC khi ghi hàng nào (vd `thao_luan` + riêng tư),
+            # nên ném ở đây là chưa có gì để rollback; vẫn nằm trong `atomic()` cho chắc.
+            raise LoiGhi(400, DU_LIEU_KHONG_HOP_LE, "; ".join(e.messages)) from e
         tu_upvote(target=moc)
         # Trong CÙNG transaction, sau khi `Mach` đã có hàng: `INSERT core_notification`
         # lấy `FOR KEY SHARE` trên `core_user`, tức cạnh `Mach → User` mà `core/ghi.py`
@@ -664,7 +708,7 @@ def noi_moc(request, mach_id: int, du_lieu: MocMoiIn):
     chính mình (PLAN 5.7).
     """
     kiem_occurred_at(du_lieu.occurred_at)
-    mach = nap_mach(mach_id)
+    mach = nap_mach(mach_id, user=request.user)
     doi_chu_so_huu(request.user, mach.author_id, "mạch")
     doi_mach_tuong_tac_duoc(mach)
     if mach.status == Mach.TrangThai.DONG:
@@ -786,7 +830,7 @@ def viet_binh_luan(request, mach_id: int, du_lieu: BinhLuanMoiIn):
     im lặng cho cả người viết thật lẫn người đọc, và nó mâu thuẫn với nguyên tắc "lý do
     phải ĐÚNG" mà repo áp cho mọi nút bị khoá. Lệch với chữ của PLAN, ghi ra để thấy.
     """
-    mach = nap_mach(mach_id)
+    mach = nap_mach(mach_id, user=request.user)
     doi_mach_tuong_tac_duoc(mach)
     if mach.tat_binh_luan:
         raise LoiGhi(
@@ -882,6 +926,10 @@ def viet_binh_luan(request, mach_id: int, du_lieu: BinhLuanMoiIn):
 def dong_so_mach(request, mach_id: int, du_lieu: DongSoIn):
     """Đóng sổ — PLAN 5.1. **Quyền: CHỈ tác giả mạch** (403 cho người khác).
 
+    Ngoại lệ DUY NHẤT: mạch `thao_luan` (chủ đề của gikky chung) — tác giả hoặc `is_staff`
+    đều đóng được (`api/quyen.py::doi_nguoi_dong_so_duoc`); người khác tác giả bấm thì để lại
+    `AuditLog`.
+
     `ket_qua` là một dòng tự do ≤40 ký tự ("+18.2% · 163 ngày"), hiện ở banner mặt CẶN và
     OG card. **Thuần hiển thị** — server không validate ngữ nghĩa, cùng triết lý với
     `figures`. Không nhập ⇒ `null`, banner ẩn phần đó.
@@ -890,15 +938,17 @@ def dong_so_mach(request, mach_id: int, du_lieu: DongSoIn):
     lần hai sẽ ghi đè `closed_at`, và cái đó **dời hạn 7 ngày mở lại** — tức một cách vô
     hạn hoá cái hạn đó bằng cách bấm hai lần.
     """
-    mach = nap_mach(mach_id)
-    doi_chu_so_huu(request.user, mach.author_id, "mạch")
+    mach = nap_mach(mach_id, user=request.user)
+    doi_nguoi_dong_so_duoc(request.user, mach)
     doi_mach_tuong_tac_duoc(mach)
     if mach.status == Mach.TrangThai.DONG:
         raise LoiGhi(409, MACH_DA_DONG, "Mạch này đã đóng sổ rồi.")
-    mach = dong_so(mach=mach, ket_qua=du_lieu.ket_qua, bai_hoc=du_lieu.bai_hoc)
+    mach = dong_so(
+        mach=mach, ket_qua=du_lieu.ket_qua, bai_hoc=du_lieu.bai_hoc, boi=request.user
+    )
     # Đóng sổ lật mặt BÃO → CẶN và đổi banner — sự kiện CÓ signal, PLAN 8.4 điểm 2.
     lam_moi_mach(mach)
-    return mach_chi_tiet_ra(nap_mach(mach.pk))
+    return mach_chi_tiet_ra(nap_mach(mach.pk, user=request.user))
 
 
 @router.post(
@@ -910,14 +960,21 @@ def dong_so_mach(request, mach_id: int, du_lieu: DongSoIn):
 )
 def cong_khai_mach_api(request, mach_id: int):
     """Công khai một mạch riêng tư. **Quyền: CHỈ tác giả mạch**."""
-    mach = nap_mach(mach_id)
+    mach = nap_mach(mach_id, user=request.user)
     doi_chu_so_huu(request.user, mach.author_id, "mạch")
     doi_mach_tuong_tac_duoc(mach)
     if mach.rieng_tu:
-        mach = cong_khai_mach(mach=mach)
-        bao_mach_moi(mach)
-        lam_moi_mach(mach)
-    return mach_chi_tiet_ra(nap_mach(mach.pk))
+        # MỘT transaction cho cả lật cờ + chuông + làm mới cache: `bao_mach_moi` ném lỗi thì
+        # mạch phải về riêng tư (rollback), không để lại trạng thái "đã công khai mà chưa
+        # báo" — bấm lại sẽ thấy `rieng_tu = False`, không báo và không làm mới cache nữa.
+        # `lam_moi_mach` tự bọc `on_commit` nên lời gọi HTTP chỉ đi sau khi commit. Thứ tự
+        # khoá: `Mach` (trong `cong_khai_mach`) rồi `Notification` (cạnh Mach → User đã
+        # khai ở `core/thong_bao.py`).
+        with transaction.atomic():
+            mach = cong_khai_mach(mach=mach)
+            bao_mach_moi(mach)
+            lam_moi_mach(mach)
+    return mach_chi_tiet_ra(nap_mach(mach.pk, user=request.user))
 
 
 @router.post(
@@ -929,7 +986,7 @@ def cong_khai_mach_api(request, mach_id: int):
     auth=dang_nhap,
 )
 def luu_tru_mach_api(request, mach_id: int, du_lieu: LuuTruMachIn):
-    mach = nap_mach(mach_id)
+    mach = nap_mach(mach_id, user=request.user)
     la_tac_gia = request.user.pk == mach.author_id
     la_staff = getattr(request.user, "is_staff", False)
     if not (la_tac_gia or la_staff):
@@ -958,7 +1015,8 @@ def luu_tru_mach_api(request, mach_id: int, du_lieu: LuuTruMachIn):
 def mo_lai_mach(request, mach_id: int):
     """Mở lại mạch đã đóng sổ — **trong 7 ngày**, sau đó nút biến mất (PLAN 5.1).
 
-    **Quyền: CHỈ tác giả mạch.** Quá hạn ⇒ 409 `het_han_mo_lai`; mạch đang mở ⇒ 409
+    **Quyền: CHỈ tác giả mạch** — trừ mạch `thao_luan`, nơi `is_staff` cũng được (như
+    `dong_so_mach`). Quá hạn ⇒ 409 `het_han_mo_lai`; mạch đang mở ⇒ 409
     `mach_dang_mo`.
 
     Hạn tính từ `closed_at`, và nó là hạn THẬT chứ không phải gợi ý UI: một cuốn sổ mở
@@ -967,8 +1025,8 @@ def mo_lai_mach(request, mach_id: int):
 
     `ket_qua` **bị xoá theo** — xem `core/ghi.py::mo_lai`.
     """
-    mach = nap_mach(mach_id)
-    doi_chu_so_huu(request.user, mach.author_id, "mạch")
+    mach = nap_mach(mach_id, user=request.user)
+    doi_nguoi_dong_so_duoc(request.user, mach)
     doi_mach_tuong_tac_duoc(mach)
     if mach.status != Mach.TrangThai.DONG:
         raise LoiGhi(409, MACH_DANG_MO, "Mạch này đang mở, không có gì để mở lại.")
@@ -980,9 +1038,9 @@ def mo_lai_mach(request, mach_id: int):
             HET_HAN_MO_LAI,
             f"Quá {NGAY_MO_LAI} ngày kể từ khi đóng sổ — mạch này không mở lại được nữa.",
         )
-    mach = mo_lai(mach=mach)
+    mach = mo_lai(mach=mach, boi=request.user)
     lam_moi_mach(mach)
-    return mach_chi_tiet_ra(nap_mach(mach.pk))
+    return mach_chi_tiet_ra(nap_mach(mach.pk, user=request.user))
 
 
 @router.post(
@@ -998,9 +1056,9 @@ def tat_binh_luan_mach(request, mach_id: int, du_lieu: DatTatBinhLuanIn):
     **Quyền: CHỈ tác giả mạch** (403 `khong_phai_chu`).
     Mạch bị mod khoá ⇒ 403 `mach_bi_khoa` (không được mở hay tắt khi mod đã khoá).
     """
-    mach = nap_mach(mach_id)
+    mach = nap_mach(mach_id, user=request.user)
     doi_chu_so_huu(request.user, mach.author_id, "mạch")
     doi_mach_tuong_tac_duoc(mach)
     dat_tat_binh_luan(mach=mach, tat=du_lieu.tat)
     lam_moi_mach(mach)
-    return mach_chi_tiet_ra(nap_mach(mach.pk))
+    return mach_chi_tiet_ra(nap_mach(mach.pk, user=request.user))

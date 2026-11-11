@@ -4,7 +4,13 @@ import type { MachTomTatOut } from "@gikky/api-client";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { docFeedOTrinhDuyet, type KhoangFeed, type TabFeed } from "@/lib/api";
+import {
+  docFeedOTrinhDuyet,
+  type KhoangFeed,
+  type LoaiMach,
+  type TabFeed,
+  type TrangThaiFeed,
+} from "@/lib/api";
 
 import css from "./feed.module.css";
 import { TheMach } from "./the-mach";
@@ -59,6 +65,8 @@ export function CuonVoHan({
   khoang,
   sub,
   truongPhai,
+  loaiMach,
+  trangThai,
 }: {
   /** `cursor_ke_tiep` của trang server render. `null` = hết bài, component không render gì. */
   cursorDau: string | null;
@@ -66,10 +74,18 @@ export function CuonVoHan({
   href: string;
   tab: TabFeed;
   khoang: KhoangFeed;
-  /** Có mặt ở `/s/<sub>`, vắng ở `/`. */
+  /** Có mặt ở `/s/<sub>`, vắng ở `/`. Cũng là công tắc nhãn loại trên thẻ nạp thêm: trang sub
+   * bày nhãn ở trang 1 (`Feed`), nên trang 2 trở đi PHẢI có nhãn y như vậy — nếu không danh
+   * sách đổi hình dạng giữa chừng. Suy từ `sub` thay vì thêm prop để `/` không đổi payload. */
   sub?: string;
   /** Bộ lọc trường phái giao dịch (nếu có). */
   truongPhai?: string;
+  /** Lọc theo loại mạch (`?loai_mach=`): trang 2 trở đi PHẢI cùng loại với trang 1, nếu không
+   * cuộn vô hạn nối bài của loại khác vào một feed đang ghi chip "Loại: Nhật ký". */
+  loaiMach?: LoaiMach;
+  /** Lọc trạng thái sổ (`?trang_thai=`): trang 2 trở đi PHẢI cùng bộ lọc với trang 1, như
+   * `loaiMach`. */
+  trangThai?: TrangThaiFeed;
 }) {
   const [them, datThem] = useState<MachTomTatOut[]>([]);
   const [cursor, datCursor] = useState<string | null>(cursorDau);
@@ -90,7 +106,14 @@ export function CuonVoHan({
     if (dangTai.current || cursor === null) return;
     dangTai.current = true;
     try {
-      const trang = await docFeedOTrinhDuyet(tab, { sub, cursor, khoang, truong_phai: truongPhai });
+      const trang = await docFeedOTrinhDuyet(tab, {
+        sub,
+        cursor,
+        khoang,
+        truong_phai: truongPhai,
+        loai_mach: loaiMach,
+        trang_thai: trangThai,
+      });
       if (trang === null) {
         datLoi(true);
         return;
@@ -105,7 +128,7 @@ export function CuonVoHan({
     } finally {
       dangTai.current = false;
     }
-  }, [cursor, khoang, sub, tab, truongPhai]);
+  }, [cursor, khoang, loaiMach, sub, tab, trangThai, truongPhai]);
 
   useEffect(() => {
     const el = moc.current;
@@ -129,7 +152,7 @@ export function CuonVoHan({
       {them.length > 0 && (
         <ul className={css.danh_sach} data-testid="feed-them">
           {them.map((m) => (
-            <TheMach key={m.id} mach={m} />
+            <TheMach key={m.id} mach={m} hienNhanLoai={sub !== undefined} />
           ))}
         </ul>
       )}

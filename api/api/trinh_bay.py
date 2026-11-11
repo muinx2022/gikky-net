@@ -29,6 +29,7 @@ from django.db.models import Q
 from core.cau_hinh import doc_phut_tu_sua_binh_luan, moc_bat_dau_tu_sua
 from core.doc_noi_dung import DA_AN, Nut, doc_duoc, la_moc_chat_luong, trang_thai_noi_dung
 from core.ghi import NGAY_MO_LAI, PHUT_SUA_IM_LANG
+from core.lenh import chuoi_so, ty_le_rr
 from core.lam_sach_html import _src_cua_site, van_ban_thuan
 from core.models.binh_luan import Comment
 from core.models.dien_dan import Mach
@@ -42,11 +43,13 @@ from api.schemas import (
     AnhOut,
     BinhLuanOut,
     FigureOut,
+    LenhOut,
     MachTomTatOut,
     MocMoiNhatTomTatOut,
     MocOut,
     MocRevisionOut,
     NguoiDungTomTatOut,
+    SO_ANH_XEM_TRUOC,
     SpineOut,
     SubTomTatOut,
     TrichOut,
@@ -65,6 +68,28 @@ def nguoi_dung_ra(user) -> NguoiDungTomTatOut:
         username=user.username,
         display_name=user.display_name,
         avatar_url=url_thumb(user.avatar_khoa) if user.avatar_khoa else None,
+        # Cột sẵn trên hàng `User` đã nạp (`select_related`) — không thêm truy vấn.
+        la_bot=bool(user.la_bot),
+    )
+
+
+def lenh_ra(mach: Mach) -> LenhOut | None:
+    """Lệnh có cấu trúc của mạch (`Mach.lenh_*`), hoặc `None` khi không khai.
+
+    Chỉ đọc cột trên chính hàng `Mach` — không truy vấn, nên dùng được trong vòng lặp feed.
+    Phòng thủ như `figures_ra`: ba cột lõi là NULL-cùng-nhau (CHECK ở DB) nhưng một hàng nạp
+    tay thiếu cột nào cũng chỉ làm `lenh` biến mất, không làm cả trang 500.
+    """
+    if mach.lenh_chieu is None or mach.lenh_ma is None or mach.lenh_gia_vao is None:
+        return None
+    return LenhOut(
+        chieu=mach.lenh_chieu,
+        ma=mach.lenh_ma,
+        gia_vao=chuoi_so(mach.lenh_gia_vao),
+        sl=chuoi_so(mach.lenh_sl),
+        tp=chuoi_so(mach.lenh_tp),
+        nhoi=chuoi_so(mach.lenh_nhoi),
+        rr=ty_le_rr(mach.lenh_gia_vao, mach.lenh_sl, mach.lenh_tp),
     )
 
 
@@ -124,6 +149,7 @@ def mach_tom_tat_ra(
         ket_qua=mach.ket_qua,
         truong_phai=mach.truong_phai,
         rieng_tu=mach.rieng_tu,
+        loai_mach=mach.loai_mach,
         entry_count=mach.entry_count,
         comment_count=mach.comment_count,
         created_at=mach.created_at,
@@ -136,6 +162,7 @@ def mach_tom_tat_ra(
         moc_moi_nhat=moc_moi_nhat,
         view_count=getattr(mach, "view_count", 0),
         da_luu_tru=getattr(mach, "archived_at", None) is not None,
+        lenh=lenh_ra(mach),
     )
 
 
@@ -154,10 +181,46 @@ _RE_IMG_SRC = re.compile(r'<img\b[^>]*\bsrc=["\']([^"\']+)["\']', re.IGNORECASE)
 
 
 def _trich_anh_noi_dung(body: str) -> list[str]:
-    """Tìm mọi URL `src` của ảnh hợp lệ nhúng trong `body`. Chỉ nhận ảnh của site."""
+    """Tìm các URL `src` của ảnh hợp lệ nhúng trong `body`. Chỉ nhận ảnh của site.
+
+    **Khử trùng, giữ lần xuất hiện ĐẦU** (theo khoá lưu trữ, nên `?v=1` hay `#x` sau `src`
+    không làm một ảnh thành hai). Người gõ hay dán cùng một ảnh nhiều lần; không khử thì
+    `so_anh` đếm lặp, ba thumb của gallery cùng một URL và web vẽ "+N" cho ảnh không tồn tại."""
     if "<img" not in body.lower():
         return []
-    return [s for s in _RE_IMG_SRC.findall(body) if _src_cua_site(s)]
+    da_thay: set[str] = set()
+    ra: list[str] = []
+    for s in _RE_IMG_SRC.findall(body):
+        if not _src_cua_site(s):
+            continue
+        khoa = khoa_tu_src_anh(s) or s
+        if khoa in da_thay:
+            continue
+        da_thay.add(khoa)
+        ra.append(s)
+    return ra
+
+
+def _anh_nhung_ra(src: str, vi_tri: int, anh_nd_map: dict[str, AnhNoiDung]) -> AnhOut:
+    """Một ảnh `<img>` nhúng trong `body` → `AnhOut`. `nd` thiếu ⇒ `w`/`h` null (không 500).
+
+    `vi_tri` là thứ tự trong `body` (0 = ảnh đầu), đóng vai `position` của gallery."""
+    khoa = khoa_tu_src_anh(src)
+    nd = anh_nd_map.get(khoa) if khoa else None
+    w = nd.w if nd else None
+    h = nd.h if nd else None
+    wt, ht = _kich_thuoc_thumb_hoac_none(w, h)
+    return AnhOut(
+        id=nd.pk if nd else 0,
+        url=url_anh(khoa) if khoa else src,
+        url_thumb=url_thumb(khoa) if khoa else src,
+        w=w,
+        h=h,
+        w_thumb=wt,
+        h_thumb=ht,
+        position=vi_tri,
+        exif_taken_at=None,
+    )
 
 
 class DuLieuThe(NamedTuple):
@@ -175,7 +238,7 @@ def du_lieu_the(machs) -> dict[int, DuLieuThe]:
     được ngay (feed 2 → 4 truy vấn thay vì 2 → 3).
 
     Thứ tự ưu tiên xem trước:
-    1. Ảnh gallery mốc 1 (`MocAnh`);
+    1. Ảnh gallery mốc 1 (`MocAnh`) — ảnh đầu vào `anh`, ảnh 2..`SO_ANH_XEM_TRUOC` vào `anh_khac`;
     2. Ảnh nhúng trong nội dung mốc 1 (`<img src="...">` / `AnhNoiDung`);
     3. Trích đoạn văn bản thuần.
 
@@ -237,9 +300,13 @@ def du_lieu_the(machs) -> dict[int, DuLieuThe]:
             srcs = _trich_anh_noi_dung(m.body)
             if srcs:
                 anh_nd_theo_moc[m.pk] = srcs
-                khoa = khoa_tu_src_anh(srcs[0])
-                if khoa:
-                    khoas_can_tra.add(khoa)
+                # `SO_ANH_XEM_TRUOC` khoá đầu chứ không một: thẻ cần ảnh 1 cho `anh` và
+                # ảnh 2.. cho `anh_khac`. `srcs` đã khử trùng (`_trich_anh_noi_dung`) TRƯỚC
+                # khi cắt nên ảnh lặp không chiếm chỗ. Vẫn MỘT truy vấn `AnhNoiDung`.
+                for src in srcs[: SO_ANH_XEM_TRUOC]:
+                    khoa = khoa_tu_src_anh(src)
+                    if khoa:
+                        khoas_can_tra.add(khoa)
 
     anh_nd_map: dict[str, AnhNoiDung] = {}
     if khoas_can_tra:
@@ -277,27 +344,19 @@ def du_lieu_the(machs) -> dict[int, DuLieuThe]:
             continue
 
         anh_gallery = anh_theo_moc.get(m1.pk, [])
+        anh_khac: list[AnhOut] = []
         if anh_gallery:
             anh_out = anh_ra(anh_gallery[0])
+            anh_khac = [anh_ra(a) for a in anh_gallery[1:SO_ANH_XEM_TRUOC]]
             so_anh = len(anh_gallery)
         elif m1.pk in anh_nd_theo_moc:
             srcs = anh_nd_theo_moc[m1.pk]
-            khoa = khoa_tu_src_anh(srcs[0])
-            nd = anh_nd_map.get(khoa)
-            w = nd.w if nd else None
-            h = nd.h if nd else None
-            wt, ht = _kich_thuoc_thumb_hoac_none(w, h)
-            anh_out = AnhOut(
-                id=nd.pk if nd else 0,
-                url=url_anh(khoa) if khoa else srcs[0],
-                url_thumb=url_thumb(khoa) if khoa else srcs[0],
-                w=w,
-                h=h,
-                w_thumb=wt,
-                h_thumb=ht,
-                position=0,
-                exif_taken_at=None,
-            )
+            mang_theo = [
+                _anh_nhung_ra(src, vi_tri, anh_nd_map)
+                for vi_tri, src in enumerate(srcs[:SO_ANH_XEM_TRUOC])
+            ]
+            anh_out = mang_theo[0]
+            anh_khac = mang_theo[1:]
             so_anh = len(srcs)
         else:
             anh_out = None
@@ -308,6 +367,7 @@ def du_lieu_the(machs) -> dict[int, DuLieuThe]:
             xem_truoc=XemTruocOut(
                 trich=trich_van_ban(m1.body),
                 anh=anh_out,
+                anh_khac=anh_khac,
                 so_anh=so_anh,
             ),
             moc_moi_nhat=moc_moi_nhat,

@@ -65,17 +65,22 @@ test.describe("thanh dieu huong tren mobile va tablet (giong cafef)", () => {
     expect(tmCss).not.toMatch(/@media\s*\(min-width:\s*961px\)[\s\S]*?\.hang_tren\s*\{[\s\S]*?position:\s*sticky/);
   });
 
-  test("khung-hai-cot.module.css & feed.module.css: .khung desktop co padding 0 24px (khong dat padding-bottom day rail_trai), .chinh dat padding 16px 0 56px", () => {
+  test("khung-hai-cot.module.css: .khung desktop co padding 0 24px (khong dat padding-bottom day rail), .chinh dat padding 16px 0 56px; feed.module.css KHONG con luoi rieng", () => {
+    // Hai cột toàn site (2026-11-10): lưới chỉ còn MỘT bản ở `khung-hai-cot.module.css`. Trước
+    // đó vòng lặp này kiểm cả `feed.module.css` vì `Feed` có lưới ba cột riêng; nay file ấy
+    // không được mọc lại `.khung` / `.chinh` / `.rail` (ba nguồn sự thật = cột nhảy ngang).
     const khungCss = boChuThichCss(readFileSync(KHUNG_HAI_COT_CSS, "utf8"));
     const feedCss = boChuThichCss(readFileSync(FEED_CSS, "utf8"));
 
-    for (const css of [khungCss, feedCss]) {
-      // .khung desktop không đặt padding-bottom để tránh đẩy .rail_trai khi cuộn tới cuối bài
-      expect(css).toMatch(/\.khung\s*\{[\s\S]*?padding:\s*0 24px;/);
-      expect(css).not.toMatch(/\.khung\s*\{[\s\S]*?padding:\s*0 24px 56px;/);
-      // .chinh desktop nhận padding-bottom 56px
-      expect(css).toMatch(/\.chinh\s*\{[\s\S]*?padding:\s*16px 0 56px;/);
-    }
+    // .khung desktop không đặt padding-bottom để tránh đẩy rail khi cuộn tới cuối bài
+    expect(khungCss).toMatch(/\.khung\s*\{[\s\S]*?padding:\s*0 24px;/);
+    expect(khungCss).not.toMatch(/\.khung\s*\{[\s\S]*?padding:\s*0 24px 56px;/);
+    // .chinh desktop nhận padding-bottom 56px
+    expect(khungCss).toMatch(/\.chinh\s*\{[\s\S]*?padding:\s*16px 0 56px;/);
+
+    expect(feedCss).not.toMatch(/\.khung\s*\{/);
+    expect(feedCss).not.toMatch(/\.chinh\s*\{/);
+    expect(feedCss).not.toMatch(/\.rail(_trai)?\s*[{,]/);
   });
 
   test("globals.css: --cao-chrome duoc cap nhat khop chieu cao that cua chrome tren desktop (61px)", () => {

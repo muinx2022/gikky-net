@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import {
+  quanTriLietKeMach,
   quanTriLietKeSub,
   quanTriTaiAnhMoc,
   quanTriTaoMachHenGio,
@@ -11,7 +12,20 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import { GOC_API, headerGhi, moTaLoi } from "../lib/api";
+import {
+  LOC_CHU_DE_DANG_MO,
+  canKiemChuDeMo,
+  dinhDangGioHen,
+  quyetDinhCanhBaoChuDe,
+  type KetQuaDanhSachChuDe,
+  type QuyetDinhCanhBao,
+} from "../lib/canh-bao-chu-de";
 import { useHanhDong } from "../lib/hanh-dong";
+import {
+  LUA_CHON_LOAI_MACH,
+  truongLoaiMach,
+  type LuaChonLoaiMach,
+} from "../lib/loai-mach";
 import { TAC_GIA_DOI, TAC_GIA_MAC_DINH } from "../lib/tac-gia-doi";
 import {
   bayGioDatetimeLocalVN,
@@ -46,6 +60,7 @@ export function FormDangBai({
   const [body, datBody] = useState("");
   const [ngay, datNgay] = useState("");
   const [loai, datLoai] = useState("");
+  const [loai_mach, datLoaiMach] = useState<LuaChonLoaiMach>("");
   const [cau_moi, datCauMoi] = useState("");
   const [figures, datFigures] = useState<Figure[]>([]);
   const [anhs, datAnhs] = useState<File[]>([]);
@@ -55,6 +70,13 @@ export function FormDangBai({
 
   const [nhac, datNhac] = useState<string | null>(null);
   const [da_tao, datDaTao] = useState<DaTao | null>(null);
+
+  // Cảnh báo "đang có chủ đề đang mở" — THÔNG TIN, không phải cổng (xem `lib/canh-bao-chu-de.ts`).
+  const [dang_kiem, datDangKiem] = useState(false);
+  const [canh_bao, datCanhBao] = useState<Extract<QuyetDinhCanhBao, { canh_bao: true }> | null>(
+    null,
+  );
+  const [khong_kiem_duoc, datKhongKiemDuoc] = useState(false);
 
   const nap = useCallback(async () => {
     datLoiNap(null);
@@ -78,13 +100,15 @@ export function FormDangBai({
   const { dang_chay, loi, het_phien, chay } = useHanhDong(khongLamGi);
 
   const du = sub !== "" && title.trim() !== "" && body.trim() !== "";
-  const khoa = dang_chay || da_tao !== null;
+  const khoa = dang_chay || dang_kiem || canh_bao !== null || da_tao !== null;
 
   const bay_gio_vn = bayGioDatetimeLocalVN();
   const gio_qua_khu = hen && o_gio !== "" && o_gio <= bay_gio_vn;
 
-  async function gui() {
+  // `da_xac_nhan` = mod vừa bấm "Vẫn tạo chủ đề": bỏ qua bước kiểm, đăng luôn.
+  async function gui(da_xac_nhan = false) {
     datNhac(null);
+    datKhongKiemDuoc(false);
     if (!du) {
       datNhac("Cần chuyên mục, tiêu đề và thân bài.");
       return;
@@ -108,6 +132,38 @@ export function FormDangBai({
       }
     }
 
+    if (!da_xac_nhan && canKiemChuDeMo(loai_mach)) {
+      // Hỏi lúc BẤM ĐĂNG (không phải lúc chọn ô) để danh sách luôn tươi. Mọi lỗi — HTTP lẫn
+      // mạng — chỉ biến thành "không kiểm được": cảnh báo không bao giờ được chặn việc tạo.
+      datDangKiem(true);
+      let ket_qua: KetQuaDanhSachChuDe;
+      try {
+        const ds = await quanTriLietKeMach({
+          baseUrl: GOC_API,
+          cache: "no-store",
+          query: LOC_CHU_DE_DANG_MO,
+        });
+        ket_qua =
+          ds.error !== undefined || ds.data === undefined
+            ? { ok: false }
+            : { ok: true, items: ds.data.items, tong: ds.data.tong };
+      } catch {
+        ket_qua = { ok: false };
+      }
+      datDangKiem(false);
+      const qd = quyetDinhCanhBaoChuDe(
+        loai_mach,
+        ket_qua,
+        published_at !== null && !gio_qua_khu ? dinhDangGioHen(o_gio) : null,
+      );
+      datKhongKiemDuoc(qd.khong_kiem_duoc);
+      if (qd.canh_bao) {
+        datCanhBao(qd);
+        return;
+      }
+    }
+    datCanhBao(null);
+
     await chay(async () => {
       const kq = await quanTriTaoMachHenGio({
         baseUrl: GOC_API,
@@ -122,6 +178,9 @@ export function FormDangBai({
           question_for_crowd: cau_moi === "" ? null : cau_moi,
           figures: cap.length === 0 ? null : cap,
           published_at,
+          // "Theo tác giả" (mặc định) ⇒ KHÔNG có khoá `loai_mach` trong request; server tự phân
+          // giải theo tác giả. Chỉ gửi khi mod chọn tường minh một loại.
+          ...truongLoaiMach(loai_mach),
         },
       });
 
@@ -341,6 +400,30 @@ export function FormDangBai({
         </div>
 
         <div>
+          <label className="mb-1 block text-sm font-medium" htmlFor="o-loai-mach">
+            Loại mạch
+          </label>
+          <select
+            id="o-loai-mach"
+            className="o-nhap cursor-pointer"
+            value={loai_mach}
+            disabled={khoa}
+            onChange={(e) => datLoaiMach(e.target.value as LuaChonLoaiMach)}
+            data-testid="o-loai-mach"
+          >
+            {LUA_CHON_LOAI_MACH.map((l) => (
+              <option key={l.gia_tri} value={l.gia_tri}>
+                {l.nhan}
+              </option>
+            ))}
+          </select>
+          <p className="mono mt-1 text-xs text-muc-mo">
+            Mặc định theo tác giả: tài khoản đội đăng thì là bài viết. Chọn &quot;Chủ đề thảo
+            luận&quot; để mở một chủ đề cả cộng đồng cùng bàn trong tuần.
+          </p>
+        </div>
+
+        <div>
           <label className="mb-1 block text-sm font-medium" htmlFor="o-loai">
             Loại <span className="text-muc-mo font-normal">(tuỳ chọn)</span>
           </label>
@@ -464,26 +547,69 @@ export function FormDangBai({
             </p>
           )}
 
-          <div className="flex justify-end gap-2 border-t border-vien pt-4">
-            <button type="button" className="nut" onClick={dong} disabled={dang_chay}>
-              Huỷ
-            </button>
-            <button
-              type="submit"
-              className="nut nut-chinh"
-              disabled={khoa || !du}
-              title={
-                da_tao !== null
-                  ? "Bài đã tạo — bấm lại là một bài thứ hai"
-                  : du
-                    ? undefined
-                    : "Cần chuyên mục, tiêu đề và thân bài"
-              }
-              data-testid="nut-dang-bai-admin"
+          {khong_kiem_duoc && (
+            <p className="text-xs text-muc-mo" data-testid="khong-kiem-duoc-chu-de-mo">
+              Không kiểm được chủ đề đang mở — bài vẫn được đăng như bình thường.
+            </p>
+          )}
+
+          {canh_bao !== null ? (
+            <div
+              className="space-y-3 border-t border-vien pt-4"
+              role="alert"
+              data-testid="canh-bao-chu-de-dang-mo"
             >
-              {dang_chay ? "Đang gửi…" : hen ? "Hẹn giờ đăng" : "Đăng ngay"}
-            </button>
-          </div>
+              <p className="break-words text-sm text-chu-y">{canh_bao.thong_diep}</p>
+              {canh_bao.dong_gio !== null && (
+                <p className="text-xs text-muc-mo">{canh_bao.dong_gio}</p>
+              )}
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  className="nut"
+                  onClick={() => datCanhBao(null)}
+                  data-testid="nut-huy-canh-bao-chu-de"
+                >
+                  Huỷ
+                </button>
+                <button
+                  type="button"
+                  className="nut nut-chinh"
+                  onClick={() => void gui(true)}
+                  data-testid="nut-van-tao-chu-de"
+                >
+                  Vẫn tạo chủ đề
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex justify-end gap-2 border-t border-vien pt-4">
+              <button type="button" className="nut" onClick={dong} disabled={dang_chay || dang_kiem}>
+                Huỷ
+              </button>
+              <button
+                type="submit"
+                className="nut nut-chinh"
+                disabled={khoa || !du}
+                title={
+                  da_tao !== null
+                    ? "Bài đã tạo — bấm lại là một bài thứ hai"
+                    : du
+                      ? undefined
+                      : "Cần chuyên mục, tiêu đề và thân bài"
+                }
+                data-testid="nut-dang-bai-admin"
+              >
+                {dang_kiem
+                  ? "Đang kiểm tra…"
+                  : dang_chay
+                    ? "Đang gửi…"
+                    : hen
+                      ? "Hẹn giờ đăng"
+                      : "Đăng ngay"}
+              </button>
+            </div>
+          )}
         </div>
       </form>
     </div>

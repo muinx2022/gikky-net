@@ -922,6 +922,86 @@ export type KhanDaiOut = {
 };
 
 /**
+ * LenhIn
+ *
+ * Lệnh có cấu trúc của nhật ký — `MachMoiIn.lenh` (`plans/2026-11-11-homepage-v2-giao-dien-moi.md` §6.1).
+ *
+ * Schema chỉ chặn HÌNH DẠNG (kiểu, độ dài, số dương, vừa cột `Decimal(20, 8)`). Luật miền —
+ * MUA ⇒ `sl < vào < tp`, BÁN ⇒ `tp < vào < sl`, chỉ nhận cho nhật ký — nằm ở
+ * `core/lenh.py::kiem_lenh` và `core/ghi.py::tao_mach`, nơi mọi cửa ghi đi qua. `ma` gửi
+ * kiểu nào cũng được, server lưu IN HOA. Số gửi dạng chuỗi hoặc số đều nhận; nên gửi chuỗi
+ * để không mất độ chính xác khi đi qua `float` của JSON.
+ */
+export type LenhIn = {
+    /**
+     * Chieu
+     */
+    chieu: 'mua' | 'ban';
+    /**
+     * Gia Vao
+     */
+    gia_vao: number | string;
+    /**
+     * Ma
+     */
+    ma: string;
+    /**
+     * Nhoi
+     */
+    nhoi?: number | string | null;
+    /**
+     * Sl
+     */
+    sl?: number | string | null;
+    /**
+     * Tp
+     */
+    tp?: number | string | null;
+};
+
+/**
+ * LenhOut
+ *
+ * Lệnh có cấu trúc của nhật ký (`Mach.lenh_*`) — thẻ nhật ký trang chủ vẽ dải
+ * "MUA HPG · Entry · SL · TP" từ đây, KHÔNG parse tiêu đề.
+ *
+ * Số là **chuỗi** thập phân đã bỏ số 0 thừa và không bao giờ ở dạng mũ ("10", "0.00012",
+ * "33.2") — để web hiện nguyên văn, không phải đoán số chữ số lẻ. `rr` = |tp − vào| /
+ * |vào − sl| làm tròn 1 chữ số, chỉ khi có cả `sl` lẫn `tp`. Thuộc tính của MẠCH như
+ * `title`: bia mộ / ẩn mốc 1 không làm nó biến mất.
+ */
+export type LenhOut = {
+    /**
+     * Chieu
+     */
+    chieu: 'mua' | 'ban';
+    /**
+     * Gia Vao
+     */
+    gia_vao: string;
+    /**
+     * Ma
+     */
+    ma: string;
+    /**
+     * Nhoi
+     */
+    nhoi?: string | null;
+    /**
+     * Rr
+     */
+    rr?: string | null;
+    /**
+     * Sl
+     */
+    sl?: string | null;
+    /**
+     * Tp
+     */
+    tp?: string | null;
+};
+
+/**
  * LoiOut
  *
  * `{detail, code}` — PLAN mục 7.
@@ -1050,6 +1130,11 @@ export type MachChiTietOut = {
      * Last Entry At
      */
     last_entry_at: string;
+    lenh?: LenhOut | null;
+    /**
+     * Loai Mach
+     */
+    loai_mach: 'nhat_ky' | 'bai_viet' | 'thao_luan';
     /**
      * Locked
      */
@@ -1171,6 +1256,9 @@ export type MachCuaToiOut = {
  * Đăng bài — `POST /machs`. Bài gốc **chính là mốc 1**, nên nó kế thừa `MocMoiIn`.
  *
  * Không có trường `body` trên `Mach` (PLAN 5.1): `body` ở đây là thân của mốc 1.
+ *
+ * `loai_mach` (KHÔNG phải `loai` — đó là chip của mốc): không gửi ⇒ server phân giải theo
+ * tác giả; người thường gửi `bai_viet` hoặc `thao_luan` ⇒ 403. Xem `api/machs.py::tao_mach_api`.
  */
 export type MachMoiIn = {
     /**
@@ -1181,10 +1269,15 @@ export type MachMoiIn = {
      * Figures
      */
     figures?: Array<FigureIn> | null;
+    lenh?: LenhIn | null;
     /**
      * Loai
      */
     loai?: string | null;
+    /**
+     * Loai Mach
+     */
+    loai_mach?: 'nhat_ky' | 'bai_viet' | 'thao_luan' | null;
     /**
      * Occurred At
      */
@@ -1275,6 +1368,11 @@ export type MachTomTatOut = {
      * Last Entry At
      */
     last_entry_at: string;
+    lenh?: LenhOut | null;
+    /**
+     * Loai Mach
+     */
+    loai_mach: 'nhat_ky' | 'bai_viet' | 'thao_luan';
     /**
      * Moc 1 Id
      */
@@ -1601,6 +1699,10 @@ export type NguoiDungTomTatOut = {
      * Display Name
      */
     display_name: string;
+    /**
+     * La Bot
+     */
+    la_bot?: boolean;
     /**
      * Username
      */
@@ -2025,6 +2127,10 @@ export type ToiOut = {
      */
     la_staff: boolean;
     /**
+     * La Tai Khoan Doi
+     */
+    la_tai_khoan_doi: boolean;
+    /**
      * Nhan Digest
      */
     nhan_digest: boolean;
@@ -2294,6 +2400,10 @@ export type VoteOut = {
 export type XemTruocOut = {
     anh: AnhOut | null;
     /**
+     * Anh Khac
+     */
+    anh_khac?: Array<AnhOut>;
+    /**
      * So Anh
      */
     so_anh: number;
@@ -2517,6 +2627,10 @@ export type LietKeFeedDangDienRaData = {
          */
         truong_phai?: string | null;
         /**
+         * Loai Mach
+         */
+        loai_mach?: 'nhat_ky' | 'bai_viet' | 'thao_luan' | null;
+        /**
          * Sort
          */
         sort?: 'tu_nhien' | 'nhieu_diem';
@@ -2571,6 +2685,14 @@ export type LietKeFeedMoiData = {
          */
         truong_phai?: string | null;
         /**
+         * Loai Mach
+         */
+        loai_mach?: 'nhat_ky' | 'bai_viet' | 'thao_luan' | null;
+        /**
+         * Trang Thai
+         */
+        trang_thai?: 'open' | 'closed' | null;
+        /**
          * Sort
          */
         sort?: 'tu_nhien' | 'nhieu_diem';
@@ -2611,6 +2733,36 @@ export type LietKeFeedMoiResponses = {
 };
 
 export type LietKeFeedMoiResponse = LietKeFeedMoiResponses[keyof LietKeFeedMoiResponses];
+
+export type LietKeNhatKyMoiTacGiaData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/feeds/nhat-ky-moi-tac-gia';
+};
+
+export type LietKeNhatKyMoiTacGiaErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+};
+
+export type LietKeNhatKyMoiTacGiaError = LietKeNhatKyMoiTacGiaErrors[keyof LietKeNhatKyMoiTacGiaErrors];
+
+export type LietKeNhatKyMoiTacGiaResponses = {
+    /**
+     * OK
+     */
+    200: FeedOut;
+};
+
+export type LietKeNhatKyMoiTacGiaResponse = LietKeNhatKyMoiTacGiaResponses[keyof LietKeNhatKyMoiTacGiaResponses];
 
 export type GetHealthData = {
     body?: never;

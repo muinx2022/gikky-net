@@ -78,8 +78,12 @@ def ve_bieu_do_bot_trader(
         df_plot["Date"] = pd.to_datetime(df_plot["Date"])
         df_plot.set_index("Date", inplace=True)
 
-    # Cắt 80 nến gần nhất để hiển thị trực quan, rõ ràng
-    df_slice = df_plot.iloc[-80:].copy()
+    # Số lượng nến hiển thị theo khung thời gian:
+    # - Khung D1 (Cổ phiếu VN): 180 nến (nếu dữ liệu < 180 thì lấy tối đa) để bao quát chu kỳ trung-dài hạn và MA 200
+    # - Khung H4 (Quốc tế): 160 nến (nếu dữ liệu < 160 thì lấy tối đa) để bao quát sóng trung hạn ~1.5 tháng
+    num_candles = 160 if timeframe == "H4" else 180
+    slice_len = min(len(df_plot), num_candles)
+    df_slice = df_plot.iloc[-slice_len:].copy()
 
     # Style Gikky Dark Obsidian
     mc = mpf.make_marketcolors(
@@ -161,7 +165,7 @@ def ve_bieu_do_bot_trader(
         style=s,
         addplot=addplots if addplots else None,
         volume=has_volume,
-        figsize=(14, 8),
+        figsize=(15, 8.5),
         hlines=dict(
             hlines=hlines,
             colors=hcolors,
@@ -200,7 +204,7 @@ def ve_bieu_do_bot_trader(
         ha="right", va="bottom", alpha=0.7
     )
 
-    # Chú thích các mốc giá theo decimals
+    # Chú thích các mốc giá theo decimals kèm box nền Dark Obsidian chống chìm nến
     if direction == "LONG":
         risk_pct = ((entry_price - stop_loss) / entry_price) * 100
         reward_pct = ((take_profit - entry_price) / entry_price) * 100
@@ -209,24 +213,26 @@ def ve_bieu_do_bot_trader(
         reward_pct = ((entry_price - take_profit) / entry_price) * 100
     rr = reward_pct / risk_pct if risk_pct > 0 else 0
 
-    ax_main.text(0.02, 0.95, f"Take Profit (TP): {take_profit:.{decimals}f} (+{reward_pct:.1f}% / {rr:.1f}R)", transform=ax_main.transAxes, color="#10b981", fontsize=10, fontweight="bold")
+    badge_props = dict(boxstyle="round,pad=0.25", facecolor="#14171d", edgecolor="#23272e", alpha=0.85)
+
+    ax_main.text(0.02, 0.95, f"Take Profit (TP): {take_profit:.{decimals}f} (+{reward_pct:.1f}% / {rr:.1f}R)", transform=ax_main.transAxes, color="#10b981", fontsize=10, fontweight="bold", bbox=badge_props)
     if pyramid_trigger:
-        ax_main.text(0.02, 0.90, f"Nhồi lệnh: {pyramid_trigger:.{decimals}f} (Gia tăng vị thế)", transform=ax_main.transAxes, color="#38bdf8", fontsize=10, fontweight="bold")
-        ax_main.text(0.02, 0.85, f"Entry ({dir_str}): {entry_price:.{decimals}f}", transform=ax_main.transAxes, color="#fbbf24", fontsize=10, fontweight="bold")
-        ax_main.text(0.02, 0.80, f"Stop Loss (SL): {stop_loss:.{decimals}f} (-{risk_pct:.1f}%)", transform=ax_main.transAxes, color="#f43f5e", fontsize=10, fontweight="bold")
+        ax_main.text(0.02, 0.90, f"Nhồi lệnh: {pyramid_trigger:.{decimals}f} (Gia tăng vị thế)", transform=ax_main.transAxes, color="#38bdf8", fontsize=10, fontweight="bold", bbox=badge_props)
+        ax_main.text(0.02, 0.85, f"Entry ({dir_str}): {entry_price:.{decimals}f}", transform=ax_main.transAxes, color="#fbbf24", fontsize=10, fontweight="bold", bbox=badge_props)
+        ax_main.text(0.02, 0.80, f"Stop Loss (SL): {stop_loss:.{decimals}f} (-{risk_pct:.1f}%)", transform=ax_main.transAxes, color="#f43f5e", fontsize=10, fontweight="bold", bbox=badge_props)
     else:
-        ax_main.text(0.02, 0.90, f"Entry ({dir_str}): {entry_price:.{decimals}f}", transform=ax_main.transAxes, color="#fbbf24", fontsize=10, fontweight="bold")
-        ax_main.text(0.02, 0.85, f"Stop Loss (SL): {stop_loss:.{decimals}f} (-{risk_pct:.1f}%)", transform=ax_main.transAxes, color="#f43f5e", fontsize=10, fontweight="bold")
+        ax_main.text(0.02, 0.90, f"Entry ({dir_str}): {entry_price:.{decimals}f}", transform=ax_main.transAxes, color="#fbbf24", fontsize=10, fontweight="bold", bbox=badge_props)
+        ax_main.text(0.02, 0.85, f"Stop Loss (SL): {stop_loss:.{decimals}f} (-{risk_pct:.1f}%)", transform=ax_main.transAxes, color="#f43f5e", fontsize=10, fontweight="bold", bbox=badge_props)
 
     # Chú giải kỹ thuật
     if strat == "ICHIMOKU":
-        ax_main.text(0.02, 0.75, "Tenkan-sen (Đỏ) | Kijun-sen (Xanh) | Mây Kumo", transform=ax_main.transAxes, color="#94a3b8", fontsize=10)
+        ax_main.text(0.02, 0.74 if pyramid_trigger else 0.78, "Tenkan-sen (Đỏ) | Kijun-sen (Xanh) | Mây Kumo", transform=ax_main.transAxes, color="#94a3b8", fontsize=10, bbox=badge_props)
     elif strat in ("MA_CROSS", "MA30_50_PULLBACK"):
-        ax_main.text(0.02, 0.75, "EMA 20 (Tím) | MA 30 (Vàng) | MA 50 (Xanh) | MA 200 (Cam)", transform=ax_main.transAxes, color="#94a3b8", fontsize=10)
+        ax_main.text(0.02, 0.74 if pyramid_trigger else 0.78, "EMA 20 (Tím) | MA 30 (Vàng) | MA 50 (Xanh) | MA 200 (Cam)", transform=ax_main.transAxes, color="#94a3b8", fontsize=10, bbox=badge_props)
     elif strat == "BB_SQUEEZE":
-        ax_main.text(0.02, 0.75, "Dải Bollinger Bands (20, 2) | MA 50 (Xanh)", transform=ax_main.transAxes, color="#94a3b8", fontsize=10)
+        ax_main.text(0.02, 0.74 if pyramid_trigger else 0.78, "Dải Bollinger Bands (20, 2) | MA 50 (Xanh)", transform=ax_main.transAxes, color="#94a3b8", fontsize=10, bbox=badge_props)
     else:
-        ax_main.text(0.02, 0.75, "Đường MA 200 ngày (Vàng) | MA 50 (Xanh)", transform=ax_main.transAxes, color="#f59e0b", fontsize=10)
+        ax_main.text(0.02, 0.74 if pyramid_trigger else 0.78, "Đường MA 200 ngày (Vàng) | MA 50 (Xanh)", transform=ax_main.transAxes, color="#f59e0b", fontsize=10, bbox=badge_props)
 
     fig.savefig(chart_file, dpi=150, bbox_inches="tight")
     plt.close(fig)

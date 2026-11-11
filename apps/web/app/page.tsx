@@ -2,16 +2,28 @@ import type { Metadata } from "next";
 
 import { Feed } from "@/components/feed";
 import { JsonLd } from "@/components/json-ld";
+import { KhoiBaiViet } from "@/components/khoi-bai-viet";
+import { VoKhungHaiCot } from "@/components/khung-hai-cot-vo";
+import { NutVeDauTrang } from "@/components/nut-ve-dau-trang";
 import { Sidebar } from "@/components/sidebar";
+import { SO_CHU_DE_TAI, SO_NHAT_KY_TAI, TrangChuV2 } from "@/components/trang-chu-v2";
 import {
+  docBinhLuanGoc,
   docCacSub,
   docFeed,
   docKhoang,
+  docLoaiMach,
+  docNhatKyMoiTacGia,
   docTab,
+  docTrangThai,
   type KhoangFeed,
+  type LoaiMach,
   type TabFeed,
+  type TrangThaiFeed,
 } from "@/lib/api";
+import { chonChuDeNoi } from "@/lib/chu-de";
 import { jsonLdWebSite } from "@/lib/json-ld";
+import { SO_BAI_VIET_TAI } from "@/lib/nhom-bai-viet";
 import { GIOI_THIEU, urlTuyetDoi } from "@/lib/site";
 
 // Xem ghi chú ở `app/m/[slugId]/page.tsx`: cơ chế cache của PLAN 8.4 là việc của Phase 3.
@@ -70,19 +82,115 @@ export const metadata: Metadata = {
 // `/luat` cũng cần nó, mà import từ file route này là kéo cả `docFeed`/`docCacSub` vào
 // cây module của đường thoát.
 
+// `<h1>` KHÔNG còn là chữ "gikky": tên hiệu đã nằm ở thanh trên cùng của mọi trang, nên in
+// lại nó ở đây vừa thừa vừa lấy mất dòng chữ có giá trị nhất của trang chủ đối với người
+// mới và với máy tìm kiếm. Nay nó nói **sản phẩm là gì** trong một câu; lede nói **trang này
+// liệt kê gì**. Phần "site vận hành ra sao" thuộc về `GIOI_THIEU` ở sidebar — xem docstring
+// của hằng ấy.
+//
+// ⚠ **Hai chuỗi này là SEO, không phải copy**: chúng giữ NGUYÊN chữ qua homepage v2, và
+// `e2e/seo-trang-chu.spec.ts` ghim chúng cùng với `metadata` ở trên. Đổi chữ là đổi thứ bot
+// đang đọc (GHI-CHU việc 11, "Ràng buộc SEO").
+const TIEU_DE = "Nhật ký giao dịch chứng khoán & Luận điểm thị trường";
+const LEDE =
+  "Ghi nhận nhận định trước khi có kết quả. Mọi mốc đều lưu vết thời gian thực và lịch sử minh bạch.";
+
+/** Có tham số nào của FEED CŨ trên URL không? Có ⇒ `Feed` cũ (nhưng trong khung hai cột);
+ * không ⇒ trang v2. Xét **sự có mặt của khoá**, không xét giá trị hợp lệ: `?cursor=rac`,
+ * `?tab=abc`, `?loai_mach=abc` đều phải ra feed cũ (và được quy về mặc định / bỏ qua ở
+ * `docTab`, `docLoaiMach`, `docFeed`), không phải trang v2 — mọi URL `/?tab=…&khoang=…&
+ * cursor=…` bot đã index vẫn trả đúng feed như cũ. Tham số lạ (`?utm_source=…`) thì không
+ * tính: nó không phải thứ của feed. */
+const KHOA_FEED_CU = [
+  "tab",
+  "khoang",
+  "cursor",
+  "truong_phai",
+  "loai_mach",
+  "trang_thai",
+] as const;
+
 export default async function TrangChu({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const q = await searchParams;
-  const tab = docTab(q.tab);
-  const khoang = docKhoang(q.khoang);
-  const cursor = Array.isArray(q.cursor) ? q.cursor[0] : q.cursor;
-  const truongPhai = typeof q.truong_phai === "string" ? q.truong_phai : undefined;
+  if (KHOA_FEED_CU.some((k) => q[k] !== undefined)) {
+    const tab = docTab(q.tab);
+    const khoang = docKhoang(q.khoang);
+    const cursor = Array.isArray(q.cursor) ? q.cursor[0] : q.cursor;
+    const truongPhai = typeof q.truong_phai === "string" ? q.truong_phai : undefined;
+    const loaiMach = docLoaiMach(q.loai_mach);
+    const trangThai = docTrangThai(q.trang_thai);
+    return (
+      <FeedDaNap
+        tab={tab}
+        khoang={khoang}
+        cursor={cursor}
+        truongPhai={truongPhai}
+        loaiMach={loaiMach}
+        trangThai={trangThai}
+      />
+    );
+  }
+  return <TrangChuMoi />;
+}
+
+/** Trang v2: các lời gọi API + danh sách chuyên mục chạy **song song** (`Promise.all`) — KHÔNG
+ * `<Suspense>`/`loading.tsx` (docstring dài ở trên đã đo là vỡ 48 bài). Mỗi lời gọi ném khi API
+ * hỏng cấu trúc, nên "chưa có nhật ký" chỉ được nói khi Django thật sự trả 0.
+ *
+ * - Nhật ký: endpoint RIÊNG, **mỗi tác giả một bài** (bài có `published_at` lớn nhất), tải
+ *   `SO_NHAT_KY_TAI` tác giả — 8 thẻ đầu vẽ ra, phần còn lại nuôi dải chân khối (xem
+ *   `lib/chan-khoi-nhat-ky.ts`). "Xem tất cả" đi tới feed `moi` không lọc.
+ * - Chủ đề + quan điểm nổi bật: lời gọi bình luận cần `id` của chủ đề được chọn
+ *   (`chonChuDeNoi`), nên nó nối đuôi lời gọi chủ đề BÊN TRONG một phần tử của `Promise.all`
+ *   — vẫn song song với các lời gọi khác, không thêm một vòng chờ ở ngoài.
+ * - Bài viết: MỘT lời gọi `SO_BAI_VIET_TAI` bài, chia nhóm ở web (`lib/nhom-bai-viet.ts`). */
+async function TrangChuMoi() {
+  const [nhat_ky, chu_de_va_quan_diem, bai_viet, cac_sub] = await Promise.all([
+    docNhatKyMoiTacGia(SO_NHAT_KY_TAI),
+    docFeed("moi", { limit: SO_CHU_DE_TAI, loai_mach: "thao_luan" }).then(async (chu_de) => {
+      const [chon] = chonChuDeNoi(chu_de.du_lieu.items);
+      return {
+        chu_de: chu_de.du_lieu,
+        binh_luan_goc: chon === undefined ? [] : await docBinhLuanGoc(chon.id),
+      };
+    }),
+    docFeed("moi", { limit: SO_BAI_VIET_TAI, loai_mach: "bai_viet" }),
+    docCacSub(),
+  ]);
 
   return (
-    <FeedDaNap tab={tab} khoang={khoang} cursor={cursor} truongPhai={truongPhai} />
+    <>
+      <JsonLd duLieu={jsonLdWebSite()} />
+      {/* Khung hai cột chứa dòng giới thiệu + chủ đề + nhật ký; section "Bài viết" đứng NGOÀI
+          khung (dưới cả rail) nên là anh em của nó. */}
+      <div data-testid="trang-chu-v2">
+        <VoKhungHaiCot
+          sidebar={
+            <Sidebar
+              gioiThieu={GIOI_THIEU}
+              cacSub={cac_sub}
+              khachTieuDe="Bắt đầu nhật ký của bạn"
+              khachMoTa="Có thể ghi riêng tư, công khai khi bạn muốn."
+            />
+          }
+        >
+          <TrangChuV2
+            tieuDe={TIEU_DE}
+            lede={LEDE}
+            chuDe={chu_de_va_quan_diem.chu_de}
+            quanDiemGoc={chu_de_va_quan_diem.binh_luan_goc}
+            nhatKy={nhat_ky}
+            bayGio={new Date()}
+          />
+        </VoKhungHaiCot>
+        <KhoiBaiViet bai_viet={bai_viet.du_lieu.items} cac_sub={cac_sub} />
+      </div>
+      <NutVeDauTrang />
+    </>
   );
 }
 
@@ -91,11 +199,15 @@ async function FeedDaNap({
   khoang,
   cursor,
   truongPhai,
+  loaiMach,
+  trangThai,
 }: {
   tab: TabFeed;
   khoang: KhoangFeed;
   cursor: string | undefined;
   truongPhai: string | undefined;
+  loaiMach: LoaiMach | undefined;
+  trangThai: TrangThaiFeed | undefined;
 }) {
   // `?cursor=rac` KHÔNG được làm trang chủ 500: `docFeed` lùi về trang đầu và trả cờ để
   // `Feed` hiện dòng giải thích (vá A1).
@@ -104,7 +216,13 @@ async function FeedDaNap({
   // trả `null`, nên ở đây không còn gì để `?? { items: [] }` — xem docstring của nó, vá
   // F1. "Chưa có bài nào ở đây" chỉ được nói khi Django thật sự trả về 0 mạch.
   const [{ du_lieu: feed, cursorHong }, cac_sub] = await Promise.all([
-    docFeed(tab, { cursor, khoang, truong_phai: truongPhai }),
+    docFeed(tab, {
+      cursor,
+      khoang,
+      truong_phai: truongPhai,
+      loai_mach: loaiMach,
+      trang_thai: trangThai,
+    }),
     docCacSub(),
   ]);
 
@@ -118,15 +236,11 @@ async function FeedDaNap({
         khoang={khoang}
         coBan="/"
         truongPhai={truongPhai}
-        // `<h1>` KHÔNG còn là chữ "gikky": tên hiệu đã nằm ở thanh trên cùng của mọi trang,
-        // nên in lại nó ở đây vừa thừa vừa lấy mất dòng chữ có giá trị nhất của trang chủ
-        // đối với người mới và với máy tìm kiếm. Nay nó nói **sản phẩm là gì** trong một
-        // câu; lede nói **trang này liệt kê gì**. Phần "site vận hành ra sao" thuộc về
-        // `GIOI_THIEU` ở sidebar — xem docstring của hằng ấy.
-        tieuDe="Nhật ký giao dịch chứng khoán & Luận điểm thị trường"
-        lede="Ghi nhận nhận định trước khi có kết quả. Mọi mốc đều lưu vết thời gian thực và lịch sử minh bạch."
+        loaiMach={loaiMach}
+        trangThai={trangThai}
+        tieuDe={TIEU_DE}
+        lede={LEDE}
         sidebar={<Sidebar gioiThieu={GIOI_THIEU} cacSub={cac_sub} />}
-        cacSub={cac_sub}
       />
     </>
   );

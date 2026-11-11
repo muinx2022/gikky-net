@@ -59,6 +59,174 @@ def goi_dang_bai_vps(action: str, payload_data: dict) -> dict | None:
 
 
 # =====================================================================
+# CÁC HÀM XÂY DỰNG MỐC & BÀI HỌC ĐÓNG SỔ THEO CHUẨN NHẬT KÝ V2
+# =====================================================================
+
+def tao_noi_dung_moc_pyramid(
+    sym: str,
+    entry: float,
+    pyramid_trigger: float,
+    new_sl: float,
+    session_date: str,
+    timeframe: str = "D1",
+    direction: str = "LONG",
+    decimals: int = 2
+) -> tuple[str, list]:
+    """Tạo nội dung mốc nhồi lệnh Pyramiding theo chuẩn Nhật ký v2."""
+    dir_label = "Mua (Long)" if direction == "LONG" else "Bán khống (Short)"
+    action_verb = "vượt mốc cản" if direction == "LONG" else "giảm xuyên mốc hỗ trợ"
+
+    body = f"""<p><strong>[Nhật ký mốc 2] Kích hoạt nhồi lệnh &amp; Chuyển trạng thái Vị thế không rủi ro (Free-risk Trade)</strong></p>
+
+<p>Trong phiên giao dịch ngày <strong>{session_date}</strong> (khung <strong>{timeframe}</strong>), hành động giá của <strong>{sym}</strong> đã phát triển hoàn toàn đúng theo kịch bản kỳ vọng, {action_verb} <strong>{pyramid_trigger:.{decimals}f}</strong> với xung lực áp đảo. Theo nguyên tắc quản trị vị thế xu hướng (Trend Following), hệ thống thực hiện giải ngân gia tăng 50% khối lượng còn lại.</p>
+
+<p>Đồng thời, toàn bộ vị thế được bảo vệ bằng cách <strong>dời mốc Stop Loss về mức giá hòa vốn ({new_sl:.{decimals}f})</strong>. Hành động này chuyển toàn bộ giao dịch sang trạng thái <strong>Free-risk Trade</strong>: kịch bản xấu nhất xảy ra chỉ khiến lệnh dừng lại ở mức hòa vốn, trong khi tiềm năng lợi nhuận tiếp tục được mở rộng tối đa theo sóng xu hướng.</p>
+
+<hr>
+<ul>
+<li><strong>Vị thế:</strong> {dir_label} gia tăng 50% khối lượng tại <strong>{pyramid_trigger:.{decimals}f}</strong></li>
+<li><strong>Stop Loss mới:</strong> <strong>{new_sl:.{decimals}f}</strong> (Bảo toàn vốn tuyệt đối)</li>
+<li><strong>Trạng thái giao dịch:</strong> <strong>Free-risk Trade (Không rủi ro)</strong></li>
+</ul>
+
+<hr>
+<p><em>* Ghi chú nhật ký: Giao dịch demo do Bot Trader thực hiện theo quy chuẩn quản trị vị thế v2.</em></p>"""
+
+    figures = [
+        {"label": "Giá nhồi lệnh", "value": f"{pyramid_trigger:.{decimals}f}"[:24]},
+        {"label": "Stop Loss mới", "value": f"{new_sl:.{decimals}f} (Hòa vốn)"[:24]},
+        {"label": "Trạng thái", "value": "Free-risk Trade"[:24]}
+    ]
+    return body, figures
+
+
+def tao_noi_dung_moc_sl(
+    sym: str,
+    entry: float,
+    exit_price: float,
+    sl: float,
+    loss_pct: float,
+    session_date: str,
+    timeframe: str = "D1",
+    direction: str = "LONG",
+    strat_name: str = "Chiến lược kỹ thuật",
+    decimals: int = 2
+) -> tuple[str, list, str]:
+    """Tạo nội dung mốc cắt lỗ kỷ luật và bài học đóng sổ (Post-Mortem Review) theo chuẩn Nhật ký v2."""
+    dir_label = "Mua (Long)" if direction == "LONG" else "Bán khống (Short)"
+    is_vn = (timeframe == "D1")
+
+    if is_vn:
+        root_cause = "Thị trường chung VN-Index rung lắc điều chỉnh, áp lực bán gia tăng bất ngờ tạo bẫy giá (fakeout) ngắn hạn khiến nến đóng cửa xuyên thủng ngưỡng hỗ trợ then chốt."
+        root_cause_short = "Thị trường chung rung lắc và fakeout ngắn hạn làm gãy ngưỡng hỗ trợ kỹ thuật then chốt."
+    elif direction == "LONG":
+        root_cause = "Chỉ số DXY bất ngờ hồi phục mạnh mẽ hoặc tâm lý Risk-Off lan rộng trên thị trường quốc tế, kích hoạt áp lực bán tháo khiến nến H4 gãy mốc phòng thủ."
+        root_cause_short = "Đồng USD đảo chiều tăng mạnh tạo áp lực bán tháo khiến nến H4 vi phạm mốc phòng thủ."
+    else:  # SHORT H4
+        root_cause = "Dòng tiền bắt đáy đảo chiều mạnh mẽ hoặc yếu tố vĩ mô bất ngờ nâng đỡ giá, phe mua chiếm ưu thế đẩy nến H4 vượt qua mốc cản cắt lỗ."
+        root_cause_short = "Lực cầu bắt đáy đảo chiều gia tăng đẩy giá bứt phá qua mốc cản cắt lỗ."
+
+    body = f"""<p><strong>[Nhật ký đóng sổ] Cắt lỗ kỷ luật &amp; Báo cáo phân tích sau giao dịch (Post-Mortem Review)</strong></p>
+
+<p>Phiên giao dịch ngày <strong>{session_date}</strong> (khung <strong>{timeframe}</strong>): Vị thế {dir_label} <strong>{sym}</strong> đã chạm mốc phòng thủ tại <strong>{sl:.{decimals}f}</strong>. Hệ thống thực hiện thanh lý vị thế dứt khoát tại <strong>{exit_price:.{decimals}f}</strong> (PnL: <strong style="color: #ef4444;">{loss_pct:.2f}%</strong>).</p>
+
+<hr>
+
+<p><strong>Báo cáo mổ xẻ sau giao dịch (Post-Mortem Review):</strong></p>
+
+<ul>
+<li><strong>Nguyên nhân chạm Stop Loss:</strong> {root_cause}</li>
+<li><strong>Kỷ luật quản trị rủi ro:</strong> Không do dự hay nuôi hy vọng vô căn cứ. Quyết định cắt lỗ được thực hiện dứt khoát ngay khi vi phạm mốc phòng thủ giúp bảo toàn nguyên vẹn 95%+ nguồn vốn danh mục, ngăn ngừa rủi ro trượt giá hoặc rơi vào các nhịp giảm sâu bất ngờ.</li>
+<li><strong>Kinh nghiệm rút ra:</strong> Nâng cao tiêu chí kiểm định độ nén biến động trước khi bứt phá; kiên nhẫn quan sát sự đồng thuận của dòng tiền nhóm ngành và bối cảnh liên thị trường trong các lần quét tiếp theo.</li>
+</ul>
+
+<hr>
+<ul>
+<li><strong>Giá mở vị thế (Entry):</strong> {entry:.{decimals}f}</li>
+<li><strong>Giá thoát lệnh (Exit):</strong> {exit_price:.{decimals}f}</li>
+<li><strong>Kết quả PnL:</strong> <strong style="color: #ef4444;">{loss_pct:.2f}%</strong></li>
+<li><strong>Chiến lược áp dụng:</strong> {strat_name}</li>
+</ul>
+
+<hr>
+<p><em>* Ghi chú nhật ký: Giao dịch demo do Bot Trader thực hiện theo quy chuẩn quản trị vị thế v2.</em></p>"""
+
+    figures = [
+        {"label": "Trạng thái", "value": "Đã đóng (Cắt lỗ)"[:24]},
+        {"label": "Giá thoát Exit", "value": f"{exit_price:.{decimals}f}"[:24]},
+        {"label": "Kết quả PnL", "value": f"{loss_pct:.1f}%"[:24]}
+    ]
+
+    bai_hoc = (
+        f"Báo cáo đóng sổ vị thế {sym} (Cắt lỗ {loss_pct:.1f}%):\n"
+        f"- Mổ xẻ nguyên nhân: {root_cause_short}\n"
+        f"- Kỷ luật quản trị vốn: Cắt lỗ dứt khoát tại mốc {sl:.{decimals}f} là nguyên tắc sống còn, bảo vệ trọn vẹn hơn 95% vốn để sẵn sàng phân bổ cho các cơ hội xác suất cao tiếp theo.\n"
+        f"- Kinh nghiệm thực chiến: Nâng cao tiêu chí chọn lọc độ nén biến động và kiên nhẫn đứng ngoài khi dòng tiền chưa có sự đồng thuận cao.\n\n"
+        f"Giao dịch demo, do Bot Trader thực hiện."
+    )
+
+    return body, figures, bai_hoc
+
+
+def tao_noi_dung_moc_tp(
+    sym: str,
+    entry: float,
+    exit_price: float,
+    tp: float,
+    profit_pct: float,
+    session_date: str,
+    timeframe: str = "D1",
+    direction: str = "LONG",
+    strat_name: str = "Chiến lược kỹ thuật",
+    rr: float = 2.4,
+    decimals: int = 2
+) -> tuple[str, list, str]:
+    """Tạo nội dung mốc chốt lời mục tiêu và bài học đóng sổ (Execution Review) theo chuẩn Nhật ký v2."""
+    dir_label = "Mua (Long)" if direction == "LONG" else "Bán khống (Short)"
+
+    body = f"""<p><strong>[Nhật ký đóng sổ] Chốt lời mục tiêu &amp; Đánh giá hiệu quả thực thi (Execution Review)</strong></p>
+
+<p>Phiên giao dịch ngày <strong>{session_date}</strong> (khung <strong>{timeframe}</strong>): Vị thế {dir_label} <strong>{sym}</strong> đã hoàn thành xuất sắc mục tiêu lợi nhuận kỳ vọng tại <strong>{tp:.{decimals}f}</strong>. Hệ thống hiện thực hóa toàn bộ lợi nhuận tại <strong>{exit_price:.{decimals}f}</strong> (PnL: <strong style="color: #10b981;">+{profit_pct:.2f}%</strong>, R:R thực hiện: <strong>1 : {rr:.2f}</strong>).</p>
+
+<hr>
+
+<p><strong>Đánh giá các yếu tố thành công:</strong></p>
+
+<ul>
+<li><strong>Phân tích bối cảnh chuẩn xác:</strong> Chọn đúng tài sản có sức mạnh giá tương đối vượt trội, nhận được sự đồng thuận mạnh mẽ của dòng tiền và xu hướng thị trường chung.</li>
+<li><strong>Tín hiệu kích hoạt tin cậy:</strong> Thiết lập kỹ thuật {strat_name} cung cấp điểm tựa vững chắc, kiểm định lực cung thành công trước khi bứt tốc mạnh mẽ.</li>
+<li><strong>Tâm lý kiên định gồng lãi:</strong> Tuân thủ trọn vẹn kế hoạch toán học, kiên định nắm giữ vị thế vượt qua các nhịp rung lắc ngắn hạn để chạm đúng vùng kháng cự mục tiêu, tuyệt đối không chốt non.</li>
+</ul>
+
+<hr>
+<ul>
+<li><strong>Giá mở vị thế (Entry):</strong> {entry:.{decimals}f}</li>
+<li><strong>Giá chốt lời (Exit):</strong> {exit_price:.{decimals}f}</li>
+<li><strong>Lợi nhuận thực tế:</strong> <strong style="color: #10b981;">+{profit_pct:.2f}%</strong></li>
+<li><strong>Tỷ lệ R:R đạt được:</strong> 1 : {rr:.2f} (Đạt chuẩn xác suất cao)</li>
+</ul>
+
+<hr>
+<p><em>* Ghi chú nhật ký: Giao dịch demo do Bot Trader thực hiện theo quy chuẩn quản trị vị thế v2.</em></p>"""
+
+    figures = [
+        {"label": "Trạng thái", "value": "Đã chốt lời mục tiêu"[:24]},
+        {"label": "Giá chốt Exit", "value": f"{exit_price:.{decimals}f}"[:24]},
+        {"label": "Lợi nhuận PnL", "value": f"+{profit_pct:.1f}%"[:24]}
+    ]
+
+    bai_hoc = (
+        f"Báo cáo đóng sổ vị thế {sym} (Chốt lời +{profit_pct:.1f}%):\n"
+        f"- Yếu tố thành công: Phân tích bối cảnh chuẩn xác, chọn đúng thời điểm kích hoạt sóng với sự bảo trợ của dòng tiền và các đường xu hướng.\n"
+        f"- Kỷ luật gồng lãi: Kiên định giữ vị thế đến mục tiêu R:R 1:{rr:.1f}, không bị lung lay bởi các nhịp điều chỉnh kỹ thuật ngắn hạn trên đường đi.\n"
+        f"- Kinh nghiệm thực chiến: Tiếp tục phát huy nguyên tắc chỉ giải ngân ở những setup có tỷ lệ Risk/Reward vượt trội và bối cảnh đồng thuận.\n\n"
+        f"Giao dịch demo, do Bot Trader thực hiện."
+    )
+
+    return body, figures, bai_hoc
+
+
+# =====================================================================
 # 1. KIỂM TRA VỊ THẾ CỔ PHIẾU VN (D1 - SAU 15H)
 # =====================================================================
 
@@ -257,33 +425,31 @@ def kiem_tra_sau_15h(simulate_date: str = None) -> list:
                 loss_pct = ((eq_exit - entry) / entry) * 100
                 print(f"🚨 CẢNH BÁO: {sym} CHẠM STOP LOSS! (Low: {low} <= SL: {sl}) -> ĐÓNG VỊ THẾ!")
 
-                body_moc_sl = f"""<p><strong>[ĐÓNG VỊ THẾ - CẮT LỖ KỶ LUẬT]</strong></p>
-<p>Hệ thống <strong>Bot Trader</strong> ghi nhận cổ phiếu <strong>{sym}</strong> chạm ngưỡng cắt lỗ tại <strong>{sl:.2f}</strong> trong phiên {session_date}. Tiến hành đóng vị thế tại <strong>{actual_exit_price:.2f}</strong> để bảo toàn nguồn vốn.</p>
-<hr>
-<ul>
-<li><strong>Giá mua (Entry):</strong> {entry:.2f}</li>
-<li><strong>Giá thoát (Exit):</strong> {actual_exit_price:.2f}</li>
-<li><strong>Kết quả PnL:</strong> <strong style="color: #ef4444;">{loss_pct:.2f}%</strong></li>
-</ul>
-<hr>
-<p><em>Giao dịch demo, do Bot Trader thực hiện.</em></p>"""
+                body_moc_sl, figures_sl, bai_hoc_sl = tao_noi_dung_moc_sl(
+                    sym=sym,
+                    entry=entry,
+                    exit_price=actual_exit_price,
+                    sl=sl,
+                    loss_pct=loss_pct,
+                    session_date=session_date,
+                    timeframe="D1",
+                    direction="LONG",
+                    strat_name=pos.get("strategy_name", "Kỹ thuật D1"),
+                    decimals=2
+                )
 
                 moc_payload = {
                     "mach_id": mach_id,
                     "body": body_moc_sl,
                     "loai": "Đóng lệnh",
-                    "figures": [
-                        {"label": "Trạng thái", "value": "Đã đóng (Cắt lỗ)"},
-                        {"label": "Giá thoát Exit", "value": f"{actual_exit_price:.2f}"},
-                        {"label": "Kết quả PnL", "value": f"{loss_pct:.1f}%"}
-                    ]
+                    "figures": figures_sl
                 }
                 goi_dang_bai_vps("them_moc", moc_payload)
 
                 dong_payload = {
                     "mach_id": mach_id,
                     "ket_qua": f"Cắt lỗ {loss_pct:.1f}%",
-                    "bai_hoc": f"Đóng lệnh cắt lỗ kỷ luật tại mốc {sl:.2f}. Bảo toàn nguồn vốn cho các cơ hội tiếp theo.\n\nGiao dịch demo, do Bot Trader thực hiện."
+                    "bai_hoc": bai_hoc_sl
                 }
                 goi_dang_bai_vps("dong_mach", dong_payload)
 
@@ -302,33 +468,32 @@ def kiem_tra_sau_15h(simulate_date: str = None) -> list:
                 profit_pct = ((eq_exit - entry) / entry) * 100
                 print(f"🎯 CHÚC MỪNG: {sym} ĐẠT TAKE PROFIT! (High: {high} >= TP: {tp}) -> ĐÓNG VỊ THẾ!")
 
-                body_moc_tp = f"""<p><strong>[ĐÓNG VỊ THẾ - CHỐT LỜI MỤC TIÊU]</strong></p>
-<p>Cổ phiếu <strong>{sym}</strong> đã hoàn thành mục tiêu chốt lời kỳ vọng tại <strong>{tp:.2f}</strong> trong phiên {session_date}. Tiến hành hiện thực hóa toàn bộ lợi nhuận tại <strong>{actual_exit_price:.2f}</strong>.</p>
-<hr>
-<ul>
-<li><strong>Giá mua (Entry):</strong> {entry:.2f}</li>
-<li><strong>Giá chốt lời (Exit):</strong> {actual_exit_price:.2f}</li>
-<li><strong>Lợi nhuận thực tế:</strong> <strong style="color: #10b981;">+{profit_pct:.2f}%</strong></li>
-</ul>
-<hr>
-<p><em>Giao dịch demo, do Bot Trader thực hiện.</em></p>"""
+                body_moc_tp, figures_tp, bai_hoc_tp = tao_noi_dung_moc_tp(
+                    sym=sym,
+                    entry=entry,
+                    exit_price=actual_exit_price,
+                    tp=tp,
+                    profit_pct=profit_pct,
+                    session_date=session_date,
+                    timeframe="D1",
+                    direction="LONG",
+                    strat_name=pos.get("strategy_name", "Kỹ thuật D1"),
+                    rr=pos.get("rr_ratio", 2.4),
+                    decimals=2
+                )
 
                 moc_payload = {
                     "mach_id": mach_id,
                     "body": body_moc_tp,
                     "loai": "Chốt lời",
-                    "figures": [
-                        {"label": "Trạng thái", "value": "Đã chốt lời mục tiêu"},
-                        {"label": "Giá chốt Exit", "value": f"{actual_exit_price:.2f}"},
-                        {"label": "Lợi nhuận PnL", "value": f"+{profit_pct:.1f}%"}
-                    ]
+                    "figures": figures_tp
                 }
                 goi_dang_bai_vps("them_moc", moc_payload)
 
                 dong_payload = {
                     "mach_id": mach_id,
                     "ket_qua": f"Chốt lời +{profit_pct:.1f}%",
-                    "bai_hoc": f"Đạt mục tiêu Take Profit thành công tại vùng cản {tp:.2f}.\n\nGiao dịch demo, do Bot Trader thực hiện."
+                    "bai_hoc": bai_hoc_tp
                 }
                 goi_dang_bai_vps("dong_mach", dong_payload)
 
@@ -344,20 +509,22 @@ def kiem_tra_sau_15h(simulate_date: str = None) -> list:
             if pyramid_trigger and high >= pyramid_trigger and not pyramided:
                 print(f"⚡ TÍN HIỆU NHỒI LỆNH: {sym} đã vượt mốc {pyramid_trigger:.2f} -> KÍCH HOẠT MỐC MỚI!")
                 new_sl = round(entry / multiplier, 2) if multiplier != 1.0 else entry
-                body_moc_pyramid = f"""<p><strong>[CẬP NHẬT VỊ THẾ - KÍCH HOẠT NHỒI LỆNH XU HƯỚNG]</strong></p>
-<p>Trong phiên ngày {session_date}, cổ phiếu <strong>{sym}</strong> đã bứt phá qua mốc cản <strong>{pyramid_trigger:.2f}</strong>. Kích hoạt giải ngân đợt 2 (nhồi thêm 50% khối lượng) và dời điểm Stop Loss lên mức hòa vốn <strong>{new_sl:.2f}</strong> (Free-risk Trade).</p>
-<hr>
-<p><em>Giao dịch demo, do Bot Trader thực hiện.</em></p>"""
+                body_moc_pyramid, figures_pyr = tao_noi_dung_moc_pyramid(
+                    sym=sym,
+                    entry=entry,
+                    pyramid_trigger=pyramid_trigger,
+                    new_sl=new_sl,
+                    session_date=session_date,
+                    timeframe="D1",
+                    direction="LONG",
+                    decimals=2
+                )
 
                 moc_payload = {
                     "mach_id": mach_id,
                     "body": body_moc_pyramid,
                     "loai": "Nhồi lệnh",
-                    "figures": [
-                        {"label": "Giá nhồi lệnh", "value": f"{pyramid_trigger:.2f}"},
-                        {"label": "Stop Loss mới", "value": f"{new_sl:.2f} (Hòa vốn)"},
-                        {"label": "Trạng thái", "value": "Free-risk Trade"}
-                    ]
+                    "figures": figures_pyr
                 }
                 goi_dang_bai_vps("them_moc", moc_payload)
 
@@ -446,34 +613,31 @@ def kiem_tra_vi_the_h4() -> list:
                     loss_pct = ((exit_price - entry) / entry) * 100
                     print(f"🚨 CẢNH BÁO: {sym} CHẠM STOP LOSS! (Low: {low} <= SL: {sl}) -> ĐÓNG LỆNH!")
 
-                    body_sl = f"""<p><strong>[ĐÓNG VỊ THẾ - CẮT LỖ KỶ LUẬT KHUNG H4]</strong></p>
-<p>Vị thế Mua (Long) <strong>{sym}</strong> đã chạm ngưỡng cắt lỗ tại <strong>{sl:.{decimals}f}</strong> (nến H4 lúc {session_time}). Tiến hành đóng lệnh tại mức giá <strong>{exit_price:.{decimals}f}</strong> nhằm tuân thủ kỷ luật quản trị rủi ro tuyệt đối.</p>
-<hr>
-<ul>
-<li><strong>Giá mua (Entry):</strong> {entry:.{decimals}f}</li>
-<li><strong>Giá đóng vị thế (Exit):</strong> {exit_price:.{decimals}f}</li>
-<li><strong>Kết quả PnL:</strong> <strong style="color: #ef4444;">{loss_pct:.2f}%</strong></li>
-<li><strong>Chiến lược:</strong> {strat_name}</li>
-</ul>
-<hr>
-<p><em>Giao dịch demo, do Bot Trader thực hiện.</em></p>"""
+                    body_sl, figures_sl, bai_hoc_sl = tao_noi_dung_moc_sl(
+                        sym=sym,
+                        entry=entry,
+                        exit_price=exit_price,
+                        sl=sl,
+                        loss_pct=loss_pct,
+                        session_date=session_time,
+                        timeframe="H4",
+                        direction="LONG",
+                        strat_name=strat_name,
+                        decimals=decimals
+                    )
 
                     moc_payload = {
                         "mach_id": mach_id,
                         "body": body_sl,
                         "loai": "Đóng lệnh",
-                        "figures": [
-                            {"label": "Trạng thái", "value": "Đã đóng (Cắt lỗ)"},
-                            {"label": "Giá thoát Exit", "value": f"{exit_price:.{decimals}f}"},
-                            {"label": "Kết quả PnL", "value": f"{loss_pct:.1f}%"}
-                        ]
+                        "figures": figures_sl
                     }
                     goi_dang_bai_vps("them_moc", moc_payload)
 
                     dong_payload = {
                         "mach_id": mach_id,
                         "ket_qua": f"Cắt lỗ {loss_pct:.1f}%",
-                        "bai_hoc": f"Đóng lệnh cắt lỗ kỷ luật tại {sl:.{decimals}f}. Bảo toàn nguồn vốn cho các cơ hội tiếp theo.\n\nGiao dịch demo, do Bot Trader thực hiện."
+                        "bai_hoc": bai_hoc_sl
                     }
                     goi_dang_bai_vps("dong_mach", dong_payload)
 
@@ -490,34 +654,32 @@ def kiem_tra_vi_the_h4() -> list:
                     profit_pct = ((exit_price - entry) / entry) * 100
                     print(f"🎯 CHÚC MỪNG: {sym} ĐẠT TAKE PROFIT! (High: {high} >= TP: {tp}) -> CHỐT LỜI!")
 
-                    body_tp = f"""<p><strong>[ĐÓNG VỊ THẾ - CHỐT LỜI MỤC TIÊU KHUNG H4]</strong></p>
-<p>Vị thế Mua (Long) <strong>{sym}</strong> đã hoàn thành mục tiêu chốt lời kỳ vọng tại <strong>{tp:.{decimals}f}</strong> (nến H4 lúc {session_time}). Hiện thực hóa toàn bộ lợi nhuận tại mức giá <strong>{exit_price:.{decimals}f}</strong>.</p>
-<hr>
-<ul>
-<li><strong>Giá mua (Entry):</strong> {entry:.{decimals}f}</li>
-<li><strong>Giá chốt lời (Exit):</strong> {exit_price:.{decimals}f}</li>
-<li><strong>Lợi nhuận thực tế:</strong> <strong style="color: #10b981;">+{profit_pct:.2f}%</strong></li>
-<li><strong>Tỷ lệ R:R thực hiện:</strong> 1 : 2.4 (Đạt chuẩn)</li>
-</ul>
-<hr>
-<p><em>Giao dịch demo, do Bot Trader thực hiện.</em></p>"""
+                    body_tp, figures_tp, bai_hoc_tp = tao_noi_dung_moc_tp(
+                        sym=sym,
+                        entry=entry,
+                        exit_price=exit_price,
+                        tp=tp,
+                        profit_pct=profit_pct,
+                        session_date=session_time,
+                        timeframe="H4",
+                        direction="LONG",
+                        strat_name=strat_name,
+                        rr=pos.get("rr_ratio", 2.4),
+                        decimals=decimals
+                    )
 
                     moc_payload = {
                         "mach_id": mach_id,
                         "body": body_tp,
                         "loai": "Chốt lời",
-                        "figures": [
-                            {"label": "Trạng thái", "value": "Đã chốt lời mục tiêu"},
-                            {"label": "Giá chốt Exit", "value": f"{exit_price:.{decimals}f}"},
-                            {"label": "Lợi nhuận PnL", "value": f"+{profit_pct:.1f}%"}
-                        ]
+                        "figures": figures_tp
                     }
                     goi_dang_bai_vps("them_moc", moc_payload)
 
                     dong_payload = {
                         "mach_id": mach_id,
                         "ket_qua": f"Chốt lời +{profit_pct:.1f}%",
-                        "bai_hoc": f"Đạt mục tiêu Take Profit thành công tại vùng cản {tp:.{decimals}f}.\n\nGiao dịch demo, do Bot Trader thực hiện."
+                        "bai_hoc": bai_hoc_tp
                     }
                     goi_dang_bai_vps("dong_mach", dong_payload)
 
@@ -532,20 +694,22 @@ def kiem_tra_vi_the_h4() -> list:
                 if pyramid and high >= pyramid and not pyramided:
                     print(f"⚡ TÍN HIỆU NHỒI LỆNH H4: {sym} đã vượt {pyramid:.{decimals}f} -> DỜI SL VỀ HÒA VỐN!")
                     new_sl = entry
-                    body_pyr = f"""<p><strong>[CẬP NHẬT VỊ THẾ H4 - KÍCH HOẠT NHỒI LỆNH XU HƯỚNG]</strong></p>
-<p>Tài sản <strong>{sym}</strong> đã bứt phá qua mốc cản <strong>{pyramid:.{decimals}f}</strong>. Kích hoạt giải ngân 50% khối lượng còn lại và đồng thời dời điểm dừng lỗ Stop Loss lên mức hòa vốn <strong>{new_sl:.{decimals}f}</strong> (Free-risk Trade).</p>
-<hr>
-<p><em>Giao dịch demo, do Bot Trader thực hiện.</em></p>"""
+                    body_pyr, figures_pyr = tao_noi_dung_moc_pyramid(
+                        sym=sym,
+                        entry=entry,
+                        pyramid_trigger=pyramid,
+                        new_sl=new_sl,
+                        session_date=session_time,
+                        timeframe="H4",
+                        direction="LONG",
+                        decimals=decimals
+                    )
 
                     moc_payload = {
                         "mach_id": mach_id,
                         "body": body_pyr,
                         "loai": "Nhồi lệnh",
-                        "figures": [
-                            {"label": "Giá nhồi lệnh", "value": f"{pyramid:.{decimals}f}"},
-                            {"label": "Stop Loss mới", "value": f"{new_sl:.{decimals}f} (Hòa vốn)"},
-                            {"label": "Trạng thái", "value": "Free-risk Trade"}
-                        ]
+                        "figures": figures_pyr
                     }
                     goi_dang_bai_vps("them_moc", moc_payload)
 
@@ -572,34 +736,31 @@ def kiem_tra_vi_the_h4() -> list:
                     loss_pct = ((entry - exit_price) / entry) * 100
                     print(f"🚨 CẢNH BÁO: {sym} [SHORT] CHẠM STOP LOSS! (High: {high} >= SL: {sl}) -> ĐÓNG LỆNH!")
 
-                    body_sl = f"""<p><strong>[ĐÓNG VỊ THẾ - CẮT LỖ KỶ LUẬT KHUNG H4]</strong></p>
-<p>Vị thế Bán khống (Short) <strong>{sym}</strong> đã vi phạm ngưỡng cắt lỗ tại <strong>{sl:.{decimals}f}</strong> (nến H4 lúc {session_time}). Tiến hành đóng lệnh tại mức giá <strong>{exit_price:.{decimals}f}</strong> để quản trị rủi ro tuyệt đối.</p>
-<hr>
-<ul>
-<li><strong>Giá bán Entry:</strong> {entry:.{decimals}f}</li>
-<li><strong>Giá đóng vị thế (Exit):</strong> {exit_price:.{decimals}f}</li>
-<li><strong>Kết quả PnL:</strong> <strong style="color: #ef4444;">{loss_pct:.2f}%</strong></li>
-<li><strong>Chiến lược:</strong> {strat_name}</li>
-</ul>
-<hr>
-<p><em>Giao dịch demo, do Bot Trader thực hiện.</em></p>"""
+                    body_sl, figures_sl, bai_hoc_sl = tao_noi_dung_moc_sl(
+                        sym=sym,
+                        entry=entry,
+                        exit_price=exit_price,
+                        sl=sl,
+                        loss_pct=loss_pct,
+                        session_date=session_time,
+                        timeframe="H4",
+                        direction="SHORT",
+                        strat_name=strat_name,
+                        decimals=decimals
+                    )
 
                     moc_payload = {
                         "mach_id": mach_id,
                         "body": body_sl,
                         "loai": "Đóng lệnh",
-                        "figures": [
-                            {"label": "Trạng thái", "value": "Đã đóng (Cắt lỗ)"},
-                            {"label": "Giá thoát Exit", "value": f"{exit_price:.{decimals}f}"},
-                            {"label": "Kết quả PnL", "value": f"{loss_pct:.1f}%"}
-                        ]
+                        "figures": figures_sl
                     }
                     goi_dang_bai_vps("them_moc", moc_payload)
 
                     dong_payload = {
                         "mach_id": mach_id,
                         "ket_qua": f"Cắt lỗ {loss_pct:.1f}%",
-                        "bai_hoc": f"Đóng lệnh bán khống cắt lỗ kỷ luật tại {sl:.{decimals}f}. Bảo toàn nguồn vốn cho các cơ hội tiếp theo.\n\nGiao dịch demo, do Bot Trader thực hiện."
+                        "bai_hoc": bai_hoc_sl
                     }
                     goi_dang_bai_vps("dong_mach", dong_payload)
 
@@ -616,34 +777,32 @@ def kiem_tra_vi_the_h4() -> list:
                     profit_pct = ((entry - exit_price) / entry) * 100
                     print(f"🎯 CHÚC MỪNG: {sym} [SHORT] ĐẠT TAKE PROFIT! (Low: {low} <= TP: {tp}) -> CHỐT LỜI!")
 
-                    body_tp = f"""<p><strong>[ĐÓNG VỊ THẾ - CHỐT LỜI MỤC TIÊU KHUNG H4]</strong></p>
-<p>Vị thế Bán khống (Short) <strong>{sym}</strong> đã hoàn thành xuất sắc mục tiêu chốt lời tại <strong>{tp:.{decimals}f}</strong> (nến H4 lúc {session_time}). Tiến hành đóng lệnh hiện thực hóa lợi nhuận tại <strong>{exit_price:.{decimals}f}</strong>.</p>
-<hr>
-<ul>
-<li><strong>Giá bán Entry:</strong> {entry:.{decimals}f}</li>
-<li><strong>Giá chốt lời Exit:</strong> {exit_price:.{decimals}f}</li>
-<li><strong>Lợi nhuận thực tế:</strong> <strong style="color: #10b981;">+{profit_pct:.2f}%</strong></li>
-<li><strong>Tỷ lệ R:R thực hiện:</strong> 1 : 2.4 (Đạt chuẩn)</li>
-</ul>
-<hr>
-<p><em>Giao dịch demo, do Bot Trader thực hiện.</em></p>"""
+                    body_tp, figures_tp, bai_hoc_tp = tao_noi_dung_moc_tp(
+                        sym=sym,
+                        entry=entry,
+                        exit_price=exit_price,
+                        tp=tp,
+                        profit_pct=profit_pct,
+                        session_date=session_time,
+                        timeframe="H4",
+                        direction="SHORT",
+                        strat_name=strat_name,
+                        rr=pos.get("rr_ratio", 2.4),
+                        decimals=decimals
+                    )
 
                     moc_payload = {
                         "mach_id": mach_id,
                         "body": body_tp,
                         "loai": "Chốt lời",
-                        "figures": [
-                            {"label": "Trạng thái", "value": "Đã chốt lời mục tiêu"},
-                            {"label": "Giá chốt Exit", "value": f"{exit_price:.{decimals}f}"},
-                            {"label": "Lợi nhuận PnL", "value": f"+{profit_pct:.1f}%"}
-                        ]
+                        "figures": figures_tp
                     }
                     goi_dang_bai_vps("them_moc", moc_payload)
 
                     dong_payload = {
                         "mach_id": mach_id,
                         "ket_qua": f"Chốt lời +{profit_pct:.1f}%",
-                        "bai_hoc": f"Đạt mục tiêu Take Profit bán khống thành công tại vùng hỗ trợ {tp:.{decimals}f}.\n\nGiao dịch demo, do Bot Trader thực hiện."
+                        "bai_hoc": bai_hoc_tp
                     }
                     goi_dang_bai_vps("dong_mach", dong_payload)
 
@@ -658,20 +817,22 @@ def kiem_tra_vi_the_h4() -> list:
                 if pyramid and low <= pyramid and not pyramided:
                     print(f"⚡ TÍN HIỆU NHỒI LỆNH H4: {sym} [SHORT] đã giảm qua {pyramid:.{decimals}f} -> DỜI SL VỀ HÒA VỐN!")
                     new_sl = entry
-                    body_pyr = f"""<p><strong>[CẬP NHẬT VỊ THẾ H4 - KÍCH HOẠT NHỒI LỆNH XU HƯỚNG]</strong></p>
-<p>Vị thế Bán khống <strong>{sym}</strong> đã giảm thành công qua mốc hỗ trợ <strong>{pyramid:.{decimals}f}</strong>. Kích hoạt mở thêm 50% khối lượng và dời điểm Stop Loss về mức hòa vốn <strong>{new_sl:.{decimals}f}</strong> (Free-risk Trade).</p>
-<hr>
-<p><em>Giao dịch demo, do Bot Trader thực hiện.</em></p>"""
+                    body_pyr, figures_pyr = tao_noi_dung_moc_pyramid(
+                        sym=sym,
+                        entry=entry,
+                        pyramid_trigger=pyramid,
+                        new_sl=new_sl,
+                        session_date=session_time,
+                        timeframe="H4",
+                        direction="SHORT",
+                        decimals=decimals
+                    )
 
                     moc_payload = {
                         "mach_id": mach_id,
                         "body": body_pyr,
                         "loai": "Nhồi lệnh",
-                        "figures": [
-                            {"label": "Giá nhồi lệnh", "value": f"{pyramid:.{decimals}f}"},
-                            {"label": "Stop Loss mới", "value": f"{new_sl:.{decimals}f} (Hòa vốn)"},
-                            {"label": "Trạng thái", "value": "Free-risk Trade"}
-                        ]
+                        "figures": figures_pyr
                     }
                     goi_dang_bai_vps("them_moc", moc_payload)
 

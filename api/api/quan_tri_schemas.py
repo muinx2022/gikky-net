@@ -25,7 +25,7 @@ from django.utils.html import strip_tags
 from ninja import Field, Schema
 
 from api.schemas import AnhOut, FigureOut, NguoiDungTomTatOut
-from api.schemas_ghi import DAI_TITLE, MocMoiIn, MocSuaIn
+from api.schemas_ghi import DAI_TITLE, LoaiMachIn, MocMoiIn, MocSuaIn
 
 #: Trích yếu nội dung trong hàng đợi/nhật ký — đủ để mod nhận ra, không phải cả bài.
 #: Không phải chuyện thẩm mỹ: `body` của một mốc lên tới 10.000 ký tự (PLAN 5.2), và một
@@ -304,6 +304,10 @@ class MachHenGioMoiIn(MocMoiIn):
       (`api/quan_tri_hen_gio.py::TAI_KHOAN_DANG_BAI`). Ngoài danh sách ⇒ 400;
     - `published_at` — tương lai thì bài nằm chờ; `null` hoặc quá khứ thì lên ngay.
       Cùng luật múi giờ với `HenGioMachIn`.
+
+    Và `loai_mach` (tuỳ chọn, 3 giá trị): bỏ ⇒ phân giải theo tác giả như cửa công khai
+    (`core/ghi.py::tao_mach`). Cửa này chỉ staff gọi được nên KHÔNG áp cổng "người thường"
+    của `POST /machs` — đây là lối tạo chủ đề `thao_luan`.
     """
 
     sub: str = Field(min_length=1, max_length=40, description="slug của chuyên mục")
@@ -312,6 +316,7 @@ class MachHenGioMoiIn(MocMoiIn):
         min_length=1, max_length=150, description="username của tài khoản đội"
     )
     published_at: datetime | None = None
+    loai_mach: LoaiMachIn | None = None
 
 
 class KetQuaHenGioOut(Schema):
@@ -782,6 +787,9 @@ class MachDongOut(Schema):
     title: str
     sub_slug: str
     tac_gia: NguoiDungTomTatOut
+    #: Loại mạch — form đăng bài đọc nó (cùng `?loai_mach=` của bảng) để biết có chủ đề
+    #: `thao_luan` nào đang mở trước khi tạo chủ đề thứ hai.
+    loai_mach: LoaiMachIn
     status: str
     created_at: datetime
     #: Ngày ĐĂNG — cột "Phát hành" của bảng. Khác `created_at` (ngày viết) đúng ở bài hẹn

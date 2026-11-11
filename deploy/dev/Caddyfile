@@ -1,0 +1,82 @@
+{
+	admin off
+	auto_https off
+	order rate_limit before basicauth
+	log {
+		output stdout
+		format console
+	}
+}
+
+(len_django) {
+	reverse_proxy api:8000 {
+		header_up X-Forwarded-For {http.request.header.CF-Connecting-IP}
+		header_up X-Forwarded-Proto https
+	}
+}
+
+(header_anh) {
+	header {
+		X-Content-Type-Options nosniff
+		Content-Security-Policy "default-src 'none'; sandbox"
+		Cache-Control "public, max-age=31536000, immutable"
+		-Server
+	}
+}
+
+http://dev.gikky.net {
+	encode zstd gzip
+
+	handle /api/_allauth/* {
+		rate_limit {
+			zone dang_ky {
+				key {http.request.header.CF-Connecting-IP}
+				events 60
+				window 1h
+			}
+		}
+		import len_django
+	}
+
+	handle /api/mobile/* {
+		import len_django
+	}
+
+	@ghi {
+		path /api/*
+		method POST PUT PATCH DELETE
+	}
+	handle @ghi {
+		import len_django
+	}
+
+	handle /api/v1/health {
+		import len_django
+	}
+
+	handle /api/* {
+		import len_django
+	}
+
+	handle /static/* {
+		root * /srv
+		file_server
+	}
+
+	handle_path /media/* {
+		root * /var/lib/gikky/media
+		file_server
+		import header_anh
+	}
+
+	handle {
+		reverse_proxy web:3000
+	}
+
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		X-Frame-Options SAMEORIGIN
+		-Server
+	}
+}

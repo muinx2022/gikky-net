@@ -1,10 +1,10 @@
 import { docCacSub, docFeed, docFeedSub } from "@/lib/api";
 
-import { CotTrai } from "./cot-trai";
-import css from "./khung-hai-cot.module.css";
+import { VoKhungHaiCot } from "./khung-hai-cot-vo";
 import { Sidebar } from "./sidebar";
 
-/** Khung **hai cột dùng chung** cho mọi trang nội dung — user chốt 2026-08-24.
+/** Khung **hai cột dùng chung** cho mọi trang nội dung — user chốt 2026-08-24, thống nhất
+ * thành hai cột (nội dung + rail phải, không cột trái) 2026-11-10.
  *
  * ## Vì sao nó tồn tại: chuyển trang bị "nhảy nhót"
  *
@@ -14,10 +14,10 @@ import { Sidebar } from "./sidebar";
  * là "nhảy nhót", và nó không sửa được bằng cách chỉnh từng trang một — chỉnh xong vẫn là
  * ba nguồn sự thật, chỉ khác là chúng trùng nhau *hôm nay*.
  *
- * Nên: **một** chỗ khai bề rộng + lưới, mọi trang nội dung đi qua nó. Trang chủ và trang
- * sub vẫn dùng lưới riêng trong `feed.module.css` vì `Feed` nhận `sidebar` làm prop —
- * nhưng ba con số ở đó **phải khớp** với ba con số ở đây; xem chú thích trong
- * `khung-hai-cot.module.css`.
+ * Nên: **một** chỗ khai bề rộng + lưới (`khung-hai-cot.module.css`, bọc bởi
+ * `VoKhungHaiCot`), mọi trang đi qua nó. `Feed` (trang chủ, trang sub) và các trang tự dựng
+ * sidebar (`/`, `/chu-de`) dùng thẳng `VoKhungHaiCot` vì họ đã có sẵn dữ liệu sidebar; file này
+ * là đường cho các trang CHƯA có — nó tự nạp rồi đưa vào cùng một vỏ.
  *
  * ## Nó tự hỏi `GET /subs` và `GET /feeds/moi` (hoặc feed theo sub)
  *
@@ -26,11 +26,10 @@ import { Sidebar } from "./sidebar";
  * và `docCacSub` đi qua data cache của Next nên chi phí gần như không tốn gì — và **cấm gõ cứng
  * slug** ở đây, đúng nợ `NAV-GHI-CUNG`.
  *
- * ## `<main>` nằm ở ĐÂY, không ở trang con
+ * ## `<main>` nằm trong vỏ, không ở trang con
  *
- * Ba trang kia trước đây mỗi trang một `<main>`. Bọc thêm một lớp nữa là `<main>` lồng
- * `<main>` — HTML sai và trình đọc màn hình mất mốc điều hướng. Nên trang con nay trả về
- * **nội dung trần**, khung này lo thẻ `<main>`.
+ * Bọc thêm một lớp nữa là `<main>` lồng `<main>` — HTML sai và trình đọc màn hình mất mốc
+ * điều hướng. Nên trang con trả về **nội dung trần**, `VoKhungHaiCot` lo thẻ `<main>`.
  */
 export async function KhungHaiCot({
   children,
@@ -54,17 +53,10 @@ export async function KhungHaiCot({
   const tieu_de = subSlug ? "Cùng chuyên mục" : "Bài mới nhất";
 
   return (
-    <div className={css.khung}>
-      <div className={css.rail_trai}>
-        <CotTrai cacSub={cac_sub} />
-      </div>
-      <main className={css.chinh}>{children}</main>
-      {/* Lớp bọc `sticky` — cùng vai với `feed.module.css#.rail`. Không có nó thì rail
-          dính ở trang chủ mà KHÔNG dính ở các trang khác, tức lại một kiểu "nhảy nhót"
-          nữa, chỉ là theo chiều dọc. */}
-      <div className={css.rail}>
-        <Sidebar cacSub={cac_sub} baiMoi={bai_moi} tieuDeBaiMoi={tieu_de} />
-      </div>
-    </div>
+    <VoKhungHaiCot
+      sidebar={<Sidebar cacSub={cac_sub} baiMoi={bai_moi} tieuDeBaiMoi={tieu_de} />}
+    >
+      {children}
+    </VoKhungHaiCot>
   );
 }

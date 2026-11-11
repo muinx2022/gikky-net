@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { Feed } from "@/components/feed";
 import { NutTheoSub } from "@/components/nut-theo-sub";
 import { Sidebar } from "@/components/sidebar";
-import { docCacSub, docFeedSub, docKhoang, docSub, docTab } from "@/lib/api";
+import { docCacSub, docFeedSub, docKhoang, docLoaiMach, docSub, docTab } from "@/lib/api";
 import { dongSoMachSub } from "@/lib/dinh-dang";
 import { urlTuyetDoi } from "@/lib/site";
 import { duongDanSub } from "@/lib/url";
@@ -60,6 +60,11 @@ export async function generateMetadata({
  * tham số. Header + sidebar là thứ biến nó thành một trang có bản sắc, đúng bố cục Reddit
  * mà PLAN 9.2 mô tả cho feed.
  *
+ * **Lọc theo loại** *(2026-11-10)*: chuyên mục dùng chung cho nhật ký, bài viết và chủ đề, nên
+ * `?loai_mach=` thu hẹp feed về một loại (hàng chip ở `Feed` → `LocLoaiMach`). Metadata ở
+ * trên KHÔNG đọc `searchParams`: canonical của mọi biến thể lọc vẫn là trang gốc, giống
+ * `?tab=`.
+ *
  * **KHÔNG có nút "Tham gia"** — PLAN mục 4 loại nó khỏi v1 *(chốt 2026-08-22)*, kể cả
  * dạng `disabled` làm chỗ đứng. Đây là chỗ nó sẽ nằm nếu ai đó tái phát minh.
  */
@@ -76,13 +81,16 @@ export default async function TrangSub({
   const khoang = docKhoang(q.khoang);
   const cursor = Array.isArray(q.cursor) ? q.cursor[0] : q.cursor;
   const truongPhai = typeof q.truong_phai === "string" ? q.truong_phai : undefined;
+  // `?loai_mach=` lạ / rỗng ⇒ `undefined` = "Tất cả" (không 500): `docLoaiMach` quy rác về
+  // "không lọc" ở tầng URL, cùng lý lẽ với `docTab`/`docKhoang` ngay trên.
+  const loaiMach = docLoaiMach(q.loai_mach);
 
   // API trả 404 `sub_khong_ton_tai` cho slug lạ — `docFeedSub` quy nó về `null`, và trang
   // sub không tồn tại phải là 404 thật chứ không phải một feed rỗng trông như bình thường.
   // Hàm RIÊNG cho nhánh có sub (vá F1): đây là chỗ duy nhất `null` có nghĩa thật, nên chỉ
   // chỗ này được nhận một kiểu nullable.
   const [{ du_lieu: feed, cursorHong }, chi_tiet, cac_sub] = await Promise.all([
-    docFeedSub(sub, tab, { cursor, khoang, truong_phai: truongPhai }),
+    docFeedSub(sub, tab, { cursor, khoang, truong_phai: truongPhai, loai_mach: loaiMach }),
     docSub(sub),
     docCacSub(),
   ]);
@@ -100,8 +108,8 @@ export default async function TrangSub({
       coBan={duongDanSub(sub)}
       sub={sub}
       truongPhai={truongPhai}
+      loaiMach={loaiMach}
       sidebar={<Sidebar sub={chi_tiet} cacSub={cac_sub} />}
-      cacSub={cac_sub}
       // X9 — **không** truyền kèm `tieuDe`/`lede` nữa: có `header` thì hai prop ấy không
       // render ở đâu, và `lede={chi_tiet.mo_ta}` là bản sao thứ hai của `mo_ta` không ai
       // đọc. Nay kiểu `DauTrang` của `Feed` cấm hẳn — truyền cả hai là `tsc` đỏ.

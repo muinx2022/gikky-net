@@ -121,6 +121,12 @@ class Command(BaseCommand):
                 # mà việc của chúng không cần.
                 u.is_staff = la_super
                 u.is_superuser = la_super
+                # Cờ `la_tai_khoan_doi` (mạch loại `bai_viet`) chỉ BẬT, không bao giờ hạ,
+                # và chỉ cho hai tài khoản đăng bài — `admin` không phải một cây bút. Bật
+                # ở đây để máy dev dựng từ clone sạch cũng đúng như prod (migration 0045
+                # lo phần dữ liệu có sẵn).
+                if not la_super:
+                    u.la_tai_khoan_doi = True
                 u.set_password(mat_khau)
                 u.save()
 

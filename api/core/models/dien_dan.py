@@ -136,6 +136,31 @@ class TrangThaiMach(models.TextChoices):
     DONG = "closed", "Đã đóng sổ"
 
 
+class LoaiMach(models.TextChoices):
+    """Loại của mạch: nhật ký giao dịch · bài viết · chủ đề thảo luận
+    (`plans/2026-11-10-truong-loai-mach.md`, mục 7 cho `thao_luan`).
+
+    `thao_luan` KHÔNG BAO GIỜ là mặc định của ai — mặc định chỉ là `nhat_ky` hoặc
+    `bai_viet` (theo tác giả, xem `core/ghi.py::tao_mach`).
+
+    Khai ở tầng module vì cùng lý do với `TrangThaiMach` (`Meta.constraints` bên dưới cần
+    nó). **Tên cột là `Mach.loai_mach`, KHÔNG phải `loai`:** `loai` đã là chip tự do của
+    MỐC (`Moc.loai`) và `MachMoiIn` kế thừa `MocMoiIn` nên mang sẵn trường đó.
+    """
+
+    NHAT_KY = "nhat_ky", "Nhật ký"
+    BAI_VIET = "bai_viet", "Bài viết"
+    THAO_LUAN = "thao_luan", "Chủ đề thảo luận"
+
+
+class LenhChieu(models.TextChoices):
+    """Chiều của lệnh có cấu trúc trên nhật ký (`Mach.lenh_chieu`). Khai ở tầng module vì
+    cùng lý do với `LoaiMach`: `Meta.constraints` của `Mach` cần tham chiếu nó."""
+
+    MUA = "mua", "Mua"
+    BAN = "ban", "Bán"
+
+
 class Mach(models.Model):
     """Một bài viết dạng nhật ký nối dài (PLAN mục 2).
 
@@ -150,6 +175,8 @@ class Mach(models.Model):
     """
 
     TrangThai = TrangThaiMach
+    LoaiMach = LoaiMach
+    LenhChieu = LenhChieu
 
     sub = models.ForeignKey(Sub, on_delete=models.PROTECT, related_name="machs")
     author = models.ForeignKey(
@@ -176,6 +203,36 @@ class Mach(models.Model):
     truong_phai = models.CharField(max_length=30, null=True, blank=True)
     #: Mạch riêng tư: True = chỉ tác giả và staff xem được; False = công khai
     rieng_tu = models.BooleanField(default=False)
+    #: Nhật ký giao dịch · bài viết · chủ đề thảo luận. Mặc định `nhat_ky`; chỉ tài khoản có
+    #: `User.la_tai_khoan_doi` được mang `bai_viet` / `thao_luan`. Luật phân giải mặc định theo tác giả
+    #: và cổng 403 nằm ở `core/ghi.py::tao_mach` / `api/machs.py::tao_mach_api` — không
+    #: chép lại ở đây. Cột này bất biến sau khi đăng (chưa có đường đổi).
+    loai_mach = models.CharField(
+        max_length=10, choices=LoaiMach, default=LoaiMach.NHAT_KY
+    )
+
+    #: **Lệnh có cấu trúc** của nhật ký (`plans/2026-11-11-homepage-v2-giao-dien-moi.md` §6.1):
+    #: chiều · mã · giá vào, tuỳ chọn SL / TP / nhồi — để thẻ nhật ký trang chủ vẽ dải
+    #: "MUA HPG · Entry · SL · TP" mà KHÔNG phải đoán từ tiêu đề. Không liên quan
+    #: `Moc.figures` (cặp nhãn/giá trị tự do, bài viết cũng dùng).
+    #:
+    #: Toàn bộ NULL = nhật ký không khai lệnh (mọi hàng có trước migration `0046`). Ba cột
+    #: chiều/mã/giá vào cùng null hoặc cùng có; SL/TP/nhồi chỉ có khi ba cột kia có — hai
+    #: CHECK ở `Meta`. **Bất biến sau khi tạo** (biên lai: lệnh đã đặt thì không sửa lại,
+    #: thay đổi kể qua mốc); không endpoint nào sửa. Luật miền (thứ tự SL/vào/TP, chỉ cho
+    #: `nhat_ky`) ở `core/lenh.py` + `core/ghi.py::tao_mach`.
+    lenh_chieu = models.CharField(
+        max_length=3, choices=LenhChieu, null=True, blank=True
+    )
+    lenh_ma = models.CharField(max_length=20, null=True, blank=True)
+    lenh_gia_vao = models.DecimalField(
+        max_digits=20, decimal_places=8, null=True, blank=True
+    )
+    lenh_sl = models.DecimalField(max_digits=20, decimal_places=8, null=True, blank=True)
+    lenh_tp = models.DecimalField(max_digits=20, decimal_places=8, null=True, blank=True)
+    lenh_nhoi = models.DecimalField(
+        max_digits=20, decimal_places=8, null=True, blank=True
+    )
 
     #: Tác giả tắt bình luận (plans/2026-09-07-tat-mo-binh-luan.md).
     #: True: không cho phép viết bình luận mới hoặc reply. Bình luận cũ vẫn đọc được.
@@ -295,6 +352,50 @@ class Mach(models.Model):
                 | models.Q(hidden_by__isnull=False)
                 | models.Q(published_at__gt=models.F("created_at")),
                 name="mach_an_phai_co_nguoi_an_hoac_hen_gio",
+            ),
+            # `choices` chỉ được kiểm ở tầng form/serializer; `objects.create` / `update`
+            # nuốt giá trị lạ. CHECK ép ở DB để một nhãn sai không lọt vào bộ lọc feed.
+            models.CheckConstraint(
+                condition=models.Q(loai_mach__in=LoaiMach.values),
+                name="mach_loai_mach_hop_le",
+            ),
+            # --- Lệnh có cấu trúc (§6.1): bốn CHECK, mỗi cái một bất biến ------------
+            # Ba cột lõi đi cùng nhau: không có mạch "MUA nhưng chưa có mã".
+            models.CheckConstraint(
+                condition=(
+                    models.Q(
+                        lenh_chieu__isnull=True,
+                        lenh_ma__isnull=True,
+                        lenh_gia_vao__isnull=True,
+                    )
+                    | models.Q(
+                        lenh_chieu__isnull=False,
+                        lenh_ma__isnull=False,
+                        lenh_gia_vao__isnull=False,
+                    )
+                ),
+                name="mach_lenh_ba_cot_cung_co",
+            ),
+            # SL / TP / nhồi chỉ có khi đã có lệnh (ba cột lõi).
+            models.CheckConstraint(
+                condition=models.Q(lenh_chieu__isnull=False)
+                | models.Q(
+                    lenh_sl__isnull=True,
+                    lenh_tp__isnull=True,
+                    lenh_nhoi__isnull=True,
+                ),
+                name="mach_lenh_phu_can_ba_cot",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(lenh_chieu__isnull=True)
+                | models.Q(lenh_chieu__in=LenhChieu.values),
+                name="mach_lenh_chieu_hop_le",
+            ),
+            # Lệnh là của nhật ký giao dịch — bài viết / chủ đề không mang lệnh.
+            models.CheckConstraint(
+                condition=models.Q(lenh_chieu__isnull=True)
+                | models.Q(loai_mach=LoaiMach.NHAT_KY),
+                name="mach_lenh_chi_nhat_ky",
             ),
         ]
         indexes = [

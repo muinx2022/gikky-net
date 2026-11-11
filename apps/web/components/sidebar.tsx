@@ -6,12 +6,19 @@ import { DIEU_CAM } from "@/lib/phap-ly";
 import { duongDanMach } from "@/lib/url";
 
 import { ChanTrang } from "./chan-trang";
+import { ChuyenMucTuTrinhDuyet } from "./chuyen-muc-tu-trinh-duyet";
+import { KhoiChuyenMuc } from "./khoi-chuyen-muc";
+import { KhoiKhach } from "./khoi-khach";
 import css from "./sidebar.module.css";
 
-/** Sidebar phải — bố cục Reddit (plan con 1d §2.5.2 và §2.5.3).
+/** Sidebar phải — cột phải DUY NHẤT của web (plan con 1d §2.5.2 và §2.5.3; hai cột toàn site
+ * 2026-11-10: không còn cột trái, nên rail này mang cả những gì cột trái từng giữ).
  *
  * Các khối:
  *
+ * 0. **khách** — "Tham gia Gikky.net" (`KhoiKhach`, client): chỉ hiện với người CHƯA đăng
+ *    nhập, ở mọi trang có rail. Người đã đăng nhập có "Hồ sơ của tôi" + "Cài đặt" ở menu tài
+ *    khoản trên header, nên không có khối "Tài khoản" ở đây;
  * 1. giới thiệu (trang chủ) hoặc mô tả sub + số mạch + ngày lập (trang sub);
  * 2. luật rút gọn dẫn `/luat` — PLAN 5.10 bắt mọi trang công khai phải có đường tới đó,
  *    và chân trang một mình thì ở dưới quá xa để ai đọc;
@@ -19,8 +26,16 @@ import css from "./sidebar.module.css";
  *    tiêu đề "Chuyên mục" mà không có chuyên mục nào là biển chỉ đường chết: nó chiếm chỗ
  *    và hứa một lối đi không tồn tại. Đây cũng là điều kiện để `KhungHaiCotTinh` dùng lại
  *    đúng `Sidebar` này với `cacSub={[]}` thay vì chế một sidebar thứ hai.
+ *    **Có ở MỌI trang có rail** *(hai cột toàn site, 2026-11-10)*: cột trái từng đặt 13 link
+ *    `/s/*` + `/luat` trên mọi trang (bot vào trang mạch ~12.000 lượt / 30 ngày); bỏ cột trái
+ *    mà không chuyển danh sách vào đây là bớt link nội bộ từ mọi bài.
+ *    Trang TĨNH (`/luat`) không có `cacSub` từ server: truyền `chuyenMucTuTrinhDuyet` để khối
+ *    tự nạp ở trình duyệt (`ChuyenMucTuTrinhDuyet`) — xem `khung-hai-cot-tinh.tsx`;
  * 4. bài mới nhất — **vắng mặt hẳn khi `baiMoi` rỗng** *(2026-09-10)*. Lấp khoảng trống
  *    ở rail phải khi xem trang chi tiết mạch `/m/[slugId]` và các trang dùng `KhungHaiCot`.
+ *
+ * **Sidebar không gọi API.** Danh sách chuyên mục / bài mới do trang (hoặc `KhungHaiCot`) nạp ở
+ * server rồi truyền xuống; nhánh tự nạp ở trình duyệt nằm trong component client riêng.
  *
  * **KHÔNG có nút "Tham gia sub"** — PLAN mục 4 loại nó khỏi v1 *(chốt 2026-08-22)* kèm
  * lý do "một cái nút vĩnh viễn không bấm được còn tệ hơn không có nút". Đây là chỗ nó sẽ
@@ -36,6 +51,9 @@ export function Sidebar({
   cacSub,
   baiMoi,
   tieuDeBaiMoi = "Bài mới nhất",
+  chuyenMucTuTrinhDuyet = false,
+  khachTieuDe,
+  khachMoTa,
 }: {
   /** Hai dòng giới thiệu — trang chủ dùng, trang sub thay bằng `mo_ta` của chính sub. */
   gioiThieu?: string;
@@ -48,10 +66,18 @@ export function Sidebar({
   baiMoi?: readonly MachTomTatOut[];
   /** Tiêu đề khối bài mới: "Bài mới nhất" hoặc "Cùng chuyên mục" (khi ở trang mạch). */
   tieuDeBaiMoi?: string;
+  /** Chỉ cho trang TĨNH không có `cacSub` từ server (`/luat`): khối "Chuyên mục" tự nạp
+   * danh sách ở trình duyệt. Vô nghĩa khi `cacSub` đã có. */
+  chuyenMucTuTrinhDuyet?: boolean;
+  /** Tiêu đề + dòng phụ riêng của khối khách — chỉ trang chủ truyền ("Bắt đầu nhật ký của
+   * bạn", plan giao diện mới §3.4); các trang khác để trống ⇒ "Tham gia Gikky.net". */
+  khachTieuDe?: string;
+  khachMoTa?: string;
 }) {
-  void cacSub;
   return (
-    <aside className={css.cot} data-testid="sidebar">
+    <aside className={css.cot} data-testid="sidebar" aria-label="Thanh bên">
+      <KhoiKhach tieuDe={khachTieuDe} moTa={khachMoTa} />
+
       {sub != null ? (
         <section className={css.khoi} data-testid="sidebar-ve-sub">
           <h2 className={css.tieu_de}>Về s/{sub.slug}</h2>
@@ -65,8 +91,26 @@ export function Sidebar({
           <section className={css.khoi} data-testid="sidebar-gioi-thieu">
             <h2 className={css.tieu_de}>Về gikky.net</h2>
             <p className={css.than}>{gioiThieu}</p>
+            {/* Lối vào kho chủ đề thảo luận nằm ở rail chứ không chỉ ở khối Chủ đề của trang chủ:
+                khối ấy ẩn hẳn khi chưa có chủ đề nào, còn `/chu-de` thì không. Cố ý KHÔNG nằm
+                trong khối "Chuyên mục": `vo-reddit.spec.ts` B10 đòi khối đó chứa đúng tập link
+                `/s/*` của API. Cùng kiểu link `dan` của khối luật. */}
+            <Link
+              className={css.dan}
+              href="/chu-de"
+              prefetch={false}
+              data-testid="sidebar-dan-chu-de"
+            >
+              Chủ đề thảo luận →
+            </Link>
           </section>
         )
+      )}
+
+      {cacSub.length > 0 ? (
+        <KhoiChuyenMuc cacSub={cacSub} />
+      ) : (
+        chuyenMucTuTrinhDuyet && <ChuyenMucTuTrinhDuyet />
       )}
 
       <section className={css.khoi} data-testid="sidebar-luat">

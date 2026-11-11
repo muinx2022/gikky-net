@@ -4,7 +4,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { AnBinhLuanData, AnBinhLuanErrors, AnBinhLuanResponses, BoTheoMachData, BoTheoMachErrors, BoTheoMachResponses, BoTheoSubData, BoTheoSubErrors, BoTheoSubResponses, BoTheoUserData, BoTheoUserErrors, BoTheoUserResponses, CongKhaiMachData, CongKhaiMachErrors, CongKhaiMachResponses, DanhDauDaDocData, DanhDauDaDocErrors, DanhDauDaDocResponses, DanhDauDaXemData, DanhDauDaXemErrors, DanhDauDaXemResponses, DatAvatarData, DatAvatarErrors, DatAvatarResponses, DatReactionData, DatReactionErrors, DatReactionResponses, DatVoteData, DatVoteErrors, DatVoteResponses, DemLuotXemData, DemLuotXemErrors, DemLuotXemResponses, DongSoMachData, DongSoMachErrors, DongSoMachResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GoTrichData, GoTrichErrors, GoTrichResponses, GuiBaoCaoData, GuiBaoCaoErrors, GuiBaoCaoResponses, LietKeBanCuMocData, LietKeBanCuMocErrors, LietKeBanCuMocResponses, LietKeBinhLuanMachData, LietKeBinhLuanMachErrors, LietKeBinhLuanMachResponses, LietKeBinhLuanMocData, LietKeBinhLuanMocErrors, LietKeBinhLuanMocResponses, LietKeDangTheoData, LietKeDangTheoErrors, LietKeDangTheoResponses, LietKeDaVoteData, LietKeDaVoteErrors, LietKeDaVoteResponses, LietKeFeedDangDienRaData, LietKeFeedDangDienRaErrors, LietKeFeedDangDienRaResponses, LietKeFeedMoiData, LietKeFeedMoiErrors, LietKeFeedMoiResponses, LietKeLuuTruData, LietKeLuuTruErrors, LietKeLuuTruResponses, LietKeMachCuaUserData, LietKeMachCuaUserErrors, LietKeMachCuaUserResponses, LietKeSubDangTheoData, LietKeSubDangTheoErrors, LietKeSubDangTheoResponses, LietKeSubData, LietKeSubResponses, LietKeSubToiLamModData, LietKeSubToiLamModErrors, LietKeSubToiLamModResponses, LietKeThongBaoData, LietKeThongBaoErrors, LietKeThongBaoResponses, LietKeUserDangTheoData, LietKeUserDangTheoErrors, LietKeUserDangTheoResponses, LuuTruMachData, LuuTruMachErrors, LuuTruMachResponses, ModDatAnBinhLuanData, ModDatAnBinhLuanErrors, ModDatAnBinhLuanResponses, ModDatAnMachData, ModDatAnMachErrors, ModDatAnMachResponses, ModDatAnMocData, ModDatAnMocErrors, ModDatAnMocResponses, ModDatKhoaMachData, ModDatKhoaMachErrors, ModDatKhoaMachResponses, MoLaiMachData, MoLaiMachErrors, MoLaiMachResponses, NoiMocData, NoiMocErrors, NoiMocResponses, SuaBinhLuanData, SuaBinhLuanErrors, SuaBinhLuanResponses, SuaMocData, SuaMocErrors, SuaMocResponses, SuaToiData, SuaToiErrors, SuaToiResponses, TaiAnhMocData, TaiAnhMocErrors, TaiAnhMocResponses, TaiAnhNoiDungData, TaiAnhNoiDungErrors, TaiAnhNoiDungResponses, TaoMachData, TaoMachErrors, TaoMachResponses, TatBinhLuanMachData, TatBinhLuanMachErrors, TatBinhLuanMachResponses, TheoMachData, TheoMachErrors, TheoMachResponses, TheoSubData, TheoSubErrors, TheoSubResponses, TheoUserData, TheoUserErrors, TheoUserResponses, TimKiemData, TimKiemErrors, TimKiemGoiYData, TimKiemGoiYErrors, TimKiemGoiYResponses, TimKiemResponses, TrichVaoSoData, TrichVaoSoErrors, TrichVaoSoResponses, VietBinhLuanData, VietBinhLuanErrors, VietBinhLuanResponses, XemHoSoData, XemHoSoErrors, XemHoSoResponses, XemMachCuaToiData, XemMachCuaToiErrors, XemMachCuaToiResponses, XemMachData, XemMachErrors, XemMachResponses, XemSubCuaToiData, XemSubCuaToiErrors, XemSubCuaToiResponses, XemSubData, XemSubErrors, XemSubResponses, XemToiData, XemToiResponses, XemUserCuaToiData, XemUserCuaToiErrors, XemUserCuaToiResponses, XoaAnhMocData, XoaAnhMocErrors, XoaAnhMocResponses, XoaAvatarData, XoaAvatarErrors, XoaAvatarResponses, XoaBinhLuanData, XoaBinhLuanErrors, XoaBinhLuanResponses, XoaMocData, XoaMocErrors, XoaMocResponses } from './types.gen';
+import type { AnBinhLuanData, AnBinhLuanErrors, AnBinhLuanResponses, BoTheoMachData, BoTheoMachErrors, BoTheoMachResponses, BoTheoSubData, BoTheoSubErrors, BoTheoSubResponses, BoTheoUserData, BoTheoUserErrors, BoTheoUserResponses, CongKhaiMachData, CongKhaiMachErrors, CongKhaiMachResponses, DanhDauDaDocData, DanhDauDaDocErrors, DanhDauDaDocResponses, DanhDauDaXemData, DanhDauDaXemErrors, DanhDauDaXemResponses, DatAvatarData, DatAvatarErrors, DatAvatarResponses, DatReactionData, DatReactionErrors, DatReactionResponses, DatVoteData, DatVoteErrors, DatVoteResponses, DemLuotXemData, DemLuotXemErrors, DemLuotXemResponses, DongSoMachData, DongSoMachErrors, DongSoMachResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GoTrichData, GoTrichErrors, GoTrichResponses, GuiBaoCaoData, GuiBaoCaoErrors, GuiBaoCaoResponses, LietKeBanCuMocData, LietKeBanCuMocErrors, LietKeBanCuMocResponses, LietKeBinhLuanMachData, LietKeBinhLuanMachErrors, LietKeBinhLuanMachResponses, LietKeBinhLuanMocData, LietKeBinhLuanMocErrors, LietKeBinhLuanMocResponses, LietKeDangTheoData, LietKeDangTheoErrors, LietKeDangTheoResponses, LietKeDaVoteData, LietKeDaVoteErrors, LietKeDaVoteResponses, LietKeFeedDangDienRaData, LietKeFeedDangDienRaErrors, LietKeFeedDangDienRaResponses, LietKeFeedMoiData, LietKeFeedMoiErrors, LietKeFeedMoiResponses, LietKeLuuTruData, LietKeLuuTruErrors, LietKeLuuTruResponses, LietKeMachCuaUserData, LietKeMachCuaUserErrors, LietKeMachCuaUserResponses, LietKeNhatKyMoiTacGiaData, LietKeNhatKyMoiTacGiaErrors, LietKeNhatKyMoiTacGiaResponses, LietKeSubDangTheoData, LietKeSubDangTheoErrors, LietKeSubDangTheoResponses, LietKeSubData, LietKeSubResponses, LietKeSubToiLamModData, LietKeSubToiLamModErrors, LietKeSubToiLamModResponses, LietKeThongBaoData, LietKeThongBaoErrors, LietKeThongBaoResponses, LietKeUserDangTheoData, LietKeUserDangTheoErrors, LietKeUserDangTheoResponses, LuuTruMachData, LuuTruMachErrors, LuuTruMachResponses, ModDatAnBinhLuanData, ModDatAnBinhLuanErrors, ModDatAnBinhLuanResponses, ModDatAnMachData, ModDatAnMachErrors, ModDatAnMachResponses, ModDatAnMocData, ModDatAnMocErrors, ModDatAnMocResponses, ModDatKhoaMachData, ModDatKhoaMachErrors, ModDatKhoaMachResponses, MoLaiMachData, MoLaiMachErrors, MoLaiMachResponses, NoiMocData, NoiMocErrors, NoiMocResponses, SuaBinhLuanData, SuaBinhLuanErrors, SuaBinhLuanResponses, SuaMocData, SuaMocErrors, SuaMocResponses, SuaToiData, SuaToiErrors, SuaToiResponses, TaiAnhMocData, TaiAnhMocErrors, TaiAnhMocResponses, TaiAnhNoiDungData, TaiAnhNoiDungErrors, TaiAnhNoiDungResponses, TaoMachData, TaoMachErrors, TaoMachResponses, TatBinhLuanMachData, TatBinhLuanMachErrors, TatBinhLuanMachResponses, TheoMachData, TheoMachErrors, TheoMachResponses, TheoSubData, TheoSubErrors, TheoSubResponses, TheoUserData, TheoUserErrors, TheoUserResponses, TimKiemData, TimKiemErrors, TimKiemGoiYData, TimKiemGoiYErrors, TimKiemGoiYResponses, TimKiemResponses, TrichVaoSoData, TrichVaoSoErrors, TrichVaoSoResponses, VietBinhLuanData, VietBinhLuanErrors, VietBinhLuanResponses, XemHoSoData, XemHoSoErrors, XemHoSoResponses, XemMachCuaToiData, XemMachCuaToiErrors, XemMachCuaToiResponses, XemMachData, XemMachErrors, XemMachResponses, XemSubCuaToiData, XemSubCuaToiErrors, XemSubCuaToiResponses, XemSubData, XemSubErrors, XemSubResponses, XemToiData, XemToiResponses, XemUserCuaToiData, XemUserCuaToiErrors, XemUserCuaToiResponses, XoaAnhMocData, XoaAnhMocErrors, XoaAnhMocResponses, XoaAvatarData, XoaAvatarErrors, XoaAvatarResponses, XoaBinhLuanData, XoaBinhLuanErrors, XoaBinhLuanResponses, XoaMocData, XoaMocErrors, XoaMocResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -173,6 +173,9 @@ export const lietKeFeedDangDienRa = <ThrowOnError extends boolean = false>(optio
  * Mạch đã đóng sổ **vẫn xuất hiện** — feed này sắp theo lúc bài LÊN SÓNG, không theo
  * trạng thái sổ.
  *
+ * `?trang_thai=open|closed` lọc theo trạng thái sổ của mạch (đang mở / đã đóng sổ); vắng
+ * = cả hai. Giá trị khác bị chặn 422. Chỉ feed này nhận tham số đó.
+ *
  * `published_at` chứ không `created_at`: bài hẹn giờ được soạn trước rồi phát hành sau,
  * và thứ tự người đọc thấy phải là thứ tự bài xuất hiện. Hai cột đều có trong
  * `MachTomTatOut` — `created_at` là ngày viết, `published_at` là ngày đăng.
@@ -195,6 +198,26 @@ export const lietKeFeedDangDienRa = <ThrowOnError extends boolean = false>(optio
  *
  */
 export const lietKeFeedMoi = <ThrowOnError extends boolean = false>(options?: Options<LietKeFeedMoiData, ThrowOnError>): RequestResult<LietKeFeedMoiResponses, LietKeFeedMoiErrors, ThrowOnError> => (options?.client ?? client).get<LietKeFeedMoiResponses, LietKeFeedMoiErrors, ThrowOnError>({ url: '/api/v1/feeds/moi', ...options });
+
+/**
+ * Feed Nhat Ky Moi Tac Gia
+ *
+ * Khối **"Nhật ký mới"** của trang chủ: MỖI tác giả một bài.
+ *
+ * Trong các mạch `nhat_ky` mà feed công khai được phép hiện (cùng bộ lọc với `/feeds/moi`:
+ * không ẩn, không riêng tư, không lưu trữ, không hẹn giờ chưa tới hạn), lấy **bài có
+ * `published_at` lớn nhất của mỗi tác giả**, rồi xếp các bài đó theo `published_at` giảm
+ * dần và cắt ở `?limit=` (1..20, mặc định 8).
+ *
+ * Chọn theo `published_at` — ngày bài LÊN SÓNG — chứ không theo `last_content_at` như
+ * `/feeds/moi`: nối mốc vào một bài cũ làm `last_content_at` của nó nhảy lên, và khối này
+ * sẽ hiện bài đăng từ ba tháng trước thay vì bài mới đăng hôm qua của cùng tác giả.
+ *
+ * Không có cursor: `cursor_ke_tiep` luôn `null`. Muốn xem hết nhật ký thì dùng
+ * `/feeds/moi?loai_mach=nhat_ky`, feed đó KHÔNG lọc theo tác giả.
+ *
+ */
+export const lietKeNhatKyMoiTacGia = <ThrowOnError extends boolean = false>(options?: Options<LietKeNhatKyMoiTacGiaData, ThrowOnError>): RequestResult<LietKeNhatKyMoiTacGiaResponses, LietKeNhatKyMoiTacGiaErrors, ThrowOnError> => (options?.client ?? client).get<LietKeNhatKyMoiTacGiaResponses, LietKeNhatKyMoiTacGiaErrors, ThrowOnError>({ url: '/api/v1/feeds/nhat-ky-moi-tac-gia', ...options });
 
 /**
  * Health
@@ -225,6 +248,14 @@ export const getHealth = <ThrowOnError extends boolean = false>(options?: Option
  * `settings.HAN_MUC_MACH_MOI_USER_NGAY`) ⇒ 429 `qua_han_muc_mach` kèm `thu_lai_tu` =
  * nửa đêm giờ VN kế tiếp. Ranh giới là nửa đêm VN, không phải 24 giờ trượt — cùng luật
  * với hạn mức mốc, xem `core/han_muc.py`.
+ *
+ * **`loai_mach`** (`nhat_ky` | `bai_viet` | `thao_luan`; KHÔNG phải `loai` — đó là chip
+ * của mốc): không gửi ⇒ `core/ghi.py::tao_mach` phân giải theo tác giả (tài khoản đội
+ * `la_tai_khoan_doi` → `bai_viet`, còn lại → `nhat_ky`; `thao_luan` không bao giờ là
+ * mặc định). Cổng ở `api/quyen.py::duoc_chon_loai_mach`: `bai_viet` chỉ tài khoản có cờ;
+ * `thao_luan` tài khoản có cờ hoặc `is_staff`; người không đủ quyền ⇒ 403
+ * `loai_mach_khong_duoc_phep` — không bỏ qua im lặng, và không có `Mach` nào được tạo.
+ * Giá trị ngoài ba loại ⇒ 400 `tham_so_khong_hop_le` (schema chặn).
  */
 export const taoMach = <ThrowOnError extends boolean = false>(options: Options<TaoMachData, ThrowOnError>): RequestResult<TaoMachResponses, TaoMachErrors, ThrowOnError> => (options.client ?? client).post<TaoMachResponses, TaoMachErrors, ThrowOnError>({
     security: [{
@@ -263,6 +294,10 @@ export const xemMach = <ThrowOnError extends boolean = false>(options: Options<X
  * Dong So Mach
  *
  * Đóng sổ — PLAN 5.1. **Quyền: CHỈ tác giả mạch** (403 cho người khác).
+ *
+ * Ngoại lệ DUY NHẤT: mạch `thao_luan` (chủ đề của gikky chung) — tác giả hoặc `is_staff`
+ * đều đóng được (`api/quyen.py::doi_nguoi_dong_so_duoc`); người khác tác giả bấm thì để lại
+ * `AuditLog`.
  *
  * `ket_qua` là một dòng tự do ≤40 ký tự ("+18.2% · 163 ngày"), hiện ở banner mặt CẶN và
  * OG card. **Thuần hiển thị** — server không validate ngữ nghĩa, cùng triết lý với
@@ -604,7 +639,8 @@ export const noiMoc = <ThrowOnError extends boolean = false>(options: Options<No
  *
  * Mở lại mạch đã đóng sổ — **trong 7 ngày**, sau đó nút biến mất (PLAN 5.1).
  *
- * **Quyền: CHỈ tác giả mạch.** Quá hạn ⇒ 409 `het_han_mo_lai`; mạch đang mở ⇒ 409
+ * **Quyền: CHỈ tác giả mạch** — trừ mạch `thao_luan`, nơi `is_staff` cũng được (như
+ * `dong_so_mach`). Quá hạn ⇒ 409 `het_han_mo_lai`; mạch đang mở ⇒ 409
  * `mach_dang_mo`.
  *
  * Hạn tính từ `closed_at`, và nó là hạn THẬT chứ không phải gợi ý UI: một cuốn sổ mở

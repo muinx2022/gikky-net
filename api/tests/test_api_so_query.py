@@ -334,3 +334,62 @@ def test_avatar_cua_author_KHONG_lam_tang_so_query(
     # `HoSoOut.avatar_url` là avatar của chính chủ hồ sơ (không lồng trong `author`), và
     # mỗi thẻ mạch kèm theo cũng mang `author.avatar_url`.
     assert d["avatar_url"] and all(m["author"]["avatar_url"] for m in d["machs"])
+
+
+# --- `GET /feeds/nhat-ky-moi-tac-gia` (2026-11-11) ---------------------------
+
+#: Khối "Nhật ký mới" của trang chủ. Hằng RIÊNG, không nằm trong `SO_QUERY`: nó là endpoint
+#: mới và con số của nó là một quyết định riêng.
+#:
+#: = 3, đúng bằng `SO_QUERY["feed"]`: MỘT truy vấn cho cả tập mạch (`DISTINCT ON (author_id)`
+#: nằm trong `pk IN (subquery)`, `sub` + `author` nạp bằng `select_related`) · **2 cho thẻ**
+#: (`trinh_bay.du_lieu_the`). Khác `/feeds/moi` ở chỗ nào: không có cursor để giải mã và không
+#: có truy vấn "sub có tồn tại không" — nên không có gì tự nhiên để cao hơn feed.
+SO_QUERY_NHAT_KY_MOI_TAC_GIA = 3
+
+
+def test_nhat_ky_moi_tac_gia_so_query_co_dinh_khong_phu_thuoc_so_mach(
+    client, seed, django_assert_num_queries
+):
+    """Số truy vấn ĐỘC LẬP với số mạch, số tác giả, số mốc và số ảnh.
+
+    Ghim một con số trên MỘT tập dữ liệu cố định vẫn xanh khi cài đặt là N+1 mà N tình cờ
+    khớp, nên đo hai lần: trên `seed` (ít tác giả) rồi sau khi thêm 12 tác giả, mỗi người
+    vài mạch, một số mạch có nhiều mốc và mốc 1 có ảnh gallery — tức mọi nhánh của
+    `du_lieu_the` (ảnh, trích đoạn, mốc mới nhất) đều chạy. Con số phải Y NGUYÊN.
+    """
+    from core.ghi import them_moc
+    from core.models import MocAnh, User
+
+    with django_assert_num_queries(SO_QUERY_NHAT_KY_MOI_TAC_GIA):
+        truoc = lay(client, "/api/v1/feeds/nhat-ky-moi-tac-gia?limit=20")
+    assert truoc["items"], "feed rỗng thì không đo được N+1 của sub/author"
+
+    for i in range(12):
+        u = User.objects.create(username=f"tac_gia_them_{i}", display_name=f"TG {i}")
+        for j in range(3):
+            m, moc1 = tao_mach(
+                sub=seed.sub,
+                author=u,
+                title=f"Nhật ký {i}.{j}",
+                body="Mốc 1.",
+                loai_mach=Mach.LoaiMach.NHAT_KY,
+            )
+            if j == 2:  # bài MỚI nhất của tác giả — đúng bài endpoint sẽ chọn
+                them_moc(mach=m, author=u, body="Mốc hai đủ dài để qua cổng. " * 3)
+                MocAnh.objects.create(
+                    moc=moc1,
+                    khoa_luu_tru=f"nk-{i}.jpg",
+                    status=MocAnh.TrangThai.XAC_NHAN,
+                    position=0,
+                    w=800,
+                    h=600,
+                )
+
+    with django_assert_num_queries(SO_QUERY_NHAT_KY_MOI_TAC_GIA):
+        sau = lay(client, "/api/v1/feeds/nhat-ky-moi-tac-gia?limit=20")
+    assert len(sau["items"]) == len(truoc["items"]) + 12 > 12
+    assert len({m["author"]["username"] for m in sau["items"]}) == len(sau["items"])
+    assert any(m["xem_truoc"] and m["xem_truoc"].get("anh") for m in sau["items"]), (
+        "nhánh ảnh của thẻ phải chạy, không thì 'không N+1' chỉ đo nhánh rỗng"
+    )

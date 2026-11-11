@@ -11,6 +11,7 @@ from core.models.dien_dan import Mach
 from core.models.moc import Moc
 from core.models.nguoi_dung import User
 from core.models.tuong_tac import Trich
+from core.rieng_tu import loc_xem_duoc
 
 from api.loi import LoiOut, khong_tim_thay
 from api.phan_trang import kiem_gioi_han
@@ -125,8 +126,18 @@ def xem_ho_so(request, username: str, limit: int = SO_MACH_TREN_HO_SO):
         # trích" *(chốt 2026-08-22)*: chủ mạch trích bình luận của chính mình không được
         # cộng vào chỉ số của chính họ. Rào 3 dựng lên để chặn "máy in địa vị", mà tự
         # trích là cái máy in ngắn nhất — không cần nick thứ hai, không cần ai đồng ý.
+        #
+        # `loc_xem_duoc(..., request.user, tien_to="moc__mach__")`: trích từ MẠCH RIÊNG TƯ chỉ
+        # được đếm cho người xem được mạch đó (tác giả / staff); khách đọc hồ sơ không được thấy
+        # "X được trích" từ một mạch họ không thấy. Áp ở ĐÂY chứ không nhét vào `TRICH_CON_HIEN`
+        # (`core/doc_noi_dung.py`): bộ lọc ấy dùng chung với `tap_dang_duoc_trich`, vốn không có
+        # người xem.
         duoc_trich=(
-            Trich.objects.filter(comment__author=user, **TRICH_CON_HIEN)
+            loc_xem_duoc(
+                Trich.objects.filter(comment__author=user, **TRICH_CON_HIEN),
+                request.user,
+                tien_to="moc__mach__",
+            )
             .exclude(moc__mach__author=user)
             .values("moc__mach__author")
             .distinct()

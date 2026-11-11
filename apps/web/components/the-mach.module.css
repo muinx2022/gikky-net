@@ -223,6 +223,20 @@
   padding: 1px 6px;
 }
 
+/* Nhãn loại mạch (chỉ trang chuyên mục). Cùng cỡ/viền với `.rieng_tu` bên dưới nhưng nét liền
+   và không dùng nền riêng: nó là thông tin thường trực của MỌI thẻ, không phải một trạng thái
+   hiếm, nên không được lấn mắt hơn tiêu đề. */
+.nhan_loai {
+  font-family: var(--f-ui);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--ink-2);
+  border: 1px solid var(--line-2);
+  border-radius: 3px;
+  padding: 0 6px;
+}
+
 .rieng_tu {
   font-family: var(--f-mono);
   font-size: 11px;

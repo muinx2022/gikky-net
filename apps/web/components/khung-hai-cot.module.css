@@ -1,27 +1,20 @@
-/* ⚠ Ba con số dưới đây phải KHỚP `feed.module.css#.khung` (trang chủ + trang sub dùng lưới
-   riêng vì `Feed` nhận `sidebar` làm prop). Lệch một con số là cột nội dung nhảy ngang
-   đúng cái lỗi mà khung này sinh ra để diệt — xem docstring `khung-hai-cot.tsx`. */
+/* MỘT lưới cho cả web (user chốt 2026-11-10: "giao diện chung của web là 2 cột, 1 cột content
+ * và cột bên phải"): nội dung chính + rail phải 300px, KHÔNG có rail trái. Mọi trang đi qua
+ * `VoKhungHaiCot` (`khung-hai-cot-vo.tsx`) nên chỉ có MỘT chỗ khai ba con số này — trước đó
+ * mỗi khung chép riêng và phải "khớp nhau", lệch một con số là cột nội dung nhảy ngang giữa
+ * hai lần bấm. Chỉ dùng token đã có trong `app/globals.css`.
+ *
+ * Bề rộng cột nội dung 760px ở MỌI trang: trang mạch đọc dài vẫn ổn, thẻ `TheMach` giãn ra
+ * thay vì để trống hai bên. */
 .khung {
-  max-width: 1380px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 0 24px;
   display: grid;
-  grid-template-columns: 226px minmax(0, 700px) 300px;
-  justify-content: space-between;
-  gap: 28px;
+  grid-template-columns: minmax(0, 760px) 300px;
+  justify-content: center;
+  gap: 36px;
   align-items: start;
-}
-
-.rail_trai {
-  position: sticky;
-  top: var(--cao-chrome);
-  height: calc(100vh - var(--cao-chrome));
-  max-height: calc(100vh - var(--cao-chrome));
-  overflow: hidden;
-  padding: 16px 14px 16px 0;
-  border-right: 1px solid var(--line);
-  display: flex;
-  flex-direction: column;
 }
 
 .chinh {
@@ -30,57 +23,54 @@
   padding: 16px 0 56px;
 }
 
-@media (max-width: 960px) and (min-width: 641px) {
-  /* Tablet & Foldable (641px - 960px): dùng chung thanh điều hướng trên giống mobile, padding 2 bên cân đối */
+/* Rail mặc định cuộn THEO TRANG (không dính, không vùng cuộn con). Bản đầu copy bộ ba
+ * `sticky` + `max-height` + `overflow-y: auto` + ẩn thanh cuộn, nhưng rail mang cả khối
+ * "Chuyên mục" (~1000px) nên ở màn laptop (1366x768) nó cao hơn khung nhìn: phần cuối
+ * ("Đọc luật cộng đồng →", dòng miễn trừ) nằm trong một vùng cuộn KHÔNG CÓ THANH CUỘN và
+ * chuột lăn trên vùng khác thì không bao giờ tới được. */
+.rail {
+  padding: 16px 0 32px;
+}
+
+/* Chỉ DÍNH khi khung nhìn đủ cao để chứa cả rail. Thấp hơn thì một rail dính cao hơn màn hình
+ * che mất phần đuôi cho tới tận cuối trang. Không `max-height`/`overflow` ở đây — đừng thêm
+ * lại: đó chính là cái bẫy ở trên.
+ *
+ * 1500px = header 61px + rail cao nhất đo được (1376px: khách thấy khối "Tham gia" 196px +
+ * Chuyên mục 13 mục + Luật + 5 "Bài mới" ở `/u/…`, `/tim-kiem`, `/dang-nhap`) ≈ 1437px, làm
+ * tròn lên. Bản trước của khung trang chủ là 1060px khi rail chỉ ~995px và CHƯA có khối khách:
+ * dời khối khách + danh sách chuyên mục sang rail làm rail cao thêm ~200–380px, nên để
+ * nguyên 1060px là dính một rail cao hơn khung nhìn. Thêm khối vào rail ⇒ đo lại con số này
+ * (`e2e/trang-chu-v2.spec.ts` L1 đứng trên nó). */
+@media (min-width: 961px) and (min-height: 1500px) {
+  .rail {
+    position: sticky;
+    top: var(--cao-chrome);
+  }
+}
+
+/* Dưới 960px: một cột, rail xuống dưới nội dung. Hết dính: một rail dính ở cuối trang một
+ * cột sẽ đè lên chính nội dung nó đứng dưới. Rail mang danh sách chuyên mục và luật — đường
+ * đi tới `/s/*` và `/luat` — nên không được ẩn trên điện thoại. */
+@media (max-width: 960px) {
   .khung {
     grid-template-columns: minmax(0, 1fr);
     max-width: 760px;
-    margin: 0 auto;
-    padding: 18px 20px 32px;
+    gap: 0;
+    padding: 18px 20px 34px;
   }
 
   .chinh {
-    padding: 0;
+    padding: 0 0 24px;
   }
 
-  .rail_trai,
   .rail {
-    display: none !important;
+    padding: 0;
   }
 }
 
 @media (max-width: 640px) {
-  /* Màn hình điện thoại (≤640px): 1 cột, ẩn rail (đã có trong Bottom Navigation Bar) */
   .khung {
-    grid-template-columns: minmax(0, 1fr);
-    padding: 16px 15px 32px;
-  }
-
-  .chinh {
-    padding: 0;
-  }
-
-  .rail_trai,
-  .rail {
-    display: none !important;
+    padding: 14px 12px 34px;
   }
 }
-
-/* ⚠ Ba thuộc tính dưới đây phải KHỚP `feed.module.css#.rail` — cùng lý do với `.khung`.
-   `max-height` + `overflow-y` là vế bắt buộc: rail dài hơn màn hình mà thiếu chúng thì
-   phần cuối KHÔNG BAO GIỜ cuộn tới được (nó dính nên không trôi lên). */
-.rail {
-  position: sticky;
-  top: var(--cao-chrome);
-  max-height: calc(100vh - var(--cao-chrome));
-  padding: 16px 0 32px;
-  overflow-y: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.rail::-webkit-scrollbar {
-  display: none;
-}
-
-

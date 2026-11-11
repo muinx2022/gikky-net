@@ -1,35 +1,3 @@
-/* Hai cột kiểu Reddit: feed trái, sidebar phải. Dưới 900px sidebar xuống dưới feed —
- * nội dung của nó là đường đi (luật, các sub), không phải trang trí, nên nó không được
- * biến mất trên điện thoại. */
-.khung {
-  max-width: 1380px;
-  margin: 0 auto;
-  padding: 0 24px;
-  display: grid;
-  grid-template-columns: 226px minmax(0, 700px) 300px;
-  justify-content: space-between;
-  gap: 28px;
-  align-items: start;
-}
-
-.rail_trai {
-  position: sticky;
-  top: var(--cao-chrome);
-  height: calc(100vh - var(--cao-chrome));
-  max-height: calc(100vh - var(--cao-chrome));
-  overflow: hidden;
-  padding: 16px 14px 16px 0;
-  border-right: 1px solid var(--line);
-  display: flex;
-  flex-direction: column;
-}
-
-.chinh {
-  min-width: 0;
-  width: 100%;
-  padding: 16px 0 56px;
-}
-
 .tieu_de {
   font-family: var(--f-display);
   font-size: clamp(23px, 3.6vw, 29px);
@@ -162,6 +130,44 @@
   font-weight: 500;
 }
 
+/* Hàng chip lọc theo loại mạch của `/s/<sub>` (`loc-loai-mach.tsx`). Chỉ dùng token sẵn có.
+ * Nằm Ở ĐÂY chứ không trong một CSS Module riêng: `Feed` do cả `/` lẫn `/s/<sub>` import, và
+ * một file CSS mới sẽ kéo thêm một `<link rel="stylesheet">` vào `<head>` của `/` dù trang đó
+ * không vẽ hàng chip nào. `flex-wrap` để ở 375px chip xuống dòng thay vì làm trang tràn ngang. */
+.loc_loai {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.loc_loai_chip {
+  white-space: nowrap;
+  font-family: var(--f-ui);
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--ink-2);
+  background: transparent;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  padding: 4px 12px;
+  transition: all 0.15s ease;
+}
+
+.loc_loai_chip:hover {
+  background: var(--inset);
+  color: var(--ink);
+}
+
+.loc_loai_chip_dang_chon,
+.loc_loai_chip_dang_chon:hover {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
 .bo_loc_truong_phai {
   display: inline-flex;
   align-items: center;
@@ -212,20 +218,6 @@
   border-bottom: 1px solid var(--accent);
 }
 
-.rail {
-  position: sticky;
-  top: var(--cao-chrome);
-  max-height: calc(100vh - var(--cao-chrome));
-  padding: 16px 0 32px;
-  overflow-y: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.rail::-webkit-scrollbar {
-  display: none;
-}
-
 @media (min-width: 961px) {
   .thanh_dinh {
     position: sticky !important;
@@ -247,36 +239,9 @@
   }
 }
 
-@media (max-width: 960px) and (min-width: 641px) {
-  /* Tablet & Foldable (641px - 960px): dùng chung thanh điều hướng trên giống mobile, padding 2 bên cân đối */
-  .khung {
-    grid-template-columns: minmax(0, 1fr);
-    max-width: 760px;
-    margin: 0 auto;
-    padding: 18px 20px 34px;
-  }
-
-  .chinh {
-    padding: 0;
-  }
-
-  .rail_trai,
-  .rail {
-    display: none !important;
-  }
-}
-
 @media (max-width: 640px) {
-  /* Màn hình điện thoại (≤640px): 1 cột, ẩn rail */
-  .khung {
-    grid-template-columns: minmax(0, 1fr);
-    padding: 14px 12px 34px;
-  }
-
-  .chinh {
-    padding: 0;
-  }
-
+  /* Màn hình điện thoại (≤640px). Gutter của khung là 12px (`khung-hai-cot.module.css`), nên
+     thanh tab tràn ra mép bằng đúng 12px. */
   .thanh_dinh {
     margin-inline: -12px;
     padding-inline: 12px;
@@ -292,11 +257,6 @@
     min-width: 36px;
     height: 34px;
     justify-content: center;
-  }
-
-  .rail_trai,
-  .rail {
-    display: none !important;
   }
 }
 

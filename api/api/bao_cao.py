@@ -20,6 +20,7 @@ from core.models.binh_luan import Comment
 from core.models.dien_dan import Mach
 from core.models.he_thong import Report
 from core.models.moc import Moc
+from core.rieng_tu import loc_xem_duoc
 
 from api.loi import KHONG_TIM_THAY, LoiOut
 from api.quyen import NOI_DUNG_DA_GO, LoiGhi, dang_nhap
@@ -32,10 +33,10 @@ router = Router()
 DA_BAO_CAO = "da_bao_cao"
 
 
-def _nap_dich(target_type: str, target_id: int):
+def _nap_dich(target_type: str, target_id: int, user):
     """Đối tượng bị tố, hoặc ném 404/409. Trả `None` nghĩa là không bao giờ xảy ra.
 
-    Ba luật, và cả ba đã có ở cửa khác — chép lại đây là chép lần thứ hai, nên chúng dùng
+    Bốn luật, và cả bốn đã có ở cửa khác — chép lại đây là chép lần thứ hai, nên chúng dùng
     đúng `doc_duoc` và đúng bộ lọc `hidden_at` của `api/ghi_chung.py` chứ không viết lại
     điều kiện:
 
@@ -44,20 +45,30 @@ def _nap_dich(target_type: str, target_id: int):
     - **đích đã là bia mộ hoặc đã bị ẩn ⇒ 409 `noi_dung_da_go`.** Không có gì để tố nữa, và
       một hàng trong hàng đợi trỏ vào ô trống chỉ tốn một lượt đọc của mod;
     - **mạch bị KHOÁ vẫn tố được** — cố ý, xem docstring endpoint.
+    - **mạch RIÊNG TƯ của người khác ⇒ 404** như mạch không tồn tại (`core/rieng_tu.py`):
+      báo cáo là cửa nhận id từ thân request, và 201 ở đây là xác nhận mạch ấy có thật.
     """
     if target_type == Report.Dich.MACH:
-        dich = Mach.objects.filter(pk=target_id, hidden_at__isnull=True).first()
+        dich = loc_xem_duoc(
+            Mach.objects.filter(pk=target_id, hidden_at__isnull=True), user
+        ).first()
         # `Mach` không có `deleted_at`; `hidden_at` đã lọc ở trên nên không cần `doc_duoc`.
         if dich is None:
             raise LoiGhi(404, KHONG_TIM_THAY, f"Không tìm thấy mạch {target_id}.")
         return dich
 
     if target_type == Report.Dich.MOC:
-        dich = Moc.objects.filter(pk=target_id, mach__hidden_at__isnull=True).first()
+        dich = loc_xem_duoc(
+            Moc.objects.filter(pk=target_id, mach__hidden_at__isnull=True),
+            user,
+            tien_to="mach__",
+        ).first()
         cai_gi = "mốc"
     else:
-        dich = Comment.objects.filter(
-            pk=target_id, mach__hidden_at__isnull=True
+        dich = loc_xem_duoc(
+            Comment.objects.filter(pk=target_id, mach__hidden_at__isnull=True),
+            user,
+            tien_to="mach__",
         ).first()
         cai_gi = "bình luận"
 
@@ -117,7 +128,7 @@ def gui_bao_cao(request, du_lieu: BaoCaoMoiIn):
     Response cố ý **không** trả trạng thái xử lý: người tố không được biết mod đã làm gì,
     và không được có một endpoint để dò xem hàng đợi có gì.
     """
-    _nap_dich(du_lieu.target_type, du_lieu.target_id)
+    _nap_dich(du_lieu.target_type, du_lieu.target_id, request.user)
     try:
         # `atomic()` bọc riêng lượt `INSERT` (savepoint): không có nó thì `IntegrityError`
         # làm hỏng cả transaction của request, và câu truy vấn kế tiếp — kể cả câu Django

@@ -1119,6 +1119,162 @@
         "title": "KhanDaiOut",
         "type": "object"
       },
+      "LenhIn": {
+        "description": "Lệnh có cấu trúc của nhật ký — `MachMoiIn.lenh` (`plans/2026-11-11-homepage-v2-giao-dien-moi.md` §6.1).\n\nSchema chỉ chặn HÌNH DẠNG (kiểu, độ dài, số dương, vừa cột `Decimal(20, 8)`). Luật miền —\nMUA ⇒ `sl < vào < tp`, BÁN ⇒ `tp < vào < sl`, chỉ nhận cho nhật ký — nằm ở\n`core/lenh.py::kiem_lenh` và `core/ghi.py::tao_mach`, nơi mọi cửa ghi đi qua. `ma` gửi\nkiểu nào cũng được, server lưu IN HOA. Số gửi dạng chuỗi hoặc số đều nhận; nên gửi chuỗi\nđể không mất độ chính xác khi đi qua `float` của JSON.",
+        "properties": {
+          "chieu": {
+            "enum": [
+              "mua",
+              "ban"
+            ],
+            "title": "Chieu",
+            "type": "string"
+          },
+          "gia_vao": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Gia Vao"
+          },
+          "ma": {
+            "maxLength": 20,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9._/-]+$",
+            "title": "Ma",
+            "type": "string"
+          },
+          "nhoi": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nhoi"
+          },
+          "sl": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sl"
+          },
+          "tp": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tp"
+          }
+        },
+        "required": [
+          "chieu",
+          "ma",
+          "gia_vao"
+        ],
+        "title": "LenhIn",
+        "type": "object"
+      },
+      "LenhOut": {
+        "description": "Lệnh có cấu trúc của nhật ký (`Mach.lenh_*`) — thẻ nhật ký trang chủ vẽ dải\n\"MUA HPG · Entry · SL · TP\" từ đây, KHÔNG parse tiêu đề.\n\nSố là **chuỗi** thập phân đã bỏ số 0 thừa và không bao giờ ở dạng mũ (\"10\", \"0.00012\",\n\"33.2\") — để web hiện nguyên văn, không phải đoán số chữ số lẻ. `rr` = |tp − vào| /\n|vào − sl| làm tròn 1 chữ số, chỉ khi có cả `sl` lẫn `tp`. Thuộc tính của MẠCH như\n`title`: bia mộ / ẩn mốc 1 không làm nó biến mất.",
+        "properties": {
+          "chieu": {
+            "enum": [
+              "mua",
+              "ban"
+            ],
+            "title": "Chieu",
+            "type": "string"
+          },
+          "gia_vao": {
+            "title": "Gia Vao",
+            "type": "string"
+          },
+          "ma": {
+            "title": "Ma",
+            "type": "string"
+          },
+          "nhoi": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nhoi"
+          },
+          "rr": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rr"
+          },
+          "sl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sl"
+          },
+          "tp": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tp"
+          }
+        },
+        "required": [
+          "chieu",
+          "ma",
+          "gia_vao"
+        ],
+        "title": "LenhOut",
+        "type": "object"
+      },
       "LoiOut": {
         "description": "`{detail, code}` — PLAN mục 7.",
         "properties": {
@@ -1260,6 +1416,25 @@
             "title": "Last Entry At",
             "type": "string"
           },
+          "lenh": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LenhOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "loai_mach": {
+            "enum": [
+              "nhat_ky",
+              "bai_viet",
+              "thao_luan"
+            ],
+            "title": "Loai Mach",
+            "type": "string"
+          },
           "locked": {
             "title": "Locked",
             "type": "boolean"
@@ -1351,6 +1526,7 @@
           "mo_lai_den",
           "tran_moc_moi_ngay",
           "ket_qua",
+          "loai_mach",
           "locked",
           "tat_binh_luan",
           "created_at",
@@ -1434,7 +1610,7 @@
         "type": "object"
       },
       "MachMoiIn": {
-        "description": "Đăng bài — `POST /machs`. Bài gốc **chính là mốc 1**, nên nó kế thừa `MocMoiIn`.\n\nKhông có trường `body` trên `Mach` (PLAN 5.1): `body` ở đây là thân của mốc 1.",
+        "description": "Đăng bài — `POST /machs`. Bài gốc **chính là mốc 1**, nên nó kế thừa `MocMoiIn`.\n\nKhông có trường `body` trên `Mach` (PLAN 5.1): `body` ở đây là thân của mốc 1.\n\n`loai_mach` (KHÔNG phải `loai` — đó là chip của mốc): không gửi ⇒ server phân giải theo\ntác giả; người thường gửi `bai_viet` hoặc `thao_luan` ⇒ 403. Xem `api/machs.py::tao_mach_api`.",
         "properties": {
           "body": {
             "maxLength": 50000,
@@ -1456,6 +1632,16 @@
             ],
             "title": "Figures"
           },
+          "lenh": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LenhIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "loai": {
             "anyOf": [
               {
@@ -1467,6 +1653,22 @@
               }
             ],
             "title": "Loai"
+          },
+          "loai_mach": {
+            "anyOf": [
+              {
+                "enum": [
+                  "nhat_ky",
+                  "bai_viet",
+                  "thao_luan"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Loai Mach"
           },
           "occurred_at": {
             "anyOf": [
@@ -1589,6 +1791,25 @@
             "title": "Last Entry At",
             "type": "string"
           },
+          "lenh": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LenhOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "loai_mach": {
+            "enum": [
+              "nhat_ky",
+              "bai_viet",
+              "thao_luan"
+            ],
+            "title": "Loai Mach",
+            "type": "string"
+          },
           "moc_1_id": {
             "anyOf": [
               {
@@ -1670,6 +1891,7 @@
           "author",
           "status",
           "ket_qua",
+          "loai_mach",
           "entry_count",
           "comment_count",
           "created_at",
@@ -2195,6 +2417,11 @@
             "title": "Display Name",
             "type": "string"
           },
+          "la_bot": {
+            "default": false,
+            "title": "La Bot",
+            "type": "boolean"
+          },
           "username": {
             "title": "Username",
             "type": "string"
@@ -2659,6 +2886,10 @@
             "title": "La Staff",
             "type": "boolean"
           },
+          "la_tai_khoan_doi": {
+            "title": "La Tai Khoan Doi",
+            "type": "boolean"
+          },
           "nhan_digest": {
             "title": "Nhan Digest",
             "type": "boolean"
@@ -2697,6 +2928,7 @@
           "email",
           "email_da_xac_thuc",
           "la_staff",
+          "la_tai_khoan_doi",
           "google_bat",
           "nhan_digest",
           "tran_anh_moi_moc"
@@ -2975,6 +3207,14 @@
                 "type": "null"
               }
             ]
+          },
+          "anh_khac": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/AnhOut"
+            },
+            "title": "Anh Khac",
+            "type": "array"
           },
           "so_anh": {
             "title": "So Anh",
@@ -3456,6 +3696,27 @@
           },
           {
             "in": "query",
+            "name": "loai_mach",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "nhat_ky",
+                    "bai_viet",
+                    "thao_luan"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Loai Mach"
+            }
+          },
+          {
+            "in": "query",
             "name": "sort",
             "required": false,
             "schema": {
@@ -3551,7 +3812,7 @@
     },
     "/api/v1/feeds/moi": {
       "get": {
-        "description": "Feed **Mới**: mọi bài, mới đăng trước (`published_at` giảm dần).\n\n    Mạch đã đóng sổ **vẫn xuất hiện** — feed này sắp theo lúc bài LÊN SÓNG, không theo\n    trạng thái sổ.\n\n    `published_at` chứ không `created_at`: bài hẹn giờ được soạn trước rồi phát hành sau,\n    và thứ tự người đọc thấy phải là thứ tự bài xuất hiện. Hai cột đều có trong\n    `MachTomTatOut` — `created_at` là ngày viết, `published_at` là ngày đăng.\n\n    `?sub=<slug>` lọc theo chuyên mục; sub không tồn tại trả 404 `sub_khong_ton_tai`.\n    `?cursor=` là cursor keyset lấy từ `cursor_ke_tiep` của trang trước; `null` là hết.\n    `?limit=` tối đa 50.\n\n    `?sort=tu_nhien` (mặc định) giữ khoá sort riêng của feed này. `?sort=nhieu_diem` sắp\n    theo điểm bài gốc giảm dần, cursor keyset trên `(diem, id)`. **Cursor của sort này\n    KHÔNG dùng được cho sort kia** — đem nhầm là 400 `cursor_khong_hop_le`.\n\n    `?khoang=ngay|tuan|thang|tat_ca` (mặc định `tat_ca`) lọc theo `published_at` (ngày\n    ĐĂNG — bài hẹn giờ đăng hôm nay thì thuộc hôm nay, dù soạn từ tuần trước), ranh giới\n    là nửa đêm **giờ VN**; `tuan` = 7 ngày lịch gần nhất kể cả hôm nay, `thang` = 30 ngày.\n    Khoảng áp cho **mọi** sort, không riêng `nhieu_diem`. Giá trị lạ trả 400\n    `tham_so_khong_hop_le` — không bao giờ lặng lẽ quy về `tat_ca`.\n\n    Mạch bị mod ẩn không xuất hiện.\n",
+        "description": "Feed **Mới**: mọi bài, mới đăng trước (`published_at` giảm dần).\n\n    Mạch đã đóng sổ **vẫn xuất hiện** — feed này sắp theo lúc bài LÊN SÓNG, không theo\n    trạng thái sổ.\n\n    `?trang_thai=open|closed` lọc theo trạng thái sổ của mạch (đang mở / đã đóng sổ); vắng\n    = cả hai. Giá trị khác bị chặn 422. Chỉ feed này nhận tham số đó.\n\n    `published_at` chứ không `created_at`: bài hẹn giờ được soạn trước rồi phát hành sau,\n    và thứ tự người đọc thấy phải là thứ tự bài xuất hiện. Hai cột đều có trong\n    `MachTomTatOut` — `created_at` là ngày viết, `published_at` là ngày đăng.\n\n    `?sub=<slug>` lọc theo chuyên mục; sub không tồn tại trả 404 `sub_khong_ton_tai`.\n    `?cursor=` là cursor keyset lấy từ `cursor_ke_tiep` của trang trước; `null` là hết.\n    `?limit=` tối đa 50.\n\n    `?sort=tu_nhien` (mặc định) giữ khoá sort riêng của feed này. `?sort=nhieu_diem` sắp\n    theo điểm bài gốc giảm dần, cursor keyset trên `(diem, id)`. **Cursor của sort này\n    KHÔNG dùng được cho sort kia** — đem nhầm là 400 `cursor_khong_hop_le`.\n\n    `?khoang=ngay|tuan|thang|tat_ca` (mặc định `tat_ca`) lọc theo `published_at` (ngày\n    ĐĂNG — bài hẹn giờ đăng hôm nay thì thuộc hôm nay, dù soạn từ tuần trước), ranh giới\n    là nửa đêm **giờ VN**; `tuan` = 7 ngày lịch gần nhất kể cả hôm nay, `thang` = 30 ngày.\n    Khoảng áp cho **mọi** sort, không riêng `nhieu_diem`. Giá trị lạ trả 400\n    `tham_so_khong_hop_le` — không bao giờ lặng lẽ quy về `tat_ca`.\n\n    Mạch bị mod ẩn không xuất hiện.\n",
         "operationId": "liet_ke_feed_moi",
         "parameters": [
           {
@@ -3584,6 +3845,47 @@
                 }
               ],
               "title": "Truong Phai"
+            }
+          },
+          {
+            "in": "query",
+            "name": "loai_mach",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "nhat_ky",
+                    "bai_viet",
+                    "thao_luan"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Loai Mach"
+            }
+          },
+          {
+            "in": "query",
+            "name": "trang_thai",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "open",
+                    "closed"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Trang Thai"
             }
           },
           {
@@ -3681,6 +3983,50 @@
         ]
       }
     },
+    "/api/v1/feeds/nhat-ky-moi-tac-gia": {
+      "get": {
+        "description": "Khối **\"Nhật ký mới\"** của trang chủ: MỖI tác giả một bài.\n\n    Trong các mạch `nhat_ky` mà feed công khai được phép hiện (cùng bộ lọc với `/feeds/moi`:\n    không ẩn, không riêng tư, không lưu trữ, không hẹn giờ chưa tới hạn), lấy **bài có\n    `published_at` lớn nhất của mỗi tác giả**, rồi xếp các bài đó theo `published_at` giảm\n    dần và cắt ở `?limit=` (1..20, mặc định 8).\n\n    Chọn theo `published_at` — ngày bài LÊN SÓNG — chứ không theo `last_content_at` như\n    `/feeds/moi`: nối mốc vào một bài cũ làm `last_content_at` của nó nhảy lên, và khối này\n    sẽ hiện bài đăng từ ba tháng trước thay vì bài mới đăng hôm qua của cùng tác giả.\n\n    Không có cursor: `cursor_ke_tiep` luôn `null`. Muốn xem hết nhật ký thì dùng\n    `/feeds/moi?loai_mach=nhat_ky`, feed đó KHÔNG lọc theo tác giả.\n",
+        "operationId": "liet_ke_nhat_ky_moi_tac_gia",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 8,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        },
+        "summary": "Feed Nhat Ky Moi Tac Gia",
+        "tags": [
+          "feed"
+        ]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "description": "`SELECT 1` thật xuống DB.\n\nDB sống → 200 `{\"status\":\"ok\",\"db\":\"ok\"}`; DB hỏng hoặc trả kết quả sai → 503\n`{\"status\":\"fail\",\"db\":\"fail\"}`.",
@@ -3716,7 +4062,7 @@
     },
     "/api/v1/machs": {
       "post": {
-        "description": "Đăng bài = tạo `Mach` + `Moc(seq=1)` trong MỘT giao dịch (PLAN 5.1).\n\n**Quyền: bất kỳ ai đã đăng nhập và không bị khoá.** Không có \"chủ\" để đối chiếu —\nngười gọi *trở thành* chủ. Tài khoản bị ban bị chặn ở lớp auth (`api/quyen.py`).\n\nKhông có nút \"tạo mạch\" riêng (PLAN nguyên tắc 1): mọi post sinh ra là post thường,\nUI mạch tự bật từ mốc 2. Vì thế endpoint này và `POST /machs/{id}/mocs` nhận **cùng\nmột bộ trường nội dung** — `MachMoiIn` kế thừa thẳng `MocMoiIn`.\n\nTác giả nhận **+1 phiếu của chính mình** ngay lúc đăng (PLAN 5.7) — để `0` trên cột\nvote có nghĩa là \"đã có người vote xuống\", không phải \"chưa ai đụng tới\".\n\n**Hạn mức: 10 mạch / người / ngày lịch VN** (PLAN mục 10 Phase 6, số đổi được ở\n`settings.HAN_MUC_MACH_MOI_USER_NGAY`) ⇒ 429 `qua_han_muc_mach` kèm `thu_lai_tu` =\nnửa đêm giờ VN kế tiếp. Ranh giới là nửa đêm VN, không phải 24 giờ trượt — cùng luật\nvới hạn mức mốc, xem `core/han_muc.py`.",
+        "description": "Đăng bài = tạo `Mach` + `Moc(seq=1)` trong MỘT giao dịch (PLAN 5.1).\n\n**Quyền: bất kỳ ai đã đăng nhập và không bị khoá.** Không có \"chủ\" để đối chiếu —\nngười gọi *trở thành* chủ. Tài khoản bị ban bị chặn ở lớp auth (`api/quyen.py`).\n\nKhông có nút \"tạo mạch\" riêng (PLAN nguyên tắc 1): mọi post sinh ra là post thường,\nUI mạch tự bật từ mốc 2. Vì thế endpoint này và `POST /machs/{id}/mocs` nhận **cùng\nmột bộ trường nội dung** — `MachMoiIn` kế thừa thẳng `MocMoiIn`.\n\nTác giả nhận **+1 phiếu của chính mình** ngay lúc đăng (PLAN 5.7) — để `0` trên cột\nvote có nghĩa là \"đã có người vote xuống\", không phải \"chưa ai đụng tới\".\n\n**Hạn mức: 10 mạch / người / ngày lịch VN** (PLAN mục 10 Phase 6, số đổi được ở\n`settings.HAN_MUC_MACH_MOI_USER_NGAY`) ⇒ 429 `qua_han_muc_mach` kèm `thu_lai_tu` =\nnửa đêm giờ VN kế tiếp. Ranh giới là nửa đêm VN, không phải 24 giờ trượt — cùng luật\nvới hạn mức mốc, xem `core/han_muc.py`.\n\n**`loai_mach`** (`nhat_ky` | `bai_viet` | `thao_luan`; KHÔNG phải `loai` — đó là chip\ncủa mốc): không gửi ⇒ `core/ghi.py::tao_mach` phân giải theo tác giả (tài khoản đội\n`la_tai_khoan_doi` → `bai_viet`, còn lại → `nhat_ky`; `thao_luan` không bao giờ là\nmặc định). Cổng ở `api/quyen.py::duoc_chon_loai_mach`: `bai_viet` chỉ tài khoản có cờ;\n`thao_luan` tài khoản có cờ hoặc `is_staff`; người không đủ quyền ⇒ 403\n`loai_mach_khong_duoc_phep` — không bỏ qua im lặng, và không có `Mach` nào được tạo.\nGiá trị ngoài ba loại ⇒ 400 `tham_so_khong_hop_le` (schema chặn).",
         "operationId": "tao_mach",
         "parameters": [],
         "requestBody": {
@@ -3847,7 +4193,7 @@
     },
     "/api/v1/machs/{mach_id}/close": {
       "post": {
-        "description": "Đóng sổ — PLAN 5.1. **Quyền: CHỈ tác giả mạch** (403 cho người khác).\n\n`ket_qua` là một dòng tự do ≤40 ký tự (\"+18.2% · 163 ngày\"), hiện ở banner mặt CẶN và\nOG card. **Thuần hiển thị** — server không validate ngữ nghĩa, cùng triết lý với\n`figures`. Không nhập ⇒ `null`, banner ẩn phần đó.\n\nMạch đã đóng rồi thì 409 `mach_da_dong` chứ không phải \"đóng lại lần nữa\": đóng sổ\nlần hai sẽ ghi đè `closed_at`, và cái đó **dời hạn 7 ngày mở lại** — tức một cách vô\nhạn hoá cái hạn đó bằng cách bấm hai lần.",
+        "description": "Đóng sổ — PLAN 5.1. **Quyền: CHỈ tác giả mạch** (403 cho người khác).\n\nNgoại lệ DUY NHẤT: mạch `thao_luan` (chủ đề của gikky chung) — tác giả hoặc `is_staff`\nđều đóng được (`api/quyen.py::doi_nguoi_dong_so_duoc`); người khác tác giả bấm thì để lại\n`AuditLog`.\n\n`ket_qua` là một dòng tự do ≤40 ký tự (\"+18.2% · 163 ngày\"), hiện ở banner mặt CẶN và\nOG card. **Thuần hiển thị** — server không validate ngữ nghĩa, cùng triết lý với\n`figures`. Không nhập ⇒ `null`, banner ẩn phần đó.\n\nMạch đã đóng rồi thì 409 `mach_da_dong` chứ không phải \"đóng lại lần nữa\": đóng sổ\nlần hai sẽ ghi đè `closed_at`, và cái đó **dời hạn 7 ngày mở lại** — tức một cách vô\nhạn hoá cái hạn đó bằng cách bấm hai lần.",
         "operationId": "dong_so_mach",
         "parameters": [
           {
@@ -4587,7 +4933,7 @@
     },
     "/api/v1/machs/{mach_id}/reopen": {
       "post": {
-        "description": "Mở lại mạch đã đóng sổ — **trong 7 ngày**, sau đó nút biến mất (PLAN 5.1).\n\n**Quyền: CHỈ tác giả mạch.** Quá hạn ⇒ 409 `het_han_mo_lai`; mạch đang mở ⇒ 409\n`mach_dang_mo`.\n\nHạn tính từ `closed_at`, và nó là hạn THẬT chứ không phải gợi ý UI: một cuốn sổ mở\nlại được vô thời hạn thì \"đã đóng sổ\" không còn nghĩa gì, mà đó là nhãn cả mặt CẶN\nlẫn OG card đang dựa vào.\n\n`ket_qua` **bị xoá theo** — xem `core/ghi.py::mo_lai`.",
+        "description": "Mở lại mạch đã đóng sổ — **trong 7 ngày**, sau đó nút biến mất (PLAN 5.1).\n\n**Quyền: CHỈ tác giả mạch** — trừ mạch `thao_luan`, nơi `is_staff` cũng được (như\n`dong_so_mach`). Quá hạn ⇒ 409 `het_han_mo_lai`; mạch đang mở ⇒ 409\n`mach_dang_mo`.\n\nHạn tính từ `closed_at`, và nó là hạn THẬT chứ không phải gợi ý UI: một cuốn sổ mở\nlại được vô thời hạn thì \"đã đóng sổ\" không còn nghĩa gì, mà đó là nhãn cả mặt CẶN\nlẫn OG card đang dựa vào.\n\n`ket_qua` **bị xoá theo** — xem `core/ghi.py::mo_lai`.",
         "operationId": "mo_lai_mach",
         "parameters": [
           {

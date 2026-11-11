@@ -304,6 +304,14 @@ export const quanTriLuotXemOnline = <ThrowOnError extends boolean = false>(optio
  * `published_at` **tăng dần** — cái sắp lên trước đứng đầu. Mọi nhóm khác giữ nguyên
  * `created_at` giảm dần.
  *
+ * `?loai_mach=` (tuỳ chọn, `nhat_ky|bai_viet|thao_luan`; giá trị lạ ⇒ 400
+ * `tham_so_khong_hop_le`) lọc theo loại mạch và **kết hợp được** với `trang_thai`. Không
+ * truyền ⇒ mọi loại, như trước. Form đăng bài của khu quản trị dùng
+ * `?loai_mach=thao_luan&trang_thai=mo` để biết "đang có chủ đề nào đang mở" trước khi tạo
+ * chủ đề thứ hai — nên "đang mở" ở đây là nhóm `mo` (loại ẩn, khoá, **và bài chờ giờ
+ * hẹn**), không phải `chua_go`. Nhóm `mo` không loại bài đã lưu trữ; hàng có `da_luu_tru`
+ * để bên gọi tự loại.
+ *
  * Không phải khẩu vị: danh sách này là một hàng đợi việc sắp xảy ra, và một hàng đợi
  * xếp ngược thì bài lên trong 10 phút nữa nằm ở trang cuối. Cursor keyset đi theo đúng
  * khoá sắp ấy — hai nửa lệch nhau là trang 2 trùng/sót hàng.

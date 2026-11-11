@@ -32,6 +32,8 @@ from ninja import Schema
 from core.doc_noi_dung import SortKhanDai, TrangThaiNoiDung
 from core.mat import Mat
 
+from api.schemas_ghi import LenhChieuIn, LoaiMachIn
+
 
 class NguoiDungTomTatOut(Schema):
     """Tác giả, ở mức đủ để render một dòng chữ ký."""
@@ -45,6 +47,10 @@ class NguoiDungTomTatOut(Schema):
     #: `avatar_khoa` là cột đã `select_related("author")` nạp sẵn. Xem
     #: `api/trinh_bay.py::nguoi_dung_ra`.
     avatar_url: str | None
+    #: Tài khoản BOT demo (`User.la_bot`) — web vẽ nhãn "BOT · DEMO" cạnh tên theo cờ này,
+    #: không so `username`. Chỉ bật bằng migration; không đường ghi nào đặt được. Mặc định
+    #: `False` để schema dựng tay (test, client cũ) vẫn hợp lệ.
+    la_bot: bool = False
 
 
 class SubTomTatOut(Schema):
@@ -175,6 +181,13 @@ class AnhNoiDungOut(Schema):
 #: là chỗ QUYẾT ĐỊNH CÓ MỞ HAY KHÔNG, không phải chỗ đọc bài.
 DAI_TRICH_FEED = 240
 
+#: Số ảnh tối đa mà `XemTruocOut` mang theo: `anh` + `anh_khac` = 10. Hàng bài viết ở trang
+#: chủ vẽ MỘT khung gallery lật từng ảnh kiểu Reddit (`apps/web/components/gallery-bai-viet.tsx`);
+#: ảnh thứ 11 trở đi chỉ là con số `so_anh` ("Xem tất cả {so_anh} ảnh →"). Hằng TS tương ứng
+#: `SO_ANH_GALLERY_TOI_DA` (`apps/web/lib/xem-truoc-anh.ts`) PHẢI bằng hằng này — bài đo
+#: `e2e/don-vi/xem-truoc-anh.spec.ts` đọc dòng gán bên dưới bằng regex, đừng đổi dạng dòng.
+SO_ANH_XEM_TRUOC = 10
+
 
 class XemTruocOut(Schema):
     """Nội dung xem trước của một thẻ feed, lấy từ **mốc 1**.
@@ -203,7 +216,15 @@ class XemTruocOut(Schema):
     #: Ảnh ĐẦU TIÊN của gallery mốc 1, hoặc `null`. Chỉ ảnh đang thật sự phục vụ được —
     #: ảnh đã vào kho cách ly (mốc bia mộ / bị ẩn) không ra tới đây.
     anh: AnhOut | None
-    #: Tổng số ảnh phục vụ được của mốc 1 — UI vẽ "+N" trên tấm đầu. `0` khi không có.
+    #: Ảnh THỨ 2 đến THỨ `SO_ANH_XEM_TRUOC` (tối đa `SO_ANH_XEM_TRUOC - 1` = 9 phần tử), cùng
+    #: thứ tự với `anh` (`position, id` với gallery; thứ tự trong `body` với ảnh nhúng) và
+    #: cùng bộ lọc "đang thật sự phục vụ được". `[]` khi mốc 1 có ≤ 1 ảnh. Thêm 2026-11-10 cho
+    #: gallery của hàng bài viết ở trang chủ (ban đầu 2 phần tử, nay 9: gallery lật từng ảnh);
+    #: `anh` và `so_anh` giữ nguyên nghĩa. Có giá trị mặc định nên client cũ không đọc nó vẫn
+    #: chạy. Tên trường GIỮ NGUYÊN khi nới trần để không phải đổi breaking.
+    anh_khac: list[AnhOut] = []
+    #: Tổng số ảnh phục vụ được của mốc 1 — UI vẽ bộ đếm "n/N" và slide "Xem tất cả N ảnh →"
+    #: khi N vượt số ảnh được mang theo. `0` khi không có.
     so_anh: int
 
 
@@ -213,6 +234,25 @@ class MocMoiNhatTomTatOut(Schema):
     seq: int
     loai: str | None
     created_at: datetime
+
+
+class LenhOut(Schema):
+    """Lệnh có cấu trúc của nhật ký (`Mach.lenh_*`) — thẻ nhật ký trang chủ vẽ dải
+    "MUA HPG · Entry · SL · TP" từ đây, KHÔNG parse tiêu đề.
+
+    Số là **chuỗi** thập phân đã bỏ số 0 thừa và không bao giờ ở dạng mũ ("10", "0.00012",
+    "33.2") — để web hiện nguyên văn, không phải đoán số chữ số lẻ. `rr` = |tp − vào| /
+    |vào − sl| làm tròn 1 chữ số, chỉ khi có cả `sl` lẫn `tp`. Thuộc tính của MẠCH như
+    `title`: bia mộ / ẩn mốc 1 không làm nó biến mất.
+    """
+
+    chieu: LenhChieuIn
+    ma: str
+    gia_vao: str
+    sl: str | None = None
+    tp: str | None = None
+    nhoi: str | None = None
+    rr: str | None = None
 
 
 class MachTomTatOut(Schema):
@@ -243,6 +283,10 @@ class MachTomTatOut(Schema):
     ket_qua: str | None
     truong_phai: str | None = None
     rieng_tu: bool = False
+    #: `nhat_ky` | `bai_viet` — homepage dùng để tách khối nhật ký khỏi khối bài viết
+    #: (`?loai_mach=` ở feed). Thuộc tính của HÀNG, không phụ thuộc người xem. Khai bằng
+    #: `Literal` để `openapi.json` ra `enum`.
+    loai_mach: LoaiMachIn
     entry_count: int
     #: Số bình luận **ĐỌC ĐƯỢC** — bình luận đã xoá hoặc bị ẩn không được đếm, dù khán
     #: đài vẫn render bia mộ giữ chỗ cho nhánh con. "💬 N" nghĩa là N bình luận đọc được,
@@ -288,6 +332,9 @@ class MachTomTatOut(Schema):
     view_count: int = 0
     #: Mạch đã lưu trữ (soft delete): True = đã lưu trữ, chỉ hiện trong tab Lưu trữ
     da_luu_tru: bool = False
+    #: Lệnh có cấu trúc của nhật ký, `null` khi tác giả không khai (và với mọi bài viết /
+    #: chủ đề). Xem `LenhOut`.
+    lenh: LenhOut | None = None
 
 
 class SubChiTietOut(Schema):
@@ -596,12 +643,17 @@ class MachChiTietOut(Schema):
     bai_hoc: str | None = None
     truong_phai: str | None = None
     rieng_tu: bool = False
+    #: Như `MachTomTatOut.loai_mach`.
+    loai_mach: LoaiMachIn
     #: Mod đã khoá mạch chưa (đọc được, cấm tương tác). Trục RIÊNG với `status`.
     locked: bool
     #: Tác giả đã tắt tính năng bình luận cho mạch này chưa (plans/2026-09-07-tat-mo-binh-luan.md).
     tat_binh_luan: bool
     #: Mạch đã lưu trữ (soft delete): True = đã lưu trữ, chỉ hiện trong tab Lưu trữ
     da_luu_tru: bool = False
+    #: Lệnh có cấu trúc của nhật ký, `null` khi tác giả không khai (và với mọi bài viết /
+    #: chủ đề). Xem `LenhOut`.
+    lenh: LenhOut | None = None
     #: Ngày VIẾT (bất biến) và ngày ĐĂNG. Web hiện `published_at`; `created_at` giữ lại
     #: vì nó là dấu server mà `MocRevision` và mọi phép đối chiếu dựa vào. Xem
     #: `MachTomTatOut`.
@@ -873,6 +925,9 @@ class ToiOut(Schema):
     email: str | None
     email_da_xac_thuc: bool
     la_staff: bool
+    #: Tài khoản của đội gikky (`User.la_tai_khoan_doi`) — để UI biết có hiện ô chọn loại
+    #: mạch (`bai_viet` / `thao_luan`) cho người đăng hay không. KHÁC `la_staff`. Khách `false`.
+    la_tai_khoan_doi: bool
     google_bat: bool
     #: Client ID công khai của Google App nếu `google_bat = True`. Dùng để frontend khởi tạo
     #: Google One Tap (Google Identity Services) cho khách chưa đăng nhập.

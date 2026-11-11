@@ -54,6 +54,7 @@ from ninja import Router
 from core.lam_sach_html import van_ban_thuan
 from core.models.binh_luan import Comment
 from core.models.dien_dan import Mach, Sub
+from core.rieng_tu import loc_cong_khai
 from core.tim_kiem import (
     TEN_INDEX,
     TEN_INDEX_BINH_LUAN,
@@ -174,23 +175,25 @@ def _boc(doan: str, tu_khoa: list[str]) -> str:
 def _mach_hien_theo_id(ids: list[int]) -> QuerySet:
     """Hàng Postgres của các mạch được phép hiện — **LỚP LỌC THỨ HAI**.
 
-    `hidden_at__isnull=True` là **cùng một bộ lọc với `api/feeds.py::_mach_hien`**, và
-    hai chỗ phải khớp nhau: lệch nghĩa là một bài hoặc rò ra ở search sau khi biến khỏi
+    `hidden_at__isnull=True` và `rieng_tu=False` (`loc_cong_khai` — mạch riêng tư không bao
+    giờ hiện ở tìm kiếm, kể cả cho tác giả) là **cùng một bộ lọc với
+    `api/feeds.py::_mach_hien`**, và hai chỗ phải khớp nhau: lệch nghĩa là một bài hoặc rò ra ở search sau khi biến khỏi
     feed, hoặc mất khỏi search dù feed vẫn có.
 
     ⚠ **Đừng "tối ưu" bằng cách tin vào cờ `hien` của index.** Cờ ấy là rào thứ nhất; nó
     đúng đúng bằng mức đường ghi cuối cùng nhớ cập nhật nó. Truy vấn này là thứ duy nhất
     đọc sự thật, và nó tốn MỘT câu SELECT cho cả trang.
     """
-    return Mach.objects.filter(
-        pk__in=ids, hidden_at__isnull=True
+    return loc_cong_khai(
+        Mach.objects.filter(pk__in=ids, hidden_at__isnull=True)
     ).select_related("sub", "author")
 
 
 def _binh_luan_hien_theo_id(ids: list[int]) -> QuerySet:
-    """Hàng Postgres của các bình luận được phép hiện — **LỚP LỌC THỨ HAI**, ba vế.
+    """Hàng Postgres của các bình luận được phép hiện — **LỚP LỌC THỨ HAI**, bốn vế.
 
-    Ba vế, và vế thứ ba là vế của cả lượt việc này:
+    Ba vế đầu, và vế thứ ba là vế của lượt trộn bình luận (vế thứ tư — mạch công khai, qua
+    `loc_cong_khai(tien_to="mach__")` — là của lượt vá mạch riêng tư 2026-11-09):
 
     1. `deleted_at__isnull=True` — bia mộ. Hàng vẫn còn trong Postgres (PLAN 5.3 giữ nó
        để cây khán đài không gãy), nên "đọc được một hàng" **không** đồng nghĩa "được
@@ -209,11 +212,14 @@ def _binh_luan_hien_theo_id(ids: list[int]) -> QuerySet:
     `mach__sub` / `mach__author` nạp sẵn vì mỗi dòng bình luận đều dựng một
     `MachTomTatOut` ngữ cảnh — thiếu chúng là N+1 trên mỗi trang kết quả.
     """
-    return Comment.objects.filter(
-        pk__in=ids,
-        deleted_at__isnull=True,
-        hidden_at__isnull=True,
-        mach__hidden_at__isnull=True,
+    return loc_cong_khai(
+        Comment.objects.filter(
+            pk__in=ids,
+            deleted_at__isnull=True,
+            hidden_at__isnull=True,
+            mach__hidden_at__isnull=True,
+        ),
+        tien_to="mach__",
     ).select_related("mach", "mach__sub", "mach__author", "author")
 
 

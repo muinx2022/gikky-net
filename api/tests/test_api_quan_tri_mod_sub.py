@@ -57,11 +57,13 @@ def test_gan_roi_go_di_tron_mot_vong(canh):
     assert r.status_code == 200, r.content
     assert r.json()["mods"] == [
         # `avatar_url` (2026-08-24): `mods` dùng `NguoiDungTomTatOut` (schema tác giả dùng
-        # chung), nên nó mang thêm trường này — `None` khi mod chưa có avatar.
+        # chung), nên nó mang thêm trường này — `None` khi mod chưa có avatar. Cùng lý do,
+        # `la_bot` (2026-11-11): mặc định `False`.
         {
             "username": "nguoi_se_lam_mod",
             "display_name": "Người Thường",
             "avatar_url": None,
+            "la_bot": False,
         }
     ]
 

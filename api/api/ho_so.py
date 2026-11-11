@@ -15,7 +15,7 @@ Tách khỏi `users.py` vì hai lý do có thật, không vì độ dài file:
 
 Không cửa nào ở đây bắt đầu từ `Mach`; chúng bắt đầu từ một bảng khác rồi đi ngược về
 mạch. Một cửa quên lọc là **cửa hậu đọc nội dung mod vừa gỡ**, trả HTTP 200, không có gì
-đỏ. Vì thế cả ba đi qua đúng một hàm — `_mach_hien()` — và không cửa nào tự viết điều
+đỏ. Vì thế cả ba đi qua đúng một hàm — `_mach_hien(nguoi_xem)` — và không cửa nào tự viết điều
 kiện.
 
 ⚠ **`Mach` KHÔNG có cột `deleted_at`** (chỉ `hidden_at`; xem `core/models/dien_dan.py`).
@@ -56,6 +56,7 @@ from ninja import Router
 from core.models.dien_dan import Mach
 from core.models.moc import Moc
 from core.models.nguoi_dung import User
+from core.rieng_tu import loc_xem_duoc
 from core.models.tuong_tac import Follow, Vote
 
 from api.loi import CURSOR_KHONG_HOP_LE, LoiOut, khong_tim_thay, loi
@@ -80,8 +81,13 @@ TRA_LOI_CONG_KHAI = {200: FeedOut, 400: LoiOut, 404: LoiOut}
 TRA_LOI_CUA_TOI = {200: FeedOut, 400: LoiOut, 401: LoiOut}
 
 
-def _mach_hien() -> QuerySet:
+def _mach_hien(nguoi_xem) -> QuerySet:
     """Mạch được phép hiện ra cửa công khai — **một định nghĩa cho cả ba cửa**.
+
+    `nguoi_xem` BẮT BUỘC (không mặc định): mạch riêng tư (`core/rieng_tu.py`) chỉ hiện cho
+    tác giả và staff. Cả ba cửa đi ngược về mạch qua `Vote` / `Follow` / `author`, và người
+    lạ có thể có `Vote`/`Follow` cũ trên một mạch về sau thành riêng tư — hàng ấy không được
+    kéo mạch ra danh sách của họ.
 
     Cùng điều kiện với `api/feeds.py::_mach_hien` và với `api/users.py::xem_ho_so`:
     `hidden_at IS NULL` và `archived_at IS NULL` là bộ lọc bảo vệ của `Mach`, và mạch bị mod ẩn
@@ -91,8 +97,9 @@ def _mach_hien() -> QuerySet:
     `mach.author` cho **mỗi** thẻ, nên thiếu nó là N+1 hai lần trên mọi trang — và nó
     không đỏ ở đâu ngoài `tests/test_api_so_query.py`.
     """
-    return Mach.objects.filter(
-        hidden_at__isnull=True, archived_at__isnull=True
+    return loc_xem_duoc(
+        Mach.objects.filter(hidden_at__isnull=True, archived_at__isnull=True),
+        nguoi_xem,
     ).select_related("sub", "author")
 
 
@@ -262,7 +269,7 @@ def liet_ke_mach_cua_user(
         )
         return l if l is not None else _ra(hang, hang, con_nua, truong="archived_at")
 
-    qs = _mach_hien().filter(author=user)
+    qs = _mach_hien(request.user).filter(author=user)
     if not (la_toi or la_staff):
         qs = qs.filter(rieng_tu=False)
 
@@ -303,7 +310,7 @@ def liet_ke_da_vote(
     # nó ném đi hàng `Vote` mồ côi (mạch đã bị xoá thật — `Vote` không có FK, xem
     # docstring đầu module). Lọc ở Python sau khi phân trang thì cả hai đều hỏng: một
     # trang 20 phiếu có thể trả về 3 thẻ, và `cursor_ke_tiep` thì vẫn nói "còn nữa".
-    moc_1_hien = Moc.objects.filter(seq=1, mach__in=_mach_hien().values("pk"))
+    moc_1_hien = Moc.objects.filter(seq=1, mach__in=_mach_hien(request.user).values("pk"))
     phieu = Vote.objects.filter(
         user=request.user,
         target_type=Vote.Loai.MOC,
@@ -349,11 +356,11 @@ def liet_ke_dang_theo(
     if (l := kiem_gioi_han(limit)) is not None:
         return l
 
-    # `mach__in=_mach_hien()` chứ không `mach__hidden_at__isnull=True`: cùng một luật, và
+    # `mach__in=_mach_hien(request.user)` chứ không `mach__hidden_at__isnull=True`: cùng một luật, và
     # nó phải đi qua đúng một hàm (xem đầu module). `select_related` nạp mạch + sub +
     # author cùng lượt — cả trang trong MỘT truy vấn.
     theo = Follow.objects.filter(
-        user=request.user, mach__in=_mach_hien().values("pk")
+        user=request.user, mach__in=_mach_hien(request.user).values("pk")
     ).select_related("mach__sub", "mach__author")
 
     hang, con_nua, l = _cat_keyset(theo, cursor=cursor, limit=limit)

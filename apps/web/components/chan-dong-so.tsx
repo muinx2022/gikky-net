@@ -40,19 +40,27 @@ import css from "./chan-dong-so.module.css";
  * `closed_at` có thể `null` ngay cả khi `status === "closed"` (dữ liệu nạp tay, mạch cũ
  * trước khi cột ấy ra đời), nên ngày tháng render có điều kiện riêng — không gộp vào
  * phép kiểm `status`.
+ *
+ * ## Chữ theo loại mạch *(homepage v2, plan §3.8)*
+ *
+ * Chủ đề thảo luận (`loai_mach === "thao_luan"`) dùng lại ĐÚNG cơ chế đóng sổ này, nhưng nó
+ * không phải một cuốn sổ: nhãn đổi thành "Đã đóng chủ đề" và khối `bai_hoc` thành "Tổng kết".
+ * **Chỉ đổi CHỮ** — cùng cấu trúc, cùng class, cùng `data-testid`, không đổi màu. Nhật ký và
+ * bài viết giữ nguyên chữ cũ từng byte (bài đo `mach-can.spec.ts` canh chữ "Mạch đã đóng").
  */
 export function ChanDongSo({
   mach,
 }: {
-  mach: Pick<MachChiTietOut, "status" | "ket_qua" | "closed_at" | "bai_hoc">;
+  mach: Pick<MachChiTietOut, "status" | "ket_qua" | "closed_at" | "bai_hoc" | "loai_mach">;
 }) {
   if (mach.status !== "closed") return null;
+  const la_chu_de = mach.loai_mach === "thao_luan";
 
   return (
     <div className={css.khung_chan} data-testid="chan-dong-so">
       <p className={css.dong_trang_thai}>
         <span className={css.nhan} data-testid="chan-dong-so-nhan">
-          Mạch đã đóng
+          {la_chu_de ? "Đã đóng chủ đề" : "Mạch đã đóng"}
         </span>
         {mach.closed_at !== null && (
           <span className="mono"> ngày {ngayCuaThoiDiem(mach.closed_at)}</span>
@@ -71,7 +79,7 @@ export function ChanDongSo({
       {mach.bai_hoc && (
         <div className={css.khoi_bai_hoc} data-testid="chan-dong-so-bai-hoc">
           <div className={css.tieu_de_bai_hoc}>
-            <span>📋 Mổ xẻ sau lệnh &amp; Bài học</span>
+            <span>{la_chu_de ? "📋 Tổng kết" : "📋 Mổ xẻ sau lệnh & Bài học"}</span>
           </div>
           <p className={css.noi_dung_bai_hoc}>{mach.bai_hoc}</p>
         </div>

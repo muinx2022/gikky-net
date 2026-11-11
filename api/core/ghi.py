@@ -114,6 +114,7 @@ from core.anh_luu import an_anh, ghi_anh, hien_anh, khoa_moi, url_anh, xoa_anh_t
 from core.cay_binh_luan import cap_phat_path
 from core.doc_noi_dung import doc_duoc, la_moc_chat_luong
 from core.lam_sach_html import DINH_DANG_HTML, DINH_DANG_MARKDOWN, lam_sach, van_ban_thuan
+from core.lenh import Lenh, kiem_lenh
 from core.models.binh_luan import Comment
 from core.models.dien_dan import Mach, Sub, slug_tu_title
 from core.models.he_thong import AuditLog, Report
@@ -361,9 +362,26 @@ def tao_mach(
     tat_binh_luan: bool = False,
     truong_phai: str | None = None,
     rieng_tu: bool = False,
+    loai_mach: str | None = None,
+    lenh: Lenh | None = None,
     _created_at_seed=None,
 ) -> tuple[Mach, Moc]:
     """Tạo `Mach` + `Moc(seq=1)` trong MỘT transaction (PLAN 5.1).
+
+    ## `loai_mach` — phân giải MẶC ĐỊNH theo tác giả, tại đúng chỗ này
+
+    `None` (không truyền) ⇒ tác giả có `la_tai_khoan_doi` → `bai_viet`, còn lại →
+    `nhat_ky`. Đặt luật ở đây chứ không ở tầng API để cả cửa v1 lẫn cửa admin hẹn giờ
+    (và các đường ống tin/bài không biết trường này) cùng nhận một kết quả. Giá trị lạ ⇒
+    `ValidationError`. **Hàm này KHÔNG kiểm quyền** (người thường chọn `bai_viet`): cổng
+    403 là việc của `api/machs.py::tao_mach_api`, vì nó cần mã lỗi HTTP riêng.
+
+    ## `lenh` — lệnh có cấu trúc (`plans/2026-11-11-homepage-v2-giao-dien-moi.md` §6.1)
+
+    Chỉ nhận khi `loai_mach` phân giải ra `nhat_ky`; loại khác truyền `lenh` ⇒
+    `ValidationError`. Luật miền (thứ tự SL / vào / TP, mã, số vừa cột) ở
+    `core/lenh.py::kiem_lenh` — một chỗ cho mọi cửa; `ma` được IN HOA ở đó. Kiểm TRƯỚC khi
+    ghi hàng nào, cùng chỗ với luật `thao_luan` + riêng tư. Ghi một lần, không có đường sửa.
 
     Không có trường `body` trên `Mach`: bài gốc *chính là* mốc 1. Vì vậy không tồn tại
     trạng thái hợp lệ nào có `Mach` mà không có mốc 1 — hai câu INSERT phải nằm trong
@@ -387,6 +405,24 @@ def tao_mach(
 
     `_created_at_seed`: chỉ `seed_dev` truyền — xem `_dong_dau_server`.
     """
+    if loai_mach is None:
+        loai_mach = (
+            Mach.LoaiMach.BAI_VIET
+            if author.la_tai_khoan_doi
+            else Mach.LoaiMach.NHAT_KY
+        )
+    elif loai_mach not in Mach.LoaiMach.values:
+        raise ValidationError(
+            f"loai_mach phải thuộc {sorted(Mach.LoaiMach.values)}, nhận {loai_mach!r}."
+        )
+    if loai_mach == Mach.LoaiMach.THAO_LUAN and rieng_tu:
+        # Chủ đề là nơi chung: riêng tư vô nghĩa và làm nó biến khỏi mọi feed. Luật đặt ở
+        # đây (một chỗ) để cửa công khai lẫn cửa admin hẹn giờ cùng bị chặn.
+        raise ValidationError("Chủ đề thảo luận không thể là mạch riêng tư.")
+    if lenh is not None:
+        if loai_mach != Mach.LoaiMach.NHAT_KY:
+            raise ValidationError("Lệnh có cấu trúc chỉ dành cho nhật ký.")
+        lenh = kiem_lenh(lenh)
     khi = _dong_dau_server(_created_at_seed)
     hen_gio = published_at is not None and published_at > khi
     with transaction.atomic():
@@ -394,9 +430,16 @@ def tao_mach(
             sub=sub,
             author=author,
             title=title,
+            lenh_chieu=lenh.chieu if lenh else None,
+            lenh_ma=lenh.ma if lenh else None,
+            lenh_gia_vao=lenh.gia_vao if lenh else None,
+            lenh_sl=lenh.sl if lenh else None,
+            lenh_tp=lenh.tp if lenh else None,
+            lenh_nhoi=lenh.nhoi if lenh else None,
             tat_binh_luan=tat_binh_luan,
             truong_phai=truong_phai,
             rieng_tu=rieng_tu,
+            loai_mach=loai_mach,
             created_at=khi,
             published_at=published_at if hen_gio else khi,
             hidden_at=khi if hen_gio else None,
@@ -1283,8 +1326,13 @@ def dong_so(
     ket_qua: str | None = None,
     bai_hoc: str | None = None,
     khi=None,
+    boi=None,
 ) -> Mach:
     """Đóng sổ mạch (PLAN 5.1). `ket_qua` là một dòng tự do ≤40 ký tự, **thuần hiển thị**.
+
+    `boi` (người bấm): mạch `thao_luan` do NGƯỜI KHÁC TÁC GIẢ đóng ⇒ ghi một dòng
+    `AuditLog` (`AUDIT_DONG_SO_CHU_DE`) trong CÙNG transaction, `meta` mang `ket_qua` /
+    `bai_hoc` trước khi bị ghi đè. Tác giả tự đóng, hoặc loại mạch khác ⇒ không ghi.
 
     `bai_hoc` là phân tích / mổ xẻ sau lệnh (≤5000 ký tự).
     Mạch đóng **vẫn bình luận được**, chỉ không nối mốc được — hai chuyện đó nằm ở tầng
@@ -1294,17 +1342,44 @@ def dong_so(
     khi = khi or timezone.now()
     with transaction.atomic():
         m = Mach.objects.select_for_update().get(pk=mach.pk)
+        ket_qua_cu, bai_hoc_cu = m.ket_qua, m.bai_hoc
         m.status = Mach.TrangThai.DONG
         m.closed_at = khi
         m.ket_qua = (ket_qua or "").strip() or None
         m.bai_hoc = (bai_hoc or "").strip() or None
         m.save(update_fields=["status", "closed_at", "ket_qua", "bai_hoc"])
         dong_bo_mach(m)
+        _ghi_audit_chu_de(
+            m, boi, AUDIT_DONG_SO_CHU_DE, ket_qua_cu=ket_qua_cu, bai_hoc_cu=bai_hoc_cu
+        )
     return m
 
 
-def mo_lai(*, mach: Mach) -> Mach:
+def _ghi_audit_chu_de(m: Mach, boi, action: str, **meta) -> None:
+    """Dòng `AuditLog` cho đóng / mở lại sổ CHỦ ĐỀ do người khác tác giả bấm.
+
+    Gọi TRONG transaction của hành động, sau khi hàng `Mach` đã bị khoá (không thêm đường
+    khoá mới). Không ghi khi: không có `boi`, mạch không phải `thao_luan`, hoặc người bấm
+    chính là tác giả — đó là hành vi cũ và nhật ký này trả lời "mod nào đụng vào bài của
+    người khác", không phải "ai bấm nút".
+    """
+    if boi is None or m.loai_mach != Mach.LoaiMach.THAO_LUAN or boi.pk == m.author_id:
+        return
+    ghi_audit(
+        actor=boi,
+        action=action,
+        target_type=DICH_MACH,
+        target_id=m.pk,
+        nguoi_bam=boi.username,
+        **meta,
+    )
+
+
+def mo_lai(*, mach: Mach, boi=None) -> Mach:
     """Mở lại mạch đã đóng sổ (PLAN 5.1 — trong 7 ngày, sau đó nút biến mất).
+
+    `boi`: như `dong_so` — mạch `thao_luan` do người khác tác giả mở lại ⇒ ghi
+    `AUDIT_MO_LAI_CHU_DE` kèm `ket_qua` / `bai_hoc` trước khi bị xoá.
 
     **`ket_qua` và `bai_hoc` bị xoá theo**, và đó là chủ đích: nó là dòng tổng kết của một
     cuốn sổ đã khép ("+18.2% · 163 ngày") và nó hiện trên banner mặt CẶN lẫn OG card. Giữ lại
@@ -1313,22 +1388,47 @@ def mo_lai(*, mach: Mach) -> Mach:
     """
     with transaction.atomic():
         m = Mach.objects.select_for_update().get(pk=mach.pk)
+        ket_qua_cu, bai_hoc_cu = m.ket_qua, m.bai_hoc
         m.status = Mach.TrangThai.MO
         m.closed_at = None
         m.ket_qua = None
         m.bai_hoc = None
         m.save(update_fields=["status", "closed_at", "ket_qua", "bai_hoc"])
         dong_bo_mach(m)
+        _ghi_audit_chu_de(
+            m, boi, AUDIT_MO_LAI_CHU_DE, ket_qua_cu=ket_qua_cu, bai_hoc_cu=bai_hoc_cu
+        )
     return m
 
 
 def cong_khai_mach(*, mach: Mach) -> Mach:
-    """Chuyển mạch riêng tư thành công khai (PLAN trung hạn)."""
+    """Chuyển mạch riêng tư thành công khai (PLAN trung hạn).
+
+    **Dời `published_at` về lúc công khai** (và chỉ khi thật sự lật cờ), cùng khuôn
+    `phat_hanh_mach(dat_gio_phat_hanh=True)`: feed "Mới" sắp theo `published_at` và
+    `bao_mach_moi` lấy nó làm khoá gộp chuông + đếm `so_mach_moi`. Giữ nguyên giá trị lúc
+    viết riêng tư thì mạch viết 3 ngày trước chìm sau mạch mới hơn, và chuông của nó ghi
+    đè lên hàng chuông cũ của ngày hôm đó.
+
+    ⛔ **CỐ Ý không đụng `lan_dau_len_song`, `created_at`, `Moc.created_at`.**
+    `core/cau_hinh.py::moc_bat_dau_tu_sua` lấy `max(moc.created_at, lan_dau_len_song)` làm
+    mốc cửa sổ sửa im lặng; mạch riêng tư có `lan_dau_len_song = created_at` từ lúc tạo.
+    Dời nó là mở lại cửa sổ sửa của các mốc đã viết riêng tư SAU khi đã biết kết quả — đúng
+    lỗ hổng mà trạng thái riêng tư đang tránh. Có bài đo ghim
+    (`tests/test_rieng_tu_vong2.py::test_v2_*`).
+    """
     with transaction.atomic():
         m = Mach.objects.select_for_update().get(pk=mach.pk)
         if m.rieng_tu:
             m.rieng_tu = False
-            m.save(update_fields=["rieng_tu"])
+            m.published_at = timezone.now()
+            m.save(update_fields=["rieng_tu", "published_at"])
+            # Feed "Mới" KHÔNG sắp theo `published_at` trực tiếp mà theo cột denormalize
+            # `last_content_at = max(published_at, mốc chất lượng mới nhất)`; chỉ
+            # `cap_nhat_dem_mach` tính lại nó (cùng khuôn `phat_hanh_mach`). Không gọi thì
+            # dời `published_at` mà feed vẫn đứng nguyên. Nó chỉ dựng lại cột DẪN XUẤT
+            # (đếm, `last_*`), không đụng `created_at` / `lan_dau_len_song`.
+            m = cap_nhat_dem_mach(m)
             dong_bo_mach(m)
     return m
 
@@ -1703,6 +1803,10 @@ AUDIT_HEN_GIO_MACH = "hen_gio_mach"
 AUDIT_PHAT_HANH_MACH = "phat_hanh_mach"
 AUDIT_LUU_TRU_MACH = "luu_tru_mach"
 AUDIT_BO_LUU_TRU_MACH = "bo_luu_tru_mach"
+#: Đóng / mở lại sổ CHỦ ĐỀ `thao_luan` bởi người KHÁC tác giả (mod `is_staff`). Tác giả tự
+#: bấm thì không ghi — xem `_ghi_audit_chu_de`. `meta`: `nguoi_bam`, `ket_qua_cu`, `bai_hoc_cu`.
+AUDIT_DONG_SO_CHU_DE = "dong_so_chu_de"
+AUDIT_MO_LAI_CHU_DE = "mo_lai_chu_de"
 
 #: `AuditLog.target_type` — cột `varchar(16)`, giữ chuỗi ngắn.
 DICH_MOC = "moc"

@@ -53,6 +53,7 @@ from api.quan_tri_schemas import (
     TrangNguoiDungOut,
     trich_yeu,
 )
+from api.schemas_ghi import LoaiMachIn
 from api.trinh_bay import nguoi_dung_ra
 
 router = Router()
@@ -81,6 +82,7 @@ def liet_ke_mach(
     sub: str | None = None,
     tac_gia: str | None = None,
     trang_thai: LocMach = "tat_ca",
+    loai_mach: LoaiMachIn | None = None,
     limit: int = GIOI_HAN_MAC_DINH,
     cursor: str | None = None,
 ):
@@ -99,6 +101,14 @@ def liet_ke_mach(
     ⚠ **`trang_thai=hen_gio` đảo CHIỀU sắp xếp** (2026-09-03): bài chờ giờ hẹn sắp theo
     `published_at` **tăng dần** — cái sắp lên trước đứng đầu. Mọi nhóm khác giữ nguyên
     `created_at` giảm dần.
+
+    `?loai_mach=` (tuỳ chọn, `nhat_ky|bai_viet|thao_luan`; giá trị lạ ⇒ 400
+    `tham_so_khong_hop_le`) lọc theo loại mạch và **kết hợp được** với `trang_thai`. Không
+    truyền ⇒ mọi loại, như trước. Form đăng bài của khu quản trị dùng
+    `?loai_mach=thao_luan&trang_thai=mo` để biết "đang có chủ đề nào đang mở" trước khi tạo
+    chủ đề thứ hai — nên "đang mở" ở đây là nhóm `mo` (loại ẩn, khoá, **và bài chờ giờ
+    hẹn**), không phải `chua_go`. Nhóm `mo` không loại bài đã lưu trữ; hàng có `da_luu_tru`
+    để bên gọi tự loại.
 
     Không phải khẩu vị: danh sách này là một hàng đợi việc sắp xảy ra, và một hàng đợi
     xếp ngược thì bài lên trong 10 phút nữa nằm ở trang cuối. Cursor keyset đi theo đúng
@@ -121,6 +131,8 @@ def liet_ke_mach(
     # bắt được (2026-08-23), và bài đo đi kèm lúc ấy đã ghim chính hành vi sai đó là đúng.
     if trang_thai in LOC_MACH_DANH_SACH:
         qs = qs.filter(LOC_MACH_DANH_SACH[trang_thai])
+    if loai_mach is not None:
+        qs = qs.filter(loai_mach=loai_mach)
 
     tong = dem_tong(qs)
 
@@ -154,6 +166,7 @@ def liet_ke_mach(
                 title=m.title,
                 sub_slug=m.sub.slug,
                 tac_gia=nguoi_dung_ra(m.author),
+                loai_mach=m.loai_mach,
                 status=m.status,
                 created_at=m.created_at,
                 published_at=m.published_at,

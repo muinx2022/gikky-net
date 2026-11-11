@@ -17,13 +17,12 @@ This is **reference documentation** for installing and updating the Vnstock Pyth
 
 | Generation | Status | Where it is described |
 | --- | --- | --- |
-| **Generation 6** (`vnstock` 6.0.0rc4 + `vnstock-oapi` 0.1.0rc3, preview releases) | **Default for every new setup.** Plans apply to generation 6 from 11/11/2026 | Section "Setup (generation 6)" |
+| **Generation 6** (`vnstock` 6.0.0 + `vnstock-oapi` 0.1.0) | **Default for every new setup.** Plans apply to generation 6 from 11/11/2026 | Section "Setup (generation 6)" |
 | Generation 5 (`vnstock` 5.x) | Only when the user's prompt names generation 5. Stops authenticating and being licensed from 10/11/2026 | Sections 1–10 |
-| Older line (`vnstock` 4.x with `vnai`, `vnstock_data` 3.x…) | Same end date as generation 5 | Section "Older line (vnstock 4.x)" |
+| Older line (`vnstock` 4.x with `vnai`, `vnii`, `vnstock_data` 3.x…) | **Stopped authenticating on 10/11/2026 and can no longer be installed.** Do not install it; move the project to generation 6: <https://vnstocks.com/onboard-member/migration> | None |
 
-* Install **generation 6** unless the user's prompt names generation 5 or the older line. Tell the user generation 6 is a preview release and that it reads data with their own Open API key at a source they choose.
+* Install **generation 6** unless the user's prompt names generation 5. Tell the user that generation 6 reads data with their own Open API key at a source they choose.
 * Generation 6 always goes into its own environment, `~/.venv_6x` (Section G2), and never replaces generation 5 or 4.x: all generations share the package name `vnstock`, and installing one over another cannot be undone.
-* Follow the older line only when the user's prompt says so (the prompts on `vnstocks.com/onboard/legacy` and `vnstocks.com/onboard-member/cai-dat-go-loi/legacy` do), or the user asks for it.
 * Before installing anything, check the environment you are about to install into: `<env python> -m pip show vnstock vnstock-oapi vnstock_data vnai`. If it holds another generation, **stop and ask**. If it already has `vnstock` 4.x, `vnstock_data` or `vnai`, installing generation 5 there replaces 4.x and breaks code written for it: offer the separate environment for generation 5 (Section 2, case B), or migration: <https://vnstocks.com/docs/vnstock/chuyen-doi/tu-vnstock-data-3x>.
 
 ### Generation 6 at a glance — copy these, do not rewrite them
@@ -33,9 +32,9 @@ Plans for generation 6 must use these exact values. Anything else below this poi
 * **First detect where you are running (Section G1).** The OS named in a prompt is where the user opened the web page, not necessarily where you run.
 * Environment on a personal machine or server: exactly `~/.venv_6x` (Windows `$HOME\.venv_6x`). Not `~/.venv`, not `~/.venv6`.
 * Environment on Google Colab, GitHub Codespaces or Kaggle: **no virtual environment**. Install into the session's own Python.
-* Core install, macOS / Linux: `~/.venv_6x/bin/python -m pip install -U --extra-index-url https://vnstocks.com/api/packages "vnstock==6.0.0rc4" "vnstock-oapi==0.1.0rc3"`
-* Core install, Windows: `& "$HOME\.venv_6x\Scripts\python.exe" -m pip install -U --extra-index-url https://vnstocks.com/api/packages "vnstock==6.0.0rc4" "vnstock-oapi==0.1.0rc3"`
-* Core install, Colab / Codespaces / Kaggle: `python3 -m pip install -U --extra-index-url https://vnstocks.com/api/packages "vnstock==6.0.0rc4" "vnstock-oapi==0.1.0rc3"`
+* Core install, macOS / Linux: `~/.venv_6x/bin/python -m pip install -U --extra-index-url https://vnstocks.com/api/packages "vnstock==6.0.0" "vnstock-oapi==0.1.1"`
+* Core install, Windows: `& "$HOME\.venv_6x\Scripts\python.exe" -m pip install -U --extra-index-url https://vnstocks.com/api/packages "vnstock==6.0.0" "vnstock-oapi==0.1.1"`
+* Core install, Colab / Codespaces / Kaggle: `python3 -m pip install -U --extra-index-url https://vnstocks.com/api/packages "vnstock==6.0.0" "vnstock-oapi==0.1.1"`
 * Add-ons: only the commands in Section G7, each with its exact version. Do not use `vnstock install` without a package name and version, and do not use `--all`.
 * Never install `vnstock_data`, `vnstock_ta`, `vnstock_news` or `vnstock_installer` into the generation 6 environment. Those names belong to older releases; `vnstock_data` is merged into `vnstock` and `vnstock_ta` is replaced by `vnstock_quant`.
 * Every `pip` command needs `--extra-index-url https://vnstocks.com/api/packages` and exact versions. Do not swap them for `--pre`.
@@ -60,18 +59,11 @@ State this plainly if the user asks. Do not downplay it.
 * Usage measurement runs **only if the account has turned it on** at <https://vnstocks.com/account?section=data-preferences>. It counts calls per function, source, row counts, durations and error codes; it never sends symbols, dates, figures, paths or error text. `DO_NOT_TRACK=1` or `VNSTOCK_TELEMETRY=0` switches it off on the machine.
 * It writes no file for AI assistants.
 
-**Older line (`vnstock` 4.x)**
-
-* `vnai` reports usage counts to `vnstocks.com` so they count toward the account's shared quota (one quota for every vnstock library, hour/day/month, shown as percent left), and derives a device identifier so paid plans can enforce their device limit.
-* With an API key configured, the key is sent to `vnstocks.com` over HTTPS in the `Authorization` header — except one call in the extended-edition helper `vnii` 0.2.x (`get_license_info`), which still passes it as a URL query parameter.
-* `vnai` 2.6.1 and earlier write an onboarding block into the AI-assistant instruction files on every `import vnstock`. From `vnai` 2.6.2 nothing is written on import; the user opts in with `vnstock.enable_agent()`.
-
 Privacy policy: <https://vnstocks.com/onboard/chinh-sach-quyen-rieng-tu>
 
 ## Package index
 
 * **Generation 6 and generation 5:** `https://vnstocks.com/api/packages` (PEP 503). No `vnai`, no separate installer.
-* **Older line 4.x:** `https://vnstocks.com/api/simple`, with `vnai`.
 
 Always use `--extra-index-url`, not `--index-url` (dependencies such as `pandas` still come from PyPI). A plain `pip install vnstock` without the index gets 4.x from PyPI. Use the interpreter of the environment you checked: `python -m pip …`.
 
@@ -122,19 +114,19 @@ Run later commands with the environment's own Python and its own `vnstock` comma
 macOS / Linux:
 
 ```bash
-~/.venv_6x/bin/python -m pip install -U --extra-index-url https://vnstocks.com/api/packages "vnstock==6.0.0rc4" "vnstock-oapi==0.1.0rc3"
+~/.venv_6x/bin/python -m pip install -U --extra-index-url https://vnstocks.com/api/packages "vnstock==6.0.0" "vnstock-oapi==0.1.1"
 ~/.venv_6x/bin/vnstock version
 ```
 
 Windows (PowerShell):
 
 ```powershell
-& "$HOME\.venv_6x\Scripts\python.exe" -m pip install -U --extra-index-url https://vnstocks.com/api/packages "vnstock==6.0.0rc4" "vnstock-oapi==0.1.0rc3"
+& "$HOME\.venv_6x\Scripts\python.exe" -m pip install -U --extra-index-url https://vnstocks.com/api/packages "vnstock==6.0.0" "vnstock-oapi==0.1.1"
 & "$HOME\.venv_6x\Scripts\vnstock.exe" version
 ```
 
-* Colab / Codespaces / Kaggle: `python3 -m pip install -U --extra-index-url https://vnstocks.com/api/packages "vnstock==6.0.0rc4" "vnstock-oapi==0.1.0rc3"` (notebook cell: prefix `!`), then `vnstock version`. Restart the notebook runtime only if `vnstock` was already imported in that session.
-* Verify: `python -c "import vnstock; print(vnstock.__version__)"` prints `6.0.0rc4`. The environment now has two commands: `vnstock` (account, machine check, function lookup) and `vnstock-oapi` (source keys and sessions).
+* Colab / Codespaces / Kaggle: `python3 -m pip install -U --extra-index-url https://vnstocks.com/api/packages "vnstock==6.0.0" "vnstock-oapi==0.1.1"` (notebook cell: prefix `!`), then `vnstock version`. Restart the notebook runtime only if `vnstock` was already imported in that session.
+* Verify: `python -c "import vnstock; print(vnstock.__version__)"` prints `6.0.0`. The environment now has two commands: `vnstock` (account, machine check, function lookup) and `vnstock-oapi` (source keys and sessions).
 * Editors and Jupyter: as Section 4, with the generation 6 environment. Register the kernel under its own name so it stays apart from generation 5: `--name=vnstock6 --display-name "Python (Vnstock 6)"`.
 
 ### G4. Vnstock account — the user logs in, you never see the key
@@ -182,12 +174,12 @@ Confirm the install with one small read-only call at the user's source, for exam
 | Library | Install into the generation 6 environment | Lowest tier |
 | --- | --- | --- |
 | `vnstock_quant` 1.0.0rc1 | `python -m pip install -U --extra-index-url https://vnstocks.com/api/packages "vnstock_quant==1.0.0rc1"` | Community trial; Bronze, Silver add more |
-| `vnstock-mcp` 1.0.0rc1 | `python -m pip install -U --extra-index-url https://vnstocks.com/api/packages "vnstock-mcp[quant]==1.0.0rc1" "vnstock==6.0.0rc4" "vnstock-oapi==0.1.0rc3"`, then `vnstock-mcp --setup` | Community; prebuilt for macOS Apple chip only in this preview |
+| `vnstock-mcp` 1.0.0rc1 | `python -m pip install -U --extra-index-url https://vnstocks.com/api/packages "vnstock-mcp[quant]==1.0.0rc1" "vnstock==6.0.0" "vnstock-oapi==0.1.1"`, then `vnstock-mcp --setup` | Community; prebuilt for macOS Apple chip only in this preview |
 | `vnstock-pipeline` 4.0.0rc1 | `vnstock install "vnstock-pipeline[rest,stream,excel]==4.0.0rc1"` (after `vnstock login`; the index serves it only to an entitled machine) | Golden |
 
 * Always keep the exact versions. Without them pip installs the generation 5 release of each library, which replaces `vnstock` 6 with 5.
 * `vnstock_news` has no generation 6 release; it stops with generation 5.
-* Charts: use `vnstock_chart` (successor of `vnstock_ezchart`, same function names). Install it into the generation 6 environment with the core pinned in the same command: `python -m pip install -U --extra-index-url https://vnstocks.com/api/packages vnstock-chart "vnstock==6.0.0rc4" "vnstock-oapi==0.1.0rc3"`. Draw with `matplotlib`, `seaborn` or `plotly` directly only for a figure or customisation `vnstock_chart` does not offer.
+* Charts: use `vnstock_chart` (successor of `vnstock_ezchart`, same function names). Install it into the generation 6 environment with the core pinned in the same command: `python -m pip install -U --extra-index-url https://vnstocks.com/api/packages vnstock-chart "vnstock==6.0.0" "vnstock-oapi==0.1.1"`. Draw with `matplotlib`, `seaborn` or `plotly` directly only for a figure or customisation `vnstock_chart` does not offer.
 * Do not install generation 5 add-ons (`vnstock_quant` 0.x, `vnstock_pipeline` 3.x, `vnstock_news` 3.x) or older-line packages into the generation 6 environment.
 * Docs: `vnstock_quant` <https://vnstocks.com/docs/vnstock_quant/v1/bat-dau/cai-dat-va-thiet-lap>, MCP <https://vnstocks.com/docs/vnstock-mcp/v1/cai-dat-va-ket-noi>, pipeline <https://vnstocks.com/docs/vnstock-pipeline/v6/cai-dat-va-tai-khoan>.
 
@@ -205,7 +197,7 @@ The rules of Section 9 apply. Write the block below as it is, filling only the p
 <!-- vnstock-guide:start -->
 ## vnstock
 
-This project uses the Python library `vnstock` generation 6 (preview, with `vnstock-oapi`).
+This project uses the Python library `vnstock` generation 6 (with `vnstock-oapi`).
 
 - Environment: `~/.venv_6x` (Windows `$HOME\.venv_6x`) unless noted here. Run code and commands with `~/.venv_6x/bin/python` and `~/.venv_6x/bin/vnstock`. Do not install vnstock into another Python.
 - At the start of a session: run `vnstock onboard` and follow it; `vnstock doctor` when something fails.
@@ -362,7 +354,6 @@ vnstock install            # install everything the tier allows (after the user 
 | Library | Lowest tier |
 | --- | --- |
 | `vnstock_quant` (replaces `vnstock_ta`, `from vnstock_quant import Indicator`) | Community trial; Bronze adds financial ratios, risk and portfolio; Silver adds every indicator |
-| `vnstock_news` 3.x | Silver |
 | `vnstock_pipeline` 3.x | Golden |
 
 Do not `pip install` add-ons by name and do not install the 4.x extended-edition packages (`vnstock_data`, `vnstock_ta`, `vnstock_installer`) into a generation 5 environment. A library above the user's tier is simply not offered; that is not an install error. Higher tiers: <https://vnstocks.com/pricing>.
@@ -428,7 +419,7 @@ This project uses the Python library `vnstock` (generation 5).
 <!-- vnstock-guide:end -->
 ```
 
-To update the guide later, replace everything between the two markers; to remove it, delete them and what is between. On 4.x, see "Older line".
+To update the guide later, replace everything between the two markers; to remove it, delete them and what is between.
 
 **User asked not to turn it on** — write nothing to any instruction file.
 
@@ -442,140 +433,5 @@ After installation and the check succeed, do not leave the user wondering what t
    > *"Tải báo cáo tài chính 4 quý gần nhất của HPG và NKG, lập bảng so sánh doanh thu thuần, biên lợi nhuận gộp và tốc độ tăng trưởng."*
 3. **Domain Skill (Kỹ năng chuyên sâu):**
    > *"Nạp kỹ năng phân tích báo cáo tài chính từ Vnstock và đánh giá cơ cấu tài sản, tỷ lệ nợ vay của VNM."*
-
-## Older line (vnstock 4.x)
-
-Use this section only when the user's prompt or request says they deliberately keep vnstock 4.x / `vnstock_data` 3.x. It stops authenticating and stops being licensed from **10/11/2026**, like generation 5; say so once. Sections 1, 8 and 10 above apply unchanged, and Section 4 with the older line's environment in place of `~/.venv`; the rest differs as follows.
-
-### Environment
-
-The older line needs its own virtual environment, because 4.x and generation 5 share the package name `vnstock`. Use a fixed place, as for generation 5, and check it first (`<env python> -m pip show vnstock vnstock_data vnai`):
-
-* `~/.venv` (Windows `$HOME\.venv`) already holds the 4.x install (the 4.x installer used it) → keep using it.
-* `~/.venv` does not exist → it can be created for 4.x, but tell the user generation 5 will then go to `~/.venv5x` later.
-* `~/.venv` holds generation 5 → **ask before touching it**, and put the older line in `~/.venv4x` (Windows `$HOME\.venv4x`).
-
-Create an environment only after the user agrees, for example:
-
-* macOS/Linux: `python3 -m venv ~/.venv4x && source ~/.venv4x/bin/activate`
-* Windows: `py -m venv "$HOME\.venv4x"` then `& "$HOME\.venv4x\Scripts\Activate.ps1"`
-* Google Colab, GitHub Codespaces: the session's own environment.
-
-Python 3.10–3.14 (`vnstock_pipeline` 2.x needs 3.11+).
-
-### Install (Community)
-
-```bash
-python -m pip install -U --extra-index-url https://vnstocks.com/api/simple "vnstock>=4.0.9" "vnai>=2.6.2"
-```
-
-Quote version specifiers (`"vnstock>=4.0.9"`) so the shell does not read `>` as a redirect.
-
-### API key (4.x)
-
-**Usual case: the key is already saved on the machine.** The setup page on vnstocks.com gives plan users a one-line command that saves their key to `~/.vnstock/api_key.json` (mode 600) before they open you. `vnstock`, `vnai` and both official installers read that file. Check that it exists **without reading or printing it**:
-
-```bash
-python -c "import os; print('Đã có khoá' if os.path.exists(os.path.expanduser('~/.vnstock/api_key.json')) else 'Chưa có khoá')"
-```
-
-If not, ask the user to run the command from <https://vnstocks.com/onboard-member/cai-dat-go-loi/legacy> (step 1) in their own Terminal/PowerShell, or one of the options below.
-
-**Alternative: environment variable.** For a command-line assistant (`claude`, `codex`, `gemini`) started from the same terminal, the user can set `VNSTOCK_API_KEY` with a silent read (nothing is echoed and the key does not enter shell history):
-
-* macOS / Linux (zsh or bash):
-  ```bash
-  printf "Dán khoá rồi nhấn Enter: "; read -rs VNSTOCK_API_KEY; echo; export VNSTOCK_API_KEY
-  ```
-* Windows PowerShell:
-  ```powershell
-  $env:VNSTOCK_API_KEY = [System.Net.NetworkCredential]::new('', (Read-Host 'Dán khoá rồi nhấn Enter' -AsSecureString)).Password
-  ```
-
-Check it exists without printing it, then save it so the graphical installer and later sessions can use it:
-
-```bash
-python -c "import os; print('Đã có khoá' if os.environ.get('VNSTOCK_API_KEY') else 'Chưa có khoá')"
-python -c "import os; from vnai import setup_api_key; setup_api_key(os.environ['VNSTOCK_API_KEY'])"
-chmod 600 ~/.vnstock/api_key.json   # macOS/Linux; vnai before 2.6.2 creates the file readable by other users
-```
-
-**Fallback: neither is available.** Ask the user to register the key themselves, in their own terminal, with the environment active:
-
-```bash
-python -c "from vnstock.core.utils.auth import register_user; register_user()"
-```
-
-**Which plan is this key on?** Ask the user to run the same `register_user()` command: with a key stored it prints the plan tier and limits (the key only as its first and last four characters), then asks whether to change the key — the user answers `N`. Do not run key-status helpers yourself: some of them print a longer part of the key.
-
-### Extended-edition packages (4.x)
-
-Installed by the official installer, which asks for the key itself. Offer to run it; do not install extended-edition packages by name. The installer only offers what the key's plan allows:
-
-| Tier | Extended-edition packages |
-| --- | --- |
-| Bronze | `vnstock_data` |
-| Silver | `vnstock_data`, `vnstock_ta`, `vnstock_news` |
-| Golden, Diamond | `vnstock_data`, `vnstock_ta`, `vnstock_news`, `vnstock_pipeline` (needs Python 3.11+) |
-
-Only verify or import the packages of the user's tier: on Bronze, `import vnstock_ta` fails by design.
-
-* Graphical installer (Windows, macOS). Keep the exact pin: an unrelated party owns `vnstock-installer` 99.0.0 on PyPI and pip takes the highest version across indexes.
-  ```bash
-  python -m pip install -U --extra-index-url https://vnstocks.com/api/simple vnstock_installer==3.1.3
-  python -m vnstock_installer
-  ```
-* Command-line mode of the same installer (any OS, no window), from 3.1.3 (`python -m vnstock_installer --version`):
-  ```bash
-  python -m vnstock_installer --non-interactive --json
-  ```
-  It reads the key from `VNSTOCK_API_KEY` or `~/.vnstock/api_key.json`. stdout is one JSON object with `tier`, `installed`, `locked`, `skipped`, `failed` and `verify_command` — run that `verify_command` to check the install. Exit codes: `0` done, `1` setup/network error or a Community key, `2` a requested package is above the plan, `3` some packages failed or were skipped. If it rejects `--non-interactive`, use the graphical installer.
-* Command-line installer (macOS, Linux, servers, Colab):
-  ```bash
-  curl -sL https://vnstocks.com/files/vnstock-cli-installer.run -o vnstock-cli-installer.run
-  bash vnstock-cli-installer.run --check
-  bash vnstock-cli-installer.run -- --non-interactive
-  ```
-  `--check` verifies the archive's embedded checksums. The `--` before `--non-interactive` is required. On CI, provide the key as the secret environment variable `VNSTOCK_API_KEY`.
-
-Illustrated walkthrough: <https://vnstocks.com/onboard-member/cai-dat-go-loi/legacy>
-
-### Updating (4.x)
-
-1. Show current versions: `python -m pip show vnstock vnai vnii`. Latest published: `https://vnstocks.com/api/vnstock/versions`.
-2. Community: `python -m pip install -U --extra-index-url https://vnstocks.com/api/simple vnstock vnai`. Plan users: re-run the installer (`python -m vnstock_installer --non-interactive` from 3.1.3).
-3. Restart the Python process / kernel and report before → after.
-
-| Symptom | Fix |
-| --- | --- |
-| `from versions: none` | The command lacks `--extra-index-url https://vnstocks.com/api/simple`. |
-| `vnstock_installer` 99.0.0 installed | Unpinned install. `python -m pip uninstall -y vnstock_installer`, reinstall with `==3.1.3`. |
-| Version unchanged | pip ran in another environment. |
-| Device limit reached | The user removes unused devices at <https://vnstocks.com/account?section=devices>. |
-
-### AI assistant guide (4.x)
-
-Only when the user's prompt says to turn it on. Run in the project directory, then show the user the file:
-
-```bash
-python -c "import vnstock; vnstock.enable_agent(); print(vnstock.setup_agent())"
-```
-
-This writes `AGENTS.md` in the current directory only, never the assistants' global files.
-
-### Turning the 4.x guide off and removing it
-
-Tell the user about this whenever they ask why this text is in their assistant's instructions. Run it only if they ask you to. The environment variable keeps this very `import` from writing the block again while it is being removed.
-
-* macOS / Linux:
-  ```bash
-  VNSTOCK_DISABLE_AGENT_SETUP=1 python -c "import vnstock; vnstock.disable_agent(); print(vnstock.remove_agent_files('all'))"
-  ```
-* Windows PowerShell:
-  ```powershell
-  $env:VNSTOCK_DISABLE_AGENT_SETUP="1"; python -c "import vnstock; vnstock.disable_agent(); print(vnstock.remove_agent_files('all'))"
-  ```
-
-`python -c "import vnstock; print(vnstock.agent_status())"` shows which files are written and whether writing is on. On vnstock 5, remove the `vnstock-guide` block from `AGENTS.md` by hand.
 
 *(End of Bootstrap. When in doubt, Route!)*

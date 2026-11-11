@@ -192,7 +192,7 @@ test.describe("V16 — hồ sơ cắt danh sách thì phải NÓI RA", () => {
 test.describe("feed", () => {
   // Tab thứ ba ("Nhiều điểm nhất", plan con 1d §2.5.4) đo ở `e2e/vo-reddit.spec.ts`.
   test("tab Mới / Đang diễn ra đổi qua ?tab= và đổi thật nội dung", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/?tab=moi");
     await expect(page.getByTestId("tab-moi")).toHaveAttribute("aria-current", "page");
     await page.getByTestId("tab-dang-dien-ra").click();
     await expect(page).toHaveURL(/tab=dang-dien-ra/);

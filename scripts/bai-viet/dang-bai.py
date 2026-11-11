@@ -46,7 +46,7 @@ EMAIL_ADMIN = os.environ.get("GIKKY_ADMIN_EMAIL", "admin@gikky.net")
 AUTHOR_HEN = "gikky-team-member"
 
 #: Trần của server — phải KHỚP `api/core/models/moc.py` và `api/api/schemas_ghi.py`.
-TRAN = {"title": 160, "body": 10_000, "loai": 20, "question_for_crowd": 200}
+TRAN = {"title": 160, "body": 50_000, "loai": 20, "question_for_crowd": 200}
 SO_FIGURES_TOI_DA = 6
 DAI_O_FIGURE = 24
 TRUONG_CHO_PHEP = {"sub", "title", "body", "loai", "question_for_crowd", "figures", "anhs", "occurred_at"}

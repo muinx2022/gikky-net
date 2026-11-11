@@ -10,6 +10,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { cauXacNhanDongSo, cauXacNhanMoLai, chuFormDongSo } from "@/lib/chu-dong-so";
 import { MA_LOI, cauLoi, layDuLieu, LoiGhi } from "@/lib/ghi";
 import { GOC_TRINH_DUYET, headerGhi } from "@/lib/tai-khoan";
 import { conMoLaiDuoc, gioPhutVN } from "@/lib/vong-doi";
@@ -22,7 +23,12 @@ import { usePhien } from "./phien";
  *
  * ### Ai thấy khối này
  *
- * **Chỉ chủ mạch.** Người lạ và khách không thấy gì — không phải một nút xám, không phải
+ * **Chỉ chủ mạch** — ngoại lệ DUY NHẤT: chủ đề thảo luận (`laChuDe`), nơi mod (`is_staff`)
+ * cũng thấy nút **Đóng sổ / Mở lại** và CHỈ hai nút đó *(plan homepage-v2 §3.7; API
+ * `doi_nguoi_dong_so_duoc` đã mở cùng cửa này cho `is_staff`)*. Tài khoản có cờ
+ * `la_tai_khoan_doi` mà không phải staff thì KHÔNG thấy: API sẽ trả 403 cho nó. Mod trên nhật
+ * ký / bài viết của người khác vẫn không thấy gì.
+ * Người lạ và khách không thấy gì — không phải một nút xám, không phải
  * một lời mời đăng nhập: nối mốc vào nhật ký của người khác là việc **không bao giờ** làm
  * được, và PLAN mục 4 chốt "một cái nút vĩnh viễn không bấm được còn tệ hơn không có nút".
  * (Composer bình luận thì ngược lại — ai cũng bình luận được sau khi đăng nhập, nên ở đó
@@ -66,6 +72,7 @@ export function KhoiChuMach({
   soMoc,
   riengTu = false,
   daLuuTru = false,
+  laChuDe = false,
 }: {
   machId: number;
   /** Tiêu đề mạch để hiển thị trên drawer đăng nhanh / nối mốc. */
@@ -88,6 +95,8 @@ export function KhoiChuMach({
   riengTu?: boolean;
   /** `da_luu_tru === true`: mạch đang ở trạng thái lưu trữ (soft delete). */
   daLuuTru?: boolean;
+  /** `loai_mach === "thao_luan"` — mở cửa đóng / mở lại cho mod (`is_staff`). */
+  laChuDe?: boolean;
 }) {
   const { toi, dangTai } = usePhien();
   const { moDrawerNoiMoc } = useDrawerDangNhanh();
@@ -101,9 +110,18 @@ export function KhoiChuMach({
   if (dangTai) return null;
   // `toi === null` viết TƯỜNG MINH: TypeScript không thu hẹp `toi` qua `?.`, mà form
   // dưới đọc `toi.tran_anh_moi_moc`.
-  if (toi === null || !toi.dang_nhap || toi.username !== chuMach) return null;
+  if (toi === null || !toi.dang_nhap) return null;
+  const la_chu = toi.username === chuMach;
+  const chu_form = chuFormDongSo(laChuDe);
+  // Mod chỉ được THÊM quyền đóng / mở lại, và chỉ trên chủ đề thảo luận của người khác. `la_staff`
+  // lấy từ chính `GET /me` mà `usePhien` đã hỏi — không thêm lời gọi API. UI ẩn nút không phải
+  // phép kiểm quyền (xem đầu file): API vẫn 403 nếu ai đó gọi thẳng.
+  const la_mod_chu_de = !la_chu && laChuDe && toi.la_staff === true;
+  if (!la_chu && !la_mod_chu_de) return null;
 
   if (khoa) {
+    // Mạch bị khoá chặn cả đóng sổ của mod (`doi_mach_tuong_tac_duoc`): không còn gì để bày.
+    if (la_mod_chu_de) return null;
     return (
       <section className={css.khoi} data-testid="khoi-chu-mach">
         <p className={css.cau} data-testid="chu-mach-khoa">
@@ -143,12 +161,8 @@ export function KhoiChuMach({
     // Không nêu "7 ngày" ở đây: con số ấy là luật của Django, và chỗ duy nhất UI biết nó
     // là `mo_lai_den` — thứ chỉ tồn tại SAU khi đóng. Nên câu này hứa đúng thứ nó giữ
     // được: hạn có thật, và khu này sẽ hiện hạn chót ngay sau đó.
-    const nhac =
-      `Đóng sổ mạch này?\n\n` +
-      `• Không nối thêm mốc được nữa.\n` +
-      `• Bình luận thì vẫn viết được.\n` +
-      `• Mở lại được trong một hạn ngắn — hạn chót sẽ hiện ngay ở khu này.`;
-    if (!window.confirm(nhac)) return;
+    // Chữ theo loại mạch ở `lib/chu-dong-so.ts`: chủ đề không có "nối mốc" để mà cắt đứt.
+    if (!window.confirm(cauXacNhanDongSo(laChuDe))) return;
     void chay(async () => {
       layDuLieu(
         await dongSoMach({
@@ -187,15 +201,10 @@ export function KhoiChuMach({
   };
 
   const guiMoLai = () => {
-    // `ket_qua` **bị xoá** khi mở lại (`api/machs.py::mo_lai_mach`). Người ta vừa gõ nó
-    // xong lúc đóng sổ, nên mất nó mà không báo trước là mất chữ không dấu vết.
-    if (
-      !window.confirm(
-        "Mở lại mạch này?\n\nDòng kết quả đã ghi khi đóng sổ sẽ bị xoá.",
-      )
-    ) {
-      return;
-    }
+    // `ket_qua` **bị xoá** khi mở lại (`api/machs.py::mo_lai_mach`), và `bai_hoc` cũng vậy — với
+    // chủ đề đó là "Tổng kết", mà người mở lại có thể là mod chứ không phải người viết nó. Mất
+    // chữ mà không báo trước là mất chữ không dấu vết; chữ theo loại mạch ở `lib/chu-dong-so.ts`.
+    if (!window.confirm(cauXacNhanMoLai(laChuDe))) return;
     void chay(async () => {
       layDuLieu(
         await moLaiMach({
@@ -246,7 +255,7 @@ export function KhoiChuMach({
 
   return (
     <section className={css.khoi} data-testid="khoi-chu-mach">
-      <p className={css.nhan_khoi}>Sổ của bạn</p>
+      <p className={css.nhan_khoi}>{la_mod_chu_de ? "Mod · chủ đề thảo luận" : "Sổ của bạn"}</p>
 
       {loi !== null && (
         <p className={css.loi} role="alert" data-testid="chu-mach-loi">
@@ -265,12 +274,13 @@ export function KhoiChuMach({
           onCongKhai={guiCongKhai}
           daLuuTru={daLuuTru}
           onLuuTru={() => guiLuuTru(!daLuuTru)}
+          chiMoLai={la_mod_chu_de}
         />
       ) : mo === "dong_so" ? (
         <form onSubmit={guiDongSo} data-testid="form-dong-so">
           <label className={css.o}>
-            <span className={css.nhan}>
-              Kết quả <span className={css.tuy_chon}>tuỳ chọn, ≤40 ký tự</span>
+            <span className={css.nhan} data-testid="dong-so-nhan-ket-qua">
+              {chu_form.nhanKetQua} <span className={css.tuy_chon}>tuỳ chọn, ≤40 ký tự</span>
             </span>
             <input
               className={`${css.dong_o} mono`}
@@ -278,16 +288,16 @@ export function KhoiChuMach({
               value={ketQua}
               maxLength={40}
               onChange={(e) => datKetQua(e.target.value)}
-              placeholder="Tóm tắt kết quả trong một dòng"
+              placeholder={chu_form.goiYKetQua}
               data-testid="dong-so-ket-qua"
             />
             <span className={css.goi_y}>
-              Một dòng tự do, hiện ở đầu trang và trên thẻ chia sẻ. Bỏ trống cũng được.
+              {chu_form.ghiChuKetQua}
             </span>
           </label>
           <label className={css.o}>
-            <span className={css.nhan}>
-              Mổ xẻ sau lệnh / Bài học rút ra <span className={css.tuy_chon}>tuỳ chọn, ≤5000 ký tự</span>
+            <span className={css.nhan} data-testid="dong-so-nhan-bai-hoc">
+              {chu_form.nhanBaiHoc} <span className={css.tuy_chon}>tuỳ chọn, ≤5000 ký tự</span>
             </span>
             <textarea
               className={css.vung_o}
@@ -295,7 +305,7 @@ export function KhoiChuMach({
               maxLength={5000}
               rows={4}
               onChange={(e) => datBaiHoc(e.target.value)}
-              placeholder="Ghi lại bài học kinh nghiệm, phân tích sai lầm hoặc điều đã làm tốt để rèn giũa kỷ luật..."
+              placeholder={chu_form.goiYBaiHoc}
               data-testid="dong-so-bai-hoc"
             />
           </label>
@@ -320,21 +330,23 @@ export function KhoiChuMach({
         </form>
       ) : (
         <div className={css.hang}>
-          <button
-            type="button"
-            className={css.chinh}
-            onClick={() =>
-              moDrawerNoiMoc({
-                machId,
-                tieuDeMach: tieuDe ?? "",
-                soMoc,
-                tranMocMoiNgay,
-              })
-            }
-            data-testid="nut-noi-moc"
-          >
-            ＋ Nối mốc
-          </button>
+          {!la_mod_chu_de && (
+            <button
+              type="button"
+              className={css.chinh}
+              onClick={() =>
+                moDrawerNoiMoc({
+                  machId,
+                  tieuDeMach: tieuDe ?? "",
+                  soMoc,
+                  tranMocMoiNgay,
+                })
+              }
+              data-testid="nut-noi-moc"
+            >
+              ＋ Nối mốc
+            </button>
+          )}
           <button
             type="button"
             className={css.nhe}
@@ -343,16 +355,18 @@ export function KhoiChuMach({
           >
             Đóng sổ
           </button>
-          <button
-            type="button"
-            className={css.nhe}
-            onClick={() => doiTrangThaiBinhLuan(!tatBinhLuan)}
-            disabled={dangGui}
-            data-testid="nut-tat-mo-binh-luan"
-          >
-            {tatBinhLuan ? "Mở bình luận" : "Tắt bình luận"}
-          </button>
-          {riengTu && (
+          {!la_mod_chu_de && (
+            <button
+              type="button"
+              className={css.nhe}
+              onClick={() => doiTrangThaiBinhLuan(!tatBinhLuan)}
+              disabled={dangGui}
+              data-testid="nut-tat-mo-binh-luan"
+            >
+              {tatBinhLuan ? "Mở bình luận" : "Tắt bình luận"}
+            </button>
+          )}
+          {!la_mod_chu_de && riengTu && (
             <button
               type="button"
               className={css.nhe}
@@ -364,16 +378,18 @@ export function KhoiChuMach({
               🔓 Công khai mạch
             </button>
           )}
-          <button
-            type="button"
-            className={css.nhe}
-            onClick={() => guiLuuTru(!daLuuTru)}
-            disabled={dangGui}
-            data-testid="nut-chu-mach-luu-tru"
-            title={daLuuTru ? "Bỏ lưu trữ mạch này" : "Lưu trữ mạch"}
-          >
-            {daLuuTru ? "📦 Bỏ lưu trữ" : "📦 Lưu trữ"}
-          </button>
+          {!la_mod_chu_de && (
+            <button
+              type="button"
+              className={css.nhe}
+              onClick={() => guiLuuTru(!daLuuTru)}
+              disabled={dangGui}
+              data-testid="nut-chu-mach-luu-tru"
+              title={daLuuTru ? "Bỏ lưu trữ mạch này" : "Lưu trữ mạch"}
+            >
+              {daLuuTru ? "📦 Bỏ lưu trữ" : "📦 Lưu trữ"}
+            </button>
+          )}
         </div>
       )}
     </section>
@@ -395,6 +411,7 @@ function MatDong({
   onCongKhai,
   daLuuTru,
   onLuuTru,
+  chiMoLai = false,
 }: {
   moLaiDen: string | null;
   dangGui: boolean;
@@ -405,6 +422,9 @@ function MatDong({
   onCongKhai?: () => void;
   daLuuTru?: boolean;
   onLuuTru?: () => void;
+  /** Mod trên chủ đề của người khác: chỉ có "Mở lại" — tắt bình luận, công khai, lưu trữ vẫn là
+   * việc của tác giả (API 403 nếu mod gọi). */
+  chiMoLai?: boolean;
 }) {
   const han = moLaiDen === null ? null : gioPhutVN(moLaiDen);
   if (!conMoLaiDuoc(moLaiDen)) {
@@ -413,39 +433,41 @@ function MatDong({
         <p className={css.cau} data-testid="het-han-mo-lai">
           Hạn mở lại sổ{han === null ? "" : ` (${han})`} đã qua — không mở lại được nữa.
         </p>
-        <div className={css.hang}>
-          <button
-            type="button"
-            className={css.nhe}
-            onClick={onDoiBinhLuan}
-            disabled={dangGui}
-            data-testid="nut-tat-mo-binh-luan-dong"
-          >
-            {tatBinhLuan ? "Mở bình luận" : "Tắt bình luận"}
-          </button>
-          {riengTu && onCongKhai && (
+        {!chiMoLai && (
+          <div className={css.hang}>
             <button
               type="button"
               className={css.nhe}
-              onClick={onCongKhai}
+              onClick={onDoiBinhLuan}
               disabled={dangGui}
-              data-testid="nut-cong-khai-mach-dong"
+              data-testid="nut-tat-mo-binh-luan-dong"
             >
-              🔓 Công khai mạch
+              {tatBinhLuan ? "Mở bình luận" : "Tắt bình luận"}
             </button>
-          )}
-          {onLuuTru && (
-            <button
-              type="button"
-              className={css.nhe}
-              onClick={onLuuTru}
-              disabled={dangGui}
-              data-testid="nut-chu-mach-luu-tru-dong"
-            >
-              {daLuuTru ? "📦 Bỏ lưu trữ" : "📦 Lưu trữ"}
-            </button>
-          )}
-        </div>
+            {riengTu && onCongKhai && (
+              <button
+                type="button"
+                className={css.nhe}
+                onClick={onCongKhai}
+                disabled={dangGui}
+                data-testid="nut-cong-khai-mach-dong"
+              >
+                🔓 Công khai mạch
+              </button>
+            )}
+            {onLuuTru && (
+              <button
+                type="button"
+                className={css.nhe}
+                onClick={onLuuTru}
+                disabled={dangGui}
+                data-testid="nut-chu-mach-luu-tru-dong"
+              >
+                {daLuuTru ? "📦 Bỏ lưu trữ" : "📦 Lưu trữ"}
+              </button>
+            )}
+          </div>
+        )}
       </>
     );
   }
@@ -465,16 +487,18 @@ function MatDong({
         >
           Mở lại sổ
         </button>
-        <button
-          type="button"
-          className={css.nhe}
-          onClick={onDoiBinhLuan}
-          disabled={dangGui}
-          data-testid="nut-tat-mo-binh-luan-dong"
-        >
-          {tatBinhLuan ? "Mở bình luận" : "Tắt bình luận"}
-        </button>
-        {riengTu && onCongKhai && (
+        {!chiMoLai && (
+          <button
+            type="button"
+            className={css.nhe}
+            onClick={onDoiBinhLuan}
+            disabled={dangGui}
+            data-testid="nut-tat-mo-binh-luan-dong"
+          >
+            {tatBinhLuan ? "Mở bình luận" : "Tắt bình luận"}
+          </button>
+        )}
+        {!chiMoLai && riengTu && onCongKhai && (
           <button
             type="button"
             className={css.nhe}
@@ -485,7 +509,7 @@ function MatDong({
             🔓 Công khai mạch
           </button>
         )}
-        {onLuuTru && (
+        {!chiMoLai && onLuuTru && (
           <button
             type="button"
             className={css.nhe}

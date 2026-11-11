@@ -41,6 +41,27 @@ cần một đường ghi khoá hàng `User` **rồi mới** xin hàng `Mach`. �
 cả hai chỉ ghi `AuditLog` sau đó — không chạm `Mach`. Thêm một đường ghi khoá `User`
 trước rồi đụng `Mach` là dựng chu trình, và nó sẽ không thấy được từ chỗ này.
 
+## Mạch RIÊNG TƯ — rào lớp hai (plan 2026-11-09, D5)
+
+Rào ở cửa theo dõi (`api/theo_doi.py` → 404 cho người lạ) chỉ chặn `Follow` MỚI. `Follow`,
+bình luận, `TheoUser`, `TheoSub` đã có từ **trước** bản vá vẫn nằm trong DB, nên chính các
+hàm ở đây phải từ chối gửi: payload mang `mach_title` mà tiêu đề lệnh của Bot Trader chứa đủ
+Entry/SL/TP. Luật chung: **mạch riêng tư ⇒ người nhận phải XEM ĐƯỢC mạch** — tức tác giả
+hoặc staff (`core.rieng_tu.mach_xem_duoc(mach, người_nhận)`); mọi người khác là người lạ có
+`Follow`/bình luận cũ và không nhận gì. Một quy tắc cho cả bốn hàm có người nhận không cố
+định; `bao_mach_moi` là ngoại lệ có chủ đích (mạch riêng tư mới tạo không phát chuông cho
+ai). Bảng bảy hàm:
+
+| hàm | gửi cho ai | rào? | vì sao |
+|---|---|---|---|
+| `bao_moc_moi` | follower (trừ tác giả) | có: lọc về người xem được mạch | follower cũ là người lạ ⇒ bỏ; staff đang theo ⇒ vẫn nhận |
+| `bao_duoc_trich` | tác giả bình luận được trích | có: người nhận phải xem được mạch | bình luận cũ của người lạ ⇒ 0; bình luận của staff ⇒ staff vẫn nhận |
+| `bao_reply` | tác giả bình luận cha | có: cha phải xem được mạch | cha là bình luận cũ của người lạ ⇒ 0; cha là staff / tác giả ⇒ vẫn báo |
+| `bao_theo_mach` | chủ mạch | không | người nhận đã là tác giả |
+| `bao_theo_user` | người được theo | không | không gắn mạch nào |
+| `bao_binh_luan` | tác giả + follower | có: lọc về người xem được mạch | follower cũ là người lạ ⇒ bỏ; staff đang theo / tác giả ⇒ vẫn nhận |
+| `bao_mach_moi` | người theo tác giả / theo sub | **có**, trả 0 (không xét người nhận) | mạch riêng tư mới tạo không phát chuông cho ai. `cong_khai_mach_api` lật cờ TRƯỚC khi gọi hàm này nên đường công khai không bị cản |
+
 ## Vì sao `payload` chép sẵn `mach_title`/`mach_slug` thay vì chỉ giữ id
 
 Chuông phải render được **mà không join** sang 4 bảng cho mỗi dòng — 20 dòng chuông poll
@@ -58,6 +79,7 @@ from core.models.binh_luan import Comment
 from core.models.he_thong import Notification
 from core.models.moc import Moc
 from core.models.tuong_tac import Follow, TheoSub, TheoUser, Trich
+from core.rieng_tu import loc_cong_khai, mach_xem_duoc
 from core.thoi_gian import TZ_VN, khoa_ngay_vn, ngay_vn
 
 logger = logging.getLogger(__name__)
@@ -119,6 +141,24 @@ def khoa_gop_moc_moi(mach_id: int, khi=None) -> str:
     return f"{MOC_MOI}:{mach_id}:{khoa_ngay_vn(khi)}"
 
 
+def _loc_nguoi_xem_duoc(mach, user_ids: list[int]) -> list[int]:
+    """Giữ lại người nhận xem được mạch (tác giả hoặc staff khi mạch riêng tư).
+
+    Mạch công khai: trả nguyên danh sách, KHÔNG thêm truy vấn nào. Mạch riêng tư: một truy
+    vấn `User` cho cả lô, **giữ thứ tự `user_id` tăng dần** (thứ tự lấy khoá — xem chú thích
+    ở `bao_moc_moi`).
+    """
+    if not mach.rieng_tu or not user_ids:
+        return user_ids
+    from core.models.nguoi_dung import User
+
+    return [
+        u.pk
+        for u in User.objects.filter(pk__in=user_ids).order_by("pk")
+        if mach_xem_duoc(mach, u)
+    ]
+
+
 def _tom_tat_mach(mach) -> dict:
     """Ba trường mọi payload đều cần để render một dòng chuông có link."""
     return {"mach_id": mach.pk, "mach_title": mach.title, "mach_slug": mach.slug}
@@ -164,6 +204,9 @@ def bao_moc_moi(moc: Moc) -> int:
         .order_by("user_id")
         .values_list("user_id", flat=True)
     )
+    # Mạch riêng tư: `Follow` cũ của người lạ vẫn nằm trong DB nên rào ở cửa theo dõi không
+    # đủ — chỉ giữ người xem được mạch (staff đang theo). Xem "Mạch RIÊNG TƯ" ở đầu module.
+    nguoi_nhan = _loc_nguoi_xem_duoc(mach, nguoi_nhan)
     if not nguoi_nhan:
         return 0
 
@@ -219,6 +262,10 @@ def bao_duoc_trich(trich: Trich) -> int:
     chu_mach_id = moc.mach.author_id
     if comment.author_id == chu_mach_id:
         return 0
+    if moc.mach.rieng_tu and not mach_xem_duoc(moc.mach, comment.author):
+        # Người nhận là tác giả của một bình luận KHÔNG phải của chủ mạch: người lạ (bình
+        # luận có trước bản vá) thì 0; staff thì vẫn nhận. Xem "Mạch RIÊNG TƯ" ở đầu module.
+        return 0
     return _ghi_theo_lo(
         [
             Notification(
@@ -254,6 +301,10 @@ def bao_reply(comment: Comment) -> int:
     if cha.author_id == comment.author_id:
         return 0
     if not doc_duoc(cha):
+        return 0
+    if comment.mach.rieng_tu and not mach_xem_duoc(comment.mach, cha.author):
+        # Mạch riêng tư: người nhận phải xem được mạch. Cha là bình luận cũ của người lạ ⇒
+        # không gửi payload có `mach_title` cho họ. Xem "Mạch RIÊNG TƯ" ở đầu module.
         return 0
     return _ghi_theo_lo(
         [
@@ -371,6 +422,8 @@ def bao_binh_luan(comment: Comment) -> int:
         ({mach.author_id} | set(Follow.objects.filter(mach=mach).values_list("user_id", flat=True)))
         - tru
     )
+    # Mạch riêng tư: follower cũ là người lạ ⇒ bỏ; tác giả và staff vẫn nhận.
+    nguoi_nhan = _loc_nguoi_xem_duoc(mach, nguoi_nhan)
     if not nguoi_nhan:
         return 0
 
@@ -411,6 +464,10 @@ def bao_mach_moi(mach) -> int:
     """
     if mach.hidden_at is not None:
         return 0
+    if mach.rieng_tu:
+        # Mọi người nhận ở đây (người theo tác giả / theo sub) là người lạ. Khi tác giả công
+        # khai, `cong_khai_mach_api` lật cờ TRƯỚC khi gọi hàm này nên không bị cản.
+        return 0
     nhan_theo_user = set(
         TheoUser.objects.filter(nguoi_duoc_theo_id=mach.author_id).values_list(
             "nguoi_theo_id", flat=True
@@ -436,8 +493,12 @@ def bao_mach_moi(mach) -> int:
     payload = {
         **_tom_tat_mach(mach),
         "boi": mach.author.username,
+        # `loc_cong_khai`: con số này hiện trong câu chuông của NGƯỜI LẠ, nên mạch riêng tư
+        # còn lại của tác giả không được cộng vào ("đăng 3 bài" mà chỉ có 1 bài thấy được).
         "so_mach_moi": _dem_trong_ngay(
-            type(mach).objects.filter(author_id=mach.author_id, hidden_at__isnull=True),
+            loc_cong_khai(
+                type(mach).objects.filter(author_id=mach.author_id, hidden_at__isnull=True)
+            ),
             mach.published_at,
             cot="published_at",
         ),

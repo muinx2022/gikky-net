@@ -3,6 +3,7 @@ import {
   lietKeBinhLuanMoc,
   lietKeFeedDangDienRa,
   lietKeFeedMoi,
+  lietKeNhatKyMoiTacGia,
   lietKeSub,
   timKiem,
   xemHoSo,
@@ -432,6 +433,66 @@ export const NHAN_KHOANG: Readonly<Record<KhoangFeed, string>> = {
 export const KHOANG_FEED = Object.keys(NHAN_KHOANG) as readonly KhoangFeed[];
 export const KHOANG_MAC_DINH: KhoangFeed = "tat_ca";
 
+/** Loại của một mạch — `?loai_mach=` (plan `2026-11-10-truong-loai-mach.md`, homepage v2).
+ *
+ * Kiểu SUY từ TS client, danh sách SUY từ bảng nhãn — cùng khuôn với `KhoangFeed`: bảng
+ * nhãn bị `Record<LoaiMach, …>` ép đủ hai chiều (API mọc thêm một loại mà bảng không có
+ * nhãn là lỗi biên dịch). Tên là `loai_mach`, KHÔNG phải `loai` — `loai` đã là chip của MỐC.
+ *
+ * Không có "mặc định": vắng `?loai_mach=` nghĩa là **không lọc** (feed cũ, mọi loại), và
+ * `GET /feeds/moi` không tham số vẫn phải trả đúng tập như trước — `app/sitemap.ts` dựa
+ * vào nó để liệt kê mọi mạch. */
+export type LoaiMach = NonNullable<ThamSoFeed["loai_mach"]>;
+export const NHAN_LOAI_MACH: Readonly<Record<LoaiMach, string>> = {
+  nhat_ky: "Nhật ký",
+  bai_viet: "Bài viết",
+  thao_luan: "Chủ đề thảo luận",
+};
+export const LOAI_MACH = Object.keys(NHAN_LOAI_MACH) as readonly LoaiMach[];
+
+/** Đọc `?loai_mach=` từ URL. Giá trị lạ → `undefined` (= không lọc).
+ *
+ * Quy rác về "không lọc" **ở tầng URL**, cùng lý lẽ với `docKhoang`/`docTab`: API trả 400
+ * cho loại sai (nó không được nuốt im lặng), và cả trang chủ sẽ 500 vì một query string ai
+ * đó gõ tay. Khác `docKhoang` ở chỗ không có "mặc định" để rơi về: rơi về `undefined`
+ * chứ không về một loại cụ thể, vì chọn đại một loại là dựng một bộ lọc tàng hình. */
+export function docLoaiMach(gia_tri: string | string[] | undefined): LoaiMach | undefined {
+  const l = Array.isArray(gia_tri) ? gia_tri[0] : gia_tri;
+  return (LOAI_MACH as readonly string[]).includes(l ?? "") ? (l as LoaiMach) : undefined;
+}
+
+/** Trạng thái sổ của mạch — `?trang_thai=` của `GET /feeds/moi` (plan
+ * `2026-11-11-homepage-v2-giao-dien-moi.md` §6.3): tab "Đang mở" / "Đã đóng sổ" của khối
+ * nhật ký trang chủ. Kiểu SUY từ TS client, cùng khuôn `LoaiMach` — bảng nhãn bị
+ * `Record<TrangThaiFeed, …>` ép đủ hai chiều. Vắng = không lọc. */
+export type TrangThaiFeed = NonNullable<ThamSoFeed["trang_thai"]>;
+export const NHAN_TRANG_THAI_FEED: Readonly<Record<TrangThaiFeed, string>> = {
+  open: "Đang mở",
+  closed: "Đã đóng sổ",
+};
+export const TRANG_THAI_FEED = Object.keys(NHAN_TRANG_THAI_FEED) as readonly TrangThaiFeed[];
+
+/** Đọc `?trang_thai=` từ URL. Giá trị lạ → `undefined` (= không lọc), cùng lý lẽ với
+ * `docLoaiMach`: API trả 400 cho giá trị sai, và cả trang chủ sẽ 500 vì một query string gõ
+ * tay. */
+export function docTrangThai(gia_tri: string | string[] | undefined): TrangThaiFeed | undefined {
+  const t = Array.isArray(gia_tri) ? gia_tri[0] : gia_tri;
+  return (TRANG_THAI_FEED as readonly string[]).includes(t ?? "")
+    ? (t as TrangThaiFeed)
+    : undefined;
+}
+
+/** `?trang_thai=` mà tab này được phép GỬI LÊN API. Chỉ `GET /feeds/moi` nhận tham số này
+ * (tab "Mới nhất" và "Nổi bật" đi qua nó); feed "Đang diễn ra" vốn chỉ gồm mạch đang mở và
+ * API không nhận `trang_thai` ở đó. Giữ lọc `closed` trên URL của tab ấy mà vẫn hiện feed
+ * mạch mở là một bộ lọc nói dối — nên ở tab đó nó bị bỏ, và `Feed` cũng không vẽ chip. */
+export function trangThaiGuiLenApi(
+  tab: TabFeed,
+  trang_thai: TrangThaiFeed | undefined,
+): TrangThaiFeed | undefined {
+  return tab === "dang-dien-ra" ? undefined : trang_thai;
+}
+
 /** Đọc `?khoang=` từ URL. Giá trị lạ → `tat_ca`.
  *
  * Quy rác về mặc định **ở tầng URL** chứ không đẩy xuống API: API trả 400 cho khoảng sai
@@ -547,7 +608,15 @@ export async function docCacSubOTrinhDuyet(): Promise<SubChiTietOut[]> {
  */
 export async function docFeed(
   tab: TabFeed,
-  opts: { cursor?: string; limit?: number; khoang?: KhoangFeed; truong_phai?: string } = {},
+  opts: {
+    cursor?: string;
+    limit?: number;
+    khoang?: KhoangFeed;
+    truong_phai?: string;
+    loai_mach?: LoaiMach;
+    /** Chỉ có tác dụng ở tab `moi` / `nhieu-diem` — xem `trangThaiGuiLenApi`. */
+    trang_thai?: TrangThaiFeed;
+  } = {},
 ): Promise<TrangCursor<FeedOut>> {
   const trang = await feedTho(tab, opts);
   if (trang.du_lieu === null) {
@@ -559,6 +628,54 @@ export async function docFeed(
     );
   }
   return { du_lieu: trang.du_lieu, cursorHong: trang.cursorHong };
+}
+
+/** Khối "Nhật ký mới" của `/`: **MỖI tác giả MỘT bài**, bài có `published_at` lớn nhất của
+ * họ (plan `2026-11-11-nhat-ky-moi-moi-tac-gia-mot-bai.md`). `limit` là số tác giả tối đa
+ * (API nhận 1..20); không có cursor — "Xem tất cả nhật ký →" đi tới `/?tab=moi&loai_mach=
+ * nhat_ky`, là feed KHÔNG lọc.
+ *
+ * Phép chọn nằm ở API (`DISTINCT ON (author_id)`), không ở đây: bản đầu kéo 50 bài của
+ * `/feeds/moi` rồi lọc ở web, và hỏng theo hai cách — feed ấy sắp theo `last_content_at`
+ * nên bài cũ vừa được nối mốc giành chỗ của bài mới đăng, và bot đăng dồn quá 50 bài thì đẩy
+ * người thật ra khỏi cửa sổ.
+ *
+ * Cùng luật với `docFeed` (vá F1): endpoint này không có đường 404 hợp lệ nào, nên 404 là hỏng
+ * CẤU TRÚC (đổi tên route, proxy nuốt prefix) và phải NÉM — không quy về "chưa có nhật ký".
+ */
+export async function docNhatKyMoiTacGia(limit: number): Promise<FeedOut> {
+  const viec = "feed nhật ký mới theo tác giả";
+  const kq = await lietKeNhatKyMoiTacGia({ ...CHUNG, query: { limit } });
+  const du_lieu = lay(kq, viec);
+  if (du_lieu === null) {
+    throw new LoiApi(
+      viec,
+      404,
+      "404 trên endpoint không có đường 404 nào — đây là hỏng cấu trúc chứ không phải feed rỗng",
+    );
+  }
+  return du_lieu;
+}
+
+/** Số bình luận gốc tải về để chọn "Quan điểm nổi bật" — trần `limit` của endpoint khán đài. */
+export const SO_BINH_LUAN_CHON_QUAN_DIEM = 50;
+
+/** Bình luận GỐC của một mạch để chọn "Quan điểm nổi bật" ở khối chủ đề tuần (plan
+ * `2026-11-11-homepage-v2-giao-dien-moi.md` §6.4): ĐÚNG endpoint khán đài đang có
+ * (`lietKeBinhLuanMach`, `sort=hay_nhat`), không thêm API. Việc chọn (gốc · đọc được · điểm
+ * cao nhất) là của `lib/chu-de.ts::chonQuanDiemNoiBat`.
+ *
+ * Trả `[]` khi mạch không có bình luận hoặc 404 (chủ đề vừa bị gỡ giữa hai lời gọi) — khối
+ * chỉ ẩn phần "Quan điểm nổi bật", không làm cả trang chủ hỏng. Lỗi CẤU TRÚC khác (API chết)
+ * vẫn ném qua `lay()`.
+ */
+export async function docBinhLuanGoc(machId: number): Promise<KhanDaiOut["threads"]> {
+  const kq = await lietKeBinhLuanMach({
+    ...CHUNG,
+    path: { mach_id: machId },
+    query: { sort: "hay_nhat", limit: SO_BINH_LUAN_CHON_QUAN_DIEM },
+  });
+  return lay(kq, `liet_ke_binh_luan_mach(${machId}) — quan điểm nổi bật`)?.threads ?? [];
 }
 
 /** Feed cho **CUỘN VÔ HẠN** — chạy trong TRÌNH DUYỆT (2026-09-03).
@@ -579,7 +696,15 @@ export async function docFeed(
  */
 export async function docFeedOTrinhDuyet(
   tab: TabFeed,
-  opts: { sub?: string; cursor: string; khoang?: KhoangFeed; limit?: number; truong_phai?: string },
+  opts: {
+    sub?: string;
+    cursor: string;
+    khoang?: KhoangFeed;
+    limit?: number;
+    truong_phai?: string;
+    loai_mach?: LoaiMach;
+    trang_thai?: TrangThaiFeed;
+  },
 ): Promise<FeedOut | null> {
   const query = {
     sub: opts.sub ?? null,
@@ -588,6 +713,8 @@ export async function docFeedOTrinhDuyet(
     sort: SORT_API[tab],
     khoang: khoangGuiLenApi(tab, opts.khoang ?? KHOANG_MAC_DINH),
     truong_phai: opts.truong_phai ?? null,
+    loai_mach: opts.loai_mach ?? null,
+    trang_thai: trangThaiGuiLenApi(tab, opts.trang_thai) ?? null,
   };
   const kq =
     tab === "dang-dien-ra"
@@ -601,14 +728,28 @@ export async function docFeedOTrinhDuyet(
 export async function docFeedSub(
   sub: string,
   tab: TabFeed,
-  opts: { cursor?: string; limit?: number; khoang?: KhoangFeed; truong_phai?: string } = {},
+  opts: {
+    cursor?: string;
+    limit?: number;
+    khoang?: KhoangFeed;
+    truong_phai?: string;
+    loai_mach?: LoaiMach;
+  } = {},
 ): Promise<TrangCursor<FeedOut | null>> {
   return feedTho(tab, { ...opts, sub });
 }
 
 async function feedTho(
   tab: TabFeed,
-  opts: { sub?: string; cursor?: string; limit?: number; khoang?: KhoangFeed; truong_phai?: string },
+  opts: {
+    sub?: string;
+    cursor?: string;
+    limit?: number;
+    khoang?: KhoangFeed;
+    truong_phai?: string;
+    loai_mach?: LoaiMach;
+    trang_thai?: TrangThaiFeed;
+  },
 ): Promise<TrangCursor<FeedOut | null>> {
   const xin = cursorHopLe(opts.cursor);
   const cursor_bi_bo = xin === null && opts.cursor !== undefined;
@@ -631,6 +772,8 @@ async function feedTho(
       // xem `khoangGuiLenApi`.
       khoang: khoangGuiLenApi(tab, opts.khoang ?? KHOANG_MAC_DINH),
       truong_phai: opts.truong_phai ?? null,
+      loai_mach: opts.loai_mach ?? null,
+      trang_thai: trangThaiGuiLenApi(tab, opts.trang_thai) ?? null,
     };
     if (tab === "dang-dien-ra") return lietKeFeedDangDienRa({ ...CHUNG, query: q });
     return lietKeFeedMoi({ ...CHUNG, query: q });

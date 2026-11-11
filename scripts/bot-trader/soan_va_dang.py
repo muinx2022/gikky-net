@@ -12,6 +12,7 @@ với Hệ thống Đa Phương Pháp Kỹ Thuật (Multi-Strategy Engine):
 import base64
 import json
 import os
+import re
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -174,6 +175,8 @@ def quet_ngay_nghi_va_danh_dau() -> list:
             continue
         if sym in recent_closed_symbols:
             continue
+        if c.get("score", 0) < 65:
+            continue
 
         deal_record = {
             "symbol": sym,
@@ -205,6 +208,8 @@ def quet_ngay_nghi_va_danh_dau() -> list:
         if sym in open_symbols:
             continue
         if sym in recent_closed_symbols:
+            continue
+        if c.get("score", 0) < 65:
             continue
 
         deal_record = {
@@ -264,7 +269,7 @@ def kiem_tra_deal_danh_dau_khi_mo_cua(market_mode: str, avoid_strategy_id: str =
 
     mode = market_mode.upper()
     watchlist = doc_danh_sach_ngay_nghi()
-    pending = [d for d in watchlist if d.get("status") == "PENDING_OPEN" and d.get("market_mode", "").upper() == mode]
+    pending = [d for d in watchlist if d.get("status") == "PENDING_OPEN" and d.get("market_mode", "").upper() == mode and d.get("score", 0) >= 65]
     if not pending:
         return None
 
@@ -447,6 +452,436 @@ def kiem_tra_han_muc_toan_he_thong(vi_the_list: list) -> tuple[bool, str]:
     return True, "OK"
 
 
+class FigureDict(dict):
+    """Dictionary đại diện cho một cặp số liệu trong figures của Gikky.
+    Tương thích cả truy cập theo chuẩn Gikky API (label) và cú pháp key/value.
+    """
+
+    def __getitem__(self, item):
+        if item == "key":
+            return super().get("label")
+        return super().__getitem__(item)
+
+    def get(self, item, default=None):
+        if item == "key":
+            return super().get("label", default)
+        return super().get(item, default)
+
+
+
+def _dung_lenh(*, direction: str, sym: str, entry_str: str, sl_str: str, tp_str: str, pyr_str: str | None) -> dict | None:
+    """Lệnh có cấu trúc gửi kèm `POST /machs` (`lenh`), dựng từ CHÍNH các chuỗi giá đã dùng
+    cho tiêu đề — số trên thẻ trang chủ khớp số trong tiêu đề từng chữ số.
+
+    Trả `None` (bài vẫn đăng, chỉ không có dải lệnh) khi dữ liệu không qua được luật của
+    server: mã ngoài `[A-Za-z0-9._/-]{1,20}`, hoặc sau khi làm tròn thứ tự SL/vào/TP không
+    còn đúng (MUA: SL < vào < TP; BÁN: TP < vào < SL). Server trả 400 cả bài nếu `lenh` sai,
+    nên bot tự kiểm trước thay vì để một lần làm tròn làm mất cả bài đăng.
+    """
+    if not re.fullmatch(r"[A-Za-z0-9._/-]{1,20}", sym or ""):
+        return None
+    try:
+        vao, sl, tp = float(entry_str), float(sl_str), float(tp_str)
+    except (TypeError, ValueError):
+        return None
+    mua = direction == "LONG"
+    dung_thu_tu = (sl < vao < tp) if mua else (tp < vao < sl)
+    if not dung_thu_tu:
+        return None
+    lenh = {
+        "chieu": "mua" if mua else "ban",
+        "ma": sym,
+        "gia_vao": entry_str,
+        "sl": sl_str,
+        "tp": tp_str,
+    }
+    if pyr_str:
+        lenh["nhoi"] = pyr_str
+    return lenh
+
+
+NGANH_MAP_VN = {
+    "HDB": "Ngân hàng",
+    "MBB": "Ngân hàng",
+    "TCB": "Ngân hàng",
+    "STB": "Ngân hàng",
+    "SSI": "Chứng khoán",
+    "SHS": "Chứng khoán",
+    "MBS": "Chứng khoán",
+    "HPG": "Thép & Vật liệu xây dựng",
+    "FPT": "Công nghệ thông tin",
+    "MWG": "Bán lẻ tiêu dùng",
+    "PVS": "Dầu khí & Dịch vụ kỹ thuật",
+    "BSR": "Lọc hóa dầu",
+    "IDC": "Bất động sản Khu công nghiệp",
+    "CEO": "Bất động sản dân dụng",
+    "ACV": "Hạ tầng cảng hàng không",
+    "VEA": "Cơ khí động lực",
+    "QNS": "Hàng tiêu dùng & Đường",
+    "VGI": "Viễn thông quốc tế",
+}
+
+
+def _tao_tieu_de_nhat_ky_vn(sym: str, entry_str: str, strat_id: str, setup_name: str, candidate: dict) -> str:
+    """Tạo tiêu đề chuẩn Nhật ký vào lệnh Cổ phiếu VN (D1, max 160 ký tự)."""
+    nganh = NGANH_MAP_VN.get(sym, "Cổ phiếu tiềm năng")
+    strat = strat_id.upper()
+    if strat == "ICHIMOKU":
+        luan_diem = f"Bứt phá Mây Kumo, đón sóng dòng tiền nhóm {nganh}"
+    elif strat in ("MA_CROSS", "MA30_50_PULLBACK"):
+        luan_diem = f"Kiểm định hỗ trợ MA 30-50 thành công, kỳ vọng nhóm {nganh} dẫn dắt"
+    elif strat == "BB_SQUEEZE":
+        luan_diem = f"Bung nén Bollinger Bands, kỳ vọng sóng tăng tốc nhóm {nganh}"
+    else:  # PA_MA200
+        luan_diem = f"Tích lũy chặt trên trục MA 200, đón nhịp bứt phá nhóm {nganh}"
+
+    title = f"[Nhật ký] Mua {sym} quanh {entry_str} — {luan_diem}"
+    return title[:160]
+
+
+def _tao_tieu_de_nhat_ky_h4(sym: str, dir_action: str, entry_str: str, strat_id: str, setup_name: str, direction: str, candidate: dict) -> str:
+    """Tạo tiêu đề chuẩn Nhật ký vào lệnh Quốc tế H4 (max 160 ký tự)."""
+    is_long = (direction == "LONG")
+    sym_u = sym.upper()
+    if "EUR" in sym_u:
+        ctx = "DXY hạ nhiệt tại kháng cự, nến H4 xác nhận đáy sau cao hơn" if is_long else "Đồng USD giữ đà tăng, nến H4 suy yếu dưới MA 50"
+    elif "GBP" in sym_u:
+        ctx = "Áp lực bán USD lan tỏa, nến H4 bứt phá vùng tích lũy" if is_long else "Đồng Bảng suy yếu trước áp lực vĩ mô, nến H4 gãy hỗ trợ"
+    elif "JPY" in sym_u:
+        ctx = "Chênh lệch lợi suất duy trì, nến H4 bật tăng trên trục MA 50" if is_long else "Tâm lý Risk-Off kích hoạt dòng tiền JPY, H4 kiểm định cản động"
+    elif "AUD" in sym_u:
+        ctx = "Kỳ vọng xuất khẩu hàng hóa hỗ trợ, nến H4 bứt phá Mây Kumo" if is_long else "Đồng USD áp đảo, cấu trúc H4 mở rộng nhịp giảm"
+    elif "CAD" in sym_u:
+        ctx = "Giá dầu suy yếu gây sức ép, nến H4 xác nhận mô hình đảo chiều" if is_long else "Giá dầu hồi phục nâng đỡ CAD, nến H4 trượt khỏi kênh tăng"
+    elif "CHF" in sym_u:
+        ctx = "Lợi suất trái phiếu hỗ trợ USD, H4 giữ vững nền giá trên MA 200" if is_long else "Dòng tiền tìm nơi trú ẩn CHF, H4 phá vỡ hỗ trợ động"
+    elif "XAU" in sym_u or "GC" in sym_u:
+        ctx = "Tâm lý Risk-Off kích hoạt dòng tiền trú ẩn, H4 giữ vững hỗ trợ" if is_long else "Lợi suất thực tăng trở lại, nến H4 chịu áp lực chốt lời tại cản"
+    elif "XAG" in sym_u or "SI" in sym_u:
+        ctx = "Xung lực kim loại quý bứt phá, nến H4 mở rộng biến độ" if is_long else "Đà tăng kim loại quý chững lại, H4 kiểm định vùng cản động"
+    elif "WTI" in sym_u or "BRENT" in sym_u or "CL" in sym_u or "BZ" in sym_u:
+        ctx = "Căng thẳng nguồn cung hỗ trợ giá dầu, nến H4 phục hồi trên MA 50" if is_long else "Tồn kho năng lượng gia tăng, nến H4 gãy kênh hỗ trợ"
+    elif "COPPER" in sym_u or "HG" in sym_u:
+        ctx = "Kỳ vọng nhu cầu công nghiệp hồi phục, nến H4 bung nén tăng tốc" if is_long else "Tín hiệu PMI chững lại, nến H4 trượt khỏi vùng cân bằng"
+    elif "NATGAS" in sym_u or "NG" in sym_u:
+        ctx = "Yếu tố thời tiết thúc đẩy nhu cầu khí đốt, nến H4 tạo đáy đảo chiều" if is_long else "Nguồn cung dồi dào gây áp lực giá, nến H4 trượt dài dưới MA 200"
+    else:
+        ctx = f"Bối cảnh liên thị trường thuận lợi, nến H4 kích hoạt tín hiệu {setup_name}"
+
+    title = f"[Nhật ký] {dir_action} {sym} quanh {entry_str} — {ctx}"
+    return title[:160]
+
+
+def tao_bai_viet_bot_trader(
+    candidate: dict,
+    chart_b64: str = None,
+    market_mode: str = "VN"
+) -> dict:
+    """Soạn thảo nội dung bài viết và cấu trúc payload xuất bản cho Bot Trader theo chuẩn
+    NHẬT KÝ GIAO DỊCH (Trading Journal) chuyên sâu v2.
+    Hỗ trợ cả Cổ phiếu VN (D1, chu kỳ thanh toán T+2.5) và Quốc tế (H4, T+0).
+    Tuân thủ quy chuẩn: 0 từ cấm, tối đa 6 cặp figures (mỗi key/value <= 24 ký tự).
+    """
+    is_h4 = (market_mode.upper() == "H4")
+    sym = candidate["symbol"]
+    exchange = candidate.get("exchange", "HOSE" if not is_h4 else "Forex")
+    entry = candidate["entry_price"]
+    sl = candidate["stop_loss"]
+    tp = candidate["take_profit"]
+    pyramid = candidate.get("pyramid_trigger")
+    setup_name = candidate.get("setup_name", "")
+    strat_id = candidate.get("strategy_id", "PA_MA200")
+    strat_name = candidate.get("strategy_name", "Price Action & MA 200")
+    direction = candidate.get("direction", "LONG")
+    timeframe = candidate.get("timeframe", "H4" if is_h4 else "D1")
+    decimals = candidate.get("decimals", 4 if "USD" in sym else 2)
+    risk_pct = candidate.get("risk_pct", 0.0)
+    reward_pct = candidate.get("reward_pct", 0.0)
+    rr = candidate.get("rr_ratio", 2.4)
+    ly_do_list = candidate.get("ly_do", [])
+    sub = candidate.get("sub", "chung-khoan" if not is_h4 else "ngoai-hoi")
+
+    dir_action = "Mua" if direction == "LONG" else "Bán"
+    dir_label = "Mua (Long)" if direction == "LONG" else "Bán khống (Short)"
+
+    entry_str = f"{entry:.{decimals}f}"
+    sl_str = f"{sl:.{decimals}f}"
+    tp_str = f"{tp:.{decimals}f}"
+    pyr_str = f"{pyramid:.{decimals}f}" if pyramid else None
+
+    # 1. Tiêu đề chuẩn Nhật ký vào lệnh thực chiến
+    if not is_h4:
+        title = _tao_tieu_de_nhat_ky_vn(sym, entry_str, strat_id, setup_name, candidate)
+    else:
+        title = _tao_tieu_de_nhat_ky_h4(sym, dir_action, entry_str, strat_id, setup_name, direction, candidate)
+
+    loai = "Vào lệnh"
+    loai_mach = "nhat_ky"
+
+    lenh = _dung_lenh(
+        direction=direction,
+        sym=sym,
+        entry_str=entry_str,
+        sl_str=sl_str,
+        tp_str=tp_str,
+        pyr_str=pyr_str,
+    )
+
+    # Bảng figures: Tối đa 6 cặp theo đúng quy định SO_FIGURES_TOI_DA của Gikky (mỗi chuỗi <= 24 ký tự)
+    if is_h4:
+        figures = [
+            FigureDict({"label": "Mã tài sản", "value": f"{sym} ({exchange})"[:24]}),
+            FigureDict({"label": "Vị thế", "value": f"{dir_label} {timeframe}"[:24]}),
+            FigureDict({"label": "Giá Entry", "value": entry_str[:24]}),
+            FigureDict({"label": "Stop Loss", "value": f"{sl_str} (-{risk_pct:.1f}%)"[:24]}),
+            FigureDict({"label": "Take Profit", "value": f"{tp_str} (+{reward_pct:.1f}%)"[:24]}),
+            FigureDict({"label": "Tỷ lệ R:R", "value": f"1 : {rr:.2f}"[:24]})
+        ]
+    else:
+        # Cổ phiếu VN (D1): Bổ sung chỉ số chu kỳ thanh toán T+2.5 (bán khả dụng từ sáng T+3)
+        figures = [
+            FigureDict({"label": "Mã tài sản", "value": f"{sym} ({exchange})"[:24]}),
+            FigureDict({"label": "Vị thế", "value": f"{dir_label} {timeframe}"[:24]}),
+            FigureDict({"label": "Giá Entry", "value": entry_str[:24]}),
+            FigureDict({"label": "Stop Loss", "value": f"{sl_str} (-{risk_pct:.1f}%)"[:24]}),
+            FigureDict({"label": "Take Profit", "value": f"{tp_str} (+{reward_pct:.1f}%)"[:24]}),
+            FigureDict({"label": "Chu kỳ bán", "value": "Từ sáng T+3"[:24]})
+        ]
+
+    # Câu hỏi tương tác ngắn gọn (tối đa 200 ký tự theo quy định Gikky API)
+    question_for_crowd = (
+        f"Với nhật ký {dir_action} {sym} ({entry_str}) khung {timeframe}, "
+        f"bạn đánh giá kịch bản nào dễ xảy ra hơn: Đạt Take Profit {tp_str} hay chạm Stop Loss {sl_str}?"
+    )[:200]
+
+    # 2. Lời mở đầu súc tích, tự nhiên của người giao dịch ghi chép nhật ký
+    nganh_vn = NGANH_MAP_VN.get(sym, "Cổ phiếu tiềm năng")
+    if not is_h4:
+        teaser_p = (
+            f"Nhật ký ghi nhận phiên giao dịch: Chỉ số VN-Index đang trong nhịp vận động tích lũy và kiểm định cung cầu, "
+            f"dòng tiền trên thị trường phân hóa mạnh mẽ và bắt đầu có tín hiệu dịch chuyển vào nhóm ngành <strong>{nganh_vn}</strong>. "
+            f"Quan sát hành vi giá của <strong>{sym}</strong> ({exchange}, khung <strong>D1</strong>), "
+            f"áp lực bán chủ động đã suy kiệt rõ rệt sau nhịp rũ bỏ, phe mua nhập cuộc dứt khoát bảo vệ các ngưỡng hỗ trợ trọng yếu. "
+            f"Nhận thấy cơ hội có xác suất thành công cao và tỷ lệ Risk/Reward vượt trội, quyết định mở vị thế giải ngân theo kế hoạch dưới đây."
+        )
+    else:
+        teaser_p = (
+            f"Nhật ký ghi nhận phiên giao dịch khung <strong>H4</strong> đối với <strong>{sym}</strong> ({exchange}): "
+            f"Bối cảnh liên thị trường ghi nhận các chuyển dịch đáng chú ý về tâm lý dòng vốn và sức mạnh đồng USD. "
+            f"Cấu trúc nến H4 của <strong>{sym}</strong> vừa hoàn tất nhịp kiểm định cung cầu với hành động giá dứt khoát, "
+            f"xác nhận điểm kích hoạt vào lệnh theo chiến lược <strong>{strat_name}</strong>. "
+            f"Dưới đây là ghi chép chi tiết về bối cảnh, luận điểm kỹ thuật và lộ trình quản trị rủi ro nghiêm ngặt."
+        )
+
+    # 3. Thân bài 4 phần chuyên sâu
+    ma200_val = candidate.get("ma200", entry)
+
+    # PHẦN 1: Bức tranh tổng thể & Tâm lý thị trường (Big Picture & Sentiment)
+    if not is_h4:
+        pos_ma200_text = (
+            f"Về vị thế kỹ thuật dài hạn, {sym} duy trì vững vàng phía trên đường trung bình MA 200 ngày ({ma200_val:.{decimals}f}), "
+            f"khẳng định cổ phiếu đang nằm trong pha tăng giá chủ đạo (Stage 2 Uptrend). "
+            f"Vị thế giá trên trục MA 200 đóng vai trò bệ đỡ tâm lý tích cực, biến các nhịp điều chỉnh ngắn hạn thành cơ hội gia tăng tỷ trọng lý tưởng."
+            if entry >= ma200_val else
+            f"Về vị thế kỹ thuật, {sym} đang nỗ lực kiểm định lại trục xu hướng dài hạn MA 200 ({ma200_val:.{decimals}f}) "
+            f"sau chu kỳ tạo đáy trung hạn vững chắc, cho thấy tâm lý bi quan đã hoàn toàn được hấp thụ bởi lực cầu tổ chức."
+        )
+        big_picture_p = (
+            f"Chỉ số VN-Index tiếp tục duy trì trạng thái tích lũy lành mạnh với sự luân phiên giữ nhịp giữa các nhóm ngành xương sống "
+            f"(Ngân hàng, Chứng khoán, Thép, BĐS). Dòng tiền chủ động có xu hướng tìm đến các cổ phiếu có nền tảng cơ bản vững vàng "
+            f"thuộc nhóm <strong>{nganh_vn}</strong>, nơi áp lực cung trôi nổi đã được hấp thụ phần lớn.<br><br>"
+            f"{pos_ma200_text}"
+        )
+    else:
+        sym_u = sym.upper()
+        if "XAU" in sym_u or "GC" in sym_u or "XAG" in sym_u or "SI" in sym_u:
+            macro_text = (
+                "Tâm lý liên thị trường đang nghiêng về trạng thái phòng thủ rủi ro (Risk-Off), thúc đẩy dòng vốn tìm kiếm nơi trú ẩn an toàn. "
+                "Thị trường kim loại quý được hỗ trợ tích cực bởi kỳ vọng chính sách tiền tệ và diễn biến lợi suất thực trái phiếu Mỹ."
+            )
+        elif "WTI" in sym_u or "BRENT" in sym_u or "CL" in sym_u or "BZ" in sym_u or "NG" in sym_u or "COPPER" in sym_u:
+            macro_text = (
+                "Thị trường năng lượng và hàng hóa thế giới đang phản ánh sự giằng co giữa kỳ vọng nhu cầu công nghiệp và các số liệu kiểm kê tồn kho. "
+                "Yếu tố vĩ mô và cân đối cung cầu tạo nên các nhịp biến động sóng trung hạn rõ rệt trên khung thời gian H4."
+            )
+        else:
+            macro_text = (
+                "Trên thị trường ngoại hối quốc tế, chỉ số DXY (US Dollar Index) đang dao động tại vùng kháng cự kỹ thuật quan trọng và chịu áp lực điều chỉnh. "
+                "Tâm lý liên thị trường ổn định tạo dư địa thuận lợi cho các cấu trúc giá bứt phá trên các cặp tỷ giá chính."
+            )
+
+        pos_ma200_h4 = (
+            f"Trên đồ thị H4, {sym} duy trì ưu thế áp đảo của phe mua khi hành động giá tôn trọng trục trung bình MA 200 ({ma200_val:.{decimals}f}), "
+            f"giữ vững cấu trúc đỉnh đáy sau cao hơn (Higher Highs / Higher Lows)."
+            if direction == "LONG" else
+            f"Trên đồ thị H4, {sym} chịu sự chi phối hoàn toàn của phe bán khi đường giá trượt dài phía dưới trục MA 200 ({ma200_val:.{decimals}f}), "
+            f"xác lập cấu trúc đỉnh đáy sau thấp hơn (Lower Highs / Lower Lows)."
+        )
+        big_picture_p = f"{macro_text}<br><br>{pos_ma200_h4}"
+
+    # PHẦN 2: Luận điểm vào lệnh & Tín hiệu kích hoạt (Trade Thesis & Technical Trigger)
+    strat = strat_id.upper()
+    if strat == "ICHIMOKU":
+        tenkan_val = candidate.get("tenkan", entry)
+        kijun_val = candidate.get("kijun", entry)
+        if direction == "LONG":
+            strat_thesis = (
+                f"Tín hiệu kích hoạt Ichimoku Kinko Hyo: Giá đóng cửa bứt phá và vận động hoàn toàn phía trên Mây Kumo, "
+                f"xác nhận phe mua kiểm soát toàn bộ xu hướng. Đường Tenkan-sen ({tenkan_val:.{decimals}f}) cắt lên và vận động phía trên Kijun-sen ({kijun_val:.{decimals}f}), "
+                f"trong khi Kijun-sen phẳng đóng vai trò bệ đỡ động nâng đỡ các nhịp rung lắc ngắn hạn."
+            )
+            invalidation_level_desc = f"thủng đường tiêu chuẩn Kijun-sen ({kijun_val:.{decimals}f}) hoặc trượt ngược trở lại vào trong Mây Kumo"
+        else:
+            strat_thesis = (
+                f"Tín hiệu kích hoạt Ichimoku Kinko Hyo: Giá đóng cửa trượt dài phía dưới Mây Kumo, "
+                f"xác nhận áp lực bán chiếm ưu thế tuyệt đối. Đường Tenkan-sen ({tenkan_val:.{decimals}f}) duy trì dưới đường Kijun-sen ({kijun_val:.{decimals}f}), "
+                f"liên tục từ chối các nỗ lực phục hồi kỹ thuật của phe mua."
+            )
+            invalidation_level_desc = f"vượt ngược trở lại lên trên đường Kijun-sen ({kijun_val:.{decimals}f}) hoặc lọt vào trong Mây Kumo"
+
+    elif strat in ("MA_CROSS", "MA30_50_PULLBACK"):
+        ma30_val = candidate.get("ma30", entry)
+        ma50_val = candidate.get("ma50", entry)
+        if direction == "LONG":
+            strat_thesis = (
+                f"Tín hiệu kích hoạt Trung bình động (MA): Dải MA 30 ({ma30_val:.{decimals}f}) và MA 50 ({ma50_val:.{decimals}f}) đang dốc lên song song mở rộng biên độ, "
+                f"xác lập xu hướng tăng bền vững. Nhịp kiểm định hỗ trợ động dải MA 30 – MA 50 xuất hiện nến phản ứng tích cực, "
+                f"xác nhận dòng tiền chủ động nhập cuộc hấp thụ hết áp lực bán điều chỉnh."
+            )
+            invalidation_level_desc = f"đóng nến gãy dải hỗ trợ động MA 50 ({ma50_val:.{decimals}f})"
+        else:
+            strat_thesis = (
+                f"Tín hiệu kích hoạt Trung bình động (MA): Dải MA 30 ({ma30_val:.{decimals}f}) vận động phía dưới MA 50 ({ma50_val:.{decimals}f}) và cùng dốc xuống, "
+                f"xác lập xu hướng giảm rõ nét. Các nỗ lực phục hồi chạm vào dải cản MA 30 – MA 50 đều nhanh chóng xuất hiện nến từ chối giá cao."
+            )
+            invalidation_level_desc = f"đóng nến bứt phá vượt qua dải kháng cự MA 50 ({ma50_val:.{decimals}f})"
+
+    elif strat == "BB_SQUEEZE":
+        bb_mid = candidate.get("bb_mid", entry)
+        if direction == "LONG":
+            strat_thesis = (
+                f"Tín hiệu kích hoạt Co thắt Bollinger Bands: Dải biến động (20, 2) vừa hoàn tất chu kỳ co thắt biên độ hẹp cực đại (Volatility Squeeze), "
+                f"sau đó xuất hiện nến kích hoạt bứt phá dải băng trên (BB Upper) đi kèm thanh khoản gia tăng đột biến, "
+                f"báo hiệu sự mở màn của một pha mở rộng biên độ tăng tốc."
+            )
+            invalidation_level_desc = f"đóng nến quay đầu thủng trục giữa dải Bollinger (BB Mid: {bb_mid:.{decimals}f})"
+        else:
+            strat_thesis = (
+                f"Tín hiệu kích hoạt Co thắt Bollinger Bands: Dải Bollinger Bands trải qua giai đoạn nén biên độ trước khi xuất hiện nến đỏ đóng cửa phá vỡ dải băng dưới (BB Lower). "
+                f"Đà mở dải băng hướng xuống cho thấy xung lực bán tháo bắt đầu gia tốc."
+            )
+            invalidation_level_desc = f"đóng nến quay đầu vượt lên trên trục giữa dải Bollinger (BB Mid: {bb_mid:.{decimals}f})"
+
+    else:  # PA_MA200
+        if direction == "LONG":
+            strat_thesis = (
+                f"Tín hiệu kích hoạt Price Action &amp; MA 200: Cổ phiếu xuất hiện mô hình nến kiểm định cung thành công (Pin Bar từ chối giá thấp / VCP nén biên độ thu hẹp) "
+                f"ngay trên trục hỗ trợ dài hạn MA 200 ({ma200_val:.{decimals}f}), tạo nên điểm vào lệnh với vị thế phòng thủ tối ưu."
+            )
+            invalidation_level_desc = f"đóng nến gãy hoàn toàn trục xu hướng dài hạn MA 200 ({ma200_val:.{decimals}f})"
+        else:
+            strat_thesis = (
+                f"Tín hiệu kích hoạt Price Action &amp; MA 200: Đường giá xuất hiện nến đảo chiều từ chối tăng khi tiếp cận trục trung bình MA 200 ({ma200_val:.{decimals}f}), "
+                f"xác nhận ngưỡng MA 200 tiếp tục là bức tường cản vững chắc chặn đứng đà phục hồi."
+            )
+            invalidation_level_desc = f"đóng nến bứt phá vượt qua trục MA 200 ({ma200_val:.{decimals}f})"
+
+    ly_do_html = "".join([f"<li>{ld}</li>" for ld in ly_do_list])
+
+    # PHẦN 3: Kỳ vọng mục tiêu & Kế hoạch phân bổ (Expectations & Execution Plan)
+    pyr_section = (
+        f"<li><strong>Kịch bản nhồi lệnh (Pyramiding):</strong> Khi giá vận động thuận lợi và vượt mốc cản <strong>{pyr_str}</strong>, "
+        f"hệ thống sẽ kích hoạt giải ngân thêm 50% khối lượng còn lại, đồng thời dời toàn bộ điểm Stop Loss về mức hòa vốn (<strong>{entry_str}</strong>) "
+        f"nhằm chuyển toàn bộ giao dịch sang trạng thái <strong>Free-risk Trade (Không rủi ro)</strong>.</li>"
+    ) if pyr_str else ""
+
+    t25_section = ""
+    if not is_h4:
+        today_dt = datetime.now()
+        if candidate.get("entry_date"):
+            try:
+                today_dt = datetime.strptime(candidate["entry_date"], "%Y-%m-%d")
+            except Exception:
+                pass
+        today_str = today_dt.strftime("%d/%m/%Y")
+        t25_section = (
+            f"<li><strong>Ứng phó chu kỳ thanh toán (T+2.5):</strong> Cổ phiếu mua trong phiên {today_str} "
+            f"sẽ về tài khoản vào chiều ngày T+2, và chính thức khả dụng để giao dịch từ phiên sáng T+3. "
+            f"Kế hoạch đã tính toán khoảng đệm an toàn ({risk_pct:.1f}%) để danh mục hấp thụ các nhịp rung lắc ngắn hạn "
+            f"trước khi cổ phiếu về tài khoản khả dụng.</li>"
+        )
+
+    # PHẦN 4: Điểm vô hiệu hóa luận điểm & Quản trị rủi ro (Invalidation Level & Risk Protocol)
+    # Ráp toàn bộ nội dung body HTML theo chuẩn nhật ký v2 (0 từ cấm, không h2/h3)
+    body = f"""<p>{{{{ANH_1}}}}</p>
+
+<p>{teaser_p}</p>
+
+<hr>
+
+<p><strong>1. Bức tranh tổng thể &amp; Tâm lý thị trường (Big Picture &amp; Sentiment)</strong></p>
+
+<p>{big_picture_p}</p>
+
+<hr>
+
+<p><strong>2. Luận điểm vào lệnh &amp; Tín hiệu kích hoạt (Trade Thesis &amp; Technical Trigger)</strong></p>
+
+<p><strong>Hành vi cung cầu (Volume &amp; Price Action):</strong> Nhịp kéo ngược (pullback) gần nhất diễn ra với biên độ nến thu hẹp và khối lượng giao dịch sụt giảm rõ rệt, chứng minh lượng cung bán tháo không còn xuất hiện. Ngay khi giá chạm vùng hỗ trợ then chốt, lực cầu đối ứng đã nhập cuộc dứt khoát hấp thụ toàn bộ cung trôi nổi.</p>
+
+<p>{strat_thesis}</p>
+
+<ul>
+{ly_do_html}
+</ul>
+
+<hr>
+
+<p><strong>3. Kỳ vọng mục tiêu &amp; Kế hoạch phân bổ (Expectations &amp; Execution Plan)</strong></p>
+
+<ul>
+<li><strong>Vị thế giải ngân:</strong> {dir_label} 50% tỷ trọng danh mục mục tiêu quanh mức giá <strong>{entry_str}</strong>.</li>
+<li><strong>Mục tiêu chốt lời (Take Profit):</strong> <strong>{tp_str}</strong> (Kỳ vọng lợi nhuận: <strong>+{reward_pct:.1f}%</strong>). Tỷ lệ Risk/Reward đạt mức <strong>1 : {rr:.2f}</strong>, thỏa mãn tiêu chuẩn khắt khe về hiệu quả toán học xác suất cao (R:R &gt;= 1:2.4).</li>
+{t25_section}
+{pyr_section}
+</ul>
+
+<hr>
+
+<p><strong>4. Điểm vô hiệu hóa luận điểm &amp; Quản trị rủi ro (Invalidation Level &amp; Risk Protocol)</strong></p>
+
+<ul>
+<li><strong>Điểm vô hiệu hóa luận điểm (Invalidation Level):</strong> Toàn bộ cấu trúc vị thế được xây dựng dựa trên tiền đề mốc phòng thủ <strong>{sl_str}</strong> được giữ vững. Nếu giá đóng cửa vi phạm {invalidation_level_desc} hoặc xuyên thủng <strong>{sl_str}</strong> (mức rủi ro tối đa: <strong>-{risk_pct:.1f}%</strong>), cấu trúc kỹ thuật ban đầu chính thức bị vô hiệu hóa hoàn toàn.</li>
+<li><strong>Kỷ luật quản trị rủi ro tuyệt đối:</strong> Không nuôi hy vọng hay trì hoãn — hệ thống sẽ thực hiện thanh lý vị thế dứt khoát khi giá xác nhận gãy mốc phòng thủ nhằm bảo vệ nguyên vẹn 95%+ nguồn vốn danh mục cho các cơ hội tiếp theo.</li>
+</ul>
+
+<hr>
+
+<p><em>* Ghi chú nhật ký: Đây là nhật ký giao dịch mô phỏng (demo) do Bot Trader ghi nhận dựa trên kế hoạch kỹ thuật {strat_name}, không cấu thành khuyến nghị hay lời mời chào đầu tư tài chính.</em></p>"""
+
+    anhs_list = []
+    if chart_b64:
+        anhs_list.append({
+            "data": chart_b64,
+            "alt": f"Biểu đồ kỹ thuật {timeframe} Chart tài sản {sym} kèm các mốc giao dịch {strat_name}",
+            "placeholder": "{{ANH_1}}"
+        })
+
+    payload = {
+        "sub": sub,
+        "title": title,
+        "body": body,
+        "loai": loai,
+        "loai_mach": loai_mach,
+        "question_for_crowd": question_for_crowd,
+        "figures": figures,
+        "anhs": anhs_list
+    }
+    if lenh is not None:
+        payload["lenh"] = lenh
+    return payload
+
+
 def dang_luan_diem(
     symbol_target: str = None,
     market_mode: str = "VN",
@@ -535,18 +970,29 @@ def dang_luan_diem(
                     if c["symbol"] in recent_closed_symbols:
                         print(f"⏳ Bỏ qua ứng viên {c['symbol']} vì vừa đóng lệnh trong thời gian gần đây.")
                         continue
+                    # Lọc chất lượng nghiêm ngặt: chỉ chấp nhận ứng viên có score >= 65
+                    if c.get("score", 0) < 65:
+                        continue
                     valid_candidates.append(c)
 
                 if valid_candidates:
-                    # Nếu có chỉ định avoid_strategy_id, ưu tiên chọn ứng viên có strategy_id khác
-                    if avoid_strategy_id:
-                        diff_strat = [c for c in valid_candidates if c.get("strategy_id") != avoid_strategy_id]
-                        candidate = diff_strat[0] if diff_strat else valid_candidates[0]
-                    else:
-                        candidate = valid_candidates[0]
+                    # Sắp xếp ưu tiên: tránh avoid_strategy_id, sau đó ưu tiên score cao nhất
+                    valid_candidates.sort(
+                        key=lambda x: (
+                            x.get("strategy_id") != avoid_strategy_id if avoid_strategy_id else True,
+                            x.get("score", 0)
+                        ),
+                        reverse=True
+                    )
+                    candidate = valid_candidates[0]
+
+    # Kiểm tra ngưỡng chất lượng score >= 65 cho candidate
+    if candidate and candidate.get("score", 0) < 65 and not symbol_target:
+        print(f"⏸️ [NO_TRADE_FALLBACK] Ứng viên {candidate.get('symbol')} có điểm {candidate.get('score')} (< 65). Không đủ điều kiện mở vị thế.")
+        candidate = None
 
     if not candidate:
-        print(f"❌ Không tìm thấy thông tin ứng viên phù hợp trong danh mục {market_label}!")
+        print(f"⏸️ [NO_TRADE_FALLBACK] Không có ứng viên nào trong danh mục {market_label} đạt chuẩn chất lượng (score >= 65). Hệ thống kiên nhẫn đứng ngoài quan sát.")
         return None
 
     sym = candidate["symbol"]
@@ -593,154 +1039,12 @@ def dang_luan_diem(
     with open(chart_path, "rb") as f:
         chart_b64 = base64.b64encode(f.read()).decode("utf-8")
 
-    # 2. Xây dựng tiêu đề & thông số
-    entry_str = f"{entry:.{decimals}f}"
-    sl_str = f"{sl:.{decimals}f}"
-    tp_str = f"{tp:.{decimals}f}"
-    pyr_str = f"{pyramid:.{decimals}f}" if pyramid else None
-
-    if pyr_str:
-        title = f"{dir_action} {sym} tại {entry_str}: Entry {entry_str}, SL {sl_str}, TP {tp_str}, Nhồi {pyr_str}"
-    else:
-        title = f"{dir_action} {sym} tại {entry_str}: Entry {entry_str}, SL {sl_str}, TP {tp_str}"
-
-    loai = "Chiến lược"
-
-    # Bảng figures: Tối đa 6 cặp theo đúng quy định SO_FIGURES_TOI_DA của Gikky
-    figures = [
-        {"label": "Mã tài sản", "value": f"{sym} ({exchange})"[:24]},
-        {"label": "Vị thế", "value": f"{dir_label} {timeframe}"[:24]},
-        {"label": "Giá Entry", "value": entry_str[:24]},
-        {"label": "Stop Loss", "value": f"{sl_str} (-{risk_pct:.1f}%)"[:24]},
-        {"label": "Take Profit", "value": f"{tp_str} (+{reward_pct:.1f}%)"[:24]},
-        {"label": "Tỷ lệ R:R", "value": f"1 : {rr:.2f}"[:24]}
-    ]
-
-    # Câu hỏi tương tác ngắn gọn (tối đa 200 ký tự theo quy định Gikky API)
-    question_for_crowd = (
-        f"Với vị thế {dir_action} {sym} ({entry_str}) khung {timeframe}, "
-        f"bạn đánh giá kịch bản nào dễ xảy ra hơn: Đạt Take Profit {tp_str} hay chạm Stop Loss {sl_str}?"
-    )[:200]
-
-    # 3. Soạn nội dung bài viết theo phương pháp kỹ thuật (0 từ cấm, không dùng thẻ h2/h3)
-    ly_do_html = "".join([f"<li><strong>{ld}</strong></li>" for ld in ly_do_list])
-
-    # Luận điểm bối cảnh chi tiết theo phương pháp
-    if strat_id == "ICHIMOKU":
-        tenkan_val = candidate.get("tenkan", entry)
-        kijun_val = candidate.get("kijun", entry)
-        if direction == "LONG":
-            context_p = (
-                f"Tài sản {sym} đang vận động trong cấu trúc tăng giá vững vàng của hệ thống Ichimoku Kinko Hyo. "
-                f"Giá duy trì phía trên Mây Kumo, xác nhận phe mua đang kiểm soát toàn bộ xu hướng. "
-                f"Đường chuyển đổi Tenkan-sen ({tenkan_val:.{decimals}f}) vận động song hành phía trên đường tiêu chuẩn Kijun-sen ({kijun_val:.{decimals}f}), "
-                f"tạo thành bệ đỡ động nâng đỡ các nhịp rung lắc ngắn hạn."
-            )
-        else:
-            context_p = (
-                f"Tài sản {sym} đang nằm trong xu hướng giảm rõ nét theo hệ thống Ichimoku Kinko Hyo. "
-                f"Giá đóng cửa trượt dài phía dưới Mây Kumo, xác nhận áp lực bán chiếm ưu thế tuyệt đối. "
-                f"Đường Tenkan-sen ({tenkan_val:.{decimals}f}) duy trì dưới đường Kijun-sen ({kijun_val:.{decimals}f}), "
-                f"liên tục từ chối các nỗ lực phục hồi kỹ thuật của phe mua."
-            )
-    elif strat_id in ("MA_CROSS", "MA30_50_PULLBACK"):
-        ma30_val = candidate.get("ma30", entry)
-        ma50_val = candidate.get("ma50", entry)
-        ma200_val = candidate.get("ma200", entry)
-        if direction == "LONG":
-            context_p = (
-                f"Cấu trúc xu hướng của {sym} được dẫn dắt bởi sự đồng thuận tăng của các đường trung bình động. "
-                f"Đường MA 30 ({ma30_val:.{decimals}f}) và MA 50 ({ma50_val:.{decimals}f}) đang dốc lên song song, "
-                f"duy trì khoảng cách an toàn phía trên đường xu hướng dài hạn MA 200 ({ma200_val:.{decimals}f}). "
-                f"Nhịp kéo ngược về dải hỗ trợ MA 30 – MA 50 đã kích hoạt lực cầu gia tăng, mở ra điểm vào lệnh tiếp diễn xu hướng."
-            )
-        else:
-            context_p = (
-                f"Cấu trúc xu hướng của {sym} thể hiện sự suy yếu rõ rệt khi đường MA 30 ({ma30_val:.{decimals}f}) "
-                f"vận động phía dưới MA 50 ({ma50_val:.{decimals}f}) và cả hai cùng dốc xuống dưới MA 200 ({ma200_val:.{decimals}f}). "
-                f"Các nhịp phục hồi chạm vào dải cản MA 30 – MA 50 đều nhanh chóng xuất hiện áp lực bán áp đảo trở lại."
-            )
-    elif strat_id == "BB_SQUEEZE":
-        if direction == "LONG":
-            context_p = (
-                f"Sau chuỗi phiên nén biên độ chặt chẽ trong dải Bollinger Bands (20, 2), tài sản {sym} đã chính thức bứt phá "
-                f"vượt qua dải băng trên (BB Upper). Sự mở rộng của dải băng đi kèm thân nến xanh mạnh mẽ "
-                f"xác nhận điểm khởi đầu của một pha biến động mở rộng theo chiều tăng."
-            )
-        else:
-            context_p = (
-                f"Dải Bollinger Bands (20, 2) của {sym} vừa trải qua giai đoạn co thắt biên độ trước khi xuất hiện nến đỏ đóng cửa "
-                f"phá vỡ dải băng dưới (BB Lower). Đà mở dải băng hướng xuống cho thấy xung lực bán tháo bắt đầu gia tốc."
-            )
-    else:  # PA_MA200
-        ma200_val = candidate.get("ma200", entry)
-        if direction == "LONG":
-            context_p = (
-                f"Tài sản {sym} đang vận động trên nền tảng tích lũy trung hạn vững chắc quanh đường trung bình dài hạn MA 200 ({ma200_val:.{decimals}f}). "
-                f"Việc giá duy trì ổn định trên MA 200 khẳng định lực cầu chủ động vẫn đang bảo vệ tốt xu hướng."
-            )
-        else:
-            context_p = (
-                f"Tài sản {sym} đang chịu áp lực điều chỉnh dưới đường trung bình động dài hạn MA 200 ({ma200_val:.{decimals}f}). "
-                f"Ngưỡng MA 200 đóng vai trò trần cản kỹ thuật cản bước các nhịp phục hồi của giá."
-            )
-
-    pyr_section = (
-        f"<li><strong>Kịch bản nhồi lệnh (Pyramiding):</strong> Khi giá di chuyển thuận lợi chạm mốc <strong>{pyr_str}</strong>, "
-        f"hệ thống sẽ mở thêm 50% khối lượng còn lại và đồng thời dời điểm dừng lỗ Stop Loss về điểm hòa vốn ({entry_str}) "
-        f"nhằm khóa chặt rủi ro tuyệt đối.</li>"
-    ) if pyr_str else ""
-
-    body = f"""<p>{{{{ANH_1}}}}</p>
-
-<p>Hệ thống giao dịch thuật toán <strong>Bot Trader</strong> phát hiện cơ hội giao dịch mới trên thị trường theo trường phái <strong>{strat_name}</strong> đối với tài sản <strong>{sym}</strong> ({exchange}, khung <strong>{timeframe}</strong>). Dưới đây là phân tích bối cảnh kỹ thuật và kế hoạch phân bổ vị thế cụ thể.</p>
-
-<hr>
-
-<p><strong>1. Bối cảnh kỹ thuật &amp; Cấu trúc xu hướng</strong></p>
-
-<p>{context_p}</p>
-
-<hr>
-
-<p><strong>2. Tín hiệu kỹ thuật kích hoạt điểm vào lệnh</strong></p>
-
-<ul>
-{ly_do_html}
-</ul>
-
-<p>Sự đồng thuận của cấu trúc giá và các chỉ báo kỹ thuật tại thời điểm hiện tại mang lại điểm vào lệnh với biên độ rủi ro được kiểm soát chặt chẽ và xác suất tiếp diễn xu hướng vượt trội.</p>
-
-<hr>
-
-<p><strong>3. Kế hoạch giao dịch &amp; Quản trị rủi ro kỷ luật</strong></p>
-
-<ul>
-<li><strong>Vị thế:</strong> {dir_label} 50% tỷ trọng danh mục mục tiêu tại mức giá <strong>{entry_str}</strong>.</li>
-<li><strong>Ngưỡng cắt lỗ (Stop Loss):</strong> <strong>{sl_str}</strong> (Biên độ chịu rủi ro: <strong>-{risk_pct:.1f}%</strong>). Nếu giá vi phạm đóng nến vượt qua ngưỡng này, hệ thống sẽ thực hiện thanh lý vị thế ngay lập tức để bảo vệ vốn.</li>
-<li><strong>Mục tiêu chốt lời (Take Profit):</strong> <strong>{tp_str}</strong> (Kỳ vọng lợi nhuận: <strong>+{reward_pct:.1f}%</strong>). Tỷ lệ Risk/Reward đạt mức <strong>1 : {rr:.2f}</strong>, hoàn toàn thỏa mãn tiêu chuẩn toán học giao dịch xác suất cao.</li>
-{pyr_section}
-</ul>
-
-<hr>
-
-<p><em>* Chú thích: Đây là giao dịch mô phỏng (demo) do Bot Trader tự động thực hiện dựa trên thuật toán {strat_name}, không cấu thành khuyến nghị hay lời mời chào đầu tư tài chính.</em></p>"""
-
-    payload = {
-        "sub": sub,
-        "title": title,
-        "body": body,
-        "loai": loai,
-        "question_for_crowd": question_for_crowd,
-        "figures": figures,
-        "anhs": [
-            {
-                "data": chart_b64,
-                "alt": f"Biểu đồ kỹ thuật {timeframe} Chart tài sản {sym} kèm các mốc giao dịch {strat_name}",
-                "placeholder": "{{ANH_1}}"
-            }
-        ]
-    }
+    # 2. Xây dựng tiêu đề, nội dung & thông số bài viết
+    payload = tao_bai_viet_bot_trader(
+        candidate=candidate,
+        chart_b64=chart_b64,
+        market_mode=market_mode
+    )
 
     payload_file = DATA_DIR / f"bot_trader_post_payload_{market_mode.lower()}.json"
     with open(payload_file, "w", encoding="utf-8") as f:
