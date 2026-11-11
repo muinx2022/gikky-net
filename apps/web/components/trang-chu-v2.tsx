@@ -109,7 +109,7 @@ export function TrangChuV2({
             prefetch={false}
             data-testid="nhat-ky-o-soan"
           >
-            Bạn vừa quyết định gì? Ví dụ: Vào HPG vì…
+            Bạn vừa quyết định gì?
           </Link>
           <div className={css.soan_dong}>
             <span className={css.goi_y}>Có thể ghi riêng tư, công khai khi bạn muốn.</span>
