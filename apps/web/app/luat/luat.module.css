@@ -251,4 +251,10 @@
   .hop_disclaimer {
     padding: 14px 16px;
   }
+
+  /* Đợt M (M6): "← Quay lại Trang chủ" cao ≥ 24px; margin âm giữ dòng chân không cao thêm. */
+  .chan_dieu_khoan a {
+    padding-block: 4px;
+    margin-block: -4px;
+  }
 }

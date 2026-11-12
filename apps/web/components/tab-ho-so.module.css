@@ -99,3 +99,10 @@
   line-height: 1.55;
   color: var(--ink-2);
 }
+
+/* Đợt M (M6): tab hồ sơ cao 44px trên điện thoại. */
+@media (max-width: 640px) {
+  .tab {
+    min-height: 44px;
+  }
+}

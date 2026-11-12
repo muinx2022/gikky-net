@@ -74,3 +74,11 @@
     padding: 14px 12px 34px;
   }
 }
+
+/* Đợt M (M8): trang form `noindex` không vẽ rail dưới form trên điện thoại — xem
+ * `khung-hai-cot-vo.tsx` (`anRailDiDong`). Chỉ ≤ 960px: desktop giữ nguyên hai cột. */
+@media (max-width: 960px) {
+  .rail_an_di_dong {
+    display: none;
+  }
+}

@@ -93,3 +93,13 @@
   padding: 0 5px;
   color: var(--ink);
 }
+
+/* Đợt M (M6): mũi tên của pill NGANG (bình luận, mốc) có vùng bấm 44×44 trên điện thoại. Margin âm
+ * dọc giữ pill cao 32px như cũ — vùng bấm tràn ra ngoài pill, không đẩy hàng nào. */
+@media (max-width: 640px) {
+  .ngang .mui_ten {
+    min-width: 44px;
+    min-height: 44px;
+    margin-block: -9px;
+  }
+}

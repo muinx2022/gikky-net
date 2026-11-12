@@ -62,3 +62,12 @@
   border-color: var(--accent);
   background: var(--accent-soft);
 }
+
+/* Đợt M (M6): hai nút của trang lỗi / 404 cao 44px trên điện thoại. */
+@media (max-width: 640px) {
+  .lien_ket {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+}

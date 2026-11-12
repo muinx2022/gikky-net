@@ -53,3 +53,25 @@
   font-size: 13px;
   color: var(--ink-3);
 }
+
+/* Đợt M (M6): nút mở ngăn kéo bình luận của mốc cao 44px trên điện thoại. `inline-block` + đệm dọc,
+ * KHÔNG `inline-flex`: nút chứa "💬 <span>2</span> bình luận" — flex biến mỗi mảnh thành một hộp riêng
+ * và nuốt khoảng trắng giữa chúng ("2bình luận"). Margin âm bằng đúng đệm ⇒ hàng không cao thêm. Hộp
+ * cao 44px thì gạch chân bằng `border-bottom` rơi xa chữ — mobile gạch bằng `text-decoration` (cùng
+ * cách `feed.module.css` làm với `.mot_khoang`). */
+@media (max-width: 640px) {
+  .nut {
+    display: inline-block;
+    padding-block: 13px;
+    margin-block: -13px;
+    border-bottom: 0;
+    text-decoration: underline;
+    text-decoration-color: var(--line-2);
+    text-underline-offset: 3px;
+  }
+
+  .nut:hover,
+  .nut[aria-expanded="true"] {
+    text-decoration-color: var(--accent);
+  }
+}

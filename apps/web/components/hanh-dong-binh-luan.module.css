@@ -169,3 +169,14 @@
   color: var(--ink);
   font-size: 12.5px;
 }
+
+/* Đợt M (M6): "Trả lời" + các nút nhẹ của hàng hành động bình luận có vùng bấm 44px trên điện thoại.
+ * Margin âm dọc: vùng bấm lớn ra mà hàng KHÔNG cao thêm (bình luận dày đặc vẫn dày đặc). */
+@media (max-width: 640px) {
+  .nhe {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    margin-block: -10px;
+  }
+}

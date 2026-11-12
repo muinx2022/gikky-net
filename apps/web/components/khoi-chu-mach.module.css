@@ -173,3 +173,11 @@
   font-size: 13px;
   line-height: 1.6;
 }
+
+/* Đợt M (M6): nút của khối "Sổ của bạn" (nối mốc, đóng sổ, tắt bình luận, lưu trữ) cao 44px. */
+@media (max-width: 640px) {
+  .chinh,
+  .nhe {
+    min-height: 44px;
+  }
+}

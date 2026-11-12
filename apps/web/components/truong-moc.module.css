@@ -216,3 +216,20 @@
     min-height: 44px;
   }
 }
+
+/* Đợt M (M6): chip gợi ý ≥ 44px cao trên điện thoại — kể cả trình duyệt không báo `pointer: coarse`. */
+@media (max-width: 640px) {
+  .chip_goi_y {
+    min-height: 44px;
+    padding-inline: 12px;
+  }
+
+  .fig_xoa {
+    width: 44px;
+    height: 44px;
+  }
+
+  .fig_them {
+    min-height: 44px;
+  }
+}

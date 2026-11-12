@@ -107,4 +107,17 @@
   .lenh_than {
     grid-template-columns: minmax(0, 1fr);
   }
+
+  /* Vùng bấm ≥ 44px (đợt M, M3/M6): dòng tóm tắt mở khối, và cả NHÃN của radio Mua/Bán (ô radio
+   * vẽ 20px ở luật chung trong `app/globals.css`). */
+  .lenh_tom_tat {
+    box-sizing: border-box;
+    min-height: 44px;
+    padding-block: 12px;
+  }
+
+  .lenh_radio {
+    min-height: 44px;
+    gap: 8px;
+  }
 }

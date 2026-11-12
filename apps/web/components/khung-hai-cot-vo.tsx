@@ -27,18 +27,28 @@ import css from "./khung-hai-cot.module.css";
  * `rail` là lớp bọc `sticky` (cùng vai ở mọi trang): `<Sidebar>` là `<aside>`, bọc thêm
  * `<aside>` nữa là hai landmark lồng nhau. Không có lớp này thì rail dính ở trang này mà không
  * dính ở trang kia — lại một kiểu "nhảy nhót", chỉ là theo chiều dọc.
+ *
+ * ## `anRailDiDong` — CHỈ cho trang `noindex`
+ *
+ * Trang form (`/dang-mach`, `/cai-dat`, `/sua-ho-so`, `/doi-mat-khau`) trên điện thoại (≤ 960px, nơi
+ * rail rơi xuống dưới nội dung) không vẽ rail: dưới một form, Chuyên mục + Luật + Bài mới là một
+ * cuộn dài không ai cần (đợt M, M8). Ẩn bằng CSS nên DOM không đổi; nhưng một trang INDEX được mà
+ * giấu link khỏi người dùng là đi ngược luật "SEO chỉ cộng" — nên cờ này chỉ dành cho trang `robots:
+ * noindex`.
  */
 export function VoKhungHaiCot({
   children,
   sidebar,
+  anRailDiDong = false,
 }: {
   children: React.ReactNode;
   sidebar: React.ReactNode;
+  anRailDiDong?: boolean;
 }) {
   return (
     <div className={css.khung} data-testid="khung-hai-cot">
       <main className={css.chinh}>{children}</main>
-      <div className={css.rail} data-testid="rail-phai">
+      <div className={anRailDiDong ? `${css.rail} ${css.rail_an_di_dong}` : css.rail} data-testid="rail-phai">
         {sidebar}
       </div>
     </div>

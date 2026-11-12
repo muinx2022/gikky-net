@@ -49,3 +49,12 @@
 .hop_menu > * {
   width: 100%;
 }
+
+/* Đợt M (M6): nút ⋯ 44×44 trên điện thoại; margin âm giữ hàng chứa nó không cao thêm. */
+@media (max-width: 640px) {
+  .nut_tron {
+    width: 44px;
+    height: 44px;
+    margin: -5px;
+  }
+}

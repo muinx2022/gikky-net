@@ -127,4 +127,12 @@
   .khung {
     padding: 20px 15px 48px;
   }
+
+  /* Đợt M (M2, M6): ô tìm, hai ô chọn, nút "Tìm" cao 44px trên điện thoại. Cỡ chữ ô nhập 16px: luật
+     chung ở `app/globals.css`. */
+  .nhap,
+  .chon,
+  .nut {
+    min-height: 44px;
+  }
 }

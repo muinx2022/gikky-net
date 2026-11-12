@@ -48,10 +48,12 @@
   transform: translateY(0);
 }
 
+/* `--cao-thanh-cai-app`: thanh "Cài ứng dụng" đang hiện thì nút đứng trên nó (đợt M, M1 — xem
+ * `goi-y-cai-app.module.css`). Không có thanh ⇒ biến rỗng ⇒ `0px`, đúng số cũ. */
 @media (max-width: 960px) {
   .nut_ve_dau {
     right: 16px;
-    bottom: 24px;
+    bottom: calc(24px + var(--cao-thanh-cai-app, 0px));
     width: 44px;
     height: 44px;
   }
@@ -63,7 +65,7 @@
  * component biết nhau. */
 @media (max-width: 640px) {
   :global(body:has([data-testid="nut-ghi-nhat-ky-di-dong"])) .nut_ve_dau {
-    bottom: 84px;
+    bottom: calc(84px + var(--cao-thanh-cai-app, 0px));
   }
 }
 

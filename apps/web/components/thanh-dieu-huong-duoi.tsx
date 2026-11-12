@@ -579,13 +579,7 @@ export function ThanhDieuHuongDuoi() {
           soChuaDoc > 0 ? (
             <button
               type="button"
-              style={{
-                fontSize: "12px",
-                color: "var(--accent)",
-                background: "none",
-                border: 0,
-                cursor: "pointer",
-              }}
+              className={css.doc_het}
               onClick={() => void docHetThongBao()}
             >
               Đọc hết

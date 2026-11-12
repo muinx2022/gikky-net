@@ -16,3 +16,10 @@
   border-color: var(--accent);
   color: var(--accent);
 }
+
+/* Đợt M (M6): nút "Sửa hồ sơ" cao 44px trên điện thoại. */
+@media (max-width: 640px) {
+  .nut {
+    min-height: 44px;
+  }
+}

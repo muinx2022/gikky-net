@@ -87,6 +87,8 @@
     display: none;
   }
 
+  /* Dải này cao 71px (10 + 46 + 14 + viền 1). Thanh "Cài ứng dụng" (fixed đáy) đang hiện thì THANH
+   * đứng trên dải, không phải ngược lại — xem `goi-y-cai-app.module.css` (đợt M, M1). */
   .dinh_day {
     position: sticky;
     bottom: 0;

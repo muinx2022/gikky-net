@@ -210,6 +210,63 @@ a:hover {
   display: none !important;
 }
 
+/* Đợt M (M2) — máy cảm ứng và màn hẹp: mọi ô nhập chữ cỡ ≥ 16px. Dưới 16px, iOS Safari tự PHÓNG TO
+ * cả trang khi chạm vào ô và không thu lại khi rời ô. Một luật ở tầng toàn cục thay cho sửa từng
+ * form: form mới viết sau này cũng không lọt. `!important` vì ô nằm trong CSS Module với độ đặc
+ * hiệu cao hơn (`.form .o`, `.soan :global(.ProseMirror)`); không ô nào của web lớn hơn 16px trên
+ * khổ nào (grep `font-size` ≥ 17px quanh ô nhập: 0 — 2026-11-12), nên luật này chỉ NÂNG.
+ *
+ * Điều kiện: `(max-width: 960px)` HOẶC `(pointer: coarse)`. Không phải `≤ 640px`: iPhone xoay ngang
+ * rộng 667–932px, iPad 768–1366px — vẫn là Safari iOS, vẫn tự phóng to. Desktop dùng chuột ở ≥ 961px
+ * không vào luật này (T3 đo trước/sau ở 1280px). Bài đo: `e2e/mobile-390.spec.ts` (T1, nhóm "ô nhập",
+ * và ca xoay ngang 844×390). */
+@media (max-width: 960px), (pointer: coarse) {
+  input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="color"]),
+  select,
+  textarea,
+  [contenteditable="true"] {
+    font-size: 16px !important;
+  }
+
+  /* M3: ô chọn vẽ TỐI THIỂU 20px (mặc định trình duyệt 13px; các form đặt 16–17px). `min-*` chứ không
+   * `width`/`height`: ô nào form đã cho lớn hơn (công tắc `/cai-dat` 22px) giữ nguyên — luật này chỉ
+   * nâng. Vùng bấm ≥ 44px là việc của NHÃN bọc ô — mỗi form tự cho nhãn `min-height: 44px` (bài đo đo
+   * bằng nhãn). */
+  input[type="checkbox"],
+  input[type="radio"] {
+    min-width: 20px !important;
+    min-height: 20px !important;
+  }
+}
+
+/* Đợt M (M1) — thanh "Cài ứng dụng gikky" (`components/goi-y-cai-app.tsx`, fixed đáy, chỉ ≤ 960px)
+ * đang hiện thì nó CHIẾM chỗ, không chỉ nằm đè:
+ *
+ * 1. `--cao-thanh-cai-app` = chiều cao thanh + lề đáy (60 + 12) + safe-area, có trên `<html>` chỉ khi
+ *    thanh có trong DOM. Nút về đầu trang (`nut-ve-dau-trang.module.css`) cộng biến này vào `bottom`
+ *    nên đứng TRÊN thanh. Riêng dải dính "Ghi nhật ký" thì ngược lại — thanh đứng trên dải, lý do ở
+ *    `goi-y-cai-app.module.css`.
+ * 2. `body` chừa đúng ngần ấy ở đáy (cộng 71px của dải ghi nếu trang có dải) ⇒ cuộn hết trang thì
+ *    dòng cuối (link chân trang) nằm TRÊN thanh.
+ *
+ * Thanh tắt / desktop ⇒ biến không có ⇒ mọi chỗ dùng nó rơi về `0px`. Phải nằm ở file toàn cục: CSS
+ * Module không nhận selector thuần `html`/`body`. Bài đo: `e2e/mobile-390.spec.ts` (T2). */
+@media (max-width: 960px) {
+  html:has([data-testid="banner-cai-app"]) {
+    --cao-thanh-cai-app: calc(72px + env(safe-area-inset-bottom, 0px));
+  }
+
+  body:has([data-testid="banner-cai-app"]) {
+    padding-bottom: var(--cao-thanh-cai-app);
+  }
+}
+
+@media (max-width: 640px) {
+  body:has([data-testid="banner-cai-app"]):has([data-testid="nut-ghi-nhat-ky-di-dong"]) {
+    padding-bottom: calc(var(--cao-thanh-cai-app) + 71px);
+  }
+}
+
 /* Deep-link tới bình luận (`#bl-<id>`) không được dán vào mép trên màn hình. */
 :target {
   scroll-margin-top: calc(var(--cao-chrome) + 27px);

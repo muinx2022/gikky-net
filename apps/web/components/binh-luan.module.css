@@ -131,3 +131,13 @@
   border-radius: 4px;
   box-shadow: 0 0 0 6px var(--accent-soft);
 }
+
+/* Đợt M (M6): tên người bình luận là link chữ — vùng bấm ≥ 24px trên điện thoại (WCAG 2.5.8). Padding
+ * dọc + margin âm: vùng bấm lớn ra, dòng đầu bình luận không cao thêm. Avatar cạnh nó KHÔNG cần to
+ * ra: nó là link trùng đích, `tabindex=-1` + `aria-hidden` (bấm trượt avatar thì vẫn trúng tên). */
+@media (max-width: 640px) {
+  .ai {
+    padding-block: 4px;
+    margin-block: -4px;
+  }
+}

@@ -208,3 +208,13 @@
   color: var(--ink-3);
   padding: 10px 0;
 }
+
+/* Đợt M (M6): link "dẫn" cuối khối ("Đọc luật cộng đồng →", "Xem tất cả…") có vùng bấm THẬT ≥ 24px
+ * trên điện thoại (WCAG 2.5.8). Padding dọc, bù ở margin trên; KHÔNG margin âm ở dưới: hai link dẫn xếp
+ * chồng (nhật ký / bài viết của chuyên mục) thì khối kế tiếp bị kéo lên đè 3px đáy link trên. */
+@media (max-width: 640px) {
+  .dan {
+    padding-block: 3px;
+    margin-top: 6px;
+  }
+}

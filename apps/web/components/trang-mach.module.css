@@ -215,6 +215,19 @@
   .khoa {
     margin: 0 0 14px;
   }
+
+  /* Đợt M (M6): tên tác giả + `s/sub` ở đầu mạch là link chữ cao 16px — vùng bấm THẬT ≥ 24px (WCAG
+   * 2.5.8). Hai dòng này xếp sát nhau: nới bằng margin âm thì hai vùng nới chồng nhau và tên chỉ còn
+   * ~18px bấm trúng. Nên mỗi dòng cao đúng 24px — đầu mạch cao thêm ~16px trên điện thoại. */
+  .ai,
+  .sub {
+    padding-block: 4px;
+  }
+
+  /* Đợt M (M11): đệm đáy thẻ mạch (trên vạch kẻ, dưới ô bình luận) — xem `khan-dai.module.css`. */
+  .the {
+    padding-bottom: 12px;
+  }
 }
 
 /* Hàng tiêu đề: chữ ký bên trái, nút "Theo mạch" đẩy sang phải. */

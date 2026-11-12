@@ -161,7 +161,18 @@
 }
 
 @media (max-width: 640px) {
+  /* Đợt M (M11): khoảng trống quanh khu bình luận trang mạch trên điện thoại. Mỗi lớp góp một ít
+   * (đáy mốc cuối 20 + khoảng khu 24 + đệm khu 16 + đệm đầu khu 12 ≈ 76px trên "Bình luận"; dưới ô soạn
+   * thì đệm khu 22 + đệm thẻ mạch 24 + đệm cột 24). Bớt ở chính khu: 24/16 → 8/8 ở trên, 22 → 8 ở dưới. */
   .khu {
-    padding: 16px 0 22px;
+    margin-top: 8px;
+    padding: 8px 0 8px;
+  }
+
+  /* Đợt M (M6): nút sắp xếp bình luận cao 44px trên điện thoại. */
+  .sort {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
   }
 }

@@ -77,3 +77,10 @@
   color: var(--accent);
   text-decoration: underline;
 }
+
+/* Đợt M (M6): nút của khối khách ≥ 44px cao trên điện thoại. */
+@media (max-width: 640px) {
+  .nut_pill {
+    height: 44px;
+  }
+}

@@ -197,7 +197,15 @@ export function NutChiaSeMach({ duongDan, tieuDe, kieu = "menu" }: NutChiaSeMach
         className={css.nut}
         data-testid="nut-chia-se-mach"
         title="Chia sẻ bài viết"
-        aria-label="Chia sẻ bài viết"
+        // Nhãn đọc ra TRẠNG THÁI, không cố định: trên điện thoại chữ trong nút bị ẩn (chỉ còn icon —
+        // `the-mach.module.css`, đợt M), nên "đã chép" chỉ còn đến được trình đọc màn hình qua đây.
+        aria-label={
+          trangThai === "da_chep"
+            ? "Đã chép link bài viết"
+            : trangThai === "da_chep_zalo"
+              ? "Đã chép link cho Zalo"
+              : "Chia sẻ bài viết"
+        }
         onClick={moHopChiaSe}
       >
         {trangThai === "chua" ? (

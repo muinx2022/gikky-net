@@ -324,4 +324,9 @@
     width: 100%;
     margin-top: 4px;
   }
+
+  /* Đợt M (M6): nút "Xem mốc" của mốc thu gọn cao 44px trên điện thoại. */
+  .nut_mo_moc {
+    min-height: 44px;
+  }
 }

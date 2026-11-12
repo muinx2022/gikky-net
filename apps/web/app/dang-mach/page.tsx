@@ -29,7 +29,7 @@ export default async function TrangDangMach({
   const cac_sub = await docCacSub();
 
   return (
-    <KhungHaiCot>
+    <KhungHaiCot anRailDiDong>
       <h1 className={css.tieu_de}>Đăng bài</h1>
       <p className={css.lede}>
         Ghi lý do <em>trước</em> khi biết kết quả — máy chủ đóng dấu thời gian, và dấu đó

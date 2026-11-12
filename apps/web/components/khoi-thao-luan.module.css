@@ -338,6 +338,14 @@ a.quan_diem_ten:hover {
     min-height: 44px;
   }
 
+  /* Đợt M (M6): tên người viết quan điểm + `s/sub` của thẻ chủ đề là link chữ — vùng bấm ≥ 24px,
+   * hàng không cao thêm. */
+  .sub,
+  .quan_diem_ten {
+    padding-block: 3px;
+    margin-block: -3px;
+  }
+
   /* Mobile chỉ HIỆN một quan điểm (plan §3.1); cả ba vẫn nằm trong HTML. */
   .quan_diem:nth-child(n + 2) {
     display: none;

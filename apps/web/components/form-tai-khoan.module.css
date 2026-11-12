@@ -339,6 +339,23 @@
   text-decoration: underline;
 }
 
+/* Đợt M (M6): link dưới form ("Quay lại đăng nhập", "Quên mật khẩu?"…) cao ≥ 24px trên điện thoại.
+   Link là phần tử inline nên padding dọc chỉ nới vùng bấm, không đổi hộp dòng. */
+@media (max-width: 640px) {
+  .lien_ket {
+    padding-block: 4px;
+  }
+}
+
+/* Đợt M (M6): nút phụ ("Chọn ảnh" đại diện — một `<label>` của ô file ẩn — và "Gỡ") cao 44px trên điện
+   thoại; các nút chính của khuôn này đã 44px sẵn. */
+@media (max-width: 640px) {
+  .nut_phu,
+  .nut_go {
+    min-height: 44px;
+  }
+}
+
 /* Công tắc của `/cai-dat` — nợ `TRANG-CAI-DAT`.
  *
  * `<label>` bọc cả ô tick lẫn chữ, nên **cả khối** là vùng bấm: một checkbox 13px đứng

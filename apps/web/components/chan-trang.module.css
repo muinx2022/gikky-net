@@ -38,4 +38,10 @@
   .chan {
     padding: 12px 4px 24px;
   }
+
+  /* Đợt M (M6): link chân trang cao ≥ 24px (WCAG 2.5.8) mà hàng không cao thêm — padding + margin âm. */
+  .lien_ket a {
+    padding-block: 4px;
+    margin-block: -4px;
+  }
 }

@@ -275,8 +275,10 @@
     padding-inline: 12px;
   }
 
-  /* Trên mobile: chỉ dùng icon, không dùng text để thanh gọn gàng */
-  .chu_tab {
+  /* Đợt M (M10): mobile hiện CHỮ của tab (Mới nhất · Đang diễn ra · Nổi bật) thay
+     vì ba icon không chữ (đồng hồ / sóng / lửa) mà không ai đoán được nghĩa. Ba nhãn + "Sắp xếp"
+     vừa một hàng 366px khi bỏ icon, nên icon nhường chỗ cho chữ. DOM không đổi (chữ vốn đã có). */
+  .mot_tab > svg {
     display: none;
   }
 
@@ -300,6 +302,13 @@
     align-items: center;
     min-height: 44px;
     border-bottom: 0;
+  }
+
+  /* Đợt M (M6): link "xem thêm" cuối feed cao ≥ 24px. Nới ở phía TRÊN (gạch chân là `border-bottom`
+     nên không nới phía dưới), bù bằng margin để chữ đứng nguyên chỗ. */
+  .xem_them {
+    padding-top: 4px;
+    margin-top: 12px;
   }
 
   /* Hộp cao 44px thì gạch chân bằng `border-bottom` rơi xa chữ — mobile gạch bằng text-decoration. */

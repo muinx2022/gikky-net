@@ -29,6 +29,28 @@
   }
 }
 
+/* Đợt M (M1): thanh đang hiện thì CHIẾM chỗ — biến `--cao-thanh-cai-app` + phần chừa đáy của `body`
+ * khai ở `app/globals.css` (CSS Module không cho selector thuần `html`/`body`). */
+@media (max-width: 960px) {
+  /* Sheet của thanh điều hướng, ngăn xem ảnh, modal chia sẻ (`div[role=dialog][aria-modal]`, chỉ có
+   * trong DOM khi mở) và mọi `<dialog>` đang mở: thanh lui đi. Ngăn kéo đăng nhanh là `aside` luôn
+   * có trong DOM nên nó đi đường React (`goi-y-cai-app.tsx`, `drawerMo`). */
+  :global(body:has(div[role="dialog"][aria-modal="true"], dialog[open])) .banner {
+    display: none;
+  }
+}
+
+/* Trang có dải dính đáy "Ghi nhật ký" (trang chủ, trang lọc nhật ký — `o-soan-nhat-ky.module.css`, chỉ
+ * ≤ 640px): thanh đứng TRÊN dải ấy (71px + lề 12px). Vì sao thanh nhích chứ không phải dải: dải chỉ
+ * dính được TRONG khối của nó. Ở màn hình đầu trang chủ, khối nhật ký bắt đầu sát đáy khung nhìn nên
+ * dải không thể lên cao hơn đỉnh khối — dải mà phải đứng trên thanh thì ở đúng màn hình đầu nó vẫn
+ * nằm dưới thanh. Thanh fixed thì đứng đâu cũng được. Phần `body` chừa thêm cho dải: `app/globals.css`. */
+@media (max-width: 640px) {
+  :global(body:has([data-testid="nut-ghi-nhat-ky-di-dong"])) .banner {
+    bottom: calc(83px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 .banner_trai {
   display: flex;
   align-items: center;
@@ -112,6 +134,20 @@
 .nut_dong:hover {
   background: var(--surface-2);
   color: var(--ink);
+}
+
+/* Vùng bấm ≥ 44px (M6) mà thanh không cao thêm: nút nới bằng margin âm vào lề đệm của thanh. */
+@media (max-width: 640px) {
+  .nut_cai_dat {
+    min-height: 44px;
+    margin: -6px 0;
+  }
+
+  .nut_dong {
+    width: 44px;
+    height: 44px;
+    margin: -8px -10px -8px 0;
+  }
 }
 
 /* ===========================================================================

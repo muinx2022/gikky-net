@@ -35,10 +35,13 @@ export async function KhungHaiCot({
   children,
   idMachHienTai,
   subSlug,
+  anRailDiDong = false,
 }: {
   children: React.ReactNode;
   idMachHienTai?: number;
   subSlug?: string;
+  /** Trang `noindex` (form) không vẽ rail trên điện thoại — xem `VoKhungHaiCot`. */
+  anRailDiDong?: boolean;
 }) {
   const [cac_sub, feed] = await Promise.all([
     docCacSub(),
@@ -55,6 +58,7 @@ export async function KhungHaiCot({
   return (
     <VoKhungHaiCot
       sidebar={<Sidebar cacSub={cac_sub} baiMoi={bai_moi} tieuDeBaiMoi={tieu_de} />}
+      anRailDiDong={anRailDiDong}
     >
       {children}
     </VoKhungHaiCot>

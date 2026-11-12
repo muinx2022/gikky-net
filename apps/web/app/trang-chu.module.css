@@ -1,0 +1,64 @@
+/* Trang chủ (`app/page.tsx`) — đợt M (M7): trên điện thoại section "Bài viết" HIỆN trước rail, DOM giữ
+ * nguyên.
+ *
+ * Trong tài liệu, `khoi-bai-viet` đứng SAU cả khung hai cột (anh em của khung, dưới rail) — thứ tự đó là
+ * của SEO (`seo-trang-chu.spec.ts`) và không được đổi. Ở ≤ 960px khung là MỘT cột nên rail (khối khách,
+ * Chuyên mục, Luật, chân trang ~1.200px) chen giữa "Nhật ký mới" và "Bài viết".
+ *
+ * Cách làm: lớp bọc `.vo` (div `trang-chu-v2`) thành flex dọc, khung `display: contents` ⇒ `main` và
+ * rail thành con TRỰC TIẾP của flex, rồi `order` xếp main → Bài viết → rail. `display: contents` làm
+ * khung mất padding + bề rộng tối đa của chính nó, nên hai con gánh lại đúng các số ấy (cùng số với
+ * `.khung` của `khung-hai-cot.module.css`: 760px, lề 20px / 12px; đệm đáy 24px của `.chinh` vẫn từ đó).
+ *
+ * Chọn theo `data-testid`, không theo lớp: chỉ `VoKhungHaiCot` được dùng `khung-hai-cot.module.css`
+ * (hàng rào `e2e/don-vi/hai-cot.spec.ts`). Desktop (≥ 961px) không vào media query này. */
+@media (max-width: 960px) {
+  .vo {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* `grid-template-columns: none`: khung không còn là lưới. Không khai thì `getComputedStyle` vẫn trả
+   * nguyên chuỗi khai báo `minmax(0, 1fr)` (không phân giải thành track vì không có hộp lưới nào), và
+   * mọi phép đếm cột bằng cách tách chuỗi đó (`hai-cot.spec.ts` W9, `trang-chu-v2.spec.ts` L3) đọc ra
+   * "2 cột" cho một trang đang hiện MỘT cột. */
+  .vo > :global([data-testid="khung-hai-cot"]) {
+    display: contents;
+    grid-template-columns: none;
+  }
+
+  .vo > :global([data-testid="khung-hai-cot"]) > main,
+  .vo > :global([data-testid="khung-hai-cot"]) > :global([data-testid="rail-phai"]) {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 760px;
+    margin-inline: auto;
+    padding-inline: 20px;
+  }
+
+  .vo > :global([data-testid="khung-hai-cot"]) > main {
+    order: 1;
+    padding-top: 18px;
+  }
+
+  .vo > :global([data-testid="khoi-bai-viet"]) {
+    order: 2;
+  }
+
+  .vo > :global([data-testid="khung-hai-cot"]) > :global([data-testid="rail-phai"]) {
+    order: 3;
+    padding-top: 18px;
+    padding-bottom: 34px;
+  }
+}
+
+@media (max-width: 640px) {
+  .vo > :global([data-testid="khung-hai-cot"]) > main,
+  .vo > :global([data-testid="khung-hai-cot"]) > :global([data-testid="rail-phai"]) {
+    padding-inline: 12px;
+  }
+
+  .vo > :global([data-testid="khung-hai-cot"]) > main {
+    padding-top: 14px;
+  }
+}

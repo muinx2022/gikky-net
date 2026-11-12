@@ -151,3 +151,30 @@
   height: auto;
   border-radius: 8px;
 }
+
+/* --- điện thoại (≤ 640px) — đợt M (M6): nút thanh công cụ cao 44px. Mười nút 44px không vừa một
+ * hàng 366px; xuống dòng thì thanh thành hai hàng (~98px) đè lên khoảng nhìn còn lại khi bàn phím
+ * bật. Nên thanh là MỘT hàng cuộn ngang. Cỡ chữ vùng soạn (`contenteditable`) ≥ 16px: luật chung ở
+ * `app/globals.css`. */
+@media (max-width: 640px) {
+  /* `position: relative`: ô `<input type=file>` ẩn (`.an`, tuyệt đối) của nút ảnh phải lấy hàng nút
+   * làm khối chứa. Không có nó, ô ấy định vị theo một tổ tiên NGOÀI vùng cuộn — nằm ở chỗ nút ảnh đã
+   * trượt tới (x ≈ 480) và kéo cả trang rộng ra (khổ 390 thành 482, trình duyệt di động thu nhỏ trang). */
+  .thanh {
+    position: relative;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-block: 0;
+  }
+
+  .nut {
+    flex: none;
+    width: 40px;
+    height: 44px;
+  }
+
+  .ngan {
+    flex: none;
+  }
+}

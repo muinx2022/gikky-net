@@ -168,3 +168,29 @@
   text-decoration: underline;
   cursor: pointer;
 }
+
+/* --- điện thoại (≤ 640px) — đợt M ------------------------------------------------------------
+ * M8: bỏ lề kép. Khung trang đã có lề 12px; thẻ form thêm 22px + viền nữa thì ô nhập còn ~320/390px.
+ * Thẻ tràn ra sát mép màn (margin âm bằng đúng lề khung), giữ viền trên/dưới, lề trong còn 12px.
+ * M3/M6: ô chọn chuyên mục, nhãn ô chọn, nút gửi ≥ 44px. Cỡ chữ ô nhập: luật chung `app/globals.css`. */
+@media (max-width: 640px) {
+  .the {
+    margin-inline: -12px;
+    padding: 16px 12px 14px;
+    border-inline: 0;
+    border-radius: 0;
+  }
+
+  .chon {
+    min-height: 44px;
+  }
+
+  .tuy_chon {
+    min-height: 44px;
+    margin-top: 4px;
+  }
+
+  .gui {
+    min-height: 44px;
+  }
+}

@@ -28,6 +28,8 @@ import { jsonLdWebSite } from "@/lib/json-ld";
 import { SO_BAI_TAI_MOI_GIA, SO_BAI_VIET_TAI, subLenTrangChu } from "@/lib/nhom-bai-viet";
 import { GIOI_THIEU, urlTuyetDoi } from "@/lib/site";
 
+import css from "./trang-chu.module.css";
+
 // Xem ghi chú ở `app/m/[slugId]/page.tsx`: cơ chế cache của PLAN 8.4 là việc của Phase 3.
 // Dòng này cũng giữ cho `pnpm build` không cần Django sống.
 export const dynamic = "force-dynamic";
@@ -188,8 +190,9 @@ async function TrangChuMoi() {
     <>
       <JsonLd duLieu={jsonLdWebSite()} />
       {/* Khung hai cột chứa dòng giới thiệu + chủ đề + nhật ký; section "Bài viết" đứng NGOÀI
-          khung (dưới cả rail) nên là anh em của nó. */}
-      <div data-testid="trang-chu-v2">
+          khung (dưới cả rail) nên là anh em của nó. `css.vo`: trên điện thoại "Bài viết" HIỆN
+          trước rail bằng CSS, DOM giữ thứ tự này (đợt M, M7 — `trang-chu.module.css`). */}
+      <div className={css.vo} data-testid="trang-chu-v2">
         <VoKhungHaiCot
           sidebar={
             <Sidebar

@@ -160,4 +160,37 @@
   .khung {
     padding: 16px 12px 34px;
   }
+
+  /* Đợt M (M9): ở 390px nút "Sửa hồ sơ" / "Theo dõi" chung hàng với tên làm tên dồn 3 dòng. Trên
+   * điện thoại cụm tên chiếm hết phần còn lại của hàng, nút xuống hàng riêng, thẳng mép với tên
+   * (bỏ qua avatar 64px + khoảng 16px). */
+  .dau_ho_so {
+    flex-wrap: wrap;
+    row-gap: 12px;
+    padding: 18px 16px;
+  }
+
+  .dau_ho_so .dau_chu {
+    flex: 1 1 calc(100% - 80px);
+  }
+
+  .dau_ho_so > a,
+  .dau_ho_so > button {
+    margin-left: 80px;
+  }
+
+  /* Ô thống kê: 4 ô xuống hai hàng thì ô cuối hàng 1 mất viền phải và hai hàng không có vạch ngăn.
+   * Lưới 2×2 với vạch 1px vẽ bằng `gap` trên nền `--line` (cùng cách `.lenh` của thẻ mạch) — đủ
+   * viền mọi cạnh, không cần tính ô nào là ô cuối. */
+  .chi_so {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1px;
+    background: var(--line);
+  }
+
+  .mot_chi_so {
+    border-right: 0;
+    background: var(--inset);
+  }
 }

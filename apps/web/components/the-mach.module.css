@@ -416,4 +416,61 @@
   .theo_user {
     display: none;
   }
+
+  /* Đợt M (M4): chân thẻ MỘT hàng ở 360–390px. Vote · mốc · bình luận · chia sẻ không đủ chỗ khi
+   * nút chia sẻ mang chữ — "Chia sẻ" rơi xuống dòng riêng, thẻ cao thêm ~44px. Trên điện thoại nút ấy
+   * chỉ còn icon (vẫn 44×44, vẫn `aria-label="Chia sẻ bài viết"` cho trình đọc màn hình); padding
+   * ngang của hai link chân thẻ và của pill vote cũng gọn lại — đủ cho ca dài nhất ("9 mốc", "26 bình
+   * luận") ở 360px. Bài đo: `e2e/mobile-390.spec.ts` (`kiemThe`, ở 390 và 360px). */
+  .nut_chan {
+    gap: 4px;
+    padding: 0 6px;
+  }
+
+  .chan_vote > * {
+    padding-inline: 0;
+  }
+
+  .chan_phai :global([data-testid="nut-chia-se-mach"]) {
+    padding: 0;
+  }
+
+  .chan_phai :global([data-testid="nut-chia-se-mach"]) > span {
+    display: none;
+  }
+
+  /* M5: dòng meta (ngày · nối mốc · s/sub) xuống dòng GIỮA các cụm, không bao giờ giữa một cụm
+   * ("s/chung-" ⏎ "khoan"). Dấu " · " (`aria-hidden`) KHÔNG được nowrap: khoảng trắng trong nó là chỗ
+   * ngắt dòng duy nhất giữa các cụm — khoá nốt nó thì cả dòng thành một khối liền và tràn ra dưới chip
+   * trạng thái. */
+  .khi_va_sub > :not([aria-hidden]) {
+    white-space: nowrap;
+  }
+
+  /* M6: tên tác giả + `s/sub` là link chữ trong dòng meta — vùng bấm THẬT ≥ 24px (WCAG 2.5.8), không
+   * 44px để dòng meta không phình quá. Hai dòng (tên 17.5px + meta 15px) cộng lại chỉ ~33px: nới bằng
+   * padding + margin âm thì hai vùng nới CHỒNG nhau (đo được: tên chỉ 19px bấm trúng, nửa dưới rơi vào
+   * `<time>` và `s/sub`). Nên mỗi dòng cao đúng 24px: đầu thẻ cao thêm ~15px trên điện thoại, đổi
+   * lấy hai vùng bấm không giẫm lên nhau. `s/sub` là `inline-block` cao 24px — vùng bấm của một
+   * phần tử inline chỉ là hộp chữ của nó, không phải cả dòng. */
+  .ten {
+    padding-block: 4px;
+  }
+
+  .khi_va_sub {
+    line-height: 24px;
+  }
+
+  .sub {
+    display: inline-block;
+    line-height: 24px;
+  }
+}
+
+/* Đợt M (M4), máy hẹp (≤ 380px, vd 360px): pill vote rộng hơn khi điểm có 2–3 chữ số, nên chân thẻ
+ * vẫn xuống dòng với "9 mốc" + "26 bình luận". Hai link ấy bỏ icon, giữ chữ (chữ mới là nghĩa). */
+@media (max-width: 380px) {
+  .nut_chan > svg {
+    display: none;
+  }
 }

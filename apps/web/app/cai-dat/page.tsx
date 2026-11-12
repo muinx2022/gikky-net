@@ -31,7 +31,7 @@ export const metadata: Metadata = {
  */
 export default function TrangCaiDat() {
   return (
-    <KhungHaiCot>
+    <KhungHaiCot anRailDiDong>
       <div className={css.cot_cai_dat}>
         <header>
           <h1 className={css.tieu_de}>Cài đặt</h1>

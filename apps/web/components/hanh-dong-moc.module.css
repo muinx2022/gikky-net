@@ -136,3 +136,26 @@
   color: var(--ink);
   font-size: 12.5px;
 }
+
+/* Đợt M (M6): nút "⋯" (thêm hành động cho mốc) 44px trên điện thoại, margin âm giữ hàng; các mục
+ * trong hộp xổ ra ("Sửa mốc", "Xoá mốc"…) cũng cao 44px. */
+@media (max-width: 640px) {
+  /* Hộp xổ ra bắt đầu DƯỚI vùng bấm 44px của nút ⋯ (vùng ấy tràn 10px dưới hộp của nút), không thì
+   * nửa dưới nút bị chính hộp của nó đè khi đang mở. */
+  .hop {
+    top: calc(100% + 14px);
+  }
+
+  .hop > button {
+    min-height: 44px;
+  }
+
+  .menu > summary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    margin-block: -10px;
+  }
+}

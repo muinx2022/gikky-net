@@ -1,8 +1,10 @@
 "use client";
 
 import { MoreVertical, Share, SquarePlus, X } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+import { useDrawerDangNhanh } from "./drawer-dang-nhanh";
 import css from "./goi-y-cai-app.module.css";
 
 interface BeforeInstallPromptEvent extends Event {
@@ -183,12 +185,36 @@ export function ModalHuongDanCaiApp({
   );
 }
 
+/** Trang form + xác thực: thanh KHÔNG hiện ở đây (đợt M, M1). Thanh fixed đáy nằm giữa một form là
+ * nằm đè đúng chỗ đang gõ khi bàn phím bật lên — và người đang điền form không cần được mời cài app.
+ * Khớp cả đường con (`/dat-lai-mat-khau/<uid>/<token>`, `/xac-thuc-email/<khoa>`). */
+const TRANG_KHONG_HIEN = [
+  "/dang-mach",
+  "/sua-ho-so",
+  "/cai-dat",
+  "/doi-mat-khau",
+  "/dang-nhap",
+  "/dang-ky",
+  "/quen-mat-khau",
+  "/dat-lai-mat-khau",
+  "/xac-thuc-email",
+] as const;
+
+function laTrangKhongHien(duongDan: string | null): boolean {
+  if (duongDan === null) return false;
+  return TRANG_KHONG_HIEN.some((t) => duongDan === t || duongDan.startsWith(`${t}/`));
+}
+
 const KHOA_LUU_DISMISS = "gikky_an_goi_y_cai_app";
 const THOI_GIAN_AN_MS = 7 * 24 * 60 * 60 * 1000; // 7 ngày
 
 /** Component gợi ý cài đặt ứng dụng Web App (PWA) trên thiết bị di động. */
 export function GoiYCaiApp() {
   const [hienBanner, setHienBanner] = useState(false);
+  const duongDan = usePathname();
+  // Ngăn kéo đăng nhanh mở ⇒ nhường chỗ. Sheet của thanh điều hướng + modal thì CSS lo
+  // (`goi-y-cai-app.module.css`, `:has()`), vì trạng thái của chúng không đi qua ngữ cảnh chung nào.
+  const { dangMo: drawerMo } = useDrawerDangNhanh();
   const [moModal, setMoModal] = useState(false);
   const deferredPromptRef = useRef<BeforeInstallPromptEvent | null>(null);
 
@@ -268,7 +294,7 @@ export function GoiYCaiApp() {
 
   return (
     <>
-      {hienBanner && (
+      {hienBanner && !drawerMo && !laTrangKhongHien(duongDan) && (
         <aside
           className={css.banner}
           aria-label="Gợi ý cài đặt ứng dụng"

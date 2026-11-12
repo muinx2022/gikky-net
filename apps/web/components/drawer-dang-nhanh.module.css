@@ -384,3 +384,46 @@
     width: 100vw;
   }
 }
+
+/* --- điện thoại (≤ 640px) — đợt M (M3, M6): mọi điều khiển của ngăn ≥ 44px cao. Cỡ chữ ô nhập + ô
+ * chọn 20px: luật chung ở `app/globals.css`.
+ * Chip chuyên mục: 44px mà vẫn xuống dòng thì 14 chip thành ~5 hàng (~260px) đẩy ô soạn khỏi màn
+ * hình đầu — nên trên điện thoại chúng nằm MỘT hàng cuộn ngang (cùng kiểu dải chip "Bài viết" của
+ * trang chủ). */
+@media (max-width: 640px) {
+  .nut_dong {
+    min-width: 44px;
+    min-height: 44px;
+    margin: -4px -8px -4px 0;
+  }
+
+  .danh_sach_sub {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .chip_sub {
+    flex: none;
+    min-height: 44px;
+    white-space: nowrap;
+  }
+
+  .nut_chon_anh,
+  .nut_gui {
+    min-height: 44px;
+  }
+
+  .link_chi_tiet {
+    min-height: 44px;
+  }
+
+  .tuy_chon {
+    min-height: 44px;
+  }
+
+  .khoi_tuy_chon {
+    gap: 2px;
+    padding-block: 4px;
+  }
+}

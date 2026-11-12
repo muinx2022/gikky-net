@@ -74,3 +74,26 @@
 .than {
   min-width: 0;
 }
+
+/* Đợt M (M6): nút gập nhánh `[−]`/`[+]` có vùng bấm 44px trên điện thoại MÀ KHÔNG đổi hộp của nó: chữ
+ * đứng đúng chỗ cũ (cùng hàng tên người bình luận, cùng hàng tóm tắt khi gập), vạch nhánh `.thanh` bắt
+ * đầu ngay dưới như cũ. Vùng bấm là `::after` tuyệt đối 30×44 canh giữa chữ; `z-index` đưa nút lên trên
+ * vạch nhánh (vạch đứng SAU trong DOM nên mặc định vẽ đè lên) — phần vùng bấm phủ xuống đầu vạch bấm
+ * vào nút chứ không vào vạch. Rộng 30px chứ không 44: cột trái chỉ 18px, rộng hơn là lấn sang avatar.
+ * (Bản đầu của đợt M nới bằng `min-height` + margin âm: chữ tụt xuống giữa ô, vạch kẻ xuyên qua chữ.) */
+@media (max-width: 640px) {
+  .nut {
+    position: relative;
+    z-index: 1;
+  }
+
+  .nut::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 30px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+  }
+}

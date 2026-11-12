@@ -250,3 +250,17 @@
     width: 100%;
   }
 }
+
+/* Đợt M (M2, M6) — điện thoại: ô tìm (nằm trong panel kính lúp của header) cao 44px, nút tìm 44×44.
+ * Cỡ chữ ô nhập 16px: luật chung ở `app/globals.css`. */
+@media (max-width: 640px) {
+  .o {
+    height: 44px;
+  }
+
+  .nut_tim {
+    width: 44px;
+    height: 44px;
+    margin-right: -8px;
+  }
+}

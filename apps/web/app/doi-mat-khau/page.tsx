@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 
 export default function TrangDoiMatKhau() {
   return (
-    <KhungHaiCot>
+    <KhungHaiCot anRailDiDong>
       <FormDoiMatKhau />
     </KhungHaiCot>
   );

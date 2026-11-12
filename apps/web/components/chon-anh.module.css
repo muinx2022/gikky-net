@@ -170,3 +170,10 @@
   border-radius: 4px;
   padding: 7px 9px;
 }
+
+/* Đợt M (M6): nút "Chọn ảnh…" (một `<label>` của ô file ẩn) cao 44px trên điện thoại. */
+@media (max-width: 640px) {
+  .nut {
+    min-height: 44px;
+  }
+}
