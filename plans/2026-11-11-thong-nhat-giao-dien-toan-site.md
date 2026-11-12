@@ -1,6 +1,6 @@
 # Thống nhất giao diện toàn site theo homepage v2
 
-> **Trạng thái:** CHỜ USER DUYỆT. Nhánh `v2`. Nối tiếp `plans/2026-11-11-homepage-v2-giao-dien-moi.md`
+> **Trạng thái:** ĐÃ LÀM ĐỦ A–E trên `v2` (A `8d1d2a8`, B `8153afb`, C `ed0081e`, D `80fd5cd`, E `508acc2`), chưa deploy. Lỗi hydrate #418 (sổ P-20261112-6) còn mở. Nhánh `v2`. Nối tiếp `plans/2026-11-11-homepage-v2-giao-dien-moi.md`
 > (homepage đã xong) và `plans/2026-11-10-hai-cot-toan-site.md` (khung hai cột).
 > Sổ việc: `GHI-CHU.md` việc 14.
 >
@@ -161,6 +161,11 @@ là chính khối (mỗi tác giả một bài), giữ chữ "Mới nhất"; hai
   xoá lúc đăng xuất) + script inline đầu `<body>` gắn `data-phien` lên `<html>` — cùng cách theme đang làm trong
   `layout.tsx`. `KhoiKhach` và cụm nút header render sẵn trong HTML, CSS ẩn/hiện theo `data-phien`. Trang vẫn cache được,
   HTML vẫn một bản cho mọi người. Cờ chỉ là gợi ý hiển thị; quyền vẫn do API quyết.
+  *(Sửa khi giao đợt E, 2026-11-12: repo ĐÃ CÓ cờ gợi ý — `lib/tai-khoan.ts::nguonScriptPhien` đọc `localStorage`
+  `gikky:phien` trong `<head>` và đặt `html[data-da-dang-nhap="1"]` trước lần vẽ đầu (commit `03369c0`), header và vài
+  nút đã dùng nó. ⇒ Dùng lại cờ ấy, KHÔNG thêm cookie, KHÔNG chạm Django. Chỗ còn giật là `KhoiKhach` trả `null` khi
+  `dangTai` ⇒ HTML server không có khối, khách tải trang thì khối hiện sau hydrate và đẩy rail xuống. Cái giá chấp nhận:
+  người đã đăng nhập trên máy MỚI (chưa có `localStorage`) thấy khối khách một lần rồi mất.)*
 
 ## 5. Chia đợt (mỗi đợt một vòng code → nghiệm thu → phản biện, commit riêng)
 

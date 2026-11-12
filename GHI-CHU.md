@@ -964,7 +964,7 @@ chuyên mục nào lên trang chủ, tối đa 4. Plan: `plans/2026-11-11-bai-vi
 
 ---
 
-## Việc 14 · Thống nhất giao diện toàn site theo homepage v2 — ĐÃ LẬP PLAN, CHỜ USER DUYỆT
+## Việc 14 · Thống nhất giao diện toàn site theo homepage v2 — ĐÃ LÀM ĐỦ 5 ĐỢT A–E trên `v2` (2026-11-12), chưa deploy
 
 **Yêu cầu (user, 2026-11-11, sau khi xem dev.gikky.net):** khối chủ đề và cột phải trên `/` "vẫn không ổn";
 `/?tab=moi&loai_mach=nhat_ky` "trình bày khác hẳn home"; `/s/quan-tri-von` "vẫn là phần cũ, không khớp cái đang làm";
