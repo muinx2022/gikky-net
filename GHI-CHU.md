@@ -985,3 +985,19 @@ User thấy giá sách (4 chuyên mục × 3 tiêu đề dài) rối mắt, mu�
 duy nhất trên `/` giảm 21 → 13, dưới ngưỡng ≥ 19 (`trang-chu-giao-dien-moi.spec.ts:649`). **User chốt:** "trước mắt tạm
 chấp nhận rối mắt thế đã để kéo bot, còn khi có người vào thì sẽ tính sau" ⇒ KHÔNG đổi, giữ ngưỡng 19. Xét lại khi có
 người dùng thật vào trang chủ.
+
+---
+
+## Việc 16 · Sửa giao diện mobile toàn site (đợt M) — PLAN ĐÃ DUYỆT (2026-11-12), chạy sau đợt D việc 14
+
+*(Số 15 bỏ trống: `rieng-tu/VIEC-15.md` của phiên khác đã dùng tên ấy.)*
+
+**Yêu cầu (user, 2026-11-12):** "review lại toàn bộ phần mobile, các trang có trong web, bao gồm cả các trang của user";
+xem kết quả soi xong thì duyệt "Lập đợt sửa".
+
+**Đã soi** 26 lượt ở 390px (18 trang khách trên dữ liệu dev, 8 trang/ngăn của user trên `gikky_e2e`): không trang nào
+tràn ngang; 3 lỗi nặng (thanh "Cài ứng dụng" che nút "Ghi nhật ký" + chân trang + form; ô nhập < 16px làm iOS phóng to;
+ô chọn 13px ở form đăng mạch), 6 lỗi vừa, 3 lỗi nhỏ.
+
+**Plan:** `plans/2026-11-12-sua-mobile.md` (M1–M12, tiêu chí T1–T5 + G). Sửa bằng CSS là chính; desktop và DOM các trang
+index được không đổi.
