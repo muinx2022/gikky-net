@@ -988,7 +988,7 @@ người dùng thật vào trang chủ.
 
 ---
 
-## Việc 16 · Sửa giao diện mobile toàn site (đợt M) — PLAN ĐÃ DUYỆT (2026-11-12), chạy sau đợt D việc 14
+## Việc 16 · Sửa giao diện mobile toàn site (đợt M) — ĐÃ LÀM trên `v2` (`076d605`, 2026-11-12), chưa deploy
 
 *(Số 15 bỏ trống: `rieng-tu/VIEC-15.md` của phiên khác đã dùng tên ấy.)*
 
@@ -1001,3 +1001,17 @@ tràn ngang; 3 lỗi nặng (thanh "Cài ứng dụng" che nút "Ghi nhật ký"
 
 **Plan:** `plans/2026-11-12-sua-mobile.md` (M1–M12, tiêu chí T1–T5 + G). Sửa bằng CSS là chính; desktop và DOM các trang
 index được không đổi.
+
+---
+
+## Việc 17 · Sửa lỗi hydrate React #418 khi có phiên lưu — ĐÃ LÀM trên `v2` (`70d4376`, 2026-11-12), chưa deploy
+
+**Yêu cầu (user, 2026-11-12):** "Lập plan sửa #418" — gộp mục sổ P-20261112-6 (và P-20261111-21 phần b).
+
+**Lỗi:** mọi lượt tải có phiên lưu trong trình duyệt (thành viên VÀ khách quay lại) dính #418 ⇒ React bỏ HTML server, vẽ
+lại cả trang, xoá thuộc tính `<html>` (cờ chống giật, `color-scheme`). **Gốc:** `components/phien.tsx:82` đọc
+`localStorage` làm `fallbackData` ngay lần render hydrate, trong khi server vẽ `toi = null`.
+
+**Plan:** `plans/2026-11-12-sua-hydrate-418.md`: sửa một chỗ ở `PhienProvider` (phiên lưu chỉ vào context sau hydrate,
+lật trong `useLayoutEffect`), thêm bài đo `hydrate-sach.spec.ts`, rồi gỡ các gương JS chống giật đợt E thêm vì lỗi này.
+HTML server không đổi.
