@@ -412,15 +412,14 @@ test.describe("B5 — `?loai_mach=` đi xuyên qua feed cũ", () => {
     );
 
     await page.goto("/?tab=moi&loai_mach=nhat_ky");
-    await expect(page.getByTestId("bo-loc-loai-mach")).toContainText("Loại: Nhật ký");
+    // Đợt C (việc 14): chip "Loại: … ✕ Bỏ lọc" bị hàng chip Loại thay — chip "Nhật ký" đang chọn.
+    await expect(page.getByTestId("bo-loc-loai-mach")).toHaveCount(0);
+    await expect(page.getByTestId("loc-loai-nhat_ky")).toHaveAttribute("aria-current", "true");
     const ids1 = await idsTrenTrang(page, "the-mach");
     expect(ids1).toEqual(trang1.items.map((m) => m.id));
 
-    // Chip "Bỏ lọc" quay về feed không lọc loại.
-    await expect(page.getByTestId("bo-loc-loai-mach").getByRole("link")).toHaveAttribute(
-      "href",
-      "/?tab=moi",
-    );
+    // Chip "Tất cả" của hàng Loại quay về feed không lọc loại (cùng URL mà chip "Bỏ lọc" cũ trỏ tới).
+    await expect(page.getByTestId("loc-loai-tat-ca")).toHaveAttribute("href", "/?tab=moi");
 
     // Cuộn vô hạn: kéo mốc "xem thêm" vào khung nhìn ⇒ trang 2, CÙNG loại.
     await page.getByTestId("feed-xem-them").scrollIntoViewIfNeeded();
@@ -442,7 +441,8 @@ test.describe("B5 — `?loai_mach=` đi xuyên qua feed cũ", () => {
     request,
   }) => {
     await page.goto("/?tab=moi&loai_mach=bai_viet");
-    await expect(page.getByTestId("bo-loc-loai-mach")).toContainText("Loại: Bài viết");
+    await expect(page.getByTestId("bo-loc-loai-mach")).toHaveCount(0);
+    await expect(page.getByTestId("loc-loai-bai_viet")).toHaveAttribute("aria-current", "true");
     await expect(page.getByTestId("tab-nhieu-diem")).toHaveAttribute(
       "href",
       "/?tab=nhieu-diem&loai_mach=bai_viet",
@@ -451,7 +451,8 @@ test.describe("B5 — `?loai_mach=` đi xuyên qua feed cũ", () => {
     const r = await request.get("/?loai_mach=abc");
     expect(r.status()).toBe(200);
     await page.goto("/?loai_mach=abc");
-    await expect(page.getByTestId("bo-loc-loai-mach")).toHaveCount(0);
+    await expect(page.getByTestId("loc-loai-tat-ca")).toHaveAttribute("aria-current", "true");
+    await expect(page.getByTestId("feed-tieu-de-loai")).toHaveCount(0);
     // Không lọc: ra đúng feed không lọc (mọi loại), không phải một loại ngầm nào.
     const khong_loc = await api<FeedOut>("/api/v1/feeds/moi?limit=20");
     expect(await idsTrenTrang(page, "the-mach")).toEqual(khong_loc.items.map((m) => m.id));

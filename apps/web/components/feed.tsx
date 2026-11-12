@@ -6,10 +6,10 @@ import {
   KHOANG_FEED,
   KHOANG_MAC_DINH,
   NHAN_KHOANG,
-  NHAN_LOAI_MACH,
   NHAN_TAB,
   NHAN_TRANG_THAI_FEED,
   TAB_FEED,
+  TRANG_THAI_FEED,
   tabCoKhoang,
   trangThaiGuiLenApi,
   type KhoangFeed,
@@ -17,14 +17,23 @@ import {
   type TabFeed,
   type TrangThaiFeed,
 } from "@/lib/api";
-import { TEN_THUONG_LOAI_MACH, hrefChipLoai } from "@/lib/loc-loai-mach";
+import {
+  cauFeedRong,
+  hienHangTrangThai,
+  hrefChipLoai,
+  hrefTrangThai,
+  nhanChipTrangThai,
+  tieuDeTrangLoc,
+} from "@/lib/loc-loai-mach";
 
 import { BaoCursorHong } from "./bao-cursor-hong";
 import { CuonVoHan } from "./cuon-vo-han";
+import dai from "./dai-tab.module.css";
 import css from "./feed.module.css";
 import { VoKhungHaiCot } from "./khung-hai-cot-vo";
 import { LocLoaiMach } from "./loc-loai-mach";
 import { NutVeDauTrang } from "./nut-ve-dau-trang";
+import { NutGhiNhatKyDinhDay, OSoanNhatKy } from "./o-soan-nhat-ky";
 import { TheMach } from "./the-mach";
 
 /** Feed ba tab — PLAN 5.9 (Mới · Đang diễn ra) + plan con 1d §2.5.4 ("Nhiều điểm nhất").
@@ -64,6 +73,28 @@ import { TheMach } from "./the-mach";
  * `khoang` ở tab không có control chọn khoảng. Gửi kèm là dựng một **bộ lọc tàng hình** —
  * feed bị cắt bớt mà trên màn hình không có gì nói ra và không có cách nào tắt, tức đâm
  * PLAN nguyên tắc 7 còn nặng hơn cái lỗi vừa vá.
+ */
+/** ## Dải điều khiển — BA hàng, mọi mục là `<Link>` thật *(việc 14, đợt C, plan §4.2)*
+ *
+ * Dùng cho CẢ `/?…` lẫn `/s/<sub>` (trước đó `/` có chip "Loại: … ✕ Bỏ lọc", `/s/*` có hàng chip,
+ * và chưa ai lọc được theo trạng thái ở `/s/*`). Từ trên xuống:
+ *
+ * 1. **Loại** — Tất cả · Nhật ký · Bài viết · Chủ đề (`LocLoaiMach`);
+ * 2. **Trạng thái** — Tất cả · Đang mở · Đã đóng sổ, CHỈ khi lọc loại Nhật ký và tab ≠ "Đang diễn
+ *    ra" (`hienHangTrangThai`). Cùng class (`dai-tab.module.css`), cùng chữ với dải tab của khối
+ *    nhật ký trên trang chủ. Có `?trang_thai=` mà hàng này không hiện thì chip "Trạng thái: …
+ *    ✕ Bỏ lọc" ở lại: một bộ lọc đang có hiệu lực không bao giờ tàng hình;
+ * 3. **Sắp xếp** — Mới nhất · Đang diễn ra · Nổi bật (+ khoảng ở "Nổi bật"): hàng PHỤ, nhỏ, canh
+ *    phải, và là hàng duy nhất dính khi cuộn (desktop).
+ *
+ * Đổi loại thì RỚT `trang_thai` (`hrefChipLoai`); đổi trạng thái giữ tab/khoảng/trường phái/loại và
+ * rớt `cursor` (`hrefTrangThai`).
+ *
+ * **Ô soạn nhanh** (`OSoanNhatKy`) hiện khi lọc loại Nhật ký, đặt DƯỚI các hàng lọc và ngay trên
+ * danh sách: đặt trên hàng Loại thì bấm "Nhật ký" làm cả hàng chip nhảy xuống bằng chiều cao ô
+ * soạn — chip là thứ người ta vừa bấm, nó phải đứng yên. Mobile thì nút dính đáy "Ghi nhật ký"
+ * (`NutGhiNhatKyDinhDay`, cùng trang chủ): trang lọc là danh sách dài cuộn vô hạn, nút dính đáy
+ * theo người đọc suốt trang, còn ô soạn ở đầu trang biến mất sau cú cuộn đầu tiên.
  */
 /** Đầu trang: **hoặc** một `header` riêng, **hoặc** cặp `tieuDe`/`lede` — không bao giờ
  * cả hai *(X9, lượt vá 3)*.
@@ -152,13 +183,18 @@ export function Feed({
   const hrefKhoang = (k: KhoangFeed) =>
     `${coBan}?tab=${tab}${duoi(k)}${duoiTruongPhai}${duoiLoaiMach}${duoiTrangThai(tab)}`;
 
-  /** Trang sub rỗng CHỈ vì bộ lọc loại (không phải vì trường phái hay khoảng thời gian, hai
-   * thứ này có câu riêng): nói đúng loại nào trống và chỉ lối về "Tất cả". */
+  /** Trang sub rỗng CHỈ vì bộ lọc loại / trạng thái (không phải vì trường phái hay khoảng thời
+   * gian, hai thứ này có câu riêng): nói đúng loại + trạng thái nào trống và chỉ lối về bước rộng
+   * hơn kế tiếp (bỏ trạng thái trước; hết trạng thái mới bỏ loại). */
   const rongDoLocLoai =
     sub !== undefined &&
-    loaiMach !== undefined &&
+    (loaiMach !== undefined || trangThai !== undefined) &&
     !truongPhai &&
     !(tabCoKhoang(tab) && khoang !== KHOANG_MAC_DINH);
+
+  /** Trang lọc `/?loai_mach=…` có `<h2>` của chính nó ⇒ tiêu đề thẻ xuống `<h3>` (trang 1 lẫn thẻ
+   * nạp thêm), cùng luật khối nhật ký trang chủ: thẻ là con của mục ấy, không ngang cấp với nó. */
+  const coH2Loai = sub === undefined && loaiMach !== undefined;
 
   const noiDung = (
     <>
@@ -171,21 +207,48 @@ export function Feed({
 
       {cursorHong && <BaoCursorHong />}
 
-      {/* Trang chuyên mục (`/s/<sub>`) lẫn cả ba loại mạch: hàng chip lọc loại đứng ngay dưới
-          header, trên thanh tab. Chỉ nhánh có `sub` dựng nó — `/` giữ nguyên DOM. */}
-      {sub !== undefined && (
-        <LocLoaiMach
-          coBan={coBan}
-          tab={tab}
-          khoang={khoang}
-          truongPhai={truongPhai}
-          loaiMach={loaiMach}
-        />
+      {/* `<h2>` theo loại đang lọc — chỉ `/?…` (trang lọc cần một câu nói "đây là trang gì"); `/s/*`
+          đã có header riêng. Đứng NGAY sau lede nên lede vẫn là `<p>` đầu tiên sau `<h1>`. */}
+      {coH2Loai && loaiMach !== undefined && (
+        <h2 className={css.tieu_loai} data-testid="feed-tieu-de-loai">
+          {tieuDeTrangLoc(tab, loaiMach, trangThai)}
+        </h2>
       )}
 
-      {/* Thanh tab feed */}
+      {/* Hàng 1 — Loại. Hiện ở CẢ `/?…` và `/s/<sub>`: nó thay chip "Loại: … ✕ Bỏ lọc" cũ của `/`. */}
+      <LocLoaiMach
+        coBan={coBan}
+        tab={tab}
+        khoang={khoang}
+        truongPhai={truongPhai}
+        loaiMach={loaiMach}
+      />
+
+      {/* Hàng 2 — Trạng thái sổ (chỉ nhật ký, chỉ tab nhận `trang_thai`). Cùng class với dải tab
+          của khối nhật ký trang chủ. */}
+      {hienHangTrangThai(tab, loaiMach) && (
+        <nav className={dai.tab} aria-label="Lọc theo trạng thái" data-testid="loc-trang-thai">
+          {[undefined, ...TRANG_THAI_FEED].map((tt) => (
+            <Link
+              key={tt ?? "tat-ca"}
+              href={hrefTrangThai(coBan, { tab, khoang, truongPhai, loaiMach }, tt)}
+              prefetch={false}
+              className={tt === trangThai ? `${dai.mot_tab} ${dai.tab_dang_chon}` : dai.mot_tab}
+              aria-current={tt === trangThai ? "true" : undefined}
+              data-testid={`loc-trang-thai-${tt ?? "tat-ca"}`}
+            >
+              {tt === undefined ? "Tất cả" : NHAN_TRANG_THAI_FEED[tt]}
+            </Link>
+          ))}
+        </nav>
+      )}
+
+      {/* Hàng 3 — Sắp xếp (+ khoảng). Nhãn nhỏ bên trái, các tab canh phải. */}
       <div className={css.thanh_dinh}>
         <div className={css.hang_dieu_khien}>
+          <span className={css.nhan_sap_xep} aria-hidden="true">
+            Sắp xếp
+          </span>
           <nav className={css.tab} data-testid="tab-feed" aria-label="Sắp xếp feed">
             {TAB_FEED.map((t) => {
               const Hinh = ICON_TAB[t];
@@ -245,32 +308,14 @@ export function Feed({
         </div>
       )}
 
-      {/* Chip loại mạch — cùng khuôn với chip trường phái ngay trên. "Bỏ lọc" giữ nguyên
-          trường phái (nếu có): bỏ MỘT bộ lọc thì không được kéo theo bộ lọc kia.
-          Trên trang sub (`sub` có mặt) hàng chip `LocLoaiMach` ở trên đã thay nó — hiện cả hai
-          là một bộ lọc được báo hai lần. */}
-      {loaiMach && sub === undefined && (
-        <div className={css.bo_loc_truong_phai} data-testid="bo-loc-loai-mach">
-          <span>
-            Loại: <strong>{NHAN_LOAI_MACH[loaiMach]}</strong>
-          </span>
-          <Link
-            href={`${coBan}?tab=${tab}${duoi(khoang)}${duoiTruongPhai}${duoiTrangThai(tab)}`}
-            className={css.xoa_bo_loc}
-            title="Bỏ lọc loại"
-            prefetch={false}
-          >
-            ✕ Bỏ lọc
-          </Link>
-        </div>
-      )}
-
-      {/* Chip trạng thái sổ — cùng khuôn với hai chip trên, và cũng chỉ ở `/` (trang sub chưa
-          nhận `?trang_thai=`). "Bỏ lọc" giữ nguyên hai bộ lọc kia. */}
-      {trangThai && sub === undefined && (
+      {/* Chip trạng thái sổ — CHỈ khi hàng Trạng thái không hiện (URL cũ kiểu `/?tab=moi&trang_thai=
+          open`, hoặc loại khác nhật ký): bộ lọc đang có hiệu lực luôn phải hiện ra. Khi loại là
+          nhật ký, hàng 2 đã báo nó (mục `aria-current`), hiện thêm chip là báo hai lần. "Bỏ lọc"
+          giữ nguyên các bộ lọc kia. */}
+      {trangThai && !hienHangTrangThai(tab, loaiMach) && (
         <div className={css.bo_loc_truong_phai} data-testid="bo-loc-trang-thai">
           <span>
-            Trạng thái: <strong>{NHAN_TRANG_THAI_FEED[trangThai]}</strong>
+            Trạng thái: <strong>{nhanChipTrangThai(loaiMach, trangThai)}</strong>
           </span>
           <Link
             href={`${coBan}?tab=${tab}${duoi(khoang)}${duoiTruongPhai}${duoiLoaiMach}`}
@@ -283,20 +328,26 @@ export function Feed({
         </div>
       )}
 
+      {loaiMach === "nhat_ky" && <OSoanNhatKy />}
+
       {feed.items.length === 0 ? (
         <p className={css.rong} data-testid="feed-rong">
           {truongPhai
             ? `Chưa có mạch nào thuộc trường phái #${truongPhai}.`
             : tabCoKhoang(tab) && khoang !== KHOANG_MAC_DINH
               ? "Chưa có bài nào trong khoảng này."
-              : rongDoLocLoai && loaiMach
-                ? `Chưa có ${TEN_THUONG_LOAI_MACH[loaiMach]} nào trong chuyên mục này.`
+              : rongDoLocLoai
+                ? cauFeedRong(loaiMach, trangThai)
                 : "Chưa có bài nào ở đây."}
           {rongDoLocLoai && (
             <>
               {" "}
               <Link
-                href={hrefChipLoai(coBan, { tab, khoang, truongPhai }, undefined)}
+                href={
+                  trangThai !== undefined
+                    ? hrefTrangThai(coBan, { tab, khoang, truongPhai, loaiMach }, undefined)
+                    : hrefChipLoai(coBan, { tab, khoang, truongPhai }, undefined)
+                }
                 prefetch={false}
                 className={css.xoa_bo_loc}
                 data-testid="feed-rong-ve-tat-ca"
@@ -309,7 +360,11 @@ export function Feed({
       ) : (
         <ul className={css.danh_sach} data-testid="feed">
           {feed.items.map((m) => (
-            <TheMach key={m.id} mach={m} hienNhanLoai={sub !== undefined} />
+            <TheMach key={m.id}
+              mach={m}
+              hienNhanLoai={sub !== undefined}
+              capHeading={coH2Loai ? 3 : 2}
+            />
           ))}
         </ul>
       )}
@@ -318,7 +373,14 @@ export function Feed({
           `CuonVoHan` render đúng cái link ấy rồi mới phủ `IntersectionObserver` lên
           trên. Bot bò được hết feed, người tắt JS vẫn bấm được, fetch lỗi thì lùi về
           đúng hành vi cũ. Xem docstring `cuon-vo-han.tsx`. */}
+      {/* `key` = URL trang 1 của BỘ LỌC hiện tại (coBan/sub, tab, khoảng, trường phái, loại, trạng
+          thái hiệu lực — đúng những gì `hrefTab` ghép). Đổi bộ lọc bằng điều hướng client ⇒ remount:
+          bài đã nạp thêm của bộ lọc cũ và fetch đang bay của nó bị bỏ. Không có key thì component
+          chỉ reset theo `cursorDau`, mà cursor API chỉ mã hoá VỊ TRÍ bài cuối (không mang bộ lọc):
+          hai bộ lọc có trang 1 cùng kết thúc ở một bài ⇒ cùng cursor ⇒ thẻ của bộ lọc cũ ở lại dưới
+          `<h2>` của bộ lọc mới (vòng sửa 2 của đợt C, tái hiện được trên `gikky_e2e`). */}
       <CuonVoHan
+        key={hrefTab(tab)}
         cursorDau={feed.cursor_ke_tiep}
         href={
           feed.cursor_ke_tiep === null
@@ -331,7 +393,10 @@ export function Feed({
         truongPhai={truongPhai}
         loaiMach={loaiMach}
         trangThai={trangThai}
+        capHeading={coH2Loai ? 3 : 2}
       />
+
+      {loaiMach === "nhat_ky" && <NutGhiNhatKyDinhDay />}
     </>
   );
 

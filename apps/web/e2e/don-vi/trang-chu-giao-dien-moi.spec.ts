@@ -307,6 +307,9 @@ test("màu: khối chủ đề, thư viện KHÔNG dùng --gain/--loss/--stamp (
     "components/khoi-bai-viet.module.css",
     "components/trang-chu-v2.module.css",
     "components/khoi-lenh.module.css",
+    // Hai file CSS dùng chung tách ra ở đợt C (việc 14) thừa hưởng đúng luật của chỗ chúng đến từ.
+    "components/dai-tab.module.css",
+    "components/o-soan-nhat-ky.module.css",
   ]) {
     const css = doc(f).replace(/\/\*[\s\S]*?\*\//g, "");
     expect(css, f).not.toMatch(/--(gain|loss|stamp)/);
@@ -380,7 +383,16 @@ test("lối vào ghi nhật ký: chỉ mở ngăn kéo khi ĐÃ đăng nhập v�
 test("trang-chu-v2 vẫn là server component; cả 4 lối vào ghi nhật ký đi qua LoiVaoNhatKy", () => {
   const tsx = doc("components/trang-chu-v2.tsx").replace(/\/\*[\s\S]*?\*\//g, "");
   expect(tsx, "không biến cả trang thành client").not.toMatch(/^\s*["']use client["']/);
-  expect(tsx.match(/<LoiVaoNhatKy\b/g)?.length).toBe(4);
+  // Đợt C (việc 14): ô soạn nhanh + nút dính đáy (3 trong 4 lối) tách sang `o-soan-nhat-ky.tsx` để
+  // trang lọc nhật ký dùng chung. Trang chủ giữ lối "mở nhật ký đầu tiên" của trạng thái rỗng (1) và
+  // dựng hai component kia; tổng vẫn đúng 4, không lối nào bị rơi.
+  const o_soan = doc("components/o-soan-nhat-ky.tsx").replace(/\/\*[\s\S]*?\*\//g, "");
+  expect(tsx.match(/<LoiVaoNhatKy\b/g)?.length).toBe(1);
+  expect(o_soan.match(/<LoiVaoNhatKy\b/g)?.length).toBe(3);
+  expect(tsx).toMatch(/<OSoanNhatKy\s*\/>/);
+  expect(tsx).toMatch(/<NutGhiNhatKyDinhDay\s*\/>/);
+  expect(o_soan, "không biến cả trang thành client").not.toMatch(/^\s*["']use client["']/);
+  expect(o_soan).not.toContain('href="/dang-mach"');
   // Không còn <Link> nào tự trỏ /dang-mach: đường vòng quanh ngăn kéo.
   expect(tsx).not.toContain('href="/dang-mach"');
   // Component client vẽ <a href="/dang-mach"> thật ⇒ HTML thô không đổi (SEO).

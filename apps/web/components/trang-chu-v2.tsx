@@ -1,13 +1,17 @@
 import type { BinhLuanOut, FeedOut } from "@gikky/api-client";
-import { Bot, Plus } from "lucide-react";
+import { Bot } from "lucide-react";
 import Link from "next/link";
 
+import { NHAN_TRANG_THAI_FEED, type TrangThaiFeed } from "@/lib/api";
 import { tomTatChanKhoi } from "@/lib/chan-khoi-nhat-ky";
+import { hrefTrangThai } from "@/lib/loc-loai-mach";
 
 import { Avatar } from "./avatar";
+import dai from "./dai-tab.module.css";
 import feedCss from "./feed.module.css";
 import { KhoiThaoLuan } from "./khoi-thao-luan";
 import { LoiVaoNhatKy } from "./loi-vao-nhat-ky";
+import { NutGhiNhatKyDinhDay, OSoanNhatKy } from "./o-soan-nhat-ky";
 import { TheMach } from "./the-mach";
 import css from "./trang-chu-v2.module.css";
 
@@ -26,12 +30,25 @@ export const SO_CHU_DE_TAI = 5;
 
 /** Tab của khối nhật ký — LINK THẬT tới feed cũ có lọc `trang_thai` (plan §6.3), không phải
  * nút đổi state: feed cũ là nơi duy nhất xem hết, và link là thứ bot bò được. "Mới nhất" là
- * chính khối này (mỗi tác giả một bài) nên `aria-current`; hai tab kia rời khối đi xem feed. */
-const TAB_NHAT_KY = [
-  { khoa: "moi", nhan: "Mới nhất", href: "/?tab=moi&loai_mach=nhat_ky" },
-  { khoa: "open", nhan: "Đang mở", href: "/?tab=moi&loai_mach=nhat_ky&trang_thai=open" },
-  { khoa: "closed", nhan: "Đã đóng sổ", href: "/?tab=moi&loai_mach=nhat_ky&trang_thai=closed" },
-] as const;
+ * chính khối này (mỗi tác giả một bài) nên `aria-current`; hai tab kia rời khối đi xem feed.
+ *
+ * **Href dựng bằng `hrefTrangThai`** — CÙNG hàm với hàng Trạng thái của `Feed` (việc 14, đợt C): bấm
+ * "Đang mở" ở đây ra đúng URL mà hàng ấy sinh ra, nên mục vừa bấm luôn là mục sáng ở trang đích.
+ * Chữ hai tab sau lấy từ `NHAN_TRANG_THAI_FEED` (cùng bảng chữ với hàng Trạng thái); mục đầu là
+ * "Mới nhất" chứ không phải "Tất cả" vì ở đây nó là chính khối (mỗi tác giả một bài, plan §4.2). */
+const GOC_NHAT_KY = { tab: "moi", khoang: "tat_ca", loaiMach: "nhat_ky" } as const;
+const TAB_NHAT_KY: readonly {
+  khoa: "moi" | TrangThaiFeed;
+  nhan: string;
+  href: string;
+}[] = [
+  { khoa: "moi", nhan: "Mới nhất", href: hrefTrangThai("/", GOC_NHAT_KY, undefined) },
+  ...(["open", "closed"] as const).map((tt) => ({
+    khoa: tt,
+    nhan: NHAN_TRANG_THAI_FEED[tt],
+    href: hrefTrangThai("/", GOC_NHAT_KY, tt),
+  })),
+];
 
 /** Nội dung CHÍNH (trong khung hai cột) của trang chủ v2: dòng giới thiệu → **Chủ đề tuần →
  * Nhật ký mới** *(plan `2026-11-11-homepage-v2-giao-dien-moi.md`; nối tiếp
@@ -108,27 +125,14 @@ export function TrangChuV2({
           </Link>
         </header>
 
-        {/* Ô soạn nhanh (desktop): một LINK tới `/dang-mach` — không phải form mới. Người đã đăng
-            nhập bấm vào thì mở NGĂN KÉO đăng nhanh (`LoiVaoNhatKy`); HTML vẫn là `<a href>`.
-            Riêng tư → công khai là MỘT CHIỀU, và mốc đã ghi sửa được nhưng để lại dấu vết
-            (GHI-CHU việc 7): nên câu phụ chỉ hứa đúng chừng ấy — và KHÔNG gợi ý riêng tư là mặc định (form `/dang-mach` mặc định công khai). */}
-        <div className={css.soan_nhanh} data-testid="nhat-ky-soan-nhanh">
-          <LoiVaoNhatKy className={css.o_soan} data-testid="nhat-ky-o-soan">
-            Bạn vừa quyết định gì?
-          </LoiVaoNhatKy>
-          <div className={css.soan_dong}>
-            <span className={css.goi_y}>Có thể ghi riêng tư, công khai khi bạn muốn.</span>
-            <LoiVaoNhatKy className={css.nut_mo} data-testid="nut-mo-nhat-ky">
-              Mở nhật ký
-            </LoiVaoNhatKy>
-          </div>
-        </div>
+        {/* Ô soạn nhanh (desktop) — dùng chung với trang lọc nhật ký, xem `o-soan-nhat-ky.tsx`. */}
+        <OSoanNhatKy />
 
-        <nav className={css.tab} aria-label="Lọc nhật ký" data-testid="nhat-ky-tab">
+        <nav className={dai.tab} aria-label="Lọc nhật ký" data-testid="nhat-ky-tab">
           {TAB_NHAT_KY.map((t) => (
             <Link
               key={t.khoa}
-              className={t.khoa === "moi" ? `${css.mot_tab} ${css.tab_dang_chon}` : css.mot_tab}
+              className={t.khoa === "moi" ? `${dai.mot_tab} ${dai.tab_dang_chon}` : dai.mot_tab}
               href={t.href}
               prefetch={false}
               aria-current={t.khoa === "moi" ? "true" : undefined}
@@ -187,12 +191,7 @@ export function TrangChuV2({
 
         {/* Mobile: nút dính đáy thay cho ô soạn nhanh. `sticky` trong chính khối, nên nó tự
             nhả khi cuộn qua hết khối nhật ký. */}
-        <div className={css.dinh_day}>
-          <LoiVaoNhatKy className={css.nut_ghi} data-testid="nut-ghi-nhat-ky-di-dong">
-            <Plus size={16} strokeWidth={2.4} aria-hidden />
-            Ghi nhật ký
-          </LoiVaoNhatKy>
-        </div>
+        <NutGhiNhatKyDinhDay />
       </section>
     </>
   );

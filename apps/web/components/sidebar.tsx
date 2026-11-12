@@ -2,8 +2,9 @@ import type { MachTomTatOut, SubChiTietOut } from "@gikky/api-client";
 import Link from "next/link";
 
 import { dongSoMachSub } from "@/lib/dinh-dang";
+import { hrefLoaiTrongSub } from "@/lib/loc-loai-mach";
 import { DIEU_CAM } from "@/lib/phap-ly";
-import { duongDanMach } from "@/lib/url";
+import { duongDanMach, duongDanSub } from "@/lib/url";
 
 import { ChanTrang } from "./chan-trang";
 import { ChuyenMucTuTrinhDuyet } from "./chuyen-muc-tu-trinh-duyet";
@@ -19,7 +20,9 @@ import css from "./sidebar.module.css";
  * 0. **khách** — "Tham gia Gikky.net" (`KhoiKhach`, client): chỉ hiện với người CHƯA đăng
  *    nhập, ở mọi trang có rail. Người đã đăng nhập có "Hồ sơ của tôi" + "Cài đặt" ở menu tài
  *    khoản trên header, nên không có khối "Tài khoản" ở đây;
- * 1. giới thiệu (trang chủ) hoặc mô tả sub + số mạch + ngày lập (trang sub);
+ * 1. giới thiệu (trang chủ) hoặc, ở trang sub, số mạch + ngày lập + hai lối nhanh "Nhật ký / Bài
+ *    viết trong chuyên mục →". **KHÔNG còn mô tả sub** *(việc 14, đợt C, T4)*: header của trang
+ *    sub đã in nó — in lại ở rail là hai bản của cùng một đoạn chữ trên một trang;
  * 2. luật rút gọn dẫn `/luat` — PLAN 5.10 bắt mọi trang công khai phải có đường tới đó,
  *    và chân trang một mình thì ở dưới quá xa để ai đọc;
  * 3. danh sách các sub — **vắng mặt hẳn khi `cacSub` rỗng** *(2026-08-31)*. Một hộp mang
@@ -55,7 +58,7 @@ export function Sidebar({
   khachTieuDe,
   khachMoTa,
 }: {
-  /** Hai dòng giới thiệu — trang chủ dùng, trang sub thay bằng `mo_ta` của chính sub. */
+  /** Hai dòng giới thiệu — chỉ trang không có `sub` dùng (trang sub không in mô tả ở rail). */
   gioiThieu?: string;
   /** Header của sub đang xem; `null`/thiếu là đang ở trang chủ. */
   sub?: SubChiTietOut | null;
@@ -81,10 +84,32 @@ export function Sidebar({
       {sub != null ? (
         <section className={css.khoi} data-testid="sidebar-ve-sub">
           <h2 className={css.tieu_de}>Về s/{sub.slug}</h2>
-          <p className={css.than}>{sub.mo_ta}</p>
           <p className={`${css.so} mono`} data-testid="sidebar-so-mach">
             {dongSoMachSub(sub.so_mach, sub.created_at)}
           </p>
+          {/* Hai lối nhanh vào feed đã lọc loại của CHÍNH chuyên mục này. `hrefLoaiTrongSub` dựng
+              href bằng `hrefChipLoai` — cùng hàm với hàng chip Loại của `Feed` — nên bấm ở đây ra
+              đúng URL mà chip sinh ra (`/s/<slug>?loai_mach=…`), và chip ấy sáng ở trang đích. */}
+          <div>
+            <Link
+              className={css.dan}
+              href={hrefLoaiTrongSub(duongDanSub(sub.slug), "nhat_ky")}
+              prefetch={false}
+              data-testid="sidebar-dan-nhat-ky-sub"
+            >
+              Nhật ký trong chuyên mục →
+            </Link>
+          </div>
+          <div>
+            <Link
+              className={css.dan}
+              href={hrefLoaiTrongSub(duongDanSub(sub.slug), "bai_viet")}
+              prefetch={false}
+              data-testid="sidebar-dan-bai-viet-sub"
+            >
+              Bài viết trong chuyên mục →
+            </Link>
+          </div>
         </section>
       ) : (
         gioiThieu !== undefined && (

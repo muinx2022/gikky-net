@@ -11,8 +11,10 @@ import css from "./feed.module.css";
  * đọc tách chúng ra. Mỗi chip là `<Link>` thật — một `<a href>` trong HTML server-render,
  * bot bò được và người tắt JS vẫn bấm được, đúng như hai hàng tab/khoảng ngay dưới nó.
  *
- * **Chỉ `/s/<sub>` dựng nó** (qua `Feed` khi có `sub`). Ở `/` bộ lọc loại vẫn đi bằng chip
- * "Loại: … ✕ Bỏ lọc" cũ; trên trang sub hàng này thay chip ấy chứ không cộng thêm.
+ * **Hiện ở MỌI trang `Feed`** — `/?…` lẫn `/s/<sub>` *(việc 14, đợt C)*. Trước đó chỉ trang sub
+ * dựng nó và `/?loai_mach=…` báo bộ lọc bằng chip "Loại: … ✕ Bỏ lọc"; chip ấy đã bị gỡ vì hàng này
+ * thay nó (hiện cả hai là một bộ lọc được báo hai lần). Là hàng 1 trong ba hàng của dải điều khiển
+ * (xem docstring `Feed`).
  *
  * "Tất cả" là trạng thái KHÔNG lọc và không đặt `loai_mach` lên URL; lựa chọn đang có mang
  * `aria-current="true"` (cùng kiểu chip khoảng thời gian).

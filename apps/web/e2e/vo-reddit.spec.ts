@@ -148,7 +148,10 @@ test.describe("A8 — trang sub có header + sidebar", () => {
     await expect(dau).toBeVisible();
     await expect(dau).toContainText(s.ten);
     await expect(dau).toContainText(s.mo_ta);
-    await expect(page.getByTestId("sub-header-so")).toContainText(
+    // Đợt C (việc 14, T4): dòng "N mạch · lập …" đã rời header — nó chỉ còn ở rail
+    // (`sidebar-so-mach`), để mỗi thứ đúng MỘT lần trên trang.
+    await expect(page.getByTestId("sub-header-so")).toHaveCount(0);
+    await expect(page.getByTestId("sidebar-so-mach")).toContainText(
       `${s.so_mach} mạch`,
     );
   });
@@ -372,7 +375,9 @@ test.describe("B8 — sub chưa có bài: không phô một con số 0", () => {
 
     await page.goto(`/s/${SUB_RONG}`);
     await expect(page.getByTestId("feed-rong")).toBeVisible();
-    for (const t of ["sub-header-so", "sidebar-so-mach"]) {
+    // Đợt C (việc 14): `sub-header-so` đã gỡ khỏi header — chỉ còn dòng ở rail.
+    await expect(page.getByTestId("sub-header-so")).toHaveCount(0);
+    for (const t of ["sidebar-so-mach"]) {
       const dong = page.getByTestId(t);
       await expect(dong).toBeVisible();
       await expect(dong, t).not.toContainText("0 mạch");
@@ -406,7 +411,7 @@ test.describe("B8 — sub chưa có bài: không phô một con số 0", () => {
     const s = await json<SubChiTietOut>("/api/v1/subs/chung-khoan");
     expect(s.so_mach).toBeGreaterThan(0);
     await page.goto("/s/chung-khoan");
-    await expect(page.getByTestId("sub-header-so")).toContainText(`${s.so_mach} mạch`);
+    await expect(page.getByTestId("sub-header-so")).toHaveCount(0);
     await expect(page.getByTestId("sidebar-so-mach")).toContainText(
       `${s.so_mach} mạch`,
     );

@@ -263,7 +263,17 @@ async function FeedDaNap({
         trangThai={trangThai}
         tieuDe={TIEU_DE}
         lede={LEDE}
-        sidebar={<Sidebar gioiThieu={GIOI_THIEU} cacSub={cac_sub} />}
+        // Khối khách dùng tiêu đề của trang chủ ("Bắt đầu nhật ký của bạn") ở MỌI trang `/?…`
+        // (việc 14, đợt C). KHÔNG truyền `khachMoTa`: câu "Có thể ghi riêng tư, công khai khi bạn
+        // muốn." đã nằm trong ô soạn nhanh của trang lọc nhật ký — lặp nó ở rail là in hai lần
+        // trên cùng một trang. Trang chủ `/` (TrangChuMoi) giữ nguyên rail của nó (việc của đợt E).
+        sidebar={
+          <Sidebar
+            gioiThieu={GIOI_THIEU}
+            cacSub={cac_sub}
+            khachTieuDe="Bắt đầu nhật ký của bạn"
+          />
+        }
       />
     </>
   );

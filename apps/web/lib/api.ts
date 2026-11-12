@@ -755,6 +755,9 @@ export async function docFeedSub(
     khoang?: KhoangFeed;
     truong_phai?: string;
     loai_mach?: LoaiMach;
+    /** Chỉ có tác dụng ở tab `moi` / `nhieu-diem` — xem `trangThaiGuiLenApi`. `GET /feeds/moi`
+     * nhận `sub` + `trang_thai` cùng lúc (`api/api/feeds.py::_mach_hien`); `feedTho` đã đẩy nó. */
+    trang_thai?: TrangThaiFeed;
   } = {},
 ): Promise<TrangCursor<FeedOut | null>> {
   return feedTho(tab, { ...opts, sub });

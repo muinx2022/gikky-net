@@ -29,6 +29,17 @@
   border-bottom: 1px solid var(--line);
 }
 
+/* `<h2>` của trang lọc `/?loai_mach=…` ("Tất cả nhật ký"): cùng cỡ chữ với tiêu đề khối nhật ký
+ * trên trang chủ (`trang-chu-v2.module.css#.tieu_khoi`) — trang lọc là bản đầy đủ của khối ấy. */
+.tieu_loai {
+  margin: 4px 0 12px;
+  font-family: var(--f-ui);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+}
+
 .dau_feed {
   position: absolute;
   width: 1px;
@@ -41,12 +52,19 @@
   border: 0;
 }
 
-/* Hàng điều khiển: dải tab sắp xếp. */
+/* Hàng điều khiển: nhãn "Sắp xếp" bên trái, dải tab sắp xếp canh phải. Đây là hàng PHỤ của dải
+ * điều khiển (hàng 1 Loại, hàng 2 Trạng thái nằm trên nó) nên chữ nhỏ và nhạt hơn. */
 .hang_dieu_khien {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+}
+
+.nhan_sap_xep {
+  font-family: var(--f-ui);
+  font-size: 12px;
+  color: var(--ink-3);
 }
 
 .tab,
@@ -79,9 +97,9 @@
   gap: 6px;
   border: 0;
   border-radius: 999px;
-  padding: 6px 14px;
+  padding: 4px 10px;
   font-family: var(--f-ui);
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
   color: var(--ink-2);
   background: transparent;
@@ -114,6 +132,7 @@
 .khoang {
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 12px;
   margin-top: 8px;
   font-size: 12.5px;
@@ -263,9 +282,31 @@
 
   .mot_tab {
     padding: 6px 11px;
-    min-width: 36px;
-    height: 34px;
+    min-width: 44px;
+    height: 44px;
     justify-content: center;
+  }
+
+  /* Vùng bấm ≥ 44px (T9): chip loại cao 44px thật, không chỉ lớn hơn bằng vùng ẩn. */
+  .loc_loai_chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  /* Hàng khoảng thời gian: link chữ trần cao ~16px — cho cao 44px để bấm được bằng ngón cái. */
+  .mot_khoang {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    border-bottom: 0;
+  }
+
+  /* Hộp cao 44px thì gạch chân bằng `border-bottom` rơi xa chữ — mobile gạch bằng text-decoration. */
+  .khoang_dang_chon {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 6px;
   }
 }
 

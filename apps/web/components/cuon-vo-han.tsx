@@ -67,6 +67,7 @@ export function CuonVoHan({
   truongPhai,
   loaiMach,
   trangThai,
+  capHeading = 2,
 }: {
   /** `cursor_ke_tiep` của trang server render. `null` = hết bài, component không render gì. */
   cursorDau: string | null;
@@ -86,6 +87,9 @@ export function CuonVoHan({
   /** Lọc trạng thái sổ (`?trang_thai=`): trang 2 trở đi PHẢI cùng bộ lọc với trang 1, như
    * `loaiMach`. */
   trangThai?: TrangThaiFeed;
+  /** Cấp tiêu đề thẻ — PHẢI bằng cấp của thẻ trang 1 (`Feed` truyền cùng giá trị), nếu không danh
+   * sách đổi cấu trúc heading giữa chừng. */
+  capHeading?: 2 | 3;
 }) {
   const [them, datThem] = useState<MachTomTatOut[]>([]);
   const [cursor, datCursor] = useState<string | null>(cursorDau);
@@ -152,7 +156,11 @@ export function CuonVoHan({
       {them.length > 0 && (
         <ul className={`${css.danh_sach} ${css.danh_sach_them}`} data-testid="feed-them">
           {them.map((m) => (
-            <TheMach key={m.id} mach={m} hienNhanLoai={sub !== undefined} />
+            <TheMach key={m.id}
+              mach={m}
+              hienNhanLoai={sub !== undefined}
+              capHeading={capHeading}
+            />
           ))}
         </ul>
       )}

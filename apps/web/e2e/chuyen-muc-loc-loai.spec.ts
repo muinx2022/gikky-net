@@ -132,7 +132,9 @@ test.describe("C2/C3 — lọc ra đúng tập API; nhãn trên thẻ khớp lo�
       await page.goto(url);
       expect(await page.getByTestId("the-mach").count(), `${url} phải có thẻ`).toBeGreaterThan(0);
       await expect(page.getByTestId("nhan-loai"), url).toHaveCount(0);
-      await expect(page.getByTestId("loc-loai"), url).toHaveCount(0);
+      // Đợt C (việc 14): hàng chip Loại nay hiện ở cả `/?…` (thay chip "Loại: …" cũ) — bài này từng
+      // đòi `loc-loai` vắng ở `/`. Còn vắng ở hồ sơ; NHÃN trên thẻ vẫn chỉ ở trang sub (dòng trên).
+      await expect(page.getByTestId("loc-loai"), url).toHaveCount(url.startsWith("/?") ? 1 : 0);
     }
   });
 });

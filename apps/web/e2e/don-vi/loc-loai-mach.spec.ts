@@ -165,9 +165,14 @@ test.describe("hàng rào nguồn", () => {
     expect(goi![1]).toMatch(/\bloai_mach\s*:\s*loaiMach\b/);
   });
 
-  test("chip 'Loại: …' cũ bị thay (không hiện song song) ở trang sub, nhưng còn ở `/`", () => {
+  // Đợt C (việc 14): bài này từng ghim "chip 'Loại: …' còn ở `/`, hàng chip chỉ ở trang sub". Nay hàng
+  // chip Loại hiện ở CẢ HAI trang và chip "Loại: … ✕ Bỏ lọc" bị gỡ hẳn (hàng chip thay nó) — hiện cả
+  // hai là báo một bộ lọc hai lần. Bài đo đảo chiều: chip cũ không còn, `LocLoaiMach` vô điều kiện.
+  test("chip 'Loại: …' cũ bị gỡ; hàng chip `LocLoaiMach` dựng vô điều kiện (cả `/` lẫn trang sub)", () => {
     const feed = boChuThich(doc("components/feed.tsx"));
-    expect(feed).toMatch(/\{loaiMach\s*&&\s*sub\s*===\s*undefined\s*&&\s*\(/);
-    expect(feed).toMatch(/\{sub\s*!==\s*undefined\s*&&\s*\(\s*<LocLoaiMach/);
+    expect(feed).not.toContain("bo-loc-loai-mach");
+    expect(feed).not.toMatch(/Loại:\s*<strong>/);
+    expect(feed).toMatch(/<LocLoaiMach\b/);
+    expect(feed).not.toMatch(/\{sub\s*!==\s*undefined\s*&&\s*\(\s*<LocLoaiMach/);
   });
 });

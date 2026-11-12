@@ -57,6 +57,16 @@
   }
 }
 
+/* Trang có nút dính đáy "Ghi nhật ký" (trang chủ, trang lọc nhật ký — `o-soan-nhat-ky.module.css`,
+ * chỉ hiện ≤ 640px): nút về đầu trang nhích lên TRÊN dải ấy (cao 71px: 10 + 46 + 14 + viền 1), nếu
+ * không nó đè mép phải nút ghi và cướp cú bấm. Hỏi bằng `:has()` theo testid để không phải bắt hai
+ * component biết nhau. */
+@media (max-width: 640px) {
+  :global(body:has([data-testid="nut-ghi-nhat-ky-di-dong"])) .nut_ve_dau {
+    bottom: 84px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .nut_ve_dau {
     transition: none;

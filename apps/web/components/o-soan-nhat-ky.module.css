@@ -1,0 +1,114 @@
+/* Lối vào "ghi nhật ký": ô soạn nhanh (desktop) + nút dính đáy (mobile). Việc 14, đợt C: tách từ
+ * `trang-chu-v2.module.css` để trang chủ và trang lọc nhật ký (`Feed`) dùng CHUNG một bộ CSS.
+ * Chỉ token đã có; không màu mới. */
+
+/* Ô soạn nhanh: trông như một ô nhập nhưng là LINK tới `/dang-mach`. */
+.soan_nhanh {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.o_soan {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  background: var(--inset);
+  color: var(--ink-3);
+  font-family: var(--f-ui);
+  font-size: 13.5px;
+}
+
+.o_soan:hover {
+  border-color: var(--accent);
+  color: var(--ink-2);
+}
+
+.soan_dong {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 14px;
+}
+
+.goi_y {
+  font-family: var(--f-ui);
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+/* Nút pill nền `--ink` (cùng khuôn nút "Đăng ký" của thanh tài khoản). Chữ nút là `--bg`
+ * chứ không trắng cứng: ở theme tối `--ink` là màu sáng, chữ trắng trên nền sáng thì mất chữ. */
+.nut_mo {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--bg);
+  font-family: var(--f-ui);
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  transition: background 0.15s ease;
+}
+
+.nut_mo:hover {
+  background: var(--ink-2);
+  color: var(--bg);
+}
+
+.nut_mo:focus-visible,
+.o_soan:focus-visible,
+.nut_ghi:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* Nút dính đáy: chỉ mobile. */
+.dinh_day {
+  display: none;
+}
+
+/* --- mobile (≤ 640px) -------------------------------------------------------------------- */
+@media (max-width: 640px) {
+  /* Mobile không có ô soạn nhanh — thay bằng nút dính đáy "Ghi nhật ký". */
+  .soan_nhanh {
+    display: none;
+  }
+
+  .dinh_day {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    display: block;
+    margin: 12px -12px 0;
+    padding: 10px 16px 14px;
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+  }
+
+  .nut_ghi {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 46px;
+    border-radius: 8px;
+    background: var(--brand);
+    color: var(--on-brand);
+    font-family: var(--f-ui);
+    font-size: 14px;
+    font-weight: 600;
+  }
+}

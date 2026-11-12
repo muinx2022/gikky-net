@@ -422,10 +422,16 @@ test.describe("W4 — ô soạn nhanh, tab lọc, dải chân khối", () => {
         .getByTestId("the-mach")
         .evaluateAll((els) => els.map((e) => Number((e as HTMLElement).dataset.machId)));
       expect(ids).toEqual(mong.items.map((m) => m.id));
-      // Mọi thẻ đúng trạng thái: thẻ cũ chỉ có chữ "đã đóng sổ" khi đóng.
-      const chip = page.getByTestId("bo-loc-trang-thai");
-      await expect(chip).toContainText(tt === "open" ? "Đang mở" : "Đã đóng sổ");
-      await expect(chip.getByRole("link")).toHaveAttribute("href", "/?tab=moi&loai_mach=nhat_ky");
+      // Đợt C (việc 14): lọc loại Nhật ký thì hàng Trạng thái thay chip "Trạng thái: … ✕ Bỏ lọc"
+      // (hiện cả hai là báo một bộ lọc hai lần): mục đang chọn mang `aria-current`, "Tất cả" trỏ về
+      // URL không lọc trạng thái. Chip chỉ còn cho URL mà hàng không hiện — bài đo riêng ở
+      // `e2e/dai-dieu-khien-feed.spec.ts`.
+      await expect(page.getByTestId("bo-loc-trang-thai")).toHaveCount(0);
+      await expect(page.getByTestId(`loc-trang-thai-${tt}`)).toHaveAttribute("aria-current", "true");
+      await expect(page.getByTestId("loc-trang-thai-tat-ca")).toHaveAttribute(
+        "href",
+        "/?tab=moi&loai_mach=nhat_ky",
+      );
       // Bộ lọc đi xuyên qua link tab và link 'xem thêm' (cursor) của trang.
       expect(await page.getByTestId("tab-nhieu-diem").getAttribute("href")).toContain(`trang_thai=${tt}`);
       if (mong.cursor_ke_tiep !== null) {
@@ -441,6 +447,7 @@ test.describe("W4 — ô soạn nhanh, tab lọc, dải chân khối", () => {
     expect(r.status()).toBe(200);
     await page.goto("/?tab=moi&trang_thai=abc");
     await expect(page.getByTestId("bo-loc-trang-thai")).toHaveCount(0);
+    await expect(page.getByTestId("loc-trang-thai")).toHaveCount(0);
     const khong_loc = await api<FeedOut>("/api/v1/feeds/moi?limit=20");
     expect(
       await page

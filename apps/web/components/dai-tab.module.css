@@ -1,0 +1,56 @@
+/* Dải tab gạch chân dùng CHUNG — việc 14, đợt C (plan `2026-11-11-thong-nhat-giao-dien-toan-site.md`
+ * §4.2): hàng Trạng thái (Tất cả · Đang mở · Đã đóng sổ) của `Feed` và dải tab của khối nhật ký
+ * trên trang chủ (`trang-chu-v2.tsx`) là CÙNG một kiểu nhìn, để bấm từ trang chủ sang trang lọc là
+ * thấy đúng dải ấy với đúng mục vừa bấm đang sáng. Trước đợt C các rule này nằm trong
+ * `trang-chu-v2.module.css`; chép sang `feed.module.css` là hai bản sẽ trôi khỏi nhau.
+ *
+ * Link thật tới feed có lọc, không phải nút đổi state. Chỉ token đã có; không màu mới. */
+
+.tab {
+  display: flex;
+  gap: 22px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.mot_tab {
+  display: inline-flex;
+  align-items: center;
+  height: 40px;
+  border-bottom: 2px solid transparent;
+  color: var(--ink-3);
+  font-family: var(--f-ui);
+  font-size: 13.5px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.mot_tab:hover {
+  color: var(--ink);
+}
+
+.mot_tab:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.tab_dang_chon {
+  border-bottom-color: var(--ink);
+  color: var(--ink);
+}
+
+/* Mobile (≤ 640px): dải tràn ra mép bằng đúng gutter 12px của khung, vùng bấm 44px. */
+@media (max-width: 640px) {
+  .tab {
+    gap: 20px;
+    margin-right: -12px;
+    margin-left: -12px;
+    padding: 0 12px;
+  }
+
+  .mot_tab {
+    height: 44px;
+  }
+}

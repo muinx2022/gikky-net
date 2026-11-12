@@ -4,8 +4,15 @@ import { notFound } from "next/navigation";
 import { Feed } from "@/components/feed";
 import { NutTheoSub } from "@/components/nut-theo-sub";
 import { Sidebar } from "@/components/sidebar";
-import { docCacSub, docFeedSub, docKhoang, docLoaiMach, docSub, docTab } from "@/lib/api";
-import { dongSoMachSub } from "@/lib/dinh-dang";
+import {
+  docCacSub,
+  docFeedSub,
+  docKhoang,
+  docLoaiMach,
+  docSub,
+  docTab,
+  docTrangThai,
+} from "@/lib/api";
 import { urlTuyetDoi } from "@/lib/site";
 import { duongDanSub } from "@/lib/url";
 
@@ -84,13 +91,22 @@ export default async function TrangSub({
   // `?loai_mach=` lạ / rỗng ⇒ `undefined` = "Tất cả" (không 500): `docLoaiMach` quy rác về
   // "không lọc" ở tầng URL, cùng lý lẽ với `docTab`/`docKhoang` ngay trên.
   const loaiMach = docLoaiMach(q.loai_mach);
+  // `?trang_thai=` (việc 14, đợt C): hàng Trạng thái của `Feed` mở cho trang chuyên mục. Giá trị lạ ⇒ không
+  // lọc, cùng lý lẽ với `docLoaiMach`. `docFeedSub` tự bỏ nó ở tab "Đang diễn ra".
+  const trangThai = docTrangThai(q.trang_thai);
 
   // API trả 404 `sub_khong_ton_tai` cho slug lạ — `docFeedSub` quy nó về `null`, và trang
   // sub không tồn tại phải là 404 thật chứ không phải một feed rỗng trông như bình thường.
   // Hàm RIÊNG cho nhánh có sub (vá F1): đây là chỗ duy nhất `null` có nghĩa thật, nên chỉ
   // chỗ này được nhận một kiểu nullable.
   const [{ du_lieu: feed, cursorHong }, chi_tiet, cac_sub] = await Promise.all([
-    docFeedSub(sub, tab, { cursor, khoang, truong_phai: truongPhai, loai_mach: loaiMach }),
+    docFeedSub(sub, tab, {
+      cursor,
+      khoang,
+      truong_phai: truongPhai,
+      loai_mach: loaiMach,
+      trang_thai: trangThai,
+    }),
     docSub(sub),
     docCacSub(),
   ]);
@@ -109,6 +125,7 @@ export default async function TrangSub({
       sub={sub}
       truongPhai={truongPhai}
       loaiMach={loaiMach}
+      trangThai={trangThai}
       sidebar={<Sidebar sub={chi_tiet} cacSub={cac_sub} />}
       // X9 — **không** truyền kèm `tieuDe`/`lede` nữa: có `header` thì hai prop ấy không
       // render ở đâu, và `lede={chi_tiet.mo_ta}` là bản sao thứ hai của `mo_ta` không ai
@@ -119,9 +136,8 @@ export default async function TrangSub({
             <p className={`${css.slug} mono`}>s/{chi_tiet.slug}</p>
             <h1 className={css.ten}>{chi_tiet.ten}</h1>
             <p className={css.mo_ta}>{chi_tiet.mo_ta}</p>
-            <p className={`${css.so} mono`} data-testid="sub-header-so">
-              {dongSoMachSub(chi_tiet.so_mach, chi_tiet.created_at)}
-            </p>
+            {/* Dòng "N mạch · lập …" KHÔNG ở đây nữa (việc 14, đợt C, T4): nó sống ở khối "Về s/…"
+                của rail (`sidebar-so-mach`), mô tả sống ở header — mỗi thứ đúng MỘT lần trên trang. */}
           </div>
           {/* Client component: trang này render ở SERVER và cache được (PLAN 8.4), nên
               "tôi có theo chuyên mục này không" phải hỏi riêng ở trình duyệt. Xem
