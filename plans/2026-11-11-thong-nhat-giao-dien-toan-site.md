@@ -111,6 +111,13 @@ Ba hàng, từ trên xuống, URL không đổi:
 
 Luật cũ giữ: đổi tab rớt `cursor`, giữ `khoang`; tab "Đang diễn ra" bỏ `trang_thai` (`trangThaiGuiLenApi`).
 
+**Quyết định bổ sung khi làm đợt C (2026-11-12):** đổi loại (hàng 1) thì RỚT `trang_thai` (giữ là lọc ngầm sang loại
+khác); URL có `trang_thai` mà hàng 2 không hiện (`/?tab=moi&trang_thai=open`, loại khác nhật ký) giữ chip "Trạng thái: … ✕
+Bỏ lọc", chữ "Đã đóng" cho loại không phải nhật ký; `hrefTrangThai` dựng từ `hrefChipLoai` — một trạng thái một URL, ở `/`
+luôn có `tab=` (không thì chip "Tất cả" đẩy về trang chủ v2); `CuonVoHan` mang `key` = toàn bộ bộ lọc (cursor API không
+mang bộ lọc ⇒ đổi bộ lọc qua điều hướng client từng giữ thẻ của bộ lọc cũ); có `<h2>` loại thì thẻ là `<h3>`; `<h2>` đổi
+theo trạng thái ("Nhật ký đang mở" / "Nhật ký đã đóng sổ"); mobile: nút về đầu trang nhích lên trên nút dính đáy "Ghi nhật ký".
+
 Home: dải tab của khối nhật ký đổi mục đầu từ "Mới nhất" thành "Tất cả" cho khớp hàng 2? **Không** — ở home mục đầu
 là chính khối (mỗi tác giả một bài), giữ chữ "Mới nhất"; hai mục kia khớp chữ với hàng 2.
 
