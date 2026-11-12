@@ -1,6 +1,6 @@
 # Sửa giao diện mobile toàn site (đợt M)
 
-> **Trạng thái:** USER ĐÃ DUYỆT (2026-11-12), CHẠY SAU ĐỢT D việc 14 (đợt D đụng `the-mach.tsx`; đợt này đụng `the-mach.module.css` — không
+> **Trạng thái:** ĐÃ LÀM (2026-11-12, sau đợt D `80fd5cd`), chờ commit. USER ĐÃ DUYỆT plan 2026-11-12 (đợt D đụng `the-mach.tsx`; đợt này đụng `the-mach.module.css` — không
 > chạy song song). Nhánh `v2`. Sổ việc: `GHI-CHU.md` việc 16.
 >
 > **Nền khi giao thợ:** ghi lúc giao (commit của đợt D, số bài `pnpm e2e:don-vi`, số đỏ e2e đầy đủ). Thợ đứng ở cây có số
@@ -87,7 +87,9 @@ margin âm hoặc `::after` — **không** làm vỡ bố cục desktop.
 - **Trang form (M8):** trên mobile không vẽ rail dưới form (các trang này `noindex` — thợ kiểm từng trang; trang nào
   index được thì giữ rail). Khung form `/dang-mach` bỏ lề kép trên mobile để ô nhập rộng gần hết màn.
 - **Đầu hồ sơ (M9):** tên không dồn quá 2 dòng ở 390px (nút "Sửa hồ sơ" xuống dưới tên hoặc thu gọn); ô thống kê đủ viền.
-- **Khoảng trống (M11):** bỏ dải trống cuối khối nhật ký home (nút dính đáy không chiếm chỗ trong luồng khi không dính);
+- **Khoảng trống (M11):** *(Chốt khi làm, 2026-11-12: phần home KHÔNG sửa — "dải trống ~100px" là ảnh giả của chụp
+  `fullPage` (dải sticky vẽ ở vị trí đang dính); cuộn thật thì cuối khối là chính nút ghi nằm trong luồng. Nghiệm thu
+  xác nhận bằng ảnh `home-cuoi-nhat-ky.png`.)* Bỏ dải trống cuối khối nhật ký home (nút dính đáy không chiếm chỗ trong luồng khi không dính);
   gọn khoảng quanh ô bình luận trang mạch.
 - **Bảng lệnh (M12):** ≤ 400px chuyển 2 cột hoặc cỡ chữ giá trị nhỏ lại — không tràn, không cắt số.
 - **Hàng sắp xếp (M10):** mobile có chữ ngắn (vd "Mới · Diễn ra · Nổi bật") thay vì chỉ icon; vẫn ≥ 44px; giữ testid.
