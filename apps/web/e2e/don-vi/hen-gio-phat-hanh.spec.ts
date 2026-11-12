@@ -28,7 +28,6 @@ test("T5a — thẻ · trang mạch · tìm kiếm · JSON-LD · RSS dùng publi
   const files: [string, string][] = [
     [WEB, "components/the-mach.tsx"],
     [WEB, "components/trang-mach.tsx"],
-    [WEB, "components/ket-qua-tim-kiem.tsx"],
     [WEB, "lib/json-ld.ts"],
     [WEB, "app/feed.xml/route.ts"],
     [WEB, "app/s/[sub]/feed.xml/route.ts"],
@@ -44,6 +43,13 @@ test("T5a — thẻ · trang mạch · tìm kiếm · JSON-LD · RSS dùng publi
     }
   }
   expect(hong, hong.join(" · ")).toEqual([]);
+
+  // Tìm kiếm (đợt D thống nhất giao diện, 2026-11-12): ngày của kết quả MẠCH nay do `TheMach`
+  // in (đã đo ở trên), nên file tìm kiếm không còn tự nhắc `published_at`. Ghim rằng nó đúng là
+  // đi qua `TheMach` và không tự in ngày mạch bằng `created_at`.
+  const tim = doc(WEB, "components/ket-qua-tim-kiem.tsx");
+  expect(tim).toContain("<TheMach");
+  expect(tim).not.toMatch(/\b(mach|m)\.created_at\b/);
 });
 
 test("T5b — mốc 1 đọc published_at (nhánh seq === 1)", () => {

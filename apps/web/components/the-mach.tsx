@@ -1,6 +1,7 @@
 import type { MachTomTatOut } from "@gikky/api-client";
 import { Bot, GitCommitHorizontal, MessageCircle } from "lucide-react";
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 import { CHU_NGUOI_DUNG } from "@/lib/chu-nguoi-dung";
 import { nhanNoiMoc, ngayCuaThoiDiem } from "@/lib/dinh-dang";
@@ -56,6 +57,15 @@ import css from "./the-mach.module.css";
  * của một lượt có chủ đích, đừng làm tiện tay. Riêng ba dấu không có đôi bên kia (`nhan-loai`,
  * `the-mach-da-luu-tru`, `the-mach-rieng-tu`) giữ nguyên tên.
  *
+ * ## Trang tìm kiếm: `khop` thay NỘI DUNG, không thay khung (đợt D)
+ *
+ * `/tim-kiem` dùng chính thẻ này (plan §8.1 — user chốt thẻ mới áp cả cho tìm kiếm), chỉ khác hai
+ * chỗ chữ: tiêu đề có chỗ khớp tô `<mark>`, và đoạn trích là ĐOẠN KHỚP của API (`doan_trich`) thay
+ * cho trích 3 dòng tự sinh từ mốc 1. Hai thứ ấy đi vào qua `khop` dưới dạng node đã dựng sẵn, nên
+ * thẻ không biết gì về dấu `[[…]]` hay về tìm kiếm — cùng thẻ, cùng DOM, cùng testid. `khop.trich
+ * = null` ⇒ KHÔNG có đoạn trích (mốc 1 là bia mộ / bị ẩn, hoặc đọc được mà chỉ có ảnh), tuyệt đối
+ * không rơi về `xem_truoc.trich`; ảnh nhỏ thì vẫn lấy từ `xem_truoc` như mọi trang.
+ *
  * Server component, một HTML cho mọi người. Các nút có state (vote, theo dõi, chia sẻ, mod) là
  * client component riêng; thẻ này không import thứ gì server-only nên `CuonVoHan` (client) vẫn
  * dựng được nó cho trang nạp thêm.
@@ -65,18 +75,22 @@ export function TheMach({
   capHeading = 2,
   hienNhanLoai = false,
   anTheoDoi = false,
+  khop,
 }: {
   mach: MachTomTatOut;
   /** Cấp heading của tiêu đề thẻ. Mặc định 2 (feed, hồ sơ); trang chủ truyền 3 vì thẻ nằm dưới
    * `<h2>Nhật ký mới</h2>` của khối. */
   capHeading?: 2 | 3;
   /** Hiện nhãn loại ("Nhật ký" / "Bài viết" / "Chủ đề") ở hàng đầu. Mặc định `false` — chỉ
-   * trang chuyên mục `/s/<sub>` bật nó (chuyên mục lẫn cả ba loại nên thẻ phải tự nói mình
-   * thuộc loại nào). Mọi chỗ khác để mặc định. */
+   * trang chuyên mục `/s/<sub>` và trang tìm kiếm bật nó (hai danh sách lẫn cả ba loại nên thẻ
+   * phải tự nói mình thuộc loại nào). Mọi chỗ khác để mặc định. */
   hienNhanLoai?: boolean;
   /** Bỏ nút "Theo dõi" tác giả ở chân thẻ. Hồ sơ `/u/<x>` bật nó cho thẻ của CHÍNH chủ trang (header
    * đã có nút ấy; 20 nút trùng chỉ là ồn và là 20 chỗ phải giữ đồng bộ). Mặc định `false`. */
   anTheoDoi?: boolean;
+  /** Chỉ trang tìm kiếm: chữ tiêu đề (đặt TRONG link tiêu đề) và đoạn trích (thay trích tự sinh;
+   * `null` ⇒ không đoạn trích) đã tô chỗ khớp. Xem mục "Trang tìm kiếm" ở trên. */
+  khop?: { tieuDe: ReactNode; trich: ReactNode | null };
 }) {
   const Heading = capHeading === 3 ? "h3" : "h2";
   const href = duongDanMach(mach.slug, mach.id);
@@ -84,6 +98,7 @@ export function TheMach({
   const lenh = mach.lenh ?? null;
   const anh = mach.xem_truoc?.anh ?? null;
   const trich = mach.xem_truoc?.trich ?? "";
+  const co_trich = khop ? khop.trich !== null : trich !== "";
   const ten = tenHienThi(mach.author);
   /** Số ảnh còn lại ngoài ảnh đang hiện (huy hiệu "+N" trên ảnh nhỏ) — như thẻ feed cũ. */
   const con_lai = Math.max(0, (mach.xem_truoc?.so_anh ?? 0) - 1);
@@ -191,7 +206,7 @@ export function TheMach({
 
       <Heading className={css.tieu_de}>
         <Link href={href} prefetch={false} {...CHU_NGUOI_DUNG}>
-          {mach.title}
+          {khop ? khop.tieuDe : mach.title}
         </Link>
       </Heading>
 
@@ -226,11 +241,11 @@ export function TheMach({
       {/* Nội dung xem trước lấy từ MỐC 1. `xem_truoc` là `null` khi mốc 1 là bia mộ hoặc bị
           mod ẩn: thẻ khi đó chỉ còn tiêu đề và **không** thông báo gì — feed không phải chỗ kể
           chuyện kiểm duyệt (`api/trinh_bay.py::du_lieu_the`). */}
-      {(trich !== "" || anh !== null) && (
+      {(co_trich || anh !== null) && (
         <div className={css.than} data-testid="the-nhat-ky-than">
-          {trich !== "" ? (
+          {co_trich ? (
             <p className={css.trich} data-testid="the-nhat-ky-trich" {...CHU_NGUOI_DUNG}>
-              {trich}
+              {khop ? khop.trich : trich}
             </p>
           ) : (
             <span className={css.trich} />

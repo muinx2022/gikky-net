@@ -130,10 +130,24 @@ test.describe("hàng rào nguồn", () => {
     }
   });
 
-  test("mọi file khác (hồ sơ, tìm kiếm, trang chủ…) không truyền `hienNhanLoai`", () => {
+  test("mọi file khác (hồ sơ, trang chủ…) không truyền `hienNhanLoai`; tìm kiếm bật CỐ ĐỊNH", () => {
+    // Tìm kiếm (đợt D thống nhất giao diện, 2026-11-12): kết quả là `TheMach` và danh sách luôn lẫn
+    // cả ba loại mạch ⇒ nhãn loại bật cố định (prop trần, không theo điều kiện nào) — plan §4.1.
+    const tim = nguon().find((f) => f.ten === "components/ket-qua-tim-kiem.tsx");
+    expect(tim, "đo rỗng: không thấy ket-qua-tim-kiem.tsx").toBeDefined();
+    expect(tim!.sach).toMatch(/<TheMach[^>]*\shienNhanLoai\s/);
+    expect(tim!.sach, "tìm kiếm bật nhãn cố định, không theo biểu thức").not.toContain("hienNhanLoai=");
     for (const f of nguon()) {
-      // the-mach.tsx là nơi ĐỊNH NGHĨA prop; feed/cuon-vo-han là hai nơi được bật.
-      if (["components/the-mach.tsx", "components/feed.tsx", "components/cuon-vo-han.tsx"].includes(f.ten)) continue;
+      // the-mach.tsx là nơi ĐỊNH NGHĨA prop; feed/cuon-vo-han là hai nơi được bật theo `sub`.
+      if (
+        [
+          "components/the-mach.tsx",
+          "components/feed.tsx",
+          "components/cuon-vo-han.tsx",
+          "components/ket-qua-tim-kiem.tsx",
+        ].includes(f.ten)
+      )
+        continue;
       expect(f.sach, f.ten).not.toContain("hienNhanLoai");
     }
   });

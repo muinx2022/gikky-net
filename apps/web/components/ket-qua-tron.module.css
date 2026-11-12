@@ -1,14 +1,9 @@
-/* Phần thêm cho dòng kết quả **bình luận** — 2026-08-30.
+/* Phần RIÊNG của dòng kết quả **bình luận** — 2026-08-30, sửa ở đợt D (2026-11-12).
  *
- * ## Vì sao là một file thứ hai chứ không thêm vào `ket-qua-tim-kiem.module.css`
- *
- * File ấy đang do một phiên khác sửa dở (`git status` báo `M` lúc bắt đầu lượt này), và
- * luật của `D:/Projects/CLAUDE.md` là **không đụng file phiên khác đang làm**. Hai lớp
- * dùng chung một dòng `<li>` là chuyện bình thường của CSS Modules; cái phải giữ là
- * chúng đừng khai trùng tên class — nên mọi thứ ở đây mang tên riêng, không có `.dong`,
- * `.dau`, `.title` thứ hai.
- *
- * Gộp lại làm một file là việc dọn dẹp của lượt sau, khi hai phiên đã ngừng giẫm chân. */
+ * Khung của dòng (viền, nền, bo góc, padding, hàng đầu avatar · tên · ngày) KHÔNG ở đây: dòng
+ * mượn thẳng các class của `the-mach.module.css` để đứng xen kẽ với thẻ mạch mà danh sách vẫn
+ * đọc như một (xem docstring `ket-qua-tim-kiem.tsx`). File này chỉ giữ những thứ thẻ mạch không
+ * có: nhãn "Bình luận", dòng ngữ cảnh "trong «…»", thân câu, và cái link bọc cả dòng. */
 
 /* Nhãn "Bình luận" — chữ của ỨNG DỤNG nói về loại dòng, không phải chữ người dùng.
  *
@@ -28,13 +23,24 @@
   text-transform: uppercase;
 }
 
-/* Dòng ngữ cảnh: "của u/… trong «tiêu đề mạch»". Đây là thứ làm một kết quả bình luận
-   đọc được — một câu trơ trọi không nói được nó thuộc cuộc trò chuyện nào. */
+/* Tên người viết. Cùng cỡ / màu / cắt chữ với `.ten` của thẻ mạch (cỡ chữ đến từ `.dong_ten`), nhưng
+   KHÔNG mượn `.ten`: nó gạch chân khi hover vì ở thẻ mạch nó là link hồ sơ, còn ở đây nó chỉ là
+   chữ trong link tới bình luận — gạch chân là hứa một đích không có. */
+.ten {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Dòng ngữ cảnh: "trong «tiêu đề mạch»". Đây là thứ làm một kết quả bình luận đọc được — một
+   câu trơ trọi không nói được nó thuộc cuộc trò chuyện nào. */
 .trong_mach {
-  margin: 3px 0 4px;
   font-size: 13px;
   line-height: 1.45;
   color: var(--ink-3);
+  overflow-wrap: anywhere;
 }
 
 /* Tiêu đề mạch ở dòng ngữ cảnh là một `<span>`, KHÔNG phải một `<a>` thứ hai: cả khối
@@ -49,25 +55,29 @@
   color: var(--accent);
 }
 
-/* Thân câu bình luận. Cùng bộ số với `.trich` của dòng mạch — hai loại dòng nằm xen kẽ
-   trong MỘT danh sách, nên chữ chính của chúng phải cùng cỡ; lệch một pixel là danh sách
-   trông như hai danh sách bị dán vào nhau. */
+/* Thân câu bình luận. Cùng bộ số với `.trich` của `the-mach.module.css` (13px / 1.55 / 3 dòng) —
+   hai loại dòng nằm xen kẽ trong MỘT danh sách, nên chữ chính của chúng phải cùng cỡ. */
 .cau {
-  font-size: 13.5px;
-  line-height: 1.55;
-  color: var(--ink-2);
-  margin: 0;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
+  min-width: 0;
   overflow: hidden;
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
 }
 
-/* Cả khối bình luận là một liên kết tới đúng neo `#bl-<id>` trên trang mạch. Bọc ngoài
+/* Cả dòng bình luận là một liên kết tới đúng neo `#bl-<id>` trên trang mạch. Bọc ngoài
    thay vì chỉ bọc tiêu đề: dòng này không có tiêu đề, và bắt người ta nhắm vào một câu
-   ba dòng để tìm chỗ bấm là thứ chỉ chuột mới làm được. */
+   ba dòng để tìm chỗ bấm là thứ chỉ chuột mới làm được. Cột flex + `gap` bằng `.the` để
+   nhịp dọc của dòng bình luận khớp nhịp của thẻ mạch đứng cạnh. */
 .den_cau {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
   color: inherit;
   text-decoration: none;
 }

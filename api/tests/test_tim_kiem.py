@@ -377,6 +377,85 @@ def test_mot_truy_van_cho_moi_loai_khong_phai_mot_cho_moi_dong(
     assert dem(2) == dem(6)
 
 
+def _mach_du_nhanh(sub, author, ten: str):
+    """Mạch có ảnh gallery ở mốc 1 (2 ảnh ⇒ "+1") và mốc 2 đạt chuẩn ⇒ mọi nhánh của
+    `du_lieu_the` (ảnh, trích, mốc mới nhất) đều chạy."""
+    from core.ghi import tao_mach, them_moc
+    from core.models import MocAnh
+
+    m, moc1 = tao_mach(sub=sub, author=author, title=f"Mạch {ten}", body=f"Mốc 1 của {ten}.")
+    for i in range(2):
+        MocAnh.objects.create(
+            moc=moc1,
+            khoa_luu_tru=f"tk-{ten}-{i}.jpg",
+            status=MocAnh.TrangThai.XAC_NHAN,
+            position=i,
+            w=800,
+            h=600,
+        )
+    them_moc(mach=m, author=author, body="Mốc hai đủ dài để qua cổng. " * 3)
+    m.refresh_from_db()
+    return m
+
+
+@pytest.mark.django_db
+def test_the_mach_tim_kiem_GIONG_the_feed_cung_mach(client, gia_meili, sub, nguoi_a):
+    """Đợt D thống nhất giao diện (2026-11-12): trang tìm kiếm dựng CHÍNH thẻ feed (`TheMach`).
+
+    Thẻ tìm kiếm của một mạch phải mang đúng `xem_truoc` (ảnh nhỏ, "+N ảnh", trích) và
+    `moc_moi_nhat` ("· nối mốc") như thẻ `GET /feeds/moi` của CÙNG mạch. Bản trước chỉ nạp
+    `moc_1_id` ⇒ hai trường kia luôn `null` và thẻ tìm kiếm thiếu ảnh / dòng nối mốc — mạch
+    Bot Trader mốc 1 chỉ có ảnh thì chỉ còn tiêu đề. Đo cả dòng BÌNH LUẬN (thẻ mạch ngữ cảnh).
+    """
+    from core.ghi import tao_mach
+
+    co_anh = _mach_du_nhanh(sub, nguoi_a, "có ảnh")
+    mot_moc, _ = tao_mach(sub=sub, author=nguoi_a, title="Mạch một mốc", body="Chỉ một mốc.")
+    c = viet(co_anh, nguoi_a, "Bình luận trong mạch có ảnh.")
+    gia_meili([co_anh.pk, mot_moc.pk, bl(c.pk)])
+
+    items = lay(client, "/api/v1/tim-kiem?q=mạch")["items"]
+    assert [(k["loai"], k["mach"]["id"]) for k in items] == [
+        ("mach", co_anh.pk),
+        ("mach", mot_moc.pk),
+        ("binh_luan", co_anh.pk),
+    ]
+    feed = {m["id"]: m for m in lay(client, "/api/v1/feeds/moi?limit=50")["items"]}
+    for k in items:
+        f = feed[k["mach"]["id"]]
+        for truong in ("moc_1_id", "xem_truoc", "moc_moi_nhat"):
+            assert k["mach"][truong] == f[truong], (k["loai"], k["mach"]["id"], truong)
+
+    # Chống đo rỗng: các nhánh có dữ liệu thật, không phải `null == null`.
+    the = items[0]["mach"]
+    assert the["xem_truoc"]["anh"] is not None and the["xem_truoc"]["so_anh"] == 2
+    assert the["moc_moi_nhat"] is not None and the["moc_moi_nhat"]["seq"] == 2
+    assert items[1]["mach"]["xem_truoc"]["trich"] and items[1]["mach"]["moc_moi_nhat"] is None
+
+
+@pytest.mark.django_db
+def test_mot_truy_van_cho_LO_the_mach_khong_phai_mot_cho_moi_mach(
+    client, gia_meili, sub, nguoi_a
+):
+    """Trần số truy vấn cho dòng MẠCH (dữ liệu thẻ: mốc 1, ảnh, mốc mới nhất) — N+1 ở
+    `du_lieu_the` không đỏ ở đâu khác. "2 mạch đủ nhánh" phải tốn đúng bằng "6 mạch"."""
+
+    def dem(so: int, tu: int) -> int:
+        from django.db import connection, reset_queries
+        from django.test.utils import CaptureQueriesContext
+
+        ms = [_mach_du_nhanh(sub, nguoi_a, f"n{tu + i}") for i in range(so)]
+        gia_meili([m.pk for m in ms])
+        reset_queries()
+        with CaptureQueriesContext(connection) as bat:
+            du = lay(client, "/api/v1/tim-kiem?q=mạch")
+        assert len(du["items"]) == so
+        assert all(k["mach"]["xem_truoc"]["anh"] for k in du["items"])
+        return len(bat)
+
+    assert dem(2, 0) == dem(6, 10)
+
+
 # --- XUỐNG THANG (S7) --------------------------------------------------------
 
 

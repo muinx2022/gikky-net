@@ -152,7 +152,7 @@ export default async function TrangTimKiem({
                   xuất hiện nhiều lần trong cùng trang (một dòng cho chính nó, thêm vài
                   dòng cho các bình luận của nó). `key={kq.mach.id}` cũ là khoá TRÙNG —
                   React cảnh báo, rồi tái dùng nhầm nút DOM khi lật trang. */}
-              <ul className={css.danh_sach}>
+              <ul className={css.danh_sach} data-testid="danh-sach-ket-qua">
                 {ket.items.map((kq) => (
                   <DongKetQua
                     key={`${kq.loai}-${kq.binh_luan_id ?? kq.mach.id}`}

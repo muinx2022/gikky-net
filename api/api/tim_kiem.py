@@ -71,7 +71,7 @@ from api.loi import (
 )
 from api.phan_trang import GIOI_HAN_MAC_DINH, kiem_gioi_han
 from api.schemas import GoiYOut, KetQuaTronOut, TimKiemGoiYOut, TimKiemOut
-from api.trinh_bay import mach_tom_tat_ra, moc_1_theo_mach, nguoi_dung_ra
+from api.trinh_bay import DuLieuThe, du_lieu_the, mach_tom_tat_ra, nguoi_dung_ra
 
 logger = logging.getLogger(__name__)
 
@@ -316,8 +316,8 @@ def _dung_ket_qua(cap: list[tuple[str, int]], cau: str) -> list[KetQuaTronOut]:
     trang ngắn đi một dòng; đó là cái giá đã chọn ở docstring module, và nó rẻ hơn vô hạn
     so với rò nội dung đã ẩn.
 
-    **Hai truy vấn, không phải 2N.** Gom id theo loại rồi hỏi Postgres một lần cho mỗi
-    loại; vòng lặp cuối chỉ tra `dict`. Một `Comment.objects.get()` trong vòng lặp là
+    **Số truy vấn cố định, không phải N.** Gom id theo loại rồi hỏi Postgres một lần cho
+    mỗi loại, cộng một lô `du_lieu_the` cho dữ liệu thẻ; vòng lặp cuối chỉ tra `dict`. Một `Comment.objects.get()` trong vòng lặp là
     N+1 trên mọi trang kết quả, và nó không đỏ ở đâu — chỉ chậm dần theo số dòng.
     """
     if not cap:
@@ -332,12 +332,27 @@ def _dung_ket_qua(cap: list[tuple[str, int]], cau: str) -> list[KetQuaTronOut]:
     if not mach_theo_id and not bl_theo_id:
         return []
 
-    # `moc_1_id` là đích của mũi tên vote trên thẻ mạch, và dòng bình luận cũng mang một
-    # thẻ mạch ngữ cảnh — nên LÔ phải gồm cả mạch của các bình luận, khử trùng theo pk.
+    # Thẻ mạch của trang tìm kiếm là CHÍNH thẻ feed (`TheMach`, đợt D thống nhất giao diện
+    # 2026-11-12), nên dữ liệu thẻ đi đúng đường feed: `du_lieu_the` cho `moc_1_id` (đích mũi
+    # tên vote), `xem_truoc` (ảnh nhỏ, "+N ảnh") và `moc_moi_nhat` ("· nối mốc"), với CÙNG
+    # luật che mốc 1 bia mộ / bị ẩn như feed (`doc_duoc`). Trước đó chỉ có `moc_1_theo_mach`
+    # ⇒ thẻ tìm kiếm của một mạch thiếu ảnh và dòng nối mốc mà thẻ feed của cùng mạch có.
+    # Dòng bình luận cũng mang một thẻ mạch ngữ cảnh — nên LÔ gồm cả mạch của các bình luận,
+    # khử trùng theo pk. Số truy vấn cố định theo trang, không theo số dòng (xem
+    # `du_lieu_the`; `tests/test_tim_kiem.py` ghim).
     moi_mach = {m.pk: m for m in mach_theo_id.values()}
     for c in bl_theo_id.values():
         moi_mach.setdefault(c.mach_id, c.mach)
-    moc_1 = moc_1_theo_mach(list(moi_mach.values()))
+    the_theo_mach = du_lieu_the(list(moi_mach.values()))
+
+    def the_ra(m):
+        d = the_theo_mach.get(m.pk, DuLieuThe())
+        return mach_tom_tat_ra(
+            m,
+            moc_1_id=d.moc_1_id,
+            xem_truoc=d.xem_truoc,
+            moc_moi_nhat=d.moc_moi_nhat,
+        )
 
     tu_khoa = [t for t in cau.split() if t]
     than = (
@@ -353,7 +368,7 @@ def _dung_ket_qua(cap: list[tuple[str, int]], cau: str) -> list[KetQuaTronOut]:
             ra.append(
                 KetQuaTronOut(
                     loai="mach",
-                    mach=mach_tom_tat_ra(m, moc_1_id=moc_1.get(m.pk)),
+                    mach=the_ra(m),
                     title_to_dam=_boc(m.title, tu_khoa),
                     doan_trich=_to_dam(
                         than.get(m.pk, ""), tu_khoa, dai=DAI_DOAN_TRICH
@@ -370,7 +385,7 @@ def _dung_ket_qua(cap: list[tuple[str, int]], cau: str) -> list[KetQuaTronOut]:
         ra.append(
             KetQuaTronOut(
                 loai="binh_luan",
-                mach=mach_tom_tat_ra(c.mach, moc_1_id=moc_1.get(c.mach_id)),
+                mach=the_ra(c.mach),
                 # Dòng bình luận không có tiêu đề riêng để tô đậm — tiêu đề mạch ở dòng
                 # ngữ cảnh cố ý KHÔNG tô: nó là chỗ đứng, không phải chỗ khớp.
                 title_to_dam="",

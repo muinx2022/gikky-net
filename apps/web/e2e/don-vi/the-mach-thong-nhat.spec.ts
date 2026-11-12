@@ -72,18 +72,22 @@ test("chỉ MỘT component dựng thẻ (`data-testid=\"the-mach\"`), và mọi
   expect(dung, "chỉ the-mach.tsx được phép dựng thẻ danh sách").toEqual(["components/the-mach.tsx"]);
 
   // Năm nơi bày danh sách thẻ mạch (đợt B): khối nhật ký `/`, feed `/?…` + `/s/*`, cuộn vô hạn,
-  // tab hồ sơ, trang hồ sơ. Mỗi nơi phải dựng `<TheMach`, không bản sao riêng.
+  // tab hồ sơ, trang hồ sơ — cộng kết quả tìm kiếm từ đợt D. Mỗi nơi phải dựng `<TheMach`, không
+  // bản sao riêng. (`\s` chứ không dấu cách: JSX nhiều prop xuống dòng ngay sau tên.)
   for (const f of [
     "components/trang-chu-v2.tsx",
     "components/feed.tsx",
     "components/cuon-vo-han.tsx",
     "components/tab-ho-so.tsx",
     "app/u/[username]/page.tsx",
+    "components/ket-qua-tim-kiem.tsx",
   ]) {
     const file = nguon.find((x) => x.ten === f);
     expect(file, `${f} phải tồn tại`).toBeDefined();
-    expect(file!.sach, f).toContain("<TheMach ");
+    expect(file!.sach, f).toMatch(/<TheMach\s/);
   }
+  // Tìm kiếm: hình dạng riêng cũ (`DongMach`) đã gỡ — không quay lại như một bản sao thứ hai.
+  expect(nguon.find((x) => x.ten === "components/ket-qua-tim-kiem.tsx")!.sach).not.toMatch(/\bDongMach\b/);
   // `TheNhatKy` / `NoiDungThe` đã bị gỡ: không file nào còn nhắc tới như một component.
   for (const f of nguon) {
     expect(f.sach, f.ten).not.toMatch(/\b(TheNhatKy|NoiDungThe)\b/);
@@ -91,6 +95,33 @@ test("chỉ MỘT component dựng thẻ (`data-testid=\"the-mach\"`), và mọi
   for (const gone of ["components/the-nhat-ky.tsx", "components/the-nhat-ky.module.css", "components/noi-dung-the.tsx", "components/noi-dung-the.module.css"]) {
     expect(existsSync(resolve(WEB, gone)), `${gone} đã bị gỡ`).toBe(false);
   }
+});
+
+test("tìm kiếm: đoạn khớp đi TRỌN đường — `ket-qua-tim-kiem` truyền `ToDam` vào `khop`, `TheMach` in đúng `khop`", () => {
+  // Đợt D (2026-11-12): thẻ tìm kiếm là `TheMach`, chỗ khớp tô `<mark>` đi vào qua `khop`. Hai
+  // chỗ đứt đều build xanh, lint xanh và không có type nào giữ: (A) `TheMach` lờ `khop` mà in
+  // `mach.title` / trích tự sinh; (B) chỗ gọi truyền `khop` mà không tô (`tieuDe: …title`,
+  // `trich: null`). Bài e2e trình duyệt bắt được cả hai nhưng CẦN Meilisearch — bài này thì không.
+  const tim = quetNguon(resolve(WEB, "components"), /^ket-qua-tim-kiem\.tsx$/)[0].sach;
+  expect(tim).toMatch(/<TheMach[\s\S]*?khop=\{\{/);
+  expect(tim, "tiêu đề phải tô bằng ToDam từ title_to_dam").toMatch(
+    /tieuDe:\s*<ToDam\s+chuoi=\{ket_qua\.title_to_dam\}\s*\/>/,
+  );
+  expect(tim, "đoạn trích: rỗng ⇒ null, còn lại ToDam từ doan_trich").toMatch(
+    /trich:\s*ket_qua\.doan_trich\s*===\s*""\s*\?\s*null\s*:\s*<ToDam\s+chuoi=\{ket_qua\.doan_trich\}\s*\/>/,
+  );
+
+  const the = quetNguon(resolve(WEB, "components"), /^the-mach\.tsx$/)[0].sach;
+  expect(the, "có đoạn trích hay không theo khop.trich khi có khop").toMatch(
+    /co_trich\s*=\s*khop\s*\?\s*khop\.trich\s*!==\s*null\s*:\s*trich\s*!==\s*""/,
+  );
+  expect(the, "link tiêu đề in khop.tieuDe").toMatch(
+    /<Heading[^>]*>\s*<Link[^>]*>\s*\{khop\s*\?\s*khop\.tieuDe\s*:\s*mach\.title\}\s*<\/Link>/,
+  );
+  expect(the, "đoạn trích in khop.trich").toMatch(
+    /data-testid="the-nhat-ky-trich"[^>]*>\s*\{khop\s*\?\s*khop\.trich\s*:\s*trich\}/,
+  );
+  expect(the).toMatch(/\{\(co_trich\s*\|\|\s*anh\s*!==\s*null\)\s*&&/);
 });
 
 test("thẻ in tên qua `tenHienThi` và chip trạng thái theo `loai_mach` (nguồn)", () => {
