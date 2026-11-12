@@ -31,15 +31,6 @@
   display: none;
 }
 
-/* Cùng ô giữ chỗ, SAU hydrate (hễ có phiên lưu, cờ trên `<html>` mất vì lượt hydrate lệch #418 làm
-   React render lại root — đã đo, sổ P-20261111-21): phiên đã lưu nói là thành viên,
-   bề ngang đặt inline từ `docRongTaiKhoan`. */
-.cho_thanh_vien {
-  margin-left: auto;
-  display: inline-block;
-  height: 26px;
-}
-
 /* Từ 2026-08-26 đây là một `<button>` (mở modal đăng nhập), không còn là `<a>`. Bốn
    dòng reset dưới đây là chỗ khác biệt duy nhất — thiếu chúng thì nút mang nền xám,
    viền và font mặc định của user-agent, đứng cạnh nút "Đăng ký" trông như hai nút. */
@@ -199,8 +190,7 @@
   /* Tài khoản cá nhân và nút đăng nhập đã có ở Navigation Rail / Bottom Nav trên màn hình ≤960px */
   .khung,
   .khach,
-  .chua_biet,
-  .cho_thanh_vien {
+  .chua_biet {
     display: none !important;
   }
 

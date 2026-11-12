@@ -32,8 +32,7 @@
   display: none;
 }
 
-:global(html[data-da-dang-nhap="1"]) .cho_nut,
-.cho_nut_giu {
+:global(html[data-da-dang-nhap="1"]) .cho_nut {
   display: inline-block;
   width: 36px;
   height: 36px;

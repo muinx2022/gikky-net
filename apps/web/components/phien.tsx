@@ -37,6 +37,19 @@ import {
  *
  * SWR giải quyết cả ba mà không thêm boilerplate. `fallbackData` đọc từ `localStorage`
  * để tránh giật bố cục khi F5 (stale-while-revalidate — đúng tên của thư viện).
+ *
+ * ## Lần render hydrate phát đúng thứ server phát *(việc 17)*
+ *
+ * Server không có `localStorage`, nên ở đó `toi = null`, `dangTai = true`. `fallbackData` thì
+ * đọc `localStorage` ngay lần render đầu ở trình duyệt — tức lần render HYDRATE — nên hễ có phiên
+ * lưu (thành viên VÀ khách quay lại) mọi component vẽ theo `toi` lệch HTML server: React báo
+ * #418, bỏ HTML server, render lại cả root và xoá mọi thuộc tính script `<head>` đặt trên
+ * `<html>` (sổ P-20261111-21, P-20261112-6 — đã đo). Nay provider che phiên lưu bằng
+ * `useDaHydrate`: lần render hydrate phát `toi = null`, `dangTai = true` như server; layout
+ * effect lật cờ và React render lại ĐỒNG BỘ trước lần vẽ đầu, nên không khung hình nào thấy
+ * "không có ai" và consumer vẫn nhận phiên lưu như trước. Provider ở layout gốc, không mount lại
+ * khi điều hướng client, nên cờ chỉ lật một lần mỗi lượt tải. Bài đo:
+ * `e2e/hydrate-sach.spec.ts`.
  */
 
 type Phien = {
@@ -61,7 +74,8 @@ async function fetchToi(): Promise<ToiOut | null> {
   return kq.data ?? null;
 }
 
-/** Đọc cache localStorage để làm `fallbackData` — tránh giật layout khi mount. */
+/** Đọc cache localStorage để làm `fallbackData` — tránh giật layout khi mount. Ở lần render
+ * hydrate giá trị này bị `PhienProvider` che (xem docstring đầu file). */
 function docCacheBanDau(): ToiOut | undefined {
   if (typeof window === "undefined") return undefined;
   try {
@@ -77,8 +91,9 @@ function docCacheBanDau(): ToiOut | undefined {
 }
 
 export function PhienProvider({ children }: { children: React.ReactNode }) {
+  const daHydrate = useDaHydrate();
   const { data, isLoading, mutate } = useSWR(KHOA_SWR, fetchToi, {
-    // Đọc từ localStorage ngay lập tức để tránh giật bố cục.
+    // Đọc từ localStorage ngay lập tức để tránh giật bố cục — chỉ lộ ra SAU hydrate (xem dưới).
     fallbackData: docCacheBanDau(),
     // Tự hỏi lại khi tab được focus — phiên hết hạn ở tab ngủ sẽ được phát hiện.
     revalidateOnFocus: true,
@@ -98,7 +113,11 @@ export function PhienProvider({ children }: { children: React.ReactNode }) {
     },
   });
 
-  const toi = data ?? null;
+  // Lần render hydrate: đúng thứ server phát (`null` / `true`) — không thì #418 (docstring đầu file).
+  // `isLoading` vốn đã `true` ở cả hai phía tới khi `/me` trả lời (SWR không coi `fallbackData` là
+  // dữ liệu đã tải); che nó nữa chỉ để lần render ấy không phụ thuộc vào chi tiết đó của SWR.
+  const toi = daHydrate ? (data ?? null) : null;
+  const dangTai = daHydrate ? isLoading : true;
 
   const taiLai = async () => {
     // `mutate()` không tham số = revalidate (gọi lại fetcher), trả Promise.
@@ -106,7 +125,7 @@ export function PhienProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <NguCanh.Provider value={{ toi, dangTai: isLoading, taiLai }}>
+    <NguCanh.Provider value={{ toi, dangTai, taiLai }}>
       {children}
     </NguCanh.Provider>
   );
@@ -119,23 +138,15 @@ export function usePhien(): Phien {
 /** `false` ở server VÀ ở lần render hydrate; `true` từ lần render ngay sau — lật trong
  * `useLayoutEffect` nên lần render ấy được commit TRƯỚC khi trình duyệt vẽ *(việc 14, đợt E)*.
  *
- * Dùng cho component vẽ trạng thái "chưa biết phiên" giống hệt HTML server rồi nhờ cờ
- * `html[data-da-dang-nhap]` (script `<head>`) ẩn/hiện bằng CSS. Hai lý do không lấy thẳng
- * `dangTai`:
+ * `PhienProvider` dùng nó để che phiên lưu (`fallbackData`) ở lần render hydrate — xem docstring
+ * đầu file (việc 17). Nhờ vậy consumer không cần cờ riêng: lần render hydrate của chúng đã thấy
+ * `toi = null`, `dangTai = true`, giống hệt server; trạng thái "chưa biết phiên" là `dangTai`, và
+ * cờ `html[data-da-dang-nhap]` / `data-google-tat` (script `<head>`) chọn hiện gì bằng CSS.
  *
- * - `fallbackData` đọc `localStorage` ngay lần render đầu ở trình duyệt, nên `dangTai` có thể đã
- *   `false` lúc hydrate ⇒ khác HTML server ⇒ React 19 báo lệch và vẽ lại cả cây;
- * - hễ có PHIÊN LƯU (`fallbackData` có giá trị — thành viên VÀ cả khách quay lại, phiên lưu
- *   `dang_nhap:false`) lượt hydrate hiện đang lệch (lỗi React #418 — nghi
- *   `thanh-dieu-huong-duoi.tsx` vẽ theo `fallbackData` ngay lúc hydrate, vd `{toi && <BottomDrawer>}`),
- *   nên React bỏ HTML server, render lại cả root và các thuộc tính script `<head>` đặt trên `<html>`
- *   bị xoá. Chỉ lượt ĐẦU (`localStorage` rỗng) là không lệch. Đã ĐO (MutationObserver + `pageerror`
- *   #418) — sổ P-20261111-21. Tức ở các lượt ấy cờ CSS chết ngay lúc hydrate, và các "gương JS"
- *   đọc phiên lưu là để chống giật TRONG KHI lỗi đó còn; sửa #418 thì xem lại để gỡ.
- *   Nếu lần lật sang trạng thái thật chờ tới effect thụ động
- *   (`useSyncExternalStore` lật ở đó với root hydrate) thì có thể có MỘT khung hình vẽ ra giữa
- *   hai việc — lời mời đăng ký chớp vào mặt thành viên. `useLayoutEffect` + `setState` thì được
- *   React render lại đồng bộ trước khi trả quyền cho trình duyệt. */
+ * Vì sao `useLayoutEffect` chứ không effect thụ động hay `useSyncExternalStore` (lật ở effect thụ
+ * động với root hydrate): giữa hydrate và lần lật có thể có MỘT khung hình được vẽ — phiên lưu chưa
+ * vào context, lời mời đăng ký chớp vào mặt thành viên. `useLayoutEffect` + `setState` thì được
+ * React render lại đồng bộ trước khi trả quyền cho trình duyệt. */
 export function useDaHydrate(): boolean {
   const [da, datDa] = useState(false);
   useLayoutEffect(() => {

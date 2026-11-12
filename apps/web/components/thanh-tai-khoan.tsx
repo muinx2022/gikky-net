@@ -6,18 +6,18 @@ import { useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { CHU_NGUOI_DUNG } from "@/lib/chu-nguoi-dung";
-import { dangXuat, docRongTaiKhoan, luuRongTaiKhoan } from "@/lib/tai-khoan";
+import { dangXuat, luuRongTaiKhoan } from "@/lib/tai-khoan";
 import { tenHienThi } from "@/lib/ten-hien-thi";
 import { duongDanHoSo } from "@/lib/url";
 
 import { Avatar } from "./avatar";
 import { useModalDangNhap } from "./modal-dang-nhap";
-import { useDaHydrate, usePhien } from "./phien";
+import { usePhien } from "./phien";
 import css from "./thanh-tai-khoan.module.css";
 
 /** Góc phải thanh trên cùng: ai đang đăng nhập, và lối ra.
  *
- * **Trong lúc chưa biết mình là ai** (`dangTai`, hoặc chưa hydrate — `useDaHydrate`) KHÔNG được
+ * **Trong lúc chưa biết mình là ai** (`dangTai` — kể cả HTML server và lần render hydrate) KHÔNG được
  * chớp "Đăng nhập" vào mặt một người **đang** đăng nhập, và cũng không được nhảy bố cục ngay
  * chỗ mắt người ta nhìn đầu tiên. Bản cũ vẽ một ô trống 116px cho MỌI người, rồi đổi sang cụm
  * khách 184px ⇒ khách (đa số lượt tải) thấy cả cụm phải trượt sang trái 68px. Nay *(việc 14,
@@ -32,7 +32,6 @@ import css from "./thanh-tai-khoan.module.css";
  */
 export function ThanhTaiKhoan() {
   const { toi, dangTai, taiLai } = usePhien();
-  const daHydrate = useDaHydrate();
   const { moModal } = useModalDangNhap();
   const router = useRouter();
   const hopRef = useRef<HTMLDivElement | null>(null);
@@ -71,22 +70,11 @@ export function ThanhTaiKhoan() {
 
   // Chưa biết phiên (HTML server, lần render hydrate, `GET /me` còn bay): vẽ SẴN cụm khách và ô giữ
   // chỗ của thành viên, CSS chọn một theo cờ `html[data-da-dang-nhap]` (việc 14, đợt E — xem
-  // docstring). Sau hydrate cờ ấy mất hễ có phiên lưu (lượt hydrate lệch #418 ⇒ React render lại root —
-  // đã đo, sổ P-20261111-21; sửa #418 thì xem lại để gỡ), nên phiên ĐÃ LƯU (`fallbackData`) chọn thay nó:
-  // thành viên ⇒ chỉ ô giữ chỗ, rộng bằng số đo lần trước (không thì chớp "Đăng nhập" vào mặt
-  // họ). Cụm thật chỉ vẽ khi `/me` đã trả lời — bài đo chờ `thanh-tai-khoan-khach` /
-  // `nut-tai-khoan` làm tín hiệu "đã biết phiên", nên testid ở đây khác.
-  if (daHydrate && dangTai && toi?.dang_nhap === true) {
-    return (
-      <span
-        className={css.cho_thanh_vien}
-        style={{ width: docRongTaiKhoan() ?? 130 }}
-        aria-hidden
-        data-testid="tai-khoan-dang-tai"
-      />
-    );
-  }
-  if (!daHydrate || dangTai) {
+  // docstring). Cờ sống suốt lượt tải vì lần render hydrate khớp HTML server (`PhienProvider` che
+  // phiên lưu tới sau hydrate — việc 17), nên không cần nhánh JS nào chọn thay nó. Cụm thật chỉ vẽ
+  // khi `/me` đã trả lời — bài đo chờ `thanh-tai-khoan-khach` / `nut-tai-khoan` làm tín hiệu "đã
+  // biết phiên", nên testid ở đây khác.
+  if (dangTai) {
     return (
       <>
         <div className={`${css.khach} ${css.khach_chua_biet}`} data-testid="thanh-tai-khoan-chua-biet">

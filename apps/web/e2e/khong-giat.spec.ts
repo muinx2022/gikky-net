@@ -216,6 +216,41 @@ test.describe("T8 — ô giữ chỗ nút Google", () => {
     }
   });
 
+  // Việc 17: gương JS `googleTatLucTai` đã gỡ, nên cờ `html[data-google-tat]` của script `<head>` là
+  // thứ DUY NHẤT bỏ ô giữ chỗ ở lượt tải sau. Thiếu cờ thì không có cú giật nào để các bài trên bắt
+  // (ô ở lại suốt lượt tải, trước = sau) — chỉ có một ô trống 40px thừa. Bài này hỏi thẳng điều đó.
+  test("Google TẮT, khách QUAY LẠI: ô giữ chỗ Google không có từ lần vẽ đầu tới sau khi biết phiên", async ({ page }) => {
+    expect((await page.goto("/s/chung-khoan"))?.status(), "/s/chung-khoan").toBe(200);
+    await expect(page.getByTestId("thanh-tai-khoan-khach")).toBeVisible();
+    // Vế tiền đề: phiên đã lưu nói Google tắt — chính thứ script `<head>` đọc.
+    await expect.poll(() => page.evaluate(() => localStorage.getItem("gikky:phien"))).toContain('"google_bat":false');
+    let tha!: () => void;
+    const cong = new Promise<void>((r) => (tha = r));
+    await page.route("**/_next/static/chunks/**", async (route) => {
+      await cong;
+      await route.continue();
+    });
+    expect((await page.goto("/", { waitUntil: "commit" }))?.status(), "/").toBe(200);
+    await page.waitForSelector('[data-testid="khoi-khach"]', { state: "attached" });
+    await page.waitForFunction(() =>
+      [...document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')].every((l) => l.sheet !== null),
+    );
+    const hien = () =>
+      page.evaluate(() => {
+        const o = document.querySelector('[data-testid="khoi-khach-cho-google"]');
+        return o !== null && o.getBoundingClientRect().height > 0;
+      });
+    // Vế chống rỗng: lúc đo "trước", React CHƯA chạy (ô có trong HTML server, chỉ CSS mới ẩn được nó).
+    expect(await page.getByTestId("thanh-tai-khoan-khach").count(), "JS chưa được thả").toBe(0);
+    await expect(page.getByTestId("khoi-khach-cho-google"), "ô phải có trong HTML server").toHaveCount(1);
+    expect(await hien(), "lần vẽ đầu: ô giữ chỗ Google hiện dù phiên lưu nói Google tắt").toBe(false);
+    tha();
+    await expect(page.getByTestId("thanh-tai-khoan-khach")).toBeVisible();
+    await page.waitForTimeout(300);
+    expect(await hien(), "sau khi biết phiên: ô giữ chỗ Google hiện").toBe(false);
+    await page.unroute("**/_next/static/chunks/**");
+  });
+
   test("Google TẮT: ô giữ chỗ chỉ sống ở lượt tải đầu; điều hướng client sang trang khác thì không còn, rail không giật", async ({
     page,
   }) => {

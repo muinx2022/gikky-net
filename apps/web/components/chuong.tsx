@@ -28,7 +28,7 @@ import {
 import { duongDanMach } from "@/lib/url";
 
 import css from "./chuong.module.css";
-import { useDaHydrate, usePhien } from "./phien";
+import { usePhien } from "./phien";
 
 /** Chuông thông báo trên thanh trên cùng — PLAN 5.8. **Poll 60 giây, không websocket.**
  *
@@ -58,7 +58,6 @@ const NHIP_POLL_MS = 60_000;
 
 export function Chuong() {
   const { toi, dangTai } = usePhien();
-  const daHydrate = useDaHydrate();
   const dang_nhap = toi?.dang_nhap === true;
 
   const [mo, datMo] = useState(false);
@@ -132,13 +131,11 @@ export function Chuong() {
     return () => window.removeEventListener(SU_KIEN_THONG_BAO_DA_DOC, handleDaDoc);
   }, []);
 
-  // Giữ chỗ tới khi `/me` trả lời. Trước hydrate cờ CSS `data-da-dang-nhap` định cỡ ô; sau hydrate
-  // cờ ấy mất hễ có phiên lưu — thành viên và khách quay lại (lượt hydrate lệch #418 ⇒ React render lại root — đã đo, sổ P-20261111-21),
-  // nên phiên ĐÃ LƯU (`fallbackData`) giữ cỡ thay nó — không thì ô sập về 0 rồi chuông mới hiện, cụm
-  // phải header giật hai lần (việc 14, đợt E; xem `useDaHydrate`). Sửa #418 thì xem lại để gỡ.
-  if (!daHydrate || dangTai) {
-    const giu = daHydrate && dang_nhap;
-    return <span className={giu ? `${css.cho_chuong} ${css.cho_chuong_giu}` : css.cho_chuong} aria-hidden />;
+  // Giữ chỗ tới khi `/me` trả lời; cờ CSS `data-da-dang-nhap` (script `<head>`) định cỡ ô — không thì
+  // ô sập về 0 rồi chuông mới hiện, cụm phải header giật hai lần (việc 14, đợt E). Cờ sống suốt lượt
+  // tải vì lần render hydrate khớp HTML server (việc 17, `PhienProvider`).
+  if (dangTai) {
+    return <span className={css.cho_chuong} aria-hidden />;
   }
 
   if (!dang_nhap) return null;

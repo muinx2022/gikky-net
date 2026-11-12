@@ -5,8 +5,8 @@ import Link from "next/link";
 import { Mail, UserPlus } from "lucide-react";
 
 import { useModalDangNhap } from "@/components/modal-dang-nhap";
-import { useDaHydrate, usePhien } from "@/components/phien";
-import { baoDamCsrf, googleTatLucTai } from "@/lib/tai-khoan";
+import { usePhien } from "@/components/phien";
+import { baoDamCsrf } from "@/lib/tai-khoan";
 import css from "./khoi-khach.module.css";
 
 function LogoGoogle() {
@@ -59,15 +59,13 @@ function LogoGoogle() {
  * nguonScriptPhien`; header đã dùng cùng cờ). Khách: khối có từ lần vẽ đầu, không nhảy. Thành
  * viên: khối không lúc nào hiện.
  *
- * Sau hydrate không dựa vào CSS nữa: hễ có phiên lưu (`fallbackData` có giá trị — thành viên VÀ
- * khách quay lại; chỉ lượt đầu với `localStorage` rỗng là không) lượt hydrate hiện lệch (lỗi React
- * #418), React render lại cả root và xoá thuộc tính `<html>` — đã đo (MutationObserver + `pageerror`
- * #418), sổ P-20261111-21. Nên `useDaHydrate` lật ngay (trước lần vẽ kế) sang quyết định bằng JS trên CÙNG nguồn: `toi` lúc
- * ấy là phiên đã lưu (`fallbackData`) trong khi `GET /me` còn bay, rồi là phiên thật. Đăng nhập ⇒
- * `null`; khách hoặc chưa có phiên lưu ⇒ khối (như CSS đã vẽ). Phiên lưu lệch (hết hạn ở tab
- * khác) thì `/me` sửa. Cái giá đã chấp nhận (plan §4.7): thành viên trên máy MỚI (chưa có
- * `localStorage`) thấy khối một lần rồi mất. Nhánh JS này là gương chống giật TRONG KHI #418 còn;
- * sửa #418 thì xem lại để gỡ.
+ * Cờ ấy sống suốt lượt tải: lần render hydrate khớp HTML server vì `PhienProvider` chỉ cho phiên
+ * lưu vào context SAU hydrate *(việc 17 — trước đó hễ có phiên lưu là lệch #418, React render lại
+ * cả root và xoá thuộc tính `<html>`, nên khối từng phải có một "gương JS" quyết thay cờ)*. Sau
+ * hydrate `toi` là phiên đã lưu (`fallbackData`) trong khi `GET /me` còn bay, rồi là phiên thật:
+ * đăng nhập ⇒ `null` (khối vốn đã bị cờ ẩn, gỡ nó không xê dịch gì); khách ⇒ khối. Phiên lưu lệch
+ * (hết hạn ở tab khác) thì `/me` sửa. Cái giá đã chấp nhận (plan §4.7): thành viên trên máy MỚI
+ * (chưa có `localStorage`) thấy khối một lần rồi mất.
  *
  * ## Ô của nút Google — giữ chỗ
  *
@@ -75,9 +73,8 @@ function LogoGoogle() {
  * điều đó chỉ biết sau `GET /me`. Để khối không cao thêm 48px khi nút hiện ra, ô của nó được GIỮ
  * CHỖ (`cho_google`, cùng chiều cao nút) trong lúc chưa biết, và vẫn giữ nếu `/me` nói "tắt" —
  * co lại lúc ấy cũng là một cú giật. Lần tải sau trình duyệt đã biết: script `<head>` đặt
- * `html[data-google-tat="1"]` từ phiên đã lưu và CSS bỏ hẳn ô trống trước lần vẽ đầu; sau
- * hydrate (cờ có thể đã mất do lượt hydrate lệch #418, xem trên) `googleTatLucTai` nói lại đúng
- * điều ấy bằng JS. Khối được GẮN MỚI khi phiên đã biết (điều hướng client sang trang khác sau khi
+ * `html[data-google-tat="1"]` từ phiên đã lưu và CSS bỏ hẳn ô trống trước lần vẽ đầu (cờ sống
+ * suốt lượt tải — xem trên). Khối được GẮN MỚI khi phiên đã biết (điều hướng client sang trang khác sau khi
  * `/me` đã trả "tắt") thì không giữ ô — không còn gì để chờ, và ô trống ở đó chỉ là chỗ thừa
  * kéo dài suốt phiên SPA. Giữ chỗ mặc định (chứ không mặc định "tắt") vì khách lần đầu là người khối này nhắm tới, và ở môi
  * trường bật Google chính họ là người sẽ thấy cú giật nếu đoán ngược.
@@ -92,20 +89,16 @@ export function KhoiKhach({
   const { toi, dangTai } = usePhien();
   const { moModal } = useModalDangNhap();
   const [csrf, datCsrf] = useState("");
-  const daHydrate = useDaHydrate();
   // Chụp MỘT lần lúc gắn: phiên đã biết và Google tắt ⇒ khối này không cần giữ ô (xem docstring).
   // Chụp chứ không đọc mỗi lần render: `/me` trả "tắt" GIỮA CHỪNG thì ô phải ở lại (co là giật).
   const [googleTatLucGan] = useState(() => !dangTai && toi?.google_bat === false);
 
-  // `toi` sau hydrate là phiên ĐÃ LƯU (`fallbackData`) trong lúc `GET /me` còn bay, rồi phiên
-  // thật. Không chờ `dangTai`: hễ có phiên lưu cờ CSS mất ngay lúc hydrate (lượt hydrate lệch #418 ⇒
-  // React render lại root — đã đo, sổ P-20261111-21), nên với thành viên "chưa biết" sau hydrate mà
-  // vẫn vẽ khối là lời mời đăng ký hiện ra với thành viên suốt thời gian `/me` bay (đo được
-  // ~160ms). Không có phiên lưu ⇒ coi là khách — đúng như CSS đã vẽ trước hydrate.
-  const chuaBiet = !daHydrate;
-  const googleTat = daHydrate && (googleTatLucTai() || googleTatLucGan);
+  // Chưa biết phiên (`dangTai` — kể cả HTML server và lần render hydrate) ⇒ class `chua_biet`, cờ
+  // CSS chọn ẩn/hiện. Sau hydrate `toi` là phiên ĐÃ LƯU trong lúc `GET /me` còn bay, rồi phiên
+  // thật; thành viên ⇒ `null` (khối vốn đã bị cờ ẩn, gỡ nó không xê dịch gì).
+  const chuaBiet = dangTai;
   const dangNhap = toi?.dang_nhap === true;
-  const googleBat = daHydrate && toi?.google_bat === true;
+  const googleBat = toi?.google_bat === true;
 
   useEffect(() => {
     if (googleBat) {
@@ -113,7 +106,7 @@ export function KhoiKhach({
     }
   }, [googleBat]);
 
-  if (daHydrate && dangNhap) return null;
+  if (dangNhap) return null;
 
   return (
     <section
@@ -138,7 +131,7 @@ export function KhoiKhach({
             </button>
           </form>
         ) : (
-          !googleTat && (
+          !googleTatLucGan && (
             <div className={css.cho_google} aria-hidden="true" data-testid="khoi-khach-cho-google" />
           )
         )}
