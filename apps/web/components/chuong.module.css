@@ -7,7 +7,8 @@
   display: none;
 }
 
-:global(html[data-da-dang-nhap="1"]) .cho_chuong {
+:global(html[data-da-dang-nhap="1"]) .cho_chuong,
+.cho_chuong_giu {
   display: inline-block;
   width: 36px;
   height: 36px;

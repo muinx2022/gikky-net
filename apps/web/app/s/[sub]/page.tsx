@@ -6,6 +6,7 @@ import { NutTheoSub } from "@/components/nut-theo-sub";
 import { Sidebar } from "@/components/sidebar";
 import {
   docCacSub,
+  docChuDeTuan,
   docFeedSub,
   docKhoang,
   docLoaiMach,
@@ -99,7 +100,8 @@ export default async function TrangSub({
   // sub không tồn tại phải là 404 thật chứ không phải một feed rỗng trông như bình thường.
   // Hàm RIÊNG cho nhánh có sub (vá F1): đây là chỗ duy nhất `null` có nghĩa thật, nên chỉ
   // chỗ này được nhận một kiểu nullable.
-  const [{ du_lieu: feed, cursorHong }, chi_tiet, cac_sub] = await Promise.all([
+  // `docChuDeTuan` (khối "Chủ đề tuần này" của rail) KHÔNG ném: hỏng thì khối ẩn — xem docstring.
+  const [{ du_lieu: feed, cursorHong }, chi_tiet, cac_sub, chu_de_tuan] = await Promise.all([
     docFeedSub(sub, tab, {
       cursor,
       khoang,
@@ -109,6 +111,7 @@ export default async function TrangSub({
     }),
     docSub(sub),
     docCacSub(),
+    docChuDeTuan(new Date()),
   ]);
   // Hai lời gọi, hai nguồn 404 độc lập — hỏi CẢ HAI. Chỉ hỏi feed thì một sub bị xoá giữa
   // hai lời gọi cho ra header `null` và trang nổ ở dòng render; chỉ hỏi header thì mất
@@ -126,7 +129,7 @@ export default async function TrangSub({
       truongPhai={truongPhai}
       loaiMach={loaiMach}
       trangThai={trangThai}
-      sidebar={<Sidebar sub={chi_tiet} cacSub={cac_sub} />}
+      sidebar={<Sidebar sub={chi_tiet} cacSub={cac_sub} chuDeTuan={chu_de_tuan} />}
       // X9 — **không** truyền kèm `tieuDe`/`lede` nữa: có `header` thì hai prop ấy không
       // render ở đâu, và `lede={chi_tiet.mo_ta}` là bản sao thứ hai của `mo_ta` không ai
       // đọc. Nay kiểu `DauTrang` của `Feed` cấm hẳn — truyền cả hai là `tsc` đỏ.

@@ -5,6 +5,8 @@ import { xemToi, type ToiOut } from "@gikky/api-client";
 import {
   createContext,
   useContext,
+  useLayoutEffect,
+  useState,
 } from "react";
 
 import {
@@ -112,6 +114,34 @@ export function PhienProvider({ children }: { children: React.ReactNode }) {
 
 export function usePhien(): Phien {
   return useContext(NguCanh);
+}
+
+/** `false` ở server VÀ ở lần render hydrate; `true` từ lần render ngay sau — lật trong
+ * `useLayoutEffect` nên lần render ấy được commit TRƯỚC khi trình duyệt vẽ *(việc 14, đợt E)*.
+ *
+ * Dùng cho component vẽ trạng thái "chưa biết phiên" giống hệt HTML server rồi nhờ cờ
+ * `html[data-da-dang-nhap]` (script `<head>`) ẩn/hiện bằng CSS. Hai lý do không lấy thẳng
+ * `dangTai`:
+ *
+ * - `fallbackData` đọc `localStorage` ngay lần render đầu ở trình duyệt, nên `dangTai` có thể đã
+ *   `false` lúc hydrate ⇒ khác HTML server ⇒ React 19 báo lệch và vẽ lại cả cây;
+ * - hễ có PHIÊN LƯU (`fallbackData` có giá trị — thành viên VÀ cả khách quay lại, phiên lưu
+ *   `dang_nhap:false`) lượt hydrate hiện đang lệch (lỗi React #418 — nghi
+ *   `thanh-dieu-huong-duoi.tsx` vẽ theo `fallbackData` ngay lúc hydrate, vd `{toi && <BottomDrawer>}`),
+ *   nên React bỏ HTML server, render lại cả root và các thuộc tính script `<head>` đặt trên `<html>`
+ *   bị xoá. Chỉ lượt ĐẦU (`localStorage` rỗng) là không lệch. Đã ĐO (MutationObserver + `pageerror`
+ *   #418) — sổ P-20261111-21. Tức ở các lượt ấy cờ CSS chết ngay lúc hydrate, và các "gương JS"
+ *   đọc phiên lưu là để chống giật TRONG KHI lỗi đó còn; sửa #418 thì xem lại để gỡ.
+ *   Nếu lần lật sang trạng thái thật chờ tới effect thụ động
+ *   (`useSyncExternalStore` lật ở đó với root hydrate) thì có thể có MỘT khung hình vẽ ra giữa
+ *   hai việc — lời mời đăng ký chớp vào mặt thành viên. `useLayoutEffect` + `setState` thì được
+ *   React render lại đồng bộ trước khi trả quyền cho trình duyệt. */
+export function useDaHydrate(): boolean {
+  const [da, datDa] = useState(false);
+  useLayoutEffect(() => {
+    datDa(true);
+  }, []);
+  return da;
 }
 
 /** Username của người đang đăng nhập, hoặc `null`. Dùng để hỏi "cái này có phải của tôi

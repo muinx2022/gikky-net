@@ -1,4 +1,4 @@
-import { docCacSub, docFeed, docFeedSub } from "@/lib/api";
+import { docCacSub, docChuDeTuan, docFeed, docFeedSub } from "@/lib/api";
 
 import { VoKhungHaiCot } from "./khung-hai-cot-vo";
 import { Sidebar } from "./sidebar";
@@ -19,8 +19,9 @@ import { Sidebar } from "./sidebar";
  * sidebar (`/`, `/chu-de`) dùng thẳng `VoKhungHaiCot` vì họ đã có sẵn dữ liệu sidebar; file này
  * là đường cho các trang CHƯA có — nó tự nạp rồi đưa vào cùng một vỏ.
  *
- * ## Nó tự hỏi `GET /subs` và `GET /feeds/moi` (hoặc feed theo sub)
+ * ## Nó tự hỏi `GET /subs` và `GET /feeds/moi` (hoặc feed theo sub), cùng chủ đề tuần
  *
+ * *(việc 14, đợt E)* Lời gọi thứ ba (`docChuDeTuan`) nuôi khối "Chủ đề tuần này" của rail.
  * `Sidebar` cần danh sách chuyên mục và các bài mới nhất (hoặc bài mới cùng chuyên mục).
  * Bắt mỗi trang tự nạp rồi truyền xuống là nhiều chỗ cùng làm một việc. Lời gọi đi song song
  * và `docCacSub` đi qua data cache của Next nên chi phí gần như không tốn gì — và **cấm gõ cứng
@@ -43,21 +44,33 @@ export async function KhungHaiCot({
   /** Trang `noindex` (form) không vẽ rail trên điện thoại — xem `VoKhungHaiCot`. */
   anRailDiDong?: boolean;
 }) {
-  const [cac_sub, feed] = await Promise.all([
+  const [cac_sub, feed, chu_de_tuan] = await Promise.all([
     docCacSub(),
     subSlug
       ? docFeedSub(subSlug, "moi", { limit: 6 })
       : docFeed("moi", { limit: 6 }),
+    // KHÔNG ném: hỏng thì khối "Chủ đề tuần này" ẩn — xem docstring `docChuDeTuan`.
+    docChuDeTuan(new Date()),
   ]);
   const items = feed.du_lieu?.items ?? [];
   const bai_moi = items
     .filter((m) => m.id !== idMachHienTai)
     .slice(0, 5);
   const tieu_de = subSlug ? "Cùng chuyên mục" : "Bài mới nhất";
+  // Đang xem CHÍNH chủ đề ấy ⇒ bỏ cả khối: tiêu đề và "Vào thảo luận" đều trỏ về trang đang
+  // đứng, còn lối về kho `/chu-de` đã nằm đầu trang mạch chủ đề (`ve-chu-de`, `trang-mach.tsx`).
+  const chu_de_hien = chu_de_tuan?.mach.id === idMachHienTai ? null : chu_de_tuan;
 
   return (
     <VoKhungHaiCot
-      sidebar={<Sidebar cacSub={cac_sub} baiMoi={bai_moi} tieuDeBaiMoi={tieu_de} />}
+      sidebar={
+        <Sidebar
+          cacSub={cac_sub}
+          baiMoi={bai_moi}
+          tieuDeBaiMoi={tieu_de}
+          chuDeTuan={chu_de_hien}
+        />
+      }
       anRailDiDong={anRailDiDong}
     >
       {children}

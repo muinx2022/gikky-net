@@ -581,9 +581,12 @@ test.describe("T2 — thanh cài app không cướp chỗ", () => {
         await page.waitForTimeout(700);
         if ((await page.evaluate(() => document.documentElement.scrollHeight)) === truoc) break;
       }
+      // Sửa ở việc 14 đợt E: chân trang không còn link nào ("Luật cộng đồng" + "Trang chủ" bỏ — plan
+      // §4.7 "Bớt lặp"), nên phép "bấm trúng" đo trên DÒNG MIỄN TRỪ — phần tử cuối của chân trang, thứ
+      // người đọc phải đọc được (PLAN 5.10). Phép đo hộp (đáy chân trang trên thanh / dải ghi) giữ nguyên.
       const d = await page.evaluate(() => {
         const chan = document.querySelector('[data-testid="chan-trang"]')!;
-        const link = [...chan.querySelectorAll("a")].at(-1)!;
+        const link = chan.querySelector('[data-testid="disclaimer"]')!;
         const rl = link.getBoundingClientRect();
         const t = document.elementFromPoint(rl.left + rl.width / 2, rl.top + rl.height / 2);
         const thanh = document.querySelector('[data-testid="banner-cai-app"]')!.getBoundingClientRect();
@@ -599,7 +602,7 @@ test.describe("T2 — thanh cài app không cướp chỗ", () => {
       });
       expect(d.chanDuoi, `${url}: ${JSON.stringify(d)}`).toBeLessThanOrEqual(d.thanhTren + 1);
       if (d.daiTren !== null) expect(d.chanDuoi, `${url}: dải ghi ${JSON.stringify(d)}`).toBeLessThanOrEqual(d.daiTren + 1);
-      expect(d.trung, `${url}: link chân trang bấm trúng ${JSON.stringify(d)}`).toBe(true);
+      expect(d.trung, `${url}: dòng miễn trừ không bị che ${JSON.stringify(d)}`).toBe(true);
     });
   }
 

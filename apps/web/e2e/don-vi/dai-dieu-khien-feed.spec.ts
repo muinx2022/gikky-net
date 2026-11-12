@@ -243,14 +243,19 @@ test.describe("hàng rào nguồn — một dải tab, một ô soạn, một ng
     expect(feed).toMatch(/\{trangThai\s*&&\s*!hienHangTrangThai\(tab,\s*loaiMach\)\s*&&\s*\(/);
   });
 
-  test("rail của `/?…` dùng tiêu đề khối khách của trang chủ và KHÔNG có `khachMoTa`", () => {
+  // Sửa ở đợt E (việc 14, plan §4.7 "Bớt lặp"): vế cuối từng ghim `/` (TrangChuMoi) CÒN `khachMoTa=` —
+  // ghi chú "giữ nguyên rail, việc của đợt E". Đợt E bỏ nó (câu ấy đã có trong ô soạn cùng trang) và
+  // gỡ luôn prop khỏi `Sidebar`/`KhoiKhach`, nên nay cả hai nhánh đều KHÔNG có.
+  test("rail của `/` và `/?…` dùng tiêu đề khối khách của trang chủ và KHÔNG có `khachMoTa`", () => {
     const trang = boChuThich(doc("app/page.tsx"));
     const nhanh = trang.slice(trang.indexOf("async function FeedDaNap"));
     expect(nhanh).toContain('khachTieuDe="Bắt đầu nhật ký của bạn"');
     expect(nhanh).not.toContain("khachMoTa");
-    // Trang chủ `/` (TrangChuMoi) giữ nguyên rail — đợt E.
     const chu = trang.slice(trang.indexOf("async function TrangChuMoi"), trang.indexOf("async function FeedDaNap"));
-    expect(chu).toContain("khachMoTa=");
+    expect(chu.length, "đo rỗng").toBeGreaterThan(200);
+    expect(chu).toContain('khachTieuDe="Bắt đầu nhật ký của bạn"');
+    expect(chu).not.toContain("khachMoTa");
+    expect(boChuThich(doc("components/sidebar.tsx"))).not.toContain("khachMoTa");
   });
 
   test("trang sub đọc `?trang_thai=` bằng `docTrangThai` và chuyển xuống API lẫn `Feed`", () => {

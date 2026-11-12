@@ -19,11 +19,20 @@
   color: var(--ink);
 }
 
-.mo_ta {
-  margin: -6px 0 0;
-  text-align: center;
-  font-size: 12.5px;
-  color: var(--ink-2);
+/* Khối vẽ sẵn trong HTML server khi chưa biết phiên: ẩn với người mà script `<head>` đã đánh dấu
+   là đã đăng nhập (`lib/tai-khoan.ts::nguonScriptPhien`) — xem docstring `KhoiKhach`. */
+:global(html[data-da-dang-nhap="1"]) .chua_biet {
+  display: none;
+}
+
+/* Ô giữ chỗ của nút Google (cùng chiều cao `.nut_pill`) — xem docstring `KhoiKhach`. Trình duyệt
+   đã biết Google tắt (phiên lưu ở lần trước) thì bỏ hẳn trước lần vẽ đầu. */
+.cho_google {
+  height: 40px;
+}
+
+:global(html[data-google-tat="1"]) .cho_google {
+  display: none;
 }
 
 .danh_sach_nut {
@@ -80,7 +89,8 @@
 
 /* Đợt M (M6): nút của khối khách ≥ 44px cao trên điện thoại. */
 @media (max-width: 640px) {
-  .nut_pill {
+  .nut_pill,
+  .cho_google {
     height: 44px;
   }
 }

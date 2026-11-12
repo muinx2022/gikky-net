@@ -6,12 +6,14 @@ import { KhoiBaiViet } from "@/components/khoi-bai-viet";
 import { VoKhungHaiCot } from "@/components/khung-hai-cot-vo";
 import { NutVeDauTrang } from "@/components/nut-ve-dau-trang";
 import { Sidebar } from "@/components/sidebar";
-import { SO_CHU_DE_TAI, SO_NHAT_KY_TAI, TrangChuV2 } from "@/components/trang-chu-v2";
+import { SO_NHAT_KY_TAI, TrangChuV2 } from "@/components/trang-chu-v2";
 import {
   docBinhLuanGoc,
   docBinhLuanGocMoiNhat,
   docCacSub,
+  docChuDeTuan,
   docFeed,
+  docFeedChuDe,
   docFeedSub,
   docKhoang,
   docLoaiMach,
@@ -160,15 +162,17 @@ export default async function TrangChu({
 async function TrangChuMoi() {
   const [nhat_ky, chu_de_va_quan_diem, bai_viet, sub_va_gia] = await Promise.all([
     docNhatKyMoiTacGia(SO_NHAT_KY_TAI),
-    docFeed("moi", { limit: SO_CHU_DE_TAI, loai_mach: "thao_luan" }).then(async (chu_de) => {
-      const [chon] = chonChuDeNoi(chu_de.du_lieu.items);
+    // Cùng lời gọi với khối "Chủ đề tuần này" ở rail các trang khác (`docFeedChuDe`), nên hai
+    // nơi luôn chọn CÙNG một chủ đề. Ở đây nó ném khi API hỏng (vá F1); ở rail thì không.
+    docFeedChuDe().then(async (chu_de) => {
+      const [chon] = chonChuDeNoi(chu_de.items);
       // Hai nguồn song song (không thêm vòng chờ): `hay_nhat` quyết "nổi bật", `moi_nhat` nuôi
       // "mới" — xem `lib/chu-de.ts::chonQuanDiem`.
       const [binh_luan_goc, binh_luan_moi] =
         chon === undefined
           ? [[], []]
           : await Promise.all([docBinhLuanGoc(chon.id), docBinhLuanGocMoiNhat(chon.id)]);
-      return { chu_de: chu_de.du_lieu, binh_luan_goc, binh_luan_moi };
+      return { chu_de, binh_luan_goc, binh_luan_moi };
     }),
     docFeed("moi", { limit: SO_BAI_VIET_TAI, loai_mach: "bai_viet" }),
     docCacSub().then(async (cac_sub) => ({
@@ -192,6 +196,9 @@ async function TrangChuMoi() {
       {/* Khung hai cột chứa dòng giới thiệu + chủ đề + nhật ký; section "Bài viết" đứng NGOÀI
           khung (dưới cả rail) nên là anh em của nó. `css.vo`: trên điện thoại "Bài viết" HIỆN
           trước rail bằng CSS, DOM giữ thứ tự này (đợt M, M7 — `trang-chu.module.css`). */}
+      {/* Rail của `/` KHÔNG có khối "Chủ đề tuần này" (đã có khối tiêu điểm ngay trong trang) và
+          KHÔNG có dòng phụ của khối khách: câu "Có thể ghi riêng tư, công khai khi bạn muốn." đã
+          nằm trong ô soạn nhanh cùng trang (việc 14, đợt E — plan §4.7 "Bớt lặp"). */}
       <div className={css.vo} data-testid="trang-chu-v2">
         <VoKhungHaiCot
           sidebar={
@@ -199,7 +206,6 @@ async function TrangChuMoi() {
               gioiThieu={GIOI_THIEU}
               cacSub={cac_sub}
               khachTieuDe="Bắt đầu nhật ký của bạn"
-              khachMoTa="Có thể ghi riêng tư, công khai khi bạn muốn."
             />
           }
         >
@@ -241,7 +247,8 @@ async function FeedDaNap({
   // Còn API hỏng thì trang này PHẢI hỏng theo: `docFeed` (bản không lọc sub) ném thay vì
   // trả `null`, nên ở đây không còn gì để `?? { items: [] }` — xem docstring của nó, vá
   // F1. "Chưa có bài nào ở đây" chỉ được nói khi Django thật sự trả về 0 mạch.
-  const [{ du_lieu: feed, cursorHong }, cac_sub] = await Promise.all([
+  // `docChuDeTuan` (khối "Chủ đề tuần này" của rail) KHÔNG ném: hỏng thì khối ẩn — xem docstring.
+  const [{ du_lieu: feed, cursorHong }, cac_sub, chu_de_tuan] = await Promise.all([
     docFeed(tab, {
       cursor,
       khoang,
@@ -250,6 +257,7 @@ async function FeedDaNap({
       trang_thai: trangThai,
     }),
     docCacSub(),
+    docChuDeTuan(new Date()),
   ]);
 
   return (
@@ -269,11 +277,12 @@ async function FeedDaNap({
         // Khối khách dùng tiêu đề của trang chủ ("Bắt đầu nhật ký của bạn") ở MỌI trang `/?…`
         // (việc 14, đợt C). KHÔNG truyền `khachMoTa`: câu "Có thể ghi riêng tư, công khai khi bạn
         // muốn." đã nằm trong ô soạn nhanh của trang lọc nhật ký — lặp nó ở rail là in hai lần
-        // trên cùng một trang. Trang chủ `/` (TrangChuMoi) giữ nguyên rail của nó (việc của đợt E).
+        // trên cùng một trang.
         sidebar={
           <Sidebar
             gioiThieu={GIOI_THIEU}
             cacSub={cac_sub}
+            chuDeTuan={chu_de_tuan}
             khachTieuDe="Bắt đầu nhật ký của bạn"
           />
         }

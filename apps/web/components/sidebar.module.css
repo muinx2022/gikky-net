@@ -76,6 +76,24 @@
   color: var(--accent);
 }
 
+/* Khối "Chủ đề tuần này" (việc 14, đợt E): câu hỏi của chủ đề là link chính của khối, chữ
+   thân cỡ lớn hơn dòng "dẫn" bên dưới; hover đổi màu như "Bài mới nhất". */
+.chu_de_tuan {
+  display: block;
+  font-size: 14px;
+  line-height: 1.45;
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: none;
+  /* Câu hỏi dài liền một khối (không dấu cách) không được đẩy trang cuộn ngang ở 375px —
+     `trang-chu-v2.spec.ts` nhóm O dựng đúng ca ấy. */
+  overflow-wrap: anywhere;
+}
+
+.chu_de_tuan:hover {
+  color: var(--accent);
+}
+
 .danh_sach_sub,
 .danh_sach_chuyen_muc {
   list-style: none;
@@ -216,5 +234,10 @@
   .dan {
     padding-block: 3px;
     margin-top: 6px;
+  }
+
+  /* Tiêu đề chủ đề một dòng chỉ cao ~20px: nới lên ≥ 24px cùng cách với `.dan`. */
+  .chu_de_tuan {
+    padding-block: 3px;
   }
 }

@@ -181,6 +181,8 @@ export function xoaCachePhien(): void {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.removeItem(KHOA_PHIEN);
+    // Bề ngang cụm tài khoản của người vừa thoát: người kế trên cùng máy không được nhận nó.
+    window.localStorage.removeItem(KHOA_RONG_TAI_KHOAN);
     document.documentElement.removeAttribute("data-da-dang-nhap");
   } catch {}
 }
@@ -199,9 +201,74 @@ export function luuCachePhien(du_lieu: unknown): void {
   } catch {}
 }
 
-/** Script inline chạy trong `<head>` trước First Paint để đánh dấu phiên đã đăng nhập, chống giật bố cục */
+/** Bề ngang (px) cụm tài khoản đã đăng nhập ở header, đo ở lần vẽ trước — xem `luuRongTaiKhoan`. */
+export const KHOA_RONG_TAI_KHOAN = "gikky:rong-tai-khoan";
+
+/** Ghi bề ngang cụm tài khoản (`ThanhTaiKhoan`, nhánh đã đăng nhập) để lần tải sau script `<head>`
+ * đặt `--rong-tai-khoan` và ô giữ chỗ trước hydrate rộng đúng bằng nó *(việc 14, đợt E)*. Tên
+ * người dùng dài ngắn khác nhau, nên một bề ngang cố định cho ô giữ chỗ là luôn trượt cả cụm phải.
+ * Bỏ qua 0 (≤ 960px cụm bị ẩn) và chỉ ghi khi đổi. */
+export function luuRongTaiKhoan(rong: number): void {
+  const r = Math.round(rong);
+  if (r <= 0) return;
+  try {
+    if (window.localStorage.getItem(KHOA_RONG_TAI_KHOAN) !== String(r)) {
+      window.localStorage.setItem(KHOA_RONG_TAI_KHOAN, String(r));
+    }
+  } catch {}
+}
+
+/** Bề ngang đã lưu bởi `luuRongTaiKhoan` (cùng giới hạn với script `<head>`), hoặc `null`. Chỉ gọi ở
+ * trình duyệt. Gương JS của biến CSS `--rong-tai-khoan`: hễ có phiên lưu (thành viên, cả khách quay
+ * lại) lượt hydrate hiện lệch (lỗi React #418) nên React render lại cả root và thuộc tính `<html>` (cả `style`) bị xoá — đã đo,
+ * sổ P-20261111-21; xem `components/phien.tsx::useDaHydrate`. Sửa #418 thì xem lại để gỡ. */
+export function docRongTaiKhoan(): number | null {
+  try {
+    const r = parseInt(window.localStorage.getItem(KHOA_RONG_TAI_KHOAN) ?? "", 10);
+    return r > 0 && r < 800 ? r : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Script inline chạy trong `<head>` trước First Paint để đánh dấu phiên đã đăng nhập, chống giật bố cục.
+ *
+ * *(việc 14, đợt E)* Thêm hai thứ, cùng một nguồn `localStorage`:
+ * - `--rong-tai-khoan` (thành viên): bề ngang cụm tài khoản lần trước, cho ô giữ chỗ của header;
+ * - cờ `data-google-tat`: phiên đã lưu nói Google đang TẮT ⇒ khối khách bỏ ô giữ chỗ của nút
+ *   Google trước lần vẽ đầu (xem docstring `components/khoi-khach.tsx`). Cố ý KHÔNG cập nhật cờ
+ *   này giữa chừng ở `luuCachePhien`: bỏ ô khi trang đã vẽ là chính cú giật cần tránh.
+ *
+ * ⚠ Hễ có PHIÊN LƯU (`fallbackData` có giá trị — thành viên VÀ khách quay lại) mọi thứ script này
+ * gắn lên `<html>` hiện chỉ sống tới lúc hydrate: lượt hydrate ấy lệch (lỗi React #418), React bỏ
+ * HTML server, render lại cả root và xoá các thuộc tính này. Chỉ lượt ĐẦU (`localStorage` rỗng) là
+ * không lệch. Đã ĐO bằng MutationObserver + `pageerror` #418 — sổ P-20261111-21. Vì vậy component có "gương JS" quyết trên cùng
+ * `localStorage` sau hydrate (`components/phien.tsx::useDaHydrate`), để chống giật TRONG KHI lỗi
+ * đó còn; sửa #418 thì xem lại để gỡ các gương ấy. */
 export function nguonScriptPhien(): string {
-  return `(function(){try{var p=localStorage.getItem("${KHOA_PHIEN}");if(p){var d=JSON.parse(p);if(d&&d.dang_nhap){document.documentElement.setAttribute("data-da-dang-nhap","1");}}}catch(e){}})();`;
+  return `(function(){try{var h=document.documentElement,p=localStorage.getItem("${KHOA_PHIEN}");if(p){var d=JSON.parse(p);if(d&&d.dang_nhap){h.setAttribute("data-da-dang-nhap","1");var r=parseInt(localStorage.getItem("${KHOA_RONG_TAI_KHOAN}"),10);if(r>0&&r<800){h.style.setProperty("--rong-tai-khoan",r+"px");}}if(d&&d.google_bat===false){h.setAttribute("data-google-tat","1");}}}catch(e){}})();`;
+}
+
+let google_tat_luc_tai: boolean | undefined;
+
+/** Bản JS của cờ `data-google-tat` mà `nguonScriptPhien` đặt — CÙNG phép thử, trên CÙNG
+ * `localStorage`. Cần nó vì một lượt hydrate lệch (hiện có hễ có phiên lưu — thành viên và khách quay lại: lỗi React #418, sổ
+ * P-20261111-21 — đã đo) làm React render lại cả root và xoá thuộc tính `<html>`, nên cờ CSS có thể
+ * không còn sau hydrate; khối khách phải tự bỏ ô giữ chỗ đúng ở những lần tải mà CSS đã bỏ nó trước
+ * lần vẽ đầu. Gương JS chống giật trong khi lỗi còn; sửa #418 thì xem lại để gỡ. Đọc MỘT lần mỗi tài liệu: `GET /me`
+ * ghi đè `localStorage` ngay sau đó, mà câu hỏi là "lúc TẢI, CSS đã thấy gì". Chỉ gọi ở trình
+ * duyệt, sau hydrate. */
+export function googleTatLucTai(): boolean {
+  if (google_tat_luc_tai === undefined) {
+    google_tat_luc_tai = false;
+    try {
+      const luu = window.localStorage.getItem(KHOA_PHIEN);
+      if (luu) {
+        google_tat_luc_tai = (JSON.parse(luu) as { google_bat?: unknown } | null)?.google_bat === false;
+      }
+    } catch {}
+  }
+  return google_tat_luc_tai;
 }
 
 export async function dangXuat(): Promise<void> {

@@ -22,11 +22,11 @@ import css from "./trang-chu-v2.module.css";
  *   dải chân khối biết còn bao nhiêu người đứng sau 8 thẻ đầu mà không gọi thêm API;
  * - chủ đề chỉ VẼ MỘT (user 2026-11-10), nhưng TẢI `SO_CHU_DE_TAI` cái để `KhoiThaoLuan` chọn
  *   cái xuất bản sau cùng: feed `moi` sắp theo `last_content_at`, nên phần tử đầu của nó có thể
- *   là chủ đề cũ vừa được nối mốc (vòng sửa 4);
+ *   là chủ đề cũ vừa được nối mốc (vòng sửa 4). Hằng ấy nay khai ở `lib/chu-de.ts`, vì rail phải
+ *   nạp cùng lời gọi (`lib/api.ts::docFeedChuDe`);
  * - bài viết: MỘT lời gọi `SO_BAI_VIET_TAI` bài rồi chia nhóm ở web (`lib/nhom-bai-viet.ts`). */
 export const SO_NHAT_KY = 8;
 export const SO_NHAT_KY_TAI = 20;
-export const SO_CHU_DE_TAI = 5;
 
 /** Tab của khối nhật ký — LINK THẬT tới feed cũ có lọc `trang_thai` (plan §6.3), không phải
  * nút đổi state: feed cũ là nơi duy nhất xem hết, và link là thứ bot bò được. "Mới nhất" là

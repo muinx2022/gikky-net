@@ -19,6 +19,7 @@ import {
   type TimKiemOut,
 } from "@gikky/api-client";
 
+import { chonChuDeNoi, type ChuDeTuan, khoangTuanVN, SO_CHU_DE_TAI } from "./chu-de";
 import type { SortKhanDai } from "./khan-dai";
 import { GOC_TRINH_DUYET } from "./tai-khoan";
 
@@ -655,6 +656,34 @@ export async function docNhatKyMoiTacGia(limit: number): Promise<FeedOut> {
     );
   }
   return du_lieu;
+}
+
+/** Feed chủ đề thảo luận mà trang chủ và rail cùng chọn từ đó: `SO_CHU_DE_TAI` chủ đề mới nhất
+ * của feed `moi`. MỘT chỗ khai lời gọi để khối tiêu điểm của `/` và khối "Chủ đề tuần này" của
+ * rail (`docChuDeTuan`) không bao giờ chọn hai chủ đề khác nhau. Ném như `docFeed` (vá F1). */
+export async function docFeedChuDe(): Promise<FeedOut> {
+  return (await docFeed("moi", { limit: SO_CHU_DE_TAI, loai_mach: "thao_luan" })).du_lieu;
+}
+
+/** Khối "Chủ đề tuần này" của rail phải (việc 14, đợt E — plan §4.7): chủ đề do
+ * `chonChuDeNoi` chọn trên `docFeedChuDe`, tức ĐÚNG chủ đề khối tiêu điểm của `/` đang hiện.
+ * `null` ⇒ không có chủ đề nào ⇒ rail ẩn khối.
+ *
+ * **KHÔNG ném**, khác mọi hàm ở trên, và đó là cố ý: đây là một khối phụ ở rail của MỌI trang có
+ * rail. Lời gọi chủ đề hỏng (Django trả 5xx cho riêng lời gọi này, ngày tháng hỏng) không được
+ * kéo trang mạch / hồ sơ / form thành 500. Không phải loài lỗi vá F1 diệt — ẩn một khối phụ
+ * không nói dối gì về nội dung của trang ("chưa có bài" khi DB đầy). Khi cả Django chết thì
+ * trang vẫn 500 qua các lời gọi chính của nó (`docCacSub`, `docFeed`…), đúng quy ước cũ. Lỗi
+ * được `console.error` để log server còn thấy. */
+export async function docChuDeTuan(bayGio: Date): Promise<ChuDeTuan | null> {
+  try {
+    const [chon] = chonChuDeNoi((await docFeedChuDe()).items);
+    if (chon === undefined) return null;
+    return { mach: chon, trongTuan: khoangTuanVN(chon.published_at, bayGio).trongTuan };
+  } catch (loi) {
+    console.error("Khối 'Chủ đề tuần này' của rail bị ẩn vì nạp hỏng:", loi);
+    return null;
+  }
 }
 
 /** Số bình luận gốc tải về để chọn "Quan điểm nổi bật" — trần `limit` của endpoint khán đài. */

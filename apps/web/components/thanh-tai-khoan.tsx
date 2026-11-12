@@ -3,30 +3,36 @@
 import { ImageUp, KeyRound, LogOut, Settings, ShieldCheck, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { CHU_NGUOI_DUNG } from "@/lib/chu-nguoi-dung";
-import { dangXuat } from "@/lib/tai-khoan";
+import { dangXuat, docRongTaiKhoan, luuRongTaiKhoan } from "@/lib/tai-khoan";
 import { tenHienThi } from "@/lib/ten-hien-thi";
 import { duongDanHoSo } from "@/lib/url";
 
 import { Avatar } from "./avatar";
 import { useModalDangNhap } from "./modal-dang-nhap";
-import { usePhien } from "./phien";
+import { useDaHydrate, usePhien } from "./phien";
 import css from "./thanh-tai-khoan.module.css";
 
 /** Góc phải thanh trên cùng: ai đang đăng nhập, và lối ra.
  *
- * **Trong lúc chưa biết mình là ai thì không vẽ gì** (`dangTai`). Vẽ trạng thái khách rồi
- * đổi sang tên người dùng là một cú nhảy bố cục ngay chỗ mắt người ta nhìn đầu tiên, và
- * tệ hơn: nó chớp "Đăng nhập" vào mặt một người **đang** đăng nhập. Một ô giữ chỗ cùng
- * chiều rộng là đủ.
+ * **Trong lúc chưa biết mình là ai** (`dangTai`, hoặc chưa hydrate — `useDaHydrate`) KHÔNG được
+ * chớp "Đăng nhập" vào mặt một người **đang** đăng nhập, và cũng không được nhảy bố cục ngay
+ * chỗ mắt người ta nhìn đầu tiên. Bản cũ vẽ một ô trống 116px cho MỌI người, rồi đổi sang cụm
+ * khách 184px ⇒ khách (đa số lượt tải) thấy cả cụm phải trượt sang trái 68px. Nay *(việc 14,
+ * đợt E)* vẽ SẴN cả hai: cụm khách thật (testid riêng) và ô giữ chỗ của thành viên; CSS chọn một
+ * theo cờ `html[data-da-dang-nhap="1"]` mà script `<head>` đặt từ `localStorage` trước lần vẽ
+ * đầu (`lib/tai-khoan.ts::nguonScriptPhien`). Khách: cụm có sẵn từ lần vẽ đầu, không trượt.
+ * Thành viên: ô giữ chỗ rộng đúng bằng cụm của họ ở lần trước (`luuRongTaiKhoan` — tên dài ngắn
+ * khác nhau, một con số cố định thì luôn trượt), nên cụm thật thế chỗ mà không đẩy ai.
  *
  * **Không có nút Google ở đây** — nó thuộc trang đăng nhập, và nó chỉ hiện khi
  * `me.google_bat` (PLAN mục 4: không nút vĩnh viễn không bấm được).
  */
 export function ThanhTaiKhoan() {
   const { toi, dangTai, taiLai } = usePhien();
+  const daHydrate = useDaHydrate();
   const { moModal } = useModalDangNhap();
   const router = useRouter();
   const hopRef = useRef<HTMLDivElement | null>(null);
@@ -54,8 +60,46 @@ export function ThanhTaiKhoan() {
     };
   }, [mo]);
 
-  if (dangTai) {
-    return <span className={css.chua_biet} aria-hidden data-testid="tai-khoan-dang-tai" />;
+  // Nhớ bề ngang cụm đã đăng nhập để lần tải sau ô giữ chỗ (trước hydrate) rộng ĐÚNG bằng nó —
+  // script `<head>` đọc lại (`nguonScriptPhien`). Chạy mỗi lần render, chỉ ghi khi đổi.
+  // KHÔNG ghi khi đang thoát: `dangXuat` → `xoaCachePhien` đã xoá khoá, mà lần vẽ "Đang thoát…"
+  // ngay sau (cụm vẫn còn) sẽ ghi nó lại cho người kế trên cùng máy.
+  useLayoutEffect(() => {
+    if (dangThoat || toi?.dang_nhap !== true || hopRef.current === null) return;
+    luuRongTaiKhoan(hopRef.current.getBoundingClientRect().width);
+  });
+
+  // Chưa biết phiên (HTML server, lần render hydrate, `GET /me` còn bay): vẽ SẴN cụm khách và ô giữ
+  // chỗ của thành viên, CSS chọn một theo cờ `html[data-da-dang-nhap]` (việc 14, đợt E — xem
+  // docstring). Sau hydrate cờ ấy mất hễ có phiên lưu (lượt hydrate lệch #418 ⇒ React render lại root —
+  // đã đo, sổ P-20261111-21; sửa #418 thì xem lại để gỡ), nên phiên ĐÃ LƯU (`fallbackData`) chọn thay nó:
+  // thành viên ⇒ chỉ ô giữ chỗ, rộng bằng số đo lần trước (không thì chớp "Đăng nhập" vào mặt
+  // họ). Cụm thật chỉ vẽ khi `/me` đã trả lời — bài đo chờ `thanh-tai-khoan-khach` /
+  // `nut-tai-khoan` làm tín hiệu "đã biết phiên", nên testid ở đây khác.
+  if (daHydrate && dangTai && toi?.dang_nhap === true) {
+    return (
+      <span
+        className={css.cho_thanh_vien}
+        style={{ width: docRongTaiKhoan() ?? 130 }}
+        aria-hidden
+        data-testid="tai-khoan-dang-tai"
+      />
+    );
+  }
+  if (!daHydrate || dangTai) {
+    return (
+      <>
+        <div className={`${css.khach} ${css.khach_chua_biet}`} data-testid="thanh-tai-khoan-chua-biet">
+          <button type="button" className={css.lien_ket} onClick={moModal}>
+            Đăng nhập
+          </button>
+          <Link href="/dang-ky" prefetch={false} className={css.nut_chinh}>
+            Đăng ký
+          </Link>
+        </div>
+        <span className={css.chua_biet} aria-hidden data-testid="tai-khoan-dang-tai" />
+      </>
+    );
   }
 
   if (toi === null || !toi.dang_nhap) {

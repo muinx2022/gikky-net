@@ -12,6 +12,8 @@
  * một sự thật viết dưới dạng số, và bài đo `chu-de-theo-tuan.spec.ts` ghim hai đầu ranh giới.
  */
 
+import type { MachTomTatOut } from "@gikky/api-client";
+
 import { trichVanBanThuan } from "./van-ban";
 
 const MS_NGAY = 86_400_000;
@@ -64,6 +66,22 @@ export function sapMoiXuatBanTruoc<T extends MucXuatBan>(items: readonly T[]): T
     return lech !== 0 && !Number.isNaN(lech) ? lech : b.id - a.id;
   });
 }
+
+/** Số chủ đề TẢI để `chonChuDeNoi` chọn một (vẽ một): feed `moi` sắp theo `last_content_at`,
+ * nên phần tử đầu của nó có thể là chủ đề cũ vừa được nối mốc (vòng sửa 4). Ở đây chứ không ở
+ * `components/trang-chu-v2.tsx` (nơi nó sinh ra) vì `lib/api.ts::docFeedChuDe` — lời gọi chung
+ * của trang chủ và rail — cần nó, và `lib/` không nhập ngược `components/`. */
+export const SO_CHU_DE_TAI = 5;
+
+/** Dữ liệu khối "Chủ đề tuần này" của rail phải (`lib/api.ts::docChuDeTuan` nạp, `Sidebar` vẽ).
+ * Kiểu nằm ở đây chứ không ở `lib/api.ts`: `Sidebar` không được nhập gì từ `@/lib/api`
+ * (`e2e/don-vi/sidebar-bai-moi.spec.ts` — rail không gọi API). */
+export type ChuDeTuan = {
+  mach: MachTomTatOut;
+  /** Chủ đề nằm trong tuần hiện tại (giờ VN) — quyết chữ "Chủ đề tuần này" / "Chủ đề gần nhất",
+   * cùng luật với khối chủ đề trên `/` (`KhoiThaoLuan`). */
+  trongTuan: boolean;
+};
 
 /** Chủ đề nổi của trang chủ: trong các chủ đề feed `moi` trả về, cái **xuất bản sau cùng**.
  * Trả mảng 0 hoặc 1 phần tử (khối Chủ đề nhận mảng).

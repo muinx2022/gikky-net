@@ -11,18 +11,33 @@
   font-size: 13px;
 }
 
-/* Ô giữ chỗ trong lúc `GET /me` chưa trả lời. Cùng chiều cao, đủ rộng để thanh không
-   nhảy — xem `ThanhTaiKhoan`: vẽ trạng thái khách rồi đổi là chớp "Đăng nhập" vào mặt
-   một người đang đăng nhập. */
+/* Trong lúc `GET /me` chưa trả lời, cả cụm khách lẫn ô giữ chỗ của thành viên cùng nằm trong
+   HTML; cờ `html[data-da-dang-nhap="1"]` (script `<head>`, từ `localStorage`) chọn một — xem
+   `ThanhTaiKhoan` (việc 14, đợt E). Không cờ ⇒ cụm khách thật, đúng kích thước, không trượt. */
 .chua_biet {
+  display: none;
+}
+
+/* Bề ngang = cụm đã đăng nhập ở lần vẽ trước (`--rong-tai-khoan`, script `<head>`); chưa đo bao
+   giờ thì 130px như cũ. */
+:global(html[data-da-dang-nhap="1"]) .chua_biet {
   margin-left: auto;
   display: inline-block;
-  width: 116px;
+  width: var(--rong-tai-khoan, 130px);
   height: 26px;
 }
 
-:global(html[data-da-dang-nhap="1"]) .chua_biet {
-  width: 130px;
+:global(html[data-da-dang-nhap="1"]) .khach_chua_biet {
+  display: none;
+}
+
+/* Cùng ô giữ chỗ, SAU hydrate (hễ có phiên lưu, cờ trên `<html>` mất vì lượt hydrate lệch #418 làm
+   React render lại root — đã đo, sổ P-20261111-21): phiên đã lưu nói là thành viên,
+   bề ngang đặt inline từ `docRongTaiKhoan`. */
+.cho_thanh_vien {
+  margin-left: auto;
+  display: inline-block;
+  height: 26px;
 }
 
 /* Từ 2026-08-26 đây là một `<button>` (mở modal đăng nhập), không còn là `<a>`. Bốn
@@ -184,7 +199,8 @@
   /* Tài khoản cá nhân và nút đăng nhập đã có ở Navigation Rail / Bottom Nav trên màn hình ≤960px */
   .khung,
   .khach,
-  .chua_biet {
+  .chua_biet,
+  .cho_thanh_vien {
     display: none !important;
   }
 

@@ -1,10 +1,11 @@
 import type { MachTomTatOut, SubChiTietOut } from "@gikky/api-client";
 import Link from "next/link";
 
+import type { ChuDeTuan } from "@/lib/chu-de";
 import { dongSoMachSub } from "@/lib/dinh-dang";
 import { hrefLoaiTrongSub } from "@/lib/loc-loai-mach";
 import { DIEU_CAM } from "@/lib/phap-ly";
-import { duongDanMach, duongDanSub } from "@/lib/url";
+import { duongDanKhanDai, duongDanMach, duongDanSub } from "@/lib/url";
 
 import { ChanTrang } from "./chan-trang";
 import { ChuyenMucTuTrinhDuyet } from "./chuyen-muc-tu-trinh-duyet";
@@ -23,6 +24,11 @@ import css from "./sidebar.module.css";
  * 1. giới thiệu (trang chủ) hoặc, ở trang sub, số mạch + ngày lập + hai lối nhanh "Nhật ký / Bài
  *    viết trong chuyên mục →". **KHÔNG còn mô tả sub** *(việc 14, đợt C, T4)*: header của trang
  *    sub đã in nó — in lại ở rail là hai bản của cùng một đoạn chữ trên một trang;
+ * 1b. **"Chủ đề tuần này"** *(việc 14, đợt E — plan §4.7)*: câu hỏi của chủ đề đang nổi (link
+ *    tới mạch) + "Vào thảo luận →" (khán đài) + "Các chủ đề trước →" (`/chu-de`). Chủ đề do trang
+ *    nạp bằng `docChuDeTuan` — cùng lời gọi, cùng phép chọn với khối tiêu điểm của `/`. Vắng mặt
+ *    ở `/` (khối tiêu điểm đã có), ở trang tĩnh, khi chưa có chủ đề / nạp hỏng, và ở trang mạch
+ *    của CHÍNH chủ đề ấy (`KhungHaiCot`);
  * 2. luật rút gọn dẫn `/luat` — PLAN 5.10 bắt mọi trang công khai phải có đường tới đó,
  *    và chân trang một mình thì ở dưới quá xa để ai đọc;
  * 3. danh sách các sub — **vắng mặt hẳn khi `cacSub` rỗng** *(2026-08-31)*. Một hộp mang
@@ -35,7 +41,9 @@ import css from "./sidebar.module.css";
  *    Trang TĨNH (`/luat`) không có `cacSub` từ server: truyền `chuyenMucTuTrinhDuyet` để khối
  *    tự nạp ở trình duyệt (`ChuyenMucTuTrinhDuyet`) — xem `khung-hai-cot-tinh.tsx`;
  * 4. bài mới nhất — **vắng mặt hẳn khi `baiMoi` rỗng** *(2026-09-10)*. Lấp khoảng trống
- *    ở rail phải khi xem trang chi tiết mạch `/m/[slugId]` và các trang dùng `KhungHaiCot`.
+ *    ở rail phải khi xem trang chi tiết mạch `/m/[slugId]` và các trang dùng `KhungHaiCot`;
+ * 5. `ChanTrang` — chỉ còn dòng miễn trừ (đợt E bỏ "Luật cộng đồng" + "Trang chủ": khối luật
+ *    ngay trên đã dẫn `/luat`, logo header dẫn `/`).
  *
  * **Sidebar không gọi API.** Danh sách chuyên mục / bài mới do trang (hoặc `KhungHaiCot`) nạp ở
  * server rồi truyền xuống; nhánh tự nạp ở trình duyệt nằm trong component client riêng.
@@ -56,7 +64,8 @@ export function Sidebar({
   tieuDeBaiMoi = "Bài mới nhất",
   chuyenMucTuTrinhDuyet = false,
   khachTieuDe,
-  khachMoTa,
+  chuDeTuan,
+  trenTrangChuDe = false,
 }: {
   /** Hai dòng giới thiệu — chỉ trang không có `sub` dùng (trang sub không in mô tả ở rail). */
   gioiThieu?: string;
@@ -72,14 +81,19 @@ export function Sidebar({
   /** Chỉ cho trang TĨNH không có `cacSub` từ server (`/luat`): khối "Chuyên mục" tự nạp
    * danh sách ở trình duyệt. Vô nghĩa khi `cacSub` đã có. */
   chuyenMucTuTrinhDuyet?: boolean;
-  /** Tiêu đề + dòng phụ riêng của khối khách — chỉ trang chủ truyền ("Bắt đầu nhật ký của
-   * bạn", plan giao diện mới §3.4); các trang khác để trống ⇒ "Tham gia Gikky.net". */
+  /** Tiêu đề riêng của khối khách — chỉ trang chủ và `/?…` truyền ("Bắt đầu nhật ký của bạn",
+   * plan giao diện mới §3.4); các trang khác để trống ⇒ "Tham gia Gikky.net". */
   khachTieuDe?: string;
-  khachMoTa?: string;
+  /** Chủ đề cho khối "Chủ đề tuần này" (`docChuDeTuan`, nạp ở server). Vắng / `null` ⇒ không có
+   * khối. Trang chủ `/` KHÔNG truyền (đã có khối tiêu điểm), trang tĩnh không truyền được. */
+  chuDeTuan?: ChuDeTuan | null;
+  /** Đang ở `/chu-de`: rail bỏ mọi link trỏ về chính trang ấy. */
+  trenTrangChuDe?: boolean;
 }) {
+  const co_khoi_chu_de = chuDeTuan != null;
   return (
     <aside className={css.cot} data-testid="sidebar" aria-label="Thanh bên">
-      <KhoiKhach tieuDe={khachTieuDe} moTa={khachMoTa} />
+      <KhoiKhach tieuDe={khachTieuDe} />
 
       {sub != null ? (
         <section className={css.khoi} data-testid="sidebar-ve-sub">
@@ -119,17 +133,62 @@ export function Sidebar({
             {/* Lối vào kho chủ đề thảo luận nằm ở rail chứ không chỉ ở khối Chủ đề của trang chủ:
                 khối ấy ẩn hẳn khi chưa có chủ đề nào, còn `/chu-de` thì không. Cố ý KHÔNG nằm
                 trong khối "Chuyên mục": `vo-reddit.spec.ts` B10 đòi khối đó chứa đúng tập link
-                `/s/*` của API. Cùng kiểu link `dan` của khối luật. */}
-            <Link
-              className={css.dan}
-              href="/chu-de"
-              prefetch={false}
-              data-testid="sidebar-dan-chu-de"
-            >
-              Chủ đề thảo luận →
-            </Link>
+                `/s/*` của API. Cùng kiểu link `dan` của khối luật.
+
+                *(việc 14, đợt E)* Có khối "Chủ đề tuần này" thì link này NHƯỜNG cho "Các chủ đề
+                trước →" của khối ấy (cùng đích, không in hai lần). Nó CÒN ở `/` và `/luat` — hai
+                trang không có khối chủ đề — vì ở đó nó là link `/chu-de` DUY NHẤT của trang: bỏ
+                là bớt link nội bộ (luật "SEO chỉ cộng"). Ở `/chu-de` thì bỏ: tự trỏ (T7). */}
+            {!co_khoi_chu_de && !trenTrangChuDe && (
+              <Link
+                className={css.dan}
+                href="/chu-de"
+                prefetch={false}
+                data-testid="sidebar-dan-chu-de"
+              >
+                Chủ đề thảo luận →
+              </Link>
+            )}
           </section>
         )
+      )}
+
+      {chuDeTuan != null && (
+        <section className={css.khoi} data-testid="sidebar-chu-de-tuan">
+          <h2 className={css.tieu_de}>
+            {chuDeTuan.trongTuan ? "Chủ đề tuần này" : "Chủ đề gần nhất"}
+          </h2>
+          <Link
+            className={css.chu_de_tuan}
+            href={duongDanMach(chuDeTuan.mach.slug, chuDeTuan.mach.id)}
+            prefetch={false}
+            data-testid="sidebar-chu-de-tuan-link"
+          >
+            {chuDeTuan.mach.title}
+          </Link>
+          <div>
+            <Link
+              className={css.dan}
+              href={duongDanKhanDai(chuDeTuan.mach.slug, chuDeTuan.mach.id)}
+              prefetch={false}
+              data-testid="sidebar-chu-de-tuan-vao"
+            >
+              Vào thảo luận →
+            </Link>
+          </div>
+          {!trenTrangChuDe && (
+            <div>
+              <Link
+                className={css.dan}
+                href="/chu-de"
+                prefetch={false}
+                data-testid="sidebar-chu-de-tuan-truoc"
+              >
+                Các chủ đề trước →
+              </Link>
+            </div>
+          )}
+        </section>
       )}
 
       {cacSub.length > 0 ? (
