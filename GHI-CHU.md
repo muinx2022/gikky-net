@@ -1015,3 +1015,27 @@ lại cả trang, xoá thuộc tính `<html>` (cờ chống giật, `color-schem
 **Plan:** `plans/2026-11-12-sua-hydrate-418.md`: sửa một chỗ ở `PhienProvider` (phiên lưu chỉ vào context sau hydrate,
 lật trong `useLayoutEffect`), thêm bài đo `hydrate-sach.spec.ts`, rồi gỡ các gương JS chống giật đợt E thêm vì lỗi này.
 HTML server không đổi.
+---
+
+## Việc 18 · Khối chủ đề xếp chồng + nút chính màu brand — ĐÃ LÀM trên `v2` (`4ed45b5`, 2026-11-13), chưa deploy
+
+**Yêu cầu (user, 2026-11-12, ảnh dev.gikky.net):** "phần list user cmt như thế này có ổn không? và nhìn nó ngang hàng với
+chủ đề thảo luận"; "có mấy nút đen, logo màu xanh, có j không ổn?".
+
+**Đã chốt với user:**
+- Nút chính (nút đặc) dùng **`--brand` xanh**, không còn `--ink` đen. Ba chỗ: "Đăng ký" ở header, "Vào thảo luận",
+  nút mở nhật ký ở ô soạn. Nút thì **bo tròn hẳn** (pill).
+- Khối chủ đề chuyển sang **xếp chồng**: chủ đề rộng hết khối, quan điểm xuống dưới thành ô nền `--inset`, mỗi quan
+  điểm một dòng. User chọn sau khi xem bản mô phỏng trên dev.gikky.net: khối thật chỉ rộng 760px, chia 2 cột thì tiêu
+  đề gãy 5 dòng; xếp chồng còn 3 dòng, khối cao thêm khoảng 120px.
+- Gộp mục sổ **P-20261110-6**: ở theme tối, nút "Đăng ký" có chữ trắng trên nền gần trắng. Đo lại trên dev.gikky.net
+  ngày 2026-11-12 vẫn thấy lỗi.
+
+**Không làm trong việc này:** đổi avatar mặc định từ icon xám sang chữ cái (icon là quyết định áp cho toàn site, commit
+`2d5ac08`); hai nút chọn phe (P-20261111-9).
+
+**Plan:** `plans/2026-11-12-khoi-chu-de-xep-chong-nut-brand.md`.
+
+**Vòng 2 (2026-11-13), user chọn "Vá luôn":** vá ba chỗ hở hàng rào ở sổ P-20261112-8: chưa đo hover ở theme tối
+(4.54:1); bài tĩnh lọt `!important`, `--ink-2`, khai `color` hai lần và khối trong `@media`; `max-width: 45%` chưa có bài
+giữ. Chỉ sửa bài đo, không đổi CSS sản phẩm. Thiết kế ở §10 của plan. **ĐÃ LÀM 2026-11-13**, nghiệm thu ĐẠT sau hai lượt sửa theo phản biện; commit `4ed45b5`. Hở còn lại: sổ P-20261113-5. Hướng hover (làm tối thay vì làm sáng): P-20261113-6, user chọn giữ như cũ (2026-11-13).

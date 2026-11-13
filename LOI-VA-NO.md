@@ -1907,7 +1907,8 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Vì sao không sửa ngay**: không thuộc homepage v2, và nhiều bài cần quyết định "sản phẩm hay bài đo sai" từng cái. Hệ quả cần biết: với 25 bài đỏ nền, một hồi quy thật có thể ẩn trong số đỏ; mọi lượt về sau chỉ chấm được "đỏ sau ⊆ đỏ nền". Cùng họ với `P-20261109-7` (pytest).
 - *Bổ sung 2026-11-10 (Đợt B):* thêm `binh-luan-chung.spec.ts:122` (deep-link `#bl-23` không vào viewport) vào tập đỏ; nghiệm thu chạy riêng 3 lần ra đỏ / xanh / đỏ trên cùng một bản build ⇒ **flaky**, không phải đỏ cố định.
 
-### P-20261110-6 · [MỞ] · NHỎ — nút "Đăng ký" ở header, theme tối: chữ trắng trên nền sáng, tương phản không đạt
+### P-20261110-6 · [ĐÃ VÁ trên `v2` — việc 18, `4ed45b5`] · NHỎ — nút "Đăng ký" ở header, theme tối: chữ trắng trên nền sáng, tương phản không đạt
+- **Đã vá (2026-11-12, việc 18)**: `.nut_chinh` nay dùng nền `--brand`, chữ `--on-brand`. Ở theme tối đo được tương phản 5.17:1. Hàng rào: `apps/web/e2e/don-vi/nut-chinh-brand.spec.ts` và `apps/web/e2e/khoi-chu-de-nut-brand.spec.ts` (đo trên `/` và `/luat`, cả hai theme).
 - **Thấy lúc**: nghiệm thu (ảnh) và phản biện (đo) của `plans/2026-11-10-homepage-v2.md`.
 - **Ở đâu**: `apps/web/components/thanh-tai-khoan.module.css` (`.nut_chinh`).
 - **Bằng chứng (ĐÃ ĐO)**: `getComputedStyle` trên `/`, `/luat`, `/s/chung-khoan`, `/chu-de` ở theme tối đều cho chữ `rgb(255,255,255)` trên nền `rgb(232,236,244)`. Không do homepage v2 (không file nào của lượt đó đụng lớp này); có sẵn trên toàn site.
@@ -2045,3 +2046,67 @@ sang `du_lieu_the`); docstring `api/tests/test_api_so_query.py:49` còn nhắc n
   - (b) `/tim-kiem` trong e2e chạy khi Meilisearch tắt (`MEILI_URL` rỗng), nên `e2e/hydrate-sach.spec.ts` chỉ phủ trạng thái kết quả rỗng của trang này. Cùng gốc với câu hỏi dựng Meilisearch cho e2e.
   - (c) Các bài có từ trước trong `apps/web/e2e/khong-giat.spec.ts` (`:114` trong `taiVaDo`, `:257`, `:304`) gọi `page.goto` mà không đọc `status()`, nên một trang 404 có rail vẫn có thể qua. Hai bài mới của việc 17 đã ép mã 200.
 - **Vì sao không sửa ngay**: ngoài phạm vi việc 17.
+
+### P-20261112-8 · [ĐÃ VÁ trên `v2` — việc 18 vòng 2, `4ed45b5`] · NHỎ — hàng rào của việc 18 còn ba chỗ hở (phản biện việc 18)
+- **Ở đâu / bằng chứng**:
+  - (a) Khi rê chuột, nút brand ở theme tối chỉ còn **4.54:1**, sát ngưỡng AA 4.5. Không bài nào đo trạng thái hover. Phản biện đọc pixel thật trên bản build `gikky_e2e` ở 1280: tối thường `[37,99,235]` 5.17, hover `[40,107,254]` 4.54; sáng thường 5.81, hover 5.12. Kênh B đã chạm trần 254. Bài (b) đọc `backgroundColor` nên không thấy `filter: brightness(1.08)`. Áp cho `thanh-tai-khoan.module.css:78-81`, `khoi-thao-luan.module.css:159-162`, `o-soan-nhat-ky.module.css:66-69`. Nút gửi form `.gui` có từ trước cũng dùng đúng cách hover này.
+  - (b) `apps/web/e2e/don-vi/nut-chinh-brand.spec.ts:44-47,81,91` vẫn xanh ở các ca phản biện đã dựng bằng chính các hàm của bài: `background: var(--ink) !important`; `var(--ink-2)`; khai `color` hai lần trong một khối, lần sau là `#fff` (`KHAI_MAU_CHU` không có cờ `g` nên chỉ lấy khai báo đầu); nền ở một khối, `color:#fff` ở khối cùng selector trong `@media` (ví dụ `thanh-tai-khoan.module.css:260-267`, `(pointer: coarse)`, mà bài trình duyệt chạy pointer fine nên cũng không phủ). Ba nút hiện có đều không dính các ca này.
+  - (c) **Nghi ngờ**: `max-width: 45%` của `.quan_diem_dong` (`khoi-thao-luan.module.css:251`) không có bài nào giữ. Bỏ dòng này thì tên dài sẽ ép câu trích về 0px mà bài (c) vẫn xanh, vì dữ liệu tạm dùng tên ngắn. Chưa thử phá. Bản hiện tại đúng: phản biện đã đo tên 54 ký tự, điểm +123456, trích 480 ký tự, ở 1280/1024/900/700/641/390 đều không tràn.
+- **Vì sao không sửa ngay**: không phải lỗi sản phẩm, chỉ là hàng rào hở; chờ user quyết có vá luôn không.
+- **Đã vá (2026-11-13, user chọn "Vá luôn")**: plan việc 18 §10. Chỉ sửa bài đo, CSS/TSX sản phẩm không đổi.
+  - (a) H1 tĩnh tính tương phản hover `brightness(k)` cho 11 khối nền đặc brand/accent ở cả hai theme. H2 rê chuột thật lên 3 nút, ép nền hover bằng `--brand`, alpha 1.
+  - (b) `nut-chinh-brand.spec.ts` tách thành hàm thuần, có ca mẫu cho mọi ca phản biện dựng được, qua ba lượt phản biện.
+  - (c) User tạm tên 60 ký tự; ở 1280/700 ép cụm tên ≤ 45%, trích ≥ 40%.
+  - Thử phá Q1–Q5 và 11 đột biến bài đo đều đỏ đúng chỗ. Hở còn lại ghi ở P-20261113-5.
+
+### P-20261112-9 · [MỞ] · VỪA — bộ e2e không có chốt tên DB: chạy `pnpm e2e` trần là ghi thẳng vào `gikky_dev` (dữ liệu THẬT)
+- **Ở đâu / bằng chứng**: `apps/web/e2e/dung-seed.ts:24-25`, `apps/web/e2e/thu-vien.ts:44-49`. Phản biện việc 18 grep `gikky_e2e` trong `dung-seed.ts`, `scripts/py.mjs` và `api/core/management/commands/`: không có kết quả nào. Hiện chỉ có lời dặn (memory, prompt giao việc) giữ chỗ này, không có hàng rào chạy được.
+- **Vì sao không sửa ngay**: ngoài phạm vi việc 18.
+
+### P-20261112-10 · [MỞ] · NHỎ — lặt vặt thấy khi làm việc 18
+- **Ở đâu / bằng chứng**:
+  - (a) `trichQuanDiem` để sót dấu `!` của ảnh markdown, nên bình luận chỉ có ảnh hiện thành "!anh" trong ô quan điểm trên trang chủ. `apps/web/lib/chu-de.ts:248`. Phản biện đo trên `/` với bình luận `![anh](https://example.com/a.png)`.
+  - (b) `pnpm e2e:don-vi -g "<regex có ngoặc>"` vỡ, vì pnpm nhân đôi dấu `\` khi chuyển cờ qua `--filter`. Playwright báo `SyntaxError: Invalid regular expression: Unmatched ')'`. Gọi thẳng `npx playwright test -c playwright.don-vi.config.ts -g …` trong `apps/web` thì chạy được. Script `e2e:don-vi` ở `package.json` gốc.
+  - (c) **Nghi ngờ**: ở 390px, chip cuối của hàng chip khối "Bài viết" bị cắt ở mép phải (lộ chữ "T"), xem ảnh `trang-chu-mobile-sang.png` của nghiệm thu việc 18. Chưa kiểm đó là hàng cuộn ngang có chủ đích (plan việc 14 ghi "chip chuyên mục cuộn ngang") hay tràn thật.
+- **Vì sao không sửa ngay**: ngoài phạm vi việc 18.
+
+### P-20261113-5 · [MỞ] · NHỎ — hàng rào việc 18 sau vòng 2 còn các hở đã biết, đang chấp nhận
+- **Ở đâu / bằng chứng**: `apps/web/e2e/don-vi/nut-chinh-brand.spec.ts:22-37` (chú thích đầu file có ca mẫu ghim từng hành vi).
+  - LỌT:
+    - selector con (`.nut_chinh span { color: #fff }`);
+    - compound chỉ nằm trong `:is()`/`:where()`;
+    - `!important` giữa hai khai nền trong CÙNG một khối;
+    - `tokenDau` chỉ nhận `var(` ở đầu giá trị: `url(x) var(--brand)`, `VAR(`, `var(--x, var(--brand))`, gradient.
+
+    Repo hiện không có cách viết nào trong số này (phản biện đã grep).
+  - BÁO NHẦM (đỏ ồn, không lọt):
+    - `.tab:hover` mới tô brand thì khối `.tab` gốc bị đòi `--on-brand`, và người sửa theo thông báo sẽ ra chữ trắng trên nền trắng;
+    - `color` khai ở khối khác cùng selector;
+    - `:disabled` có nền `!important`;
+    - `unset`/`initial`.
+  - Hai chốt đếm (`SO_KHOI_NEN_BRAND = 13`, `SO_KHOI_HOVER_FILTER = 11`) so `≥`, nên chỉ chặn chiều hụt, không bắt được đếm dôi. Số thật hiện bằng đúng mốc.
+- **Vì sao không sửa ngay**: đọc CSS bằng regex thì mỗi lượt vá lại mở ra ca mới, và các hở này đều là lý thuyết hoặc đỏ ồn. Dừng ở lượt sửa thứ hai, đúng mức tối đa của quy trình.
+
+### P-20261113-6 · [ĐÓNG — user chọn giữ như cũ, 2026-11-13] · NHỎ — hover `brightness(1.08)` trên nút chữ trắng luôn làm GIẢM tương phản; brand tối còn 4.54:1, biên 0.04
+- **Ở đâu / bằng chứng**: các khối hover nền đặc, gồm `thanh-tai-khoan.module.css:78`, `khoi-thao-luan.module.css:159`, `o-soan-nhat-ky.module.css:66` và 8 khối khác (`.gui`, `.nut_gui`, `.nut_dang_chinh`, `.nutXacNhan`…).
+  - Phản biện vòng 2 tính:
+
+    | `brightness(k)` | brand tối | brand sáng | accent tối |
+    |---|---|---|---|
+    | 0.92 | 4.95 | 5.55 | 6.76 |
+    | 1.04 | 4.85 | 5.46 | 8.30 |
+    | 1.08 (đang dùng) | 4.54 | 5.12 | 8.78 |
+
+  - Lệch một đơn vị kênh G khi làm tròn là tụt xuống 4.48.
+  - Nút brand chữ trắng muốn tăng tương phản thì phải làm TỐI khi hover. Accent tối chữ đậm thì ngược lại.
+  - Hàng rào H1/H2 của việc 18 vòng 2 nay chặn được việc tụt dưới 4.5.
+- **Vì sao không sửa ngay**: đổi hướng hover là quyết định thiết kế của user. 4.54 vẫn đạt AA.
+- **Chốt (2026-11-13)**: user chọn "Giữ như cũ". Hover vẫn `brightness(1.08)`; H1/H2 giữ ngưỡng 4.5. Mở lại nếu đổi token `--brand`.
+
+### P-20261113-7 · [MỞ] · NHỎ — lặt vặt thấy khi làm việc 18 vòng 2
+- **Ở đâu / bằng chứng**:
+  - (a) Không bài nào giữ cho hai khối token tối trong `apps/web/app/globals.css:97-147` giống nhau: khối `@media (prefers-color-scheme: dark) :root:not([data-theme="light"])` và khối `:root[data-theme="dark"]`. Bài tĩnh (`tuong-phan`, H1) chỉ đọc `[data-theme="dark"]`; bài trình duyệt với `colorScheme: dark` chỉ đi nhánh `@media`. Hiện hai khối giống hệt nhau.
+  - (b) Chưa có luật tĩnh "chữ trên nền `--accent` phải là `--on-accent`", tức bản đối xứng của `kiemChuTrenBrand`. Có 9 khối nền accent đặc không được kiểm, trừ phần hover `filter` mà H1 đã đo.
+  - (c) `transition: filter 0.15s ease, opacity 0.15s ease` của `.nut_chinh` header (`thanh-tai-khoan.module.css:75`): phần `opacity` là thừa, vì không trạng thái nào đổi opacity.
+  - (d) Thử phá cần build (sửa tạm CSS rồi chạy `pnpm e2e`) để lại `apps/web/.next` build từ bản bị phá, nếu không build lại sau khi khôi phục. `next start` chạy sau đó sẽ phục vụ bản hỏng. Nghiệm thu vòng 2 tự build lại. Quy trình thử phá ở các plan chưa có bước này.
+- **Vì sao không sửa ngay**: ngoài phạm vi việc 18.
