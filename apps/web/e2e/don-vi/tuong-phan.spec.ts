@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { expect, test } from "@playwright/test";
 
+import { docToken } from "./token";
+
 const WEB = resolve(__dirname, "..", "..");
 
 /** **T5 — tương phản WCAG AA, đo bằng SỐ, ở CẢ HAI theme.**
@@ -30,23 +32,6 @@ const AA_CHU_THUONG = 4.5;
 // hằng 3:1 mang tên "chữ lớn" khi chưa ai dùng là để sẵn một lối hạ ngưỡng.)
 /** Viền, icon, thành phần giao diện — WCAG 1.4.11 "non-text contrast". */
 const AA_PHI_CHU = 3;
-
-/** Đọc một khối `:root { … }` (hoặc `:root[data-theme="dark"] { … }`) thành bảng token. */
-export function docToken(css: string, chon: string): Record<string, string> {
-  const tai = css.indexOf(chon);
-  if (tai === -1) throw new Error(`Không thấy khối \`${chon}\` trong globals.css`);
-  const mo = css.indexOf("{", tai);
-  const dong = css.indexOf("}", mo);
-  if (mo === -1 || dong === -1) throw new Error(`Khối \`${chon}\` không đóng ngoặc.`);
-  const ra: Record<string, string> = {};
-  for (const m of css.slice(mo, dong).matchAll(/(--[\w-]+)\s*:\s*(#[0-9a-fA-F]{3,8})\s*;/g)) {
-    ra[m[1]] = m[2];
-  }
-  if (Object.keys(ra).length === 0) {
-    throw new Error(`Cắt được \`${chon}\` nhưng không ra token màu nào — bài đo sẽ rỗng.`);
-  }
-  return ra;
-}
 
 /** Suy `--card` từ khai báo `color-mix` trong `globals.css` **thay vì gõ cứng một mã hex**.
  *
@@ -132,6 +117,10 @@ const CAP: readonly { chu: string; nen: string; nguong: number; o_dau: string }[
   // chỉ vì nó đang trượt. Hạ ngưỡng là cách "sửa" một bài đo tương phản mà không sửa gì.
   { chu: "--ink-3", nen: "--bg", nguong: AA_CHU_THUONG, o_dau: "mực nhạt trên nền trang" },
   { chu: "--ink-3", nen: "--surface", nguong: AA_CHU_THUONG, o_dau: "mực nhạt trên thẻ" },
+  // Ô quan điểm của khối chủ đề trang chủ nền `--inset` (việc 18): ngày + nhãn h3 là mực nhạt,
+  // link "Xem tất cả quan điểm" là `--accent`.
+  { chu: "--ink-3", nen: "--inset", nguong: AA_CHU_THUONG, o_dau: "ngày · nhãn trong ô quan điểm" },
+  { chu: "--accent", nen: "--inset", nguong: AA_CHU_THUONG, o_dau: 'link "Xem tất cả quan điểm"' },
   // ===== Nền THẺ `--card` (feed từ 2026-08-24, trang mạch từ 2026-08-26) =====
   // Nó TỐI HƠN `--surface` ở theme sáng, nên mọi cặp ở đây căng hơn cặp cùng chữ trên
   // `--surface` — và suốt từ lúc token ấy ra đời KHÔNG cặp nào được đo (xem `docCard`).

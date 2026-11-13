@@ -9,7 +9,7 @@ import {
   trichQuanDiem,
 } from "@/lib/chu-de";
 import { CHU_NGUOI_DUNG } from "@/lib/chu-nguoi-dung";
-import { diemCoDau } from "@/lib/dinh-dang";
+import { diemCoDau, ngayNganCuaThoiDiem } from "@/lib/dinh-dang";
 import { tenHienThi } from "@/lib/ten-hien-thi";
 import {
   duongDanHoSo,
@@ -41,16 +41,20 @@ export const SO_QUAN_DIEM_NOI_BAT = 3;
  * "chủ đề trước" trên `/`**: mỗi tuần một chủ đề, hết tuần đóng, mở chủ đề khác; kho cũ vẫn ở
  * `/chu-de`, lối vào là link trên rail phải.
  *
- * ## Hai nửa
+ * ## Xếp chồng *(việc 18, plan `2026-11-12-khoi-chu-de-xep-chong-nut-brand.md`)*
  *
- * - trái: nhãn tuần · khoảng tuần (thứ Hai–Chủ nhật giờ VN của `published_at`) · chip trạng
+ * Bản đầu là lưới hai cột: tiêu đề bị ép còn ~380px và gãy 5 dòng. Nay hai phần xếp chồng,
+ * phần chủ đề luôn rộng hết khối:
+ *
+ * - trên: nhãn tuần · khoảng tuần (thứ Hai–Chủ nhật giờ VN của `published_at`) · chip trạng
  *   thái · câu hỏi (`<h2>` cỡ lớn — `<h1>` của trang là dòng giới thiệu SEO, không phải chỗ này)
- *   · một dòng bối cảnh · hai nút;
- * - phải: quan điểm — bình luận GỐC (`chonQuanDiem`). Có ít nhất một bình luận điểm > 0 ⇒
- *   "Quan điểm nổi bật", điểm cao nhất trước; toàn điểm 0 ⇒ "Quan điểm mới", mới nhất trước và
- *   KHÔNG in điểm. Chỉ in `▲ N` cho bình luận có N ≠ 0. Tên + avatar là link hồ sơ (cùng kiểu
- *   `TheMach`). Chưa có bình luận nào ⇒ **ẩn cả nửa phải**, nửa trái chiếm hết (không khung
- *   rỗng);
+ *   · bối cảnh (2 dòng) · hai nút;
+ * - dưới: ô quan điểm nền `--inset` — bình luận GỐC (`chonQuanDiem`). Có ít nhất một bình luận
+ *   điểm > 0 ⇒ "Quan điểm nổi bật", điểm cao nhất trước; toàn điểm 0 ⇒ "Quan điểm mới", mới nhất
+ *   trước và KHÔNG in điểm. Chỉ in `▲ N` cho bình luận có N ≠ 0. Mỗi quan điểm một hàng ở
+ *   desktop (avatar · tên · ngày · điểm · trích một dòng), hai hàng ở mobile. Tên + avatar là
+ *   link hồ sơ (cùng kiểu `TheMach`). Chưa có bình luận nào ⇒ **không có ô quan điểm** (không
+ *   khung rỗng);
  * - hai nút khác `href`: "Viết quan điểm của bạn" tới Ô SOẠN (`duongDanVietBinhLuan`), "Xem tất
  *   cả quan điểm →" tới danh sách (`duongDanKhanDai`).
  *
@@ -72,7 +76,7 @@ export function KhoiThaoLuan({
   bay_gio,
 }: {
   chu_de: readonly MachTomTatOut[];
-  /** Bình luận gốc của CHÍNH chủ đề được chọn (`docBinhLuanGoc`); rỗng ⇒ ẩn nửa phải. */
+  /** Bình luận gốc của CHÍNH chủ đề được chọn (`docBinhLuanGoc`); rỗng ⇒ không có ô quan điểm. */
   binh_luan_goc: readonly BinhLuanOut[];
   /** Bình luận gốc MỚI NHẤT của chính chủ đề ấy (`docBinhLuanGocMoiNhat`) — chỉ dùng khi chưa ai
    * bỏ phiếu ("Quan điểm mới"). */
@@ -105,7 +109,7 @@ export function KhoiThaoLuan({
       {/* `chu-de-the` + `data-mach-id`: giữ nguyên mốc cho các bài đo đã nhắm "thẻ chủ đề" của
           trang chủ (`chu-de.spec.ts`, `trang-chu-v2.spec.ts`) — đúng MỘT cái trong khối. */}
       <div
-        className={quan_diem.length > 0 ? css.hai_nua : css.mot_nua}
+        className={css.the}
         data-testid="chu-de-the"
         data-mach-id={moi_nhat.id}
       >
@@ -189,7 +193,7 @@ export function KhoiThaoLuan({
                     ten={b.author?.username ?? "?"}
                     hienThi={b.author?.display_name}
                     url={b.author?.avatar_url}
-                    co={34}
+                    co={24}
                   />
                 );
                 return (
@@ -226,6 +230,10 @@ export function KhoiThaoLuan({
                             {tenHienThi(b.author, "?")}
                           </Link>
                         )}
+                        {/* Ngày tuyệt đối như mọi nơi trên site, không giờ tương đối. */}
+                        <time className={css.quan_diem_ngay} dateTime={b.created_at}>
+                          {ngayNganCuaThoiDiem(b.created_at)}
+                        </time>
                         {/* Điểm 0 không in: "▲ 0" là phô sự im lặng (PLAN nguyên tắc 9). */}
                         {b.score !== 0 && (
                           <span className={css.quan_diem_diem} title="Điểm của bình luận">

@@ -201,13 +201,10 @@ test.describe.serial("W2/G2 — chủ đề tuần: chip 'còn N ngày' theo gi�
       n > 0 ? `Đang mở · còn ${n} ngày` : "Đang mở · đóng hôm nay",
     );
     await expect(khoi.getByTestId("chu-de-boi-canh")).toContainText("Bối cảnh ngắn");
-    // Chưa có bình luận ⇒ ẩn nửa phải; nửa trái chiếm hết (một cột, không khung rỗng).
+    // Chưa có bình luận ⇒ không có ô quan điểm (không khung rỗng). Phần đếm cột lưới của
+    // `chu-de-the` đã gỡ ở việc 18: khối nay LUÔN xếp chồng một cột, nên phép đếm ấy xanh bất kể
+    // đúng sai (đo rỗng). Bố cục xếp chồng đo ở `khoi-chu-de-nut-brand.spec.ts` (c).
     await expect(khoi.getByTestId("quan-diem-noi-bat")).toHaveCount(0);
-    const cot = await khoi.getByTestId("chu-de-the").evaluate((e) => {
-      const t = getComputedStyle(e).gridTemplateColumns;
-      return t === "none" ? 1 : t.trim().split(/\s+/).length;
-    });
-    expect(cot, "không bình luận ⇒ một nửa").toBe(1);
   });
 
   test("ranh giới: mốc 'bây giờ' nằm ở DÒNG chip, không ở HTML bị cache — tải lại vẫn đúng", async ({
