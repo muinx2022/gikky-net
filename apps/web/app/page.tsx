@@ -11,6 +11,7 @@ import { SO_NHAT_KY_TAI, TrangChuV2 } from "@/components/trang-chu-v2";
 import {
   docCacSub,
   docChuDeTuan,
+  docDanhSachBanTin,
   docFeed,
   docFeedChuDe,
   docFeedSub,
@@ -24,14 +25,9 @@ import {
   type TabFeed,
   type TrangThaiFeed,
 } from "@/lib/api";
+import { SO_BAN_TIN_DAI } from "@/lib/ban-tin";
 import { jsonLdWebSite } from "@/lib/json-ld";
-import {
-  chonBanTin,
-  SO_BAI_TAI_MOI_GIA,
-  SO_BAI_VIET_TAI,
-  SO_BAN_TIN_DAI,
-  subLenTrangChu,
-} from "@/lib/nhom-bai-viet";
+import { SO_BAI_TAI_MOI_GIA, SO_BAI_VIET_TAI, subLenTrangChu } from "@/lib/nhom-bai-viet";
 import { GIOI_THIEU, urlTuyetDoi } from "@/lib/site";
 
 import css from "./trang-chu.module.css";
@@ -156,15 +152,16 @@ export default async function TrangChu({
  *   `lib/chan-khoi-nhat-ky.ts`). "Xem tất cả" đi tới feed `moi` không lọc.
  * - Chủ đề: MỘT lời gọi feed chủ đề. Khối chủ đề không còn ô quan điểm (việc 19, plan
  *   `2026-11-13-ban-tin-len-dau-ban-quyen.md` §3.4) nên trang chủ không gọi API bình luận nào.
- * - Bài viết: MỘT lời gọi `SO_BAI_VIET_TAI` bài cho dải Mới đăng + dải bản tin (chọn ở web,
- *   `lib/nhom-bai-viet.ts`; dải bản tin đứng TRÊN CÙNG trang, ngay dưới header — việc 19),
- *   và MỖI giá sách một lời gọi riêng `docFeedSub` — sub nào lên giá là dữ liệu
+ * - Bản tin: MỘT lời gọi `liet_ke_ban_tin` (`SO_BAN_TIN_DAI` bản) — bảng RIÊNG từ việc 20, dải
+ *   đứng TRÊN CÙNG trang, ngay dưới header (việc 19). Nó không còn lọc ra từ feed bài viết.
+ * - Bài viết: MỘT lời gọi `SO_BAI_VIET_TAI` bài cho dải Mới đăng (chọn ở web,
+ *   `lib/nhom-bai-viet.ts`), và MỖI giá sách một lời gọi riêng `docFeedSub` — sub nào lên giá là dữ liệu
  *   (`vi_tri_trang_chu` trong `GET /subs`, admin đặt), nên các lời gọi ấy phải chờ danh sách
  *   sub: chúng nối đuôi `docCacSub()` BÊN TRONG một phần tử của `Promise.all` — vẫn song song
  *   với các lời gọi khác, không thêm một vòng chờ ở ngoài. Gọi theo từng sub (không lọc từ cửa
  *   sổ 50 bài) để sub đăng chậm vẫn có bài. `null` (404, sub vừa bị xoá) ⇒ giá rỗng ⇒ ẩn. */
 async function TrangChuMoi() {
-  const [nhat_ky, chu_de, bai_viet, sub_va_gia] = await Promise.all([
+  const [nhat_ky, chu_de, bai_viet, sub_va_gia, ban_tin] = await Promise.all([
     docNhatKyMoiTacGia(SO_NHAT_KY_TAI),
     // Cùng lời gọi với khối "Chủ đề tuần này" ở rail các trang khác (`docFeedChuDe`), nên hai
     // nơi luôn chọn CÙNG một chủ đề. Ở đây nó ném khi API hỏng (vá F1); ở rail thì không.
@@ -182,6 +179,7 @@ async function TrangChuMoi() {
         }),
       ),
     })),
+    docDanhSachBanTin({ limit: SO_BAN_TIN_DAI }),
   ]);
   const { cac_sub, gia } = sub_va_gia;
 
@@ -197,7 +195,7 @@ async function TrangChuMoi() {
           KHÔNG có dòng phụ của khối khách: câu "Có thể ghi riêng tư, công khai khi bạn muốn." đã
           nằm trong ô soạn nhanh cùng trang (việc 14, đợt E — plan §4.7 "Bớt lặp"). */}
       <div className={css.vo} data-testid="trang-chu-v2">
-        <DaiBanTin banTin={chonBanTin(bai_viet.du_lieu.items, SO_BAN_TIN_DAI)} />
+        <DaiBanTin banTin={ban_tin.du_lieu.items} />
         <VoKhungHaiCot
           sidebar={
             <Sidebar

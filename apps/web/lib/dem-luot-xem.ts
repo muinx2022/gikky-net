@@ -1,3 +1,5 @@
+import { DUONG_DAN_TRANG_BAN_TIN } from "./ban-tin";
+
 /** Hai quyết định của `middleware.ts`, tách ra thành **hàm thuần để ĐO ĐƯỢC**.
  *
  * Middleware chạy trên edge runtime: không có bộ đo nào chạy được nó trực tiếp, và
@@ -159,6 +161,9 @@ const KHONG_DEM = [
  * - Trang chủ `/`
  * - Mạch `/m/<slugId>` và biến thể dynamic `/m-phien/<slugId>`
  * - Diễn đàn con `/s/<subSlug>`
+ * - Trang một bản tin `/s/tin-tuc/<YYYY-MM-DD>` (việc 20) — lượt xem cộng vào
+ *   `BanTin.view_count` ở Django (`api/api/dem_luot_xem.py::DUONG_DAN_BAN_TIN`); chỉ đúng sub
+ *   bản tin và đúng dạng ngày, không mở `/s/<x>/<y>` bất kỳ
  * - Hồ sơ người dùng `/u/<username>` (và các trang con dưới `/u/`)
  * - Các trang tĩnh: cai-dat, chan-doan, dang-ky, dang-mach, dang-nhap, doi-mat-khau,
  *   khu-mod, luat, quen-mat-khau, sua-ho-so, tim-kiem;
@@ -170,6 +175,7 @@ export const DUONG_DAN_HOP_LE = [
   /^\/$/,
   /^\/(?:m|m-phien)\/[^/]+\/?$/,
   /^\/s\/[^/]+\/?$/,
+  DUONG_DAN_TRANG_BAN_TIN,
   /^\/u\/[^/]+(?:\/[^/]+)*\/?$/,
   /^\/(?:cai-dat|chan-doan|chu-de|dang-ky|dang-mach|dang-nhap|doi-mat-khau|khu-mod|luat|quen-mat-khau|sua-ho-so|tim-kiem)\/?$/,
 ];

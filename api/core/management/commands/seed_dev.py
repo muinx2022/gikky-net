@@ -179,7 +179,7 @@ SUBS = [
     {
         "slug": "tin-tuc",
         "ten": "Tin tức",
-        "mo_ta": "Bản tin tổng hợp tự động: mỗi ngày một mạch, ba mốc theo ba khung giờ.",
+        "mo_ta": "Bản tin thị trường mỗi ngày: đêm qua, trước phiên VN, trước phiên Mỹ. Chỉ tin, không nhận định.",
     },
 ]
 

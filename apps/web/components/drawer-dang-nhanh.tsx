@@ -14,6 +14,7 @@ import {
 
 import { cauLoiTaiAnh, KIEU_NHAN, taiAnhLanLuot } from "@/lib/anh";
 import { docCacSubOTrinhDuyet } from "@/lib/api";
+import { subDangDuoc } from "@/lib/ban-tin";
 import { MA_LOI, layDuLieu, LoiGhi } from "@/lib/ghi";
 import { cauLoiGuiLenh, lenhFormRong, lenhTuForm, type LenhForm } from "@/lib/lenh-form";
 import { GOC_TRINH_DUYET, headerGhi } from "@/lib/tai-khoan";
@@ -114,6 +115,8 @@ export function DrawerDangNhanhProvider({
   useEffect(() => {
     let vanCon = true;
     docCacSubOTrinhDuyet()
+      // Bỏ `tin-tuc` (việc 20): API từ chối mọi mạch vào chuyên mục bản tin.
+      .then(subDangDuoc)
       .then((subs) => {
         if (!vanCon) return;
         setCacSub(subs);

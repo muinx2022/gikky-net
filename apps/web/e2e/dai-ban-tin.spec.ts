@@ -1,4 +1,4 @@
-import type { FeedOut } from "@gikky/api-client";
+import type { TrangBanTinOut } from "@gikky/api-client";
 import { expect, test, type Page } from "@playwright/test";
 
 import { donThuVien, dungThuVien, py } from "./thu-vien";
@@ -15,10 +15,11 @@ import { donThuVien, dungThuVien, py } from "./thu-vien";
  *   không trần phần trăm), thẳng mép với `<h1>` và rail. V1 (hàm cắt tiền tố) ở
  *   `e2e/don-vi/bai-viet-trang-chu.spec.ts`.
  *
- * Dữ liệu: thư viện bài viết TẠM của `./thu-vien.ts` (có đúng 3 bài `tin-tuc`), dựng ở
- * `beforeAll` cấp file và dọn ở `afterAll`. Chủ đề + bình luận là của `seed_e2e`. Nguồn sự thật
- * kỳ vọng là **API**, không phải HTML mình vừa render. T13 dựng thêm MỘT chủ đề tạm có bối cảnh
- * dài (xem nhóm T13: bối cảnh của seed quá ngắn để đo). */
+ * Dữ liệu: bản tin là bảng RIÊNG từ việc 20 (plan `2026-11-13-ban-tin-bang-rieng.md`) — dải đọc
+ * `GET /ban-tin?limit=2`; `seed_e2e` có 3 bản tin hiện được (+1 đã ẩn). Thư viện bài viết TẠM của
+ * `./thu-vien.ts` vẫn dựng ở `beforeAll` cấp file (khối Bài viết, T2) và dọn ở `afterAll`. Chủ đề +
+ * bình luận là của `seed_e2e`. Nguồn sự thật kỳ vọng là **API**, không phải HTML mình vừa render.
+ * T13 dựng thêm MỘT chủ đề tạm có bối cảnh dài (xem nhóm T13: bối cảnh của seed quá ngắn để đo). */
 
 const API = process.env.E2E_API_ORIGIN ?? "http://localhost:8000";
 
@@ -41,10 +42,9 @@ const hop = (page: Page, selector: string) =>
     return { top: r.top + window.scrollY, bottom: r.bottom + window.scrollY, h: r.height };
   });
 
-/** Hai bài `tin-tuc` mới nhất theo đúng lời gọi trang chủ dùng (`SO_BAN_TIN_DAI` = 2, vòng 2). */
+/** Hai bản tin mới nhất theo đúng lời gọi trang chủ dùng (`liet_ke_ban_tin`, `SO_BAN_TIN_DAI` = 2). */
 async function banTinMong() {
-  const moi = await api<FeedOut>("/api/v1/feeds/moi?loai_mach=bai_viet&limit=50");
-  return moi.items.filter((m) => m.sub.slug === "tin-tuc").slice(0, 2);
+  return (await api<TrangBanTinOut>("/api/v1/ban-tin?limit=2")).items;
 }
 
 /** Hai tiêu đề kiểu THẬT (dạng "Bản tin DD/MM — …", rộng ~470–550px ở 13px — số đo của phản biện
@@ -114,14 +114,13 @@ test.describe("T1–T5 — dải bản tin ngay dưới header", () => {
     await expect(page.getByTestId("ban-tin")).toHaveCount(0);
   });
 
-  test("T3/V2 — HTML thô: ĐÚNG 2 mục = 2 bài tin-tuc mới nhất, đúng thứ tự, <time datetime>, title đầy đủ; link tất cả; không heading, không <p>", async ({
+  test("T3/V2 — HTML thô: ĐÚNG 2 mục = 2 bản tin mới nhất (liet_ke_ban_tin), đúng thứ tự, <time datetime> = ngày, title đầy đủ; link tất cả; không heading, không <p>", async ({
     request,
   }) => {
     const tin = await banTinMong();
-    expect(tin.length, "dữ liệu tạm có đủ bản tin").toBe(2);
-    // Dữ liệu tạm có 3 bài tin-tuc: dải vẽ 2 là do `SO_BAN_TIN_DAI`, không phải do thiếu bài.
-    const moi = await api<FeedOut>("/api/v1/feeds/moi?loai_mach=bai_viet&limit=50");
-    expect(moi.items.filter((m) => m.sub.slug === "tin-tuc").length).toBeGreaterThanOrEqual(3);
+    expect(tin.length, "seed có đủ bản tin").toBe(2);
+    // Seed có 3 bản tin hiện được: dải vẽ 2 là do `SO_BAN_TIN_DAI`, không phải do thiếu bài.
+    expect((await api<TrangBanTinOut>("/api/v1/ban-tin?limit=50")).items.length).toBeGreaterThanOrEqual(3);
     const html = await (await request.get("/")).text();
     const dai = /<section\b[^>]*data-testid="ban-tin"[^>]*>([\s\S]*?)<\/section>/.exec(html);
     expect(dai, "không tìm thấy dải trong HTML thô").not.toBeNull();
@@ -131,9 +130,10 @@ test.describe("T1–T5 — dải bản tin ngay dưới header", () => {
     expect((than.match(/<li\b/g) ?? []).length, "đúng 2 <li>").toBe(2);
     const giaiMa = (s: string) => s.replaceAll("&amp;", "&").replaceAll("&quot;", '"');
     for (let i = 0; i < 2; i += 1) {
-      expect(/href="([^"]+)"/.exec(muc[i][0])![1], `mục ${i}`).toBe(`/m/${tin[i].slug}-${tin[i].id}`);
+      expect(/href="([^"]+)"/.exec(muc[i][0])![1], `mục ${i}`).toBe(`/s/tin-tuc/${tin[i].ngay}`);
+      // Ngày là `BanTin.ngay` (YYYY-MM-DD), không phải một dấu thời gian (sổ P-20261113-8 (a)).
       expect(/<time\b[^>]*\bdatetime="([^"]+)"/i.exec(muc[i][1])?.[1], `mục ${i}: <time datetime>`).toBe(
-        tin[i].published_at,
+        tin[i].ngay,
       );
       expect(giaiMa(/\btitle="([^"]*)"/.exec(muc[i][0])?.[1] ?? ""), `mục ${i}: title`).toBe(tin[i].title);
     }
@@ -396,27 +396,65 @@ test.describe.serial("T13 — bối cảnh chủ đề hiện trọn đoạn tr�
 
 test.describe.serial("V3 — một bản tin TẠM mang tiêu đề thật: dải vẽ tiêu đề gọn, title đầy đủ, không bị cắt", () => {
   // Các bài V3 ở trên ghi đè chữ trên DOM — chúng đo CSS, không đo việc trang có gọi
-  // `tieuDeBanTinGon` hay không (tiêu đề của thư viện tạm không có tiền tố "Bản tin DD/MM — ").
-  // Bài này đăng MỘT bài `tin-tuc` mới nhất mang đúng khuôn tiêu đề thật rồi đọc chữ trang vẽ.
-  // Dấu `[e2e-viec-19]` ở CUỐI: tiêu đề không thể trùng một bản tin thật, nên lệnh xoá theo
-  // tiêu đề bên dưới không bao giờ chạm bài thật kể cả khi lỡ chạy vào DB có dữ liệu thật. Tiền tố
-  // giữ nguyên để bài vẫn đo việc cắt tiền tố.
+  // `tieuDeBanTinGon` hay không. Bài này đăng MỘT bản tin mới nhất mang đúng khuôn tiêu đề thật
+  // rồi đọc chữ trang vẽ. Dấu `[e2e-viec-19]` ở CUỐI: tiêu đề không thể trùng một bản tin thật,
+  // nên lệnh xoá theo tiêu đề bên dưới không bao giờ chạm bài thật kể cả khi lỡ chạy vào DB có dữ
+  // liệu thật. Tiền tố giữ nguyên để bài vẫn đo việc cắt tiền tố.
+  //
+  // Việc 20: bản tin là bảng RIÊNG (`BanTin`), không còn là mạch `tin-tuc`. Ngày = ngày mới nhất
+  // + 1 (UNIQUE, và để nó đứng ĐẦU dải). `created_at` / `cap_nhat_luc` cố ý rơi vào một NGÀY VN
+  // KHÁC (23:30 UTC hai hôm trước = 06:30 VN hôm trước): dải phải in `ngay`, không in ngày của
+  // một dấu thời gian — bài đo đóng sổ `P-20261113-8` (a).
   const TD = `${TIEU_DE_THAT[0]} [e2e-viec-19]`;
-  const xoa = () => py(`from core.models import Mach; Mach.objects.filter(title=${JSON.stringify(TD)}).delete()`);
+  const xoa = () => py(`from core.models import BanTin; BanTin.objects.filter(title=${JSON.stringify(TD)}).delete()`);
+  let ngay = "";
   test.beforeAll(() => {
     xoa();
-    py(
+    ngay = py(
       [
-        "from core.ghi import tao_mach",
-        "from core.models import Sub, User",
+        "from datetime import datetime, time, timedelta, timezone",
+        "from django.db.models import Max",
+        "from core.models import BanTin, BanTinKhung, User",
+        "from core.thoi_gian import ngay_vn",
         "doi = User.objects.get(username='e2e_tai_khoan_doi')",
-        `tao_mach(sub=Sub.objects.get(slug='tin-tuc'), author=doi, title=${JSON.stringify(TD)},`,
-        "    body='Bản tin tạm của bài đo V3.', occurred_at=None, loai=None)",
+        "moi_nhat = BanTin.objects.aggregate(m=Max('ngay'))['m'] or ngay_vn()",
+        "ngay = moi_nhat + timedelta(days=1)",
+        "khi = datetime.combine(ngay - timedelta(days=2), time(23, 30), tzinfo=timezone.utc)",
+        `bt = BanTin.objects.create(ngay=ngay, title=${JSON.stringify(TD)}, tac_gia=doi, created_at=khi, cap_nhat_luc=khi)`,
+        "BanTinKhung.objects.create(ban_tin=bt, khung='dem_qua', body='<p>Bản tin tạm của bài đo V3.</p>', created_at=khi)",
+        "print(ngay.isoformat())",
         "",
       ].join("\n"),
-    );
+    )
+      // Django shell in thêm "N objects imported automatically" lên stdout: giá trị là dòng CUỐI.
+      .trim()
+      .split("\n")
+      .pop()!
+      .trim();
   });
   test.afterAll(() => xoa());
+
+  test("P-20261113-8 (a) — dải in NGÀY của bản tin (`ngay`), không phải ngày VN của cap_nhat_luc", async ({
+    page,
+  }) => {
+    expect(ngay).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    await page.goto("/");
+    const dau = page.getByTestId("ban-tin-muc").first();
+    await expect(dau).toHaveAttribute("title", TD);
+    await expect(dau).toHaveAttribute("href", `/s/tin-tuc/${ngay}`);
+    const t = dau.locator("time");
+    await expect(t).toHaveAttribute("datetime", ngay);
+    const [, mm, dd] = ngay.split("-");
+    await expect(t).toHaveText(`${dd}/${mm}`);
+    // Chống đo rỗng: ngày VN của cap_nhat_luc phải KHÁC `ngay`, nếu không bài này không phân biệt
+    // được hai nguồn.
+    const ban_tin = (await api<TrangBanTinOut>("/api/v1/ban-tin?limit=1")).items[0];
+    expect(ban_tin.ngay).toBe(ngay);
+    const ngay_cap_nhat = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Ho_Chi_Minh" }).format(
+      new Date(ban_tin.cap_nhat_luc),
+    );
+    expect(ngay_cap_nhat, "dấu thời gian rơi vào ngày khác").not.toBe(ngay);
+  });
 
   test("V3 — 1280: mục đầu là '<ngày> · Dow Jones …' (không 'Bản tin 10/11 —'), title = tiêu đề đầy đủ, không bị cắt", async ({
     page,

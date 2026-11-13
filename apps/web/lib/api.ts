@@ -1,14 +1,18 @@
 import {
+  lietKeBanTin,
   lietKeBinhLuanMach,
   lietKeBinhLuanMoc,
   lietKeFeedDangDienRa,
   lietKeFeedMoi,
   lietKeNhatKyMoiTacGia,
   lietKeSub,
+  timBanTinTuMachCu,
   timKiem,
+  xemBanTin,
   xemHoSo,
   xemMach,
   xemSub,
+  type BanTinChiTietOut,
   type FeedOut,
   type HoSoOut,
   type KhanDaiOut,
@@ -17,6 +21,7 @@ import {
   type NganKeoOut,
   type SubChiTietOut,
   type TimKiemOut,
+  type TrangBanTinOut,
 } from "@gikky/api-client";
 
 import { chonChuDeNoi, type ChuDeTuan, khoangTuanVN, SO_CHU_DE_TAI } from "./chu-de";
@@ -830,4 +835,55 @@ export async function docTimKiem(opts: {
     }),
     `tim_kiem(${opts.q})`,
   );
+}
+
+/* --------------------------------------------------------------------------------------------- */
+/* Bản tin — bảng RIÊNG từ việc 20 (plan `2026-11-13-ban-tin-bang-rieng.md` §3.2, §3.5).          */
+
+/** Một bản tin theo ngày VN (`YYYY-MM-DD`) — trang `/s/tin-tuc/<ngày>`. `null` khi API trả 404
+ * (ngày sai dạng, không có, hoặc đã ẩn) ⇒ trang `notFound()`. */
+export async function docBanTin(ngay: string): Promise<BanTinChiTietOut | null> {
+  return lay(await xemBanTin({ ...CHUNG, path: { ngay } }), `xem_ban_tin(${ngay})`);
+}
+
+/** Danh sách bản tin mới → cũ theo ngày — trang `/s/tin-tuc`, dải trang chủ, sitemap, RSS.
+ *
+ * Cùng luật cursor với `feedTho` (vá A1): `?cursor=` rỗng / rác ⇒ trang đầu **kèm cờ**
+ * `cursorHong` để UI nói ra. `GET /ban-tin` không có đường 404 nào, nên `null` là hỏng CẤU TRÚC
+ * và phải NÉM (vá F1) — không quy về "chưa có bản tin nào". */
+export async function docDanhSachBanTin(opts: {
+  cursor?: string;
+  limit?: number;
+}): Promise<TrangCursor<TrangBanTinOut>> {
+  const xin = cursorHopLe(opts.cursor);
+  const cursor_bi_bo = xin === null && opts.cursor !== undefined;
+  const viec = "liet_ke_ban_tin";
+  const limit = opts.limit ?? 20;
+  let kq = await lietKeBanTin({ ...CHUNG, query: { cursor: xin, limit } });
+  let hong = cursor_bi_bo;
+  if (maLoi(kq, CURSOR_KHONG_HOP_LE)) {
+    kq = await lietKeBanTin({ ...CHUNG, query: { cursor: null, limit } });
+    hong = true;
+  }
+  const du_lieu = lay(kq, viec);
+  if (du_lieu === null) {
+    throw new LoiApi(
+      viec,
+      404,
+      "404 trên GET /ban-tin — endpoint này không có đường 404 nào, nên đây là hỏng cấu trúc " +
+        "chứ không phải 'chưa có bản tin nào'",
+    );
+  }
+  return { du_lieu, cursorHong: hong };
+}
+
+/** Ngày của bản tin đã chuyển từ mạch cũ `machId`, hoặc `null` — CHỈ để trang mạch trả 301
+ * `/m/<slug>-<id>` → `/s/tin-tuc/<ngày>` sau khi `xem_mach` đã trả 404. Không có lời gọi nào trên
+ * đường trang mạch thành công. */
+export async function docNgayBanTinTuMachCu(machId: number): Promise<string | null> {
+  const ra = lay(
+    await timBanTinTuMachCu({ ...CHUNG, path: { mach_id: machId } }),
+    `tim_ban_tin_tu_mach_cu(${machId})`,
+  );
+  return ra === null ? null : ra.ngay;
 }

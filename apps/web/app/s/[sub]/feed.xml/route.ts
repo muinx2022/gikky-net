@@ -1,4 +1,5 @@
-import { docFeedSub, docSub } from "@/lib/api";
+import { docDanhSachBanTin, docFeedSub, docSub } from "@/lib/api";
+import { SUB_BAN_TIN, duongDanBanTin } from "@/lib/ban-tin";
 import { DAU_TRANG_RSS, SO_MUC_RSS, dungRss, moTaMuc } from "@/lib/rss";
 import { urlTuyetDoi } from "@/lib/site";
 import { duongDanMach, duongDanSub } from "@/lib/url";
@@ -20,6 +21,7 @@ export async function GET(
   { params }: { params: Promise<{ sub: string }> },
 ) {
   const { sub } = await params;
+  if (sub === SUB_BAN_TIN) return rssBanTin();
   // Hai nguồn 404 độc lập, hỏi cả hai — cùng lý lẽ với `app/s/[sub]/page.tsx`: chỉ hỏi
   // feed thì sub bị xoá giữa hai lời gọi cho ra header `null` rồi nổ ở dòng dựng XML.
   const [{ du_lieu: feed }, chi_tiet] = await Promise.all([
@@ -46,5 +48,34 @@ export async function GET(
     })),
   });
 
+  return new Response(xml, { headers: DAU_TRANG_RSS });
+}
+
+/** `/s/tin-tuc/feed.xml` — mỗi bản tin MỘT mục, link `/s/tin-tuc/<ngày>` (việc 20). Bản tin là
+ * bảng riêng nên không đi qua `docFeedSub`. `pubDate` = `cap_nhat_luc`: khung mới đăng là nội dung
+ * mới của cùng một mục. Mô tả = các cặp số liệu (danh sách không trả thân). */
+async function rssBanTin() {
+  const [{ du_lieu: trang }, chi_tiet] = await Promise.all([
+    docDanhSachBanTin({ limit: SO_MUC_RSS }),
+    docSub(SUB_BAN_TIN),
+  ]);
+  if (chi_tiet === null) {
+    return new Response("Không có chuyên mục này.\n", {
+      status: 404,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
+  }
+  const xml = dungRss({
+    tieuDe: `gikky.net · s/${chi_tiet.slug} — ${chi_tiet.ten}`,
+    moTa: chi_tiet.mo_ta,
+    lienKet: urlTuyetDoi(duongDanSub(chi_tiet.slug)),
+    tuLienKet: urlTuyetDoi(`${duongDanSub(chi_tiet.slug)}/feed.xml`),
+    muc: trang.items.map((b) => ({
+      tieuDe: b.title,
+      lienKet: urlTuyetDoi(duongDanBanTin(b.ngay)),
+      moTa: b.so_lieu.map((f) => `${f.label} ${f.value}`).join(" · "),
+      ngay: new Date(b.cap_nhat_luc),
+    })),
+  });
   return new Response(xml, { headers: DAU_TRANG_RSS });
 }

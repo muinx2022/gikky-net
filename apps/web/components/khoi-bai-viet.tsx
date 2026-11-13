@@ -6,7 +6,6 @@ import Link from "next/link";
 import { CHU_NGUOI_DUNG } from "@/lib/chu-nguoi-dung";
 import { ngayNganCuaThoiDiem } from "@/lib/dinh-dang";
 import {
-  chonBanTin,
   chonMoiDang,
   dungGiaSach,
   idDaHien,
@@ -94,19 +93,20 @@ function MucGia({ mach }: { mach: MachTomTatOut }) {
  * cột, dưới cả rail) *(plan `2026-11-11-bai-viet-trang-chu-gia-sach.md`)*. Từ trên xuống:
  *
  * 1. Header + chip: chip là các chuyên mục admin đã chọn lên trang chủ (`vi_tri_trang_chu`).
- * 2. **Mới đăng**: `SO_MOI_DANG` bài `bai_viet` mới nhất của MỌI chuyên mục trừ `tin-tuc`, kèm
- *    thumbnail + chip tên chuyên mục — nên chuyên mục không được chọn vẫn lên trang chủ.
+ * 2. **Mới đăng**: `SO_MOI_DANG` bài `bai_viet` mới nhất của MỌI chuyên mục trừ `tin-tuc` (lọc
+ *    phòng thủ cho mạch bản tin cũ — xem `chonMoiDang`), kèm thumbnail + chip tên chuyên mục — nên
+ *    chuyên mục không được chọn vẫn lên trang chủ.
  * 3. **Giá sách**: mỗi chuyên mục được chọn là một cột (tiêu đề = `sub.ten`), `SO_BAI_MOI_GIA`
  *    bài chỉ tiêu đề + ngày, KHÔNG trùng bài đã ở Mới đăng. `gia` do trang chủ tải riêng từng
- *    sub (`docFeedSub`) nên sub đăng chậm vẫn có bài. Cột rỗng ⇒ ẩn. Bài đã ở dải "Bản tin
- *    thị trường" cũng bị loại khỏi giá.
+ *    sub (`docFeedSub`) nên sub đăng chậm vẫn có bài. Cột rỗng ⇒ ẩn.
  *
  * Dải "Bản tin thị trường" từng là mục 4 ở cuối section này; từ việc 19 nó là `DaiBanTin` ở ĐẦU
- * trang, ngay dưới header (plan `2026-11-13-ban-tin-len-dau-ban-quyen.md`).
+ * trang, ngay dưới header (plan `2026-11-13-ban-tin-len-dau-ban-quyen.md`), và từ việc 20 bản tin
+ * là bảng RIÊNG — section này không chọn bản tin nào nữa.
  *
  * Việc chọn bài là của `lib/nhom-bai-viet.ts` (hàm thuần). **Mới đăng và giá sách cùng rỗng ⇒ ẩn
  * cả section** (không khung rỗng). Mọi bài là `<article>` có `<a href>` thật ở tiêu đề (heading),
- * ngày trong `<time datetime>`. Web không giữ bản sao tên hay slug chuyên mục nào ngoài `tin-tuc`.
+ * ngày trong `<time datetime>`. Web không giữ bản sao tên hay slug chuyên mục nào.
  * HTML như nhau cho mọi UA.
  *
  * Gallery lật ảnh kiểu Reddit của homepage v2 bản đầu (`gallery-bai-viet.tsx`) không còn được
@@ -121,9 +121,9 @@ export function KhoiBaiViet({
   gia: readonly GiaSachTho[];
 }) {
   const moi_dang = chonMoiDang(bai_viet);
-  // Bản tin không còn vẽ ở đây (dải riêng ở đầu trang), nhưng giá sách VẪN bỏ các bài ấy: admin
-  // có thể chọn `tin-tuc` làm một giá, và ba bài của giá ấy sẽ trùng đúng dải bản tin.
-  const cot = dungGiaSach(gia, idDaHien(moi_dang, chonBanTin(bai_viet)));
+  // Bản tin là bảng riêng từ việc 20 — không còn bài viết nào thuộc nó, nên giá sách chỉ bỏ bài
+  // đã ở dải Mới đăng.
+  const cot = dungGiaSach(gia, idDaHien(moi_dang));
   if (moi_dang.length === 0 && cot.length === 0) return null;
 
   const hrefTatCa = "/?tab=moi&loai_mach=bai_viet";

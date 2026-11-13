@@ -4,15 +4,11 @@ import { resolve } from "node:path";
 import type { MachTomTatOut, SubChiTietOut } from "@gikky/api-client";
 import { expect, test } from "@playwright/test";
 
+import { SO_BAN_TIN_DAI, SUB_BAN_TIN, tieuDeBanTinGon } from "../../lib/ban-tin";
 import {
   SO_BAI_MOI_GIA,
   SO_BAI_TAI_MOI_GIA,
-  SO_BAN_TIN,
-  SO_BAN_TIN_DAI,
   SO_MOI_DANG,
-  SUB_BAN_TIN,
-  tieuDeBanTinGon,
-  chonBanTin,
   chonMoiDang,
   dungGiaSach,
   idDaHien,
@@ -38,12 +34,14 @@ test("hằng số theo plan: 3 bài Mới đăng, 3 bài mỗi giá, mỗi giá 
   expect(SO_BAI_TAI_MOI_GIA).toBeGreaterThanOrEqual(SO_BAI_MOI_GIA + SO_MOI_DANG);
 });
 
-test("Mới đăng: bài mới nhất của MỌI chuyên mục, trừ tin-tuc; giữ thứ tự feed; tối đa 3", () => {
+// Việc 20, vòng sửa 1: bài `tin-tuc` vẫn bị LOẠI khỏi Mới đăng — phòng thủ cho mạch bản tin cũ
+// mà `chuyen_ban_tin` cố ý bỏ qua (chúng ở lại là `bai_viet` công khai trong sub ấy).
+test("Mới đăng: bài mới nhất của MỌI chuyên mục, trừ mạch tin-tuc cũ; giữ thứ tự feed; tối đa 3", () => {
   const items = [
-    bai(1, "tin-tuc"),
+    bai(1, SUB_BAN_TIN), // mạch bản tin cũ lệnh chuyển bỏ qua — mới nhất mà vẫn không lên
     bai(2, "ngoai-hoi"), // sub không ai chọn lên giá — vẫn vào Mới đăng
     bai(3, "chung-khoan"),
-    bai(4, "tin-tuc"),
+    bai(4, SUB_BAN_TIN),
     bai(5, "vi-mo"),
     bai(6, "crypto"), // bài thứ 4 hợp lệ ⇒ rớt
   ];
@@ -98,25 +96,11 @@ test("giá sách: đúng ca xin SO_BAI_TAI_MOI_GIA bài mà cả 3 bài đầu �
   expect(cot[0].baiViet.map((m) => m.id)).toEqual([4, 5, 6]);
 });
 
-test("giá sách: admin chọn tin-tuc làm giá ⇒ bỏ bài trùng dải Bản tin (và dải Mới đăng)", () => {
-  const items = [
-    bai(1, "tin-tuc"),
-    bai(2, "vi-mo"),
-    bai(3, "tin-tuc"),
-    bai(4, "tin-tuc"),
-    bai(5, "tin-tuc"),
-    bai(6, "tin-tuc"),
-  ];
-  const moi_dang = chonMoiDang(items);
-  const ban_tin = chonBanTin(items); // 1, 3, 4
-  const gia = [{ sub: sub("tin-tuc", 1), items: items.filter((m) => m.sub.slug === "tin-tuc") }];
-
-  // Chỉ gộp Mới đăng (cách cũ): giá tin-tuc lặp lại đúng 3 bài của dải Bản tin.
-  expect(dungGiaSach(gia, idDaHien(moi_dang))[0].baiViet.map((m) => m.id)).toEqual([1, 3, 4]);
-  // Gộp cả Bản tin: giá chỉ còn bài CHƯA hiện.
-  const daHien = idDaHien(moi_dang, ban_tin);
-  expect([...daHien].sort()).toEqual([1, 2, 3, 4]);
-  expect(dungGiaSach(gia, daHien)[0].baiViet.map((m) => m.id)).toEqual([5, 6]);
+// Bài "admin chọn tin-tuc làm giá ⇒ bỏ bài trùng dải Bản tin" đã BỎ ở việc 20 cùng `chonBanTin`:
+// dải bản tin đọc bảng riêng, không chung bài nào với giá sách. Phần còn lại của nó — gộp nhiều
+// dải vào tập đã hiện — đo ở đây.
+test("idDaHien: gộp id của mọi dải đã hiện; không dải nào ⇒ tập rỗng", () => {
+  expect([...idDaHien([bai(1, "a"), bai(2, "b")], [bai(3, "c")])].sort()).toEqual([1, 2, 3]);
   expect(idDaHien()).toEqual(new Set());
 });
 
@@ -128,19 +112,20 @@ test("giá sách: không đột biến đầu vào", () => {
   expect(gia).toHaveLength(1);
 });
 
-test("lib/nhom-bai-viet.ts không còn slug cứng nào ngoài SUB_BAN_TIN", () => {
+test("lib/nhom-bai-viet.ts không còn slug cứng nào (kể cả slug bản tin — việc 20)", () => {
   const nguon = readFileSync(resolve(__dirname, "..", "..", "lib", "nhom-bai-viet.ts"), "utf8")
     .replace(/\/\*[\s\S]*?\*\//g, "")
     .replace(/^\s*\/\/.*$/gm, "");
   const chuoi = [...nguon.matchAll(/"([^"\n]*)"/g)].map((m) => m[1]);
-  // Cho phép: slug bản tin, đường import, và tên trường trong `Pick<…>`. Mọi chuỗi còn lại là
+  // Cho phép: đường import (gói và tương đối) và tên trường trong `Pick<…>`. Mọi chuỗi còn lại là
   // slug cứng → cấm.
+  // `SUB_BAN_TIN` từng là ngoại lệ; từ việc 20 nó sống ở `lib/ban-tin.ts` và chỉ còn rẽ nhánh route.
   const TEN_TRUONG = new Set(["slug", "ten", "vi_tri_trang_chu"]);
+  // `./ban-tin`: lọc phòng thủ của `chonMoiDang` (vòng sửa 1) lấy `SUB_BAN_TIN` qua import.
   const la = chuoi.filter(
-    (s) => s !== SUB_BAN_TIN && !s.startsWith("@gikky/") && !TEN_TRUONG.has(s),
+    (s) => !s.startsWith("@gikky/") && !s.startsWith("./") && !TEN_TRUONG.has(s),
   );
   expect(la, "slug chuyên mục là dữ liệu (Sub.vi_tri_trang_chu), không gõ cứng ở web").toEqual([]);
-  expect(SUB_BAN_TIN).toBe("tin-tuc");
 });
 
 /* -------------------------------------------- V1 — tiêu đề gọn của dải bản tin (việc 19 §3.6) -- */
@@ -169,9 +154,8 @@ test("V1 — tieuDeBanTinGon: không khớp, hoặc sau tiền tố không còn 
   }
 });
 
-test("V1 — dải đầu trang vẽ 2 bản tin; giá sách vẫn loại đủ 3", () => {
+// Việc 20: `SO_BAN_TIN` (3, số bài giá sách loại theo dải) và `chonBanTin` đã bỏ — dải đọc
+// `liet_ke_ban_tin({limit: SO_BAN_TIN_DAI})` thẳng từ API (ghim ở `e2e/don-vi/ban-tin.spec.ts`).
+test("V1 — dải đầu trang vẽ 2 bản tin", () => {
   expect(SO_BAN_TIN_DAI).toBe(2);
-  expect(SO_BAN_TIN).toBe(3);
-  const items = [1, 2, 3, 4].map((id) => bai(id, SUB_BAN_TIN));
-  expect(chonBanTin(items, SO_BAN_TIN_DAI).map((m) => m.id)).toEqual([1, 2]);
 });

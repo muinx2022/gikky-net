@@ -3,6 +3,7 @@ import { KhungHaiCot } from "@/components/khung-hai-cot";
 
 import { FormDangMach } from "@/components/form-dang-mach";
 import { docCacSub } from "@/lib/api";
+import { subDangDuoc } from "@/lib/ban-tin";
 
 import css from "./dang-mach.module.css";
 
@@ -35,7 +36,8 @@ export default async function TrangDangMach({
         Ghi lý do <em>trước</em> khi biết kết quả — máy chủ đóng dấu thời gian, và dấu đó
         không sửa được. Đó là toàn bộ giá trị của một cuốn sổ ở đây.
       </p>
-      <FormDangMach cacSub={cac_sub} subMacDinh={sub} />
+      {/* `subDangDuoc` bỏ `tin-tuc`: bản tin là bảng riêng, API từ chối mọi mạch vào đó (việc 20). */}
+      <FormDangMach cacSub={subDangDuoc(cac_sub)} subMacDinh={sub} />
     </KhungHaiCot>
   );
 }

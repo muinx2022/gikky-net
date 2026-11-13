@@ -26,13 +26,15 @@ export class LoiTranTrang extends Error {
 
 /** Lật hết feed bằng cursor và gom `items`. Ném `LoiTranTrang` khi chạm trần mà chưa hết.
  *
- * `nap` nhận cursor của trang trước (`undefined` cho trang đầu) và trả một trang feed.
+ * `nap` nhận cursor của trang trước (`undefined` cho trang đầu) và trả một trang feed. Generic
+ * theo kiểu mục để vòng lật danh sách bản tin (`liet_ke_ban_tin`, cùng hình `{items,
+ * cursor_ke_tiep}`) đi qua đúng vòng này và đúng cái trần biết kêu này (việc 20).
  */
-export async function duyetFeedTheoTrang(
-  nap: (cursor: string | undefined) => Promise<FeedOut>,
+export async function duyetFeedTheoTrang<T = FeedOut["items"][number]>(
+  nap: (cursor: string | undefined) => Promise<{ items: T[]; cursor_ke_tiep: string | null }>,
   tranTrang: number,
-): Promise<FeedOut["items"]> {
-  const ra: FeedOut["items"] = [];
+): Promise<T[]> {
+  const ra: T[] = [];
   let cursor: string | undefined;
   for (let i = 0; i < tranTrang; i += 1) {
     const feed = await nap(cursor);

@@ -1,10 +1,10 @@
 import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 
-import type { FeedOut, MachTomTatOut } from "@gikky/api-client";
+import type { FeedOut, MachTomTatOut, TrangBanTinOut } from "@gikky/api-client";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
-import { tieuDeBanTinGon } from "../lib/nhom-bai-viet";
+import { tieuDeBanTinGon } from "../lib/ban-tin";
 
 import { dungTaiKhoan } from "./danh-tinh";
 import {
@@ -470,6 +470,7 @@ test.describe("W5/G4 — khối bài viết: Mới đăng, giá sách do admin c
       "/api/v1/subs",
     );
     const moi = await api<FeedOut>("/api/v1/feeds/moi?loai_mach=bai_viet&limit=50");
+    // Mới đăng = 3 bài đầu của feed trừ tin-tuc (lọc phòng thủ, việc 20 vòng sửa 1).
     const mong = moi.items.filter((m) => m.sub.slug !== "tin-tuc").slice(0, 3);
     expect(
       await muc.evaluateAll((ls) => ls.map((l) => Number((l as HTMLElement).dataset.machId))),
@@ -579,13 +580,12 @@ test.describe("W5/G4 — khối bài viết: Mới đăng, giá sách do admin c
     expect(nen).not.toBe(nen_section);
   });
 
-  test("dải bản tin: 2 bài tin-tuc mới nhất (ngày · tiêu đề gọn, title đầy đủ) + 'Tất cả bản tin →'; chip chuyên mục là link /s/*", async ({
+  test("dải bản tin: 2 bản tin mới nhất (ngày · tiêu đề gọn, title đầy đủ) + 'Tất cả bản tin →'; chip chuyên mục là link /s/*", async ({
     page,
   }) => {
     await page.goto("/");
-    const moi = await api<FeedOut>("/api/v1/feeds/moi?loai_mach=bai_viet&limit=50");
-    // Dải vẽ 2 bản tin (`SO_BAN_TIN_DAI`, việc 19 vòng 2), dữ liệu tạm có 3.
-    const tin = moi.items.filter((m) => m.sub.slug === "tin-tuc").slice(0, 2);
+    // Dải vẽ 2 bản tin (`SO_BAN_TIN_DAI`, việc 19 vòng 2) từ bảng RIÊNG (`liet_ke_ban_tin`, việc 20).
+    const tin = (await api<TrangBanTinOut>("/api/v1/ban-tin?limit=2")).items;
     expect(tin.length).toBe(2);
     // Việc 19: dải dời lên ngay dưới header, nhãn là `<span>` (đứng trước `<h1>` nên không là
     // heading) và vùng của nó mang tên qua `aria-label`. Vị trí đo ở `dai-ban-tin.spec.ts`.
@@ -595,12 +595,12 @@ test.describe("W5/G4 — khối bài viết: Mới đăng, giá sách do admin c
     await expect(page.getByTestId("khoi-bai-viet").getByTestId("ban-tin")).toHaveCount(0);
     const muc = ban_tin.getByTestId("ban-tin-muc");
     expect(await muc.evaluateAll((l) => l.map((a) => a.getAttribute("href")))).toEqual(
-      tin.map((m) => `/m/${m.slug}-${m.id}`),
+      tin.map((b) => `/s/tin-tuc/${b.ngay}`),
     );
     for (let i = 0; i < 2; i += 1) {
       await expect(muc.nth(i)).toContainText(tieuDeBanTinGon(tin[i].title));
       await expect(muc.nth(i)).toHaveAttribute("title", tin[i].title);
-      expect(await muc.nth(i).locator("time").getAttribute("datetime")).toBe(tin[i].published_at);
+      expect(await muc.nth(i).locator("time").getAttribute("datetime")).toBe(tin[i].ngay);
     }
     await expect(page.getByTestId("ban-tin-tat-ca")).toHaveAttribute("href", "/s/tin-tuc");
     // Chip: chỉ sub CÓ THẬT; nhãn lấy từ `GET /subs`.
@@ -633,7 +633,11 @@ test.describe("W6/G5 — SEO: số link /m/, HTML như nhau cho trình duyệt v
   }) => {
     const html = await (await request.get("/", { headers: { "user-agent": UA_TRINH_DUYET } })).text();
     const links = linkM(html);
-    expect(links.size, `số link /m/ duy nhất: ${links.size}`).toBeGreaterThanOrEqual(19);
+    // Việc 20: hai link bản tin của dải rời `/m/` sang `/s/tin-tuc/<ngày>` — ngưỡng /m/ hạ đúng 2
+    // (19 → 17), và hai link bản tin được đếm riêng.
+    expect(links.size, `số link /m/ duy nhất: ${links.size}`).toBeGreaterThanOrEqual(17);
+    const ban_tin = new Set([...html.matchAll(/<a [^>]*href="(\/s\/tin-tuc\/\d{4}-\d{2}-\d{2})"/g)].map((m) => m[1]));
+    expect(ban_tin.size, "hai link bản tin của dải").toBe(2);
     // Link chuyên mục /s/* và /luat còn đủ.
     const subs = await api<{ slug: string }[]>("/api/v1/subs");
     const hrefs = new Set([...html.matchAll(/<a [^>]*href="([^"]+)"/g)].map((m) => m[1]));

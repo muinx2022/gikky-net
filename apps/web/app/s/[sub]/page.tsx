@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { DanhSachBanTin } from "@/components/danh-sach-ban-tin";
 import { Feed } from "@/components/feed";
+import { VoKhungHaiCot } from "@/components/khung-hai-cot-vo";
 import { NutTheoSub } from "@/components/nut-theo-sub";
+import { NutVeDauTrang } from "@/components/nut-ve-dau-trang";
 import { Sidebar } from "@/components/sidebar";
 import {
   docCacSub,
   docChuDeTuan,
+  docDanhSachBanTin,
   docFeedSub,
   docKhoang,
   docLoaiMach,
@@ -14,7 +18,8 @@ import {
   docTab,
   docTrangThai,
 } from "@/lib/api";
-import { urlTuyetDoi } from "@/lib/site";
+import { SO_BAN_TIN_MOI_TRANG, SUB_BAN_TIN } from "@/lib/ban-tin";
+import { GIOI_THIEU, urlTuyetDoi } from "@/lib/site";
 import { duongDanSub } from "@/lib/url";
 
 import css from "./sub.module.css";
@@ -85,9 +90,11 @@ export default async function TrangSub({
 }) {
   const { sub } = await params;
   const q = await searchParams;
+  const cursor = Array.isArray(q.cursor) ? q.cursor[0] : q.cursor;
+  // Bản tin là bảng RIÊNG (việc 20): `/s/tin-tuc` liệt kê theo ngày, không phải feed mạch.
+  if (sub === SUB_BAN_TIN) return <DanhSachBanTinDaNap cursor={cursor} />;
   const tab = docTab(q.tab);
   const khoang = docKhoang(q.khoang);
-  const cursor = Array.isArray(q.cursor) ? q.cursor[0] : q.cursor;
   const truongPhai = typeof q.truong_phai === "string" ? q.truong_phai : undefined;
   // `?loai_mach=` lạ / rỗng ⇒ `undefined` = "Tất cả" (không 500): `docLoaiMach` quy rác về
   // "không lọc" ở tầng URL, cùng lý lẽ với `docTab`/`docKhoang` ngay trên.
@@ -149,5 +156,30 @@ export default async function TrangSub({
         </header>
       }
     />
+  );
+}
+
+/** `/s/tin-tuc` — danh sách bản tin theo ngày (`DanhSachBanTin`, plan
+ * `2026-11-13-ban-tin-bang-rieng.md` §3.5). Header vẫn lấy tên + mô tả từ `xem_sub` (sub `tin-tuc`
+ * còn trong DB, URL sống trên nó); rail là rail chung, không phải rail "Về s/…" — hai lối "Nhật
+ * ký / Bài viết trong chuyên mục" của rail sub vô nghĩa với bản tin. `?cursor=` hỏng ⇒ trang đầu
+ * kèm dòng báo, như feed. */
+async function DanhSachBanTinDaNap({ cursor }: { cursor: string | undefined }) {
+  const [{ du_lieu: trang, cursorHong }, chi_tiet, cac_sub, chu_de_tuan] = await Promise.all([
+    docDanhSachBanTin({ cursor, limit: SO_BAN_TIN_MOI_TRANG }),
+    docSub(SUB_BAN_TIN),
+    docCacSub(),
+    docChuDeTuan(new Date()),
+  ]);
+  if (chi_tiet === null) notFound();
+  return (
+    <>
+      <VoKhungHaiCot
+        sidebar={<Sidebar gioiThieu={GIOI_THIEU} cacSub={cac_sub} chuDeTuan={chu_de_tuan} />}
+      >
+        <DanhSachBanTin sub={chi_tiet} trang={trang} cursorHong={cursorHong} />
+      </VoKhungHaiCot>
+      <NutVeDauTrang />
+    </>
   );
 }

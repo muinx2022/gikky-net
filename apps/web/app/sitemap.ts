@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 
-import { docCacSub, docFeed } from "@/lib/api";
+import { docCacSub, docDanhSachBanTin, docFeed } from "@/lib/api";
+import { duongDanBanTin } from "@/lib/ban-tin";
 import { urlTuyetDoi } from "@/lib/site";
 import { duyetFeedTheoTrang } from "@/lib/sitemap";
 import { duongDanMach, duongDanSub } from "@/lib/url";
@@ -54,6 +55,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(m.last_entry_at),
       changeFrequency: m.status === "closed" ? "yearly" : "daily",
       priority: 0.8,
+    });
+  }
+
+  // Bản tin là bảng riêng (việc 20): không đi qua `/feeds/moi` nên phải lật danh sách của chính
+  // nó. Cùng vòng lật, cùng trần biết kêu. `lastModified` = `cap_nhat_luc` (khung mới nhất).
+  const ban_tin = await duyetFeedTheoTrang(
+    async (cursor) => (await docDanhSachBanTin({ cursor, limit: 50 })).du_lieu,
+    TRAN_TRANG,
+  );
+  for (const b of ban_tin) {
+    trang.push({
+      url: urlTuyetDoi(duongDanBanTin(b.ngay)),
+      lastModified: new Date(b.cap_nhat_luc),
+      changeFrequency: "daily",
+      priority: 0.7,
     });
   }
 

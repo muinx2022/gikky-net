@@ -3,7 +3,10 @@ import { readFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-/** Vật liệu dùng chung của ba file `opengraph-image.tsx` (Phase 6, PLAN mục 10).
+import { ngayDayDuBanTin, tieuDeBanTinGon } from "./ban-tin";
+
+/** Vật liệu dùng chung của các file `opengraph-image.tsx` (Phase 6, PLAN mục 10; việc 20 thêm
+ * ảnh của trang bản tin).
  *
  * Ảnh OG là **kênh phát tán chính**: người ta dán link mạch lên Facebook/Zalo và cái
  * hiện ra ở đó quyết định có ai bấm không. Vì thế nó được sinh tại chỗ bằng
@@ -208,6 +211,33 @@ export function ogSub(sub: {
       catChu(sub.mo_ta, 90),
       sub.so_mach === 0 ? null : `${sub.so_mach} mạch`,
     ]),
+    soOSpine: 0,
+    dongSo: false,
+  };
+}
+
+/** Số cặp số liệu tối đa ở dòng chân ảnh OG bản tin, và trần ký tự của dòng ấy (mono 30px,
+ * ~1000px chiều ngang ⇒ ~56 ký tự trước khi chạm logo). */
+export const SO_SO_LIEU_OG = 3;
+export const TRAN_DONG_PHU_BAN_TIN_OG = 56;
+
+/** Ảnh OG của một bản tin `/s/tin-tuc/<ngày>` (việc 20 — bản tin là bảng riêng, không còn ảnh
+ * OG của mạch). Nhãn: "Bản tin thị trường · <ngày đầy đủ>" (ngày từ `ngay`, không từ dấu thời
+ * gian); tiêu đề gọn (`tieuDeBanTinGon`: ngày đã ở nhãn); dòng chân: tối đa `SO_SO_LIEU_OG` cặp số
+ * liệu của khung ĐẦU TIÊN (theo thứ tự hiển thị) có số liệu. Không spine, không nhãn đóng sổ. */
+export function ogBanTin(ban_tin: {
+  ngay: string;
+  title: string;
+  khung: readonly { figures?: readonly { label: string; value: string }[] | null }[];
+}): DuLieuOg {
+  const so_lieu = ban_tin.khung.find((k) => k.figures && k.figures.length > 0)?.figures ?? [];
+  return {
+    nhan: `Bản tin thị trường · ${ngayDayDuBanTin(ban_tin.ngay)}`,
+    tieuDe: catChu(tieuDeBanTinGon(ban_tin.title), TRAN_TIEU_DE_OG),
+    dongPhu: catChu(
+      ghepDongPhu(so_lieu.slice(0, SO_SO_LIEU_OG).map((f) => `${f.label} ${f.value}`)),
+      TRAN_DONG_PHU_BAN_TIN_OG,
+    ),
     soOSpine: 0,
     dongSo: false,
   };

@@ -5,8 +5,9 @@ import { resolve } from "node:path";
  * §3.3 và `2026-11-11-bai-viet-trang-chu-gia-sach.md`), dùng chung cho `trang-chu-v2.spec.ts` và
  * `trang-chu-giao-dien-moi.spec.ts`.
  *
- * Khối gồm dải "Mới đăng" (mọi sub trừ tin-tuc) + "giá sách" (các sub admin chọn, `Sub.
- * vi_tri_trang_chu`) + dải bản tin. 43 bài viết của `seed_e2e` đều nằm trong sub riêng
+ * Khối gồm dải "Mới đăng" (mọi sub) + "giá sách" (các sub admin chọn, `Sub.vi_tri_trang_chu`).
+ * Bản tin là bảng RIÊNG từ việc 20 — thư viện KHÔNG còn dựng bài `tin-tuc` (API chặn đăng vào đó,
+ * nên dữ liệu ấy là một trạng thái không thể có); dải bản tin đọc bản tin của `seed_e2e`. 43 bài viết của `seed_e2e` đều nằm trong sub riêng
  * `e2e-thu-nghiem` và không sub nào được chọn lên trang chủ ⇒ khối rỗng và mọi bài đo "thứ tự ba
  * khối", "đếm link `/m/`" đo RỖNG. Gắn chúng vào sub thật của `seed_dev` thì `seed_dev --reset`
  * ăn `ProtectedError` (vá A3). Nên bài đo TỰ DỰNG vài bài viết MỚI NHẤT trong các sub thật, ĐẶT
@@ -15,7 +16,7 @@ import { resolve } from "node:path";
  * đầu để một lần chạy trước bị ngắt giữa chừng không để lại rác.
  *
  * Phân bố (tạo theo thứ tự này, cũ → mới): hoi-dap ×3, vi-mo ×3, quan-tri-von ×3, chung-khoan ×1,
- * crypto ×1, tin-tuc ×3. Giá sách = hoi-dap #1, vi-mo #2, quan-tri-von #3; **chung-khoan và
+ * crypto ×1. Giá sách = hoi-dap #1, vi-mo #2, quan-tri-von #3; **chung-khoan và
  * crypto KHÔNG được chọn** nhưng bài của chúng là hai trong ba bài mới nhất ⇒ lên dải Mới đăng
  * (đo "sub không chọn vẫn lên trang chủ"); bài mới nhất của quan-tri-von cũng ở Mới đăng ⇒ giá
  * quan-tri-von chỉ còn 2 bài (đo "giá không trùng dải"). Bài của chung-khoan có một ảnh gallery
@@ -33,7 +34,6 @@ export const BAI_THU_VIEN: ReadonlyArray<readonly [string, number]> = [
   ["quan-tri-von", 3],
   ["chung-khoan", 1],
   ["crypto", 1],
-  ["tin-tuc", 3],
 ];
 
 /** Sub được đặt lên giá sách, theo vị trí 1..3. */

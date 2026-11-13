@@ -1,7 +1,13 @@
 import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
 
-import type { FeedOut, MachChiTietOut, MachTomTatOut, SubChiTietOut } from "@gikky/api-client";
+import type {
+  FeedOut,
+  MachChiTietOut,
+  MachTomTatOut,
+  SubChiTietOut,
+  TrangBanTinOut,
+} from "@gikky/api-client";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 import { tuanVNCua } from "../lib/chu-de";
@@ -244,7 +250,7 @@ test.describe("K1 · K4 · K5 — /chu-de với dữ liệu seed", () => {
     expect(await dau('meta[property="og:url"]', "content")).toBe("http://localhost:3000");
   });
 
-  test("K5 — sitemap.xml có /chu-de; tổng số URL = 3 trang tĩnh + chuyên mục + mọi mạch", async ({
+  test("K5 — sitemap.xml có /chu-de; tổng số URL = 3 trang tĩnh + chuyên mục + mọi mạch + mọi bản tin", async ({
     request,
   }) => {
     const xml = await (await request.get("/sitemap.xml")).text();
@@ -263,7 +269,20 @@ test.describe("K1 · K4 · K5 — /chu-de với dữ liệu seed", () => {
       cursor = f.cursor_ke_tiep;
       if (cursor === null) break;
     }
-    expect(loc).toHaveLength(3 + cac_sub.length + tong_mach);
+    // Việc 20: bản tin là bảng RIÊNG, sitemap lật danh sách của nó (`GET /ban-tin`) — mỗi bản tin
+    // hiện được một URL `/s/tin-tuc/<ngày>`.
+    let tong_ban_tin = 0;
+    cursor = null;
+    for (let i = 0; i < 100; i += 1) {
+      const t: TrangBanTinOut = await api<TrangBanTinOut>(
+        `/api/v1/ban-tin?limit=50${cursor === null ? "" : `&cursor=${encodeURIComponent(cursor)}`}`,
+      );
+      tong_ban_tin += t.items.length;
+      cursor = t.cursor_ke_tiep;
+      if (cursor === null) break;
+    }
+    expect(tong_ban_tin, "seed có bản tin (chống đo rỗng nhánh mới)").toBeGreaterThan(0);
+    expect(loc).toHaveLength(3 + cac_sub.length + tong_mach + tong_ban_tin);
     // Chủ đề riêng lẻ vẫn nằm trong sitemap qua vòng feed (không bị mất).
     for (const m of await tatCaChuDeTheoApi()) {
       expect(loc).toContain(`http://localhost:3000/m/${m.slug}-${m.id}`);

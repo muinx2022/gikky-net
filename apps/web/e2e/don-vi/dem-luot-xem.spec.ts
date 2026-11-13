@@ -197,6 +197,8 @@ test("R5i — chuông cảnh báo: mọi `page.tsx` trong `app/` (trừ trang b�
     }
     let duongDan = "/" + f.ten.replace(/\/page\.tsx$/, "").replace(/^page\.tsx$/, "");
     duongDan = duongDan
+      // Trang một bản tin (việc 20) chỉ sống dưới `/s/tin-tuc/<YYYY-MM-DD>`.
+      .replace(/\[sub\]\/\[ngay\]/, "tin-tuc/2026-11-13")
       .replace(/\[slugId\]/, "mau-1")
       .replace(/\[sub\]/, "chung-khoan")
       .replace(/\[username\]/, "ai-do");

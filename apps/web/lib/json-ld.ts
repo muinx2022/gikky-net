@@ -1,5 +1,7 @@
-import type { MachChiTietOut } from "@gikky/api-client";
+import type { BanTinChiTietOut, MachChiTietOut } from "@gikky/api-client";
 
+import { SUB_BAN_TIN, anhOgBanTin, duongDanBanTin } from "./ban-tin";
+import { ngayDayDu } from "./dinh-dang";
 import { trichUrlAnhMach } from "./og";
 import { urlTuyetDoi } from "./site";
 import { duongDanHoSo, duongDanMach, duongDanSub } from "./url";
@@ -139,6 +141,68 @@ export function jsonLdMach(mach: MachChiTietOut): Record<string, unknown> {
   }
 
   return du_lieu;
+}
+
+/** `<meta description>` của trang một bản tin: chữ thuần của khung ĐẦU TIÊN (theo thứ tự hiển thị
+ * API đã trả), cắt theo ranh giới từ ~155 ký tự. Không có chữ ⇒ một câu mô tả từ ngày. */
+export function moTaBanTin(ban_tin: BanTinChiTietOut): string {
+  const thuan = trichVanBanThuan(ban_tin.khung[0]?.body ?? "").replace(/\s+/g, " ").trim();
+  if (!thuan) return `${ban_tin.title} — Bản tin thị trường ngày ${ngayDayDu(ban_tin.ngay)} trên gikky.net.`;
+  if (thuan.length <= 155) return thuan;
+  const cat = thuan.slice(0, 155);
+  const khoang = cat.lastIndexOf(" ");
+  return `${khoang > 110 ? cat.slice(0, khoang) : cat}…`;
+}
+
+/** JSON-LD `NewsArticle` cho trang một bản tin `/s/tin-tuc/<ngày>` *(việc 20, plan
+ * `2026-11-13-ban-tin-bang-rieng.md` §3.5 mục 6)*. Bản tin không còn là mạch nên KHÔNG có
+ * `DiscussionForumPosting` (không bình luận). `datePublished` = `created_at` (lúc khung đầu tiên
+ * lên), `dateModified` = `cap_nhat_luc` (khung mới nhất). Tác giả là tổ chức, không phải một người:
+ * bản tin do tài khoản đội đăng. */
+export function jsonLdBanTin(ban_tin: BanTinChiTietOut): Record<string, unknown> {
+  const url = urlTuyetDoi(duongDanBanTin(ban_tin.ngay));
+  const urlTrangChu = urlTuyetDoi("/");
+  const than = ban_tin.khung
+    .map((k) => trichVanBanThuan(k.body).replace(/\s+/g, " ").trim())
+    .filter((s) => s !== "")
+    .join(" ");
+  return {
+    "@context": "https://schema.org",
+    "@type": "NewsArticle",
+    "@id": url,
+    url,
+    mainEntityOfPage: { "@type": "WebPage", "@id": url },
+    headline: ban_tin.title,
+    name: ban_tin.title,
+    // NewsArticle không có `image` thì không đủ điều kiện rich result; ảnh là ảnh OG của trang.
+    image: [urlTuyetDoi(anhOgBanTin(ban_tin.ngay))],
+    datePublished: ban_tin.created_at,
+    dateModified: ban_tin.cap_nhat_luc,
+    inLanguage: "vi-VN",
+    articleSection: "Bản tin thị trường",
+    description: moTaBanTin(ban_tin),
+    ...(than ? { articleBody: than } : {}),
+    author: { "@type": "Organization", name: "gikky.net", url: urlTrangChu },
+    publisher: {
+      "@type": "Organization",
+      name: "gikky.net",
+      url: urlTrangChu,
+      logo: { "@type": "ImageObject", url: urlTuyetDoi("/icon.png") },
+    },
+    breadcrumb: {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Trang chủ", item: urlTrangChu },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: "Bản tin thị trường",
+          item: urlTuyetDoi(duongDanSub(SUB_BAN_TIN)),
+        },
+        { "@type": "ListItem", position: 3, name: ban_tin.title, item: url },
+      ],
+    },
+  };
 }
 
 /** JSON-LD WebSite và Organization cho Trang chủ */

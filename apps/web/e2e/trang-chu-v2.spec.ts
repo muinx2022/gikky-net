@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
 
-import type { FeedOut, MachTomTatOut, SubChiTietOut } from "@gikky/api-client";
+import type { FeedOut, MachTomTatOut, SubChiTietOut, TrangBanTinOut } from "@gikky/api-client";
 import { expect, test, type Page } from "@playwright/test";
 
 import { SUB_GIA_SACH, donThuVien, dungThuVien } from "./thu-vien";
@@ -322,7 +322,8 @@ test.describe("B — các khối của trang chủ v2", () => {
     expect(await idsTrenTrang(page, "the-mach")).toEqual(await idsNhatKyMoiTacGia());
     expect(await idsTrenTrang(page, "chu-de-the")).toEqual(await ids("thao_luan", 1));
     // Bài viết: kỳ vọng viết lại ĐỘC LẬP ở đây (không import `lib/nhom-bai-viet`) từ chính API.
-    //  · Mới đăng = 3 bài đầu của `/feeds/moi` trừ tin-tuc, mọi sub;
+    //  · Mới đăng = 3 bài đầu của `/feeds/moi` trừ tin-tuc, mọi sub (việc 20: bản tin là bảng riêng;
+    //    lọc tin-tuc ở lại để phòng thủ mạch bản tin cũ mà lệnh chuyển bỏ qua);
     //  · giá sách = mỗi sub có `vi_tri_trang_chu` (theo vị trí) một cột: 3 bài đầu của feed RIÊNG
     //    sub ấy trừ bài đã ở Mới đăng; cột rỗng ẩn.
     const moi = await api<FeedOut>("/api/v1/feeds/moi?loai_mach=bai_viet&limit=50");
@@ -358,13 +359,16 @@ test.describe("B — các khối của trang chủ v2", () => {
     // Ca đo được "giá không trùng dải": giá quan-tri-von mất đúng bài mới nhất vào Mới đăng.
     const tat_ca_gia = co.flatMap((c) => c.ids);
     for (const id of da_hien) expect(tat_ca_gia, `bài ${id} trùng dải Mới đăng`).not.toContain(id);
-    // Dải bản tin (đầu trang): 2 bài mới nhất của `tin-tuc` — `SO_BAN_TIN_DAI`, việc 19 vòng 2.
+    // Dải bản tin (đầu trang): 2 bản tin mới nhất của bảng RIÊNG (`liet_ke_ban_tin`, việc 20) —
+    // `SO_BAN_TIN_DAI`, việc 19 vòng 2.
+    const ban_tin = await api<TrangBanTinOut>("/api/v1/ban-tin?limit=2");
+    expect(ban_tin.items.length, "seed có ≥ 2 bản tin").toBe(2);
     expect(
       await page
         .getByTestId("ban-tin")
-        .locator("li[data-mach-id]")
-        .evaluateAll((ls) => ls.map((l) => Number((l as HTMLElement).dataset.machId))),
-    ).toEqual(moi.items.filter((m) => m.sub.slug === "tin-tuc").slice(0, 2).map((m) => m.id));
+        .locator("li[data-ngay]")
+        .evaluateAll((ls) => ls.map((l) => (l as HTMLElement).dataset.ngay)),
+    ).toEqual(ban_tin.items.map((b) => b.ngay));
   });
 
   test("B4 — nút 'Mở nhật ký' trỏ /dang-mach, kèm dòng phụ đúng với sản phẩm", async ({

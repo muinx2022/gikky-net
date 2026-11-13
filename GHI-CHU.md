@@ -1088,7 +1088,7 @@ bối cảnh chỉ nới bằng CSS.
 
 ---
 
-## Việc 20 · Bản tin thành bảng dữ liệu riêng + trình bày kiểu bản tin — ĐANG LÀM trên `v2`: đợt A (API + dữ liệu + bot) xong 2026-11-13, nghiệm thu + phản biện + vòng sửa 1 ĐẠT; đợt B (web) đang làm; chưa lên dev/prod
+## Việc 20 · Bản tin thành bảng dữ liệu riêng + trình bày kiểu bản tin — ĐANG LÀM trên `v2`: đợt A (API + dữ liệu + bot) xong 2026-11-13, nghiệm thu + phản biện + vòng sửa 1 ĐẠT; đợt B (web: trang `/s/tin-tuc/<ngày>`, danh sách, 308 từ `/m/` cũ, sitemap, RSS, ảnh OG, dải trang chủ đọc `BanTin.ngay`) xong 2026-11-13, nghiệm thu + phản biện + vòng sửa 1 ĐẠT; chưa lên dev/prod. Bước deploy prod: migrate → `chuyen_ban_tin` chạy thử (bảng phải 0 dòng LỖI/BỎ QUA bất thường) → `--that` → web; sửa tay mô tả sub `tin-tuc` ở admin Chuyên mục
 
 **Yêu cầu (user, 2026-11-13):** "tách phần bản tin ra 1 phần riêng, không dùng chung dữ liệu với bài viết hay nhật kí
 nữa"; "hiện tại bản tin đang gộp lại theo dạng nhật kí, cần cách trình bày mới của bản tin, không theo dạng nhật kí nữa".

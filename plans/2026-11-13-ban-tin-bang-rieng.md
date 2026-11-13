@@ -296,3 +296,85 @@ xoá-bình-luận, và các bảng ghim thiếu `luu-tru`/`da_luu_tru`), không 
 Bài đo mới: 8 ở `test_chuyen_ban_tin.py`, 4 ở `test_bot_dang_tin.py` (+ `tests/urls_ban_tin_chap_chon.py`), 1 ở
 `test_hen_gio_phat_hanh.py`. Thử phá 15 lượt, cả 15 đỏ. Bộ chung: `pnpm test` 2735 passed / 17 failed (đúng 17 bài đỏ sẵn của HEAD,
 P-20261113-9) / 26 skipped; `pnpm codegen:check` khớp; `pnpm lint` 0 warning; `pnpm build` xanh; `pnpm e2e:don-vi` 769.
+
+### Báo cáo thực thi — Đợt B (2026-11-13, opus-dev, chưa commit)
+
+Nền: HEAD `8361f18`; `pnpm e2e:don-vi` 769 xanh; client có `lietKeBanTin` / `xemBanTin` / `timBanTinTuMachCu`.
+`gikky_e2e` chưa có `0048` ⇒ đã `migrate core` CHỈ trên `gikky_e2e` (in `DB=gikky_e2e` trước) rồi mới chạy nền.
+
+**File mới:** `apps/web/lib/ban-tin.ts` (hằng `SUB_BAN_TIN`, `SO_BAN_TIN_DAI`, `tieuDeBanTinGon` dời từ
+`nhom-bai-viet.ts`; ngày / thứ / giờ VN, thứ tự khung, tách giá trị trong ngoặc, `subDangDuoc`, regex lượt xem),
+`apps/web/app/s/[sub]/[ngay]/page.tsx` + `ban-tin.module.css` (trang một bản tin),
+`apps/web/components/danh-sach-ban-tin.tsx` + `.module.css` (trang `/s/tin-tuc`), `apps/web/e2e/ban-tin.spec.ts`
+(B1–B5, B7, B8), `apps/web/e2e/don-vi/ban-tin.spec.ts` (hàm thuần + hàng rào nguồn).
+**File sửa:** `lib/api.ts` (`docBanTin`, `docDanhSachBanTin`, `docNgayBanTinTuMachCu`), `lib/dem-luot-xem.ts`
+(`DUONG_DAN_HOP_LE` + đường bản tin), `lib/json-ld.ts` (`jsonLdBanTin` NewsArticle, `moTaBanTin`), `lib/sitemap.ts`
+(vòng lật generic), `lib/nhom-bai-viet.ts` (bỏ `SUB_BAN_TIN`, `SO_BAN_TIN`, `SO_BAN_TIN_DAI`, `chonBanTin`,
+`tieuDeBanTinGon`; `chonMoiDang` không lọc sub), `app/page.tsx`, `components/dai-ban-tin.tsx`,
+`components/khoi-bai-viet.tsx`, `components/trang-mach.tsx` (308 trong `nap` chỉ khi `xem_mach` 404),
+`app/s/[sub]/page.tsx` + `feed.xml/route.ts` (rẽ nhánh `tin-tuc`), `app/sitemap.ts`, `app/dang-mach/page.tsx` +
+`components/drawer-dang-nhanh.tsx` (`subDangDuoc`). Bài đo sửa theo dữ liệu mới: `e2e/thu-vien.ts` (bỏ 3 bài
+`tin-tuc` — trạng thái API không còn cho tạo), `dai-ban-tin.spec.ts` (nguồn `GET /ban-tin`; V3 tạm dựng `BanTin`),
+`trang-chu-v2.spec.ts` B1, `trang-chu-giao-dien-moi.spec.ts` (dải; ngưỡng link `/m/` 19 → 17 + đếm riêng 2 link
+`/s/tin-tuc/<ngày>`), `chu-de.spec.ts` K5 (tổng URL sitemap cộng số bản tin), `don-vi/bai-viet-trang-chu.spec.ts`,
+`don-vi/trang-chu-giao-dien-moi.spec.ts` (bỏ bài `chonBanTin`; khoá màu thêm 2 file CSS mới),
+`don-vi/dem-luot-xem.spec.ts` R5i (thay `[sub]/[ngay]` bằng `tin-tuc/2026-11-13`).
+**Bài bỏ theo hàm bị bỏ:** don-vi "bản tin: chỉ bài của tin-tuc…" (`chonBanTin`), "giá sách: admin chọn tin-tuc
+làm giá…" (thay bằng bài `idDaHien`), vế `chonBanTin` của "V1 — dải đầu trang vẽ 2 bản tin".
+
+**Quyết định tự chốt:**
+1. Màu tăng / giảm của phần trong ngoặc đi qua `SoLaiLo` (`components/con-so.tsx`, file được phép dùng
+   `--gain`/`--loss`) — không chạm allowlist của `mau-token.spec.ts`.
+2. Rail của hai trang bản tin là rail chung (giới thiệu + chủ đề tuần + chuyên mục + luật), không phải rail "Về s/…".
+3. 301 thực tế là **308** (`permanentRedirect`, như redirect slug hiện có); bài đo nhận 301 hoặc 308.
+4. Lượt xem in `max(1, view_count)` (cùng lý lẽ với `ChuKyLuotXem`); trang `force-dynamic` nên số tươi.
+5. RSS `/s/tin-tuc/feed.xml`: `pubDate` = `cap_nhat_luc`, mô tả = các cặp số liệu (danh sách không trả thân).
+6. Sitemap: bản tin `lastModified` = `cap_nhat_luc`, priority 0.7, đi qua cùng vòng lật có trần 40 trang.
+
+**Kết quả:** `pnpm lint` 0 warning; `tsc --noEmit` sạch; `pnpm build` xanh (trong `pnpm e2e`);
+`pnpm e2e:don-vi` 769 → **779** (+11 bài `don-vi/ban-tin.spec.ts`, −1 bài `chonBanTin`; hai bài đổi nội dung).
+e2e đầy đủ trên `gikky_e2e`: nền 1160 passed / 22 failed / 7 skipped / 8 did not run; sau 1184 passed / 22 failed.
+Danh sách đỏ sau = nền, trừ: (+) `chu-de.spec.ts` K5 (sitemap nay có bản tin — đã sửa bài, chạy lại xanh), (−)
+`form-ghi.spec.ts` B3 (đỏ ở nền, xanh ở sau — dao động). Chạy lại `chu-de` + `ban-tin` + `trang-chu*`: 186 passed / 1 skipped.
+B1–B8 xanh; `seo-trang-chu.spec.ts` xanh, không sửa. `pnpm test` 2735 passed / 17 failed / 26 skipped — đúng nền
+(đợt B không chạm `api/`).
+
+**Thử phá** (một bản build phá 8 chỗ cùng lúc, mỗi chỗ nhắm một bài): đảo thứ tự khung ⇒ B1 HTML + B2 đỏ; bỏ 308 ⇒
+B4 đỏ; dải in ngày của `cap_nhat_luc` ⇒ bài P-20261113-8 (a) đỏ; danh sách đảo thứ tự ⇒ B3 (cả hai) đỏ; bỏ
+`overflow-x: auto` mục lục ⇒ B7 390 + 360 đỏ; sitemap lệch tiền tố `/x/s/tin-tuc/…` ⇒ B5 sitemap **xanh** (bài đo so
+đuôi chuỗi — đã siết so cả đường dẫn sau origin, chạy lại đỏ); RSS trỏ `/m/` ⇒ B5 RSS đỏ; JSON-LD `datePublished =
+cap_nhat_luc` ⇒ B8 đỏ. Don-vi: gọi `tim_ban_tin_tu_mach_cu` trên đường thành công ⇒ bài 301 nguồn đỏ; phá
+`ngayBanTinHopLe`, `khungTheoThuTu`, `tachGiaTri` ⇒ 3 bài tương ứng đỏ; nới regex lượt xem thành `/s/x/y` ⇒ bài lượt
+xem đỏ. Đã khôi phục từ bản sao lưu, kiểm grep 0 dấu phá.
+
+#### Đợt B — Vòng sửa 1 (2026-11-13, sau phản biện)
+
+1. **VỪA — trang bản tin không có ảnh chia sẻ.** Mới `apps/web/app/s/[sub]/[ngay]/opengraph-image.tsx` (cùng cổng 404
+   với trang: sub khác / ngày sai / không có / đã ẩn). Nội dung chữ `lib/og.ts::ogBanTin` (nhãn "Bản tin thị trường ·
+   Thứ …, DD/MM/YYYY" từ `ngay`, tiêu đề gọn, ≤ 3 cặp số liệu của khung đầu có số liệu, cắt 56 ký tự).
+   `lib/ban-tin.ts::anhOgBanTin`; `lib/json-ld.ts::jsonLdBanTin` thêm `image`. **Lệch nhỏ:** KHÔNG khai `images` bằng
+   tay trong `generateMetadata` — đã đo: có file `opengraph-image` thì Next tự sinh cả `og:image` lẫn `twitter:image`
+   (bản khai tay bị file ghi đè, gỡ khai tay vẫn xanh; xoá file thì mất cả hai thẻ ⇒ đỏ).
+2. **VỪA — mạch tin-tuc cũ lệnh chuyển bỏ qua chui vào "Mới đăng".** `lib/nhom-bai-viet.ts::chonMoiDang` lọc lại
+   `m.sub.slug !== SUB_BAN_TIN` (import từ `lib/ban-tin.ts`), chú thích là phòng thủ. Bài "không slug cứng" nhận thêm
+   import tương đối; hai bài DOM (`trang-chu-v2` B1, `trang-chu-giao-dien-moi`) trả lại vế `!== "tin-tuc"`.
+3. **NHỎ — lời tra 301 hỏng biến 404 thành 500.** `components/trang-mach.tsx::nap`: `try/catch` quanh
+   `docNgayBanTinTuMachCu` ⇒ `console.error` rồi rơi xuống `notFound()`; `permanentRedirect`/`notFound` đứng ngoài `try`.
+   Chú thích ghi rõ là ngoại lệ có chủ đích với F1.
+4. **NHỎ — mô tả sub cũ.** `api/core/management/commands/seed_dev.py:182` → "Bản tin thị trường mỗi ngày: đêm qua, trước
+   phiên VN, trước phiên Mỹ. Chỉ tin, không nhận định." `seed_e2e` không có mô tả cũ nào. Không chạm DB nào (DB đã
+   seed vẫn giữ chữ cũ cho tới khi ai đó sửa qua admin / `tao_sub`).
+
+**Bài đo mới:** don-vi `ban-tin.spec.ts` +2 (try/catch lời tra; `ogBanTin` + `anhOgBanTin` + route ảnh không là lượt
+xem); `bai-viet-trang-chu.spec.ts` bài Mới đăng có lại mạch `tin-tuc`; web `ban-tin.spec.ts` B8 thêm `og:image` /
+`twitter:image` trỏ đúng route, JSON-LD `image`, route ảnh 200 `image/png` (đầu file `\x89PNG`), và bài mới "ảnh OG: 404
+như trang".
+
+**Thử phá:** bỏ lọc `chonMoiDang` ⇒ bài Mới đăng đỏ; bỏ `try/catch` ⇒ bài lời tra đỏ; trần 4 cặp số liệu ⇒ bài
+`ogBanTin` lúc đầu **xanh** (trần ký tự đã cắt trước) — thêm vế cặp ngắn, chạy lại đỏ; cổng ảnh bỏ kiểm sub ⇒ "ảnh OG: 404"
+đỏ (`/s/chung-khoan/<ngày>/opengraph-image` 200); xoá file ảnh ⇒ B8 đỏ "thiếu og:image"; bỏ `image` JSON-LD ⇒ B8 đỏ.
+Đã khôi phục, grep 0 dấu phá.
+
+**Kết quả:** `pnpm lint` 0 warning; `tsc` sạch; `pnpm e2e:don-vi` 779 → **781**; `pnpm build` xanh (trong `pnpm e2e`);
+`pnpm e2e ban-tin.spec.ts trang-chu-v2 trang-chu-giao-dien-moi seo-trang-chu` trên `gikky_e2e` (khớp cả
+`dai-ban-tin` và hai file don-vi): 148 passed / 1 skipped / 0 failed; `pnpm test -- -k seed` 68 passed.

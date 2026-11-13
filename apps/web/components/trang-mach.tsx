@@ -36,9 +36,11 @@ import {
   docKhanDai,
   docMach,
   docNganKeo,
+  docNgayBanTinTuMachCu,
   type ChinhSachDoc,
   type TrangCursor,
 } from "@/lib/api";
+import { duongDanBanTin } from "@/lib/ban-tin";
 import { figuresMocDau } from "@/lib/bien-lai-dau";
 import { CHU_NGUOI_DUNG } from "@/lib/chu-nguoi-dung";
 import { nenHienSoDem } from "@/lib/dem";
@@ -104,11 +106,31 @@ function motChuoi(v: string | string[] | undefined): string | undefined {
   return Array.isArray(v) ? v[0] : v;
 }
 
+/** Mạch theo `id` trên URL. 404 ⇒ hỏi xem `id` ấy có phải mạch bản tin CŨ đã chuyển sang bảng
+ * bản tin không (việc 20, plan `2026-11-13-ban-tin-bang-rieng.md` §3.5): có ⇒ 308 vĩnh viễn sang
+ * `/s/tin-tuc/<ngày>` (giữ tín hiệu của 57 URL đã index), không ⇒ 404 như cũ. Lời gọi thứ hai CHỈ
+ * nằm trên nhánh 404 — đường trang mạch thành công không thêm lời gọi nào.
+ *
+ * ⚠ **Lời tra hỏng (5xx, lỗi mạng) ⇒ `console.error` + 404, KHÔNG ném** — ngoại lệ có chủ đích
+ * với luật vá F1 ("API hỏng thì trang phải hỏng theo"). F1 cấm nuốt lỗi thành một câu nói dối về
+ * nội dung; ở đây trang VỐN ĐÃ là 404 (`xem_mach` vừa trả 404), lời tra chỉ là đường phụ để cứu
+ * URL cũ, nên hỏng nó mà biến 404 thành 500 là tệ hơn chứ không trung thực hơn. Log để còn thấy.
+ * `permanentRedirect` / `notFound` đứng NGOÀI `try`: cả hai ném lỗi đặc biệt của Next, bắt nhầm
+ * chúng là nuốt luôn cú chuyển hướng. */
 async function nap(slugId: string, doc: ChinhSachDoc, cookieHeader?: string) {
   const tach = tachSlugId(slugId);
   if (tach === null) notFound();
   const mach = await docMach(tach.id, doc, cookieHeader);
-  if (mach === null) notFound();
+  if (mach === null) {
+    let ngay: string | null = null;
+    try {
+      ngay = await docNgayBanTinTuMachCu(tach.id);
+    } catch (loi) {
+      console.error(`Tra bản tin từ mạch cũ ${tach.id} hỏng — trả 404 như mạch không có:`, loi);
+    }
+    if (ngay !== null) permanentRedirect(duongDanBanTin(ngay));
+    notFound();
+  }
   return { mach, slugTrenUrl: tach.slug };
 }
 

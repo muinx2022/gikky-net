@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import type { LenhOut, MachTomTatOut } from "@gikky/api-client";
+import type { LenhOut } from "@gikky/api-client";
 import { expect, test } from "@playwright/test";
 
 import { docTrangThai, trangThaiGuiLenApi } from "../../lib/api";
@@ -16,7 +16,6 @@ import {
   lenhTuForm,
 } from "../../lib/lenh-form";
 import { nenMoNganKeo, type CuBamLoiVao } from "../../lib/loi-vao-nhat-ky";
-import { chonBanTin } from "../../lib/nhom-bai-viet";
 
 /** Hàm THUẦN của trang chủ giao diện mới (plan `2026-11-11-homepage-v2-giao-dien-moi.md`).
  * Không mạng, không DB, không cổng — chạy được song song với bất cứ thứ gì (`pnpm e2e:don-vi`).
@@ -180,22 +179,8 @@ test("chip chủ đề: đang mở có đếm; Chủ nhật 'đóng hôm nay'; q
 
 /* ---------------------------------------------------------------- thư viện bài viết -- */
 
-function bai(id: number, sub: string): MachTomTatOut {
-  return { id, sub: { slug: sub, ten: sub }, title: `Bài ${id}` } as MachTomTatOut;
-}
-
-test("bản tin: chỉ bài của tin-tuc, mới nhất trước, tối đa 3", () => {
-  const items = [
-    bai(1, "tin-tuc"),
-    bai(2, "vi-mo"),
-    bai(3, "tin-tuc"),
-    bai(4, "tin-tuc"),
-    bai(5, "tin-tuc"),
-  ];
-  expect(chonBanTin(items).map((m) => m.id)).toEqual([1, 3, 4]);
-  expect(chonBanTin(items, 2).map((m) => m.id)).toEqual([1, 3]);
-  expect(chonBanTin([bai(9, "vi-mo")])).toEqual([]);
-});
+// Bài "bản tin: chỉ bài của tin-tuc, mới nhất trước, tối đa 3" (`chonBanTin`) đã BỎ ở việc 20: bản
+// tin là bảng riêng, dải trang chủ đọc `liet_ke_ban_tin` thẳng từ API — `e2e/don-vi/ban-tin.spec.ts`.
 
 /* ---------------------------------------------------------------- chân khối nhật ký -- */
 
@@ -259,6 +244,9 @@ test("màu: khối chủ đề, thư viện KHÔNG dùng --gain/--loss/--stamp (
     "components/o-soan-nhat-ky.module.css",
     // Dải bản tin tách khỏi `khoi-bai-viet.module.css` ở việc 19 — cùng lý lẽ.
     "components/dai-ban-tin.module.css",
+    // Hai trang bản tin của việc 20: màu tăng / giảm đi qua `SoLaiLo` (`con-so.module.css`).
+    "components/danh-sach-ban-tin.module.css",
+    "app/s/[sub]/[ngay]/ban-tin.module.css",
   ]) {
     const css = doc(f).replace(/\/\*[\s\S]*?\*\//g, "");
     expect(css, f).not.toMatch(/--(gain|loss|stamp)/);
