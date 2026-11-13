@@ -35,20 +35,32 @@ import css from "./khung-hai-cot.module.css";
  * cuộn dài không ai cần (đợt M, M8). Ẩn bằng CSS nên DOM không đổi; nhưng một trang INDEX được mà
  * giấu link khỏi người dùng là đi ngược luật "SEO chỉ cộng" — nên cờ này chỉ dành cho trang `robots:
  * noindex`.
+ *
+ * ## `railCao` — rail mang khối "Bài viết mới" 10 bài (`/` nhánh v2 và `/luat`)
+ *
+ * Rail chỉ DÍNH khi khung nhìn đủ cao để chứa cả nó (`khung-hai-cot.module.css`). Khối 10 bài
+ * (việc 24) làm rail của hai trang ấy cao hơn hẳn mọi trang khác (1831px so với ≤ 1478px), nên
+ * chúng dùng ngưỡng RIÊNG cao hơn — một ngưỡng chung đủ cho chúng thì làm `/m/…`, `/u/…` mất dính
+ * oan ở cả dải khung nhìn giữa hai con số. Con số và bảng đo nằm ở file CSS.
  */
 export function VoKhungHaiCot({
   children,
   sidebar,
   anRailDiDong = false,
+  railCao = false,
 }: {
   children: React.ReactNode;
   sidebar: React.ReactNode;
   anRailDiDong?: boolean;
+  railCao?: boolean;
 }) {
+  const lop_rail = [css.rail, anRailDiDong && css.rail_an_di_dong, railCao && css.rail_cao]
+    .filter(Boolean)
+    .join(" ");
   return (
     <div className={css.khung} data-testid="khung-hai-cot">
       <main className={css.chinh}>{children}</main>
-      <div className={anRailDiDong ? `${css.rail} ${css.rail_an_di_dong}` : css.rail} data-testid="rail-phai">
+      <div className={lop_rail} data-testid="rail-phai">
         {sidebar}
       </div>
     </div>

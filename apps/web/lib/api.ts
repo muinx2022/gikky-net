@@ -19,6 +19,7 @@ import {
   type KhanDaiOut,
   type LietKeFeedMoiData,
   type MachChiTietOut,
+  type MachTomTatOut,
   type NganKeoOut,
   type NhatKyDangBanOut,
   type SubChiTietOut,
@@ -594,6 +595,20 @@ export async function docCacSub(): Promise<SubChiTietOut[]> {
 export async function docCacSubOTrinhDuyet(): Promise<SubChiTietOut[]> {
   const kq = await lietKeSub({ baseUrl: GOC_TRINH_DUYET });
   return kq.data ?? [];
+}
+
+/** `limit` bài `bai_viet` mới nhất (feed "Mới", mọi chuyên mục) — chạy trong TRÌNH DUYỆT, cho
+ * khối "Bài viết mới" ở rail của trang TĨNH `/luat` (`BaiMoiTuTrinhDuyet`, việc 24). Cùng lý lẽ
+ * với `docCacSubOTrinhDuyet`: `baseUrl` là `GOC_TRINH_DUYET`, lời gọi theo TÊN.
+ *
+ * API trả lỗi ⇒ mảng rỗng; lỗi mạng thì promise reject — người gọi `.catch` và khối vắng mặt
+ * (trang tĩnh phải đứng được khi Django chết). */
+export async function docBaiVietMoiOTrinhDuyet(limit: number): Promise<MachTomTatOut[]> {
+  const kq = await lietKeFeedMoi({
+    baseUrl: GOC_TRINH_DUYET,
+    query: { limit, loai_mach: "bai_viet" },
+  });
+  return kq.data?.items ?? [];
 }
 
 /** Feed **không lọc sub** — `/` và `sitemap.xml`.

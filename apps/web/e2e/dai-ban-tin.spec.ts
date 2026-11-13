@@ -102,10 +102,11 @@ test.describe("T1–T5 — dải bản tin ngay dưới header", () => {
     expect(dai.h, "dải cao ≤ 44px").toBeLessThanOrEqual(44);
   });
 
-  test("T2 — đúng MỘT dải trên `/`, không còn trong 'Bài viết'; `/?tab=moi` không có dải", async ({ page }) => {
+  test("T2 — đúng MỘT dải trên `/`, không nằm trong khối bài viết; `/?tab=moi` không có dải", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByTestId("ban-tin")).toHaveCount(1);
-    await expect(page.locator('[data-testid="khoi-bai-viet"] [data-testid="ban-tin"]')).toHaveCount(0);
+    // Khối bài viết nay ở rail (`sidebar-bai-moi`, việc 24).
+    await expect(page.locator('[data-testid="sidebar-bai-moi"] [data-testid="ban-tin"]')).toHaveCount(0);
     // Con ĐẦU của `trang-chu-v2` (trước khung hai cột).
     expect(
       await page.getByTestId("trang-chu-v2").evaluate((e) => e.firstElementChild?.getAttribute("data-testid")),

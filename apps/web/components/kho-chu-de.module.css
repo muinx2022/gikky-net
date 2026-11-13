@@ -1,7 +1,7 @@
 /* Kho chủ đề thảo luận `/chu-de`: danh sách theo tuần, mỗi chủ đề một hàng gọn. Chỉ token đã
  * có; không màu mới. Chip "Đang mở" / "Đã đóng" dùng lại lớp của `khoi-thao-luan.module.css`
  * (cùng một chip ở trang chủ và ở kho), nên file này không khai lại chúng. Đường kẻ chân và
- * rê chuột theo khuôn `khoi-bai-viet.module.css#.hang` để hai danh sách đọc như cùng một trang. */
+ * rê chuột theo khuôn `.hang` của khối "Bài viết" trang chủ (đã gỡ ở việc 24). */
 .tuan {
   margin-top: 28px;
 }

@@ -7,8 +7,10 @@ import { hrefLoaiTrongSub } from "@/lib/loc-loai-mach";
 import { DIEU_CAM } from "@/lib/phap-ly";
 import { duongDanKhanDai, duongDanMach, duongDanSub } from "@/lib/url";
 
+import { BaiMoiTuTrinhDuyet } from "./bai-moi-tu-trinh-duyet";
 import { ChanTrang } from "./chan-trang";
 import { ChuyenMucTuTrinhDuyet } from "./chuyen-muc-tu-trinh-duyet";
+import { KhoiBaiMoi } from "./khoi-bai-moi";
 import { KhoiChuyenMuc } from "./khoi-chuyen-muc";
 import { KhoiKhach } from "./khoi-khach";
 import css from "./sidebar.module.css";
@@ -29,8 +31,12 @@ import css from "./sidebar.module.css";
  *    nạp bằng `docChuDeTuan` — cùng lời gọi, cùng phép chọn với khối tiêu điểm của `/`. Vắng mặt
  *    ở `/` (khối tiêu điểm đã có), ở trang tĩnh, khi chưa có chủ đề / nạp hỏng, và ở trang mạch
  *    của CHÍNH chủ đề ấy (`KhungHaiCot`);
- * 2. luật rút gọn dẫn `/luat` — PLAN 5.10 bắt mọi trang công khai phải có đường tới đó,
- *    và chân trang một mình thì ở dưới quá xa để ai đọc;
+ * 2. bài mới (`KhoiBaiMoi`) — **vắng mặt hẳn khi `baiMoi` rỗng** *(2026-09-10)*. "Bài mới nhất" /
+ *    "Cùng chuyên mục" ở trang mạch `/m/[slugId]` và các trang dùng `KhungHaiCot`; "Bài viết
+ *    mới" ở `/` — thay cho khối "Bài viết" to đã gỡ khỏi trang chủ *(việc 24)*. Đứng TRƯỚC
+ *    "Chuyên mục" (việc 24): trên điện thoại rail xuống dưới nội dung, khối để cuối thì không ai
+ *    cuộn tới. Trang TĨNH (`/luat`) truyền `baiMoiTuTrinhDuyet` để khối tự nạp ở trình duyệt
+ *    (`BaiMoiTuTrinhDuyet`). Rail `/s/*` không có khối này;
  * 3. danh sách các sub — **vắng mặt hẳn khi `cacSub` rỗng** *(2026-08-31)*. Một hộp mang
  *    tiêu đề "Chuyên mục" mà không có chuyên mục nào là biển chỉ đường chết: nó chiếm chỗ
  *    và hứa một lối đi không tồn tại. Đây cũng là điều kiện để `KhungHaiCotTinh` dùng lại
@@ -40,8 +46,8 @@ import css from "./sidebar.module.css";
  *    mà không chuyển danh sách vào đây là bớt link nội bộ từ mọi bài.
  *    Trang TĨNH (`/luat`) không có `cacSub` từ server: truyền `chuyenMucTuTrinhDuyet` để khối
  *    tự nạp ở trình duyệt (`ChuyenMucTuTrinhDuyet`) — xem `khung-hai-cot-tinh.tsx`;
- * 4. bài mới nhất — **vắng mặt hẳn khi `baiMoi` rỗng** *(2026-09-10)*. Lấp khoảng trống
- *    ở rail phải khi xem trang chi tiết mạch `/m/[slugId]` và các trang dùng `KhungHaiCot`;
+ * 4. luật rút gọn dẫn `/luat` — PLAN 5.10 bắt mọi trang công khai phải có đường tới đó,
+ *    và chân trang một mình thì ở dưới quá xa để ai đọc;
  * 5. `ChanTrang` — chỉ còn dòng miễn trừ (đợt E bỏ "Luật cộng đồng" + "Trang chủ": khối luật
  *    ngay trên đã dẫn `/luat`, logo header dẫn `/`).
  *
@@ -62,6 +68,8 @@ export function Sidebar({
   cacSub,
   baiMoi,
   tieuDeBaiMoi = "Bài mới nhất",
+  baiMoiTuTrinhDuyet = false,
+  linkTatCaBaiViet = false,
   chuyenMucTuTrinhDuyet = false,
   khachTieuDe,
   chuDeTuan,
@@ -76,8 +84,14 @@ export function Sidebar({
   cacSub: readonly SubChiTietOut[];
   /** Danh sách bài mới nhất; vắng mặt hoặc rỗng thì không render khối. */
   baiMoi?: readonly MachTomTatOut[];
-  /** Tiêu đề khối bài mới: "Bài mới nhất" hoặc "Cùng chuyên mục" (khi ở trang mạch). */
+  /** Tiêu đề khối bài mới: "Bài mới nhất" hoặc "Cùng chuyên mục" (khi ở trang mạch), "Bài viết
+   * mới" ở `/` và `/luat`. */
   tieuDeBaiMoi?: string;
+  /** Chỉ cho trang TĨNH không có `baiMoi` từ server (`/luat`): khối bài mới tự nạp `bai_viet` ở
+   * trình duyệt (`BaiMoiTuTrinhDuyet`). Đối xứng với `chuyenMucTuTrinhDuyet`. */
+  baiMoiTuTrinhDuyet?: boolean;
+  /** Link "Tất cả bài viết →" cuối khối bài mới — chỉ `/` và `/luat` bật. */
+  linkTatCaBaiViet?: boolean;
   /** Chỉ cho trang TĨNH không có `cacSub` từ server (`/luat`): khối "Chuyên mục" tự nạp
    * danh sách ở trình duyệt. Vô nghĩa khi `cacSub` đã có. */
   chuyenMucTuTrinhDuyet?: boolean;
@@ -191,6 +205,16 @@ export function Sidebar({
         </section>
       )}
 
+      {/* Khối bài mới đứng TRƯỚC "Chuyên mục" (việc 24): trên điện thoại rail xuống dưới nội dung,
+          để cuối thì không ai cuộn tới. */}
+      {baiMoi && baiMoi.length > 0 ? (
+        <KhoiBaiMoi baiMoi={baiMoi} tieuDe={tieuDeBaiMoi} coLinkTatCa={linkTatCaBaiViet} />
+      ) : (
+        baiMoiTuTrinhDuyet && (
+          <BaiMoiTuTrinhDuyet tieuDe={tieuDeBaiMoi} coLinkTatCa={linkTatCaBaiViet} />
+        )
+      )}
+
       {cacSub.length > 0 ? (
         <KhoiChuyenMuc cacSub={cacSub} />
       ) : (
@@ -219,40 +243,6 @@ export function Sidebar({
           Đọc luật cộng đồng →
         </Link>
       </section>
-
-      {baiMoi && baiMoi.length > 0 && (
-        <section className={css.khoi} data-testid="sidebar-bai-moi">
-          <h2 className={css.tieu_de}>{tieuDeBaiMoi}</h2>
-          <ul className={css.danh_sach_bai_moi}>
-            {baiMoi.map((m) => (
-              <li key={m.id} className={css.muc_bai_moi}>
-                <Link
-                  className={css.link_bai_moi}
-                  href={duongDanMach(m.slug, m.id)}
-                  prefetch={false}
-                >
-                  <span className={css.tieu_de_bai_moi}>{m.title}</span>
-                  <span className={css.meta_bai_moi}>
-                    <span className={`${css.slug_bai_moi} mono`}>s/{m.sub.slug}</span>
-                    {m.entry_count > 1 && (
-                      <>
-                        <span className={css.cham_phan_cach}>·</span>
-                        <span>{m.entry_count} mốc</span>
-                      </>
-                    )}
-                    {m.comment_count > 0 && (
-                      <>
-                        <span className={css.cham_phan_cach}>·</span>
-                        <span>{m.comment_count} bình luận</span>
-                      </>
-                    )}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
 
       <ChanTrang />
     </aside>

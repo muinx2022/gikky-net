@@ -630,26 +630,29 @@ test.describe("T2 — thanh cài app không cướp chỗ", () => {
 
 /* ===================================================================== T5 · home mobile */
 
-test.describe("T5 — home mobile: 'Bài viết' trước rail", () => {
-  test("390px: Nhật ký mới → Bài viết → rail → chân trang (đo vị trí hiển thị, DOM không đổi)", async ({ page }) => {
+// Việc 24: section "Bài viết" (từng đứng NGOÀI khung, được `order` kéo lên trước rail) đã gỡ;
+// bài viết mới là khối ĐẦU của rail sau khối giới thiệu — trước "Chuyên mục", để người cuộn xuống
+// gặp nó trước. Bài đo chuyển từ "Bài viết trước rail" sang "bài viết đứng đầu rail".
+test.describe("T5 — home mobile: bài viết mới ở đầu rail", () => {
+  test("390px: Nhật ký mới → rail (bài viết mới → Chuyên mục) → chân trang; không cuộn ngang", async ({ page }) => {
     await moi(page, "/");
     const top = (sel: string) =>
       page.locator(sel).first().evaluate((el) => el.getBoundingClientRect().top + window.scrollY);
+    await expect(page.locator('[data-testid="khoi-bai-viet"]')).toHaveCount(0);
     const nhatKy = await top('[data-testid="khoi-nhat-ky"]');
-    const baiViet = await top('[data-testid="khoi-bai-viet"]');
     const rail = await top('[data-testid="rail-phai"]');
+    const baiViet = await top('[data-testid="rail-phai"] [data-testid="sidebar-bai-moi"]');
+    const chuyenMuc = await top('[data-testid="rail-phai"] [data-testid="sidebar-cac-sub"]');
     const chan = await top('[data-testid="chan-trang"]');
-    expect(nhatKy).toBeLessThan(baiViet);
-    expect(baiViet, "Bài viết phải hiện TRƯỚC rail").toBeLessThan(rail);
-    expect(rail).toBeLessThan(chan);
-
-    // DOM giữ nguyên thứ tự (SEO): rail vẫn đứng trước section Bài viết trong tài liệu.
-    const thuTuDom = await page.evaluate(() => {
-      const r = document.querySelector('[data-testid="rail-phai"]')!;
-      const b = document.querySelector('[data-testid="khoi-bai-viet"]')!;
-      return Boolean(r.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
-    });
-    expect(thuTuDom, "DOM: rail trước Bài viết như cũ").toBe(true);
+    expect(nhatKy).toBeLessThan(rail);
+    expect(rail).toBeLessThanOrEqual(baiViet);
+    expect(baiViet, "bài viết mới phải hiện TRƯỚC Chuyên mục").toBeLessThan(chuyenMuc);
+    expect(chuyenMuc).toBeLessThan(chan);
+    const rong = await page.evaluate(() => ({
+      cuon: document.documentElement.scrollWidth,
+      khung: window.innerWidth,
+    }));
+    expect(rong.cuon, JSON.stringify(rong)).toBeLessThanOrEqual(rong.khung);
   });
 });
 

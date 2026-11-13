@@ -164,56 +164,76 @@
   gap: 4px;
 }
 
-.muc_bai_moi,
 .muc_moi {
   margin: 0;
   padding: 0;
 }
 
-.link_bai_moi {
+/* Một dòng của khối bài mới. `<a>` CHỈ bọc tiêu đề (anchor text sạch, việc 24); vùng bấm cả dòng
+   là "stretched link": `<li>` định vị, `::after` của `<a>` phủ kín nó (bên dưới). Nền khi rê và
+   màu tiêu đề đổi theo `:hover` của cả `<li>` — như khi cả dòng còn là một `<a>`. */
+.muc_bai_moi {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 2px;
   padding: 5px 6px;
   margin: 0 -6px;
   border-radius: 5px;
-  text-decoration: none;
-  color: inherit;
   transition: background 0.12s ease;
 }
 
-.link_bai_moi:hover {
+.muc_bai_moi:hover {
   background: var(--surface-2);
 }
 
-.link_bai_moi:hover .tieu_de_bai_moi {
+.muc_bai_moi:hover .tieu_de_bai_moi {
   color: var(--accent);
 }
 
+/* Việc 24: tiêu đề MỘT dòng, chữ thường, cắt bằng CSS — chuỗi đầy đủ vẫn nằm trong HTML (anchor
+   text) và ở `title` của link. Bỏ `-webkit-line-clamp`: hai dòng làm 10 bài của trang chủ thành một
+   cột chữ dài. Chính `<a>` mang lớp này. */
 .tieu_de_bai_moi {
-  font-size: 13px;
+  display: block;
+  font-size: 12.5px;
   line-height: 1.45;
-  font-weight: 500;
+  font-weight: 400;
   color: var(--ink);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  text-decoration: none;
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+/* Stretched link: phủ cả `<li>` (khối chứa gần nhất có định vị). `overflow: hidden` của `<a>` không
+   cắt nó — `<a>` không phải khối chứa của `::after`. */
+.tieu_de_bai_moi::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+/* Tên chuyên mục · ngày đăng. Một dòng: tên chuyên mục dài thì nó co lại (cắt), ngày giữ nguyên. */
 .meta_bai_moi {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
   gap: 5px;
+  min-width: 0;
   font-size: 11.5px;
   color: var(--ink-3);
   line-height: 1.3;
+  white-space: nowrap;
 }
 
-.slug_bai_moi {
-  color: var(--accent);
-  font-size: 11.5px;
+.sub_bai_moi {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ngay_bai_moi {
+  flex-shrink: 0;
 }
 
 .cham_phan_cach {

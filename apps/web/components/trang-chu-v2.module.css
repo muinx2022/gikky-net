@@ -1,6 +1,6 @@
 /* Trang chủ v2: dòng giới thiệu + khối "Nhật ký mới" (plan
- * `2026-11-11-homepage-v2-giao-dien-moi.md`). Chỉ token đã có; không màu mới. Chủ đề tuần và
- * section Bài viết có CSS riêng (`khoi-thao-luan.module.css`, `khoi-bai-viet.module.css`). */
+ * `2026-11-11-homepage-v2-giao-dien-moi.md`). Chỉ token đã có; không màu mới. Chủ đề tuần có CSS
+ * riêng (`khoi-thao-luan.module.css`). */
 
 /* --- dòng giới thiệu (h1 + lede, chữ GIỮ NGUYÊN — h1 22px, ≤ 960px còn 19px) ------------ */
 .gioi_thieu_h1 {

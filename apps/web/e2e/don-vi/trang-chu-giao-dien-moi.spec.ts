@@ -236,13 +236,13 @@ test("màu: khối chủ đề, thư viện KHÔNG dùng --gain/--loss/--stamp (
   // theo selector ở `mau-token.spec.ts`, và bài kế dưới khoá phần còn lại bằng cách đọc nguồn.
   for (const f of [
     "components/khoi-thao-luan.module.css",
-    "components/khoi-bai-viet.module.css",
+    // `khoi-bai-viet.module.css` đã gỡ ở việc 24 (khối bài viết dời sang rail, `sidebar.module.css`).
     "components/trang-chu-v2.module.css",
     "components/khoi-lenh.module.css",
     // Hai file CSS dùng chung tách ra ở đợt C (việc 14) thừa hưởng đúng luật của chỗ chúng đến từ.
     "components/dai-tab.module.css",
     "components/o-soan-nhat-ky.module.css",
-    // Dải bản tin tách khỏi `khoi-bai-viet.module.css` ở việc 19 — cùng lý lẽ.
+    // Dải bản tin tách khỏi khối bài viết ở việc 19 — cùng lý lẽ.
     "components/dai-ban-tin.module.css",
     // Hai trang bản tin của việc 20: màu tăng / giảm đi qua `SoLaiLo` (`con-so.module.css`).
     "components/danh-sach-ban-tin.module.css",

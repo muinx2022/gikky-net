@@ -11,7 +11,6 @@ import {
   NK_BOT,
   NK_DONG,
   NK_THUONG,
-  SUB_GIA_SACH,
   TIEN_TO_NHAT_KY_W,
   donNhatKyW,
   donThuVien,
@@ -24,7 +23,7 @@ import {
  * G1–G7) — chạy trên BẢN BUILD thật, nhóm **W**. Bố cục hai cột, SEO của `<head>`, mỗi tác giả
  * một thẻ… đã có ở `trang-chu-v2.spec.ts` / `seo-trang-chu.spec.ts`; file này đo cái MỚI: thứ
  * tự khối, chủ đề tuần, thẻ nhật ký (dải lệnh · BOT · chip · ảnh nhỏ · chân thẻ), tab lọc trạng
- * thái, dải chân khối, thư viện bài viết, số link `/m/`, mobile.
+ * thái, dải chân khối, bài viết (khối rail từ việc 24), số link `/m/`, mobile.
  *
  * Dữ liệu TẠM (xem `thu-vien.ts`): thư viện bài viết trong các sub nhóm + ba nhật ký mới nhất
  * (lệnh đủ năm số của tài khoản `la_bot`, lệnh BÁN đã đóng sổ, nhật ký thường). Dựng ở
@@ -100,8 +99,8 @@ test.describe("W0 — seed_e2e dựng dữ liệu cho dải lệnh / nhãn BOT (
 
 /* =============================================================================== W1 · thứ tự */
 
-test.describe("W1/G1 — thứ tự: dòng giới thiệu → Chủ đề tuần → Nhật ký mới → Bài viết", () => {
-  test("y tăng dần theo đúng thứ tự; thư viện nằm DƯỚI CẢ RAIL và trải hết chiều ngang", async ({
+test.describe("W1/G1 — thứ tự: dòng giới thiệu → Chủ đề tuần → Nhật ký mới; bài viết ở rail", () => {
+  test("y tăng dần theo đúng thứ tự; bài viết là khối của RAIL (việc 24), không còn section riêng", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
@@ -114,20 +113,16 @@ test.describe("W1/G1 — thứ tự: dòng giới thiệu → Chủ đề tuần
     const h1 = await page.locator("h1").first().evaluate((e) => e.getBoundingClientRect().top + window.scrollY);
     const chu_de = await y("khoi-thao-luan");
     const nhat_ky = await y("khoi-nhat-ky");
-    const bai_viet = await y("khoi-bai-viet");
-    const rail = await y("rail-phai");
+    const main = await page.locator("main").first().evaluate((e) => e.getBoundingClientRect().right);
     expect(h1, "dòng giới thiệu trên cùng").toBeLessThan(chu_de.top);
     expect(chu_de.bottom, "chủ đề trước nhật ký").toBeLessThanOrEqual(nhat_ky.top + 1);
-    expect(nhat_ky.top).toBeLessThan(bai_viet.top);
-    // Section bài viết: dưới cả rail (không chỉ dưới main) và rộng bằng cả khung nhìn.
-    expect(bai_viet.top, "thư viện dưới rail").toBeGreaterThanOrEqual(rail.bottom - 1);
-    expect(Math.round(bai_viet.x)).toBe(0);
-    // Rộng BẰNG `<body>` (`html { scrollbar-gutter: stable }` chừa sẵn rãnh cuộn nên body hẹp hơn
-    // khung nhìn 15px), tức không bị khống chế ở 1200px như khung hai cột.
-    expect(Math.round(bai_viet.w)).toBe(
-      await page.evaluate(() => Math.round(document.body.getBoundingClientRect().width)),
-    );
-    expect(Math.round(bai_viet.w), "rộng hơn khung hai cột (1200px)").toBeGreaterThan(1200);
+    // Việc 24: section "Bài viết" (từng đứng dưới rail, trải hết chiều ngang) đã gỡ; bài viết mới
+    // nằm trong rail phải — cột BÊN PHẢI nội dung chính ở desktop.
+    await expect(page.getByTestId("khoi-bai-viet")).toHaveCount(0);
+    const bai_viet = page.getByTestId("rail-phai").getByTestId("sidebar-bai-moi");
+    await expect(bai_viet).toHaveCount(1);
+    const hop = await bai_viet.boundingBox();
+    expect(hop!.x, "khối bài viết ở cột phải").toBeGreaterThanOrEqual(main - 1);
     // Không còn danh sách "chủ đề trước" trên `/`.
     await expect(page.getByTestId("khoi-thao-luan").getByTestId("chu-de-hang")).toHaveCount(0);
     await expect(page.getByTestId("khoi-thao-luan").getByRole("link", { name: /chủ đề trước/i })).toHaveCount(0);
@@ -451,136 +446,42 @@ test.describe("W4 — ô soạn nhanh, tab lọc, dải chân khối", () => {
 
 /* ====================================================================== W5 · thư viện bài viết */
 
-test.describe("W5/G4 — khối bài viết: Mới đăng, giá sách do admin chọn, ảnh từng bài, <time>, dải bản tin", () => {
-  test("Mới đăng: 3 bài mọi chuyên mục (có bài của sub KHÔNG được chọn), chip tên sub, <time datetime>, ô ảnh", async ({
+test.describe("W5/G4 — bài viết ở rail (việc 24): 10 bài, tên chuyên mục, <time>, 'Tất cả bài viết'; dải bản tin", () => {
+  test("rail: 'Bài viết mới' = 10 bài đầu của API (trừ tin-tuc), title đầy đủ, tên chuyên mục · <time datetime>", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/");
-    const khoi = page.getByTestId("khoi-bai-viet");
-    await expect(khoi.getByRole("heading", { level: 2 })).toHaveText("Bài viết");
-    await expect(khoi).toContainText("Kiến thức nền cho người giao dịch nghiêm túc");
+    await expect(page.getByTestId("khoi-bai-viet")).toHaveCount(0);
+    const khoi = page.getByTestId("sidebar-bai-moi");
+    await expect(khoi.getByRole("heading", { level: 2 })).toHaveText("Bài viết mới");
 
-    const moi_dang = khoi.getByTestId("bai-viet-moi-dang");
-    await expect(moi_dang.getByRole("heading", { level: 3 })).toHaveText("Mới đăng");
-    const muc = moi_dang.getByTestId("bai-viet-moi-dang-muc");
-    await expect(muc).toHaveCount(3);
-
-    const subs = await api<{ slug: string; ten: string; vi_tri_trang_chu: number | null }[]>(
-      "/api/v1/subs",
-    );
+    const subs = await api<{ slug: string; ten: string }[]>("/api/v1/subs");
     const moi = await api<FeedOut>("/api/v1/feeds/moi?loai_mach=bai_viet&limit=50");
-    // Mới đăng = 3 bài đầu của feed trừ tin-tuc (lọc phòng thủ, việc 20 vòng sửa 1).
-    const mong = moi.items.filter((m) => m.sub.slug !== "tin-tuc").slice(0, 3);
-    expect(
-      await muc.evaluateAll((ls) => ls.map((l) => Number((l as HTMLElement).dataset.machId))),
-    ).toEqual(mong.map((m) => m.id));
-    // Dữ liệu tạm: chung-khoan và crypto KHÔNG được chọn lên giá sách mà vẫn lên Mới đăng.
-    const khong_chon = new Set(subs.filter((s) => s.vi_tri_trang_chu === null).map((s) => s.slug));
-    expect(
-      mong.some((m) => khong_chon.has(m.sub.slug)),
-      "Mới đăng phải có bài của sub không được chọn",
-    ).toBe(true);
-
-    // Mỗi bài: tiêu đề là heading cấp 4 chứa link thật, chip = TÊN chuyên mục (không `s/<slug>`
-    // khi sub có trong GET /subs), <time datetime> hợp lệ, ô ảnh.
-    for (let i = 0; i < 3; i += 1) {
-      const m = muc.nth(i);
-      await expect(m.getByRole("heading", { level: 4 }).getByRole("link")).toHaveAttribute(
-        "href",
-        `/m/${mong[i].slug}-${mong[i].id}`,
-      );
-      await expect(m).toContainText(subs.find((s) => s.slug === mong[i].sub.slug)!.ten);
-      const t = m.locator("time");
-      expect(await t.getAttribute("datetime"), `bài ${i}: <time datetime>`).toMatch(/^\d{4}-\d{2}-\d{2}T/);
-      await expect(t).toHaveText(/^\d{2}\/\d{2}$/);
-      await expect(m.getByTestId("bai-viet-thumb")).toHaveCount(1);
+    // Lọc phòng thủ tin-tuc (việc 20 vòng sửa 1) giữ nguyên ở rail.
+    const mong = moi.items.filter((m) => m.sub.slug !== "tin-tuc").slice(0, 10);
+    expect(mong.length, "dữ liệu tạm + seed có ≥ 10 bài viết").toBe(10);
+    const muc = khoi.locator("li");
+    await expect(muc).toHaveCount(10);
+    for (let i = 0; i < 10; i += 1) {
+      const a = muc.nth(i).locator("a");
+      await expect(a).toHaveAttribute("href", `/m/${mong[i].slug}-${mong[i].id}`);
+      await expect(a).toHaveAttribute("title", mong[i].title);
+      // Tên chuyên mục (không `s/<slug>` khi sub có trong GET /subs).
+      await expect(muc.nth(i)).toContainText(subs.find((s) => s.slug === mong[i].sub.slug)!.ten);
+      const t = muc.nth(i).locator("time");
+      expect(await t.getAttribute("datetime"), `bài ${i}: <time datetime>`).toBe(mong[i].published_at);
+      await expect(t).toHaveText(/^\d{2}\/\d{2}\/\d{4}$/);
+      // Không ảnh trong rail.
+      await expect(muc.nth(i).locator("img")).toHaveCount(0);
     }
+    await expect(khoi.getByTestId("sidebar-bai-moi-tat-ca")).toHaveAttribute(
+      "href",
+      "/?tab=moi&loai_mach=bai_viet",
+    );
   });
 
-  test("giá sách: một cột mỗi sub được chọn theo vị trí, tiêu đề = tên sub, 'Xem thêm →' tới /s/<slug>, chỉ tiêu đề + ngày", async ({
-    page,
-  }) => {
-    await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto("/");
-    const khoi = page.getByTestId("khoi-bai-viet");
-    const subs = await api<{ slug: string; ten: string; vi_tri_trang_chu: number | null }[]>(
-      "/api/v1/subs",
-    );
-    const cot = khoi.getByTestId("bai-viet-gia");
-    await expect(cot).toHaveCount(3);
-    expect(await cot.evaluateAll((c) => c.map((e) => (e as HTMLElement).dataset.sub))).toEqual(
-      SUB_GIA_SACH,
-    );
-    expect(await cot.getByRole("heading", { level: 3 }).allTextContents()).toEqual(
-      SUB_GIA_SACH.map((slug) => subs.find((s) => s.slug === slug)!.ten),
-    );
-    expect(
-      await cot
-        .getByTestId("bai-viet-gia-xem-them")
-        .evaluateAll((l) => l.map((a) => a.getAttribute("href"))),
-    ).toEqual(SUB_GIA_SACH.map((slug) => `/s/${slug}`));
-    // Lưới chia đều theo SỐ giá (3 cột, không chừa ô trống cho cột thứ tư).
-    const so_cot = await khoi
-      .locator("[data-testid='bai-viet-gia']")
-      .first()
-      .evaluate((e) => getComputedStyle(e.parentElement!).gridTemplateColumns.trim().split(/\s+/).length);
-    expect(so_cot).toBe(3);
-
-    // Mỗi bài trên giá: <article>, tiêu đề cấp 4 chứa link thật, <time datetime>; KHÔNG ảnh,
-    // KHÔNG đoạn trích. Giá không trùng bài đã ở Mới đăng.
-    const trong_moi_dang = await khoi
-      .getByTestId("bai-viet-moi-dang-muc")
-      .evaluateAll((ls) => ls.map((l) => (l as HTMLElement).dataset.machId));
-    const muc = khoi.getByTestId("bai-viet-gia-muc");
-    const n = await muc.count();
-    expect(n).toBeGreaterThanOrEqual(3);
-    for (let i = 0; i < n; i += 1) {
-      const m = muc.nth(i);
-      await expect(m.getByRole("heading", { level: 4 }).getByRole("link")).toHaveAttribute(
-        "href",
-        /^\/m\/.+-\d+$/,
-      );
-      const t = m.locator("time");
-      expect(await t.getAttribute("datetime"), `bài ${i}: <time datetime>`).toMatch(/^\d{4}-\d{2}-\d{2}T/);
-      await expect(t).toHaveText(/^\d{2}\/\d{2}$/);
-      await expect(m.locator("img")).toHaveCount(0);
-      await expect(m.getByTestId("bai-viet-thumb")).toHaveCount(0);
-      expect(trong_moi_dang).not.toContain(await m.getAttribute("data-mach-id"));
-    }
-  });
-
-  test("ảnh: bài có ảnh dùng thumb (lazy, width/height) trong khung 104×72; bài không ảnh có ô nền; khung không đổi", async ({
-    page,
-  }) => {
-    await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto("/");
-    const khoi = page.getByTestId("khoi-bai-viet");
-    const co_anh = khoi.locator('[data-testid="bai-viet-thumb"][data-co-anh="true"]');
-    const khong = khoi.locator('[data-testid="bai-viet-thumb"][data-co-anh="false"]');
-    expect(await co_anh.count(), "có ít nhất một bài có ảnh").toBeGreaterThanOrEqual(1);
-    expect(await khong.count(), "có ít nhất một bài không ảnh").toBeGreaterThanOrEqual(1);
-    const img = co_anh.first().locator("img");
-    await expect(img).toHaveAttribute("loading", "lazy");
-    await expect(img).toHaveAttribute("width", /^\d+$/);
-    await expect(img).toHaveAttribute("height", /^\d+$/);
-    await expect(img).toHaveAttribute("alt", /^Ảnh minh họa: /);
-    const hop = async (l: Locator) => {
-      const b = await l.boundingBox();
-      return { w: Math.round(b!.width), h: Math.round(b!.height) };
-    };
-    expect(await hop(co_anh.first())).toEqual({ w: 104, h: 72 });
-    expect(await hop(khong.first()), "ô thay thế cùng kích thước").toEqual({ w: 104, h: 72 });
-    expect(await khong.first().locator("img").count()).toBe(0);
-    await img.evaluate((e) => (e as HTMLImageElement).decode());
-    expect(await hop(co_anh.first())).toEqual({ w: 104, h: 72 });
-    // Nền ô thay thế khác nền section (nhìn thấy được), cả hai theme dùng token.
-    const nen = await khong.first().evaluate((e) => getComputedStyle(e).backgroundColor);
-    const nen_section = await khoi.evaluate((e) => getComputedStyle(e).backgroundColor);
-    expect(nen).not.toBe(nen_section);
-  });
-
-  test("dải bản tin: 2 bản tin mới nhất (ngày · tiêu đề gọn, title đầy đủ) + 'Tất cả bản tin →'; chip chuyên mục là link /s/*", async ({
+  test("dải bản tin: 2 bản tin mới nhất (ngày · tiêu đề gọn, title đầy đủ) + 'Tất cả bản tin →'", async ({
     page,
   }) => {
     await page.goto("/");
@@ -592,7 +493,8 @@ test.describe("W5/G4 — khối bài viết: Mới đăng, giá sách do admin c
     const ban_tin = page.getByRole("region", { name: "Bản tin thị trường" });
     await expect(ban_tin).toHaveAttribute("data-testid", "ban-tin");
     await expect(ban_tin.getByRole("heading")).toHaveCount(0);
-    await expect(page.getByTestId("khoi-bai-viet").getByTestId("ban-tin")).toHaveCount(0);
+    // Bản tin không lọt vào khối bài viết ở rail (việc 24).
+    await expect(page.getByTestId("sidebar-bai-moi").getByTestId("ban-tin")).toHaveCount(0);
     const muc = ban_tin.getByTestId("ban-tin-muc");
     expect(await muc.evaluateAll((l) => l.map((a) => a.getAttribute("href")))).toEqual(
       tin.map((b) => `/s/tin-tuc/${b.ngay}`),
@@ -603,19 +505,8 @@ test.describe("W5/G4 — khối bài viết: Mới đăng, giá sách do admin c
       expect(await muc.nth(i).locator("time").getAttribute("datetime")).toBe(tin[i].ngay);
     }
     await expect(page.getByTestId("ban-tin-tat-ca")).toHaveAttribute("href", "/s/tin-tuc");
-    // Chip: chỉ sub CÓ THẬT; nhãn lấy từ `GET /subs`.
-    const subs = await api<{ slug: string; ten: string }[]>("/api/v1/subs");
-    const chip = page.getByTestId("bai-viet-chips").locator("a[data-testid^='bai-viet-chip-']");
-    const hrefs = await chip.evaluateAll((l) => l.map((a) => a.getAttribute("href")));
-    expect(hrefs.length).toBeGreaterThan(0);
-    for (const h of hrefs) {
-      const slug = h!.replace("/s/", "");
-      expect(subs.some((s) => s.slug === slug), `chip tới sub không có thật: ${h}`).toBe(true);
-    }
-    await expect(page.getByTestId("bai-viet-chips").getByTestId("bai-viet-chip-hoi-dap")).toHaveText(
-      subs.find((s) => s.slug === "hoi-dap")!.ten,
-    );
-    expect(hrefs).not.toContain("/s/tin-tuc");
+    // Hàng chip chuyên mục của khối "Bài viết" gỡ cùng khối (việc 24); lối tới mọi `/s/*` nay là
+    // khối "Chuyên mục" của rail (đo ở W6 và `vo-reddit.spec.ts`).
   });
 });
 
@@ -628,7 +519,7 @@ test.describe("W6/G5 — SEO: số link /m/, HTML như nhau cho trình duyệt v
   const linkM = (html: string) =>
     new Set([...html.matchAll(/<a [^>]*href="(\/m\/[^"]+)"/g)].map((m) => m[1]));
 
-  test("≥ 19 link /m/ duy nhất trong HTML thô; bản tin + chủ đề + nhật ký + bài viết đều có", async ({
+  test("≥ 17 link /m/ duy nhất trong HTML thô; bản tin + chủ đề + nhật ký + bài viết (rail) đều có", async ({
     request,
   }) => {
     const html = await (await request.get("/", { headers: { "user-agent": UA_TRINH_DUYET } })).text();
@@ -643,17 +534,25 @@ test.describe("W6/G5 — SEO: số link /m/, HTML như nhau cho trình duyệt v
     const hrefs = new Set([...html.matchAll(/<a [^>]*href="([^"]+)"/g)].map((m) => m[1]));
     for (const s of subs) expect(hrefs.has(`/s/${s.slug}`), `thiếu /s/${s.slug}`).toBe(true);
     expect(hrefs.has("/luat")).toBe(true);
-    // Mỗi bài viết trong thư viện là <article> có <a href> và <time datetime> TRONG HTML thô.
-    expect((html.match(/<article\b/g) ?? []).length).toBeGreaterThanOrEqual(9);
+    // Việc 24: khối "Bài viết" (9 `<article>` — 3 Mới đăng + ≥ 6 giá sách) đã gỡ; bài viết nay là
+    // khối rail "Bài viết mới": 10 `<li>`, mỗi mục một `<a href="/m/…">` và một `<time datetime>`
+    // TRONG HTML thô. Ngưỡng đếm theo khối ấy (không còn `<article>` nào để đếm trên `/`).
+    const rail = /<section[^>]*data-testid="sidebar-bai-moi"[\s\S]*?<\/section>/.exec(html)?.[0] ?? "";
+    expect(rail, "khối bài viết ở rail phải có trong HTML thô").not.toBe("");
+    expect(linkM(rail).size, "10 link bài viết ở rail").toBe(10);
     // React in `dateTime=` (camelCase) ra HTML thô; thuộc tính HTML không phân biệt hoa thường.
-    expect((html.match(/<time\b[^>]*\bdatetime="/gi) ?? []).length).toBeGreaterThanOrEqual(9 + 3);
+    expect((rail.match(/<time\b[^>]*\bdatetime="/gi) ?? []).length).toBe(10);
+    expect((html.match(/<time\b[^>]*\bdatetime="/gi) ?? []).length).toBeGreaterThanOrEqual(10 + 3);
   });
 
-  test("UA trình duyệt và Googlebot nhận CÙNG tập link /m/ và cùng số <article>", async ({ request }) => {
+  test("UA trình duyệt và Googlebot nhận CÙNG tập link /m/ và cùng số <time>", async ({ request }) => {
     const a = await (await request.get("/", { headers: { "user-agent": UA_TRINH_DUYET } })).text();
     const b = await (await request.get("/", { headers: { "user-agent": UA_GOOGLEBOT } })).text();
     expect([...linkM(a)].sort()).toEqual([...linkM(b)].sort());
-    expect((a.match(/<article\b/g) ?? []).length).toBe((b.match(/<article\b/g) ?? []).length);
+    // `<article>` (khối bài viết cũ) không còn trên `/` từ việc 24 — so `<time>` thay cho nó.
+    const dem = (s: string) => (s.match(/<time\b[^>]*\bdatetime="/gi) ?? []).length;
+    expect(dem(a)).toBeGreaterThan(0);
+    expect(dem(a)).toBe(dem(b));
     expect(/<h1[^>]*>([\s\S]*?)<\/h1>/.exec(a)![1]).toBe(/<h1[^>]*>([\s\S]*?)<\/h1>/.exec(b)![1]);
   });
 });
@@ -686,8 +585,7 @@ test.describe("W7/G7 — mobile 390px", () => {
       ["nút Ghi nhật ký", page.getByTestId("nut-ghi-nhat-ky-di-dong")],
       ["chân khối", page.getByTestId("nhat-ky-chan-khoi")],
       ["Tất cả nhật ký", page.getByTestId("nhat-ky-tat-ca")],
-      ["Xem thêm bài viết", page.getByTestId("bai-viet-xem-them")],
-      ["chip chuyên mục", page.getByTestId("bai-viet-chip-hoi-dap")],
+      // "Xem thêm bài viết" + chip chuyên mục gỡ cùng khối "Bài viết" (việc 24).
       ["bản tin", page.getByTestId("ban-tin-muc").first()],
       ["Tất cả bản tin", page.getByTestId("ban-tin-tat-ca")],
     ];
@@ -715,37 +613,29 @@ test.describe("W7/G7 — mobile 390px", () => {
     expect(thap, `vùng bấm < 44px: ${thap.join(" · ")}`).toEqual([]);
   });
 
-  test("khối bài viết mobile: Mới đăng đủ 3 bài, giá sách 1 cột × 2 bài hiện (bài thứ 3 ẩn), thumb 88×66, chip cuộn ngang, 'Xem thêm bài viết' hiện", async ({
+  test("khối bài viết mobile (việc 24): nằm trong rail DƯỚI nội dung chính, đủ 10 bài một dòng, không tràn ngang", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
-    const khoi = page.getByTestId("khoi-bai-viet");
-    const hien = (l: Locator) =>
-      l.evaluateAll((ls) => ls.filter((e) => (e as HTMLElement).offsetParent !== null).length);
-    expect(await hien(khoi.getByTestId("bai-viet-moi-dang-muc")), "Mới đăng giữ cả 3 bài").toBe(3);
-    const cot = khoi.getByTestId("bai-viet-gia");
-    expect(await cot.count()).toBeGreaterThan(0);
-    for (let i = 0; i < (await cot.count()); i += 1) {
-      const thay = await hien(cot.nth(i).getByTestId("bai-viet-gia-muc"));
-      expect(thay, `giá ${i}`).toBeLessThanOrEqual(2);
-      expect(thay).toBeGreaterThan(0);
-    }
-    // Một cột: các giá xếp dọc, mỗi giá rộng bằng khối.
-    const xs = await cot.evaluateAll((l) => l.map((e) => Math.round(e.getBoundingClientRect().left)));
-    expect(new Set(xs).size, "mọi giá cùng lề trái (1 cột)").toBe(1);
-    const t = await khoi.getByTestId("bai-viet-thumb").first().boundingBox();
-    expect({ w: Math.round(t!.width), h: Math.round(t!.height) }).toEqual({ w: 88, h: 66 });
-    await expect(page.getByTestId("bai-viet-xem-them")).toBeVisible();
-    const chips = page.getByTestId("bai-viet-chips");
-    // Chip = các sub admin chọn (ít hơn trước) nên có thể vừa khít 390px: chỉ ghim CƠ CHẾ cuộn
-    // (một hàng không xuống dòng, overflow-x auto), không ghim việc nó tràn.
-    const cuon = await chips.evaluate((e) => ({
-      ov: getComputedStyle(e).overflowX,
-      wrap: getComputedStyle(e).flexWrap,
+    const khoi = page.getByTestId("rail-phai").getByTestId("sidebar-bai-moi");
+    await expect(khoi).toBeVisible();
+    const tren = await page.locator("main").first().evaluate((e) => e.getBoundingClientRect().bottom);
+    const hop = await khoi.boundingBox();
+    expect(hop!.y, "khối bài viết dưới nội dung chính").toBeGreaterThanOrEqual(tren - 1);
+    expect(hop!.x + hop!.width, "khối bài viết trong khung 390px").toBeLessThanOrEqual(390);
+    // Đủ 10 bài, mỗi tiêu đề MỘT dòng (cắt bằng ellipsis), không đẩy trang cuộn ngang.
+    const tieu_de = khoi.locator("li > a");
+    await expect(tieu_de).toHaveCount(10);
+    const cao = await tieu_de.evaluateAll((ls) =>
+      ls.map((e) => Math.round(e.getBoundingClientRect().height) <= Math.ceil(parseFloat(getComputedStyle(e).lineHeight)) + 1),
+    );
+    expect(cao.every(Boolean), `tiêu đề một dòng: ${JSON.stringify(cao)}`).toBe(true);
+    const rong = await page.evaluate(() => ({
+      cuon: document.documentElement.scrollWidth,
+      khung: window.innerWidth,
     }));
-    expect(cuon.ov).toBe("auto");
-    expect(cuon.wrap).toBe("nowrap");
+    expect(rong.cuon, JSON.stringify(rong)).toBeLessThanOrEqual(rong.khung);
   });
 });
 

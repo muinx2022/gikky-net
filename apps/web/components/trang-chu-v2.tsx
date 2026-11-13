@@ -26,7 +26,8 @@ import css from "./trang-chu-v2.module.css";
  *   cái xuất bản sau cùng: feed `moi` sắp theo `last_content_at`, nên phần tử đầu của nó có thể
  *   là chủ đề cũ vừa được nối mốc (vòng sửa 4). Hằng ấy nay khai ở `lib/chu-de.ts`, vì rail phải
  *   nạp cùng lời gọi (`lib/api.ts::docFeedChuDe`);
- * - bài viết: MỘT lời gọi `SO_BAI_VIET_TAI` bài rồi chia nhóm ở web (`lib/nhom-bai-viet.ts`). */
+ * - bài viết: không còn khối trong component này — khối "Bài viết mới" ở rail phải (việc 24,
+ *   `lib/nhom-bai-viet.ts`). */
 export const SO_NHAT_KY = 8;
 export const SO_NHAT_KY_TAI = 20;
 
@@ -54,12 +55,11 @@ const TAB_NHAT_KY: readonly {
 
 /** Nội dung CHÍNH (trong khung hai cột) của trang chủ v2: dòng giới thiệu → **Chủ đề tuần →
  * Nhật ký mới** *(plan `2026-11-11-homepage-v2-giao-dien-moi.md`; nối tiếp
- * `2026-11-10-homepage-v2.md`)*. Section "Bài viết" (`KhoiBaiViet`) là phần THỨ BA của trang
- * và **ra ngoài khung hai cột**, trải hết chiều ngang dưới cả rail — nên `app/page.tsx` dựng
- * `<VoKhungHaiCot>` quanh component này rồi đặt `KhoiBaiViet` ngay sau nó, cả hai trong một
- * `data-testid="trang-chu-v2"`. Dải "Bản tin thị trường" (`DaiBanTin`) đứng TRƯỚC khung, là con
- * đầu của cùng div ấy — ngay dưới header, trên `<h1>` (việc 19). Tất cả nằm trong HTML đầu tiên
- * (server component) để bot thấy đủ.
+ * `2026-11-10-homepage-v2.md`)*. `app/page.tsx` dựng `<VoKhungHaiCot>` quanh component này trong
+ * một `data-testid="trang-chu-v2"`; bài viết mới nằm ở rail phải (việc 24 gỡ section "Bài viết"
+ * từng đứng ngoài khung). Dải "Bản tin thị trường" (`DaiBanTin`) đứng TRƯỚC khung, là con đầu của
+ * cùng div ấy — ngay dưới header, trên `<h1>` (việc 19). Tất cả nằm trong HTML đầu tiên (server
+ * component) để bot thấy đủ.
  *
  * `<h1>` và lede nhận từ ngoài để chữ của chúng sống ở MỘT chỗ (`app/page.tsx`) cho cả trang v2
  * lẫn feed cũ ở `/?tab=…` — và GIỮ TỪNG BYTE (SEO, `seo-trang-chu.spec.ts`); chỉ cỡ chữ nhỏ đi,

@@ -2151,3 +2151,17 @@ P-20261113-21 · MỞ · VỪA · Chạy `pnpm test` cùng lúc ở hai phiên t
 P-20261113-28 · MỞ · NHỎ · Trình soạn thảo của WEB (`apps/web/components/soan-thao.tsx:116-117`) tắt `horizontalRule` và `codeBlock` dù allowlist server (`api/core/lam_sach_html.py:45-65`, `THE_CHO_PHEP`) cho phép `hr` và `pre`: ba chỗ (server, soạn thảo web, soạn thảo admin) lệch nhau đúng hai thẻ này; người dùng sửa một mốc có `<hr>`/`<pre>` bằng soạn thảo web sẽ mất cấu trúc · phản biện đợt D việc 21 (2026-11-13), đọc code; bản admin đang vá trong đợt D.
 
 P-20261113-29 · MỞ · NHỎ · Thanh công cụ của `SoanThaoQuanTri` (admin) chưa có nút chèn `<hr>` / khối mã: từ vòng sửa đợt D việc 21 trình soạn thảo đã nạp và giữ được hai thẻ này, nhưng mod chưa tự chèn được · `apps/admin/components/soan-thao-quan-tri.tsx` (khối toolbar: B/I/S/mã/H2/H3/danh sách/trích/link/ảnh) · báo cáo thợ đợt D vòng sửa 1 (2026-11-13).
+
+P-20261113-31 · MỞ · VỪA · Bài `vo-reddit` A10 "nội dung vẫn nằm trong HTML khi gập" đỏ sẵn trên `gikky_e2e` — đỏ y hệt cả với bản build HEAD (`696025a`, `8a8c3f3`), không do việc 24 · `apps/web/e2e/vo-reddit.spec.ts:555` · lỗi "thân gốc không có thẻ `p` nào … element(s) not found"; **nghi** do dữ liệu seed/rác của thread HPG trên `gikky_e2e`; thợ + nghiệm thu việc 24 (2026-11-13).
+
+P-20261113-32 · MỞ · NHỎ · `lib/xem-truoc-anh.ts` (`chonThumb`, `tyLeKhung*`) là mã chết trên web (từ trước việc 24; nay gallery + khối bài viết đã gỡ), chỉ bài đo nhóm L của `xem-truoc-anh.spec.ts` giữ nó sống; API vẫn dựng `anh_khac` (≤ 10 ảnh/bài) cho mọi item feed mà web không còn đọc, comment còn trỏ `gallery-bai-viet.tsx` đã xoá · `apps/web/lib/xem-truoc-anh.ts`, `api/api/schemas.py:185` · `git grep xem-truoc-anh -- apps/web/app apps/web/components apps/web/lib` chỉ ra chính file đó; phản biện việc 24 (2026-11-13).
+
+P-20261113-33 · MỞ · NHỎ · Fixture e2e vẫn dựng dữ liệu giá sách (`SUB_GIA_SACH`, đặt `vi_tri_trang_chu` cho ba sub) cho khối đã gỡ ở việc 24; không spec nào còn import `SUB_GIA_SACH` · `apps/web/e2e/thu-vien.ts:40,83-85` · grep; nghiệm thu việc 24 (2026-11-13). Số phận của chính trường `Sub.vi_tri_trang_chu` ghi ở GHI-CHU việc 24.
+
+P-20261113-34 · MỞ · NHỎ · Tên bài đo còn nhắc `KhoiBaiViet` đã xoá (assertion vẫn đúng) · `apps/web/e2e/don-vi/ban-tin.spec.ts:140` · việc 24 (2026-11-13).
+
+P-20261113-35 · MỞ · NHỎ · Selector `.muc_moi` / `.danh_sach_moi` trong `sidebar.module.css` không còn ai dùng · `apps/web/components/sidebar.module.css:157-170` · grep `muc_moi|danh_sach_moi` trong `apps/web` chỉ ra chính file CSS; thợ việc 24 (2026-11-13).
+
+P-20261113-36 · MỞ · NHỎ · Hai bài L1 ngưỡng dính có biên mỏng: bài "ngay dưới ngưỡng" đo chiều cao rail ngay sau `goto`, trước khi khối khách vẽ xong (1811 thay vì 1831px, biên hụt 20px); bài "`/m/` ở 1550px" lấy bài viết đầu feed (rail 1330px) chứ không phải trang có rail cao nhất của nhóm chung (1478px) · `apps/web/e2e/trang-chu-v2.spec.ts:149-172` · số in ra lúc thử phá; nghiệm thu + thợ việc 24 (2026-11-13).
+
+P-20261113-37 · MỞ · NHỎ · File mồ côi chưa track `apps/web/e2e/bai-viet-xem-truoc.spec.ts.cu` tham chiếu `khoi-bai-viet` / `gallery-bai-viet` (đã xoá ở việc 24) · `apps/web/e2e/bai-viet-xem-truoc.spec.ts.cu` · sửa lần cuối 2026-11-11, có trước việc 24; nghiệm thu việc 24 (2026-11-13).

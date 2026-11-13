@@ -28,7 +28,8 @@ import { Sidebar } from "./sidebar";
  *
  * Khối "Chuyên mục" ở đây tự nạp ở **TRÌNH DUYỆT** (`chuyenMucTuTrinhDuyet` → component
  * client `ChuyenMucTuTrinhDuyet`, y như cột trái cũ làm): HTML tĩnh không có nó, nên Django
- * chết thì `/luat` vẫn dựng được — khối chỉ vắng mặt, không hộp rỗng, không lỗi.
+ * chết thì `/luat` vẫn dựng được — khối chỉ vắng mặt, không hộp rỗng, không lỗi. Khối "Bài viết
+ * mới" *(việc 24)* đi đúng đường ấy (`baiMoiTuTrinhDuyet` → `BaiMoiTuTrinhDuyet`).
  *
  * ## Luật của file này
  *
@@ -40,9 +41,22 @@ import { Sidebar } from "./sidebar";
 export function KhungHaiCotTinh({ children }: { children: React.ReactNode }) {
   // `gioiThieu` để rail không thành 288px trống trơ (phản biện 2026-08-31): khối giới thiệu
   // hợp đúng cảnh người ta rơi vào trang này — từ một trang lỗi, chưa chắc biết site là gì.
+  // `baiMoiTuTrinhDuyet` *(việc 24)*: rail của `/luat` hiện bài viết mới như trang chủ — cũng nạp
+  // ở TRÌNH DUYỆT (`BaiMoiTuTrinhDuyet`), cùng lý do với khối "Chuyên mục". `railCao`: rail mang
+  // khối 10 bài ⇒ ngưỡng dính riêng (`khung-hai-cot.module.css`).
   return (
     <VoKhungHaiCot
-      sidebar={<Sidebar gioiThieu={GIOI_THIEU} cacSub={[]} chuyenMucTuTrinhDuyet />}
+      railCao
+      sidebar={
+        <Sidebar
+          gioiThieu={GIOI_THIEU}
+          cacSub={[]}
+          chuyenMucTuTrinhDuyet
+          baiMoiTuTrinhDuyet
+          tieuDeBaiMoi="Bài viết mới"
+          linkTatCaBaiViet
+        />
+      }
     >
       {children}
     </VoKhungHaiCot>

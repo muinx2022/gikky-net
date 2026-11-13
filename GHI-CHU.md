@@ -1134,3 +1134,47 @@ tác giả một bài).
 **Vòng sửa 1 (sau phản biện):** truy vấn lọc cửa sổ 48 giờ ngay trong JOIN (`FilteredRelation`, ~640 ms → ~27 ms ở 100k bình luận); xếp theo số NGƯỜI bàn trước rồi mới số bình luận (một người spam không đứng đầu được); dải lỗi thì ẩn, không kéo `/` thành 500; bài e2e "không lặp giữa hai khối" có răng. Giờ bình luận cuối in tuyệt đối (web chưa có helper giờ tương đối). Index `core_comment(mach_id, created_at)` để sau: sổ `P-20261113-18`.
 
 **Plan:** `plans/2026-11-13-nhat-ky-dang-ban.md`.
+
+---
+
+## Việc 23 · Khối "Được bàn nhiều trong chuyên mục" ở rail phải — GHI SỔ, CHỜ DỮ LIỆU (user chốt 2026-11-13: để sau)
+
+**Đề xuất của user (2026-11-13):** ở chuyên mục, bỏ khối bài viết, thay bằng các bài có nhiều bình luận trong chuyên
+mục đó. Ý này nảy ra khi bàn chuyện dời khối "Bài viết" của trang chủ sang rail phải (đề xuất đó chưa chốt, chưa
+thành việc).
+
+**Vì sao chưa làm:** gần như chưa có bình luận để xếp hạng. Đo `gikky_dev` (chỉ SELECT, bản sao cũ, prod CHƯA đo)
+ngày 2026-11-13, tính mạch công khai, chưa ẩn/lưu trữ: 0 bài có bình luận trong 7 hoặc 30 ngày ở cả 12 chuyên mục;
+cả site chỉ 5 bài từng có bình luận (chung-khoan 3, quan-tri-von 1, crypto 1), bình luận cuối 2026-09-10.
+Thay ngay thì khối hoặc trống ở 9/12 chuyên mục, hoặc hiện bài từ tháng 9 dưới tiêu đề "được bàn nhiều" — phản tác dụng.
+
+**Hướng đã thống nhất khi làm:** THÊM có điều kiện, KHÔNG thay. Giữ khối bài mới ("Cùng chuyên mục"); khối "Được bàn
+nhiều trong chuyên mục" đứng trên nó và **chỉ hiện khi chuyên mục có ≥ 3 mạch có bình luận trong 14 ngày**, thiếu thì ẩn
+hẳn (tự bật khi đủ dữ liệu, không ai phải nhớ).
+
+**Kỹ thuật (gợi ý, chưa thành plan):** `GET /feeds/nhat-ky-dang-ban` (việc 22) không nhận `sub`, chỉ lấy nhật ký,
+cửa sổ 48 giờ ⇒ cần thêm tham số `sub` + cửa sổ + có lấy cả bài viết không; giữ các luật đã chốt ở việc 22 (đếm
+bình luận của người khác tác giả mạch, loại `la_bot`, xếp theo số NGƯỜI bàn trước). Có `operation_id` mới hoặc
+mở rộng cái cũ ⇒ `pnpm codegen`. Index `P-20261113-18` liên quan.
+
+**Điều kiện mở lại:** đo prod (chỉ đọc) thấy ít nhất một chuyên mục có ≥ 3 mạch có bình luận trong 14 ngày.
+
+---
+
+## Việc 24 · Khối "Bài viết" trang chủ dời sang rail phải; `/luat` cũng có — ĐÃ LÀM + COMMIT trên `v2` (2026-11-13), chưa lên dev/prod: nghiệm thu ĐẠT 13/13, phản biện + vòng sửa 1 xong
+
+**Yêu cầu (user, 2026-11-13):** "giờ có phần nhật kí mới, có nên đẩy phần bài viết sang bên phải (các bài mới), sau đó
+bỏ phần bài viết ở trang chủ đi, phần bên phải khi vào các chuyên mục thì bỏ đi, vào các trang tĩnh như luat thì show
+các bài viết mới như trang chủ"; thêm: "khi hiển thị cho font nhỏ hơn, chữ thường, cắt bớt kí tự, giờ tiêu đề dài quá".
+
+**Đã chốt với user:** ở trang chuyên mục **chỉ bỏ khối bài** (giữ cột phải; hiện `/s/*` vốn không có khối bài nên không
+đổi gì). Cắt tiêu đề bằng CSS (một dòng, "…"), tiêu đề đầy đủ vẫn nằm trong HTML. `/luat` nạp danh sách ở trình duyệt
+(trang tĩnh, đường thoát của `error.tsx`).
+
+**Đảo quyết định cũ:** bổ sung việc 13 (2026-11-11, "tạm chấp nhận rối mắt để kéo bot") nay bị thay — khối bài + giá sách
+rời trang chủ. Bù link bằng 10 bài ở rail; ngưỡng ≥ 17 link `/m/` của `/` giữ nguyên, không hạ.
+
+**Hệ quả còn mở:** trường `Sub.vi_tri_trang_chu` (admin chọn ≤ 4 chuyên mục lên giá sách, việc 13) không còn chỗ nào
+trên web đọc — chưa gỡ, chờ user quyết giữ (để dùng lại) hay bỏ.
+
+**Plan:** `plans/2026-11-13-bai-viet-sang-rail.md`.

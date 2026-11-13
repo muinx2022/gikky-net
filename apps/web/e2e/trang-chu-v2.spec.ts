@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 import type { FeedOut, MachTomTatOut, SubChiTietOut, TrangBanTinOut } from "@gikky/api-client";
 import { expect, test, type Page } from "@playwright/test";
 
-import { SUB_GIA_SACH, donThuVien, dungThuVien } from "./thu-vien";
+import { donThuVien, dungThuVien } from "./thu-vien";
 
 /** Homepage v2 (plan `plans/2026-11-10-homepage-v2.md`) — chạy trên BẢN BUILD thật.
  *
@@ -85,12 +85,15 @@ async function kiemHaiCot(page: Page, url: string, nhan: string) {
   expect(Math.abs(rail.y - chinh.y), `${nhan}: hai cột bắt đầu cùng độ cao`).toBeLessThan(30);
 }
 
-/** Chiều cao khung nhìn đủ để chứa cả header (61px) + rail của `/` (1204px cho KHÁCH với seed e2e:
- * khối "Tham gia" 196px + giới thiệu + Chuyên mục + Luật) — dưới ngưỡng `min-height: 1500px` của
- * `khung-hai-cot.module.css` rail KHÔNG dính, nên bài đo "dính" phải đứng trên nó. (Ngưỡng này
- * là 1060px khi rail chưa mang khối khách; hai cột toàn site dời khối khách sang rail.) */
-const CAO_DU_CHO_RAIL = 1500;
-
+/** Ngưỡng dính của rail CAO (`/` nhánh v2 và `/luat`, `railCao` — khối "Bài viết mới" 10 bài):
+ * BẰNG `min-height` của `.rail_cao` ở `khung-hai-cot.module.css` (bảng số đo ở comment của nó; rail
+ * `/` cho KHÁCH với seed e2e là 1831px ⇒ 61 + 1831 = 1892, chừa ~100px ⇒ 2000). Dưới ngưỡng rail
+ * KHÔNG dính, nên bài đo "dính" đứng đúng trên nó. (Lịch sử: 1060px khi rail chưa mang khối khách,
+ * 1500px trước việc 24.) */
+const CAO_DU_CHO_RAIL = 2000;
+/** Ngưỡng dính CHUNG của mọi trang khác — BẰNG `min-height` của `.rail:not(.rail_cao)` (61 + 1478
+ * rail cao nhất của `/m/…`, `/u/…`, `/tim-kiem` ⇒ 1550). */
+const CAO_DU_CHO_RAIL_CHUNG = 1550;
 for (const theme of ["sang", "toi"] as const) {
   test.describe(`L — bố cục trang chủ (theme ${theme})`, () => {
     test.use({ colorScheme: theme === "toi" ? "dark" : "light" });
@@ -115,15 +118,18 @@ for (const theme of ["sang", "toi"] as const) {
       const rail = page.getByTestId("rail-phai");
       expect(await rail.evaluate((e) => getComputedStyle(e).position)).toBe("sticky");
 
-      // Trang đủ dài để cuộn: 1 + 8 + 10 mục. Không dài thì bài đo này là rỗng. Cuộn 600px (không
-      // phải 1200 như khi khung nhìn chỉ 1100px): ở khung nhìn 1500px trang chỉ dài hơn nó ~1000px.
-      const dai = await page.evaluate(() => document.documentElement.scrollHeight);
-      expect(dai, "trang phải dài hơn khung nhìn thì mới cuộn được").toBeGreaterThan(
-        CAO_DU_CHO_RAIL + 600,
+      // Cuộn một đoạn CÓ NGHĨA: ở khung nhìn 2000px trang `/` (≈ 2600px với seed e2e, việc 24) chỉ
+      // dài hơn khung nhìn ~600px, nên không đòi "dài hơn + 600" nữa mà cuộn min(400, phần cuộn
+      // được) và CHẶN đo rỗng: phải cuộn được ≥ 200px — một rail KHÔNG dính khi ấy đã trôi lên
+      // ≥ 200px khỏi mép header, nên phép "bám mép" dưới đây phân biệt được dính / không dính.
+      const cuon_duoc = await page.evaluate(
+        () => document.documentElement.scrollHeight - window.innerHeight,
       );
-
-      await page.evaluate(() => window.scrollTo(0, 600));
+      expect(cuon_duoc, "trang phải cuộn được ≥ 200px thì bài đo mới có nghĩa").toBeGreaterThanOrEqual(200);
+      const doan = Math.min(400, cuon_duoc);
+      await page.evaluate((y) => window.scrollTo(0, y), doan);
       await page.waitForTimeout(100);
+      expect(await page.evaluate(() => window.scrollY), "đã cuộn thật").toBeGreaterThanOrEqual(doan - 1);
       const cao_chrome = await page.evaluate(() =>
         parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--cao-chrome")),
       );
@@ -133,6 +139,52 @@ for (const theme of ["sang", "toi"] as const) {
       // Dính mà vẫn đủ cao: cả rail nằm trong khung nhìn, không cắt đuôi.
       expect(hop!.y + hop!.height, "đáy rail nằm trong khung nhìn").toBeLessThanOrEqual(
         CAO_DU_CHO_RAIL + 1,
+      );
+    });
+
+    // Vế NGƯỢC của bài trên (việc 24): bài trên chỉ đo ở khung nhìn = ngưỡng, nên một ngưỡng QUÁ
+    // THẤP (vd 1500/1550px khi rail `/` đã 1831px) vẫn xanh — hỏng nằm ở dải giữa ngưỡng và
+    // header + rail. Đo ở khung nhìn THẤP HƠN header + rail đúng 10px (tính từ rail đo được, không
+    // gõ cứng): rail mà dính ở đó thì đuôi bị che.
+    test("L1 — ngay dưới ngưỡng: rail cao hơn khung nhìn thì KHÔNG dính (không che đuôi)", async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: 1280, height: 900 });
+      await page.goto("/");
+      const do_ = await page.getByTestId("rail-phai").evaluate((e) => ({
+        cao_rail: e.getBoundingClientRect().height,
+        chrome: parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--cao-chrome")),
+      }));
+      const cao = Math.floor(do_.chrome + do_.cao_rail) - 10;
+      // Tiền điều kiện: khung nhìn này nằm TRONG dải nguy hiểm (trên ngưỡng chung) — không thì
+      // ngưỡng chung một mình đã đủ giữ, bài đo không phân biệt được gì.
+      expect(cao, `khung nhìn đo phải > ngưỡng chung: ${JSON.stringify(do_)}`).toBeGreaterThan(
+        CAO_DU_CHO_RAIL_CHUNG,
+      );
+      await page.setViewportSize({ width: 1280, height: cao });
+      await page.goto("/");
+      const vi_tri = await page.getByTestId("rail-phai").evaluate((e) => getComputedStyle(e).position);
+      expect(vi_tri, `rail dính ở khung nhìn ${cao}px sẽ che đuôi: ${JSON.stringify(do_)}`).not.toBe("sticky");
+    });
+
+    // Ngưỡng CHUNG (việc 24): trang không có khối 10 bài vẫn dính từ 1550px — một ngưỡng chung kéo
+    // lên cho vừa `/` (1900+) làm chúng mất dính oan ở dải 1550–1899px.
+    test("L1 — `/m/<bài viết>` ở khung nhìn bằng ngưỡng chung: rail DÍNH và lọt cả vào khung nhìn", async ({
+      page,
+    }) => {
+      const ds = (await api<FeedOut>("/api/v1/feeds/moi?loai_mach=bai_viet&limit=50")).items;
+      const mach = ds.find((m) => m.sub.slug !== "tin-tuc");
+      expect(mach, "đo rỗng: cần một bài viết").toBeDefined();
+      await page.setViewportSize({ width: 1280, height: CAO_DU_CHO_RAIL_CHUNG });
+      await page.goto(`/m/${mach!.slug}-${mach!.id}`);
+      const d = await page.getByTestId("rail-phai").evaluate((e) => ({
+        vi_tri: getComputedStyle(e).position,
+        cao_rail: e.getBoundingClientRect().height,
+        chrome: parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--cao-chrome")),
+      }));
+      expect(d.vi_tri, `rail /m/ phải dính ở ${CAO_DU_CHO_RAIL_CHUNG}px: ${JSON.stringify(d)}`).toBe("sticky");
+      expect(d.chrome + d.cao_rail, `rail /m/ dính phải lọt khung nhìn: ${JSON.stringify(d)}`).toBeLessThanOrEqual(
+        CAO_DU_CHO_RAIL_CHUNG + 1,
       );
     });
 
@@ -261,38 +313,34 @@ test.describe("L2 — `/s/<sub>` cũng HAI cột, cùng lưới với `/`", () =
 });
 
 test.describe("B — các khối của trang chủ v2", () => {
-  test("B1/B3 — thứ tự Chủ đề → Nhật ký mới → Bài viết (đo vị trí DOM và y thật), trần số mục 1 / 8 / 10", async ({
+  test("B1/B3 — thứ tự Chủ đề → Nhật ký mới (đo vị trí DOM và y thật); bài viết ở RAIL; trần số mục 1 / 8 / 10", async ({
     page,
   }) => {
     await page.goto("/");
     const thu_tu = await page.evaluate(() => {
       const bao = (id: string) => document.querySelector(`[data-testid="${id}"]`);
       const chu_de = bao("khoi-thao-luan"),
-        nhat_ky = bao("khoi-nhat-ky"),
-        bai_viet = bao("khoi-bai-viet");
-      if (!chu_de || !nhat_ky || !bai_viet) return null;
+        nhat_ky = bao("khoi-nhat-ky");
+      if (!chu_de || !nhat_ky) return null;
       const truoc = (x: Element, y: Element) =>
         Boolean(x.compareDocumentPosition(y) & Node.DOCUMENT_POSITION_FOLLOWING);
       const y = (x: Element) => x.getBoundingClientRect().top + window.scrollY;
       return {
-        dom: { chu_de_nhat_ky: truoc(chu_de, nhat_ky), nhat_ky_bai_viet: truoc(nhat_ky, bai_viet) },
-        y: { chu_de: y(chu_de), nhat_ky: y(nhat_ky), bai_viet: y(bai_viet) },
+        dom: { chu_de_nhat_ky: truoc(chu_de, nhat_ky) },
+        y: { chu_de: y(chu_de), nhat_ky: y(nhat_ky) },
       };
     });
-    expect(thu_tu, "ba khối phải cùng có mặt (seed có đủ ba loại)").not.toBeNull();
-    expect(thu_tu!.dom, "thứ tự trong DOM").toEqual({ chu_de_nhat_ky: true, nhat_ky_bai_viet: true });
+    expect(thu_tu, "hai khối phải cùng có mặt (seed có đủ loại)").not.toBeNull();
+    expect(thu_tu!.dom, "thứ tự trong DOM").toEqual({ chu_de_nhat_ky: true });
     // Thứ tự HIỂN THỊ (CSS không đảo): y tăng dần.
     expect(thu_tu!.y.chu_de, JSON.stringify(thu_tu!.y)).toBeLessThan(thu_tu!.y.nhat_ky);
-    expect(thu_tu!.y.nhat_ky, JSON.stringify(thu_tu!.y)).toBeLessThan(thu_tu!.y.bai_viet);
+    // Việc 24: khối "Bài viết" to đã gỡ khỏi trang; bài viết mới là một khối của rail phải.
+    await expect(page.getByTestId("khoi-bai-viet")).toHaveCount(0);
+    await expect(page.getByTestId("rail-phai").getByTestId("sidebar-bai-moi")).toHaveCount(1);
 
     const nhat_ky = await page.getByTestId("khoi-nhat-ky").getByTestId("the-mach").count();
     const chu_de = await page.getByTestId("khoi-thao-luan").getByTestId("chu-de-the").count();
-    const moi_dang = await page
-      .getByTestId("khoi-bai-viet")
-      .getByTestId("bai-viet-moi-dang-muc")
-      .count();
-    const muc_gia = await page.getByTestId("khoi-bai-viet").getByTestId("bai-viet-gia-muc").count();
-    const cot = await page.getByTestId("khoi-bai-viet").getByTestId("bai-viet-gia").count();
+    const bai_rail = await page.getByTestId("sidebar-bai-moi").locator("li").count();
     expect(nhat_ky).toBeGreaterThan(0);
     expect(nhat_ky).toBeLessThanOrEqual(8);
     // Số thẻ = min(8, số tác giả) — không phải min(8, số bài).
@@ -300,14 +348,9 @@ test.describe("B — các khối của trang chủ v2", () => {
     // Seed có 3 chủ đề nhưng trang chủ chỉ hiện MỘT (mới nhất) — bài đo không rỗng vì có 3.
     expect((await api<FeedOut>("/api/v1/feeds/moi?loai_mach=thao_luan&limit=50")).items.length).toBe(3);
     expect(chu_de, "chỉ MỘT chủ đề mới nhất").toBe(1);
-    // Khối Bài viết = dải Mới đăng (đúng 3) + giá sách (mỗi sub được chọn một cột, ≤ 3 bài).
-    // `beforeAll` cấp file đặt 3 sub lên giá sách và dựng đủ bài ⇒ ĐÚNG 3 cột (bài đo không rỗng);
-    // số bài từng cột phụ thuộc phần trùng với Mới đăng nên chỉ chặn hai đầu — con số chính xác
+    // Rail: 10 bài viết (seed có 43 `bai_viet` ⇒ đủ 10, bài đo không rỗng). Danh sách chính xác
     // được so với API ở bài B1 kế tiếp.
-    expect(moi_dang, "dải Mới đăng").toBe(3);
-    expect(cot, "ba giá sách").toBe(3);
-    expect(muc_gia).toBeGreaterThanOrEqual(3);
-    expect(muc_gia).toBeLessThanOrEqual(9);
+    expect(bai_rail, "10 bài viết ở rail").toBe(10);
   });
 
   test("B1 — mỗi khối mang ĐÚNG loại mạch của nó (khớp API)", async ({ page }) => {
@@ -321,44 +364,18 @@ test.describe("B — các khối của trang chủ v2", () => {
     // với API và vẫn là mảng ĐÚNG THỨ TỰ; chỉ nguồn kỳ vọng đổi.
     expect(await idsTrenTrang(page, "the-mach")).toEqual(await idsNhatKyMoiTacGia());
     expect(await idsTrenTrang(page, "chu-de-the")).toEqual(await ids("thao_luan", 1));
-    // Bài viết: kỳ vọng viết lại ĐỘC LẬP ở đây (không import `lib/nhom-bai-viet`) từ chính API.
-    //  · Mới đăng = 3 bài đầu của `/feeds/moi` trừ tin-tuc, mọi sub (việc 20: bản tin là bảng riêng;
-    //    lọc tin-tuc ở lại để phòng thủ mạch bản tin cũ mà lệnh chuyển bỏ qua);
-    //  · giá sách = mỗi sub có `vi_tri_trang_chu` (theo vị trí) một cột: 3 bài đầu của feed RIÊNG
-    //    sub ấy trừ bài đã ở Mới đăng; cột rỗng ẩn.
+    // Bài viết (việc 24 — khối "Bài viết mới" ở rail): kỳ vọng viết lại ĐỘC LẬP ở đây (không
+    // import `lib/nhom-bai-viet`) từ chính API: 10 bài đầu của `/feeds/moi?loai_mach=bai_viet` trừ
+    // tin-tuc (lọc phòng thủ mạch bản tin cũ mà lệnh chuyển bỏ qua — việc 20), đúng thứ tự.
     const moi = await api<FeedOut>("/api/v1/feeds/moi?loai_mach=bai_viet&limit=50");
-    const moi_dang_mong = moi.items.filter((m) => m.sub.slug !== "tin-tuc").slice(0, 3);
+    const rail_mong = moi.items.filter((m) => m.sub.slug !== "tin-tuc").slice(0, 10);
+    expect(rail_mong.length, "seed có ≥ 10 bài viết").toBe(10);
     expect(
       await page
-        .getByTestId("bai-viet-moi-dang-muc")
-        .evaluateAll((ls) => ls.map((l) => Number((l as HTMLElement).dataset.machId))),
-    ).toEqual(moi_dang_mong.map((m) => m.id));
-    const cac_sub = await api<SubChiTietOut[]>("/api/v1/subs");
-    const chon = cac_sub
-      .filter((s) => s.vi_tri_trang_chu !== null)
-      .sort((a, b) => a.vi_tri_trang_chu! - b.vi_tri_trang_chu!);
-    expect(chon.map((s) => s.slug), "seed tạm đặt ba sub lên giá sách").toEqual(SUB_GIA_SACH);
-    const da_hien = new Set(moi_dang_mong.map((m) => m.id));
-    const gia_mong: { slug: string; ids: number[] }[] = [];
-    for (const s of chon) {
-      const f = await api<FeedOut>(
-        `/api/v1/feeds/moi?sub=${s.slug}&loai_mach=bai_viet&limit=6`,
-      );
-      const ids = f.items.filter((m) => !da_hien.has(m.id)).slice(0, 3).map((m) => m.id);
-      if (ids.length > 0) gia_mong.push({ slug: s.slug, ids });
-    }
-    const co = await page.getByTestId("bai-viet-gia").evaluateAll((cols) =>
-      cols.map((c) => ({
-        slug: (c as HTMLElement).dataset.sub!,
-        ids: [...c.querySelectorAll('[data-testid="bai-viet-gia-muc"]')].map((e) =>
-          Number((e as HTMLElement).dataset.machId),
-        ),
-      })),
-    );
-    expect(co).toEqual(gia_mong);
-    // Ca đo được "giá không trùng dải": giá quan-tri-von mất đúng bài mới nhất vào Mới đăng.
-    const tat_ca_gia = co.flatMap((c) => c.ids);
-    for (const id of da_hien) expect(tat_ca_gia, `bài ${id} trùng dải Mới đăng`).not.toContain(id);
+        .getByTestId("sidebar-bai-moi")
+        .locator("li a")
+        .evaluateAll((ls) => ls.map((l) => l.getAttribute("href"))),
+    ).toEqual(rail_mong.map((m) => `/m/${m.slug}-${m.id}`));
     // Dải bản tin (đầu trang): 2 bản tin mới nhất của bảng RIÊNG (`liet_ke_ban_tin`, việc 20) —
     // `SO_BAN_TIN_DAI`, việc 19 vòng 2.
     const ban_tin = await api<TrangBanTinOut>("/api/v1/ban-tin?limit=2");
@@ -392,7 +409,8 @@ test.describe("B — các khối của trang chủ v2", () => {
       "href",
       "/?tab=moi&loai_mach=nhat_ky",
     );
-    await expect(page.getByTestId("bai-viet-tat-ca")).toHaveAttribute(
+    // Việc 24: "Tất cả bài viết →" nay ở cuối khối bài viết của rail.
+    await expect(page.getByTestId("sidebar-bai-moi-tat-ca")).toHaveAttribute(
       "href",
       "/?tab=moi&loai_mach=bai_viet",
     );
@@ -477,14 +495,18 @@ test.describe("S — đường bò của bot (HTML thô, không JS)", () => {
   // bài mới nhất theo nhóm sub, nên "bài thứ 10 của khối" không còn nghĩa. Đường bò của bot vẫn
   // phải có thật: link "Tất cả bài viết →" và "Xem thêm bài viết" là `<a href>` trong HTML thô,
   // trỏ feed bài viết (feed cũ có cursor + cuộn vô hạn), và link "Xem thêm →" của từng cột.
-  test("S5 — 'Tất cả bài viết', 'Xem thêm bài viết', 'Xem thêm →' của cột là <a href> THẬT trong HTML thô", async ({
+  //
+  // Việc 24: khối "Bài viết" (có "Xem thêm bài viết" + "Xem thêm →" từng cột) đã gỡ; còn đúng MỘT
+  // link tới feed bài viết — "Tất cả bài viết →" cuối khối rail. Link `/s/*` nay đến từ khối
+  // "Chuyên mục" của rail.
+  test("S5 — 'Tất cả bài viết' (rail) là <a href> THẬT trong HTML thô; link /s/* còn đủ", async ({
     request,
     page,
   }) => {
     const html = await (await request.get("/")).text();
     const hrefs = [...html.matchAll(/<a [^>]*href="([^"]+)"/g)].map((m) => m[1].replace(/&amp;/g, "&"));
     const tat_ca = hrefs.filter((h) => h === "/?tab=moi&loai_mach=bai_viet");
-    expect(tat_ca.length, "cả 'Tất cả bài viết →' lẫn 'Xem thêm bài viết' trỏ feed bài viết").toBe(2);
+    expect(tat_ca.length, "'Tất cả bài viết →' của rail trỏ feed bài viết").toBe(1);
     for (const sub of ["hoi-dap", "vi-mo", "quan-tri-von", "tin-tuc"]) {
       expect(hrefs, `thiếu link tới /s/${sub}`).toContain(`/s/${sub}`);
     }
@@ -531,7 +553,8 @@ test.describe.serial("B1 — khối Chủ đề ẩn hẳn khi chưa có chủ �
     await page.goto("/");
     await expect(page.getByTestId("khoi-thao-luan")).toHaveCount(0);
     await expect(page.getByTestId("khoi-nhat-ky")).toBeVisible();
-    await expect(page.getByTestId("khoi-bai-viet")).toBeVisible();
+    // Bài viết nay là khối của rail (việc 24).
+    await expect(page.getByTestId("sidebar-bai-moi")).toBeVisible();
     // Chỉ xét phần NỘI DUNG (`main`): rail phải cố ý có link "Chủ đề thảo luận →" tới kho `/chu-de`.
     await expect(page.locator("main")).not.toContainText("Chủ đề thảo luận");
     await expect(page.locator("main")).not.toContainText("Chủ đề tuần");
@@ -746,13 +769,13 @@ test.describe("H — cấp heading của trang chủ (việc 6)", () => {
     for (let i = 1; i < cac.length; i += 1) {
       expect(cac[i].cap - cac[i - 1].cap, `nhảy cấp ở #${i}: ${so}`).toBeLessThanOrEqual(1);
     }
-    // Ba khối: đúng một <h2> đứng đầu, và KHÔNG còn <h2> nào của thẻ bên trong. Nhật ký + bài viết
-    // có <h3> bên dưới; khối chủ đề thì KHÔNG còn <h3> nào — <h3> duy nhất của nó là tiêu đề ô quan
-    // điểm, ô ấy bỏ ở việc 19 (plan `2026-11-13-ban-tin-len-dau-ban-quyen.md` §3.4).
+    // Hai khối: đúng một <h2> đứng đầu, và KHÔNG còn <h2> nào của thẻ bên trong. Nhật ký có <h3>
+    // bên dưới; khối chủ đề thì KHÔNG còn <h3> nào — <h3> duy nhất của nó là tiêu đề ô quan
+    // điểm, ô ấy bỏ ở việc 19 (plan `2026-11-13-ban-tin-len-dau-ban-quyen.md` §3.4). Khối "Bài
+    // viết" (có <h3>) đã gỡ ở việc 24 — bài viết nay là một khối rail, chỉ một <h2>.
     for (const [khoi, co_h3] of [
       ["khoi-thao-luan", false],
       ["khoi-nhat-ky", true],
-      ["khoi-bai-viet", true],
     ] as const) {
       const trong = cac.filter((h) => h.khoi === khoi);
       expect(trong.filter((h) => h.cap === 2), `${khoi}: đúng một <h2>: ${so}`).toHaveLength(1);
@@ -856,13 +879,13 @@ test.describe.serial("O — tiêu đề dài liền nhau không làm trang cuộ
             rong.khung + 1,
           );
         }
-        // Riêng `/`: cả khối chủ đề lẫn khối bài viết đều có tiêu đề dài ấy.
+        // Riêng `/`: cả khối chủ đề lẫn khối bài viết ở rail (việc 24) đều có tiêu đề dài ấy.
         await page.goto("/");
         await expect(
           page.getByTestId("khoi-thao-luan").getByRole("link", { name: TIEU_DE_DAI }),
         ).toHaveCount(1);
         await expect(
-          page.getByTestId("khoi-bai-viet").getByRole("link", { name: TIEU_DE_DAI }),
+          page.getByTestId("sidebar-bai-moi").getByRole("link", { name: TIEU_DE_DAI }),
         ).toHaveCount(1);
       } finally {
         await ctx.close();

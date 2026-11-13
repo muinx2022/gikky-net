@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 import { DaiBanTin } from "@/components/dai-ban-tin";
 import { Feed } from "@/components/feed";
 import { JsonLd } from "@/components/json-ld";
-import { KhoiBaiViet } from "@/components/khoi-bai-viet";
 import { VoKhungHaiCot } from "@/components/khung-hai-cot-vo";
 import { NutVeDauTrang } from "@/components/nut-ve-dau-trang";
 import { Sidebar } from "@/components/sidebar";
@@ -14,7 +13,6 @@ import {
   docDanhSachBanTin,
   docFeed,
   docFeedChuDe,
-  docFeedSub,
   docKhoang,
   docLoaiMach,
   docNhatKyDangBan,
@@ -29,7 +27,7 @@ import {
 import { SO_BAN_TIN_DAI } from "@/lib/ban-tin";
 import { jsonLdWebSite } from "@/lib/json-ld";
 import { SO_DANG_BAN_TAI } from "@/lib/nhat-ky-dang-ban";
-import { SO_BAI_TAI_MOI_GIA, SO_BAI_VIET_TAI, subLenTrangChu } from "@/lib/nhom-bai-viet";
+import { chonMoiDang, SO_BAI_VIET_TAI } from "@/lib/nhom-bai-viet";
 import { GIOI_THIEU, urlTuyetDoi } from "@/lib/site";
 
 import css from "./trang-chu.module.css";
@@ -159,54 +157,46 @@ export default async function TrangChu({
  *   `2026-11-13-ban-tin-len-dau-ban-quyen.md` §3.4) nên trang chủ không gọi API bình luận nào.
  * - Bản tin: MỘT lời gọi `liet_ke_ban_tin` (`SO_BAN_TIN_DAI` bản) — bảng RIÊNG từ việc 20, dải
  *   đứng TRÊN CÙNG trang, ngay dưới header (việc 19). Nó không còn lọc ra từ feed bài viết.
- * - Bài viết: MỘT lời gọi `SO_BAI_VIET_TAI` bài cho dải Mới đăng (chọn ở web,
- *   `lib/nhom-bai-viet.ts`), và MỖI giá sách một lời gọi riêng `docFeedSub` — sub nào lên giá là dữ liệu
- *   (`vi_tri_trang_chu` trong `GET /subs`, admin đặt), nên các lời gọi ấy phải chờ danh sách
- *   sub: chúng nối đuôi `docCacSub()` BÊN TRONG một phần tử của `Promise.all` — vẫn song song
- *   với các lời gọi khác, không thêm một vòng chờ ở ngoài. Gọi theo từng sub (không lọc từ cửa
- *   sổ 50 bài) để sub đăng chậm vẫn có bài. `null` (404, sub vừa bị xoá) ⇒ giá rỗng ⇒ ẩn. */
+ * - Bài viết *(việc 24)*: KHÔNG còn khối riêng trong trang — MỘT lời gọi `SO_BAI_VIET_TAI` bài,
+ *   `chonMoiDang` lấy `SO_BAI_VIET_RAIL` bài (trừ mạch bản tin cũ) cho khối "Bài viết mới" ở rail
+ *   phải (`lib/nhom-bai-viet.ts`). Giá sách theo sub đã gỡ cùng khối "Bài viết" to.
+ * - Chuyên mục: `docCacSub()` cho khối "Chuyên mục" của rail. */
 async function TrangChuMoi() {
-  const [nhat_ky, dang_ban, chu_de, bai_viet, sub_va_gia, ban_tin] = await Promise.all([
+  const [nhat_ky, dang_ban, chu_de, bai_viet, cac_sub, ban_tin] = await Promise.all([
     docNhatKyMoiTacGia(SO_NHAT_KY_TAI),
     docNhatKyDangBan(SO_DANG_BAN_TAI),
     // Cùng lời gọi với khối "Chủ đề tuần này" ở rail các trang khác (`docFeedChuDe`), nên hai
     // nơi luôn chọn CÙNG một chủ đề. Ở đây nó ném khi API hỏng (vá F1); ở rail thì không.
     docFeedChuDe(),
     docFeed("moi", { limit: SO_BAI_VIET_TAI, loai_mach: "bai_viet" }),
-    docCacSub().then(async (cac_sub) => ({
-      cac_sub,
-      gia: await Promise.all(
-        subLenTrangChu(cac_sub).map(async (sub) => {
-          const trang = await docFeedSub(sub.slug, "moi", {
-            limit: SO_BAI_TAI_MOI_GIA,
-            loai_mach: "bai_viet",
-          });
-          return { sub, items: trang.du_lieu?.items ?? [] };
-        }),
-      ),
-    })),
+    docCacSub(),
     docDanhSachBanTin({ limit: SO_BAN_TIN_DAI }),
   ]);
-  const { cac_sub, gia } = sub_va_gia;
 
   return (
     <>
       <JsonLd duLieu={jsonLdWebSite()} />
       {/* Dải bản tin là con ĐẦU của `trang-chu-v2`: ngay dưới header (và dưới thanh tab di động),
-          trên `<h1>`, trải hết bề ngang. Khung hai cột chứa dòng giới thiệu + chủ đề + nhật ký;
-          section "Bài viết" đứng NGOÀI khung (dưới cả rail) nên là anh em của nó. `css.vo`: trên
-          điện thoại "Bài viết" HIỆN trước rail bằng CSS, DOM giữ thứ tự này (đợt M, M7 —
-          `trang-chu.module.css`); dải bản tin không khai `order` nên vẫn đứng đầu. */}
+          trên `<h1>`, trải hết bề ngang. Khung hai cột chứa dòng giới thiệu + chủ đề + nhật ký, và
+          rail phải mang khối "Bài viết mới" (việc 24 — khối "Bài viết" to từng đứng NGOÀI khung đã
+          gỡ). `css.vo`: trên điện thoại khung thành một cột main → rail (`trang-chu.module.css`);
+          dải bản tin không khai `order` nên vẫn đứng đầu. */}
       {/* Rail của `/` KHÔNG có khối "Chủ đề tuần này" (đã có khối tiêu điểm ngay trong trang) và
           KHÔNG có dòng phụ của khối khách: câu "Có thể ghi riêng tư, công khai khi bạn muốn." đã
           nằm trong ô soạn nhanh cùng trang (việc 14, đợt E — plan §4.7 "Bớt lặp"). */}
       <div className={css.vo} data-testid="trang-chu-v2">
         <DaiBanTin banTin={ban_tin.du_lieu.items} />
+        {/* `railCao`: rail mang khối "Bài viết mới" 10 bài ⇒ ngưỡng dính riêng, cao hơn
+            (`khung-hai-cot.module.css`). */}
         <VoKhungHaiCot
+          railCao
           sidebar={
             <Sidebar
               gioiThieu={GIOI_THIEU}
               cacSub={cac_sub}
+              baiMoi={chonMoiDang(bai_viet.du_lieu.items)}
+              tieuDeBaiMoi="Bài viết mới"
+              linkTatCaBaiViet
               khachTieuDe="Bắt đầu nhật ký của bạn"
             />
           }
@@ -220,7 +210,6 @@ async function TrangChuMoi() {
             bayGio={new Date()}
           />
         </VoKhungHaiCot>
-        <KhoiBaiViet bai_viet={bai_viet.du_lieu.items} cac_sub={cac_sub} gia={gia} />
       </div>
       <NutVeDauTrang />
     </>

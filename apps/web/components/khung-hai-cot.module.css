@@ -36,14 +36,41 @@
  * che mất phần đuôi cho tới tận cuối trang. Không `max-height`/`overflow` ở đây — đừng thêm
  * lại: đó chính là cái bẫy ở trên.
  *
- * 1500px = header 61px + rail cao nhất đo được (1376px: khách thấy khối "Tham gia" 196px +
- * Chuyên mục 13 mục + Luật + 5 "Bài mới" ở `/u/…`, `/tim-kiem`, `/dang-nhap`) ≈ 1437px, làm
- * tròn lên. Bản trước của khung trang chủ là 1060px khi rail chỉ ~995px và CHƯA có khối khách:
- * dời khối khách + danh sách chuyên mục sang rail làm rail cao thêm ~200–380px, nên để
- * nguyên 1060px là dính một rail cao hơn khung nhìn. Thêm khối vào rail ⇒ đo lại con số này
- * (`e2e/trang-chu-v2.spec.ts` L1 đứng trên nó). */
-@media (min-width: 961px) and (min-height: 1500px) {
-  .rail {
+ * HAI ngưỡng, mỗi ngưỡng = header 61px + rail cao nhất của nhóm trang ấy, làm tròn LÊN bội số 50
+ * *(đo ở việc 24, 2026-11-13, 1280px, khách, seed e2e)*:
+ *
+ *   trang                                          rail    nhóm
+ *   `/` (nhánh v2)                                 1831px  rail_cao — khối "Bài viết mới" 10 bài
+ *   `/luat` (sau hydrate)                          1783px  rail_cao — cùng khối, nạp ở trình duyệt
+ *   `/m/<bài viết>`, `/u/…`, `/tim-kiem`, `/dang-nhap`  1478px  chung — 5 "Bài mới" + "Chủ đề tuần"
+ *   `/m/<nhật ký>`                                 1331px  chung
+ *   `/s/…`                                         1311px  chung
+ *   `/chu-de`                                      1309px  chung
+ *
+ * - **Chung 1550px** = 61 + 1478 = 1539 ⇒ 1550.
+ * - **`rail_cao` 2000px** = 61 + 1831 = 1892 ⇒ 1900, cộng chừa ~100px (≈ 3 chuyên mục nữa): ở 1900
+ *   chỉ còn dư 8px, một chuyên mục mới là rail `/` dính mà che đuôi.
+ *
+ * Vì sao hai ngưỡng: việc 24 thêm khối 10 bài viết vào rail `/` và `/luat` (+ ~575px). Một ngưỡng
+ * chung đủ cho hai trang ấy (≥ 1900) làm mọi trang còn lại — rail chỉ 1478px — mất dính oan ở
+ * khung nhìn 1550–1899px; một ngưỡng chung vừa cho chúng (1550) để rail `/` dính khi còn hụt
+ * ~340px, che mất đuôi (Luật, chân trang) tới tận cuối trang. `VoKhungHaiCot` bật `rail_cao` qua
+ * prop `railCao`. Người đã đăng nhập không có khối "Tham gia" (khối DUY NHẤT của rail phụ thuộc
+ * phiên) nên rail của khách luôn là rail cao nhất.
+ *
+ * Lịch sử: khung trang chủ từng là 1060px khi rail chỉ ~995px và CHƯA có khối khách; dời khối
+ * khách + danh sách chuyên mục sang rail làm rail cao thêm ~200–380px ⇒ 1500px. Thêm khối vào
+ * rail ⇒ đo lại hai con số này (`e2e/trang-chu-v2.spec.ts` L1 đứng trên chúng: `CAO_DU_CHO_RAIL`,
+ * `CAO_DU_CHO_RAIL_CHUNG`). */
+@media (min-width: 961px) and (min-height: 1550px) {
+  .rail:not(.rail_cao) {
+    position: sticky;
+    top: var(--cao-chrome);
+  }
+}
+
+@media (min-width: 961px) and (min-height: 2000px) {
+  .rail_cao {
     position: sticky;
     top: var(--cao-chrome);
   }

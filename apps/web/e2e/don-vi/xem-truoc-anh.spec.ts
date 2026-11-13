@@ -25,9 +25,9 @@ const doc = (duong: string) => readFileSync(resolve(GOC, duong), "utf8");
  * Hai nhóm:
  * - **L** — `lib/xem-truoc-anh.ts`: chọn bao nhiêu ảnh, khi nào có slide "Xem tất cả", tỉ lệ
  *   khung, và hằng `SO_ANH_GALLERY_TOI_DA` = `SO_ANH_XEM_TRUOC` của API;
- * - **N** — nguồn: màu (C1), ảnh lazy, số dòng chữ đi qua một hằng, hợp đồng API có
- *   `anh_khac`, gallery (khung / track / nút / bộ đếm), và `TheMach` / `NoiDungThe` /
- *   `GalleryMoc` KHÔNG bị đụng.
+ * - **N** — nguồn: màu (C1), hợp đồng API có `anh_khac`, và `TheMach` / `GalleryMoc` KHÔNG bị
+ *   đụng. (Việc 24 gỡ khối "Bài viết" + gallery cùng các bài N đọc nguồn của chúng — xem ghi chú
+ *   trước nhóm N.)
  */
 
 const anh = (id: number, w: number | null = 480, h: number | null = 360): AnhOut => ({
@@ -140,102 +140,17 @@ test.describe("L — chonThumb / tyLeKhung / tyLeKhungGallery", () => {
   });
 });
 
-const TSX = "apps/web/components/khoi-bai-viet.tsx";
-const CSS = "apps/web/components/khoi-bai-viet.module.css";
-const GAL_TSX = "apps/web/components/gallery-bai-viet.tsx";
-const GAL_CSS = "apps/web/components/gallery-bai-viet.module.css";
-
-/** Thân của luật CSS đầu tiên khớp selector (đã bỏ chú thích). */
-const luat = (css: string, selector: string) => {
-  const mau = selector.replace(/[.[\]]/g, "\\$&");
-  return new RegExp(`${mau}\\s*\\{([^}]*)\\}`).exec(css)?.[1] ?? "";
-};
+/* Việc 24 (plan `2026-11-13-bai-viet-sang-rail.md`): khối "Bài viết" của trang chủ
+ * (`khoi-bai-viet.*`) và component gallery (`gallery-bai-viet.*`, đã không ai dùng từ khi trang chủ
+ * thôi vẽ gallery) ĐÃ GỠ — các bài N đọc nguồn hai cặp file ấy (thumb 104×72, kẹp dòng, vùng bấm,
+ * bàn phím / nút / lật của gallery…) bỏ theo. Còn lại: màu của `lib/xem-truoc-anh.ts`, hợp đồng API
+ * `anh_khac`, và `TheMach` / `GalleryMoc` không bị đụng. */
 
 test.describe("N — nguồn", () => {
-  test("N1 (C1) — không mã màu thô trong tsx / css / lib của hàng bài viết và gallery", () => {
+  test("N1 (C1) — không mã màu thô trong lib/xem-truoc-anh.ts", () => {
     const re = /#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(|\bhwb\(|\blab\(|\boklch\(/;
-    for (const f of [TSX, CSS, GAL_TSX, GAL_CSS, "apps/web/lib/xem-truoc-anh.ts"]) {
-      const sach = boChuThich(doc(f));
-      expect(sach, `${f} có mã màu thô`).not.toMatch(re);
-    }
-    // Màu chỉ đi qua token: mọi `color`/`background`/`border` dùng var(--…) hoặc color-mix từ token.
-    for (const f of [CSS, GAL_CSS]) {
-      const css = boChuThich(doc(f));
-      for (const m of css.matchAll(/(?:^|[;{\s])(color|background|border(?:-color)?)\s*:\s*([^;}]+)/g)) {
-        const v = m[2].trim();
-        expect(
-          /var\(--|color-mix\(|^(inherit|transparent|none|0)\b|^\d+px solid var\(/.test(v) ||
-            /^\d+px solid /.test(v),
-          `${f} ${m[1]}: ${v}`,
-        ).toBe(true);
-      }
-    }
-  });
-
-  test("N2 — mọi <img> của thư viện: lazy + decoding async + width/height từ w_thumb/h_thumb + alt (đúng MỘT thẻ)", () => {
-    const src = boChuThich(doc(TSX));
-    const imgs = src.match(/<img\b[\s\S]*?\/>/g) ?? [];
-    expect(imgs, "thư viện chỉ có một thẻ <img>: thumb của mục bài viết").toHaveLength(1);
-    const khoi = imgs[0];
-    expect(khoi).toMatch(/loading="lazy"/);
-    expect(khoi).toMatch(/decoding="async"/);
-    expect(khoi).toMatch(/width=\{[\w.[\]]+\.w_thumb \?\? undefined\}/);
-    expect(khoi).toMatch(/height=\{[\w.[\]]+\.h_thumb \?\? undefined\}/);
-    expect(khoi).toMatch(/src=\{[\w.[\]]+\.url_thumb\}/);
-    expect(khoi).toMatch(/alt=\{`Ảnh minh họa: \$\{mach\.title\}`\}/);
-  });
-
-  test("N3 — thư viện: tiêu đề kẹp 3 dòng, đoạn trích kẹp 2 dòng (CSS), mobile ẩn trích", () => {
-    const css = boChuThich(doc(CSS));
-    expect(luat(css, ".tieu_de")).toMatch(/-webkit-line-clamp:\s*3\b/);
-    expect(luat(css, ".trich")).toMatch(/-webkit-line-clamp:\s*2\b/);
-    expect(luat(css, ".trich")).toMatch(/overflow:\s*hidden/);
-    // Chữ trích lấy từ `xem_truoc.trich` do server cắt, không tự cắt ở web.
-    expect(boChuThich(doc(TSX))).toMatch(/mach\.xem_truoc\?\.trich/);
-  });
-
-  test("N4 — thumb của mục: khung CỐ ĐỊNH 104×72 (mobile 88×66) chống CLS, ảnh cover, ô nền khi không ảnh", () => {
-    const css = boChuThich(doc(CSS));
-    const t = luat(css, ".thumb");
-    expect(t).toMatch(/width:\s*104px/);
-    expect(t).toMatch(/height:\s*72px/);
-    expect(t).toMatch(/overflow:\s*hidden/);
-    expect(t).toMatch(/background:\s*var\(--surface-2\)/);
-    const a = luat(css, ".anh");
-    expect(a).toMatch(/object-fit:\s*cover/);
-    expect(a).toMatch(/width:\s*100%/);
-    expect(a).toMatch(/height:\s*100%/);
-    // Mobile: 88×66.
-    const mobile = /@media \(max-width: 640px\) \{([\s\S]*)\}\s*$/.exec(css)?.[1] ?? "";
-    expect(luat(mobile, ".thumb")).toMatch(/width:\s*88px/);
-    expect(luat(mobile, ".thumb")).toMatch(/height:\s*66px/);
-    // Dấu vết của hàng bài viết kiểu gallery đã gỡ khỏi trang chủ.
-    expect(css).not.toMatch(/\.dai_gallery|\.them_anh|\.dai_mot_anh|--cao-thumb/);
-    const tsx = boChuThich(doc(TSX));
-    expect(tsx).not.toMatch(/GalleryBaiViet|gallery-bai-viet|chonThumb|tyLeKhung/);
-  });
-
-  test("N4b — khung gallery: aspect-ratio theo biến, trần 360px, track cuộn có snap, ảnh contain", () => {
-    const css = boChuThich(doc(GAL_CSS));
-    const g = luat(css, ".gallery");
-    expect(g).toMatch(/aspect-ratio:\s*var\(--ty-le/);
-    expect(g).toMatch(/max-height:\s*360px/);
-    expect(g).toMatch(/overflow:\s*hidden/);
-    expect(g).toMatch(/width:\s*100%/);
-    const t = luat(css, ".track");
-    expect(t).toMatch(/display:\s*flex/);
-    expect(t).toMatch(/overflow-x:\s*auto/);
-    expect(t).toMatch(/scroll-snap-type:\s*x mandatory/);
-    expect(t).toMatch(/overscroll-behavior-x:\s*contain/);
-    expect(t).toMatch(/scrollbar-width:\s*none/);
-    const sl = luat(css, ".slide");
-    expect(sl).toMatch(/flex:\s*0 0 100%/);
-    expect(sl).toMatch(/scroll-snap-align:\s*center/);
-    expect(sl).toMatch(/scroll-snap-stop:\s*always/);
-    const a = luat(css, ".anh");
-    expect(a).toMatch(/object-fit:\s*contain/);
-    expect(a).toMatch(/width:\s*100%/);
-    expect(a).toMatch(/height:\s*100%/);
+    const sach = boChuThich(doc("apps/web/lib/xem-truoc-anh.ts"));
+    expect(sach).not.toMatch(re);
   });
 
   test("N5 — hợp đồng: client sinh có `anh_khac`; OpenAPI có `anh_khac` là mảng AnhOut", () => {
@@ -260,150 +175,5 @@ test.describe("N — nguồn", () => {
         /anh_khac|xem-truoc-anh|SO_THUMB_TOI_DA|SO_ANH_GALLERY_TOI_DA|gallery-bai-viet|GalleryBaiViet/,
       );
     }
-  });
-
-  test("N7 — ảnh chỉ vẽ khi mốc 1 có ảnh (`xem_truoc.anh` khác null); ô thumb luôn có (không lệch cột)", () => {
-    const tsx = boChuThich(doc(TSX));
-    expect(tsx).toMatch(/anh !== null &&/);
-    expect(tsx).toMatch(/data-co-anh=\{anh !== null \? "true" : "false"\}/);
-    expect(tsx.match(/data-testid="bai-viet-thumb"/g)).toHaveLength(1);
-  });
-
-  test("N8 — a11y: thumb là aria-hidden (chỉ minh hoạ cho tiêu đề bên cạnh), trích là <p> NGOÀI mọi aria-hidden, gallery (component còn lại) là carousel có tên", () => {
-    const tsx = boChuThich(doc(TSX));
-    const thumb = /<span\s+className=\{css\.thumb\}[\s\S]*?>/.exec(tsx)?.[0] ?? "";
-    expect(thumb, "phải tìm thấy ô thumb").not.toBe("");
-    expect(thumb).toMatch(/aria-hidden="true"/);
-    const p = /<p\s+className=\{css\.trich\}[\s\S]*?>/.exec(tsx)?.[0] ?? "";
-    expect(p, "trich phải là một <p>").not.toBe("");
-    expect(p).not.toMatch(/aria-hidden/);
-    // Tiêu đề là heading chứa link thật; ngày trong <time datetime>.
-    expect(tsx).toMatch(/<h4 className=\{css\.tieu_de\}>\s*<Link href=\{href\}/);
-    expect(tsx).toMatch(/<time dateTime=\{mach\.published_at\}>/);
-    // Component gallery vẫn còn trong repo (không còn dùng ở trang chủ): giữ nguyên hợp đồng a11y của nó.
-    const g = boChuThich(doc(GAL_TSX));
-    const khung = /<div\s+className=\{css\.gallery\}[\s\S]*?>/.exec(g)?.[0] ?? "";
-    expect(khung).toMatch(/role="group"/);
-    expect(khung).toMatch(/aria-roledescription="carousel"/);
-    expect(khung).toMatch(/aria-label=\{`Ảnh của bài: \$\{tieuDe\}`\}/);
-    expect(khung).not.toMatch(/aria-hidden/);
-  });
-
-  test("N9 — vùng bấm cả mục: .muc relative + ::after của link tiêu đề phủ inset 0", () => {
-    const css = boChuThich(doc(CSS));
-    expect(luat(css, ".muc")).toMatch(/position:\s*relative/);
-    const sau = /\.tieu_de a::after\s*\{([^}]*)\}/.exec(css)?.[1] ?? "";
-    expect(sau).toMatch(/content:\s*""/);
-    expect(sau).toMatch(/position:\s*absolute/);
-    expect(sau).toMatch(/inset:\s*0\b/);
-    // Gallery (component còn lại): khung nằm trên lớp phủ nếu ai đó dùng lại nó trong một hàng.
-    const g = luat(boChuThich(doc(GAL_CSS)), ".gallery");
-    expect(g, ".gallery phải nằm trên lớp phủ").toMatch(/z-index:\s*1\b/);
-    expect(g, ".gallery phải được định vị").toMatch(/position:\s*relative/);
-  });
-
-  test("N10 — component gallery: client, slide là children (server), nút là anh em của track, có nhãn / aria-live / giảm chuyển động / nạp sớm", () => {
-    const g = boChuThich(doc(GAL_TSX));
-    expect(g.trimStart().startsWith('"use client"')).toBe(true);
-    // Slide server-render: component client không tự dựng ảnh / link (bot sẽ thấy khung rỗng).
-    expect(g).not.toMatch(/<img\b|next\/link|<Link\b/);
-    expect(g).toMatch(/\{children\}/);
-    expect(boChuThich(doc(TSX)).trimStart().startsWith('"use client"')).toBe(false);
-    // Hai nút: type="button", nhãn tiếng Việt, ẩn ở hai đầu bằng thuộc tính hidden.
-    const nut = g.match(/<button\b[\s\S]*?>/g) ?? [];
-    expect(nut).toHaveLength(2);
-    expect(nut[0]).toMatch(/type="button"/);
-    expect(nut[0]).toMatch(/aria-label="Ảnh trước"/);
-    expect(nut[0]).toMatch(/hidden={!daNap || chi === 0}/);
-    expect(nut[1]).toMatch(/type="button"/);
-    expect(nut[1]).toMatch(/aria-label="Ảnh sau"/);
-    expect(nut[1]).toMatch(/hidden={!daNap || chi === soSlide - 1}/);
-    // Nút KHÔNG nằm trong track (bấm nút không được mở bài): </ul> đứng trước nút đầu tiên.
-    expect(g.indexOf("</ul>")).toBeGreaterThan(-1);
-    expect(g.indexOf("</ul>")).toBeLessThan(g.indexOf("<button"));
-    // Bộ đếm: vùng live lịch sự, đọc "Ảnh n trên N".
-    expect(g).toMatch(/aria-live="polite"/);
-    expect(g).toMatch(/Ảnh \{chi \+ 1\} trên \{soAnh\}/);
-    // Cuộn mượt, đổi sang tức thì khi người dùng giảm chuyển động.
-    expect(g).toMatch(/prefers-reduced-motion: reduce/);
-    expect(g).toMatch(/behavior: giamChuyenDong \? "auto" : "smooth"/);
-    // Nạp sớm ở lần chạm / rê / focus đầu tiên.
-    expect(g).toMatch(/img\.loading = "eager"/);
-    for (const ev of ["onPointerEnter", "onTouchStart", "onFocus"]) expect(g).toContain(`${ev}={napSom}`);
-  });
-
-  test("N11 — nút chỉ hiện khi có chuột: ẩn mặc định, (hover: hover) mới hiện, hidden thắng display", () => {
-    const css = boChuThich(doc(GAL_CSS));
-    expect(luat(css, ".nut")).toMatch(/display:\s*none/);
-    const media = /@media \(hover: hover\)\s*\{([\s\S]*?)\n\}/.exec(css)?.[1] ?? "";
-    expect(media, "phải có @media (hover: hover)").not.toBe("");
-    expect(media).toMatch(/\.nut\s*\{[^}]*display:\s*grid[^}]*opacity:\s*0/);
-    expect(media).toMatch(/\.gallery:hover \.nut/);
-    // Không `:focus-within` thuần (giữ nút "dính" sau khi bấm chuột): chỉ `:hover` và `:has(:focus-visible)`.
-    expect(media).toMatch(/\.gallery:has\(:focus-visible\) \.nut\s*\{[^}]*opacity:\s*1/);
-    expect(css).not.toContain(":focus-within");
-    expect(css).toMatch(/\.nut\[hidden\][^{]*\{\s*display:\s*none/);
-    // Bộ đếm không bắt chuột: bấm xuyên xuống ảnh.
-    expect(luat(css, ".bo_dem")).toMatch(/pointer-events:\s*none/);
-  });
-  test("N12 — bàn phím: track là điểm dừng Tab có tên + ←/→; focus nút chuyển SAU khi render (không đồng bộ trong lat); link 'Xem tất cả' có thứ tự Tab theo slide", () => {
-    const g = boChuThich(doc(GAL_TSX));
-    const ul = /<ul\b[\s\S]*?>/.exec(g)?.[0] ?? "";
-    expect(ul, "phải có thẻ <ul> của track").not.toBe("");
-    expect(ul).toMatch(/tabIndex=\{0\}/);
-    expect(ul).toMatch(/aria-label="[^"]+"/);
-    expect(ul).toMatch(/onKeyDown=\{khiNhanPhim\}/);
-    expect(g).toMatch(/e\.key === "ArrowRight"/);
-    expect(g).toMatch(/e\.key === "ArrowLeft"/);
-    // Gốc lỗi cũ: `lat()` gọi `.focus()` ngay khi bấm, lúc nút đích còn `hidden` (hàng 2 slide) ⇒
-    // focus rơi về <body>. Nay chỉ được chuyển focus trong `useLayoutEffect` sau khi render.
-    const lat = /const lat = [\s\S]*?\n {2}\};\n/.exec(g)?.[0] ?? "";
-    expect(lat, "phải tìm thấy hàm lat").not.toBe("");
-    expect(lat, "lat() không được tự chuyển focus").not.toMatch(/\.focus\(\)/);
-    const hieu_ung = /useLayoutEffect\(\(\) => \{[\s\S]*?\}, \[chi, soSlide\]\);/.exec(g)?.[0] ?? "";
-    expect(hieu_ung, "phải có useLayoutEffect chuyển focus").toMatch(/\.focus\(\)/);
-    // Chromium blur nút NGAY khi `hidden` được gán (trước useLayoutEffect) và onBlur của React không nhận: dùng focusout gốc.
-    expect(g).toContain('nutTruoc.addEventListener("focusout", matTruoc)');
-    expect(g).toContain('nutSau.addEventListener("focusout", matSau)');
-    expect(g).not.toMatch(/onBlur=/);
-    // Link "Xem tất cả" chỉ tab được khi slide của nó hiện.
-    expect(g).toMatch(/lienKet\.tabIndex = chi === soSlide - 1 \? 0 : -1/);
-  });
-
-  test("N13 — viền focus của track, link 'Xem tất cả' và nút vẽ BÊN TRONG khung (offset âm cho phần tử phủ kín khung), chỉ token", () => {
-    const css = boChuThich(doc(GAL_CSS));
-    const khoi = /\.track:focus-visible,\s*\.xem_het:focus-visible\s*\{([^}]*)\}/.exec(css)?.[1] ?? "";
-    expect(khoi, "phải có luật focus-visible cho track + .xem_het").not.toBe("");
-    expect(khoi).toMatch(/outline:\s*\d+px solid var\(--[a-z-]+\)/);
-    const off = /outline-offset:\s*(-?\d+)px/.exec(khoi)?.[1];
-    expect(Number(off), "outline-offset phải ÂM: `.gallery` có overflow:hidden cắt viền ngoài").toBeLessThan(0);
-    const day = /outline:\s*(\d+)px/.exec(khoi)?.[1];
-    expect(Math.abs(Number(off)), "viền thụt vào ít nhất bằng độ day").toBeGreaterThanOrEqual(Number(day));
-    const nut = /\.nut:focus-visible\s*\{([^}]*)\}/.exec(css)?.[1] ?? "";
-    expect(nut).toMatch(/outline:\s*\d+px solid var\(--/);
-    expect(luat(css, ".gallery")).toMatch(/overflow:\s*hidden/);
-  });
-  test("N14 — lật: đích cộng dồn (không đọc scrollLeft đang chạy dở), làm tròn bằng Math.round, hết cuộn thì xoá đích; rAF mồ côi; nút chỉ hiện sau hydrate", () => {
-    const g = boChuThich(doc(GAL_TSX));
-    // Gốc lỗi "mất bước": đích tính từ vị trí cuộn đang chạy dở của lần smooth trước.
-    const lat = /const lat = [\s\S]*?\n {2}\};\n/.exec(g)?.[0] ?? "";
-    expect(lat, "phải tìm thấy hàm lat").not.toBe("");
-    expect(lat).toContain("dichDen.current ?? Math.round(el.scrollLeft / rong)");
-    expect(lat).toContain("dichDen.current = dich;");
-    expect(lat).toContain("datChi(dich);");
-    // `Math.floor` ở đây làm vị trí lệch 1px (k·w − 1) nhảy lùi một slide; chỉ `Math.round`.
-    expect(g).not.toMatch(/Math\.floor|Math\.ceil|Math\.trunc/);
-    expect(g.match(/Math\.round\(/g)?.length, "docChi và lat đều làm tròn").toBe(2);
-    // Đích bị xoá khi hết cuộn (scrollend, hẹn giờ dự phòng) và khi người dùng tự cuộn / chạm / bấm.
-    expect(g).toContain('el?.addEventListener("scrollend", khiScrollEnd)');
-    expect(g).toContain("window.setTimeout(xongCuon, 150)");
-    for (const ev of ["onWheel", "onTouchStart", "onPointerDown"]) expect(g).toContain(`${ev}={huyDichDen}`);
-    // rAF mồ côi: sau khi huỷ phải đặt lại null.
-    expect(g).toMatch(/cancelAnimationFrame\(khungHinh\.current\);\s*(\/\/[^\n]*\n\s*)*khungHinh\.current = null;/);
-    // Nút + bộ đếm chỉ hiện sau hydrate.
-    expect(g).toContain("useSyncExternalStore");
-    expect(g).toMatch(/hidden=\{!daNap \|\| chi === 0\}/);
-    expect(g).toMatch(/hidden=\{!daNap \|\| chi === soSlide - 1\}/);
-    expect(g).toMatch(/aria-live="polite" hidden=\{!daNap \|\| dangOXemHet\}/);
   });
 });
