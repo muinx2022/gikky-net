@@ -112,6 +112,118 @@ export type AnhOut = {
 };
 
 /**
+ * BanTinChiTietOut
+ */
+export type BanTinChiTietOut = {
+    /**
+     * Cap Nhat Luc
+     */
+    cap_nhat_luc: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Khung
+     */
+    khung: Array<KhungBanTinOut>;
+    /**
+     * Ngay
+     */
+    ngay: string;
+    /**
+     * Ngay Sau
+     */
+    ngay_sau: string | null;
+    /**
+     * Ngay Truoc
+     */
+    ngay_truoc: string | null;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * View Count
+     */
+    view_count: number;
+};
+
+/**
+ * BanTinDaDangOut
+ */
+export type BanTinDaDangOut = {
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Khung
+     */
+    khung: 'dem_qua' | 'truoc_phien_vn' | 'truoc_phien_my';
+    /**
+     * Ngay
+     */
+    ngay: string;
+    /**
+     * Url
+     */
+    url: string;
+};
+
+/**
+ * BanTinMoiIn
+ *
+ * Thân `POST /ban-tin`. Trường thừa (vd `question_for_crowd` của bot cũ) bị bỏ qua.
+ */
+export type BanTinMoiIn = {
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Figures
+     */
+    figures?: Array<FigureIn> | null;
+    /**
+     * Khung
+     */
+    khung: 'dem_qua' | 'truoc_phien_vn' | 'truoc_phien_my';
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * BanTinTomTatOut
+ *
+ * Một hàng của trang danh sách `/s/tin-tuc`.
+ */
+export type BanTinTomTatOut = {
+    /**
+     * Cap Nhat Luc
+     */
+    cap_nhat_luc: string;
+    /**
+     * Khung Da Co
+     */
+    khung_da_co: Array<'dem_qua' | 'truoc_phien_vn' | 'truoc_phien_my'>;
+    /**
+     * Ngay
+     */
+    ngay: string;
+    /**
+     * So Lieu
+     */
+    so_lieu: Array<FigureOut>;
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
  * BaoCaoDaGuiOut
  *
  * Biên nhận của `POST /reports` — PLAN 5.10 (L03, lượt vá V1).
@@ -922,6 +1034,32 @@ export type KhanDaiOut = {
 };
 
 /**
+ * KhungBanTinOut
+ */
+export type KhungBanTinOut = {
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Figures
+     */
+    figures: Array<FigureOut> | null;
+    /**
+     * Khung
+     */
+    khung: 'dem_qua' | 'truoc_phien_vn' | 'truoc_phien_my';
+    /**
+     * Ten
+     */
+    ten: string;
+};
+
+/**
  * LenhIn
  *
  * Lệnh có cấu trúc của nhật ký — `MachMoiIn.lenh` (`plans/2026-11-11-homepage-v2-giao-dien-moi.md` §6.1).
@@ -1686,6 +1824,16 @@ export type NganKeoOut = {
 };
 
 /**
+ * NgayBanTinOut
+ */
+export type NgayBanTinOut = {
+    /**
+     * Ngay
+     */
+    ngay: string;
+};
+
+/**
  * NguoiDungTomTatOut
  *
  * Tác giả, ở mức đủ để render một dòng chữ ký.
@@ -2188,6 +2336,22 @@ export type ToiSuaIn = {
 };
 
 /**
+ * TrangBanTinOut
+ *
+ * Một trang danh sách. `cursor_ke_tiep = null` nghĩa là hết.
+ */
+export type TrangBanTinOut = {
+    /**
+     * Cursor Ke Tiep
+     */
+    cursor_ke_tiep: string | null;
+    /**
+     * Items
+     */
+    items: Array<BanTinTomTatOut>;
+};
+
+/**
  * TrichIn
  *
  * `POST /mocs/{id}/trich` — chủ mạch ghi một câu khán đài vào sổ (PLAN 5.6).
@@ -2454,6 +2618,137 @@ export type XoaAnhMocResponses = {
 };
 
 export type XoaAnhMocResponse = XoaAnhMocResponses[keyof XoaAnhMocResponses];
+
+export type LietKeBanTinData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/ban-tin';
+};
+
+export type LietKeBanTinErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+};
+
+export type LietKeBanTinError = LietKeBanTinErrors[keyof LietKeBanTinErrors];
+
+export type LietKeBanTinResponses = {
+    /**
+     * OK
+     */
+    200: TrangBanTinOut;
+};
+
+export type LietKeBanTinResponse = LietKeBanTinResponses[keyof LietKeBanTinResponses];
+
+export type DangBanTinData = {
+    body: BanTinMoiIn;
+    path?: never;
+    query?: never;
+    url: '/api/v1/ban-tin';
+};
+
+export type DangBanTinErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Conflict
+     */
+    409: LoiOut;
+};
+
+export type DangBanTinError = DangBanTinErrors[keyof DangBanTinErrors];
+
+export type DangBanTinResponses = {
+    /**
+     * Created
+     */
+    201: BanTinDaDangOut;
+};
+
+export type DangBanTinResponse = DangBanTinResponses[keyof DangBanTinResponses];
+
+export type TimBanTinTuMachCuData = {
+    body?: never;
+    path: {
+        /**
+         * Mach Id
+         */
+        mach_id: number;
+    };
+    query?: never;
+    url: '/api/v1/ban-tin/tu-mach/{mach_id}';
+};
+
+export type TimBanTinTuMachCuErrors = {
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type TimBanTinTuMachCuError = TimBanTinTuMachCuErrors[keyof TimBanTinTuMachCuErrors];
+
+export type TimBanTinTuMachCuResponses = {
+    /**
+     * OK
+     */
+    200: NgayBanTinOut;
+};
+
+export type TimBanTinTuMachCuResponse = TimBanTinTuMachCuResponses[keyof TimBanTinTuMachCuResponses];
+
+export type XemBanTinData = {
+    body?: never;
+    path: {
+        /**
+         * Ngay
+         */
+        ngay: string;
+    };
+    query?: never;
+    url: '/api/v1/ban-tin/{ngay}';
+};
+
+export type XemBanTinErrors = {
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type XemBanTinError = XemBanTinErrors[keyof XemBanTinErrors];
+
+export type XemBanTinResponses = {
+    /**
+     * OK
+     */
+    200: BanTinChiTietOut;
+};
+
+export type XemBanTinResponse = XemBanTinResponses[keyof XemBanTinResponses];
 
 export type XoaBinhLuanData = {
     body?: never;

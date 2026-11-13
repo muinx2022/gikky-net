@@ -224,6 +224,13 @@ def test_du_endpoint_cua_plan_muc_7():
         # Nó vẫn khai `auth=`, và khách trần vẫn nhận 401 như mọi cửa ghi khác — xem
         # docstring `api/dem_luot_xem.py`.
         (("POST",), "/dem-luot-xem"),
+        # --- bản tin (việc 20, `plans/2026-11-13-ban-tin-bang-rieng.md` §3.2) ---
+        # Bảng riêng, không còn là `Mach`: ba cửa đọc công khai + một cửa đăng của tài
+        # khoản đội. Không có cửa đếm lượt xem riêng — lượt xem đi qua `/dem-luot-xem`.
+        (("GET",), "/ban-tin"),
+        (("GET",), "/ban-tin/{ngay}"),
+        (("GET",), "/ban-tin/tu-mach/{int:mach_id}"),
+        (("POST",), "/ban-tin"),
     }
 
 

@@ -76,6 +76,7 @@ from ninja import Router, Schema, Status
 from ninja.security import APIKeyHeader
 
 from core.bot import ten_bot
+from core.models.ban_tin import SUB_BAN_TIN, BanTin
 from core.models.dien_dan import Mach
 from core.models.luot_xem import LuotXem, MuoiNgay
 from core.nhan_dien_ua import thiet_bi, trinh_duyet
@@ -230,6 +231,14 @@ DUONG_DAN_RAC = re.compile(
     r"|^/(?:wp[-_]|wordpress|\.env|\.git|xmlrpc|phpmyadmin|actuator|cgi-bin|autodiscover|\.well-known)",
     re.IGNORECASE,
 )
+
+
+#: Trang một bản tin `/s/tin-tuc/<YYYY-MM-DD>` (việc 20). Lượt xem của nó cộng vào
+#: `BanTin.view_count` qua ĐÚNG đường của trang mạch dưới đây — cùng luật bot, cùng cửa sổ
+#: khử trùng — chứ không qua một cửa đếm riêng: một cửa thứ hai là bản chép thứ hai của bộ
+#: luật này, và trình duyệt vẫn gọi `/dem-luot-xem` cho mọi trang nên nó còn ghi trùng
+#: hàng `LuotXem`.
+DUONG_DAN_BAN_TIN = re.compile(rf"^/s/{re.escape(SUB_BAN_TIN)}/(\d{{4}}-\d{{2}}-\d{{2}})$")
 
 
 def la_duong_dan_rac(duong_dan: str) -> bool:
@@ -484,6 +493,17 @@ def dem_luot_xem(request, du_lieu: DemLuotXemIn):
     # Lượt xem mới hợp lệ từ người dùng:
     if mach_id is not None:
         Mach.objects.filter(pk=mach_id).update(view_count=F("view_count") + 1)
+    elif (m_ban_tin := DUONG_DAN_BAN_TIN.match(duong)) is not None:
+        # Parse trước khi lọc: chuỗi qua được regex nhưng không phải ngày có thật (vd
+        # `2026-13-45`) đem so với cột `date` là Postgres ném lỗi ⇒ 500 trên đường ghi nóng.
+        try:
+            ngay_ban_tin = date.fromisoformat(m_ban_tin.group(1))
+        except ValueError:
+            ngay_ban_tin = None
+        if ngay_ban_tin is not None:
+            BanTin.objects.filter(ngay=ngay_ban_tin, hidden_at__isnull=True).update(
+                view_count=F("view_count") + 1
+            )
 
     LuotXem.objects.create(
         duong_dan=duong,

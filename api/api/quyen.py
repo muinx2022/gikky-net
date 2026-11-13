@@ -77,6 +77,13 @@ HET_CUA_SO_SUA = "het_cua_so_sua"
 #: Người dùng thường gửi `loai_mach = "bai_viet"` — loại này chỉ dành cho tài khoản đội
 #: (`User.la_tai_khoan_doi`). 403; `POST /machs` không tạo `Mach` nào.
 LOAI_MACH_KHONG_DUOC_PHEP = "loai_mach_khong_duoc_phep"
+#: Tạo mạch vào sub bản tin (`core/models/ban_tin.py::SUB_BAN_TIN`) — từ việc 20 bản tin là
+#: bảng riêng, không còn là `Mach`. 400; không `Mach` nào được tạo.
+SUB_DANH_RIENG_BAN_TIN = "sub_danh_rieng_ban_tin"
+#: `POST /ban-tin` bởi tài khoản không có `la_tai_khoan_doi`. 403.
+KHONG_PHAI_TAI_KHOAN_DOI = "khong_phai_tai_khoan_doi"
+#: `POST /ban-tin` cho một khung đã đăng trong ngày VN đó. 409.
+KHUNG_DA_DANG = "khung_da_dang"
 #: Đã hết số lần đổi tên hiển thị cho phép (tối đa 2 lần). 400.
 HET_LUOT_DOI_TEN = "het_luot_doi_ten"
 

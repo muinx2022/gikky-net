@@ -40,6 +40,7 @@ from ninja import Router, Status
 
 from core.ghi import hen_gio_mach, phat_hanh_mach, tao_mach, tu_upvote
 from core.management.commands.tao_tai_khoan_doi import TAI_KHOAN
+from core.models.ban_tin import la_sub_ban_tin
 from core.models.dien_dan import Mach, Sub
 from core.models.nguoi_dung import User
 from core.thong_bao import bao_mach_moi
@@ -50,7 +51,12 @@ from api.machs import figures_ra_dict
 from api.quan_tri_kiem_duyet import duong_dan_mach
 from api.quan_tri_loc import dang_hen_gio
 from api.quan_tri_schemas import HenGioMachIn, KetQuaHenGioOut, MachHenGioMoiIn
-from api.quyen import DU_LIEU_KHONG_HOP_LE, LoiGhi, NOI_DUNG_DA_GO
+from api.quyen import (
+    DU_LIEU_KHONG_HOP_LE,
+    NOI_DUNG_DA_GO,
+    SUB_DANH_RIENG_BAN_TIN,
+    LoiGhi,
+)
 
 router = Router()
 
@@ -226,6 +232,13 @@ def tao_mach_hen_gio(request, du_lieu: MachHenGioMoiIn):
     sub = Sub.objects.filter(slug=du_lieu.sub).first()
     if sub is None:
         return khong_tim_thay(f"chuyên mục {du_lieu.sub!r}")
+    if la_sub_ban_tin(sub):
+        # Cùng cổng với `api/machs.py::tao_mach_api` — bản tin là bảng riêng từ việc 20.
+        return loi(
+            400,
+            SUB_DANH_RIENG_BAN_TIN,
+            "Chuyên mục này dành riêng cho bản tin — không đăng bài vào đây được.",
+        )
 
     with transaction.atomic():
         mach, _moc = tao_mach(

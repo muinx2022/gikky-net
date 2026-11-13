@@ -223,6 +223,15 @@ CUA_GHI = [
     # Nó vắng mặt ở `CUA_CO_CHU` vì đích của nó không có chủ: một lượt xem trang không
     # thuộc về ai, và bảng `LuotXem` cố ý không có cột nào gắn được với một con người.
     ("post", "/api/v1/dem-luot-xem", {"duong_dan": "/", "user_agent": "curl/8"}),
+    # --- bản tin (việc 20) ---
+    # Cổng là cờ `la_tai_khoan_doi`, suy từ phiên — không tham số nào trỏ tới hàng của người
+    # khác, nên nó vắng mặt ở `CUA_CO_CHU`. Vế 403 cho người thường / `is_staff` không cờ
+    # được đo riêng ở `test_ban_tin.py`.
+    (
+        "post",
+        "/api/v1/ban-tin",
+        {"khung": "dem_qua", "title": "Bản tin", "body": "<p>x</p>"},
+    ),
 ]
 
 

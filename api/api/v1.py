@@ -99,6 +99,7 @@ def health(request):
 # Mount ở CUỐI file: các module router import `api.loi`/`api.schemas`, còn `api_v1` phải
 # tồn tại trước khi `config/api_registry.py` đọc tới. Đặt import ở đây tránh vòng lặp
 # import mà không cần một module "app" thứ ba chỉ để nối dây.
+from api.ban_tin import router as router_ban_tin  # noqa: E402
 from api.bao_cao import router as router_bao_cao  # noqa: E402
 from api.anh import router as router_anh  # noqa: E402
 from api.avatar import router as router_avatar  # noqa: E402
@@ -175,3 +176,7 @@ api_v1.add_router("", router_mod)
 # một router có sẵn là mời lượt sau chép nhầm `auth=secret_dem_luot_xem` sang một cửa
 # thật sự cần `dang_nhap`. Xem docstring `api/dem_luot_xem.py`.
 api_v1.add_router("", router_dem_luot_xem)
+# Bản tin (việc 20, `plans/2026-11-13-ban-tin-bang-rieng.md`) — bảng riêng, không còn là
+# `Mach`. Router riêng vì nó không thuộc tiền tố URL nào ở trên và không có tương tác nào
+# (chỉ đọc + một cửa đăng của tài khoản đội). Xem docstring `api/ban_tin.py`.
+api_v1.add_router("", router_ban_tin)

@@ -4,7 +4,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { AnBinhLuanData, AnBinhLuanErrors, AnBinhLuanResponses, BoTheoMachData, BoTheoMachErrors, BoTheoMachResponses, BoTheoSubData, BoTheoSubErrors, BoTheoSubResponses, BoTheoUserData, BoTheoUserErrors, BoTheoUserResponses, CongKhaiMachData, CongKhaiMachErrors, CongKhaiMachResponses, DanhDauDaDocData, DanhDauDaDocErrors, DanhDauDaDocResponses, DanhDauDaXemData, DanhDauDaXemErrors, DanhDauDaXemResponses, DatAvatarData, DatAvatarErrors, DatAvatarResponses, DatReactionData, DatReactionErrors, DatReactionResponses, DatVoteData, DatVoteErrors, DatVoteResponses, DemLuotXemData, DemLuotXemErrors, DemLuotXemResponses, DongSoMachData, DongSoMachErrors, DongSoMachResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GoTrichData, GoTrichErrors, GoTrichResponses, GuiBaoCaoData, GuiBaoCaoErrors, GuiBaoCaoResponses, LietKeBanCuMocData, LietKeBanCuMocErrors, LietKeBanCuMocResponses, LietKeBinhLuanMachData, LietKeBinhLuanMachErrors, LietKeBinhLuanMachResponses, LietKeBinhLuanMocData, LietKeBinhLuanMocErrors, LietKeBinhLuanMocResponses, LietKeDangTheoData, LietKeDangTheoErrors, LietKeDangTheoResponses, LietKeDaVoteData, LietKeDaVoteErrors, LietKeDaVoteResponses, LietKeFeedDangDienRaData, LietKeFeedDangDienRaErrors, LietKeFeedDangDienRaResponses, LietKeFeedMoiData, LietKeFeedMoiErrors, LietKeFeedMoiResponses, LietKeLuuTruData, LietKeLuuTruErrors, LietKeLuuTruResponses, LietKeMachCuaUserData, LietKeMachCuaUserErrors, LietKeMachCuaUserResponses, LietKeNhatKyMoiTacGiaData, LietKeNhatKyMoiTacGiaErrors, LietKeNhatKyMoiTacGiaResponses, LietKeSubDangTheoData, LietKeSubDangTheoErrors, LietKeSubDangTheoResponses, LietKeSubData, LietKeSubResponses, LietKeSubToiLamModData, LietKeSubToiLamModErrors, LietKeSubToiLamModResponses, LietKeThongBaoData, LietKeThongBaoErrors, LietKeThongBaoResponses, LietKeUserDangTheoData, LietKeUserDangTheoErrors, LietKeUserDangTheoResponses, LuuTruMachData, LuuTruMachErrors, LuuTruMachResponses, ModDatAnBinhLuanData, ModDatAnBinhLuanErrors, ModDatAnBinhLuanResponses, ModDatAnMachData, ModDatAnMachErrors, ModDatAnMachResponses, ModDatAnMocData, ModDatAnMocErrors, ModDatAnMocResponses, ModDatKhoaMachData, ModDatKhoaMachErrors, ModDatKhoaMachResponses, MoLaiMachData, MoLaiMachErrors, MoLaiMachResponses, NoiMocData, NoiMocErrors, NoiMocResponses, SuaBinhLuanData, SuaBinhLuanErrors, SuaBinhLuanResponses, SuaMocData, SuaMocErrors, SuaMocResponses, SuaToiData, SuaToiErrors, SuaToiResponses, TaiAnhMocData, TaiAnhMocErrors, TaiAnhMocResponses, TaiAnhNoiDungData, TaiAnhNoiDungErrors, TaiAnhNoiDungResponses, TaoMachData, TaoMachErrors, TaoMachResponses, TatBinhLuanMachData, TatBinhLuanMachErrors, TatBinhLuanMachResponses, TheoMachData, TheoMachErrors, TheoMachResponses, TheoSubData, TheoSubErrors, TheoSubResponses, TheoUserData, TheoUserErrors, TheoUserResponses, TimKiemData, TimKiemErrors, TimKiemGoiYData, TimKiemGoiYErrors, TimKiemGoiYResponses, TimKiemResponses, TrichVaoSoData, TrichVaoSoErrors, TrichVaoSoResponses, VietBinhLuanData, VietBinhLuanErrors, VietBinhLuanResponses, XemHoSoData, XemHoSoErrors, XemHoSoResponses, XemMachCuaToiData, XemMachCuaToiErrors, XemMachCuaToiResponses, XemMachData, XemMachErrors, XemMachResponses, XemSubCuaToiData, XemSubCuaToiErrors, XemSubCuaToiResponses, XemSubData, XemSubErrors, XemSubResponses, XemToiData, XemToiResponses, XemUserCuaToiData, XemUserCuaToiErrors, XemUserCuaToiResponses, XoaAnhMocData, XoaAnhMocErrors, XoaAnhMocResponses, XoaAvatarData, XoaAvatarErrors, XoaAvatarResponses, XoaBinhLuanData, XoaBinhLuanErrors, XoaBinhLuanResponses, XoaMocData, XoaMocErrors, XoaMocResponses } from './types.gen';
+import type { AnBinhLuanData, AnBinhLuanErrors, AnBinhLuanResponses, BoTheoMachData, BoTheoMachErrors, BoTheoMachResponses, BoTheoSubData, BoTheoSubErrors, BoTheoSubResponses, BoTheoUserData, BoTheoUserErrors, BoTheoUserResponses, CongKhaiMachData, CongKhaiMachErrors, CongKhaiMachResponses, DangBanTinData, DangBanTinErrors, DangBanTinResponses, DanhDauDaDocData, DanhDauDaDocErrors, DanhDauDaDocResponses, DanhDauDaXemData, DanhDauDaXemErrors, DanhDauDaXemResponses, DatAvatarData, DatAvatarErrors, DatAvatarResponses, DatReactionData, DatReactionErrors, DatReactionResponses, DatVoteData, DatVoteErrors, DatVoteResponses, DemLuotXemData, DemLuotXemErrors, DemLuotXemResponses, DongSoMachData, DongSoMachErrors, DongSoMachResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GoTrichData, GoTrichErrors, GoTrichResponses, GuiBaoCaoData, GuiBaoCaoErrors, GuiBaoCaoResponses, LietKeBanCuMocData, LietKeBanCuMocErrors, LietKeBanCuMocResponses, LietKeBanTinData, LietKeBanTinErrors, LietKeBanTinResponses, LietKeBinhLuanMachData, LietKeBinhLuanMachErrors, LietKeBinhLuanMachResponses, LietKeBinhLuanMocData, LietKeBinhLuanMocErrors, LietKeBinhLuanMocResponses, LietKeDangTheoData, LietKeDangTheoErrors, LietKeDangTheoResponses, LietKeDaVoteData, LietKeDaVoteErrors, LietKeDaVoteResponses, LietKeFeedDangDienRaData, LietKeFeedDangDienRaErrors, LietKeFeedDangDienRaResponses, LietKeFeedMoiData, LietKeFeedMoiErrors, LietKeFeedMoiResponses, LietKeLuuTruData, LietKeLuuTruErrors, LietKeLuuTruResponses, LietKeMachCuaUserData, LietKeMachCuaUserErrors, LietKeMachCuaUserResponses, LietKeNhatKyMoiTacGiaData, LietKeNhatKyMoiTacGiaErrors, LietKeNhatKyMoiTacGiaResponses, LietKeSubDangTheoData, LietKeSubDangTheoErrors, LietKeSubDangTheoResponses, LietKeSubData, LietKeSubResponses, LietKeSubToiLamModData, LietKeSubToiLamModErrors, LietKeSubToiLamModResponses, LietKeThongBaoData, LietKeThongBaoErrors, LietKeThongBaoResponses, LietKeUserDangTheoData, LietKeUserDangTheoErrors, LietKeUserDangTheoResponses, LuuTruMachData, LuuTruMachErrors, LuuTruMachResponses, ModDatAnBinhLuanData, ModDatAnBinhLuanErrors, ModDatAnBinhLuanResponses, ModDatAnMachData, ModDatAnMachErrors, ModDatAnMachResponses, ModDatAnMocData, ModDatAnMocErrors, ModDatAnMocResponses, ModDatKhoaMachData, ModDatKhoaMachErrors, ModDatKhoaMachResponses, MoLaiMachData, MoLaiMachErrors, MoLaiMachResponses, NoiMocData, NoiMocErrors, NoiMocResponses, SuaBinhLuanData, SuaBinhLuanErrors, SuaBinhLuanResponses, SuaMocData, SuaMocErrors, SuaMocResponses, SuaToiData, SuaToiErrors, SuaToiResponses, TaiAnhMocData, TaiAnhMocErrors, TaiAnhMocResponses, TaiAnhNoiDungData, TaiAnhNoiDungErrors, TaiAnhNoiDungResponses, TaoMachData, TaoMachErrors, TaoMachResponses, TatBinhLuanMachData, TatBinhLuanMachErrors, TatBinhLuanMachResponses, TheoMachData, TheoMachErrors, TheoMachResponses, TheoSubData, TheoSubErrors, TheoSubResponses, TheoUserData, TheoUserErrors, TheoUserResponses, TimBanTinTuMachCuData, TimBanTinTuMachCuErrors, TimBanTinTuMachCuResponses, TimKiemData, TimKiemErrors, TimKiemGoiYData, TimKiemGoiYErrors, TimKiemGoiYResponses, TimKiemResponses, TrichVaoSoData, TrichVaoSoErrors, TrichVaoSoResponses, VietBinhLuanData, VietBinhLuanErrors, VietBinhLuanResponses, XemBanTinData, XemBanTinErrors, XemBanTinResponses, XemHoSoData, XemHoSoErrors, XemHoSoResponses, XemMachCuaToiData, XemMachCuaToiErrors, XemMachCuaToiResponses, XemMachData, XemMachErrors, XemMachResponses, XemSubCuaToiData, XemSubCuaToiErrors, XemSubCuaToiResponses, XemSubData, XemSubErrors, XemSubResponses, XemToiData, XemToiResponses, XemUserCuaToiData, XemUserCuaToiErrors, XemUserCuaToiResponses, XoaAnhMocData, XoaAnhMocErrors, XoaAnhMocResponses, XoaAvatarData, XoaAvatarErrors, XoaAvatarResponses, XoaBinhLuanData, XoaBinhLuanErrors, XoaBinhLuanResponses, XoaMocData, XoaMocErrors, XoaMocResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -51,6 +51,57 @@ export const xoaAnhMoc = <ThrowOnError extends boolean = false>(options: Options
     url: '/api/v1/anh/{anh_id}',
     ...options
 });
+
+/**
+ * Liet Ke Ban Tin
+ *
+ * Danh sách bản tin, mới → cũ theo ngày. Bản đã ẩn không có mặt.
+ *
+ * `limit` 1..50 (mặc định 20); cursor sai ⇒ 400 `cursor_khong_hop_le`.
+ */
+export const lietKeBanTin = <ThrowOnError extends boolean = false>(options?: Options<LietKeBanTinData, ThrowOnError>): RequestResult<LietKeBanTinResponses, LietKeBanTinErrors, ThrowOnError> => (options?.client ?? client).get<LietKeBanTinResponses, LietKeBanTinErrors, ThrowOnError>({ url: '/api/v1/ban-tin', ...options });
+
+/**
+ * Dang Ban Tin
+ *
+ * Đăng một khung bản tin. **Chỉ tài khoản đội** (`la_tai_khoan_doi`); khác ⇒ 403 `khong_phai_tai_khoan_doi`.
+ *
+ * Server tự lấy ngày VN. Chưa có bản tin ngày đó ⇒ tạo (dùng `title`); có rồi ⇒ thêm khung
+ * (bỏ qua `title`). Khung đã đăng ⇒ 409 `khung_da_dang`. Thân HTML qua cùng bộ lọc với mốc;
+ * lọc xong rỗng hoặc `figures` sai dạng ⇒ 400 `du_lieu_khong_hop_le`.
+ */
+export const dangBanTin = <ThrowOnError extends boolean = false>(options: Options<DangBanTinData, ThrowOnError>): RequestResult<DangBanTinResponses, DangBanTinErrors, ThrowOnError> => (options.client ?? client).post<DangBanTinResponses, DangBanTinErrors, ThrowOnError>({
+    security: [{
+            key: 'DangNhap',
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/v1/ban-tin',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Tim Ban Tin Tu Mach Cu
+ *
+ * Ngày của bản tin đã chuyển từ mạch cũ `mach_id`, để web trả 301 `/m/…` → `/s/tin-tuc/<ngày>`.
+ *
+ * Mạch không phải bản tin đã chuyển, hoặc bản tin đã ẩn ⇒ 404 `khong_tim_thay`.
+ */
+export const timBanTinTuMachCu = <ThrowOnError extends boolean = false>(options: Options<TimBanTinTuMachCuData, ThrowOnError>): RequestResult<TimBanTinTuMachCuResponses, TimBanTinTuMachCuErrors, ThrowOnError> => (options.client ?? client).get<TimBanTinTuMachCuResponses, TimBanTinTuMachCuErrors, ThrowOnError>({ url: '/api/v1/ban-tin/tu-mach/{mach_id}', ...options });
+
+/**
+ * Xem Ban Tin
+ *
+ * Một bản tin theo ngày VN (`YYYY-MM-DD`), khung theo thứ tự đêm qua → trước phiên VN → trước phiên Mỹ.
+ *
+ * Sai dạng, không có, hoặc đã ẩn ⇒ 404 `khong_tim_thay`.
+ */
+export const xemBanTin = <ThrowOnError extends boolean = false>(options: Options<XemBanTinData, ThrowOnError>): RequestResult<XemBanTinResponses, XemBanTinErrors, ThrowOnError> => (options.client ?? client).get<XemBanTinResponses, XemBanTinErrors, ThrowOnError>({ url: '/api/v1/ban-tin/{ngay}', ...options });
 
 /**
  * Xoa Binh Luan Api
@@ -248,6 +299,9 @@ export const getHealth = <ThrowOnError extends boolean = false>(options?: Option
  * `settings.HAN_MUC_MACH_MOI_USER_NGAY`) ⇒ 429 `qua_han_muc_mach` kèm `thu_lai_tu` =
  * nửa đêm giờ VN kế tiếp. Ranh giới là nửa đêm VN, không phải 24 giờ trượt — cùng luật
  * với hạn mức mốc, xem `core/han_muc.py`.
+ *
+ * **Sub bản tin (`tin-tuc`) đóng với mọi người**, kể cả tài khoản đội ⇒ 400
+ * `sub_danh_rieng_ban_tin`. Bản tin đăng qua `POST /ban-tin`.
  *
  * **`loai_mach`** (`nhat_ky` | `bai_viet` | `thao_luan`; KHÔNG phải `loai` — đó là chip
  * của mốc): không gửi ⇒ `core/ghi.py::tao_mach` phân giải theo tác giả (tài khoản đội

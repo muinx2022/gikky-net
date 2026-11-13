@@ -26,7 +26,7 @@ from api.schemas import SO_ANH_XEM_TRUOC
 from core.anh_luu import THU_MUC_ANH, THU_MUC_THUMB, khoa_tu_src_anh, xoa_anh_that
 from core.ghi import SO_ANH_TOI_DA_MOI_MOC, xoa_anh_moc
 from core.management.commands import seed_dev, seed_e2e
-from core.models import AnhNoiDung, Mach, Moc, MocAnh, Sub, User
+from core.models import AnhNoiDung, BanTin, Mach, Moc, MocAnh, Sub, User
 
 from .conftest import chay_seed, lay
 
@@ -489,3 +489,25 @@ def test_seed_e2e_reset_xoa_ca_hang_lan_file_anh_cua_mach_rac(
     assert not (phuc_vu / THU_MUC_THUMB / khoa).exists()
     # Tài khoản rác không bị xoá (chỉ mạch của nó trong sub e2e).
     assert User.objects.filter(username="rac_co_anh").exists()
+
+
+def test_seed_e2e_dung_ban_tin_du_ca_cho_dot_B(client):
+    """Việc 20 — bốn ngày bản tin: đủ khung / đã ẩn / thiếu khung / chuyển từ mạch cũ."""
+    chay_seed("seed_e2e")
+    hom_nay = seed_e2e.ngay_vn()
+    bt = {b.ngay: b for b in BanTin.objects.all()}
+    assert len(bt) == len(seed_e2e.BAN_TIN) == 4
+    for ca in seed_e2e.BAN_TIN:
+        b = bt[hom_nay - seed_e2e.timedelta(days=ca["lui"])]
+        assert (b.hidden_at is not None) == ca["an"]
+        assert sorted(b.khung.values_list("khung", flat=True)) == sorted(ca["khung"])
+        assert (b.mach_cu is not None) == bool(ca.get("mach_cu"))
+    cu = BanTin.objects.get(mach_cu__isnull=False).mach_cu
+    assert cu.archived_at is not None, "mạch của ca 301 phải đã lưu trữ"
+    assert lay(client, f"/api/v1/ban-tin/tu-mach/{cu.pk}")["ngay"]
+
+    # Chạy lại không nhân đôi; --reset dọn rồi dựng lại đúng bốn.
+    chay_seed("seed_e2e")
+    assert BanTin.objects.count() == 4
+    chay_seed("seed_e2e", "--reset")
+    assert BanTin.objects.count() == 4

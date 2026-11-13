@@ -22,6 +22,20 @@
  * cố định hoá hợp đồng và **test được**; phần LLM chỉ còn việc nó làm tốt — đọc tin và
  * viết chữ.
  *
+ * ## Hai đường đăng — script TỰ NHẬN BIẾT server (việc 20, `plans/2026-11-13-ban-tin-bang-rieng.md` §3.4)
+ *
+ * Từ việc 20 bản tin là bảng riêng (`POST /api/v1/ban-tin`), không còn là mạch. Nhưng
+ * nhiệm vụ đặt lịch đọc script từ cây làm việc và đăng lên **prod**, mà prod có thể còn
+ * chạy bản chưa có API mới. Nên trước khi đăng, script hỏi `GET /api/v1/ban-tin?limit=1`:
+ *
+ *   200 ⇒ đường MỚI: `POST /api/v1/ban-tin` với `khung` suy từ `--slot`;
+ *   404 ⇒ đường CŨ, y nguyên như trước (tạo mạch / nối mốc);
+ *   mã khác hoặc lỗi mạng ⇒ `MA.LOI` — không đoán.
+ *
+ * Không có cờ tay: cờ tay là thứ người trực quên bật đúng sáng hôm deploy. `--thu` không
+ * gọi mạng nên nó chỉ tả được nhánh của đường cũ. Đường cũ gỡ ở một việc sau, khi prod đã
+ * chạy API mới.
+ *
  * ## Chuỗi ba request (tham chiếu: `apps/web/lib/tai-khoan.ts`)
  *
  *   ① GET  /api/_allauth/browser/v1/auth/session  → cookie `csrftoken`
@@ -73,6 +87,7 @@ import {
   kiemTraBaiViet,
   machCuaNgay,
   ngayVN,
+  thanBanTin,
   ngoaiKhungGio,
   thanNoiMoc,
   thoiDiemBayGio,
@@ -400,6 +415,96 @@ async function noiMoc({ origin, hu, mach_id, bai, duong_so_cai, ngay }) {
   return { mach_id, seq, moc_id: id, body_da_luu: typeof body === "string" ? body : null };
 }
 
+/** Khoảng chờ (ms) trước mỗi lượt hỏi LẠI `GET /api/v1/ban-tin` — 3 lượt hỏi tổng cộng.
+ *
+ * Ghi đè bằng `GIKKY_BOT_CHO_THU_LAI="0,0"` (danh sách ms, phẩy ngăn) — CHỈ để bài đo chạy
+ * nhanh. Giá trị hỏng ⇒ dùng mặc định, không ném: đây là cấu hình của một con bot chạy lúc
+ * 06:12, và một chuỗi gõ sai không được phép là lý do ngày đó không có bản tin.
+ */
+const CHO_THU_LAI_MAC_DINH = Object.freeze([2000, 5000]);
+
+function choThuLai(env) {
+  const tho = String(env.GIKKY_BOT_CHO_THU_LAI ?? "").trim();
+  if (tho === "") return CHO_THU_LAI_MAC_DINH;
+  const so = tho.split(",").map((x) => Number(x.trim()));
+  return so.length > 0 && so.every((x) => Number.isFinite(x) && x >= 0)
+    ? so
+    : CHO_THU_LAI_MAC_DINH;
+}
+
+/** Mã của lượt hỏi đáng hỏi LẠI: server đang chập chờn, chưa nói được nó là bản nào.
+ *
+ * 403 nằm trong danh sách vì `gikky.net` đứng sau Cloudflare: một trang challenge của Bot
+ * Fight Mode trả 403 HTML, và nó qua đi sau vài giây — không phải "server không có API".
+ */
+function nenHoiLai(trangThai) {
+  return trangThai === 403 || trangThai === 429 || trangThai >= 500;
+}
+
+const ngu = (ms) => new Promise((xong) => setTimeout(xong, ms));
+
+/** Server có bảng bản tin chưa? `true` ⇒ đường mới, `false` ⇒ đường cũ. Xem docstring module.
+ *
+ * Cửa đọc công khai, không cần đăng nhập — hỏi TRƯỚC khi đăng nhập để lượt chạy trên một
+ * server lạ chết sớm, trước khi gửi mật khẩu đi.
+ *
+ * Lỗi mạng, 403, 429, 5xx ⇒ hỏi lại, tối đa 3 lượt, giãn cách tăng dần (`choThuLai`). Hết
+ * lượt, hoặc gặp mã lạ khác (vd 400, 401) ⇒ `MA.LOI`. **Không bao giờ đoán đường**: đoán
+ * "cũ" trên server mới là `POST /machs` vào `tin-tuc` ăn 400; đoán "mới" trên server cũ là
+ * `POST /ban-tin` ăn 404 — đằng nào ngày đó cũng không có bản tin, nên hỏi lại rẻ hơn.
+ */
+async function serverCoBanTin(origin, env) {
+  const cho = choThuLai(env);
+  let ly_do = "";
+  for (let lan = 0; ; lan += 1) {
+    let hoi = null;
+    try {
+      hoi = await goi(origin, "/api/v1/ban-tin?limit=1", { hu: new HuCookie() });
+    } catch (e) {
+      ly_do = `lỗi mạng: ${e.message}`;
+    }
+    if (hoi !== null) {
+      if (hoi.trangThai === 200) return true;
+      if (hoi.trangThai === 404) return false;
+      ly_do = `HTTP ${hoi.trangThai}: ${cauLoi(hoi.than, hoi.van_ban)}`;
+      if (!nenHoiLai(hoi.trangThai)) break;
+    }
+    if (lan >= cho.length) break;
+    await ngu(cho[lan]);
+  }
+  throw new LoiCoMa(
+    MA.LOI,
+    `GET /api/v1/ban-tin không trả 200/404 — không biết server đi đường nào (${ly_do}).`,
+  );
+}
+
+/** ③-MỚI — `POST /api/v1/ban-tin`. Trả `{ url, body_da_luu }` (`url` là đường dẫn tương đối).
+ *
+ * 409 `khung_da_dang` ⇒ `MA.TRUNG` (3): khung này của ngày đã có — cùng nghĩa với "slot đã
+ * đăng hôm nay" của sổ cái, chỉ là lần này server biết. Mọi mã khác ≠ 201 (gồm 403 tài
+ * khoản không phải tài khoản đội) ⇒ `MA.LOI`.
+ */
+async function dangBanTin({ origin, hu, bai, slot }) {
+  const dang = await goi(origin, "/api/v1/ban-tin", {
+    method: "POST",
+    than: thanBanTin(bai, slot),
+    hu,
+  });
+  if (dang.trangThai !== 201) {
+    const trung = dang.trangThai === 409 && dang.than?.code === "khung_da_dang";
+    throw new LoiCoMa(
+      trung ? MA.TRUNG : MA.LOI,
+      `POST /api/v1/ban-tin trả ${dang.trangThai}: ${cauLoi(dang.than, dang.van_ban)}` +
+        (trung ? `\nKhung của slot "${slot}" hôm nay đã đăng rồi.` : ""),
+    );
+  }
+  const { url } = dang.than ?? {};
+  if (typeof url !== "string" || !url.startsWith("/")) {
+    throw new LoiCoMa(MA.LOI, "201 nhưng thân không có `url` — hợp đồng đã đổi?");
+  }
+  return { url, body_da_luu: typeof dang.than?.body === "string" ? dang.than.body : null };
+}
+
 /** Ngưỡng cảnh báo: giữ lại dưới ngần này thì thân bài đã bị lọc mất phần đáng kể. */
 const TY_LE_GIU_TOI_THIEU = 0.9;
 
@@ -430,6 +535,52 @@ function canhBaoBiLoc(body_gui, body_luu) {
 }
 
 // --- Điều phối ---------------------------------------------------------------
+
+/** Đường MỚI (việc 20): đăng nhập → `POST /ban-tin` → in URL → ghi sổ cái.
+ *
+ * Giữ nguyên luật "URL ra TRƯỚC, ghi sổ SAU, ghi sổ hỏng không làm hỏng lượt này" của
+ * đường cũ (xem khối chú thích dài trong `main()`). Sổ cái vẫn được ghi dù đường mới không
+ * cần `mach_id`: nó là thứ cho ca "đã đăng slot này hôm nay" dừng sớm, trước khi gọi mạng.
+ * `mach_id` cũ của ngày (nếu sáng nay còn đi đường cũ) được giữ nguyên.
+ */
+async function dangDuongMoi({
+  cau_hinh,
+  tham_so,
+  bai,
+  so_cai,
+  duong_so_cai,
+  ngay,
+  bay_gio,
+  mach_hom_nay,
+}) {
+  const hu = await dangNhap(cau_hinh.origin, cau_hinh.email, cau_hinh.matKhau);
+  const ket = await dangBanTin({ origin: cau_hinh.origin, hu, bai, slot: tham_so.slot });
+  const url = `${cau_hinh.origin}${ket.url}`;
+  process.stdout.write(`${url}\n`);
+  try {
+    ghiSoCai(
+      duong_so_cai,
+      ghiNhanDaDang(so_cai, {
+        slot: tham_so.slot,
+        ngay,
+        mach_id: mach_hom_nay?.mach_id,
+        url,
+        luc: bay_gio,
+      }),
+    );
+  } catch (e) {
+    process.stderr.write(
+      `⚠ ĐÃ ĐĂNG ${url} nhưng KHÔNG ghi được sổ cái ${duong_so_cai}: ${e.message}\n` +
+        `Chạy lại slot "${tham_so.slot}" hôm nay sẽ bị server từ chối (409, thoát ` +
+        `${MA.TRUNG}) — không đăng trùng được, nhưng nên điền tay sổ cái.\n`,
+    );
+  }
+  canhBaoBiLoc(bai.body, ket.body_da_luu);
+  for (const cau of canhBaoThieuTruong(bai, { duongMoi: true })) {
+    process.stderr.write(`⚠ ${cau}\n`);
+  }
+  return MA.OK;
+}
 
 async function main(argv, env) {
   const tham_so = bocThamSo(argv);
@@ -507,6 +658,19 @@ async function main(argv, env) {
         `(slot ${tham_so.slot}, ngày VN ${ngay}) — KHÔNG gọi mạng.\n`,
     );
     return MA.OK;
+  }
+
+  if (await serverCoBanTin(cau_hinh.origin, env)) {
+    return dangDuongMoi({
+      cau_hinh,
+      tham_so,
+      bai,
+      so_cai,
+      duong_so_cai,
+      ngay,
+      bay_gio,
+      mach_hom_nay,
+    });
   }
 
   const hu = await dangNhap(cau_hinh.origin, cau_hinh.email, cau_hinh.matKhau);

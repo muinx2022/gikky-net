@@ -665,6 +665,27 @@ def test_C14_tao_mach_hen_gio_chan_tac_gia_ngoai_allowlist(canh):
     assert Mach.objects.filter(author=nguoi_that).count() == 0
 
 
+def test_C14_tao_mach_hen_gio_vao_sub_ban_tin_bi_chan(canh):
+    """Việc 20: sub `tin-tuc` dành riêng cho bản tin (bảng `BanTin`) — cửa admin cũng chặn."""
+    from core.models.ban_tin import SUB_BAN_TIN
+
+    Sub.objects.create(slug=SUB_BAN_TIN, ten="Tin tức")
+    r = canh["mod"].post(
+        "/api/admin/machs/hen-gio",
+        data={
+            "sub": SUB_BAN_TIN,
+            "title": "Bản tin soạn sẵn",
+            "body": "<p>Thân.</p>",
+            "author": TEAM_NEWS,
+            "published_at": (timezone.now() + timedelta(days=1)).isoformat(),
+        },
+        content_type="application/json",
+    )
+    assert r.status_code == 400, r.content[:300]
+    assert r.json()["code"] == "sub_danh_rieng_ban_tin"
+    assert Mach.objects.filter(sub__slug=SUB_BAN_TIN).count() == 0
+
+
 def test_C15_khong_phai_staff_bi_chan_o_ca_ba_cua(canh, client):
     """#15 — hai cửa GHI + cửa ĐỌC `?trang_thai=hen_gio` đều đòi `is_staff`.
 

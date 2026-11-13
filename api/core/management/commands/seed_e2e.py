@@ -69,7 +69,7 @@ from core.ghi import (
 )
 from core.lenh import Lenh
 from core.management.commands.don_rac_e2e import MIEN_E2E
-from core.models import AnhNoiDung, Mach, Moc, MocAnh, Sub, User
+from core.models import AnhNoiDung, BanTin, BanTinKhung, Mach, Moc, MocAnh, Sub, User
 from core.moi_truong import doi_dev
 from core.thoi_gian import TZ_VN, ngay_vn
 
@@ -154,6 +154,39 @@ USERNAME_DONG_SO = "e2e_nhat_ky_dong"
 DISPLAY_NAME_DONG_SO = "E2E Nhật ký đã đóng"
 TIEU_DE_NHAT_KY_DONG = "Bán E2EFX tại 0.8187 — nhật ký đã đóng sổ của bộ e2e"
 LENH_DONG = Lenh(chieu="ban", ma="E2EFX", gia_vao=Decimal("0.8187"), sl=Decimal("0.8223"))
+
+# --- Bản tin bảng riêng (plans/2026-11-13-ban-tin-bang-rieng.md, việc 20) ----------------
+#
+# Đợt B (web) vẽ trang `/s/tin-tuc/<ngày>`, danh sách, dải trang chủ, sitemap và 301 từ
+# `/m/…` cũ; không có hàng nào thì cả nhóm B1–B7 đo rỗng. Bốn ngày, mỗi ngày một ca:
+#
+# - lùi 1 ngày: ĐỦ ba khung (đăng lệch thứ tự, để trang phải tự sắp lại);
+# - lùi 2 ngày: ĐÃ ẨN — `ngay_truoc`/`ngay_sau` và danh sách phải nhảy qua nó;
+# - lùi 3 ngày: THIẾU khung ("Trước phiên VN" chưa có) — mục lục có ô mờ;
+# - lùi 4 ngày: chuyển từ một mạch cũ đã lưu trữ (`mach_cu`) — ca 301 của B4.
+#
+# Ngày GẦN hôm nay chứ không lùi sâu như phần trên: dải trang chủ đọc 2 bản MỚI NHẤT, và
+# bản tin không chen vào feed mạch nên không đẩy dữ liệu nghiệm thu nào khỏi màn hình.
+# Mạch cũ của ca 301 nằm trong sub e2e (KHÔNG phải `tin-tuc` — sub đó thuộc `seed_dev`, và
+# treo mạch e2e vào nó là dựng lại đúng cái bẫy `PROTECT` của vá A3); 301 chỉ đọc
+# `mach_cu`, không đọc sub.
+#
+# `ngay` là UNIQUE toàn bảng: ngày nào đã có bản tin (DB dùng chung) thì BỎ QUA ngày đó.
+BAN_TIN = (
+    {"lui": 1, "an": False, "khung": ("truoc_phien_my", "dem_qua", "truoc_phien_vn")},
+    {"lui": 2, "an": True, "khung": ("dem_qua",)},
+    {"lui": 3, "an": False, "khung": ("dem_qua", "truoc_phien_my")},
+    {"lui": 4, "an": False, "khung": ("dem_qua", "truoc_phien_vn"), "mach_cu": True},
+)
+TIEU_DE_BAN_TIN = "Bản tin e2e {ngay:%d/%m}: VN-Index thử nghiệm của bộ e2e"
+TIEU_DE_MACH_BAN_TIN_CU = "Bản tin e2e cũ (đã chuyển sang bảng bản tin)"
+FIGURES_BAN_TIN = [
+    {"label": "VN-Index", "value": "1.280,5 (+0,42%)"},
+    {"label": "S&P 500", "value": "5.432,1 (-0,35%)"},
+    {"label": "DXY", "value": "104,2"},
+    {"label": "Vàng", "value": "2.401"},
+    {"label": "Dầu WTI", "value": "78,3 (-1,1%)"},
+]
 
 #: ≥ 40 theo plan (44 là trần của `/` = 8 + 6 + 30 mà `/` cũng phải cắt ở 30 bài viết, nên
 #: cần HƠN 30 để nút "Xem thêm bài viết" có đất chạy).
@@ -252,6 +285,7 @@ class Command(BaseCommand):
         self._dung_homepage_v2()
         self._dung_anh_bai_viet()
         self._dung_nhat_ky_co_lenh()
+        self._dung_ban_tin()
 
     def _dung_ho_so_bi_cat(self) -> None:
         """Ca V16: user `USERNAME` với 21 mạch, cùng sub riêng và sub rỗng."""
@@ -522,6 +556,56 @@ class Command(BaseCommand):
             )
         )
 
+    def _dung_ban_tin(self) -> None:
+        """Bốn ngày bản tin — xem khối hằng `BAN_TIN`. Cổng idempotency: tác giả đã có bản tin."""
+        doi = User.objects.filter(username=USERNAME_DOI).first()
+        if doi is None or BanTin.objects.filter(tac_gia=doi).exists():
+            return
+        sub = Sub.objects.get(slug=SUB_SLUG)
+        hom_nay = ngay_vn()
+        so = 0
+        for ca in BAN_TIN:
+            ngay = hom_nay - timedelta(days=ca["lui"])
+            if BanTin.objects.filter(ngay=ngay).exists():
+                continue
+            khi = datetime.combine(ngay, time(6, 12), tzinfo=TZ_VN)
+            mach_cu = None
+            if ca.get("mach_cu"):
+                mach_cu, _ = tao_mach(
+                    sub=sub,
+                    author=doi,
+                    title=TIEU_DE_MACH_BAN_TIN_CU,
+                    body="<p>Bản tin cũ thời còn là mạch.</p>",
+                    loai="Đêm qua",
+                    # `nhat_ky` tường minh: để mặc định thì tác giả đội ra `bai_viet`, và
+                    # số bài viết của seed (`SO_BAI_VIET`, có bài đo ghim) lệch đi một.
+                    loai_mach=Mach.LoaiMach.NHAT_KY,
+                    _created_at_seed=khi,
+                )
+                Mach.objects.filter(pk=mach_cu.pk).update(archived_at=khi)
+            bt = BanTin.objects.create(
+                ngay=ngay,
+                title=TIEU_DE_BAN_TIN.format(ngay=ngay),
+                tac_gia=doi,
+                created_at=khi,
+                cap_nhat_luc=khi + timedelta(hours=len(ca["khung"]) - 1),
+                hidden_at=khi if ca["an"] else None,
+                mach_cu=mach_cu,
+            )
+            for i, khung in enumerate(ca["khung"]):
+                BanTinKhung.objects.create(
+                    ban_tin=bt,
+                    khung=khung,
+                    body=(
+                        f"<h3>Khung {khung} của bộ e2e</h3>"
+                        "<ul><li>Một ý thử nghiệm.</li><li>Ý thứ hai.</li></ul>"
+                    ),
+                    figures=FIGURES_BAN_TIN if i % 2 == 0 else None,
+                    created_at=khi + timedelta(hours=i),
+                )
+            so += 1
+        self.stdout.write(self.style.SUCCESS(f"seed_e2e xong: {so} bản tin."))
+
     def _xoa(self) -> None:
         """Xoá `Mach` trước `User` — tác giả nội dung là `PROTECT` — rồi tới `Sub`.
 
@@ -576,6 +660,8 @@ class Command(BaseCommand):
             MocAnh.objects.filter(moc__mach__in=mach_rac).values_list("khoa_luu_tru", flat=True)
         )
         so_rac = mach_rac.count()
+        # Bản tin TRƯỚC user: `BanTin.tac_gia` là PROTECT.
+        BanTin.objects.filter(tac_gia__in=users).delete()
         Mach.objects.filter(author__in=users).delete()
         mach_rac.delete()
         for khoa in khoa_anh:

@@ -1086,3 +1086,33 @@ header, cao 41px (mobile 45px); `/` có đúng 1 dải, `/?tab=moi` có 0; 0 ô 
 User CHƯA xem lại ba điểm phiên chính tự quyết: dải chỉ 2 bản tin, dòng © nằm ở chân cột phải (không phải đáy trang),
 bối cảnh chỉ nới bằng CSS.
 
+---
+
+## Việc 20 · Bản tin thành bảng dữ liệu riêng + trình bày kiểu bản tin — ĐANG LÀM trên `v2`: đợt A (API + dữ liệu + bot) xong 2026-11-13, nghiệm thu + phản biện + vòng sửa 1 ĐẠT; đợt B (web) đang làm; chưa lên dev/prod
+
+**Yêu cầu (user, 2026-11-13):** "tách phần bản tin ra 1 phần riêng, không dùng chung dữ liệu với bài viết hay nhật kí
+nữa"; "hiện tại bản tin đang gộp lại theo dạng nhật kí, cần cách trình bày mới của bản tin, không theo dạng nhật kí nữa".
+
+**Đã chốt với user:** bảng dữ liệu riêng (`BanTin` + `BanTinKhung`, không còn là `Mach`) · giữ `/s/tin-tuc` làm trang
+danh sách · chỉ đọc (không bình luận / vote / câu hỏi cho đám đông, vẫn đếm lượt xem) · URL `/s/tin-tuc/YYYY-MM-DD` ·
+57 mạch cũ trên prod lưu trữ + 301 sang URL mới · chờ việc 19 commit rồi mới code.
+
+**Phiên chính tự quyết (trong plan, user duyệt cùng plan):** chuyển dữ liệu bằng lệnh `chuyen_ban_tin` (chạy thử mặc
+định) thay vì data migration; bot tự nhận biết server mới / cũ để không chết trước deploy prod; chặn tạo mạch mới trong
+`tin-tuc`; bản tin rời tìm kiếm nội bộ và `/feed.xml` chung.
+
+**Plan:** `plans/2026-11-13-ban-tin-bang-rieng.md`.
+
+---
+
+## Việc 21 · Khu quản trị: quản lý bản tin + chủ đề thảo luận hàng tuần — ĐÃ DUYỆT PLAN (2026-11-13), chờ việc 19 commit
+
+**Yêu cầu (user, 2026-11-13):** "ngoài phần bảng tin, còn thêm phần chủ đề bình luận hàng tuần. bạn xem trong admin còn
+thiếu phần quản lý nào thì lập plan xử lý luôn".
+
+**Thiếu (đo 2026-11-13):** admin không có danh sách chủ đề theo tuần, không cho biết chủ đề nào đang trên trang chủ,
+không đóng / mở lại / viết tổng kết được (API có, chỉ bấm được ở web), `/machs` không lọc theo loại, không báo tuần sau
+chưa có chủ đề; bản tin không có trang quản lý nào và không ai biết bot hôm nay đã đăng khung nào.
+
+**Plan:** `plans/2026-11-13-quan-tri-ban-tin-chu-de.md` (đợt C chủ đề chạy được ngay sau việc 19; đợt D bản tin sau
+việc 20 đợt A).

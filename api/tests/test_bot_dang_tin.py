@@ -31,6 +31,14 @@ Mọi lượt chạy dưới đây vì thế phải: truyền `--origin` tườn
 `GIKKY_BOT_ENV_FILE` vào một file **không tồn tại**, và trỏ `GIKKY_BOT_SO_CAI` vào
 `tmp_path`. Trỏ sổ cái đi chỗ khác còn là điều kiện để bài đo chạy được **lần thứ hai**:
 sổ thật sẽ nói "slot này đăng hôm nay rồi" và mọi thứ đỏ giả.
+
+## Hai server: CŨ (mặc định) và MỚI (việc 20)
+
+Từ việc 20 script tự hỏi `GET /api/v1/ban-tin`: 200 ⇒ đường bản tin mới, 404 ⇒ đường mạch
+cũ. Mọi bài đo có từ trước việc 20 đo ĐƯỜNG CŨ, nên fixture autouse `server_cu` dựng lại
+đúng prod đang chạy `main`: `/api/v1/ban-tin` trả 404 (`tests/urls_server_cu.py`) và cổng
+chặn sub `tin-tuc` của `POST /machs` tắt. Bài nào đo đường mới thì xin fixture
+`server_moi` — khi đó `server_cu` đứng ngoài.
 """
 
 import json
@@ -46,7 +54,9 @@ import pytest
 from allauth.account.models import EmailAddress
 from django.utils import timezone
 
-from core.models import Mach, Moc, Sub, User
+from core.models import BanTin, BanTinKhung, Mach, Moc, Sub, User
+from core.models.ban_tin import KhungBanTin
+from core.thoi_gian import ngay_vn
 from tests._an_mach import an_mach_tho
 
 #: `api/tests/x.py` → `api/tests` → `api` → gốc repo.
@@ -126,15 +136,21 @@ def moi_truong_sach(tmp_path) -> dict[str, str]:
         "GIKKY_BOT_EMAIL": EMAIL_BOT,
         "GIKKY_BOT_PASSWORD": MAT_KHAU_BOT,
         "GIKKY_BOT_GIO_GIA_LAP": GIO_VN["dem-qua"],
+        # Hỏi lại `GET /api/v1/ban-tin` không chờ — mặc định 2s rồi 5s (vòng sửa 1, mục 4).
+        "GIKKY_BOT_CHO_THU_LAI": "0,0",
     }
 
 
-def dung_bot() -> User:
-    """`User` + mật khẩu + `EmailAddress` — đủ ba vế, xem docstring module."""
+def dung_bot(*, la_tai_khoan_doi: bool = False) -> User:
+    """`User` + mật khẩu + `EmailAddress` — đủ ba vế, xem docstring module.
+
+    `la_tai_khoan_doi` chỉ đường MỚI cần (`POST /ban-tin`); đường cũ không đọc cờ này.
+    """
     u = User.objects.create(
         username="gikky-team-news",
         email=EMAIL_BOT,
         display_name="gikky · Tin tức",
+        la_tai_khoan_doi=la_tai_khoan_doi,
     )
     u.set_password(MAT_KHAU_BOT)
     u.save()
@@ -225,6 +241,24 @@ def khong_gioi_han_dang_nhap(settings) -> None:
 
     settings.ACCOUNT_RATE_LIMITS = {"login": None, "login_failed": None}
     cache.clear()
+
+
+@pytest.fixture
+def server_moi() -> None:
+    """Xin fixture này ⇒ bài đo chạy trên server CÓ việc 20 (xem docstring module)."""
+
+
+@pytest.fixture(autouse=True)
+def server_cu(request, settings, monkeypatch) -> None:
+    """Mặc định: server CŨ — `/api/v1/ban-tin` 404, `POST /machs` vào `tin-tuc` vẫn được.
+
+    `live_server` chạy trong luồng của CÙNG tiến trình, nên `settings.ROOT_URLCONF` và
+    `monkeypatch` ở đây có hiệu lực với nó.
+    """
+    if "server_moi" in request.fixturenames:
+        return
+    settings.ROOT_URLCONF = "tests.urls_server_cu"
+    monkeypatch.setattr("api.machs.la_sub_ban_tin", lambda sub: False)
 
 
 @pytest.fixture
@@ -1323,3 +1357,215 @@ def test_n16_slot_go_nham_bi_TU_CHOI_chu_khong_thanh_khoa_so_cai_moi(
         for ten in ("dem-qua", "truoc-phien-vn", "truoc-phien-my"):
             assert ten in ket_qua.stderr, (xau, ten)
         assert Mach.objects.count() == 0
+
+
+# --- Việc 20: đường MỚI `POST /api/v1/ban-tin` (plan §3.4, tiêu chí A7) -------
+#
+# ⚠ Ngày của bản tin do SERVER tính bằng giờ thật, còn `GIKKY_BOT_GIO_GIA_LAP` chỉ ghim
+# giờ của script (khung giờ + khoá sổ cái). Vì thế mọi khẳng định về `BanTin.ngay` dưới
+# đây so với `ngay_vn()` thật, còn khoá sổ cái so với ngày giả lập — hai con số khác nhau
+# là đúng, không phải lỗi.
+
+
+def test_bang_slot_sang_khung_KHOP_giua_lib_mjs_va_python(node):
+    """`KHUNG_THEO_SLOT` phủ đúng ba slot và trỏ đúng ba khoá `KhungBanTin`."""
+    ma = (
+        "import('./scripts/tin-tuc/lib.mjs').then(m => process.stdout.write("
+        "JSON.stringify([Object.keys(m.SLOT), m.KHUNG_THEO_SLOT])))"
+    )
+    ra = subprocess.run(
+        [node, "--input-type=module", "-e", ma],
+        cwd=str(GOC_REPO), capture_output=True, text=True, encoding="utf-8", timeout=60,
+    )
+    assert ra.returncode == 0, ra.stderr
+    slot, bang = json.loads(ra.stdout)
+    assert list(bang) == slot
+    assert list(bang.values()) == list(KhungBanTin.values)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_server_cu_that_su_404_o_ban_tin_va_server_moi_thi_200(client, settings):
+    """Chống đo rỗng: fixture `server_cu` phải THẬT SỰ giấu `/api/v1/ban-tin`."""
+    assert client.get("/api/v1/ban-tin?limit=1").status_code == 404
+    settings.ROOT_URLCONF = "config.urls"
+    assert client.get("/api/v1/ban-tin?limit=1").status_code == 200
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a7_server_moi_tao_ngay_roi_them_khung_khong_tao_mach(
+    server_moi, live_server, cookie_khong_secure, node, tmp_path, moi_truong_sach
+):
+    """A7: server có `/ban-tin` ⇒ đường mới. Khung đầu tạo ngày, khung sau thêm vào."""
+    Sub.objects.create(slug="tin-tuc", ten="Tin tức")
+    dung_bot(la_tai_khoan_doi=True)
+    hom_nay = ngay_vn()
+
+    dau = chay_bot(
+        node, moi_truong_sach,
+        "--file", ghi_bai(tmp_path), "--slot", "dem-qua", "--origin", live_server.url,
+    )
+    assert dau.returncode == MA_OK, dau.stderr
+    assert dau.stdout.strip() == f"{live_server.url}/s/tin-tuc/{hom_nay.isoformat()}"
+    # `question_for_crowd` có trong file bài: đường mới bỏ nó, không cảnh báo về nó.
+    assert "question_for_crowd" not in dau.stderr
+
+    sau = chay_bot(
+        node,
+        {**moi_truong_sach, "GIKKY_BOT_GIO_GIA_LAP": GIO_VN["truoc-phien-vn"]},
+        "--file", ghi_bai(tmp_path, "bai2.json", title="Tiêu đề khác hẳn", loai="Trước phiên VN"),
+        "--slot", "truoc-phien-vn", "--origin", live_server.url,
+    )
+    assert sau.returncode == MA_OK, sau.stderr
+
+    assert Mach.objects.count() == 0, "đường mới không được tạo mạch"
+    bt = BanTin.objects.get()
+    assert bt.ngay == hom_nay
+    assert bt.title == "Bản tin 25/08 — S&P 500 đóng cửa 5.432,10 điểm"
+    assert sorted(bt.khung.values_list("khung", flat=True)) == ["dem_qua", "truoc_phien_vn"]
+    k = bt.khung.get(khung="dem_qua")
+    assert k.figures == [{"label": "S&P 500", "value": "5.432,10"}]
+    assert 'rel="nofollow ugc noopener"' in k.body
+
+    so_cai = doc_so_cai(moi_truong_sach)
+    assert list(so_cai["2026-08-26"]["slot"]) == ["dem-qua", "truoc-phien-vn"]
+    assert "mach_id" not in so_cai["2026-08-26"]
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a7_server_moi_khung_da_dang_thi_409_ra_ma_3(
+    server_moi, live_server, cookie_khong_secure, node, tmp_path, moi_truong_sach
+):
+    """409 `khung_da_dang` ⇒ mã 3, kể cả khi sổ cái trống (máy khác đã đăng)."""
+    bot = dung_bot(la_tai_khoan_doi=True)
+    bt = BanTin.objects.create(ngay=ngay_vn(), title="Đã có", tac_gia=bot)
+    BanTinKhung.objects.create(ban_tin=bt, khung="dem_qua", body="<p>bản trước</p>")
+
+    ket_qua = chay_bot(
+        node, moi_truong_sach,
+        "--file", ghi_bai(tmp_path), "--slot", "dem-qua", "--origin", live_server.url,
+    )
+    assert ket_qua.returncode == MA_TRUNG, (ket_qua.returncode, ket_qua.stderr)
+    assert "khung_da_dang" in ket_qua.stderr or "đã đăng" in ket_qua.stderr
+    assert BanTinKhung.objects.get().body == "<p>bản trước</p>"
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a7_server_moi_tai_khoan_khong_co_co_doi_thi_ma_1(
+    server_moi, live_server, cookie_khong_secure, node, tmp_path, moi_truong_sach
+):
+    dung_bot(la_tai_khoan_doi=False)
+    ket_qua = chay_bot(
+        node, moi_truong_sach,
+        "--file", ghi_bai(tmp_path), "--slot", "dem-qua", "--origin", live_server.url,
+    )
+    assert ket_qua.returncode == MA_LOI, (ket_qua.returncode, ket_qua.stderr)
+    assert "403" in ket_qua.stderr
+    assert BanTin.objects.count() == 0
+
+
+# --- Vòng sửa 1 ---------------------------------------------------------------
+
+
+#: Thân bài mà bộ lọc gỡ gần hết: `<img>` trỏ ra ngoài site bị gỡ CẢ thẻ (khác `<table>`,
+#: bị gỡ thẻ nhưng giữ chữ bên trong — tỉ lệ giữ lại vẫn gần 100%, không đo được gì).
+BODY_BI_LOC = "<p>Bảng số liệu ở ảnh dưới.</p>" + (
+    '<img src="https://cdn.reuters.com/anh/bang-so-lieu-phien-my-dong-cua-rat-dai.png">' * 6
+)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_v1_duong_moi_canh_bao_khi_than_bi_loc_mat_nhieu(
+    server_moi, live_server, cookie_khong_secure, node, tmp_path, moi_truong_sach
+):
+    """Mục 3: đường mới đọc `body` đã lọc trong 201 và cảnh báo như đường cũ. Vẫn mã 0."""
+    dung_bot(la_tai_khoan_doi=True)
+    ket_qua = chay_bot(
+        node, moi_truong_sach,
+        "--file", ghi_bai(tmp_path, body=BODY_BI_LOC), "--slot", "dem-qua",
+        "--origin", live_server.url,
+    )
+    assert ket_qua.returncode == MA_OK, ket_qua.stderr
+    assert "bị server lọc mất" in ket_qua.stderr
+    assert "<img" not in BanTinKhung.objects.get().body
+
+
+@pytest.mark.django_db(transaction=True)
+def test_v1_duong_moi_than_nguyen_ven_thi_KHONG_canh_bao_loc(
+    server_moi, live_server, cookie_khong_secure, node, tmp_path, moi_truong_sach
+):
+    """Đối chứng của bài trên: thân bình thường không sinh cảnh báo lọc."""
+    dung_bot(la_tai_khoan_doi=True)
+    ket_qua = chay_bot(
+        node, moi_truong_sach,
+        "--file", ghi_bai(tmp_path), "--slot", "dem-qua", "--origin", live_server.url,
+    )
+    assert ket_qua.returncode == MA_OK, ket_qua.stderr
+    assert "bị server lọc mất" not in ket_qua.stderr
+
+
+@pytest.fixture
+def chap_chon(server_moi, settings, monkeypatch):
+    """`/api/v1/ban-tin` chập chờn (503 rồi 404) — xem `tests/urls_ban_tin_chap_chon.py`.
+
+    Xin `server_moi` để fixture autouse `server_cu` đứng ngoài, rồi tự dựng "server cũ" với
+    urlconf chập chờn. Trả dict `DEM` để bài đo đặt số lượt 503 và đọc số lượt đã hỏi.
+    """
+    from tests import urls_ban_tin_chap_chon as u
+
+    settings.ROOT_URLCONF = "tests.urls_ban_tin_chap_chon"
+    monkeypatch.setattr("api.machs.la_sub_ban_tin", lambda sub: False)
+    u.DEM.update(so_503=0, da_hoi=0)
+    return u.DEM
+
+
+@pytest.fixture
+def dem_dang_nhap():
+    """Đếm số lượt đăng nhập THÀNH CÔNG ở server (cùng tiến trình với `live_server`)."""
+    from django.contrib.auth.signals import user_logged_in
+
+    dem = {"n": 0}
+
+    def nghe(**_):
+        dem["n"] += 1
+
+    user_logged_in.connect(nghe, weak=False)
+    yield dem
+    user_logged_in.disconnect(nghe)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_v1_probe_503_roi_404_thi_hoi_lai_va_di_duong_cu(
+    chap_chon, live_server, cookie_khong_secure, node, tmp_path, moi_truong_sach
+):
+    """Mục 4: một lượt 503 rồi 404 ⇒ bot hỏi lại, nhận ra server cũ, đăng mạch như cũ."""
+    chap_chon["so_503"] = 1
+    Sub.objects.create(slug="tin-tuc", ten="Tin tức")
+    dung_bot()
+    ket_qua = chay_bot(
+        node, moi_truong_sach,
+        "--file", ghi_bai(tmp_path), "--slot", "dem-qua", "--origin", live_server.url,
+    )
+    assert ket_qua.returncode == MA_OK, ket_qua.stderr
+    assert chap_chon["da_hoi"] == 2
+    mach = Mach.objects.get()
+    assert ket_qua.stdout.strip() == f"{live_server.url}/m/{mach.slug}-{mach.id}"
+    assert BanTin.objects.count() == 0
+
+
+@pytest.mark.django_db(transaction=True)
+def test_v1_probe_luon_503_thi_ma_1_va_KHONG_dang_nhap(
+    chap_chon, dem_dang_nhap, live_server, cookie_khong_secure, node, tmp_path, moi_truong_sach
+):
+    """Mục 4: hết 3 lượt vẫn 503 ⇒ mã 1, và không một request đăng nhập nào được gửi."""
+    chap_chon["so_503"] = 99
+    Sub.objects.create(slug="tin-tuc", ten="Tin tức")
+    dung_bot()
+    ket_qua = chay_bot(
+        node, moi_truong_sach,
+        "--file", ghi_bai(tmp_path), "--slot", "dem-qua", "--origin", live_server.url,
+    )
+    assert ket_qua.returncode == MA_LOI, (ket_qua.returncode, ket_qua.stderr)
+    assert "503" in ket_qua.stderr
+    assert chap_chon["da_hoi"] == 3
+    assert dem_dang_nhap["n"] == 0
+    assert Mach.objects.count() == 0 and BanTin.objects.count() == 0

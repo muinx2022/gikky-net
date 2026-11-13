@@ -52,6 +52,7 @@ from core.han_muc import (
 )
 from core.lenh import Lenh
 from core.mat import tinh_mat_theo_thoi_gian
+from core.models.ban_tin import la_sub_ban_tin
 from core.models.dien_dan import Mach, Sub
 from core.models.moc import Moc, MocAnh
 from core.models.tuong_tac import Trich
@@ -90,6 +91,7 @@ from api.quyen import (
     QUA_HAN_MUC_BINH_LUAN,
     QUA_HAN_MUC_MACH,
     QUA_HAN_MUC_MOC,
+    SUB_DANH_RIENG_BAN_TIN,
     LoiGhi,
     dang_nhap,
     doi_chu_so_huu,
@@ -610,6 +612,9 @@ def tao_mach_api(request, du_lieu: MachMoiIn):
     nửa đêm giờ VN kế tiếp. Ranh giới là nửa đêm VN, không phải 24 giờ trượt — cùng luật
     với hạn mức mốc, xem `core/han_muc.py`.
 
+    **Sub bản tin (`tin-tuc`) đóng với mọi người**, kể cả tài khoản đội ⇒ 400
+    `sub_danh_rieng_ban_tin`. Bản tin đăng qua `POST /ban-tin`.
+
     **`loai_mach`** (`nhat_ky` | `bai_viet` | `thao_luan`; KHÔNG phải `loai` — đó là chip
     của mốc): không gửi ⇒ `core/ghi.py::tao_mach` phân giải theo tác giả (tài khoản đội
     `la_tai_khoan_doi` → `bai_viet`, còn lại → `nhat_ky`; `thao_luan` không bao giờ là
@@ -629,6 +634,14 @@ def tao_mach_api(request, du_lieu: MachMoiIn):
     sub = Sub.objects.filter(slug=du_lieu.sub).first()
     if sub is None:
         raise LoiGhi(404, SUB_KHONG_TON_TAI, f"Không có chuyên mục {du_lieu.sub!r}.")
+    if la_sub_ban_tin(sub):
+        # Việc 20: bản tin là bảng riêng (`POST /ban-tin`), sub này chỉ còn chở mạch cũ đã
+        # lưu trữ. Áp cho CẢ tài khoản đội — bot cũ đăng đúng vào đây.
+        raise LoiGhi(
+            400,
+            SUB_DANH_RIENG_BAN_TIN,
+            "Chuyên mục này dành riêng cho bản tin — không đăng bài vào đây được.",
+        )
     tran_mach = tran_mach_moi_ngay()
     if dem_mach_trong_ngay_vn(request.user) >= tran_mach:
         # Phép đếm này **không** dưới khoá, và đó là quyết định có ghi lý do —

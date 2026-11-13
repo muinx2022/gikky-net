@@ -109,6 +109,17 @@ BANG_CUA: dict[str, dict[str, Cua]] = {
     "GET /mocs/{int:moc_id}/comments": {
         "": Cua(NHOM_DOC, lambda c, i: c.get(f"/api/v1/mocs/{i.moc}/comments"), 200, 200)
     },
+    # Việc 20: chỉ trả `{ngay}` của bản tin đã chuyển từ mạch đó, không một chữ nào của
+    # mạch. Dòng này đo ĐÚNG một ca: mạch riêng tư không có `BanTin` nào trỏ tới ⇒ 404 với
+    # mọi người (cùng câu trả lời với id không tồn tại). Chuyện "mạch riêng tư không bao
+    # giờ thành bản tin" là luật của `chuyen_ban_tin::la_ban_tin_cua_doi`, đo ở
+    # `test_chuyen_ban_tin.py::test_v1_mach_cua_nguoi_thuong_bi_BO_QUA…` và
+    # `…::test_v1_mach_rieng_tu_cua_TAI_KHOAN_DOI_cung_bi_bo_qua` — KHÔNG phải ở đây.
+    "GET /ban-tin/tu-mach/{int:mach_id}": {
+        "": Cua(
+            NHOM_DOC, lambda c, i: c.get(f"/api/v1/ban-tin/tu-mach/{i.mach}"), 404, 404
+        )
+    },
     "GET /mocs/{int:moc_id}/revisions": {
         "": Cua(NHOM_DOC, lambda c, i: c.get(f"/api/v1/mocs/{i.moc}/revisions"), 200, 200)
     },

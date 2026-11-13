@@ -165,6 +165,29 @@ export const SLOT = Object.freeze({
   "truoc-phien-my": Object.freeze({ som_nhat: "16:00", han_chot: "21:00", chay: "19:33" }),
 });
 
+/** Slot (tên cờ `--slot`) → khoá khung của `POST /api/v1/ban-tin` (việc 20).
+ *
+ * Phải phủ ĐÚNG ba slot của `SLOT`: `api/tests/test_bot_dang_tin.py` đọc cả hai bảng và đỏ
+ * nếu chúng lệch. Khoá phía server là `core/models/ban_tin.py::KhungBanTin`.
+ */
+export const KHUNG_THEO_SLOT = Object.freeze({
+  "dem-qua": "dem_qua",
+  "truoc-phien-vn": "truoc_phien_vn",
+  "truoc-phien-my": "truoc_phien_my",
+});
+
+/** Thân `POST /api/v1/ban-tin` (đường MỚI, việc 20) dựng từ file bài.
+ *
+ * File bài KHÔNG đổi hợp đồng — vẫn mang `sub`, `loai`, `question_for_crowd`,
+ * `occurred_at` cho đường cũ. Đường mới chỉ cần bốn trường; ba trường kia bị bỏ ở đây chứ
+ * không gửi lên cho server nuốt im lặng, cùng lý lẽ với `thanNoiMoc`.
+ */
+export function thanBanTin(bai, slot) {
+  const than = { khung: KHUNG_THEO_SLOT[slot], title: bai.title, body: bai.body };
+  if (Object.hasOwn(bai, "figures")) than.figures = bai.figures;
+  return than;
+}
+
 /** Tra khung giờ của một slot. Ném khi slot không có trong bảng — **không** fallback.
  *
  * Fallback im lặng ở đây chính là lỗ mà `SLOT` sinh ra để bịt: một slot lạ vẫn chạy được
@@ -348,7 +371,7 @@ function kiemTraOccurredAt(occurred_at, ngayHomNay) {
  * trước khi gọi mạng, cảnh báo thì ra stderr **sau khi đã đăng**. Nâng chúng thành lỗi
  * là để một bản tin đầy đủ số liệu bị vứt vì thiếu một câu mời — cái giá cao hơn hẳn.
  */
-export function canhBaoThieuTruong(bai) {
+export function canhBaoThieuTruong(bai, { duongMoi = false } = {}) {
   if (bai === null || typeof bai !== "object" || Array.isArray(bai)) return [];
   const canh = [];
   const vang = (ten) => bai[ten] === undefined || bai[ten] === null;
@@ -358,7 +381,8 @@ export function canhBaoThieuTruong(bai) {
         "con số nằm chôn trong thân bài. 4–6 cặp.",
     );
   }
-  if (vang("question_for_crowd")) {
+  // Đường mới (bảng bản tin, việc 20) không có câu hỏi cho đám đông — vắng là đúng.
+  if (!duongMoi && vang("question_for_crowd")) {
     canh.push(
       "`question_for_crowd` vắng — không có câu mời thì bản tin là thứ để đọc, không " +
         "phải chỗ để đứng.",

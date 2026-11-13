@@ -146,6 +146,204 @@
         "title": "AnhOut",
         "type": "object"
       },
+      "BanTinChiTietOut": {
+        "properties": {
+          "cap_nhat_luc": {
+            "format": "date-time",
+            "title": "Cap Nhat Luc",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "khung": {
+            "items": {
+              "$ref": "#/components/schemas/KhungBanTinOut"
+            },
+            "title": "Khung",
+            "type": "array"
+          },
+          "ngay": {
+            "format": "date",
+            "title": "Ngay",
+            "type": "string"
+          },
+          "ngay_sau": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ngay Sau"
+          },
+          "ngay_truoc": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ngay Truoc"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "view_count": {
+            "title": "View Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ngay",
+          "title",
+          "created_at",
+          "cap_nhat_luc",
+          "view_count",
+          "khung",
+          "ngay_truoc",
+          "ngay_sau"
+        ],
+        "title": "BanTinChiTietOut",
+        "type": "object"
+      },
+      "BanTinDaDangOut": {
+        "properties": {
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "khung": {
+            "enum": [
+              "dem_qua",
+              "truoc_phien_vn",
+              "truoc_phien_my"
+            ],
+            "title": "Khung",
+            "type": "string"
+          },
+          "ngay": {
+            "format": "date",
+            "title": "Ngay",
+            "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ngay",
+          "khung",
+          "url",
+          "body"
+        ],
+        "title": "BanTinDaDangOut",
+        "type": "object"
+      },
+      "BanTinMoiIn": {
+        "description": "Thân `POST /ban-tin`. Trường thừa (vd `question_for_crowd` của bot cũ) bị bỏ qua.",
+        "properties": {
+          "body": {
+            "maxLength": 50000,
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          },
+          "figures": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FigureIn"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Figures"
+          },
+          "khung": {
+            "enum": [
+              "dem_qua",
+              "truoc_phien_vn",
+              "truoc_phien_my"
+            ],
+            "title": "Khung",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "khung",
+          "title",
+          "body"
+        ],
+        "title": "BanTinMoiIn",
+        "type": "object"
+      },
+      "BanTinTomTatOut": {
+        "description": "Một hàng của trang danh sách `/s/tin-tuc`.",
+        "properties": {
+          "cap_nhat_luc": {
+            "format": "date-time",
+            "title": "Cap Nhat Luc",
+            "type": "string"
+          },
+          "khung_da_co": {
+            "items": {
+              "enum": [
+                "dem_qua",
+                "truoc_phien_vn",
+                "truoc_phien_my"
+              ],
+              "type": "string"
+            },
+            "title": "Khung Da Co",
+            "type": "array"
+          },
+          "ngay": {
+            "format": "date",
+            "title": "Ngay",
+            "type": "string"
+          },
+          "so_lieu": {
+            "items": {
+              "$ref": "#/components/schemas/FigureOut"
+            },
+            "title": "So Lieu",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ngay",
+          "title",
+          "cap_nhat_luc",
+          "khung_da_co",
+          "so_lieu"
+        ],
+        "title": "BanTinTomTatOut",
+        "type": "object"
+      },
       "BaoCaoDaGuiOut": {
         "description": "Biên nhận của `POST /reports` — PLAN 5.10 (L03, lượt vá V1).\n\n**Cố ý không trả trạng thái xử lý.** Người tố không được biết mod đã làm gì với báo\ncáo của mình, và endpoint này không được biến thành một cửa dò xem hàng đợi có gì:\n`resolved_at`/`resolved_by`/`action` chỉ sống ở `/api/admin`.\n\nTrả `id` vì UI cần một khoá để không hiện hai lần biên nhận cho cùng một lượt bấm;\ntrả `created_at` vì đó là dấu thời gian **của server**, thứ duy nhất trả lời được\n\"mình đã tố lúc nào\".",
         "properties": {
@@ -1117,6 +1315,55 @@
           "cursor_ke_tiep"
         ],
         "title": "KhanDaiOut",
+        "type": "object"
+      },
+      "KhungBanTinOut": {
+        "properties": {
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "figures": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FigureOut"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Figures"
+          },
+          "khung": {
+            "enum": [
+              "dem_qua",
+              "truoc_phien_vn",
+              "truoc_phien_my"
+            ],
+            "title": "Khung",
+            "type": "string"
+          },
+          "ten": {
+            "title": "Ten",
+            "type": "string"
+          }
+        },
+        "required": [
+          "khung",
+          "ten",
+          "created_at",
+          "body",
+          "figures"
+        ],
+        "title": "KhungBanTinOut",
         "type": "object"
       },
       "LenhIn": {
@@ -2399,6 +2646,20 @@
         "title": "NganKeoOut",
         "type": "object"
       },
+      "NgayBanTinOut": {
+        "properties": {
+          "ngay": {
+            "format": "date",
+            "title": "Ngay",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ngay"
+        ],
+        "title": "NgayBanTinOut",
+        "type": "object"
+      },
       "NguoiDungTomTatOut": {
         "description": "Tác giả, ở mức đủ để render một dòng chữ ký.",
         "properties": {
@@ -2990,6 +3251,35 @@
         "title": "ToiSuaIn",
         "type": "object"
       },
+      "TrangBanTinOut": {
+        "description": "Một trang danh sách. `cursor_ke_tiep = null` nghĩa là hết.",
+        "properties": {
+          "cursor_ke_tiep": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cursor Ke Tiep"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BanTinTomTatOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items",
+          "cursor_ke_tiep"
+        ],
+        "title": "TrangBanTinOut",
+        "type": "object"
+      },
       "TrichIn": {
         "description": "`POST /mocs/{id}/trich` — chủ mạch ghi một câu khán đài vào sổ (PLAN 5.6).\n\nChỉ có `comment_id`: **mốc nhận trích nằm ở URL**, không nằm trong thân. Hai thứ đó\nkhông được cùng ở một chỗ vì rào 1 (\"tối đa 1 trích đang hiệu lực mỗi mốc\") là một\nràng buộc trên `moc`, và người gọi phải nói rõ mốc nào trước khi server đi kiểm.\n\nKhông có trường `body`: sổ trích **dẫn lại** một bình luận đã tồn tại, không phải chỗ\nchủ mạch tự viết một câu rồi gán tên người khác vào.",
         "properties": {
@@ -3336,6 +3626,228 @@
         "summary": "Xoa Anh Moc Api",
         "tags": [
           "anh"
+        ]
+      }
+    },
+    "/api/v1/ban-tin": {
+      "get": {
+        "description": "Danh sách bản tin, mới → cũ theo ngày. Bản đã ẩn không có mặt.\n\n`limit` 1..50 (mặc định 20); cursor sai ⇒ 400 `cursor_khong_hop_le`.",
+        "operationId": "liet_ke_ban_tin",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrangBanTinOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        },
+        "summary": "Liet Ke Ban Tin",
+        "tags": [
+          "ban-tin"
+        ]
+      },
+      "post": {
+        "description": "Đăng một khung bản tin. **Chỉ tài khoản đội** (`la_tai_khoan_doi`); khác ⇒ 403 `khong_phai_tai_khoan_doi`.\n\nServer tự lấy ngày VN. Chưa có bản tin ngày đó ⇒ tạo (dùng `title`); có rồi ⇒ thêm khung\n(bỏ qua `title`). Khung đã đăng ⇒ 409 `khung_da_dang`. Thân HTML qua cùng bộ lọc với mốc;\nlọc xong rỗng hoặc `figures` sai dạng ⇒ 400 `du_lieu_khong_hop_le`.",
+        "operationId": "dang_ban_tin",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BanTinMoiIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BanTinDaDangOut"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "DangNhap": []
+          }
+        ],
+        "summary": "Dang Ban Tin",
+        "tags": [
+          "ban-tin"
+        ]
+      }
+    },
+    "/api/v1/ban-tin/tu-mach/{mach_id}": {
+      "get": {
+        "description": "Ngày của bản tin đã chuyển từ mạch cũ `mach_id`, để web trả 301 `/m/…` → `/s/tin-tuc/<ngày>`.\n\nMạch không phải bản tin đã chuyển, hoặc bản tin đã ẩn ⇒ 404 `khong_tim_thay`.",
+        "operationId": "tim_ban_tin_tu_mach_cu",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mach_id",
+            "required": true,
+            "schema": {
+              "title": "Mach Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NgayBanTinOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "Tim Ban Tin Tu Mach Cu",
+        "tags": [
+          "ban-tin"
+        ]
+      }
+    },
+    "/api/v1/ban-tin/{ngay}": {
+      "get": {
+        "description": "Một bản tin theo ngày VN (`YYYY-MM-DD`), khung theo thứ tự đêm qua → trước phiên VN → trước phiên Mỹ.\n\nSai dạng, không có, hoặc đã ẩn ⇒ 404 `khong_tim_thay`.",
+        "operationId": "xem_ban_tin",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ngay",
+            "required": true,
+            "schema": {
+              "title": "Ngay",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BanTinChiTietOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "Xem Ban Tin",
+        "tags": [
+          "ban-tin"
         ]
       }
     },
@@ -4074,7 +4586,7 @@
     },
     "/api/v1/machs": {
       "post": {
-        "description": "Đăng bài = tạo `Mach` + `Moc(seq=1)` trong MỘT giao dịch (PLAN 5.1).\n\n**Quyền: bất kỳ ai đã đăng nhập và không bị khoá.** Không có \"chủ\" để đối chiếu —\nngười gọi *trở thành* chủ. Tài khoản bị ban bị chặn ở lớp auth (`api/quyen.py`).\n\nKhông có nút \"tạo mạch\" riêng (PLAN nguyên tắc 1): mọi post sinh ra là post thường,\nUI mạch tự bật từ mốc 2. Vì thế endpoint này và `POST /machs/{id}/mocs` nhận **cùng\nmột bộ trường nội dung** — `MachMoiIn` kế thừa thẳng `MocMoiIn`.\n\nTác giả nhận **+1 phiếu của chính mình** ngay lúc đăng (PLAN 5.7) — để `0` trên cột\nvote có nghĩa là \"đã có người vote xuống\", không phải \"chưa ai đụng tới\".\n\n**Hạn mức: 10 mạch / người / ngày lịch VN** (PLAN mục 10 Phase 6, số đổi được ở\n`settings.HAN_MUC_MACH_MOI_USER_NGAY`) ⇒ 429 `qua_han_muc_mach` kèm `thu_lai_tu` =\nnửa đêm giờ VN kế tiếp. Ranh giới là nửa đêm VN, không phải 24 giờ trượt — cùng luật\nvới hạn mức mốc, xem `core/han_muc.py`.\n\n**`loai_mach`** (`nhat_ky` | `bai_viet` | `thao_luan`; KHÔNG phải `loai` — đó là chip\ncủa mốc): không gửi ⇒ `core/ghi.py::tao_mach` phân giải theo tác giả (tài khoản đội\n`la_tai_khoan_doi` → `bai_viet`, còn lại → `nhat_ky`; `thao_luan` không bao giờ là\nmặc định). Cổng ở `api/quyen.py::duoc_chon_loai_mach`: `bai_viet` chỉ tài khoản có cờ;\n`thao_luan` tài khoản có cờ hoặc `is_staff`; người không đủ quyền ⇒ 403\n`loai_mach_khong_duoc_phep` — không bỏ qua im lặng, và không có `Mach` nào được tạo.\nGiá trị ngoài ba loại ⇒ 400 `tham_so_khong_hop_le` (schema chặn).",
+        "description": "Đăng bài = tạo `Mach` + `Moc(seq=1)` trong MỘT giao dịch (PLAN 5.1).\n\n**Quyền: bất kỳ ai đã đăng nhập và không bị khoá.** Không có \"chủ\" để đối chiếu —\nngười gọi *trở thành* chủ. Tài khoản bị ban bị chặn ở lớp auth (`api/quyen.py`).\n\nKhông có nút \"tạo mạch\" riêng (PLAN nguyên tắc 1): mọi post sinh ra là post thường,\nUI mạch tự bật từ mốc 2. Vì thế endpoint này và `POST /machs/{id}/mocs` nhận **cùng\nmột bộ trường nội dung** — `MachMoiIn` kế thừa thẳng `MocMoiIn`.\n\nTác giả nhận **+1 phiếu của chính mình** ngay lúc đăng (PLAN 5.7) — để `0` trên cột\nvote có nghĩa là \"đã có người vote xuống\", không phải \"chưa ai đụng tới\".\n\n**Hạn mức: 10 mạch / người / ngày lịch VN** (PLAN mục 10 Phase 6, số đổi được ở\n`settings.HAN_MUC_MACH_MOI_USER_NGAY`) ⇒ 429 `qua_han_muc_mach` kèm `thu_lai_tu` =\nnửa đêm giờ VN kế tiếp. Ranh giới là nửa đêm VN, không phải 24 giờ trượt — cùng luật\nvới hạn mức mốc, xem `core/han_muc.py`.\n\n**Sub bản tin (`tin-tuc`) đóng với mọi người**, kể cả tài khoản đội ⇒ 400\n`sub_danh_rieng_ban_tin`. Bản tin đăng qua `POST /ban-tin`.\n\n**`loai_mach`** (`nhat_ky` | `bai_viet` | `thao_luan`; KHÔNG phải `loai` — đó là chip\ncủa mốc): không gửi ⇒ `core/ghi.py::tao_mach` phân giải theo tác giả (tài khoản đội\n`la_tai_khoan_doi` → `bai_viet`, còn lại → `nhat_ky`; `thao_luan` không bao giờ là\nmặc định). Cổng ở `api/quyen.py::duoc_chon_loai_mach`: `bai_viet` chỉ tài khoản có cờ;\n`thao_luan` tài khoản có cờ hoặc `is_staff`; người không đủ quyền ⇒ 403\n`loai_mach_khong_duoc_phep` — không bỏ qua im lặng, và không có `Mach` nào được tạo.\nGiá trị ngoài ba loại ⇒ 400 `tham_so_khong_hop_le` (schema chặn).",
         "operationId": "tao_mach",
         "parameters": [],
         "requestBody": {
