@@ -1,4 +1,4 @@
-import type { BinhLuanOut, FeedOut } from "@gikky/api-client";
+import type { FeedOut } from "@gikky/api-client";
 import { Bot } from "lucide-react";
 import Link from "next/link";
 
@@ -55,7 +55,9 @@ const TAB_NHAT_KY: readonly {
  * `2026-11-10-homepage-v2.md`)*. Section "Bài viết" (`KhoiBaiViet`) là phần THỨ BA của trang
  * và **ra ngoài khung hai cột**, trải hết chiều ngang dưới cả rail — nên `app/page.tsx` dựng
  * `<VoKhungHaiCot>` quanh component này rồi đặt `KhoiBaiViet` ngay sau nó, cả hai trong một
- * `data-testid="trang-chu-v2"`. Cả hai nằm trong HTML đầu tiên (server component) để bot thấy đủ.
+ * `data-testid="trang-chu-v2"`. Dải "Bản tin thị trường" (`DaiBanTin`) đứng TRƯỚC khung, là con
+ * đầu của cùng div ấy — ngay dưới header, trên `<h1>` (việc 19). Tất cả nằm trong HTML đầu tiên
+ * (server component) để bot thấy đủ.
  *
  * `<h1>` và lede nhận từ ngoài để chữ của chúng sống ở MỘT chỗ (`app/page.tsx`) cho cả trang v2
  * lẫn feed cũ ở `/?tab=…` — và GIỮ TỪNG BYTE (SEO, `seo-trang-chu.spec.ts`); chỉ cỡ chữ nhỏ đi,
@@ -67,18 +69,12 @@ export function TrangChuV2({
   tieuDe,
   lede,
   chuDe,
-  quanDiemGoc,
-  quanDiemMoi,
   nhatKy,
   bayGio,
 }: {
   tieuDe: string;
   lede: string;
   chuDe: FeedOut;
-  /** Bình luận gốc của chủ đề được chọn (`docBinhLuanGoc`); rỗng nếu chưa có / không có chủ đề. */
-  quanDiemGoc: readonly BinhLuanOut[];
-  /** Bình luận gốc MỚI NHẤT của cùng chủ đề (`docBinhLuanGocMoiNhat`) — nguồn của "Quan điểm mới". */
-  quanDiemMoi: readonly BinhLuanOut[];
   /** Mỗi tác giả một bài, tối đa `SO_NHAT_KY_TAI` (API lọc sẵn); `cursor_ke_tiep` luôn `null`. */
   nhatKy: FeedOut;
   bayGio: Date;
@@ -93,12 +89,7 @@ export function TrangChuV2({
       <p className={css.gioi_thieu_lede}>{lede}</p>
 
       {/* Chủ đề đứng ĐẦU và là tiêu điểm; ẩn hẳn khi chưa có chủ đề nào. */}
-      <KhoiThaoLuan
-        chu_de={chuDe.items}
-        binh_luan_goc={quanDiemGoc}
-        binh_luan_moi={quanDiemMoi}
-        bay_gio={bayGio}
-      />
+      <KhoiThaoLuan chu_de={chuDe.items} bay_gio={bayGio} />
 
       <section
         className={css.khoi}

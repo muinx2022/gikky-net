@@ -43,7 +43,6 @@ import { docToken } from "./token";
 const WEB = resolve(__dirname, "..", "..");
 const doc = (duong_dan: string) => readFileSync(resolve(WEB, duong_dan), "utf8");
 const boChuThichCss = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "");
-const boChuThich = (s: string) => boChuThichCss(s).replace(/^\s*\/\/.*$/gm, "");
 
 /** Mọi `*.module.css` dưới `components/` và `app/` (đệ quy), đường dẫn tương đối `WEB`. */
 function moiModuleCss(): string[] {
@@ -568,12 +567,4 @@ test("(a)3 — nút bo tròn hẳn (999px) ở năm selector của việc 18", (
     expect(bo.length, `${f} ${chon}: không thấy khai border-radius`).toBeGreaterThan(0);
     for (const v of bo) expect(v, `${f} ${chon}`).toBe("999px");
   }
-});
-
-test("(a)4 — mỗi quan điểm có `<time dateTime={b.created_at}>` in ngày ngắn", () => {
-  const tsx = boChuThich(doc("components/khoi-thao-luan.tsx"));
-  const li = /data-testid="quan-diem"[\s\S]*?<\/li>/.exec(tsx)?.[0];
-  expect(li, "không tìm thấy mục `quan-diem` — phép tách đã trôi").toBeDefined();
-  expect(li).toMatch(/<time\b[^>]*\bdateTime=\{b\.created_at\}/);
-  expect(li).toMatch(/ngayNganCuaThoiDiem\(b\.created_at\)/);
 });

@@ -34,8 +34,8 @@
   padding: 24px;
 }
 
-/* Xếp chồng (việc 18): phần chủ đề trên, ô quan điểm dưới — chủ đề luôn rộng hết khối, có bình
- * luận hay không. Tên `.trai`/`.phai` là tên cũ của thời lưới hai cột, giữ để khỏi trôi mốc. */
+/* Phần chủ đề rộng hết khối. Ô quan điểm từng xếp dưới nó (việc 18) đã bỏ ở việc 19 (§3.4); tên
+ * `.trai` là tên cũ của thời lưới hai cột, giữ để khỏi trôi mốc. */
 .the {
   display: flex;
   flex-direction: column;
@@ -112,7 +112,7 @@
   color: var(--ink-2);
   overflow-wrap: anywhere;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 6;
 }
 
 .ket_qua {
@@ -174,8 +174,7 @@
 
 .nut_chinh:focus-visible,
 .nut_phu:focus-visible,
-.so_binh_luan:focus-visible,
-.xem_tat_ca:focus-visible {
+.so_binh_luan:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
@@ -192,123 +191,6 @@
 
 .so_binh_luan:hover {
   color: var(--accent);
-}
-
-/* --- ô quan điểm (dưới phần chủ đề) ------------------------------------------------- */
-.phai {
-  min-width: 0;
-  padding: 14px 16px;
-  border-radius: 10px;
-  background: var(--inset);
-}
-
-.tieu_phai {
-  margin: 0 0 8px;
-  font-family: var(--f-ui);
-  font-size: 11.5px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-}
-
-.ds_quan_diem {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-/* Desktop: MỘT hàng — avatar · tên · ngày · điểm · trích một dòng chiếm phần còn lại. */
-.quan_diem {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 0;
-  border-top: 1px solid var(--line);
-}
-
-.quan_diem:first-child {
-  padding-top: 0;
-  border-top: 0;
-}
-
-.quan_diem_than {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  min-width: 0;
-  flex: 1;
-}
-
-.quan_diem_dong {
-  display: flex;
-  flex: none;
-  align-items: baseline;
-  gap: 8px;
-  /* Tên dài không được nuốt hết chỗ của câu trích. */
-  max-width: 45%;
-  min-width: 0;
-  font-family: var(--f-ui);
-  font-size: 13px;
-}
-
-.quan_diem_avatar {
-  display: inline-flex;
-  flex: none;
-}
-
-.quan_diem_ngay {
-  flex: none;
-  color: var(--ink-3);
-  font-family: var(--f-ui);
-  font-size: 12px;
-}
-
-.quan_diem_ten {
-  min-width: 0;
-  overflow: hidden;
-  color: var(--ink);
-  font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-a.quan_diem_ten:hover {
-  text-decoration: underline;
-}
-
-.quan_diem_diem {
-  flex: none;
-  color: var(--ink-3);
-  font-family: var(--f-mono);
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-}
-
-.quan_diem_trich {
-  flex: 1;
-  min-width: 0;
-  margin: 0;
-  overflow: hidden;
-  font-size: 13px;
-  line-height: 1.55;
-  color: var(--ink-2);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.xem_tat_ca {
-  display: inline-block;
-  padding-top: 6px;
-  font-family: var(--f-ui);
-  font-size: 12.5px;
-  color: var(--accent);
-}
-
-.xem_tat_ca:hover {
-  text-decoration: underline;
 }
 
 @media (max-width: 640px) {
@@ -339,44 +221,9 @@ a.quan_diem_ten:hover {
     min-height: 44px;
   }
 
-  /* Đợt M (M6): tên người viết quan điểm + `s/sub` của thẻ chủ đề là link chữ — vùng bấm ≥ 24px,
-   * hàng không cao thêm. */
-  .sub,
-  .quan_diem_ten {
+  /* Đợt M (M6): `s/sub` của thẻ chủ đề là link chữ — vùng bấm ≥ 24px, hàng không cao thêm. */
+  .sub {
     padding-block: 3px;
     margin-block: -3px;
-  }
-
-  /* Mobile: tên · ngày · điểm một hàng, trích xuống hàng dưới, cắt ở 2 dòng (việc 18). */
-  .quan_diem {
-    align-items: flex-start;
-  }
-
-  .quan_diem_than {
-    display: block;
-  }
-
-  .quan_diem_dong {
-    max-width: none;
-  }
-
-  .quan_diem_trich {
-    margin-top: 3px;
-    display: -webkit-box;
-    white-space: normal;
-    overflow-wrap: anywhere;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-  }
-
-  /* Mobile chỉ HIỆN một quan điểm (plan §3.1); cả ba vẫn nằm trong HTML. */
-  .quan_diem:nth-child(n + 2) {
-    display: none;
-  }
-
-  .xem_tat_ca {
-    display: flex;
-    align-items: center;
-    min-height: 44px;
   }
 }

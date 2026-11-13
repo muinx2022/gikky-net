@@ -14,8 +14,6 @@
 
 import type { MachTomTatOut } from "@gikky/api-client";
 
-import { trichVanBanThuan } from "./van-ban";
-
 const MS_NGAY = 86_400_000;
 const LECH_VN_MS = 7 * 3_600_000;
 
@@ -166,91 +164,4 @@ export function chuChipChuDe(dang_mo: boolean, tuan: KhoangTuan): string {
   return tuan.soNgayConLai > 0
     ? `Đang mở · còn ${tuan.soNgayConLai} ngày`
     : "Đang mở · đóng hôm nay";
-}
-
-type CoDiemBinhLuan = { id: number; depth: number; trang_thai: string; score: number };
-
-/** "Quan điểm nổi bật" — bình luận GỐC (`depth === 1`) còn đọc được (`binh_thuong`) và có điểm
- * KHÔNG ÂM (`score >= 0`: một bình luận đang bị dìm không được đặt lên làm "nổi bật" chỉ vì
- * chủ đề có ít bình luận), điểm cao nhất trước, tối đa `toiDa`. Điểm bằng nhau giữ thứ tự API (`sort=hay_nhat`): sắp ổn định.
- * Không đột biến `ds`. Rỗng ⇒ khối ẩn phần phải. */
-export function chonQuanDiemNoiBat<T extends CoDiemBinhLuan>(
-  ds: readonly T[],
-  toiDa: number,
-): T[] {
-  return ds
-    .filter((b) => b.depth === 1 && b.trang_thai === "binh_thuong" && b.score >= 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, toiDa);
-}
-
-export type QuanDiemChon<T> = {
-  /** `noi_bat`: có ít nhất một bình luận điểm > 0, sắp theo điểm. `moi`: toàn điểm 0 (chưa ai
-   * bỏ phiếu), sắp mới nhất trước và KHÔNG in điểm. */
-  kieu: "noi_bat" | "moi";
-  muc: T[];
-};
-
-/** Mới viết trước: `created_at` giảm dần, hoà (hoặc mốc không đọc được) thì `id` giảm dần. Mốc
- * hỏng xếp CUỐI — cùng luật `sapMoiXuatBanTruoc`, vì hàm này cũng chạy trên trang chủ. */
-function sapBinhLuanMoiTruoc<T extends { id: number; created_at: string }>(ds: readonly T[]): T[] {
-  const ms = (b: T) => {
-    const t = Date.parse(b.created_at);
-    return Number.isNaN(t) ? Number.NEGATIVE_INFINITY : t;
-  };
-  return [...ds].sort((a, b) => {
-    const lech = ms(b) - ms(a);
-    return lech !== 0 && !Number.isNaN(lech) ? lech : b.id - a.id;
-  });
-}
-
-/** Chọn quan điểm cho khối chủ đề trên `/` *(plan `2026-11-11-thong-nhat-giao-dien-toan-site.md`
- * §4.5)*. Cùng tập ứng viên với `chonQuanDiemNoiBat` (gốc · đọc được · điểm ≥ 0), từ HAI nguồn:
- *
- * - `nguonHayNhat` (`sort=hay_nhat`): có ít nhất một bình luận điểm > 0 trong đó ⇒ `noi_bat`,
- *   điểm cao nhất trước, tối đa `toiDa`;
- * - không có (cả ba cùng `▲ 0`: chưa ai bỏ phiếu) ⇒ `moi`, lấy từ `nguonMoiNhat`
- *   (`sort=moi_nhat`), mới viết nhất trước. KHÔNG lấy từ nguồn `hay_nhat`: khi chưa ai bỏ phiếu
- *   nó trả 50 bình luận CŨ NHẤT (hoà điểm ⇒ `created_at` tăng dần), nên chủ đề hơn 50 bình luận
- *   gốc sẽ gắn nhãn "mới" lên bình luận cũ. Một khối tự xưng "nổi bật" mà xếp theo thứ tự API
- *   của những bình luận hoà điểm 0 cũng là lời nói quá, và con số `▲ 0` là phô sự im lặng.
- *
- * Không đột biến `ds`. Rỗng ⇒ `{ kieu: "moi", muc: [] }` (khối ẩn phần phải). */
-export function chonQuanDiem<T extends CoDiemBinhLuan & { created_at: string }>(
-  nguonHayNhat: readonly T[],
-  nguonMoiNhat: readonly T[],
-  toiDa: number,
-): QuanDiemChon<T> {
-  const doc_duoc = (b: T) => b.depth === 1 && b.trang_thai === "binh_thuong" && b.score >= 0;
-  const hay_nhat = nguonHayNhat.filter(doc_duoc);
-  if (hay_nhat.some((b) => b.score > 0)) {
-    return { kieu: "noi_bat", muc: chonQuanDiemNoiBat(hay_nhat, toiDa) };
-  }
-  return { kieu: "moi", muc: sapBinhLuanMoiTruoc(nguonMoiNhat.filter(doc_duoc)).slice(0, toiDa) };
-}
-
-/** Số ký tự tối đa của đoạn trích một quan điểm. CSS kẹp 3 dòng; cắt ở đây để HTML không mang
- * nguyên bình luận dài nghìn chữ chỉ để rồi bị `line-clamp` giấu đi. */
-const DAI_TRICH_QUAN_DIEM = 240;
-
-/** Đoạn trích THUẦN CHỮ của một bình luận (HTML hoặc markdown) cho thẻ "Quan điểm nổi bật".
- *
- * HTML ⇒ `trichVanBanThuan`. Markdown ⇒ bỏ ký hiệu đầu dòng (`#`, `>`, `-`, `*`, `1.`), cặp
- * nhấn mạnh và link `[chữ](url)` → `chữ`, rồi gom khoảng trắng. Không cố hiểu markdown cho
- * đúng — đây là đoạn xem trước 3 dòng, không phải renderer (`lib/markdown.ts` mới là
- * renderer). Cắt ở `DAI_TRICH_QUAN_DIEM` ký tự và thêm "…" khi bị cắt. */
-export function trichQuanDiem(body: string, dinh_dang: string): string {
-  let chu =
-    dinh_dang === "html"
-      ? trichVanBanThuan(body)
-      : body
-          .replace(/^\s{0,3}(?:#{1,6}|>|[-*+]|\d+\.)\s+/gm, "")
-          .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
-          .replace(/(\*\*|__|\*|_|~~|`)/g, "")
-          .replace(/\s+/g, " ")
-          .trim();
-  if (chu.length > DAI_TRICH_QUAN_DIEM) {
-    chu = `${chu.slice(0, DAI_TRICH_QUAN_DIEM).trimEnd()}…`;
-  }
-  return chu;
 }

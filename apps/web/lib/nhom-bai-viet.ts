@@ -21,6 +21,11 @@ export const SO_MOI_DANG = 3;
 export const SO_BAI_MOI_GIA = 3;
 /** Số bản tin trong dải (plan: 2–3). */
 export const SO_BAN_TIN = 3;
+/** Số bản tin VẼ trong dải đầu trang (`DaiBanTin`) *(việc 19, vòng 2 — plan
+ * `2026-11-13-ban-tin-len-dau-ban-quyen.md` §3.6)*. Ít hơn `SO_BAN_TIN`: với tiêu đề thật, bản
+ * thứ ba không bao giờ đủ chỗ trong một dòng 1096px, và một link luôn ẩn với người mà vẫn có trong
+ * HTML là thứ không nên có. Giá sách vẫn loại đủ `SO_BAN_TIN` bài. */
+export const SO_BAN_TIN_DAI = 2;
 /** Số bài xin cho MỖI giá: đủ để sau khi bỏ bài đã ở dải Mới đăng (tối đa `SO_MOI_DANG`) vẫn
  * còn `SO_BAI_MOI_GIA`. Lời gọi riêng theo sub nên sub đăng chậm vẫn có bài, không phụ thuộc
  * cửa sổ `SO_BAI_VIET_TAI` của feed chung. */
@@ -53,6 +58,22 @@ export function chonBanTin(
   toiDa: number = SO_BAN_TIN,
 ): MachTomTatOut[] {
   return items.filter((m) => m.sub.slug === SUB_BAN_TIN).slice(0, toiDa);
+}
+
+/** Tiền tố "Bản tin DD/MM — " (có thể kèm năm; gạch `—`, `–` hoặc `-`) mà mọi tiêu đề bản tin
+ * thật đều mang. */
+const TIEN_TO_BAN_TIN = /^Bản tin \d{1,2}\/\d{1,2}(\/\d{2,4})?\s*[—–-]\s*/i;
+
+/** Tiêu đề bản tin bỏ tiền tố ngày cho dải đầu trang: dải đã in `<time>` ngay trước tiêu đề, nên
+ * "13/11 · Bản tin 13/11 — S&P 500 …" in ngày HAI lần và mất ~95px của một dòng vốn đã chật.
+ * Không khớp tiền tố, hoặc sau tiền tố không còn chữ nào ⇒ trả NGUYÊN tiêu đề. */
+export function tieuDeBanTinGon(title: string): string {
+  // Cắt bằng độ dài của phần khớp, không `replace(…, "")`: hàng rào "không slug cứng" của
+  // `e2e/don-vi/bai-viet-trang-chu.spec.ts` coi mọi chuỗi trong file này là ứng viên slug.
+  const tien_to = TIEN_TO_BAN_TIN.exec(title);
+  if (tien_to === null) return title;
+  const gon = title.slice(tien_to[0].length);
+  return gon.trim().length === 0 ? title : gon;
 }
 
 /** Tập id các bài ĐÃ hiện ở các dải khác (Mới đăng, Bản tin…), để giá sách bỏ trùng. Gộp cả bản

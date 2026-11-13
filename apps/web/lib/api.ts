@@ -686,48 +686,6 @@ export async function docChuDeTuan(bayGio: Date): Promise<ChuDeTuan | null> {
   }
 }
 
-/** Số bình luận gốc tải về để chọn "Quan điểm nổi bật" — trần `limit` của endpoint khán đài. */
-export const SO_BINH_LUAN_CHON_QUAN_DIEM = 50;
-
-/** Bình luận GỐC của một mạch để chọn "Quan điểm nổi bật" ở khối chủ đề tuần (plan
- * `2026-11-11-homepage-v2-giao-dien-moi.md` §6.4): ĐÚNG endpoint khán đài đang có
- * (`lietKeBinhLuanMach`, `sort=hay_nhat`), không thêm API. Việc chọn (gốc · đọc được · điểm
- * cao nhất, hoặc mới nhất khi chưa ai bỏ phiếu) là của `lib/chu-de.ts::chonQuanDiem`, nhận
- * nguồn này cùng nguồn `docBinhLuanGocMoiNhat`.
- *
- * Trả `[]` khi mạch không có bình luận hoặc 404 (chủ đề vừa bị gỡ giữa hai lời gọi) — khối
- * chỉ ẩn phần "Quan điểm nổi bật", không làm cả trang chủ hỏng. Lỗi CẤU TRÚC khác (API chết)
- * vẫn ném qua `lay()`.
- */
-export async function docBinhLuanGoc(machId: number): Promise<KhanDaiOut["threads"]> {
-  const kq = await lietKeBinhLuanMach({
-    ...CHUNG,
-    path: { mach_id: machId },
-    query: { sort: "hay_nhat", limit: SO_BINH_LUAN_CHON_QUAN_DIEM },
-  });
-  return lay(kq, `liet_ke_binh_luan_mach(${machId}) — quan điểm nổi bật`)?.threads ?? [];
-}
-
-/** Số bình luận gốc MỚI NHẤT tải về cho chế độ "Quan điểm mới" — dư cho `SO_QUAN_DIEM_NOI_BAT`
- * (3) sau khi `chonQuanDiem` lọc bia mộ / bị ẩn / điểm âm. */
-export const SO_BINH_LUAN_MOI_NHAT = 20;
-
-/** Bình luận GỐC mới viết nhất của một mạch (`sort=moi_nhat`) — nguồn của "Quan điểm mới".
- *
- * Tách khỏi `docBinhLuanGoc` vì `sort=hay_nhat` khi chưa ai bỏ phiếu trả 50 bình luận CŨ NHẤT
- * (hoà điểm ⇒ `created_at` tăng dần, `api/core/doc_noi_dung.py`): chọn "mới nhất" trong 50 cái
- * ấy, ở chủ đề hơn 50 bình luận gốc, là gắn nhãn "mới" lên bình luận cũ. Cùng cách lỗi/404 với
- * `docBinhLuanGoc`: `[]`.
- */
-export async function docBinhLuanGocMoiNhat(machId: number): Promise<KhanDaiOut["threads"]> {
-  const kq = await lietKeBinhLuanMach({
-    ...CHUNG,
-    path: { mach_id: machId },
-    query: { sort: "moi_nhat", limit: SO_BINH_LUAN_MOI_NHAT },
-  });
-  return lay(kq, `liet_ke_binh_luan_mach(${machId}) — quan điểm mới`)?.threads ?? [];
-}
-
 /** Feed cho **CUỘN VÔ HẠN** — chạy trong TRÌNH DUYỆT (2026-09-03).
  *
  * Bản song song của `docFeed`/`docFeedSub`, khác đúng một chỗ và chỗ ấy là lý do nó tồn

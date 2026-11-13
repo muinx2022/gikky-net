@@ -4,6 +4,8 @@ import { resolve } from "node:path";
 import type { FeedOut, MachTomTatOut } from "@gikky/api-client";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
+import { tieuDeBanTinGon } from "../lib/nhom-bai-viet";
+
 import { dungTaiKhoan } from "./danh-tinh";
 import {
   NK_BOT,
@@ -201,8 +203,8 @@ test.describe.serial("W2/G2 — chủ đề tuần: chip 'còn N ngày' theo gi�
       n > 0 ? `Đang mở · còn ${n} ngày` : "Đang mở · đóng hôm nay",
     );
     await expect(khoi.getByTestId("chu-de-boi-canh")).toContainText("Bối cảnh ngắn");
-    // Chưa có bình luận ⇒ không có ô quan điểm (không khung rỗng). Phần đếm cột lưới của
-    // `chu-de-the` đã gỡ ở việc 18: khối nay LUÔN xếp chồng một cột, nên phép đếm ấy xanh bất kể
+    // Không có ô quan điểm (việc 19 bỏ hẳn ô này; trước đó: chưa có bình luận thì ẩn). Phần đếm
+    // cột lưới của `chu-de-the` đã gỡ ở việc 18: khối nay LUÔN xếp chồng một cột, nên phép đếm ấy xanh bất kể
     // đúng sai (đo rỗng). Bố cục xếp chồng đo ở `khoi-chu-de-nut-brand.spec.ts` (c).
     await expect(khoi.getByTestId("quan-diem-noi-bat")).toHaveCount(0);
   });
@@ -214,36 +216,6 @@ test.describe.serial("W2/G2 — chủ đề tuần: chip 'còn N ngày' theo gi�
     const lan1 = await page.getByTestId("chu-de-trang-thai").textContent();
     await page.reload();
     expect(await page.getByTestId("chu-de-trang-thai").textContent()).toBe(lan1);
-  });
-});
-
-test.describe("W2b — quan điểm nổi bật: top điểm, tối đa 3 ở desktop, MỘT ở mobile", () => {
-  test("desktop hiện hết (seed: chủ đề mở có 2 bình luận gốc); 390px chỉ hiện 1", async ({ page }) => {
-    // Chủ đề được chọn = cái xuất bản sau cùng trong 5 chủ đề mới nhất; dùng chính khối trên trang.
-    await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto("/");
-    const khoi = page.getByTestId("khoi-thao-luan");
-    const id = Number(await khoi.getByTestId("chu-de-the").getAttribute("data-mach-id"));
-    const bl = await api<{
-      threads: { id: number; depth: number; trang_thai: string; score: number }[];
-    }>(`/api/v1/machs/${id}/comments?sort=hay_nhat&limit=50`);
-    const goc = bl.threads.filter(
-      (b) => b.depth === 1 && b.trang_thai === "binh_thuong" && b.score >= 0,
-    ).length;
-    test.skip(goc < 2, "chủ đề hiện tại có < 2 bình luận gốc — không đo được ẩn bớt ở mobile");
-    const mong = Math.min(goc, 3);
-    expect(await khoi.getByTestId("quan-diem").evaluateAll((l) => l.filter((e) => (e as HTMLElement).offsetParent !== null).length)).toBe(mong);
-
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/");
-    expect(
-      await page
-        .getByTestId("khoi-thao-luan")
-        .getByTestId("quan-diem")
-        .evaluateAll((l) => l.filter((e) => (e as HTMLElement).offsetParent !== null).length),
-    ).toBe(1);
-    // Cả ba vẫn nằm trong HTML (một nội dung cho mọi UA).
-    expect(await page.getByTestId("khoi-thao-luan").getByTestId("quan-diem").count()).toBe(mong);
   });
 });
 
@@ -607,21 +579,27 @@ test.describe("W5/G4 — khối bài viết: Mới đăng, giá sách do admin c
     expect(nen).not.toBe(nen_section);
   });
 
-  test("dải bản tin: 3 bài tin-tuc mới nhất (ngày · tiêu đề) + 'Tất cả bản tin →'; chip chuyên mục là link /s/*", async ({
+  test("dải bản tin: 2 bài tin-tuc mới nhất (ngày · tiêu đề gọn, title đầy đủ) + 'Tất cả bản tin →'; chip chuyên mục là link /s/*", async ({
     page,
   }) => {
     await page.goto("/");
     const moi = await api<FeedOut>("/api/v1/feeds/moi?loai_mach=bai_viet&limit=50");
-    const tin = moi.items.filter((m) => m.sub.slug === "tin-tuc").slice(0, 3);
-    expect(tin.length).toBe(3);
-    const ban_tin = page.getByTestId("ban-tin");
-    await expect(ban_tin.getByRole("heading", { level: 3 })).toHaveText("Bản tin thị trường");
+    // Dải vẽ 2 bản tin (`SO_BAN_TIN_DAI`, việc 19 vòng 2), dữ liệu tạm có 3.
+    const tin = moi.items.filter((m) => m.sub.slug === "tin-tuc").slice(0, 2);
+    expect(tin.length).toBe(2);
+    // Việc 19: dải dời lên ngay dưới header, nhãn là `<span>` (đứng trước `<h1>` nên không là
+    // heading) và vùng của nó mang tên qua `aria-label`. Vị trí đo ở `dai-ban-tin.spec.ts`.
+    const ban_tin = page.getByRole("region", { name: "Bản tin thị trường" });
+    await expect(ban_tin).toHaveAttribute("data-testid", "ban-tin");
+    await expect(ban_tin.getByRole("heading")).toHaveCount(0);
+    await expect(page.getByTestId("khoi-bai-viet").getByTestId("ban-tin")).toHaveCount(0);
     const muc = ban_tin.getByTestId("ban-tin-muc");
     expect(await muc.evaluateAll((l) => l.map((a) => a.getAttribute("href")))).toEqual(
       tin.map((m) => `/m/${m.slug}-${m.id}`),
     );
-    for (let i = 0; i < 3; i += 1) {
-      await expect(muc.nth(i)).toContainText(tin[i].title);
+    for (let i = 0; i < 2; i += 1) {
+      await expect(muc.nth(i)).toContainText(tieuDeBanTinGon(tin[i].title));
+      await expect(muc.nth(i)).toHaveAttribute("title", tin[i].title);
       expect(await muc.nth(i).locator("time").getAttribute("datetime")).toBe(tin[i].published_at);
     }
     await expect(page.getByTestId("ban-tin-tat-ca")).toHaveAttribute("href", "/s/tin-tuc");
@@ -707,6 +685,7 @@ test.describe("W7/G7 — mobile 390px", () => {
       ["Xem thêm bài viết", page.getByTestId("bai-viet-xem-them")],
       ["chip chuyên mục", page.getByTestId("bai-viet-chip-hoi-dap")],
       ["bản tin", page.getByTestId("ban-tin-muc").first()],
+      ["Tất cả bản tin", page.getByTestId("ban-tin-tat-ca")],
     ];
     const thap: string[] = [];
     for (const [ten, loc] of can_44) {

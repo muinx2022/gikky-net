@@ -52,8 +52,10 @@ export function duongDanKhanDai(slug: string, id: number): string {
 }
 
 /** `/m/<slug>-<id>` cuộn tới **ô soạn bình luận** (`#viet-binh-luan`), khán đài đã bung như
- * `duongDanKhanDai`. Khác `duongDanKhanDai` ĐÚNG ở phần neo: "Xem tất cả quan điểm" dẫn tới danh
- * sách, "Viết quan điểm của bạn" dẫn tới chỗ viết — hai nút cùng một `href` là một nút thừa. */
+ * `duongDanKhanDai`. Khác `duongDanKhanDai` ĐÚNG ở phần neo: "Viết quan điểm của bạn" dẫn tới chỗ
+ * viết, còn lối vào danh sách từ `/` là con số bình luận `chu-de-so-binh-luan` (chỉ hiện khi ≥ 4
+ * bình luận; nút "Xem tất cả quan điểm" bỏ ở việc 19 cùng ô quan điểm) — hai lối cùng một `href`
+ * là một lối thừa. */
 export function duongDanVietBinhLuan(slug: string, id: number): string {
   return `${duongDanMach(slug, id)}?khan_dai=1&sort=${SORT_MAC_DINH}#${ID_O_SOAN_BINH_LUAN}`;
 }

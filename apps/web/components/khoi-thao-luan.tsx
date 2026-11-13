@@ -1,34 +1,20 @@
-import type { BinhLuanOut, MachTomTatOut } from "@gikky/api-client";
+import type { MachTomTatOut } from "@gikky/api-client";
 import Link from "next/link";
 
-import {
-  chonChuDeNoi,
-  chonQuanDiem,
-  chuChipChuDe,
-  khoangTuanVN,
-  trichQuanDiem,
-} from "@/lib/chu-de";
+import { chonChuDeNoi, chuChipChuDe, khoangTuanVN } from "@/lib/chu-de";
 import { CHU_NGUOI_DUNG } from "@/lib/chu-nguoi-dung";
-import { diemCoDau, ngayNganCuaThoiDiem } from "@/lib/dinh-dang";
-import { tenHienThi } from "@/lib/ten-hien-thi";
 import {
-  duongDanHoSo,
   duongDanKhanDai,
   duongDanMach,
   duongDanSub,
   duongDanVietBinhLuan,
 } from "@/lib/url";
 
-import { Avatar } from "./avatar";
 import css from "./khoi-thao-luan.module.css";
 
 /** Từ ngần này bình luận trở lên mới phô con số — PLAN nguyên tắc 9 (không phô sự im lặng).
  * Dưới ngưỡng: không hiện con số nào (nút "Vào thảo luận" đã là lời mời). */
 export const NGUONG_PHO_SO_BINH_LUAN = 4;
-
-/** Số quan điểm nổi bật tối đa ở desktop (mobile chỉ HIỆN 1, bằng CSS — cả ba cùng nằm trong
- * HTML, một nội dung cho mọi UA). */
-export const SO_QUAN_DIEM_NOI_BAT = 3;
 
 /** Khối "Chủ đề tuần" — TIÊU ĐIỂM của trang chủ *(plan
  * `2026-11-11-homepage-v2-giao-dien-moi.md` §3.1; user 2026-11-11: "Chủ đề thảo luận sẽ là
@@ -43,20 +29,16 @@ export const SO_QUAN_DIEM_NOI_BAT = 3;
  *
  * ## Xếp chồng *(việc 18, plan `2026-11-12-khoi-chu-de-xep-chong-nut-brand.md`)*
  *
- * Bản đầu là lưới hai cột: tiêu đề bị ép còn ~380px và gãy 5 dòng. Nay hai phần xếp chồng,
- * phần chủ đề luôn rộng hết khối:
+ * Bản đầu là lưới hai cột: tiêu đề bị ép còn ~380px và gãy 5 dòng. Nay phần chủ đề luôn rộng
+ * hết khối: nhãn tuần · khoảng tuần (thứ Hai–Chủ nhật giờ VN của `published_at`) · chip trạng
+ * thái · câu hỏi (`<h2>` cỡ lớn — `<h1>` của trang là dòng giới thiệu SEO, không phải chỗ này)
+ * · bối cảnh (TRỌN đoạn trích server đã cắt; CSS chỉ chặn ở 6 dòng — việc 19 §3.5) · tổng kết
+ * (chủ đề đã đóng) · hai nút. Hai nút khác `href`: "Vào thảo luận" tới mạch, "Viết quan điểm của bạn" tới Ô SOẠN (`duongDanVietBinhLuan`); con số bình
+ * luận (từ ngưỡng) dẫn tới khán đài (`duongDanKhanDai`).
  *
- * - trên: nhãn tuần · khoảng tuần (thứ Hai–Chủ nhật giờ VN của `published_at`) · chip trạng
- *   thái · câu hỏi (`<h2>` cỡ lớn — `<h1>` của trang là dòng giới thiệu SEO, không phải chỗ này)
- *   · bối cảnh (2 dòng) · hai nút;
- * - dưới: ô quan điểm nền `--inset` — bình luận GỐC (`chonQuanDiem`). Có ít nhất một bình luận
- *   điểm > 0 ⇒ "Quan điểm nổi bật", điểm cao nhất trước; toàn điểm 0 ⇒ "Quan điểm mới", mới nhất
- *   trước và KHÔNG in điểm. Chỉ in `▲ N` cho bình luận có N ≠ 0. Mỗi quan điểm một hàng ở
- *   desktop (avatar · tên · ngày · điểm · trích một dòng), hai hàng ở mobile. Tên + avatar là
- *   link hồ sơ (cùng kiểu `TheMach`). Chưa có bình luận nào ⇒ **không có ô quan điểm** (không
- *   khung rỗng);
- * - hai nút khác `href`: "Viết quan điểm của bạn" tới Ô SOẠN (`duongDanVietBinhLuan`), "Xem tất
- *   cả quan điểm →" tới danh sách (`duongDanKhanDai`).
+ * **Không có ô quan điểm** *(việc 19, plan `2026-11-13-ban-tin-len-dau-ban-quyen.md` §3.4 —
+ * user: "bỏ luôn các list cmt của các user đi")*. Việc 18 từng xếp dưới phần chủ đề một ô liệt
+ * kê bình luận gốc; nay khối không vẽ bình luận nào, nên trang chủ cũng không gọi API bình luận.
  *
  * Hai nút chọn phe trong mockup ("Ưu tiên quản trị rủi ro" / "Canh nhịp chỉnh để gom hàng")
  * KHÔNG làm: chúng cần mô hình dữ liệu "lựa chọn quan điểm" chưa có (plan §3.1).
@@ -71,16 +53,9 @@ export const SO_QUAN_DIEM_NOI_BAT = 3;
  * Không dùng chữ "tham gia": `vo-reddit.spec.ts` (A8) cấm nó trên `/`. */
 export function KhoiThaoLuan({
   chu_de,
-  binh_luan_goc,
-  binh_luan_moi,
   bay_gio,
 }: {
   chu_de: readonly MachTomTatOut[];
-  /** Bình luận gốc của CHÍNH chủ đề được chọn (`docBinhLuanGoc`); rỗng ⇒ không có ô quan điểm. */
-  binh_luan_goc: readonly BinhLuanOut[];
-  /** Bình luận gốc MỚI NHẤT của chính chủ đề ấy (`docBinhLuanGocMoiNhat`) — chỉ dùng khi chưa ai
-   * bỏ phiếu ("Quan điểm mới"). */
-  binh_luan_moi: readonly BinhLuanOut[];
   /** Thời điểm hiện tại — tham số để đo được ranh giới tuần; trang truyền `new Date()`. */
   bay_gio: Date;
 }) {
@@ -94,11 +69,6 @@ export function KhoiThaoLuan({
   const href_viet = duongDanVietBinhLuan(moi_nhat.slug, moi_nhat.id);
   const co_ket_qua = !dang_mo && moi_nhat.ket_qua !== null && moi_nhat.ket_qua !== "";
   const boi_canh = moi_nhat.xem_truoc?.trich ?? "";
-  const { kieu: kieu_quan_diem, muc: quan_diem } = chonQuanDiem(
-    binh_luan_goc,
-    binh_luan_moi,
-    SO_QUAN_DIEM_NOI_BAT,
-  );
 
   return (
     <section
@@ -180,85 +150,6 @@ export function KhoiThaoLuan({
             )}
           </div>
         </div>
-
-        {quan_diem.length > 0 && (
-          <div className={css.phai} data-testid="quan-diem-noi-bat" data-kieu={kieu_quan_diem}>
-            <h3 className={css.tieu_phai}>
-              {kieu_quan_diem === "noi_bat" ? "Quan điểm nổi bật" : "Quan điểm mới"}
-            </h3>
-            <ul className={css.ds_quan_diem}>
-              {quan_diem.map((b) => {
-                const avatar = (
-                  <Avatar
-                    ten={b.author?.username ?? "?"}
-                    hienThi={b.author?.display_name}
-                    url={b.author?.avatar_url}
-                    co={24}
-                  />
-                );
-                return (
-                  <li key={b.id} className={css.quan_diem} data-testid="quan-diem" data-binh-luan-id={b.id}>
-                    {/* Tác giả `null` = tài khoản đã xoá: không có hồ sơ để trỏ tới ⇒ không link. */}
-                    {b.author === null ? (
-                      avatar
-                    ) : (
-                      <Link
-                        href={duongDanHoSo(b.author.username)}
-                        prefetch={false}
-                        tabIndex={-1}
-                        aria-hidden="true"
-                        className={css.quan_diem_avatar}
-                      >
-                        {avatar}
-                      </Link>
-                    )}
-                    <div className={css.quan_diem_than}>
-                      <div className={css.quan_diem_dong}>
-                        {b.author === null ? (
-                          <b className={css.quan_diem_ten} {...CHU_NGUOI_DUNG}>
-                            {tenHienThi(b.author, "?")}
-                          </b>
-                        ) : (
-                          <Link
-                            className={css.quan_diem_ten}
-                            href={duongDanHoSo(b.author.username)}
-                            prefetch={false}
-                            title={`u/${b.author.username}`}
-                            data-testid="quan-diem-ten"
-                            {...CHU_NGUOI_DUNG}
-                          >
-                            {tenHienThi(b.author, "?")}
-                          </Link>
-                        )}
-                        {/* Ngày tuyệt đối như mọi nơi trên site, không giờ tương đối. */}
-                        <time className={css.quan_diem_ngay} dateTime={b.created_at}>
-                          {ngayNganCuaThoiDiem(b.created_at)}
-                        </time>
-                        {/* Điểm 0 không in: "▲ 0" là phô sự im lặng (PLAN nguyên tắc 9). */}
-                        {b.score !== 0 && (
-                          <span className={css.quan_diem_diem} title="Điểm của bình luận">
-                            ▲ {diemCoDau(b.score)}
-                          </span>
-                        )}
-                      </div>
-                      <p className={css.quan_diem_trich} {...CHU_NGUOI_DUNG}>
-                        {trichQuanDiem(b.body ?? "", b.body_dinh_dang)}
-                      </p>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-            <Link
-              className={css.xem_tat_ca}
-              href={href_khan_dai}
-              prefetch={false}
-              data-testid="quan-diem-tat-ca"
-            >
-              Xem tất cả quan điểm →
-            </Link>
-          </div>
-        )}
       </div>
     </section>
   );

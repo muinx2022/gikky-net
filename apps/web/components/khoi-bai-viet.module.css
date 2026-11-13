@@ -79,8 +79,7 @@
 }
 
 .tat_ca:hover,
-.xem_them:hover,
-.ban_tin_tat_ca:hover {
+.xem_them:hover {
   text-decoration: underline;
 }
 
@@ -276,55 +275,6 @@
   object-fit: cover;
 }
 
-/* --- dải bản tin ------------------------------------------------------------------------ */
-.ban_tin {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 16px;
-  padding: 12px 16px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--inset);
-  font-family: var(--f-ui);
-  font-size: 13px;
-}
-
-.ban_tin_nhan {
-  margin: 0;
-  color: var(--ink-3);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.ban_tin_ds {
-  display: contents;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.ban_tin_muc {
-  color: var(--ink);
-  overflow-wrap: anywhere;
-}
-
-.ban_tin_muc:hover {
-  color: var(--accent);
-}
-
-.ban_tin_ngay {
-  color: var(--ink-3);
-}
-
-.ban_tin_tat_ca {
-  margin-left: auto;
-  color: var(--accent);
-  font-size: 12.5px;
-}
-
 /* Nút "Xem thêm bài viết" chỉ có ở mobile. */
 .xem_them_di_dong {
   display: none;
@@ -379,8 +329,7 @@
     height: 44px;
   }
 
-  .xem_them,
-  .ban_tin_tat_ca {
+  .xem_them {
     display: inline-flex;
     align-items: center;
     min-height: 44px;
@@ -414,12 +363,6 @@
   .thumb {
     width: 88px;
     height: 66px;
-  }
-
-  .ban_tin_muc {
-    display: flex;
-    align-items: center;
-    min-height: 44px;
   }
 
   .xem_them_di_dong {

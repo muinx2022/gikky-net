@@ -1,0 +1,118 @@
+/* Dải "Bản tin thị trường" — MỘT dòng mảnh ngay dưới header của `/` (plan
+ * `2026-11-13-ban-tin-len-dau-ban-quyen.md` §3.1, vòng 2 §3.6). Trải hết bề ngang.
+ *
+ * Hộp bên trong thẳng hàng với LƯỚI THẬT của `khung-hai-cot.module.css`, không với con số 1200 của
+ * nó: lưới là hai track 760 + 300 cách 36 = 1096px căn giữa, nên phần nội dung của hộp tối đa
+ * 1096px (1144 = 1096 + 2 × 24 lề) — nhãn thẳng mép trái `<h1>`, "Tất cả bản tin →" thẳng mép
+ * phải rail ở mọi bề rộng ≥ 961px. ≤ 960px theo 760px / 20px, ≤ 640px lề 12px như khung. Không
+ * `sticky`: dải cuộn theo trang. Không khai `order`: ở ≤ 960px `.vo` của trang chủ là flex dọc
+ * (`app/trang-chu.module.css`) và `order` mặc định 0 giữ dải đứng đầu. Chỉ token đã có. */
+.dai {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  font-family: var(--f-ui);
+  font-size: 13px;
+}
+
+.trong {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-sizing: border-box;
+  max-width: 1144px;
+  margin: 0 auto;
+  padding: 0 24px;
+  white-space: nowrap;
+}
+
+.nhan {
+  flex: none;
+  color: var(--ink-3);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ds {
+  display: flex;
+  flex: 1 1 auto;
+  gap: 20px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Bản 1 lấy đủ bề rộng tự nhiên — KHÔNG trần phần trăm (trần 55% của bản đầu cắt mất phần con số
+ * của mọi tiêu đề thật, ở mọi khổ); nó chỉ co và cắt "…" khi một mình nó đã rộng hơn danh sách.
+ * Bản 2 lấy phần còn lại và cắt "…". */
+.muc_goc {
+  min-width: 0;
+}
+
+.muc_goc:first-child {
+  flex: 0 1 auto;
+}
+
+.muc_goc:nth-child(2) {
+  flex: 1 1 0;
+}
+
+.muc {
+  display: block;
+  overflow: hidden;
+  color: var(--ink);
+  line-height: 40px;
+  text-overflow: ellipsis;
+}
+
+.muc:hover {
+  color: var(--accent);
+}
+
+.ngay {
+  color: var(--ink-3);
+}
+
+.tat_ca {
+  flex: none;
+  margin-left: auto;
+  color: var(--accent);
+  font-size: 12.5px;
+  line-height: 40px;
+}
+
+.tat_ca:hover {
+  text-decoration: underline;
+}
+
+/* --- tablet + mobile (≤ 960px): chỉ HIỆN bản 1 (bản 2 vẫn trong HTML); vùng bấm ≥ 44px ------- */
+@media (max-width: 960px) {
+  .trong {
+    max-width: 760px;
+    padding: 0 20px;
+    gap: 12px;
+  }
+
+  .muc_goc:nth-child(n + 2) {
+    display: none;
+  }
+
+  .muc,
+  .tat_ca {
+    line-height: 44px;
+  }
+}
+
+/* --- mobile (≤ 640px): nhãn "Bản tin", link "Tất cả →" ----------------------------------- */
+@media (max-width: 640px) {
+  .trong {
+    padding: 0 12px;
+    gap: 10px;
+  }
+
+  .phu {
+    display: none;
+  }
+}

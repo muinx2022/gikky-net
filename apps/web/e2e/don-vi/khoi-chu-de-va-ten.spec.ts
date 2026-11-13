@@ -1,10 +1,8 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 
-import type { BinhLuanOut } from "@gikky/api-client";
 import { expect, test } from "@playwright/test";
 
-import { chonQuanDiem } from "../../lib/chu-de";
 import { ID_O_SOAN_BINH_LUAN } from "../../lib/khan-dai";
 import { tenHienThi } from "../../lib/ten-hien-thi";
 import { duongDanKhanDai, duongDanVietBinhLuan } from "../../lib/url";
@@ -16,116 +14,6 @@ import { duongDanKhanDai, duongDanVietBinhLuan } from "../../lib/url";
 const WEB = resolve(__dirname, "..", "..");
 const doc = (duong_dan: string) => readFileSync(resolve(WEB, duong_dan), "utf8");
 const boChuThich = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
-
-function bl(id: number, over: Partial<BinhLuanOut> = {}): BinhLuanOut {
-  return {
-    id,
-    depth: 1,
-    trang_thai: "binh_thuong",
-    score: 0,
-    created_at: "2026-11-11T07:50:00Z",
-    body: `Bình luận ${id}`,
-    body_dinh_dang: "markdown",
-    ...over,
-  } as BinhLuanOut;
-}
-
-/* ---------------------------------------------------------------- chonQuanDiem -- */
-
-test("quan điểm: toàn điểm 0 ⇒ chế độ 'moi', MỚI VIẾT nhất trước (không theo thứ tự API)", () => {
-  const ds = [
-    bl(1, { created_at: "2026-11-11T07:50:00Z" }),
-    bl(2, { created_at: "2026-11-11T09:00:00Z" }),
-    bl(3, { created_at: "2026-11-10T20:00:00Z" }),
-  ];
-  const kq = chonQuanDiem(ds, ds, 3);
-  expect(kq.kieu).toBe("moi");
-  expect(kq.muc.map((b) => b.id)).toEqual([2, 1, 3]);
-  expect(chonQuanDiem(ds, ds, 2).muc.map((b) => b.id), "cắt ở toiDa SAU khi sắp").toEqual([2, 1]);
-});
-
-test("quan điểm: hoà thời điểm ⇒ id lớn trước; mốc hỏng xếp cuối, không ném", () => {
-  const cung_luc = "2026-11-11T07:50:00Z";
-  const ds = [
-    bl(1, { created_at: cung_luc }),
-    bl(2, { created_at: "không phải ngày" }),
-    bl(3, { created_at: cung_luc }),
-  ];
-  const kq = chonQuanDiem(ds, ds, 3);
-  expect(kq.kieu).toBe("moi");
-  expect(kq.muc.map((b) => b.id)).toEqual([3, 1, 2]);
-});
-
-test("quan điểm: có ít nhất MỘT điểm dương ⇒ 'noi_bat', điểm cao nhất trước, điểm 0 đứng sau", () => {
-  const ds = [
-    bl(1, { score: 0, created_at: "2026-11-11T12:00:00Z" }),
-    bl(2, { score: 3 }),
-    bl(3, { score: 1 }),
-    bl(4, { score: 0 }),
-  ];
-  const kq = chonQuanDiem(ds, ds, 3);
-  expect(kq.kieu).toBe("noi_bat");
-  expect(kq.muc.map((b) => b.id)).toEqual([2, 3, 1]);
-});
-
-test("quan điểm: một bình luận điểm dương nhưng là REPLY / bị ẩn thì KHÔNG đủ để thành 'noi_bat'", () => {
-  const ds = [
-    bl(1, { score: 0, created_at: "2026-11-11T10:00:00Z" }),
-    bl(2, { score: 9, depth: 2 }),
-    bl(3, { score: 9, trang_thai: "da_an" }),
-  ];
-  const kq = chonQuanDiem(ds, ds, 3);
-  expect(kq.kieu).toBe("moi");
-  expect(kq.muc.map((b) => b.id)).toEqual([1]);
-});
-
-test("quan điểm: điểm âm bị loại; chỉ có điểm âm hoặc rỗng ⇒ không quan điểm nào", () => {
-  const ds_am = [bl(1, { score: -2 }), bl(2, { score: -1 })];
-  const am = chonQuanDiem(ds_am, ds_am, 3);
-  expect(am.muc).toEqual([]);
-  expect(chonQuanDiem([], [], 3)).toEqual({ kieu: "moi", muc: [] });
-  // Điểm âm không chen vào danh sách 'moi' dù còn chỗ.
-  const ds_lan = [bl(1, { score: 0 }), bl(2, { score: -1 })];
-  expect(chonQuanDiem(ds_lan, ds_lan, 3).muc.map((b) => b.id)).toEqual([1]);
-});
-
-test("quan điểm: không đột biến mảng gốc", () => {
-  const ds = [
-    bl(1, { created_at: "2026-11-10T00:00:00Z" }),
-    bl(2, { created_at: "2026-11-11T00:00:00Z" }),
-  ];
-  const truoc = ds.map((b) => b.id);
-  chonQuanDiem(ds, ds, 3);
-  expect(ds.map((b) => b.id)).toEqual(truoc);
-});
-
-test("quan điểm mới: nguồn hay_nhat toàn 0 điểm và KHÔNG chứa bình luận mới nhất ⇒ lấy đúng cái mới nhất từ nguồn moi_nhat", () => {
-  // `sort=hay_nhat` khi chưa ai vote trả các bình luận CŨ NHẤT trước (hoà điểm ⇒ created_at tăng dần).
-  const hay_nhat = [
-    bl(1, { created_at: "2026-11-01T00:00:00Z" }),
-    bl(2, { created_at: "2026-11-02T00:00:00Z" }),
-    bl(3, { created_at: "2026-11-03T00:00:00Z" }),
-  ];
-  const moi_nhat = [
-    bl(9, { created_at: "2026-11-11T09:00:00Z" }),
-    bl(8, { created_at: "2026-11-10T09:00:00Z" }),
-    bl(7, { created_at: "2026-11-09T09:00:00Z" }),
-    bl(6, { created_at: "2026-11-08T09:00:00Z", trang_thai: "da_xoa" }), // bia mộ — loại
-  ];
-  const kq = chonQuanDiem(hay_nhat, moi_nhat, 3);
-  expect(kq.kieu).toBe("moi");
-  expect(kq.muc.map((b) => b.id), "lấy từ nguồn moi_nhat, không từ 50 cái cũ nhất").toEqual([9, 8, 7]);
-});
-
-test("quan điểm nổi bật lấy từ nguồn hay_nhat, nguồn moi_nhat không được xen vào", () => {
-  const hay_nhat = [bl(1, { score: 4 }), bl(2, { score: 1 }), bl(3, { score: 0 })];
-  const moi_nhat = [bl(9, { score: 0, created_at: "2026-11-11T09:00:00Z" })];
-  const kq = chonQuanDiem(hay_nhat, moi_nhat, 3);
-  expect(kq.kieu).toBe("noi_bat");
-  expect(kq.muc.map((b) => b.id)).toEqual([1, 2, 3]);
-  // Nguồn moi_nhat rỗng (lời gọi 404 / chưa có) mà hay_nhat toàn 0 ⇒ 'moi' rỗng, không bịa từ hay_nhat.
-  expect(chonQuanDiem([bl(1)], [], 3)).toEqual({ kieu: "moi", muc: [] });
-});
 
 /* ----------------------------------------------------------------- tenHienThi -- */
 
@@ -167,7 +55,6 @@ test("không còn chỗ nào trong components/ chép tay `display_name || `u/${�
   for (const f of [
     "binh-luan",
     "ket-qua-tim-kiem",
-    "khoi-thao-luan",
     "khoi-trich",
     "thanh-tai-khoan",
     "the-mach",
@@ -224,7 +111,7 @@ test("chữ hiển thị `u/${…}` chỉ còn ở allowlist có lý do — mọ
   expect(boChuThich(doc("components/binh-luan.tsx"))).toMatch(/tenHienThi\(nut\.author, "u\/"\)/);
 });
 
-test("'Viết quan điểm của bạn' và 'Xem tất cả quan điểm' trỏ HAI đích khác nhau; nút Viết kết thúc bằng id ô soạn", () => {
+test("'Viết quan điểm của bạn' và lối vào khán đài (con số bình luận) trỏ HAI đích khác nhau; nút Viết kết thúc bằng id ô soạn", () => {
   const viet = duongDanVietBinhLuan("chu-de-tuan", 1484);
   const tat_ca = duongDanKhanDai("chu-de-tuan", 1484);
   expect(viet).not.toBe(tat_ca);
@@ -236,10 +123,11 @@ test("'Viết quan điểm của bạn' và 'Xem tất cả quan điểm' trỏ 
 
   const tsx = boChuThich(doc("components/khoi-thao-luan.tsx"));
   expect(tsx).toMatch(/data-testid="chu-de-viet"/);
-  // Nút "Viết" lấy href từ duongDanVietBinhLuan, nút "Xem tất cả" từ duongDanKhanDai.
+  // Nút "Viết" lấy href từ duongDanVietBinhLuan; con số bình luận (lối vào khán đài còn lại sau khi
+  // ô quan điểm bị bỏ ở việc 19) từ duongDanKhanDai.
   expect(tsx).toMatch(/href_viet\s*=\s*duongDanVietBinhLuan\(/);
   expect(tsx).toMatch(/href=\{href_viet\}[\s\S]{0,80}data-testid="chu-de-viet"/);
-  expect(tsx).toMatch(/href=\{href_khan_dai\}[\s\S]{0,80}data-testid="quan-diem-tat-ca"/);
+  expect(tsx).toMatch(/href=\{href_khan_dai\}[\s\S]{0,160}data-testid="chu-de-so-binh-luan"/);
 });
 
 test("id ô soạn bình luận tồn tại trong HTML SERVER của cả hai mặt trang mạch (cái bọc, không phải Composer client)", () => {
@@ -251,19 +139,6 @@ test("id ô soạn bình luận tồn tại trong HTML SERVER của cả hai m�
   expect(trang_mach).toMatch(/id=\{ID_O_SOAN_BINH_LUAN\}[\s\S]{0,80}data-testid="composer-mat-bao"/);
   // `Composer` KHÔNG tự mang id (nó trả null tới khi biết phiên ⇒ không có trong HTML server).
   expect(boChuThich(doc("components/composer.tsx"))).not.toContain("ID_O_SOAN_BINH_LUAN");
-});
-
-test("khối chủ đề: không in `▲ 0`, tên + avatar là link hồ sơ kiểu TheNhatKy", () => {
-  const tsx = boChuThich(doc("components/khoi-thao-luan.tsx"));
-  expect(tsx, "chỉ in điểm khi ≠ 0").toMatch(/b\.score\s*!==\s*0\s*&&/);
-  expect(tsx).toContain("duongDanHoSo(b.author.username)");
-  expect(tsx, "avatar link ẩn khỏi cây trợ năng và tab, như TheNhatKy").toMatch(
-    /tabIndex=\{-1\}\s*aria-hidden="true"/,
-  );
-  expect(tsx, "title u/<username> ở link tên").toContain("title={`u/${b.author.username}`}");
-  expect(tsx, "tác giả null (đã xoá) thì không link").toMatch(/b\.author === null \?/);
-  expect(tsx).toContain('"Quan điểm mới"');
-  expect(tsx).toContain('"Quan điểm nổi bật"');
 });
 
 test("màu: CSS của đợt A không thêm mã hex / --gain / --loss / --stamp", () => {

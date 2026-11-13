@@ -11,7 +11,6 @@ import {
   dungGiaSach,
   idDaHien,
   subLenTrangChu,
-  SUB_BAN_TIN,
   type GiaSachTho,
 } from "@/lib/nhom-bai-viet";
 import { duongDanMach, duongDanSub } from "@/lib/url";
@@ -99,13 +98,16 @@ function MucGia({ mach }: { mach: MachTomTatOut }) {
  *    thumbnail + chip tên chuyên mục — nên chuyên mục không được chọn vẫn lên trang chủ.
  * 3. **Giá sách**: mỗi chuyên mục được chọn là một cột (tiêu đề = `sub.ten`), `SO_BAI_MOI_GIA`
  *    bài chỉ tiêu đề + ngày, KHÔNG trùng bài đã ở Mới đăng. `gia` do trang chủ tải riêng từng
- *    sub (`docFeedSub`) nên sub đăng chậm vẫn có bài. Cột rỗng ⇒ ẩn.
- * 4. Dải "Bản tin thị trường": bài mới nhất của `s/tin-tuc`.
+ *    sub (`docFeedSub`) nên sub đăng chậm vẫn có bài. Cột rỗng ⇒ ẩn. Bài đã ở dải "Bản tin
+ *    thị trường" cũng bị loại khỏi giá.
  *
- * Việc chọn bài là của `lib/nhom-bai-viet.ts` (hàm thuần). **Cả ba phần rỗng ⇒ ẩn cả section**
- * (không khung rỗng). Mọi bài là `<article>` có `<a href>` thật ở tiêu đề (heading), ngày trong
- * `<time datetime>`. Web không giữ bản sao tên hay slug chuyên mục nào ngoài `tin-tuc`. HTML như
- * nhau cho mọi UA.
+ * Dải "Bản tin thị trường" từng là mục 4 ở cuối section này; từ việc 19 nó là `DaiBanTin` ở ĐẦU
+ * trang, ngay dưới header (plan `2026-11-13-ban-tin-len-dau-ban-quyen.md`).
+ *
+ * Việc chọn bài là của `lib/nhom-bai-viet.ts` (hàm thuần). **Mới đăng và giá sách cùng rỗng ⇒ ẩn
+ * cả section** (không khung rỗng). Mọi bài là `<article>` có `<a href>` thật ở tiêu đề (heading),
+ * ngày trong `<time datetime>`. Web không giữ bản sao tên hay slug chuyên mục nào ngoài `tin-tuc`.
+ * HTML như nhau cho mọi UA.
  *
  * Gallery lật ảnh kiểu Reddit của homepage v2 bản đầu (`gallery-bai-viet.tsx`) không còn được
  * dùng ở đây: dải Mới đăng chỉ có MỘT thumbnail nhỏ mỗi bài. */
@@ -119,9 +121,10 @@ export function KhoiBaiViet({
   gia: readonly GiaSachTho[];
 }) {
   const moi_dang = chonMoiDang(bai_viet);
-  const ban_tin = chonBanTin(bai_viet);
-  const cot = dungGiaSach(gia, idDaHien(moi_dang, ban_tin));
-  if (moi_dang.length === 0 && cot.length === 0 && ban_tin.length === 0) return null;
+  // Bản tin không còn vẽ ở đây (dải riêng ở đầu trang), nhưng giá sách VẪN bỏ các bài ấy: admin
+  // có thể chọn `tin-tuc` làm một giá, và ba bài của giá ấy sẽ trùng đúng dải bản tin.
+  const cot = dungGiaSach(gia, idDaHien(moi_dang, chonBanTin(bai_viet)));
+  if (moi_dang.length === 0 && cot.length === 0) return null;
 
   const hrefTatCa = "/?tab=moi&loai_mach=bai_viet";
   const ten_sub = new Map(cac_sub.map((s) => [s.slug, s.ten]));
@@ -213,39 +216,6 @@ export function KhoiBaiViet({
                 </ol>
               </div>
             ))}
-          </div>
-        )}
-
-        {ban_tin.length > 0 && (
-          <div className={css.ban_tin} data-testid="ban-tin">
-            <h3 className={css.ban_tin_nhan}>Bản tin thị trường</h3>
-            <ul className={css.ban_tin_ds}>
-              {ban_tin.map((m) => (
-                <li key={m.id} data-mach-id={m.id}>
-                  <Link
-                    className={css.ban_tin_muc}
-                    href={duongDanMach(m.slug, m.id)}
-                    prefetch={false}
-                    data-testid="ban-tin-muc"
-                    {...CHU_NGUOI_DUNG}
-                  >
-                    <time className={css.ban_tin_ngay} dateTime={m.published_at}>
-                      {ngayNganCuaThoiDiem(m.published_at)}
-                    </time>
-                    <span aria-hidden> · </span>
-                    {m.title}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-            <Link
-              className={css.ban_tin_tat_ca}
-              href={duongDanSub(SUB_BAN_TIN)}
-              prefetch={false}
-              data-testid="ban-tin-tat-ca"
-            >
-              Tất cả bản tin →
-            </Link>
           </div>
         )}
 

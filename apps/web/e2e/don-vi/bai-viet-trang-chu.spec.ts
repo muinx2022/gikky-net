@@ -7,8 +7,11 @@ import { expect, test } from "@playwright/test";
 import {
   SO_BAI_MOI_GIA,
   SO_BAI_TAI_MOI_GIA,
+  SO_BAN_TIN,
+  SO_BAN_TIN_DAI,
   SO_MOI_DANG,
   SUB_BAN_TIN,
+  tieuDeBanTinGon,
   chonBanTin,
   chonMoiDang,
   dungGiaSach,
@@ -138,4 +141,37 @@ test("lib/nhom-bai-viet.ts không còn slug cứng nào ngoài SUB_BAN_TIN", () 
   );
   expect(la, "slug chuyên mục là dữ liệu (Sub.vi_tri_trang_chu), không gõ cứng ở web").toEqual([]);
   expect(SUB_BAN_TIN).toBe("tin-tuc");
+});
+
+/* -------------------------------------------- V1 — tiêu đề gọn của dải bản tin (việc 19 §3.6) -- */
+
+test("V1 — tieuDeBanTinGon: bỏ tiền tố 'Bản tin DD/MM — ' vì dải đã in ngày ở <time>", () => {
+  expect(tieuDeBanTinGon("Bản tin 11/11 — Dow Jones 52.231 điểm")).toBe("Dow Jones 52.231 điểm");
+  // Gạch ngắn / gạch nối, có năm, khoảng trắng lệch, hoa thường.
+  expect(tieuDeBanTinGon("Bản tin 1/2 – Vàng giữ 4.100 USD")).toBe("Vàng giữ 4.100 USD");
+  expect(tieuDeBanTinGon("Bản tin 13/11/2026 - S&P 500 tăng 2,35%")).toBe("S&P 500 tăng 2,35%");
+  expect(tieuDeBanTinGon("Bản tin 13/11/26—Nasdaq lên 25.253")).toBe("Nasdaq lên 25.253");
+  expect(tieuDeBanTinGon("BẢN TIN 10/11 — Lãi suất")).toBe("Lãi suất");
+  expect(tieuDeBanTinGon("bản tin 10/11 — Lãi suất")).toBe("Lãi suất");
+});
+
+test("V1 — tieuDeBanTinGon: không khớp, hoặc sau tiền tố không còn chữ ⇒ trả NGUYÊN", () => {
+  for (const t of [
+    "Bản tin 11/11 —",
+    "Bản tin 11/11 —   ",
+    "Dow Jones 52.231 điểm",
+    "Bản tin sáng — Dow Jones",
+    "Tổng hợp Bản tin 11/11 — Dow Jones",
+    "Bản tin 11/11 Dow Jones",
+    "",
+  ]) {
+    expect(tieuDeBanTinGon(t), JSON.stringify(t)).toBe(t);
+  }
+});
+
+test("V1 — dải đầu trang vẽ 2 bản tin; giá sách vẫn loại đủ 3", () => {
+  expect(SO_BAN_TIN_DAI).toBe(2);
+  expect(SO_BAN_TIN).toBe(3);
+  const items = [1, 2, 3, 4].map((id) => bai(id, SUB_BAN_TIN));
+  expect(chonBanTin(items, SO_BAN_TIN_DAI).map((m) => m.id)).toEqual([1, 2]);
 });

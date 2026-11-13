@@ -358,13 +358,13 @@ test.describe("B — các khối của trang chủ v2", () => {
     // Ca đo được "giá không trùng dải": giá quan-tri-von mất đúng bài mới nhất vào Mới đăng.
     const tat_ca_gia = co.flatMap((c) => c.ids);
     for (const id of da_hien) expect(tat_ca_gia, `bài ${id} trùng dải Mới đăng`).not.toContain(id);
-    // Dải bản tin: 3 bài mới nhất của `tin-tuc`.
+    // Dải bản tin (đầu trang): 2 bài mới nhất của `tin-tuc` — `SO_BAN_TIN_DAI`, việc 19 vòng 2.
     expect(
       await page
         .getByTestId("ban-tin")
         .locator("li[data-mach-id]")
         .evaluateAll((ls) => ls.map((l) => Number((l as HTMLElement).dataset.machId))),
-    ).toEqual(moi.items.filter((m) => m.sub.slug === "tin-tuc").slice(0, 3).map((m) => m.id));
+    ).toEqual(moi.items.filter((m) => m.sub.slug === "tin-tuc").slice(0, 2).map((m) => m.id));
   });
 
   test("B4 — nút 'Mở nhật ký' trỏ /dang-mach, kèm dòng phụ đúng với sản phẩm", async ({
@@ -637,8 +637,8 @@ test.describe.serial("B2/B7 — khối Chủ đề là MỘT thẻ nổi, nhãn 
     const vao = the.getByTestId("chu-de-vao");
     await expect(vao).toHaveText(dang_mo ? "Vào thảo luận" : "Xem lại thảo luận");
     await expect(vao).toHaveAttribute("href", `/m/${m.slug}-${m.id}`);
-    // Nút phụ: tới Ô SOẠN bình luận của CHÍNH chủ đề này — khác `href` với "Xem tất cả quan điểm"
-    // (đợt A, plan thống nhất giao diện §4.5: trước đó hai nút cùng trỏ `#khan-dai`).
+    // Nút phụ: tới Ô SOẠN bình luận của CHÍNH chủ đề này (`#viet-binh-luan`), không phải danh sách
+    // `#khan-dai` (đợt A, plan thống nhất giao diện §4.5: trước đó hai nút cùng trỏ `#khan-dai`).
     const viet = the.getByTestId("chu-de-viet");
     await expect(viet).toHaveText("Viết quan điểm của bạn");
     expect(await viet.getAttribute("href")).toContain(`/m/${m.slug}-${m.id}?`);
@@ -655,52 +655,10 @@ test.describe.serial("B2/B7 — khối Chủ đề là MỘT thẻ nổi, nhãn 
       nhanMong(m.published_at, new Date()),
     );
 
-    // Quan điểm nổi bật: bình luận GỐC điểm cao nhất, tối đa 3, từ chính API khán đài; không có
-    // bình luận ⇒ ẩn cả nửa phải.
-    // Có điểm dương ⇒ "Quan điểm nổi bật" (điểm cao nhất trước); toàn điểm 0 ⇒ "Quan điểm mới"
-    // (mới viết nhất trước, không in điểm) — đúng `lib/chu-de.ts::chonQuanDiem`.
-    const bl = await api<{
-      threads: { id: number; depth: number; trang_thai: string; score: number; created_at: string }[];
-    }>(`/api/v1/machs/${m.id}/comments?sort=hay_nhat&limit=50`);
-    const ung_vien = bl.threads.filter(
-      (b) => b.depth === 1 && b.trang_thai === "binh_thuong" && b.score >= 0,
-    );
-    const noi_bat = ung_vien.some((b) => b.score > 0);
-    const mong_qd = (
-      noi_bat
-        ? [...ung_vien].sort((a, b) => b.score - a.score)
-        : [...ung_vien].sort(
-            (a, b) => Date.parse(b.created_at) - Date.parse(a.created_at) || b.id - a.id,
-          )
-    )
-      .slice(0, 3)
-      .map((b) => b.id);
-    const co_qd = await the
-      .getByTestId("quan-diem")
-      .evaluateAll((els) => els.map((e) => Number((e as HTMLElement).dataset.binhLuanId)));
-    expect(co_qd, "quan điểm nổi bật = top điểm của bình luận gốc").toEqual(mong_qd);
-    if (mong_qd.length === 0) {
-      await expect(the.getByTestId("quan-diem-noi-bat")).toHaveCount(0);
-    } else {
-      await expect(the.getByTestId("quan-diem-noi-bat").getByRole("heading", { level: 3 })).toHaveText(
-        noi_bat ? "Quan điểm nổi bật" : "Quan điểm mới",
-      );
-      await expect(the.getByTestId("quan-diem-tat-ca")).toHaveText("Xem tất cả quan điểm →");
-      // Hai nút KHÁC href: một tới ô soạn, một tới danh sách.
-      expect(await the.getByTestId("quan-diem-tat-ca").getAttribute("href")).toMatch(/#khan-dai$/);
-      expect(await viet.getAttribute("href")).not.toBe(
-        await the.getByTestId("quan-diem-tat-ca").getAttribute("href"),
-      );
-      // Không còn `▲ 0` ở bất kỳ quan điểm nào; tên là link hồ sơ.
-      for (const diem of await the.locator('[data-testid="quan-diem"] [title="Điểm của bình luận"]').allTextContents()) {
-        expect(diem, "điểm 0 không được in").not.toMatch(/^▲\s*0$/);
-      }
-      for (const href of await the
-        .getByTestId("quan-diem-ten")
-        .evaluateAll((l) => l.map((e) => e.getAttribute("href")))) {
-        expect(href).toMatch(/^\/u\//);
-      }
-    }
+    // Không còn ô quan điểm (việc 19, plan `2026-11-13-ban-tin-len-dau-ban-quyen.md` §3.4), bất kể
+    // chủ đề có bao nhiêu bình luận; bài T10 ở `dai-ban-tin.spec.ts` chứng minh nó không đo rỗng.
+    await expect(the.getByTestId("quan-diem-noi-bat")).toHaveCount(0);
+    await expect(the.getByTestId("quan-diem")).toHaveCount(0);
 
     // Luật đếm: dưới 4 bình luận không phô số; từ 4 trở lên "💬 N".
     if (m.comment_count >= 4) {
@@ -761,7 +719,7 @@ test.describe.serial("B2/B7 — khối Chủ đề là MỘT thẻ nổi, nhãn 
 /* ---------------------------------------------------------------------------------------- */
 
 test.describe("H — cấp heading của trang chủ (việc 6)", () => {
-  test("`/`: một <h1>, không <h3> nào đứng trước <h2> đầu tiên, mỗi khối h2 có h3 bên dưới, không nhảy cấp", async ({
+  test("`/`: một <h1>, không <h3> nào đứng trước <h2> đầu tiên, khối nhật ký/bài viết có h3 bên dưới (khối chủ đề không), không nhảy cấp", async ({
     page,
   }) => {
     await page.goto("/");
@@ -784,11 +742,19 @@ test.describe("H — cấp heading của trang chủ (việc 6)", () => {
     for (let i = 1; i < cac.length; i += 1) {
       expect(cac[i].cap - cac[i - 1].cap, `nhảy cấp ở #${i}: ${so}`).toBeLessThanOrEqual(1);
     }
-    // Ba khối: đúng một <h2> + ≥ 1 <h3>, và KHÔNG còn <h2> nào của thẻ bên trong.
-    for (const khoi of ["khoi-thao-luan", "khoi-nhat-ky", "khoi-bai-viet"]) {
+    // Ba khối: đúng một <h2> đứng đầu, và KHÔNG còn <h2> nào của thẻ bên trong. Nhật ký + bài viết
+    // có <h3> bên dưới; khối chủ đề thì KHÔNG còn <h3> nào — <h3> duy nhất của nó là tiêu đề ô quan
+    // điểm, ô ấy bỏ ở việc 19 (plan `2026-11-13-ban-tin-len-dau-ban-quyen.md` §3.4).
+    for (const [khoi, co_h3] of [
+      ["khoi-thao-luan", false],
+      ["khoi-nhat-ky", true],
+      ["khoi-bai-viet", true],
+    ] as const) {
       const trong = cac.filter((h) => h.khoi === khoi);
       expect(trong.filter((h) => h.cap === 2), `${khoi}: đúng một <h2>: ${so}`).toHaveLength(1);
-      expect(trong.filter((h) => h.cap === 3).length, `${khoi}: có <h3>: ${so}`).toBeGreaterThan(0);
+      const so_h3 = trong.filter((h) => h.cap === 3).length;
+      if (co_h3) expect(so_h3, `${khoi}: có <h3>: ${so}`).toBeGreaterThan(0);
+      else expect(so_h3, `${khoi}: không còn <h3>: ${so}`).toBe(0);
       expect(trong[0].cap, `${khoi}: <h2> đứng đầu khối`).toBe(2);
     }
     // Thẻ nhật ký cụ thể: <h3>, không <h2>.

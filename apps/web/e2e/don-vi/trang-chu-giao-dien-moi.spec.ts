@@ -1,17 +1,12 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import type { BinhLuanOut, LenhOut, MachTomTatOut } from "@gikky/api-client";
+import type { LenhOut, MachTomTatOut } from "@gikky/api-client";
 import { expect, test } from "@playwright/test";
 
 import { docTrangThai, trangThaiGuiLenApi } from "../../lib/api";
 import { tomTatChanKhoi } from "../../lib/chan-khoi-nhat-ky";
-import {
-  chonQuanDiemNoiBat,
-  chuChipChuDe,
-  khoangTuanVN,
-  trichQuanDiem,
-} from "../../lib/chu-de";
+import { chuChipChuDe, khoangTuanVN } from "../../lib/chu-de";
 import { cacOLenh, NHAN_CHIEU_LENH } from "../../lib/lenh";
 import { LoiGhi } from "../../lib/ghi";
 import {
@@ -183,54 +178,6 @@ test("chip chủ đề: đang mở có đếm; Chủ nhật 'đóng hôm nay'; q
   expect(chuChipChuDe(false, trong)).toBe("Đã đóng");
 });
 
-/* ------------------------------------------------------------------ quan điểm nổi bật -- */
-
-function bl(id: number, over: Partial<BinhLuanOut> = {}): BinhLuanOut {
-  return {
-    id,
-    depth: 1,
-    trang_thai: "binh_thuong",
-    score: 0,
-    body: `bình luận ${id}`,
-    body_dinh_dang: "html",
-    ...over,
-  } as BinhLuanOut;
-}
-
-test("quan điểm nổi bật: chỉ bình luận GỐC đọc được, điểm cao nhất trước, tối đa N, không đột biến", () => {
-  const ds = [
-    bl(1, { score: 2 }),
-    bl(2, { score: 9, depth: 2 }), // reply — loại
-    bl(3, { score: 7 }),
-    bl(4, { score: 100, trang_thai: "da_xoa" }), // bia mộ — loại
-    bl(5, { score: 7 }), // hoà điểm với 3 ⇒ giữ thứ tự API
-    bl(6, { score: 5, trang_thai: "da_an" }), // bị ẩn — loại
-    bl(7, { score: -1 }),
-  ];
-  const truoc = ds.map((b) => b.id);
-  expect(chonQuanDiemNoiBat(ds, 3).map((b) => b.id)).toEqual([3, 5, 1]);
-  expect(chonQuanDiemNoiBat(ds, 1).map((b) => b.id)).toEqual([3]);
-  // Còn chỗ trống vẫn KHÔNG nhặt bình luận điểm âm (id 7, score -1); điểm 0 thì được.
-  expect(chonQuanDiemNoiBat(ds, 10).map((b) => b.id)).toEqual([3, 5, 1]);
-  expect(chonQuanDiemNoiBat([bl(1, { score: -1 }), bl(2, { score: 0 })], 3).map((b) => b.id)).toEqual([2]);
-  expect(chonQuanDiemNoiBat([bl(1, { score: -5 })], 3)).toEqual([]);
-  expect(ds.map((b) => b.id), "không đột biến mảng gốc").toEqual(truoc);
-  expect(chonQuanDiemNoiBat([], 3)).toEqual([]);
-  expect(chonQuanDiemNoiBat([bl(1, { depth: 2 })], 3)).toEqual([]);
-});
-
-test("đoạn trích quan điểm: HTML gỡ thẻ, markdown gỡ ký hiệu, cắt ở 240 ký tự", () => {
-  expect(trichQuanDiem("<p>Giữ <strong>50%</strong> tỷ trọng.</p><p>Hạ nếu thủng 1.250.</p>", "html")).toBe(
-    "Giữ 50% tỷ trọng. Hạ nếu thủng 1.250.",
-  );
-  expect(trichQuanDiem("## Ý chính\n\n- **Giữ** 50%\n- [Xem thêm](https://x.y)", "markdown")).toBe(
-    "Ý chính Giữ 50% Xem thêm",
-  );
-  const dai = trichQuanDiem("a".repeat(500), "markdown");
-  expect(dai.length).toBe(241);
-  expect(dai.endsWith("…")).toBe(true);
-});
-
 /* ---------------------------------------------------------------- thư viện bài viết -- */
 
 function bai(id: number, sub: string): MachTomTatOut {
@@ -310,6 +257,8 @@ test("màu: khối chủ đề, thư viện KHÔNG dùng --gain/--loss/--stamp (
     // Hai file CSS dùng chung tách ra ở đợt C (việc 14) thừa hưởng đúng luật của chỗ chúng đến từ.
     "components/dai-tab.module.css",
     "components/o-soan-nhat-ky.module.css",
+    // Dải bản tin tách khỏi `khoi-bai-viet.module.css` ở việc 19 — cùng lý lẽ.
+    "components/dai-ban-tin.module.css",
   ]) {
     const css = doc(f).replace(/\/\*[\s\S]*?\*\//g, "");
     expect(css, f).not.toMatch(/--(gain|loss|stamp)/);
