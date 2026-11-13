@@ -11,9 +11,11 @@ Nối thêm mốc không đụng vào con số đó, nên động cơ "băm mố
 mỗi feed đã có một tập mạch riêng (mọi mạch / mạch đang mở), `sort` chỉ đổi cách sắp.
 """
 
+from datetime import timedelta
 from typing import Literal, get_args
 
-from django.db.models import Count, Q, QuerySet
+from django.db.models import Count, F, FilteredRelation, Max, Q, QuerySet
+from django.utils import timezone
 from ninja import Router
 
 from core.models.dien_dan import Mach, Sub, TrangThaiMach
@@ -38,7 +40,12 @@ from api.phan_trang import (
     ma_hoa_cursor,
     ma_hoa_cursor_so,
 )
-from api.schemas import FeedOut, SubChiTietOut
+from api.schemas import (
+    FeedOut,
+    NhatKyDangBanMucOut,
+    NhatKyDangBanOut,
+    SubChiTietOut,
+)
 from api.schemas_ghi import LoaiMachIn
 from api.trinh_bay import DuLieuThe, du_lieu_the, mach_tom_tat_ra
 
@@ -400,6 +407,96 @@ def feed_nhat_ky_moi_tac_gia(
         .order_by("-published_at", "-pk")[:limit]
     )
     return FeedOut(items=_the_ra(trang), cursor_ke_tiep=None)
+
+
+#: `GET /feeds/nhat-ky-dang-ban` (plan `2026-11-13-nhat-ky-dang-ban.md`): cửa sổ đếm bình luận
+#: và ngưỡng. Hai con số phiên chính tự chọn — đổi ở đây là đủ, web đọc `cua_so_gio` từ response.
+#: 48 giờ chứ không 24: phiên chứng khoán nghỉ cuối tuần, một nhật ký được bàn chiều thứ Sáu vẫn
+#: phải còn trên dải sáng thứ Bảy. Ngưỡng 2 bình luận tính chứ không 1: một bình luận lẻ chưa
+#: phải "đang được bàn". Ngưỡng đếm BÌNH LUẬN, không đếm người — một người hỏi rồi hỏi tiếp
+#: vẫn lên dải; chống một người spam là việc của THỨ TỰ (vòng sửa 1): xếp theo số người bàn
+#: trước, số bình luận sau, nên 20 bình luận của một người đứng sau 2 người mỗi người một câu.
+CUA_SO_DANG_BAN_GIO = 48
+NGUONG_DANG_BAN = 2
+GIOI_HAN_DANG_BAN_MAC_DINH = 10
+GIOI_HAN_DANG_BAN_TOI_DA = 10
+
+_MO_TA_NHAT_KY_DANG_BAN = """Dải **"Đang được bàn"** của trang chủ: nhật ký có nhiều bình luận
+    gần đây.
+
+    Trong các mạch `nhat_ky` mà feed công khai được phép hiện (cùng bộ lọc với `/feeds/moi`), đếm
+    bình luận **tính**: viết trong `cua_so_gio` giờ qua, chưa xoá, chưa bị ẩn, của người **khác**
+    tác giả mạch, và tác giả bình luận không phải tài khoản bot. Mạch có từ 2 bình luận tính trở
+    lên thì lên dải, xếp theo số **người** viết bình luận tính (`so_nguoi_ban`) giảm dần — để
+    một người viết liên tục không đẩy được mạch lên đầu — rồi số bình luận tính giảm dần, rồi
+    bình luận tính mới nhất trước, rồi `id` giảm dần. `?limit=` 1..10, mặc định 10.
+
+    **Không** lọc mỗi tác giả một bài (khác `/feeds/nhat-ky-moi-tac-gia`): hai nhật ký của cùng
+    một người cùng đang được bàn thì cả hai đều lên. Không có cursor.
+"""
+
+
+@router.get(
+    "/feeds/nhat-ky-dang-ban",
+    response={200: NhatKyDangBanOut, 400: LoiOut},
+    operation_id="liet_ke_nhat_ky_dang_ban",
+    description=_MO_TA_NHAT_KY_DANG_BAN,
+    tags=["feed"],
+)
+def feed_nhat_ky_dang_ban(request, limit: int = GIOI_HAN_DANG_BAN_MAC_DINH):
+    """Xem `_MO_TA_NHAT_KY_DANG_BAN` — mô tả công khai nằm ở `description=`."""
+    if not 1 <= limit <= GIOI_HAN_DANG_BAN_TOI_DA:
+        return loi(
+            400,
+            THAM_SO_KHONG_HOP_LE,
+            f"limit phải nằm trong 1..{GIOI_HAN_DANG_BAN_TOI_DA}, nhận {limit}.",
+        )
+    # MỘT truy vấn: đếm + max có điều kiện trên phép nối `comments`, HAVING theo ngưỡng.
+    # Không dùng `last_discussion_at` (gán bằng giờ mở mạch, chỉ nhích theo luật bình luận
+    # chất lượng) cũng không dùng `comment_count` (tổng trọn đời) — cả hai không trả lời
+    # câu "đang được bàn".
+    # Cửa sổ + xoá + ẩn đi vào `FilteredRelation` ⇒ nằm trong `ON` của LEFT JOIN, nên Postgres
+    # chỉ nối bình luận trong cửa sổ chứ không nối mọi bình luận trọn đời của mọi nhật ký rồi
+    # mới lọc trong `FILTER` (vòng sửa 1: 100k bình luận ~640 ms ⇒ ~27 ms). Phần còn lại (bot,
+    # tác giả mạch) cần nối `core_user` / so với cột của mạch nên ở `filter=` của aggregate —
+    # vẫn trên ĐÚNG hàng bình luận của alias, vì `~Q(...)` trong `filter=` KHÔNG tách thành
+    # subquery (Django dựng nó với `split_subq=False`).
+    tinh = Q(bl_tinh__author__la_bot=False) & ~Q(bl_tinh__author_id=F("author_id"))
+    trang = list(
+        _mach_hien(None, loai_mach="nhat_ky")
+        .annotate(
+            bl_tinh=FilteredRelation(
+                "comments",
+                condition=Q(
+                    comments__created_at__gte=timezone.now()
+                    - timedelta(hours=CUA_SO_DANG_BAN_GIO),
+                    comments__deleted_at__isnull=True,
+                    comments__hidden_at__isnull=True,
+                ),
+            ),
+        )
+        .annotate(
+            so_binh_luan_gan_day=Count("bl_tinh", filter=tinh),
+            so_nguoi_ban=Count("bl_tinh__author", distinct=True, filter=tinh),
+            binh_luan_cuoi_at=Max("bl_tinh__created_at", filter=tinh),
+        )
+        .filter(so_binh_luan_gan_day__gte=NGUONG_DANG_BAN)
+        .order_by("-so_nguoi_ban", "-so_binh_luan_gan_day", "-binh_luan_cuoi_at", "-pk")[
+            :limit
+        ]
+    )
+    return NhatKyDangBanOut(
+        items=[
+            NhatKyDangBanMucOut(
+                mach=the,
+                so_nguoi_ban=m.so_nguoi_ban,
+                so_binh_luan_gan_day=m.so_binh_luan_gan_day,
+                binh_luan_cuoi_at=m.binh_luan_cuoi_at,
+            )
+            for m, the in zip(trang, _the_ra(trang))
+        ],
+        cua_so_gio=CUA_SO_DANG_BAN_GIO,
+    )
 
 
 def subs_kem_so_mach() -> QuerySet:

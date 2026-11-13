@@ -1,0 +1,121 @@
+/* Dải "Đang được bàn" dưới khối "Nhật ký mới" của trang chủ (plan `2026-11-13-nhat-ky-dang-ban.md`).
+ * Chỉ token đã có; không màu mới. Hàng gọn, không phải thẻ mạch. */
+.khoi {
+  margin-top: 22px;
+}
+
+.dau {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.tieu {
+  margin: 0;
+  font-family: var(--f-ui);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.mo_ta {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.xem_them {
+  font-family: var(--f-ui);
+  font-size: 13px;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.xem_them:hover {
+  text-decoration: underline;
+}
+
+.danh_sach {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+
+.hang {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+/* `block` + `min-height` 24px: vùng bấm tối thiểu của link (WCAG 2.5.8 — `e2e/mobile-390.spec.ts`). */
+.tieu_de {
+  display: block;
+  min-height: 24px;
+  font-family: var(--f-ui);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.6;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.tieu_de:hover {
+  color: var(--accent);
+}
+
+.phu {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  font-family: var(--f-ui);
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+.tac_gia {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ten {
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+
+.avatar_bot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--ink-2);
+}
+
+.dem {
+  color: var(--ink-2);
+  font-weight: 600;
+}
+
+.luc {
+  white-space: nowrap;
+}
+
+/* --- mobile (≤ 640px) -------------------------------------------------------------------- */
+@media (max-width: 640px) {
+  .xem_them {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+}

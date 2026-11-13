@@ -1116,3 +1116,21 @@ chưa có chủ đề; bản tin không có trang quản lý nào và không ai 
 
 **Plan:** `plans/2026-11-13-quan-tri-ban-tin-chu-de.md` (đợt C chủ đề chạy được ngay sau việc 19; đợt D bản tin sau
 việc 20 đợt A).
+
+---
+
+## Việc 22 · Dải "Đang được bàn" dưới khối Nhật ký mới — ĐÃ LÀM trên `v2` (2026-11-13, chưa commit): nghiệm thu ĐẠT 8/8, phản biện + vòng sửa 1 xong
+
+**Yêu cầu (user, 2026-11-13):** "phần nhật kí, luôn lấy mới nhất của uniq user, nếu có 1 nhật kí về hpg hoặc dri, đang
+rất nhiều thảo luận, nhưng vì có nhật kí mới, nên nó biến mất khỏi home, sẽ rất khó để lọc các nhật kí đang được thảo
+luận nhiều".
+
+**Đã chốt với user:** thêm dải riêng "Đang được bàn" dưới khối Nhật ký mới (không chỉ thêm tab; không đổi luật mỗi
+tác giả một bài).
+
+**Phiên chính tự quyết (trong plan):** cửa sổ 48 giờ, ngưỡng ≥ 2 bình luận của người khác tác giả mạch, loại tài khoản
+`la_bot`; dải tối đa 5 mục, bỏ mạch đã có trong 8 thẻ phía trên, rỗng thì ẩn hẳn.
+
+**Vòng sửa 1 (sau phản biện):** truy vấn lọc cửa sổ 48 giờ ngay trong JOIN (`FilteredRelation`, ~640 ms → ~27 ms ở 100k bình luận); xếp theo số NGƯỜI bàn trước rồi mới số bình luận (một người spam không đứng đầu được); dải lỗi thì ẩn, không kéo `/` thành 500; bài e2e "không lặp giữa hai khối" có răng. Giờ bình luận cuối in tuyệt đối (web chưa có helper giờ tương đối). Index `core_comment(mach_id, created_at)` để sau: sổ `P-20261113-18`.
+
+**Plan:** `plans/2026-11-13-nhat-ky-dang-ban.md`.

@@ -1,14 +1,16 @@
-import type { FeedOut } from "@gikky/api-client";
+import type { FeedOut, NhatKyDangBanOut } from "@gikky/api-client";
 import { Bot } from "lucide-react";
 import Link from "next/link";
 
 import { NHAN_TRANG_THAI_FEED, type TrangThaiFeed } from "@/lib/api";
 import { tomTatChanKhoi } from "@/lib/chan-khoi-nhat-ky";
 import { hrefTrangThai } from "@/lib/loc-loai-mach";
+import { chonDangBan } from "@/lib/nhat-ky-dang-ban";
 
 import { Avatar } from "./avatar";
 import dai from "./dai-tab.module.css";
 import feedCss from "./feed.module.css";
+import { KhoiNhatKyDangBan } from "./khoi-nhat-ky-dang-ban";
 import { KhoiThaoLuan } from "./khoi-thao-luan";
 import { LoiVaoNhatKy } from "./loi-vao-nhat-ky";
 import { NutGhiNhatKyDinhDay, OSoanNhatKy } from "./o-soan-nhat-ky";
@@ -70,6 +72,7 @@ export function TrangChuV2({
   lede,
   chuDe,
   nhatKy,
+  dangBan,
   bayGio,
 }: {
   tieuDe: string;
@@ -77,6 +80,8 @@ export function TrangChuV2({
   chuDe: FeedOut;
   /** Mỗi tác giả một bài, tối đa `SO_NHAT_KY_TAI` (API lọc sẵn); `cursor_ke_tiep` luôn `null`. */
   nhatKy: FeedOut;
+  /** Nhật ký đang được bàn (`/feeds/nhat-ky-dang-ban`), CHƯA bỏ trùng với khối nhật ký. */
+  dangBan: NhatKyDangBanOut;
   bayGio: Date;
 }) {
   const hien = nhatKy.items.slice(0, SO_NHAT_KY);
@@ -184,6 +189,13 @@ export function TrangChuV2({
             nhả khi cuộn qua hết khối nhật ký. */}
         <NutGhiNhatKyDinhDay />
       </section>
+
+      {/* Dải "Đang được bàn": nhật ký cũ nhiều bình luận mà khối trên (mỗi tác giả một bài MỚI
+          nhất) đã đẩy ra. Bỏ trùng với các thẻ vừa vẽ; rỗng thì component không vẽ gì. */}
+      <KhoiNhatKyDangBan
+        muc={chonDangBan(dangBan.items, new Set(hien.map((m) => m.id)))}
+        cuaSoGio={dangBan.cua_so_gio}
+      />
     </>
   );
 }

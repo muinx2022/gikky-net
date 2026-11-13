@@ -4,6 +4,7 @@ import {
   lietKeBinhLuanMoc,
   lietKeFeedDangDienRa,
   lietKeFeedMoi,
+  lietKeNhatKyDangBan,
   lietKeNhatKyMoiTacGia,
   lietKeSub,
   timBanTinTuMachCu,
@@ -19,6 +20,7 @@ import {
   type LietKeFeedMoiData,
   type MachChiTietOut,
   type NganKeoOut,
+  type NhatKyDangBanOut,
   type SubChiTietOut,
   type TimKiemOut,
   type TrangBanTinOut,
@@ -661,6 +663,35 @@ export async function docNhatKyMoiTacGia(limit: number): Promise<FeedOut> {
     );
   }
   return du_lieu;
+}
+
+/** Dải "Đang được bàn" của `/` (plan `2026-11-13-nhat-ky-dang-ban.md`): nhật ký có từ 2 bình
+ * luận của người KHÁC tác giả (không phải bot, chưa xoá/ẩn) trong `cua_so_gio` giờ qua, KHÔNG lọc
+ * mỗi tác giả một bài — để nhật ký cũ đang được bàn không biến khỏi trang chủ chỉ vì tác giả vừa
+ * đăng bài mới. Phép đếm nằm ở API; web chỉ bỏ trùng với khối "Nhật ký mới"
+ * (`lib/nhat-ky-dang-ban.ts::chonDangBan`). `limit` 1..10.
+ *
+ * **KHÔNG ném** (vòng sửa 1), theo khuôn `docChuDeTuan` chứ không theo `docNhatKyMoiTacGia`:
+ * đây là dải PHỤ dưới khối Nhật ký mới, hỏng thì dải ẩn chứ không kéo cả `/` thành 500. Và
+ * deploy dev đi từng service một — web lên trước api thì endpoint này 404 một quãng, `/` phải
+ * sống qua quãng đó. Ẩn một dải phụ không nói dối gì về nội dung trang (khác loài lỗi vá F1
+ * diệt); khi cả Django chết thì `/` vẫn 500 qua các lời gọi chính. Lỗi được `console.error`
+ * để log server còn thấy.
+ */
+export async function docNhatKyDangBan(limit: number): Promise<NhatKyDangBanOut> {
+  try {
+    const du_lieu = lay(
+      await lietKeNhatKyDangBan({ ...CHUNG, query: { limit } }),
+      "dải nhật ký đang được bàn",
+    );
+    if (du_lieu === null) throw new Error("404 — api chưa có endpoint này (web lên trước api?)");
+    return du_lieu;
+  } catch (loi) {
+    console.error("Dải 'Đang được bàn' của trang chủ bị ẩn vì nạp hỏng:", loi);
+    // `items` rỗng ⇒ dải không vẽ, nên `cua_so_gio` này không bao giờ được in; đặt bằng giá
+    // trị của server (`CUA_SO_DANG_BAN_GIO`) chỉ để kiểu không phải nói dối.
+    return { items: [], cua_so_gio: 48 };
+  }
 }
 
 /** Feed chủ đề thảo luận mà trang chủ và rail cùng chọn từ đó: `SO_CHU_DE_TAI` chủ đề mới nhất

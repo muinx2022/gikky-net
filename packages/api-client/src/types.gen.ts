@@ -1858,6 +1858,51 @@ export type NguoiDungTomTatOut = {
 };
 
 /**
+ * NhatKyDangBanMucOut
+ *
+ * Một nhật ký đang được bàn: thẻ mạch + số bình luận TÍNH trong cửa sổ.
+ *
+ * `so_binh_luan_gan_day` **không phải `mach.comment_count`**: chỉ đếm bình luận viết trong
+ * `cua_so_gio` giờ qua, chưa xoá, chưa bị ẩn, của người KHÁC tác giả mạch và không phải tài
+ * khoản bot. `so_nguoi_ban` là số người KHÁC NHAU viết các bình luận tính đó (khoá xếp hạng
+ * đầu tiên). `binh_luan_cuoi_at` là lúc của bình luận tính mới nhất.
+ */
+export type NhatKyDangBanMucOut = {
+    /**
+     * Binh Luan Cuoi At
+     */
+    binh_luan_cuoi_at: string;
+    mach: MachTomTatOut;
+    /**
+     * So Binh Luan Gan Day
+     */
+    so_binh_luan_gan_day: number;
+    /**
+     * So Nguoi Ban
+     */
+    so_nguoi_ban: number;
+};
+
+/**
+ * NhatKyDangBanOut
+ *
+ * Dải "Đang được bàn" của trang chủ — `GET /feeds/nhat-ky-dang-ban`.
+ *
+ * `cua_so_gio` là độ dài cửa sổ đếm bình luận (giờ), để client in "trong N giờ qua" từ con
+ * số của server thay vì ghi cứng lần thứ hai. Không có cursor.
+ */
+export type NhatKyDangBanOut = {
+    /**
+     * Cua So Gio
+     */
+    cua_so_gio: number;
+    /**
+     * Items
+     */
+    items: Array<NhatKyDangBanMucOut>;
+};
+
+/**
  * NoiDungCuaToiOut
  *
  * Một mảnh nội dung **của chính người gọi** đang bị che ở cửa công khai — PLAN 5.2 + 5.10.
@@ -3032,6 +3077,36 @@ export type LietKeFeedMoiResponses = {
 };
 
 export type LietKeFeedMoiResponse = LietKeFeedMoiResponses[keyof LietKeFeedMoiResponses];
+
+export type LietKeNhatKyDangBanData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/v1/feeds/nhat-ky-dang-ban';
+};
+
+export type LietKeNhatKyDangBanErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+};
+
+export type LietKeNhatKyDangBanError = LietKeNhatKyDangBanErrors[keyof LietKeNhatKyDangBanErrors];
+
+export type LietKeNhatKyDangBanResponses = {
+    /**
+     * OK
+     */
+    200: NhatKyDangBanOut;
+};
+
+export type LietKeNhatKyDangBanResponse = LietKeNhatKyDangBanResponses[keyof LietKeNhatKyDangBanResponses];
 
 export type LietKeNhatKyMoiTacGiaData = {
     body?: never;

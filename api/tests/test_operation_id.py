@@ -105,6 +105,7 @@ def test_du_endpoint_cua_plan_muc_7():
         (("GET",), "/feeds/moi"),
         (("GET",), "/feeds/dang-dien-ra"),
         (("GET",), "/feeds/nhat-ky-moi-tac-gia"),
+        (("GET",), "/feeds/nhat-ky-dang-ban"),
         (("GET",), "/subs"),
         (("GET",), "/subs/{slug}"),
         (("GET",), "/machs/{int:mach_id}"),

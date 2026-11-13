@@ -393,3 +393,46 @@ def test_nhat_ky_moi_tac_gia_so_query_co_dinh_khong_phu_thuoc_so_mach(
     assert any(m["xem_truoc"] and m["xem_truoc"].get("anh") for m in sau["items"]), (
         "nhánh ảnh của thẻ phải chạy, không thì 'không N+1' chỉ đo nhánh rỗng"
     )
+
+
+# --- `GET /feeds/nhat-ky-dang-ban` (2026-11-13) --------------------------------
+
+#: Dải "Đang được bàn" của trang chủ. = 3, như `/feeds/nhat-ky-moi-tac-gia`: MỘT truy vấn đếm
+#: (`Count` + `Max` có điều kiện trên phép nối `comments` + tác giả bình luận, `sub` + `author`
+#: của mạch nạp bằng `select_related`) · **2 cho thẻ** (`trinh_bay.du_lieu_the`).
+SO_QUERY_NHAT_KY_DANG_BAN = 3
+
+
+def test_nhat_ky_dang_ban_so_query_co_dinh_khong_phu_thuoc_so_mach(
+    client, sub, django_assert_num_queries
+):
+    """Đo hai lần — 1 mạch rồi 10 mạch, mỗi mạch của một tác giả khác và mỗi bình luận của
+    một người khác — con số phải Y NGUYÊN: tác giả mạch, tác giả bình luận (`la_bot`) hay thẻ
+    mà nạp lẻ thì lần đo thứ hai đỏ."""
+    from core.models import User
+    from tests.conftest import viet
+
+    def mach_dang_ban(i: int) -> None:
+        u = User.objects.create(username=f"tg_db_{i}", display_name=f"TG {i}")
+        m, _ = tao_mach(
+            sub=sub,
+            author=u,
+            title=f"Nhật ký {i}",
+            body="Mốc 1.",
+            loai_mach=Mach.LoaiMach.NHAT_KY,
+        )
+        for j in range(2):
+            ban = User.objects.create(username=f"ban_db_{i}_{j}", display_name="B")
+            viet(m, ban, "Bàn.")
+
+    mach_dang_ban(0)
+    with django_assert_num_queries(SO_QUERY_NHAT_KY_DANG_BAN):
+        truoc = lay(client, "/api/v1/feeds/nhat-ky-dang-ban")
+    assert len(truoc["items"]) == 1
+
+    for i in range(1, 10):
+        mach_dang_ban(i)
+    with django_assert_num_queries(SO_QUERY_NHAT_KY_DANG_BAN):
+        sau = lay(client, "/api/v1/feeds/nhat-ky-dang-ban")
+    assert len(sau["items"]) == 10
+    assert all(x["mach"]["author"]["username"] for x in sau["items"])

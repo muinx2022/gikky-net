@@ -2696,6 +2696,57 @@
         "title": "NguoiDungTomTatOut",
         "type": "object"
       },
+      "NhatKyDangBanMucOut": {
+        "description": "Một nhật ký đang được bàn: thẻ mạch + số bình luận TÍNH trong cửa sổ.\n\n`so_binh_luan_gan_day` **không phải `mach.comment_count`**: chỉ đếm bình luận viết trong\n`cua_so_gio` giờ qua, chưa xoá, chưa bị ẩn, của người KHÁC tác giả mạch và không phải tài\nkhoản bot. `so_nguoi_ban` là số người KHÁC NHAU viết các bình luận tính đó (khoá xếp hạng\nđầu tiên). `binh_luan_cuoi_at` là lúc của bình luận tính mới nhất.",
+        "properties": {
+          "binh_luan_cuoi_at": {
+            "format": "date-time",
+            "title": "Binh Luan Cuoi At",
+            "type": "string"
+          },
+          "mach": {
+            "$ref": "#/components/schemas/MachTomTatOut"
+          },
+          "so_binh_luan_gan_day": {
+            "title": "So Binh Luan Gan Day",
+            "type": "integer"
+          },
+          "so_nguoi_ban": {
+            "title": "So Nguoi Ban",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "mach",
+          "so_nguoi_ban",
+          "so_binh_luan_gan_day",
+          "binh_luan_cuoi_at"
+        ],
+        "title": "NhatKyDangBanMucOut",
+        "type": "object"
+      },
+      "NhatKyDangBanOut": {
+        "description": "Dải \"Đang được bàn\" của trang chủ — `GET /feeds/nhat-ky-dang-ban`.\n\n`cua_so_gio` là độ dài cửa sổ đếm bình luận (giờ), để client in \"trong N giờ qua\" từ con\nsố của server thay vì ghi cứng lần thứ hai. Không có cursor.",
+        "properties": {
+          "cua_so_gio": {
+            "title": "Cua So Gio",
+            "type": "integer"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/NhatKyDangBanMucOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items",
+          "cua_so_gio"
+        ],
+        "title": "NhatKyDangBanOut",
+        "type": "object"
+      },
       "NoiDungCuaToiOut": {
         "description": "Một mảnh nội dung **của chính người gọi** đang bị che ở cửa công khai — PLAN 5.2 + 5.10.\n\nPLAN 5.10 chốt moderation là *\"ẩn (soft-hide — **tác giả vẫn thấy kèm nhãn**)\"*, và\nPLAN 5.2 nhắc lại: *\"tác giả thấy **nội dung**, người khác thấy nhãn\"*. Vế ấy không cài\nđược ở `GET /machs/{id}` — cửa đó bị ép **không chứa gì per-user** vì cả trang cache\ntheo URL (PLAN 8.4), nên nhét nội dung của tác giả vào là phục vụ nó cho mọi người mở\ncùng URL. Vì thế nó sống ở đây: `GET /machs/{id}/me` vốn đã per-user, đã `no-store`,\nvà đã chạy trên mọi lượt tải trang mạch.\n\nClient vá `body` này vào đúng ô trống mà `GET /machs/{id}` để lại, kèm nhãn của\n`trang_thai` — **không** xoá nhãn đi. Tác giả phải biết là người khác KHÔNG đọc được.\n\n⚠ **Chỉ có mặt khi người gọi là `author` của chính mảnh đó.** Đây là chỗ nguy hiểm\nnhất của cả cửa này: trả nhầm của người khác biến một bản vá minh bạch thành một lỗ\nrò nội dung đã bị mod gỡ, trên một endpoint không ai soi vì nó \"chỉ trả trạng thái\".\n`tests/test_api_noi_dung_cua_toi.py` đo **cả hai chiều**.",
         "properties": {
@@ -4502,6 +4553,50 @@
           }
         },
         "summary": "Feed Moi",
+        "tags": [
+          "feed"
+        ]
+      }
+    },
+    "/api/v1/feeds/nhat-ky-dang-ban": {
+      "get": {
+        "description": "Dải **\"Đang được bàn\"** của trang chủ: nhật ký có nhiều bình luận\n    gần đây.\n\n    Trong các mạch `nhat_ky` mà feed công khai được phép hiện (cùng bộ lọc với `/feeds/moi`), đếm\n    bình luận **tính**: viết trong `cua_so_gio` giờ qua, chưa xoá, chưa bị ẩn, của người **khác**\n    tác giả mạch, và tác giả bình luận không phải tài khoản bot. Mạch có từ 2 bình luận tính trở\n    lên thì lên dải, xếp theo số **người** viết bình luận tính (`so_nguoi_ban`) giảm dần — để\n    một người viết liên tục không đẩy được mạch lên đầu — rồi số bình luận tính giảm dần, rồi\n    bình luận tính mới nhất trước, rồi `id` giảm dần. `?limit=` 1..10, mặc định 10.\n\n    **Không** lọc mỗi tác giả một bài (khác `/feeds/nhat-ky-moi-tac-gia`): hai nhật ký của cùng\n    một người cùng đang được bàn thì cả hai đều lên. Không có cursor.\n",
+        "operationId": "liet_ke_nhat_ky_dang_ban",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NhatKyDangBanOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        },
+        "summary": "Feed Nhat Ky Dang Ban",
         "tags": [
           "feed"
         ]

@@ -54,6 +54,7 @@ from io import BytesIO
 from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.utils import timezone
 from PIL import Image, ImageDraw
 
 from core.anh import xu_ly_anh_tai_len
@@ -69,7 +70,17 @@ from core.ghi import (
 )
 from core.lenh import Lenh
 from core.management.commands.don_rac_e2e import MIEN_E2E
-from core.models import AnhNoiDung, BanTin, BanTinKhung, Mach, Moc, MocAnh, Sub, User
+from core.models import (
+    AnhNoiDung,
+    BanTin,
+    BanTinKhung,
+    Comment,
+    Mach,
+    Moc,
+    MocAnh,
+    Sub,
+    User,
+)
 from core.moi_truong import doi_dev
 from core.thoi_gian import TZ_VN, ngay_vn
 
@@ -154,6 +165,34 @@ USERNAME_DONG_SO = "e2e_nhat_ky_dong"
 DISPLAY_NAME_DONG_SO = "E2E Nhật ký đã đóng"
 TIEU_DE_NHAT_KY_DONG = "Bán E2EFX tại 0.8187 — nhật ký đã đóng sổ của bộ e2e"
 LENH_DONG = Lenh(chieu="ban", ma="E2EFX", gia_vao=Decimal("0.8187"), sl=Decimal("0.8223"))
+
+# --- Dải "Đang được bàn" (plans/2026-11-13-nhat-ky-dang-ban.md, việc 22) ------------------
+#
+# Đúng ca của user: tác giả X có nhật ký CŨ đang được bàn (≥ 2 bình luận của người khác trong
+# 48 giờ) và một nhật ký MỚI hơn ⇒ khối "Nhật ký mới" (mỗi tác giả một bài) chỉ hiện bài mới,
+# dải "Đang được bàn" phải hiện bài cũ.
+#
+# Bài MỚI cũng có `SO_BINH_LUAN_MOI_CUA_X` bình luận trong cửa sổ (vòng sửa 1): API trả CẢ HAI
+# bài, nên bài đo "không lặp" của `trang-chu-dang-ban.spec.ts` có răng — dải phải tự bỏ bài mới
+# vì nó đã nằm trong khối Nhật ký mới. Bài mới không có bình luận thì API vốn đã không trả nó và
+# bài đo xanh dù bước loại trùng hỏng. Ít bình luận hơn bài cũ ⇒ bài cũ vẫn đứng đầu dải.
+#
+# Ngày đăng LÙI SÂU như mọi dữ liệu phụ (bài mới đứng ngay TRƯỚC cụm nhật ký mang lệnh — mới hơn
+# nó một ngày —, bài cũ sau cả cụm `e2e_nhieu_mach`) để không đẩy mạch nghiệm thu khỏi trang 1
+# của feed "Mới". Còn GIỜ của bình luận thì không lùi được: cửa sổ đếm là 48 giờ tính từ lúc
+# GỌI API. Nên mỗi lần chạy (kể cả khi cụm đã dựng từ trước — `dung-seed.ts` không `--reset`)
+# giờ bình luận của CẢ HAI bài được LÀM TƯƠI về vài giờ trước; thiếu bước đó thì DB e2e dựng từ
+# hôm kia làm dải rỗng và bài đo đỏ vô cớ. Chỉ `Comment.created_at` được làm tươi (`update()`),
+# các cột đếm/giờ của `Mach` giữ theo ngày lùi sâu ⇒ thứ tự các feed không đổi theo giờ chạy.
+USERNAME_DANG_BAN = "e2e_tac_gia_dang_ban"
+DISPLAY_NAME_DANG_BAN = "E2E Tác giả đang được bàn"
+USERNAME_BAN_LUAN = "e2e_nguoi_ban_luan"
+TIEU_DE_NHAT_KY_DANG_BAN = "Nhật ký e2e cũ đang được bàn — HPG thử nghiệm"
+TIEU_DE_NHAT_KY_MOI_CUA_X = "Nhật ký e2e mới hơn của tác giả đang được bàn"
+LUI_NGAY_NHAT_KY_DANG_BAN = 450
+LUI_NGAY_NHAT_KY_MOI_CUA_X = LUI_NGAY_NHAT_KY_LENH - 1
+SO_BINH_LUAN_DANG_BAN = 3
+SO_BINH_LUAN_MOI_CUA_X = 2
 
 # --- Bản tin bảng riêng (plans/2026-11-13-ban-tin-bang-rieng.md, việc 20) ----------------
 #
@@ -286,6 +325,7 @@ class Command(BaseCommand):
         self._dung_anh_bai_viet()
         self._dung_nhat_ky_co_lenh()
         self._dung_ban_tin()
+        self._dung_nhat_ky_dang_ban()
 
     def _dung_ho_so_bi_cat(self) -> None:
         """Ca V16: user `USERNAME` với 21 mạch, cùng sub riêng và sub rỗng."""
@@ -606,6 +646,71 @@ class Command(BaseCommand):
             so += 1
         self.stdout.write(self.style.SUCCESS(f"seed_e2e xong: {so} bản tin."))
 
+    def _dung_nhat_ky_dang_ban(self) -> None:
+        """Ca của dải "Đang được bàn" — xem khối hằng `USERNAME_DANG_BAN`. Cổng idempotency theo
+        `USERNAME_DANG_BAN`; bước bù bình luận còn thiếu và bước làm tươi giờ chạy MỌI lần (DB e2e
+        dựng trước vòng sửa 1 có bài mới của X mà chưa có bình luận nào)."""
+        if not User.objects.filter(username=USERNAME_DANG_BAN).exists():
+            sub, _ = Sub.objects.get_or_create(
+                slug=SUB_SLUG, defaults={"ten": SUB_TEN, "mo_ta": SUB_MO_TA}
+            )
+            mat_khau = make_password("seed-dev-khong-dung-that")
+            x = User.objects.create(
+                username=USERNAME_DANG_BAN,
+                email=f"{USERNAME_DANG_BAN}@vi-du.gikky.net",
+                password=mat_khau,
+                display_name=DISPLAY_NAME_DANG_BAN,
+            )
+            User.objects.create(
+                username=USERNAME_BAN_LUAN,
+                email=f"{USERNAME_BAN_LUAN}@vi-du.gikky.net",
+                password=mat_khau,
+                display_name="E2E Người bàn luận",
+            )
+            hom_nay = ngay_vn()
+            for lui, tieu_de in (
+                (LUI_NGAY_NHAT_KY_DANG_BAN, TIEU_DE_NHAT_KY_DANG_BAN),
+                (LUI_NGAY_NHAT_KY_MOI_CUA_X, TIEU_DE_NHAT_KY_MOI_CUA_X),
+            ):
+                khi = datetime.combine(hom_nay - timedelta(days=lui), time(10, 0), tzinfo=TZ_VN)
+                tao_mach(
+                    sub=sub,
+                    author=x,
+                    title=tieu_de,
+                    body="Nội dung giữ chỗ cho dải Đang được bàn của trang chủ.",
+                    occurred_at=khi.date(),
+                    loai_mach=Mach.LoaiMach.NHAT_KY,
+                    _created_at_seed=khi,
+                )
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"seed_e2e xong: u/{USERNAME_DANG_BAN} có một nhật ký cũ "
+                    f"{SO_BINH_LUAN_DANG_BAN} bình luận + một nhật ký mới hơn "
+                    f"{SO_BINH_LUAN_MOI_CUA_X} bình luận."
+                )
+            )
+        ban_luan = User.objects.get(username=USERNAME_BAN_LUAN)
+        bay_gio = timezone.now()
+        for tieu_de, so in (
+            (TIEU_DE_NHAT_KY_DANG_BAN, SO_BINH_LUAN_DANG_BAN),
+            (TIEU_DE_NHAT_KY_MOI_CUA_X, SO_BINH_LUAN_MOI_CUA_X),
+        ):
+            mach = Mach.objects.get(author__username=USERNAME_DANG_BAN, title=tieu_de)
+            # Bù bình luận còn thiếu, giờ tạo bám ngày lùi sâu của mạch (như mọi dữ liệu phụ) —
+            # các cột đếm/giờ của `Mach` vì thế không nhích lên đầu feed.
+            for i in range(Comment.objects.filter(mach=mach).count(), so):
+                tao_binh_luan(
+                    mach=mach,
+                    author=ban_luan,
+                    body=f"Bàn luận thử nghiệm số {i + 1} của bộ e2e.",
+                    _created_at_seed=mach.created_at + timedelta(hours=1 + i),
+                )
+            # Làm tươi: bình luận thứ i lùi (i + 1) giờ so với BÂY GIỜ — trong cửa sổ 48 giờ.
+            for i, c in enumerate(Comment.objects.filter(mach=mach).order_by("pk")):
+                Comment.objects.filter(pk=c.pk).update(
+                    created_at=bay_gio - timedelta(hours=i + 1)
+                )
+
     def _xoa(self) -> None:
         """Xoá `Mach` trước `User` — tác giả nội dung là `PROTECT` — rồi tới `Sub`.
 
@@ -620,6 +725,8 @@ class Command(BaseCommand):
                 USERNAME_BINH_LUAN,
                 USERNAME_BOT,
                 USERNAME_DONG_SO,
+                USERNAME_DANG_BAN,
+                USERNAME_BAN_LUAN,
             ]
         )
         # Mạch LẠ nằm trong hai sub của bộ e2e (do bài đo tạm đăng bằng tài khoản dùng-một-lần

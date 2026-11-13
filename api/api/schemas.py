@@ -374,6 +374,32 @@ class FeedOut(Schema):
     cursor_ke_tiep: str | None
 
 
+class NhatKyDangBanMucOut(Schema):
+    """Một nhật ký đang được bàn: thẻ mạch + số bình luận TÍNH trong cửa sổ.
+
+    `so_binh_luan_gan_day` **không phải `mach.comment_count`**: chỉ đếm bình luận viết trong
+    `cua_so_gio` giờ qua, chưa xoá, chưa bị ẩn, của người KHÁC tác giả mạch và không phải tài
+    khoản bot. `so_nguoi_ban` là số người KHÁC NHAU viết các bình luận tính đó (khoá xếp hạng
+    đầu tiên). `binh_luan_cuoi_at` là lúc của bình luận tính mới nhất.
+    """
+
+    mach: MachTomTatOut
+    so_nguoi_ban: int
+    so_binh_luan_gan_day: int
+    binh_luan_cuoi_at: datetime
+
+
+class NhatKyDangBanOut(Schema):
+    """Dải "Đang được bàn" của trang chủ — `GET /feeds/nhat-ky-dang-ban`.
+
+    `cua_so_gio` là độ dài cửa sổ đếm bình luận (giờ), để client in "trong N giờ qua" từ con
+    số của server thay vì ghi cứng lần thứ hai. Không có cursor.
+    """
+
+    items: list[NhatKyDangBanMucOut]
+    cua_so_gio: int
+
+
 class KetQuaTronOut(Schema):
     """Một dòng kết quả tìm kiếm — **mạch HOẶC bình luận**, trộn chung một danh sách.
 

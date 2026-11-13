@@ -17,6 +17,7 @@ import {
   docFeedSub,
   docKhoang,
   docLoaiMach,
+  docNhatKyDangBan,
   docNhatKyMoiTacGia,
   docTab,
   docTrangThai,
@@ -27,6 +28,7 @@ import {
 } from "@/lib/api";
 import { SO_BAN_TIN_DAI } from "@/lib/ban-tin";
 import { jsonLdWebSite } from "@/lib/json-ld";
+import { SO_DANG_BAN_TAI } from "@/lib/nhat-ky-dang-ban";
 import { SO_BAI_TAI_MOI_GIA, SO_BAI_VIET_TAI, subLenTrangChu } from "@/lib/nhom-bai-viet";
 import { GIOI_THIEU, urlTuyetDoi } from "@/lib/site";
 
@@ -150,6 +152,9 @@ export default async function TrangChu({
  * - Nhật ký: endpoint RIÊNG, **mỗi tác giả một bài** (bài có `published_at` lớn nhất), tải
  *   `SO_NHAT_KY_TAI` tác giả — 8 thẻ đầu vẽ ra, phần còn lại nuôi dải chân khối (xem
  *   `lib/chan-khoi-nhat-ky.ts`). "Xem tất cả" đi tới feed `moi` không lọc.
+ * - Đang được bàn: MỘT lời gọi `docNhatKyDangBan` (nhật ký nhiều bình luận gần đây, không lọc
+ *   theo tác giả) cho dải ngay dưới khối nhật ký; bỏ trùng với 8 thẻ ở `TrangChuV2`. Lời gọi
+ *   này là ngoại lệ của câu "mỗi lời gọi ném": hỏng thì dải ẩn (xem docstring `docNhatKyDangBan`).
  * - Chủ đề: MỘT lời gọi feed chủ đề. Khối chủ đề không còn ô quan điểm (việc 19, plan
  *   `2026-11-13-ban-tin-len-dau-ban-quyen.md` §3.4) nên trang chủ không gọi API bình luận nào.
  * - Bản tin: MỘT lời gọi `liet_ke_ban_tin` (`SO_BAN_TIN_DAI` bản) — bảng RIÊNG từ việc 20, dải
@@ -161,8 +166,9 @@ export default async function TrangChu({
  *   với các lời gọi khác, không thêm một vòng chờ ở ngoài. Gọi theo từng sub (không lọc từ cửa
  *   sổ 50 bài) để sub đăng chậm vẫn có bài. `null` (404, sub vừa bị xoá) ⇒ giá rỗng ⇒ ẩn. */
 async function TrangChuMoi() {
-  const [nhat_ky, chu_de, bai_viet, sub_va_gia, ban_tin] = await Promise.all([
+  const [nhat_ky, dang_ban, chu_de, bai_viet, sub_va_gia, ban_tin] = await Promise.all([
     docNhatKyMoiTacGia(SO_NHAT_KY_TAI),
+    docNhatKyDangBan(SO_DANG_BAN_TAI),
     // Cùng lời gọi với khối "Chủ đề tuần này" ở rail các trang khác (`docFeedChuDe`), nên hai
     // nơi luôn chọn CÙNG một chủ đề. Ở đây nó ném khi API hỏng (vá F1); ở rail thì không.
     docFeedChuDe(),
@@ -210,6 +216,7 @@ async function TrangChuMoi() {
             lede={LEDE}
             chuDe={chu_de}
             nhatKy={nhat_ky}
+            dangBan={dang_ban}
             bayGio={new Date()}
           />
         </VoKhungHaiCot>

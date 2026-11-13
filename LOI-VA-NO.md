@@ -2139,3 +2139,11 @@ P-20261113-15 · MỞ · NHỎ · Hàng rào chỗ gọi `FormDangBai` không th
 P-20261113-16 · MỞ · NHỎ · `pnpm test -- -q` chồng lên `-q` mặc định của `scripts/pytest.mjs` thành `-qq`, mất dòng tổng kết `N passed` (người chấm phải đếm ký hiệu tiến độ) · `scripts/pytest.mjs` · output nghiệm thu đợt C việc 21 (2026-11-13): `node scripts/pytest.mjs -q "--" "-q" …`, file kết quả không có dòng `passed`.
 
 P-20261113-17 · MỞ · NHỎ · Ngăn kéo đăng bài ở `/machs` (admin) không nạp lại bảng khi đóng sau các nhánh `FormDangBai` không gọi `onThanhCong` ("đã lên ngay", ảnh tải lỗi, "không chắc đã tạo") · `apps/admin/app/machs/page.tsx:751-757` (`dong={() => datMoDangBai(false)}` không gọi `ds.napLai()`) · phản biện đợt C việc 21 (2026-11-13), đọc code; cùng loại lỗi đã vá ở `/chu-de`.
+
+P-20261113-18 · MỞ · NHỎ · `core_comment` không có index nào trên `created_at`; dải "Đang được bàn" (việc 22) đã đổi sang `FilteredRelation` nhưng vẫn quét theo `mach_id` rồi lọc giờ — index `(mach_id, created_at)` đưa ca 100k bình luận từ ~27 ms xuống ~9 ms; bảng quản trị bình luận cũng `order_by("-created_at")` trên cả bảng · `api/core/models/binh_luan.py:136-147`, `api/api/quan_tri_bang.py:243` · phản biện việc 22 (2026-11-13), đo trên DB test riêng 100k bình luận. Cố ý chưa thêm migration vì phiên khác đang làm song song.
+
+P-20261113-19 · MỞ · VỪA · Bài đo mobile để lại nhật ký tạm trên feed công khai của `gikky_e2e` (mạch "Nhật ký mobile của m390_…" đứng đầu `nhat-ky-moi-tac-gia`, chiếm một trong 8 thẻ của mọi bài đo trang chủ) · `apps/web/e2e/mobile-390.spec.ts:478` · phản biện việc 22 (2026-11-13), đọc `gikky_e2e`.
+
+P-20261113-20 · MỞ · NHỎ · Bài đo kiểm duyệt dồn ~70 bình luận (đã ẩn) của user `bl_*`/`md_*` vào mạch HPG của `seed_dev` mỗi lượt chạy; `comment_count`/bảng quản trị phình theo số lần chạy, lượt bị ngắt trước bước ẩn thì rò sang phép đếm công khai · mạch 1000 trên `gikky_e2e` · phản biện việc 22 (2026-11-13), đọc `gikky_e2e`; chưa định vị spec nguồn (**nghi ngờ** bài đo kiểm duyệt).
+
+P-20261113-21 · MỞ · VỪA · Chạy `pnpm test` cùng lúc ở hai phiên trên cùng checkout làm phiên sau lỗi DB toàn bộ (`DuplicateDatabase`/`ObjectInUse` trên `test_gikky_dev`), trông như mọi bài ERROR · `scripts/pytest.mjs` · thợ việc 22 (2026-11-13) gặp ở lượt đo nền; lách bằng `DATABASE_URL` trỏ tên DB riêng mỗi phiên.
