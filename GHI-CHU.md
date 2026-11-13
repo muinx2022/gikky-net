@@ -1017,7 +1017,7 @@ lật trong `useLayoutEffect`), thêm bài đo `hydrate-sach.spec.ts`, rồi g�
 HTML server không đổi.
 ---
 
-## Việc 18 · Khối chủ đề xếp chồng + nút chính màu brand — ĐÃ LÀM trên `v2` (`4ed45b5`, 2026-11-13), chưa deploy
+## Việc 18 · Khối chủ đề xếp chồng + nút chính màu brand — ĐÃ LÀM trên `v2` (`4ed45b5`, 2026-11-13), đã lên dev.gikky.net (`ee61f94`, 2026-11-13 08:22, chỉ `web`), chưa lên prod
 
 **Yêu cầu (user, 2026-11-12, ảnh dev.gikky.net):** "phần list user cmt như thế này có ổn không? và nhìn nó ngang hàng với
 chủ đề thảo luận"; "có mấy nút đen, logo màu xanh, có j không ổn?".

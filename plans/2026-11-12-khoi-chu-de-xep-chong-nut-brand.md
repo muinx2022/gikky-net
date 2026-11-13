@@ -1,7 +1,7 @@
 # Khối chủ đề xếp chồng + nút chính màu brand (việc 18)
 
 > **Trạng thái:** ĐÃ LÀM 2026-11-12; **vòng 2 (vá hàng rào P-20261112-8, §10) ĐÃ LÀM 2026-11-13, nghiệm thu ĐẠT**. Nghiệm thu ĐẠT 6/6. Phản biện không có lỗi NẶNG hay VỪA; ba điểm NHỎ của hàng rào
-> ghi ở sổ P-20261112-8. **Commit `4ed45b5` (2026-11-13), chưa deploy.** Nhánh `v2`, nền `34600c5`. Sổ việc: `GHI-CHU.md` việc 18.
+> ghi ở sổ P-20261112-8. **Commit `4ed45b5`; đã lên dev.gikky.net (`ee61f94`, 2026-11-13 08:22, chỉ build `web`), chưa lên prod.** Nhánh `v2`, nền `34600c5`. Sổ việc: `GHI-CHU.md` việc 18.
 > Gộp mục sổ **P-20261110-6** (nút "Đăng ký" ở theme tối mất chữ). User đồng ý sau khi được báo lỗi này và chọn
 > "Xanh brand".
 >
@@ -417,4 +417,4 @@ Lưu ý thử phá Q1/Q5 cần build lại, nên chạy tuần tự, không ch�
 - Mở mới: P-20261113-5 (hở còn lại), P-20261113-6 (hướng hover), P-20261113-7 (lặt vặt).
 - Ý "pnpm nhân đôi `\`" trùng với P-20261112-10(b), không ghi lại.
 
-**Còn lại.** Code commit ở `4ed45b5`, chưa deploy. Thử phá cần build đã để `apps/web/.next` được build lại nhiều lần; lần cuối do nghiệm thu build sạch.
+**Còn lại.** Code commit ở `4ed45b5`, docs ở `ee61f94`. Đã lên dev.gikky.net 2026-11-13 08:22 (chỉ `web`; đo qua Caddy dev 8092 và trang thật ở theme tối). Chưa lên prod. Thử phá cần build đã để `apps/web/.next` được build lại nhiều lần; lần cuối do nghiệm thu build sạch.
