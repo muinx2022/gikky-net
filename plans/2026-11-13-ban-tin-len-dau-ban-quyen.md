@@ -1,6 +1,8 @@
 # Bản tin thị trường lên ngay dưới header + dòng bản quyền (việc 19)
 
-> **Trạng thái:** ĐÃ LẬP PLAN 2026-11-13, chưa chạy. Nhánh `v2`, nền `9ac3a69`. Sổ việc: `GHI-CHU.md` việc 19.
+> **Trạng thái:** ĐÃ LÀM 2026-11-13 (hai vòng), nghiệm thu ĐẠT cả hai vòng, phản biện không có lỗi NẶNG. **Commit `8da9d22`; đã lên
+> dev.gikky.net (`8da9d22`, 2026-11-13 11:37, chỉ build `web`), chưa lên prod.** Nhánh `v2`, nền `9ac3a69`. Sổ việc: `GHI-CHU.md` việc 19.
+> Mục 3.4, 3.5 là user bổ sung giữa chừng; mục 3.6 là vòng 2, ĐỔI thiết kế của 3.1 sau khi phản biện đo bằng tiêu đề thật.
 >
 > **Nền khi giao thợ:** HEAD `9ac3a69`. `pnpm e2e:don-vi` cho **772 bài, xanh hết** (đo 2026-11-13). Thợ thấy số
 > khác thì DỪNG và báo. Cây làm việc có sẵn thay đổi chưa commit của phiên khác ở `GHI-CHU.md`, `LOI-VA-NO.md`,
@@ -225,4 +227,47 @@ Chạy ở gốc repo `D:\Projects\gikky-net`.
 
 ## Báo cáo thực thi
 
-*(điền sau)*
+**Plan sai ở đâu và đã đổi hướng ra sao.** §3.1 giả định tiêu đề bản tin ngắn và giữ đủ 3 link; với tiêu đề thật
+("Bản tin DD/MM — …", 468–547px) dải vòng 1 in ngày hai lần, cắt bản mới nhất ở mọi khổ và lệch 28px so với lưới.
+Seed e2e có 3 tiêu đề ngắn bằng nhau nên vòng 1 xanh hết, và T4 còn khoá đúng cái trần 55% gây lỗi. Phản biện đo ra;
+vòng 2 (§3.6) đổi: 2 bản tin, cắt tiền tố, bỏ trần, hộp 1096px. T13 cũng khác plan: seed chỉ có bối cảnh 59 ký tự nên
+bài đo tự dựng chủ đề tạm thay vì đo trên seed.
+
+**Kiểm chứng (checkout chính, nhánh `v2`, DB `gikky_e2e`).**
+
+| Lệnh | Vòng 1 (nghiệm thu tự chạy) | Vòng 2 (nghiệm thu tự chạy) |
+|---|---|---|
+| `pnpm lint` | 0 warning | 0 warning |
+| `pnpm build` | xanh, `/luat` là `○` | xanh, `/luat` là `○` |
+| `pnpm e2e:don-vi` | 766 xanh (772 + 6 − 12) | 769 xanh (766 + 3) |
+| e2e đầy đủ | 1152 xanh, 21 đỏ, 7 skip, 8 không chạy | không chạy lại |
+| e2e 9 file trang chủ | xanh hết | 182 xanh, 1 skip (W-ANH), 0 đỏ |
+
+21 bài đỏ của lượt đầy đủ đều thuộc nhóm đỏ nền ngoài trang chủ (thợ đo trước khi sửa: 22 đỏ; sau khi sửa: 19). Nghiệm
+thu KHÔNG tự đo nền ở HEAD (không được stash vì cây có việc của phiên khác), chỉ đối chiếu theo tên nhóm. Sau sửa nhỏ
+cuối (gắn dấu `[e2e-viec-19]` vào bài tạm của V3) chỉ chạy lại `pnpm lint` và `dai-ban-tin` (20/20), do thợ chạy.
+
+**Nghiệm thu.** Vòng 1: 12/13 đạt, T9 đạt một phần (lý do ở trên). Vòng 2: V1–V5 đạt 5/5; T1, T2, T3, T4, T5, T8, T9
+chấm lại đều đạt.
+
+**Phản biện (sau vòng 1).** 1 VỪA (dải không đọc được với tiêu đề thật) và 3 NHỎ (1–2 bản tin vẫn bị trần 55%; lệch
+28px; chú thích cũ ở `lib/url.ts`). Cả bốn đã sửa ở vòng 2. Vòng 2 KHÔNG được phản biện lại; nghiệm thu vòng 2 có đo
+độc lập với tiêu đề thật ở 1280 và 1024.
+
+**Thử phá.** Vòng 1: 8 cách phá, mỗi cách làm đỏ đúng bài (T1/T2/T3, T6, T4, T13, T10, T7, T12). Vòng 2: trả trần 55%
+⇒ V3 ở 1024 đỏ (ở 1280 KHÔNG đỏ); trả `max-width` 1200 ⇒ V5 đỏ; bỏ cắt tiền tố ⇒ bài V3 dùng bài tạm đỏ; phá hàm ⇒ V1 đỏ.
+
+**Bài đo cũ.** Xoá 12 bài `don-vi` và 5 bài e2e, đều đo ô quan điểm đã bỏ. Sửa: bài H của `trang-chu-v2` (khối chủ
+đề nay phải có 0 `<h3>`), các bài đòi 3 bản tin thành 2, bài nút brand bỏ phần ô quan điểm. `seo-trang-chu.spec.ts`
+không bị sửa; hai ngưỡng SEO (≥ 19 link `/m/`, ≥ 12 `<time>`) không bị hạ.
+
+**Deploy dev.** Trước khi thay cây: `.deploy-commit` = `ee61f94`, md5 cả 1.173 file trên VPS khớp commit đó. Archive
+`8da9d22` (1.180 file), md5 hai đầu khớp; bản cũ dời sang `~/gikky-dev/src.cu-20261113-113533`; build và recreate chỉ
+`web` lúc 11:37. Đo qua `127.0.0.1:8092`: `/`, `/?tab=moi`, `/luat`, `/s/tin-tuc`, `/api/v1/health` đều 200. Trên
+trình duyệt, 1024px: dải sát header (khe 0), cao 41px, bản 1 "11/11 · Dow Jones 52.231 điểm, Nasdaq -1,21%, Brent 92,06
+USD" không bị cắt, bản 2 rộng 319px có "…", mép trùng `<h1>` và rail; bối cảnh 3 dòng không bị cắt; "Nhật ký mới" lên
+y=536 (trước 685). 375px: dải ở y=111, cao 45px, bản 1 bị cắt còn 235/372px, không tràn ngang; "Vào thảo luận" có đáy
+ở 655px. Chưa có ảnh chụp (khung trình duyệt không chụp được lúc đo).
+
+**Chưa xong / user chưa xem lại.** Dải chỉ 2 bản tin (ban đầu báo user là 3); dòng © ở chân cột phải, không ở đáy
+trang; bối cảnh chỉ nới bằng CSS (server vẫn cắt ~240 ký tự). Chưa lên prod. Việc lặt vặt: sổ P-20261113-8.

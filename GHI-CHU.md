@@ -1039,3 +1039,50 @@ chủ đề thảo luận"; "có mấy nút đen, logo màu xanh, có j không �
 **Vòng 2 (2026-11-13), user chọn "Vá luôn":** vá ba chỗ hở hàng rào ở sổ P-20261112-8: chưa đo hover ở theme tối
 (4.54:1); bài tĩnh lọt `!important`, `--ink-2`, khai `color` hai lần và khối trong `@media`; `max-width: 45%` chưa có bài
 giữ. Chỉ sửa bài đo, không đổi CSS sản phẩm. Thiết kế ở §10 của plan. **ĐÃ LÀM 2026-11-13**, nghiệm thu ĐẠT sau hai lượt sửa theo phản biện; commit `4ed45b5`. Hở còn lại: sổ P-20261113-5. Hướng hover (làm tối thay vì làm sáng): P-20261113-6, user chọn giữ như cũ (2026-11-13).
+
+---
+
+## Việc 19 · Bản tin thị trường lên ngay dưới header + dòng bản quyền ở chân trang — ĐÃ LÀM trên `v2` (`8da9d22`, 2026-11-13), đã lên dev.gikky.net (`8da9d22`, 2026-11-13 11:37, chỉ `web`), chưa lên prod
+
+**Yêu cầu (user, 2026-11-13, sau khi xem dev.gikky.net):** "phần bản tin thị trường xếp xuống dưới cùng có vẻ không ổn
+lắm, chả ai kéo xuống dưới đó để mà xem tin tức cả"; "cũng không có phần nào chú thích @gikky {year}"; sau khi xem phác
+thảo: "trên desktop cũng kéo bản tin lên, ngay dưới header".
+
+**Số đo (dev.gikky.net `ee61f94`):** dải bản tin nằm ở ~2.900/3.025px trên desktop 1024 và ~4.165/5.607px trên mobile
+375, tức sau 4–5 màn hình.
+
+**Đã chốt với user:** bản tin thành **một dải mảnh ngay dưới header** của trang chủ `/`, cả desktop lẫn mobile; gỡ dải
+cũ ở cuối section "Bài viết". Việc này KHÔNG đảo quyết định 2026-11-09 (tin tức là phụ trợ): dải chỉ cao một dòng,
+chủ đề tuần vẫn là tiêu điểm.
+
+**Phiên chính tự quyết (user chưa xem lại):**
+- Dải chỉ có ở trang v2 `/`, không có ở feed cũ `/?tab=…` hay trang khác.
+- Giữ đủ 3 link bản tin trong HTML (luật "SEO chỉ cộng"); desktop hiện cả ba trên một dòng (bản mới nhất ưu tiên chỗ),
+  tablet/mobile chỉ hiện bản mới nhất.
+- Dòng bản quyền `© {năm} gikky.net` đặt trong `ChanTrang` (chân cột phải, cạnh dòng miễn trừ, có ở mọi trang), không
+  dựng footer ngang mới. Không thêm link (đợt E của việc 14 đã cố ý gỡ link khỏi chân trang).
+
+**Bổ sung (user, 2026-11-13, cùng ngày):** "phần chủ đề tuần này, bỏ luôn các list cmt của các user đi". Bỏ hẳn ô
+"Quan điểm mới / nổi bật" của khối chủ đề trên `/` (ô việc 18 vừa dựng lại): danh sách, tiêu đề ô và link "Xem tất cả
+quan điểm →". Hai nút "Vào thảo luận" và "Viết quan điểm của bạn" giữ nguyên. Trang chủ bớt hai lời gọi API bình luận.
+Plan §3.4.
+
+**Bổ sung 2 (user, 2026-11-13):** "cho nội dung chủ đề nhiều hơn chút, hiện tại hơi ít". Phần bối cảnh của chủ đề đang
+kẹp 2 dòng; nới thành tối đa 6 dòng để hiện trọn đoạn trích server trả về (~240 ký tự). Phiên chính tự quyết: chỉ sửa
+CSS, KHÔNG kéo dài đoạn trích ở API (đoạn trích dùng chung cho mọi thẻ). Plan §3.5.
+
+**Bổ sung 3 (user, 2026-11-13):** "sau khi xong thì deploy luôn" — hiểu là dev.gikky.net, không phải prod.
+
+**Plan:** `plans/2026-11-13-ban-tin-len-dau-ban-quyen.md`.
+
+**Vòng 2 (sau phản biện), khác điều đã chốt ban đầu:** với tiêu đề bản tin thật ("Bản tin DD/MM — …", rộng 468–547px)
+dải vòng 1 in ngày hai lần và cắt mất phần con số ở mọi khổ. Đổi: dải vẽ **2 bản tin** (không phải 3; desktop hiện 2,
+≤ 960px hiện 1), cắt tiền tố "Bản tin DD/MM —" khi vẽ, bản mới nhất không còn trần bề rộng, hộp trong 1096px cho thẳng
+mép `<h1>` và rail. Plan §3.6.
+
+**Kết quả:** nghiệm thu ĐẠT cả hai vòng; phản biện không có lỗi NẶNG. Đo trên dev.gikky.net sau deploy: dải sát đáy
+header, cao 41px (mobile 45px); `/` có đúng 1 dải, `/?tab=moi` có 0; 0 ô quan điểm; `© 2026 gikky.net` ở `/`,
+`/?tab=moi`, `/luat`; `<h1>` và lede không đổi; 28 link `/m/` duy nhất. Việc lặt vặt còn lại: sổ P-20261113-8.
+User CHƯA xem lại ba điểm phiên chính tự quyết: dải chỉ 2 bản tin, dòng © nằm ở chân cột phải (không phải đáy trang),
+bối cảnh chỉ nới bằng CSS.
+

@@ -2110,3 +2110,14 @@ sang `du_lieu_the`); docstring `api/tests/test_api_so_query.py:49` còn nhắc n
   - (c) `transition: filter 0.15s ease, opacity 0.15s ease` của `.nut_chinh` header (`thanh-tai-khoan.module.css:75`): phần `opacity` là thừa, vì không trạng thái nào đổi opacity.
   - (d) Thử phá cần build (sửa tạm CSS rồi chạy `pnpm e2e`) để lại `apps/web/.next` build từ bản bị phá, nếu không build lại sau khi khôi phục. `next start` chạy sau đó sẽ phục vụ bản hỏng. Nghiệm thu vòng 2 tự build lại. Quy trình thử phá ở các plan chưa có bước này.
 - **Vì sao không sửa ngay**: ngoài phạm vi việc 18.
+
+### P-20261113-8 · [MỞ] · NHỎ — lặt vặt thấy khi làm việc 19 (bản tin lên đầu, bản quyền, bỏ ô quan điểm)
+- **Ở đâu / bằng chứng**:
+  - (a) Dải bản tin cắt tiền tố "Bản tin DD/MM —" và chỉ in ngày đăng (`published_at`). Bài đăng khác ngày ghi trong tiêu đề thì dải hiện ngày lệch (`apps/web/components/dai-ban-tin.tsx`). **Nghi ngờ**: ba bản tin thật trên dev ngày 2026-11-13 đều trùng ngày (09/11, 10/11, 11/11); chưa thấy ca lệch nào.
+  - (b) Bối cảnh của chủ đề trong `seed_e2e` chỉ dài 59 ký tự, nên không bài nào đo được kẹp dòng trên seed; `apps/web/e2e/dai-ban-tin.spec.ts` (T13) phải tự dựng rồi xoá một chủ đề tạm.
+  - (c) DB dev local `gikky_dev` không có bài `tin-tuc` nào (`Mach.objects.filter(sub__slug='tin-tuc').count()` = 0), nên dải bản tin không hiện và không đo được bằng tiêu đề thật ở local; chỉ đo được trên dev.gikky.net.
+  - (d) `apps/web/components/khoi-thao-luan.tsx`: lớp bọc `.the > .trai` chỉ còn một con, sót lại từ thời lưới hai cột; giữ vì testid `chu-de-the`.
+  - (e) Bài đo: `apps/web/e2e/khoi-chu-de-nut-brand.spec.ts` vẫn dựng user tạm tên dài dù phép đo tên dài đã bỏ cùng ô quan điểm; hai bài V3 ghi đè DOM trong `e2e/dai-ban-tin.spec.ts` không đo được "không lặp ngày" (được bù bằng bài V3 dùng bài `tin-tuc` tạm, chỉ ở 1280); V3 ở 1280 không bắt được việc trả lại trần 55% (chỉ ca 1024 bắt); `e2e/trang-chu-giao-dien-moi.spec.ts` dựng kỳ vọng bằng chính hàm sản phẩm `tieuDeBanTinGon`.
+  - (f) Bộ e2e đầy đủ trên `gikky_e2e` đỏ nền 19 / 21 / 22 bài qua ba lượt chạy cùng ngày (trước sửa 22, sau sửa 19, nghiệm thu 21), đều ngoài trang chủ (`mach-can`, `binh-luan-chung`, `form-ghi`, `tai-khoan-va-ghi`, `seo-va-trang`, `giao-dien` T8, `phase-3` P3, `sang-toi`, `vo-reddit` A10). Con số dao động tức có bài chập chờn; chưa ai tách bài chập chờn khỏi bài đỏ thật.
+  - (g) Từ `/`, lối vào khán đài của chủ đề tuần chỉ còn `chu-de-so-binh-luan`, mà nó chỉ hiện khi chủ đề có ≥ 4 bình luận. Dưới ngưỡng thì người đọc phải vào trang mạch rồi mới tới khán đài.
+- **Vì sao không sửa ngay**: ngoài phạm vi việc 19.
