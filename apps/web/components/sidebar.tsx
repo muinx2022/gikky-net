@@ -31,13 +31,7 @@ import css from "./sidebar.module.css";
  *    nạp bằng `docChuDeTuan` — cùng lời gọi, cùng phép chọn với khối tiêu điểm của `/`. Vắng mặt
  *    ở `/` (khối tiêu điểm đã có), ở trang tĩnh, khi chưa có chủ đề / nạp hỏng, và ở trang mạch
  *    của CHÍNH chủ đề ấy (`KhungHaiCot`);
- * 2. bài mới (`KhoiBaiMoi`) — **vắng mặt hẳn khi `baiMoi` rỗng** *(2026-09-10)*. "Bài mới nhất" /
- *    "Cùng chuyên mục" ở trang mạch `/m/[slugId]` và các trang dùng `KhungHaiCot`; "Bài viết
- *    mới" ở `/` — thay cho khối "Bài viết" to đã gỡ khỏi trang chủ *(việc 24)*. Đứng TRƯỚC
- *    "Chuyên mục" (việc 24): trên điện thoại rail xuống dưới nội dung, khối để cuối thì không ai
- *    cuộn tới. Trang TĨNH (`/luat`) truyền `baiMoiTuTrinhDuyet` để khối tự nạp ở trình duyệt
- *    (`BaiMoiTuTrinhDuyet`). Rail `/s/*` không có khối này;
- * 3. danh sách các sub — **vắng mặt hẳn khi `cacSub` rỗng** *(2026-08-31)*. Một hộp mang
+ * 2. danh sách các sub — **vắng mặt hẳn khi `cacSub` rỗng** *(2026-08-31)*. Một hộp mang
  *    tiêu đề "Chuyên mục" mà không có chuyên mục nào là biển chỉ đường chết: nó chiếm chỗ
  *    và hứa một lối đi không tồn tại. Đây cũng là điều kiện để `KhungHaiCotTinh` dùng lại
  *    đúng `Sidebar` này với `cacSub={[]}` thay vì chế một sidebar thứ hai.
@@ -46,6 +40,12 @@ import css from "./sidebar.module.css";
  *    mà không chuyển danh sách vào đây là bớt link nội bộ từ mọi bài.
  *    Trang TĨNH (`/luat`) không có `cacSub` từ server: truyền `chuyenMucTuTrinhDuyet` để khối
  *    tự nạp ở trình duyệt (`ChuyenMucTuTrinhDuyet`) — xem `khung-hai-cot-tinh.tsx`;
+ * 3. bài mới (`KhoiBaiMoi`) — **vắng mặt hẳn khi `baiMoi` rỗng** *(2026-09-10)*. "Bài mới nhất" /
+ *    "Cùng chuyên mục" ở trang mạch `/m/[slugId]` và các trang dùng `KhungHaiCot`; "Bài viết
+ *    mới" ở `/` — thay cho khối "Bài viết" to đã gỡ khỏi trang chủ *(việc 24)*. Đứng SAU
+ *    "Chuyên mục", TRƯỚC "Luật rút gọn" (user chốt 2026-11-13). Trang TĨNH (`/luat`) truyền
+ *    `baiMoiTuTrinhDuyet` để khối tự nạp ở trình duyệt (`BaiMoiTuTrinhDuyet`). Rail `/s/*` không
+ *    có khối này;
  * 4. luật rút gọn dẫn `/luat` — PLAN 5.10 bắt mọi trang công khai phải có đường tới đó,
  *    và chân trang một mình thì ở dưới quá xa để ai đọc;
  * 5. `ChanTrang` — chỉ còn dòng miễn trừ (đợt E bỏ "Luật cộng đồng" + "Trang chủ": khối luật
@@ -205,20 +205,19 @@ export function Sidebar({
         </section>
       )}
 
-      {/* Khối bài mới đứng TRƯỚC "Chuyên mục" (việc 24): trên điện thoại rail xuống dưới nội dung,
-          để cuối thì không ai cuộn tới. */}
+      {cacSub.length > 0 ? (
+        <KhoiChuyenMuc cacSub={cacSub} />
+      ) : (
+        chuyenMucTuTrinhDuyet && <ChuyenMucTuTrinhDuyet />
+      )}
+
+      {/* Khối bài mới đứng SAU "Chuyên mục", TRƯỚC "Luật rút gọn" (user chốt 2026-11-13). */}
       {baiMoi && baiMoi.length > 0 ? (
         <KhoiBaiMoi baiMoi={baiMoi} tieuDe={tieuDeBaiMoi} coLinkTatCa={linkTatCaBaiViet} />
       ) : (
         baiMoiTuTrinhDuyet && (
           <BaiMoiTuTrinhDuyet tieuDe={tieuDeBaiMoi} coLinkTatCa={linkTatCaBaiViet} />
         )
-      )}
-
-      {cacSub.length > 0 ? (
-        <KhoiChuyenMuc cacSub={cacSub} />
-      ) : (
-        chuyenMucTuTrinhDuyet && <ChuyenMucTuTrinhDuyet />
       )}
 
       <section className={css.khoi} data-testid="sidebar-luat">

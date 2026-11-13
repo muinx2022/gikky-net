@@ -158,3 +158,13 @@ hunk KHÔNG thuộc việc này. Commit theo pathspec cả file sẽ kéo chúng
 ### Ghi sổ
 
 `LOI-VA-NO.md`: `P-20261113-31` … `-37`. `GHI-CHU.md` việc 24: trường `Sub.vi_tri_trang_chu` hết người đọc trên web.
+
+### Bổ sung sau commit `bee47df` (user, 2026-11-13)
+
+"di chuyển bài viết mới xuống dưới chuyên mục bên phải, sau đó deploy luôn" ⇒ khối bài mới đứng SAU Chuyên mục, TRƯỚC
+Luật (đảo lại vị trí "trước Chuyên mục" của mục A; trên điện thoại khối xuống thấp hơn — user chấp nhận). Chiều cao rail
+không đổi ⇒ ngưỡng dính giữ. Sửa `sidebar.tsx` + đảo các bài đo thứ tự (V24-T7, T7, T8 `/luat`, T10, mobile T5); T4
+"bấm dòng phụ" thêm `scrollIntoViewIfNeeded()` vì khối nay nằm dưới mép màn 1280×900. Kiểm chứng (thợ): lint 0 warning,
+`e2e:don-vi` 819 passed, e2e `rail-bai-viet` + `trang-chu-v2` + `mobile-390` + `trang-chu-giao-dien-moi` 91 passed /
+1 skipped trên cụm cô lập `gikky_e2e`; phá V24-T7 (thứ tự cũ) ⇒ đỏ. Bỏ chặng nghiệm thu/phản biện (đổi chỗ một khối,
+ngoại lệ "sửa một chỗ đã biết chắc"); phiên chính đọc diff.

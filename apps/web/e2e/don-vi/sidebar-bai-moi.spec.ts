@@ -41,7 +41,8 @@ test.describe("sidebar-bai-moi", () => {
 
   /* ---------------------------------------------------------- việc 24 — bài viết sang rail -- */
 
-  test("V24-T7 — Sidebar: khối bài mới đứng TRƯỚC khối Chuyên mục (cả hai nhánh tĩnh)", () => {
+  test("V24-T7 — Sidebar: khối bài mới đứng SAU Chuyên mục, TRƯỚC Luật (cả hai nhánh tĩnh)", () => {
+    // Thứ tự user chốt 2026-11-13: … → Chuyên mục → bài mới → Luật rút gọn.
     const sach = boChuThich(doc("components/sidebar.tsx"));
     const i_bai = sach.indexOf("<KhoiBaiMoi");
     const i_bai_td = sach.indexOf("<BaiMoiTuTrinhDuyet");
@@ -51,9 +52,12 @@ test.describe("sidebar-bai-moi", () => {
     for (const [ten, i] of Object.entries({ i_bai, i_bai_td, i_cm, i_cm_td, i_luat })) {
       expect(i, `đo rỗng: không thấy ${ten}`).toBeGreaterThan(0);
     }
-    expect(i_bai).toBeLessThan(i_cm);
-    expect(i_bai_td).toBeLessThan(i_cm);
-    expect(i_cm_td).toBeLessThan(i_luat);
+    // Cả hai nhánh Chuyên mục (server + trình duyệt) đứng trước cả hai nhánh bài mới.
+    expect(i_cm).toBeLessThan(i_bai);
+    expect(i_cm_td).toBeLessThan(i_bai);
+    expect(i_cm_td).toBeLessThan(i_bai_td);
+    expect(i_bai).toBeLessThan(i_luat);
+    expect(i_bai_td).toBeLessThan(i_luat);
   });
 
   test("V24-T6 — CSS tiêu đề bài mới: 12.5px, chữ thường, MỘT dòng cắt bằng ellipsis, không line-clamp", () => {

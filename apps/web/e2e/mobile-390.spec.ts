@@ -631,10 +631,12 @@ test.describe("T2 — thanh cài app không cướp chỗ", () => {
 /* ===================================================================== T5 · home mobile */
 
 // Việc 24: section "Bài viết" (từng đứng NGOÀI khung, được `order` kéo lên trước rail) đã gỡ;
-// bài viết mới là khối ĐẦU của rail sau khối giới thiệu — trước "Chuyên mục", để người cuộn xuống
-// gặp nó trước. Bài đo chuyển từ "Bài viết trước rail" sang "bài viết đứng đầu rail".
-test.describe("T5 — home mobile: bài viết mới ở đầu rail", () => {
-  test("390px: Nhật ký mới → rail (bài viết mới → Chuyên mục) → chân trang; không cuộn ngang", async ({ page }) => {
+// bài viết mới là một khối của rail. Thứ tự trong rail user chốt 2026-11-13: "Chuyên mục" →
+// bài viết mới → "Luật rút gọn".
+test.describe("T5 — home mobile: bài viết mới trong rail, sau Chuyên mục", () => {
+  test("390px: Nhật ký mới → rail (Chuyên mục → bài viết mới → Luật) → chân trang; không cuộn ngang", async ({
+    page,
+  }) => {
     await moi(page, "/");
     const top = (sel: string) =>
       page.locator(sel).first().evaluate((el) => el.getBoundingClientRect().top + window.scrollY);
@@ -643,11 +645,13 @@ test.describe("T5 — home mobile: bài viết mới ở đầu rail", () => {
     const rail = await top('[data-testid="rail-phai"]');
     const baiViet = await top('[data-testid="rail-phai"] [data-testid="sidebar-bai-moi"]');
     const chuyenMuc = await top('[data-testid="rail-phai"] [data-testid="sidebar-cac-sub"]');
+    const luat = await top('[data-testid="rail-phai"] [data-testid="sidebar-luat"]');
     const chan = await top('[data-testid="chan-trang"]');
     expect(nhatKy).toBeLessThan(rail);
-    expect(rail).toBeLessThanOrEqual(baiViet);
-    expect(baiViet, "bài viết mới phải hiện TRƯỚC Chuyên mục").toBeLessThan(chuyenMuc);
-    expect(chuyenMuc).toBeLessThan(chan);
+    expect(rail).toBeLessThanOrEqual(chuyenMuc);
+    expect(chuyenMuc, "bài viết mới phải hiện SAU Chuyên mục").toBeLessThan(baiViet);
+    expect(baiViet, "bài viết mới phải hiện TRƯỚC Luật rút gọn").toBeLessThan(luat);
+    expect(luat).toBeLessThan(chan);
     const rong = await page.evaluate(() => ({
       cuon: document.documentElement.scrollWidth,
       khung: window.innerWidth,

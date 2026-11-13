@@ -76,8 +76,23 @@ const viTriDom = (page: Page) =>
     const rail = document.querySelector('[data-testid="rail-phai"]');
     if (!rail) return null;
     const ds = [...rail.querySelectorAll("[data-testid]")].map((e) => e.getAttribute("data-testid"));
-    return { bai: ds.indexOf("sidebar-bai-moi"), cm: ds.indexOf("sidebar-cac-sub") };
+    return {
+      bai: ds.indexOf("sidebar-bai-moi"),
+      cm: ds.indexOf("sidebar-cac-sub"),
+      luat: ds.indexOf("sidebar-luat"),
+    };
   });
+
+/** Thứ tự user chốt 2026-11-13: Chuyên mục → bài mới → Luật rút gọn. Cả ba phải CÓ (chặn đo rỗng). */
+async function kiemThuTu(page: Page) {
+  const vt = await viTriDom(page);
+  expect(vt, "phải có rail").not.toBeNull();
+  expect(vt!.bai, "đo rỗng: không thấy khối bài viết").toBeGreaterThan(-1);
+  expect(vt!.cm, "đo rỗng: không thấy khối chuyên mục").toBeGreaterThan(-1);
+  expect(vt!.luat, "đo rỗng: không thấy khối luật").toBeGreaterThan(-1);
+  expect(vt!.cm, JSON.stringify(vt)).toBeLessThan(vt!.bai);
+  expect(vt!.bai, JSON.stringify(vt)).toBeLessThan(vt!.luat);
+}
 
 /* ========================================================================== T4 · HTML thô */
 
@@ -128,6 +143,9 @@ test.describe("T4 — `/` HTML thô: khối 'Bài viết' cũ đã gỡ; rail c�
       .evaluateAll((ls) => ls.map((a) => a.textContent));
     expect(chu).toEqual((await baiVietMong()).map((m) => m.title));
     // Stretched link: điểm giữa dòng phụ (ngoài `<a>`) vẫn trúng `<a>` của mục (lớp `::after`).
+    // Cuộn mục vào khung nhìn trước: `elementFromPoint` trả `null` ngoài khung nhìn, và từ
+    // 2026-11-13 khối nằm dưới "Chuyên mục" — có thể dưới mép màn hình 900px.
+    await khoi.locator("li").first().scrollIntoViewIfNeeded();
     const trung = await khoi.locator("li").first().evaluate((li) => {
       const t = li.querySelector("time")!.getBoundingClientRect();
       const e = document.elementFromPoint(t.left + t.width / 2, t.top + t.height / 2);
@@ -162,7 +180,7 @@ test.describe("T4 — `/` HTML thô: khối 'Bài viết' cũ đã gỡ; rail c�
 const TIEU_DE_DAI_RAIL =
   "[e2e-rail-v24] Vì sao nhà đầu tư cá nhân nên ghi nhật ký giao dịch trước khi biết kết quả của lệnh";
 
-test.describe.serial("T6/T7 — `/` desktop 1280px: kiểu chữ của rail, khối bài viết TRƯỚC Chuyên mục", () => {
+test.describe.serial("T6/T7 — `/` desktop 1280px: kiểu chữ của rail, khối bài viết SAU Chuyên mục", () => {
   const dem = () =>
     Number(
       py(
@@ -213,20 +231,18 @@ test.describe.serial("T6/T7 — `/` desktop 1280px: kiểu chữ của rail, kh�
     ).toBeGreaterThan(dai_nhat.rong);
   });
 
-  test("T7 — trong rail, `sidebar-bai-moi` đứng TRƯỚC `sidebar-cac-sub` (thứ tự DOM)", async ({ page }) => {
+  test("T7 — trong rail, `sidebar-bai-moi` đứng SAU `sidebar-cac-sub`, TRƯỚC `sidebar-luat` (thứ tự DOM)", async ({
+    page,
+  }) => {
     await page.goto("/");
-    const vt = await viTriDom(page);
-    expect(vt, "phải có rail").not.toBeNull();
-    expect(vt!.bai, "đo rỗng: không thấy khối bài viết").toBeGreaterThan(-1);
-    expect(vt!.cm, "đo rỗng: không thấy khối chuyên mục").toBeGreaterThan(-1);
-    expect(vt!.bai).toBeLessThan(vt!.cm);
+    await kiemThuTu(page);
   });
 });
 
 /* ============================================================================ T8 · `/luat` */
 
 test.describe("T8 — `/luat` (TĨNH): khối bài viết nạp ở trình duyệt; API chết thì khối vắng", () => {
-  test("HTML thô KHÔNG có khối; sau hydrate có, ≤ 10 link /m/ đúng API, trước Chuyên mục", async ({
+  test("HTML thô KHÔNG có khối; sau hydrate có, ≤ 10 link /m/ đúng API, sau Chuyên mục, trước Luật", async ({
     page,
     request,
   }) => {
@@ -249,8 +265,7 @@ test.describe("T8 — `/luat` (TĨNH): khối bài viết nạp ở trình duy�
     await kiemKieuChu(khoi, "/luat");
     // Chuyên mục cũng nạp ở trình duyệt; chờ nó rồi mới so thứ tự.
     await expect(page.getByTestId("sidebar-cac-sub")).toBeVisible();
-    const vt = await viTriDom(page);
-    expect(vt!.bai).toBeLessThan(vt!.cm);
+    await kiemThuTu(page);
   });
 
   test("chặn `/api/v1/feeds/moi` ⇒ khối vắng mặt, nội dung luật còn đủ, không lỗi JS", async ({ page }) => {
@@ -291,7 +306,7 @@ test.describe("T9/T10 — rail các trang khác", () => {
     await expect(page.getByTestId("sidebar-bai-moi")).toHaveCount(0);
   });
 
-  test("T10 — `/m/<slug>-<id>`: còn khối 'Cùng chuyên mục', trước Chuyên mục, kiểu chữ như T6", async ({
+  test("T10 — `/m/<slug>-<id>`: còn khối 'Cùng chuyên mục', sau Chuyên mục, trước Luật, kiểu chữ như T6", async ({
     page,
   }) => {
     // Một bài viết trong sub có ≥ 2 bài ⇒ khối "Cùng chuyên mục" chắc chắn có bài khác.
@@ -308,9 +323,7 @@ test.describe("T9/T10 — rail các trang khác", () => {
     // Trang mạch giữ 5 bài, không có link "Tất cả bài viết".
     expect(await khoi.locator("li").count()).toBeLessThanOrEqual(5);
     await expect(khoi.getByTestId("sidebar-bai-moi-tat-ca")).toHaveCount(0);
-    const vt = await viTriDom(page);
-    expect(vt!.bai).toBeGreaterThan(-1);
-    expect(vt!.bai).toBeLessThan(vt!.cm);
+    await kiemThuTu(page);
     await kiemKieuChu(khoi, "/m/");
   });
 });

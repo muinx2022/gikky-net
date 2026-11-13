@@ -1178,3 +1178,7 @@ rời trang chủ. Bù link bằng 10 bài ở rail; ngưỡng ≥ 17 link `/m/`
 trên web đọc — chưa gỡ, chờ user quyết giữ (để dùng lại) hay bỏ.
 
 **Plan:** `plans/2026-11-13-bai-viet-sang-rail.md`.
+
+**Bổ sung (user, 2026-11-13, sau commit `bee47df`):** "di chuyển bài viết mới xuống dưới chuyên mục bên phải, sau đó
+deploy luôn" ⇒ khối bài mới đứng SAU khối Chuyên mục, TRƯỚC Luật, ở mọi trang có nó (đảo lại lựa chọn "trước Chuyên mục"
+của plan; hệ quả đã biết: trên điện thoại khối xuống thấp hơn). Deploy = dev.gikky.net (nhánh `v2`), chỉ `web`.
