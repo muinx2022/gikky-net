@@ -46,7 +46,7 @@ Menu thêm nhóm **"Nội dung"** đặt giữa "Tổng quan" và "Kiểm duyệ
   bị ẩn), số bình luận, lượt xem, ngày đóng. Mỗi hàng: link "Bình luận" → `/binh-luan?mach_id=`, "Sửa" →
   `/m/[machId]`, "Trang công khai", và **Đóng chủ đề** hoặc **Mở lại**.
 - **Đóng chủ đề:** ngăn kéo (`ngan-keo.tsx`) có ô "Kết quả một dòng" (`ket_qua`, ≤ 40 ký tự) và ô "Tổng kết"
-  (`bai_hoc`). Mở lại: hộp xác nhận, nói rõ tổng kết được giữ.
+  (`bai_hoc`). Mở lại: hộp xác nhận, nói rõ tổng kết BỊ XOÁ (sửa 2026-11-13: plan gốc ghi "được giữ" là sai — `core/ghi.py::mo_lai` cố ý xoá `ket_qua`/`bai_hoc`, bản cũ lưu ở `AuditLog.meta`, quyết định của plan `2026-11-10-truong-loai-mach.md` vòng sửa 1, sổ `P-20261110-2`).
 - **API (NinjaAPI admin, `api/api/quan_tri_chu_de.py` MỚI):**
   - `GET /quan-tri/chu-de` (`quan_tri_liet_ke_chu_de`): danh sách + ba ô trạng thái trong cùng một phản hồi.
   - `POST /quan-tri/chu-de/{id}/dong` (`quan_tri_dong_chu_de`) và `/mo-lai` (`quan_tri_mo_lai_chu_de`): gọi đúng hàm
@@ -93,7 +93,7 @@ diện `apps/web`; không cho tạo bản tin tay; không commit, không deploy,
 |---|---|---|
 | C1 | Ô "Đang trên trang chủ" | pytest: id trả về = id chủ đề mà feed chủ đề công khai trả, với seed có chủ đề đóng mới hơn chủ đề mở |
 | C2 | Tuần này / tuần sau | pytest đóng băng giờ: CN 23:30 VN và T2 00:10 VN rơi đúng tuần; chủ đề hẹn giờ tuần sau ⇒ "tuần sau: có" |
-| C3 | Đóng / mở lại | Staff đóng ⇒ `status=closed`, `ket_qua`/`bai_hoc` lưu, có AuditLog; mở lại giữ `bai_hoc`; mạch `nhat_ky` ⇒ 400; user thường ⇒ 403 |
+| C3 | Đóng / mở lại | Staff đóng ⇒ `status=closed`, `ket_qua`/`bai_hoc` lưu, có AuditLog; mở lại xoá `ket_qua`/`bai_hoc` và AuditLog giữ bản cũ; mạch `nhat_ky` ⇒ 400; user thường ⇒ 403 |
 | C4 | Lọc loại ở `/machs` | Chọn "Chủ đề" ⇒ request mang `loai_mach=thao_luan`, bảng chỉ còn chủ đề |
 | C5 | Menu | Hai mục mới có trang thật; `quan-tri-giao-dien.spec.ts` xanh không nới |
 | D1 | Ô "Hôm nay" | Đóng băng 08:30 VN thứ Sáu, có khung đêm qua: đêm qua = đã đăng, trước phiên VN = chưa (chưa quá hạn), trước phiên Mỹ = chưa; 09:30 ⇒ trước phiên VN đỏ; thứ Bảy ⇒ "Không có lịch" |
@@ -104,4 +104,93 @@ diện `apps/web`; không cho tạo bản tin tay; không commit, không deploy,
 
 ## Báo cáo thực thi
 
-*(điền sau)*
+### Đợt C (2026-11-13, opus-dev, chưa commit)
+
+Nền: HEAD `8361f18`, cây có sẵn đợt B việc 20 chưa commit (không đụng). `pnpm e2e:don-vi` 781 xanh; `pnpm test`
+17 đỏ sẵn (đúng danh sách P-20261113-9). Không migration.
+
+**File mới:** `api/api/quan_tri_chu_de.py` (router: `quan_tri_liet_ke_chu_de`, `quan_tri_dong_chu_de`,
+`quan_tri_mo_lai_chu_de`), `api/tests/test_api_quan_tri_chu_de.py` (14 bài), `apps/admin/app/chu-de/page.tsx`,
+`apps/admin/lib/chu-de.ts`, `apps/web/e2e/don-vi/quan-tri-chu-de.spec.ts` (11 bài).
+**File sửa:** `api/api/quan_tri.py` (mount), `api/tests/_quan_tri.py` (3 dòng bảng phân quyền),
+`apps/admin/components/khung/menu.ts` (nhóm "Nội dung" + "Chủ đề tuần"), `apps/admin/app/machs/page.tsx` (ô lọc
+"Loại" + cột "Loại"), `apps/admin/lib/loai-mach.ts` (`NHAN_LOAI_MACH`, `docLocLoaiMach`, kiểu suy từ type sinh ra),
+`apps/admin/app/nhat-ky/page.tsx` (gợi ý `dong_so_chu_de` / `mo_lai_chu_de`), `packages/api-client/**` (sinh ra),
+`apps/admin/components/form-dang-bai.tsx` (prop `loai_mach_ban_dau`, mặc định `""`),
+`apps/web/e2e/don-vi/loai-mach-quan-tri.spec.ts` (ngoại lệ phiên chính cho phép: hàng rào mặc định prop + đếm chỗ gọi).
+
+**Quyết định tự chốt:**
+- Đường API theo prefix thật của NinjaAPI admin: `/api/admin/chu-de` (plan ghi `/quan-tri/chu-de`).
+- "Đang trên trang chủ" = `api/feeds.py::_mach_hien(loai_mach=thao_luan)` sắp `-last_content_at` cắt 5, rồi chọn
+  `published_at` lớn nhất (hoà ⇒ id) — đúng hai bước `docFeedChuDe` + `chonChuDeNoi`. Hằng 5 nhân bản
+  `SO_CHU_DE_TAI` của web; bài C1 so với chính endpoint feed công khai.
+- "Tuần này / tuần sau có chủ đề" = mạch `thao_luan`, không bị MOD ẩn (`hidden_by` null), không lưu trữ, không
+  riêng tư, `published_at` trong `[T2 00:00, T2 kế 00:00)` giờ VN; bài chờ giờ hẹn tính là "có".
+- Mạch bị khoá ⇒ 409 `mach_bi_khoa` (không 403 như cửa công khai — 403 ở khu quản trị là "không phải mod").
+  Hạn 7 ngày mở lại giữ nguyên như cửa công khai; server trả `co_the_mo_lai` để UI ẩn nút.
+- Bảng một trang, trần 200 hàng + `tong` (chủ đề một cái/tuần), không cursor.
+
+**Hai điểm từng lệch, phiên chính đã quyết:**
+1. **Mở lại xoá tổng kết** — giữ: gọi đúng `core/ghi.py::mo_lai` (xoá `ket_qua` + `bai_hoc`, chốt từ plan
+   `2026-11-10-truong-loai-mach.md` vòng sửa 1, P-20261110-2); bản cũ ở `AuditLog.meta.bai_hoc_cu`; hộp xác nhận nói
+   rõ. §3.1 / C3 của plan này đã sửa theo.
+2. **Đặt sẵn loại cho "Tạo chủ đề"** — đã làm: `FormDangBai` thêm prop `loai_mach_ban_dau` (mặc định `""`,
+   `form-dang-bai.tsx:50`, state `:68`); chỉ `app/chu-de/page.tsx:288` truyền `"thao_luan"`. Hàng rào
+   `loai-mach-quan-tri.spec.ts:61` ghim mặc định `""` + state lấy từ prop (một `useState` loại duy nhất); bài mới
+   `:81` quét mọi `<FormDangBai … />` của `apps/admin` (≥3 chỗ gọi, chống rỗng) và đòi chỉ `/chu-de` có prop, giá
+   trị `thao_luan`. Bài `quan-tri-chu-de.spec.ts:139`: ô "Tuần sau" → `onTao` → ngăn kéo `mo_tao` → form có
+   `loai_mach_ban_dau="thao_luan"`.
+
+**Bài đo:**
+- C1, C2, C3: `pnpm test -- tests/test_api_quan_tri_chu_de.py` ⇒ 14 passed.
+- C4: `pnpm e2e:don-vi -g "C4"` (hàm thuần + request thật của client sinh ra với `fetch` giả mang
+  `loai_mach=thao_luan` + nguồn trang); bảng chỉ còn chủ đề: pytest có sẵn
+  `test_api_quan_tri_bang_loai_mach.py::test_loc_loai_mach_dung_tung_loai`. Chạy trình duyệt thật trên `gikky_e2e`:
+  chọn "Chủ đề" ⇒ request `GET /api/admin/machs?q=&trang_thai=chua_go&loai_mach=thao_luan&limit=25`, cột Loại chỉ
+  "Chủ đề" (6 hàng).
+- C5: `pnpm e2e:don-vi -g "C5|MENU"`; `quan-tri-giao-dien.spec.ts` không nới.
+- G: `pnpm lint` 0 warning · `pnpm build` exit 0 · `pnpm codegen:check` khớp · `pnpm e2e:don-vi` 793 passed
+  (781 + 12) · `pnpm test`: 17 đỏ, tập đỏ BẰNG ĐÚNG tập nền (so `diff` từng tên); thu 2792 bài = nền 2778 + 14 mới.
+- Trình duyệt thật (Django 8000 + `next start` 3001 trên `gikky_e2e`, phiên staff tạo tay rồi xoá): đóng một chủ
+  đề qua ngăn kéo ⇒ hàng thành "đã đóng" + nút "Mở lại"; mở lại qua hộp xác nhận ⇒ "đang mở" + nút "Đóng"; 0 lỗi
+  console; 0 px cuộn ngang trang ở 1280 và 390. Dữ liệu chụp ảnh (3 mạch, 4 AuditLog, 1 user, 1 session) đã xoá.
+
+**Thử phá:** bỏ cắt 5 ứng viên ⇒ `test_c1_chu_de_moi_xuat_ban_nhat_bi_day...` đỏ · tính tuần theo UTC ⇒ 3 bài C2
+đỏ · bỏ `boi=` ⇒ bài audit đỏ · bỏ `lam_moi_mach` khi đóng ⇒ 3 bài C3 đỏ · bỏ kiểm loại mạch ⇒ bài 400 đỏ · tuần
+tính cả bài bị mod ẩn ⇒ `test_c2_chu_de_bi_mod_an...` đỏ · `docLocLoaiMach` luôn null ⇒ 2 bài C4 đỏ · trang
+`/machs` bỏ `loai_mach` khỏi query ⇒ bài nguồn C4 đỏ · bỏ mục menu ⇒ C5 đỏ · mục menu trỏ trang không có ⇒ C5 +
+`MENU — mọi mục sidebar…` đỏ · `nutChuDe` bỏ `da_khoa` ⇒ bài nút đỏ · mặc định prop `loai_mach_ban_dau` đổi sang `"thao_luan"` ⇒
+`loai-mach-quan-tri.spec.ts:61` đỏ · `/chu-de` không truyền prop ⇒ `loai-mach-quan-tri.spec.ts:81` +
+`quan-tri-chu-de.spec.ts:139` đỏ · `/machs/moi` truyền prop ⇒ `loai-mach-quan-tri.spec.ts:81` đỏ. Mọi file khôi phục.
+
+#### Vòng sửa 1 (2026-11-13, sau phản biện)
+
+1. **VỪA · đua đóng / mở lại.** Kiểm lại DƯỚI khoá ở hàm lõi: `api/core/ghi.py:1323` lớp mới `SoDaDoiTrangThai`
+   (theo nếp `QuaNhieuAnh` / `KhongTheGoAnHenGio`: lỗi của core, tầng API dịch); `dong_so` ném khi hàng đã `closed`
+   (`:1364`), `mo_lai` ném khi hàng không `closed` (`:1412`, cùng mẫu kiểm-rồi-mới-khoá). Dịch thành 409
+   `mach_da_dong` / `mach_dang_mo` ở cả cửa công khai (`api/api/machs.py:964`, `:1061`) lẫn cửa quản trị
+   (`api/api/quan_tri_chu_de.py:304`, `:337`). Bài đua thật (`transaction=True`, hai luồng; một `Barrier` chèn
+   giữa phép kiểm của API và lời gọi hàm lõi để đua CHẮC xảy ra): `test_dua_hai_mod_cung_dong_chu_de_qua_cua_quan_tri`,
+   `..._qua_cua_cong_khai`, `test_dua_hai_mod_cung_mo_lai_chu_de` — đúng một 200 + một 409, tổng kết của lượt thắng,
+   đúng một dòng audit.
+2. **NHỎ · nút trên hàng bị ẩn / hẹn giờ.** `apps/admin/lib/chu-de.ts:70` xét `bi_an` / `hen_gio` trước cờ server.
+   Server: `_co_the_mo_lai` trả `False` khi `hidden_at` có (`quan_tri_chu_de.py:171`); `_nap_chu_de` trả 409
+   `chu_de_dang_an` (`:69`, `:268`) cho bài bị ẩn / chờ giờ hẹn. Bài: `test_c3_chu_de_hen_gio_hay_bi_an_thi_409...`
+   (đóng bài hẹn giờ ⇒ 409, mở lại bài bị ẩn ⇒ 409, `co_the_mo_lai=false`); don-vi "vòng sửa 1 › hàng bị ẩn / hẹn giờ".
+3. **NHỎ · bài lưu trữ rỗng.** `test_c2_chu_de_bi_mod_an_hay_luu_tru...` thêm một chủ đề tuần sau đã lưu trữ, hẹn
+   muộn hơn bài bị ẩn (là ứng viên đầu nếu bộ lọc rơi mất); ô "Tuần sau" vẫn rỗng.
+4. **NHỎ · đóng ngăn kéo tạo không nạp lại.** `apps/admin/app/chu-de/page.tsx:305` `dong` = `dongNganTao(); void nap();`
+   (chủ đề đăng ngay không gọi `onThanhCong`). Bài nguồn don-vi "đóng ngăn kéo tạo chủ đề cũng nạp lại trang".
+5. **NHỎ · câu chữ hộp mở lại.** `apps/admin/lib/chu-de.ts:80` `soPhanTongKetKhiMoLai(tac_gia, mod)`;
+   `page.tsx:244` dùng `useQuanTri().mod.username`: tác giả là mod đang đăng nhập ⇒ "tổng kết sẽ mất hẳn, không có bản
+   lưu"; khác ⇒ bản cũ ở Nhật ký (`mo_lai_chu_de`). Logic lõi không đổi.
+
+**Thử phá (mọi file khôi phục, `cmp` khớp):** bỏ kiểm lại trong `dong_so` ⇒ 2 bài đua đóng đỏ · bỏ trong `mo_lai` ⇒
+bài đua mở lại đỏ · bỏ `archived_at__isnull=True` ⇒ bài lưu trữ đỏ · bỏ 409 ẩn / hẹn giờ ⇒ bài 409 đỏ · bỏ
+`hidden_at` khỏi `_co_the_mo_lai` ⇒ bài 409 đỏ (vế `co_the_mo_lai`) · `nutChuDe` bỏ dòng chặn ẩn / hẹn giờ ⇒ bài
+don-vi đỏ · đóng ngăn kéo không `nap()` ⇒ bài nguồn đỏ · `soPhanTongKetKhiMoLai` luôn "lưu nhật ký" ⇒ bài đỏ.
+
+**Con số:** `pnpm test` (đầy đủ, không `-q`): `17 failed, 2753 passed, 26 skipped` — tập đỏ bằng đúng 17 bài nền
+(`diff` từng tên); 2753 = 2735 + 18 bài của `test_api_quan_tri_chu_de.py`. `pnpm codegen:check` khớp (không đổi
+schema). `pnpm lint` 0 warning. `pnpm e2e:don-vi` 796 passed (781 + 15). `pnpm build` exit 0 (cổng 3000/3001 trống
+trước khi build).

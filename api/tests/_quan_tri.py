@@ -338,6 +338,13 @@ def bang_endpoint(dl: dict) -> list[tuple[str, str, str, BodyEndpoint]]:
                 "published_at": "2099-01-01T08:00:00+07:00",
             },
         ),
+        # Trang "Chủ đề tuần" (việc 21, đợt C). Cửa đọc + hai cửa GHI mở cho mọi mod. Mạch
+        # của bộ dữ liệu này là nhật ký ⇒ hai cửa ghi trả 400 `khong_phai_chu_de` cho mod,
+        # tức không đổi trạng thái gì của hàng dùng chung — và 400 vẫn là "đã qua hàng rào"
+        # đúng nghĩa: phép kiểm loại mạch nằm SAU `ChiMod`.
+        ("quan_tri_liet_ke_chu_de", "get", "/api/admin/chu-de", None),
+        ("quan_tri_dong_chu_de", "post", f"/api/admin/chu-de/{mach_id}/dong", {}),
+        ("quan_tri_mo_lai_chu_de", "post", f"/api/admin/chu-de/{mach_id}/mo-lai", None),
     ]
 
 

@@ -545,6 +545,120 @@
         "title": "ChiSoDocGiaOut",
         "type": "object"
       },
+      "ChuDeOut": {
+        "description": "Một chủ đề thảo luận — một hàng của bảng, và cũng là nội dung của ba ô trạng thái.",
+        "properties": {
+          "bai_hoc": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bai Hoc"
+          },
+          "closed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed At"
+          },
+          "co_the_mo_lai": {
+            "title": "Co The Mo Lai",
+            "type": "boolean"
+          },
+          "comment_count": {
+            "title": "Comment Count",
+            "type": "integer"
+          },
+          "da_khoa": {
+            "title": "Da Khoa",
+            "type": "boolean"
+          },
+          "da_luu_tru": {
+            "title": "Da Luu Tru",
+            "type": "boolean"
+          },
+          "duong_dan_cong_khai": {
+            "title": "Duong Dan Cong Khai",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "ket_qua": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ket Qua"
+          },
+          "published_at": {
+            "format": "date-time",
+            "title": "Published At",
+            "type": "string"
+          },
+          "tac_gia": {
+            "title": "Tac Gia",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "trang_thai": {
+            "enum": [
+              "bi_an",
+              "hen_gio",
+              "dong",
+              "mo"
+            ],
+            "title": "Trang Thai",
+            "type": "string"
+          },
+          "tuan_bat_dau": {
+            "format": "date",
+            "title": "Tuan Bat Dau",
+            "type": "string"
+          },
+          "view_count": {
+            "title": "View Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "tac_gia",
+          "trang_thai",
+          "published_at",
+          "tuan_bat_dau",
+          "closed_at",
+          "ket_qua",
+          "bai_hoc",
+          "comment_count",
+          "view_count",
+          "da_khoa",
+          "da_luu_tru",
+          "co_the_mo_lai",
+          "duong_dan_cong_khai"
+        ],
+        "title": "ChuDeOut",
+        "type": "object"
+      },
       "DatAnIn": {
         "description": "Body của mọi endpoint ẩn/gỡ ẩn.\n\n**Một endpoint đặt-trạng-thái thay vì hai endpoint `hide`/`unhide`** — hai chiều nhận\ncùng bộ đầu vào, nên tách ra chỉ nhân đôi số chỗ phải kiểm quyền. Và nó **idempotent**:\ngửi `an=true` hai lần cho ra cùng một trạng thái.",
         "properties": {
@@ -704,6 +818,37 @@
           "hanh_dong"
         ],
         "title": "DongBaoCaoIn",
+        "type": "object"
+      },
+      "DongSoIn": {
+        "description": "Đóng sổ — `POST /machs/{id}/close`. `ket_qua` tuỳ chọn, ≤40 ký tự (PLAN 5.1).\n\nThuần hiển thị, không validate ngữ nghĩa — cùng triết lý với `figures`.",
+        "properties": {
+          "bai_hoc": {
+            "anyOf": [
+              {
+                "maxLength": 5000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bai Hoc"
+          },
+          "ket_qua": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ket Qua"
+          }
+        },
+        "title": "DongSoIn",
         "type": "object"
       },
       "FigureIn": {
@@ -2966,6 +3111,46 @@
         "title": "TrangBinhLuanOut",
         "type": "object"
       },
+      "TrangChuDeOut": {
+        "properties": {
+          "dang_tren_trang_chu": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ChuDeOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ChuDeOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "tong": {
+            "title": "Tong",
+            "type": "integer"
+          },
+          "tuan_nay": {
+            "$ref": "#/components/schemas/TuanChuDeOut"
+          },
+          "tuan_sau": {
+            "$ref": "#/components/schemas/TuanChuDeOut"
+          }
+        },
+        "required": [
+          "dang_tren_trang_chu",
+          "tuan_nay",
+          "tuan_sau",
+          "items",
+          "tong"
+        ],
+        "title": "TrangChuDeOut",
+        "type": "object"
+      },
       "TrangMachOut": {
         "properties": {
           "cursor_ke_tiep": {
@@ -3097,6 +3282,38 @@
           "mo"
         ],
         "title": "TrangThaiMachOut",
+        "type": "object"
+      },
+      "TuanChuDeOut": {
+        "description": "Một tuần (thứ Hai → Chủ nhật, giờ VN) và chủ đề của nó, nếu có.",
+        "properties": {
+          "bat_dau": {
+            "format": "date",
+            "title": "Bat Dau",
+            "type": "string"
+          },
+          "chu_de": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ChuDeOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ket_thuc": {
+            "format": "date",
+            "title": "Ket Thuc",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bat_dau",
+          "ket_thuc",
+          "chu_de"
+        ],
+        "title": "TuanChuDeOut",
         "type": "object"
       }
     },
@@ -3631,6 +3848,240 @@
         "summary": "Chan Doan Tim Kiem",
         "tags": [
           "quan-tri"
+        ]
+      }
+    },
+    "/api/admin/chu-de": {
+      "get": {
+        "description": "Bảng chủ đề thảo luận (mới xuất bản trước) + ba ô trạng thái.\n\nBảng thấy MỌI chủ đề — kể cả bị ẩn, đã lưu trữ, đang chờ giờ hẹn — cùng luật với bảng\nmạch (`quan_tri_bang.py`): mod phải thấy thứ đã gỡ thì mới gỡ lại được. Trần\n`GIOI_HAN_BANG_CHU_DE` hàng; `tong` là tổng thật.",
+        "operationId": "quan_tri_liet_ke_chu_de",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrangChuDeOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Liet Ke Chu De",
+        "tags": [
+          "quan-tri-chu-de"
+        ]
+      }
+    },
+    "/api/admin/chu-de/{mach_id}/dong": {
+      "post": {
+        "description": "Đóng một chủ đề, kèm \"Kết quả một dòng\" (`ket_qua`, ≤40 ký tự) và \"Tổng kết\"\n(`bai_hoc`). Đã đóng rồi ⇒ 409 `mach_da_dong` (đóng lần hai dời hạn mở lại — xem\n`api/machs.py::dong_so_mach`).",
+        "operationId": "quan_tri_dong_chu_de",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mach_id",
+            "required": true,
+            "schema": {
+              "title": "Mach Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DongSoIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChuDeOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Dong Chu De",
+        "tags": [
+          "quan-tri-chu-de"
+        ]
+      }
+    },
+    "/api/admin/chu-de/{mach_id}/mo-lai": {
+      "post": {
+        "description": "Mở lại một chủ đề đã đóng, trong `NGAY_MO_LAI` ngày kể từ lúc đóng.\n\n⚠ `core/ghi.py::mo_lai` **xoá** `ket_qua` và `bai_hoc` (chủ đích của hàm lõi: không in\ndòng tổng kết lên một câu chuyện chưa kết thúc). Bản cũ nằm trong `meta` của dòng\nAuditLog `mo_lai_chu_de` khi người bấm không phải tác giả.",
+        "operationId": "quan_tri_mo_lai_chu_de",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mach_id",
+            "required": true,
+            "schema": {
+              "title": "Mach Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChuDeOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Mo Lai Chu De",
+        "tags": [
+          "quan-tri-chu-de"
         ]
       }
     },

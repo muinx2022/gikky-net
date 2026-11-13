@@ -4,7 +4,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { QuanTriBanNguoiDungData, QuanTriBanNguoiDungErrors, QuanTriBanNguoiDungResponses, QuanTriChanDoanTimKiemData, QuanTriChanDoanTimKiemErrors, QuanTriChanDoanTimKiemResponses, QuanTriDatAnBinhLuanData, QuanTriDatAnBinhLuanErrors, QuanTriDatAnBinhLuanResponses, QuanTriDatAnMachData, QuanTriDatAnMachErrors, QuanTriDatAnMachResponses, QuanTriDatAnMocData, QuanTriDatAnMocErrors, QuanTriDatAnMocResponses, QuanTriDatKhoaMachData, QuanTriDatKhoaMachErrors, QuanTriDatKhoaMachResponses, QuanTriDatLuuTruMachData, QuanTriDatLuuTruMachErrors, QuanTriDatLuuTruMachResponses, QuanTriDatMatKhauData, QuanTriDatMatKhauErrors, QuanTriDatMatKhauResponses, QuanTriDatThuTuSubData, QuanTriDatThuTuSubErrors, QuanTriDatThuTuSubResponses, QuanTriDatTrangChuSubData, QuanTriDatTrangChuSubErrors, QuanTriDatTrangChuSubResponses, QuanTriDoiQuyenModData, QuanTriDoiQuyenModErrors, QuanTriDoiQuyenModResponses, QuanTriDongBaoCaoData, QuanTriDongBaoCaoErrors, QuanTriDongBaoCaoResponses, QuanTriGanModSubData, QuanTriGanModSubErrors, QuanTriGanModSubResponses, QuanTriGoBanNguoiDungData, QuanTriGoBanNguoiDungErrors, QuanTriGoBanNguoiDungResponses, QuanTriGoModSubData, QuanTriGoModSubErrors, QuanTriGoModSubResponses, QuanTriHenGioMachData, QuanTriHenGioMachErrors, QuanTriHenGioMachResponses, QuanTriLietKeBaoCaoData, QuanTriLietKeBaoCaoErrors, QuanTriLietKeBaoCaoResponses, QuanTriLietKeBinhLuanData, QuanTriLietKeBinhLuanErrors, QuanTriLietKeBinhLuanResponses, QuanTriLietKeMachData, QuanTriLietKeMachErrors, QuanTriLietKeMachResponses, QuanTriLietKeNguoiDungData, QuanTriLietKeNguoiDungErrors, QuanTriLietKeNguoiDungResponses, QuanTriLietKeNhatKyData, QuanTriLietKeNhatKyErrors, QuanTriLietKeNhatKyResponses, QuanTriLietKeSubData, QuanTriLietKeSubErrors, QuanTriLietKeSubResponses, QuanTriLuotXemData, QuanTriLuotXemErrors, QuanTriLuotXemOnlineData, QuanTriLuotXemOnlineErrors, QuanTriLuotXemOnlineResponses, QuanTriLuotXemResponses, QuanTriLuuCaiDatBienTapData, QuanTriLuuCaiDatBienTapErrors, QuanTriLuuCaiDatBienTapResponses, QuanTriLuuCaiDatGoogleData, QuanTriLuuCaiDatGoogleErrors, QuanTriLuuCaiDatGoogleResponses, QuanTriSuaMocData, QuanTriSuaMocErrors, QuanTriSuaMocResponses, QuanTriSuaNguoiDungData, QuanTriSuaNguoiDungErrors, QuanTriSuaNguoiDungResponses, QuanTriSuaSubData, QuanTriSuaSubErrors, QuanTriSuaSubResponses, QuanTriSuaTieuDeMachData, QuanTriSuaTieuDeMachErrors, QuanTriSuaTieuDeMachResponses, QuanTriTaiAnhMocData, QuanTriTaiAnhMocErrors, QuanTriTaiAnhMocResponses, QuanTriTaiAnhNoiDungData, QuanTriTaiAnhNoiDungErrors, QuanTriTaiAnhNoiDungResponses, QuanTriTaoMachHenGioData, QuanTriTaoMachHenGioErrors, QuanTriTaoMachHenGioResponses, QuanTriTaoNguoiDungData, QuanTriTaoNguoiDungErrors, QuanTriTaoNguoiDungResponses, QuanTriTaoSubData, QuanTriTaoSubErrors, QuanTriTaoSubResponses, QuanTriThongKeData, QuanTriThongKeErrors, QuanTriThongKeResponses, QuanTriToiData, QuanTriToiErrors, QuanTriToiResponses, QuanTriXemCaiDatBienTapData, QuanTriXemCaiDatBienTapErrors, QuanTriXemCaiDatBienTapResponses, QuanTriXemCaiDatGoogleData, QuanTriXemCaiDatGoogleErrors, QuanTriXemCaiDatGoogleResponses, QuanTriXemMachData, QuanTriXemMachErrors, QuanTriXemMachResponses, QuanTriXemMocData, QuanTriXemMocErrors, QuanTriXemMocResponses, QuanTriXemNguoiDungData, QuanTriXemNguoiDungErrors, QuanTriXemNguoiDungResponses, QuanTriXoaAnhMocData, QuanTriXoaAnhMocErrors, QuanTriXoaAnhMocResponses, QuanTriXoaCaiDatGoogleData, QuanTriXoaCaiDatGoogleErrors, QuanTriXoaCaiDatGoogleResponses, QuanTriXoaSubData, QuanTriXoaSubErrors, QuanTriXoaSubResponses } from './types.gen';
+import type { QuanTriBanNguoiDungData, QuanTriBanNguoiDungErrors, QuanTriBanNguoiDungResponses, QuanTriChanDoanTimKiemData, QuanTriChanDoanTimKiemErrors, QuanTriChanDoanTimKiemResponses, QuanTriDatAnBinhLuanData, QuanTriDatAnBinhLuanErrors, QuanTriDatAnBinhLuanResponses, QuanTriDatAnMachData, QuanTriDatAnMachErrors, QuanTriDatAnMachResponses, QuanTriDatAnMocData, QuanTriDatAnMocErrors, QuanTriDatAnMocResponses, QuanTriDatKhoaMachData, QuanTriDatKhoaMachErrors, QuanTriDatKhoaMachResponses, QuanTriDatLuuTruMachData, QuanTriDatLuuTruMachErrors, QuanTriDatLuuTruMachResponses, QuanTriDatMatKhauData, QuanTriDatMatKhauErrors, QuanTriDatMatKhauResponses, QuanTriDatThuTuSubData, QuanTriDatThuTuSubErrors, QuanTriDatThuTuSubResponses, QuanTriDatTrangChuSubData, QuanTriDatTrangChuSubErrors, QuanTriDatTrangChuSubResponses, QuanTriDoiQuyenModData, QuanTriDoiQuyenModErrors, QuanTriDoiQuyenModResponses, QuanTriDongBaoCaoData, QuanTriDongBaoCaoErrors, QuanTriDongBaoCaoResponses, QuanTriDongChuDeData, QuanTriDongChuDeErrors, QuanTriDongChuDeResponses, QuanTriGanModSubData, QuanTriGanModSubErrors, QuanTriGanModSubResponses, QuanTriGoBanNguoiDungData, QuanTriGoBanNguoiDungErrors, QuanTriGoBanNguoiDungResponses, QuanTriGoModSubData, QuanTriGoModSubErrors, QuanTriGoModSubResponses, QuanTriHenGioMachData, QuanTriHenGioMachErrors, QuanTriHenGioMachResponses, QuanTriLietKeBaoCaoData, QuanTriLietKeBaoCaoErrors, QuanTriLietKeBaoCaoResponses, QuanTriLietKeBinhLuanData, QuanTriLietKeBinhLuanErrors, QuanTriLietKeBinhLuanResponses, QuanTriLietKeChuDeData, QuanTriLietKeChuDeErrors, QuanTriLietKeChuDeResponses, QuanTriLietKeMachData, QuanTriLietKeMachErrors, QuanTriLietKeMachResponses, QuanTriLietKeNguoiDungData, QuanTriLietKeNguoiDungErrors, QuanTriLietKeNguoiDungResponses, QuanTriLietKeNhatKyData, QuanTriLietKeNhatKyErrors, QuanTriLietKeNhatKyResponses, QuanTriLietKeSubData, QuanTriLietKeSubErrors, QuanTriLietKeSubResponses, QuanTriLuotXemData, QuanTriLuotXemErrors, QuanTriLuotXemOnlineData, QuanTriLuotXemOnlineErrors, QuanTriLuotXemOnlineResponses, QuanTriLuotXemResponses, QuanTriLuuCaiDatBienTapData, QuanTriLuuCaiDatBienTapErrors, QuanTriLuuCaiDatBienTapResponses, QuanTriLuuCaiDatGoogleData, QuanTriLuuCaiDatGoogleErrors, QuanTriLuuCaiDatGoogleResponses, QuanTriMoLaiChuDeData, QuanTriMoLaiChuDeErrors, QuanTriMoLaiChuDeResponses, QuanTriSuaMocData, QuanTriSuaMocErrors, QuanTriSuaMocResponses, QuanTriSuaNguoiDungData, QuanTriSuaNguoiDungErrors, QuanTriSuaNguoiDungResponses, QuanTriSuaSubData, QuanTriSuaSubErrors, QuanTriSuaSubResponses, QuanTriSuaTieuDeMachData, QuanTriSuaTieuDeMachErrors, QuanTriSuaTieuDeMachResponses, QuanTriTaiAnhMocData, QuanTriTaiAnhMocErrors, QuanTriTaiAnhMocResponses, QuanTriTaiAnhNoiDungData, QuanTriTaiAnhNoiDungErrors, QuanTriTaiAnhNoiDungResponses, QuanTriTaoMachHenGioData, QuanTriTaoMachHenGioErrors, QuanTriTaoMachHenGioResponses, QuanTriTaoNguoiDungData, QuanTriTaoNguoiDungErrors, QuanTriTaoNguoiDungResponses, QuanTriTaoSubData, QuanTriTaoSubErrors, QuanTriTaoSubResponses, QuanTriThongKeData, QuanTriThongKeErrors, QuanTriThongKeResponses, QuanTriToiData, QuanTriToiErrors, QuanTriToiResponses, QuanTriXemCaiDatBienTapData, QuanTriXemCaiDatBienTapErrors, QuanTriXemCaiDatBienTapResponses, QuanTriXemCaiDatGoogleData, QuanTriXemCaiDatGoogleErrors, QuanTriXemCaiDatGoogleResponses, QuanTriXemMachData, QuanTriXemMachErrors, QuanTriXemMachResponses, QuanTriXemMocData, QuanTriXemMocErrors, QuanTriXemMocResponses, QuanTriXemNguoiDungData, QuanTriXemNguoiDungErrors, QuanTriXemNguoiDungResponses, QuanTriXoaAnhMocData, QuanTriXoaAnhMocErrors, QuanTriXoaAnhMocResponses, QuanTriXoaCaiDatGoogleData, QuanTriXoaCaiDatGoogleErrors, QuanTriXoaCaiDatGoogleResponses, QuanTriXoaSubData, QuanTriXoaSubErrors, QuanTriXoaSubResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -205,6 +205,65 @@ export const quanTriChanDoanTimKiem = <ThrowOnError extends boolean = false>(opt
             type: 'apiKey'
         }],
     url: '/api/admin/chan-doan/tim-kiem',
+    ...options
+});
+
+/**
+ * Liet Ke Chu De
+ *
+ * Bảng chủ đề thảo luận (mới xuất bản trước) + ba ô trạng thái.
+ *
+ * Bảng thấy MỌI chủ đề — kể cả bị ẩn, đã lưu trữ, đang chờ giờ hẹn — cùng luật với bảng
+ * mạch (`quan_tri_bang.py`): mod phải thấy thứ đã gỡ thì mới gỡ lại được. Trần
+ * `GIOI_HAN_BANG_CHU_DE` hàng; `tong` là tổng thật.
+ */
+export const quanTriLietKeChuDe = <ThrowOnError extends boolean = false>(options?: Options<QuanTriLietKeChuDeData, ThrowOnError>): RequestResult<QuanTriLietKeChuDeResponses, QuanTriLietKeChuDeErrors, ThrowOnError> => (options?.client ?? client).get<QuanTriLietKeChuDeResponses, QuanTriLietKeChuDeErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/admin/chu-de',
+    ...options
+});
+
+/**
+ * Dong Chu De
+ *
+ * Đóng một chủ đề, kèm "Kết quả một dòng" (`ket_qua`, ≤40 ký tự) và "Tổng kết"
+ * (`bai_hoc`). Đã đóng rồi ⇒ 409 `mach_da_dong` (đóng lần hai dời hạn mở lại — xem
+ * `api/machs.py::dong_so_mach`).
+ */
+export const quanTriDongChuDe = <ThrowOnError extends boolean = false>(options: Options<QuanTriDongChuDeData, ThrowOnError>): RequestResult<QuanTriDongChuDeResponses, QuanTriDongChuDeErrors, ThrowOnError> => (options.client ?? client).post<QuanTriDongChuDeResponses, QuanTriDongChuDeErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/admin/chu-de/{mach_id}/dong',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Mo Lai Chu De
+ *
+ * Mở lại một chủ đề đã đóng, trong `NGAY_MO_LAI` ngày kể từ lúc đóng.
+ *
+ * ⚠ `core/ghi.py::mo_lai` **xoá** `ket_qua` và `bai_hoc` (chủ đích của hàm lõi: không in
+ * dòng tổng kết lên một câu chuyện chưa kết thúc). Bản cũ nằm trong `meta` của dòng
+ * AuditLog `mo_lai_chu_de` khi người bấm không phải tác giả.
+ */
+export const quanTriMoLaiChuDe = <ThrowOnError extends boolean = false>(options: Options<QuanTriMoLaiChuDeData, ThrowOnError>): RequestResult<QuanTriMoLaiChuDeResponses, QuanTriMoLaiChuDeErrors, ThrowOnError> => (options.client ?? client).post<QuanTriMoLaiChuDeResponses, QuanTriMoLaiChuDeErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/admin/chu-de/{mach_id}/mo-lai',
     ...options
 });
 

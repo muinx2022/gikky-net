@@ -47,9 +47,14 @@ type DaTao = { mach_id: number; moc_id: number | null; da_len_ngay: boolean };
 export function FormDangBai({
   dong,
   onThanhCong,
+  loai_mach_ban_dau = "",
 }: {
   dong: () => void;
   onThanhCong?: (machId: number) => void;
+  /** Ô "Loại mạch" lúc mở form. Mặc định `""` = theo tác giả (không gửi trường). CHỈ trang
+   *  `/chu-de` truyền `"thao_luan"` (nút "Tạo chủ đề"); hàng rào
+   *  `e2e/don-vi/loai-mach-quan-tri.spec.ts` đếm chỗ gọi theo nguồn. Mod vẫn đổi được. */
+  loai_mach_ban_dau?: LuaChonLoaiMach;
 }) {
   const [subs, datSubs] = useState<SubQuanTriOut[] | null>(null);
   const [loi_nap, datLoiNap] = useState<string | null>(null);
@@ -60,7 +65,7 @@ export function FormDangBai({
   const [body, datBody] = useState("");
   const [ngay, datNgay] = useState("");
   const [loai, datLoai] = useState("");
-  const [loai_mach, datLoaiMach] = useState<LuaChonLoaiMach>("");
+  const [loai_mach, datLoaiMach] = useState<LuaChonLoaiMach>(loai_mach_ban_dau);
   const [cau_moi, datCauMoi] = useState("");
   const [figures, datFigures] = useState<Figure[]>([]);
   const [anhs, datAnhs] = useState<File[]>([]);

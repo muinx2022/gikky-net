@@ -1105,7 +1105,7 @@ danh sách · chỉ đọc (không bình luận / vote / câu hỏi cho đám đ
 
 ---
 
-## Việc 21 · Khu quản trị: quản lý bản tin + chủ đề thảo luận hàng tuần — ĐÃ DUYỆT PLAN (2026-11-13), chờ việc 19 commit
+## Việc 21 · Khu quản trị: quản lý bản tin + chủ đề thảo luận hàng tuần — ĐANG LÀM trên `v2`: đợt C (admin `/chu-de`, lọc loại ở `/machs`, vá đua đóng/mở lại ở `core/ghi.py`) xong 2026-11-13, nghiệm thu + phản biện + vòng sửa 1 ĐẠT; đợt D (admin bản tin) đang làm
 
 **Yêu cầu (user, 2026-11-13):** "ngoài phần bảng tin, còn thêm phần chủ đề bình luận hàng tuần. bạn xem trong admin còn
 thiếu phần quản lý nào thì lập plan xử lý luôn".

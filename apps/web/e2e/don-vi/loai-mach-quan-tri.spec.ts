@@ -8,7 +8,7 @@ import {
   truongLoaiMach,
   type LuaChonLoaiMach,
 } from "../../../admin/lib/loai-mach";
-import { boChuThich } from "./quet";
+import { boChuThich, quetNguon } from "./quet";
 
 /** K9 — ô chọn "Loại mạch" của form đăng bài ở khu quản trị
  * (`apps/admin/components/form-dang-bai.tsx`, plan homepage-v2 §3.7).
@@ -58,9 +58,14 @@ test("ô chọn có đúng bốn lựa chọn, theo thứ tự, mặc định l�
   }
 });
 
-test("form THẬT: state khởi tạo là '' và thân request trải truongLoaiMach(loai_mach)", () => {
+test("form THẬT: state khởi tạo từ prop mặc định '' và thân request trải truongLoaiMach(loai_mach)", () => {
   const sach = form();
-  expect(sach).toMatch(/useState<LuaChonLoaiMach>\(\s*""\s*\)/);
+  // State khởi tạo từ prop `loai_mach_ban_dau`, mà mặc định của prop là "" (việc 21, đợt C:
+  // `/chu-de` cần đặt sẵn `thao_luan`). Mặc định đổi khỏi "" là MỌI form đăng bài đổi hành vi
+  // — đúng thứ bài này canh. Chỗ gọi nào được truyền prop: bài kế bên.
+  expect(sach).toMatch(/useState<LuaChonLoaiMach>\(\s*loai_mach_ban_dau\s*\)/);
+  expect(sach.match(/useState<LuaChonLoaiMach>\(/g)).toHaveLength(1);
+  expect(sach).toMatch(/export function FormDangBai\(\{[^}]*\bloai_mach_ban_dau\s*=\s*""\s*,/);
   // Trải ĐÚNG trong thân `quanTriTaoMachHenGio`, không ở chỗ nào khác của file.
   expect(sach).toMatch(
     /quanTriTaoMachHenGio\(\{[\s\S]*?body:\s*\{[\s\S]*?\.\.\.truongLoaiMach\(\s*loai_mach\s*\)[\s\S]*?\}\s*,\s*\}\s*\)/,
@@ -71,4 +76,18 @@ test("form THẬT: state khởi tạo là '' và thân request trải truongLoai
   expect(sach).toMatch(/data-testid="o-loai-mach"/);
   expect(sach).toMatch(/value=\{loai_mach\}/);
   expect(sach).toMatch(/LUA_CHON_LOAI_MACH\.map/);
+});
+
+test("chỗ gọi FormDangBai: CHỈ /chu-de truyền loai_mach_ban_dau, và chỉ với 'thao_luan'", () => {
+  // Đếm theo NGUỒN mọi thẻ `<FormDangBai … />` trong apps/admin. Chỗ gọi mới mà truyền prop
+  // là một form đăng bài không còn mặc định "theo tác giả" — phải đi qua hàng rào này.
+  const goi: { ten: string; the: string }[] = [];
+  for (const f of quetNguon(ADMIN, /\.tsx$/)) {
+    for (const m of f.sach.matchAll(/<FormDangBai\b[\s\S]*?\/>/g)) goi.push({ ten: f.ten, the: m[0] });
+  }
+  // Chống hàng rào rỗng: hôm nay có ba chỗ gọi (ngăn kéo /machs, /machs/moi, /chu-de).
+  expect(goi.length).toBeGreaterThanOrEqual(3);
+  const co_prop = goi.filter((g) => /\bloai_mach_ban_dau\b/.test(g.the));
+  expect(co_prop.map((g) => g.ten)).toEqual(["app/chu-de/page.tsx"]);
+  expect(co_prop[0].the).toMatch(/\bloai_mach_ban_dau="thao_luan"/);
 });

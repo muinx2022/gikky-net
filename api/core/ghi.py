@@ -1320,6 +1320,22 @@ def xoa_binh_luan(*, comment: Comment, khi=None) -> bool:
         return True
 
 
+class SoDaDoiTrangThai(Exception):
+    """Trạng thái sổ đã đổi giữa lúc tầng API kiểm và lúc hàng `Mach` bị khoá: `dong_so` gặp
+    mạch ĐÃ đóng, hoặc `mo_lai` gặp mạch ĐANG mở. Tầng API dịch thành 409 (`mach_da_dong` /
+    `mach_dang_mo`, theo `status_hien_tai`).
+
+    Vì sao kiểm lại DƯỚI khoá: phép kiểm của tầng API chạy ngoài transaction. Hai mod bấm
+    "Đóng" cùng lúc thì cả hai qua được phép kiểm ấy; không có lần kiểm này, lượt khoá sau
+    ghi đè `ket_qua`/`bai_hoc` của lượt trước và dời `closed_at` (tức dời hạn mở lại) — cả
+    hai cùng nhận 200 (phản biện việc 21, đợt C).
+    """
+
+    def __init__(self, status_hien_tai: str) -> None:
+        self.status_hien_tai = status_hien_tai
+        super().__init__(f"Sổ của mạch đã ở trạng thái {status_hien_tai!r}.")
+
+
 def dong_so(
     *,
     mach: Mach,
@@ -1338,10 +1354,14 @@ def dong_so(
     Mạch đóng **vẫn bình luận được**, chỉ không nối mốc được — hai chuyện đó nằm ở tầng
     API, đây chỉ ghi trạng thái. `status` và `locked_at` là hai trục riêng: đóng sổ không
     đụng vào khoá của mod và ngược lại (PLAN 5.10).
+
+    Mạch đã đóng (đọc DƯỚI khoá) ⇒ ném `SoDaDoiTrangThai`, không ghi gì.
     """
     khi = khi or timezone.now()
     with transaction.atomic():
         m = Mach.objects.select_for_update().get(pk=mach.pk)
+        if m.status == Mach.TrangThai.DONG:
+            raise SoDaDoiTrangThai(m.status)
         ket_qua_cu, bai_hoc_cu = m.ket_qua, m.bai_hoc
         m.status = Mach.TrangThai.DONG
         m.closed_at = khi
@@ -1388,6 +1408,8 @@ def mo_lai(*, mach: Mach, boi=None) -> Mach:
     """
     with transaction.atomic():
         m = Mach.objects.select_for_update().get(pk=mach.pk)
+        if m.status != Mach.TrangThai.DONG:
+            raise SoDaDoiTrangThai(m.status)
         ket_qua_cu, bai_hoc_cu = m.ket_qua, m.bai_hoc
         m.status = Mach.TrangThai.MO
         m.closed_at = None

@@ -1,4 +1,4 @@
-import type { MachHenGioMoiIn } from "@gikky/api-client/admin";
+import type { MachHenGioMoiIn, QuanTriLietKeMachData } from "@gikky/api-client/admin";
 
 /** Ô chọn "Loại mạch" của form đăng bài ở khu quản trị *(homepage v2, plan §3.7)*.
  *
@@ -28,4 +28,24 @@ export const LUA_CHON_LOAI_MACH: readonly { gia_tri: LuaChonLoaiMach; nhan: stri
  * Dùng bằng `...truongLoaiMach(loai_mach)` để khoá KHÔNG xuất hiện ở lựa chọn mặc định. */
 export function truongLoaiMach(lua_chon: LuaChonLoaiMach): { loai_mach?: LoaiMachGui } {
   return lua_chon === "" ? {} : { loai_mach: lua_chon };
+}
+
+/* ---------------------------------------------------------------------------------------- */
+/* Ô lọc "Loại" + cột loại của bảng `/machs` (việc 21, đợt C — plan §3.1 dòng cuối).          */
+
+/** Giá trị `?loai_mach=` của bảng mạch, suy từ type SINH RA của endpoint (không gõ tay). */
+export type LocLoaiMach = NonNullable<NonNullable<QuanTriLietKeMachData["query"]>["loai_mach"]>;
+
+/** Nhãn ngắn của từng loại — cho ô lọc và cột "Loại". `Record` khoá bằng type sinh ra: server
+ * thêm một loại mới thì `tsc` đỏ ở đây, không phải một ô lọc lặng lẽ thiếu một mục. */
+export const NHAN_LOAI_MACH: Record<LocLoaiMach, string> = {
+  nhat_ky: "Nhật ký",
+  bai_viet: "Bài viết",
+  thao_luan: "Chủ đề",
+};
+
+/** `?loai_mach=` trên URL của `/machs` → giá trị gửi lên API, hoặc `null` (= "Tất cả").
+ * Giá trị lạ (link cũ, gõ tay) ⇒ `null` chứ không gửi đi để ăn 400. */
+export function docLocLoaiMach(tho: string | null): LocLoaiMach | null {
+  return tho !== null && Object.hasOwn(NHAN_LOAI_MACH, tho) ? (tho as LocLoaiMach) : null;
 }

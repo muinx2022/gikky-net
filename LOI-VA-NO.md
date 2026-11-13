@@ -2129,3 +2129,13 @@ P-20261113-10 · MỞ · VỪA · Worktree của subagent KHÔNG cách ly hẳn 
 P-20261113-11 · MỞ · NHỎ · Bot bản tin: probe `GET /api/v1/ban-tin` chỉ có bài đo cho ca 503; các nhánh lỗi mạng / 403 / 429 và khoảng chờ mặc định 2s/5s chưa có bài đo; đặt `GIKKY_BOT_CHO_THU_LAI` dài hơn 2 phần tử thì số lượt hỏi vượt 3 · `scripts/dang-tin.mjs` (`serverCoBanTin`, `choThuLai`) · nghiệm thu vòng sửa 1 việc 20 (2026-11-13), đọc code; `api/tests/urls_ban_tin_chap_chon.py` chỉ trả 503 rồi 404.
 
 P-20261113-12 · MỞ · NHỎ · **nghi ngờ** · `chuyen_ban_tin` không kiểm lại `rieng_tu` / tác giả dưới khoá lúc ghi: mạch bị đổi sang riêng tư giữa lúc lập kế hoạch và lúc ghi vẫn bị chép · `api/core/management/commands/chuyen_ban_tin.py:228-235` · đọc code, chưa dựng được ca thật (cửa sổ vài mili giây, mạch đội hiếm khi đổi riêng tư).
+
+P-20261113-13 · MỞ · NHỎ · Hằng "số chủ đề tải về cho trang chủ" có HAI bản (web `SO_CHU_DE_TAI` và Python `SO_CHU_DE_TAI_TRANG_CHU` của ô "Đang trên trang chủ" ở admin) mà không hàng rào nào ép bằng nhau; lệch thì ô admin có thể chỉ sai chủ đề mà không bài nào đỏ (bài C1 lấy chính hằng Python làm `limit`) · `api/api/quan_tri_chu_de.py:66`, `apps/web/lib/chu-de.ts` · báo cáo thợ đợt C việc 21 (2026-11-13), đọc code.
+
+P-20261113-14 · MỞ · NHỎ · Danh sách gợi ý action ở trang `/nhat-ky` của admin chép tay, đã thiếu sẵn `hen_gio_mach`, `phat_hanh_mach`, `luu_tru_mach`, `bo_luu_tru_mach` · `apps/admin/app/nhat-ky/page.tsx:47` · so với các hằng `AUDIT_*` ở `api/core/ghi.py:1807-1810` (báo cáo thợ đợt C việc 21, 2026-11-13).
+
+P-20261113-15 · MỞ · NHỎ · Hàng rào chỗ gọi `FormDangBai` không thấy prop truyền qua spread biến (`<FormDangBai {...X} />` với `X = { loai_mach_ban_dau: "thao_luan" }`) · `apps/web/e2e/don-vi/loai-mach-quan-tri.spec.ts:81-92` · nghiệm thu đợt C việc 21 (2026-11-13) thử phá trong `apps/admin/app/machs/moi/page.tsx`: `pnpm e2e:don-vi -g "chỗ gọi|form THẬT"` vẫn `4 passed`.
+
+P-20261113-16 · MỞ · NHỎ · `pnpm test -- -q` chồng lên `-q` mặc định của `scripts/pytest.mjs` thành `-qq`, mất dòng tổng kết `N passed` (người chấm phải đếm ký hiệu tiến độ) · `scripts/pytest.mjs` · output nghiệm thu đợt C việc 21 (2026-11-13): `node scripts/pytest.mjs -q "--" "-q" …`, file kết quả không có dòng `passed`.
+
+P-20261113-17 · MỞ · NHỎ · Ngăn kéo đăng bài ở `/machs` (admin) không nạp lại bảng khi đóng sau các nhánh `FormDangBai` không gọi `onThanhCong` ("đã lên ngay", ảnh tải lỗi, "không chắc đã tạo") · `apps/admin/app/machs/page.tsx:751-757` (`dong={() => datMoDangBai(false)}` không gọi `ds.napLai()`) · phản biện đợt C việc 21 (2026-11-13), đọc code; cùng loại lỗi đã vá ở `/chu-de`.

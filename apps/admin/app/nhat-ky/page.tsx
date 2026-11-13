@@ -74,6 +74,8 @@ const GOI_Y_ACTION = [
   "sua_tieu_de_mach",
   "them_anh_moc",
   "xoa_anh_moc",
+  "dong_so_chu_de",
+  "mo_lai_chu_de",
 ];
 export default function TrangNhatKy() {
   const [loc, datLoc] = useState("");

@@ -33,6 +33,7 @@ import { GOC_API, MA_CHUA_DANG_NHAP, headerGhi, maLoi } from "../../lib/api";
 import { useDanhSach } from "../../lib/danh-sach";
 import { useHanhDong } from "../../lib/hanh-dong";
 import { locCanLam, tomTatHangLoat } from "../../lib/hang-loat";
+import { NHAN_LOAI_MACH, docLocLoaiMach, type LocLoaiMach } from "../../lib/loai-mach";
 import { duongDanCongKhai } from "../../lib/url";
 
 /** Số hàng mỗi trang. Một hằng cho CẢ HAI phía: `limit` gửi lên server và mẫu số để
@@ -117,6 +118,8 @@ function BangMach() {
    * Duyệt thì mặc định hẹp, tìm thì mặc định rộng. */
   const mac_dinh: LocTrangThai = q === "" ? "chua_go" : "tat_ca";
   const trang_thai = (tham_so.get("trang_thai") ?? mac_dinh) as LocTrangThai;
+  /** `?loai_mach=` (việc 21): `null` = "Tất cả loại". Giá trị lạ trên URL quy về `null`. */
+  const loai_mach = docLocLoaiMach(tham_so.get("loai_mach"));
 
   const [o_tim, datOTim] = useState(q);
 
@@ -141,11 +144,12 @@ function BangMach() {
           sub: sub === "" ? null : sub,
           tac_gia: tac_gia === "" ? null : tac_gia,
           trang_thai,
+          loai_mach,
           limit: MOI_TRANG,
           cursor,
         },
       }),
-    [q, sub, tac_gia, trang_thai],
+    [q, sub, tac_gia, trang_thai, loai_mach],
   );
 
   const ds = useDanhSach<MachDongOut>(nap, MOI_TRANG);
@@ -303,7 +307,11 @@ function BangMach() {
   };
 
   const co_bo_loc =
-    q !== "" || sub !== "" || tac_gia !== "" || trang_thai !== mac_dinh;
+    q !== "" ||
+    sub !== "" ||
+    tac_gia !== "" ||
+    trang_thai !== mac_dinh ||
+    loai_mach !== null;
 
   return (
     <>
@@ -376,6 +384,25 @@ function BangMach() {
             {(Object.keys(CHU_LOC) as LocTrangThai[]).map((x) => (
               <option key={x} value={x}>
                 {CHU_LOC[x]}
+              </option>
+            ))}
+          </select>
+
+          <label className="sr-only" htmlFor="loc-loai-mach">
+            Lọc theo loại
+          </label>
+          <select
+            id="loc-loai-mach"
+            className="nut cursor-pointer"
+            value={loai_mach ?? ""}
+            disabled={dang_chay}
+            onChange={(e) => datLoc("loai_mach", e.target.value)}
+            data-testid="loc-loai-mach"
+          >
+            <option value="">Tất cả loại</option>
+            {(Object.keys(NHAN_LOAI_MACH) as LocLoaiMach[]).map((x) => (
+              <option key={x} value={x}>
+                {NHAN_LOAI_MACH[x]}
               </option>
             ))}
           </select>
@@ -483,6 +510,7 @@ function BangMach() {
                   testid="chon-tat-ca"
                 />,
                 "Bài viết",
+                "Loại",
                 "Chuyên mục",
                 "Tác giả",
                 "Chỉ số",
@@ -528,6 +556,12 @@ function BangMach() {
                         <NhanTrangThai tone="nhan">đã đóng sổ</NhanTrangThai>
                       )}
                     </span>
+                  </td>
+                  <td
+                    className="px-3 py-2.5 text-xs whitespace-nowrap text-muc-mo"
+                    data-testid={`loai-mach-${m.id}`}
+                  >
+                    {NHAN_LOAI_MACH[m.loai_mach]}
                   </td>
                   <td className="mono px-3 py-2.5 text-xs whitespace-nowrap">
                     <Link

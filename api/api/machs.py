@@ -31,6 +31,7 @@ from core.doc_noi_dung import (
 from core.ghi import (
     NGAY_MO_LAI,
     SO_MOC_TOI_DA_MOI_NGAY,
+    SoDaDoiTrangThai,
     cong_khai_mach,
     dat_luu_tru_mach,
     dat_tat_binh_luan,
@@ -956,9 +957,13 @@ def dong_so_mach(request, mach_id: int, du_lieu: DongSoIn):
     doi_mach_tuong_tac_duoc(mach)
     if mach.status == Mach.TrangThai.DONG:
         raise LoiGhi(409, MACH_DA_DONG, "Mạch này đã đóng sổ rồi.")
-    mach = dong_so(
-        mach=mach, ket_qua=du_lieu.ket_qua, bai_hoc=du_lieu.bai_hoc, boi=request.user
-    )
+    try:
+        mach = dong_so(
+            mach=mach, ket_qua=du_lieu.ket_qua, bai_hoc=du_lieu.bai_hoc, boi=request.user
+        )
+    except SoDaDoiTrangThai:
+        # Đua: một lượt khác đóng giữa phép kiểm trên và lúc khoá hàng (`core/ghi.py`).
+        raise LoiGhi(409, MACH_DA_DONG, "Mạch này đã đóng sổ rồi.") from None
     # Đóng sổ lật mặt BÃO → CẶN và đổi banner — sự kiện CÓ signal, PLAN 8.4 điểm 2.
     lam_moi_mach(mach)
     return mach_chi_tiet_ra(nap_mach(mach.pk, user=request.user))
@@ -1051,7 +1056,10 @@ def mo_lai_mach(request, mach_id: int):
             HET_HAN_MO_LAI,
             f"Quá {NGAY_MO_LAI} ngày kể từ khi đóng sổ — mạch này không mở lại được nữa.",
         )
-    mach = mo_lai(mach=mach, boi=request.user)
+    try:
+        mach = mo_lai(mach=mach, boi=request.user)
+    except SoDaDoiTrangThai:
+        raise LoiGhi(409, MACH_DANG_MO, "Mạch này đang mở, không có gì để mở lại.") from None
     lam_moi_mach(mach)
     return mach_chi_tiet_ra(nap_mach(mach.pk, user=request.user))
 

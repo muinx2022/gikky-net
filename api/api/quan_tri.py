@@ -226,6 +226,7 @@ from api.quan_tri_bang import router as router_bang  # noqa: E402
 from api.quan_tri_bao_cao import router as router_bao_cao  # noqa: E402
 from api.quan_tri_cai_dat import router as router_cai_dat  # noqa: E402
 from api.quan_tri_chan_doan import router as router_chan_doan  # noqa: E402
+from api.quan_tri_chu_de import router as router_chu_de  # noqa: E402
 from api.quan_tri_hen_gio import router as router_hen_gio  # noqa: E402
 from api.quan_tri_kiem_duyet import router as router_kiem_duyet  # noqa: E402
 from api.quan_tri_luot_xem import router as router_luot_xem  # noqa: E402
@@ -239,6 +240,7 @@ api_admin.add_router("", router_bao_cao)
 api_admin.add_router("", router_bang)
 api_admin.add_router("", router_cai_dat)
 api_admin.add_router("", router_chan_doan)
+api_admin.add_router("", router_chu_de)
 # ⚠ **TRƯỚC `router_kiem_duyet`**, và thứ tự này là bắt buộc. `POST /machs/hen-gio` khớp
 # được cả `machs/{mach_id}` của router kia nếu pattern ấy đứng trước — django-ninja sinh
 # urlpattern theo TỪNG router và Django resolver lấy pattern khớp ĐẦU TIÊN. Ở đây

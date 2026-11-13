@@ -387,6 +387,74 @@ export type ChiSoDocGiaOut = {
 };
 
 /**
+ * ChuDeOut
+ *
+ * Một chủ đề thảo luận — một hàng của bảng, và cũng là nội dung của ba ô trạng thái.
+ */
+export type ChuDeOut = {
+    /**
+     * Bai Hoc
+     */
+    bai_hoc: string | null;
+    /**
+     * Closed At
+     */
+    closed_at: string | null;
+    /**
+     * Co The Mo Lai
+     */
+    co_the_mo_lai: boolean;
+    /**
+     * Comment Count
+     */
+    comment_count: number;
+    /**
+     * Da Khoa
+     */
+    da_khoa: boolean;
+    /**
+     * Da Luu Tru
+     */
+    da_luu_tru: boolean;
+    /**
+     * Duong Dan Cong Khai
+     */
+    duong_dan_cong_khai: string;
+    /**
+     * Id
+     */
+    id: number;
+    /**
+     * Ket Qua
+     */
+    ket_qua: string | null;
+    /**
+     * Published At
+     */
+    published_at: string;
+    /**
+     * Tac Gia
+     */
+    tac_gia: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Trang Thai
+     */
+    trang_thai: 'bi_an' | 'hen_gio' | 'dong' | 'mo';
+    /**
+     * Tuan Bat Dau
+     */
+    tuan_bat_dau: string;
+    /**
+     * View Count
+     */
+    view_count: number;
+};
+
+/**
  * DatAnIn
  *
  * Body của mọi endpoint ẩn/gỡ ẩn.
@@ -535,6 +603,24 @@ export type DongBaoCaoIn = {
      * Hanh Dong
      */
     hanh_dong: 'an' | 'khoa' | 'ban' | 'bo_qua';
+};
+
+/**
+ * DongSoIn
+ *
+ * Đóng sổ — `POST /machs/{id}/close`. `ket_qua` tuỳ chọn, ≤40 ký tự (PLAN 5.1).
+ *
+ * Thuần hiển thị, không validate ngữ nghĩa — cùng triết lý với `figures`.
+ */
+export type DongSoIn = {
+    /**
+     * Bai Hoc
+     */
+    bai_hoc?: string | null;
+    /**
+     * Ket Qua
+     */
+    ket_qua?: string | null;
 };
 
 /**
@@ -2216,6 +2302,23 @@ export type TrangBinhLuanOut = {
 };
 
 /**
+ * TrangChuDeOut
+ */
+export type TrangChuDeOut = {
+    dang_tren_trang_chu: ChuDeOut | null;
+    /**
+     * Items
+     */
+    items: Array<ChuDeOut>;
+    /**
+     * Tong
+     */
+    tong: number;
+    tuan_nay: TuanChuDeOut;
+    tuan_sau: TuanChuDeOut;
+};
+
+/**
  * TrangMachOut
  */
 export type TrangMachOut = {
@@ -2302,6 +2405,23 @@ export type TrangThaiMachOut = {
      * Mo
      */
     mo: number;
+};
+
+/**
+ * TuanChuDeOut
+ *
+ * Một tuần (thứ Hai → Chủ nhật, giờ VN) và chủ đề của nó, nếu có.
+ */
+export type TuanChuDeOut = {
+    /**
+     * Bat Dau
+     */
+    bat_dau: string;
+    chu_de: ChuDeOut | null;
+    /**
+     * Ket Thuc
+     */
+    ket_thuc: string;
 };
 
 export type QuanTriTaiAnhNoiDungData = {
@@ -2584,6 +2704,127 @@ export type QuanTriChanDoanTimKiemResponses = {
 };
 
 export type QuanTriChanDoanTimKiemResponse = QuanTriChanDoanTimKiemResponses[keyof QuanTriChanDoanTimKiemResponses];
+
+export type QuanTriLietKeChuDeData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/admin/chu-de';
+};
+
+export type QuanTriLietKeChuDeErrors = {
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+};
+
+export type QuanTriLietKeChuDeError = QuanTriLietKeChuDeErrors[keyof QuanTriLietKeChuDeErrors];
+
+export type QuanTriLietKeChuDeResponses = {
+    /**
+     * OK
+     */
+    200: TrangChuDeOut;
+};
+
+export type QuanTriLietKeChuDeResponse = QuanTriLietKeChuDeResponses[keyof QuanTriLietKeChuDeResponses];
+
+export type QuanTriDongChuDeData = {
+    body: DongSoIn;
+    path: {
+        /**
+         * Mach Id
+         */
+        mach_id: number;
+    };
+    query?: never;
+    url: '/api/admin/chu-de/{mach_id}/dong';
+};
+
+export type QuanTriDongChuDeErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+    /**
+     * Conflict
+     */
+    409: LoiOut;
+};
+
+export type QuanTriDongChuDeError = QuanTriDongChuDeErrors[keyof QuanTriDongChuDeErrors];
+
+export type QuanTriDongChuDeResponses = {
+    /**
+     * OK
+     */
+    200: ChuDeOut;
+};
+
+export type QuanTriDongChuDeResponse = QuanTriDongChuDeResponses[keyof QuanTriDongChuDeResponses];
+
+export type QuanTriMoLaiChuDeData = {
+    body?: never;
+    path: {
+        /**
+         * Mach Id
+         */
+        mach_id: number;
+    };
+    query?: never;
+    url: '/api/admin/chu-de/{mach_id}/mo-lai';
+};
+
+export type QuanTriMoLaiChuDeErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+    /**
+     * Conflict
+     */
+    409: LoiOut;
+};
+
+export type QuanTriMoLaiChuDeError = QuanTriMoLaiChuDeErrors[keyof QuanTriMoLaiChuDeErrors];
+
+export type QuanTriMoLaiChuDeResponses = {
+    /**
+     * OK
+     */
+    200: ChuDeOut;
+};
+
+export type QuanTriMoLaiChuDeResponse = QuanTriMoLaiChuDeResponses[keyof QuanTriMoLaiChuDeResponses];
 
 export type QuanTriLietKeBinhLuanData = {
     body?: never;
