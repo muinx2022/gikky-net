@@ -1105,7 +1105,7 @@ danh sách · chỉ đọc (không bình luận / vote / câu hỏi cho đám đ
 
 ---
 
-## Việc 21 · Khu quản trị: quản lý bản tin + chủ đề thảo luận hàng tuần — ĐANG LÀM trên `v2`: đợt C (admin `/chu-de`, lọc loại ở `/machs`, vá đua đóng/mở lại ở `core/ghi.py`) xong 2026-11-13, nghiệm thu + phản biện + vòng sửa 1 ĐẠT; đợt D (admin `/ban-tin`: ô Hôm nay theo hạn chót, sửa/ẩn/xoá khung, Tiptap giữ hr/pre) xong 2026-11-13, nghiệm thu + phản biện + vòng sửa 1 ĐẠT
+## Việc 21 · Khu quản trị: quản lý bản tin + chủ đề thảo luận hàng tuần — ĐANG LÀM trên `v2`: đợt C (admin `/chu-de`, lọc loại ở `/machs`, vá đua đóng/mở lại ở `core/ghi.py`) xong 2026-11-13, nghiệm thu + phản biện + vòng sửa 1 ĐẠT; đợt D (admin `/ban-tin`: ô Hôm nay theo hạn chót, sửa/ẩn/xoá khung, Tiptap giữ hr/pre) xong 2026-11-13, nghiệm thu + phản biện + vòng sửa 1 ĐẠT. Commit `28e3ede` (C) + `562795a` (D); api `562795a` ĐÃ LÊN dev.gikky.net 2026-11-13 20:59 (stack dev không có service admin nên chưa xem được giao diện admin trên dev); chưa lên prod
 
 **Yêu cầu (user, 2026-11-13):** "ngoài phần bảng tin, còn thêm phần chủ đề bình luận hàng tuần. bạn xem trong admin còn
 thiếu phần quản lý nào thì lập plan xử lý luôn".
