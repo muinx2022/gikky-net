@@ -46,7 +46,19 @@ services:
       FRONTEND_ORIGIN: ${SITE_ORIGIN:-https://dev.gikky.net}
       SITE_ORIGIN: ${SITE_ORIGIN:-https://dev.gikky.net}
       CSRF_TRUSTED_ORIGINS: https://dev.gikky.net
-      SESSION_COOKIE_DOMAIN: .gikky.net
+      # ⚠ CẤM đặt `SESSION_COOKIE_DOMAIN` ở đây. Dev chỉ có một host nên cookie phiên
+      # host-only là đủ. Đặt `.gikky.net` là chung slot `sessionid` với prod: trình
+      # duyệt gửi phiên prod sang dev, dev không thấy phiên trong DB của mình nên
+      # `SessionMiddleware` xoá cookie kèm `Domain` — tức xoá luôn phiên prod. Sự cố
+      # 2026-11-13, đo được: `Set-Cookie: sessionid=""; Domain=.gikky.net; Max-Age=0`
+      # ⇒ admin.gikky.net 401, phải đăng nhập lại.
+      # `CSRF_COOKIE_DOMAIN` thì GIỮ có chủ đích: bỏ đi là dev nhận HAI `csrftoken`
+      # (`.gikky.net` của prod + host-only của dev), frontend đọc cookie đầu còn Django
+      # lấy cookie cuối ⇒ mọi request ghi ăn 403. Chung slot này KHÔNG đăng xuất prod
+      # (Django không bao giờ xoá cookie CSRF). Cái giá còn lại, có từ trước: form chụp
+      # token lúc mount (nút Google) có thể ăn 403 một lần nếu tab khác vừa đổi
+      # `csrftoken`.
+      # Hàng rào: `api/tests/test_cookie_domain_stack_phu.py`.
       CSRF_COOKIE_DOMAIN: .gikky.net
       EMAIL_URL: ${EMAIL_URL:-}
       DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-gikky <no-reply@gikky.net>}
