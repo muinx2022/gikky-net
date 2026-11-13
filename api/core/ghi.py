@@ -115,6 +115,7 @@ from core.cay_binh_luan import cap_phat_path
 from core.doc_noi_dung import doc_duoc, la_moc_chat_luong
 from core.lam_sach_html import DINH_DANG_HTML, DINH_DANG_MARKDOWN, lam_sach, van_ban_thuan
 from core.lenh import Lenh, kiem_lenh
+from core.models.ban_tin import BanTin
 from core.models.binh_luan import Comment
 from core.models.dien_dan import Mach, Sub, slug_tu_title
 from core.models.he_thong import AuditLog, Report
@@ -1834,6 +1835,16 @@ AUDIT_BO_LUU_TRU_MACH = "bo_luu_tru_mach"
 #: bấm thì không ghi — xem `_ghi_audit_chu_de`. `meta`: `nguoi_bam`, `ket_qua_cu`, `bai_hoc_cu`.
 AUDIT_DONG_SO_CHU_DE = "dong_so_chu_de"
 AUDIT_MO_LAI_CHU_DE = "mo_lai_chu_de"
+#: Bản tin từ khu quản trị (việc 21, đợt D — `plans/2026-11-13-quan-tri-ban-tin-chu-de.md`
+#: §3.2). `target_type=DICH_BAN_TIN`, `target_id` = pk `BanTin`; `meta` luôn có `ngay`, và
+#: `truoc` / `sau` mang bản trước / sau của đúng trường bị đụng — bản tin không có bảng
+#: revision nào, nên nhật ký là chỗ duy nhất giữ chữ cũ. Bốn hằng có đường ghi ở
+#: `core/ghi_ban_tin.py`; ẩn / hiện ở đây (`dat_an_ban_tin`) vì nó ghi `hidden_at`.
+AUDIT_SUA_BAN_TIN = "sua_ban_tin"
+AUDIT_SUA_KHUNG_BAN_TIN = "sua_khung_ban_tin"
+AUDIT_AN_BAN_TIN = "an_ban_tin"
+AUDIT_HIEN_BAN_TIN = "hien_ban_tin"
+AUDIT_XOA_KHUNG_BAN_TIN = "xoa_khung_ban_tin"
 
 #: `AuditLog.target_type` — cột `varchar(16)`, giữ chuỗi ngắn.
 DICH_MOC = "moc"
@@ -1843,6 +1854,7 @@ DICH_USER = "user"
 DICH_SUB = "sub"
 DICH_CAI_DAT = "cai_dat"
 DICH_REPORT = "report"
+DICH_BAN_TIN = "ban_tin"
 
 
 def ghi_audit(*, actor, action: str, target_type: str, target_id: int | None, **meta):
@@ -2451,3 +2463,38 @@ def tao_bao_cao(*, reporter, target_type: str, target_id: int, ly_do: str, ghi_c
         ly_do=ly_do,
         ghi_chu=ghi_chu,
     )
+
+
+def dat_an_ban_tin(*, ban_tin, an: bool, boi):
+    """Ẩn (`an=True`) hoặc hiện lại cả một bản tin (việc 21, đợt D). Trả `(bản tin, có đổi không)`.
+
+    Ở `core/ghi.py` chứ không ở `core/ghi_ban_tin.py` vì nó ghi `hidden_at` — mọi đường làm
+    nội dung biến khỏi trang công khai sống ở file này để `tests/test_tim_kiem_cau_truc.py`
+    đếm được (`BANG_DONG_BO`). Không gọi `dong_bo_mach`: `BanTin` không có trong index tìm kiếm.
+
+    Ẩn ⇒ mọi cửa đọc công khai coi như không có (`api/ban_tin.py::_ban_tin_hien`): trang
+    `/s/tin-tuc/<ngày>` 404, rơi khỏi danh sách và dải trang chủ. Bot vẫn thêm khung vào được
+    ngày đang ẩn (`core/ghi_ban_tin.py::dang_khung_ban_tin`).
+
+    Khoá: đúng một hàng `BanTin`, rồi `INSERT AuditLog`. Không chạm `Mach` ⇒ không thêm cạnh.
+    Không đổi gì ⇒ không ghi nhật ký.
+    """
+    with transaction.atomic():
+        hang = BanTin.objects.select_for_update().get(pk=ban_tin.pk)
+        if (hang.hidden_at is not None) == an:
+            return hang, False
+        cu = hang.hidden_at
+        hang.hidden_at = timezone.now() if an else None
+        hang.save(update_fields=["hidden_at"])
+        ghi_audit(
+            actor=boi,
+            action=AUDIT_AN_BAN_TIN if an else AUDIT_HIEN_BAN_TIN,
+            target_type=DICH_BAN_TIN,
+            target_id=hang.pk,
+            ngay=hang.ngay.isoformat(),
+            truoc={"hidden_at": None if cu is None else cu.isoformat()},
+            sau={
+                "hidden_at": None if hang.hidden_at is None else hang.hidden_at.isoformat()
+            },
+        )
+    return hang, True

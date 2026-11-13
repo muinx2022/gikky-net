@@ -54,11 +54,14 @@ export const NHOM_MENU: NhomMenu[] = [
   },
   {
     // Việc 21 (plan `2026-11-13-quan-tri-ban-tin-chu-de.md`): nhóm của thứ đội gikky TỰ
-    // làm ra theo lịch (chủ đề tuần, sau này cả bản tin), tách khỏi "Kiểm duyệt" — nơi xử
-    // lý thứ người khác viết. Mục "Bản tin" `/ban-tin` vào đây khi trang của nó có thật
-    // (đợt D); thêm trước là một nút dẫn tới 404.
+    // làm ra theo lịch (chủ đề tuần, bản tin), tách khỏi "Kiểm duyệt" — nơi xử lý thứ
+    // người khác viết. "Bản tin" khớp tiền tố để `/ban-tin/<ngày>` vẫn tô sáng mục này.
+    // Icon dùng lại `"nhat-ky"` (`icon.tsx` không thêm tên mới cho một mục).
     ten: "Nội dung",
-    muc: [{ duong_dan: "/chu-de", nhan: "Chủ đề tuần", icon: "binh-luan" }],
+    muc: [
+      { duong_dan: "/chu-de", nhan: "Chủ đề tuần", icon: "binh-luan" },
+      { duong_dan: "/ban-tin", nhan: "Bản tin", icon: "nhat-ky", khop_tien_to: true },
+    ],
   },
   {
     ten: "Kiểm duyệt",

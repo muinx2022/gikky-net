@@ -78,15 +78,16 @@ test.describe("C4 — lọc loại ở /machs", () => {
 });
 
 test.describe("C5 — menu", () => {
-  test("nhóm 'Nội dung' đứng giữa 'Tổng quan' và 'Kiểm duyệt', có đúng mục 'Chủ đề tuần'", () => {
+  test("nhóm 'Nội dung' đứng giữa 'Tổng quan' và 'Kiểm duyệt', 'Chủ đề tuần' rồi 'Bản tin'", () => {
     const ten = NHOM_MENU.map((n) => n.ten);
     const i = ten.indexOf("Nội dung");
     expect(i).toBeGreaterThan(-1);
     expect(ten[i - 1]).toBe("Tổng quan");
     expect(ten[i + 1]).toBe("Kiểm duyệt");
-    // Đợt C chỉ thêm "Chủ đề tuần"; "Bản tin" vào cùng trang thật của nó (đợt D).
+    // Đợt C thêm "Chủ đề tuần"; đợt D thêm "Bản tin" cùng trang thật của nó.
     expect(NHOM_MENU[i].muc.map((m) => [m.duong_dan, m.nhan])).toEqual([
       ["/chu-de", "Chủ đề tuần"],
+      ["/ban-tin", "Bản tin"],
     ]);
   });
 });

@@ -1,13 +1,11 @@
 "use client";
 
 import { quanTriTaiAnhNoiDung } from "@gikky/api-client/admin";
-import Image from "@tiptap/extension-image";
-import Link from "@tiptap/extension-link";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
 import { useRef, useState } from "react";
 
 import { GOC_API, headerGhi } from "../lib/api";
+import { phanMoRongQuanTri } from "../lib/tiptap-quan-tri";
 
 /** Trình soạn thảo **thân mốc** cho khu quản trị — Tiptap, xuất ra HTML.
  *
@@ -22,8 +20,9 @@ import { GOC_API, headerGhi } from "../lib/api";
  *
  * `core/lam_sach_html.py` allowlist 15 thẻ: `p br strong em u s code pre blockquote ul ol
  * li a h2 h3 hr`. Nút nào tạo ra thẻ ngoài danh sách ấy sẽ cho mod một định dạng **biến
- * mất lúc lưu**. Nên thanh dưới đây là **tập con của allowlist**, và `StarterKit` bị tắt
- * bớt cho khớp.
+ * mất lúc lưu**. Nên thanh dưới đây là **tập con của allowlist**. Bộ extension (cái quyết định
+ * thẻ nào SỐNG khi nạp nội dung cũ) ở `lib/tiptap-quan-tri.ts` — đọc chú thích ở đó: tắt
+ * nhầm một node có trong allowlist là xoá thẻ đó khỏi bài lúc nạp.
  *
  * ⚠ **Sửa allowlist ở server thì phải sửa BA chỗ**: `core/lam_sach_html.py`,
  * `apps/web/components/soan-thao.tsx`, và file này. Ba file ở hai ngôn ngữ, không có gì
@@ -58,6 +57,8 @@ export function SoanThaoQuanTri({
   datGiaTri,
   khoa = false,
   choPhepAnh = true,
+  xemTruoc = false,
+  onTaoXong,
 }: {
   giaTri: string;
   datGiaTri: (html: string) => void;
@@ -72,6 +73,15 @@ export function SoanThaoQuanTri({
    * Mặc định `true` để chỗ gọi cũ (trang sửa mốc, vốn khoá cả editor bằng `khoa`) không
    * đổi hành vi. */
   choPhepAnh?: boolean;
+  /** Chỉ hiện nội dung, không thanh công cụ, không sửa được — ô "xem trước" của trang bản tin
+   * (`app/ban-tin/[ngay]/page.tsx`). Vẽ qua đúng schema Tiptap của trình soạn thảo thay vì
+   * chèn HTML thô: khu quản trị không có chỗ nào `dangerouslySetInnerHTML` chữ người viết.
+   *
+   * ⚠ Tiptap chỉ đọc `editable` lúc DỰNG editor — đổi qua lại giữa xem và sửa thì chỗ gọi
+   * phải đổi `key` để dựng một editor mới. */
+  xemTruoc?: boolean;
+  /** Gọi MỘT lần khi editor dựng xong, với HTML Tiptap vừa dựng từ `giaTri`. */
+  onTaoXong?: (html: string) => void;
 }) {
   const [dang_tai_anh, datDangTaiAnh] = useState(false);
   const [loi_anh, datLoiAnh] = useState<string | null>(null);
@@ -122,27 +132,13 @@ export function SoanThaoQuanTri({
 
   const editor = useEditor({
     immediatelyRender: false,
-    editable: !khoa,
-    extensions: [
-      StarterKit.configure({
-        // Ngoài allowlist của server ⇒ tắt, để không ai gõ được thứ sẽ bị xoá lúc lưu.
-        horizontalRule: false,
-        codeBlock: false,
-        heading: { levels: [2, 3] },
-        link: false,
-      }),
-      // Ảnh CHỈ từ kho của site. `allowBase64: false` là vế bắt buộc: một `data:` URI
-      // khổng lồ nhét thẳng vào `body` sẽ qua mặt cả lệnh dọn ảnh mồ côi, và `lam_sach`
-      // ở server sẽ gỡ nó ⇒ ảnh "biến mất lúc lưu".
-      Image.configure({ allowBase64: false, inline: false }),
-      Link.configure({
-        openOnClick: false,
-        autolink: true,
-        // Khớp allowlist giao thức của server. `lam_sach` vẫn là chốt cuối.
-        protocols: ["http", "https", "mailto"],
-      }),
-    ],
+    editable: !khoa && !xemTruoc,
+    extensions: phanMoRongQuanTri(),
     content: giaTri,
+    // Bản HTML đầu tiên Tiptap dựng từ `giaTri` — mốc so "có đổi gì không" của trang bản tin.
+    // So với `giaTri` thô là sai: Tiptap chuẩn hoá ngay lúc nạp (`<pre>` → `<pre><code>`,
+    // thuộc tính link…), nên "gõ rồi xoá lại" trông như đã sửa.
+    onCreate: ({ editor: e }) => onTaoXong?.(e.isEmpty ? "" : e.getHTML()),
     onUpdate: ({ editor: e }) => {
       // `isEmpty` chứ không so chuỗi: Tiptap để lại `<p></p>` khi người ta xoá hết, và
       // chuỗi ấy qua được `min_length=1` rồi bị `lam_sach` cắt thành rỗng ⇒ server từ
@@ -180,6 +176,14 @@ export function SoanThaoQuanTri({
   });
 
   ed_ref.current = editor;
+
+  if (xemTruoc) {
+    return editor === null ? (
+      <div className="min-h-16" aria-busy="true" data-testid="soan-cho" />
+    ) : (
+      <EditorContent editor={editor} />
+    );
+  }
 
   if (editor === null) {
     // Chỗ giữ CÙNG chiều cao với vùng soạn thật — `null` làm cả form nhảy một nhịp khi

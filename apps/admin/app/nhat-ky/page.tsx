@@ -76,6 +76,12 @@ const GOI_Y_ACTION = [
   "xoa_anh_moc",
   "dong_so_chu_de",
   "mo_lai_chu_de",
+  // Bản tin (việc 21, đợt D) — hằng `AUDIT_*_BAN_TIN` ở `api/core/ghi.py`.
+  "sua_ban_tin",
+  "sua_khung_ban_tin",
+  "an_ban_tin",
+  "hien_ban_tin",
+  "xoa_khung_ban_tin",
 ];
 export default function TrangNhatKy() {
   const [loc, datLoc] = useState("");

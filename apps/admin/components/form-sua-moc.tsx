@@ -23,7 +23,7 @@ const DAI_CAU_MOI = 200;
 const SO_FIGURE_TOI_DA = 6;
 const DAI_FIGURE = 24;
 
-type Figure = { label: string; value: string };
+export type Figure = { label: string; value: string };
 
 export function FormSuaMoc({
   mocId,
@@ -415,7 +415,9 @@ export function FormSuaMoc({
   );
 }
 
-function OFigures({
+/** Ô "Dải số" — dùng chung với trang sửa bản tin (`app/ban-tin/[ngay]/page.tsx`, việc 21 đợt
+ * D): cùng trần 6 cặp × 24 ký tự với `FigureIn` / `kiem_figures` ở server. */
+export function OFigures({
   figures,
   datFigures,
   khoa,

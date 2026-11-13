@@ -155,6 +155,11 @@ BANG_DONG_BO: dict[str, tuple[str, str]] = {
     "tao_bao_cao": (KHONG, "một lượt tố không giấu nội dung nào"),
     "ghi_audit": (KHONG, "một dòng `AuditLog`"),
     "dem_moc_trong_ngay_vn": (KHONG, "hàm ĐẾM, không ghi gì"),
+    "dat_an_ban_tin": (
+        KHONG,
+        "`BanTin` (việc 20) là bảng riêng, không có trong index tìm kiếm — không có tài liệu "
+        "nào để gỡ hay dựng lại",
+    ),
 }
 
 

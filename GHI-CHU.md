@@ -1088,7 +1088,7 @@ bối cảnh chỉ nới bằng CSS.
 
 ---
 
-## Việc 20 · Bản tin thành bảng dữ liệu riêng + trình bày kiểu bản tin — ĐANG LÀM trên `v2`: đợt A (API + dữ liệu + bot) xong 2026-11-13, nghiệm thu + phản biện + vòng sửa 1 ĐẠT; đợt B (web: trang `/s/tin-tuc/<ngày>`, danh sách, 308 từ `/m/` cũ, sitemap, RSS, ảnh OG, dải trang chủ đọc `BanTin.ngay`) xong 2026-11-13, nghiệm thu + phản biện + vòng sửa 1 ĐẠT; chưa lên dev/prod. Bước deploy prod: migrate → `chuyen_ban_tin` chạy thử (bảng phải 0 dòng LỖI/BỎ QUA bất thường) → `--that` → web; sửa tay mô tả sub `tin-tuc` ở admin Chuyên mục
+## Việc 20 · Bản tin thành bảng dữ liệu riêng + trình bày kiểu bản tin — ĐANG LÀM trên `v2`: đợt A (API + dữ liệu + bot) xong 2026-11-13, nghiệm thu + phản biện + vòng sửa 1 ĐẠT; đợt B (web: trang `/s/tin-tuc/<ngày>`, danh sách, 308 từ `/m/` cũ, sitemap, RSS, ảnh OG, dải trang chủ đọc `BanTin.ngay`) xong 2026-11-13, nghiệm thu + phản biện + vòng sửa 1 ĐẠT; ĐÃ LÊN dev.gikky.net 2026-11-13 20:26 (`696025a`, api + web; `chuyen_ban_tin --that` trên DB dev: 55 mạch chuyển, 0 lỗi, 0 bỏ qua; bản sao DB trước migrate `~/gikky-dev/backup/truoc-696025a-20261113-201756.dump`), chưa lên prod. Bước deploy prod: migrate → `chuyen_ban_tin` chạy thử (bảng phải 0 dòng LỖI/BỎ QUA bất thường) → `--that` → web; sửa tay mô tả sub `tin-tuc` ở admin Chuyên mục
 
 **Yêu cầu (user, 2026-11-13):** "tách phần bản tin ra 1 phần riêng, không dùng chung dữ liệu với bài viết hay nhật kí
 nữa"; "hiện tại bản tin đang gộp lại theo dạng nhật kí, cần cách trình bày mới của bản tin, không theo dạng nhật kí nữa".
@@ -1105,7 +1105,7 @@ danh sách · chỉ đọc (không bình luận / vote / câu hỏi cho đám đ
 
 ---
 
-## Việc 21 · Khu quản trị: quản lý bản tin + chủ đề thảo luận hàng tuần — ĐANG LÀM trên `v2`: đợt C (admin `/chu-de`, lọc loại ở `/machs`, vá đua đóng/mở lại ở `core/ghi.py`) xong 2026-11-13, nghiệm thu + phản biện + vòng sửa 1 ĐẠT; đợt D (admin bản tin) đang làm
+## Việc 21 · Khu quản trị: quản lý bản tin + chủ đề thảo luận hàng tuần — ĐANG LÀM trên `v2`: đợt C (admin `/chu-de`, lọc loại ở `/machs`, vá đua đóng/mở lại ở `core/ghi.py`) xong 2026-11-13, nghiệm thu + phản biện + vòng sửa 1 ĐẠT; đợt D (admin `/ban-tin`: ô Hôm nay theo hạn chót, sửa/ẩn/xoá khung, Tiptap giữ hr/pre) xong 2026-11-13, nghiệm thu + phản biện + vòng sửa 1 ĐẠT
 
 **Yêu cầu (user, 2026-11-13):** "ngoài phần bảng tin, còn thêm phần chủ đề bình luận hàng tuần. bạn xem trong admin còn
 thiếu phần quản lý nào thì lập plan xử lý luôn".

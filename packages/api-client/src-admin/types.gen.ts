@@ -127,6 +127,88 @@ export type BanIn = {
 };
 
 /**
+ * BanTinQuanTriOut
+ */
+export type BanTinQuanTriOut = {
+    /**
+     * Cap Nhat Luc
+     */
+    cap_nhat_luc: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Da An
+     */
+    da_an: boolean;
+    /**
+     * Duong Dan Cong Khai
+     */
+    duong_dan_cong_khai: string;
+    /**
+     * Hidden At
+     */
+    hidden_at: string | null;
+    /**
+     * Khung
+     */
+    khung: Array<KhungBanTinQuanTriOut>;
+    /**
+     * Ngay
+     */
+    ngay: string;
+    /**
+     * Tac Gia
+     */
+    tac_gia: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * View Count
+     */
+    view_count: number;
+};
+
+/**
+ * BanTinQuanTriTomTatOut
+ *
+ * Một hàng của bảng `/ban-tin`.
+ */
+export type BanTinQuanTriTomTatOut = {
+    /**
+     * Cap Nhat Luc
+     */
+    cap_nhat_luc: string;
+    /**
+     * Da An
+     */
+    da_an: boolean;
+    /**
+     * Duong Dan Cong Khai
+     */
+    duong_dan_cong_khai: string;
+    /**
+     * Khung Da Co
+     */
+    khung_da_co: Array<'dem_qua' | 'truoc_phien_vn' | 'truoc_phien_my'>;
+    /**
+     * Ngay
+     */
+    ngay: string;
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * View Count
+     */
+    view_count: number;
+};
+
+/**
  * BaoCaoOut
  *
  * Một dòng trong hàng đợi báo cáo (PLAN 5.10).
@@ -696,6 +778,32 @@ export type HenGioMachIn = {
 };
 
 /**
+ * HomNayOut
+ */
+export type HomNayOut = {
+    /**
+     * Co Lich
+     */
+    co_lich: boolean;
+    /**
+     * Da An
+     */
+    da_an: boolean;
+    /**
+     * Khung
+     */
+    khung: Array<KhungHomNayOut>;
+    /**
+     * Ngay
+     */
+    ngay: string;
+    /**
+     * So Da Dang
+     */
+    so_da_dang: number;
+};
+
+/**
  * KenhNguonOut
  *
  * Phân bổ nguồn truy cập theo kênh dẫn.
@@ -931,6 +1039,58 @@ export type KhuVucOut = {
      * So Luot Nguoi
      */
     so_luot_nguoi: number;
+};
+
+/**
+ * KhungBanTinQuanTriOut
+ */
+export type KhungBanTinQuanTriOut = {
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Figures
+     */
+    figures: Array<FigureOut> | null;
+    /**
+     * Khung
+     */
+    khung: 'dem_qua' | 'truoc_phien_vn' | 'truoc_phien_my';
+    /**
+     * Ten
+     */
+    ten: string;
+};
+
+/**
+ * KhungHomNayOut
+ */
+export type KhungHomNayOut = {
+    /**
+     * Da Dang Luc
+     */
+    da_dang_luc: string | null;
+    /**
+     * Han Chot
+     */
+    han_chot: string;
+    /**
+     * Khung
+     */
+    khung: 'dem_qua' | 'truoc_phien_vn' | 'truoc_phien_my';
+    /**
+     * Ten
+     */
+    ten: string;
+    /**
+     * Trang Thai
+     */
+    trang_thai: 'da_dang' | 'da_xoa' | 'khong_lich' | 'qua_han' | 'chua';
 };
 
 /**
@@ -1861,6 +2021,32 @@ export type SapXepSubIn = {
 };
 
 /**
+ * SuaBanTinIn
+ */
+export type SuaBanTinIn = {
+    /**
+     * Title
+     */
+    title: string;
+};
+
+/**
+ * SuaKhungBanTinIn
+ *
+ * Thay TRỌN thân + bảng số liệu của một khung. `figures = null` (hoặc `[]`) ⇒ bỏ bảng số.
+ */
+export type SuaKhungBanTinIn = {
+    /**
+     * Body
+     */
+    body: string;
+    /**
+     * Figures
+     */
+    figures?: Array<FigureIn> | null;
+};
+
+/**
  * SuaMocQuanTriIn
  *
  * Mod sửa mốc — `PATCH /admin/mocs/{id}`. Đúng 5 trường của `MocSuaIn`, cộng `ly_do`.
@@ -2264,6 +2450,25 @@ export type TopTuKhoaOut = {
 };
 
 /**
+ * TrangBanTinQuanTriOut
+ */
+export type TrangBanTinQuanTriOut = {
+    /**
+     * Cursor Ke Tiep
+     */
+    cursor_ke_tiep: string | null;
+    hom_nay: HomNayOut;
+    /**
+     * Items
+     */
+    items: Array<BanTinQuanTriTomTatOut>;
+    /**
+     * Tong
+     */
+    tong: number;
+};
+
+/**
  * TrangBaoCaoOut
  *
  * Một trang hàng đợi, cursor keyset theo `(created_at, id)` giảm dần.
@@ -2510,6 +2715,324 @@ export type QuanTriXoaAnhMocResponses = {
 };
 
 export type QuanTriXoaAnhMocResponse = QuanTriXoaAnhMocResponses[keyof QuanTriXoaAnhMocResponses];
+
+export type QuanTriLietKeBanTinData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Cursor
+         */
+        cursor?: string | null;
+        /**
+         * Limit
+         */
+        limit?: number;
+    };
+    url: '/api/admin/ban-tin';
+};
+
+export type QuanTriLietKeBanTinErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+};
+
+export type QuanTriLietKeBanTinError = QuanTriLietKeBanTinErrors[keyof QuanTriLietKeBanTinErrors];
+
+export type QuanTriLietKeBanTinResponses = {
+    /**
+     * OK
+     */
+    200: TrangBanTinQuanTriOut;
+};
+
+export type QuanTriLietKeBanTinResponse = QuanTriLietKeBanTinResponses[keyof QuanTriLietKeBanTinResponses];
+
+export type QuanTriXemBanTinData = {
+    body?: never;
+    path: {
+        /**
+         * Ngay
+         */
+        ngay: string;
+    };
+    query?: never;
+    url: '/api/admin/ban-tin/{ngay}';
+};
+
+export type QuanTriXemBanTinErrors = {
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+};
+
+export type QuanTriXemBanTinError = QuanTriXemBanTinErrors[keyof QuanTriXemBanTinErrors];
+
+export type QuanTriXemBanTinResponses = {
+    /**
+     * OK
+     */
+    200: BanTinQuanTriOut;
+};
+
+export type QuanTriXemBanTinResponse = QuanTriXemBanTinResponses[keyof QuanTriXemBanTinResponses];
+
+export type QuanTriSuaBanTinData = {
+    body: SuaBanTinIn;
+    path: {
+        /**
+         * Ngay
+         */
+        ngay: string;
+    };
+    query?: never;
+    url: '/api/admin/ban-tin/{ngay}';
+};
+
+export type QuanTriSuaBanTinErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+    /**
+     * Conflict
+     */
+    409: LoiOut;
+};
+
+export type QuanTriSuaBanTinError = QuanTriSuaBanTinErrors[keyof QuanTriSuaBanTinErrors];
+
+export type QuanTriSuaBanTinResponses = {
+    /**
+     * OK
+     */
+    200: BanTinQuanTriOut;
+};
+
+export type QuanTriSuaBanTinResponse = QuanTriSuaBanTinResponses[keyof QuanTriSuaBanTinResponses];
+
+export type QuanTriAnBanTinData = {
+    body?: never;
+    path: {
+        /**
+         * Ngay
+         */
+        ngay: string;
+    };
+    query?: never;
+    url: '/api/admin/ban-tin/{ngay}/an';
+};
+
+export type QuanTriAnBanTinErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+    /**
+     * Conflict
+     */
+    409: LoiOut;
+};
+
+export type QuanTriAnBanTinError = QuanTriAnBanTinErrors[keyof QuanTriAnBanTinErrors];
+
+export type QuanTriAnBanTinResponses = {
+    /**
+     * OK
+     */
+    200: BanTinQuanTriOut;
+};
+
+export type QuanTriAnBanTinResponse = QuanTriAnBanTinResponses[keyof QuanTriAnBanTinResponses];
+
+export type QuanTriHienBanTinData = {
+    body?: never;
+    path: {
+        /**
+         * Ngay
+         */
+        ngay: string;
+    };
+    query?: never;
+    url: '/api/admin/ban-tin/{ngay}/hien';
+};
+
+export type QuanTriHienBanTinErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+    /**
+     * Conflict
+     */
+    409: LoiOut;
+};
+
+export type QuanTriHienBanTinError = QuanTriHienBanTinErrors[keyof QuanTriHienBanTinErrors];
+
+export type QuanTriHienBanTinResponses = {
+    /**
+     * OK
+     */
+    200: BanTinQuanTriOut;
+};
+
+export type QuanTriHienBanTinResponse = QuanTriHienBanTinResponses[keyof QuanTriHienBanTinResponses];
+
+export type QuanTriXoaKhungBanTinData = {
+    body?: never;
+    path: {
+        /**
+         * Ngay
+         */
+        ngay: string;
+        /**
+         * Khung
+         */
+        khung: string;
+    };
+    query?: never;
+    url: '/api/admin/ban-tin/{ngay}/khung/{khung}';
+};
+
+export type QuanTriXoaKhungBanTinErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+    /**
+     * Conflict
+     */
+    409: LoiOut;
+};
+
+export type QuanTriXoaKhungBanTinError = QuanTriXoaKhungBanTinErrors[keyof QuanTriXoaKhungBanTinErrors];
+
+export type QuanTriXoaKhungBanTinResponses = {
+    /**
+     * OK
+     */
+    200: BanTinQuanTriOut;
+};
+
+export type QuanTriXoaKhungBanTinResponse = QuanTriXoaKhungBanTinResponses[keyof QuanTriXoaKhungBanTinResponses];
+
+export type QuanTriSuaKhungBanTinData = {
+    body: SuaKhungBanTinIn;
+    path: {
+        /**
+         * Ngay
+         */
+        ngay: string;
+        /**
+         * Khung
+         */
+        khung: string;
+    };
+    query?: never;
+    url: '/api/admin/ban-tin/{ngay}/khung/{khung}';
+};
+
+export type QuanTriSuaKhungBanTinErrors = {
+    /**
+     * Bad Request
+     */
+    400: LoiOut;
+    /**
+     * Unauthorized
+     */
+    401: LoiOut;
+    /**
+     * Forbidden
+     */
+    403: LoiOut;
+    /**
+     * Not Found
+     */
+    404: LoiOut;
+    /**
+     * Conflict
+     */
+    409: LoiOut;
+};
+
+export type QuanTriSuaKhungBanTinError = QuanTriSuaKhungBanTinErrors[keyof QuanTriSuaKhungBanTinErrors];
+
+export type QuanTriSuaKhungBanTinResponses = {
+    /**
+     * OK
+     */
+    200: BanTinQuanTriOut;
+};
+
+export type QuanTriSuaKhungBanTinResponse = QuanTriSuaKhungBanTinResponses[keyof QuanTriSuaKhungBanTinResponses];
 
 export type QuanTriXemCaiDatBienTapData = {
     body?: never;

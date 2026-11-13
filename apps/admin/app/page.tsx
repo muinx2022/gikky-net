@@ -1,11 +1,15 @@
 "use client";
 
+import { quanTriLietKeBanTin, type HomNayOut } from "@gikky/api-client/admin";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 import { CotNhom, ThanhTienDo, VanhKhuyen } from "../components/bieu-do";
 import { Icon, type TenIcon } from "../components/icon";
 import { useQuanTri } from "../components/khung/ngu-canh";
 import { HangTieuDe, KhungBang, Skeleton, The, TieuDeTrang } from "../components/ui";
+import { GOC_API } from "../lib/api";
+import { soKhungMoiNgay } from "../lib/ban-tin";
 
 /** Bảng điều khiển — màn hình đầu tiên của khu quản trị.
  *
@@ -55,7 +59,7 @@ export default function TrangBangDieuKhien() {
         </div>
       ) : (
         <div className="space-y-5">
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             <TheKpi
               nhan="Chờ xử lý"
               so={thong_ke.cho_xu_ly}
@@ -84,6 +88,7 @@ export default function TrangBangDieuKhien() {
               icon="nguoi-dung"
               den="/users"
             />
+            <TheBanTinHomNay />
           </div>
 
           <div className="grid gap-4 xl:grid-cols-3">
@@ -233,6 +238,74 @@ function TheKpi({
           ${tone === "xau" ? "bg-xau/10 text-xau" : "bg-nhan-mo text-nhan"}`}
       >
         <Icon ten={icon} />
+      </span>
+    </Link>
+  );
+}
+
+/** Ô "Hôm nay" của trang bản tin — đọc `hom_nay` của `GET /admin/ban-tin` (trang đầu, 1 hàng).
+ *
+ * Ngoại lệ DUY NHẤT của câu "mọi con số ở đây tới từ `/admin/thong-ke`" ở đầu file: số khung
+ * bản tin đã đăng không nằm trong thống kê chung, và nhét nó vào đó là nhân bản phép tính "hôm
+ * nay / hạn chót" của `api/quan_tri_ban_tin.py`. Hỏng thì thẻ nói ra, các thẻ khác không sao. */
+function useBanTinHomNay(): { hom_nay: HomNayOut | null; loi: boolean } {
+  const [hom_nay, datHomNay] = useState<HomNayOut | null>(null);
+  const [loi, datLoi] = useState(false);
+  useEffect(() => {
+    let con_song = true;
+    void quanTriLietKeBanTin({
+      baseUrl: GOC_API,
+      cache: "no-store",
+      query: { limit: 1 },
+    }).then(({ data, error }) => {
+      if (!con_song) return;
+      if (error !== undefined || data === undefined) datLoi(true);
+      else datHomNay(data.hom_nay);
+    });
+    return () => {
+      con_song = false;
+    };
+  }, []);
+  return { hom_nay, loi };
+}
+
+/** Thẻ "Bản tin hôm nay": số khung đã đăng / số khung mỗi ngày, đỏ khi có khung quá hạn chót. */
+function TheBanTinHomNay() {
+  const { hom_nay, loi } = useBanTinHomNay();
+  const tre = hom_nay?.khung.some((k) => k.trang_thai === "qua_han") ?? false;
+  return (
+    <Link
+      href="/ban-tin"
+      className="the flex items-start gap-3 p-4 transition-colors hover:bg-nen-mo"
+      data-testid="kpi-Bản tin hôm nay"
+    >
+      <span className="min-w-0 flex-1">
+        <span className="block text-[11px] font-semibold tracking-wider text-muc-mo uppercase">
+          Bản tin hôm nay
+        </span>
+        <span
+          className={`mono block text-3xl font-semibold ${tre ? "text-xau" : ""}`}
+          data-testid="kpi-so-ban-tin"
+        >
+          {hom_nay === null ? (loi ? "?" : "…") : `${hom_nay.so_da_dang}/${soKhungMoiNgay(hom_nay)}`}
+        </span>
+        <span className="mono block text-xs text-muc-mo">
+          {loi
+            ? "Không đọc được trạng thái bản tin"
+            : hom_nay === null
+              ? "Đang nạp…"
+              : !hom_nay.co_lich
+                ? "Không có lịch hôm nay"
+                : tre
+                  ? "Có khung quá hạn chót"
+                  : "khung đã đăng"}
+        </span>
+      </span>
+      <span
+        className={`grid size-10 shrink-0 place-items-center rounded-xl
+          ${tre ? "bg-xau/10 text-xau" : "bg-nhan-mo text-nhan"}`}
+      >
+        <Icon ten="nhat-ky" />
       </span>
     </Link>
   );

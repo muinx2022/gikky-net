@@ -222,6 +222,7 @@ def toi(request):
 
 # Mount ở CUỐI file, cùng lý do như `api/v1.py`: các router import `api.quan_tri_schemas`
 # và `api.loi`, còn `api_admin` phải tồn tại trước khi `config/api_registry.py` đọc tới.
+from api.quan_tri_ban_tin import router as router_ban_tin  # noqa: E402
 from api.quan_tri_bang import router as router_bang  # noqa: E402
 from api.quan_tri_bao_cao import router as router_bao_cao  # noqa: E402
 from api.quan_tri_cai_dat import router as router_cai_dat  # noqa: E402
@@ -237,6 +238,7 @@ from api.quan_tri_sub import router as router_sub  # noqa: E402
 from api.quan_tri_thong_ke import router as router_thong_ke  # noqa: E402
 
 api_admin.add_router("", router_bao_cao)
+api_admin.add_router("", router_ban_tin)
 api_admin.add_router("", router_bang)
 api_admin.add_router("", router_cai_dat)
 api_admin.add_router("", router_chan_doan)

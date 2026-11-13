@@ -171,6 +171,132 @@
         "title": "BanIn",
         "type": "object"
       },
+      "BanTinQuanTriOut": {
+        "properties": {
+          "cap_nhat_luc": {
+            "format": "date-time",
+            "title": "Cap Nhat Luc",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "da_an": {
+            "title": "Da An",
+            "type": "boolean"
+          },
+          "duong_dan_cong_khai": {
+            "title": "Duong Dan Cong Khai",
+            "type": "string"
+          },
+          "hidden_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hidden At"
+          },
+          "khung": {
+            "items": {
+              "$ref": "#/components/schemas/KhungBanTinQuanTriOut"
+            },
+            "title": "Khung",
+            "type": "array"
+          },
+          "ngay": {
+            "format": "date",
+            "title": "Ngay",
+            "type": "string"
+          },
+          "tac_gia": {
+            "title": "Tac Gia",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "view_count": {
+            "title": "View Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ngay",
+          "title",
+          "tac_gia",
+          "created_at",
+          "cap_nhat_luc",
+          "view_count",
+          "da_an",
+          "hidden_at",
+          "duong_dan_cong_khai",
+          "khung"
+        ],
+        "title": "BanTinQuanTriOut",
+        "type": "object"
+      },
+      "BanTinQuanTriTomTatOut": {
+        "description": "Một hàng của bảng `/ban-tin`.",
+        "properties": {
+          "cap_nhat_luc": {
+            "format": "date-time",
+            "title": "Cap Nhat Luc",
+            "type": "string"
+          },
+          "da_an": {
+            "title": "Da An",
+            "type": "boolean"
+          },
+          "duong_dan_cong_khai": {
+            "title": "Duong Dan Cong Khai",
+            "type": "string"
+          },
+          "khung_da_co": {
+            "items": {
+              "enum": [
+                "dem_qua",
+                "truoc_phien_vn",
+                "truoc_phien_my"
+              ],
+              "type": "string"
+            },
+            "title": "Khung Da Co",
+            "type": "array"
+          },
+          "ngay": {
+            "format": "date",
+            "title": "Ngay",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "view_count": {
+            "title": "View Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ngay",
+          "title",
+          "khung_da_co",
+          "view_count",
+          "cap_nhat_luc",
+          "da_an",
+          "duong_dan_cong_khai"
+        ],
+        "title": "BanTinQuanTriTomTatOut",
+        "type": "object"
+      },
       "BaoCaoOut": {
         "description": "Một dòng trong hàng đợi báo cáo (PLAN 5.10).",
         "properties": {
@@ -931,6 +1057,43 @@
         "title": "HenGioMachIn",
         "type": "object"
       },
+      "HomNayOut": {
+        "properties": {
+          "co_lich": {
+            "title": "Co Lich",
+            "type": "boolean"
+          },
+          "da_an": {
+            "title": "Da An",
+            "type": "boolean"
+          },
+          "khung": {
+            "items": {
+              "$ref": "#/components/schemas/KhungHomNayOut"
+            },
+            "title": "Khung",
+            "type": "array"
+          },
+          "ngay": {
+            "format": "date",
+            "title": "Ngay",
+            "type": "string"
+          },
+          "so_da_dang": {
+            "title": "So Da Dang",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ngay",
+          "co_lich",
+          "khung",
+          "so_da_dang",
+          "da_an"
+        ],
+        "title": "HomNayOut",
+        "type": "object"
+      },
       "KenhNguonOut": {
         "description": "Phân bổ nguồn truy cập theo kênh dẫn.",
         "properties": {
@@ -1185,6 +1348,108 @@
           "so_luot"
         ],
         "title": "KhuVucOut",
+        "type": "object"
+      },
+      "KhungBanTinQuanTriOut": {
+        "properties": {
+          "body": {
+            "title": "Body",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "figures": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FigureOut"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Figures"
+          },
+          "khung": {
+            "enum": [
+              "dem_qua",
+              "truoc_phien_vn",
+              "truoc_phien_my"
+            ],
+            "title": "Khung",
+            "type": "string"
+          },
+          "ten": {
+            "title": "Ten",
+            "type": "string"
+          }
+        },
+        "required": [
+          "khung",
+          "ten",
+          "created_at",
+          "body",
+          "figures"
+        ],
+        "title": "KhungBanTinQuanTriOut",
+        "type": "object"
+      },
+      "KhungHomNayOut": {
+        "properties": {
+          "da_dang_luc": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Da Dang Luc"
+          },
+          "han_chot": {
+            "title": "Han Chot",
+            "type": "string"
+          },
+          "khung": {
+            "enum": [
+              "dem_qua",
+              "truoc_phien_vn",
+              "truoc_phien_my"
+            ],
+            "title": "Khung",
+            "type": "string"
+          },
+          "ten": {
+            "title": "Ten",
+            "type": "string"
+          },
+          "trang_thai": {
+            "enum": [
+              "da_dang",
+              "da_xoa",
+              "khong_lich",
+              "qua_han",
+              "chua"
+            ],
+            "title": "Trang Thai",
+            "type": "string"
+          }
+        },
+        "required": [
+          "khung",
+          "ten",
+          "han_chot",
+          "trang_thai",
+          "da_dang_luc"
+        ],
+        "title": "KhungHomNayOut",
         "type": "object"
       },
       "LoiOut": {
@@ -2497,6 +2762,51 @@
         "title": "SapXepSubIn",
         "type": "object"
       },
+      "SuaBanTinIn": {
+        "properties": {
+          "title": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "SuaBanTinIn",
+        "type": "object"
+      },
+      "SuaKhungBanTinIn": {
+        "description": "Thay TRỌN thân + bảng số liệu của một khung. `figures = null` (hoặc `[]`) ⇒ bỏ bảng số.",
+        "properties": {
+          "body": {
+            "maxLength": 50000,
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          },
+          "figures": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FigureIn"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Figures"
+          }
+        },
+        "required": [
+          "body"
+        ],
+        "title": "SuaKhungBanTinIn",
+        "type": "object"
+      },
       "SuaMocQuanTriIn": {
         "description": "Mod sửa mốc — `PATCH /admin/mocs/{id}`. Đúng 5 trường của `MocSuaIn`, cộng `ly_do`.\n\n**Kế thừa chứ không chép**: 5 trường sửa được của một mốc là MỘT hợp đồng (PLAN 5.2),\nvà bản thứ hai gõ tay ở đây sẽ trôi đúng lúc ai đó nới `DAI_BODY_MOC`. Cơ chế PATCH\nthật (`model_fields_set`) đi theo luôn — trường không gửi thì không đổi.\n\n`ly_do` **không** phải một trường của mốc: nó đi vào `AuditLog.meta`, không vào hàng\n`Moc`. Nên handler phải bóc nó ra TRƯỚC khi dựng `thay_doi`; lọt vào `thay_doi` là\n`core/ghi.py` ném `ValidationError` \"không sửa được trường ly_do\".",
         "properties": {
@@ -3044,6 +3354,43 @@
         "title": "TopTuKhoaOut",
         "type": "object"
       },
+      "TrangBanTinQuanTriOut": {
+        "properties": {
+          "cursor_ke_tiep": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cursor Ke Tiep"
+          },
+          "hom_nay": {
+            "$ref": "#/components/schemas/HomNayOut"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BanTinQuanTriTomTatOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "tong": {
+            "title": "Tong",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hom_nay",
+          "items",
+          "cursor_ke_tiep",
+          "tong"
+        ],
+        "title": "TrangBanTinQuanTriOut",
+        "type": "object"
+      },
       "TrangBaoCaoOut": {
         "description": "Một trang hàng đợi, cursor keyset theo `(created_at, id)` giảm dần.",
         "properties": {
@@ -3496,6 +3843,633 @@
         "summary": "Xoa Anh Moc Quan Tri",
         "tags": [
           "quan-tri-sua-bai"
+        ]
+      }
+    },
+    "/api/admin/ban-tin": {
+      "get": {
+        "description": "Bảng bản tin mới → cũ theo ngày (kể cả đã ẩn), cursor keyset `(ngay, id)`, kèm ô \"Hôm nay\".\n\n`limit` 1..50; cursor sai ⇒ 400 `cursor_khong_hop_le`. `tong` đếm trước khi cắt keyset.",
+        "operationId": "quan_tri_liet_ke_ban_tin",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrangBanTinQuanTriOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Liet Ke Ban Tin",
+        "tags": [
+          "quan-tri-ban-tin"
+        ]
+      }
+    },
+    "/api/admin/ban-tin/{ngay}": {
+      "get": {
+        "description": "Một bản tin theo ngày VN (`YYYY-MM-DD`), kể cả đã ẩn. Sai dạng / không có ⇒ 404.",
+        "operationId": "quan_tri_xem_ban_tin",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ngay",
+            "required": true,
+            "schema": {
+              "title": "Ngay",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BanTinQuanTriOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Xem Ban Tin",
+        "tags": [
+          "quan-tri-ban-tin"
+        ]
+      },
+      "patch": {
+        "description": "Đổi tiêu đề. Chỉ khoảng trắng ⇒ 400. Không đổi gì ⇒ 200, không ghi nhật ký.",
+        "operationId": "quan_tri_sua_ban_tin",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ngay",
+            "required": true,
+            "schema": {
+              "title": "Ngay",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuaBanTinIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BanTinQuanTriOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Sua Ban Tin",
+        "tags": [
+          "quan-tri-ban-tin"
+        ]
+      }
+    },
+    "/api/admin/ban-tin/{ngay}/an": {
+      "post": {
+        "description": "Ẩn cả bản tin: trang công khai 404, rơi khỏi danh sách và dải trang chủ. Đã ẩn ⇒ 200, không ghi.",
+        "operationId": "quan_tri_an_ban_tin",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ngay",
+            "required": true,
+            "schema": {
+              "title": "Ngay",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BanTinQuanTriOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "An Ban Tin",
+        "tags": [
+          "quan-tri-ban-tin"
+        ]
+      }
+    },
+    "/api/admin/ban-tin/{ngay}/hien": {
+      "post": {
+        "description": "Hiện lại một bản tin đã ẩn. Đang hiện ⇒ 200, không ghi.",
+        "operationId": "quan_tri_hien_ban_tin",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ngay",
+            "required": true,
+            "schema": {
+              "title": "Ngay",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BanTinQuanTriOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Hien Ban Tin",
+        "tags": [
+          "quan-tri-ban-tin"
+        ]
+      }
+    },
+    "/api/admin/ban-tin/{ngay}/khung/{khung}": {
+      "delete": {
+        "description": "Xoá hẳn một khung — không hoàn tác; bản cũ nằm ở nhật ký (`xoa_khung_ban_tin`).\n\nKhung cuối cùng ⇒ 409 `khung_cuoi_cung` (ẩn cả bản tin thay vì xoá). Không có ⇒ 404.",
+        "operationId": "quan_tri_xoa_khung_ban_tin",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ngay",
+            "required": true,
+            "schema": {
+              "title": "Ngay",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "khung",
+            "required": true,
+            "schema": {
+              "title": "Khung",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BanTinQuanTriOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Xoa Khung",
+        "tags": [
+          "quan-tri-ban-tin"
+        ]
+      },
+      "patch": {
+        "description": "Thay thân + bảng số liệu của một khung — cùng bộ lọc HTML, cùng validator `figures`,\ncùng trần độ dài với đường đăng của bot.\n\nThân chỉ gồm thẻ bị chặn (lọc xong rỗng) hoặc `figures` sai dạng ⇒ 400\n`du_lieu_khong_hop_le`. Khung chưa đăng ⇒ 404.",
+        "operationId": "quan_tri_sua_khung_ban_tin",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ngay",
+            "required": true,
+            "schema": {
+              "title": "Ngay",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "khung",
+            "required": true,
+            "schema": {
+              "title": "Khung",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuaKhungBanTinIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BanTinQuanTriOut"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoiOut"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "security": [
+          {
+            "ChiMod": []
+          }
+        ],
+        "summary": "Sua Khung",
+        "tags": [
+          "quan-tri-ban-tin"
         ]
       }
     },

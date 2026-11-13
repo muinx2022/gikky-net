@@ -4,7 +4,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { QuanTriBanNguoiDungData, QuanTriBanNguoiDungErrors, QuanTriBanNguoiDungResponses, QuanTriChanDoanTimKiemData, QuanTriChanDoanTimKiemErrors, QuanTriChanDoanTimKiemResponses, QuanTriDatAnBinhLuanData, QuanTriDatAnBinhLuanErrors, QuanTriDatAnBinhLuanResponses, QuanTriDatAnMachData, QuanTriDatAnMachErrors, QuanTriDatAnMachResponses, QuanTriDatAnMocData, QuanTriDatAnMocErrors, QuanTriDatAnMocResponses, QuanTriDatKhoaMachData, QuanTriDatKhoaMachErrors, QuanTriDatKhoaMachResponses, QuanTriDatLuuTruMachData, QuanTriDatLuuTruMachErrors, QuanTriDatLuuTruMachResponses, QuanTriDatMatKhauData, QuanTriDatMatKhauErrors, QuanTriDatMatKhauResponses, QuanTriDatThuTuSubData, QuanTriDatThuTuSubErrors, QuanTriDatThuTuSubResponses, QuanTriDatTrangChuSubData, QuanTriDatTrangChuSubErrors, QuanTriDatTrangChuSubResponses, QuanTriDoiQuyenModData, QuanTriDoiQuyenModErrors, QuanTriDoiQuyenModResponses, QuanTriDongBaoCaoData, QuanTriDongBaoCaoErrors, QuanTriDongBaoCaoResponses, QuanTriDongChuDeData, QuanTriDongChuDeErrors, QuanTriDongChuDeResponses, QuanTriGanModSubData, QuanTriGanModSubErrors, QuanTriGanModSubResponses, QuanTriGoBanNguoiDungData, QuanTriGoBanNguoiDungErrors, QuanTriGoBanNguoiDungResponses, QuanTriGoModSubData, QuanTriGoModSubErrors, QuanTriGoModSubResponses, QuanTriHenGioMachData, QuanTriHenGioMachErrors, QuanTriHenGioMachResponses, QuanTriLietKeBaoCaoData, QuanTriLietKeBaoCaoErrors, QuanTriLietKeBaoCaoResponses, QuanTriLietKeBinhLuanData, QuanTriLietKeBinhLuanErrors, QuanTriLietKeBinhLuanResponses, QuanTriLietKeChuDeData, QuanTriLietKeChuDeErrors, QuanTriLietKeChuDeResponses, QuanTriLietKeMachData, QuanTriLietKeMachErrors, QuanTriLietKeMachResponses, QuanTriLietKeNguoiDungData, QuanTriLietKeNguoiDungErrors, QuanTriLietKeNguoiDungResponses, QuanTriLietKeNhatKyData, QuanTriLietKeNhatKyErrors, QuanTriLietKeNhatKyResponses, QuanTriLietKeSubData, QuanTriLietKeSubErrors, QuanTriLietKeSubResponses, QuanTriLuotXemData, QuanTriLuotXemErrors, QuanTriLuotXemOnlineData, QuanTriLuotXemOnlineErrors, QuanTriLuotXemOnlineResponses, QuanTriLuotXemResponses, QuanTriLuuCaiDatBienTapData, QuanTriLuuCaiDatBienTapErrors, QuanTriLuuCaiDatBienTapResponses, QuanTriLuuCaiDatGoogleData, QuanTriLuuCaiDatGoogleErrors, QuanTriLuuCaiDatGoogleResponses, QuanTriMoLaiChuDeData, QuanTriMoLaiChuDeErrors, QuanTriMoLaiChuDeResponses, QuanTriSuaMocData, QuanTriSuaMocErrors, QuanTriSuaMocResponses, QuanTriSuaNguoiDungData, QuanTriSuaNguoiDungErrors, QuanTriSuaNguoiDungResponses, QuanTriSuaSubData, QuanTriSuaSubErrors, QuanTriSuaSubResponses, QuanTriSuaTieuDeMachData, QuanTriSuaTieuDeMachErrors, QuanTriSuaTieuDeMachResponses, QuanTriTaiAnhMocData, QuanTriTaiAnhMocErrors, QuanTriTaiAnhMocResponses, QuanTriTaiAnhNoiDungData, QuanTriTaiAnhNoiDungErrors, QuanTriTaiAnhNoiDungResponses, QuanTriTaoMachHenGioData, QuanTriTaoMachHenGioErrors, QuanTriTaoMachHenGioResponses, QuanTriTaoNguoiDungData, QuanTriTaoNguoiDungErrors, QuanTriTaoNguoiDungResponses, QuanTriTaoSubData, QuanTriTaoSubErrors, QuanTriTaoSubResponses, QuanTriThongKeData, QuanTriThongKeErrors, QuanTriThongKeResponses, QuanTriToiData, QuanTriToiErrors, QuanTriToiResponses, QuanTriXemCaiDatBienTapData, QuanTriXemCaiDatBienTapErrors, QuanTriXemCaiDatBienTapResponses, QuanTriXemCaiDatGoogleData, QuanTriXemCaiDatGoogleErrors, QuanTriXemCaiDatGoogleResponses, QuanTriXemMachData, QuanTriXemMachErrors, QuanTriXemMachResponses, QuanTriXemMocData, QuanTriXemMocErrors, QuanTriXemMocResponses, QuanTriXemNguoiDungData, QuanTriXemNguoiDungErrors, QuanTriXemNguoiDungResponses, QuanTriXoaAnhMocData, QuanTriXoaAnhMocErrors, QuanTriXoaAnhMocResponses, QuanTriXoaCaiDatGoogleData, QuanTriXoaCaiDatGoogleErrors, QuanTriXoaCaiDatGoogleResponses, QuanTriXoaSubData, QuanTriXoaSubErrors, QuanTriXoaSubResponses } from './types.gen';
+import type { QuanTriAnBanTinData, QuanTriAnBanTinErrors, QuanTriAnBanTinResponses, QuanTriBanNguoiDungData, QuanTriBanNguoiDungErrors, QuanTriBanNguoiDungResponses, QuanTriChanDoanTimKiemData, QuanTriChanDoanTimKiemErrors, QuanTriChanDoanTimKiemResponses, QuanTriDatAnBinhLuanData, QuanTriDatAnBinhLuanErrors, QuanTriDatAnBinhLuanResponses, QuanTriDatAnMachData, QuanTriDatAnMachErrors, QuanTriDatAnMachResponses, QuanTriDatAnMocData, QuanTriDatAnMocErrors, QuanTriDatAnMocResponses, QuanTriDatKhoaMachData, QuanTriDatKhoaMachErrors, QuanTriDatKhoaMachResponses, QuanTriDatLuuTruMachData, QuanTriDatLuuTruMachErrors, QuanTriDatLuuTruMachResponses, QuanTriDatMatKhauData, QuanTriDatMatKhauErrors, QuanTriDatMatKhauResponses, QuanTriDatThuTuSubData, QuanTriDatThuTuSubErrors, QuanTriDatThuTuSubResponses, QuanTriDatTrangChuSubData, QuanTriDatTrangChuSubErrors, QuanTriDatTrangChuSubResponses, QuanTriDoiQuyenModData, QuanTriDoiQuyenModErrors, QuanTriDoiQuyenModResponses, QuanTriDongBaoCaoData, QuanTriDongBaoCaoErrors, QuanTriDongBaoCaoResponses, QuanTriDongChuDeData, QuanTriDongChuDeErrors, QuanTriDongChuDeResponses, QuanTriGanModSubData, QuanTriGanModSubErrors, QuanTriGanModSubResponses, QuanTriGoBanNguoiDungData, QuanTriGoBanNguoiDungErrors, QuanTriGoBanNguoiDungResponses, QuanTriGoModSubData, QuanTriGoModSubErrors, QuanTriGoModSubResponses, QuanTriHenGioMachData, QuanTriHenGioMachErrors, QuanTriHenGioMachResponses, QuanTriHienBanTinData, QuanTriHienBanTinErrors, QuanTriHienBanTinResponses, QuanTriLietKeBanTinData, QuanTriLietKeBanTinErrors, QuanTriLietKeBanTinResponses, QuanTriLietKeBaoCaoData, QuanTriLietKeBaoCaoErrors, QuanTriLietKeBaoCaoResponses, QuanTriLietKeBinhLuanData, QuanTriLietKeBinhLuanErrors, QuanTriLietKeBinhLuanResponses, QuanTriLietKeChuDeData, QuanTriLietKeChuDeErrors, QuanTriLietKeChuDeResponses, QuanTriLietKeMachData, QuanTriLietKeMachErrors, QuanTriLietKeMachResponses, QuanTriLietKeNguoiDungData, QuanTriLietKeNguoiDungErrors, QuanTriLietKeNguoiDungResponses, QuanTriLietKeNhatKyData, QuanTriLietKeNhatKyErrors, QuanTriLietKeNhatKyResponses, QuanTriLietKeSubData, QuanTriLietKeSubErrors, QuanTriLietKeSubResponses, QuanTriLuotXemData, QuanTriLuotXemErrors, QuanTriLuotXemOnlineData, QuanTriLuotXemOnlineErrors, QuanTriLuotXemOnlineResponses, QuanTriLuotXemResponses, QuanTriLuuCaiDatBienTapData, QuanTriLuuCaiDatBienTapErrors, QuanTriLuuCaiDatBienTapResponses, QuanTriLuuCaiDatGoogleData, QuanTriLuuCaiDatGoogleErrors, QuanTriLuuCaiDatGoogleResponses, QuanTriMoLaiChuDeData, QuanTriMoLaiChuDeErrors, QuanTriMoLaiChuDeResponses, QuanTriSuaBanTinData, QuanTriSuaBanTinErrors, QuanTriSuaBanTinResponses, QuanTriSuaKhungBanTinData, QuanTriSuaKhungBanTinErrors, QuanTriSuaKhungBanTinResponses, QuanTriSuaMocData, QuanTriSuaMocErrors, QuanTriSuaMocResponses, QuanTriSuaNguoiDungData, QuanTriSuaNguoiDungErrors, QuanTriSuaNguoiDungResponses, QuanTriSuaSubData, QuanTriSuaSubErrors, QuanTriSuaSubResponses, QuanTriSuaTieuDeMachData, QuanTriSuaTieuDeMachErrors, QuanTriSuaTieuDeMachResponses, QuanTriTaiAnhMocData, QuanTriTaiAnhMocErrors, QuanTriTaiAnhMocResponses, QuanTriTaiAnhNoiDungData, QuanTriTaiAnhNoiDungErrors, QuanTriTaiAnhNoiDungResponses, QuanTriTaoMachHenGioData, QuanTriTaoMachHenGioErrors, QuanTriTaoMachHenGioResponses, QuanTriTaoNguoiDungData, QuanTriTaoNguoiDungErrors, QuanTriTaoNguoiDungResponses, QuanTriTaoSubData, QuanTriTaoSubErrors, QuanTriTaoSubResponses, QuanTriThongKeData, QuanTriThongKeErrors, QuanTriThongKeResponses, QuanTriToiData, QuanTriToiErrors, QuanTriToiResponses, QuanTriXemBanTinData, QuanTriXemBanTinErrors, QuanTriXemBanTinResponses, QuanTriXemCaiDatBienTapData, QuanTriXemCaiDatBienTapErrors, QuanTriXemCaiDatBienTapResponses, QuanTriXemCaiDatGoogleData, QuanTriXemCaiDatGoogleErrors, QuanTriXemCaiDatGoogleResponses, QuanTriXemMachData, QuanTriXemMachErrors, QuanTriXemMachResponses, QuanTriXemMocData, QuanTriXemMocErrors, QuanTriXemMocResponses, QuanTriXemNguoiDungData, QuanTriXemNguoiDungErrors, QuanTriXemNguoiDungResponses, QuanTriXoaAnhMocData, QuanTriXoaAnhMocErrors, QuanTriXoaAnhMocResponses, QuanTriXoaCaiDatGoogleData, QuanTriXoaCaiDatGoogleErrors, QuanTriXoaCaiDatGoogleResponses, QuanTriXoaKhungBanTinData, QuanTriXoaKhungBanTinErrors, QuanTriXoaKhungBanTinResponses, QuanTriXoaSubData, QuanTriXoaSubErrors, QuanTriXoaSubResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -77,6 +77,127 @@ export const quanTriXoaAnhMoc = <ThrowOnError extends boolean = false>(options: 
         }],
     url: '/api/admin/anh/{anh_id}',
     ...options
+});
+
+/**
+ * Liet Ke Ban Tin
+ *
+ * Bảng bản tin mới → cũ theo ngày (kể cả đã ẩn), cursor keyset `(ngay, id)`, kèm ô "Hôm nay".
+ *
+ * `limit` 1..50; cursor sai ⇒ 400 `cursor_khong_hop_le`. `tong` đếm trước khi cắt keyset.
+ */
+export const quanTriLietKeBanTin = <ThrowOnError extends boolean = false>(options?: Options<QuanTriLietKeBanTinData, ThrowOnError>): RequestResult<QuanTriLietKeBanTinResponses, QuanTriLietKeBanTinErrors, ThrowOnError> => (options?.client ?? client).get<QuanTriLietKeBanTinResponses, QuanTriLietKeBanTinErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/admin/ban-tin',
+    ...options
+});
+
+/**
+ * Xem Ban Tin
+ *
+ * Một bản tin theo ngày VN (`YYYY-MM-DD`), kể cả đã ẩn. Sai dạng / không có ⇒ 404.
+ */
+export const quanTriXemBanTin = <ThrowOnError extends boolean = false>(options: Options<QuanTriXemBanTinData, ThrowOnError>): RequestResult<QuanTriXemBanTinResponses, QuanTriXemBanTinErrors, ThrowOnError> => (options.client ?? client).get<QuanTriXemBanTinResponses, QuanTriXemBanTinErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/admin/ban-tin/{ngay}',
+    ...options
+});
+
+/**
+ * Sua Ban Tin
+ *
+ * Đổi tiêu đề. Chỉ khoảng trắng ⇒ 400. Không đổi gì ⇒ 200, không ghi nhật ký.
+ */
+export const quanTriSuaBanTin = <ThrowOnError extends boolean = false>(options: Options<QuanTriSuaBanTinData, ThrowOnError>): RequestResult<QuanTriSuaBanTinResponses, QuanTriSuaBanTinErrors, ThrowOnError> => (options.client ?? client).patch<QuanTriSuaBanTinResponses, QuanTriSuaBanTinErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/admin/ban-tin/{ngay}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * An Ban Tin
+ *
+ * Ẩn cả bản tin: trang công khai 404, rơi khỏi danh sách và dải trang chủ. Đã ẩn ⇒ 200, không ghi.
+ */
+export const quanTriAnBanTin = <ThrowOnError extends boolean = false>(options: Options<QuanTriAnBanTinData, ThrowOnError>): RequestResult<QuanTriAnBanTinResponses, QuanTriAnBanTinErrors, ThrowOnError> => (options.client ?? client).post<QuanTriAnBanTinResponses, QuanTriAnBanTinErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/admin/ban-tin/{ngay}/an',
+    ...options
+});
+
+/**
+ * Hien Ban Tin
+ *
+ * Hiện lại một bản tin đã ẩn. Đang hiện ⇒ 200, không ghi.
+ */
+export const quanTriHienBanTin = <ThrowOnError extends boolean = false>(options: Options<QuanTriHienBanTinData, ThrowOnError>): RequestResult<QuanTriHienBanTinResponses, QuanTriHienBanTinErrors, ThrowOnError> => (options.client ?? client).post<QuanTriHienBanTinResponses, QuanTriHienBanTinErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/admin/ban-tin/{ngay}/hien',
+    ...options
+});
+
+/**
+ * Xoa Khung
+ *
+ * Xoá hẳn một khung — không hoàn tác; bản cũ nằm ở nhật ký (`xoa_khung_ban_tin`).
+ *
+ * Khung cuối cùng ⇒ 409 `khung_cuoi_cung` (ẩn cả bản tin thay vì xoá). Không có ⇒ 404.
+ */
+export const quanTriXoaKhungBanTin = <ThrowOnError extends boolean = false>(options: Options<QuanTriXoaKhungBanTinData, ThrowOnError>): RequestResult<QuanTriXoaKhungBanTinResponses, QuanTriXoaKhungBanTinErrors, ThrowOnError> => (options.client ?? client).delete<QuanTriXoaKhungBanTinResponses, QuanTriXoaKhungBanTinErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/admin/ban-tin/{ngay}/khung/{khung}',
+    ...options
+});
+
+/**
+ * Sua Khung
+ *
+ * Thay thân + bảng số liệu của một khung — cùng bộ lọc HTML, cùng validator `figures`,
+ * cùng trần độ dài với đường đăng của bot.
+ *
+ * Thân chỉ gồm thẻ bị chặn (lọc xong rỗng) hoặc `figures` sai dạng ⇒ 400
+ * `du_lieu_khong_hop_le`. Khung chưa đăng ⇒ 404.
+ */
+export const quanTriSuaKhungBanTin = <ThrowOnError extends boolean = false>(options: Options<QuanTriSuaKhungBanTinData, ThrowOnError>): RequestResult<QuanTriSuaKhungBanTinResponses, QuanTriSuaKhungBanTinErrors, ThrowOnError> => (options.client ?? client).patch<QuanTriSuaKhungBanTinResponses, QuanTriSuaKhungBanTinErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/api/admin/ban-tin/{ngay}/khung/{khung}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**

@@ -15,6 +15,8 @@ giờ) — một phép kiểm "đọc rồi ghi" ở tầng trên không chặn 
 tin đăng qua đường mới để nó `NULL`.
 """
 
+from datetime import time
+
 from django.conf import settings
 from django.core.validators import MaxLengthValidator
 from django.db import models
@@ -60,6 +62,27 @@ class KhungBanTin(models.TextChoices):
 #: Thứ tự hiển thị — suy từ `KhungBanTin`, không gõ lại.
 THU_TU_KHUNG: dict[str, int] = {khoa: i for i, khoa in enumerate(KhungBanTin.values)}
 
+#: Hạn chót của từng khung, giờ VN — **khai một lần ở phía Python** (việc 21, plan
+#: `2026-11-13-quan-tri-ban-tin-chu-de.md` §3.2). Ô "Hôm nay" của khu quản trị đọc nó qua
+#: API (`api/quan_tri_ban_tin.py`), admin không gõ lại số nào.
+#:
+#: Bản thứ hai không tránh được: bot chạy trên máy khác Django và khai hạn chót của nó ở
+#: `scripts/tin-tuc/lib.mjs::SLOT` (`han_chot`), README in lại ở bảng "Ba khung giờ".
+#: `tests/test_api_quan_tri_ban_tin.py::test_han_chot_KHOP_*` đọc hai file ấy dạng chữ và đỏ
+#: khi lệch — bot đổi giờ mà quên chỗ này thì ô "Hôm nay" tô đỏ sai giờ.
+#:
+#: Luật so như bot (`quaHanChot`): **quá** hạn là phút giờ VN `>` phút hạn chót, tức 07:00
+#: vẫn còn kịp.
+HAN_CHOT_KHUNG: dict[str, time] = {
+    KhungBanTin.DEM_QUA: time(7, 0),
+    KhungBanTin.TRUOC_PHIEN_VN: time(9, 0),
+    KhungBanTin.TRUOC_PHIEN_MY: time(21, 0),
+}
+
+#: Ngày trong tuần bot có lịch (`date.weekday()`: 0 = thứ Hai). Ba nhiệm vụ đặt lịch chạy
+#: cron `* * 1-5` (README, mục "Ba khung giờ") — T7 / CN không có bản tin nào phải chờ.
+THU_CO_LICH_BAN_TIN = frozenset(range(5))
+
 
 class BanTin(models.Model):
     """Bản tin của MỘT ngày lịch VN.
@@ -79,7 +102,7 @@ class BanTin(models.Model):
     created_at = models.DateTimeField(default=timezone.now, editable=False)
     cap_nhat_luc = models.DateTimeField(default=timezone.now)
     view_count = models.PositiveIntegerField(default=0)
-    #: Mod ẩn một bản tin sai qua Django admin. Ẩn ⇒ mọi cửa đọc coi như không tồn tại.
+    #: Mod ẩn một bản tin sai ở khu quản trị (`/ban-tin/<ngày>`) hoặc Django admin. Ẩn ⇒ mọi cửa đọc coi như không tồn tại.
     hidden_at = models.DateTimeField(null=True, blank=True)
     #: Mạch cũ đã chuyển sang hàng này — chỉ để 301. `OneToOne` = FK + `UNIQUE`: hai bản
     #: tin cùng trỏ một mạch là 301 mơ hồ, và chạy lại lệnh chuyển phải không tạo gì thêm.

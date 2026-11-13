@@ -345,6 +345,33 @@ def bang_endpoint(dl: dict) -> list[tuple[str, str, str, BodyEndpoint]]:
         ("quan_tri_liet_ke_chu_de", "get", "/api/admin/chu-de", None),
         ("quan_tri_dong_chu_de", "post", f"/api/admin/chu-de/{mach_id}/dong", {}),
         ("quan_tri_mo_lai_chu_de", "post", f"/api/admin/chu-de/{mach_id}/mo-lai", None),
+        # Trang "Bản tin" (việc 21, đợt D). Mọi cửa mở cho mọi mod. Bộ dữ liệu này không có
+        # bản tin nào, nên năm cửa ghi trả 404 cho mod — không đổi gì của hàng dùng chung,
+        # và 404 vẫn là "đã qua hàng rào": phép tra ngày nằm SAU `ChiMod`. Thân request
+        # phải HỢP LỆ, nếu không 400 của schema trả về trước cả phép tra và bài đo đọc nó
+        # thành "đã qua" vì một lý do khác.
+        ("quan_tri_liet_ke_ban_tin", "get", "/api/admin/ban-tin", None),
+        ("quan_tri_xem_ban_tin", "get", "/api/admin/ban-tin/2000-01-03", None),
+        (
+            "quan_tri_sua_ban_tin",
+            "patch",
+            "/api/admin/ban-tin/2000-01-03",
+            {"title": "Bản tin thử"},
+        ),
+        (
+            "quan_tri_sua_khung_ban_tin",
+            "patch",
+            "/api/admin/ban-tin/2000-01-03/khung/dem_qua",
+            {"body": "<p>Thân thử</p>", "figures": None},
+        ),
+        (
+            "quan_tri_xoa_khung_ban_tin",
+            "delete",
+            "/api/admin/ban-tin/2000-01-03/khung/dem_qua",
+            None,
+        ),
+        ("quan_tri_an_ban_tin", "post", "/api/admin/ban-tin/2000-01-03/an", None),
+        ("quan_tri_hien_ban_tin", "post", "/api/admin/ban-tin/2000-01-03/hien", None),
     ]
 
 

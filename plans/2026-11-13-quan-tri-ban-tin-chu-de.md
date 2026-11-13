@@ -194,3 +194,131 @@ don-vi đỏ · đóng ngăn kéo không `nap()` ⇒ bài nguồn đỏ · `soPh
 (`diff` từng tên); 2753 = 2735 + 18 bài của `test_api_quan_tri_chu_de.py`. `pnpm codegen:check` khớp (không đổi
 schema). `pnpm lint` 0 warning. `pnpm e2e:don-vi` 796 passed (781 + 15). `pnpm build` exit 0 (cổng 3000/3001 trống
 trước khi build).
+
+### Báo cáo thực thi — Đợt D (2026-11-13, opus-dev, chưa commit)
+
+Nền: HEAD `28e3ede`; migration mới nhất `0048_ban_tin.py`, **không thêm migration** (chỉ thêm hằng). `pnpm e2e:don-vi`
+nền 796. ⚠ Lượt chạy `pnpm test` "nền" bị bẩn (chạy chồng lúc đã mount router mới, và một phiên khác đang làm việc
+"nhật ký đang bàn" trong CÙNG checkout: `api/api/feeds.py`, `schemas.py`, `seed_e2e.py`, `apps/web/app/page.tsx`,
+`lib/api.ts`, `test_api_so_query.py`, `test_operation_id.py`…) ⇒ tập đỏ được so với danh sách 17 bài của
+`P-20261113-9`.
+
+**File mới:** `api/api/quan_tri_ban_tin.py` (7 endpoint), `api/tests/test_api_quan_tri_ban_tin.py` (28 bài),
+`apps/admin/app/ban-tin/page.tsx`, `apps/admin/app/ban-tin/[ngay]/page.tsx`, `apps/admin/lib/ban-tin.ts`,
+`apps/web/e2e/don-vi/quan-tri-ban-tin.spec.ts` (18 bài).
+**File sửa:** `api/core/models/ban_tin.py` (`HAN_CHOT_KHUNG`, `THU_CO_LICH_BAN_TIN`), `api/core/ghi_ban_tin.py`
+(`sua_tieu_de_ban_tin`, `sua_khung_ban_tin`, `xoa_khung_ban_tin`, `KhongCoKhung`, `KhungCuoiCung`), `api/core/ghi.py`
+(`dat_an_ban_tin`, 5 hằng `AUDIT_*_BAN_TIN`, `DICH_BAN_TIN`), `api/api/quan_tri.py` (mount), `api/tests/_quan_tri.py`
+(7 dòng bảng quyền), `api/tests/test_tim_kiem_cau_truc.py` (1 dòng `BANG_DONG_BO`), `apps/admin/components/khung/menu.ts`
+(mục "Bản tin"), `apps/admin/app/page.tsx` (thẻ "Bản tin hôm nay"), `apps/admin/app/nhat-ky/page.tsx` (5 gợi ý),
+`apps/admin/components/form-sua-moc.tsx` (`export` `OFigures` + `Figure`), `apps/admin/components/soan-thao-quan-tri.tsx`
+(prop `xemTruoc`), `apps/web/e2e/don-vi/quan-tri-chu-de.spec.ts` (C5: menu nay có 2 mục), `packages/api-client/**`.
+
+**Quyết định tự chốt:**
+- Đường API theo prefix admin: `GET /api/admin/ban-tin`, `GET|PATCH /ban-tin/{ngay}`, `PATCH|DELETE
+  /ban-tin/{ngay}/khung/{khung}`, `POST /ban-tin/{ngay}/an|hien`. Mọi cửa mở cho mọi mod (`is_staff`), như `/chu-de`.
+- Hạn chót khai một lần: `core/models/ban_tin.py::HAN_CHOT_KHUNG` (07:00 / 09:00 / 21:00) + `THU_CO_LICH_BAN_TIN` (T2–T6,
+  theo cron `1-5` của README). API trả `han_chot` dạng `HH:MM` và `trang_thai` ∈ `da_dang | khong_lich | qua_han | chua`;
+  admin không gõ giờ nào (bài don-vi quét cả `apps/admin`). "Quá hạn" so như bot `quaHanChot`: phút VN `>` phút hạn chót.
+  Bot có khai hạn chót ở chỗ đọc được (`scripts/tin-tuc/lib.mjs::SLOT.han_chot` + `KHUNG_THEO_SLOT`): pytest đọc dạng chữ
+  cả `lib.mjs` lẫn hai bảng của `README.md`, không sửa `scripts/**`.
+- **Ẩn / hiện nằm ở `core/ghi.py`**, không ở `ghi_ban_tin.py`: hàng rào `test_tim_kiem_cau_truc.py::test_khong_ai_ghi_luat_che_ngoai_ghi_py`
+  cấm ghi `hidden_at` ngoài `core/ghi.py`. Không nới allowlist; thêm `dat_an_ban_tin` vào `BANG_DONG_BO` nhãn KHONG
+  (`BanTin` không có trong index tìm kiếm). Hằng `AUDIT_*_BAN_TIN` vì thế cũng ở `core/ghi.py`.
+- AuditLog: `target_type="ban_tin"`, `target_id` = pk; `meta.ngay` + `meta.truoc` / `meta.sau` (tiêu đề; thân + figures;
+  `hidden_at`; khung bị xoá mang `body`, `figures`, `created_at`, `sau=null`). Không đổi gì ⇒ 200, không ghi.
+- Khoá: `BanTin` FOR UPDATE → hàng `BanTinKhung` FOR UPDATE/DELETE → INSERT `AuditLog`. Không chạm `Mach`.
+- `cap_nhat_luc`: sửa khung KHÔNG đổi (định nghĩa việc 20 §3.1 = `created_at` khung mới nhất); xoá khung mới nhất ⇒ lùi về
+  `created_at` của khung mới nhất còn lại; xoá khung khác ⇒ giữ.
+- **Xoá khung cuối cùng ⇒ 409 `khung_cuoi_cung`** (UI khoá nút, chú thích "ẩn cả bản tin thay vì xoá"): bản tin rỗng sẽ là
+  trang công khai chỉ có tiêu đề.
+- **Không gọi revalidate**: đo được `/s/tin-tuc/<ngày>`, `/s/tin-tuc`, `/` đều `force-dynamic`, `docBanTin` /
+  `docDanhSachBanTin` đi `CHUNG` (`no-store`); cửa `/lam-moi-cache` chỉ nhận `/m/…`. Bài don-vi ghim giả định đó.
+- Xem trước HTML = `SoanThaoQuanTri` chỉ đọc (prop `xemTruoc`, ẩn thanh công cụ, `editable=false`), không
+  `dangerouslySetInnerHTML`. Ô dải số dùng lại `OFigures` của `form-sua-moc.tsx` (chỉ thêm `export`). Thân khung không cho
+  chèn ảnh (`choPhepAnh={false}`).
+- `SuaKhungBanTinIn` thay TRỌN thân + figures (`figures=[]`/`null` ⇒ bỏ bảng số); trần độ dài = `DAI_BODY_MOC`, figures
+  qua `FigureIn` (schema) + `kiem_figures` (≤6 cặp) như đường đăng.
+- Thẻ "Bản tin hôm nay" ở `/` tự gọi `GET /admin/ban-tin?limit=1` (ngoại lệ duy nhất của "mọi số từ `/thong-ke`"), đỏ khi
+  có khung quá hạn; lưới KPI đổi `xl:grid-cols-4` → `lg:grid-cols-3 xl:grid-cols-5`.
+
+**Bài đo:**
+- D1: `pnpm test -- tests/test_api_quan_tri_ban_tin.py -k d1` — T6 08:30 (đêm qua đã đăng lúc 06:10, hai khung kia
+  "chua"), 09:30 (trước phiên VN `qua_han`), biên 09:00:59 / 09:01, thứ Bảy `khong_lich`, 23:30 UTC thứ Năm = thứ Sáu VN,
+  bản tin hôm nay bị ẩn; cộng `test_han_chot_KHOP_voi_bot_trong_lib_mjs` + `..._README`.
+- D2: `<script>` bị lọc + AuditLog trước/sau; thân chỉ thẻ bị chặn ⇒ 400 không ghi; figures sai dạng (ô >24, ô rỗng, 7 cặp,
+  thiếu trường) ⇒ 400 không ghi; quá `DAI_BODY_MOC` ⇒ 400; không đổi ⇒ không audit.
+- D3: ẩn ⇒ `GET /api/v1/ban-tin/<ngày>` 404 + rơi khỏi `liet_ke_ban_tin` (nguồn của dải trang chủ), ẩn lần hai không thêm
+  nhật ký, admin vẫn đọc được; hiện lại ⇒ quay về.
+- D4: xoá trước phiên VN ⇒ cửa công khai còn đúng hai khung kia, nguyên vẹn từng trường; khung mới nhất ⇒ `cap_nhat_luc`
+  lùi; khung cuối ⇒ 409; khung không có ⇒ 404.
+- Phân quyền: 7 dòng mới ở `tests/_quan_tri.py` (khách 401, user thường 403, mod qua) — xanh.
+- Don-vi: `pnpm e2e:don-vi quan-tri-ban-tin` 18 bài (hàm thuần, request thật của client sinh ra, nguồn trang, hàng rào
+  "không gõ giờ hạn chót", "không chèn HTML thô", thẻ bảng điều khiển, gợi ý nhật ký khớp `core/ghi.py`, ba trang công khai
+  `force-dynamic` + `no-store`).
+- Trình duyệt thật (Django 8000 + `next start` admin 3001 trên `gikky_e2e`, staff + session + bản tin hôm nay tạo tạm): ô
+  "Hôm nay" lúc ~16:30 VN = đêm qua đã đăng 06:14 / trước phiên VN quá hạn (đỏ) / trước phiên Mỹ chưa (xám); 0 lỗi console;
+  0 px cuộn ngang ở 1280 và 390. Bấm Ẩn ⇒ `/api/v1/ban-tin/<ngày>` 404, Hiện lại ⇒ 200; sửa tiêu đề; sửa thân qua Tiptap
+  ⇒ thân công khai đổi. Dữ liệu tạm (1 user, 1 session, 1 bản tin, 4 AuditLog) đã xoá; `gikky_e2e` về 4 bản tin seed.
+
+**Thử phá (mọi file khôi phục, so byte):** Python — hạn chót đêm qua 07:30 ⇒ 3 bài đỏ (hai bài KHOP + D1 08:30) · `>` thành
+`>=` ⇒ bài biên đỏ · bỏ đổi sang giờ VN ⇒ bài UTC đỏ · bỏ nhánh `khong_lich` ⇒ bài thứ Bảy đỏ · bỏ `kiem_figures` +
+`lam_sach` ở sửa khung ⇒ 3 bài D2 đỏ · bỏ audit sửa khung ⇒ 2 bài đỏ · ẩn không lưu `hidden_at` ⇒ D3 đỏ · xoá cả bản tin
+thay vì một khung ⇒ D4 đỏ · bỏ lùi `cap_nhat_luc` ⇒ bài khung mới nhất đỏ · bỏ chặn khung cuối ⇒ bài 409 đỏ · bảng lọc bỏ
+bản ẩn ⇒ bài bảng đỏ · bỏ phép "không đổi ⇒ không ghi" ⇒ bài không-audit đỏ. Admin — "quá hạn" tông xám ⇒ đỏ · bỏ thẻ
+bảng điều khiển ⇒ đỏ · bỏ mục menu ⇒ 2 bài đỏ (kể cả C5) · gõ `"09:00"` vào `lib/ban-tin.ts` ⇒ đỏ · hộp xoá bỏ chữ "không
+hoàn tác" ⇒ đỏ · bỏ gợi ý `xoa_khung_ban_tin` ⇒ đỏ · `khungDaDoi` bỏ chuẩn hoá ⇒ đỏ · xem trước sửa được ⇒ đỏ · trang không
+đọc `hom_nay` từ server ⇒ đỏ · nhãn ngày qua múi giờ máy ⇒ đỏ. **Không phá** bài "ba trang công khai force-dynamic"
+(đòi sửa `apps/web/app/**` — ngoài phạm vi, và phiên khác đang sửa `app/page.tsx`).
+
+**Con số:** `pnpm test` (đầy đủ, không `-q`): `17 failed, 2804 passed, 26 skipped` — tập đỏ đúng 17 bài của
+`P-20261113-9`; 2804 = 2753 + 28 (đợt này) + 21 (`test_api_nhat_ky_dang_ban.py` của phiên khác) + 2 (phiên khác).
+`pnpm e2e:don-vi` 819 passed = 796 + 18 (đợt này) + 5 (`nhat-ky-dang-ban.spec.ts` của phiên khác). `pnpm codegen:check`
+khớp. `pnpm lint` 0 warning; `tsc --noEmit` admin sạch. `pnpm build` exit 0 (cổng 3000/3001/8000 trống lúc build).
+⚠ `packages/api-client/openapi.json` + `src/**` (client v1) đổi theo endpoint `/feeds/nhat-ky-dang-ban` của phiên khác —
+codegen sinh từ cả cây; commit phải tách cho đúng việc.
+
+#### Đợt D — Vòng sửa 1 (2026-11-13, sau phản biện)
+
+1. **NẶNG · Tiptap làm hỏng cấu trúc bản tin.**
+   - (a) Bộ extension tách ra `apps/admin/lib/tiptap-quan-tri.ts::phanMoRongQuanTri` (MỘT chỗ, dùng cho cả
+     `components/soan-thao-quan-tri.tsx:136` lẫn bài đo); BỎ `horizontalRule: false` + `codeBlock: false`, chú thích sửa
+     cho đúng `lam_sach_html.py::THE_CHO_PHEP` (có `hr`, `pre`) và ghi rõ chiều mất dữ liệu. Vá luôn trang sửa MỐC
+     (`form-sua-moc.tsx` dùng chung component) — mốc KHÔNG đi qua bước chuẩn hoá (b). `SoanThaoQuanTri` thêm
+     `onTaoXong` (`:141`, sự kiện `create` của Tiptap).
+   - (b) `apps/admin/lib/ban-tin.ts:93` `chuanHoaThanBanTin`: `<li><p>x</p></li>` → `<li>x</li>` chỉ khi `li` có đúng
+     một `<p>` con (mục có danh sách con giữ nguyên), bỏ `<p></p>` ở CUỐI (giữa thân giữ). Gọi ở đường lưu
+     `app/ban-tin/[ngay]/page.tsx:133`.
+   - "Gõ rồi xoá": trang so với HTML Tiptap lúc tạo (`body_goc` từ `onTaoXong`, `:122`, `:301`), `khungDaDoi` (`:113`)
+     so trên bản chuẩn hoá của cả hai bên.
+   - (c) Bài round-trip `apps/web/e2e/don-vi/quan-tri-ban-tin-tiptap.spec.ts` (5 bài) với thân THẬT của bot
+     (`e2e/don-vi/mau/ban-tin-that-truoc-phien-my.html` — 5 `<hr>`, `…-truoc-phien-vn.html`, chép từ prod 13/11) + một
+     mẫu dựng tay (`<pre>` nhiều dòng, `<ol>`, danh sách lồng). Chạy trong Chromium của Playwright qua helper
+     `e2e/don-vi/tiptap-trinh-duyet.ts`: `page.route` trên origin giả, tự phân giải import trong `node_modules`,
+     `typescript.transpileModule` cho file `.ts` của admin — dựng đúng `phanMoRongQuanTri()`, không chép cấu hình.
+     **Lý do trình duyệt:** repo không có `jsdom`/`happy-dom`/`@tiptap/html` (thêm phụ thuộc là việc của phiên chính);
+     vẫn không server / cổng / DB nên chạy được trong `pnpm e2e:don-vi`. Đo: số thẻ `hr/pre/h3/a/strong/ul/ol/li` trước
+     = sau, không còn `li > p`, không `p` rỗng cuối; gõ rồi xoá ⇒ `khungDaDoi` = false. Kiểm thêm ngoài bộ (một lần,
+     bằng `lam_sach` thật): hai thân lưu xong qua `lam_sach` ra đúng tập thẻ của thân gốc, 0 `li>p`.
+   - Thử phá: tắt lại `horizontalRule` ⇒ 3 bài round-trip + bài nguồn đỏ · tắt `codeBlock` ⇒ bài mẫu tay + bài nguồn đỏ
+     · `chuanHoaThanBanTin` trả nguyên ⇒ 4 bài đỏ · bỏ cắt `p` rỗng cuối ⇒ 2 bài đỏ · trang gửi `body_moi` chưa chuẩn hoá
+     ⇒ bài nguồn đỏ · trang so với `k.body` thô ⇒ bài nguồn đỏ. **Xanh khi phá:** `khungDaDoi` bỏ chuẩn hoá hai bên — vì
+     mốc so đã là HTML Tiptap (`onTaoXong`) nên hai bên vốn cùng dáng; phép chuẩn hoá ấy chỉ là lớp phòng thủ.
+2. **NHỎ · Nạp lại đè tiêu đề đang gõ.** `lib/ban-tin.ts:77` `tieuDeSauKhiNap` (nạp đầu ⇒ lấy server; ô còn bằng tiêu
+   đề lần nạp trước ⇒ lấy mới; khác ⇒ giữ chữ đang gõ); `[ngay]/page.tsx:83` dùng nó, ref `tieu_de_da_nap`. Bài thuần +
+   bài nguồn. Thử phá: đặt lại `datTieuDe(data.title)` ⇒ bài nguồn đỏ; hàm luôn trả tiêu đề server ⇒ bài thuần đỏ.
+3. **NHỎ · Xoá khung hôm nay thành "quá hạn".** `api/api/quan_tri_ban_tin.py:90` thêm `da_xoa` vào `Literal`; `:191`
+   đọc `AuditLog` `xoa_khung_ban_tin` theo `target_id` = bản tin hôm nay VÀ `meta.ngay`; `:210` xét sau "đã đăng", trước
+   "không lịch / quá hạn". Admin `lib/ban-tin.ts:23` `da_xoa` = "đã xoá", tông xám; thẻ bảng điều khiển chỉ đỏ khi
+   `qua_han` (bài nguồn ghim). Pytest `test_d1_khung_hom_nay_bi_mod_xoa_la_da_xoa_khong_phai_qua_han` (có xoá cùng
+   khung ở NGÀY KHÁC làm nhiễu; bot đăng lại ⇒ "đã đăng" thắng). Thử phá: bỏ nhánh `da_xoa` ⇒ đỏ; tông `xau` ⇒ bài
+   don-vi đỏ; bỏ CẢ HAI bộ lọc `target_id` + `meta__ngay` ⇒ đỏ (bỏ từng cái một thì xanh — hai bộ lọc cùng chặn ca
+   ngày khác, mỗi cái đủ một mình).
+4. **NHỎ · Chú thích.** `apps/admin/app/nhat-ky/page.tsx:79` nay ghi hằng ở `api/core/ghi.py`; docstring
+   `api/core/ghi_ban_tin.py:57` nói hiện lại ở khu quản trị; thêm: chú thích `hidden_at` của
+   `core/models/ban_tin.py` (cùng chuyện cũ "chỉ qua Django admin"; chỉ chú thích, không sinh migration).
+
+**Con số:** `pnpm test` đầy đủ: `17 failed, 2806 passed, 26 skipped` — tập đỏ đúng 17 bài `P-20261113-9`
+(`test_api_quan_tri_ban_tin.py` nay 29 bài). `pnpm e2e:don-vi` 819 passed (bài của đợt này 28 = 23 + 5; tổng không cộng
+thẳng được vì phiên việc 22 đã commit `696025a` và đang sửa thêm 5 spec don-vi khác). `pnpm codegen:check` khớp;
+`pnpm lint` 0 warning; `tsc --noEmit` admin sạch; `pnpm build` exit 0 (cổng 3000/3001/8000 trống).
