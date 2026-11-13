@@ -101,7 +101,7 @@ for (const theme of ["sang", "toi"] as const) {
     test("L4 — theme đúng thật (không đo hai lần cùng một theme)", async ({ page }) => {
       await page.goto("/");
       const nen = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-      expect(nen).toBe(theme === "toi" ? "rgb(14, 17, 22)" : "rgb(255, 255, 255)");
+      expect(nen).toBe(theme === "toi" ? "rgb(14, 17, 22)" : "rgb(241, 242, 245)");
     });
 
     test("L1 — `/` và `/?tab=moi`: hai cột, KHÔNG có rail trái, rail phải 300px", async ({

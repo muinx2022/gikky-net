@@ -4,27 +4,29 @@
   padding: 26px 22px 40px;
 }
 
-/* **Nền thẻ = `--card`, GIỐNG thẻ ở feed** *(user chốt 2026-08-26: "box show content
- * post đang có nền nổi quá so với bg, dùng bg như card ở home").*
+/* **Thân bài là MỘT THẺ, cùng khuôn với thẻ feed** *(user chốt 2026-11-13: thêm nền trắng
+ * cho thân bài, cho giống feed)*. Nền `--surface` · viền `--line` · bo 12px · đệm 16px (14px
+ * ở ≤ 640px) — chép đúng `the-mach.module.css#.the`, cả hai theme, để đi từ feed vào trang
+ * mạch vẫn là cùng một tấm thẻ.
  *
- * Trước đó là `--surface` — trắng tinh ở theme sáng, tức nổi hẳn một bậc rưỡi so với nền
- * trang. `--card` (khai ở `app/globals.css`) chỉ chênh nền trang đúng một chút, cùng bậc
- * nổi mà thẻ ở feed đang dùng (`the-mach.module.css#.the`), nên đi từ feed vào trang mạch
- * không còn cú nhảy sáng.
+ * Lịch sử: 2026-08-26 thẻ dùng `--card`; commit 612a1cb (2026-10-21) bỏ đóng khung —
+ * `transparent`, chỉ còn vạch đáy — vì khi đó `--bg` sáng là trắng, khung không còn nghĩa.
+ * 2026-11-13 `--bg` sáng về lại `#f1f2f5` ⇒ chữ thân bài nằm thẳng trên nền xám, lệch với
+ * feed và với rail phải ⇒ đóng khung lại.
  *
- * ⚠ Ba chỗ khác PHẢI đi theo, không phải trang trí: `.hang_tren` (nền mờ của header dính
- * nằm ĐÈ lên chính thẻ này) và `the-moc.module.css#.dot` (vòng tròn số mốc đục lỗ trên ray
- * — nó tô nền thẻ để che đường kẻ). Chỗ nào còn `--surface` sẽ hiện ra thành một mảng sáng
- * lệch màu ngay giữa thẻ. */
+ * ⚠ Những chỗ TRONG thẻ tô nền để che thứ bên dưới phải dùng ĐÚNG nền thẻ (`--surface`):
+ * `the-moc.module.css#.dot` (vòng số mốc đục lỗ trên ray), `mat-bao.module.css`. Chỗ nào
+ * tô `--bg` sẽ hiện ra thành một mảng xám lệch màu ngay giữa thẻ. `.hang_tren` nền trong
+ * suốt và KHÔNG dính (`thanh-dieu-huong.spec.ts` ghim) nên luôn nằm trên nền thẻ. Bình
+ * luận (`KhanDai`) và ô soạn nằm TRONG `<article>` này nên cũng ở trên nền thẻ. */
 .the {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  padding: 8px 0 24px;
-  background: transparent;
-  border: 0;
-  border-bottom: 1px solid var(--line);
-  border-radius: 0;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
   box-shadow: none;
 }
 
@@ -224,9 +226,10 @@
     padding-block: 4px;
   }
 
-  /* Đợt M (M11): đệm đáy thẻ mạch (trên vạch kẻ, dưới ô bình luận) — xem `khan-dai.module.css`. */
+  /* Đệm 14px như thẻ feed ở điện thoại (`the-mach.module.css`). Đợt M (M11) từng hạ riêng đệm
+   * đáy xuống 12px để bớt khoảng trống dưới ô bình luận — xem `khan-dai.module.css`. */
   .the {
-    padding-bottom: 12px;
+    padding: 14px;
   }
 }
 
@@ -281,16 +284,11 @@
 }
 
 /* Mặt BÃO: composer đứng giữa nhật ký và khán đài (wireframe 9.2). */
+/* Không đệm đáy: ngay dưới là khu bình luận, và khoảng giữa hai khối do `gap` của `.the` lo
+ * (P-20261113-27 — đệm 18px cũ cộng dồn với `gap` và lề trên của khu). */
 .composer_bao {
-  padding: 0 0 18px;
   /* `id` đích của "Viết quan điểm của bạn" (`ID_O_SOAN_BINH_LUAN`): chừa chỗ cho thanh trên cùng. */
   scroll-margin-top: calc(var(--cao-chrome) + 14px);
-}
-
-@media (max-width: 640px) {
-  .composer_bao {
-    padding: 0 0 16px;
-  }
 }
 
 @media (max-width: 960px) and (min-width: 641px) {

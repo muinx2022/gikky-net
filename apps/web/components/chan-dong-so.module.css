@@ -9,9 +9,12 @@
  * làm ở đây — mà không dựng thêm một tấm thẻ lồng trong tấm thẻ.
  *
  * Lề trái/phải 26px khớp `.nhat_ky` của `trang-mach.module.css` (16px dưới 640px), vì nó
- * là em út của danh sách mốc chứ không phải một khối độc lập. */
+ * là em út của danh sách mốc chứ không phải một khối độc lập.
+ *
+ * Đáy 0: khối đứng trong thẻ mạch (flex cột, `gap: 14px`) nên khoảng với khối dưới (khu bình
+ * luận) do `gap` lo — lề đáy 18px cũ cộng dồn thành ~84px trống trên "Bình luận" (P-20261113-27). */
 .khung_chan {
-  margin: 4px 26px 18px;
+  margin: 4px 26px 0;
   padding-top: 11px;
   border-top: 1px solid var(--line);
 }
@@ -75,7 +78,7 @@
 
 @media (max-width: 640px) {
   .khung_chan {
-    margin: 4px 16px 16px;
+    margin: 4px 16px 0;
   }
 }
 

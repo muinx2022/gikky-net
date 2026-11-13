@@ -13,6 +13,17 @@
   scroll-margin-top: 60px;
 }
 
+/* Mốc CUỐI của nhật ký (2026-11-13): đệm đáy 26/20px là khoảng thở tới mốc KẾ; dưới mốc
+ * cuối không còn mốc nào nên nó chỉ cộng dồn với gap của thẻ + đệm khán đài ⇒ 50–56px trắng
+ * trước "Bình luận". Thu về 2px ⇒ còn ~32px desktop / ~26px mobile. Ray (`.ray`) dừng ở đáy
+ * nội dung, không ăn vào đệm, nên đổi đệm không làm ray cụt hay lơ lửng.
+ * Neo vào `ol[data-testid=nhat-ky]` với `>`: `:last-child` trần còn trúng mốc cuối của
+ * `ol` trong dải gập (`trong_gap`) — mốc đó KHÔNG phải mốc cuối của nhật ký. */
+:global([data-testid="nhat-ky"]) > .hang:last-child,
+:global([data-testid="nhat-ky"]) > .hang_don:last-child {
+  padding-bottom: 2px;
+}
+
 .ray {
   position: relative;
   border-left: 2px solid var(--line);

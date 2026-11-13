@@ -49,12 +49,20 @@
  * `LOI-VA-NO.md` (L43). Bản tối thì đạt thoải mái (7.78:1).
  */
 
+/* `--bg` sáng = nền giấy lạnh `#f1f2f5` của PLAN 9.1. Commit 612a1cb (2026-10-21) từng đổi
+ * nó sang `#ffffff` cho "kiểu Reddit", và thẻ trắng (`--surface`/`--card`) nằm trên nền
+ * trắng thì MẤT KHỐI: mép thẻ biến mất, khe giữa các thẻ trông rộng ra dù vẫn ~22px. Đổi
+ * lại 2026-11-13. Bản tối không có bệnh này vì `--surface` sáng hơn `--bg` sẵn rồi.
+ * Chỗ còn dùng `var(--bg)` (header dính, thanh tab feed, ô nhập, sheet đáy…) là CỐ Ý: ở
+ * cả hai theme nó là "nền trang / mặt lõm" so với `--surface`, không phải mặt khối. */
 :root {
-  --bg: #ffffff;
+  --bg: #f1f2f5;
   --surface: #ffffff;
   --surface-2: #e2e8f0;
   --inset: #f6f8fb;
-  /* Nền THẺ — chỉ chênh nhẹ so với nền trang */
+  /* Nền THẺ. Trộn 100% `--surface` ⇒ ở cả hai theme nó BẰNG ĐÚNG `--surface`; thẻ tách
+     khỏi trang nhờ `--bg` khác `--surface`, không nhờ token này. Giữ dạng `color-mix` vì
+     `e2e/don-vi/tuong-phan.spec.ts` đọc đúng cú pháp ấy để suy ra màu thẻ. */
   --card: color-mix(in srgb, var(--surface) 100%, var(--surface-2));
   --ink: #2b2d3c;
   --ink-2: #4b4d63;

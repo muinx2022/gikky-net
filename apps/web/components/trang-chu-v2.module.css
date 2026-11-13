@@ -13,7 +13,9 @@
 }
 
 .gioi_thieu_lede {
-  margin: 0 0 14px;
+  /* Khoảng thở trước khối tiêu điểm. `main` là khối thường ⇒ margin GỘP với margin-top 8px của
+   * `.khoi` nhật ký khi chưa có chủ đề: hai ca đều ra đúng 24px (≤ 640px: 20px). */
+  margin: 0 0 24px;
   font-size: 14px;
   color: var(--ink-3);
 }
@@ -147,6 +149,10 @@
 
 /* --- mobile (≤ 640px) -------------------------------------------------------------------- */
 @media (max-width: 640px) {
+  .gioi_thieu_lede {
+    margin-bottom: 20px;
+  }
+
   .tieu_khoi {
     font-size: 18px;
   }

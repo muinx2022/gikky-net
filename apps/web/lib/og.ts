@@ -39,7 +39,7 @@ export const KIEU_OG = "image/png";
  * `app/globals.css`. Chỉ có bản SÁNG ("nền giấy lạnh" của PLAN 9.1): ảnh OG là một tệp
  * PNG tĩnh, nó không biết theme của người xem. */
 export const MAU_OG = {
-  nen: "#ffffff",
+  nen: "#f1f2f5",
   the: "#ffffff",
   muc: "#2b2d3c",
   muc_2: "#4b4d63",

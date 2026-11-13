@@ -2013,9 +2013,35 @@ loãng, và loãng đủ lâu thì cả sổ bị bỏ.
 - **Ở đâu / bằng chứng**: (a) menu tài khoản in tên hai dòng ("ai_do" rồi "u/ai_do") khi chưa đặt tên hiển thị, vì `/me` trả `display_name = username` — `api/api/toi.py:56`, `apps/web/components/thanh-tai-khoan.tsx:123`, `thanh-dieu-huong-duoi.tsx:690`; (b) ba chỗ còn chép tay `display_name || username` — `components/the-moc.tsx:131`, `tab-ho-so.tsx:373`, `trang-mach.tsx:147` (metadata `authors`); (c) **nghi ngờ**: `duongDanHoSo` không `encodeURIComponent` username — `apps/web/lib/url.ts:65-67`; (d) `composer-mat-bao` không ẩn khi in trang — `apps/web/app/globals.css:227-238`; (e) `giao-dien.spec.ts:259` T7b bị `test.skip` từ trước; (f) file lạ chưa theo dõi `apps/web/e2e/bai-viet-xem-truoc.spec.ts.cu`.
 - **Vì sao không sửa ngay**: ngoài phạm vi đợt A.
 
+### P-20261111-16 · [MỞ] · NẶNG — vnstock gói khách vượt 20 request/phút thì KẾT THÚC TIẾN TRÌNH, hạn mức dùng chung cả máy
+- **Ở đâu / bằng chứng**: `scripts/bot-trader/scanner.py:89-99` chỉ bắt `Exception`, không bắt `SystemExit`. Một script khác đọc giá qua vnstock chạy 2026-11-11 in "Rate limit exceeded ... Process terminated." (20/20 đã dùng) rồi thoát. Hai tiến trình dùng vnstock chạy cùng lúc (vd Bot Trader `--scan` và một script khác) có thể làm nhau chết giữa chừng. Chưa tái hiện trên chính Bot Trader.
+- **Vì sao không sửa ngay**: ngoài phạm vi; cần quyết cách chia hạn mức (giãn nhịp, khoá liên tiến trình, hay nâng gói).
+
+### P-20261111-17 · [MỞ] · VỪA — **nghi ngờ**: cache giá của scanner giữ nến dở dang cả ngày
+- **Ở đâu / bằng chứng**: `scripts/bot-trader/scanner.py:66-87` — `lay_du_lieu_co_cache` khoá cache theo `end_date`, không có thời hạn; quét trong phiên thì nến hôm nay chưa đóng được dùng lại tới hết ngày. Đọc mã, CHƯA tái hiện.
+- **Vì sao không sửa ngay**: ngoài phạm vi.
+
+### P-20261111-18 · [MỞ] · NHỎ — lặt vặt ở scanner / vnstock
+- **Ở đâu / bằng chứng**: (a) `scripts/bot-trader/scanner.py:300` in "Tenkan-sen (1.1170) nằm dưới Kijun-sen (1.1170)" khi hai giá trị bằng nhau (điều kiện `<=`), thấy trong `ly_do` tín hiệu EUR/USD 2026-11-11; (b) `symbols_by_group('VNMID')` của vnstock nguồn vci ném "JSON data is empty".
+- **Vì sao không sửa ngay**: ngoài phạm vi.
+
+### P-20261111-19 · [MỞ] · NẶNG — Bot Trader dò GDKHQ bằng khoảng trống giá, nhưng dữ liệu vci đã điều chỉnh HỒI TỐ nên không còn khoảng trống
+- **Ở đâu / bằng chứng**: `scripts/bot-trader/eod_checker.py` (các ngưỡng 0.91 / 0.87 / 0.82). Cache `scripts/bot-trader/data/cache/TCB_*.json`: tới file ngày 2026-10-28 nến 2025-10-06 đóng 38.59; từ file 2026-10-29 cả lịch sử 257 nến bị nhân 0.6666 (38.59 → 25.73), chuỗi mới không có khoảng trống nào. Hệ quả suy ra: lệnh mở qua ngày GDKHQ bị so giá vào/SL/TP CHƯA điều chỉnh với giá ĐÃ điều chỉnh ⇒ có thể đăng "cắt lỗ" không có thật. **Chưa đối chiếu** với một lệnh cụ thể đã đăng của `bot-trader`.
+- **Vì sao không sửa ngay**: ngoài phạm vi; cần rà các mạch bot đã đóng sổ quanh ngày GDKHQ trước khi quyết cách sửa.
+
+### P-20261111-20 · [MỞ] · NHỎ — lặt vặt ở Bot Trader / client
+- **Ở đâu / bằng chứng**: (a) SL/TP của scanner không theo bước giá HOSE — `scripts/bot-trader/scanner.py:571-579`, `round(entry*0.96, 2)` ra 31.87 trong dải bước 50 đồng; (b) `GikkyClient._yeu_cau` không đặt timeout — `scripts/gikky_api_client.py:182`, một request treo là treo cả tiến trình gọi.
+- **Vì sao không sửa ngay**: ngoài phạm vi.
+
 ### P-20261111-21 · [MỞ] · VỪA — phát hiện ngoài phạm vi ở đợt B việc 14
 - **Ở đâu / bằng chứng**: (a) **nền e2e đỏ nay đếm đủ 21 bài** trên `gikky_e2e` (full-run 2026-11-11: 1008 xanh / 21 đỏ): 16 bài của P-20261111-13 (trừ `giao-dien:179` đã xoá theo nút Thẻ/Gọn và `vo-reddit:118` đã sửa theo thẻ mới) + `seo-va-trang.spec.ts:78,144,367` + `form-ghi.spec.ts:46,111` (`nut-dang-mach` nay mở ngăn kéo) + `phase-3.spec.ts:173` (chữ "Theo dõi mạch") + `sang-toi.spec.ts:43` (bài đặt `data-theme="light"`, `MutationObserver` ở `components/lua-chon-theme.ts` reset ngay). (b) **Lỗi hydrate React #418 (`args HTML`) trên mọi trang**, có sẵn trước đợt B: thấy ở console của `dev.gikky.net/s/quan-tri-von` (bản chưa có đợt B) và `localhost:3000/luat`; chưa truy gốc — **nghi ngờ** script inline đổi thuộc tính `<html>` trước hydrate, hoặc do chính khung trình duyệt nhúng dùng để xem. (c) e2e đầy đủ để lại tác giả dùng một lần trên `/` của `gikky_e2e` ⇒ bài đo nào giả định "mạch seed còn trên trang chủ" sẽ phụ thuộc thứ tự chạy. (d) `phanTramChieuRongAnh` (`apps/web/lib/anh.ts:144`) thành code chết, chỉ còn `e2e/don-vi/anh-feed-css.spec.ts` gọi. (e) Tên testid `the-nhat-ky-*` nay gắn cho thẻ mọi loại mạch (~35 chỗ đo ghim). (f) Chú thích sai nền thẻ ở `apps/web/components/trang-mach.module.css:8-13`.
 - **Vì sao không sửa ngay**: ngoài phạm vi đợt B.
+
+### P-20261112-1 · [MỞ] · NẶNG — v2 bị đẩy nhầm vào cây PROD, chỉ `web` được build ⇒ trang chủ gikky.net sập ~8,5 giờ (đã rollback)
+- **Ở đâu / bằng chứng**: VPS `vps-muinx`, `~/gikky-net/src` bị thay lúc 21:39 ngày 2026-11-11 bằng cây v2 (mtime file khớp commit `faca28e`). Chỉ image `gikkynet-web` được build lại (21:41); `api` vẫn là image ngày 2026-10-22, DB prod dừng ở migration `0044`. Trang chủ v2 gọi `GET /api/v1/feeds/nhat-ky-moi-tac-gia` (`apps/web/lib/api.ts:646`, endpoint thêm ở `79ba0f4`) ⇒ API cũ trả 404 ⇒ `docNhatKyMoiTacGia` ném lỗi ⇒ màn "Trang này đang hỏng", digest `3610090134`. Log API có 133 lượt 404 trên đúng đường này, từ 21:42 ngày 11/11 tới 06:09 ngày 12/11. Đây là cùng loại sự cố 2026-09-03 đã ghi ở `deploy/prod/README.md` (mục "Rebuild ĐỦ các service"). Chưa xác định phiên nào đẩy: hai phiên đã báo deploy v2 "lên dev" là "Homepage v2 giao diện mới" và "Gikky v2 bài viết danh mục"; **nghi ngờ** một trong hai gõ nhầm `~/gikky-net` thay cho `~/gikky-dev`.
+- **Đã làm (2026-11-12, 06:13)**: rollback web về `main` `748f95f` theo luật 1–3 của README (archive ra file → scp → so md5 → giải nén → build riêng `web` → `up -d --no-deps web`). Cây v2 cất ở `~/gikky-net/src.v2-nham-20261111`, chưa xoá. Không đụng api/DB/admin/stack dev. Kiểm sau rollback: `/` 200 qua Caddy 8091 và qua `https://gikky.net`, log web sạch, không còn 404 trên đường đó.
+- **Còn mở**: (a) không có hàng rào nào chặn deploy một nhánh ≠ `main` vào `~/gikky-net/src`, hay chặn build `web` khi `api` đang chạy thiếu endpoint mà web gọi; hai đường prod/dev chỉ khác nhau một chữ trong lệnh ssh. (b) Khi đưa v2 lên prod thật: build đủ api + web + admin, `pg_dump` trước (luật 4), 3 migration `0045`–`0047`. (c) Dọn `~/gikky-net/src.v2-nham-20261111` trên VPS.
+- **Vì sao không sửa ngay**: (a) là việc riêng (script deploy tự kiểm nhánh/endpoint), cần user đồng ý gộp vào plan.
 
 ### P-20261112-2 · [MỞ] · NHỎ — lặt vặt thấy khi làm đợt C việc 14
 - **Ở đâu / bằng chứng**: (a) `apps/web/components/feed.module.css:43` `.dau_feed` là class chết từ trước đợt C (`git show 2fb84d1:apps/web/components/feed.tsx` không dùng). (b) Bài đo cuộn vô hạn đổi bộ lọc (`apps/web/e2e/dai-dieu-khien-feed.spec.ts`, nhóm "cuộn vô hạn") chỉ đỏ khi gỡ `key` ở cặp `/?tab=moi` → "Nhật ký" — cặp duy nhất trên seed `gikky_e2e` có cursor trang 1 trùng nhau; hai ca còn lại (`/s/*`, chiều ngược) xanh cả khi lỗi quay lại. (c) Ở `/s/<sub>?loai_mach=X` thẻ vẫn in nhãn loại (`feed.tsx`, `hienNhanLoai={sub !== undefined}`) dù hàng Loại đã nói rõ đang lọc một loại — thừa chữ. (d) `/?…` rỗng vì lọc loại/trạng thái vẫn chỉ nói "Chưa có bài nào ở đây.", không có link bỏ lọc như `/s/*` (`feed.tsx`, `rongDoLocLoai` đòi `sub !== undefined`); chưa có ca seed nào dựng được. (e) e2e đầy đủ báo "8 did not run" mà line reporter không nêu tên — **nghi ngờ** là bài sau bài đỏ trong `describe.serial`, chưa đối chiếu với nền.
@@ -2069,6 +2095,25 @@ sang `du_lieu_the`); docstring `api/tests/test_api_so_query.py:49` còn nhắc n
   - (b) `pnpm e2e:don-vi -g "<regex có ngoặc>"` vỡ, vì pnpm nhân đôi dấu `\` khi chuyển cờ qua `--filter`. Playwright báo `SyntaxError: Invalid regular expression: Unmatched ')'`. Gọi thẳng `npx playwright test -c playwright.don-vi.config.ts -g …` trong `apps/web` thì chạy được. Script `e2e:don-vi` ở `package.json` gốc.
   - (c) **Nghi ngờ**: ở 390px, chip cuối của hàng chip khối "Bài viết" bị cắt ở mép phải (lộ chữ "T"), xem ảnh `trang-chu-mobile-sang.png` của nghiệm thu việc 18. Chưa kiểm đó là hàng cuộn ngang có chủ đích (plan việc 14 ghi "chip chuyên mục cuộn ngang") hay tràn thật.
 - **Vì sao không sửa ngay**: ngoài phạm vi việc 18.
+
+### P-20261113-1 · [MỞ] · VỪA (nghi ngờ) — prod và dev dùng CHUNG `SECRET_KEY`, DB dev khôi phục từ dump prod
+- **Ở đâu / bằng chứng**: env container `gikkynet-api-1` và `gikkynet-dev-api-1` trên `vps-muinx`. Dòng `SECRET_KEY=` của hai bên có cùng sha256 (`ecadfbae25b2…`). DB dev dựng từ `~/gikky-dev/gikky_real.sql.gz` (dump 11/11 13:45); bảng `django_session` của dev có 626 hàng, `expire_date` thấp nhất 2026-09-08 ⇒ phiên prod tạo trước lúc dump vẫn hợp lệ trên dev. **Chưa thử**: token ký trên dev (link đặt lại mật khẩu, xác thực email) có dùng được trên prod không, nếu user chưa đổi gì từ lúc dump. Thấy khi phản biện việc sửa cookie phiên dev.
+- **Vì sao không sửa ngay**: ngoài phạm vi việc sửa `SESSION_COOKIE_DOMAIN` của dev; đổi `SECRET_KEY` của dev là việc riêng (đăng xuất mọi phiên dev).
+
+### P-20261113-2 · [MỞ] · NHỎ — Caddy dev không ghi access log ⇒ không đối chiếu được sự cố phiên; 4 lần mất phiên admin sáng 12/11 chưa giải thích được
+- **Ở đâu / bằng chứng**: `deploy/dev/Caddyfile`, khối `http://dev.gikky.net` không có chỉ thị `log`; log Django dev mất mỗi lần container dựng lại (bản hiện tại chỉ còn từ 12/11 20:05). Log prod sáng 12/11 (IP `…2551:7726:44f5:4c28`) có 4 lần admin rơi về khách (10:21→10:22, 10:27→10:28, 10:29, 11:02→11:03) trong khi `core_luotxem` của dev không có lượt xem người thật nào từ 08:48 tới 18:37. **Nghi ngờ** (chưa có bằng chứng): một tab dev.gikky.net mở sẵn gọi lại `/api/v1/me` không đi qua beacon đếm lượt xem, hoặc một nguồn khác. Từ bản vá `SESSION_COOKIE_DOMAIN` của dev (2026-11-13), mọi request tới dev không còn xoá được cookie prod; nếu admin còn rơi thì là nguồn khác.
+- **Vì sao không sửa ngay**: ngoài phạm vi; thêm access log cho Caddy dev là việc hạ tầng riêng.
+
+### P-20261113-3 · [MỞ] · NHỎ (nghi ngờ) — một link GET có thể đăng xuất user prod qua cửa mobile
+- **Ở đâu / bằng chứng**: `api/api/mobile_auth.py:76-82` (`dang_ky_mobile` gọi `logout(request)` khi đang đăng nhập), `:299` (`dang_xuat_mobile` là `@csrf_exempt`). Cookie `SameSite=Lax` vẫn đi theo điều hướng GET cấp cao nhất ⇒ dẫn user tới URL đó là đăng xuất họ. **Chưa dựng ca chạy thật** (phản biện đọc code).
+- **Vì sao không sửa ngay**: ngoài phạm vi.
+
+### P-20261113-4 · [MỞ] · NHỎ — lặt vặt thấy khi sửa cookie phiên dev
+- **Ở đâu / bằng chứng**:
+  - (a) Ingress cloudflared trỏ `console.trekky.net` vào `127.0.0.1:8092`, tức Caddy của gikky dev. Trông như mapping cũ còn sót. Lấy từ `curl 127.0.0.1:2000/config` trên VPS.
+  - (b) Hàng rào `api/tests/test_cookie_domain_stack_phu.py` có lỗ, hiện chưa ca nào rơi vào: map viết một dòng (`environment: { SESSION_COOKIE_DOMAIN: … }`), `${VAR:-}` do `--env-file` cấp giá trị, `extends:`/`include:`, `ENV` trong `deploy/prod/api.Dockerfile` (dev dùng chung), file tên `deploy/<x>/docker-compose.yml`.
+  - (c) Sau bản vá, dev.gikky.net vẫn nhận HAI cookie `sessionid` (slot `.gikky.net` của prod + host-only của dev); Django và Next đều lấy cookie cuối ⇒ phiên đăng nhập *trên dev* có thể tự rơi (prod không bị chạm). Gỡ triệt để là tên cookie riêng cho dev, nhưng frontend đang viết cứng `sessionid`/`csrftoken`.
+- **Vì sao không sửa ngay**: ngoài phạm vi.
 
 ### P-20261113-5 · [MỞ] · NHỎ — hàng rào việc 18 sau vòng 2 còn các hở đã biết, đang chấp nhận
 - **Ở đâu / bằng chứng**: `apps/web/e2e/don-vi/nut-chinh-brand.spec.ts:22-37` (chú thích đầu file có ca mẫu ghim từng hành vi).
@@ -2148,9 +2193,27 @@ P-20261113-20 · MỞ · NHỎ · Bài đo kiểm duyệt dồn ~70 bình luận
 
 P-20261113-21 · MỞ · VỪA · Chạy `pnpm test` cùng lúc ở hai phiên trên cùng checkout làm phiên sau lỗi DB toàn bộ (`DuplicateDatabase`/`ObjectInUse` trên `test_gikky_dev`), trông như mọi bài ERROR · `scripts/pytest.mjs` · thợ việc 22 (2026-11-13) gặp ở lượt đo nền; lách bằng `DATABASE_URL` trỏ tên DB riêng mỗi phiên.
 
+P-20261113-22 · MỞ · NHỎ · Chú thích đầu `trang-mach.module.css` nói thân bài dùng nền `--card` "GIỐNG thẻ ở feed", nhưng `.the` thật là `background: transparent` — từ khi nền sáng về `#f1f2f5` thì thân bài trang chi tiết nằm thẳng trên nền xám, khác feed · `apps/web/components/trang-mach.module.css:7-28` · lượt đổi nền sáng (2026-11-13), dòng 7-18 so với dòng 24.
+
+P-20261113-23 · MỞ · NHỎ · Chú thích `tuong-phan.spec.ts` vẫn tả `--card` "chênh nhẹ" so với `--surface`, thực tế trộn 100% nên bằng đúng `--surface` (bài đo vẫn đúng) · `apps/web/e2e/don-vi/tuong-phan.spec.ts:36-42` · lượt đổi nền sáng (2026-11-13).
+
+P-20261113-24 · MỞ · NHỎ · Gán `document.documentElement.dataset.theme="light"` từ JS bị đặt lại về null ngay sau đó khi localStorage chưa có theme ⇒ không ép được theme sáng bằng cách này khi kiểm bằng mắt, phải giả lập `prefers-color-scheme` · `apps/web/lib/theme.ts` · thợ lượt đổi nền sáng (2026-11-13) quan sát; **nghi ngờ**, chưa đọc code.
+
+P-20261113-25 · MỞ · NHỎ · Chú thích `.hang_tren` vẫn nói "sticky trên desktop (>960px)" nhưng CSS là `position: relative` và bài đo ghim là KHÔNG dính · `apps/web/components/trang-mach.module.css` (khối chú thích trên `.hang_tren`) · đối chiếu `e2e/don-vi/thanh-dieu-huong.spec.ts:62-65`; lượt đóng khung thân bài (2026-11-13).
+
+P-20261113-26 · MỞ · NHỎ · Chú thích `khoi-chu-mach` gọi nó là "nền lõm" nhưng thật là `--card` (= `--surface`); nay là hộp trắng trong thẻ trắng, chỉ còn viền tách · `apps/web/components/khoi-chu-mach.module.css:1-12` · lượt đóng khung thân bài (2026-11-13).
+
+P-20261113-27 · MỞ · NHỎ · Khoảng trống ~80px giữa dòng "MẠCH ĐÃ ĐÓNG" và tiêu đề "Bình luận" ở desktop, có từ trước, nay lộ rõ vì nằm trong thẻ · `apps/web/components/khan-dai.module.css` (`.khu`, **nghi ngờ** chỗ gây) · ảnh chụp trang mạch HPG trên `gikky_e2e`, lượt đóng khung thân bài (2026-11-13).
+
 P-20261113-28 · MỞ · NHỎ · Trình soạn thảo của WEB (`apps/web/components/soan-thao.tsx:116-117`) tắt `horizontalRule` và `codeBlock` dù allowlist server (`api/core/lam_sach_html.py:45-65`, `THE_CHO_PHEP`) cho phép `hr` và `pre`: ba chỗ (server, soạn thảo web, soạn thảo admin) lệch nhau đúng hai thẻ này; người dùng sửa một mốc có `<hr>`/`<pre>` bằng soạn thảo web sẽ mất cấu trúc · phản biện đợt D việc 21 (2026-11-13), đọc code; bản admin đang vá trong đợt D.
 
 P-20261113-29 · MỞ · NHỎ · Thanh công cụ của `SoanThaoQuanTri` (admin) chưa có nút chèn `<hr>` / khối mã: từ vòng sửa đợt D việc 21 trình soạn thảo đã nạp và giữ được hai thẻ này, nhưng mod chưa tự chèn được · `apps/admin/components/soan-thao-quan-tri.tsx` (khối toolbar: B/I/S/mã/H2/H3/danh sách/trích/link/ảnh) · báo cáo thợ đợt D vòng sửa 1 (2026-11-13).
+
+P-20261113-28 · MỞ · NHỎ · Selector `.khung` trong `khan-dai.module.css` không còn ai dùng (`khan-dai.tsx` chỉ dùng `css.khu`) · `apps/web/components/khan-dai.module.css:1` · grep `css\.khung` trong `khan-dai.tsx` = 0; lượt thu khoảng trống Bình luận (2026-11-13).
+
+P-20261113-29 · MỞ · NHỎ · Trong flex `.the` của trang mạch còn lề đáy cũ từ thời chưa có `gap`, cộng dồn với gap 14: `.doi_mat` (14/12), `.khoa` (16), `KhoiChuMach .khoi` (`18px 0 6px`) · `apps/web/components/trang-mach.module.css:178`, `:347`; `apps/web/components/khoi-chu-mach.module.css:8` · đọc computed style, **chưa đo** trên trang.
+
+P-20261113-30 · MỞ · NHỎ · Tên bài đo nói h1 "nhỏ hơn câu hỏi chủ đề nhiều" nhưng nay cả hai 22px và bài không kiểm quan hệ đó · `apps/web/e2e/trang-chu-giao-dien-moi.spec.ts:131` · `.gioi_thieu_h1` 22px (`trang-chu-v2.module.css:9`), `.cau_hoi` 22px (`khoi-thao-luan.module.css:88`); lượt hạ cỡ tiêu đề chủ đề (2026-11-13).
 
 P-20261113-31 · MỞ · VỪA · Bài `vo-reddit` A10 "nội dung vẫn nằm trong HTML khi gập" đỏ sẵn trên `gikky_e2e` — đỏ y hệt cả với bản build HEAD (`696025a`, `8a8c3f3`), không do việc 24 · `apps/web/e2e/vo-reddit.spec.ts:555` · lỗi "thân gốc không có thẻ `p` nào … element(s) not found"; **nghi** do dữ liệu seed/rác của thread HPG trên `gikky_e2e`; thợ + nghiệm thu việc 24 (2026-11-13).
 
@@ -2165,3 +2228,7 @@ P-20261113-35 · MỞ · NHỎ · Selector `.muc_moi` / `.danh_sach_moi` trong `
 P-20261113-36 · MỞ · NHỎ · Hai bài L1 ngưỡng dính có biên mỏng: bài "ngay dưới ngưỡng" đo chiều cao rail ngay sau `goto`, trước khi khối khách vẽ xong (1811 thay vì 1831px, biên hụt 20px); bài "`/m/` ở 1550px" lấy bài viết đầu feed (rail 1330px) chứ không phải trang có rail cao nhất của nhóm chung (1478px) · `apps/web/e2e/trang-chu-v2.spec.ts:149-172` · số in ra lúc thử phá; nghiệm thu + thợ việc 24 (2026-11-13).
 
 P-20261113-37 · MỞ · NHỎ · File mồ côi chưa track `apps/web/e2e/bai-viet-xem-truoc.spec.ts.cu` tham chiếu `khoi-bai-viet` / `gallery-bai-viet` (đã xoá ở việc 24) · `apps/web/e2e/bai-viet-xem-truoc.spec.ts.cu` · sửa lần cuối 2026-11-11, có trước việc 24; nghiệm thu việc 24 (2026-11-13).
+
+P-20261113-31 · MỞ · NHỎ · Trên mobile 390 ray của mốc dừng sớm hơn đáy nội dung mốc 6.4px (desktop 0), có từ trước · `apps/web/components/the-moc.module.css:16` (`.ray`) · đo `do-ray-cuoi.cjs` ca 2 mốc `-1538` mobile, gikky_e2e (2026-11-13).
+
+P-20261113-32 · MỞ · NHỎ · Luật thu đệm mốc cuối neo vào `:global([data-testid="nhat-ky"]) > .hang:last-child` — đổi testid này thì luật chết im lặng, không bài đo nào báo · `apps/web/components/the-moc.module.css` (khối thêm 2026-11-13) · CSS Module không tham chiếu được class `.nhat_ky` của `trang-mach.module.css` nên phải neo bằng testid.

@@ -1,7 +1,12 @@
+/* Khu bình luận là con TRỰC TIẾP của thẻ mạch (`trang-mach.module.css#.the`, flex cột,
+ * `gap: 14px`), nên khoảng cách với khối trên đã do `gap` lo. Không thêm lề/đệm trên ở đây:
+ * trước 2026-11-13 khu còn `margin-top: 24px` + `padding-top: 16px` cộng dồn với `gap` và đáy
+ * của khối trên ⇒ ~84px trống trên "Bình luận" ở desktop (P-20261113-27). Còn lại khối trên ↔
+ * tiêu đề = `gap` 14 + đệm `.dau` 12 ≈ 26px. */
 .khu,
 .khung {
-  margin-top: 24px;
-  padding: 16px 0 0;
+  margin-top: 0;
+  padding: 0;
   background: transparent;
   border: 0;
   border-radius: 0;
@@ -163,10 +168,10 @@
 @media (max-width: 640px) {
   /* Đợt M (M11): khoảng trống quanh khu bình luận trang mạch trên điện thoại. Mỗi lớp góp một ít
    * (đáy mốc cuối 20 + khoảng khu 24 + đệm khu 16 + đệm đầu khu 12 ≈ 76px trên "Bình luận"; dưới ô soạn
-   * thì đệm khu 22 + đệm thẻ mạch 24 + đệm cột 24). Bớt ở chính khu: 24/16 → 8/8 ở trên, 22 → 8 ở dưới. */
+   * thì đệm khu 22 + đệm thẻ mạch 24 + đệm cột 24). Bớt ở chính khu: 24/16 → 8/8 ở trên, 22 → 8 ở dưới.
+   * 2026-11-13: phía trên nay về 0 ở mọi khổ (xem `.khu` đầu file) — chỉ còn giữ đệm dưới 8px. */
   .khu {
-    margin-top: 8px;
-    padding: 8px 0 8px;
+    padding-bottom: 8px;
   }
 
   /* Đợt M (M6): nút sắp xếp bình luận cao 44px trên điện thoại. */

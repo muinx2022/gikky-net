@@ -11,7 +11,7 @@ import { TITLE_HPG, duongDan, timMachTheoTitle } from "./du-lieu";
  * sai chỗ vẫn nằm nguyên trong file mà không bao giờ khớp.
  */
 
-const NEN_SANG = "rgb(255, 255, 255)"; // #ffffff
+const NEN_SANG = "rgb(241, 242, 245)"; // #f1f2f5
 const NEN_TOI = "rgb(14, 17, 22)"; //     #0e1116
 const MUC_SANG = "rgb(43, 45, 60)"; //    #2b2d3c
 const MUC_TOI = "rgb(232, 236, 244)"; //  #e8ecf4
