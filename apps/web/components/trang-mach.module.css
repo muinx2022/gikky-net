@@ -78,10 +78,13 @@
   min-width: 0;
 }
 
+/* Một dòng, không xuống hàng: tên dài (display_name tới 60 ký tự, gõ tự do) bị `.ai` cắt bằng
+ * dấu "…" như `.ten` của thẻ feed, còn dấu chấm và ngày (`flex-shrink: 0`) luôn hiện đủ. */
 .dong_user {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
+  min-width: 0;
   gap: 6px;
   font-size: 12px;
   line-height: 16px;
@@ -98,6 +101,7 @@
 }
 
 .khi {
+  flex-shrink: 0;
   font-size: 12px;
   color: var(--ink-3);
 }
@@ -126,10 +130,14 @@
 }
 
 .ai {
+  min-width: 0;
+  overflow: hidden;
   color: var(--ink);
   font-weight: 600;
   font-size: 12px;
   text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ai:hover {
@@ -137,6 +145,7 @@
 }
 
 .cham {
+  flex-shrink: 0;
   color: var(--line-2);
 }
 

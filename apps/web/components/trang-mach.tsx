@@ -66,6 +66,7 @@ import { chonMoiBung, idDaTrich } from "@/lib/moi-bung";
 import { trichUrlAnhMach } from "@/lib/og";
 import { urlTuyetDoi } from "@/lib/site";
 import { TRAN_NGAN_KEO, chayCoTran } from "@/lib/song-song";
+import { tenHienThi } from "@/lib/ten-hien-thi";
 import { duongDanHoSo, duongDanMach, duongDanSub, tachSlugId } from "@/lib/url";
 import { trichVanBanThuan } from "@/lib/van-ban";
 
@@ -449,7 +450,7 @@ export async function TrangMach({
                         prefetch={false}
                         {...CHU_NGUOI_DUNG}
                       >
-                        u/{mach.author.username}
+                        {tenHienThi(mach.author)}
                       </Link>
                       <span className={css.cham} aria-hidden>
                         -

@@ -59,13 +59,23 @@ test("không còn chỗ nào trong components/ chép tay `display_name || `u/${�
     "thanh-tai-khoan",
     "the-mach",
     "thanh-dieu-huong-duoi",
+    "trang-mach",
   ]) {
     expect(doc(`components/${f}.tsx`), f).toContain("tenHienThi(");
   }
 });
 
-/** Chữ hiển thị dựng bằng `` `u/${…}` `` mà CỐ Ý giữ nguyên tiền tố — khoá bằng đoạn dòng, kèm lý do.
- * Mục không còn khớp dòng nào ⇒ đỏ (allowlist không được mục nát). */
+test("trang mạch: link tên tác giả (title u/<username>) in chữ tenHienThi(mach.author), cùng luật với thẻ feed", () => {
+  // Hàng rào `u/{…}` bên dưới chỉ chặn MỘT dạng hỏng; `{mach.author.username}`,
+  // `{display_name || username}`, `{"u/"}{…}` đều lọt nó. Ghim thẳng chữ con của đúng link này.
+  const tsx = boChuThich(doc("components/trang-mach.tsx"));
+  expect(tsx).toMatch(
+    /title=\{`u\/\$\{mach\.author\.username\}`\}[^>]*>\s*\{tenHienThi\(mach\.author\)\}\s*<\/Link>/,
+  );
+});
+
+/** Chữ hiển thị dựng bằng `` `u/${…}` `` hoặc chữ JSX `u/{…}` mà CỐ Ý giữ nguyên tiền tố — khoá bằng
+ * đoạn dòng, kèm lý do. Mục không còn khớp dòng nào ⇒ đỏ (allowlist không được mục nát). */
 const GIU_TIEN_TO_U: readonly { file: string; chua: string; ly_do: string }[] = [
   { file: "components/binh-luan.tsx", chua: "bình luận của u/", ly_do: "nhãn trợ năng của nút hành động, gọi đúng tài khoản (handle)" },
   { file: "components/chuong.tsx", chua: "u/${payload.boi}", ly_do: "thông báo trong chuông: payload chỉ mang username" },
@@ -78,9 +88,17 @@ const GIU_TIEN_TO_U: readonly { file: string; chua: string; ly_do: string }[] = 
   { file: "lib/og.ts", chua: "u/${mach.author.username}", ly_do: "ảnh OG / SEO: không đổi byte" },
   { file: "lib/rss.ts", chua: "u/${mach.author.username}", ly_do: "RSS / SEO: không đổi byte" },
   { file: "app/u/[username]/page.tsx", chua: "u/${username_giai_ma}", ly_do: "trang hồ sơ: u/ là danh tính của trang" },
+  // Chữ JSX `u/{…}` — bản đầu của hàng rào chỉ bắt template literal nên bỏ sót dạng này, và trang
+  // mạch từng in `u/<username>` trong khi thẻ feed của cùng mạch in tenHienThi.
+  { file: "app/u/[username]/page.tsx", chua: "u/{ho_so.username}", ly_do: "trang hồ sơ: dòng handle dưới h1, u/ là danh tính của trang" },
+  { file: "components/form-cai-dat.tsx", chua: "u/{toi.username}", ly_do: "cài đặt: nói về tài khoản của chính mình (handle)" },
+  { file: "components/tai-khoan-forms.tsx", chua: "u/{username}", ly_do: "form tài khoản: nói về tài khoản đang đăng nhập (handle)" },
+  { file: "components/thanh-tai-khoan.tsx", chua: "u/{toi.username}", ly_do: "menu tài khoản: dòng handle phụ dưới display_name" },
+  { file: "components/thanh-dieu-huong-duoi.tsx", chua: "u/{toi.username}", ly_do: "menu tài khoản (điện thoại): dòng handle phụ dưới display_name" },
+  { file: "components/tab-ho-so.tsx", chua: "u/{u.username}", ly_do: "tab hồ sơ: dòng handle phụ dưới tên" },
 ];
 
-test("chữ hiển thị `u/${…}` chỉ còn ở allowlist có lý do — mọi chỗ khác đi qua tenHienThi", () => {
+test("chữ hiển thị `u/${…}` / JSX `u/{…}` chỉ còn ở allowlist có lý do — mọi chỗ khác đi qua tenHienThi", () => {
   const tep: string[] = [];
   const duyet = (rel: string) => {
     for (const ent of readdirSync(resolve(WEB, rel), { withFileTypes: true })) {
@@ -97,15 +115,18 @@ test("chữ hiển thị `u/${…}` chỉ còn ở allowlist có lý do — mọ
     const dong = boChuThich(doc(f)).split("\n");
     for (const d of dong) {
       // Template literal chứa `u/${` KHÔNG đứng sau `/` hay chữ (loại `/u/${…}` là đường dẫn).
-      if (!/`[^`]*(?<![/\w])u\/\$\{/.test(d)) continue;
       // Thuộc tính `title` / `aria-label` luôn được phép mang handle.
-      if (/title=|aria-label/.test(d)) continue;
+      const template = /`[^`]*(?<![/\w])u\/\$\{/.test(d) && !/title=|aria-label/.test(d);
+      // Chữ JSX `u/{…}`, cũng không đứng sau `/` hay chữ. Không miễn theo `title=`: chữ con của một
+      // link có `title` trên cùng dòng vẫn là chữ hiển thị.
+      const jsx = /(?<![/\w])u\/\{/.test(d);
+      if (!template && !jsx) continue;
       const i = GIU_TIEN_TO_U.findIndex((m) => m.file === f && d.includes(m.chua));
       if (i < 0) vi_pham.push(`${f}: ${d.trim()}`);
       else trung_allowlist.add(i);
     }
   }
-  expect(vi_pham, "chữ hiển thị tự dựng u/${…}: dùng lib/ten-hien-thi.ts hoặc thêm vào GIU_TIEN_TO_U kèm lý do").toEqual([]);
+  expect(vi_pham, "chữ hiển thị tự dựng u/${…} / u/{…}: dùng lib/ten-hien-thi.ts hoặc thêm vào GIU_TIEN_TO_U kèm lý do").toEqual([]);
   GIU_TIEN_TO_U.forEach((m, i) => expect(trung_allowlist.has(i), `allowlist mục nát: ${m.file} «${m.chua}»`).toBe(true));
   // `tomTatNhanh` (dòng "ai viết" của nhánh bị gập) đi qua tenHienThi, không `u/${username}`.
   expect(boChuThich(doc("components/binh-luan.tsx"))).toMatch(/tenHienThi\(nut\.author, "u\/"\)/);
