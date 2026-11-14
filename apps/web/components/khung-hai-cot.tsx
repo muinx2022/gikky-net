@@ -47,15 +47,15 @@ export async function KhungHaiCot({
   const [cac_sub, feed, chu_de_tuan] = await Promise.all([
     docCacSub(),
     subSlug
-      ? docFeedSub(subSlug, "moi", { limit: 6 })
-      : docFeed("moi", { limit: 6 }),
+      ? docFeedSub(subSlug, "moi", { limit: 11 })
+      : docFeed("moi", { limit: 11 }),
     // KHÔNG ném: hỏng thì khối "Chủ đề tuần này" ẩn — xem docstring `docChuDeTuan`.
     docChuDeTuan(new Date()),
   ]);
   const items = feed.du_lieu?.items ?? [];
   const bai_moi = items
     .filter((m) => m.id !== idMachHienTai)
-    .slice(0, 5);
+    .slice(0, 10);
   const tieu_de = subSlug ? "Cùng chuyên mục" : "Bài mới nhất";
   // Đang xem CHÍNH chủ đề ấy ⇒ bỏ cả khối: tiêu đề và "Vào thảo luận" đều trỏ về trang đang
   // đứng, còn lối về kho `/chu-de` đã nằm đầu trang mạch chủ đề (`ve-chu-de`, `trang-mach.tsx`).

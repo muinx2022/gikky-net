@@ -2275,3 +2275,5 @@ P-20261114-19 · MỞ · NHỎ · Vài chỗ in tên vẫn tự viết `display_
 P-20261114-20 · MỞ · NHỎ · Docstring `lib/chu-nguoi-dung.ts` còn nói `binh-luan.tsx` in `u/{author.username}` trên đầu bình luận; code không còn chữ đó · `apps/web/lib/chu-nguoi-dung.ts:25` · grep `u/\{` trong `binh-luan.tsx` = 0 (2026-11-14).
 
 P-20261114-21 · MỞ · NHỎ · DB dev local `gikky_dev` còn 2 tài khoản có username là email: id=58 `test@gmail.com`, id=62 `muinx2022@gmail.com` (cả hai 0 mạch/mốc/bình luận); prod đã sạch sau khi đổi P-20261109-2 · `node scripts/py.mjs doi_username --tim-email` (2026-11-14).
+
+P-20261115-1 · MỞ · NHỎ · Bài đơn vị "Logic loc bai moi…" chỉ test mảng giả với `.slice(0, 5)` viết sẵn trong bài, không đọc `khung-hai-cot.tsx` ⇒ đổi số bài hay bỏ `filter` ở code thật vẫn xanh (test trang trí) · `apps/web/e2e/don-vi/sidebar-bai-moi.spec.ts:191` · vẫn xanh sau khi code đổi sang `.slice(0, 10)` (lượt rail 5→10, 2026-11-15).

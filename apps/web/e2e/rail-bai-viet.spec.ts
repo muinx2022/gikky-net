@@ -558,8 +558,8 @@ test.describe("T9/T10 — rail các trang khác", () => {
     const khoi = page.getByTestId("sidebar-bai-moi");
     await expect(khoi).toBeVisible();
     await expect(khoi.getByRole("heading", { level: 2 })).toHaveText(/^(Cùng chuyên mục|Bài mới nhất)$/);
-    // Trang mạch giữ 5 bài, không có link "Tất cả bài viết".
-    expect(await khoi.locator("li").count()).toBeLessThanOrEqual(5);
+    // Trang mạch giữ tối đa 10 bài, không có link "Tất cả bài viết".
+    expect(await khoi.locator("li").count()).toBeLessThanOrEqual(10);
     await expect(khoi.getByTestId("sidebar-bai-moi-tat-ca")).toHaveCount(0);
     await kiemThuTu(page);
     await kiemKieuChu(khoi, "/m/");
