@@ -4,11 +4,14 @@ Sự cố 2026-11-13: dev compose đặt `SESSION_COOKIE_DOMAIN: .gikky.net` y n
 stack chung MỘT slot cookie `sessionid`. Mở dev.gikky.net là trình duyệt gửi phiên prod
 sang; dev không thấy phiên đó trong DB của mình nên `SessionMiddleware` trả
 `Set-Cookie: sessionid=""; Domain=.gikky.net; Max-Age=0` — xoá luôn phiên admin prod.
-Chú thích đầy đủ ở `deploy/dev/compose.yml`, ngay chỗ dòng đó từng đứng.
+Stack dev.gikky.net (`deploy/dev/`) đã gỡ hẳn ngày 2026-11-14, nhưng luật vẫn giữ cho MỌI
+compose ngoài prod — kể cả `docker-compose.dev.yml` ở gốc và mọi stack phụ dựng về sau: cookie
+host-only là đủ, chỉ prod cần domain chung để phiên đi được từ gikky.net sang admin.gikky.net.
 
 Không có PyYAML trong venv và không thêm dependency, nên đọc theo dòng: bắt cả dạng map
 (`SESSION_COOKIE_DOMAIN: x`) lẫn dạng list (`- SESSION_COOKIE_DOMAIN=x`), bỏ dòng chú
-thích. Glob phải thấy cả prod lẫn dev — dời/đổi tên file thì bài đỏ, không xanh suông.
+thích. Glob phải thấy cả prod lẫn ít nhất một compose ngoài prod — dời/đổi tên file thì bài
+đỏ, không xanh suông trên tập rỗng.
 """
 
 import re
@@ -18,7 +21,8 @@ import pytest
 
 GOC_REPO = Path(__file__).resolve().parents[2]
 PROD = "deploy/prod/compose.yml"
-DEV = "deploy/dev/compose.yml"
+# Compose ngoài prod chắc chắn còn trong repo — mốc để bài "chỉ prod được đặt" không đo rỗng.
+PHU = "docker-compose.dev.yml"
 
 # `  SESSION_COOKIE_DOMAIN: x` · `  - SESSION_COOKIE_DOMAIN=x` · `  - "SESSION_COOKIE_DOMAIN=x"`
 _DONG = re.compile(
@@ -63,10 +67,10 @@ def _cac_cho_dat(duong_dan: Path) -> list[tuple[int, str]]:
     return ket_qua
 
 
-def test_glob_thay_ca_prod_lan_dev():
+def test_glob_thay_ca_prod_lan_compose_phu():
     tim = _file_compose()
-    assert PROD in tim and DEV in tim, (
-        f"Glob compose không còn thấy {PROD} và {DEV} (thấy: {sorted(tim)}). Dời/đổi tên "
+    assert PROD in tim and PHU in tim, (
+        f"Glob compose không còn thấy {PROD} và {PHU} (thấy: {sorted(tim)}). Dời/đổi tên "
         "file thì sửa bài này theo — đừng để nó đo trên tập rỗng."
     )
 
@@ -90,8 +94,8 @@ def test_chi_prod_duoc_dat_session_cookie_domain():
         f"Stack ngoài prod đặt SESSION_COOKIE_DOMAIN: {vi_pham} (file: [(dòng, giá trị)]). "
         "Chung domain cookie với prod ⇒ mở stack đó là trình duyệt gửi phiên prod sang, "
         "Django của stack đó không thấy phiên trong DB riêng và XOÁ cookie kèm Domain — "
-        "tức đăng xuất admin prod. Bỏ dòng đó (cookie host-only là đủ); đọc thêm chú "
-        f"thích ở {DEV}."
+        "tức đăng xuất admin prod. Bỏ dòng đó (cookie host-only là đủ); đọc thêm "
+        "docstring đầu file test này."
     )
 
 
