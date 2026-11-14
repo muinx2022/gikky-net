@@ -1,6 +1,7 @@
 "use client";
 
 import { suaMoc, xoaMoc, type MocOut } from "@gikky/api-client";
+import { Flag } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
@@ -17,7 +18,8 @@ import { useMach } from "./mach-ngu-canh";
 import { usePhien } from "./phien";
 import { TruongMoc, thanMoc, DAI_BODY_MOC, type NoiDungMoc } from "./truong-moc";
 
-/** Menu `⋯` trên thẻ mốc: **Sửa** · **Xoá** — PLAN 5.2. Anh em với `HanhDongBinhLuan`.
+/** Menu `⋯` trên thẻ mốc: **Sửa** · **Xoá** — PLAN 5.2 — hoặc nút **Báo cáo** cho người
+ * không phải tác giả. Anh em với `HanhDongBinhLuan`.
  *
  * ### Ai thấy
  *
@@ -28,7 +30,9 @@ import { TruongMoc, thanMoc, DAI_BODY_MOC, type NoiDungMoc } from "./truong-moc"
  * **Báo cáo** (thêm ở lượt vá V1 — L03): ngược lại, chỉ **người KHÔNG phải tác giả**, và
  * **vẫn hiện khi mạch bị khoá** — `api/bao_cao.py` cố ý không áp `doi_mach_tuong_tac_duoc`,
  * vì báo cáo là lời nhắn gửi mod chứ không phải tương tác với nội dung. Hai luật ngược
- * chiều nhau trong cùng một menu, nên chúng được viết ra ở đây thay vì để người sau suy.
+ * chiều nhau trong cùng một component, nên chúng được viết ra ở đây thay vì để người sau suy.
+ * Từ 2026-11-14 báo cáo là một NÚT đứng thẳng (lá cờ + "Báo cáo"), không còn nằm trong
+ * menu `⋯` — menu chỉ còn cho tác giả.
  *
  * ✅ **Hỏi ĐÚNG cột mà API hỏi: `moc.author`** *(nợ `MOC-THIEU-AUTHOR`, trả 2026-08-23)*.
  * Trước lượt này `MocOut` không có trường ấy nên UI phải suy từ chủ MẠCH — hai cột hôm nay
@@ -194,51 +198,52 @@ export function HanhDongMoc({ moc }: { moc: MocOut }) {
 
   return (
     <div className={css.khung}>
-      <details className={css.menu} ref={hopRef} data-testid="menu-moc">
-        <summary aria-label={`Thêm hành động cho mốc ${moc.seq}`}>⋯</summary>
-        <div className={css.hop}>
-          {cua_toi && (
-            <>
-              {!qua_han_tu_sua && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    dongMenu();
-                    datGiaTri(tuMoc(moc));
-                    datMo(true);
-                  }}
-                  data-testid="nut-sua-moc"
-                >
-                  Sửa mốc
-                </button>
-              )}
+      {/* Hai nhánh TRÌNH BÀY (user chốt 2026-11-14): tác giả có menu `⋯` Sửa / Xoá; người
+          khác chỉ có MỘT việc là báo cáo, nên một menu chứa đúng một mục là thêm một cú bấm
+          vô ích ⇒ nút báo cáo đứng thẳng. Điều kiện ai thấy gì vẫn là các phép kiểm ở trên. */}
+      {cua_toi ? (
+        <details className={css.menu} ref={hopRef} data-testid="menu-moc">
+          <summary aria-label={`Thêm hành động cho mốc ${moc.seq}`}>⋯</summary>
+          <div className={css.hop}>
+            {!qua_han_tu_sua && (
               <button
                 type="button"
                 onClick={() => {
                   dongMenu();
-                  void xoa();
+                  datGiaTri(tuMoc(moc));
+                  datMo(true);
                 }}
-                disabled={dangGui}
-                data-testid="nut-xoa-moc"
+                data-testid="nut-sua-moc"
               >
-                Xoá mốc
+                Sửa mốc
               </button>
-            </>
-          )}
-          {!cua_toi && (
+            )}
             <button
               type="button"
               onClick={() => {
                 dongMenu();
-                datMoBaoCao(true);
+                void xoa();
               }}
-              data-testid="nut-bao-cao-moc"
+              disabled={dangGui}
+              data-testid="nut-xoa-moc"
             >
-              Báo cáo
+              Xoá mốc
             </button>
-          )}
-        </div>
-      </details>
+          </div>
+        </details>
+      ) : (
+        <button
+          type="button"
+          className={css.bao_cao}
+          onClick={() => datMoBaoCao(true)}
+          aria-label={`Báo cáo mốc ${moc.seq}`}
+          title={`Báo cáo mốc ${moc.seq}`}
+          data-testid="nut-bao-cao-moc"
+        >
+          <Flag size={14} strokeWidth={2} aria-hidden />
+          <span>Báo cáo</span>
+        </button>
+      )}
 
       {moBaoCao && (
         <FormBaoCao

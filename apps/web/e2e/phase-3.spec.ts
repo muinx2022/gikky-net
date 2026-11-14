@@ -363,11 +363,13 @@ test.describe("Phase 3 — mặt BÃO, vòng lặp quay lại, cache", () => {
     const moc_3_chu = chu.getByTestId("moc-3");
     await moc_3_chu.getByTestId("menu-moc").click();
     await expect(moc_3_chu.getByTestId("nut-sua-moc")).toBeVisible();
-    // Người khác vẫn có menu `⋯` (từ L03 nó mang nút "Báo cáo"), nhưng **không** có
-    // "Sửa mốc" — đó mới là thứ bài đo này nói về.
+    // Người khác không có menu `⋯` nữa *(2026-11-14)*: chỉ một nút "Báo cáo" đứng thẳng
+    // (từ L03 nó là mục duy nhất của menu ấy), và **không** có "Sửa mốc" — đó mới là thứ
+    // bài đo này nói về. Đòi nút báo cáo CÓ mặt để "không có gì" không xanh hộ.
     await khan_gia.goto(duong_dan_mach);
     const moc_3_khan_gia = khan_gia.getByTestId("moc-3");
-    await moc_3_khan_gia.getByTestId("menu-moc").click();
+    await expect(moc_3_khan_gia.getByTestId("nut-bao-cao-moc")).toBeVisible();
+    await expect(moc_3_khan_gia.getByTestId("menu-moc")).toHaveCount(0);
     await expect(moc_3_khan_gia.getByTestId("nut-sua-moc")).toHaveCount(0);
     await expect(moc_3_khan_gia.getByTestId("nut-xoa-moc")).toHaveCount(0);
   });

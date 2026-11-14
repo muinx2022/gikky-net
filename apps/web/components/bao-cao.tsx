@@ -1,7 +1,7 @@
 "use client";
 
 import { guiBaoCao, type BaoCaoMoiIn } from "@gikky/api-client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { cauLoi, layDuLieu } from "@/lib/ghi";
 import { GOC_TRINH_DUYET, headerGhi } from "@/lib/tai-khoan";
@@ -18,15 +18,22 @@ import css from "./bao-cao.module.css";
  * thế biến mất cùng lúc nó mở ra. Nên cha giữ state "đang mở form nào" — đúng lối mà "Sửa"
  * đã dùng — và render component này ở thân, ngoài menu.
  *
+ * ### MODAL, không inline *(user chốt 2026-11-14)*
+ *
+ * Bản inline bung form ngay trong hàng chân mốc / hàng chữ ký và đẩy vỡ bố cục quanh nó.
+ * Nay component này TỰ là một `<dialog>` mở bằng `showModal()` khi mount — cả ba chỗ gọi
+ * (mốc, bình luận, cả bài) giữ nguyên lời gọi `{dangMo && <FormBaoCao … onHuy />}`. Đóng
+ * bằng Huỷ, Esc hoặc bấm nền; đang gửi thì không đóng được.
+ *
  * ### Sáu lý do là ENUM của server, không phải chữ tự do
  *
  * `LyDo` nhập từ `BaoCaoMoiIn` của TS client, không gõ lại (PLAN 8.3): thêm/bớt một lý do
  * ở Django là `pnpm codegen` làm chỗ này đỏ ở `tsc`, thay vì lặng lẽ gửi một giá trị server
  * từ chối. Nhãn tiếng Việt thì phải viết ở đây — `openapi.json` chỉ mang khoá.
  *
- * ### Sau khi gửi xong, form KHÔNG tự đóng
+ * ### Sau khi gửi xong, modal KHÔNG tự đóng
  *
- * Nó đổi thành một dòng xác nhận. Báo cáo là hành động không có phản hồi nhìn thấy được ở
+ * Nó đổi thành một dòng xác nhận + nút "Đóng", người dùng tự đóng. Báo cáo là hành động không có phản hồi nhìn thấy được ở
  * đâu khác trên trang (nội dung vẫn nguyên đó — mod chưa xử), nên một form tự đóng im lặng
  * để lại đúng câu hỏi "mình bấm rồi hay chưa?", và câu trả lời sai của người dùng là bấm
  * thêm lần nữa.
@@ -76,6 +83,29 @@ export function FormBaoCao({
   const [dangGui, datDangGui] = useState(false);
   const [loi, datLoi] = useState<string | null>(null);
   const [xong, datXong] = useState(false);
+  const hop = useRef<HTMLDialogElement>(null);
+
+  // Mở modal ngay khi mount — cha render component này CÓ ĐIỀU KIỆN (`{moBaoCao && …}`),
+  // nên "mount" chính là "bấm Báo cáo". Cùng khuôn `modal-xac-nhan.tsx::HopThoai`:
+  // `showModal()` cho backdrop + bẫy focus + top layer (không cần portal), và trả focus
+  // cho nút đã mở nó khi đóng.
+  useEffect(() => {
+    const d = hop.current;
+    if (d === null || d.open) return;
+    const truoc = document.activeElement;
+    d.showModal();
+    return () => {
+      if (d.open) d.close();
+      if (truoc instanceof HTMLElement && truoc.isConnected) truoc.focus();
+    };
+  }, []);
+
+  // Đang gửi thì không cho đóng: đóng giữa chừng là người dùng không biết báo cáo đã đi
+  // hay chưa — đúng câu hỏi mà màn "đã gửi" bên dưới sinh ra để trả lời.
+  const dong = () => {
+    if (dangGui) return;
+    onHuy();
+  };
 
   const gui = async () => {
     if (dangGui) return;
@@ -105,72 +135,96 @@ export function FormBaoCao({
     }
   };
 
-  if (xong) {
-    return (
-      <div className={css.khung} data-testid="bao-cao-xong">
-        <p className={css.xong} role="status">
-          Đã gửi báo cáo. Quản trị viên sẽ xem — nội dung vẫn hiện cho tới khi có quyết định.
-        </p>
-        <div className={css.chan}>
-          <button type="button" className={css.nhe} onClick={onHuy}>
-            Đóng
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className={css.khung} data-testid="form-bao-cao">
-      <label className={css.nhan} htmlFor={`bao-cao-ly-do-${dich}-${id}`}>
-        Báo cáo {moTaDich} — lý do
-      </label>
-      <select
-        id={`bao-cao-ly-do-${dich}-${id}`}
-        className={css.chon}
-        value={lyDo}
-        onChange={(e) => datLyDo(e.target.value as LyDo)}
-        data-testid="bao-cao-ly-do"
-      >
-        {(Object.keys(NHAN_LY_DO) as LyDo[]).map((k) => (
-          <option key={k} value={k}>
-            {NHAN_LY_DO[k]}
-          </option>
-        ))}
-      </select>
-      <textarea
-        className={css.o}
-        rows={2}
-        value={ghiChu}
-        onChange={(e) => datGhiChu(e.target.value)}
-        placeholder="Nói thêm (không bắt buộc)"
-        aria-label="Ghi chú cho quản trị viên"
-        data-testid="bao-cao-ghi-chu"
-      />
-      {loi !== null && (
-        <p className={css.loi} role="alert" data-testid="bao-cao-loi">
-          {loi}
-        </p>
+    <dialog
+      ref={hop}
+      className={css.hop}
+      aria-label={`Báo cáo ${moTaDich}`}
+      onClick={(e) => {
+        // Chặn nổi bọt: dialog vẫn là con DOM/React của thẻ mốc, mà `VoThuGonMoc` bung mốc
+        // khi bấm vào thân — bấm nền hay bấm chữ trong modal không được bung mốc phía sau.
+        e.stopPropagation();
+        if (e.target === hop.current) dong();
+      }}
+      onCancel={(e) => {
+        // Esc: đóng qua state của cha, không để trình duyệt tự `close()` trong khi cha vẫn
+        // tưởng đang mở.
+        e.preventDefault();
+        dong();
+      }}
+      data-testid="modal-bao-cao"
+    >
+      {xong ? (
+        <div className={css.khung} data-testid="bao-cao-xong">
+          <p className={css.xong} role="status">
+            Đã gửi báo cáo. Quản trị viên sẽ xem — nội dung vẫn hiện cho tới khi có quyết định.
+          </p>
+          <div className={css.chan}>
+            <button
+              type="button"
+              className={css.nhe}
+              onClick={onHuy}
+              data-testid="bao-cao-dong"
+            >
+              Đóng
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className={css.khung} data-testid="form-bao-cao">
+          <label className={css.nhan} htmlFor={`bao-cao-ly-do-${dich}-${id}`}>
+            Báo cáo {moTaDich} — lý do
+          </label>
+          <select
+            id={`bao-cao-ly-do-${dich}-${id}`}
+            className={css.chon}
+            value={lyDo}
+            onChange={(e) => datLyDo(e.target.value as LyDo)}
+            data-testid="bao-cao-ly-do"
+          >
+            {(Object.keys(NHAN_LY_DO) as LyDo[]).map((k) => (
+              <option key={k} value={k}>
+                {NHAN_LY_DO[k]}
+              </option>
+            ))}
+          </select>
+          <textarea
+            className={css.o}
+            rows={3}
+            value={ghiChu}
+            onChange={(e) => datGhiChu(e.target.value)}
+            placeholder="Nói thêm (không bắt buộc)"
+            aria-label="Ghi chú cho quản trị viên"
+            data-testid="bao-cao-ghi-chu"
+          />
+          {loi !== null && (
+            <p className={css.loi} role="alert" data-testid="bao-cao-loi">
+              {loi}
+            </p>
+          )}
+          <div className={css.chan}>
+            <button
+              type="button"
+              className={css.nhe}
+              onClick={dong}
+              disabled={dangGui}
+              data-testid="bao-cao-huy"
+            >
+              Huỷ
+            </button>
+            <button
+              type="button"
+              className={css.gui}
+              onClick={() => void gui()}
+              disabled={dangGui}
+              data-testid="bao-cao-gui"
+            >
+              {dangGui ? "Đang gửi…" : "Gửi báo cáo"}
+            </button>
+          </div>
+        </div>
       )}
-      <div className={css.chan}>
-        <button
-          type="button"
-          className={css.nhe}
-          onClick={onHuy}
-          data-testid="bao-cao-huy"
-        >
-          Huỷ
-        </button>
-        <button
-          type="button"
-          className={css.gui}
-          onClick={() => void gui()}
-          disabled={dangGui}
-          data-testid="bao-cao-gui"
-        >
-          {dangGui ? "Đang gửi…" : "Gửi báo cáo"}
-        </button>
-      </div>
-    </div>
+    </dialog>
   );
 }

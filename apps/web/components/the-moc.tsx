@@ -210,42 +210,50 @@ export function TheMoc({
           </p>
         )}
 
+        {/* Chân mốc HAI cột (2026-11-14): trái sát mép trái là vote + menu `⋯`; phải sát
+            mép phải là mọi action còn lại. Bố cục nằm ở `.chan_trai` / `.chan_phai` trong
+            `the-moc.module.css`. */}
         <div className={css.chan}>
-          <CotVote
-            diem={moc.score}
-            nhan={`mốc ${moc.seq}`}
-            cai_gi="moc"
-            nam_ngang
-            dich={hien ? { loai: "moc", id: moc.id } : null}
-          />
-          {/* Hàng reaction — `📈 12 · 🔥 9` của wireframe 9.2, nợ `REACTION-CHUA-CO-UI`.
-              Cùng MỘT dòng với vote, ngay sau nó và TRƯỚC các nút ngăn kéo / sửa / mod: nó là
-              phản ứng với nội dung, không phải một thao tác quản lý nội dung. Bia mộ không có
-              gì để phản ứng — và `reactions` của nó đã bị `moc_ra` zero hoá, nên hàng nút ở
-              đó sẽ là năm cái nút trống. */}
-          {hien && <HangReaction mocId={moc.id} dem={moc.reactions} />}
-          {laMach && (
-            <NutNganKeo
-              seq={moc.seq}
-              soBinhLuan={moc.so_binh_luan}
-              coHang={co_hang}
-              hienSoDem={hienSoDem}
-            />
-          )}
-          {/* Menu `⋯` của TÁC GIẢ — sửa / xoá mốc (PLAN 5.2). Nó tự quyết có hiện hay
-              không (chủ mạch? mạch bị khoá? bia mộ?), nên chỗ này không có điều kiện nào:
-              một phép kiểm quyền chép ra hai chỗ là chỗ thứ hai sẽ quên `khoa`.
-              Hiện cả trên bài thường (`laMach === false`) — bài một mốc vẫn sửa được. */}
-          <HanhDongMoc moc={moc} />
-          {/* Công cụ mod — chỉ mod thấy (`HanhDongMod`). Mốc bị ẩn vẫn ở lại trang dưới
-              dạng bia mộ, nên đây là công tắc HAI CHIỀU. */}
-          <div className={css.mod_hang_rieng}>
-            <HanhDongMod
-              loai="moc"
-              id={moc.id}
-              dangAn={moc.trang_thai === "da_an"}
+          <div className={css.chan_trai}>
+            <CotVote
+              diem={moc.score}
               nhan={`mốc ${moc.seq}`}
+              cai_gi="moc"
+              nam_ngang
+              dich={hien ? { loai: "moc", id: moc.id } : null}
             />
+            {/* Menu `⋯` của TÁC GIẢ — sửa / xoá mốc (PLAN 5.2), người khác thấy "Báo cáo".
+                Nó tự quyết có hiện hay không (chủ mạch? mạch bị khoá? bia mộ?), nên chỗ này
+                không có điều kiện nào: một phép kiểm quyền chép ra hai chỗ là chỗ thứ hai sẽ
+                quên `khoa`. Hiện cả trên bài thường (`laMach === false`) — bài một mốc vẫn
+                sửa được. Đứng ngay sau vote, ở cột trái. */}
+            <HanhDongMoc moc={moc} />
+          </div>
+          <div className={css.chan_phai}>
+            {/* Hàng reaction — `📈 12 · 🔥 9` của wireframe 9.2, nợ `REACTION-CHUA-CO-UI`.
+                Đứng ĐẦU cột phải, TRƯỚC ngăn kéo và mod: nó là phản ứng với nội dung, không
+                phải một thao tác quản lý nội dung. Bia mộ không có gì để phản ứng — và
+                `reactions` của nó đã bị `moc_ra` zero hoá, nên hàng nút ở đó sẽ là năm cái
+                nút trống. */}
+            {hien && <HangReaction mocId={moc.id} dem={moc.reactions} />}
+            {laMach && (
+              <NutNganKeo
+                seq={moc.seq}
+                soBinhLuan={moc.so_binh_luan}
+                coHang={co_hang}
+                hienSoDem={hienSoDem}
+              />
+            )}
+            {/* Công cụ mod — chỉ mod thấy (`HanhDongMod`), cuối cột phải. Mốc bị ẩn vẫn ở
+                lại trang dưới dạng bia mộ, nên đây là công tắc HAI CHIỀU. */}
+            <div className={css.mod_hang_rieng}>
+              <HanhDongMod
+                loai="moc"
+                id={moc.id}
+                dangAn={moc.trang_thai === "da_an"}
+                nhan={`mốc ${moc.seq}`}
+              />
+            </div>
           </div>
         </div>
 

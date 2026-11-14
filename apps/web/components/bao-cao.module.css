@@ -1,19 +1,35 @@
-/* Form báo cáo — bung ra dưới thẻ mốc / nút bình luận, cùng chất liệu với form sửa.
-   Xám và nhỏ: đây là một cái cửa hiếm dùng, không phải một lời mời (PLAN 9.1). */
+/* Form báo cáo — MODAL `<dialog>` từ 2026-11-14 (trước đó bung inline dưới thẻ mốc / nút
+   bình luận). Vỏ modal cùng khuôn `modal-xac-nhan.module.css`. Ruột vẫn xám và nhỏ: đây là
+   một cái cửa hiếm dùng, không phải một lời mời (PLAN 9.1). */
+
+.hop {
+  border: none;
+  background: none;
+  padding: 0;
+  /* Vừa khung 360px: 360 − 2·16 = 328px bề ngang. */
+  max-width: min(440px, calc(100vw - 32px));
+  width: 100%;
+  color: var(--ink);
+}
+
+.hop::backdrop {
+  background: rgb(0 0 0 / 55%);
+}
 
 .khung {
-  margin-top: 7px;
-  padding: 9px 11px;
+  padding: 18px 18px 16px;
   border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--inset);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 16px 32px rgb(0 0 0 / 15%);
 }
 
 .nhan {
   display: block;
-  margin-bottom: 4px;
-  color: var(--ink-3);
-  font-size: 12px;
+  margin-bottom: 8px;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .chon,
@@ -50,7 +66,12 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 8px;
+  margin-top: 14px;
+}
+
+/* Màn "đã gửi" chỉ có nút Đóng — đẩy nó về phải như nút Gửi của màn form. */
+.xong + .chan {
+  justify-content: flex-end;
 }
 
 .nhe {
@@ -93,7 +114,21 @@
   padding: 6px 10px;
   border: 1px solid var(--line-2);
   border-radius: 4px;
-  background: var(--surface);
+  background: var(--inset);
   color: var(--ink);
   font-size: 12.5px;
+}
+
+.nhe:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Màn hẹp: nút trong modal cao ≥ 44px (vùng bấm cảm ứng). */
+@media (max-width: 640px) {
+  .nhe,
+  .gui {
+    min-height: 44px;
+    padding-inline: 16px;
+  }
 }

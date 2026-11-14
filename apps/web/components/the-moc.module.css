@@ -191,14 +191,49 @@
   border-radius: 0 3px 3px 0;
 }
 
-/* Chân mốc MỘT dòng: pill vote · hàng reaction · ngăn kéo · menu tác giả · mod. `wrap` để máy hẹp
- * tự xuống dòng thay vì tràn ngang. */
+/* Chân mốc HAI cột (2026-11-14): trái = pill vote · nút báo cáo / menu tác giả `⋯`; phải =
+ * hàng reaction · ngăn kéo · mod. `wrap` để máy hẹp tự xuống dòng thay vì tràn ngang. */
 .chan {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   margin-top: 12px;
+}
+
+.chan_trai,
+.chan_phai {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* Cột phải luôn SÁT MÉP PHẢI — kể cả khi nó rớt xuống dòng riêng trên máy hẹp (user chốt
+ * 2026-11-14, không căn trái khi xuống dòng). `justify-content` lo các dòng con khi chính cột
+ * này wrap bên trong nó. */
+.chan_phai {
+  margin-left: auto;
+  justify-content: flex-end;
+}
+
+/* Wrapper rỗng không chiếm chỗ: bia mộ không có reaction, bài thường không có ngăn kéo, khách
+ * không có mod ⇒ `.chan_phai` có thể rỗng. (`HanhDongMoc` trả `null` ⇒ `.chan_trai` vẫn còn
+ * vote nên không rỗng, nhưng giữ đối xứng.) */
+.chan_trai:empty,
+.chan_phai:empty {
+  display: none;
+}
+
+/* Form sửa mốc và câu lỗi của `HanhDongMoc` nằm trong một `.khung` `display: contents` — tức
+ * là flex item của `.chan_trai`. Khi một cái hiện ra, cho cột trái chiếm trọn dòng để nó có
+ * đủ bề ngang như hồi chân mốc còn một hàng (`.sua` / `.loi` tự `flex: 1 0 100%`); cột phải
+ * rớt xuống dòng dưới, vẫn sát phải. Form BÁO CÁO không cần luật này: nó là `<dialog>` modal
+ * (top layer, ngoài luồng bố cục) — và vì thế selector KHÔNG được viết kiểu "mọi anh em sau
+ * nút báo cáo", kẻo trúng cả cái dialog. */
+.chan_trai:has([data-testid="form-sua-moc"], [data-testid="moc-loi"]) {
+  flex: 1 0 100%;
 }
 
 .mod_hang_rieng {
@@ -330,11 +365,11 @@
     flex-basis: 100%;
   }
 
-  .mod_hang_rieng {
-    display: flex;
-    width: 100%;
-    margin-top: 4px;
-  }
+  /* Khối `.mod_hang_rieng { display: flex; width: 100%; margin-top: 4px }` ĐÃ GỠ 2026-11-14.
+   * Nó ép công cụ mod xuống dòng riêng, căn trái — đúng khi chân mốc còn một hàng dài. Nay mod
+   * ở cuối `.chan_phai`, cột ấy tự wrap và luôn sát mép phải (user chốt); giữ `width: 100%`
+   * thì nút mod nhảy về mép TRÁI của dòng riêng, ngược luật căn phải. Khối ấy không đặt
+   * chiều cao / vùng bấm nào, nên gỡ không hạ vùng bấm nào. */
 
   /* Đợt M (M6): nút "Xem mốc" của mốc thu gọn cao 44px trên điện thoại. */
   .nut_mo_moc {

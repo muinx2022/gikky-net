@@ -27,10 +27,11 @@ import { usePhien } from "./phien";
  * tự báo cáo, ẩn nó đi ở client là dựng một luật thứ hai chỉ tồn tại trên giao diện. Tự
  * báo cáo mình là chuyện vô hại và hiếm; một luật vô hình thì không.
  *
- * ## Form mở TẠI CHỖ, không phải modal
+ * ## Form mở trong MODAL *(đổi 2026-11-14)*
  *
- * Cùng khuôn hai chỗ báo cáo đã có. Modal là một luồng focus nữa phải tự lo, cho một thao
- * tác hiếm — và `FormBaoCao` vốn đã dựng để nằm trong luồng trang.
+ * Trước đây mở tại chỗ; user chốt modal cho cả ba chỗ báo cáo (mốc, bình luận, cả bài) vì
+ * form inline đẩy vỡ hàng chứa nó. `FormBaoCao` tự là `<dialog>`, nên ở đây nút **ở lại**
+ * khi modal mở — nó là chỗ focus quay về lúc đóng.
  */
 export function NutBaoCaoMach({ machId, tieuDe }: { machId: number; tieuDe: string }) {
   const { toi } = usePhien();
@@ -40,18 +41,16 @@ export function NutBaoCaoMach({ machId, tieuDe }: { machId: number; tieuDe: stri
 
   return (
     <div className={css.khung}>
-      {!mo && (
-        <button
-          type="button"
-          className={css.nut}
-          onClick={() => datMo(true)}
-          title="Báo cáo bài này vi phạm luật cộng đồng"
-          data-testid="nut-bao-cao-mach"
-        >
-          <Flag size={16} strokeWidth={2} aria-hidden />
-          <span>Báo cáo</span>
-        </button>
-      )}
+      <button
+        type="button"
+        className={css.nut}
+        onClick={() => datMo(true)}
+        title="Báo cáo bài này vi phạm luật cộng đồng"
+        data-testid="nut-bao-cao-mach"
+      >
+        <Flag size={16} strokeWidth={2} aria-hidden />
+        <span>Báo cáo</span>
+      </button>
       {mo && (
         <FormBaoCao
           dich="mach"

@@ -277,11 +277,11 @@ test.describe("B — form ghi: vòng lặp lõi chạy thật trong trình duy�
     await expect(page.getByTestId("khoi-chu-mach")).toHaveCount(0);
     await expect(page.getByTestId("nut-noi-moc")).toHaveCount(0);
     await expect(page.getByTestId("nut-dong-so")).toHaveCount(0);
-    // Menu `⋯` trên mốc của người khác **có** tồn tại từ lượt vá V1 (L03) — nhưng nó chỉ
-    // chứa "Báo cáo". Bài đo vì thế đòi đúng thứ nó vẫn luôn muốn đòi ("UI không mời
-    // người ta làm việc sẽ bị từ chối") ở dạng CHẶT HƠN: hai nút ghi vắng mặt, và cửa báo
-    // cáo thì có mặt — trước lượt vá, "menu vắng" cũng xanh khi UI mất luôn nút báo cáo.
-    await page.getByTestId("menu-moc").first().click();
+    // Trên mốc của người khác, từ lượt vá V1 (L03) cửa duy nhất là "Báo cáo" — từ
+    // 2026-11-14 nó là một NÚT đứng thẳng, không còn menu `⋯`. Bài đo vẫn đòi đúng thứ nó
+    // luôn muốn đòi ("UI không mời người ta làm việc sẽ bị từ chối") ở dạng CHẶT HƠN: hai
+    // nút ghi vắng mặt, và cửa báo cáo thì có mặt — "vắng hết" không được xanh hộ.
+    await expect(page.getByTestId("menu-moc")).toHaveCount(0);
     await expect(page.getByTestId("nut-sua-moc")).toHaveCount(0);
     await expect(page.getByTestId("nut-xoa-moc")).toHaveCount(0);
     await expect(page.getByTestId("nut-bao-cao-moc").first()).toBeVisible();

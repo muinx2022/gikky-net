@@ -29,6 +29,35 @@
   background: var(--accent-soft);
 }
 
+/* Nút "Báo cáo" đứng thẳng cho người không phải tác giả (2026-11-14) — thay menu `⋯` chỉ có
+   một mục. Cao 28px khớp pill vote ngang (`cot-vote.module.css#.ngang`) ngay bên trái nó.
+   Nhẹ, không viền, `--ink-3`, KHÔNG `--loss` — cùng lý do với `nut-bao-cao-mach.module.css`:
+   báo cáo là thao tác hiếm, không phải một lời mời bấm; tín hiệu là lá cờ + chữ. */
+.bao_cao {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--ink-3);
+  font-family: var(--f-ui);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.bao_cao:hover {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.bao_cao:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
 .hop {
   position: absolute;
   top: calc(100% + 4px);
@@ -62,9 +91,9 @@
 }
 
 .sua {
-  /* `.khung` là `display: contents`, nên khối này là một flex item của `.chan` trên thẻ
-     mốc (`flex-wrap: wrap`). `flex: 1 0 100%` ép nó xuống dòng riêng, không chen vào
-     hàng nút. */
+  /* `.khung` là `display: contents`, nên khối này là một flex item của `.chan_trai` trên thẻ
+     mốc (`flex-wrap: wrap`; cột ấy chiếm trọn dòng khi form mở — `the-moc.module.css`).
+     `flex: 1 0 100%` ép nó xuống dòng riêng, không chen vào hàng nút. */
   flex: 1 0 100%;
   margin-top: 10px;
   padding: 13px 14px 11px;
@@ -157,5 +186,11 @@
     min-width: 44px;
     min-height: 44px;
     margin-block: -10px;
+  }
+
+  /* Nút báo cáo: vùng bấm 44px, margin âm (44 − 28) / 2 = 8px giữ hàng cao 28px như pill vote. */
+  .bao_cao {
+    min-height: 44px;
+    margin-block: -8px;
   }
 }
