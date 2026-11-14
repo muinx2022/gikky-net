@@ -59,7 +59,13 @@
   --bg: #f1f2f5;
   --surface: #ffffff;
   --surface-2: #e2e8f0;
-  --inset: #f6f8fb;
+  /* `--inset` = "mặt lõm" TRONG khối trắng (dải lệnh, viên vote, ô nhập…). Từng là `#f6f8fb`
+     — chọn hồi `--bg` còn trắng, nằm trên `--surface` chỉ 1.06:1 nên mọi ô lõm trông nhạt nhoà,
+     trống. Hạ 2026-11-14 xuống xám lạnh đậm hơn `--bg` một chút (1.04:1) để còn đọc ra khối —
+     kể cả các khối rail đặt thẳng trên `--bg` (`sidebar`/`khoi-khach`): nhạt hơn nữa thì chúng
+     tan vào nền trang. Không đậm hơn được: `--gain` trên nó còn 4.58:1, sát AA — đo ở
+     `e2e/don-vi/tuong-phan.spec.ts`. */
+  --inset: #ebeef4;
   /* Nền THẺ. Trộn 100% `--surface` ⇒ ở cả hai theme nó BẰNG ĐÚNG `--surface`; thẻ tách
      khỏi trang nhờ `--bg` khác `--surface`, không nhờ token này. Giữ dạng `color-mix` vì
      `e2e/don-vi/tuong-phan.spec.ts` đọc đúng cú pháp ấy để suy ra màu thẻ. */

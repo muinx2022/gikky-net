@@ -1,10 +1,11 @@
 /* Dải lệnh dùng chung của thẻ mạch và trang chi tiết (việc 25, `dai-lenh.tsx`). Dời nguyên từ
  * `the-mach.module.css` — MỘT bản. Chỉ token trung tính: màu MUA/BÁN/TP/SL ở `con-so.module.css`.
  *
- * Các ô cách nhau 1px bằng `gap` + nền `--line` của khung — không cần tính viền phải/dưới
- * cho từng ô khi dải xuống dòng. `width: fit-content`: ở trang chi tiết cha là khối thường (không
- * phải cột flex như thẻ), thiếu nó thì dải giãn hết chiều ngang và nền `--line` lộ thành một vệt
- * xám sau ô cuối. */
+ * Các ô cách nhau 1px bằng `gap` + nền `--line-2` của khung — không cần tính viền phải/dưới
+ * cho từng ô khi dải xuống dòng. `--line-2` chứ không `--line` (2026-11-14): `--inset` sáng đã
+ * hạ xuống `#ebeef4`, và `--line` `#e6ecf5` trên nó chỉ 1.02:1 — vạch ngăn tan mất.
+ * `width: fit-content`: ở trang chi tiết cha là khối thường (không phải cột flex như thẻ), thiếu
+ * nó thì dải giãn hết chiều ngang và nền `--line-2` lộ thành một vệt xám sau ô cuối. */
 .lenh {
   display: flex;
   flex-wrap: wrap;
@@ -13,16 +14,16 @@
   max-width: 100%;
   gap: 1px;
   overflow: hidden;
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-2);
   border-radius: 8px;
-  background: var(--line);
+  background: var(--line-2);
   font-family: var(--f-mono);
   font-size: 12.5px;
   font-variant-numeric: tabular-nums;
 }
 
-/* `flex: 1 1 auto`: ô GIÃN lấp hết hàng khi dải xuống dòng — không còn khoảng trống lộ nền `--line`
- * (vệt xám) ở cuối hàng. Một hàng (desktop, dải `fit-content`) thì không có chỗ thừa để giãn. */
+/* `flex: 1 1 auto`: ô GIÃN lấp hết hàng khi dải xuống dòng — không còn khoảng trống lộ nền
+ * `--line-2` (vệt xám) ở cuối hàng. Một hàng (desktop, dải `fit-content`) thì không có chỗ thừa để giãn. */
 .o_lenh {
   display: flex;
   flex: 1 1 auto;
@@ -68,7 +69,7 @@
 /* --- mobile (≤ 640px) -------------------------------------------------------------- */
 /* Ô xếp chồng nhãn / số, mỗi ô ≥ 76px, dải giãn hết chiều ngang (`width: auto` để `align-self:
  * stretch` của cột flex trong thẻ còn tác dụng). Flex-wrap chứ KHÔNG lưới: lưới `auto-fit` 4 cột
- * với 6 ô để trống nửa hàng 2 thành một vệt nền `--line`; flex cho các ô hàng cuối giãn lấp hàng. */
+ * với 6 ô để trống nửa hàng 2 thành một vệt nền `--line-2`; flex cho các ô hàng cuối giãn lấp hàng. */
 @media (max-width: 640px) {
   .lenh {
     align-self: stretch;
