@@ -60,7 +60,9 @@ import css from "./sidebar.module.css";
  * định sự VẮNG MẶT của nó.
  *
  * Trên màn hình hẹp sidebar **xuống dưới feed** chứ không biến mất: nội dung của nó là
- * đường đi (luật, các sub), không phải trang trí.
+ * đường đi (luật, các sub), không phải trang trí. Riêng trên điện thoại (≤ 640px) hai khối
+ * "Chuyên mục" và bài mới bị ẩn bằng CSS (user chốt 2026-11-14) — danh sách chuyên mục đã có
+ * ở tab "Chuyên mục" của thanh điều hướng dưới; xem `.an_tren_dien_thoai` (`sidebar.module.css`).
  */
 export function Sidebar({
   gioiThieu,

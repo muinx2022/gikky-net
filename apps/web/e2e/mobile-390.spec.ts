@@ -631,32 +631,59 @@ test.describe("T2 — thanh cài app không cướp chỗ", () => {
 /* ===================================================================== T5 · home mobile */
 
 // Việc 24: section "Bài viết" (từng đứng NGOÀI khung, được `order` kéo lên trước rail) đã gỡ;
-// bài viết mới là một khối của rail. Thứ tự trong rail user chốt 2026-11-13: "Chuyên mục" →
-// bài viết mới → "Luật rút gọn".
-test.describe("T5 — home mobile: bài viết mới trong rail, sau Chuyên mục", () => {
-  test("390px: Nhật ký mới → rail (Chuyên mục → bài viết mới → Luật) → chân trang; không cuộn ngang", async ({
+// bài viết mới là một khối của rail. User chốt 2026-11-14: trên điện thoại (≤ 640px) rail BỎ hẳn
+// "Chuyên mục" và khối bài mới (`.an_tren_dien_thoai`) — danh sách chuyên mục đã có ở tab "Chuyên
+// mục" của thanh điều hướng dưới. Hai khối vẫn trong DOM (ẩn bằng CSS), chỉ không hiện.
+test.describe("T5 — home mobile: rail không có Chuyên mục / bài mới", () => {
+  test("390px: Nhật ký mới → rail (Luật) → chân trang; Chuyên mục + bài mới ẩn; không cuộn ngang", async ({
     page,
   }) => {
     await moi(page, "/");
     const top = (sel: string) =>
       page.locator(sel).first().evaluate((el) => el.getBoundingClientRect().top + window.scrollY);
     await expect(page.locator('[data-testid="khoi-bai-viet"]')).toHaveCount(0);
+    const rail = page.getByTestId("rail-phai");
+    // Vế chống rỗng: hai khối CÓ trong DOM (trang có dữ liệu), chỉ bị ẩn.
+    await expect(rail.getByTestId("sidebar-cac-sub")).toBeAttached();
+    await expect(rail.getByTestId("sidebar-bai-moi")).toBeAttached();
+    await expect(rail.getByTestId("sidebar-cac-sub")).toBeHidden();
+    await expect(rail.getByTestId("sidebar-bai-moi")).toBeHidden();
+    // Các khối khác của rail giữ nguyên.
+    await expect(rail.getByTestId("sidebar-luat")).toBeVisible();
+    // Đường tới danh sách chuyên mục trên điện thoại: tab "Chuyên mục" của thanh điều hướng dưới.
+    await expect(
+      page.getByRole("navigation", { name: "Điều hướng chính di động" }).getByRole("button", { name: "Chuyên mục" }),
+    ).toBeVisible();
     const nhatKy = await top('[data-testid="khoi-nhat-ky"]');
-    const rail = await top('[data-testid="rail-phai"]');
-    const baiViet = await top('[data-testid="rail-phai"] [data-testid="sidebar-bai-moi"]');
-    const chuyenMuc = await top('[data-testid="rail-phai"] [data-testid="sidebar-cac-sub"]');
+    const dauRail = await top('[data-testid="rail-phai"]');
     const luat = await top('[data-testid="rail-phai"] [data-testid="sidebar-luat"]');
     const chan = await top('[data-testid="chan-trang"]');
-    expect(nhatKy).toBeLessThan(rail);
-    expect(rail).toBeLessThanOrEqual(chuyenMuc);
-    expect(chuyenMuc, "bài viết mới phải hiện SAU Chuyên mục").toBeLessThan(baiViet);
-    expect(baiViet, "bài viết mới phải hiện TRƯỚC Luật rút gọn").toBeLessThan(luat);
+    expect(nhatKy).toBeLessThan(dauRail);
+    expect(dauRail).toBeLessThanOrEqual(luat);
     expect(luat).toBeLessThan(chan);
     const rong = await page.evaluate(() => ({
       cuon: document.documentElement.scrollWidth,
       khung: window.innerWidth,
     }));
     expect(rong.cuon, JSON.stringify(rong)).toBeLessThanOrEqual(rong.khung);
+  });
+
+  test("`/luat` (khối tự nạp ở trình duyệt) cũng ẩn ở 390px; 641px thì cả hai khối HIỆN lại", async ({ page }) => {
+    await moi(page, "/luat");
+    const rail = page.getByTestId("rail-phai");
+    // Nhánh trình duyệt (`ChuyenMucTuTrinhDuyet` / `BaiMoiTuTrinhDuyet`): chờ nạp xong rồi mới xét.
+    await expect(rail.getByTestId("sidebar-cac-sub")).toBeAttached();
+    await expect(rail.getByTestId("sidebar-bai-moi")).toBeAttached();
+    await expect(rail.getByTestId("sidebar-cac-sub")).toBeHidden();
+    await expect(rail.getByTestId("sidebar-bai-moi")).toBeHidden();
+    await expect(rail.getByTestId("sidebar-luat")).toBeVisible();
+    // Ngay trên breakpoint điện thoại: không đổi so với trước 2026-11-14.
+    await page.setViewportSize({ width: 641, height: 900 });
+    for (const url of ["/", "/luat"]) {
+      await moi(page, url);
+      await expect(rail.getByTestId("sidebar-cac-sub"), url).toBeVisible();
+      await expect(rail.getByTestId("sidebar-bai-moi"), url).toBeVisible();
+    }
   });
 });
 

@@ -617,17 +617,25 @@ test.describe("W7/G7 — mobile 390px", () => {
     expect(thap, `vùng bấm < 44px: ${thap.join(" · ")}`).toEqual([]);
   });
 
-  test("khối bài viết mobile (việc 24): nằm trong rail DƯỚI nội dung chính, đủ 10 bài một dòng, không tràn ngang", async ({
+  // User chốt 2026-11-14: ở điện thoại (≤ 640px) khối bài viết bị ẩn khỏi rail (xem
+  // `mobile-390.spec.ts` T5). Phép đo bố cục một cột nay chạy ở 768px (tablet: rail vẫn dưới nội
+  // dung, khối còn hiện); 390px chỉ còn khẳng định khối ẩn.
+  test("khối bài viết một cột (việc 24): 390px ẩn; 768px nằm trong rail DƯỚI nội dung chính, đủ 10 bài một dòng, không tràn ngang", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
     const khoi = page.getByTestId("rail-phai").getByTestId("sidebar-bai-moi");
+    await expect(khoi).toBeAttached();
+    await expect(khoi).toBeHidden();
+
+    await page.setViewportSize({ width: 768, height: 1024 });
+    await page.goto("/");
     await expect(khoi).toBeVisible();
     const tren = await page.locator("main").first().evaluate((e) => e.getBoundingClientRect().bottom);
     const hop = await khoi.boundingBox();
     expect(hop!.y, "khối bài viết dưới nội dung chính").toBeGreaterThanOrEqual(tren - 1);
-    expect(hop!.x + hop!.width, "khối bài viết trong khung 390px").toBeLessThanOrEqual(390);
+    expect(hop!.x + hop!.width, "khối bài viết trong khung 768px").toBeLessThanOrEqual(768);
     // Đủ 10 bài, mỗi tiêu đề MỘT dòng (cắt bằng ellipsis), không đẩy trang cuộn ngang.
     const tieu_de = khoi.locator("li > a");
     await expect(tieu_de).toHaveCount(10);

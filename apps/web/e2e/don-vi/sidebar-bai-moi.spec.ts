@@ -210,3 +210,60 @@ test.describe("sidebar-bai-moi", () => {
     expect(loc999[0].id).toBe(101);
   });
 });
+
+/** Trả về `{ boc, than }` của mọi khối cấp đầu (`selector-hoặc-@media { … }`), đếm ngoặc thật —
+ * không dừng ở `}` đầu tiên của luật lồng trong `@media`. */
+function khoiCapDau(css: string): { boc: string; than: string }[] {
+  const ra: { boc: string; than: string }[] = [];
+  let bat_dau = 0;
+  let i = 0;
+  while (i < css.length) {
+    const mo = css.indexOf("{", i);
+    if (mo < 0) break;
+    let muc = 1;
+    let j = mo + 1;
+    for (; j < css.length && muc > 0; j += 1) {
+      if (css[j] === "{") muc += 1;
+      else if (css[j] === "}") muc -= 1;
+    }
+    ra.push({ boc: css.slice(bat_dau, mo).trim(), than: css.slice(mo + 1, j - 1) });
+    bat_dau = j;
+    i = j;
+  }
+  return ra;
+}
+
+test.describe("rail điện thoại — ẩn Chuyên mục + bài mới (user chốt 2026-11-14)", () => {
+  test("`.an_tren_dien_thoai { display: none }` CHỈ nằm trong `@media (max-width: 640px)`", () => {
+    const css = doc("components/sidebar.module.css").replace(/\/\*[\s\S]*?\*\//g, "");
+    const co = khoiCapDau(css).filter((k) => /\.an_tren_dien_thoai\b/.test(`${k.boc}{${k.than}}`));
+    expect(co.length, "đo rỗng: không thấy .an_tren_dien_thoai").toBeGreaterThan(0);
+    for (const k of co) {
+      // Ở cấp đầu (ngoài @media) là ẩn ở MỌI bề rộng — desktop mất hai khối.
+      expect(k.boc, `.an_tren_dien_thoai nằm ngoài @media 640: "${k.boc}"`).toMatch(
+        /^@media\s*\(max-width:\s*640px\)$/,
+      );
+      const luat = /(?:^|\n)\s*\.an_tren_dien_thoai\s*\{([^}]*)\}/.exec(k.than)?.[1] ?? "";
+      expect(luat).toMatch(/display:\s*none/);
+    }
+  });
+
+  test("lớp gắn ở phần tử GỐC của KhoiChuyenMuc + KhoiBaiMoi (phủ cả nhánh trình duyệt), không gắn khối rail khác", () => {
+    for (const [file, id] of [
+      ["components/khoi-chuyen-muc.tsx", "sidebar-cac-sub"],
+      ["components/khoi-bai-moi.tsx", "sidebar-bai-moi"],
+    ] as const) {
+      const sach = boChuThich(doc(file));
+      const goc = new RegExp(`<section\\b[^>]*data-testid="${id}"[^>]*>`).exec(sach)?.[0] ?? "";
+      expect(goc, `đo rỗng: không thấy <section> gốc của ${file}`).not.toBe("");
+      expect(goc, file).toContain("css.an_tren_dien_thoai");
+    }
+    // Nhánh trình duyệt dựng lại ĐÚNG hai khối này, không markup riêng.
+    expect(boChuThich(doc("components/chuyen-muc-tu-trinh-duyet.tsx"))).toMatch(/<KhoiChuyenMuc\b/);
+    expect(boChuThich(doc("components/bai-moi-tu-trinh-duyet.tsx"))).toMatch(/<KhoiBaiMoi\b/);
+    // Các khối rail khác (khách, giới thiệu, chủ đề tuần, luật, chân trang) giữ nguyên trên điện thoại.
+    for (const f of ["components/sidebar.tsx", "components/khoi-khach.tsx", "components/chan-trang.tsx"]) {
+      expect(boChuThich(doc(f)), f).not.toContain("an_tren_dien_thoai");
+    }
+  });
+});

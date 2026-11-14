@@ -77,8 +77,10 @@
 }
 
 /* Dưới 960px: một cột, rail xuống dưới nội dung. Hết dính: một rail dính ở cuối trang một
- * cột sẽ đè lên chính nội dung nó đứng dưới. Rail mang danh sách chuyên mục và luật — đường
- * đi tới `/s/*` và `/luat` — nên không được ẩn trên điện thoại. */
+ * cột sẽ đè lên chính nội dung nó đứng dưới. Rail mang luật — đường đi tới `/luat` — nên cả
+ * rail không được ẩn trên điện thoại. Riêng hai khối "Chuyên mục" và bài mới thì ẩn ở ≤ 640px
+ * (user chốt 2026-11-14): điện thoại đã có danh sách chuyên mục ở tab "Chuyên mục" của thanh
+ * điều hướng dưới — xem `.an_tren_dien_thoai` trong `sidebar.module.css`. */
 @media (max-width: 960px) {
   .khung {
     grid-template-columns: minmax(0, 1fr);

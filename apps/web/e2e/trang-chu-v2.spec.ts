@@ -285,9 +285,12 @@ for (const theme of ["sang", "toi"] as const) {
         expect(rail.y, `${url}: rail dưới nội dung`).toBeGreaterThanOrEqual(
           chinh.y + chinh.height - 1,
         );
-        // Rail trên điện thoại vẫn chứa đường tới `/s/*` và `/luat` (không còn cột trái nào).
+        // Rail trên điện thoại vẫn chứa đường tới `/luat`. Khối "Chuyên mục" còn trong HTML (link
+        // `/s/*` cho bot) nhưng ẩn ở ≤ 640px (user chốt 2026-11-14) — đường tới `/s/*` trên điện
+        // thoại là tab "Chuyên mục" của thanh điều hướng dưới.
         await expect(page.getByTestId("sidebar-cac-sub")).toBeAttached();
-        await expect(page.getByTestId("sidebar-dan-luat")).toBeAttached();
+        await expect(page.getByTestId("sidebar-cac-sub")).toBeHidden();
+        await expect(page.getByTestId("sidebar-dan-luat")).toBeVisible();
       }
     });
   });
@@ -879,14 +882,13 @@ test.describe.serial("O — tiêu đề dài liền nhau không làm trang cuộ
             rong.khung + 1,
           );
         }
-        // Riêng `/`: cả khối chủ đề lẫn khối bài viết ở rail (việc 24) đều có tiêu đề dài ấy.
+        // Riêng `/`: khối chủ đề có tiêu đề dài ấy. Khối bài viết ở rail (việc 24) ẩn ở 375px
+        // (user chốt 2026-11-14) nên không thể tràn — chỉ khẳng định nó ẩn.
         await page.goto("/");
         await expect(
           page.getByTestId("khoi-thao-luan").getByRole("link", { name: TIEU_DE_DAI }),
         ).toHaveCount(1);
-        await expect(
-          page.getByTestId("sidebar-bai-moi").getByRole("link", { name: TIEU_DE_DAI }),
-        ).toHaveCount(1);
+        await expect(page.getByTestId("sidebar-bai-moi")).toBeHidden();
       } finally {
         await ctx.close();
       }

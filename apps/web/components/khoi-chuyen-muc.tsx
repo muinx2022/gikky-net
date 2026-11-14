@@ -15,7 +15,7 @@ import css from "./sidebar.module.css";
  */
 export function KhoiChuyenMuc({ cacSub }: { cacSub: readonly SubChiTietOut[] }) {
   return (
-    <section className={css.khoi} data-testid="sidebar-cac-sub">
+    <section className={`${css.khoi} ${css.an_tren_dien_thoai}`} data-testid="sidebar-cac-sub">
       <h2 className={css.tieu_de}>Chuyên mục</h2>
       <ul className={css.danh_sach_chuyen_muc}>
         {cacSub.map((s) => (

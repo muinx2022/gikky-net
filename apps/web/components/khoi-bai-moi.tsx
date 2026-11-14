@@ -50,7 +50,7 @@ export function KhoiBaiMoi({
   coLinkTatCa?: boolean;
 }) {
   return (
-    <section className={css.khoi} data-testid="sidebar-bai-moi">
+    <section className={`${css.khoi} ${css.an_tren_dien_thoai}`} data-testid="sidebar-bai-moi">
       <h2 className={css.tieu_de}>{tieuDe}</h2>
       <ul className={css.danh_sach_bai_moi}>
         {baiMoi.map((m) => (
