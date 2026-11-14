@@ -73,10 +73,15 @@ test.describe("sidebar-bai-moi", () => {
     expect(luat).not.toMatch(/line-clamp|-webkit-box/);
   });
 
-  test("V24 — KhoiBaiMoi: tiêu đề ĐẦY ĐỦ trong <a> + title, dòng phụ tên chuyên mục · <time dateTime>", () => {
+  test("V24 — KhoiBaiMoi: tiêu đề ĐẦY ĐỦ trong <a> (không title), dòng phụ tên chuyên mục · <time dateTime>", () => {
     const sach = boChuThich(doc("components/khoi-bai-moi.tsx"));
     expect(sach.trimStart().startsWith('"use client"')).toBe(false);
-    expect(sach).toMatch(/title=\{m\.title\}/);
+    // Việc 24 bổ sung (user 2026-11-13): bỏ `title` — tooltip native tràn khỏi rail. Tiêu đề đầy
+    // đủ cho người rê chuột nay ở `data-tieu-de` của `<li>` (tooltip CSS), chỉ khi dài hơn ngưỡng.
+    expect(sach).not.toMatch(/\btitle=\{/);
+    expect(sach).toMatch(
+      /data-tieu-de=\{m\.title\.length\s*>\s*NGUONG_TOOLTIP_TIEU_DE\s*\?\s*m\.title\s*:\s*undefined\}/,
+    );
     // `<a>` CHỈ bọc tiêu đề: text của nó = đúng `m.title` (không dính dòng phụ vào anchor text).
     const link = /<Link\b[^>]*>([\s\S]*?)<\/Link>/.exec(sach);
     expect(link, "đo rỗng: không thấy <Link> của mục").not.toBeNull();
@@ -100,6 +105,32 @@ test.describe("sidebar-bai-moi", () => {
     expect(sach).toMatch(/m\.sub\.ten/);
     expect(sach).toContain('data-testid="sidebar-bai-moi-tat-ca"');
     expect(sach).toContain('"/?tab=moi&loai_mach=bai_viet"');
+  });
+
+  test("V24-B — tooltip CSS của dòng: ::before của <li>, alt rỗng, rộng bằng dòng, xuống dòng, không bắt chuột, hover chỉ khi (hover: hover), bàn phím qua :focus-visible", () => {
+    const css = doc("components/sidebar.module.css").replace(/\/\*[\s\S]*?\*\//g, "");
+    const goc = /(?:^|\n)\.muc_bai_moi\[data-tieu-de\]::before\s*\{([^}]*)\}/.exec(css)?.[1] ?? "";
+    expect(goc, "đo rỗng: không thấy .muc_bai_moi[data-tieu-de]::before").not.toBe("");
+    expect(goc).toMatch(/content:\s*attr\(data-tieu-de\);/);
+    // Alt rỗng: trình đọc màn hình không đọc tiêu đề lần hai (anchor text đã đọc). Khai SAU dòng
+    // không alt (trình duyệt cũ bỏ dòng này, giữ dòng trên).
+    expect(goc).toMatch(/content:\s*attr\(data-tieu-de\);\s*content:\s*attr\(data-tieu-de\)\s*\/\s*""\s*;/);
+    expect(goc).toMatch(/position:\s*absolute/);
+    expect(goc).toMatch(/left:\s*0;/);
+    expect(goc).toMatch(/right:\s*0;/);
+    expect(goc).toMatch(/white-space:\s*normal/);
+    expect(goc).toMatch(/pointer-events:\s*none/);
+    expect(goc).not.toMatch(/--(gain|loss|stamp)|#[0-9a-fA-F]{3,8}\b/);
+    // Hiện bằng BÀN PHÍM (`:focus-visible`) ở mọi thiết bị; bằng chuột CHỈ trong `@media (hover:
+    // hover)`. `:focus-within` bị cấm: nó khớp cả focus do bấm chuột / chạm ⇒ hộp kẹt lại.
+    expect(css).toMatch(/\n\.muc_bai_moi\[data-tieu-de\]:has\(:focus-visible\)::before\s*\{/);
+    expect(css).not.toMatch(/\.muc_bai_moi[^{]*:focus-within/);
+    expect(css).not.toMatch(/\n\.muc_bai_moi\[data-tieu-de\]:hover::before/);
+    expect(css).toMatch(
+      /@media \(hover: hover\)\s*\{\s*\.muc_bai_moi\[data-tieu-de\]:hover::before\s*\{[^}]*opacity:\s*1/,
+    );
+    // Stretched link của `<a>` vẫn là `::after` — tooltip không được chiếm nó.
+    expect(css).not.toMatch(/\.muc_bai_moi[^{,]*::after/);
   });
 
   test("V24-T8 — /luat: khung tĩnh bật khối bài mới ở TRÌNH DUYỆT, không thêm lời gọi API nào", () => {

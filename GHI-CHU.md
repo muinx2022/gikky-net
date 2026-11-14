@@ -1161,7 +1161,7 @@ mở rộng cái cũ ⇒ `pnpm codegen`. Index `P-20261113-18` liên quan.
 
 ---
 
-## Việc 24 · Khối "Bài viết" trang chủ dời sang rail phải; `/luat` cũng có — ĐÃ LÀM + COMMIT trên `v2` (2026-11-13), chưa lên dev/prod: nghiệm thu ĐẠT 13/13, phản biện + vòng sửa 1 xong
+## Việc 24 · Khối "Bài viết" trang chủ dời sang rail phải; `/luat` cũng có — ĐÃ LÀM trên `v2` (`bee47df` + `ea1596b`, 2026-11-13), đã lên dev.gikky.net (`ea1596b`, 2026-11-13 23:22, chỉ `web`), chưa lên prod: nghiệm thu ĐẠT 13/13, phản biện + vòng sửa 1 xong
 
 **Yêu cầu (user, 2026-11-13):** "giờ có phần nhật kí mới, có nên đẩy phần bài viết sang bên phải (các bài mới), sau đó
 bỏ phần bài viết ở trang chủ đi, phần bên phải khi vào các chuyên mục thì bỏ đi, vào các trang tĩnh như luat thì show
@@ -1182,3 +1182,29 @@ trên web đọc — chưa gỡ, chờ user quyết giữ (để dùng lại) ha
 **Bổ sung (user, 2026-11-13, sau commit `bee47df`):** "di chuyển bài viết mới xuống dưới chuyên mục bên phải, sau đó
 deploy luôn" ⇒ khối bài mới đứng SAU khối Chuyên mục, TRƯỚC Luật, ở mọi trang có nó (đảo lại lựa chọn "trước Chuyên mục"
 của plan; hệ quả đã biết: trên điện thoại khối xuống thấp hơn). Deploy = dev.gikky.net (nhánh `v2`), chỉ `web`.
+
+---
+
+## Việc 25 · Dải lệnh (MUA/BÁN · mã · Entry · SL · TP · Nhồi · R:R) ở trang chi tiết mạch — ĐÃ LÀM + COMMIT trên `v2` (2026-11-14), chưa lên prod: nghiệm thu ĐẠT 3 lượt, phản biện 2 lượt, 3 vòng sửa
+
+**Yêu cầu (user, 2026-11-13, kèm ảnh thẻ nhật ký NAB):** "cái dãy số liệu này, sao trong chi tiết không thấy?" → "Làm luôn".
+
+**Nguyên nhân:** lệnh có cấu trúc ra đời ở homepage v2 (`79ba0f4`); các plan (`2026-11-11-homepage-v2-giao-dien-moi.md`
+G3, `2026-11-11-thong-nhat-giao-dien-toan-site.md`) chỉ khai dải lệnh cho THẺ (`components/the-mach.tsx:213`). API chi
+tiết (`MachChiTietOut.lenh`, `api/api/schemas.py:685`) đã trả đủ, nhưng `components/trang-mach.tsx` chỉ vẽ
+`BienLaiDauBai` (số tự do `figures` của mốc 1 — dữ liệu khác). Chỉ đụng web, không đổi API.
+
+**Plan:** `plans/2026-11-13-dai-lenh-trang-mach.md`.
+
+**Gộp cùng lượt (user, 2026-11-13):** "khi di chuột, hover dài quá, có cách nào làm cho nó ngắn lại được không" — tooltip
+native (`title`) của khối "Bài viết mới" (việc 24) tràn dài khỏi rail ⇒ thay bằng tooltip CSS rộng bằng dòng, xuống dòng;
+phần B của cùng plan.
+
+**Quyết định (user, 2026-11-14, sau phản biện việc 25):**
+- Mạch có lệnh ⇒ đầu trang chi tiết CHỈ có dải lệnh; khối số `figures` của mốc 1 không lên đầu trang mà về lại thẻ mốc 1
+  (bot gửi cả hai ⇒ trùng; `figures` sửa được còn `lenh` thì không ⇒ có thể lệch).
+- Mốc 1 bị ẩn/gỡ ⇒ dải lệnh ẩn ở cả thẻ feed lẫn trang chi tiết — làm ở API (`lenh = null`), nên lượt deploy dev tới
+  gồm cả `api`.
+- **Đính chính (user, 2026-11-14, sau phản biện lượt 2):** chỉ khi **mod ẩn** mốc 1 (`hidden_at`) thì `lenh = null`.
+  Tác giả **tự xoá** mốc 1 (bia mộ, `deleted_at`) ⇒ **GIỮ lệnh** như luật cũ — nếu không, xoá mốc 1 thành cách giấu
+  lệnh thua (ngược "lệnh là biên lai", việc 7). Phiên chính đã lỡ mở rộng thành "hoặc bia mộ" khi giao việc.

@@ -192,7 +192,7 @@
 }
 
 /* Việc 24: tiêu đề MỘT dòng, chữ thường, cắt bằng CSS — chuỗi đầy đủ vẫn nằm trong HTML (anchor
-   text) và ở `title` của link. Bỏ `-webkit-line-clamp`: hai dòng làm 10 bài của trang chủ thành một
+   text); người rê chuột đọc nó ở tooltip CSS bên dưới (không còn `title`). Bỏ `-webkit-line-clamp`: hai dòng làm 10 bài của trang chủ thành một
    cột chữ dài. Chính `<a>` mang lớp này. */
 .tieu_de_bai_moi {
   display: block;
@@ -212,6 +212,56 @@
   content: "";
   position: absolute;
   inset: 0;
+}
+
+/* Tooltip tiêu đề đầy đủ (việc 24 bổ sung, user 2026-11-13: tooltip NATIVE của `title` là một dải
+   đen dài tràn khỏi rail, CSS không chỉnh được). Vẽ bằng `::before` của `<li>` — `::after` của `<a>`
+   đã là stretched link — đọc chữ từ `data-tieu-de`, nên không có bản sao tiêu đề thứ hai trong text
+   HTML. Chỉ dòng có `data-tieu-de` (tiêu đề dài hơn ngưỡng ở `khoi-bai-moi.tsx`) mới có hộp.
+   - Rộng ĐÚNG bằng dòng (`left: 0; right: 0` của `<li>`), chữ xuống dòng — không bao giờ tràn rail.
+   - Ngay DƯỚI dòng (`top: 100%`), đè lên các dòng kế (`z-index`), không bắt chuột: dòng dưới vẫn
+     bấm được xuyên qua hộp.
+   - Hiện sau 300ms (rê ngang qua danh sách không nháy hàng loạt hộp), ẩn ngay khi rời.
+   - Alt rỗng (`/ ""`): chữ của hộp là bản sao của anchor text, trình đọc màn hình không được đọc lại
+     lần hai. Trình duyệt chưa hiểu cú pháp alt bỏ dòng thứ hai, giữ dòng đầu. */
+.muc_bai_moi[data-tieu-de]::before {
+  content: attr(data-tieu-de);
+  content: attr(data-tieu-de) / "";
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  z-index: 3;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--ink) 14%, transparent);
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.1s ease, visibility 0s linear 0.1s;
+}
+
+/* Bàn phím: CHỈ `:focus-visible`. `:focus-within` khớp cả focus do chuột / chạm (bấm, Ctrl+click,
+   chuột giữa, tap) ⇒ hộp kẹt lại sau khi rời chuột, hai hộp cùng lúc, và bật trên máy cảm ứng. */
+.muc_bai_moi[data-tieu-de]:has(:focus-visible)::before {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.12s ease 0.3s, visibility 0s linear 0.3s;
+}
+
+@media (hover: hover) {
+  .muc_bai_moi[data-tieu-de]:hover::before {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.12s ease 0.3s, visibility 0s linear 0.3s;
+  }
 }
 
 /* Tên chuyên mục · ngày đăng. Một dòng: tên chuyên mục dài thì nó co lại (cắt), ngày giữ nguyên. */

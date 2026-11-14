@@ -247,6 +247,8 @@ test("màu: khối chủ đề, thư viện KHÔNG dùng --gain/--loss/--stamp (
     // Hai trang bản tin của việc 20: màu tăng / giảm đi qua `SoLaiLo` (`con-so.module.css`).
     "components/danh-sach-ban-tin.module.css",
     "app/s/[sub]/[ngay]/ban-tin.module.css",
+    // Dải lệnh tách khỏi `the-mach.module.css` ở việc 25: màu MUA/BÁN/TP/SL đi qua `con-so`.
+    "components/dai-lenh.module.css",
   ]) {
     const css = doc(f).replace(/\/\*[\s\S]*?\*\//g, "");
     expect(css, f).not.toMatch(/--(gain|loss|stamp)/);
@@ -257,9 +259,12 @@ test("màu: khối chủ đề, thư viện KHÔNG dùng --gain/--loss/--stamp (
 test("màu MUA/BÁN/SL/TP nằm trong con-so.module.css (file duy nhất được dùng --gain/--loss)", () => {
   const css = doc("components/con-so.module.css").replace(/\/\*[\s\S]*?\*\//g, "");
   for (const lop of [".mua", ".ban", ".gia_tp", ".gia_sl"]) expect(css).toContain(lop);
+  // Markup dải lệnh dời sang `dai-lenh.tsx` ở việc 25 (dùng chung thẻ + trang chi tiết): lớp màu
+  // được dùng ở ĐÓ, thẻ chỉ dựng `<DaiLenh>`.
+  const dai = doc("components/dai-lenh.tsx");
+  expect(dai).toContain("conSo.mua");
+  expect(dai).toContain("conSo.gia_tp");
   const tsx = doc("components/the-mach.tsx");
-  expect(tsx).toContain("conSo.mua");
-  expect(tsx).toContain("conSo.gia_tp");
   expect(tsx, "chip Đã đóng sổ dùng `.dong_so` (selector duy nhất được khoá --stamp)").toContain(
     "css.dong_so",
   );

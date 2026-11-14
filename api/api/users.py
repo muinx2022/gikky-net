@@ -149,6 +149,7 @@ def xem_ho_so(request, username: str, limit: int = SO_MACH_TREN_HO_SO):
                 moc_1_id=d.moc_1_id,
                 xem_truoc=d.xem_truoc,
                 moc_moi_nhat=d.moc_moi_nhat,
+                moc_1_bi_mod_an=d.moc_1_bi_mod_an,
             )
             for m in machs
             for d in [the.get(m.pk, DuLieuThe(None, None, None))]

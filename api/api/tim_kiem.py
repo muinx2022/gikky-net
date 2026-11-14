@@ -352,6 +352,7 @@ def _dung_ket_qua(cap: list[tuple[str, int]], cau: str) -> list[KetQuaTronOut]:
             moc_1_id=d.moc_1_id,
             xem_truoc=d.xem_truoc,
             moc_moi_nhat=d.moc_moi_nhat,
+            moc_1_bi_mod_an=d.moc_1_bi_mod_an,
         )
 
     tu_khoa = [t for t in cau.split() if t]

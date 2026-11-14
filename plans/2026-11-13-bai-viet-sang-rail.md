@@ -1,6 +1,6 @@
 # Việc 24 — Khối "Bài viết" trang chủ dời sang rail phải; `/luat` cũng có
 
-**Trạng thái:** ĐÃ LÀM + COMMIT trên `v2` (2026-11-13), chưa lên dev/prod. Nghiệm thu ĐẠT 13/13 + vòng sửa
+**Trạng thái:** ĐÃ LÀM trên `v2` (`bee47df` + `ea1596b`), đã lên dev.gikky.net (`ea1596b`, 2026-11-13 23:22, chỉ `web`; cây cũ `~/gikky-dev/src.cu-20261113-232202`), chưa lên prod. Nghiệm thu ĐẠT 13/13 + vòng sửa
 R1–R6 ĐẠT; phản biện 3 VỪA + 1 NHỎ đã sửa ở vòng sửa 1. Sổ: `GHI-CHU.md` việc 24.
 
 ## Bối cảnh

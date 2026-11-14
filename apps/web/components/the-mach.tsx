@@ -5,14 +5,13 @@ import type { ReactNode } from "react";
 
 import { CHU_NGUOI_DUNG } from "@/lib/chu-nguoi-dung";
 import { nhanNoiMoc, ngayCuaThoiDiem } from "@/lib/dinh-dang";
-import { NHAN_CHIEU_LENH, cacOLenh } from "@/lib/lenh";
 import { NHAN_NGAN_LOAI_MACH } from "@/lib/loc-loai-mach";
 import { tenHienThi } from "@/lib/ten-hien-thi";
 import { duongDanHoSo, duongDanMach, duongDanSub } from "@/lib/url";
 
 import { Avatar } from "./avatar";
-import conSo from "./con-so.module.css";
 import { CotVote } from "./cot-vote";
+import { DaiLenh } from "./dai-lenh";
 import { HanhDongMod } from "./hanh-dong-mod";
 import { NutChiaSeMach } from "./nut-chia-se-mach";
 import { NutTheoUser } from "./nut-theo-user";
@@ -32,7 +31,8 @@ import css from "./the-mach.module.css";
  * 2. tiêu đề = link tới mạch;
  * 3. **dải lệnh — CHỈ khi `mach.lenh` có** (dữ liệu có cấu trúc do tác giả khai lúc đăng).
  *    Cố ý KHÔNG parse tiêu đề "Mua X tại …" để suy ra: một dải đoán mò trông y hệt dải thật mà có
- *    thể sai số;
+ *    thể sai số. Dải là component dùng chung `DaiLenh` (`dai-lenh.tsx`, việc 25) — trang chi tiết
+ *    vẽ đúng dải này dưới `<h1>`; thẻ truyền `tienTo="the-nhat-ky"` nên testid không đổi;
  * 4. đoạn trích (kẹp 3 dòng) + ẢNH NHỎ bên phải nếu mốc 1 có ảnh;
  * 5. chân thẻ — vote · "N mốc" · bình luận · (phải) Theo dõi tác giả · Chia sẻ · mod.
  *
@@ -46,7 +46,7 @@ import css from "./the-mach.module.css";
  * ## Màu
  *
  * `--gain`/`--loss` của TP/SL và chip MUA/BÁN nằm ở `con-so.module.css` (file duy nhất
- * `mau-token.spec.ts` cho phép); chip "Đã đóng sổ" là `.dong_so` của `the-mach.module.css` —
+ * `mau-token.spec.ts` cho phép), dùng qua `DaiLenh`; chip "Đã đóng sổ" là `.dong_so` của `the-mach.module.css` —
  * `--stamp` bị khoá theo TỪNG selector, một class mới trong file CSS này làm hàng rào đỏ.
  *
  * ## Testid
@@ -210,33 +210,7 @@ export function TheMach({
         </Link>
       </Heading>
 
-      {lenh !== null && (
-        <div className={css.lenh} data-testid="the-nhat-ky-lenh" role="group" aria-label="Lệnh">
-          <span className={css.o_lenh}>
-            <span
-              className={`${css.chieu} ${lenh.chieu === "mua" ? conSo.mua : conSo.ban}`}
-              data-testid="the-nhat-ky-chieu"
-            >
-              {NHAN_CHIEU_LENH[lenh.chieu]}
-            </span>
-            <b className={css.ma} {...CHU_NGUOI_DUNG}>
-              {lenh.ma}
-            </b>
-          </span>
-          {cacOLenh(lenh).map((o) => (
-            <span key={o.khoa} className={css.o_lenh} data-testid={`the-nhat-ky-${o.khoa}`}>
-              <em className={css.nhan_o}>{o.nhan}</em>
-              <b
-                className={
-                  o.khoa === "tp" ? conSo.gia_tp : o.khoa === "sl" ? conSo.gia_sl : undefined
-                }
-              >
-                {o.gia_tri}
-              </b>
-            </span>
-          ))}
-        </div>
-      )}
+      {lenh !== null && <DaiLenh lenh={lenh} tienTo="the-nhat-ky" />}
 
       {/* Nội dung xem trước lấy từ MỐC 1. `xem_truoc` là `null` khi mốc 1 là bia mộ hoặc bị
           mod ẩn: thẻ khi đó chỉ còn tiêu đề và **không** thông báo gì — feed không phải chỗ kể

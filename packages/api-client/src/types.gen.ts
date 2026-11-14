@@ -1106,7 +1106,9 @@ export type LenhIn = {
  * Số là **chuỗi** thập phân đã bỏ số 0 thừa và không bao giờ ở dạng mũ ("10", "0.00012",
  * "33.2") — để web hiện nguyên văn, không phải đoán số chữ số lẻ. `rr` = |tp − vào| /
  * |vào − sl| làm tròn 1 chữ số, chỉ khi có cả `sl` lẫn `tp`. Thuộc tính của MẠCH như
- * `title`: bia mộ / ẩn mốc 1 không làm nó biến mất.
+ * `title` — lệnh là biên lai: mốc 1 thành bia mộ do tác giả TỰ xoá KHÔNG làm nó biến mất
+ * (nếu không, xoá mốc 1 là giấu được lệnh thua mà không để dấu vết). Ngoại lệ duy nhất: mốc 1
+ * bị MOD ẩn ⇒ `null` (nội dung bài đầu đã bị gỡ khỏi cửa công khai, việc 25).
  */
 export type LenhOut = {
     /**

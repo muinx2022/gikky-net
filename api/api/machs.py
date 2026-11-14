@@ -229,7 +229,13 @@ def mach_chi_tiet_ra(mach: Mach) -> MachChiTietOut:
     # là thông tin về **mốc 1**, và trang mạch đã trả nguyên mốc 1 trong `mocs` — chép
     # thêm một bản ở tầng mạch là dựng hai chỗ nói cùng một con số, và cái thứ hai sẽ là
     # cái trôi. Thẻ feed cần chúng vì nó KHÔNG có `mocs`.
-    tom_tat = mach_tom_tat_ra(mach)
+    # `moc_1_bi_mod_an` lấy từ `mocs` đã nạp ở trên — không thêm truy vấn. Mốc 1 bị MOD ẩn ⇒
+    # `lenh = null` (việc 25), cùng luật với thẻ feed (`du_lieu_the`); bia mộ do tác giả tự xoá
+    # GIỮ lệnh (lệnh là biên lai). Response vẫn không phụ thuộc người xem.
+    moc_1 = next((m for m in mocs if m.seq == 1), None)
+    tom_tat = mach_tom_tat_ra(
+        mach, moc_1_bi_mod_an=moc_1 is not None and moc_1.hidden_at is not None
+    )
     return MachChiTietOut(
         **tom_tat.model_dump(exclude={"diem", "moc_1_id", "view_count"}),
         view_count=mach.view_count,

@@ -243,7 +243,9 @@ class LenhOut(Schema):
     Số là **chuỗi** thập phân đã bỏ số 0 thừa và không bao giờ ở dạng mũ ("10", "0.00012",
     "33.2") — để web hiện nguyên văn, không phải đoán số chữ số lẻ. `rr` = |tp − vào| /
     |vào − sl| làm tròn 1 chữ số, chỉ khi có cả `sl` lẫn `tp`. Thuộc tính của MẠCH như
-    `title`: bia mộ / ẩn mốc 1 không làm nó biến mất.
+    `title` — lệnh là biên lai: mốc 1 thành bia mộ do tác giả TỰ xoá KHÔNG làm nó biến mất
+    (nếu không, xoá mốc 1 là giấu được lệnh thua mà không để dấu vết). Ngoại lệ duy nhất: mốc 1
+    bị MOD ẩn ⇒ `null` (nội dung bài đầu đã bị gỡ khỏi cửa công khai, việc 25).
     """
 
     chieu: LenhChieuIn
@@ -332,8 +334,9 @@ class MachTomTatOut(Schema):
     view_count: int = 0
     #: Mạch đã lưu trữ (soft delete): True = đã lưu trữ, chỉ hiện trong tab Lưu trữ
     da_luu_tru: bool = False
-    #: Lệnh có cấu trúc của nhật ký, `null` khi tác giả không khai (và với mọi bài viết /
-    #: chủ đề). Xem `LenhOut`.
+    #: Lệnh có cấu trúc của nhật ký. `null` khi tác giả không khai (và với mọi bài viết /
+    #: chủ đề), hoặc khi mốc 1 bị MOD ẩn. Bia mộ do tác giả tự xoá KHÔNG làm lệnh biến mất —
+    #: lệnh là biên lai. Xem `LenhOut`.
     lenh: LenhOut | None = None
 
 
@@ -680,8 +683,9 @@ class MachChiTietOut(Schema):
     tat_binh_luan: bool
     #: Mạch đã lưu trữ (soft delete): True = đã lưu trữ, chỉ hiện trong tab Lưu trữ
     da_luu_tru: bool = False
-    #: Lệnh có cấu trúc của nhật ký, `null` khi tác giả không khai (và với mọi bài viết /
-    #: chủ đề). Xem `LenhOut`.
+    #: Lệnh có cấu trúc của nhật ký. `null` khi tác giả không khai (và với mọi bài viết /
+    #: chủ đề), hoặc khi mốc 1 bị MOD ẩn. Bia mộ do tác giả tự xoá KHÔNG làm lệnh biến mất —
+    #: lệnh là biên lai. Xem `LenhOut`.
     lenh: LenhOut | None = None
     #: Ngày VIẾT (bất biến) và ngày ĐĂNG. Web hiện `published_at`; `created_at` giữ lại
     #: vì nó là dấu server mà `MocRevision` và mọi phép đối chiếu dựa vào. Xem

@@ -199,56 +199,7 @@
   color: var(--accent);
 }
 
-/* --- dải lệnh ---------------------------------------------------------------------- */
-/* Các ô cách nhau 1px bằng `gap` + nền `--line` của khung — không cần tính viền phải/dưới
- * cho từng ô khi dải xuống dòng. */
-.lenh {
-  display: flex;
-  flex-wrap: wrap;
-  align-self: flex-start;
-  max-width: 100%;
-  gap: 1px;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--line);
-  font-family: var(--f-mono);
-  font-size: 12.5px;
-  font-variant-numeric: tabular-nums;
-}
-
-.o_lenh {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-  padding: 6px 11px;
-  background: var(--inset);
-  color: var(--ink);
-}
-
-.nhan_o {
-  font-family: var(--f-ui);
-  font-size: 10.5px;
-  font-style: normal;
-  color: var(--ink-3);
-}
-
-.chieu {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 20px;
-  padding: 0 7px;
-  border-radius: 4px;
-  font-family: var(--f-ui);
-  font-size: 10.5px;
-  font-weight: 700;
-}
-
-.ma {
-  overflow-wrap: anywhere;
-}
+/* Dải lệnh: `dai-lenh.module.css` (dùng chung với trang chi tiết, việc 25). */
 
 /* --- đoạn trích + ảnh nhỏ ---------------------------------------------------------- */
 .than {
@@ -367,21 +318,6 @@
 
   .tieu_de {
     font-size: 15.5px;
-  }
-
-  /* Dải lệnh thành lưới ô xếp chồng nhãn / số, mỗi ô ≥ 76px. */
-  .lenh {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(76px, 1fr));
-    align-self: stretch;
-    font-size: 12.5px;
-  }
-
-  .o_lenh {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
-    padding: 6px 9px;
   }
 
   .anh_o {

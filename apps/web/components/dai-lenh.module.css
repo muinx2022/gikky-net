@@ -1,0 +1,86 @@
+/* Dải lệnh dùng chung của thẻ mạch và trang chi tiết (việc 25, `dai-lenh.tsx`). Dời nguyên từ
+ * `the-mach.module.css` — MỘT bản. Chỉ token trung tính: màu MUA/BÁN/TP/SL ở `con-so.module.css`.
+ *
+ * Các ô cách nhau 1px bằng `gap` + nền `--line` của khung — không cần tính viền phải/dưới
+ * cho từng ô khi dải xuống dòng. `width: fit-content`: ở trang chi tiết cha là khối thường (không
+ * phải cột flex như thẻ), thiếu nó thì dải giãn hết chiều ngang và nền `--line` lộ thành một vệt
+ * xám sau ô cuối. */
+.lenh {
+  display: flex;
+  flex-wrap: wrap;
+  align-self: flex-start;
+  width: fit-content;
+  max-width: 100%;
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--line);
+  font-family: var(--f-mono);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* `flex: 1 1 auto`: ô GIÃN lấp hết hàng khi dải xuống dòng — không còn khoảng trống lộ nền `--line`
+ * (vệt xám) ở cuối hàng. Một hàng (desktop, dải `fit-content`) thì không có chỗ thừa để giãn. */
+.o_lenh {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 6px 11px;
+  background: var(--inset);
+  color: var(--ink);
+}
+
+.nhan_o {
+  font-family: var(--f-ui);
+  font-size: 10.5px;
+  font-style: normal;
+  color: var(--ink-3);
+}
+
+.chieu {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 4px;
+  font-family: var(--f-ui);
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.ma {
+  overflow-wrap: anywhere;
+}
+
+/* Giá (schema cho tới 12 chữ số nguyên + 8 số lẻ, vd `0.00001234`, `123456789012.12345678`) phải
+ * xuống dòng trong ô chứ không tràn sang ô kế (bị đè, mất chữ số). */
+.o_lenh > b {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+/* --- mobile (≤ 640px) -------------------------------------------------------------- */
+/* Ô xếp chồng nhãn / số, mỗi ô ≥ 76px, dải giãn hết chiều ngang (`width: auto` để `align-self:
+ * stretch` của cột flex trong thẻ còn tác dụng). Flex-wrap chứ KHÔNG lưới: lưới `auto-fit` 4 cột
+ * với 6 ô để trống nửa hàng 2 thành một vệt nền `--line`; flex cho các ô hàng cuối giãn lấp hàng. */
+@media (max-width: 640px) {
+  .lenh {
+    align-self: stretch;
+    width: auto;
+    font-size: 12.5px;
+  }
+
+  .o_lenh {
+    flex: 1 1 76px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 6px 9px;
+  }
+}

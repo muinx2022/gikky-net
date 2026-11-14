@@ -12,6 +12,7 @@ import { BaoCursorHong } from "@/components/bao-cursor-hong";
 import { BienLaiDauBai } from "@/components/bien-lai-dau";
 import { ChanDongSo } from "@/components/chan-dong-so";
 import { DaiGapBung } from "@/components/dai-gap";
+import { DaiLenh } from "@/components/dai-lenh";
 import { JsonLd } from "@/components/json-ld";
 import { KhanDai } from "@/components/khan-dai";
 import { KhungHaiCot } from "@/components/khung-hai-cot";
@@ -98,6 +99,18 @@ import css from "./trang-mach.module.css";
  * đã theo chưa, đọc tới đâu — tất cả đến sau, ở client, qua `TrangThaiToiProvider`. Biến
  * thể `"tuoi-song"` khác biến thể kia đúng một thứ: **độ tươi của dữ liệu công khai**
  * (người vừa nối mốc phải thấy mốc của mình ngay), không phải nội dung.
+ *
+ * ## Dải lệnh dưới tiêu đề *(việc 25)*
+ *
+ * Mạch có `lenh` ⇒ ngay sau `<h1>` là `DaiLenh` — đúng component của thẻ feed (testid
+ * `trang-mach-*` thay cho `the-nhat-ky-*`). Một bản markup, một bản CSS; đừng chép dải ra đây.
+ *
+ * **Có lệnh thì KHÔNG có `BienLaiDauBai`** (user chốt 2026-11-14): số của mốc 1 khi đó nằm lại
+ * trong thẻ mốc 1. Hai khối số chồng nhau dưới tiêu đề là lặp (bot gửi Entry/SL/TP ở cả hai) và
+ * có thể lệch (`figures` sửa được, `lenh` thì không). Mạch không lệnh giữ biên lai như cũ.
+ * Mốc 1 bị MOD ẩn ⇒ API trả `lenh = null` (`api/trinh_bay.py::mach_tom_tat_ra`) ⇒ không dải.
+ * Mốc 1 là bia mộ do tác giả tự xoá ⇒ API VẪN trả lệnh (lệnh là biên lai, user chốt "Giữ
+ * lệnh") ⇒ dải hiện; biên lai thì không (đã có lệnh, và `figuresMocDau` vốn rỗng khi bia mộ).
  */
 
 type Query = Record<string, string | string[] | undefined>;
@@ -347,7 +360,12 @@ export async function TrangMach({
   const id_trong_trang = idTrongTrangGop(hay_nhat?.threads ?? null, lat_cat.values());
 
   // Một kết quả cho ô dưới tiêu đề và cho `anFigures` — hai lần gọi là hai chỗ trôi.
-  const figuresDau = figuresMocDau(mach.mocs);
+  // **Có lệnh ⇒ KHÔNG khối số đầu trang** (việc 25, user chốt "Có lệnh thì ẩn khối số"): bot
+  // gửi cả `lenh` lẫn `figures` mốc 1 với Entry/SL/TP trùng nhau ⇒ hai khối số chồng nhau
+  // dưới tiêu đề; và `figures` sửa được (`sua_moc`) còn `lenh` thì không ⇒ hai khối có thể
+  // LỆCH nhau. Rỗng ở đây thì `anFigures` của mốc 1 là `false` ⇒ số của mốc 1 trở về nằm
+  // trong chính thẻ mốc 1, như trước khi có khối đầu trang.
+  const figuresDau = mach.lenh ? [] : figuresMocDau(mach.mocs);
 
   const the_moc = (seq: number) => {
     const m = mach.mocs.find((x) => x.seq === seq);
@@ -497,6 +515,15 @@ export async function TrangMach({
                   </div>
                 )}
                 <h1 className={css.tieu_de}>{mach.title}</h1>
+                {/* Dải lệnh — CÙNG component với thẻ feed (việc 25). Chỉ khi tác giả khai lệnh
+                    và mốc 1 không bị MOD ẩn (API trả `lenh = null` khi đó; bia mộ do tác giả
+                    xoá thì vẫn có lệnh); bài viết / chủ đề luôn `lenh = null`. Có lệnh thì
+                    `figuresDau` rỗng ⇒ biên lai dưới đây không vẽ — mỗi trang một khối số. */}
+                {mach.lenh && (
+                  <div className={css.dai_lenh}>
+                    <DaiLenh lenh={mach.lenh} tienTo="trang-mach" />
+                  </div>
+                )}
                 <BienLaiDauBai figures={figuresDau} />
               </header>
 

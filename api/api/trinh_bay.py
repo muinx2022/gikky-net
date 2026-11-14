@@ -128,6 +128,7 @@ def figures_ra(figures) -> list[FigureOut] | None:
 def mach_tom_tat_ra(
     mach: Mach,
     *,
+    moc_1_bi_mod_an: bool,
     moc_1_id: int | None = None,
     xem_truoc: XemTruocOut | None = None,
     moc_moi_nhat: MocMoiNhatTomTatOut | None = None,
@@ -138,6 +139,20 @@ def mach_tom_tat_ra(
     thẻ). Hàm không tự truy vấn: nó chạy một lần cho mỗi thẻ, nên một `Moc.objects.filter`
     ở đây là N+1 đúng nghĩa trên mọi feed — và nó sẽ không đỏ ở đâu cả, chỉ chậm dần theo
     số thẻ. `api/feeds.py` và `api/users.py` gom một truy vấn cho cả trang.
+
+    `moc_1_bi_mod_an` — mốc 1 có `hidden_at` (MOD ẩn). `True` ⇒ **`lenh = None`** *(việc 25,
+    user chốt 2026-11-14: "mod ẩn mốc 1 thì ẩn dải lệnh theo")*: mod gỡ nội dung bài đầu mà JSON
+    vẫn trả lệnh là một cửa thứ hai đọc được thứ vừa bị gỡ.
+
+    ⚠ **CHỈ mod ẩn, KHÔNG phải bia mộ** — cố ý KHÁC `doc_duoc` (thứ quyết `xem_truoc`). Tác giả
+    tự xoá mốc 1 (`deleted_at`) thì lệnh VẪN trả (user: "Giữ lệnh"): lệnh là biên lai, và
+    `DELETE /mocs/{id}` không audit, không cửa sổ — coi bia mộ như ẩn là cho tác giả một nút giấu
+    lệnh thua không để dấu vết. Mốc 1 vừa bị ẩn vừa bị xoá ⇒ theo `hidden_at` ⇒ `None`.
+
+    **Bắt buộc, không mặc định**: quên truyền ở đường gọi thứ năm là `TypeError` ngay tại lời
+    gọi, không phải lệnh của mốc bị gỡ lọt ra im lặng. Người gọi lấy nó từ dữ liệu đã nạp
+    (`DuLieuThe.moc_1_bi_mod_an` cho lô thẻ, danh sách `mocs` cho trang mạch) — không thêm truy
+    vấn.
     """
     return MachTomTatOut(
         id=mach.pk,
@@ -162,7 +177,7 @@ def mach_tom_tat_ra(
         moc_moi_nhat=moc_moi_nhat,
         view_count=getattr(mach, "view_count", 0),
         da_luu_tru=getattr(mach, "archived_at", None) is not None,
-        lenh=lenh_ra(mach),
+        lenh=None if moc_1_bi_mod_an else lenh_ra(mach),
     )
 
 
@@ -227,6 +242,9 @@ class DuLieuThe(NamedTuple):
     moc_1_id: int | None = None
     xem_truoc: XemTruocOut | None = None
     moc_moi_nhat: MocMoiNhatTomTatOut | None = None
+    #: Mốc 1 bị MOD ẩn (`hidden_at`) ⇒ thẻ không có lệnh. CHỈ mod ẩn — bia mộ giữ lệnh, khác
+    #: luật `xem_truoc`. Xem `mach_tom_tat_ra`.
+    moc_1_bi_mod_an: bool = False
 
 
 def du_lieu_the(machs) -> dict[int, DuLieuThe]:
@@ -242,7 +260,8 @@ def du_lieu_the(machs) -> dict[int, DuLieuThe]:
     2. Ảnh nhúng trong nội dung mốc 1 (`<img src="...">` / `AnhNoiDung`);
     3. Trích đoạn văn bản thuần.
 
-    ⚠ **Mốc 1 không đọc được thì không có xem trước** — nhưng `moc_1_id` VẪN trả về.
+    ⚠ **Mốc 1 không đọc được thì không có xem trước** — nhưng `moc_1_id` VẪN trả về. (Lệnh
+    theo luật HẸP hơn: chỉ mất khi mốc 1 bị mod ẩn, xem `DuLieuThe.moc_1_bi_mod_an`, việc 25.)
     Hai thứ khác nhau: `moc_1_id` là đích của mũi tên vote, và vote vào một bia mộ vẫn là
     thao tác hợp lệ (`MocOut.score` của bia mộ là `0`, không phải `null`). Còn nội dung
     thì `doc_duoc` chặn — cùng phép kiểm mà trang mạch dùng
@@ -340,6 +359,8 @@ def du_lieu_the(machs) -> dict[int, DuLieuThe]:
                 moc_1_id=m1.pk,
                 xem_truoc=None,
                 moc_moi_nhat=moc_moi_nhat,
+                # Bia mộ ⇒ `False` (giữ lệnh); mod ẩn ⇒ `True`. Chỉ `hidden_at` quyết.
+                moc_1_bi_mod_an=m1.hidden_at is not None,
             )
             continue
 

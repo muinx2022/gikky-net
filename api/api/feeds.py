@@ -90,6 +90,7 @@ def _the_ra(trang) -> list:
             moc_1_id=d.moc_1_id,
             xem_truoc=d.xem_truoc,
             moc_moi_nhat=d.moc_moi_nhat,
+            moc_1_bi_mod_an=d.moc_1_bi_mod_an,
         )
         for m in trang
         for d in [theo_mach.get(m.pk, DuLieuThe(None, None, None))]

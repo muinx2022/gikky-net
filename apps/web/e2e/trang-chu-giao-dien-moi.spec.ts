@@ -447,7 +447,7 @@ test.describe("W4 — ô soạn nhanh, tab lọc, dải chân khối", () => {
 /* ====================================================================== W5 · thư viện bài viết */
 
 test.describe("W5/G4 — bài viết ở rail (việc 24): 10 bài, tên chuyên mục, <time>, 'Tất cả bài viết'; dải bản tin", () => {
-  test("rail: 'Bài viết mới' = 10 bài đầu của API (trừ tin-tuc), title đầy đủ, tên chuyên mục · <time datetime>", async ({
+  test("rail: 'Bài viết mới' = 10 bài đầu của API (trừ tin-tuc), tiêu đề đầy đủ (không title), tên chuyên mục · <time datetime>", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
@@ -466,7 +466,11 @@ test.describe("W5/G4 — bài viết ở rail (việc 24): 10 bài, tên chuyên
     for (let i = 0; i < 10; i += 1) {
       const a = muc.nth(i).locator("a");
       await expect(a).toHaveAttribute("href", `/m/${mong[i].slug}-${mong[i].id}`);
-      await expect(a).toHaveAttribute("title", mong[i].title);
+      // Tiêu đề đầy đủ là TEXT của `<a>`; `title` đã bỏ (việc 24 bổ sung, user 2026-11-13: tooltip
+      // native tràn khỏi rail) — tiêu đề dài đi qua tooltip CSS `data-tieu-de`, đo ở
+      // `rail-bai-viet.spec.ts` (B1/B2).
+      await expect(a).toHaveText(mong[i].title);
+      await expect(a).not.toHaveAttribute("title");
       // Tên chuyên mục (không `s/<slug>` khi sub có trong GET /subs).
       await expect(muc.nth(i)).toContainText(subs.find((s) => s.slug === mong[i].sub.slug)!.ten);
       const t = muc.nth(i).locator("time");
