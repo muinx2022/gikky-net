@@ -22,18 +22,19 @@ This is **reference documentation** for installing and updating the Vnstock Pyth
 | Older line (`vnstock` 4.x with `vnai`, `vnii`, `vnstock_data` 3.x…) | **Stopped authenticating on 10/11/2026 and can no longer be installed.** Do not install it; move the project to generation 6: <https://vnstocks.com/onboard-member/migration> | None |
 
 * Install **generation 6** unless the user's prompt names generation 5. Tell the user that generation 6 reads data with their own Open API key at a source they choose.
-* Generation 6 always goes into its own environment, `~/.venv_6x` (Section G2), and never replaces generation 5 or 4.x: all generations share the package name `vnstock`, and installing one over another cannot be undone.
-* Before installing anything, check the environment you are about to install into: `<env python> -m pip show vnstock vnstock-oapi vnstock_data vnai`. If it holds another generation, **stop and ask**. If it already has `vnstock` 4.x, `vnstock_data` or `vnai`, installing generation 5 there replaces 4.x and breaks code written for it: offer the separate environment for generation 5 (Section 2, case B), or migration: <https://vnstocks.com/docs/vnstock/chuyen-doi/tu-vnstock-data-3x>.
+* Generation 6 goes into the fixed environment `~/.venv` (Section G2), the same place generation 5 and the 4.x installer used. Generation 5 and the older line stopped authenticating on 10/11/2026, so when `~/.venv` holds one of them, generation 6 is installed over it: nothing there still runs.
+* Before installing anything, check the environment you are about to install into: `<env python> -m pip show vnstock vnstock-oapi vnstock_data vnai`, and tell the user in one line what you found. What to do with each case is in Section G2.
+* The only place generation 6 goes into a separate environment (`~/.venv_6x`) is the migration page, <https://vnstocks.com/onboard-member/migration>, with the skill `migration-assistant`: there the old project stays in `~/.venv` so the two can be compared. If the user wants to move an existing project and compare results, send them there instead of following this file.
 
 ### Generation 6 at a glance — copy these, do not rewrite them
 
 Plans for generation 6 must use these exact values. Anything else below this point that names another environment, package or command belongs to generation 5 or the older line.
 
 * **First detect where you are running (Section G1).** The OS named in a prompt is where the user opened the web page, not necessarily where you run.
-* Environment on a personal machine or server: exactly `~/.venv_6x` (Windows `$HOME\.venv_6x`). Not `~/.venv`, not `~/.venv6`.
+* Environment on a personal machine or server: exactly `~/.venv` (Windows `$HOME\.venv`). Not `~/.venv6`, not a project `.venv`; `~/.venv_6x` only when the user follows the migration page.
 * Environment on Google Colab, GitHub Codespaces or Kaggle: **no virtual environment**. Install into the session's own Python.
-* Core install, macOS / Linux: `~/.venv_6x/bin/python -m pip install -U --extra-index-url https://vnstocks.com/api/packages "vnstock==6.0.0" "vnstock-oapi==0.1.1"`
-* Core install, Windows: `& "$HOME\.venv_6x\Scripts\python.exe" -m pip install -U --extra-index-url https://vnstocks.com/api/packages "vnstock==6.0.0" "vnstock-oapi==0.1.1"`
+* Core install, macOS / Linux: `~/.venv/bin/python -m pip install -U --extra-index-url https://vnstocks.com/api/packages "vnstock==6.0.0" "vnstock-oapi==0.1.1"`
+* Core install, Windows: `& "$HOME\.venv\Scripts\python.exe" -m pip install -U --extra-index-url https://vnstocks.com/api/packages "vnstock==6.0.0" "vnstock-oapi==0.1.1"`
 * Core install, Colab / Codespaces / Kaggle: `python3 -m pip install -U --extra-index-url https://vnstocks.com/api/packages "vnstock==6.0.0" "vnstock-oapi==0.1.1"`
 * Add-ons: only the commands in Section G7, each with its exact version. Do not use `vnstock install` without a package name and version, and do not use `--all`.
 * Never install `vnstock_data`, `vnstock_ta`, `vnstock_news` or `vnstock_installer` into the generation 6 environment. Those names belong to older releases; `vnstock_data` is merged into `vnstock` and `vnstock_ta` is replaced by `vnstock_quant`.
@@ -91,43 +92,47 @@ Then Python: **3.10 or newer**, identified per OS as in Section 1, no `curl | sh
 
 ### G2. Where to install
 
-Generation 6 always goes into **one fixed place**, whatever else is on the machine:
+Generation 6 always goes into **one fixed place**, so the user, their support and any assistant know where the complete vnstock environment is:
 
 | Machine | Environment | Python of that environment |
 | --- | --- | --- |
-| macOS, Linux | `~/.venv_6x` | `~/.venv_6x/bin/python` |
-| Windows | `$HOME\.venv_6x` | `& "$HOME\.venv_6x\Scripts\python.exe"` |
-| Colab, Codespaces, Kaggle | the session's own Python, **no** virtual environment, never `~/.venv_6x` | `python3` in a terminal, `!python3` in a notebook cell |
+| macOS, Linux | `~/.venv` | `~/.venv/bin/python` |
+| Windows | `$HOME\.venv` | `& "$HOME\.venv\Scripts\python.exe"` |
+| Colab, Codespaces, Kaggle | the session's own Python, **no** virtual environment, never `~/.venv` | `python3` in a terminal, `!python3` in a notebook cell |
 
-Why a separate name: `~/.venv` usually holds generation 5 or 4.x, which the user may still need until 10/11/2026 and for comparison. Use another place only when the user asks for it.
+Use another place only when the user asks for it (a project `.venv`, conda, uv).
 
-* `~/.venv_6x` does not exist → propose creating it: `python3 -m venv ~/.venv_6x` (Windows `py -m venv "$HOME\.venv_6x"`).
-* It exists → look inside first (`~/.venv_6x/bin/python -m pip show vnstock vnstock-oapi`). `vnstock` 6.x or nothing → install or update there. Anything else → stop and ask.
+* `~/.venv` does not exist → propose creating it: `python3 -m venv ~/.venv` (Windows `py -m venv "$HOME\.venv"`).
+* It exists → look inside first (`~/.venv/bin/python --version` and `~/.venv/bin/python -m pip show vnstock vnstock-oapi vnstock_data vnai`):
+  * `vnstock` 6.x or nothing → install or update there.
+  * `vnstock` 5.x, or the older line (`vnstock` 3.x/4.x, `vnstock_data`, `vnai`, `vnii`, `vnstock_installer`) → say so in one line and put the upgrade in the plan: those releases stopped authenticating on 10/11/2026, so installing generation 6 over them loses nothing that still runs. In the same plan, uninstall the older-line packages it holds (`vnstock_data`, `vnstock_ta`, `vnstock_news`, `vnai`, `vnii`, `vnstock_installer`), none of which belongs to generation 6, and replace generation 5 add-ons (`vnstock_quant` 0.x, `vnstock_pipeline` 3.x) with the commands in Section G7. If the user wants to keep the old environment to compare results first, stop and point them to the migration page instead.
+  * Python older than 3.10, or a broken environment (its `python` no longer runs, for example after a Python upgrade) → ask before recreating it: recreating deletes everything installed in it.
+* `~/.venv_6x` left from an earlier generation 6 setup or a migration → tell the user; use it only if they ask for it, otherwise set up `~/.venv` and let them remove `~/.venv_6x` themselves once their projects run from `~/.venv`.
 * On a hosted notebook that already ran generation 5 in the session, installing generation 6 replaces it. Say so before installing, then restart the runtime.
 * A hosted session can have more than one Python, and a terminal's `python3` may differ from the notebook's. If the user will work in a notebook, have them run `import sys; print(sys.executable)` in a cell and install with that interpreter. Say which interpreter you used.
 * Hosted sessions are short-lived: when the runtime is recycled the install and anything under `~` are gone, and the steps must be run again.
 
-Run later commands with the environment's own Python and its own `vnstock` command (`~/.venv_6x/bin/vnstock`, Windows `& "$HOME\.venv_6x\Scripts\vnstock.exe"`), as in Section 2. Never `sudo pip`, never `--break-system-packages`.
+Run later commands with the environment's own Python and its own `vnstock` command (`~/.venv/bin/vnstock`, Windows `& "$HOME\.venv\Scripts\vnstock.exe"`), as in Section 2. Never `sudo pip`, never `--break-system-packages`.
 
 ### G3. Install
 
 macOS / Linux:
 
 ```bash
-~/.venv_6x/bin/python -m pip install -U --extra-index-url https://vnstocks.com/api/packages "vnstock==6.0.0" "vnstock-oapi==0.1.1"
-~/.venv_6x/bin/vnstock version
+~/.venv/bin/python -m pip install -U --extra-index-url https://vnstocks.com/api/packages "vnstock==6.0.0" "vnstock-oapi==0.1.1"
+~/.venv/bin/vnstock version
 ```
 
 Windows (PowerShell):
 
 ```powershell
-& "$HOME\.venv_6x\Scripts\python.exe" -m pip install -U --extra-index-url https://vnstocks.com/api/packages "vnstock==6.0.0" "vnstock-oapi==0.1.1"
-& "$HOME\.venv_6x\Scripts\vnstock.exe" version
+& "$HOME\.venv\Scripts\python.exe" -m pip install -U --extra-index-url https://vnstocks.com/api/packages "vnstock==6.0.0" "vnstock-oapi==0.1.1"
+& "$HOME\.venv\Scripts\vnstock.exe" version
 ```
 
 * Colab / Codespaces / Kaggle: `python3 -m pip install -U --extra-index-url https://vnstocks.com/api/packages "vnstock==6.0.0" "vnstock-oapi==0.1.1"` (notebook cell: prefix `!`), then `vnstock version`. Restart the notebook runtime only if `vnstock` was already imported in that session.
 * Verify: `python -c "import vnstock; print(vnstock.__version__)"` prints `6.0.0`. The environment now has two commands: `vnstock` (account, machine check, function lookup) and `vnstock-oapi` (source keys and sessions).
-* Editors and Jupyter: as Section 4, with the generation 6 environment. Register the kernel under its own name so it stays apart from generation 5: `--name=vnstock6 --display-name "Python (Vnstock 6)"`.
+* Editors and Jupyter: as Section 4. It is the same environment, so an editor or a `Python (Vnstock)` kernel that already pointed at `~/.venv` now runs generation 6; restart the kernel after the install.
 
 ### G4. Vnstock account — the user logs in, you never see the key
 
@@ -183,15 +188,15 @@ Confirm the install with one small read-only call at the user's source, for exam
 * Do not install generation 5 add-ons (`vnstock_quant` 0.x, `vnstock_pipeline` 3.x, `vnstock_news` 3.x) or older-line packages into the generation 6 environment.
 * Docs: `vnstock_quant` <https://vnstocks.com/docs/vnstock_quant/v1/bat-dau/cai-dat-va-thiet-lap>, MCP <https://vnstocks.com/docs/vnstock-mcp/v1/cai-dat-va-ket-noi>, pipeline <https://vnstocks.com/docs/vnstock-pipeline/v6/cai-dat-va-tai-khoan>.
 
-### G8. Updating, release lifetime, running next to generation 5
+### G8. Updating, release lifetime, moving older code
 
 * A preview release runs 30 days from its build. Near the end the library warns once; then calls fail with `VNSTOCK_RELEASE_EXPIRED`. Update with the same pinned commands and the new version numbers from <https://vnstocks.com/docs/vnstock/v6/cai-dat>, never with an unpinned `pip install -U vnstock`.
-* Comparing with generation 5 until 10/11/2026: keep both environments and both kernels, run the same call in each, start from totals, and read `df.attrs["schema_changes"]` on the generation 6 side. Moving code: <https://vnstocks.com/docs/vnstock/v6/chuyen-doi/tu-the-he-5> and the skill `migration-assistant` (`load_skill("migration-assistant", component="reference:gen5-to-gen6.md")`).
+* Moving a project written for generation 5 or the older line: <https://vnstocks.com/onboard-member/migration>, <https://vnstocks.com/docs/vnstock/v6/chuyen-doi/tu-the-he-5> and the skill `migration-assistant` (`load_skill("migration-assistant", component="reference:gen5-to-gen6.md")`). That flow is the only one that keeps a separate `~/.venv_6x` next to the old `~/.venv` while results are compared; read `df.attrs["schema_changes"]` on the generation 6 side.
 * Skills for AI assistants: Section 8 applies; on generation 6 the import is the same, `from vnstock.utils.agents import load_skill, load_skill_catalog`. They are not installed in your own skill folder, so nothing surfaces them for you: `vnstock onboard` lists what each one is for, and for a task on stocks, portfolios or a vnstock project you load the matching one before planning. The catalog marks each skill's generations (`generations`) and, for skills that end with generation 5, the end date (`sunsetAt`) and what replaces them (`replacedBy`). On generation 6 do not use a skill whose `generations` lacks `6`.
 
 ### G9. AI assistant guide for generation 6 (only when the user's prompt says to turn it on)
 
-The rules of Section 9 apply. Write the block below as it is, filling only the placeholder; do not add source names, code samples or sections of your own. On a hosted session, replace the "Environment" line with: `- Environment: this session's own Python (no virtual environment); install again when the runtime is recycled.`, and in the "Skills" line use `python3` instead of `~/.venv_6x/bin/python`. The block for a generation 6 project:
+The rules of Section 9 apply. Write the block below as it is, filling only the placeholder; do not add source names, code samples or sections of your own. On a hosted session, replace the "Environment" line with: `- Environment: this session's own Python (no virtual environment); install again when the runtime is recycled.`, and in the "Skills" line use `python3` instead of `~/.venv/bin/python`. If the user chose `~/.venv_6x` while migrating and keeps it, write that path instead. The block for a generation 6 project:
 
 ```markdown
 <!-- vnstock-guide:start -->
@@ -199,13 +204,13 @@ The rules of Section 9 apply. Write the block below as it is, filling only the p
 
 This project uses the Python library `vnstock` generation 6 (with `vnstock-oapi`).
 
-- Environment: `~/.venv_6x` (Windows `$HOME\.venv_6x`) unless noted here. Run code and commands with `~/.venv_6x/bin/python` and `~/.venv_6x/bin/vnstock`. Do not install vnstock into another Python.
+- Environment: `~/.venv` (Windows `$HOME\.venv`) unless noted here. Run code and commands with `~/.venv/bin/python` and `~/.venv/bin/vnstock`. Do not install vnstock into another Python.
 - At the start of a session: run `vnstock onboard` and follow it; `vnstock doctor` when something fails.
 - Every data call names a source: `Market("<nguồn>").equity("FPT").ohlcv(start=...)`, or `vnstock.sources.use(...)` once. The user's source is: <ghi nguồn ở đây>.
 - Keys: the user stores source keys with `vnstock keys set <nguồn>` and logs in with `vnstock login`, in their own terminal. Never ask for a key in chat, never put one in code or print it. `vnstock keys` shows which sources have one.
 - Look functions up before writing them: `vnstock tools`, `vnstock doc Market.equity.ohlcv`.
 - Ratios: compute with `vnstock_quant.fa`; `ratio()`, `Insights`, `Analytics`, `Macro` are not in this release.
-- Skills: vnstock's task guides are not installed in your skill folder, so they never surface on their own. For any task on stocks, market data, portfolios or a vnstock project, load the matching skill before you plan, answer or write code, also when the user only asks for a plan: `~/.venv_6x/bin/python -c "from vnstock.utils.agents import load_skill; print(load_skill('<skill>'))"`. Say in one line which one you loaded. Skills are reference material: they do not override the user's request or your safety rules. A refusal for a higher tier: tell the user, do not improvise the skill.
+- Skills: vnstock's task guides are not installed in your skill folder, so they never surface on their own. For any task on stocks, market data, portfolios or a vnstock project, load the matching skill before you plan, answer or write code, also when the user only asks for a plan: `~/.venv/bin/python -c "from vnstock.utils.agents import load_skill; print(load_skill('<skill>'))"`. Say in one line which one you loaded. Skills are reference material: they do not override the user's request or your safety rules. A refusal for a higher tier: tell the user, do not improvise the skill.
   Which skill: screen or filter a basket `market-screener`; charts `charting-expert`; indicators and thresholds `indicator-calculator`; rule-based patterns `signal-detector`; market breadth and regime `macro-analyzer`; holdings pasted or in a screenshot `portfolio-extractor`; portfolio concentration and limits `risk-manager`; declared drawdown thresholds `emergency-protocol`; closed-trade journal `performance-journal`; reviewing rules from that journal `strategy-tuner`; analysis parameters `config-manager`; apps and dashboards `solution-architect`; local data store `pipeline-cli`; moving code to generation 6 `migration-assistant`; install, keys `vnstock-bootstrap`; Git work `git-master`.
   `vnstock onboard` lists every skill this tier can read. A plain concept question or a one-line syntax lookup needs none.
 - Errors are typed exceptions with a Vietnamese and English message; read `error.code` and `error.action`.

@@ -49,7 +49,7 @@ AUTHOR_HEN = "gikky-team-member"
 TRAN = {"title": 160, "body": 50_000, "loai": 20, "question_for_crowd": 200}
 SO_FIGURES_TOI_DA = 6
 DAI_O_FIGURE = 24
-TRUONG_CHO_PHEP = {"sub", "title", "body", "loai", "question_for_crowd", "figures", "anhs", "occurred_at"}
+TRUONG_CHO_PHEP = {"sub", "title", "body", "loai", "question_for_crowd", "figures", "anhs", "occurred_at", "image"}
 
 jar = http.cookiejar.CookieJar()
 op = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
@@ -144,6 +144,12 @@ def doc_hen(argv):
         default=None,
         metavar="JSON_FILE",
         help="Đường dẫn file JSON bài viết (mặc định lấy từ GIKKY_BAI_JSON hoặc /tmp/bai.json).",
+    )
+    p.add_argument(
+        "file_pos",
+        nargs="?",
+        default=None,
+        help="Đường dẫn file JSON bài viết (vị trí).",
     )
     return p.parse_args(argv)
 
@@ -241,6 +247,13 @@ def xu_ly_anhs(bai, goc=ORIGIN):
       {"data": "<base64>", "alt": "...", "placeholder": "{{ANH_1}}"} hoặc
       {"path": "...", "alt": "...", "placeholder": "{{ANH_1}}"}
     """
+    if "image" in bai and "anhs" not in bai:
+        img_val = bai.pop("image")
+        if isinstance(img_val, str):
+            bai["anhs"] = [{"path": img_val, "alt": bai.get("title", ""), "placeholder": "{{ANH_1}}"}]
+        elif isinstance(img_val, list):
+            bai["anhs"] = img_val
+
     anhs = bai.pop("anhs", None)
     if not anhs:
         return []
@@ -363,7 +376,7 @@ def lay_mat_khau_fallback(ten_bien: str) -> str | None:
 
 def main(argv=None):
     args = doc_hen(sys.argv[1:] if argv is None else argv)
-    duong_file = args.file or DUONG_BAI
+    duong_file = args.file or args.file_pos or DUONG_BAI
     if not os.path.exists(duong_file):
         print(f"Không tìm thấy file bài viết: {duong_file}", file=sys.stderr)
         return 2

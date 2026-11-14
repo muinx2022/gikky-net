@@ -412,6 +412,15 @@ def kiem_tra_han_muc_toan_he_thong(vi_the_list: list) -> tuple[bool, str]:
     now = datetime.now()
     today_str = now.strftime("%Y-%m-%d")
 
+    # 0. Kiểm tra file lock chống trùng lặp tiến trình trong ngày
+    lock_file = DATA_DIR / f"trade_{today_str}.lock"
+    if lock_file.exists():
+        msg = (
+            f"⛔ [LOCK NGÀY] Hôm nay ({today_str}) đã có lock file giao dịch ({lock_file.name}). "
+            f"Đã có tiến trình mở lệnh cho ngày hôm nay. Hủy bỏ để tránh trùng lặp."
+        )
+        return False, msg
+
     # 1. Kiểm tra trần cứng 1 bài trade / ngày cho tất cả thị trường gộp chung
     trades_today = [
         p for p in vi_the_list
@@ -535,7 +544,7 @@ def _tao_tieu_de_nhat_ky_vn(sym: str, entry_str: str, strat_id: str, setup_name:
     else:  # PA_MA200
         luan_diem = f"Tích lũy chặt trên trục MA 200, đón nhịp bứt phá nhóm {nganh}"
 
-    title = f"[Nhật ký] Mua {sym} quanh {entry_str} — {luan_diem}"
+    title = f"Mua {sym} quanh {entry_str} — {luan_diem}"
     return title[:160]
 
 
@@ -568,7 +577,7 @@ def _tao_tieu_de_nhat_ky_h4(sym: str, dir_action: str, entry_str: str, strat_id:
     else:
         ctx = f"Bối cảnh liên thị trường thuận lợi, nến H4 kích hoạt tín hiệu {setup_name}"
 
-    title = f"[Nhật ký] {dir_action} {sym} quanh {entry_str} — {ctx}"
+    title = f"{dir_action} {sym} quanh {entry_str} — {ctx}"
     return title[:160]
 
 
@@ -1017,6 +1026,22 @@ def dang_luan_diem(
     dir_action = "Mua" if direction == "LONG" else "Bán"
     dir_label = "Mua (Long)" if direction == "LONG" else "Bán khống (Short)"
 
+    # Khóa chống trùng lặp (Atomic Lock / Guard)
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    lock_file = DATA_DIR / f"trade_{today_str}.lock"
+    if lock_file.exists():
+        print(f"⛔ Đã có tiến trình mở lệnh cho ngày hôm nay ({today_str}). Hủy bỏ để tránh trùng lặp.")
+        return None
+    try:
+        with open(lock_file, "w", encoding="utf-8") as f:
+            json.dump({
+                "symbol": sym,
+                "market_mode": market_mode,
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            }, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"⚠️ Cảnh báo không thể tạo file lock: {e}")
+
     print(f"\n🚀 Chuẩn bị xuất bản Luận điểm {dir_action} {sym} ({exchange}) khung {timeframe}...")
 
     # 1. Vẽ biểu đồ kỹ thuật
@@ -1056,6 +1081,11 @@ def dang_luan_diem(
         res = thuc_hien_action("tao_mach", payload)
     except Exception as e:
         print(f"❌ Xuất bản thất bại: {e}")
+        if lock_file.exists():
+            try:
+                lock_file.unlink()
+            except Exception:
+                pass
         return None
 
     mach_id = res["mach_id"]

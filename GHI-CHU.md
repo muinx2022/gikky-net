@@ -47,6 +47,9 @@ Site **chưa có thành viên** nên vẫn phải dùng AI để đăng bài. Nh
 
 Việc nào đòi chạm vào ba điều trên thì dừng và hỏi user.
 
+> ⚠ **Luật này đã được user sửa ngày 2026-11-11.** Nội dung sửa nằm ngoài repo: `rieng-tu/VIEC-15.md` (không commit).
+> Đọc file đó trước khi áp ba điều trên; không có file thì hỏi user.
+
 ---
 
 ## Việc 1 · Bot Trader: vào lệnh riêng tư, đóng sổ mới công khai — CHƯA LÀM (nền tảng đã có sẵn, còn một lỗi rò phải vá trước)
@@ -964,7 +967,7 @@ chuyên mục nào lên trang chủ, tối đa 4. Plan: `plans/2026-11-11-bai-vi
 
 ---
 
-## Việc 14 · Thống nhất giao diện toàn site theo homepage v2 — ĐÃ LÀM ĐỦ 5 ĐỢT A–E trên `v2` (2026-11-12), chưa deploy
+## Việc 14 · Thống nhất giao diện toàn site theo homepage v2 — ĐÃ LÀM ĐỦ 5 ĐỢT A–E trên `v2` (2026-11-12), đã lên dev.gikky.net (`34600c5`, 2026-11-12 20:05), chưa lên prod
 
 **Yêu cầu (user, 2026-11-11, sau khi xem dev.gikky.net):** khối chủ đề và cột phải trên `/` "vẫn không ổn";
 `/?tab=moi&loai_mach=nhat_ky` "trình bày khác hẳn home"; `/s/quan-tri-von` "vẫn là phần cũ, không khớp cái đang làm";
@@ -988,7 +991,7 @@ người dùng thật vào trang chủ.
 
 ---
 
-## Việc 16 · Sửa giao diện mobile toàn site (đợt M) — ĐÃ LÀM trên `v2` (`076d605`, 2026-11-12), chưa deploy
+## Việc 16 · Sửa giao diện mobile toàn site (đợt M) — ĐÃ LÀM trên `v2` (`076d605`, 2026-11-12), đã lên dev.gikky.net (`34600c5`), chưa lên prod
 
 *(Số 15 bỏ trống: `rieng-tu/VIEC-15.md` của phiên khác đã dùng tên ấy.)*
 
@@ -1004,7 +1007,7 @@ index được không đổi.
 
 ---
 
-## Việc 17 · Sửa lỗi hydrate React #418 khi có phiên lưu — ĐÃ LÀM trên `v2` (`70d4376`, 2026-11-12), chưa deploy
+## Việc 17 · Sửa lỗi hydrate React #418 khi có phiên lưu — ĐÃ LÀM trên `v2` (`70d4376`, 2026-11-12), đã lên dev.gikky.net (`34600c5`), chưa lên prod
 
 **Yêu cầu (user, 2026-11-12):** "Lập plan sửa #418" — gộp mục sổ P-20261112-6 (và P-20261111-21 phần b).
 
@@ -1015,6 +1018,7 @@ lại cả trang, xoá thuộc tính `<html>` (cờ chống giật, `color-schem
 **Plan:** `plans/2026-11-12-sua-hydrate-418.md`: sửa một chỗ ở `PhienProvider` (phiên lưu chỉ vào context sau hydrate,
 lật trong `useLayoutEffect`), thêm bài đo `hydrate-sach.spec.ts`, rồi gỡ các gương JS chống giật đợt E thêm vì lỗi này.
 HTML server không đổi.
+
 ---
 
 ## Việc 18 · Khối chủ đề xếp chồng + nút chính màu brand — ĐÃ LÀM trên `v2` (`4ed45b5`, 2026-11-13), đã lên dev.gikky.net (`ee61f94`, 2026-11-13 08:22, chỉ `web`), chưa lên prod
@@ -1119,7 +1123,7 @@ việc 20 đợt A).
 
 ---
 
-## Việc 22 · Dải "Đang được bàn" dưới khối Nhật ký mới — ĐÃ LÀM trên `v2` (2026-11-13, chưa commit): nghiệm thu ĐẠT 8/8, phản biện + vòng sửa 1 xong
+## Việc 22 · Dải "Đang được bàn" dưới khối Nhật ký mới — ĐÃ LÀM trên `v2` (`696025a`, 2026-11-13), lên dev 2026-11-13 20:26, lên prod 2026-11-14 11:50 (bản `c9cfbf5`): nghiệm thu ĐẠT 8/8, phản biện + vòng sửa 1 xong
 
 **Yêu cầu (user, 2026-11-13):** "phần nhật kí, luôn lấy mới nhất của uniq user, nếu có 1 nhật kí về hpg hoặc dri, đang
 rất nhiều thảo luận, nhưng vì có nhật kí mới, nên nó biến mất khỏi home, sẽ rất khó để lọc các nhật kí đang được thảo
@@ -1161,7 +1165,7 @@ mở rộng cái cũ ⇒ `pnpm codegen`. Index `P-20261113-18` liên quan.
 
 ---
 
-## Việc 24 · Khối "Bài viết" trang chủ dời sang rail phải; `/luat` cũng có — ĐÃ LÀM trên `v2` (`bee47df` + `ea1596b`, 2026-11-13), đã lên dev.gikky.net (`ea1596b`, 2026-11-13 23:22, chỉ `web`), chưa lên prod: nghiệm thu ĐẠT 13/13, phản biện + vòng sửa 1 xong
+## Việc 24 · Khối "Bài viết" trang chủ dời sang rail phải; `/luat` cũng có — ĐÃ LÀM trên `v2` (`bee47df` + `ea1596b`, 2026-11-13), đã lên dev.gikky.net (`ea1596b`, 2026-11-13 23:22, chỉ `web`), đã lên prod gikky.net (`c9cfbf5`, 2026-11-14 11:50, phiên "Chuyển sang production"): nghiệm thu ĐẠT 13/13, phản biện + vòng sửa 1 xong
 
 **Yêu cầu (user, 2026-11-13):** "giờ có phần nhật kí mới, có nên đẩy phần bài viết sang bên phải (các bài mới), sau đó
 bỏ phần bài viết ở trang chủ đi, phần bên phải khi vào các chuyên mục thì bỏ đi, vào các trang tĩnh như luat thì show
@@ -1185,7 +1189,7 @@ của plan; hệ quả đã biết: trên điện thoại khối xuống thấp 
 
 ---
 
-## Việc 25 · Dải lệnh (MUA/BÁN · mã · Entry · SL · TP · Nhồi · R:R) ở trang chi tiết mạch — ĐÃ LÀM + COMMIT trên `v2` (2026-11-14), chưa lên prod: nghiệm thu ĐẠT 3 lượt, phản biện 2 lượt, 3 vòng sửa
+## Việc 25 · Dải lệnh (MUA/BÁN · mã · Entry · SL · TP · Nhồi · R:R) ở trang chi tiết mạch — ĐÃ LÀM trên `v2` (`9b3ac8c`, 2026-11-14), đã lên dev.gikky.net (`9b3ac8c`, 2026-11-14 09:28, `api` + `web`), đã lên prod gikky.net (`c9cfbf5`, 2026-11-14 11:50, phiên "Chuyển sang production"): nghiệm thu ĐẠT 3 lượt, phản biện 2 lượt, 3 vòng sửa
 
 **Yêu cầu (user, 2026-11-13, kèm ảnh thẻ nhật ký NAB):** "cái dãy số liệu này, sao trong chi tiết không thấy?" → "Làm luôn".
 

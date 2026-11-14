@@ -1,6 +1,6 @@
 # Việc 25 — Dải lệnh ở trang chi tiết mạch
 
-**Trạng thái:** ĐÃ LÀM + COMMIT trên `v2` (2026-11-14), chưa lên prod. Nghiệm thu ĐẠT 3 lượt (D1–D9/B1–B4; R1–R7; S1–S6); phản biện 2 lượt; 3 vòng sửa (vòng 3 user duyệt). Sổ: `GHI-CHU.md` việc 25.
+**Trạng thái:** ĐÃ LÀM trên `v2` (`9b3ac8c`), đã lên dev.gikky.net (`9b3ac8c`, 2026-11-14 09:28, `api` rồi `web`; cây cũ `~/gikky-dev/src.cu-20261114-092653`), đã lên prod gikky.net (`c9cfbf5`, 2026-11-14 11:50). Nghiệm thu ĐẠT 3 lượt (D1–D9/B1–B4; R1–R7; S1–S6); phản biện 2 lượt; 3 vòng sửa (vòng 3 user duyệt). Sổ: `GHI-CHU.md` việc 25.
 
 ## Bối cảnh
 
