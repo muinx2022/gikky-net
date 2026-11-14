@@ -276,7 +276,7 @@ export function TheMach({
           data-testid="the-nhat-ky-so-moc"
           title="Số mốc ghi nhận trong mạch"
         >
-          <GitCommitHorizontal size={15} strokeWidth={2} aria-hidden />
+          <GitCommitHorizontal size={14} strokeWidth={2} aria-hidden />
           <span>{mach.entry_count} mốc</span>
         </Link>
         <Link
@@ -286,7 +286,7 @@ export function TheMach({
           data-testid="the-nhat-ky-so-binh-luan"
           title="Bình luận"
         >
-          <MessageCircle size={15} strokeWidth={2} aria-hidden />
+          <MessageCircle size={14} strokeWidth={2} aria-hidden />
           <span>{mach.comment_count > 0 ? `${mach.comment_count} bình luận` : "Bình luận"}</span>
         </Link>
         <span className={css.chan_phai}>

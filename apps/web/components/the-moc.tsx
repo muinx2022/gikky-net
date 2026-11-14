@@ -210,12 +210,6 @@ export function TheMoc({
           </p>
         )}
 
-        {/* Hàng reaction — `📈 12 · 🔥 9` của wireframe 9.2, nợ `REACTION-CHUA-CO-UI`.
-            Đứng SAU thân mốc và TRƯỚC hàng nút: nó là phản ứng với nội dung, không phải
-            một thao tác quản lý nội dung. Bia mộ không có gì để phản ứng — và `reactions`
-            của nó đã bị `moc_ra` zero hoá, nên hàng nút ở đó sẽ là năm cái nút trống. */}
-        {hien && <HangReaction mocId={moc.id} dem={moc.reactions} />}
-
         <div className={css.chan}>
           <CotVote
             diem={moc.score}
@@ -224,6 +218,12 @@ export function TheMoc({
             nam_ngang
             dich={hien ? { loai: "moc", id: moc.id } : null}
           />
+          {/* Hàng reaction — `📈 12 · 🔥 9` của wireframe 9.2, nợ `REACTION-CHUA-CO-UI`.
+              Cùng MỘT dòng với vote, ngay sau nó và TRƯỚC các nút ngăn kéo / sửa / mod: nó là
+              phản ứng với nội dung, không phải một thao tác quản lý nội dung. Bia mộ không có
+              gì để phản ứng — và `reactions` của nó đã bị `moc_ra` zero hoá, nên hàng nút ở
+              đó sẽ là năm cái nút trống. */}
+          {hien && <HangReaction mocId={moc.id} dem={moc.reactions} />}
           {laMach && (
             <NutNganKeo
               seq={moc.seq}

@@ -260,7 +260,7 @@ function kiemThe(): { so: number; loi: string[] } {
     const tieuDe = (the.querySelector("h2, h3")?.textContent ?? "").trim().slice(0, 30);
     const chan = the.querySelector('[data-testid="the-nhat-ky-so-moc"]')?.parentElement;
     if (chan) {
-      // Một hàng = mọi con có cùng TÂM dọc (các con cao khác nhau: pill vote 32px, nút 44px, canh giữa).
+      // Một hàng = mọi con có cùng TÂM dọc (các con cao khác nhau: pill vote 28px, nút 44px, canh giữa).
       const tam = [...chan.children]
         .filter((c) => c.checkVisibility() && c.getBoundingClientRect().width > 0)
         .map((c) => {

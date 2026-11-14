@@ -188,7 +188,7 @@ export function NutChiaSeMach({ duongDan, tieuDe, kieu = "menu" }: NutChiaSeMach
     datThongBaoTam("da_chep", 1800);
   };
 
-  const iconSize = kieu === "pill" ? 15 : 16;
+  const iconSize = kieu === "pill" ? 14 : 16;
 
   return (
     <div className={kieu === "pill" ? `${css.khung} ${css.khung_pill}` : css.khung}>

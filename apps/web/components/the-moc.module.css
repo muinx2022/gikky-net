@@ -191,13 +191,13 @@
   border-radius: 0 3px 3px 0;
 }
 
-/* Điểm mốc đã dời sang cột vote bên trái (`cot-vote.module.css`) — chân thẻ chỉ còn cái
- * nút ngăn kéo. Giữ `flex` vì nút đó vẫn cần canh và vì Phase 2 sẽ thêm reaction vào đây. */
+/* Chân mốc MỘT dòng: pill vote · hàng reaction · ngăn kéo · menu tác giả · mod. `wrap` để máy hẹp
+ * tự xuống dòng thay vì tràn ngang. */
 .chan {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 13px;
+  gap: 8px;
   margin-top: 12px;
 }
 

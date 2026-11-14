@@ -70,7 +70,7 @@
   align-items: center;
   gap: 2px;
   width: auto;
-  height: 32px;
+  height: 28px;
   flex: 0 0 auto;
   padding: 0 4px;
   background: var(--inset);
@@ -79,8 +79,8 @@
 
 .ngang .mui_ten,
 .ngang .nut {
-  width: 26px;
-  height: 26px;
+  width: 22px;
+  height: 22px;
   padding: 0;
   border-radius: 999px;
   font-size: 11px;
@@ -88,18 +88,18 @@
 
 .ngang .diem {
   font-family: var(--f-ui);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   padding: 0 5px;
   color: var(--ink);
 }
 
 /* Đợt M (M6): mũi tên của pill NGANG (bình luận, mốc) có vùng bấm 44×44 trên điện thoại. Margin âm
- * dọc giữ pill cao 32px như cũ — vùng bấm tràn ra ngoài pill, không đẩy hàng nào. */
+ * dọc giữ pill cao 28px như desktop ((44 − 28) / 2 = 8px mỗi phía) — vùng bấm tràn ra ngoài pill, không đẩy hàng nào. */
 @media (max-width: 640px) {
   .ngang .mui_ten {
     min-width: 44px;
     min-height: 44px;
-    margin-block: -9px;
+    margin-block: -8px;
   }
 }
