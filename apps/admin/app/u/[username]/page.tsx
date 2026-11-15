@@ -95,6 +95,9 @@ export default function TrangChiTietNguoiDung() {
       <div className="grid gap-4 lg:grid-cols-3">
         <The className="p-4 lg:col-span-2">
           <div className="flex flex-wrap gap-1.5">
+            {u.do_gikky_tao && (
+              <NhanTrangThai tone="nhan">do Gikky tạo</NhanTrangThai>
+            )}
             {u.is_staff && <NhanTrangThai tone="nhan">quản trị viên</NhanTrangThai>}
             {!u.is_active && <NhanTrangThai>tài khoản đã vô hiệu hoá</NhanTrangThai>}
             {u.dang_bi_ban ? (

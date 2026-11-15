@@ -93,6 +93,30 @@ def _tim(username: str) -> User | None:
     )
 
 
+def la_email_do_gikky(email: str | None) -> bool:
+    """True khi email, sau `strip` và chữ thường, thuộc đúng domain `gikky.net`.
+
+    Hàm thuần — không query. Đúng một `@`; phần local không rỗng và không chứa
+    khoảng trắng; phần domain **bằng đúng** `gikky.net`. Subdomain
+    (`a@vi-du.gikky.net`), hậu tố (`a@gikky.net.evil`), thiếu local (`@gikky.net`),
+    hai dấu `@` (`a@b@gikky.net`), dấu chấm cuối (`a@gikky.net.`) đều False.
+    `a+tag@gikky.net` là True. Không punycode, không so gần đúng.
+
+    Nhãn «do Gikky tạo» đọc cờ `do_gikky_tao` suy từ hàm này. Không phải
+    `User.la_tai_khoan_doi` hay `User.la_bot` — hai cột ấy là đặc quyền khác,
+    không suy từ email.
+    """
+    if email is None:
+        return False
+    sach = email.strip().lower()
+    local, dau, domain = sach.partition("@")
+    if dau != "@" or "@" in domain:
+        return False
+    if not local or any(ky_tu.isspace() for ky_tu in local):
+        return False
+    return domain == "gikky.net"
+
+
 def vai_tro_cua(u: User) -> str:
     """Nhãn "thuộc nhóm nào" — tính ở SERVER, không để frontend suy từ hai cờ.
 
@@ -124,6 +148,7 @@ def nguoi_dung_quan_tri_ra(u: User) -> NguoiDungQuanTriOut:
         so_binh_luan=u._so_binh_luan,
         is_superuser=u.is_superuser,
         email=u.email or "",
+        do_gikky_tao=la_email_do_gikky(u.email),
         co_mat_khau=u.has_usable_password(),
         vai_tro=vai_tro_cua(u),
         # `sorted` trong Python: `prefetch_related` đã nạp sẵn, thêm `order_by` ở đây là

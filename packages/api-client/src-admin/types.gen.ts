@@ -1787,6 +1787,10 @@ export type NguoiDungQuanTriOut = {
      */
     display_name: string;
     /**
+     * Do Gikky Tao
+     */
+    do_gikky_tao: boolean;
+    /**
      * Email
      */
     email: string;

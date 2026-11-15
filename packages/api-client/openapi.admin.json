@@ -2430,6 +2430,10 @@
             "title": "Display Name",
             "type": "string"
           },
+          "do_gikky_tao": {
+            "title": "Do Gikky Tao",
+            "type": "boolean"
+          },
           "email": {
             "title": "Email",
             "type": "string"
@@ -2484,6 +2488,7 @@
           "so_binh_luan",
           "is_superuser",
           "email",
+          "do_gikky_tao",
           "co_mat_khau",
           "vai_tro",
           "subs_mod"

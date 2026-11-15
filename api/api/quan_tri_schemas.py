@@ -414,6 +414,9 @@ class NguoiDungQuanTriOut(Schema):
     #: Thêm 2026-08-25 (`plans/2026-08-25-crud-nguoi-dung.md`).
     is_superuser: bool
     email: str
+    #: Tài khoản do Gikky tạo, suy từ domain email. **Không** phải cột DB, **không**
+    #: phải `la_tai_khoan_doi` / `la_bot`. Frontend không tự tính lại.
+    do_gikky_tao: bool
     #: `has_usable_password()`. Tài khoản `False` chỉ vào được bằng Google hoặc
     #: `/quen-mat-khau` — **không phải khoá ngoài**, nhưng giao diện phải nói ra chứ đừng
     #: bày ra ô "đổi mật khẩu hiện tại" cho họ.
