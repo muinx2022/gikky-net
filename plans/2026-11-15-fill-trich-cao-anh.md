@@ -1,6 +1,6 @@
 # Fill đoạn trích thẻ feed cao ngang ảnh nhỏ
 
-> **Trạng thái:** ĐÃ LÀM (2026-11-15) — chờ commit + deploy prod; T5 e2e T13 chưa đo (DB local thiếu 0047/0048)
+> **Trạng thái:** ĐÃ LÀM + ĐÃ LÊN prod (2026-11-16) — commit `8750a60`; T5 e2e T13 chưa đo local (DB thiếu 0047/0048); feed prod `max_trich=400`
 
 ## Vấn đề
 
