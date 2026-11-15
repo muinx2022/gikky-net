@@ -238,7 +238,7 @@ export default function TrangNguoiDung() {
                     data-testid={`hang-user-${u.username}`}
                   >
                     <td className="px-3 py-2.5">
-                      <span className="flex flex-wrap items-center gap-1.5">
+                      <span className="relative inline-block">
                         <Link
                           href={`/u/${u.username}`}
                           className="font-medium text-nhan hover:underline"
@@ -246,9 +246,14 @@ export default function TrangNguoiDung() {
                           {u.display_name || u.username}
                         </Link>
                         {/* Cột Trạng thái mờ khi rê chuột (`md:group-hover:opacity-0`).
-                            Nhãn này ở ô Tài khoản thì còn nhìn thấy. Cờ do server tính. */}
+                            Chấm này ở khung tên thì còn nhìn thấy. Cờ do server tính. */}
                         {u.do_gikky_tao && (
-                          <NhanTrangThai tone="nhan">do Gikky tạo</NhanTrangThai>
+                          <span
+                            className="absolute -top-1 -right-2 size-2 rounded-full bg-nhan"
+                            title="do Gikky tạo"
+                            role="img"
+                            aria-label="do Gikky tạo"
+                          />
                         )}
                       </span>
                       <span className="mono block text-xs text-muc-mo">

@@ -74,7 +74,17 @@ export default function TrangChiTietNguoiDung() {
             ← Bảng tài khoản
           </Link>
           <h1 className="mt-1 text-2xl font-semibold">
-            {u.display_name || u.username}
+            <span className="relative inline-block">
+              {u.display_name || u.username}
+              {u.do_gikky_tao && (
+                <span
+                  className="absolute -top-1 -right-2 size-2 rounded-full bg-nhan"
+                  title="do Gikky tạo"
+                  role="img"
+                  aria-label="do Gikky tạo"
+                />
+              )}
+            </span>
           </h1>
           <p className="mono text-xs text-muc-mo">u/{u.username}</p>
         </div>
@@ -95,9 +105,6 @@ export default function TrangChiTietNguoiDung() {
       <div className="grid gap-4 lg:grid-cols-3">
         <The className="p-4 lg:col-span-2">
           <div className="flex flex-wrap gap-1.5">
-            {u.do_gikky_tao && (
-              <NhanTrangThai tone="nhan">do Gikky tạo</NhanTrangThai>
-            )}
             {u.is_staff && <NhanTrangThai tone="nhan">quản trị viên</NhanTrangThai>}
             {!u.is_active && <NhanTrangThai>tài khoản đã vô hiệu hoá</NhanTrangThai>}
             {u.dang_bi_ban ? (
