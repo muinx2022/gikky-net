@@ -1,6 +1,6 @@
 # Nhãn «do Gikky tạo» trên `/users`
 
-**Trạng thái:** ĐẠT 4/4. Đang deploy chỉ nhãn lên đúng cây VPS (không kèm 8 commit web sau `c9cfbf5`).
+**Trạng thái:** ĐÃ LÊN PROD 2026-11-15 ~12:53 (`408e209`). Cây VPS trước đó đã là `643a38d` (8 commit web đã có sẵn), nên bản này chỉ thêm nhãn. Image cũ: `gikkynet-{api,admin}:truoc-nhan-gikky`. Cây cũ: `~/gikky-net/src.cu-20261115-124939`. Không migration.
 
 **Đo (nghiệm thu tự chạy, 2026-11-15):** pytest 41 passed (18 bài mới + 23 CRUD cũ) · `e2e:don-vi -g nhan-email-gikky` 4 passed · `codegen:check` khớp 34 file · lint admin exit 0, không warning. Phản biện: Opus hết quota, chạy lại bằng Grok — không lỗi chặn. Sổ: `P-20261115-2` (sửa email không cập nhật `EmailAddress`, có từ trước).
 
