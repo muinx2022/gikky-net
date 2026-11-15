@@ -1,9 +1,18 @@
 import type { AnhOut, XemTruocOut } from "@gikky/api-client";
 
-/** Số dòng chữ khi bài KHÔNG có ảnh. User (2026-11-10): "nếu không có ảnh thì hiển thị xxx
- * dòng text" — chưa có số, nên lấy 3: đó là độ dài `DAI_TRICH_FEED` (240 ký tự) được thiết
- * kế cho ở bề rộng cột chính. Đổi số này là đổi cả CSS (đi qua biến `--so-dong`). */
+/** Số dòng chữ khi bài KHÔNG có ảnh — `.trich` trong `the-mach.module.css`
+ * (`-webkit-line-clamp: 3`). User (2026-11-10): "nếu không có ảnh thì hiển thị xxx
+ * dòng text"; 3 giữ thẻ chữ-only không phình. Đổi số là đổi cả rule CSS đó. */
 export const SO_DONG_TRICH = 3;
+
+/** Số dòng khi thẻ CÓ ảnh nhỏ, desktop (>640px) — `.than:has(.anh_o) .trich`
+ * trong `the-mach.module.css` (`-webkit-line-clamp: 5`, cao gần khung 168×104). */
+export const SO_DONG_TRICH_CO_ANH = 5;
+
+/** Số dòng khi thẻ CÓ ảnh nhỏ, mobile (≤640px) — cùng selector trong
+ * `@media (max-width: 640px)` của `the-mach.module.css` (`-webkit-line-clamp: 4`,
+ * khung ảnh 76×76). */
+export const SO_DONG_TRICH_CO_ANH_MOBILE = 4;
 
 /** Số ảnh tối đa trong gallery của hàng bài viết — khớp `SO_ANH_XEM_TRUOC` của API
  * (`anh` + `anh_khac`); bài đo `e2e/don-vi/xem-truoc-anh.spec.ts` đọc `api/api/schemas.py` và

@@ -2279,3 +2279,15 @@ P-20261114-21 · MỞ · NHỎ · DB dev local `gikky_dev` còn 2 tài khoản c
 P-20261115-1 · MỞ · NHỎ · Bài đơn vị "Logic loc bai moi…" chỉ test mảng giả với `.slice(0, 5)` viết sẵn trong bài, không đọc `khung-hai-cot.tsx` ⇒ đổi số bài hay bỏ `filter` ở code thật vẫn xanh (test trang trí) · `apps/web/e2e/don-vi/sidebar-bai-moi.spec.ts:191` · vẫn xanh sau khi code đổi sang `.slice(0, 10)` (lượt rail 5→10, 2026-11-15).
 
 P-20261115-2 · MỞ · VỪA · `PATCH /admin/users/{username}` đổi email chỉ ghi `User.email`, không cập nhật `EmailAddress` của allauth — địa chỉ đăng nhập có thể lệch địa chỉ mà nhãn `do_gikky_tao` đọc · `api/api/quan_tri_nguoi_dung.py:478-485` · tạo user ghi cả hai (`:402`); sửa chỉ `u.email = email` rồi `save(update_fields=…)`. Có từ trước, không thuộc diff nhãn (phản biện 2026-11-15). Đề nghị: khi user duyệt, sửa email cập nhật luôn hàng `EmailAddress` primary.
+
+P-20261115-3 · MỞ · VỪA · `tsc --noEmit` của `apps/admin` đỏ: `data` trong vòng nạp cây bình luận ngầm kiểu `any` (TS7022) vì `cursor` được gán lại từ `data.cursor_ke_tiep` trong cùng khối khởi tạo. `pnpm lint` không bắt lỗi này · `apps/admin/app/m/[machId]/page.tsx:481` · `npx tsc --noEmit -p .` trong `apps/admin` exit 1, một lỗi TS7022 (2026-11-15). Thuộc cây bình luận chưa commit. Đề nghị: khi user duyệt, tách kiểu trang trả về ra khỏi vòng gán `cursor`.
+
+P-20261115-4 · MỞ · NHỎ · `?gikky=true` lọc bằng regex SQL, lệch `la_email_do_gikky` trên ký tự điều khiển `\x1c`–`\x1f` và Kelvin U+212A — hàng có thể hiện khi tích «Gikky» mà chấm tròn tắt, hoặc ngược lại · `api/api/quan_tri_bang.py:350` · phản biện 2026-11-15, SELECT trên Postgres dev. Docstring hàm vẫn nói lọc đúng hàm Python. Email thường không vào được DB. Đề nghị: khi user duyệt, ghi ngoại lệ vào docstring; không đổi regex.
+
+P-20261115-5 · MỞ · NHỎ · `PLAN.md` vẫn mô tả `xem_truoc.trich` ≤240 ký tự trong khi `DAI_TRICH_FEED` đã thành 400 (fill trích thẻ feed) · `PLAN.md:573` · phản biện + nghiệm thu 2026-11-15; đề nghị cập nhật câu PLAN khi user duyệt.
+
+P-20261115-6 · MỞ · NHỎ · Hàng rào CSS clamp `xem-truoc-anh` bỏ lọt: dời rule desktop xuống sau `@media 640`, thêm media ghi đè, hoặc selector specificity cao hơn ở cuối file — bài don-vi vẫn xanh · `apps/web/e2e/don-vi/xem-truoc-anh.spec.ts` · phản biện 2026-11-15 (thử phá trong bộ nhớ); đề nghị ép thứ tự rule + đo DOM khi user duyệt.
+
+P-20261115-7 · MỞ · VỪA · DB local `gikky_dev` chưa apply migration 0047/0048 nên `seed_e2e` chết (`column core_sub.vi_tri_trang_chu does not exist`) — chặn đo e2e T13 · `api/core/migrations/0047_sub_vi_tri_trang_chu.py` · `showmigrations` để 0047 và 0048 ở `[ ]`; thợ V1 fill-trích 2026-11-15. Đề nghị: khi user duyệt, `pnpm api:migrate` trên DB local (cẩn thận nếu phiên khác đang dùng DB).
+
+P-20261115-8 · MỞ · NHỎ · `catBoiCanhChuDe` cắt theo code unit UTF-16: emoji đúng vị trí cắt cứng có thể ra ký tự hỏng trước `…` (Python `trich_van_ban` đếm ký tự Unicode) · `apps/web/lib/boi-canh-chu-de.ts` · phản biện V1 2026-11-15; ca hiếm. Đề nghị: cắt bằng `Array.from` khi user duyệt.

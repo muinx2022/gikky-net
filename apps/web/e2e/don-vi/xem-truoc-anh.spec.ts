@@ -6,6 +6,8 @@ import { expect, test } from "@playwright/test";
 import {
   SO_ANH_GALLERY_TOI_DA,
   SO_DONG_TRICH,
+  SO_DONG_TRICH_CO_ANH,
+  SO_DONG_TRICH_CO_ANH_MOBILE,
   TY_LE_MAC_DINH,
   chonThumb,
   tyLeKhung,
@@ -16,6 +18,46 @@ import { boChuThich } from "./quet";
 const WEB = resolve(__dirname, "..", "..");
 const GOC = resolve(WEB, "..", "..");
 const doc = (duong: string) => readFileSync(resolve(GOC, duong), "utf8");
+
+/** Bỏ chú thích CSS `/* … *\/` — số dòng trong comment không được làm bài đo xanh. */
+function boChuThichCss(css: string): string {
+  return css.replace(/\/\*[\s\S]*?\*\//g, " ");
+}
+
+/** Cắt khối `@media <điều kiện> { … }` (kể cả rule lồng) ra khỏi phần còn lại của file. */
+function rutMedia(css: string, dieuKien: RegExp): { than: string; phanConLai: string } | null {
+  const m = dieuKien.exec(css);
+  if (!m) return null;
+  const mo = css.indexOf("{", m.index);
+  if (mo < 0) return null;
+  let depth = 0;
+  let i = mo;
+  for (; i < css.length; i++) {
+    if (css[i] === "{") depth++;
+    else if (css[i] === "}") {
+      depth--;
+      if (depth === 0) {
+        i++;
+        break;
+      }
+    }
+  }
+  if (depth !== 0) return null;
+  return { than: css.slice(mo + 1, i - 1), phanConLai: css.slice(0, m.index) + css.slice(i) };
+}
+
+/** Mọi `-webkit-line-clamp` của rule có selector khớp đúng `selector` (sau khi gộp khoảng trắng). */
+function lineClamp(css: string, selector: string): number[] {
+  const muon = selector.replace(/\s+/g, " ").trim();
+  const ra: number[] = [];
+  for (const m of css.matchAll(/([^{}]+)\{([^}]*)\}/g)) {
+    const sels = m[1].split(",").map((s) => s.replace(/\s+/g, " ").trim());
+    if (!sels.includes(muon)) continue;
+    const c = /-webkit-line-clamp:\s*(\d+)/.exec(m[2]);
+    if (c) ra.push(Number(c[1]));
+  }
+  return ra;
+}
 
 /** Hàng "Bài viết" ở trang chủ có xem trước theo ảnh — hàng rào ĐỌC NGUỒN và hàm thuần
  * (`plans/2026-11-10-bai-viet-xem-truoc-anh.md`, gallery kiểu Reddit:
@@ -54,8 +96,10 @@ const xemTruoc = (n: number): XemTruocOut => ({
 });
 
 test.describe("L — chonThumb / tyLeKhung / tyLeKhungGallery", () => {
-  test("hằng: 3 dòng chữ, tối đa 10 ảnh trong gallery", () => {
+  test("hằng: 3 dòng không ảnh, 5/4 khi có ảnh, tối đa 10 ảnh trong gallery", () => {
     expect(SO_DONG_TRICH).toBe(3);
+    expect(SO_DONG_TRICH_CO_ANH).toBe(5);
+    expect(SO_DONG_TRICH_CO_ANH_MOBILE).toBe(4);
     expect(SO_ANH_GALLERY_TOI_DA).toBe(10);
   });
 
@@ -66,6 +110,29 @@ test.describe("L — chonThumb / tyLeKhung / tyLeKhungGallery", () => {
     const so = /^SO_ANH_XEM_TRUOC\s*=\s*(\d+)\s*$/m.exec(py)?.[1];
     expect(so, "không thấy SO_ANH_XEM_TRUOC trong api/api/schemas.py").toBeDefined();
     expect(Number(so)).toBe(SO_ANH_GALLERY_TOI_DA);
+  });
+
+  test("DAI_TRICH_FEED (api/api/schemas.py) = 400", () => {
+    // Cùng lối đọc nguồn với `SO_ANH_XEM_TRUOC`: 400 đủ 5 dòng cạnh ảnh nhỏ. 240 cũ hết chữ
+    // trước khi CSS kịp hiện 5 dòng.
+    const py = doc("api/api/schemas.py");
+    const so = /^DAI_TRICH_FEED\s*=\s*(\d+)\s*$/m.exec(py)?.[1];
+    expect(so, "không thấy DAI_TRICH_FEED trong api/api/schemas.py").toBeDefined();
+    expect(Number(so)).toBe(400);
+  });
+
+  test("CSS thẻ: clamp 3 không ảnh, 5 khi có ảnh, 4 trong media ≤640px", () => {
+    // `plans/2026-11-15-fill-trich-cao-anh.md`. Đọc nguồn đã bỏ chú thích — số trong comment
+    // không được làm bài xanh.
+    const css = boChuThichCss(doc("apps/web/components/the-mach.module.css"));
+    const media = rutMedia(css, /@media\s*\(\s*max-width:\s*640px\s*\)/);
+    expect(media, "thiếu @media (max-width: 640px)").not.toBeNull();
+    const ngoai = media!.phanConLai;
+    const trong = media!.than;
+    expect(lineClamp(ngoai, ".trich"), "không ảnh").toEqual([3]);
+    expect(lineClamp(ngoai, ".than:has(.anh_o) .trich"), "có ảnh, desktop").toEqual([5]);
+    expect(lineClamp(trong, ".than:has(.anh_o) .trich"), "có ảnh, mobile").toEqual([4]);
+    expect(lineClamp(trong, ".trich"), "mobile không được đổi clamp thẻ không ảnh").toEqual([]);
   });
 
   for (const [n, anhs, con_lai] of [

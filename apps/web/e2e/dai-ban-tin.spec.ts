@@ -337,7 +337,7 @@ test.describe("T10–T11 — khối Chủ đề tuần: không còn ô quan đi�
 test.describe.serial("T13 — bối cảnh chủ đề hiện trọn đoạn trích (kẹp 6 dòng)", () => {
   // Chủ đề TẠM: bối cảnh của chủ đề trong `seed_e2e` chỉ dài 59 ký tự — vừa trong 2 dòng cũ, nên
   // đo trên nó thì bài không phân biệt được 2 với 6 (đo rỗng). Chủ đề này xuất bản SAU CÙNG nên là
-  // cái `chonChuDeNoi` chọn; server tự cắt đoạn trích (~240 ký tự) từ thân bài.
+  // cái `chonChuDeNoi` chọn; khối cắt client ~240; API feed có thể dài hơn.
   const TD = "Chủ đề e2e T13 — bối cảnh dài";
   const THAN =
     "Bối cảnh dài của bài đo T13: lãi suất liên ngân hàng tăng ba phiên liền, tỷ giá chạm trần biên độ, " +

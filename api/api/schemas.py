@@ -177,9 +177,11 @@ class AnhNoiDungOut(Schema):
     height: int | None
 
 
-#: Độ dài trích đoạn trên thẻ feed. Đủ ba dòng ở bề rộng cột chính, không hơn: thẻ feed
-#: là chỗ QUYẾT ĐỊNH CÓ MỞ HAY KHÔNG, không phải chỗ đọc bài.
-DAI_TRICH_FEED = 240
+#: Độ dài trích đoạn trên thẻ feed. 400 ký tự đủ năm dòng cạnh ảnh nhỏ ở bề rộng
+#: cột chính (≈ 55–60 ký tự/dòng × 5, có đệm). Thẻ không ảnh vẫn hiện ba dòng
+#: bằng CSS (`.trich` trong `the-mach.module.css`). Thẻ feed là chỗ QUYẾT ĐỊNH
+#: CÓ MỞ HAY KHÔNG, không phải chỗ đọc bài.
+DAI_TRICH_FEED = 400
 
 #: Số ảnh tối đa mà `XemTruocOut` mang theo: `anh` + `anh_khac` = 10. Hàng bài viết ở trang
 #: chủ vẽ MỘT khung gallery lật từng ảnh kiểu Reddit (`apps/web/components/gallery-bai-viet.tsx`);

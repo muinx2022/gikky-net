@@ -1,6 +1,6 @@
 /* Thẻ mạch DUY NHẤT của mọi danh sách (plan `2026-11-11-thong-nhat-giao-dien-toan-site.md` §4.1):
- * hình dạng của thẻ nhật ký trang chủ cũ — hộp có viền, avatar + tên ở hàng đầu, trích 3 dòng,
- * ảnh nhỏ bên phải, chân thẻ. Chỉ token đã có trong `app/globals.css`.
+ * hình dạng của thẻ nhật ký trang chủ cũ — hộp có viền, avatar + tên ở hàng đầu, trích 3 dòng
+ * (5 cạnh ảnh nhỏ, 4 trên mobile), ảnh nhỏ bên phải, chân thẻ. Chỉ token đã có trong `app/globals.css`.
  *
  * ⚠ `mau-token.spec.ts` khoá `--stamp` theo TỪNG selector và chỉ cho `.dong_so` của file NÀY
  * (nhãn "ĐÃ ĐÓNG SỔ" của PLAN 9.1); `--gain`/`--loss` chỉ cho `con-so.module.css`. Đừng thêm
@@ -223,6 +223,13 @@
   -webkit-line-clamp: 3;
 }
 
+/* Có ảnh nhỏ 168×104: 5 dòng (13px × 1.55 × 5 ≈ 101px) cao gần khung. Không ảnh giữ clamp 3
+ * ở `.trich`. Mobile hạ xuống 4 trong `@media (max-width: 640px)` — khung ảnh còn 76px.
+ * Hằng TS: `SO_DONG_TRICH` / `_CO_ANH` / `_CO_ANH_MOBILE`. Bài đo: `e2e/don-vi/xem-truoc-anh.spec.ts`. */
+.than:has(.anh_o) .trich {
+  -webkit-line-clamp: 5;
+}
+
 /* Khung CỐ ĐỊNH 168×104 (mobile 76×76): ảnh nạp xong không đẩy chữ — CLS = 0. */
 .anh_o {
   position: relative;
@@ -337,6 +344,11 @@
   .anh_o {
     width: 76px;
     height: 76px;
+  }
+
+  /* Ảnh 76×76: 4 dòng (13px × 1.55 × 4 ≈ 81px) sát khung. Desktop giữ 5. */
+  .than:has(.anh_o) .trich {
+    -webkit-line-clamp: 4;
   }
 
   .than {

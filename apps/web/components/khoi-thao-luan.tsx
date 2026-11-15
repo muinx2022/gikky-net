@@ -1,6 +1,7 @@
 import type { MachTomTatOut } from "@gikky/api-client";
 import Link from "next/link";
 
+import { catBoiCanhChuDe } from "@/lib/boi-canh-chu-de";
 import { chonChuDeNoi, chuChipChuDe, khoangTuanVN } from "@/lib/chu-de";
 import { CHU_NGUOI_DUNG } from "@/lib/chu-nguoi-dung";
 import {
@@ -32,7 +33,7 @@ export const NGUONG_PHO_SO_BINH_LUAN = 4;
  * Bản đầu là lưới hai cột: tiêu đề bị ép còn ~380px và gãy 5 dòng. Nay phần chủ đề luôn rộng
  * hết khối: nhãn tuần · khoảng tuần (thứ Hai–Chủ nhật giờ VN của `published_at`) · chip trạng
  * thái · câu hỏi (`<h2>` cỡ lớn — `<h1>` của trang là dòng giới thiệu SEO, không phải chỗ này)
- * · bối cảnh (TRỌN đoạn trích server đã cắt; CSS chỉ chặn ở 6 dòng — việc 19 §3.5) · tổng kết
+ * · bối cảnh (client cắt về 240 — API feed nới 400; CSS vẫn chặn 6 dòng, việc 19 §3.5 / T13) · tổng kết
  * (chủ đề đã đóng) · hai nút. Hai nút khác `href`: "Vào thảo luận" tới mạch, "Viết quan điểm của bạn" tới Ô SOẠN (`duongDanVietBinhLuan`); con số bình
  * luận (từ ngưỡng) dẫn tới khán đài (`duongDanKhanDai`).
  *
@@ -68,7 +69,8 @@ export function KhoiThaoLuan({
   const href_khan_dai = duongDanKhanDai(moi_nhat.slug, moi_nhat.id);
   const href_viet = duongDanVietBinhLuan(moi_nhat.slug, moi_nhat.id);
   const co_ket_qua = !dang_mo && moi_nhat.ket_qua !== null && moi_nhat.ket_qua !== "";
-  const boi_canh = moi_nhat.xem_truoc?.trich ?? "";
+  // API nới 400 cho thẻ feed; khối chủ đề cố ý giữ 240 (plan 13/11 + e2e T13).
+  const boi_canh = catBoiCanhChuDe(moi_nhat.xem_truoc?.trich ?? "");
 
   return (
     <section
