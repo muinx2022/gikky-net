@@ -1,4 +1,5 @@
 import type {
+  BinhLuanOut,
   FeedOut,
   HoSoOut,
   KhanDaiOut,
@@ -7,6 +8,7 @@ import type {
 } from "@gikky/api-client";
 import { type Page, expect, test } from "@playwright/test";
 
+import { SO_REPLY_HIEN_SAN, lamPhangThread } from "../lib/binh-luan-phang";
 import { TEN_DAU_CHU_NGUOI_DUNG } from "../lib/chu-nguoi-dung";
 import { ngayCuaThoiDiem } from "../lib/dinh-dang";
 // Đổi tên ở Phase 2: hằng cũ (một câu duy nhất cho "vote chưa sống") tách làm hai, vì
@@ -533,7 +535,11 @@ test.describe("A10 — `[−]` gập/mở nhánh ở cả khán đài lẫn ngă
     await expect(goc.nth(1).getByTestId("than-nhanh").first()).toBeVisible();
   });
 
-  test("tóm tắt nói ra SỐ NHÁNH bị giấu (không thì `[+]` là hộp kín)", async ({
+  // Sửa 2026-11-16 (bình luận kiểu TikTok): reply nay là MỘT danh sách phẳng dưới gốc, nên
+  // thứ bị giấu khi gập là mọi hậu duệ — và đó cũng là con số người ta thấy khi mở ra. Câu
+  // hỏi của bài không đổi ("tóm tắt phải nói ra bao nhiêu thứ bị giấu"), chỉ đổi đơn vị:
+  // "N nhánh" (con trực tiếp) → "N câu trả lời" (mọi tầng).
+  test("tóm tắt nói ra SỐ CÂU TRẢ LỜI bị giấu (không thì `[+]` là hộp kín)", async ({
     page,
   }) => {
     const { seq, nk } = await nganKeoDongNhat(1);
@@ -548,7 +554,7 @@ test.describe("A10 — `[−]` gập/mở nhánh ở cả khán đài lẫn ngă
     await expect(thread).toHaveCount(1);
     await thread.getByTestId("nut-gap-nhanh").first().click();
     await expect(thread.getByTestId("tom-tat-nhanh").first()).toContainText(
-      `${co_con!.replies.length} nhánh`,
+      `${lamPhangThread(co_con!).length} câu trả lời`,
     );
   });
 
@@ -566,17 +572,25 @@ test.describe("A10 — `[−]` gập/mở nhánh ở cả khán đài lẫn ngă
     // `gikky_e2e` tích rác qua từng lượt chạy, và 5 thread rác 0-reply (2026-08-27)
     // từng đẩy bài này sang đo một thread rác — cú đỏ bị ghi nhầm thành lỗi sản phẩm
     // (P-20260830-8, chẩn đoán đã lật).
+    //
+    // Từ 2026-11-16 reply là danh sách PHẲNG và thread > `SO_REPLY_HIEN_SAN` reply gập
+    // phần đuôi (`hidden`). Reply mồi phải nằm trong phần HIỆN SẴN — không thì vế
+    // "TRƯỚC khi gập, chữ mồi reply hiện" đỏ vì đuôi gập chứ không vì `[−]`. Bài chạy
+    // không đăng nhập, nên phần hiện sẵn = `SO_REPLY_HIEN_SAN` reply đầu theo thời gian
+    // (`lamPhangThread` — đúng hàm component dùng).
+    const replyMoi = (t: BinhLuanOut) =>
+      lamPhangThread(t)
+        .slice(0, SO_REPLY_HIEN_SAN)
+        .map((x) => x.nut)
+        .find((r) => r.trang_thai === "binh_thuong" && !r.tu_gap);
     const muc_tieu = nk.threads.find(
-      (t) =>
-        t.trang_thai === "binh_thuong" &&
-        !t.tu_gap &&
-        t.replies.some((r) => r.trang_thai === "binh_thuong"),
+      (t) => t.trang_thai === "binh_thuong" && !t.tu_gap && replyMoi(t) !== undefined,
     );
     expect(
       muc_tieu,
       "seed không có thread gốc bình thường có reply đọc được ⇒ không có gì để đo",
     ).toBeDefined();
-    const con = muc_tieu!.replies.find((r) => r.trang_thai === "binh_thuong")!;
+    const con = replyMoi(muc_tieu!)!;
 
     await page.goto(`${duongDan(hpg)}?khan_dai=1&sort=hay_nhat`);
     await page.getByTestId(`nut-ngan-keo-${seq}`).click();
@@ -603,7 +617,13 @@ test.describe("A10 — `[−]` gập/mở nhánh ở cả khán đài lẫn ngă
         .split("\n")
         .map((d) => d.trim())
         .reduce((a, b) => (b.length > a.length ? b : a), "");
-    const p_goc = than.locator("> [data-chu-nguoi-dung]").locator("p").first();
+    // Khối thân là con trực tiếp, HOẶC cháu qua cái `<div onClick>` mà `than-html.tsx`
+    // bọc quanh `ThanVan` ở nhánh markdown (2787f29). Bản cũ chỉ đòi con trực tiếp nên
+    // đỏ trên mọi thân markdown — đỏ cả trên HEAD trước lượt 2026-11-16 (đã đo). Tên tác
+    // giả cũng mang dấu nhưng nằm sâu hơn (`div.dau > span > a`), nên hai vế dưới không
+    // bắt nhầm nó.
+    const THAN = ":scope > [data-chu-nguoi-dung], :scope > div > [data-chu-nguoi-dung]";
+    const p_goc = than.locator(THAN).locator("p").first();
     await expect(
       p_goc,
       "thân gốc không có thẻ `p` nào (body toàn ul/blockquote?) — đổi cách lấy chữ mồi",
@@ -613,12 +633,11 @@ test.describe("A10 — `[−]` gập/mở nhánh ở cả khán đài lẫn ngă
       chu.length,
       "chữ mồi rỗng/quá ngắn thì các phép dưới pass rỗng",
     ).toBeGreaterThanOrEqual(10);
-    // Chữ mồi thứ hai: thân của REPLY — vế "mọi nhánh con" của hợp đồng.
+    // Chữ mồi thứ hai: thân của REPLY — vế "mọi nhánh con" của hợp đồng. Reply phẳng
+    // không có `[−]`/`than-nhanh` riêng (2026-11-16): khối thân nằm thẳng dưới `<li>`.
     const p_con = thread
       .locator(`[data-binh-luan-id="${con.id}"]`)
-      .getByTestId("than-nhanh")
-      .first()
-      .locator("> [data-chu-nguoi-dung]")
+      .locator(THAN)
       .locator("p")
       .first();
     await expect(

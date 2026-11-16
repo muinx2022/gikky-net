@@ -10,8 +10,6 @@ import { thamSoPhanTrangBiBo } from "../../lib/api";
 import { NGUONG_HIEN_SO_DEM, nenHienSoDem } from "../../lib/dem";
 import {
   HIEN_KHOI_DANG_CHU_Y,
-  SAU_KHAN_DAI,
-  SAU_NGAN_KEO,
   SORT_KHAN_DAI,
   SORT_MAC_DINH,
   docSort,
@@ -125,29 +123,27 @@ function chuoiSau(sau: number, tuId = 1): BinhLuanOut[] {
   return [cay];
 }
 
-test(`W8 — idTrongTrang dừng ở tầng ${SAU_KHAN_DAI}, đúng chỗ UI cắt render`, () => {
-  const cay = chuoiSau(SAU_KHAN_DAI + 3);
-  const co = idTrongTrang(cay);
+/** Cây sâu hơn hẳn ngưỡng cắt CŨ (6 tầng) — để bài đo dưới phân biệt được "cắt ở 6" với
+ * "không cắt". */
+const SAU_THU = 9;
 
-  // Tầng 1..6 có `<li id="bl-N">` thật trong trang.
-  for (let d = 1; d <= SAU_KHAN_DAI; d += 1) {
+test("W8 — idTrongTrang lấy MỌI tầng: render phẳng không còn cắt theo độ sâu (2026-11-16)", () => {
+  // Bất biến của nợ B4 giữ nguyên — tập id phải BẰNG tập được render. Từ lượt bình luận
+  // kiểu TikTok, `components/binh-luan.tsx` dồn mọi hậu duệ thành một danh sách phẳng và
+  // không cắt tầng nào (`plans/2026-11-16-binh-luan-kieu-tiktok.md` §1), nên nút tầng 7+
+  // nay CÓ `<li id="bl-N">`. Báo "trang sau" cho nó là bảo người dùng đi tìm một thứ đang
+  // nằm ngay trên trang.
+  const co = idTrongTrang(chuoiSau(SAU_THU));
+  for (let d = 1; d <= SAU_THU; d += 1) {
     expect(co.has(d), `tầng ${d} phải nằm trong trang`).toBe(true);
   }
-  // Tầng 7 trở đi KHÔNG được render (`components/binh-luan.tsx` thay bằng link "tiếp tục
-  // thread →"), nên không có neo nào để cuộn tới.
-  for (let d = SAU_KHAN_DAI + 1; d <= SAU_KHAN_DAI + 3; d += 1) {
-    expect(co.has(d), `tầng ${d} KHÔNG được coi là nằm trong trang`).toBe(false);
-  }
+  expect(co.size).toBe(SAU_THU);
 });
 
-test("W8 — deep-link tới bình luận sâu quá ngưỡng phải nói 'nằm ở trang sau'", () => {
-  // Nợ B4: `idTrongTrang` từng duyệt cả cây, nên nút `depth ≥ 7` được báo "cuộn được" —
-  // bấm xong trang đứng yên, không thông báo gì. Đó là ca người dùng không có cách nào
-  // hiểu, tệ hơn hẳn một câu giải thích.
-  const co = idTrongTrang(chuoiSau(SAU_KHAN_DAI + 2));
-  expect(trangThaiDeepLink(SAU_KHAN_DAI, co)).toBe("cuon_duoc");
-  expect(trangThaiDeepLink(SAU_KHAN_DAI + 1, co)).toBe("trang_sau");
-  expect(trangThaiDeepLink(SAU_KHAN_DAI + 2, co)).toBe("trang_sau");
+test("W8 — deep-link tới bình luận sâu là cuộn được; id ngoài response vẫn là 'trang sau'", () => {
+  const co = idTrongTrang(chuoiSau(SAU_THU));
+  expect(trangThaiDeepLink(SAU_THU, co)).toBe("cuon_duoc");
+  expect(trangThaiDeepLink(SAU_THU + 1, co)).toBe("trang_sau");
 });
 
 /** Một `NganKeoOut` bọc quanh `threads`. `idTrongTrangGop` chỉ đọc `threads`; các trường
@@ -193,41 +189,40 @@ test("§D3 — `idTrongTrangGop` là HỢP thật: thiếu vế nào cũng mất
   expect(trangThaiDeepLink(999, gop)).toBe("trang_sau");
 });
 
-test(`§D3 — hợp cắt ở tầng ${SAU_KHAN_DAI} ở CẢ HAI vế, không riêng khán đài`, () => {
-  // Ngăn kéo nay là bản CHÍNH và sâu bằng khán đài (§C1), nhưng nó vẫn CÓ ngưỡng. Một
-  // cài đặt "khán đài thì cắt, lát cắt thì lấy cả cây" hứa cuộn tới một nút không có
-  // `<li id="bl-N">` nào — đúng nợ B4, chỉ đổi khu.
-  const sau = SAU_KHAN_DAI + 2;
-  const gop = idTrongTrangGop(null, [latCat(2, chuoiSau(sau, 101))]);
-
-  expect(gop.has(101 + SAU_KHAN_DAI - 1), `tầng ${SAU_KHAN_DAI} phải có`).toBe(true);
-  expect(gop.has(101 + SAU_KHAN_DAI), `tầng ${SAU_KHAN_DAI + 1} KHÔNG được có`).toBe(false);
+test("§D3 — hợp lấy MỌI tầng ở CẢ HAI vế, không riêng khán đài", () => {
+  // Ngăn kéo là bản CHÍNH (§C1) và render bằng cùng `DanhSachBinhLuan` với khán đài. Một
+  // cài đặt "khán đài thì lấy cả cây, lát cắt thì cắt" báo "chưa nhảy tới được" cho một
+  // nút đang nằm trong ngăn kéo — đúng nợ B4, chỉ đổi khu.
+  const gop = idTrongTrangGop(null, [latCat(2, chuoiSau(SAU_THU, 101))]);
+  expect(gop.has(101 + SAU_THU - 1), `tầng ${SAU_THU} phải có`).toBe(true);
 
   // `null` là ca THẬT, không phải ca biên bịa ra: `trang-mach.tsx` cố ý không nạp trang 1
   // `hay_nhat` khi mạch không gập, không trích và không xem sort ấy (vá C6).
-  expect(gop.size).toBe(SAU_KHAN_DAI);
+  expect(gop.size).toBe(SAU_THU);
 });
 
 test("neo bình luận là một chỗ sinh một chỗ đọc", () => {
   expect(neoBinhLuan(1234)).toBe("bl-1234");
 });
 
-test("§C1 — ngăn kéo sâu BẰNG khán đài, và `the-moc.tsx` thật sự dùng hằng ấy", () => {
-  // Từ 2026-08-26 ngăn kéo là **nhà duy nhất** của thread neo mốc: khán đài đã lọc chúng
-  // ra (`api/machs.py::goc_khong_neo`), nên link "tiếp tục thread →" không còn nhà đầy đủ
-  // nào để trỏ sang. PLAN 5.4 luật 2 vế "render tối đa 2 tầng reply" (ngưỡng 3) chết theo.
-  expect(SAU_NGAN_KEO).toBe(SAU_KHAN_DAI);
-
-  // Vế thứ hai là vế bắt được ca "hằng đúng, chỗ dùng gõ số": hằng bằng nhau không nói gì
-  // về việc `the-moc.tsx` có đọc nó hay không. `boChuThich` bắt buộc — chú thích ngay trên
-  // lời gọi có nhắc cả hai tên hằng.
-  const src = boChuThich(
-    readFileSync(resolve(__dirname, "..", "..", "components/the-moc.tsx"), "utf8"),
-  );
-  expect(src).toMatch(/doSauToiDa=\{SAU_NGAN_KEO\}/);
-  expect(src, "gõ số thẳng thì hai hằng hết ràng buộc được chỗ render").not.toMatch(
-    /doSauToiDa=\{\s*\d/,
-  );
+test("§C1 — không khu nào còn cắt bình luận theo độ sâu lúc render", () => {
+  // Thay cho bài "ngăn kéo sâu BẰNG khán đài" (ghim `SAU_NGAN_KEO === SAU_KHAN_DAI` và
+  // `doSauToiDa={SAU_NGAN_KEO}` ở `the-moc.tsx`): từ 2026-11-16 cả hai hằng đã gỡ vì
+  // render phẳng không cắt tầng nào. Câu hỏi của bài cũ — "nhà duy nhất không được cụt hơn
+  // nhà cũ" — nay đọc thành: không chỗ render nào được mọc lại một ngưỡng độ sâu, vì
+  // `idTrongTrang` (bài W8 trên) đã hứa mọi tầng đều có mặt. `boChuThich` bắt buộc —
+  // chú thích trong các file này còn nhắc tên cũ.
+  for (const f of [
+    "components/binh-luan.tsx",
+    "components/the-moc.tsx",
+    "components/khan-dai.tsx",
+  ]) {
+    const src = boChuThich(readFileSync(resolve(__dirname, "..", "..", f), "utf8"));
+    expect(src, `${f}: ngưỡng độ sâu mọc lại`).not.toMatch(
+      /doSauToiDa|SAU_KHAN_DAI|SAU_NGAN_KEO/,
+    );
+    expect(src, `${f}: so độ sâu lúc render`).not.toMatch(/\.depth\s*[<>]=?/);
+  }
 });
 
 test("tách `<slug>-<id>`: id là khoá, slug chỉ để đọc", () => {

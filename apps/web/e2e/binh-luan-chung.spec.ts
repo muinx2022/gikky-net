@@ -403,7 +403,8 @@ test.describe("Tiêu chí 7 — ngăn kéo sâu bằng khán đài", () => {
     for (const [i, id] of tang.entries()) {
       await expect(lat.locator(`#bl-${id}`), `tầng ${i + 1}`).toHaveCount(1);
     }
-    // Không nhánh nào bị cắt ⇒ không có link "tiếp tục thread →" nào trong ngăn kéo.
+    // Không nhánh nào bị cắt ⇒ không có link "tiếp tục thread →" nào trong ngăn kéo. Từ
+    // 2026-11-16 (hai tầng phẳng) link ấy đã gỡ hẳn; phép đếm 0 giữ làm chốt chống mọc lại.
     await expect(lat.getByRole("link", { name: /tiếp tục thread/ })).toHaveCount(0);
   });
 

@@ -378,7 +378,6 @@ export async function TrangMach({
         laMach={la_mach}
         hienSoDem={hien_so_dem}
         nganKeo={lat_cat.get(m.seq) ?? null}
-        duongDanKhanDai={duong_dan_khan_dai}
         duongDanTrich={duong_dan_trich}
         idTrongTrangKhanDai={id_trong_trang}
         publishedAtMach={mach.published_at}

@@ -30,7 +30,8 @@ import css from "./ngan-keo.module.css";
  * ⚠ **Ngăn kéo nay là PHÒNG, không còn là cửa sổ** *(user chốt 2026-08-26)*. Thread neo
  * mốc N render **duy nhất** ở đây; khán đài chỉ giữ thread không neo. Hai hệ quả sống
  * trong file này: nó phải mở được từ một deep-link `#bl-N` (xem `NganKeoProvider`), và độ
- * sâu render của nó bằng khán đài (`SAU_NGAN_KEO`, `lib/khan-dai.ts`).
+ * nó render cây bằng đúng component của khán đài (`DanhSachBinhLuan` — hai tầng phẳng, không
+ * cắt theo độ sâu từ 2026-11-16).
  *
  * Luật 3 (composer tự neo mốc) thuộc Phase 2: 1c chưa có thao tác ghi nào hoạt động.
  */
@@ -78,13 +79,21 @@ function useNganKeo(): Ctx {
  * — `scrollIntoView` thành lệnh rỗng, và cờ đã-xử-lý vẫn bị đóng dấu nên không lần nào
  * thử lại. Ca ấy có thật trên seed: khối trích ở mốc 7 trỏ bình luận neo mốc 5, mà mốc 5
  * nằm trong dải gập `2..6` của mạch HPG.
+ *
+ * ## Khoang thứ tư: đuôi reply gập *(2026-11-16, bình luận kiểu TikTok)*
+ *
+ * Reply thứ 4 trở đi của một thread bị gập bằng `hidden` trên **chính** `<li id="bl-N">`
+ * (`binh-luan-uu-tien.tsx::DanhSachReply`), và nút "Xem thêm" khai `aria-controls` là
+ * **danh sách** id các `<li>` ấy. Nên vòng lặp đi từ CHÍNH `dich` (không từ cha của nó), và
+ * khớp `aria-controls~=` (một phần tử trong danh sách id) thay vì `=`. Ba khoang cũ chỉ
+ * khai một id, `~=` vẫn khớp đúng chúng.
  */
 function moToTienDangGap(dich: HTMLElement): boolean {
   let da_bam = false;
-  for (let el = dich.parentElement; el !== null; el = el.parentElement) {
+  for (let el: HTMLElement | null = dich; el !== null; el = el.parentElement) {
     if (!el.hasAttribute("hidden") || el.id === "") continue;
     const cong_tac = document.querySelector<HTMLElement>(
-      `[aria-controls="${CSS.escape(el.id)}"]`,
+      `[aria-controls~="${CSS.escape(el.id)}"]`,
     );
     if (cong_tac === null) continue;
     cong_tac.click();
@@ -225,15 +234,30 @@ export function NganKeoProvider({ children }: { children: ReactNode }) {
     // lúc ấy `#bl-<id vừa tạo>` chưa tồn tại. Không có nhịp hẹn này thì effect thoát và
     // không có gì gọi nó lại (một cú re-render do refresh KHÔNG chắc xảy ra ở component
     // này), nên tiêu chí 16 chết im lặng đúng kiểu NẶNG-1 vừa chữa.
-    if (dich === null) {
+    const henThuLai = () => {
       window.clearTimeout(hen.current);
       hen.current = window.setTimeout(() => datNhip((n) => n + 1), NHIP_THU_LAI_MS);
+    };
+    if (dich === null) {
+      henThuLai();
       return;
     }
-    // Còn khoang phải mở ⇒ để React commit rồi lượt render sau tính tiếp. KHÔNG đóng dấu.
-    if (moToTienDangGap(dich)) return;
-    // Mở hết mà vẫn không chiếm chỗ ⇒ vẫn chưa xong. Vẫn KHÔNG đóng dấu.
-    if (dich.offsetParent === null) return;
+    // Còn khoang phải mở ⇒ để React commit rồi lượt sau tính tiếp. KHÔNG đóng dấu — và PHẢI
+    // hẹn lượt sau *(vòng sửa 2, 2026-11-16)*: "lượt render sau" chỉ tự đến khi state vừa
+    // đổi nằm ở CHÍNH provider này (ngăn kéo). Công tắc của khoang khác — dải gập, đuôi reply
+    // gập (`DanhSachReply`), cả khu bình luận chung vốn đứng NGOÀI provider — đổi state ở
+    // component của nó, provider không render lại, effect không chạy lần hai, không cuộn.
+    if (moToTienDangGap(dich)) {
+      henThuLai();
+      return;
+    }
+    // Mở hết mà vẫn không chiếm chỗ ⇒ vẫn chưa xong. Vẫn KHÔNG đóng dấu, và hẹn lượt sau
+    // cùng lý do trên (khoang vừa được người khác mở — vd. `DanhSachReply` vừa thấy hash
+    // mới — chưa commit). `TRAN_THU_MO_DUONG` vẫn chặn trên mọi nhánh.
+    if (dich.offsetParent === null) {
+      henThuLai();
+      return;
+    }
     daXuLy.current = neo;
     dichSuKien.current = null;
     dich.scrollIntoView({ block: "center" });

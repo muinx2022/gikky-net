@@ -116,10 +116,31 @@
   color: var(--ink-3);
 }
 
-.sau_qua {
-  margin: 10px 0 0;
-  font-size: 12.5px;
+/* Link "tiếp tục thread (N nhánh) →" (`.sau_qua`) gỡ 2026-11-16 cùng lượt phẳng hoá: không
+ * còn cắt theo độ sâu thì không còn nhánh nào bị cắt để đi tiếp. */
+
+/* Dòng `↪ trả lời @cha` đầu thân reply phẳng — nhỏ, nhạt: nó là ngữ cảnh, không phải nội dung. */
+.tra_loi_cha {
+  margin: 4px 0 0;
+  font-size: 12px;
   color: var(--ink-3);
+}
+
+/* Nút `Xem thêm N câu trả lời ▾` / `Ẩn bớt ▴` của đuôi reply gập. Trông như chữ, bấm như nút. */
+.xem_them_reply {
+  margin: 12px 0 0;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.xem_them_reply:hover {
+  color: var(--ink);
 }
 
 .noi_bat {

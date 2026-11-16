@@ -91,42 +91,16 @@ export function docSort(gia_tri: string | string[] | undefined): SortKhanDai {
  */
 export const HIEN_KHOI_DANG_CHU_Y: boolean = false;
 
-/** Độ sâu render tối đa của khán đài — PLAN 5.3 "UI render tối đa 6 tầng rồi
- * *tiếp tục thread →*". API trả đủ cây, cắt là việc của UI.
- *
- * Hằng nằm ở `lib/` chứ không ở `components/binh-luan.tsx` vì `idTrongTrang` dưới đây
- * **phải** dừng ở đúng con số này (nợ B4 của đợt vá 2026-08-22): nút sâu hơn ngưỡng
- * không có `<li id="bl-N">` nào trong trang, nên báo "cuộn được" cho nó là hứa một cú
- * bấm rồi trang đứng yên, không thông báo gì. Hai hằng ở hai file là hai sự thật.
- */
-export const SAU_KHAN_DAI = 6;
+/** `SAU_KHAN_DAI` / `SAU_NGAN_KEO` (độ sâu render tối đa, 6 tầng rồi "tiếp tục thread →")
+ * **gỡ 2026-11-16** cùng lượt bình luận kiểu TikTok (`plans/2026-11-16-binh-luan-kieu-tiktok.md`):
+ * gốc + mọi hậu duệ dồn thành một danh sách phẳng (`lib/binh-luan-phang.ts`), không còn
+ * cắt theo độ sâu. Bất biến của nợ B4 vẫn giữ — tập id dưới đây phải BẰNG tập được render —
+ * chỉ là nay tập ấy là cả cây. */
 
-/** Ngăn kéo — **bằng đúng `SAU_KHAN_DAI`** từ 2026-08-26.
- *
- * PLAN 5.4 luật 2 vế "render tối đa 2 tầng reply" (ngưỡng 3, vì gốc là tầng 1) **chết**
- * cùng lượt tách bình luận chung khỏi bình luận mốc. Lý lẽ của con số 3 là *"ngăn kéo chỉ
- * là cửa sổ chiếu vào khán đài"*: cụt ở tầng 3 không mất gì, vì link "tiếp tục thread →"
- * dẫn sang một cái nhà đầy đủ ở dưới. Từ lượt ấy **không còn cái nhà đó** — thread neo mốc
- * N chỉ sống trong ngăn kéo mốc N, nên nhà duy nhất không được cụt hơn nhà cũ.
- *
- * Giữ tên riêng thay vì thay hết bằng `SAU_KHAN_DAI` ở chỗ dùng: hai khu vẫn là hai khu,
- * và ngày chúng tách con số ra lần nữa thì chỗ sửa là ĐÂY. Gán bằng chứ không chép số:
- * hai hằng kể hai câu chuyện là cách chúng trôi khỏi nhau lặng lẽ.
- */
-export const SAU_NGAN_KEO = SAU_KHAN_DAI;
-
-/** Duyệt cây bình luận theo chiều sâu, gốc trước con.
- *
- * `doSauToiDa` cắt đúng như `components/binh-luan.tsx` cắt khi render: nút ở đúng ngưỡng
- * vẫn ra, con của nó thì không (chỗ đó UI thay bằng link "tiếp tục thread →").
- */
-export function duyetCay(
-  threads: readonly BinhLuanOut[],
-  doSauToiDa = Number.POSITIVE_INFINITY,
-): BinhLuanOut[] {
+/** Duyệt cây bình luận theo chiều sâu, gốc trước con — mọi tầng. */
+export function duyetCay(threads: readonly BinhLuanOut[]): BinhLuanOut[] {
   const ra: BinhLuanOut[] = [];
   const di = (nut: BinhLuanOut) => {
-    if (nut.depth > doSauToiDa) return;
     ra.push(nut);
     nut.replies.forEach(di);
   };
@@ -136,14 +110,17 @@ export function duyetCay(
 
 /** Tập `id` của mọi bình luận **được RENDER RA** trong trang khán đài đang cầm.
  *
- * "Có trong response" khác "có trong trang": khán đài cắt ở `SAU_KHAN_DAI` tầng, nên một
- * nút `depth ≥ 7` nằm trong JSON nhưng không có phần tử HTML nào mang `id` của nó.
+ * Từ lượt phẳng hoá (2026-11-16) mọi nút trong response đều có `<li id="bl-N">` trên trang.
+ * Reply nằm trong đuôi gập (thứ 4 trở đi) vẫn có `<li>` đó — chỉ mang `hidden` — và
+ * "cuộn được" vẫn đúng với nó vì hai lớp: `DanhSachReply` không bao giờ ẩn reply đang là
+ * đích `#bl-N` trên URL, còn `ngan-keo.tsx::moToTienDangGap` bấm nút "Xem thêm" (khai
+ * `aria-controls` các `<li>` trong đuôi) khi đích vẫn đang ẩn. **Cần JS**: không JS thì
+ * đuôi đóng và trình duyệt không cuộn tới phần tử `hidden` — cùng giới hạn đã chấp nhận
+ * của ngăn kéo (xem `NganKeoProvider`). Trước 2026-11-16 khán đài cắt ở 6 tầng và tập
+ * này phải dừng đúng ở đó (nợ B4).
  */
-export function idTrongTrang(
-  threads: readonly BinhLuanOut[],
-  doSauToiDa = SAU_KHAN_DAI,
-): Set<number> {
-  return new Set(duyetCay(threads, doSauToiDa).map((n) => n.id));
+export function idTrongTrang(threads: readonly BinhLuanOut[]): Set<number> {
+  return new Set(duyetCay(threads).map((n) => n.id));
 }
 
 /** Tập `id` được render ra trong **cả trang mạch**: khán đài ∪ mọi lát cắt ngăn kéo.
@@ -165,9 +142,9 @@ export function idTrongTrang(
  * (`the-moc.tsx` bật `datNeo`), tức `id="bl-N"` của thread neo nằm ở đó. Tính tập này chỉ
  * từ khán đài là báo "chưa nhảy tới được" cho đúng những bình luận đang có mặt trong trang.
  *
- * Hai vế cắt ở **cùng** một ngưỡng, và đó không phải trùng hợp: `SAU_NGAN_KEO` nay bằng
- * `SAU_KHAN_DAI` (§C1), nên `idTrongTrang` mặc định đúng con số cho cả hai. Ngày hai khu
- * tách ngưỡng ra lần nữa thì chỗ sửa là ĐÂY, không phải ở `trang-mach.tsx`.
+ * Hai vế dùng **cùng** một luật (`idTrongTrang`) vì hai khu render bằng cùng một component
+ * (`DanhSachBinhLuan`). Ngày hai khu render khác nhau thì chỗ sửa là ĐÂY, không phải ở
+ * `trang-mach.tsx`.
  *
  * `hayNhat` nhận `null` vì `trang-mach.tsx` **cố ý** không nạp trang 1 `hay_nhat` khi
  * không cần (vá C6): post thường không gập, không trích, không xem sort ấy thì lời gọi

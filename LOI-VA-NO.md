@@ -2297,3 +2297,11 @@ P-20261116-1 · MỞ · VỪA · **nghi ngờ** · Mix Fold 3 có thể báo `in
 P-20261116-2 · MỞ · NHỎ · Ca 960px trong `mobile-390` T5 không ghim tab «Chuyên mục» của thanh dưới đang hiện — mối «ẩn rail vì đã có tab» không có hàng rào · `apps/web/e2e/mobile-390.spec.ts:682-690` · phản biện 2026-11-16; đề nghị thêm expect tab hiện trong vòng 960 khi user duyệt.
 
 P-20261116-3 · MỞ · NHỎ · **nghi ngờ** · Cặp `max-width: 960px` / `min-width: 961px` để hở bề rộng lẻ (vd 960,5px): lưới còn hai cột trong khi thanh dưới có thể hiện · `thanh-dieu-huong-duoi.module.css:53`, `khung-hai-cot.module.css:65,85` · phản biện 2026-11-16; chưa đo máy thật.
+
+P-20261116-4 · MỞ · VỪA · 11 bài e2e đỏ sẵn trên HEAD 44a973a (chạy `gikky_e2e`): `binh-luan-chung` :122/:138/:159 (deep-link `#bl-23` viewport ratio 0 / not visible), `mach-can` :272/:301/:342/:812 (`trich-moc-7`, `trich-nhay-khan-dai` hidden), :653/:704 (V8: "24 Bình luận" hoa; post 2 bình luận vẫn có `chu-ky-so-binh-luan`), `tai-khoan-va-ghi` :158 (`nut-xoa-binh-luan` timeout) / :272 (khách thấy 25 `nut-tra-loi`, mong 0) · `apps/web/e2e/` · nghiệm thu 2026-11-16 đối chứng worktree HEAD, cùng thông báo lỗi.
+
+P-20261116-5 · MỞ · NHỎ · Deep-link `#bl-N` vào thread mà gốc đang bị gập `[−]` không tự mở: `than-nhanh` của `GapNhanh` có `hidden` nhưng không `id`/`aria-controls` nên `moToTienDangGap` không thấy · `apps/web/components/gap-nhanh.tsx:78` · phản biện + thợ 2026-11-16; có từ trước.
+
+P-20261116-6 · MỞ · NHỎ · Docstring `BinhLuanOut` còn ghi "UI render tối đa 6 tầng rồi 'tiếp tục thread →'", sai sau khi bình luận chuyển 2 tầng phẳng (plan `2026-11-16-binh-luan-kieu-tiktok.md`); sửa phải chạy `pnpm codegen` · `api/api/schemas.py:739` · phản biện 2026-11-16.
+
+P-20261116-7 · MỞ · NHỎ · `mobile-390` T1 chớp tắt: `nut-ghi-nhat-ky-di-dong` ở `/` bị `banner-cai-app` che một lượt, lượt sau xanh · `apps/web/e2e/mobile-390.spec.ts:418` · thợ 2026-11-16.

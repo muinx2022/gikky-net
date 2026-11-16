@@ -4,13 +4,12 @@ import Link from "next/link";
 import {
   ID_O_SOAN_BINH_LUAN,
   NHAN_SORT,
-  SAU_KHAN_DAI,
   SORT_KHAN_DAI,
   type SortKhanDai,
   nenRenderCauDangDoc,
 } from "@/lib/khan-dai";
 
-import { BinhLuan, DanhSachBinhLuan } from "./binh-luan";
+import { DanhSachBinhLuan } from "./binh-luan";
 import { Composer } from "./composer";
 import css from "./khan-dai.module.css";
 
@@ -34,13 +33,7 @@ import css from "./khan-dai.module.css";
  * không mất nội dung. Ngược lại, để cả trang mạch 500 vì một khối phụ mới là hỏng nặng
  * hơn thứ nó chữa.
  */
-export function CauDangDoc({
-  tap,
-  duongDanKhanDai,
-}: {
-  tap: KhanDaiOut | null;
-  duongDanKhanDai: string;
-}) {
+export function CauDangDoc({ tap }: { tap: KhanDaiOut | null }) {
   // Khối không lọc được gì ⇒ không render: nó sẽ chép lại y nguyên cây ngay dưới nó.
   // "Câu đáng đọc" là một phép LỌC; khi nó không lọc được gì thì thứ nó thêm vào chỉ là
   // hai bản của cùng một danh sách, và người đọc phải tự đoán vì sao mình thấy mọi bình
@@ -57,19 +50,10 @@ export function CauDangDoc({
           Bình luận được chủ mạch trích vào sổ, cùng những câu điểm cao nhất.
         </p>
       </div>
-      <DanhSachBinhLuan data-testid="cay-cau-dang-doc">
-        {tap.threads.map((n) => (
-          <BinhLuan
-            key={n.id}
-            nut={n}
-            doSauToiDa={SAU_KHAN_DAI}
-            duongDanKhanDai={duongDanKhanDai}
-            // `datNeo` TẮT ở đây: khối này và cây đầy đủ bên dưới render cùng những
-            // bình luận ấy, và hai phần tử cùng mang `id="bl-<id>"` là HTML trùng id —
-            // trình duyệt cuộn tới cái nào là chuyện hên xui. Neo thuộc về cây đầy đủ.
-          />
-        ))}
-      </DanhSachBinhLuan>
+      {/* `datNeo` TẮT ở đây: khối này và cây đầy đủ bên dưới render cùng những bình luận
+          ấy, và hai phần tử cùng mang `id="bl-<id>"` là HTML trùng id — trình duyệt cuộn
+          tới cái nào là chuyện hên xui. Neo thuộc về cây đầy đủ. */}
+      <DanhSachBinhLuan data-testid="cay-cau-dang-doc" threads={tap.threads} />
     </section>
   );
 }
@@ -234,7 +218,7 @@ export function KhanDai({
 
       {/* TRÊN CÙNG của DANH SÁCH, trước cả thanh sort — PLAN 5.5 chốt đúng vị trí
           này. Đặt nó dưới cây là để cái nhãn trên nút vẫn hứa suông. */}
-      <CauDangDoc tap={cauDangDoc} duongDanKhanDai={duongDanKhanDai} />
+      <CauDangDoc tap={cauDangDoc} />
 
       <div className={css.thanh_sort} data-testid="thanh-sort">
         <span className={css.nhan_sort}>Sắp xếp:</span>
@@ -265,17 +249,7 @@ export function KhanDai({
         </p>
       ) : (
         <div className={css.danh_sach}>
-          <DanhSachBinhLuan data-testid="cay-khan-dai">
-            {khanDai.threads.map((n) => (
-              <BinhLuan
-                key={n.id}
-                nut={n}
-                doSauToiDa={SAU_KHAN_DAI}
-                duongDanKhanDai={duongDanKhanDai}
-                datNeo
-              />
-            ))}
-          </DanhSachBinhLuan>
+          <DanhSachBinhLuan data-testid="cay-khan-dai" threads={khanDai.threads} datNeo />
         </div>
       )}
 

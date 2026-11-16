@@ -1,10 +1,9 @@
 import type { MocOut, NganKeoOut } from "@gikky/api-client";
 
 import { dauThoiGianServer, ngayDayDu } from "@/lib/dinh-dang";
-import { SAU_NGAN_KEO } from "@/lib/khan-dai";
 
 import { BanCuMoc } from "./ban-cu-moc";
-import { BinhLuan, DanhSachBinhLuan } from "./binh-luan";
+import { DanhSachBinhLuan } from "./binh-luan";
 import { Composer } from "./composer";
 import { SoLaiLo } from "./con-so";
 import { CotVote } from "./cot-vote";
@@ -37,9 +36,6 @@ type Props = {
    * lát cắt là cách cái nút mời "＋ nói gì đó về mốc này" mở ra "Chưa ai neo bình luận
    * vào mốc này" ngay bên dưới blockquote trích từ chính bình luận đó. */
   nganKeo: NganKeoOut | null;
-  /** Đường tới khán đài đầy đủ theo sort người dùng đang xem — cho link "tiếp tục
-   * thread →" của ngăn kéo. */
-  duongDanKhanDai: string;
   /** Đường tới khán đài mà **khối trích** deep-link vào: luôn là trang 1 của `hay_nhat`,
    * cùng trang mà `idTrongTrangKhanDai` được tính trên (vá B3). */
   duongDanTrich: string;
@@ -64,7 +60,6 @@ export function TheMoc({
   laMach,
   hienSoDem,
   nganKeo,
-  duongDanKhanDai,
   duongDanTrich,
   idTrongTrangKhanDai,
   publishedAtMach,
@@ -260,27 +255,21 @@ export function TheMoc({
         {laMach && (
           <KhungNganKeo seq={moc.seq}>
             {co_hang ? (
-              <DanhSachBinhLuan data-testid={`lat-cat-${moc.seq}`}>
-                {nganKeo.threads.map((n) => (
-                  <BinhLuan
-                    key={n.id}
-                    nut={n}
-                    doSauToiDa={SAU_NGAN_KEO}
-                    duongDanKhanDai={duongDanKhanDai}
-                    // **Bản CHÍNH từ 2026-08-26** — `id="bl-N"` và `data-binh-luan-id`
-                    // của thread neo mốc này nằm ở đây, không ở khán đài nữa: khán đài
-                    // chỉ còn thread KHÔNG neo (`api/machs.py`), nên ngăn kéo là nơi
-                    // DUY NHẤT chúng render.
-                    //
-                    // Bất biến "mỗi bình luận đúng MỘT nút mang định danh" vẫn giữ, và
-                    // giữ được là nhờ hai tập nguồn rời nhau: khán đài lấy
-                    // `anchor_moc_seq IS NULL`, ngăn kéo lấy `== seq`. Khối "Câu đáng
-                    // đọc" (đang tắt) vẫn `datNeo=false`, nên bật lại cũng không sinh
-                    // id trùng.
-                    datNeo
-                  />
-                ))}
-              </DanhSachBinhLuan>
+              <DanhSachBinhLuan
+                data-testid={`lat-cat-${moc.seq}`}
+                threads={nganKeo.threads}
+                // **Bản CHÍNH từ 2026-08-26** — `id="bl-N"` và `data-binh-luan-id`
+                // của thread neo mốc này nằm ở đây, không ở khán đài nữa: khán đài
+                // chỉ còn thread KHÔNG neo (`api/machs.py`), nên ngăn kéo là nơi
+                // DUY NHẤT chúng render.
+                //
+                // Bất biến "mỗi bình luận đúng MỘT nút mang định danh" vẫn giữ, và
+                // giữ được là nhờ hai tập nguồn rời nhau: khán đài lấy
+                // `anchor_moc_seq IS NULL`, ngăn kéo lấy `== seq`. Khối "Câu đáng
+                // đọc" (đang tắt) vẫn `datNeo=false`, nên bật lại cũng không sinh
+                // id trùng.
+                datNeo
+              />
             ) : (
               <p data-testid={`lat-cat-rong-${moc.seq}`}>
                 Chưa ai neo bình luận vào mốc này.

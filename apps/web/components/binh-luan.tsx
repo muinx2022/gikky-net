@@ -1,6 +1,13 @@
 import type { BinhLuanOut } from "@gikky/api-client";
 import Link from "next/link";
 
+import {
+  type ChaReply,
+  type ReplyPhang,
+  chuTraLoi,
+  lamPhangThread,
+  nguoiThamGia,
+} from "@/lib/binh-luan-phang";
 import { CHU_NGUOI_DUNG } from "@/lib/chu-nguoi-dung";
 import { dauThoiGianServer, diemCoDau } from "@/lib/dinh-dang";
 import { neoBinhLuan } from "@/lib/khan-dai";
@@ -9,21 +16,21 @@ import { duongDanHoSo } from "@/lib/url";
 
 import { Avatar } from "./avatar";
 import css from "./binh-luan.module.css";
+import { DanhSachReply, DanhSachThread } from "./binh-luan-uu-tien";
 import { CotVote } from "./cot-vote";
 import { GapNhanh } from "./gap-nhanh";
 import { HanhDongBinhLuan } from "./hanh-dong-binh-luan";
 import { HanhDongMod } from "./hanh-dong-mod";
 import { ThanHtml } from "./than-html";
 
-// `SAU_KHAN_DAI` / `SAU_NGAN_KEO` đã dời sang `lib/khan-dai.ts`: `idTrongTrang` phải
-// dừng ở CÙNG con số với chỗ render (nợ B4), và hằng sống ở `components/` thì `lib/`
-// không với tới được mà không đảo chiều phụ thuộc.
+// **Hai tầng phẳng kiểu TikTok từ 2026-11-16** (`plans/2026-11-16-binh-luan-kieu-tiktok.md`).
+// Cây không còn render đệ quy và không còn cắt theo độ sâu: gốc, rồi mọi hậu duệ thành
+// MỘT danh sách phẳng thụt một bậc (`lib/binh-luan-phang.ts::lamPhangThread`). Hằng
+// `SAU_KHAN_DAI` / `SAU_NGAN_KEO` và link "tiếp tục thread (N nhánh) →" chết theo — mọi
+// nút trong response đều có mặt trên trang, và `idTrongTrang` đếm đúng như thế.
 
 type Props = {
   nut: BinhLuanOut;
-  doSauToiDa: number;
-  /** Đường tới khán đài đầy đủ, để nhánh bị cắt còn chỗ đi tiếp. */
-  duongDanKhanDai: string;
   /** Nút này là **bản CHÍNH** của bình luận trong trang: nó mang `id="bl-<id>"` (để
    * deep-link neo được) **và** `data-binh-luan-id`. Chỉ cây khán đài đầy đủ bật.
    *
@@ -46,26 +53,42 @@ type Props = {
   datNeo?: boolean;
 };
 
-/** Danh sách bình luận cùng cấp. Tách ra để khán đài và ngăn kéo dùng CHUNG một kiểu
- * dáng — hai `<ul>` tự bày là hai kiểu dáng sẽ trôi khỏi nhau. */
+/** Danh sách thread gốc. Tách ra để khán đài và ngăn kéo dùng CHUNG một kiểu dáng — hai
+ * `<ul>` tự bày là hai kiểu dáng sẽ trôi khỏi nhau.
+ *
+ * Từ 2026-11-16 thứ tự cuối cùng do CLIENT quyết (`DanhSachThread`): thread có người đang
+ * đăng nhập tham gia lên đầu. Server chỉ dựng từng thread kèm tập người tham gia. */
 export function DanhSachBinhLuan({
-  children,
+  threads,
+  datNeo = false,
   "data-testid": testid,
 }: {
-  children: React.ReactNode;
+  threads: readonly BinhLuanOut[];
+  datNeo?: boolean;
   "data-testid"?: string;
 }) {
   return (
-    <ul className={css.danh_sach} data-testid={testid}>
-      {children}
-    </ul>
+    <DanhSachThread
+      data-testid={testid}
+      threads={threads.map((n) => ({
+        id: n.id,
+        nguoiThamGia: nguoiThamGia(n),
+        node: <BinhLuan nut={n} datNeo={datNeo} />,
+      }))}
+    />
   );
 }
 
-/** Dòng hiện ra khi nhánh bị gập — ai viết + còn bao nhiêu nhánh bên dưới.
+function demHauDue(nut: BinhLuanOut): number {
+  return nut.replies.reduce((tong, con) => tong + 1 + demHauDue(con), 0);
+}
+
+/** Dòng hiện ra khi thread bị gập — ai viết + còn bao nhiêu câu trả lời bên dưới.
  *
- * Phải nói được **số nhánh bị giấu**, nếu không cái nút `[+]` là một hộp kín và người đọc
- * không có căn cứ nào để quyết định có mở hay không. Bia mộ thì không có tác giả để nêu.
+ * Phải nói được **số câu trả lời bị giấu**, nếu không cái nút `[+]` là một hộp kín và
+ * người đọc không có căn cứ nào để quyết định có mở hay không. Đếm MỌI hậu duệ chứ không
+ * chỉ con trực tiếp: từ lượt phẳng hoá, thứ bị giấu là cả danh sách reply phẳng, và đó
+ * cũng là con số người ta thấy được khi mở ra. Bia mộ thì không có tác giả để nêu.
  */
 function tomTatNhanh(nut: BinhLuanOut): string {
   const ai =
@@ -74,72 +97,87 @@ function tomTatNhanh(nut: BinhLuanOut): string {
       : nut.trang_thai === "da_xoa"
         ? "[bình luận đã xoá]"
         : "[bình luận đã bị ẩn]";
-  const con = nut.replies.length;
-  return con === 0 ? ai : `${ai} · ${con} nhánh`;
+  const so = demHauDue(nut);
+  return so === 0 ? ai : `${ai} · ${so} câu trả lời`;
 }
 
-export function BinhLuan({ nut, doSauToiDa, duongDanKhanDai, datNeo = false }: Props) {
-  const con_bi_cat = nut.replies.length > 0 && nut.depth >= doSauToiDa;
+/** Thuộc tính định danh của một nút bình luận — gốc và reply phẳng dùng chung (reply: đi qua
+ * prop sang `DanhSachReply`, nên chỉ chứa giá trị tuần tự hoá được). */
+function dinhDanh(nut: BinhLuanOut, datNeo: boolean) {
+  return {
+    id: datNeo ? neoBinhLuan(nut.id) : undefined,
+    "data-testid": "binh-luan",
+    "data-binh-luan-id": datNeo ? nut.id : undefined,
+    "data-ban-phu-binh-luan-id": datNeo ? undefined : nut.id,
+    "data-trang-thai": nut.trang_thai,
+  };
+}
+
+function BiaMo({ nut }: { nut: BinhLuanOut }) {
   return (
-    <li
-      className={css.noi_bat}
-      id={datNeo ? neoBinhLuan(nut.id) : undefined}
-      data-testid="binh-luan"
-      data-binh-luan-id={datNeo ? nut.id : undefined}
-      data-ban-phu-binh-luan-id={datNeo ? undefined : nut.id}
-      data-trang-thai={nut.trang_thai}
-    >
-      {/* `[−]` gập cả bình luận lẫn nhánh con — plan con 1d §2.5.5. Nội dung vẫn nằm
-          trong HTML (chỉ `hidden`), nên bot và deep-link `#bl-<id>` không mất gì. */}
+    <p className={css.bia_mo} data-testid="bia-mo-binh-luan">
+      {nut.trang_thai === "da_xoa" ? "[bình luận đã xoá]" : "[bình luận đã bị ẩn]"}
+    </p>
+  );
+}
+
+/** Một thread: bình luận gốc + danh sách reply phẳng ngay dưới nó. */
+export function BinhLuan({ nut, datNeo = false }: Props) {
+  const replies = lamPhangThread(nut);
+  return (
+    <li className={css.noi_bat} {...dinhDanh(nut, datNeo)}>
+      {/* `[−]` gập cả gốc lẫn mọi reply — plan con 1d §2.5.5. Nội dung vẫn nằm trong
+          HTML (chỉ `hidden`), nên bot và deep-link `#bl-<id>` không mất gì. Reply phẳng
+          không có `[−]` riêng: chúng chỉ còn một tầng, gập gốc là đủ. */}
       <GapNhanh tomTat={tomTatNhanh(nut)}>
-        {nut.trang_thai === "binh_thuong" ? (
-          <NoiDung nut={nut} />
-        ) : (
-          <p className={css.bia_mo} data-testid="bia-mo-binh-luan">
-            {nut.trang_thai === "da_xoa"
-              ? "[bình luận đã xoá]"
-              : "[bình luận đã bị ẩn]"}
-          </p>
-        )}
+        {nut.trang_thai === "binh_thuong" ? <NoiDung nut={nut} /> : <BiaMo nut={nut} />}
 
-        {nut.replies.length > 0 && !con_bi_cat && (
-          <ul className={css.tra_loi}>
-            {nut.replies.map((con) => (
-              <BinhLuan
-                key={con.id}
-                nut={con}
-                doSauToiDa={doSauToiDa}
-                duongDanKhanDai={duongDanKhanDai}
-                datNeo={datNeo}
-              />
-            ))}
-          </ul>
-        )}
-
-        {con_bi_cat && (
-          /* ⚠ **Quirk đã biết, KHÔNG sửa ở lượt này** *(NHẸ 7, 2026-08-27)*: link này trỏ
-             về `#bl-<id của chính nút đang đứng>`. Ở khán đài nó vốn đã như vậy từ đầu —
-             nút bị cắt con nằm ở tầng 6, và trang đích cũng cắt ở tầng 6, nên "đi tiếp"
-             thực ra là cuộn về đúng chỗ mình đang đứng. Từ lượt ngăn kéo sâu bằng khán đài
-             (§C1), ngăn kéo thừa hưởng y hệt quirk ấy — tức đây là **parity**, không phải
-             một hồi quy mới sinh ra.
-
-             Sửa thật = một trang permalink cho thread (nơi nút ấy thành gốc và cây được
-             dựng lại từ nó), và đó là một việc riêng có tầm vóc riêng. Trước khi có nó,
-             giữ link còn hơn bỏ: nó vẫn nói ra rằng **còn N nhánh nữa** ở dưới, thứ mà
-             một dấu ba chấm im lặng không nói. */
-          <p className={css.sau_qua}>
-            <Link href={`${duongDanKhanDai}#${neoBinhLuan(nut.id)}`} prefetch={false}>
-              tiếp tục thread ({nut.replies.length} nhánh) →
-            </Link>
-          </p>
+        {replies.length > 0 && (
+          <DanhSachReply
+            replies={replies.map((r) => ({
+              id: r.nut.id,
+              tacGia: r.nut.author?.username ?? null,
+              dinhDanh: dinhDanh(r.nut, datNeo),
+              node: <ThanReply r={r} />,
+            }))}
+          />
         )}
       </GapNhanh>
     </li>
   );
 }
 
-function NoiDung({ nut }: { nut: BinhLuanOut }) {
+/** Thân một reply phẳng — KHÔNG kèm `<li>`: `<li>` (và định danh của nó) do
+ * `DanhSachReply` dựng, để gập đuôi bằng `hidden` trên chính `<li>` mà không phải tháo
+ * nút khi nó đổi phe hiện/gập. */
+function ThanReply({ r }: { r: ReplyPhang }) {
+  return r.nut.trang_thai === "binh_thuong" ? (
+    <NoiDung nut={r.nut} cha={r.cha} />
+  ) : (
+    <BiaMo nut={r.nut} />
+  );
+}
+
+/** Dòng `↪ trả lời @cha` — chỉ khi cha KHÔNG phải gốc. Tên cha là chữ người dùng gõ (Y3)
+ * nên mang dấu `CHU_NGUOI_DUNG`; phần "↪ trả lời" và nhãn bia mộ là chữ của ứng dụng. */
+function DongTraLoi({ cha }: { cha: ChaReply }) {
+  if (cha.loai !== "nguoi") {
+    return (
+      <p className={css.tra_loi_cha} data-testid="tra-loi-cha">
+        {chuTraLoi(cha)}
+      </p>
+    );
+  }
+  return (
+    <p className={css.tra_loi_cha} data-testid="tra-loi-cha">
+      ↪ trả lời <span {...CHU_NGUOI_DUNG}>@{cha.ten}</span>
+    </p>
+  );
+}
+
+/** Thân một bình luận đọc được. `cha` khác `null` ⇔ reply phẳng mà cha không phải gốc —
+ * dòng `↪ trả lời @cha` đứng đầu thân, TRONG `<details>` tự gập (nó là một phần của thân). */
+function NoiDung({ nut, cha = null }: { nut: BinhLuanOut; cha?: ChaReply | null }) {
   const than = (
     <>
       <div className={css.dau}>
@@ -184,6 +222,7 @@ function NoiDung({ nut }: { nut: BinhLuanOut }) {
       {/* `ThanHtml` chứ không `ThanVan` từ 2026-08-26: bình luận nay có HAI định dạng.
           Nó tự rẽ theo `body_dinh_dang` — `markdown` đi thẳng về `ThanVan`, tức mọi bình
           luận cũ giữ nguyên đường render cũ, không migrate gì. */}
+      {cha !== null && <DongTraLoi cha={cha} />}
       <ThanHtml
         body={nut.body ?? ""}
         dinhDang={nut.body_dinh_dang}
