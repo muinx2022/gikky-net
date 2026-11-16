@@ -418,6 +418,17 @@
             "title": "Mach Title",
             "type": "string"
           },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
           "score": {
             "title": "Score",
             "type": "integer"
@@ -432,6 +443,7 @@
         },
         "required": [
           "id",
+          "parent_id",
           "mach_id",
           "mach_title",
           "tac_gia",
@@ -5066,7 +5078,7 @@
     },
     "/api/admin/comments": {
       "get": {
-        "description": "Bảng bình luận cho mod, mới nhất trước, cursor keyset `(created_at, id)`.\n\nGồm **cả bia mộ và bình luận đã bị ẩn**. Bia mộ có mặt vì `deleted_at` không xoá\n`body` khỏi DB (PLAN 5.3 giữ chỗ), và mod đôi khi cần đọc đúng cái đã bị tác giả rút\nlại sau khi bị tố.\n\n`trang_thai=hien` = còn sống **và** chưa bị ẩn — hai cột, không phải một.",
+        "description": "Bảng bình luận cho mod, mới nhất trước, cursor keyset `(created_at, id)`.\n\nGồm **cả bia mộ và bình luận đã bị ẩn**. Bia mộ có mặt vì `deleted_at` không xoá\n`body` khỏi DB (PLAN 5.3 giữ chỗ), và mod đôi khi cần đọc đúng cái đã bị tác giả rút\nlại sau khi bị tố.\n\n`trang_thai=hien` = còn sống **và** chưa bị ẩn — hai cột, không phải một.\n\n`parent_id` là id bình luận cha, `None` khi là gốc. Thứ tự không đổi (vẫn\n`-created_at, -pk`), bộ lọc không đổi. Bảng `/binh-luan` dùng chung cửa này và\nvẫn vẽ phẳng — chỉ trang chi tiết mạch đọc field này để dựng cây.",
         "operationId": "quan_tri_liet_ke_binh_luan",
         "parameters": [
           {
@@ -7603,7 +7615,7 @@
     },
     "/api/admin/users": {
       "get": {
-        "description": "Bảng tài khoản, mới đăng ký trước, cursor keyset `(date_joined, id)`.\n\n`?q=` khớp một phần trên `username` **hoặc** `display_name`. Cố ý **không** tìm theo\nemail: khu quản trị không cần nó để phán xử nội dung, và một ô tìm-theo-email là cách\nrẻ nhất để một mod tra ngược địa chỉ của một người từ một mẩu địa chỉ đoán được.\n\n`trang_thai=bi_ban` dùng đúng điều kiện của `User.dang_bi_ban()` — vĩnh viễn **hoặc**\nhạn tạm chưa qua. Viết lại điều kiện ấy ở đây là bản sao thứ hai, nên nó được đặt cạnh\nmột bài đo ghim rằng hai bên không lệch nhau\n(`tests/test_api_quan_tri_bang.py::test_loc_bi_ban_trung_voi_dang_bi_ban`).\n\n## Staff biến khỏi ba bộ lọc kia — 2026-08-26\n\n`tat_ca` / `bi_ban` / `moi` đều **loại `is_staff=True`**; chỉ `staff` còn thấy họ.\nUser chốt *\"2 mục này nên có phần quản lý riêng, đặt vào đây hơi khó hiểu và khó mà\ntìm được\"* — hai hàng quản trị nằm lẫn giữa vài nghìn tài khoản thường là nhiễu ở cả\nhai chiều. Khu riêng là `/quan-tri-vien` ở `apps/admin`, nó gọi lại chính endpoint này\nvới `trang_thai=staff`.\n\n⚠ Đây là **đổi hành vi của một endpoint đang chạy**, không phải thêm tính năng.\n\n`so_staff_an` là cái giá phải trả cho phép loại ấy: sau lượt này, gõ `mod_gikky` vào ô\nlọc ra bảng rỗng, mà một bảng rỗng không phân biệt được \"không có ai tên vậy\" với\n\"có, nhưng ở trang khác\". Đếm **cùng `q`, cùng `trang_thai`**, chỉ khác điều kiện\nstaff.",
+        "description": "Bảng tài khoản, mới đăng ký trước, cursor keyset `(date_joined, id)`.\n\n`?q=` khớp một phần trên `username` **hoặc** `display_name`. Cố ý **không** tìm theo\nemail: khu quản trị không cần nó để phán xử nội dung, và một ô tìm-theo-email là cách\nrẻ nhất để một mod tra ngược địa chỉ của một người từ một mẩu địa chỉ đoán được.\n\n`?an_gikky=true` **loại** mọi email mà `la_email_do_gikky` trả true. Lọc bằng SQL, cùng chỗ\nvới `q` và `trang_thai`, **trước** phép loại staff — `tong` và `so_staff_an` là số\ncủa tập đã lọc. Thiếu tham số hoặc `false` thì không lọc theo domain. Kết hợp AND\nvới `q` và `trang_thai`.\n\n`trang_thai=bi_ban` dùng đúng điều kiện của `User.dang_bi_ban()` — vĩnh viễn **hoặc**\nhạn tạm chưa qua. Viết lại điều kiện ấy ở đây là bản sao thứ hai, nên nó được đặt cạnh\nmột bài đo ghim rằng hai bên không lệch nhau\n(`tests/test_api_quan_tri_bang.py::test_loc_bi_ban_trung_voi_dang_bi_ban`).\n\n## Staff biến khỏi ba bộ lọc kia — 2026-08-26\n\n`tat_ca` / `bi_ban` / `moi` đều **loại `is_staff=True`**; chỉ `staff` còn thấy họ.\nUser chốt *\"2 mục này nên có phần quản lý riêng, đặt vào đây hơi khó hiểu và khó mà\ntìm được\"* — hai hàng quản trị nằm lẫn giữa vài nghìn tài khoản thường là nhiễu ở cả\nhai chiều. Khu riêng là `/quan-tri-vien` ở `apps/admin`, nó gọi lại chính endpoint này\nvới `trang_thai=staff`.\n\n⚠ Đây là **đổi hành vi của một endpoint đang chạy**, không phải thêm tính năng.\n\n`so_staff_an` là cái giá phải trả cho phép loại ấy: sau lượt này, gõ `mod_gikky` vào ô\nlọc ra bảng rỗng, mà một bảng rỗng không phân biệt được \"không có ai tên vậy\" với\n\"có, nhưng ở trang khác\". Đếm **cùng `q`, cùng `trang_thai`, cùng `an_gikky`**, chỉ\nkhác điều kiện staff.",
         "operationId": "quan_tri_liet_ke_nguoi_dung",
         "parameters": [
           {
@@ -7631,6 +7643,16 @@
               ],
               "title": "Trang Thai",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "an_gikky",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "An Gikky",
+              "type": "boolean"
             }
           },
           {

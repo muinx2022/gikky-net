@@ -266,6 +266,25 @@ def test_loc_binh_luan_theo_mach_va_tac_gia(canh):
     assert [c["id"] for c in mod.get("/api/admin/comments?q=mạch 2").json()["items"]] == [b.pk]
 
 
+def test_binh_luan_tra_parent_id_goc_null_reply_dung_cha(canh):
+    """Cây trên trang mạch cần biết cha. Gốc là `null`, reply là đúng id cha.
+
+    Không phải cột mới: `Comment.parent` đã có. Thiếu field thì frontend không phân
+    được reply với gốc, còn bảng phẳng `/binh-luan` dùng chung schema này nên bài cũ
+    của file vẫn phải xanh.
+    """
+    mach = _mach(canh, "Mạch")
+    goc = tao_binh_luan(mach=mach, author=canh["tac_gia"], body="gốc")
+    reply = tao_binh_luan(
+        mach=mach, author=canh["tac_gia"], body="trả lời", parent=goc
+    )
+
+    items = canh["mod"].get("/api/admin/comments").json()["items"]
+    theo_id = {c["id"]: c for c in items}
+    assert theo_id[goc.pk]["parent_id"] is None
+    assert theo_id[reply.pk]["parent_id"] == goc.pk
+
+
 def test_binh_luan_cua_mach_bi_an_van_liet_ke_duoc(canh):
     """Mạch bị ẩn kéo theo cả khán đài biến khỏi cửa công khai — nhưng không khỏi cửa mod."""
     mach = _mach(canh, "Mạch sắp ẩn")

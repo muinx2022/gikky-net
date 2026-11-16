@@ -845,6 +845,9 @@ class BinhLuanDongOut(Schema):
     """
 
     id: int
+    #: Id bình luận cha, `None` khi là gốc. Không phải cột mới — `Comment.parent` đã có;
+    #: cửa liệt kê trả ra để trang chi tiết mạch dựng cây. Bảng phẳng không đọc field này.
+    parent_id: int | None
     mach_id: int
     mach_title: str
     tac_gia: NguoiDungTomTatOut

@@ -14,7 +14,7 @@ import {
 } from "@gikky/api-client/admin";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   HangTieuDe,
@@ -23,7 +23,6 @@ import {
   KhungBang,
   NhanTrangThai,
   Skeleton,
-  ThanhPhanTrang,
   The,
   gioVN,
 } from "../../../components/ui";
@@ -31,17 +30,22 @@ import { Icon } from "../../../components/icon";
 import { KhoiHenGio } from "../../../components/khoi-hen-gio";
 import { FormSuaMoc } from "../../../components/form-sua-moc";
 import { NganKeo } from "../../../components/ngan-keo";
-import { useDanhSach } from "../../../lib/danh-sach";
-import { GOC_API, headerGhi, moTaLoi } from "../../../lib/api";
-import { useHanhDong } from "../../../lib/hanh-dong";
+import { GOC_API, MA_CHUA_DANG_NHAP, headerGhi, maLoi, moTaLoi } from "../../../lib/api";
+import {
+  conThieuSauNap,
+  dungCay,
+  manHinhCay,
+  type NutCay,
+} from "../../../lib/cay-binh-luan";
+import { useHanhDong, type KetQuaHanhDong } from "../../../lib/hanh-dong";
 import { useQuanTri } from "../../../components/khung/ngu-canh";
 import { useTieuDeTrang } from "../../../lib/tieu-de";
 import { boTheHtml, duongDanCongKhai } from "../../../lib/url";
 
-/** Số hàng mỗi trang. Một hằng cho CẢ HAI phía: `limit` gửi lên server và mẫu số để
- * `useDanhSach` chia ra `so_trang`. Hai con số này lệch nhau thì thanh phân trang báo
- * sai số trang mà không có gì nổ — chỉ là một cái "Trang 1/12" trên một bảng 6 trang. */
-const MOI_TRANG = 25;
+/** Trần `limit` của cửa liệt kê (`GIOI_HAN_TOI_DA`). Khán đài nạp từng trang đúng số này. */
+const GIOI_HAN_TRANG_CAY = 50;
+/** 4 lần × 50 = 200 hàng. Quá thì nói còn thiếu, không gọi tiếp và không vẽ như thể đã đủ. */
+const TOI_DA_LAN_NAP_CAY = 4;
 
 /** Trang chi tiết một mạch cho mod — PLAN 9.3 mục 2 ("trang chi tiết với hành động mod").
  *
@@ -439,38 +443,104 @@ export default function TrangChiTietMach() {
   );
 }
 
-/** Bình luận của chính bài này.
+/** Bình luận của chính bài này, vẽ thành cây chứ không phải bảng phẳng.
  *
- * Trước lượt này trang chi tiết chỉ hiện **con số** `comment_count` — mod muốn đọc thì
- * phải sang `/binh-luan` rồi tự lọc. Nó cũng là chỗ dễ đọc nhầm nhất của cả trang: bảng
- * "Nội dung bài" ở trên liệt kê MỐC, và một bảng chữ dài trông rất giống một danh sách
- * bình luận. Có cả hai, mỗi bảng một tiêu đề nói rõ mình là gì, thì không còn gì để đoán.
+ * Bảng "Nội dung bài" ở trên liệt kê MỐC. Khán đài là một `<ul>` lồng nhau, tiêu đề
+ * nói rõ mình là bình luận — hai thứ đứng cạnh nhau mà không trông như cùng một bảng.
  *
- * Tách thành component riêng để `useDanhSach` (có `useEffect` nạp) không chạy trước khi
- * `mach_id` hợp lệ — trang cha `return` sớm ở ba nhánh, và hook không được nằm sau một
- * `return` có điều kiện.
+ * Nạp **hết** các trang của mạch này (tối đa 4 lần, `limit` 50). Cây cụt — trang 2
+ * lỗi mà vẫn vẽ trang 1 như thể đã đủ — là nói dối: mod tưởng không còn reply. Lượt
+ * lỗi xoá cây đang hiện (`null`, không phải `[]`): mảng rỗng là «Chưa ai bình luận»,
+ * còn cây của lượt trước để nguyên thì trông như bản hiện tại. Còn cursor sau lần 4,
+ * hoặc `tong` của trang cuối lớn hơn số hàng đã gom, thì một dòng nói còn thiếu.
+ * Cây đã nạp vẫn hiện ở hai ca đó vì những hàng đã lấy là thật.
+ *
+ * Tách thành component riêng để hook nạp không chạy trước khi `mach_id` hợp lệ —
+ * trang cha `return` sớm ở ba nhánh, và hook không được nằm sau một `return` có
+ * điều kiện. Trang `/binh-luan` không đi qua đây; nó giữ bảng phẳng.
  */
 function BinhLuanCuaMach({ mach_id }: { mach_id: number }) {
-  const nap = useCallback(
-    (cursor: string | null) =>
-      quanTriLietKeBinhLuan({
-        baseUrl: GOC_API,
-        cache: "no-store",
-        query: { mach_id, limit: MOI_TRANG, cursor },
-      }),
-    [mach_id],
-  );
+  const [items, datItems] = useState<BinhLuanDongOut[] | null>(null);
+  const [loiNap, datLoiNap] = useState<string | null>(null);
+  const [conThieu, datConThieu] = useState(false);
+  /** GET liệt kê trả `chua_dang_nhap` thì `useHanhDong` không thấy — cờ của hook
+   * chỉ bật khi bấm Ẩn. Không truyền vào `HienLoi` thì câu lỗi không có lối
+   * đăng nhập lại. */
+  const [hetPhienNap, datHetPhienNap] = useState(false);
+  /** Số thứ tự lượt nạp. Đổi mạch giữa chừng thì response cũ không được ghi đè cây mới. */
+  const lan = useRef(0);
 
-  const ds = useDanhSach<BinhLuanDongOut>(nap, MOI_TRANG);
+  const napHet = useCallback(async () => {
+    const cuaToi = ++lan.current;
+    datLoiNap(null);
+    datHetPhienNap(false);
+    const gom: BinhLuanDongOut[] = [];
+    let cursor: string | null = null;
+    let tongTrangCuoi = 0;
+    for (let i = 0; i < TOI_DA_LAN_NAP_CAY; i += 1) {
+      // Kiểu ghi tường minh để cắt vòng suy kiểu: `cursor` đi vào query rồi
+      // lại được gán từ `data` — bỏ chú thích này là TS7022.
+      const {
+        data,
+        error,
+      }: Awaited<ReturnType<typeof quanTriLietKeBinhLuan<false>>> =
+        await quanTriLietKeBinhLuan({
+          baseUrl: GOC_API,
+          cache: "no-store",
+          query: { mach_id, limit: GIOI_HAN_TRANG_CAY, cursor },
+        });
+      if (cuaToi !== lan.current) return;
+      if (error !== undefined || data === undefined) {
+        // Không `datItems(gom)`: một cây cụt trông như đã đủ. `null` chứ không
+        // phải `[]` — mảng rỗng là «Chưa ai bình luận». Cây lượt trước cũng đi,
+        // kẻo còn hiện như bản hiện tại.
+        datItems(null);
+        datConThieu(false);
+        datLoiNap(moTaLoi(error ?? "Không nhận được trang bình luận."));
+        datHetPhienNap(maLoi(error) === MA_CHUA_DANG_NHAP);
+        return;
+      }
+      gom.push(...data.items);
+      cursor = data.cursor_ke_tiep;
+      tongTrangCuoi = data.tong;
+      if (cursor === null) {
+        datItems(gom);
+        datConThieu(
+          conThieuSauNap({
+            tong: tongTrangCuoi,
+            soHangDaGom: gom.length,
+            dungViTran: false,
+          }),
+        );
+        return;
+      }
+    }
+    if (cuaToi !== lan.current) return;
+    datItems(gom);
+    datConThieu(
+      conThieuSauNap({
+        tong: tongTrangCuoi,
+        soHangDaGom: gom.length,
+        dungViTran: true,
+      }),
+    );
+  }, [mach_id]);
+
+  useEffect(() => {
+    datItems(null);
+    datConThieu(false);
+    void napHet();
+  }, [napHet]);
 
   /** ⚠ Khối này từng **nuốt lỗi**: nút Ẩn gọi `quanTriDatAnBinhLuan(...)` rồi vứt kết
    * quả đi — không đọc `{error}`, không có chỗ nào hiện nó. Server từ chối (hết phiên,
    * 403 CSRF, bình luận đã bị xoá) thì màn hình vẫn nạp lại y như một lượt thành công, và
    * mod kết luận là đã ẩn. Đây là chỗ duy nhất trong khu quản trị làm thế; nay nó đi
    * chung một cửa với tám trang kia. */
-  const { dang_chay, loi, het_phien, chay } = useHanhDong(async () => {
-    await ds.napLai();
-  });
+  const { dang_chay, loi, het_phien, chay } = useHanhDong(napHet);
+
+  const cay = items === null ? null : dungCay(items);
+  const manHinh = manHinhCay(items, loiNap, cay?.length ?? 0);
 
   return (
     <The
@@ -479,85 +549,115 @@ function BinhLuanCuaMach({ mach_id }: { mach_id: number }) {
       className="mt-4"
     >
       <div className="mt-3">
-        <HienLoi loi={loi ?? ds.loi} het_phien={het_phien} />
-        {ds.items === null ? (
-          <Skeleton dong={3} />
-        ) : ds.items.length === 0 ? (
-          <KhoiRong co_bo_loc={false} chua_co="Chưa ai bình luận vào bài này." />
-        ) : (
-          <KhungBang rong={false}>
-            <HangTieuDe cot={["Bình luận", <span key="thao-tac" className="sr-only">Thao tác</span>]} />
-            <tbody>
-              {ds.items.map((c) => (
-                <tr
-                  key={c.id}
-                  className="border-b border-vien last:border-0 hover:bg-nen-mo/50"
-                  data-testid={`hang-binh-luan-mach-${c.id}`}
-                >
-                  <td className="px-3 py-3 align-top">
-                    <p className="text-sm leading-relaxed text-chu">
-                      {boTheHtml(c.trich_yeu)}
-                    </p>
-                    <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-xs text-muc-mo">
-                      <span>{gioVN(c.created_at)}</span>
-                      <span>·</span>
-                      <Link
-                        href={`/u/${c.tac_gia.username}`}
-                        className="text-nhan hover:underline"
-                      >
-                        u/{c.tac_gia.username}
-                      </Link>
-                      <span>·</span>
-                      <span>{c.score} điểm</span>
-                      {c.da_bi_an && <NhanTrangThai tone="xau">đã ẩn</NhanTrangThai>}
-                      {c.da_xoa && <NhanTrangThai tone="chu-y">bia mộ</NhanTrangThai>}
-                    </div>
-                  </td>
-                  <td className="w-16 px-3 py-3 align-top text-right whitespace-nowrap">
-                    <div className="flex items-center justify-end">
-                      <button
-                        type="button"
-                        className="nut nut-nho shrink-0 px-1.5"
-                        disabled={dang_chay}
-                        data-testid={`nut-an-binh-luan-mach-${c.id}`}
-                        title={c.da_bi_an ? "Gỡ ẩn" : "Ẩn"}
-                        aria-label={
-                          c.da_bi_an
-                            ? `Gỡ ẩn bình luận: ${boTheHtml(c.trich_yeu)}`
-                            : `Ẩn bình luận: ${boTheHtml(c.trich_yeu)}`
-                        }
-                        onClick={() =>
-                          chay(() =>
-                            quanTriDatAnBinhLuan({
-                              baseUrl: GOC_API,
-                              headers: headerGhi(),
-                              path: { comment_id: c.id },
-                              body: { an: !c.da_bi_an, ly_do: "" },
-                            }),
-                          )
-                        }
-                      >
-                        <Icon ten={c.da_bi_an ? "hien" : "an"} className="size-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </KhungBang>
+        <HienLoi loi={loi ?? loiNap} het_phien={het_phien || hetPhienNap} />
+        {manHinh === "chi-loi" && (
+          <div className="px-4 pb-4">
+            <button
+              type="button"
+              className="nut nut-nho"
+              onClick={() => void napHet()}
+            >
+              Tải lại
+            </button>
+          </div>
         )}
-        <ThanhPhanTrang
-          trang={ds.trang}
-          so_trang={ds.so_trang}
-          tong={ds.tong}
-          co_truoc={ds.co_truoc}
-          co_sau={ds.co_sau}
-          dang_tai={ds.dang_tai}
-          onTruoc={ds.truoc}
-          onSau={ds.sau}
-          ten_muc="bình luận"
-        />
+        {manHinh === "skeleton" && <Skeleton dong={3} />}
+        {manHinh === "chua-ai" && (
+          <KhoiRong co_bo_loc={false} chua_co="Chưa ai bình luận vào bài này." />
+        )}
+        {manHinh === "cay" && cay !== null && (
+          <ul className="list-none px-4 pb-2">
+            {cay.map((nut) => (
+              <NutBinhLuanMach
+                key={nut.id}
+                nut={nut}
+                dang_chay={dang_chay}
+                chay={chay}
+              />
+            ))}
+          </ul>
+        )}
+        {manHinh === "cay" && conThieu && (
+          <p className="mono border-t border-vien px-4 py-3 text-xs text-muc-mo">
+            Còn bình luận chưa đưa vào cây.
+          </p>
+        )}
       </div>
     </The>
+  );
+}
+
+function NutBinhLuanMach({
+  nut,
+  dang_chay,
+  chay,
+}: {
+  nut: NutCay<BinhLuanDongOut>;
+  dang_chay: boolean;
+  chay: (viec: () => Promise<KetQuaHanhDong>) => Promise<void>;
+}) {
+  return (
+    <li className="py-2" data-testid={`hang-binh-luan-mach-${nut.id}`}>
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="text-sm leading-relaxed text-chu">
+            {boTheHtml(nut.trich_yeu)}
+          </p>
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-xs text-muc-mo">
+            <span>{gioVN(nut.created_at)}</span>
+            <span>·</span>
+            <Link
+              href={`/u/${nut.tac_gia.username}`}
+              className="text-nhan hover:underline"
+            >
+              u/{nut.tac_gia.username}
+            </Link>
+            <span>·</span>
+            <span>{nut.score} điểm</span>
+            {nut.khongThayCha && (
+              <NhanTrangThai tone="chu-y">không thấy cha</NhanTrangThai>
+            )}
+            {nut.da_bi_an && <NhanTrangThai tone="xau">đã ẩn</NhanTrangThai>}
+            {nut.da_xoa && <NhanTrangThai tone="chu-y">bia mộ</NhanTrangThai>}
+          </div>
+        </div>
+        <button
+          type="button"
+          className="nut nut-nho shrink-0 px-1.5"
+          disabled={dang_chay}
+          data-testid={`nut-an-binh-luan-mach-${nut.id}`}
+          title={nut.da_bi_an ? "Gỡ ẩn" : "Ẩn"}
+          aria-label={
+            nut.da_bi_an
+              ? `Gỡ ẩn bình luận: ${boTheHtml(nut.trich_yeu)}`
+              : `Ẩn bình luận: ${boTheHtml(nut.trich_yeu)}`
+          }
+          onClick={() =>
+            chay(() =>
+              quanTriDatAnBinhLuan({
+                baseUrl: GOC_API,
+                headers: headerGhi(),
+                path: { comment_id: nut.id },
+                body: { an: !nut.da_bi_an, ly_do: "" },
+              }),
+            )
+          }
+        >
+          <Icon ten={nut.da_bi_an ? "hien" : "an"} className="size-4" />
+        </button>
+      </div>
+      {nut.con.length > 0 && (
+        <ul className="ml-4 border-l border-vien pl-3 list-none">
+          {nut.con.map((c) => (
+            <NutBinhLuanMach
+              key={c.id}
+              nut={c}
+              dang_chay={dang_chay}
+              chay={chay}
+            />
+          ))}
+        </ul>
+      )}
+    </li>
   );
 }

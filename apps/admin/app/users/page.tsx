@@ -87,6 +87,8 @@ export default function TrangNguoiDung() {
   const [q, datQ] = useState("");
   const [o_tim, datOTim] = useState("");
   const [trang_thai, datTrangThai] = useState<LocHien>("tat_ca");
+  /** Tích là nạp lại ngay — cùng deps với `q` và `trang_thai`. Luật domain ở server. */
+  const [an_gikky, datAnGikky] = useState(false);
   const [mo_ban, datMoBan] = useState<string | null>(null);
   /** username đang mở ngăn kéo SỬA. Tách khỏi `mo_ban`: gộp là dựng sẵn tổ hợp "vừa
    * ban vừa sửa", và tổ hợp ấy sẽ xảy ra đúng lúc ai đó thêm đường mở thứ ba. */
@@ -98,9 +100,9 @@ export default function TrangNguoiDung() {
       quanTriLietKeNguoiDung({
         baseUrl: GOC_API,
         cache: "no-store",
-        query: { q, trang_thai, limit: MOI_TRANG, cursor },
+        query: { q, trang_thai, an_gikky, limit: MOI_TRANG, cursor },
       }),
-    [q, trang_thai],
+    [q, trang_thai, an_gikky],
   );
 
   const ds = useDanhSach<NguoiDungQuanTriOut>(nap, MOI_TRANG);
@@ -115,7 +117,7 @@ export default function TrangNguoiDung() {
     await lamMoi();
   });
 
-  const co_bo_loc = q !== "" || trang_thai !== "tat_ca";
+  const co_bo_loc = q !== "" || trang_thai !== "tat_ca" || an_gikky;
 
   return (
     <>
@@ -183,6 +185,17 @@ export default function TrangNguoiDung() {
             ))}
           </select>
 
+          <label className="flex items-center gap-1.5 text-sm cursor-pointer">
+            <input
+              type="checkbox"
+              className="size-4 cursor-pointer accent-nhan"
+              checked={an_gikky}
+              onChange={(e) => datAnGikky(e.target.checked)}
+              data-testid="an-gikky-user"
+            />
+            Ẩn user gikky
+          </label>
+
           {co_bo_loc && (
             <button
               type="button"
@@ -191,6 +204,7 @@ export default function TrangNguoiDung() {
                 datOTim("");
                 datQ("");
                 datTrangThai("tat_ca");
+                datAnGikky(false);
               }}
             >
               Xoá bộ lọc

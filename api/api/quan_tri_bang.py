@@ -211,6 +211,10 @@ def liet_ke_binh_luan(
     lại sau khi bị tố.
 
     `trang_thai=hien` = còn sống **và** chưa bị ẩn — hai cột, không phải một.
+
+    `parent_id` là id bình luận cha, `None` khi là gốc. Thứ tự không đổi (vẫn
+    `-created_at, -pk`), bộ lọc không đổi. Bảng `/binh-luan` dùng chung cửa này và
+    vẫn vẽ phẳng — chỉ trang chi tiết mạch đọc field này để dựng cây.
     """
     response["Cache-Control"] = "no-store"
     if (l := kiem_gioi_han(limit)) is not None:
@@ -249,6 +253,7 @@ def liet_ke_binh_luan(
         items=[
             BinhLuanDongOut(
                 id=c.pk,
+                parent_id=c.parent_id,
                 mach_id=c.mach_id,
                 mach_title=c.mach.title,
                 tac_gia=nguoi_dung_ra(c.author),
@@ -277,6 +282,7 @@ def liet_ke_nguoi_dung(
     response: HttpResponse,
     q: str = "",
     trang_thai: LocNguoiDung = "tat_ca",
+    an_gikky: bool = False,
     limit: int = GIOI_HAN_MAC_DINH,
     cursor: str | None = None,
 ):
@@ -285,6 +291,11 @@ def liet_ke_nguoi_dung(
     `?q=` khớp một phần trên `username` **hoặc** `display_name`. Cố ý **không** tìm theo
     email: khu quản trị không cần nó để phán xử nội dung, và một ô tìm-theo-email là cách
     rẻ nhất để một mod tra ngược địa chỉ của một người từ một mẩu địa chỉ đoán được.
+
+    `?an_gikky=true` **loại** mọi email mà `la_email_do_gikky` trả true. Lọc bằng SQL, cùng chỗ
+    với `q` và `trang_thai`, **trước** phép loại staff — `tong` và `so_staff_an` là số
+    của tập đã lọc. Thiếu tham số hoặc `false` thì không lọc theo domain. Kết hợp AND
+    với `q` và `trang_thai`.
 
     `trang_thai=bi_ban` dùng đúng điều kiện của `User.dang_bi_ban()` — vĩnh viễn **hoặc**
     hạn tạm chưa qua. Viết lại điều kiện ấy ở đây là bản sao thứ hai, nên nó được đặt cạnh
@@ -303,8 +314,8 @@ def liet_ke_nguoi_dung(
 
     `so_staff_an` là cái giá phải trả cho phép loại ấy: sau lượt này, gõ `mod_gikky` vào ô
     lọc ra bảng rỗng, mà một bảng rỗng không phân biệt được "không có ai tên vậy" với
-    "có, nhưng ở trang khác". Đếm **cùng `q`, cùng `trang_thai`**, chỉ khác điều kiện
-    staff.
+    "có, nhưng ở trang khác". Đếm **cùng `q`, cùng `trang_thai`, cùng `an_gikky`**, chỉ
+    khác điều kiện staff.
     """
     response["Cache-Control"] = "no-store"
     if (l := kiem_gioi_han(limit)) is not None:
@@ -331,14 +342,21 @@ def liet_ke_nguoi_dung(
         qs = qs.filter(
             date_joined__gte=timezone.now() - timedelta(days=NGAY_LA_MOI)
         )
+    if an_gikky:
+        # Cùng `q` / `trang_thai`, TRƯỚC phép loại staff. Loại đúng tập mà
+        # `la_email_do_gikky` trả true — `iregex` khớp hàm ấy trên các ca ASCII trong
+        # test; không khớp ký tự điều khiển (`\x1f`) và chữ tương thích (Kelvin U+212A).
+        qs = qs.exclude(
+            email__iregex=r"^[[:space:]]*[^[:space:]@]+@gikky\.net[[:space:]]*$"
+        )
 
     # ⚠ Phép loại staff phải đứng **TRƯỚC `dem_tong`**. Đếm trước rồi mới loại là `tong`
     # kể cả staff còn bảng thì không — đúng cái bẫy `phan_trang.py::dem_tong` cảnh báo,
     # và nó im lặng: chỉ là một con số lớn hơn số hàng đếm được, thứ không ai kiểm.
     #
-    # `so_staff_an` đếm trên CÙNG `qs` (tức cùng `q`, cùng `trang_thai`), chỉ khác điều
-    # kiện staff — nên nó luôn là "số hàng phép loại ngay dưới vừa lấy đi", không phải
-    # "tổng số staff trên hệ thống". Hai con số ấy khác nhau ngay khi có `q`.
+    # `so_staff_an` đếm trên CÙNG `qs` (tức cùng `q`, cùng `trang_thai`, cùng `an_gikky`),
+    # chỉ khác điều kiện staff — nên nó luôn là "số hàng phép loại ngay dưới vừa lấy đi",
+    # không phải "tổng số staff trên hệ thống". Hai con số ấy khác nhau ngay khi có `q`.
     #
     # `moi_nguoi` là lối thoát cho người gọi thật sự cần cả staff (ô gợi ý ở `/subs`) —
     # nó KHÔNG loại gì, nên `so_staff_an` cũng phải là 0: không có ai bị giấu thì không

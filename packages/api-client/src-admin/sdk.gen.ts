@@ -398,6 +398,10 @@ export const quanTriMoLaiChuDe = <ThrowOnError extends boolean = false>(options:
  * lại sau khi bị tố.
  *
  * `trang_thai=hien` = còn sống **và** chưa bị ẩn — hai cột, không phải một.
+ *
+ * `parent_id` là id bình luận cha, `None` khi là gốc. Thứ tự không đổi (vẫn
+ * `-created_at, -pk`), bộ lọc không đổi. Bảng `/binh-luan` dùng chung cửa này và
+ * vẫn vẽ phẳng — chỉ trang chi tiết mạch đọc field này để dựng cây.
  */
 export const quanTriLietKeBinhLuan = <ThrowOnError extends boolean = false>(options?: Options<QuanTriLietKeBinhLuanData, ThrowOnError>): RequestResult<QuanTriLietKeBinhLuanResponses, QuanTriLietKeBinhLuanErrors, ThrowOnError> => (options?.client ?? client).get<QuanTriLietKeBinhLuanResponses, QuanTriLietKeBinhLuanErrors, ThrowOnError>({
     security: [{
@@ -1165,6 +1169,11 @@ export const quanTriThongKe = <ThrowOnError extends boolean = false>(options?: O
  * email: khu quản trị không cần nó để phán xử nội dung, và một ô tìm-theo-email là cách
  * rẻ nhất để một mod tra ngược địa chỉ của một người từ một mẩu địa chỉ đoán được.
  *
+ * `?an_gikky=true` **loại** mọi email mà `la_email_do_gikky` trả true. Lọc bằng SQL, cùng chỗ
+ * với `q` và `trang_thai`, **trước** phép loại staff — `tong` và `so_staff_an` là số
+ * của tập đã lọc. Thiếu tham số hoặc `false` thì không lọc theo domain. Kết hợp AND
+ * với `q` và `trang_thai`.
+ *
  * `trang_thai=bi_ban` dùng đúng điều kiện của `User.dang_bi_ban()` — vĩnh viễn **hoặc**
  * hạn tạm chưa qua. Viết lại điều kiện ấy ở đây là bản sao thứ hai, nên nó được đặt cạnh
  * một bài đo ghim rằng hai bên không lệch nhau
@@ -1182,8 +1191,8 @@ export const quanTriThongKe = <ThrowOnError extends boolean = false>(options?: O
  *
  * `so_staff_an` là cái giá phải trả cho phép loại ấy: sau lượt này, gõ `mod_gikky` vào ô
  * lọc ra bảng rỗng, mà một bảng rỗng không phân biệt được "không có ai tên vậy" với
- * "có, nhưng ở trang khác". Đếm **cùng `q`, cùng `trang_thai`**, chỉ khác điều kiện
- * staff.
+ * "có, nhưng ở trang khác". Đếm **cùng `q`, cùng `trang_thai`, cùng `an_gikky`**, chỉ
+ * khác điều kiện staff.
  */
 export const quanTriLietKeNguoiDung = <ThrowOnError extends boolean = false>(options?: Options<QuanTriLietKeNguoiDungData, ThrowOnError>): RequestResult<QuanTriLietKeNguoiDungResponses, QuanTriLietKeNguoiDungErrors, ThrowOnError> => (options?.client ?? client).get<QuanTriLietKeNguoiDungResponses, QuanTriLietKeNguoiDungErrors, ThrowOnError>({
     security: [{

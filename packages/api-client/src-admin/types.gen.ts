@@ -281,6 +281,10 @@ export type BinhLuanDongOut = {
      */
     mach_title: string;
     /**
+     * Parent Id
+     */
+    parent_id: number | null;
+    /**
      * Score
      */
     score: number;
@@ -4598,6 +4602,10 @@ export type QuanTriLietKeNguoiDungData = {
          * Trang Thai
          */
         trang_thai?: 'tat_ca' | 'moi_nguoi' | 'bi_ban' | 'staff' | 'moi';
+        /**
+         * An Gikky
+         */
+        an_gikky?: boolean;
         /**
          * Limit
          */
