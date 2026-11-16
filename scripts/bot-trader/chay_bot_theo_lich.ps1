@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Script dieu phoi va thuc thi Bot Trader theo lich trinh tu dong.
 .DESCRIPTION
@@ -15,7 +15,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true, Position = 0)]
-    [ValidateSet('scan', 'post-scheduled', 'check-eod', 'check-h4')]
+    [ValidateSet('scan', 'post-scheduled', 'check-eod', 'check-h4', 'reply-comments')]
     [string]$HanhDong
 )
 
@@ -50,6 +50,7 @@ $CliFlag = switch ($HanhDong) {
     'post-scheduled' { '--post-scheduled' }
     'check-eod'      { '--check-eod' }
     'check-h4'       { '--check-h4' }
+    'reply-comments' { '--reply-comments' }
     Default          { throw "Hanh dong '$HanhDong' khong hop le." }
 }
 

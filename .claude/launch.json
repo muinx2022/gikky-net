@@ -1,0 +1,35 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "api-e2e",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "C:\\Users\\NGXUAN~1\\AppData\\Local\\Temp\\claude\\837c7ad501d85b11\\7de84d96-4df1-4263-9547-eaf634b246dd\\scratchpad\\chay-api-e2e.ps1"
+      ],
+      "port": 8000
+    },
+    {
+      "name": "api-dev",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["api:dev"],
+      "port": 8000
+    },
+    {
+      "name": "web-start",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["-C", "apps/web", "start"],
+      "port": 3000
+    },
+    {
+      "name": "web-dev",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["-C", "apps/web", "dev"],
+      "port": 3000
+    }
+  ]
+}

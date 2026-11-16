@@ -7,6 +7,9 @@ bằng `GIKKY_ADMIN_PASSWORD` và gọi `POST /api/admin/machs/hen-gio` thay m�
     python scripts/bai-viet/dang-bai.py --file /tmp/bai.json
     python scripts/bai-viet/dang-bai.py --hen '2026-09-10T08:00:00+07:00' --file /tmp/bai.json
 
+Trường tuỳ chọn `loai_mach` (`nhat_ky` | `bai_viet` | `thao_luan`) chuyển nguyên lên cả hai
+đường tạo mạch — `thao_luan` để đăng chủ đề thảo luận; không đi cùng `--noi-moc`.
+
 Thân bài đọc từ `--file <duong_dan>` hoặc `GIKKY_BAI_JSON` (mặc định `/tmp/bai.json`).
 Mật khẩu đọc từ biến môi trường hoặc tự động fallback nạp an toàn từ .env/VPS.
 """
@@ -49,7 +52,9 @@ AUTHOR_HEN = "gikky-team-member"
 TRAN = {"title": 160, "body": 50_000, "loai": 20, "question_for_crowd": 200}
 SO_FIGURES_TOI_DA = 6
 DAI_O_FIGURE = 24
-TRUONG_CHO_PHEP = {"sub", "title", "body", "loai", "question_for_crowd", "figures", "anhs", "occurred_at", "image"}
+TRUONG_CHO_PHEP = {"sub", "title", "body", "loai", "loai_mach", "question_for_crowd", "figures", "anhs", "occurred_at", "image"}
+#: Phải KHỚP `LoaiMachIn` ở `api/api/quan_tri_schemas.py` / `api/api/machs.py`.
+LOAI_MACH_HOP_LE = ("nhat_ky", "bai_viet", "thao_luan")
 
 jar = http.cookiejar.CookieJar()
 op = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
@@ -118,6 +123,13 @@ def soat(bai, la_noi_moc=False):
                 for k in ("label", "value"):
                     if not isinstance(cap[k], str) or len(cap[k]) > DAI_O_FIGURE:
                         loi.append(f"`figures[{i}].{k}` phải là chuỗi ≤{DAI_O_FIGURE}.")
+    if "loai_mach" in bai:
+        lm = bai["loai_mach"]
+        if la_noi_moc:
+            # Đường nối mốc lọc trường theo hợp đồng /mocs ⇒ `loai_mach` sẽ bị bỏ im lặng.
+            loi.append("`loai_mach` là thuộc tính của MẠCH, không dùng được với --noi-moc.")
+        elif lm is not None and lm not in LOAI_MACH_HOP_LE:
+            loi.append(f"`loai_mach` = {lm!r} không hợp lệ; chỉ nhận: {', '.join(LOAI_MACH_HOP_LE)}.")
     for ten in bai:
         if ten not in TRUONG_CHO_PHEP:
             loi.append(f"Trường `{ten}` không có trong hợp đồng POST /machs hoặc /mocs.")
@@ -269,7 +281,10 @@ def xu_ly_anhs(bai, goc=ORIGIN):
         ten_tep = a.get("ten_tep", f"image_{i+1}.jpg")
         if "data" in a:
             try:
-                raw_bytes = base64.b64decode(a["data"])
+                b64_data = a["data"]
+                if "," in b64_data and b64_data.startswith("data:"):
+                    b64_data = b64_data.split(",", 1)[1]
+                raw_bytes = base64.b64decode(b64_data)
             except Exception as e:
                 loi.append(f"`anhs[{i}].data` không phải base64 hợp lệ: {e}")
                 continue

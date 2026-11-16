@@ -1,0 +1,128 @@
+import type { BinhLuanOut } from "@gikky/api-client";
+
+import { tenHienThi } from "./ten-hien-thi";
+
+/** Bình luận trang mạch kiểu TikTok — hai tầng phẳng *(2026-11-16, user chốt)*.
+ *
+ * > *"hiển thị cmt theo kiểu tiktok, ưu tiên cmt của user đang đăng nhập"* — *"hiện tại
+ * > chưa có nhiều cmt, nên hiển thị sao cho dễ nhìn thấy nhiều dữ liệu"*
+ *
+ * Dữ liệu VẪN là cây (`replies` lồng, nút trả lời vẫn gửi `parent_id` = id reply được
+ * bấm); chỉ cách HIỆN là phẳng: gốc, rồi mọi hậu duệ của nó thành một danh sách thụt một
+ * bậc. Reply không trả lời thẳng gốc mang dòng `↪ trả lời @cha` để mạch hội thoại không
+ * mất khi cây bị dẹt.
+ *
+ * File này là **hàm thuần** — không React — để `e2e/don-vi/binh-luan-phang.spec.ts` ghim
+ * được thứ tự, dòng `↪`, luật ưu tiên và luật gập đuôi mà không dựng trang. Plan:
+ * `plans/2026-11-16-binh-luan-kieu-tiktok.md`.
+ */
+
+/** Cha của một reply phẳng, đủ để in dòng `↪ trả lời …`. `null` = cha là chính gốc
+ * (reply thẳng vào gốc không cần dòng này: nó đứng ngay dưới gốc rồi). */
+export type ChaReply =
+  | { loai: "nguoi"; ten: string }
+  | { loai: "da_xoa" }
+  | { loai: "da_an" };
+
+export type ReplyPhang = {
+  nut: BinhLuanOut;
+  cha: ChaReply | null;
+};
+
+/** Gốc hiện tối đa ngần này reply khi thread chưa bung; phần còn lại vào đuôi gập. */
+export const SO_REPLY_HIEN_SAN = 3;
+
+function moTaCha(cha: BinhLuanOut): ChaReply {
+  if (cha.trang_thai === "da_xoa") return { loai: "da_xoa" };
+  if (cha.trang_thai === "da_an") return { loai: "da_an" };
+  return { loai: "nguoi", ten: tenHienThi(cha.author, "?") };
+}
+
+/** Chữ của dòng `↪` — một chỗ sinh, component chỉ in. Tên người là phần cuối của chuỗi
+ * để component tách được ra mà đánh dấu chữ người dùng (`CHU_NGUOI_DUNG`). */
+export function chuTraLoi(cha: ChaReply): string {
+  if (cha.loai === "da_xoa") return "↪ trả lời [bình luận đã xoá]";
+  if (cha.loai === "da_an") return "↪ trả lời [đã bị ẩn]";
+  return `↪ trả lời @${cha.ten}`;
+}
+
+function soKhi(s: string): number {
+  const t = Date.parse(s);
+  return Number.isNaN(t) ? 0 : t;
+}
+
+/** Mọi hậu duệ của `goc` (mọi tầng), phẳng, `created_at` tăng dần — hoà thì `id` tăng.
+ *
+ * Cha lấy theo **cấu trúc** (nút chứa nó trong `replies`), không tra `parent_id`: cây do
+ * server dựng là nguồn sự thật về quan hệ cha–con, và tra theo `parent_id` sẽ có ca "mồ
+ * côi" (id cha không có trong thread) phải chế luật cho. Theo cấu trúc thì mọi nút đều
+ * có đúng một cha, và mỗi nút xuất hiện **đúng một lần**.
+ *
+ * Gốc không nằm trong kết quả. `cha === null` ⇔ cha là gốc.
+ */
+export function lamPhangThread(goc: BinhLuanOut): ReplyPhang[] {
+  const ra: ReplyPhang[] = [];
+  const di = (cha: BinhLuanOut) => {
+    for (const con of cha.replies) {
+      ra.push({ nut: con, cha: cha === goc ? null : moTaCha(cha) });
+      di(con);
+    }
+  };
+  di(goc);
+  return ra.sort(
+    (a, b) => soKhi(a.nut.created_at) - soKhi(b.nut.created_at) || a.nut.id - b.nut.id,
+  );
+}
+
+/** Username có mặt trong thread: tác giả gốc + tác giả mọi reply (mọi tầng). */
+export function nguoiThamGia(goc: BinhLuanOut): string[] {
+  const tap = new Set<string>();
+  const di = (n: BinhLuanOut) => {
+    if (n.author?.username) tap.add(n.author.username);
+    n.replies.forEach(di);
+  };
+  di(goc);
+  return [...tap];
+}
+
+/** Đưa phần tử "của tôi" lên đầu, **giữ nguyên thứ tự tương đối** ở cả hai nhóm.
+ *
+ * `toi === null` (chưa đăng nhập, hoặc phiên còn đang tải) ⇒ trả về **đúng thứ tự cũ**:
+ * HTML server (ISR, cache chung cho mọi người) là thứ tự của server, và đổi gì ở đây khi
+ * chưa biết người xem là ai là đổi theo đoán. */
+export function uuTienCuaToi<T>(
+  ds: readonly T[],
+  toi: string | null,
+  coToi: (x: T, toi: string) => boolean,
+): T[] {
+  if (toi === null || toi === "") return [...ds];
+  const cua_toi: T[] = [];
+  const con_lai: T[] = [];
+  for (const x of ds) (coToi(x, toi) ? cua_toi : con_lai).push(x);
+  return [...cua_toi, ...con_lai];
+}
+
+/** Thread có `toi` tham gia (gốc hoặc bất kỳ reply) lên đầu, stable. */
+export function sapThreadUuTien<T extends { nguoiThamGia: readonly string[] }>(
+  threads: readonly T[],
+  toi: string | null,
+): T[] {
+  return uuTienCuaToi(threads, toi, (t, u) => t.nguoiThamGia.includes(u));
+}
+
+/** Reply của `toi` lên đầu danh sách reply (stable), rồi chia phần hiện sẵn / đuôi gập.
+ *
+ * Phần hiện sẵn = `SO_REPLY_HIEN_SAN` cái đầu, **nhưng không ít hơn số reply của tôi**:
+ * reply của tôi KHÔNG BAO GIỜ nằm trong đuôi gập — người vừa trả lời phải thấy câu mình
+ * vừa viết mà không phải bấm gì. Đuôi rỗng ⇔ không cần nút "Xem thêm".
+ */
+export function chiaReply<T extends { tacGia: string | null }>(
+  replies: readonly T[],
+  toi: string | null,
+  soHienSan = SO_REPLY_HIEN_SAN,
+): { dau: T[]; duoi: T[] } {
+  const sap = uuTienCuaToi(replies, toi, (r, u) => r.tacGia === u);
+  const so_cua_toi = toi === null ? 0 : sap.filter((r) => r.tacGia === toi).length;
+  const cat = Math.max(soHienSan, so_cua_toi);
+  return { dau: sap.slice(0, cat), duoi: sap.slice(cat) };
+}

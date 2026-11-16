@@ -26,6 +26,7 @@ from soan_va_dang import (
     quet_ngay_nghi_va_danh_dau
 )
 from eod_checker import kiem_tra_sau_15h, kiem_tra_vi_the_h4
+from phan_hoi_binh_luan import tu_dong_phan_hoi_binh_luan
 
 
 def main():
@@ -45,6 +46,7 @@ def main():
     parser.add_argument("--date", type=str, default=None, help="Ngày kiểm tra (định dạng YYYY-MM-DD)")
     
     parser.add_argument("--list", action="store_true", help="Liệt kê danh sách các vị thế đang theo dõi")
+    parser.add_argument("--reply-comments", action="store_true", help="Tự động quét và phản hồi bình luận của độc giả trên các deal của Bot Trader")
     parser.add_argument("--comments", action="store_true", help="Quét bình luận của độc giả trên các trade của Bot Trader")
     parser.add_argument("--reply-comment", type=int, help="ID bình luận cần trả lời dưới danh nghĩa u/bot-trader")
     parser.add_argument("--comment-trade", type=int, help="ID mạch trade cần bình luận cập nhật")
@@ -91,9 +93,24 @@ def main():
 
     elif args.check_eod:
         kiem_tra_sau_15h(simulate_date=args.date)
+        print("\n💬 [BOT TRADER] Kiểm tra và tự động phản hồi bình luận của độc giả sau phiên EOD...")
+        try:
+            tu_dong_phan_hoi_binh_luan()
+        except Exception as e:
+            print(f"⚠️ Lỗi khi tự động phản hồi bình luận sau EOD: {e}")
 
     elif args.check_h4:
         kiem_tra_vi_the_h4()
+        print("\n💬 [BOT TRADER] Kiểm tra và tự động phản hồi bình luận của độc giả sau nến H4...")
+        try:
+            tu_dong_phan_hoi_binh_luan()
+        except Exception as e:
+            print(f"⚠️ Lỗi khi tự động phản hồi bình luận sau H4: {e}")
+
+    elif args.reply_comments:
+        print("\n💬 [BOT TRADER] Bắt đầu quét và tự động phản hồi bình luận của độc giả...")
+        res = tu_dong_phan_hoi_binh_luan()
+        print(f"✅ Hoàn tất xử lý: {len(res)} phản hồi đã được gửi.")
 
     elif args.comments:
         sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "binh-luan"))
