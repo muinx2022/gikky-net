@@ -155,7 +155,7 @@ export function BinhLuan({ nut, datNeo = false }: Props) {
  * nút khi nó đổi phe hiện/gập. */
 function ThanReply({ r }: { r: ReplyPhang }) {
   return r.nut.trang_thai === "binh_thuong" ? (
-    <NoiDung nut={r.nut} cha={r.cha} />
+    <NoiDung nut={r.nut} cha={r.cha} laReply />
   ) : (
     <BiaMo nut={r.nut} />
   );
@@ -179,8 +179,20 @@ function DongTraLoi({ cha }: { cha: ChaReply }) {
 }
 
 /** Thân một bình luận đọc được. `cha` khác `null` ⇔ reply phẳng mà cha không phải gốc —
- * dòng `↪ trả lời @cha` đứng đầu thân, TRONG `<details>` tự gập (nó là một phần của thân). */
-function NoiDung({ nut, cha = null }: { nut: BinhLuanOut; cha?: ChaReply | null }) {
+ * dòng `↪ trả lời @cha` đứng đầu thân, TRONG `<details>` tự gập (nó là một phần của thân).
+ *
+ * `laReply` chỉ đổi CỠ avatar (26 gốc / 18 reply — phân cấp 2026-11-16): avatar đặt cỡ
+ * bằng `style` inline nên CSS không với tới; cỡ chữ tên/thời gian thì CSS tự lo
+ * (`.tra_loi .ai`…). Không dùng `cha` để suy ra: reply thẳng vào gốc cũng có `cha === null`. */
+function NoiDung({
+  nut,
+  cha = null,
+  laReply = false,
+}: {
+  nut: BinhLuanOut;
+  cha?: ChaReply | null;
+  laReply?: boolean;
+}) {
   const than = (
     <>
       <div className={css.dau}>
@@ -198,7 +210,7 @@ function NoiDung({ nut, cha = null }: { nut: BinhLuanOut; cha?: ChaReply | null 
               ten={nut.author?.username ?? ""}
               hienThi={nut.author?.display_name}
               url={nut.author?.avatar_url}
-              co={22}
+              co={laReply ? 18 : 26}
             />
           </Link>
           <Link

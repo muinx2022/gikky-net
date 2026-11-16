@@ -8,7 +8,18 @@
 .danh_sach {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
+}
+
+/* **Kẻ mảnh giữa hai thread gốc** (phân cấp, 2026-11-16). Chọn kẻ chứ không nới khoảng
+ * trống: reply cũng cách nhau bằng khoảng trống (`.tra_loi` gap 16px), nên khoảng trống to
+ * hơn chỉ khác vài pixel — mắt không đọc ra "đây là thread mới". Đường kẻ nói thẳng điều
+ * đó, và nó chỉ nằm GIỮA các thread gốc, không bao giờ giữa các reply.
+ * `--line-2` chứ không `--line`: `--line` ở theme tối gần bằng nền thẻ — đúng cái bệnh
+ * làm vạch thread cũ chìm mất. */
+.danh_sach > li + li {
+  padding-top: 18px;
+  border-top: 1px solid var(--line-2);
 }
 
 /* **Không còn `border-left` ở đây** (lượt giao diện, 2026-08-23).
@@ -18,10 +29,13 @@
  * là hai vạch song song cách nhau vài pixel, và cái người ta nhắm chuột vào sẽ là cái
  * không làm gì.
  *
- * `padding-left` co lại theo: phần thụt vào nay đến từ lưới 18px + 4px của `.khung`. */
+ * **Thụt một cột avatar gốc** (phân cấp, 2026-11-16): avatar gốc 26px + khe 6px của
+ * `.cum_tac_gia` = 32px ⇒ avatar reply đứng thẳng dưới TÊN người viết gốc. Bản cũ chỉ 8px
+ * và reply trông như một bình luận cùng cấp (ảnh prod 2026-11-16). Đổi cỡ avatar gốc ở
+ * `binh-luan.tsx::NoiDung` thì đổi con số này theo. ≤ 640px thụt ít hơn — xem cuối file. */
 .tra_loi {
   margin: 15px 0 0;
-  padding-left: 8px;
+  padding-left: 32px;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -50,7 +64,21 @@
 
 .ai {
   font-weight: 600;
-  font-size: 13px;
+  font-size: 14px;
+}
+
+/* Reply nhỏ hơn gốc một nấc ở dòng đầu (tên, giờ) — đi cùng avatar 18px vs 26px
+ * (`binh-luan.tsx::NoiDung`). Thân chữ GIỮ 14px: nhỏ đi là bóp đúng chữ người ta đọc. */
+.tra_loi .dau {
+  gap: 6px;
+}
+
+.tra_loi .ai {
+  font-size: 12.5px;
+}
+
+.tra_loi .khi {
+  font-size: 11px;
 }
 
 .chu_mach {
@@ -128,7 +156,9 @@
 
 /* Nút `Xem thêm N câu trả lời ▾` / `Ẩn bớt ▴` của đuôi reply gập. Trông như chữ, bấm như nút. */
 .xem_them_reply {
-  margin: 12px 0 0;
+  /* Thụt bằng đúng `.tra_loi` (và cùng nhịp ≤ 640px ở cuối file): nút này thuộc danh sách
+     reply, đứng ở cột gốc thì trông như hành động của bình luận gốc. */
+  margin: 12px 0 0 32px;
   padding: 4px 0;
   border: 0;
   background: none;
@@ -160,5 +190,15 @@
   .ai {
     padding-block: 4px;
     margin-block: -4px;
+  }
+
+  /* Điện thoại thụt ít hơn: ở 375px cột chữ reply chỉ còn ~290px, thụt đủ 32px là bóp
+   * chữ. Avatar 18px + tên nhỏ một nấc vẫn tách reply khỏi gốc. */
+  .tra_loi {
+    padding-left: 20px;
+  }
+
+  .xem_them_reply {
+    margin-left: 20px;
   }
 }

@@ -26,7 +26,11 @@
 .nut {
   font-family: var(--f-mono);
   font-size: 11px;
-  line-height: 1.5;
+  /* 22px chứ không `1.5` (phân cấp, 2026-11-16): avatar gốc lên 26px nên dòng tên cao 26px,
+     tâm ở 13px; `[−]` cao 16,5px thì tâm ở 8px — lệch 5px, `mobile-390.spec.ts` M6 (≤ 4px)
+     đỏ. 22px đặt tâm ở 11px: lệch 2px với dòng tên, ~1,5px với dòng bia mộ / `tu_gap`
+     (chữ 12,5–13px) — vừa cả ba kiểu mở đầu của một thread. */
+  line-height: 22px;
   color: var(--ink-3);
   padding: 0;
   text-align: left;
@@ -57,7 +61,11 @@
   left: 50%;
   width: 2px;
   margin-left: -1px;
-  background: var(--line);
+  /* Trộn `--line-2` với `--ink-3` (phân cấp, 2026-11-16) — cùng cách `chrome.module.css`
+     làm viền đầu trang. `var(--line)` trần ở theme tối là `#232b3a` trên nền `#161b24`,
+     gần như chìm hẳn: người ta không thấy vạch thì không biết reply thuộc thread nào, và
+     cũng không biết nó bấm được. Mức trộn này cho ~2,5:1 trên nền thẻ ở CẢ hai theme. */
+  background: color-mix(in srgb, var(--line-2) 55%, var(--ink-3));
   border-radius: 1px;
 }
 
