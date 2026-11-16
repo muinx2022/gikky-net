@@ -2291,3 +2291,9 @@ P-20261115-6 · MỞ · NHỎ · Hàng rào CSS clamp `xem-truoc-anh` bỏ lọt
 P-20261115-7 · MỞ · VỪA · DB local `gikky_dev` chưa apply migration 0047/0048 nên `seed_e2e` chết (`column core_sub.vi_tri_trang_chu does not exist`) — chặn đo e2e T13 · `api/core/migrations/0047_sub_vi_tri_trang_chu.py` · `showmigrations` để 0047 và 0048 ở `[ ]`; thợ V1 fill-trích 2026-11-15. Đề nghị: khi user duyệt, `pnpm api:migrate` trên DB local (cẩn thận nếu phiên khác đang dùng DB).
 
 P-20261115-8 · MỞ · NHỎ · `catBoiCanhChuDe` cắt theo code unit UTF-16: emoji đúng vị trí cắt cứng có thể ra ký tự hỏng trước `…` (Python `trich_van_ban` đếm ký tự Unicode) · `apps/web/lib/boi-canh-chu-de.ts` · phản biện V1 2026-11-15; ca hiếm. Đề nghị: cắt bằng `Array.from` khi user duyệt.
+
+P-20261116-1 · MỞ · VỪA · **nghi ngờ** · Mix Fold 3 có thể báo `innerWidth` > 960px (vd Chrome «Trang web cho máy tính» 980px, cầm ngang) ⇒ lưới vẫn hai cột, `.an_tren_dien_thoai` không áp, đúng triệu chứng «phần bên phải + chuyên mục vẫn hiện»; bản vá ≤960 chưa chữa được ca đó · plan `2026-11-16-an-chuyen-muc-bai-moi-mobile.md` · phản biện 2026-11-16; chưa đo trên máy user. Đề nghị: user in `innerWidth` + `matchMedia('(max-width:960px)').matches` trên Fold (dọc/ngang) trước khi nâng ngưỡng thêm.
+
+P-20261116-2 · MỞ · NHỎ · Ca 960px trong `mobile-390` T5 không ghim tab «Chuyên mục» của thanh dưới đang hiện — mối «ẩn rail vì đã có tab» không có hàng rào · `apps/web/e2e/mobile-390.spec.ts:682-690` · phản biện 2026-11-16; đề nghị thêm expect tab hiện trong vòng 960 khi user duyệt.
+
+P-20261116-3 · MỞ · NHỎ · **nghi ngờ** · Cặp `max-width: 960px` / `min-width: 961px` để hở bề rộng lẻ (vd 960,5px): lưới còn hai cột trong khi thanh dưới có thể hiện · `thanh-dieu-huong-duoi.module.css:53`, `khung-hai-cot.module.css:65,85` · phản biện 2026-11-16; chưa đo máy thật.

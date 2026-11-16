@@ -617,25 +617,39 @@ test.describe("W7/G7 — mobile 390px", () => {
     expect(thap, `vùng bấm < 44px: ${thap.join(" · ")}`).toEqual([]);
   });
 
-  // User chốt 2026-11-14: ở điện thoại (≤ 640px) khối bài viết bị ẩn khỏi rail (xem
-  // `mobile-390.spec.ts` T5). Phép đo bố cục một cột nay chạy ở 768px (tablet: rail vẫn dưới nội
-  // dung, khối còn hiện); 390px chỉ còn khẳng định khối ẩn.
-  test("khối bài viết một cột (việc 24): 390px ẩn; 768px nằm trong rail DƯỚI nội dung chính, đủ 10 bài một dòng, không tràn ngang", async ({
+  // User chốt 2026-11-14 (ẩn bằng CSS, giữ DOM); ngưỡng nâng 2026-11-16: ≤ 960px khối bài viết
+  // ẩn khỏi rail — khớp tab "Chuyên mục" của thanh điều hướng dưới và lưới một cột (xem
+  // `mobile-390.spec.ts` T5). 390 / 768 / 960 đều ẩn. Phép đo khi khối HIỆN chạy ở 1280px
+  // (≥ 961, rail phải của lưới hai cột): đủ 10 bài, mỗi tiêu đề một dòng, không tràn ngang,
+  // mép trái/phải nằm trong rail. Không còn đo "y dưới đáy main" — đó là bố cục một cột cũ.
+  test("khối bài viết (việc 24): ≤960px ẩn (390, 768, 960); 1280px hiện trong rail phải, đủ 10 bài một dòng, không tràn ngang", async ({
     page,
   }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/");
-    const khoi = page.getByTestId("rail-phai").getByTestId("sidebar-bai-moi");
-    await expect(khoi).toBeAttached();
-    await expect(khoi).toBeHidden();
+    const rail = page.getByTestId("rail-phai");
+    const khoi = rail.getByTestId("sidebar-bai-moi");
 
-    await page.setViewportSize({ width: 768, height: 1024 });
+    for (const [rong, cao_khung] of [
+      [390, 844],
+      [768, 1024],
+      [960, 900],
+    ] as const) {
+      await page.setViewportSize({ width: rong, height: cao_khung });
+      await page.goto("/");
+      await expect(khoi, `${rong}px: còn trong DOM`).toBeAttached();
+      await expect(khoi, `${rong}px: ẩn`).toBeHidden();
+    }
+
+    await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/");
     await expect(khoi).toBeVisible();
-    const tren = await page.locator("main").first().evaluate((e) => e.getBoundingClientRect().bottom);
     const hop = await khoi.boundingBox();
-    expect(hop!.y, "khối bài viết dưới nội dung chính").toBeGreaterThanOrEqual(tren - 1);
-    expect(hop!.x + hop!.width, "khối bài viết trong khung 768px").toBeLessThanOrEqual(768);
+    const hopRail = await rail.boundingBox();
+    expect(hop, "đo được khối bài viết").not.toBeNull();
+    expect(hopRail, "đo được rail phải").not.toBeNull();
+    expect(hop!.x, "mép trái khối nằm trong rail").toBeGreaterThanOrEqual(hopRail!.x - 1);
+    expect(hop!.x + hop!.width, "mép phải khối nằm trong rail").toBeLessThanOrEqual(
+      hopRail!.x + hopRail!.width + 1,
+    );
     // Đủ 10 bài, mỗi tiêu đề MỘT dòng (cắt bằng ellipsis), không đẩy trang cuộn ngang.
     const tieu_de = khoi.locator("li > a");
     await expect(tieu_de).toHaveCount(10);

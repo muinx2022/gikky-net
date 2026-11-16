@@ -631,9 +631,10 @@ test.describe("T2 — thanh cài app không cướp chỗ", () => {
 /* ===================================================================== T5 · home mobile */
 
 // Việc 24: section "Bài viết" (từng đứng NGOÀI khung, được `order` kéo lên trước rail) đã gỡ;
-// bài viết mới là một khối của rail. User chốt 2026-11-14: trên điện thoại (≤ 640px) rail BỎ hẳn
-// "Chuyên mục" và khối bài mới (`.an_tren_dien_thoai`) — danh sách chuyên mục đã có ở tab "Chuyên
-// mục" của thanh điều hướng dưới. Hai khối vẫn trong DOM (ẩn bằng CSS), chỉ không hiện.
+// bài viết mới là một khối của rail. User chốt 2026-11-14 (ẩn bằng CSS, giữ DOM); ngưỡng nâng
+// 2026-11-16: trên mobile và màn hình gập (≤ 960px) rail BỎ hẳn "Chuyên mục" và khối bài mới
+// (`.an_tren_dien_thoai`) — danh sách chuyên mục đã có ở tab "Chuyên mục" của thanh điều hướng
+// dưới, cũng ≤ 960px. Hai khối vẫn trong DOM, chỉ không hiện. Từ 961px (desktop hai cột) hiện lại.
 test.describe("T5 — home mobile: rail không có Chuyên mục / bài mới", () => {
   test("390px: Nhật ký mới → rail (Luật) → chân trang; Chuyên mục + bài mới ẩn; không cuộn ngang", async ({
     page,
@@ -668,7 +669,7 @@ test.describe("T5 — home mobile: rail không có Chuyên mục / bài mới", 
     expect(rong.cuon, JSON.stringify(rong)).toBeLessThanOrEqual(rong.khung);
   });
 
-  test("`/luat` (khối tự nạp ở trình duyệt) cũng ẩn ở 390px; 641px thì cả hai khối HIỆN lại", async ({ page }) => {
+  test("`/luat` ẩn ở 390px; 960px vẫn ẩn; 961px thì cả hai khối HIỆN", async ({ page }) => {
     await moi(page, "/luat");
     const rail = page.getByTestId("rail-phai");
     // Nhánh trình duyệt (`ChuyenMucTuTrinhDuyet` / `BaiMoiTuTrinhDuyet`): chờ nạp xong rồi mới xét.
@@ -677,8 +678,18 @@ test.describe("T5 — home mobile: rail không có Chuyên mục / bài mới", 
     await expect(rail.getByTestId("sidebar-cac-sub")).toBeHidden();
     await expect(rail.getByTestId("sidebar-bai-moi")).toBeHidden();
     await expect(rail.getByTestId("sidebar-luat")).toBeVisible();
-    // Ngay trên breakpoint điện thoại: không đổi so với trước 2026-11-14.
-    await page.setViewportSize({ width: 641, height: 900 });
+    // Mép fold / tablet: một cột, tab «Chuyên mục» đã có — hai khối rail vẫn ẩn. Luật vẫn hiện.
+    await page.setViewportSize({ width: 960, height: 900 });
+    for (const url of ["/", "/luat"]) {
+      await moi(page, url);
+      await expect(rail.getByTestId("sidebar-cac-sub"), url).toBeAttached();
+      await expect(rail.getByTestId("sidebar-bai-moi"), url).toBeAttached();
+      await expect(rail.getByTestId("sidebar-cac-sub"), `${url} @960`).toBeHidden();
+      await expect(rail.getByTestId("sidebar-bai-moi"), `${url} @960`).toBeHidden();
+      await expect(rail.getByTestId("sidebar-luat"), `${url} @960`).toBeVisible();
+    }
+    // Ngay trên breakpoint: desktop hai cột, cả hai khối hiện lại.
+    await page.setViewportSize({ width: 961, height: 900 });
     for (const url of ["/", "/luat"]) {
       await moi(page, url);
       await expect(rail.getByTestId("sidebar-cac-sub"), url).toBeVisible();

@@ -310,14 +310,16 @@
   .chu_de_tuan {
     padding-block: 3px;
   }
+}
 
-  /* Điện thoại bỏ hẳn "Chuyên mục" và khối bài mới ("Bài viết mới" / "Bài mới nhất" / "Cùng
-   * chuyên mục") khỏi rail (user chốt 2026-11-14). Rail ở đây đã rơi xuống dưới nội dung; danh
-   * sách chuyên mục trên điện thoại đã có ở tab "Chuyên mục" của thanh điều hướng dưới
-   * (`thanh-dieu-huong-duoi.tsx`, hiện ở ≤ 960px). Ẩn bằng CSS, KHÔNG bằng matchMedia: markup
-   * server và trình duyệt giữ nguyên (không lệch hydrate), link `/s/*` / `/m/*` vẫn nằm trong
-   * HTML. Lớp gắn ở phần tử gốc của `KhoiChuyenMuc` / `KhoiBaiMoi` nên phủ cả nhánh server lẫn
-   * nhánh tự nạp ở trình duyệt (`ChuyenMucTuTrinhDuyet` / `BaiMoiTuTrinhDuyet`). */
+/* Bỏ hẳn "Chuyên mục" và khối bài mới ("Bài viết mới" / "Bài mới nhất" / "Cùng chuyên mục")
+ * khỏi rail khi ≤ 960px (user chốt 2026-11-14 ẩn bằng CSS; ngưỡng nâng 2026-11-16 cho khớp
+ * tab "Chuyên mục" của thanh điều hướng dưới — `thanh-dieu-huong-duoi.tsx` — và lưới một cột,
+ * cả hai cũng ≤ 960px). Ẩn bằng CSS, KHÔNG bằng matchMedia: markup server và trình duyệt giữ
+ * nguyên (không lệch hydrate), link `/s/*` / `/m/*` vẫn nằm trong HTML. Lớp gắn ở phần tử gốc
+ * của `KhoiChuyenMuc` / `KhoiBaiMoi` nên phủ cả nhánh server lẫn nhánh tự nạp ở trình duyệt
+ * (`ChuyenMucTuTrinhDuyet` / `BaiMoiTuTrinhDuyet`). */
+@media (max-width: 960px) {
   .an_tren_dien_thoai {
     display: none;
   }

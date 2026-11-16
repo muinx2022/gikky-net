@@ -234,14 +234,14 @@ function khoiCapDau(css: string): { boc: string; than: string }[] {
 }
 
 test.describe("rail điện thoại — ẩn Chuyên mục + bài mới (user chốt 2026-11-14)", () => {
-  test("`.an_tren_dien_thoai { display: none }` CHỈ nằm trong `@media (max-width: 640px)`", () => {
+  test("`.an_tren_dien_thoai { display: none }` CHỈ nằm trong `@media (max-width: 960px)`", () => {
     const css = doc("components/sidebar.module.css").replace(/\/\*[\s\S]*?\*\//g, "");
     const co = khoiCapDau(css).filter((k) => /\.an_tren_dien_thoai\b/.test(`${k.boc}{${k.than}}`));
     expect(co.length, "đo rỗng: không thấy .an_tren_dien_thoai").toBeGreaterThan(0);
     for (const k of co) {
       // Ở cấp đầu (ngoài @media) là ẩn ở MỌI bề rộng — desktop mất hai khối.
-      expect(k.boc, `.an_tren_dien_thoai nằm ngoài @media 640: "${k.boc}"`).toMatch(
-        /^@media\s*\(max-width:\s*640px\)$/,
+      expect(k.boc, `.an_tren_dien_thoai nằm ngoài @media 960: "${k.boc}"`).toMatch(
+        /^@media\s*\(max-width:\s*960px\)$/,
       );
       const luat = /(?:^|\n)\s*\.an_tren_dien_thoai\s*\{([^}]*)\}/.exec(k.than)?.[1] ?? "";
       expect(luat).toMatch(/display:\s*none/);
