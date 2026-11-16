@@ -1,6 +1,6 @@
 # Bình luận trang mạch kiểu TikTok + ưu tiên thread của người đang đăng nhập
 
-**Trạng thái:** CODE XONG, CHƯA COMMIT, CHƯA LÊN PROD. Nghiệm thu ĐẠT 21/23 (thiếu: nhìn tận
+**Trạng thái:** ĐÃ LÊN PROD 0c24649 (2026-11-16 ~20:00, chỉ rebuild `web`; trước đó prod = 44a973a). Nghiệm thu ĐẠT 21/23 (thiếu: nhìn tận
 mắt trên trình duyệt). Phản biện bắt 1 NẶNG (deep-link vào reply trong đuôi gập không cuộn tới) +
 2 NHẸ (reply nhảy giữa hai `<ul>` khi phiên về; "↪ trả lời @?") — đã sửa vòng 2, mỗi lớp sửa có bài
 e2e đỏ khi gỡ. Don-vi 870/870; e2e `gikky_e2e` chỉ còn 3 bài đỏ có sẵn trên HEAD (P-20261116-4).
