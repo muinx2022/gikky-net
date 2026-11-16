@@ -7,6 +7,7 @@ import {
   chuTraLoi,
   lamPhangThread,
   nguoiThamGia,
+  tacGiaGoc,
 } from "@/lib/binh-luan-phang";
 import { CHU_NGUOI_DUNG } from "@/lib/chu-nguoi-dung";
 import { dauThoiGianServer, diemCoDau } from "@/lib/dinh-dang";
@@ -57,7 +58,8 @@ type Props = {
  * `<ul>` tự bày là hai kiểu dáng sẽ trôi khỏi nhau.
  *
  * Từ 2026-11-16 thứ tự cuối cùng do CLIENT quyết (`DanhSachThread`): thread có người đang
- * đăng nhập tham gia lên đầu. Server chỉ dựng từng thread kèm tập người tham gia. */
+ * đăng nhập viết gốc lên đầu, rồi thread họ có reply. Server chỉ dựng từng thread kèm tác
+ * giả gốc + tập người tham gia. */
 export function DanhSachBinhLuan({
   threads,
   datNeo = false,
@@ -72,6 +74,7 @@ export function DanhSachBinhLuan({
       data-testid={testid}
       threads={threads.map((n) => ({
         id: n.id,
+        tacGiaGoc: tacGiaGoc(n),
         nguoiThamGia: nguoiThamGia(n),
         node: <BinhLuan nut={n} datNeo={datNeo} />,
       }))}

@@ -20,6 +20,8 @@ import { usePhien } from "./phien";
 
 export type ThreadDaDung = {
   id: number;
+  /** Username tác giả gốc; `null` ở bia mộ. */
+  tacGiaGoc: string | null;
   nguoiThamGia: string[];
   node: React.ReactNode;
 };
@@ -33,7 +35,7 @@ export type ReplyDaDung = {
   node: React.ReactNode;
 };
 
-/** Danh sách thread gốc — thread có tôi tham gia lên đầu (stable). */
+/** Danh sách thread gốc — gốc của tôi, rồi thread tôi có reply, rồi phần còn lại (stable). */
 export function DanhSachThread({
   threads,
   "data-testid": testid,

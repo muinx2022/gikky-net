@@ -105,12 +105,31 @@ export function uuTienCuaToi<T>(
   return [...cua_toi, ...con_lai];
 }
 
-/** Thread có `toi` tham gia (gốc hoặc bất kỳ reply) lên đầu, stable. */
-export function sapThreadUuTien<T extends { nguoiThamGia: readonly string[] }>(
-  threads: readonly T[],
-  toi: string | null,
-): T[] {
-  return uuTienCuaToi(threads, toi, (t, u) => t.nguoiThamGia.includes(u));
+/** Username tác giả gốc; `null` khi gốc là bia mộ (server nhả `author` ở bia mộ). */
+export function tacGiaGoc(goc: BinhLuanOut): string | null {
+  return goc.author?.username ?? null;
+}
+
+/** Sắp thread theo 3 bậc, **stable trong từng bậc**:
+ * 1. thread có GỐC do `toi` viết;
+ * 2. thread `toi` chỉ tham gia bằng reply;
+ * 3. còn lại.
+ *
+ * Bản đầu (2026-11-16) gộp bậc 1 + 2 làm một nhóm "có tôi tham gia" giữ thứ tự server —
+ * user báo trên prod: thread người khác mà mình có reply đứng TRÊN bình luận gốc của chính
+ * mình (*"nick của tôi lại xuống dưới"*). Gốc bia mộ (`tacGiaGoc === null`) không phải
+ * của ai. `toi` rỗng ⇒ thứ tự server, như `uuTienCuaToi`.
+ */
+export function sapThreadUuTien<
+  T extends { tacGiaGoc: string | null; nguoiThamGia: readonly string[] },
+>(threads: readonly T[], toi: string | null): T[] {
+  const goc_cua_toi = uuTienCuaToi(threads, toi, (t, u) => t.tacGiaGoc === u);
+  if (toi === null || toi === "") return goc_cua_toi;
+  const so_goc = goc_cua_toi.filter((t) => t.tacGiaGoc === toi).length;
+  return [
+    ...goc_cua_toi.slice(0, so_goc),
+    ...uuTienCuaToi(goc_cua_toi.slice(so_goc), toi, (t, u) => t.nguoiThamGia.includes(u)),
+  ];
 }
 
 /** Reply của `toi` lên đầu danh sách reply (stable), rồi chia phần hiện sẵn / đuôi gập.

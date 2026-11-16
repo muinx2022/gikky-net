@@ -13,6 +13,7 @@ import {
   lamPhangThread,
   nguoiThamGia,
   sapThreadUuTien,
+  tacGiaGoc,
 } from "../../lib/binh-luan-phang";
 import { boChuThich } from "./quet";
 
@@ -152,24 +153,51 @@ test("người tham gia = tác giả gốc + mọi reply mọi tầng, không tr
   expect(nguoiThamGia(goc).sort()).toEqual(["an", "goc", "sau"]);
 });
 
-type T = { id: number; nguoiThamGia: string[] };
+type T = { id: number; tacGiaGoc: string | null; nguoiThamGia: string[] };
+const th = (id: number, tacGiaGoc: string | null, ...khac: string[]): T => ({
+  id,
+  tacGiaGoc,
+  nguoiThamGia: tacGiaGoc === null ? khac : [tacGiaGoc, ...khac],
+});
 const threads: T[] = [
-  { id: 1, nguoiThamGia: ["a"] },
-  { id: 2, nguoiThamGia: ["toi", "b"] },
-  { id: 3, nguoiThamGia: ["c"] },
-  { id: 4, nguoiThamGia: ["d", "toi"] },
-  { id: 5, nguoiThamGia: ["e"] },
+  th(1, "a"),
+  th(2, "b", "toi"),
+  th(3, "toi"),
+  th(4, "c"),
+  th(5, "toi", "d"),
+  th(6, "e", "toi"),
+  th(7, "f"),
 ];
 
-test("thread có tôi lên đầu, STABLE ở cả hai nhóm", () => {
-  expect(sapThreadUuTien(threads, "toi").map((x) => x.id)).toEqual([2, 4, 1, 3, 5]);
+test("thread 3 bậc: gốc của tôi → tôi chỉ reply → còn lại, STABLE trong từng bậc", () => {
+  expect(sapThreadUuTien(threads, "toi").map((x) => x.id)).toEqual([3, 5, 2, 6, 1, 4, 7]);
+});
+
+test("ca DRI (prod 2026-11-16): gốc của tôi đứng TRÊN thread người khác mà tôi có reply", () => {
+  // Server xếp #36 (Quản trị viên, có reply của tôi) trước #50 (gốc của tôi). Luật cũ gộp
+  // hai cái làm một nhóm "có tôi tham gia" ⇒ giữ [36, 50] — "nick của tôi lại xuống dưới".
+  const ds = [th(36, "quan_tri_vien", "toi"), th(50, "toi")];
+  expect(sapThreadUuTien(ds, "toi").map((x) => x.id)).toEqual([50, 36]);
+});
+
+test("gốc bia mộ (tác giả null) không phải của tôi — tôi có reply thì chỉ ở bậc 2", () => {
+  const ds = [th(1, "a"), th(2, null, "toi"), th(3, "b", "toi"), th(4, "toi")];
+  expect(sapThreadUuTien(ds, "toi").map((x) => x.id)).toEqual([4, 2, 3, 1]);
+  // Bia mộ không ai reply: đứng yên ở bậc 3.
+  expect(sapThreadUuTien([th(1, null), th(2, "toi")], "toi").map((x) => x.id)).toEqual([2, 1]);
+});
+
+test("tacGiaGoc: username tác giả gốc, null ở bia mộ", () => {
+  expect(tacGiaGoc(nut(1, { ai: "an", replies: [nut(2, { ai: "toi" })] }))).toBe("an");
+  expect(tacGiaGoc(nut(1, { ai: null, trang_thai: "da_xoa", replies: [nut(2, { ai: "toi" })] }))).toBeNull();
 });
 
 test("chưa đăng nhập / phiên đang tải (toi = null): thứ tự server, không đổi gì", () => {
-  expect(sapThreadUuTien(threads, null).map((x) => x.id)).toEqual([1, 2, 3, 4, 5]);
-  expect(sapThreadUuTien(threads, "").map((x) => x.id)).toEqual([1, 2, 3, 4, 5]);
+  const nguyen = threads.map((x) => x.id);
+  expect(sapThreadUuTien(threads, null).map((x) => x.id)).toEqual(nguyen);
+  expect(sapThreadUuTien(threads, "").map((x) => x.id)).toEqual(nguyen);
   // Không ai khớp ⇒ cũng không đổi.
-  expect(sapThreadUuTien(threads, "nguoi_la").map((x) => x.id)).toEqual([1, 2, 3, 4, 5]);
+  expect(sapThreadUuTien(threads, "nguoi_la").map((x) => x.id)).toEqual(nguyen);
 });
 
 type R = { id: number; tacGia: string | null };

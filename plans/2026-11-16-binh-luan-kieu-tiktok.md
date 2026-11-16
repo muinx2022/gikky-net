@@ -56,8 +56,13 @@ tiktok, ưu tiên cmt của user đang đăng nhập"*. Chốt qua câu hỏi:
 
 - Một client component bọc danh sách thread (dùng ở cả khu chung lẫn ngăn kéo). Server truyền mỗi
   thread kèm tập username tham gia (tác giả gốc + mọi reply), children là node server dựng sẵn.
-- Có `toi`: thread có `toi.username` lên đầu, giữ nguyên thứ tự tương đối (stable) cả trong nhóm
-  "của tôi" lẫn phần còn lại. Chưa đăng nhập / đang tải phiên: thứ tự server, không đổi gì.
+- Có `toi`: thread sắp 3 bậc, stable trong từng bậc — (1) thread có GỐC do `toi.username` viết;
+  (2) thread `toi` chỉ tham gia bằng reply; (3) còn lại. Gốc bia mộ (author null) không tính là
+  của tôi. Server truyền thêm tác giả gốc (`tacGiaGoc`) cho mỗi thread. Chưa đăng nhập / đang tải
+  phiên: thứ tự server, không đổi gì.
+- *2026-11-16, sửa sau prod:* bản đầu gộp (1) + (2) làm một nhóm "có tôi tham gia" giữ thứ tự
+  server. User báo trên `/m/dri-mua-vi-gia-cao-su-dang-tang-1254`: thread #36 của Quản trị viên (có
+  reply của user) đứng trên #50 là bình luận GỐC của user — *"nick của tôi lại xuống dưới"*.
 - Trong một thread: reply của tôi lên đầu danh sách reply (stable), và **không bao giờ** nằm trong
   đuôi bị gập.
 - Luật sắp là hàm thuần trong `lib/`, ghim bằng don-vi.
